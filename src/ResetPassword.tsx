@@ -131,7 +131,19 @@ export default function ResetPassword() {
           return;
         }
         // One-shot: reject if this link was already used to reset.
-        const usedAt = session.user.user_metadata?.password_reset_used_at;
+        // CRITICAL: We must NOT read user_metadata off `session.user` —
+        // that's parsed from the JWT in the email link's access_token,
+        // which was issued BEFORE any reset flag was written. Reading
+        // it would always return undefined on the second click and let
+        // the same link be reused. `getUser()` forces a server fetch
+        // so we see the current user_metadata state.
+        const { data: userData, error: userErr } = await client.auth.getUser();
+        if (cancelled) return;
+        if (userErr || !userData?.user) {
+          setTokenStatus("invalid");
+          return;
+        }
+        const usedAt = userData.user.user_metadata?.password_reset_used_at;
         if (typeof usedAt === "number") {
           const elapsed = Date.now() - usedAt;
           if (elapsed < 24 * 60 * 60 * 1000) {
@@ -142,7 +154,7 @@ export default function ResetPassword() {
           }
         }
         csrfTokenRef.current = generateCsrfToken();
-        setEmail(session.user.email ?? undefined);
+        setEmail(userData.user.email ?? undefined);
         setTokenStatus("valid");
       } catch {
         if (!cancelled) {
@@ -223,10 +235,38 @@ export default function ResetPassword() {
       );
       const currentSession = sessionResult.data.session;
 
+      // Re-fetch user from server — JWT-cached user_metadata is stale
+      // because the access_token in the email link was issued before any
+      // metadata write. Without this, password_reset_used_at would always
+      // appear unset on subsequent link clicks.
+      const userResult = await withTimeout(
+        client.auth.getUser(),
+        8000,
+        "getUser",
+      );
+      const freshUser = userResult.data.user;
+
+      // Server-side double-check: if the link has already been used
+      // recently, reject the submit even if the page somehow loaded
+      // (race condition between mount check + submit).
+      const lastUsedAt = freshUser?.user_metadata?.password_reset_used_at;
+      if (typeof lastUsedAt === "number") {
+        const elapsed = Date.now() - lastUsedAt;
+        if (elapsed < 24 * 60 * 60 * 1000) {
+          setError(
+            "This reset link was already used. Request a new one to change your password again.",
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       // Last-3 password reuse rejection (defence-in-depth; Supabase handles
-      // canonical password hashing server-side).
+      // canonical password hashing server-side). Read from the FRESH user
+      // record, not the JWT-cached session, for the same staleness reason.
       const passwordHashes: string[] =
-        currentSession?.user?.user_metadata?.password_hashes || [];
+        (freshUser?.user_metadata?.password_hashes as string[] | undefined) ||
+        [];
       const newHash = await sha256Hex(password);
       if (passwordHashes.includes(newHash)) {
         setError("You can't reuse a recent password. Pick a different one.");
