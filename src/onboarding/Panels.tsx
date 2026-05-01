@@ -988,7 +988,7 @@ function ScoreGauge({
     >
       <div
         className="hsx-onb-score-gauge"
-        style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 18, alignItems: "center" }}
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}
       >
         <div style={{ position: "relative", width: 180, height: 100 }}>
           <svg width="180" height="100" viewBox="0 0 180 100" aria-hidden="true">

@@ -1053,10 +1053,11 @@ function ScoreGauge({
       <div
         className="hsx-onb-score-gauge"
         style={{
-          display: "grid",
-          gridTemplateColumns: "180px 1fr",
-          gap: 18,
+          display: "flex",
+          flexDirection: "column",
           alignItems: "center",
+          gap: 14,
+          textAlign: "center",
         }}
       >
       <div style={{ position: "relative", width: 180, height: 100 }}>
