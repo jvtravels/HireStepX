@@ -383,9 +383,7 @@ export default function Signup({
                       ? "Enter a valid email to continue"
                       : !passwordV.valid
                         ? "Choose a password that meets the requirements"
-                        : !termsAccepted
-                          ? "Accept the Terms to continue"
-                          : "Complete the form to continue"
+                        : "Complete the form to continue"
                   : undefined;
                 return (
                   <button

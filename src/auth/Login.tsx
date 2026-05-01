@@ -23,6 +23,14 @@ import {
   validatePassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import {
+  buildAuthLink,
+  computeAuthRedirect,
+  mapAuthError,
+  readStaySignedInPref,
+  useIsMounted,
+  writeStaySignedInPref,
+} from "./_shell";
 
 // Auto-hide password if visible for this long (over-shoulder protection)
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
@@ -77,29 +85,6 @@ function clearFailedAttempts() {
   }
 }
 
-/** Map Supabase auth errors to user-facing copy. Keep messages short
-    and actionable; never leak which field was wrong (security). */
-function mapAuthError(raw: string | undefined): string {
-  if (!raw) return "Something went wrong. Try again.";
-  const msg = raw.toLowerCase();
-  if (
-    msg.includes("invalid login credentials") ||
-    msg.includes("invalid_credentials")
-  ) {
-    return "Email or password is incorrect. Try again, or reset your password.";
-  }
-  if (msg.includes("email not confirmed")) {
-    return "Please verify your email first. Check your inbox for the confirmation link.";
-  }
-  if (msg.includes("rate limit") || msg.includes("too many requests")) {
-    return "Too many attempts. Try again in a few minutes.";
-  }
-  if (msg.includes("network") || msg.includes("failed to fetch")) {
-    return "Couldn't reach our servers. Check your connection and try again.";
-  }
-  return raw;
-}
-
 export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -114,9 +99,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleInFlight, setGoogleInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lockoutSeconds, setLockoutSeconds] = useState(() =>
-    readLockoutSeconds(),
-  );
+  // SSR-safe: starts at 0, reads from localStorage in useEffect after mount
+  // to avoid hydration mismatch when the user is already locked.
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const isMounted = useIsMounted();
 
   // Validation
   const emailV = validateEmail(email);
@@ -136,21 +122,41 @@ export default function Login() {
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
 
-  const computeRedirect = useCallback(() => {
-    if (nextParam && nextParam.startsWith("/")) return nextParam;
-    const base = user?.hasCompletedOnboarding ? "/dashboard" : "/onboarding";
-    return planParam ? `${base}?plan=${planParam}` : base;
-  }, [nextParam, planParam, user]);
+  const computeRedirect = useCallback(
+    () =>
+      computeAuthRedirect({
+        next: nextParam,
+        plan: planParam,
+        hasCompletedOnboarding: !!user?.hasCompletedOnboarding,
+      }),
+    [nextParam, planParam, user],
+  );
 
   // Already-logged-in: bounce to destination
   useEffect(() => {
     if (isLoggedIn && user) router.replace(computeRedirect());
   }, [isLoggedIn, user, router, computeRedirect]);
 
-  // Analytics: viewed once
+  // Analytics: viewed once. Pass the screen variant for funnel symmetry
+  // with Signup which fires "signup".
   useEffect(() => {
-    trackAuth(loginViewedEvent());
+    trackAuth(loginViewedEvent("login"));
   }, []);
+
+  // Hydrate the "Stay signed in" preference from previous session, and
+  // initialize lockout on the client (SSR-safe — runs after mount).
+  useEffect(() => {
+    setStaySignedIn(readStaySignedInPref());
+    setLockoutSeconds(readLockoutSeconds());
+  }, []);
+
+  // Persist the "Stay signed in" preference. Today this is consumed
+  // only as a UI memory; future commit will pass it through to
+  // useAuth().login() to control session lifetime (sessionStorage vs
+  // localStorage on the Supabase client).
+  useEffect(() => {
+    writeStaySignedInPref(staySignedIn);
+  }, [staySignedIn]);
 
   // Auto-hide password timeout
   useEffect(() => {
@@ -181,9 +187,18 @@ export default function Login() {
     setError(null);
     trackAuth({ type: "login_method_selected", method: "google" });
     trackAuth({ type: "login_submitted", method: "google" });
+
+    // Fallback timer — if OAuth redirect doesn't fire (popup blocker,
+    // network blip, browser cancel), re-enable the button after 8s
+    // so users aren't stranded on a permanently disabled button.
+    const fallback = setTimeout(() => {
+      if (isMounted.current) setGoogleInFlight(false);
+    }, 8000);
+
     const start = Date.now();
     try {
       const result = await loginWithGoogle(computeRedirect());
+      if (!isMounted.current) return;
       if (!result.success) {
         setError(mapAuthError(result.error));
         trackAuth({
@@ -197,14 +212,20 @@ export default function Login() {
           method: "google",
           timeMs: Date.now() - start,
         });
-        return; // OAuth redirect will navigate away
+        // OAuth redirect will navigate away. Leave googleInFlight true
+        // so the button stays disabled until navigation actually happens
+        // (or the fallback timer trips).
+        return;
       }
     } catch (e) {
+      if (!isMounted.current) return;
       setError(mapAuthError(e instanceof Error ? e.message : undefined));
       trackAuth({ type: "login_failed", method: "google", reason: "unknown" });
+    } finally {
+      clearTimeout(fallback);
     }
-    setGoogleInFlight(false);
-  }, [googleInFlight, loading, loginWithGoogle, computeRedirect]);
+    if (isMounted.current) setGoogleInFlight(false);
+  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -221,6 +242,7 @@ export default function Login() {
       const start = Date.now();
       try {
         const result = await login(cleanEmail, password);
+        if (!isMounted.current) return;
         if (!result.success) {
           recordFailedAttempt();
           setLockoutSeconds(readLockoutSeconds());
@@ -241,14 +263,15 @@ export default function Login() {
           });
         }
       } catch (err) {
+        if (!isMounted.current) return;
         const msg = err instanceof Error ? err.message : undefined;
         setError(mapAuthError(msg));
         trackAuth({ type: "login_failed", method: "email", reason: "network" });
       } finally {
-        setLoading(false);
+        if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, password, login],
+    [canSubmit, email, password, login, isMounted],
   );
 
   const handlePasswordVisibility = () => {
@@ -287,7 +310,13 @@ export default function Login() {
             gap: 16,
           }}
         >
-          <Wordmark />
+          <a
+            href="/"
+            aria-label="HireStepX home"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            <Wordmark />
+          </a>
           <div
             className="hsx-login-signup-prompt"
             style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}
@@ -296,7 +325,7 @@ export default function Login() {
               Don't have an account?{" "}
             </span>
             <a
-              href={planParam ? `/signup?plan=${planParam}` : "/signup"}
+              href={buildAuthLink("/signup", searchParams)}
               className="hsx-link-indigo"
               onClick={() => trackAuth({ type: "login_signup_clicked" })}
               style={{
@@ -382,7 +411,7 @@ export default function Login() {
               className="hsx-login-google"
               onClick={handleGoogle}
               disabled={googleInFlight || loading || isLocked}
-              aria-busy={googleInFlight || undefined}
+              aria-busy={googleInFlight ? "true" : "false"}
               style={{
                 width: "100%",
                 fontFamily: f.sans,
@@ -548,7 +577,7 @@ export default function Login() {
                   description="Keeps you signed in for 30 days on this device. Don't enable on shared computers."
                 />
                 <a
-                  href="/reset-password"
+                  href="/forgot-password"
                   className="hsx-link-indigo"
                   onClick={() =>
                     trackAuth({ type: "login_forgot_password_clicked" })
@@ -585,7 +614,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    aria-busy={loading || undefined}
+                    aria-busy={loading ? "true" : "false"}
                     title={tooltip}
                     className="hsx-login-cta"
                     style={{
@@ -613,7 +642,7 @@ export default function Login() {
                   >
                     {loading ? (
                       <>
-                        <Spinner />
+                        <Spinner color={t.cream} />
                         Signing in…
                       </>
                     ) : (
@@ -660,6 +689,8 @@ export default function Login() {
           our{" "}
           <a
             href="/terms"
+            target="_blank"
+            rel="noopener"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
@@ -672,6 +703,8 @@ export default function Login() {
           and{" "}
           <a
             href="/privacy"
+            target="_blank"
+            rel="noopener"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,

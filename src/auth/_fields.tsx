@@ -29,11 +29,18 @@ export function GoogleIcon() {
   );
 }
 
-export function Spinner() {
+export interface SpinnerProps {
+  /** Override stroke color — defaults to currentColor (inherits text color). */
+  color?: string;
+  /** Override pixel size — defaults to 16. */
+  size?: number;
+}
+
+export function Spinner({ color = "currentColor", size = 16 }: SpinnerProps = {}) {
   return (
     <svg
-      width="16"
-      height="16"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden="true"
@@ -43,13 +50,13 @@ export function Spinner() {
         cx="12"
         cy="12"
         r="10"
-        stroke="currentColor"
+        stroke={color}
         strokeOpacity="0.3"
         strokeWidth="2.5"
       />
       <path
         d="M22 12a10 10 0 0 0-10-10"
-        stroke="currentColor"
+        stroke={color}
         strokeWidth="2.5"
         strokeLinecap="round"
       />
@@ -235,23 +242,24 @@ export function Field({
       </div>
       {/* aria-live="polite" announces during natural pauses; role="alert"
           would interrupt repeatedly as the user types. Field errors are
-          informational, not urgent. */}
-      <p
-        id={errorId}
-        className="hsx-field-error"
-        aria-live="polite"
-        style={{
-          fontFamily: f.sans,
-          fontSize: 12,
-          color: t.error,
-          margin: hasError ? "6px 2px 0" : 0,
-          height: hasError ? "auto" : 0,
-          overflow: "hidden",
-          lineHeight: 1.4,
-        }}
-      >
-        {hasError ? errorMessage : ""}
-      </p>
+          informational, not urgent. Only mounted when present so we don't
+          leave a dangling aria-describedby target in the DOM. */}
+      {hasError && (
+        <p
+          id={errorId}
+          className="hsx-field-error"
+          aria-live="polite"
+          style={{
+            fontFamily: f.sans,
+            fontSize: 12,
+            color: t.error,
+            margin: "6px 2px 0",
+            lineHeight: 1.4,
+          }}
+        >
+          {errorMessage}
+        </p>
+      )}
     </div>
   );
 }
@@ -358,9 +366,10 @@ export function PasswordStrengthMeter({
   label,
 }: PasswordStrengthMeterProps) {
   // 4 segment bars; how many are filled depends on score.
-  // Color graduates from error → warning → success.
+  // Bar color and label color use the same tier mapping so they
+  // never disagree (previously 3 = warning bars + success label).
   const filled = Math.max(0, Math.min(4, score));
-  const colors = [t.line, t.error, t.error, t.warning ?? t.copper, t.success];
+  const colors = [t.line, t.error, t.error, t.success, t.success];
   const barColor = colors[filled] ?? t.line;
   return (
     <div

@@ -1,0 +1,181 @@
+/* HireStepX — Auth / Shared shell
+   Helpers shared between Login, Signup, ForgotPassword.
+   Keeps the per-screen components focused on composition + state. */
+
+import { useCallback, useEffect, useRef } from "react";
+
+/* ─── Error mapping ─── */
+
+/** Map Supabase auth errors to user-facing copy. Keep messages short
+    and actionable; never leak which field was wrong (security). */
+export function mapAuthError(raw: string | undefined): string {
+  if (!raw) return "Something went wrong. Try again.";
+  const msg = raw.toLowerCase();
+  if (
+    msg.includes("invalid login credentials") ||
+    msg.includes("invalid_credentials")
+  ) {
+    return "Email or password is incorrect. Try again, or reset your password.";
+  }
+  if (
+    msg.includes("already registered") ||
+    msg.includes("already exists") ||
+    msg.includes("user already")
+  ) {
+    return "An account with this email already exists. Try logging in instead.";
+  }
+  if (msg.includes("email not confirmed")) {
+    return "Please verify your email first. Check your inbox for the confirmation link.";
+  }
+  if (msg.includes("rate limit") || msg.includes("too many requests")) {
+    return "Too many attempts. Try again in a few minutes.";
+  }
+  if (msg.includes("network") || msg.includes("failed to fetch")) {
+    return "Couldn't reach our servers. Check your connection and try again.";
+  }
+  return raw;
+}
+
+/* ─── isMounted ref — prevents setState-after-unmount on async submits ─── */
+
+export function useIsMounted(): React.MutableRefObject<boolean> {
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  return isMounted;
+}
+
+/* ─── "Stay signed in" preference persistence ─── */
+
+const STAY_SIGNED_IN_KEY = "hsx_stay_signed_in";
+
+export function readStaySignedInPref(): boolean {
+  try {
+    return localStorage.getItem(STAY_SIGNED_IN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeStaySignedInPref(value: boolean) {
+  try {
+    localStorage.setItem(STAY_SIGNED_IN_KEY, value ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+/* ─── Build a /signup or /login link that preserves both
+       plan + next params (Login → Signup, Signup → Login). ─── */
+
+export function buildAuthLink(
+  basePath: "/login" | "/signup",
+  searchParams: URLSearchParams | { get(k: string): string | null } | null,
+): string {
+  if (!searchParams) return basePath;
+  const plan = searchParams.get("plan");
+  const next = searchParams.get("next");
+  const qs = new URLSearchParams();
+  if (plan) qs.set("plan", plan);
+  if (next && next.startsWith("/")) qs.set("next", next);
+  const search = qs.toString();
+  return search ? `${basePath}?${search}` : basePath;
+}
+
+/* ─── Compute the post-auth redirect destination ─── */
+
+export interface ComputeRedirectArgs {
+  /** The `next=` query param (may be null) */
+  next: string | null;
+  /** The `plan=` query param (may be null) */
+  plan: string | null;
+  /** Whether the user has finished onboarding */
+  hasCompletedOnboarding: boolean;
+}
+
+export function computeAuthRedirect({
+  next,
+  plan,
+  hasCompletedOnboarding,
+}: ComputeRedirectArgs): string {
+  if (next && next.startsWith("/")) return next;
+  const base = hasCompletedOnboarding ? "/dashboard" : "/onboarding";
+  return plan ? `${base}?plan=${plan}` : base;
+}
+
+/* ─── Email typo detection (Levenshtein-1 against common domains) ─── */
+
+const COMMON_DOMAINS = [
+  "gmail.com",
+  "yahoo.com",
+  "yahoo.co.in",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "protonmail.com",
+  "rediffmail.com",
+  "live.com",
+  "me.com",
+];
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    Array(n + 1).fill(0),
+  );
+  for (let i = 0; i <= m; i++) dp[i]![0] = i;
+  for (let j = 0; j <= n; j++) dp[0]![j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i]![j] = Math.min(
+        dp[i - 1]![j]! + 1,
+        dp[i]![j - 1]! + 1,
+        dp[i - 1]![j - 1]! + cost,
+      );
+    }
+  }
+  return dp[m]![n]!;
+}
+
+/** Suggest a corrected email if the domain is within edit-distance 1 or 2
+    of a known common domain. Returns null if no suggestion. */
+export function suggestEmailCorrection(value: string): string | null {
+  const trimmed = value.trim().toLowerCase();
+  const at = trimmed.lastIndexOf("@");
+  if (at < 0) return null;
+  const local = trimmed.slice(0, at);
+  const domain = trimmed.slice(at + 1);
+  if (!domain || COMMON_DOMAINS.includes(domain)) return null;
+
+  for (const d of COMMON_DOMAINS) {
+    const dist = levenshtein(domain, d);
+    if (dist > 0 && dist <= 2) {
+      return `${local}@${d}`;
+    }
+  }
+  return null;
+}
+
+/* ─── Async-safe setter helper ─── */
+
+export function useSafeAsync<T extends (...args: never[]) => Promise<unknown>>(
+  fn: T,
+  isMounted: React.MutableRefObject<boolean>,
+): T {
+  return useCallback(
+    (async (...args: Parameters<T>) => {
+      const result = await fn(...args);
+      if (!isMounted.current) return undefined as never;
+      return result;
+    }) as T,
+    [fn, isMounted],
+  );
+}

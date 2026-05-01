@@ -26,35 +26,18 @@ import {
   validateSignupPassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import {
+  buildAuthLink,
+  computeAuthRedirect,
+  mapAuthError,
+  suggestEmailCorrection,
+  useIsMounted,
+} from "./_shell";
 
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
 const NAME_MAX_LENGTH = 64;
 const EMAIL_MAX_LENGTH = 320;
 const PASSWORD_MAX_LENGTH = 256;
-
-/** Map Supabase signup errors to user-facing copy. */
-function mapAuthError(raw: string | undefined): string {
-  if (!raw) return "Something went wrong. Try again.";
-  const msg = raw.toLowerCase();
-  if (
-    msg.includes("already registered") ||
-    msg.includes("already exists") ||
-    msg.includes("user already")
-  ) {
-    return "An account with this email already exists. Try logging in instead.";
-  }
-  if (msg.includes("rate limit") || msg.includes("too many requests")) {
-    return "Too many signups from this network. Try again in a few minutes.";
-  }
-  if (msg.includes("network") || msg.includes("failed to fetch")) {
-    return "Couldn't reach our servers. Check your connection and try again.";
-  }
-  if (msg.includes("password")) {
-    // Server-side password rejection — usually echoes our client copy.
-    return raw;
-  }
-  return raw;
-}
 
 export default function Signup() {
   const router = useRouter();
@@ -74,6 +57,14 @@ export default function Signup() {
   const [googleInFlight, setGoogleInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupSent, setSignupSent] = useState(false);
+  // Honeypot — bots fill any input they see; humans don't see this one
+  // (visually + screen-reader hidden, tabIndex -1). If it has a value at
+  // submit, we silently no-op the request.
+  const [honeypot, setHoneypot] = useState("");
+  const isMounted = useIsMounted();
+  // Suggest typo correction (e.g. "rahul@gmial.com" → "rahul@gmail.com").
+  // Only computed when the user has touched the field and value is non-empty.
+  const emailSuggestion = emailTouched ? suggestEmailCorrection(email) : null;
 
   // Validation
   const nameV = validateName(name);
@@ -99,11 +90,15 @@ export default function Signup() {
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
 
-  const computeRedirect = useCallback(() => {
-    if (nextParam && nextParam.startsWith("/")) return nextParam;
-    const base = user?.hasCompletedOnboarding ? "/dashboard" : "/onboarding";
-    return planParam ? `${base}?plan=${planParam}` : base;
-  }, [nextParam, planParam, user]);
+  const computeRedirect = useCallback(
+    () =>
+      computeAuthRedirect({
+        next: nextParam,
+        plan: planParam,
+        hasCompletedOnboarding: !!user?.hasCompletedOnboarding,
+      }),
+    [nextParam, planParam, user],
+  );
 
   // Already-logged-in: bounce to destination
   useEffect(() => {
@@ -134,9 +129,15 @@ export default function Signup() {
     setError(null);
     trackAuth({ type: "login_method_selected", method: "google" });
     trackAuth({ type: "login_submitted", method: "google" });
+
+    const fallback = setTimeout(() => {
+      if (isMounted.current) setGoogleInFlight(false);
+    }, 8000);
+
     const start = Date.now();
     try {
       const result = await loginWithGoogle(computeRedirect());
+      if (!isMounted.current) return;
       if (!result.success) {
         setError(mapAuthError(result.error));
         trackAuth({
@@ -150,14 +151,17 @@ export default function Signup() {
           method: "google",
           timeMs: Date.now() - start,
         });
-        return; // OAuth flow navigates away
+        return;
       }
     } catch (e) {
+      if (!isMounted.current) return;
       setError(mapAuthError(e instanceof Error ? e.message : undefined));
       trackAuth({ type: "login_failed", method: "google", reason: "unknown" });
+    } finally {
+      clearTimeout(fallback);
     }
-    setGoogleInFlight(false);
-  }, [googleInFlight, loading, loginWithGoogle, computeRedirect]);
+    if (isMounted.current) setGoogleInFlight(false);
+  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -166,6 +170,12 @@ export default function Signup() {
       setEmailTouched(true);
       setPasswordTouched(true);
       setTermsAttempted(true);
+      // Honeypot trip — silently no-op + fake success so bots get nothing
+      // useful back. Don't even fire analytics — these aren't real submits.
+      if (honeypot) {
+        setSignupSent(true);
+        return;
+      }
       if (!canSubmit) return;
 
       setError(null);
@@ -176,6 +186,7 @@ export default function Signup() {
       const start = Date.now();
       try {
         const result = await signup(cleanEmail, name.trim(), password);
+        if (!isMounted.current) return;
         if (!result.success) {
           setError(mapAuthError(result.error));
           trackAuth({
@@ -195,14 +206,15 @@ export default function Signup() {
           setSignupSent(true);
         }
       } catch (err) {
+        if (!isMounted.current) return;
         const msg = err instanceof Error ? err.message : undefined;
         setError(mapAuthError(msg));
         trackAuth({ type: "login_failed", method: "email", reason: "network" });
       } finally {
-        setLoading(false);
+        if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup],
+    [canSubmit, email, name, password, signup, honeypot, isMounted],
   );
 
   const handlePasswordVisibility = () => {
@@ -236,7 +248,13 @@ export default function Signup() {
               padding: "32px 48px",
             }}
           >
-            <Wordmark />
+            <a
+              href="/"
+              aria-label="HireStepX home"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <Wordmark />
+            </a>
           </header>
           <main
             // role=status + aria-live ensures SR users hear the transition
@@ -358,7 +376,13 @@ export default function Signup() {
             gap: 16,
           }}
         >
-          <Wordmark />
+          <a
+            href="/"
+            aria-label="HireStepX home"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            <Wordmark />
+          </a>
           <div
             className="hsx-login-signup-prompt"
             style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft }}
@@ -367,7 +391,7 @@ export default function Signup() {
               Already have an account?{" "}
             </span>
             <a
-              href={planParam ? `/login?plan=${planParam}` : "/login"}
+              href={buildAuthLink("/login", searchParams)}
               className="hsx-link-indigo"
               style={{
                 color: t.indigo,
@@ -452,7 +476,7 @@ export default function Signup() {
               className="hsx-login-google"
               onClick={handleGoogle}
               disabled={googleInFlight || loading}
-              aria-busy={googleInFlight || undefined}
+              aria-busy={googleInFlight ? "true" : "false"}
               style={{
                 width: "100%",
                 fontFamily: f.sans,
@@ -562,6 +586,71 @@ export default function Signup() {
                 invalid={!!error || (emailTouched && !!emailV.message)}
                 errorMessage={emailError}
               />
+
+              {/* Email typo suggestion — shown when domain is within
+                  edit-distance 1-2 of a common provider. Click to apply. */}
+              {emailSuggestion && !emailV.valid && (
+                <p
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 13,
+                    color: t.inkSoft,
+                    margin: "-6px 2px 0",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Did you mean{" "}
+                  <button
+                    type="button"
+                    onClick={() => setEmail(emailSuggestion)}
+                    className="hsx-link-indigo"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      color: t.indigo,
+                      fontWeight: 600,
+                      fontFamily: f.sans,
+                      fontSize: 13,
+                    }}
+                  >
+                    {emailSuggestion}
+                  </button>
+                  ?
+                </p>
+              )}
+
+              {/* Honeypot field — visually + SR-hidden, off the tab order.
+                  Bots fill any input they see; humans never see this one. */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  width: 1,
+                  height: 1,
+                  padding: 0,
+                  margin: -1,
+                  overflow: "hidden",
+                  clip: "rect(0,0,0,0)",
+                  whiteSpace: "nowrap",
+                  border: 0,
+                }}
+              >
+                <label htmlFor="hsx-website-field">
+                  Website (leave blank)
+                </label>
+                <input
+                  id="hsx-website-field"
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </div>
+
               <div>
                 <Field
                   label="Password"
@@ -663,7 +752,7 @@ export default function Signup() {
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    aria-busy={loading || undefined}
+                    aria-busy={loading ? "true" : "false"}
                     title={tooltip}
                     className="hsx-login-cta"
                     style={{
@@ -691,7 +780,7 @@ export default function Signup() {
                   >
                     {loading ? (
                       <>
-                        <Spinner />
+                        <Spinner color={t.cream} />
                         Creating your account…
                       </>
                     ) : (
@@ -737,6 +826,8 @@ export default function Signup() {
           By creating an account you agree to our{" "}
           <a
             href="/terms"
+            target="_blank"
+            rel="noopener"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
@@ -749,6 +840,8 @@ export default function Signup() {
           and{" "}
           <a
             href="/privacy"
+            target="_blank"
+            rel="noopener"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
