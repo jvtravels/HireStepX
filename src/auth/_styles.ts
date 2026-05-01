@@ -211,16 +211,17 @@ export const AUTH_STYLES = `
   /* Mobile (≤640px) — single column, shrunk paddings, lighter chrome */
   @media (max-width: 640px) {
     .hsx-login-topbar { padding: 20px 20px !important; gap: 12px !important; }
-    /* Top-anchored layout — centering created huge gaps on phones since
-       the form is much shorter than the viewport. Sit content near top
-       so the keyboard doesn't shove things further. */
+    /* Vertically center the content block within main. The form +
+       hero pair is shorter than the viewport, so this distributes
+       empty space evenly above and below for a balanced layout. */
     .hsx-login-main   {
-      justify-content: flex-start !important;
+      justify-content: center !important;
       padding: 28px 20px 32px !important;
     }
     .hsx-login-form   { max-width: 100% !important; }
-    /* Tighten hero → form distance on mobile so they read as one screen */
-    .hsx-login-hero   { margin-bottom: 20px !important; }
+    /* Hero → form gap on mobile — generous enough that hero reads as
+       its own block, tight enough that they still feel related. */
+    .hsx-login-hero   { margin-bottom: 36px !important; }
     .hsx-login-footer { padding: 24px 20px 32px !important; font-size: 11px !important; }
     .hsx-login-signup-prompt { font-size: 13px !important; }
     .hsx-login-subtitle { font-size: 14px !important; margin-top: 12px !important; margin-bottom: 0 !important; line-height: 1.45 !important; }
@@ -233,7 +234,14 @@ export const AUTH_STYLES = `
     .hsx-login-field-input::placeholder { font-size: 14px !important; }
     .hsx-login-field-label { font-size: 13px !important; margin-bottom: 6px !important; font-weight: 500 !important; }
     .hsx-login-wordmark { font-size: 19px !important; }
-    .hsx-login-meta-row { flex-wrap: wrap !important; gap: 10px !important; }
+    /* Stack the meta row vertically on mobile — at <640px the
+       "Stay signed in on this device" label is too wide to share a row
+       with "Forgot password" without unpredictable wrap behavior. */
+    .hsx-login-meta-row {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 14px !important;
+    }
   }
 
   /* Small phone (≤420px) */
