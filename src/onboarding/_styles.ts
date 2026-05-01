@@ -95,17 +95,23 @@ export const ONBOARDING_STYLES = `
     .hsx-onb-shimmer { display: none; }
   }
 
-  /* Responsive — collapse multi-col grids progressively. */
+  /* Cell wrapper used by the bento grid. Stretches to fill the
+     row so the SectionCard inside (height: 100%) matches the
+     tallest sibling — eliminates voids at the bottom of shorter
+     content. */
+  .hsx-onb-cell { display: flex; flex-direction: column; }
+
+  /* Responsive — collapse the 12-col bento progressively. At
+     each breakpoint we override the inline gridColumn spans so
+     cards land in sensible row groupings rather than stacking
+     to single column too early. */
   @media (max-width: 1100px) {
-    .hsx-onb-body-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-    }
+    .hsx-onb-body-grid > .hsx-onb-cell { grid-column: span 6 !important; }
+    .hsx-onb-body-grid > .hsx-onb-cell:last-child { grid-column: span 12 !important; }
   }
   @media (max-width: 900px) {
-    .hsx-onb-hero-row,
-    .hsx-onb-body-grid {
-      grid-template-columns: 1fr !important;
-    }
+    .hsx-onb-hero-row { grid-template-columns: 1fr !important; }
+    .hsx-onb-body-grid > .hsx-onb-cell { grid-column: span 12 !important; }
   }
   @media (max-width: 540px) {
     .hsx-onb-score-gauge { grid-template-columns: 1fr !important; justify-items: center; text-align: center; }

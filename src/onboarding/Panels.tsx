@@ -795,22 +795,29 @@ export function ProfileReadyState({
           />
         </div>
 
-        {/* Body 3-col */}
+        {/* Body — bento-grid layout. Previously a 3-column flowing
+            stack with align-items: start, which left voids at the
+            bottom of shorter columns. Now organised into 3 logical
+            rows where every card in a row stretches to the same
+            height, so cards never feel "shorter than their peers". */}
         <div
           className="hsx-onb-body-grid"
-          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, alignItems: "start" }}
+          style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 16 }}
         >
-          {/* LEFT — resume profile */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {aiProfile.careerTrajectory && (
+          {/* ── ROW 1 — RESUME PROFILE NARRATIVE ──
+              Career trajectory (wide) + Top skills (narrow). */}
+          {aiProfile.careerTrajectory && (
+            <div className="hsx-onb-cell" style={{ gridColumn: "span 7" }}>
               <SectionCard label="Career trajectory">
                 <p style={{ fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.6, color: t.coal, margin: 0 }}>
                   {aiProfile.careerTrajectory}
                 </p>
               </SectionCard>
-            )}
+            </div>
+          )}
 
-            {aiProfile.topSkills.length > 0 && (
+          {aiProfile.topSkills.length > 0 && (
+            <div className="hsx-onb-cell" style={{ gridColumn: "span 5" }}>
               <SectionCard label="Top skills">
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {visibleSkills.map((s) => (
@@ -827,9 +834,14 @@ export function ProfileReadyState({
                   )}
                 </div>
               </SectionCard>
-            )}
+            </div>
+          )}
 
-            {aiProfile.keyAchievements.length > 0 && (
+          {/* ── ROW 2 — INTERVIEW READINESS TRIAD ──
+              Three equal cards: Achievements + Strengths + Worth Practising.
+              All evidence-based assessments at equal weight. */}
+          {aiProfile.keyAchievements.length > 0 && (
+            <div className="hsx-onb-cell" style={{ gridColumn: "span 4" }}>
               <SectionCard label="Key achievements">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.keyAchievements.map((line, i) => (
@@ -840,42 +852,26 @@ export function ProfileReadyState({
                   ))}
                 </ul>
               </SectionCard>
-            )}
+            </div>
+          )}
 
-          </div>
-
-          {/* MIDDLE — interview readiness + transparency */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {aiProfile.interviewStrengths.length > 0 && (
+          {aiProfile.interviewStrengths.length > 0 && (
+            <div className="hsx-onb-cell" style={{ gridColumn: "span 4" }}>
               <StrengthGapCard label="Interview strengths" tone="success" items={aiProfile.interviewStrengths} />
-            )}
-            {aiProfile.interviewGaps.length > 0 && (
+            </div>
+          )}
+
+          {aiProfile.interviewGaps.length > 0 && (
+            <div className="hsx-onb-cell" style={{ gridColumn: "span 4" }}>
               <StrengthGapCard label="Worth practising" tone="copper" items={aiProfile.interviewGaps} />
-            )}
+            </div>
+          )}
 
-            <SectionCard label="Based on">
-              <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  "Resume content & structure",
-                  "Projects depth & impact",
-                  "Quantified achievements",
-                  "Industry & role benchmarking",
-                ].map((line) => (
-                  <li key={line} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.5, color: t.coal }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          </div>
-
-          {/* RIGHT — next steps. Improve-your-resume + a small Practice
-              preview (derived from skills + gaps) so the column fills. */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {aiProfile.improvements && aiProfile.improvements.length > 0 && (
+          {/* ── ROW 3 — ACTION PLAN PAIR ──
+              Improve your resume (what to fix) + Focus area
+              (what we'll cover). Two equal halves. */}
+          {aiProfile.improvements && aiProfile.improvements.length > 0 && (
+            <div className="hsx-onb-cell" style={{ gridColumn: "span 6" }}>
               <SectionCard label="Improve your resume">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.improvements.map((line, i) => (
@@ -889,10 +885,11 @@ export function ProfileReadyState({
                   ))}
                 </ul>
               </SectionCard>
-            )}
+            </div>
+          )}
 
-            {/* Practice preview — a quick "what we'll cover" derived from the
-                top skills + gaps. Helps users anticipate the session. */}
+          {/* Focus area — Practice preview derived from top skills + gaps. */}
+          <div className="hsx-onb-cell" style={{ gridColumn: "span 6" }}>
             <SectionCard label="Focus area">
               <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                 {(() => {
@@ -926,6 +923,27 @@ export function ProfileReadyState({
                   ? `Tuned to ${trimmedName.split(/\s+/)[0]}'s profile`
                   : "Tuned to your profile"}
               </p>
+            </SectionCard>
+          </div>
+
+          {/* ── ROW 4 — TRUST ATTRIBUTION (full width, low emphasis) ── */}
+          <div className="hsx-onb-cell" style={{ gridColumn: "span 12" }}>
+            <SectionCard label="Based on">
+              <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+                {[
+                  "Resume content & structure",
+                  "Projects depth & impact",
+                  "Quantified achievements",
+                  "Industry & role benchmarking",
+                ].map((line) => (
+                  <li key={line} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.5, color: t.coal }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {line}
+                  </li>
+                ))}
+              </ul>
             </SectionCard>
           </div>
         </div>
@@ -1079,7 +1097,7 @@ function StatRow({
 function SectionCard({ label, children }: { label?: string; children: React.ReactNode }) {
   return (
     <section
-      style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "14px 16px", boxShadow: shadows.card }}
+      style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "14px 16px", boxShadow: shadows.card, height: "100%", display: "flex", flexDirection: "column" }}
     >
       {label && (
         <div
@@ -1111,7 +1129,7 @@ function Pill({ tone, label }: { tone: "indigo" | "muted"; label: string }) {
 function StrengthGapCard({ label, tone, items }: { label: string; tone: "success" | "copper"; items: string[] }) {
   const accent = tone === "success" ? t.success : t.copper;
   return (
-    <section style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "14px 16px", boxShadow: shadows.card }}>
+    <section style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "14px 16px", boxShadow: shadows.card, height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: accent, marginBottom: 8 }}>
         {tone === "success" ? (
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
