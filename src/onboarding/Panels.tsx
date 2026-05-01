@@ -1286,127 +1286,46 @@ export function NavigationFooter({
     );
   }
 
-  // ── Dual-mode (post-resume): canvas-style "Ready to improve?" card.
-  // Restores the indigo callout with serif heading + sub-copy + the
-  // expectation strip that was in the canvas. Centred under the body grid.
+  // ── Dual-mode (post-resume): the primary "Start mock interview"
+  // CTA now lives inside the ScoreGauge card up top, so this footer
+  // only renders a low-emphasis secondary link to the dashboard +
+  // any quota / save status messages. Removes the duplicate indigo
+  // "Ready to improve?" card that used to sit here.
   return (
-    <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
-      <section
-        aria-labelledby="onb-cta-heading"
+    <div style={{ marginTop: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+      <button
+        type="button"
+        onClick={onGoToDashboard}
+        disabled={starting}
         style={{
-          width: "100%",
-          maxWidth: 640,
-          background: t.indigo,
-          border: `1px solid ${t.indigo}`,
-          borderRadius: 14,
-          padding: "20px 22px",
-          boxShadow: shadows.cta,
-          color: t.cream,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
+          fontFamily: f.sans,
+          fontSize: 13.5,
+          fontWeight: 500,
+          color: t.inkSoft,
+          background: "transparent",
+          border: "none",
+          padding: "8px 12px",
+          cursor: starting ? "not-allowed" : "pointer",
+          textDecoration: "underline",
+          textDecorationColor: "rgba(110,103,89,0.35)",
+          textUnderlineOffset: 3,
         }}
       >
-        <div
-          id="onb-cta-heading"
-          style={{ fontFamily: f.serif, fontSize: 26, fontWeight: 400, lineHeight: 1.15, letterSpacing: "-0.01em" }}
-        >
-          Ready to{" "}
-          <em style={{ fontStyle: "italic", color: t.copper100 }}>
-            improve?
-          </em>
+        Skip for now — go to dashboard
+      </button>
+      {quotaHint && (
+        <div style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
+          {quotaHint}
         </div>
-        <p style={{ fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: "rgba(250, 247, 240, 0.78)", margin: 0 }}>
-          Personalised interview plan with role-specific questions and AI feedback.
-        </p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
-          <button
-            type="button"
-            onClick={onStartInterview}
-            disabled={primaryDisabled}
-            aria-busy={starting || undefined}
-            style={{
-              flex: 1,
-              minWidth: 220,
-              fontFamily: f.sans,
-              fontSize: 15,
-              fontWeight: 600,
-              color: primaryDisabled ? t.inkFaint : t.indigo,
-              background: primaryDisabled ? "rgba(250, 247, 240, 0.6)" : t.cream,
-              border: "1px solid transparent",
-              borderRadius: 10,
-              padding: "14px 18px",
-              cursor: primaryDisabled ? "not-allowed" : "pointer",
-              letterSpacing: 0.1,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-          >
-            {starting ? "Starting…" : "Start mock interview"}
-            {!starting && (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={onGoToDashboard}
-            disabled={starting}
-            style={{
-              fontFamily: f.sans,
-              fontSize: 14,
-              fontWeight: 500,
-              color: "rgba(250, 247, 240, 0.85)",
-              background: "transparent",
-              border: `1px solid rgba(250, 247, 240, 0.25)`,
-              borderRadius: 10,
-              padding: "12px 18px",
-              cursor: starting ? "not-allowed" : "pointer",
-            }}
-          >
-            Go to dashboard
-          </button>
+      )}
+      {saveStatus === "saving" && (
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>Saving…</div>
+      )}
+      {saveStatus === "error" && (
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.error }}>
+          Couldn&apos;t save — your work is safe locally.
         </div>
-        <ul
-          style={{
-            listStyle: "none",
-            margin: 0,
-            marginTop: 2,
-            padding: 0,
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 12,
-            fontFamily: f.mono,
-            fontSize: 11,
-            letterSpacing: "0.10em",
-            textTransform: "uppercase",
-            color: "rgba(250, 247, 240, 0.65)",
-          }}
-        >
-          <li>~25 min</li>
-          <li aria-hidden="true" style={{ width: 2, height: 2, borderRadius: 999, background: "rgba(250,247,240,0.35)" }} />
-          <li>Pause anytime</li>
-        </ul>
-        {quotaHint && (
-          <div style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(250,247,240,0.55)", textAlign: "center", marginTop: 2 }}>
-            {quotaHint}
-          </div>
-        )}
-        {saveStatus === "saving" && (
-          <div style={{ fontFamily: f.sans, fontSize: 12, color: "rgba(250,247,240,0.7)", textAlign: "center" }}>Saving…</div>
-        )}
-        {saveStatus === "error" && (
-          <div style={{ fontFamily: f.sans, fontSize: 12, color: t.error100, textAlign: "center" }}>
-            Couldn&apos;t save — your work is safe locally.
-          </div>
-        )}
-      </section>
+      )}
     </div>
   );
 }
