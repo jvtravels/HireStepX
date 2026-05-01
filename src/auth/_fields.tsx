@@ -372,14 +372,33 @@ export function PasswordStrengthMeter({
   const filled = Math.max(0, Math.min(4, score));
   const colors = [t.line, t.error, t.error, t.success, t.success];
   const barColor = colors[filled] ?? t.line;
+
+  // Debounce the announced label for screen-reader users so high-WPM
+  // typists don't hear "weak, weak, weak, good, strong" on every
+  // keystroke. The visible label still updates immediately for sighted
+  // users; only the aria-live region waits 600ms of stillness before
+  // announcing.
+  const [announcedLabel, setAnnouncedLabel] = useState(label ?? "");
+  useEffect(() => {
+    if (!label) {
+      setAnnouncedLabel("");
+      return;
+    }
+    const id = setTimeout(() => setAnnouncedLabel(label), 600);
+    return () => clearTimeout(id);
+  }, [label]);
+
   return (
     <div
-      // The bars are decorative; the label is announced via aria-live below.
+      // The bars are decorative; the label is announced via the
+      // hidden aria-live region (debounced) below.
       role="meter"
       aria-valuenow={filled}
       aria-valuemin={0}
       aria-valuemax={4}
-      aria-label={label ? `Password strength: ${label}` : "Password strength"}
+      aria-label={
+        label ? `Password strength: ${label}` : "Password strength"
+      }
       style={{
         display: "flex",
         alignItems: "center",
@@ -401,9 +420,27 @@ export function PasswordStrengthMeter({
           />
         ))}
       </div>
+      {/* Debounced SR-only announcement — fires only after user pauses.
+          Fast typists don't get spammed with intermediate strength values. */}
+      <span
+        aria-live="polite"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clip: "rect(0,0,0,0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        {announcedLabel ? `Password strength: ${announcedLabel}` : ""}
+      </span>
       {label && (
         <span
-          aria-live="polite"
+          aria-hidden="true"
           style={{
             fontFamily: f.mono,
             fontSize: 10,

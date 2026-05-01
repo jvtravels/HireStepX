@@ -237,7 +237,7 @@ export default function Login() {
       clearTimeout(fallback);
     }
     if (isMounted.current) setGoogleInFlight(false);
-  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted]);
+  }, [googleInFlight, loading, loginWithGoogle, computeRedirect, isMounted, staySignedIn]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -286,7 +286,7 @@ export default function Login() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, password, login, isMounted],
+    [canSubmit, email, password, login, isMounted, staySignedIn],
   );
 
   const handlePasswordVisibility = () => {

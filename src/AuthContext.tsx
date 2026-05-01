@@ -768,7 +768,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { /* server rate limit check failed, proceed with login */ }
 
     const client = await getSupabase();
+    // Constant-time response — Supabase fails fast (~50ms) for unknown
+    // emails and slow (~200ms with bcrypt) for known emails with wrong
+    // passwords. Pad the response to a fixed minimum so an attacker
+    // can't enumerate valid accounts via timing alone.
+    const LOGIN_TIMING_FLOOR_MS = 600;
+    const t0 = Date.now();
     const { data, error } = await client.auth.signInWithPassword({ email, password });
+    const elapsed = Date.now() - t0;
+    if (elapsed < LOGIN_TIMING_FLOOR_MS) {
+      await new Promise((r) =>
+        setTimeout(r, LOGIN_TIMING_FLOOR_MS - elapsed),
+      );
+    }
     if (error) {
       // Track failed attempt (client + server)
       const attempts = getLoginAttempts() + 1;

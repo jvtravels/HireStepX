@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase, supabaseConfigured } from "./supabase";
+import { clearSessionStart } from "./auth/_shell";
 import { c, font } from "./tokens";
 
 export default function AuthCallback() {
@@ -46,6 +47,10 @@ export default function AuthCallback() {
           } else {
             setError("No authorization code received from Google.");
           }
+          // Clear the optimistic session-start timestamp recorded by
+          // Login.tsx before the OAuth redirect — there's no real
+          // session to attach it to.
+          clearSessionStart();
           setTimeout(() => router.push("/login"), 2000);
           return;
         }
@@ -97,16 +102,36 @@ export default function AuthCallback() {
         // Note: nonce is not used — Google doesn't embed nonce in ID tokens for authorization_code flow.
         // CSRF protection is handled by the state parameter validated above.
         const client = await getSupabase();
-        const { error: signInError } = await client.auth.signInWithIdToken({
-          provider: "google",
-          token: id_token,
-          access_token: access_token || undefined,
-        });
+        const { data: signInData, error: signInError } =
+          await client.auth.signInWithIdToken({
+            provider: "google",
+            token: id_token,
+            access_token: access_token || undefined,
+          });
 
         if (signInError) {
           console.error("[auth] signInWithIdToken failed:", signInError.message);
           setError("Failed to sign in. Please try again.");
+          clearSessionStart();
           setTimeout(() => router.push("/login"), 2000);
+          return;
+        }
+
+        // Defense-in-depth: Google should always supply a verified email
+        // when it returns one, but if for some reason the user record
+        // landed without email_confirmed_at, refuse the session.
+        const signedInUser = signInData?.user;
+        const isGoogle =
+          signedInUser?.app_metadata?.provider === "google" ||
+          signedInUser?.app_metadata?.providers?.includes("google");
+        if (signedInUser && !isGoogle && !signedInUser.email_confirmed_at) {
+          console.warn("[auth] OAuth returned unverified email — rejecting");
+          await client.auth.signOut().catch(() => {});
+          clearSessionStart();
+          setError(
+            "Your email isn't verified. Please verify with your provider and try again.",
+          );
+          setTimeout(() => router.push("/login"), 2500);
           return;
         }
 
