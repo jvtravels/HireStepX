@@ -222,7 +222,7 @@ export function Field({
           <div
             style={{
               position: "absolute",
-              right: 12,
+              right: 6,
               top: "50%",
               transform: "translateY(-50%)",
               display: "flex",
