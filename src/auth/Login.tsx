@@ -26,6 +26,7 @@ import { trackAuth, loginViewedEvent } from "./_analytics";
 import {
   buildAuthLink,
   computeAuthRedirect,
+  isResetInProgress,
   mapAuthError,
   readStaySignedInPref,
   useIsMounted,
@@ -132,9 +133,14 @@ export default function Login() {
     [nextParam, planParam, user],
   );
 
-  // Already-logged-in: bounce to destination
+  // Already-logged-in: bounce to destination — UNLESS another tab is
+  // mid password-reset, in which case the recovery session is briefly
+  // propagating across tabs and we'd yank this tab to /dashboard with
+  // a stale session about to be invalidated.
   useEffect(() => {
-    if (isLoggedIn && user) router.replace(computeRedirect());
+    if (isLoggedIn && user && !isResetInProgress()) {
+      router.replace(computeRedirect());
+    }
   }, [isLoggedIn, user, router, computeRedirect]);
 
   // Analytics: viewed once. Pass the screen variant for funnel symmetry
@@ -148,6 +154,17 @@ export default function Login() {
   useEffect(() => {
     setStaySignedIn(readStaySignedInPref());
     setLockoutSeconds(readLockoutSeconds());
+  }, []);
+
+  // Clear stale error banner when the user navigates back to this page
+  // via the browser back button (bfcache restore preserves component
+  // state, so a previous "incorrect password" error would persist).
+  useEffect(() => {
+    const handler = (e: PageTransitionEvent) => {
+      if (e.persisted) setError(null);
+    };
+    window.addEventListener("pageshow", handler);
+    return () => window.removeEventListener("pageshow", handler);
   }, []);
 
   // Persist the "Stay signed in" preference. Today this is consumed

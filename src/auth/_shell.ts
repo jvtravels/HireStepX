@@ -49,6 +49,48 @@ export function useIsMounted(): React.MutableRefObject<boolean> {
   return isMounted;
 }
 
+/* ─── Reset-in-progress flag ─── */
+
+/* When the user is mid-reset-flow in another tab, that tab briefly
+   establishes a recovery session that propagates across tabs via
+   localStorage. Without this flag, Login/Signup tabs see isLoggedIn
+   flip to true and yank the user to /dashboard with a stale session
+   that the reset flow's signOut is about to invalidate.
+
+   /reset-password sets this flag on mount and clears it on unmount;
+   Login + Signup check it before honoring their auto-redirect. */
+
+const RESET_IN_PROGRESS_KEY = "hsx_reset_in_progress";
+
+export function setResetInProgress(value: boolean) {
+  try {
+    if (value) {
+      localStorage.setItem(RESET_IN_PROGRESS_KEY, String(Date.now()));
+    } else {
+      localStorage.removeItem(RESET_IN_PROGRESS_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isResetInProgress(): boolean {
+  try {
+    const raw = localStorage.getItem(RESET_IN_PROGRESS_KEY);
+    if (!raw) return false;
+    // Stale flags expire after 10 min so a crashed reset tab doesn't
+    // trap auth tabs forever.
+    const stamped = parseInt(raw, 10);
+    if (Number.isNaN(stamped) || Date.now() - stamped > 10 * 60 * 1000) {
+      localStorage.removeItem(RESET_IN_PROGRESS_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /* ─── "Stay signed in" preference persistence ─── */
 
 const STAY_SIGNED_IN_KEY = "hsx_stay_signed_in";

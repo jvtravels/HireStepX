@@ -30,6 +30,7 @@ import {
   passwordHasEdgeWhitespace,
   validateSignupPassword,
 } from "./auth/_validation";
+import { setResetInProgress } from "./auth/_shell";
 import { getSupabase, supabaseConfigured } from "./supabase";
 
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
@@ -92,6 +93,14 @@ export default function ResetPassword() {
     if (typeof document === "undefined") return false;
     return document.visibilityState === "visible";
   });
+
+  // Mark "reset in progress" so other auth tabs (Login/Signup/ForgotPassword)
+  // don't auto-redirect to /dashboard when this tab's recovery session
+  // briefly propagates to localStorage. Cleared on unmount.
+  useEffect(() => {
+    setResetInProgress(true);
+    return () => setResetInProgress(false);
+  }, []);
 
   // ── Live expiry countdown (visual only; backend authoritative) ──────────
   const [secondsLeft, setSecondsLeft] = useState(TOKEN_LIFETIME_SEC);

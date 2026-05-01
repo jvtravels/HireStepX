@@ -30,6 +30,7 @@ import {
   buildAuthLink,
   computeAuthRedirect,
   detectEmailProvider,
+  isResetInProgress,
   mapAuthError,
   suggestEmailCorrection,
   useIsMounted,
@@ -69,6 +70,50 @@ export default function Signup() {
   // Only computed when the user has touched the field and value is non-empty.
   const emailSuggestion = emailTouched ? suggestEmailCorrection(email) : null;
 
+  // Resend-verification state on the success screen.
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(
+      () => setResendCooldown((s) => Math.max(0, s - 1)),
+      1000,
+    );
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  const handleResendVerification = useCallback(async () => {
+    if (resendCooldown > 0 || resending) return;
+    setResending(true);
+    setResendError(null);
+    try {
+      const cleanEmail = sanitizeEmail(email);
+      const res = await fetch("/api/send-welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, name: name.trim() }),
+      });
+      if (!isMounted.current) return;
+      if (res.status === 429) {
+        setResendError(
+          "Too many requests. Try again in a few minutes.",
+        );
+      } else if (!res.ok) {
+        setResendError("Couldn't send the email. Try again in a moment.");
+      } else {
+        setResendCooldown(60);
+      }
+    } catch {
+      if (!isMounted.current) return;
+      setResendError("Couldn't reach our servers. Check your connection.");
+    } finally {
+      if (isMounted.current) setResending(false);
+    }
+  }, [resendCooldown, resending, email, name, isMounted]);
+
   // Validation
   const nameV = validateName(name);
   const emailV = validateEmail(email);
@@ -103,9 +148,12 @@ export default function Signup() {
     [nextParam, planParam, user],
   );
 
-  // Already-logged-in: bounce to destination
+  // Already-logged-in: bounce to destination — UNLESS another tab is
+  // mid password-reset (recovery session leaks across tabs).
   useEffect(() => {
-    if (isLoggedIn && user) router.replace(computeRedirect());
+    if (isLoggedIn && user && !isResetInProgress()) {
+      router.replace(computeRedirect());
+    }
   }, [isLoggedIn, user, router, computeRedirect]);
 
   useEffect(() => {
@@ -360,6 +408,55 @@ export default function Signup() {
                     </a>
                   );
                 })()}
+
+                {/* Resend verification email — 60s cooldown matches
+                    server rate limit. Surfaces 429 / network errors. */}
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendCooldown > 0 || resending}
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: resendCooldown > 0 ? t.inkFaint : t.indigo,
+                    background: "transparent",
+                    border: "none",
+                    textDecoration: "none",
+                    cursor:
+                      resendCooldown > 0 || resending
+                        ? "not-allowed"
+                        : "pointer",
+                    padding: 0,
+                  }}
+                >
+                  {resending ? (
+                    <span aria-live="polite">Sending…</span>
+                  ) : resendCooldown > 0 ? (
+                    <span aria-live="polite">
+                      Didn't get it? Resend in {resendCooldown}s
+                    </span>
+                  ) : (
+                    <span className="hsx-link-indigo">
+                      Didn't get it? Resend verification email
+                    </span>
+                  )}
+                </button>
+                {resendError && (
+                  <p
+                    role="alert"
+                    style={{
+                      fontFamily: f.sans,
+                      fontSize: 12,
+                      color: t.error,
+                      margin: 0,
+                      textAlign: "center",
+                    }}
+                  >
+                    {resendError}
+                  </p>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setSignupSent(false)}
@@ -686,13 +783,15 @@ export default function Signup() {
                   border: 0,
                 }}
               >
-                <label htmlFor="hsx-website-field">
-                  Website (leave blank)
+                <label htmlFor="hsx-referral-display-name">
+                  Referral display name (leave blank)
                 </label>
                 <input
-                  id="hsx-website-field"
+                  id="hsx-referral-display-name"
                   type="text"
-                  name="website"
+                  // Avoid the well-known "website"/"url" honeypot field
+                  // names that sophisticated bots specifically skip.
+                  name="referral_display_name"
                   tabIndex={-1}
                   autoComplete="off"
                   value={honeypot}
