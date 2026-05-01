@@ -1074,15 +1074,17 @@ function ScoreGauge({
 
       {hasStats && (
         <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* These rows display data — not clickable. Black ink keeps
+              indigo reserved for actually-interactive elements
+              (CTAs, links). Reduces visual noise. */}
           {displayName && initials && (
             <StatRow
               label="You"
               value={displayName}
-              valueTone="indigo"
               avatarInitials={initials}
             />
           )}
-          {seniority && <StatRow label="Seniority" value={seniority} valueTone="indigo" />}
+          {seniority && <StatRow label="Seniority" value={seniority} />}
           {industriesLabel && <StatRow label="Industries" value={industriesLabel} />}
         </div>
       )}
