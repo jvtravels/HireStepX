@@ -6,7 +6,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import { Field, Wordmark, Spinner } from "./_fields";
@@ -20,8 +19,14 @@ const EMAIL_MAX_LENGTH = 320;
 const RESEND_COOLDOWN_SEC = 60;
 
 export default function ForgotPassword() {
-  const router = useRouter();
-  const { resetPassword, isLoggedIn } = useAuth();
+  // We deliberately don't read isLoggedIn / don't auto-redirect to
+  // /dashboard. A user who just submitted a password reset in another
+  // tab will briefly become "logged in" via the recovery session that
+  // propagates through localStorage — auto-redirecting on isLoggedIn
+  // would yank this tab to /dashboard with a stale session that's
+  // about to be invalidated by the reset flow's signOut. Users who
+  // landed here intentionally should stay here.
+  const { resetPassword } = useAuth();
 
   const [email, setEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -50,11 +55,6 @@ export default function ForgotPassword() {
     );
     return () => clearInterval(id);
   }, [cooldown]);
-
-  // Already-logged-in users probably opened this by accident; bounce them.
-  useEffect(() => {
-    if (isLoggedIn) router.replace("/dashboard");
-  }, [isLoggedIn, router]);
 
   useEffect(() => {
     trackAuth(loginViewedEvent("forgot-password"));
