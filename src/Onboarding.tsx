@@ -544,13 +544,32 @@ export default function Onboarding() {
       resumeScore: aiProfile?.resumeScore ?? null,
       dest,
     });
-    if (dest === "interview") router.push("/session/new?firstFree=1");
-    else router.push("/dashboard");
+    // Wrap navigation so a router failure doesn't leave the CTA stuck
+    // in "Starting…" with no way to recover. If navigation throws, we
+    // reset starting and surface a toast.
+    try {
+      if (dest === "interview") router.push("/session/new?firstFree=1");
+      else router.push("/dashboard");
+    } catch (navErr) {
+      console.warn("[finalizeOnboarding] navigation failed:", navErr);
+      setStarting(false);
+      startingRef.current = false;
+      setDraftToast(dest === "skip"
+        ? "Saved. You can come back anytime from Settings."
+        : "Couldn't navigate — try again, or refresh the page.");
+    }
   };
 
   const handleStartInterview = () => { finalizeOnboarding("interview"); };
   const handleGoToDashboard = () => { finalizeOnboarding("dashboard"); };
-  const handleSkip = () => { finalizeOnboarding("skip"); };
+  // Skip path → show a brief "saved for later" toast before nav so
+  // the user knows the flow isn't lost. The toast appears for ~900ms,
+  // then we navigate. finalizeOnboarding handles starting state +
+  // tracking; the toast is purely UX reassurance.
+  const handleSkip = () => {
+    setDraftToast("Saved. You can finish setup anytime from Settings.");
+    setTimeout(() => finalizeOnboarding("skip"), 900);
+  };
   // Back-compat: Enter key defaults to dashboard (safer than auto-starting an interview).
   const handleStart = handleGoToDashboard;
 

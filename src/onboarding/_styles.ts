@@ -118,6 +118,19 @@ export const ONBOARDING_STYLES = `
     box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.32);
   }
 
+  /* CTA pair (Start mock interview + Dashboard) inside the score
+     card — at <520px the side-by-side layout wraps awkwardly. Stack
+     vertically so each button gets full width. */
+  @media (max-width: 520px) {
+    .hsx-onb-cta-pair {
+      flex-direction: column !important;
+    }
+    .hsx-onb-cta-pair > button {
+      width: 100% !important;
+      flex: 0 0 auto !important;
+    }
+  }
+
   /* Responsive — collapse the 12-col bento progressively. At
      each breakpoint we override the inline gridColumn spans so
      cards land in sensible row groupings rather than stacking

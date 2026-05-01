@@ -384,6 +384,16 @@ export function ResumeLoadingState({
   onTargetRoleChange,
 }: ResumeLoadingStateProps) {
   const [progress, setProgress] = useState(8);
+  // Drive the bar from server-reported analysisStage when we have it.
+  // Each stage is roughly 25% of the total work, so we floor the bar
+  // at the stage's progress level — prevents the bar from "lying"
+  // (sitting at 30% when the LLM has actually finished stage 3).
+  useEffect(() => {
+    if (analysisStage >= 0) {
+      const stageFloor = Math.min(95, 15 + analysisStage * 22);
+      setProgress((p) => Math.max(p, stageFloor));
+    }
+  }, [analysisStage]);
   useEffect(() => {
     const id = setInterval(() => {
       setProgress((p) => (p < 90 ? p + (90 - p) * 0.06 : p));
@@ -413,9 +423,9 @@ export function ResumeLoadingState({
           <p
             style={{ fontFamily: f.sans, fontSize: 16, lineHeight: 1.55, color: t.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}
           >
-            Hang tight — usually takes 10–15 seconds.
+            Tuning your practice to your role and experience.
             <br />
-            We&apos;re tuning your practice to your role and experience.
+            Detailed resumes take a few seconds longer.
           </p>
         </div>
 
@@ -1041,6 +1051,8 @@ function ScoreGauge({
     >
       <div
         className="hsx-onb-score-gauge"
+        role={score != null ? "img" : undefined}
+        aria-label={score != null ? `Clarity score ${score} out of 100, ${label.toLowerCase()}` : "Clarity score unavailable"}
         style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center", flex: "1 1 auto", justifyContent: "center" }}
       >
         <div style={{ position: "relative", width: 180, height: 100 }}>
@@ -1099,11 +1111,10 @@ function ScoreGauge({
 
       {/* CTA pair — primary "Start mock interview" + secondary
           "Dashboard". Side-by-side at the bottom of the score card.
-          The marginTop: auto pushes them to the floor even when the
-          card stretches taller than its content (parent grid uses
-          align-items: stretch). */}
+          On <520px the .hsx-onb-cta-pair stylesheet rule stacks
+          them vertically so neither truncates. */}
       {onStartInterview && (
-        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}`, display: "flex", gap: 8 }}>
+        <div className="hsx-onb-cta-pair" style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}`, display: "flex", gap: 8 }}>
           <button
             type="button"
             onClick={onStartInterview}
