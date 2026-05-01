@@ -1,0 +1,34 @@
+{
+  "name": "hirestepx-tempo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build-storybook": "storybook build",
+    "chromatic": "chromatic --exit-zero-on-changes",
+    "dev": "vite --host 127.0.0.1",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006"
+  },
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.0",
+    "@storybook/addon-a11y": "^10.0.0",
+    "@storybook/addon-docs": "^10.0.0",
+    "@storybook/react-vite": "^10.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "chromatic": "^11.20.0",
+    "storybook": "^10.0.0",
+    "tailwindcss": "^4.0.0",
+    "tempo-sdk": "latest",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}

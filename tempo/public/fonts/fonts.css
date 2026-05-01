@@ -1,0 +1,67 @@
+/* HireStepX — Self-hosted webfonts.
+   Drop the .woff2 files alongside this file (see README.md in this dir).
+   Once present, browsers load locally with no third-party CDN dependency.
+   While files are missing, the inline @import fallbacks in canvas
+   components keep things rendering from CDN. */
+
+/* Satoshi — body / UI sans, by Indian Type Foundry */
+@font-face {
+  font-family: "Satoshi";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/Satoshi-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/Satoshi-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/Satoshi-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/Satoshi-Black.woff2") format("woff2");
+}
+
+/* Instrument Serif — display serif (regular + italic only, by design) */
+@font-face {
+  font-family: "Instrument Serif";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/InstrumentSerif-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  src: url("/fonts/InstrumentSerif-Italic.woff2") format("woff2");
+}
+
+/* JetBrains Mono — micro-caps + code */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/JetBrainsMono-Medium.woff2") format("woff2");
+}

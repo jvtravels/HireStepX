@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HireStepX — Sign in</title>
+
+<!-- ───────────────────────────────────────────────
+     v5 — RESTRAINT PASS
+
+     Hard reset. Every move from v4 that read as decoration
+     ("trying hard") got cut. What remains is what Stripe,
+     Linear, Vercel, and Notion auth screens have in common:
+     systematic spacing, one accent, one atmospheric move,
+     confident type, no flourishes.
+
+     CUT:
+       • Hand-drawn underline (gimmicky)
+       • Italic+amber on "back." (over-styling)
+       • Paper-grain SVG noise (decoration)
+       • Second balance glow (busy)
+       • Fictional "Last sign-in" pill (static fake data)
+       • Fictional "Last used" badge (same)
+       • Keyboard ⌘↵ pill (showing off)
+       • Multi-color step bars in the mark
+       • Card entrance animation (try-hard)
+       • Mono-caps everywhere (overuse killed the effect)
+
+     KEPT:
+       • Warm cream surface (the only "personality" colour move)
+       • Fraunces serif on the heading — ONE moment of editorial
+         refinement, set tight, no italic, no decoration
+       • Inter for everything else
+       • Mono-caps ONLY on field labels — restraint = effect
+       • Single soft amber focus ring
+       • Single low-opacity glow top-right
+       • 8px / 4px spacing grid, religiously
+     ─────────────────────────────────────────────── -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  /* ───────── TOKENS ─────────
+     Smaller palette. Less is the polish. */
+  :root {
+    --bg:           #faf7f0;
+    --surface:      #ffffff;
+    --surface-soft: #faf8f3;
+    --input:        #f6f3ec;
+    --input-hover:  #f0ece2;
+
+    --ink-1:        #14110a;
+    --ink-2:        #3f3a2f;
+    --ink-3:        #6e6759;
+    --ink-4:        #a39c8b;
+    --line:         #ebe5d2;
+    --line-strong:  #d6cdb5;
+
+    --accent:       #b45309;
+    --accent-soft:  rgba(180,83,9,.20);
+
+    --black:        #0e0c08;
+    --black-press:  #000;
+
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-pill: 999px;
+
+    --shadow-card:  0 1px 0 rgba(20,17,10,.03),
+                    0 1px 2px rgba(20,17,10,.04),
+                    0 12px 32px -16px rgba(20,17,10,.10);
+    --shadow-cta:   0 1px 2px rgba(20,17,10,.12),
+                    0 4px 12px -4px rgba(20,17,10,.20);
+    --ring:         0 0 0 3px var(--accent-soft);
+
+    --t: .15s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ───────── RESET ───────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
+    color: var(--ink-1);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--ink-1); color: #fff; }
+
+  /* ───────── ATMOSPHERE — single soft warmth ───────── */
+  .glow {
+    position: fixed;
+    top: -40%;
+    right: -25%;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(closest-side, rgba(180,83,9,.10), transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ───────── LAYOUT ───────── */
+  .page {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* ───────── TOPBAR ───────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--ink-1);
+    transition: opacity var(--t);
+  }
+  .wordmark:hover { opacity: .7; }
+  .wordmark-text {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.014em;
+    color: var(--ink-1);
+  }
+  .topbar-right {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .topbar-right strong {
+    color: var(--ink-1);
+    font-weight: 600;
+    margin-left: 6px;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--t);
+  }
+  .topbar-right a:hover strong { border-bottom-color: var(--ink-1); }
+
+  /* ───────── MAIN ───────── */
+  .main {
+    display: grid;
+    place-items: center;
+    padding: 24px 24px 48px;
+  }
+  .stack {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ───────── CARD ─────────
+     White surface, minimal border, soft shadow.
+     Padding: 32px top/sides, 28px bottom (slightly tighter
+     bottom anchors the form to the CTA). */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card);
+    padding: 32px 32px 28px;
+  }
+
+  /* ───────── HEADING — Fraunces, single move ─────────
+     One serif moment. No italic, no underline, no colour
+     accent. Just a confident, well-set heading. */
+  .heading {
+    margin: 0 0 22px;
+  }
+  .heading h1 {
+    margin: 0 0 6px;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink-1);
+    font-variation-settings: "opsz" 96;
+  }
+  .heading p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-3);
+  }
+
+  /* ───────── GOOGLE BUTTON ─────────
+     Subtle, not aggressive. White with light border at rest;
+     hover lifts to a slightly warmer surface. No invert.
+     Industry standard, not novelty. */
+  .google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 44px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    color: var(--ink-1);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background var(--t), border-color var(--t),
+                box-shadow var(--t);
+  }
+  .google:hover {
+    background: var(--surface-soft);
+    border-color: var(--ink-3);
+  }
+  .google:focus-visible { outline: none; box-shadow: var(--ring); }
+  .google svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ───────── DIVIDER ───────── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+    color: var(--ink-4);
+    font-size: 12px;
+  }
+  .divider::before,
+  .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ───────── FORM ───────── */
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .label {
+    /* Mono-caps used HERE ONLY. Restraint = the effect lands. */
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .field-link {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    transition: color var(--t);
+  }
+  .field-link:hover { color: var(--ink-1); }
+
+  .input {
+    height: 44px;
+    padding: 0 14px;
+    background: var(--input);
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font-size: 14px;
+    color: var(--ink-1);
+    transition: background var(--t), border-color var(--t),
+                box-shadow var(--t);
+  }
+  .input::placeholder { color: var(--ink-4); }
+  .input:hover { background: var(--input-hover); }
+  .input:focus {
+    outline: none;
+    background: var(--surface);
+    border-color: var(--accent);
+    box-shadow: var(--ring);
+  }
+
+  /* ───────── REMEMBER ROW ─────────
+     Small + low-emphasis. Doesn't need its own row anymore;
+     sits inline below password field. */
+  .remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--ink-3);
+    cursor: pointer;
+    user-select: none;
+  }
+  .remember input {
+    appearance: none;
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 3px;
+    background: var(--surface);
+    cursor: pointer;
+    position: relative;
+    transition: background var(--t), border-color var(--t);
+  }
+  .remember input:checked {
+    background: var(--ink-1);
+    border-color: var(--ink-1);
+  }
+  .remember input:checked::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='M3 7.2L5.6 9.8L11 4.2' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/10px no-repeat;
+  }
+  .remember input:focus-visible { outline: none; box-shadow: var(--ring); }
+
+  /* ───────── CTA ───────── */
+  .cta {
+    width: 100%;
+    height: 44px;
+    margin-top: 18px;
+    background: var(--black);
+    color: #fff;
+    border: 0;
+    border-radius: var(--r-md);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    box-shadow: var(--shadow-cta);
+    transition: background var(--t), transform .1s var(--t);
+  }
+  .cta:hover {
+    background: var(--black-press);
+    transform: translateY(-1px);
+  }
+  .cta:active { transform: translateY(0); }
+  .cta:focus-visible { outline: none; box-shadow: var(--shadow-cta), var(--ring); }
+  .cta:disabled {
+    background: var(--ink-4);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ───────── LEGAL ───────── */
+  .legal {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ink-4);
+    text-align: center;
+  }
+  .legal a {
+    color: var(--ink-3);
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 2px;
+    transition: color var(--t), text-decoration-color var(--t);
+  }
+  .legal a:hover { color: var(--ink-1); text-decoration-color: var(--ink-1); }
+
+  /* ───────── FOOTER ───────── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px 24px;
+    font-size: 12px;
+    color: var(--ink-4);
+  }
+  .trust {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trust svg { width: 12px; height: 12px; color: var(--ink-3); }
+  .footer-links { display: inline-flex; gap: 18px; }
+  .footer-links a { color: var(--ink-4); transition: color var(--t); }
+  .footer-links a:hover { color: var(--ink-1); }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 540px) {
+    .topbar { padding: 18px 20px; }
+    .topbar-right span:not(strong) { display: none; }
+    .topbar-right strong { margin-left: 0; }
+    .footer {
+      padding: 16px 20px 20px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card { padding: 26px 22px 22px; border-radius: var(--r-md); }
+    .glow { width: 460px; height: 460px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0s !important; }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="glow" aria-hidden="true"></div>
+
+<div class="page">
+
+  <!-- ─── TOPBAR ────────────────────────────────── -->
+  <header class="topbar" role="banner">
+    <a class="wordmark" href="/" aria-label="HireStepX home">
+      <!-- Monochrome SVG mark — three rising steps, single colour.
+           No multi-color flourish. Reads at favicon size. -->
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <rect width="22" height="22" rx="6" fill="#0e0c08"/>
+        <rect x="5"  y="14" width="5"  height="2.5" rx="1" fill="#fff" opacity=".55"/>
+        <rect x="5"  y="9.75" width="8.5" height="2.5" rx="1" fill="#fff" opacity=".8"/>
+        <rect x="5"  y="5.5" width="12" height="2.5" rx="1" fill="#fff"/>
+      </svg>
+      <span class="wordmark-text">HireStepX</span>
+    </a>
+    <div class="topbar-right">
+      <a href="/signup">
+        <span>New here?</span><strong>Create account</strong>
+      </a>
+    </div>
+  </header>
+
+  <!-- ─── MAIN ──────────────────────────────────── -->
+  <main class="main">
+    <div class="stack">
+
+      <section class="card" aria-labelledby="login-title">
+
+        <!-- Heading: Fraunces, no decoration -->
+        <div class="heading">
+          <h1 id="login-title">Sign in to HireStepX</h1>
+          <p>Welcome back.</p>
+        </div>
+
+        <!-- Google -->
+        <button type="button" class="google" aria-label="Continue with Google">
+          <svg viewBox="0 0 18 18" aria-hidden="true">
+            <path fill="#EA4335" d="M9 3.5c1.6 0 3 .55 4.1 1.6l3.05-3.05C14.3.85 11.85 0 9 0 5.5 0 2.5 2 1 4.95l3.55 2.75C5.35 5.4 7 3.5 9 3.5z"/>
+            <path fill="#4285F4" d="M17.6 9.2c0-.65-.05-1.27-.16-1.87H9v3.55h4.85c-.21 1.13-.85 2.08-1.81 2.72l2.95 2.28c1.72-1.6 2.71-3.95 2.71-6.68z"/>
+            <path fill="#FBBC05" d="M4.55 10.7c-.21-.6-.32-1.25-.32-1.95s.12-1.35.32-1.95L1 4.05A8.99 8.99 0 0 0 0 8.75c0 1.45.35 2.83.95 4.05l3.6-2.1z"/>
+            <path fill="#34A853" d="M9 17.5c2.43 0 4.47-.81 5.96-2.18l-2.95-2.28c-.82.55-1.86.88-3.01.88-2 0-3.65-1.9-4.45-4.2L1 12.78c1.5 2.95 4.5 4.72 8 4.72z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="divider"><span>or</span></div>
+
+        <!-- Email + Password -->
+        <form action="#" method="post" novalidate>
+          <div class="field-group">
+
+            <div class="field">
+              <label class="label" for="email">Email</label>
+              <input
+                id="email"
+                class="input"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                placeholder="you@company.com"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <div class="label-row">
+                <label class="label" for="password">Password</label>
+                <a class="field-link" href="/forgot">Forgot?</a>
+              </div>
+              <input
+                id="password"
+                class="input"
+                type="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <label class="remember">
+              <input type="checkbox" />
+              <span>Keep me signed in</span>
+            </label>
+          </div>
+
+          <button type="submit" class="cta">Sign in</button>
+        </form>
+
+      </section>
+
+      <p class="legal">
+        By continuing, you agree to our
+        <a href="/terms">Terms</a> and
+        <a href="/privacy">Privacy Policy</a>.
+      </p>
+
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ────────────────────────────────── -->
+  <footer class="footer" role="contentinfo">
+    <span class="trust">
+      <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M7 1.5l4.5 1.6v3.4c0 3-2 5.4-4.5 6-2.5-.6-4.5-3-4.5-6V3.1L7 1.5z"
+          stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Encrypted &amp; hosted in India
+    </span>
+    <div class="footer-links">
+      <a href="/help">Help</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/status">Status</a>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>

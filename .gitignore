@@ -10,7 +10,6 @@ next-env.d.ts
 .env.local
 .env*.local
 .env.resend-check
-
 # Playwright
 /test-results/
 /playwright-report/
@@ -18,7 +17,16 @@ next-env.d.ts
 /playwright/.cache/
 /playwright/.auth/
 tsconfig.tsbuildinfo
-
 # Vitest coverage — regenerated on every `npm run test:coverage` run.
 /coverage/
 *.lcov
+tempo/.tempo/
+tempo/node_modules/
+tempo/dist/
+
+# Storybook + Chromatic
+tempo/storybook-static/
+tempo/chromatic.log
+
+.DS_Store
+tempo/build-storybook.log

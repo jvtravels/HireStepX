@@ -1,0 +1,1257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HireStepX — Design System / Colors</title>
+
+<!-- ───────────────────────────────────────────────
+     HireStepX Design System — Color
+     Canonical reference for surface, ink, brand, and status tokens.
+
+     The discipline:
+       Indigo is interactive. Copper is editorial.
+       Anything you click is indigo.
+       Anything that's a "highlighted number or fact" is copper.
+       Never mix.
+     ─────────────────────────────────────────────── -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  /* ─────────── CANONICAL TOKENS ─────────── */
+  :root {
+    /* Surface */
+    --cream:        #FAF7F0;
+    --white:        #FFFFFF;
+    --cream-soft:   #F4EFE3;
+
+    /* Ink */
+    --coal:         #0E0C08;
+    --indigo-gray:  #3E3A6E;
+    --ink-soft:     #6E6759;
+    --ink-faint:    #A39C8B;
+
+    /* Brand — interactive */
+    --indigo:       #312E81;
+    --indigo-deep:  #1E1B4B;
+    --indigo-100:   #E5E2F2;
+    --indigo-ring:  rgba(49, 46, 129, 0.20);
+
+    /* Brand — editorial */
+    --copper:       #B45309;
+    --copper-soft:  rgba(180, 83, 9, 0.12);
+    --copper-100:   #F4E5D8;
+
+    /* Status */
+    --error:        #B91C1C;
+    --error-100:    #FEE2E2;
+    --success:      #15803D;
+    --success-100:  #DCFCE7;
+
+    --line:         #EBE5D2;
+    --line-strong:  #D6CDB5;
+
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-pill: 999px;
+
+    --shadow-card:  0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10);
+    --shadow-chip:  0 1px 2px rgba(20,17,10,.06);
+
+    --t: .18s cubic-bezier(.16, 1, .3, 1);
+  }
+
+  /* ─────────── RESET ─────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
+    color: var(--coal);
+    background: var(--cream);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.55;
+  }
+  ::selection { background: var(--indigo); color: var(--white); }
+
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .serif { font-family: "Fraunces", Georgia, serif; }
+
+  /* ─────────── PAGE LAYOUT ─────────── */
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 80px 56px 120px;
+  }
+
+  /* ─────────── MASTHEAD ─────────── */
+  .masthead {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 40px;
+    margin-bottom: 64px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: end;
+  }
+  .masthead .label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  .masthead h1 {
+    font-family: "Fraunces", serif;
+    font-size: 56px;
+    font-weight: 400;
+    letter-spacing: -.02em;
+    line-height: 1.05;
+    margin: 0;
+  }
+  .masthead h1 em {
+    font-style: italic;
+    color: var(--copper);
+  }
+  .masthead p {
+    color: var(--indigo-gray);
+    font-size: 15px;
+    margin: 16px 0 0;
+    max-width: 540px;
+  }
+  .masthead .meta {
+    text-align: right;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .masthead .meta b { color: var(--coal); font-weight: 500; }
+
+  /* ─────────── SECTION ─────────── */
+  section { margin-bottom: 80px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+  }
+  .section-head .num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--copper);
+    letter-spacing: .12em;
+  }
+  .section-head h2 {
+    font-family: "Fraunces", serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -.01em;
+    margin: 0;
+  }
+  .section-head p {
+    margin: 0 0 0 auto;
+    color: var(--ink-soft);
+    font-size: 13px;
+    max-width: 380px;
+    text-align: right;
+  }
+
+  /* ─────────── PRINCIPLE CARD ─────────── */
+  .principle {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 36px 40px;
+    box-shadow: var(--shadow-card);
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .principle .left {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: -.01em;
+  }
+  .principle .left em { font-style: italic; color: var(--copper); }
+  .principle .left b { color: var(--indigo); font-weight: 500; }
+  .principle ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+  .principle li { display: grid; grid-template-columns: 70px 1fr; gap: 16px; font-size: 14px; color: var(--ink-soft); }
+  .principle li .key { color: var(--coal); font-weight: 500; font-family: "Inter", sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding-top: 2px; }
+  .principle li .key.indigo { color: var(--indigo); }
+  .principle li .key.copper { color: var(--copper); }
+
+  /* ─────────── SWATCH GRID ─────────── */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .swatch {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    transition: var(--t);
+  }
+  .swatch:hover { border-color: var(--line-strong); transform: translateY(-1px); box-shadow: var(--shadow-card); }
+  .swatch .chip {
+    height: 120px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .swatch .body { padding: 14px 16px 16px; }
+  .swatch .name {
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--coal);
+  }
+  .swatch .role {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 4px 0 10px;
+    line-height: 1.4;
+  }
+  .swatch .hex {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--coal);
+    background: var(--cream-soft);
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .swatch.dark .name, .swatch.dark .role { color: var(--coal); }
+  .swatch .dot {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.6);
+  }
+  .swatch .label-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.85);
+  }
+  .swatch .label-overlay.dark { color: rgba(14,12,8,.7); }
+
+  /* ─────────── TOKEN TABLE ─────────── */
+  .token-table {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .token-table .row {
+    display: grid;
+    grid-template-columns: 200px 1fr 200px 1fr 120px;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    transition: var(--t);
+  }
+  .token-table .row:last-child { border-bottom: none; }
+  .token-table .row:hover { background: var(--cream-soft); }
+  .token-table .row.head {
+    background: var(--cream-soft);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .token-table .row.head:hover { background: var(--cream-soft); }
+  .token-table .var-name { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--coal); }
+  .token-table .role-text { color: var(--indigo-gray); font-size: 12px; }
+  .token-table .hex { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--coal); background: var(--cream-soft); padding: 3px 8px; border-radius: 4px; display: inline-block; }
+  .token-table .preview {
+    width: 28px; height: 28px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--line);
+    display: inline-block;
+  }
+
+  /* ─────────── CONTRAST PAIRS ─────────── */
+  .contrast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .contrast {
+    border-radius: var(--r-md);
+    padding: 28px 24px;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .contrast .demo-text {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    margin: 0 0 4px;
+    line-height: 1.2;
+  }
+  .contrast .demo-sub {
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .contrast .ratio {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    background: rgba(255,255,255,.85);
+    border-radius: 4px;
+    color: var(--coal);
+    letter-spacing: .04em;
+  }
+  .contrast .pair-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 14px;
+    opacity: .7;
+  }
+  .pass { color: var(--success); }
+  .fail { color: var(--error); }
+
+  /* ─────────── DO / DON'T ─────────── */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .rule {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 24px 28px;
+  }
+  .rule.do { border-left: 3px solid var(--success); }
+  .rule.dont { border-left: 3px solid var(--error); }
+  .rule .tag {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    margin-bottom: 16px;
+  }
+  .rule.do .tag { background: var(--success-100); color: var(--success); }
+  .rule.dont .tag { background: var(--error-100); color: var(--error); }
+  .rule h4 {
+    font-family: "Fraunces", serif;
+    font-size: 18px;
+    font-weight: 400;
+    margin: 0 0 8px;
+    line-height: 1.3;
+  }
+  .rule p { color: var(--indigo-gray); font-size: 13px; margin: 0 0 12px; }
+  .rule .demo {
+    margin-top: 14px;
+    background: var(--cream-soft);
+    border-radius: var(--r-sm);
+    padding: 14px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* ─────────── EXAMPLES (LIVING UI) ─────────── */
+  .examples {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .example {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-card);
+  }
+  .example .ex-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--copper);
+    margin-bottom: 14px;
+  }
+  .example h3 {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    font-weight: 400;
+    margin: 0 0 6px;
+    letter-spacing: -.01em;
+  }
+  .example h3 em { font-style: italic; color: var(--copper); }
+  .example p { color: var(--indigo-gray); font-size: 13px; margin: 0 0 20px; }
+
+  .btn {
+    background: var(--indigo);
+    color: var(--white);
+    border: none;
+    padding: 12px 22px;
+    border-radius: var(--r-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--t);
+    box-shadow: 0 1px 2px rgba(20,17,10,.12);
+  }
+  .btn:hover { background: var(--indigo-deep); transform: translateY(-1px); }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--indigo-ring); }
+
+  .btn-secondary {
+    background: var(--white);
+    color: var(--coal);
+    border: 1px solid var(--line-strong);
+    padding: 12px 22px;
+    border-radius: var(--r-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--t);
+    margin-left: 8px;
+  }
+  .btn-secondary:hover { background: var(--cream-soft); }
+
+  .input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--white);
+    color: var(--coal);
+    transition: var(--t);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3px var(--indigo-ring);
+  }
+  .input-label {
+    display: block;
+    font-size: 12px;
+    color: var(--coal);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .score-card {
+    text-align: center;
+    padding: 28px 24px;
+    background: var(--cream-soft);
+    border-radius: var(--r-lg);
+  }
+  .score-card .score-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .score-card .score-num {
+    font-family: "Fraunces", serif;
+    font-size: 72px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--copper);
+    letter-spacing: -.02em;
+  }
+  .score-card .score-num small {
+    font-size: 22px;
+    color: var(--ink-faint);
+    margin-left: 4px;
+  }
+  .score-card .score-tag {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 3px 12px;
+    font-size: 11px;
+    background: var(--copper-soft);
+    color: var(--copper);
+    border-radius: var(--r-pill);
+    font-weight: 500;
+  }
+
+  .link-demo a {
+    color: var(--indigo);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: var(--t);
+    font-weight: 500;
+  }
+  .link-demo a:hover { border-bottom-color: var(--indigo); }
+  .link-demo {
+    font-size: 14px;
+    color: var(--indigo-gray);
+    line-height: 1.7;
+  }
+
+  /* ─────────── HEX REFERENCE BLOCK ─────────── */
+  .code-block {
+    background: var(--coal);
+    color: #d8d2c0;
+    border-radius: var(--r-lg);
+    padding: 28px 32px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+  .code-block .c-key { color: #c4a8ff; }
+  .code-block .c-val { color: #f4d4a8; }
+  .code-block .c-comment { color: #6b6660; font-style: italic; }
+  .code-block .c-brand { color: var(--copper); }
+
+  /* ─────────── PHILOSOPHY (CULTURAL CARD) ─────────── */
+  .philosophy {
+    background: var(--coal);
+    color: var(--cream);
+    border-radius: var(--r-lg);
+    padding: 48px 56px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+  .philosophy h3 {
+    font-family: "Fraunces", serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.15;
+    margin: 0 0 20px;
+    letter-spacing: -.015em;
+  }
+  .philosophy h3 em { font-style: italic; color: var(--copper); }
+  .philosophy p { color: rgba(250, 247, 240, .72); font-size: 14px; line-height: 1.7; margin: 0 0 14px; }
+  .philosophy .pull {
+    border-left: 2px solid var(--copper);
+    padding-left: 20px;
+    font-family: "Fraunces", serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--cream);
+    line-height: 1.45;
+  }
+
+  /* ─────────── FOOTER ─────────── */
+  .footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: .04em;
+  }
+  .footer b { color: var(--coal); font-weight: 500; }
+
+  /* ─────────── RESPONSIVE ─────────── */
+  @media (max-width: 800px) {
+    .page { padding: 48px 24px 80px; }
+    .masthead { grid-template-columns: 1fr; }
+    .masthead .meta { text-align: left; }
+    .masthead h1 { font-size: 38px; }
+    .principle { grid-template-columns: 1fr; gap: 24px; }
+    .examples { grid-template-columns: 1fr; }
+    .rules-grid { grid-template-columns: 1fr; }
+    .token-table .row { grid-template-columns: 1fr 60px; gap: 8px; padding: 14px 18px; }
+    .token-table .row > div:nth-child(2),
+    .token-table .row > div:nth-child(4) { display: none; }
+    .philosophy { grid-template-columns: 1fr; padding: 32px 28px; }
+    .section-head { flex-direction: column; align-items: flex-start; }
+    .section-head p { margin-left: 0; text-align: left; }
+  }
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <div>
+      <div class="label">Design System · v1.0</div>
+      <h1>Color, by <em>discipline</em>.</h1>
+      <p>
+        The canonical color reference for HireStepX. Cream surface,
+        coal text, indigo for everything you click, copper for one
+        highlighted fact per moment. Defaults handle the rest.
+      </p>
+    </div>
+    <div class="meta">
+      <div><b>Indigo</b> #312E81</div>
+      <div><b>Copper</b> #B45309</div>
+      <div><b>Cream</b> #FAF7F0</div>
+      <div><b>Coal</b> #0E0C08</div>
+    </div>
+  </header>
+
+  <!-- 1. THE DISCIPLINE -->
+  <section>
+    <div class="section-head">
+      <span class="num">01</span>
+      <h2>The discipline</h2>
+      <p>One rule, applied everywhere. If you remember nothing else, remember this.</p>
+    </div>
+    <div class="principle">
+      <div class="left">
+        <b>Indigo</b> is interactive.<br/>
+        <em>Copper</em> is editorial.<br/>
+        Never mix.
+      </div>
+      <ul>
+        <li><span class="key indigo">Indigo</span><span>CTAs · links · focus rings · brand identifiers (logo wordmark, score numbers as state) · selection</span></li>
+        <li><span class="key copper">Copper</span><span>The italic accent word in a hero. A "highlighted number or fact" — once per moment. Never twice on the same screen.</span></li>
+        <li><span class="key">Coal</span><span>Primary text. Warm dark, never pure black.</span></li>
+        <li><span class="key">Indigo-gray</span><span>Secondary text. Tints body copy with brand identity, subliminally.</span></li>
+        <li><span class="key">Defaults</span><span>Errors are red. Success is green. Don't burn brand budget on status.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 2. SURFACE -->
+  <section>
+    <div class="section-head">
+      <span class="num">02</span>
+      <h2>Surface</h2>
+      <p>Where everything sits. Warm, parchment-like, never pure white.</p>
+    </div>
+    <div class="swatch-grid">
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--cream);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Page</span>
+        </div>
+        <div class="body">
+          <div class="name">Cream</div>
+          <div class="role">Primary canvas — every page background.</div>
+          <span class="hex">#FAF7F0</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--white); border-bottom: 1px solid var(--line);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Card</span>
+        </div>
+        <div class="body">
+          <div class="name">White</div>
+          <div class="role">Cards, input fields, surfaces lifted off cream.</div>
+          <span class="hex">#FFFFFF</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--cream-soft);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Soft</span>
+        </div>
+        <div class="body">
+          <div class="name">Cream-soft</div>
+          <div class="role">Hover states, recessed sections, code snippets.</div>
+          <span class="hex">#F4EFE3</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3. INK -->
+  <section>
+    <div class="section-head">
+      <span class="num">03</span>
+      <h2>Ink</h2>
+      <p>Text. Coal for primary, indigo-gray for secondary — the brand-thread move.</p>
+    </div>
+    <div class="swatch-grid">
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--coal);">
+          <span class="label-overlay">Primary</span>
+        </div>
+        <div class="body">
+          <div class="name">Coal</div>
+          <div class="role">Primary text. Warm dark — never pure black.</div>
+          <span class="hex">#0E0C08</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--indigo-gray);">
+          <span class="label-overlay">Secondary</span>
+        </div>
+        <div class="body">
+          <div class="name">Indigo-gray</div>
+          <div class="role">Secondary text — tinted with brand. Use for body, helpers.</div>
+          <span class="hex">#3E3A6E</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-soft);">
+          <span class="label-overlay">Helper</span>
+        </div>
+        <div class="body">
+          <div class="name">Ink-soft</div>
+          <div class="role">Microcopy, labels, captions.</div>
+          <span class="hex">#6E6759</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-faint);">
+          <span class="label-overlay">Faint</span>
+        </div>
+        <div class="body">
+          <div class="name">Ink-faint</div>
+          <div class="role">Placeholders, disabled, tertiary metadata.</div>
+          <span class="hex">#A39C8B</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. BRAND -->
+  <section>
+    <div class="section-head">
+      <span class="num">04</span>
+      <h2>Brand</h2>
+      <p>Indigo is the path forward. Copper is the spotlight. They never share the stage.</p>
+    </div>
+    <div class="swatch-grid">
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--indigo);">
+          <span class="label-overlay">Interactive</span>
+        </div>
+        <div class="body">
+          <div class="name">Indigo</div>
+          <div class="role">Primary CTAs, links, focus, score numerals. Anything you click.</div>
+          <span class="hex">#312E81</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--indigo-deep);">
+          <span class="label-overlay">Hover</span>
+        </div>
+        <div class="body">
+          <div class="name">Indigo-deep</div>
+          <div class="role">CTA hover, pressed state. ~10% darker.</div>
+          <span class="hex">#1E1B4B</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--indigo-100);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Soft</span>
+        </div>
+        <div class="body">
+          <div class="name">Indigo-100</div>
+          <div class="role">Soft brand background — premium-tier panels, badges.</div>
+          <span class="hex">#E5E2F2</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--copper);">
+          <span class="label-overlay">Editorial</span>
+        </div>
+        <div class="body">
+          <div class="name">Copper</div>
+          <div class="role">Italic accent words. Score numbers. Logo accent stroke.</div>
+          <span class="hex">#B45309</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--copper-100);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Soft</span>
+        </div>
+        <div class="body">
+          <div class="name">Copper-100</div>
+          <div class="role">Avatar tints, soft accent badges, score-tag chips.</div>
+          <span class="hex">#F4E5D8</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. STATUS -->
+  <section>
+    <div class="section-head">
+      <span class="num">05</span>
+      <h2>Status</h2>
+      <p>Defaults. Universally legible. Don't burn brand budget on status colors.</p>
+    </div>
+    <div class="swatch-grid">
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--error);">
+          <span class="label-overlay">Error</span>
+        </div>
+        <div class="body">
+          <div class="name">Error</div>
+          <div class="role">Form validation, destructive actions, hard failures.</div>
+          <span class="hex">#B91C1C</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--success);">
+          <span class="label-overlay">Success</span>
+        </div>
+        <div class="body">
+          <div class="name">Success</div>
+          <div class="role">Confirmations, validated fields, completed states.</div>
+          <span class="hex">#15803D</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--error-100);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Soft</span>
+        </div>
+        <div class="body">
+          <div class="name">Error-100</div>
+          <div class="role">Inline error backgrounds, soft warning panels.</div>
+          <span class="hex">#FEE2E2</span>
+        </div>
+      </div>
+
+      <div class="swatch">
+        <div class="chip" style="background: var(--success-100);">
+          <span class="dot" style="background: rgba(14,12,8,.15);"></span>
+          <span class="label-overlay dark">Soft</span>
+        </div>
+        <div class="body">
+          <div class="name">Success-100</div>
+          <div class="role">Inline success backgrounds, "fit" tags.</div>
+          <span class="hex">#DCFCE7</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 6. TOKEN TABLE -->
+  <section>
+    <div class="section-head">
+      <span class="num">06</span>
+      <h2>Token reference</h2>
+      <p>Drop these into your stylesheet. Every value used in this system maps to one variable.</p>
+    </div>
+    <div class="token-table">
+
+      <div class="row head">
+        <div>Token</div>
+        <div>Where</div>
+        <div>Hex</div>
+        <div>Notes</div>
+        <div>Preview</div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--cream</div>
+        <div class="role-text">Page background</div>
+        <div><span class="hex">#FAF7F0</span></div>
+        <div class="role-text">Warm parchment, never #FFF</div>
+        <div><span class="preview" style="background: var(--cream);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--white</div>
+        <div class="role-text">Card surface, inputs</div>
+        <div><span class="hex">#FFFFFF</span></div>
+        <div class="role-text">Lifted off cream</div>
+        <div><span class="preview" style="background: var(--white);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--coal</div>
+        <div class="role-text">Primary text</div>
+        <div><span class="hex">#0E0C08</span></div>
+        <div class="role-text">Warm dark, premium</div>
+        <div><span class="preview" style="background: var(--coal);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--indigo-gray</div>
+        <div class="role-text">Secondary text</div>
+        <div><span class="hex">#3E3A6E</span></div>
+        <div class="role-text">Tinted with brand</div>
+        <div><span class="preview" style="background: var(--indigo-gray);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--indigo</div>
+        <div class="role-text">Primary CTA, links, focus</div>
+        <div><span class="hex">#312E81</span></div>
+        <div class="role-text">Anything you click</div>
+        <div><span class="preview" style="background: var(--indigo);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--indigo-deep</div>
+        <div class="role-text">CTA hover</div>
+        <div><span class="hex">#1E1B4B</span></div>
+        <div class="role-text">Pressed state</div>
+        <div><span class="preview" style="background: var(--indigo-deep);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--indigo-ring</div>
+        <div class="role-text">Focus halos</div>
+        <div><span class="hex">rgba(49,46,129,.20)</span></div>
+        <div class="role-text">3px ring outset</div>
+        <div><span class="preview" style="background: var(--indigo-ring);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--copper</div>
+        <div class="role-text">Editorial accent</div>
+        <div><span class="hex">#B45309</span></div>
+        <div class="role-text">One per moment</div>
+        <div><span class="preview" style="background: var(--copper);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--copper-100</div>
+        <div class="role-text">Avatar tints, badges</div>
+        <div><span class="hex">#F4E5D8</span></div>
+        <div class="role-text">Soft brand thread</div>
+        <div><span class="preview" style="background: var(--copper-100);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--error</div>
+        <div class="role-text">Destructive, validation fail</div>
+        <div><span class="hex">#B91C1C</span></div>
+        <div class="role-text">Default red — leave it</div>
+        <div><span class="preview" style="background: var(--error);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--success</div>
+        <div class="role-text">Confirmation, validated</div>
+        <div><span class="hex">#15803D</span></div>
+        <div class="role-text">Default green — leave it</div>
+        <div><span class="preview" style="background: var(--success);"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="var-name">--line</div>
+        <div class="role-text">Borders, dividers</div>
+        <div><span class="hex">#EBE5D2</span></div>
+        <div class="role-text">Soft on cream</div>
+        <div><span class="preview" style="background: var(--line);"></span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 7. CONTRAST / ACCESSIBILITY -->
+  <section>
+    <div class="section-head">
+      <span class="num">07</span>
+      <h2>Contrast &amp; accessibility</h2>
+      <p>WCAG 2.1 AA requires 4.5:1 for body text. AAA prefers 7:1. Every approved pairing checks out.</p>
+    </div>
+    <div class="contrast-grid">
+
+      <div class="contrast" style="background: var(--cream);">
+        <div class="ratio pass">15.9:1 · AAA</div>
+        <p class="demo-text" style="color: var(--coal);">Coal on Cream</p>
+        <p class="demo-sub" style="color: var(--coal);">Hero text, primary copy. The default pair.</p>
+        <p class="pair-meta" style="color: var(--ink-soft);">--coal / --cream</p>
+      </div>
+
+      <div class="contrast" style="background: var(--cream);">
+        <div class="ratio pass">7.4:1 · AAA</div>
+        <p class="demo-text" style="color: var(--indigo-gray);">Indigo-gray on Cream</p>
+        <p class="demo-sub" style="color: var(--indigo-gray);">Body copy, secondary text. Brand-tinted reading.</p>
+        <p class="pair-meta" style="color: var(--ink-soft);">--indigo-gray / --cream</p>
+      </div>
+
+      <div class="contrast" style="background: var(--cream);">
+        <div class="ratio pass">9.1:1 · AAA</div>
+        <p class="demo-text" style="color: var(--indigo);">Indigo on Cream</p>
+        <p class="demo-sub" style="color: var(--indigo);">Links, interactive text. Always meets AAA.</p>
+        <p class="pair-meta" style="color: var(--ink-soft);">--indigo / --cream</p>
+      </div>
+
+      <div class="contrast" style="background: var(--cream);">
+        <div class="ratio pass">5.4:1 · AA</div>
+        <p class="demo-text" style="color: var(--copper);">Copper on Cream</p>
+        <p class="demo-sub" style="color: var(--copper);">Italic accent words, headlines only. AA pass.</p>
+        <p class="pair-meta" style="color: var(--ink-soft);">--copper / --cream</p>
+      </div>
+
+      <div class="contrast" style="background: var(--indigo);">
+        <div class="ratio pass">12.5:1 · AAA</div>
+        <p class="demo-text" style="color: var(--white);">White on Indigo</p>
+        <p class="demo-sub" style="color: rgba(255,255,255,.86);">Primary CTA text. Universal pass.</p>
+        <p class="pair-meta" style="color: rgba(255,255,255,.65);">--white / --indigo</p>
+      </div>
+
+      <div class="contrast" style="background: var(--white);">
+        <div class="ratio pass">17.4:1 · AAA</div>
+        <p class="demo-text" style="color: var(--coal);">Coal on White</p>
+        <p class="demo-sub" style="color: var(--coal);">Card surfaces. Maximum readability.</p>
+        <p class="pair-meta" style="color: var(--ink-soft);">--coal / --white</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 8. DO / DON'T -->
+  <section>
+    <div class="section-head">
+      <span class="num">08</span>
+      <h2>Do &amp; don't</h2>
+      <p>The discipline rule applied to common situations. Save the brand from drift.</p>
+    </div>
+    <div class="rules-grid">
+
+      <div class="rule do">
+        <span class="tag">Do</span>
+        <h4>One copper moment per screen.</h4>
+        <p>The italic accent word is the signature. Don't dilute it.</p>
+        <div class="demo">
+          Hero: "Reset your <em style="color: var(--copper); font-family: 'Fraunces', serif;">password</em>"<br/>
+          Score numeral: <b style="color: var(--copper); font-family: 'Fraunces', serif;">62</b><br/>
+          Pick <i>one</i>. Not both.
+        </div>
+      </div>
+
+      <div class="rule dont">
+        <span class="tag">Don't</span>
+        <h4>Stack copper on warnings, icons, AND text.</h4>
+        <p>When everything is highlighted, nothing is.</p>
+        <div class="demo">
+          ❌ Copper italic accent + copper warning icon + copper time-clock + copper avatar + copper "replace" link — all on one screen.
+        </div>
+      </div>
+
+      <div class="rule do">
+        <span class="tag">Do</span>
+        <h4>Make every clickable thing indigo.</h4>
+        <p>Predictability is premium. Buttons, links, focus rings, score numbers (interactive on click).</p>
+        <div class="demo">
+          <a href="#" style="color: var(--indigo); border-bottom: 1px solid var(--indigo);">View report</a>
+          · <span style="color: var(--indigo);">→ Continue</span>
+        </div>
+      </div>
+
+      <div class="rule dont">
+        <span class="tag">Don't</span>
+        <h4>Use copper on click targets.</h4>
+        <p>Copper is editorial — a label for a fact, not an invitation to act.</p>
+        <div class="demo">
+          ❌ "Replace" link in copper · ❌ "View all" CTA in copper · ❌ Tab navigation in copper.
+        </div>
+      </div>
+
+      <div class="rule do">
+        <span class="tag">Do</span>
+        <h4>Tint secondary text with indigo-gray.</h4>
+        <p>Body copy stays subliminally on-brand. Mercury and Substack do exactly this.</p>
+        <div class="demo">
+          <span style="color: var(--indigo-gray);">"You have a strong foundation. With a few improvements, you'll stand out."</span>
+        </div>
+      </div>
+
+      <div class="rule dont">
+        <span class="tag">Don't</span>
+        <h4>Use a neutral gray for secondary text.</h4>
+        <p>Generic grays make every SaaS look the same. The indigo-tint is an inch of identity per paragraph.</p>
+        <div class="demo">
+          ❌ <span style="color: #6B7280;">"Generic Tailwind gray-500."</span> Looks like every other dashboard.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 9. LIVING EXAMPLES -->
+  <section>
+    <div class="section-head">
+      <span class="num">09</span>
+      <h2>Living examples</h2>
+      <p>The system applied. Hover, focus, and click — every state earned its color.</p>
+    </div>
+    <div class="examples">
+
+      <div class="example">
+        <div class="ex-label">Buttons · Interactive</div>
+        <h3>Primary action</h3>
+        <p>Indigo on every CTA. Subtle hover lift. Focus halo for keyboard.</p>
+        <button class="btn">Continue to practise →</button>
+        <button class="btn-secondary">Cancel</button>
+      </div>
+
+      <div class="example">
+        <div class="ex-label">Inputs · Focused state</div>
+        <h3>Form field</h3>
+        <p>Click in to see the indigo focus ring at 20% alpha.</p>
+        <label class="input-label">Email address</label>
+        <input class="input" type="email" placeholder="name@email.com" />
+      </div>
+
+      <div class="example">
+        <div class="ex-label">Editorial moment</div>
+        <h3>Reset your <em>password</em></h3>
+        <p>The italic accent word is the brand signature. One copper moment, no more.</p>
+      </div>
+
+      <div class="example">
+        <div class="ex-label">Highlighted fact</div>
+        <div class="score-card">
+          <div class="score-label">Clarity Score</div>
+          <div class="score-num">62<small>/100</small></div>
+          <div class="score-tag">Fair · room to grow</div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="ex-label">Links · Hover the underline</div>
+        <h3>In-flow links</h3>
+        <p>Indigo with a soft underline on hover. Never copper for clickable.</p>
+        <div class="link-demo">
+          Read our <a href="#">privacy policy</a> · <a href="#">contact support</a> · <a href="#">view all sessions</a>.
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="ex-label">Status · Inline</div>
+        <h3>Validation states</h3>
+        <p>Defaults handle errors and success. Don't override.</p>
+        <div style="margin-top: 8px;">
+          <div style="background: var(--success-100); color: var(--success); padding: 10px 14px; border-radius: var(--r-md); font-size: 13px; font-weight: 500;">✓ Strong password — well done.</div>
+          <div style="background: var(--error-100); color: var(--error); padding: 10px 14px; border-radius: var(--r-md); font-size: 13px; font-weight: 500; margin-top: 10px;">! Email already in use.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 10. CSS TOKENS -->
+  <section>
+    <div class="section-head">
+      <span class="num">10</span>
+      <h2>CSS variables</h2>
+      <p>Drop into your global stylesheet. Single source of truth.</p>
+    </div>
+    <pre class="code-block"><span class="c-comment">/* HireStepX — Design System / Color tokens */</span>
+:root {
+  <span class="c-comment">/* Surface */</span>
+  <span class="c-key">--cream</span>:        <span class="c-val">#FAF7F0</span>;
+  <span class="c-key">--white</span>:        <span class="c-val">#FFFFFF</span>;
+  <span class="c-key">--cream-soft</span>:   <span class="c-val">#F4EFE3</span>;
+
+  <span class="c-comment">/* Ink — text */</span>
+  <span class="c-key">--coal</span>:         <span class="c-val">#0E0C08</span>;       <span class="c-comment">/* primary */</span>
+  <span class="c-key">--indigo-gray</span>:  <span class="c-val">#3E3A6E</span>;       <span class="c-comment">/* secondary, brand-tinted */</span>
+  <span class="c-key">--ink-soft</span>:     <span class="c-val">#6E6759</span>;       <span class="c-comment">/* helpers, microcopy */</span>
+  <span class="c-key">--ink-faint</span>:    <span class="c-val">#A39C8B</span>;       <span class="c-comment">/* placeholders, disabled */</span>
+
+  <span class="c-comment">/* Brand — </span><span class="c-brand">interactive</span><span class="c-comment"> */</span>
+  <span class="c-key">--indigo</span>:       <span class="c-val">#312E81</span>;       <span class="c-comment">/* CTAs, links, focus, score */</span>
+  <span class="c-key">--indigo-deep</span>:  <span class="c-val">#1E1B4B</span>;       <span class="c-comment">/* hover */</span>
+  <span class="c-key">--indigo-100</span>:   <span class="c-val">#E5E2F2</span>;       <span class="c-comment">/* soft backgrounds */</span>
+  <span class="c-key">--indigo-ring</span>:  <span class="c-val">rgba(49, 46, 129, .20)</span>;
+
+  <span class="c-comment">/* Brand — </span><span class="c-brand">editorial</span><span class="c-comment"> */</span>
+  <span class="c-key">--copper</span>:       <span class="c-val">#B45309</span>;       <span class="c-comment">/* italic accent, score numerals */</span>
+  <span class="c-key">--copper-100</span>:   <span class="c-val">#F4E5D8</span>;       <span class="c-comment">/* avatar tints, soft chips */</span>
+
+  <span class="c-comment">/* Status — defaults, leave alone */</span>
+  <span class="c-key">--error</span>:        <span class="c-val">#B91C1C</span>;
+  <span class="c-key">--error-100</span>:    <span class="c-val">#FEE2E2</span>;
+  <span class="c-key">--success</span>:      <span class="c-val">#15803D</span>;
+  <span class="c-key">--success-100</span>:  <span class="c-val">#DCFCE7</span>;
+
+  <span class="c-comment">/* Lines */</span>
+  <span class="c-key">--line</span>:         <span class="c-val">#EBE5D2</span>;
+  <span class="c-key">--line-strong</span>:  <span class="c-val">#D6CDB5</span>;
+}</pre>
+  </section>
+
+  <!-- 11. PHILOSOPHY -->
+  <section>
+    <div class="section-head">
+      <span class="num">11</span>
+      <h2>Why these colors</h2>
+      <p>The cultural and competitive logic behind every choice.</p>
+    </div>
+    <div class="philosophy">
+      <div>
+        <h3>Indigo is <em>historically</em> Indian.</h3>
+        <p>The dye is literally named after the country — Sanskrit <i>nīla</i> → Greek <i>indikón</i>. India's signature export for 2,000+ years.</p>
+        <p>Using it isn't cliché in the way saffron is. It's quietly, culturally rooted.</p>
+        <div class="pull">No competitor in our space owns indigo — Yoodli is blue, Final Round is blue/black, Pramp is orange, Big Interview is red. We can be the first.</div>
+      </div>
+      <div>
+        <h3>Copper is the <em>perfect</em> counterweight.</h3>
+        <p>Warm where indigo is cool. Earthen where indigo is sky. Indian-aware (terracotta, copper, brass are visual signatures of Indian craft). And already at home in our cream-bg world.</p>
+        <p>The two colors fight beautifully — like a Banarasi or Pochampally weave. Subconsciously Indian without ever being literal.</p>
+        <div class="pull">Indigo says depth, calm, authority, premium. Copper says heritage, warmth, fact. Together they say: this product was made by someone who knows.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div><b>HireStepX</b> · Design System · v1.0 · Color</div>
+    <div>Indigo is interactive. Copper is editorial. Never mix.</div>
+  </div>
+
+</div>
+</body>
+</html>

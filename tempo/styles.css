@@ -1,0 +1,38 @@
+/* Tempo canvas runtime styles.
+   Self-contained — does NOT import the project's Tailwind/CSS.
+   This isolates the design-system canvas from Next.js + Tailwind v4
+   resolution issues. Each canvas component carries its own styling
+   via inline style or scoped CSS. */
+
+/* Self-hosted webfonts.
+   Inlined here (not @import "/fonts/fonts.css") because PostCSS resolves
+   @imports against the filesystem at build time, and `public/fonts/...`
+   isn't reachable from there. The .woff2 files are still served from
+   /public/fonts at runtime. If they're missing, browsers fall through to
+   the inline @import in canvas components (CDN). */
+
+/* Satoshi — body / UI sans */
+@font-face { font-family: "Satoshi"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/Satoshi-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Satoshi"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/Satoshi-Medium.woff2") format("woff2"); }
+@font-face { font-family: "Satoshi"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fonts/Satoshi-Bold.woff2") format("woff2"); }
+@font-face { font-family: "Satoshi"; font-weight: 900; font-style: normal; font-display: swap; src: url("/fonts/Satoshi-Black.woff2") format("woff2"); }
+
+/* Instrument Serif — display serif */
+@font-face { font-family: "Instrument Serif"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/InstrumentSerif-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Instrument Serif"; font-weight: 400; font-style: italic; font-display: swap; src: url("/fonts/InstrumentSerif-Italic.woff2") format("woff2"); }
+
+/* JetBrains Mono — micro-caps + code */
+@font-face { font-family: "JetBrains Mono"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/JetBrainsMono-Medium.woff2") format("woff2"); }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Satoshi", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: #FAF7F0;
+  color: #0E0C08;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+#root { min-height: 100vh; }
