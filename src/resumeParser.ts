@@ -300,15 +300,21 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   // be fully uppercase (allows "JAY VYAS"). Allows hyphenated and
   // apostrophe names ("Anne-Marie", "O'Brien"). Between 2 and 4 tokens.
   const namePattern = /^(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})){1,3}$/;
-  // Organisational / institutional keywords. If any token in the line
-  // matches one of these, reject the line as a name candidate — these
-  // are companies, universities, banks, etc. that often appear at the
-  // very top of a resume and slip past the all-caps allowance meant
-  // for actual names like "JAY VYAS". Word-boundary matched, case-
-  // insensitive. Without this guard, "DY PATIL UNIVERSITY",
-  // "INDIAN INSTITUTE OF TECHNOLOGY", "TATA CONSULTANCY SERVICES"
-  // all match namePattern and become the candidate's "name."
-  const orgKeywords = /\b(university|universities|college|colleges|institute|institution|institutes|academy|academies|school|society|consultancy|consulting|services|solutions|technologies|technology|systems|limited|ltd|pvt|private|inc|incorporated|corporation|corp|company|co|llc|bank|insurance|industries|industry|international|group|enterprises|global|hospital|clinic|foundation|trust|labs|laboratory|laboratories|department|ministry|government|govt|board|council|federation|association|iit|iim|iiit|nit|bits|pucsd|ifim|isb|nsut|dtu|vit|srm|amity|manipal|christ|jadavpur|jamia|aligarh|karnatak|gujarat|kerala|tamil|nadu|karnataka|maharashtra|delhi|mumbai|chennai|bangalore|hyderabad|kolkata|pune)\b/i;
+  // Organisational / institutional / academic-degree keywords. If any
+  // token in the line matches one of these, reject the line as a name
+  // candidate. These are companies, universities, degrees, subjects,
+  // and city/state names that frequently appear at the top of a
+  // resume and slip past the all-caps allowance meant for actual
+  // names like "JAY VYAS". Word-boundary matched, case-insensitive.
+  //
+  // Reported failures this denylist now covers:
+  //   "DY PATIL UNIVERSITY"          → "university" ✓
+  //   "TATA CONSULTANCY SERVICES"    → "consultancy" ✓
+  //   "INDIAN INSTITUTE OF TECHNOLOGY" → "institute" ✓
+  //   "BTech Computer Science"       → "btech" ✓
+  //   "Bachelor Of Engineering"      → "bachelor" ✓
+  //   "MBA Finance"                  → "mba" ✓
+  const orgKeywords = /\b(?:university|universities|college|colleges|institute|institution|institutes|academy|academies|school|society|consultancy|consulting|services|solutions|technologies|technology|systems|limited|ltd|pvt|private|inc|incorporated|corporation|corp|company|co|llc|bank|insurance|industries|industry|international|group|enterprises|global|hospital|clinic|foundation|trust|labs|laboratory|laboratories|department|ministry|government|govt|board|council|federation|association|iit|iim|iiit|nit|bits|pucsd|ifim|isb|nsut|dtu|vit|srm|amity|manipal|christ|jadavpur|jamia|aligarh|karnatak|gujarat|kerala|tamil|nadu|karnataka|maharashtra|delhi|mumbai|chennai|bangalore|hyderabad|kolkata|pune|btech|b\.tech|mtech|m\.tech|bsc|b\.sc|msc|m\.sc|bcom|b\.com|mcom|m\.com|bca|mca|llb|llm|mbbs|bds|bachelor|bachelors|master|masters|diploma|engineering|science|sciences|commerce|arts|computer|information|electronics|mechanical|electrical|civil|chemical|biotechnology|biotech|finance|marketing|management|economics|psychology|physics|chemistry|biology|mathematics|maths|statistics|sociology|history|english|hindi|graduate|graduation|postgraduate|undergraduate|phd|doctorate|fellowship|certification|certificate)\b/i;
   const locationLower = resolvedLocation.toLowerCase();
   let name = "";
   for (const line of lines.slice(0, 8)) {

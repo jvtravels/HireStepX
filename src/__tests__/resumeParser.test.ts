@@ -90,6 +90,29 @@ describe("parseResumeData", () => {
     expect(result.name).toBe("Priya Krishnan");
   });
 
+  it("does NOT pick up a degree line ('BTech Computer Science') as candidate name", () => {
+    // Reported bug: a candidate's resume started with their degree
+    // ("BTech Computer Science") on line 1 and the AI displayed
+    // that as their name with avatar initials "BC".
+    const text =
+      "BTech Computer Science\n" +
+      "Arjun Patel\n" +
+      "arjun@example.com\n" +
+      "Experience: Software Engineer at TCS";
+    const result = parseResumeData(text);
+    expect(result.name).toBe("Arjun Patel");
+    expect(result.name).not.toMatch(/btech|computer/i);
+  });
+
+  it("rejects degree-line variants ('Bachelor Of Engineering', 'MBA Finance')", () => {
+    expect(
+      parseResumeData("Bachelor Of Engineering\nNeha Kapoor\nneha@example.com").name
+    ).toBe("Neha Kapoor");
+    expect(
+      parseResumeData("MBA Finance\nVikram Singh\nvikram@example.com").name
+    ).toBe("Vikram Singh");
+  });
+
   it("extracts email address", () => {
     const result = parseResumeData("John Smith\njohn@example.com\nExperience");
     expect(result.email).toBe("john@example.com");
