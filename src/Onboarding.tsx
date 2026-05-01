@@ -653,7 +653,11 @@ export default function Onboarding() {
         onLogout={async () => { await logout(); router.push("/"); }}
         userEmail={user?.email || ""}
         userAvatar={undefined}
-        userName={user?.name || userName}
+        // Prioritise the resume-parsed name over the account name. The
+        // account name often reflects the institutional sign-up (e.g.
+        // "DY PATIL UNIVERSITY") which doesn't match what the AI uses
+        // for personalised interviewing.
+        userName={(userName && userName.trim()) || user?.name || ""}
       />
 
       <div className="ob-content-area" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", overflow: "auto" }}>

@@ -234,7 +234,9 @@ export function ResumeEmptyState({
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
       <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
-        <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center" }}>
+        {/* Extra breathing room under the hero so the subtitle doesn't crowd
+            the drop zone — supplements the stack's 16px gap. */}
+        <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
           <h1
             style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal, textWrap: "balance" }}
           >
@@ -614,14 +616,7 @@ export function ProfileReadyState({
   const visibleSkills = skillsExpanded ? aiProfile.topSkills : aiProfile.topSkills.slice(0, SKILLS_VISIBLE);
   const hiddenSkills = Math.max(0, aiProfile.topSkills.length - SKILLS_VISIBLE);
 
-  const trimmedName = (userName || aiProfile.headline || "").trim();
-  const initials =
-    trimmedName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "?";
+  const trimmedName = (userName || "").trim();
 
   return (
     <>
@@ -774,14 +769,14 @@ export function ProfileReadyState({
             </div>
           </section>
 
-          {/* Score gauge + stats */}
+          {/* Score gauge + stats. We deliberately don't pass displayName
+              here — identity already lives in the topbar avatar; repeating
+              it inside the gauge card was redundant. */}
           <ScoreGauge
             score={displayScore}
             tone={scoreTone as "success" | "warning" | "error" | "muted"}
             seniority={aiProfile.seniorityLevel}
             industries={aiProfile.industries}
-            initials={initials}
-            displayName={trimmedName || undefined}
           />
         </div>
 
@@ -931,15 +926,11 @@ function ScoreGauge({
   tone,
   seniority,
   industries,
-  initials,
-  displayName,
 }: {
   score: number | null;
   tone: "success" | "warning" | "error" | "muted";
   seniority?: string;
   industries?: string[];
-  initials?: string;
-  displayName?: string;
 }) {
   const color =
     tone === "success" ? t.success : tone === "warning" ? t.warning : tone === "error" ? t.error : t.inkSoft;
@@ -970,7 +961,7 @@ function ScoreGauge({
   const filled = circumference * pct;
 
   const industriesLabel = industries && industries.length > 0 ? industries.slice(0, 3).join(" · ") : null;
-  const hasStats = !!(displayName || seniority || industriesLabel);
+  const hasStats = !!(seniority || industriesLabel);
 
   return (
     <section
@@ -1019,14 +1010,6 @@ function ScoreGauge({
 
       {hasStats && (
         <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-          {displayName && initials && (
-            <StatRow
-              label="You"
-              value={displayName}
-              valueTone="indigo"
-              avatarInitials={initials}
-            />
-          )}
           {seniority && <StatRow label="Seniority" value={seniority} valueTone="indigo" />}
           {industriesLabel && <StatRow label="Industries" value={industriesLabel} />}
         </div>
@@ -1039,27 +1022,20 @@ function StatRow({
   label,
   value,
   valueTone,
-  avatarInitials,
 }: {
   label: string;
   value: string;
   valueTone?: "indigo";
-  avatarInitials?: string;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
       <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint, flexShrink: 0 }}>
         {label}
       </span>
       <span
         title={value}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: valueTone === "indigo" ? t.indigo : t.coal, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
+        style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: valueTone === "indigo" ? t.indigo : t.coal, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
       >
-        {avatarInitials && (
-          <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: f.serif, fontSize: 11, fontWeight: 400, flexShrink: 0 }}>
-            {avatarInitials}
-          </span>
-        )}
         {value}
       </span>
     </div>
@@ -1299,8 +1275,6 @@ export function NavigationFooter({
           }}
         >
           <li>~25 min</li>
-          <li aria-hidden="true" style={{ width: 2, height: 2, borderRadius: 999, background: "rgba(250,247,240,0.35)" }} />
-          <li>10 questions</li>
           <li aria-hidden="true" style={{ width: 2, height: 2, borderRadius: 999, background: "rgba(250,247,240,0.35)" }} />
           <li>Pause anytime</li>
         </ul>

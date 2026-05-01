@@ -8,7 +8,7 @@ export type OnboardingStep = "upload" | "analyse" | "review";
 const STEPS: { id: OnboardingStep; label: string }[] = [
   { id: "upload", label: "Upload" },
   { id: "analyse", label: "Read" },
-  { id: "review", label: "Practice" },
+  { id: "review", label: "Result" },
 ];
 
 export function OnboardingStepper({ current }: { current: OnboardingStep }) {
