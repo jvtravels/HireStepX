@@ -60,42 +60,62 @@ export function validateName(value: string): FieldValidation {
   return { valid: true, message: null };
 }
 
+/** Per-criterion checks exposed for the live checklist UI. */
+export interface PasswordChecks {
+  length: boolean;
+  lowercase: boolean;
+  uppercase: boolean;
+  number: boolean;
+  symbol: boolean;
+}
+
 /** Signup-grade password validator. Min 8 chars + at least 3 of:
     lowercase / uppercase / digit / symbol. Returns score 0-4 for the
-    strength meter, plus a message when invalid. */
+    strength meter, individual checks for the live checklist, and an
+    actionable message when invalid. */
 export interface PasswordStrength extends FieldValidation {
   score: 0 | 1 | 2 | 3 | 4;
   label: string;
+  checks: PasswordChecks;
 }
 
 export function validateSignupPassword(value: string): PasswordStrength {
+  const checks: PasswordChecks = {
+    length: value.length >= 8,
+    lowercase: /[a-z]/.test(value),
+    uppercase: /[A-Z]/.test(value),
+    number: /[0-9]/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+  };
+
   if (value.length === 0) {
-    return { valid: false, message: null, score: 0, label: "" };
+    return { valid: false, message: null, score: 0, label: "", checks };
   }
-  if (value.length < 8) {
+  if (!checks.length) {
     return {
       valid: false,
-      message: "Must be at least 8 characters.",
+      message: null, // checklist communicates this
       score: 1,
       label: "Too short",
+      checks,
     };
   }
-  let variety = 0;
-  if (/[a-z]/.test(value)) variety++;
-  if (/[A-Z]/.test(value)) variety++;
-  if (/[0-9]/.test(value)) variety++;
-  if (/[^A-Za-z0-9]/.test(value)) variety++;
 
+  const variety =
+    Number(checks.lowercase) +
+    Number(checks.uppercase) +
+    Number(checks.number) +
+    Number(checks.symbol);
   const longBonus = value.length >= 14 ? 1 : 0;
   const score = Math.min(4, variety + longBonus) as 0 | 1 | 2 | 3 | 4;
 
   if (variety < 3) {
     return {
       valid: false,
-      message:
-        "Add an uppercase letter, a number, or a symbol to make it stronger.",
+      message: null, // the checklist tells the user what's missing
       score: Math.max(1, score) as 0 | 1 | 2 | 3 | 4,
       label: "Weak",
+      checks,
     };
   }
 
@@ -104,5 +124,6 @@ export function validateSignupPassword(value: string): PasswordStrength {
     message: null,
     score,
     label: score >= 4 ? "Strong" : "Good",
+    checks,
   };
 }

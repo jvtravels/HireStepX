@@ -347,7 +347,12 @@ export function PasswordStrengthMeter({
   const barColor = colors[filled] ?? t.line;
   return (
     <div
-      aria-hidden="true"
+      // The bars are decorative; the label is announced via aria-live below.
+      role="meter"
+      aria-valuenow={filled}
+      aria-valuemin={0}
+      aria-valuemax={4}
+      aria-label={label ? `Password strength: ${label}` : "Password strength"}
       style={{
         display: "flex",
         alignItems: "center",
@@ -355,7 +360,7 @@ export function PasswordStrengthMeter({
         marginTop: 8,
       }}
     >
-      <div style={{ display: "flex", gap: 4, flex: 1 }}>
+      <div aria-hidden="true" style={{ display: "flex", gap: 4, flex: 1 }}>
         {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
@@ -371,6 +376,7 @@ export function PasswordStrengthMeter({
       </div>
       {label && (
         <span
+          aria-live="polite"
           style={{
             fontFamily: f.mono,
             fontSize: 10,
@@ -385,6 +391,96 @@ export function PasswordStrengthMeter({
         </span>
       )}
     </div>
+  );
+}
+
+/* ─── Password Checklist ─── */
+
+export interface PasswordChecklistProps {
+  checks: {
+    length: boolean;
+    lowercase: boolean;
+    uppercase: boolean;
+    number: boolean;
+    symbol: boolean;
+  };
+}
+
+export function PasswordChecklist({ checks }: PasswordChecklistProps) {
+  const items: { key: keyof PasswordChecklistProps["checks"]; label: string; required: boolean }[] = [
+    { key: "length", label: "At least 8 characters", required: true },
+    { key: "lowercase", label: "Lowercase letter", required: false },
+    { key: "uppercase", label: "Uppercase letter", required: false },
+    { key: "number", label: "Number", required: false },
+    { key: "symbol", label: "Symbol", required: false },
+  ];
+
+  return (
+    <ul
+      aria-label="Password requirements"
+      style={{
+        listStyle: "none",
+        padding: 0,
+        margin: "10px 0 0",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        rowGap: 4,
+        columnGap: 16,
+        fontFamily: f.sans,
+        fontSize: 12,
+      }}
+    >
+      {items.map(({ key, label, required }) => {
+        const ok = checks[key];
+        return (
+          <li
+            key={key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              color: ok ? t.success : required ? t.inkSoft : t.inkFaint,
+              transition: "color 160ms ease",
+            }}
+          >
+            <span aria-hidden="true" style={{ width: 12, display: "inline-flex" }}>
+              {ok ? (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M2 6.5L4.8 9.2 10 3.5"
+                    stroke={t.success}
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <circle
+                    cx="6"
+                    cy="6"
+                    r="4.5"
+                    stroke={required ? t.inkSoft : t.inkFaint}
+                    strokeWidth="1.2"
+                    fill="none"
+                  />
+                </svg>
+              )}
+            </span>
+            <span>
+              {label}
+              {!required && (
+                <span
+                  style={{ color: t.inkFaint, fontWeight: 400, marginLeft: 4 }}
+                >
+                  (recommended)
+                </span>
+              )}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

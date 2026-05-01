@@ -15,6 +15,7 @@ import {
   Spinner,
   EyeIcon,
   PasswordStrengthMeter,
+  PasswordChecklist,
 } from "./_fields";
 import { AUTH_STYLES } from "./_styles";
 import {
@@ -65,6 +66,8 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAttempted, setTermsAttempted] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
@@ -78,7 +81,11 @@ export default function Signup() {
   const emailV = validateEmail(email);
   const passwordV = validateSignupPassword(password);
   const canSubmit =
-    nameV.valid && emailV.valid && passwordV.valid && !loading;
+    nameV.valid &&
+    emailV.valid &&
+    passwordV.valid &&
+    termsAccepted &&
+    !loading;
 
   const nameError = nameTouched ? nameV.message : null;
   const emailError = emailTouched ? emailV.message : null;
@@ -159,6 +166,7 @@ export default function Signup() {
       setNameTouched(true);
       setEmailTouched(true);
       setPasswordTouched(true);
+      setTermsAttempted(true);
       if (!canSubmit) return;
 
       setError(null);
@@ -232,6 +240,10 @@ export default function Signup() {
             <Wordmark />
           </header>
           <main
+            // role=status + aria-live ensures SR users hear the transition
+            // from form → confirmation as a single coherent announcement.
+            role="status"
+            aria-live="polite"
             style={{
               flex: 1,
               display: "flex",
@@ -273,30 +285,48 @@ export default function Signup() {
                 <strong style={{ color: t.coal }}>{sanitizeEmail(email)}</strong>.
                 Click it to finish creating your account.
               </p>
-              <p
+
+              {/* Action row: change email + try again. Stacked, spaced. */}
+              <div
                 style={{
-                  fontFamily: f.mono,
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  color: t.inkFaint,
-                  marginTop: 36,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  marginTop: 32,
                 }}
               >
-                Didn't see it? Check spam, or{" "}
-                <a
-                  href="/signup"
+                <button
+                  type="button"
+                  onClick={() => setSignupSent(false)}
                   className="hsx-link-indigo"
                   style={{
+                    fontFamily: f.sans,
+                    fontSize: 14,
+                    fontWeight: 500,
                     color: t.indigo,
+                    background: "transparent",
+                    border: "none",
                     textDecoration: "none",
-                    fontWeight: 600,
+                    cursor: "pointer",
+                    padding: 0,
+                    alignSelf: "center",
                   }}
                 >
-                  try again
-                </a>
-                .
-              </p>
+                  Wrong email? Change it
+                </button>
+                <p
+                  style={{
+                    fontFamily: f.mono,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                    color: t.inkFaint,
+                    margin: 0,
+                  }}
+                >
+                  Didn't see it? Check spam folder.
+                </p>
+              </div>
             </div>
           </main>
         </div>
@@ -370,14 +400,16 @@ export default function Signup() {
               id="signup-heading"
               style={{
                 fontFamily: f.serif,
-                fontSize: "72px",
-                lineHeight: 1.05,
+                // Fluid hero — sized so "Practise like the real thing." fits
+                // on one line at desktop and wraps cleanly on mobile.
+                fontSize: "clamp(1.75rem, 4.2vw, 2.75rem)",
+                lineHeight: 1.1,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
                 textAlign: "center",
+                textWrap: "balance",
                 margin: 0,
                 color: t.coal,
-                whiteSpace: "nowrap",
               }}
             >
               Practise like the{" "}
@@ -568,14 +600,45 @@ export default function Signup() {
                   }
                 />
                 {password.length > 0 && (
-                  <PasswordStrengthMeter
-                    score={passwordV.score}
-                    label={passwordV.label}
-                  />
+                  <>
+                    <PasswordStrengthMeter
+                      score={passwordV.score}
+                      label={passwordV.label}
+                    />
+                    <PasswordChecklist checks={passwordV.checks} />
+                  </>
                 )}
               </div>
 
+              {/* Required: Terms acknowledgement (DPDP-friendly explicit consent) */}
               <div style={{ marginTop: 4 }}>
+                <Checkbox
+                  checked={termsAccepted}
+                  onChange={(v) => {
+                    setTermsAccepted(v);
+                    if (v && termsAttempted) setTermsAttempted(false);
+                  }}
+                  label="I agree to the Terms of Use and Privacy Policy"
+                  description="Required. You can review them in the footer."
+                />
+                {termsAttempted && !termsAccepted && (
+                  <p
+                    role="alert"
+                    style={{
+                      fontFamily: f.sans,
+                      fontSize: 12,
+                      color: t.error,
+                      margin: "6px 26px 0",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    Please accept the Terms to continue.
+                  </p>
+                )}
+              </div>
+
+              {/* Optional: Marketing opt-in (DPDP-compliant unchecked default) */}
+              <div>
                 <Checkbox
                   checked={marketingOptIn}
                   onChange={setMarketingOptIn}
