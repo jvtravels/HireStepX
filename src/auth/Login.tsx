@@ -538,6 +538,7 @@ export default function Login() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   marginTop: 2,
+                  minHeight: 20,
                 }}
               >
                 <Checkbox
@@ -553,10 +554,13 @@ export default function Login() {
                     trackAuth({ type: "login_forgot_password_clicked" })
                   }
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 20,
                     fontFamily: f.sans,
                     fontSize: 13,
                     fontWeight: 500,
-                    lineHeight: "16px",
+                    lineHeight: 1,
                     color: t.indigo,
                     textDecoration: "none",
                   }}
