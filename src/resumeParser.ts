@@ -300,6 +300,15 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   // be fully uppercase (allows "JAY VYAS"). Allows hyphenated and
   // apostrophe names ("Anne-Marie", "O'Brien"). Between 2 and 4 tokens.
   const namePattern = /^(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})){1,3}$/;
+  // Organisational / institutional keywords. If any token in the line
+  // matches one of these, reject the line as a name candidate — these
+  // are companies, universities, banks, etc. that often appear at the
+  // very top of a resume and slip past the all-caps allowance meant
+  // for actual names like "JAY VYAS". Word-boundary matched, case-
+  // insensitive. Without this guard, "DY PATIL UNIVERSITY",
+  // "INDIAN INSTITUTE OF TECHNOLOGY", "TATA CONSULTANCY SERVICES"
+  // all match namePattern and become the candidate's "name."
+  const orgKeywords = /\b(university|universities|college|colleges|institute|institution|institutes|academy|academies|school|society|consultancy|consulting|services|solutions|technologies|technology|systems|limited|ltd|pvt|private|inc|incorporated|corporation|corp|company|co|llc|bank|insurance|industries|industry|international|group|enterprises|global|hospital|clinic|foundation|trust|labs|laboratory|laboratories|department|ministry|government|govt|board|council|federation|association|iit|iim|iiit|nit|bits|pucsd|ifim|isb|nsut|dtu|vit|srm|amity|manipal|christ|jadavpur|jamia|aligarh|karnatak|gujarat|kerala|tamil|nadu|karnataka|maharashtra|delhi|mumbai|chennai|bangalore|hyderabad|kolkata|pune)\b/i;
   const locationLower = resolvedLocation.toLowerCase();
   let name = "";
   for (const line of lines.slice(0, 8)) {
@@ -316,6 +325,9 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
     if (/^[A-Z]{2,}$/.test(cleaned)) continue;
     // Must match the positive name shape.
     if (!namePattern.test(cleaned)) continue;
+    // Reject organisational / institutional lines (universities, companies,
+    // banks, etc.). This is the fix for the "DY PATIL UNIVERSITY" bug.
+    if (orgKeywords.test(cleaned)) continue;
     // Don't treat our own location string as a name.
     if (locationLower && cleaned.toLowerCase() === locationLower) continue;
     // Don't pick up single-city labels that happen to fit the pattern but

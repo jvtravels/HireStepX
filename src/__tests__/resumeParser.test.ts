@@ -44,6 +44,52 @@ describe("parseResumeData", () => {
     expect(result.name).toBe("John Smith");
   });
 
+  it("does NOT pick up a university header as the candidate's name", () => {
+    // Reported bug: "DY PATIL UNIVERSITY" was being treated as the
+    // candidate's name because the regex accepted any line of all-
+    // uppercase tokens. Real fix: deny org/institution keywords.
+    const text =
+      "DY PATIL UNIVERSITY\n" +
+      "Pune, Maharashtra\n" +
+      "Rahul Verma\n" +
+      "rahul@example.com\n" +
+      "Experience:\n- Built APIs at Razorpay";
+    const result = parseResumeData(text);
+    expect(result.name).toBe("Rahul Verma");
+    expect(result.name).not.toContain("UNIVERSITY");
+  });
+
+  it("does NOT pick up a company name (Tata Consultancy Services) as candidate name", () => {
+    const text =
+      "TATA CONSULTANCY SERVICES\n" +
+      "Mumbai, India\n" +
+      "Anita Sharma\n" +
+      "anita@example.com\n" +
+      "Experience:\n- 5 years as PM";
+    const result = parseResumeData(text);
+    expect(result.name).toBe("Anita Sharma");
+  });
+
+  it("still extracts an all-caps human name (JAY VYAS)", () => {
+    const text =
+      "JAY VYAS\n" +
+      "Bangalore\n" +
+      "jay@example.com\n" +
+      "Experience: PM at Razorpay";
+    const result = parseResumeData(text);
+    expect(result.name).toBe("JAY VYAS");
+  });
+
+  it("rejects 'Indian Institute of Technology' header", () => {
+    const text =
+      "INDIAN INSTITUTE OF TECHNOLOGY DELHI\n" +
+      "Priya Krishnan\n" +
+      "priya@example.com\n" +
+      "Education: B.Tech";
+    const result = parseResumeData(text);
+    expect(result.name).toBe("Priya Krishnan");
+  });
+
   it("extracts email address", () => {
     const result = parseResumeData("John Smith\njohn@example.com\nExperience");
     expect(result.email).toBe("john@example.com");
