@@ -98,6 +98,38 @@ function RadioDot({ active }: { active: boolean }) {
   );
 }
 
+/** Render a Unix-ms timestamp as a relative phrase ("3h ago"). */
+function formatRelative(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 60_000) return "Just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d ago`;
+  return new Date(ts).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** Best-effort UA → "Browser on OS" label. Matches major browsers + OS
+    so the audit list reads as something the user recognizes. */
+function parseUserAgent(ua: string): string {
+  if (!ua) return "Unknown device";
+  let browser = "Browser";
+  if (/Edg\//i.test(ua)) browser = "Edge";
+  else if (/OPR\//i.test(ua)) browser = "Opera";
+  else if (/Chrome\//i.test(ua)) browser = "Chrome";
+  else if (/Firefox\//i.test(ua)) browser = "Firefox";
+  else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = "Safari";
+  let os = "Unknown";
+  if (/Windows NT/i.test(ua)) os = "Windows";
+  else if (/Mac OS X/i.test(ua)) os = "Mac";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+  else if (/Linux/i.test(ua)) os = "Linux";
+  return `${browser} on ${os}`;
+}
+
 export function Divider() {
   return (
     <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.border}, transparent)`, margin: "28px 0" }} />
@@ -168,6 +200,13 @@ export interface AccountSectionProps {
   signOutOthersDone: boolean;
   signOutOthersError: string | null;
   handleSignOutOtherDevices: () => void;
+  // Recent devices history (last 5 logins). Read-only audit list.
+  recentDevices: Array<{
+    id: string;
+    ua?: string;
+    at?: number;
+    isCurrent: boolean;
+  }>;
   // Blur handler (auto-save)
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
 }
@@ -180,6 +219,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     resetLoading, resetSent, handlePasswordReset,
     signOutOthersLoading, signOutOthersDone, signOutOthersError,
     handleSignOutOtherDevices,
+    recentDevices,
     focusOut,
   } = props;
 
@@ -290,6 +330,95 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
       </div>
 
       <Divider />
+
+      {/* Recent device history — read-only audit list. Each entry is a
+          login event recorded in user_metadata.recent_devices. The
+          first entry (isCurrent) is the device this tab is on. */}
+      {recentDevices.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <span
+            style={{
+              fontFamily: font.ui,
+              fontSize: 12,
+              fontWeight: 600,
+              color: c.stone,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              display: "block",
+              marginBottom: 10,
+            }}
+          >
+            Recent devices
+          </span>
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {recentDevices.map((d) => {
+              const seenAgo = d.at ? formatRelative(d.at) : "Unknown";
+              const label = parseUserAgent(d.ua || "");
+              return (
+                <li
+                  key={d.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 14px",
+                    borderRadius: 10,
+                    background: d.isCurrent
+                      ? "rgba(122,158,126,0.06)"
+                      : "rgba(245,242,237,0.03)",
+                    border: `1px solid ${d.isCurrent ? "rgba(122,158,126,0.18)" : c.border}`,
+                  }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                    <span
+                      style={{
+                        fontFamily: font.ui,
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: c.ivory,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {label}
+                    </span>
+                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
+                      {d.isCurrent ? "This device · " : ""}
+                      {seenAgo}
+                    </span>
+                  </div>
+                  {d.isCurrent && (
+                    <span
+                      style={{
+                        fontFamily: font.mono,
+                        fontSize: 9,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        color: c.sage,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        background: "rgba(122,158,126,0.08)",
+                      }}
+                    >
+                      Current
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Sessions — sign out every other device that's signed in */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

@@ -33,6 +33,65 @@ export function validatePassword(value: string): FieldValidation {
   return { valid: true, message: null };
 }
 
+/* ─── Have I Been Pwned password breach check ───
+   k-anonymous lookup: only the first 5 hex chars of the SHA-1 hash
+   leave the browser. The full hash never reaches HIBP. */
+
+async function sha1HexUpper(str: string): Promise<string> {
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-1", enc);
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+}
+
+export interface BreachResult {
+  /** True if the password appears in any HIBP-indexed breach. */
+  breached: boolean;
+  /** How many times this password has been seen across breaches. */
+  count: number;
+}
+
+/** Check if a password has appeared in known data breaches.
+    Fails open — if the API is unreachable or errors, returns
+    `{ breached: false, count: 0 }` rather than blocking signup. */
+export async function checkPasswordBreached(
+  password: string,
+): Promise<BreachResult> {
+  // No point checking trivially-bad passwords — they fail validateSignupPassword
+  // anyway and we shouldn't waste a network call.
+  if (password.length < 8) return { breached: false, count: 0 };
+  try {
+    const hash = await sha1HexUpper(password);
+    const prefix = hash.slice(0, 5);
+    const suffix = hash.slice(5);
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 4000);
+    const res = await fetch(
+      `https://api.pwnedpasswords.com/range/${prefix}`,
+      {
+        // "Add-Padding: true" pads the response to a fixed size to
+        // prevent network observers from inferring how many breach hits
+        // exist for this prefix.
+        headers: { "Add-Padding": "true" },
+        signal: ac.signal,
+      },
+    );
+    clearTimeout(t);
+    if (!res.ok) return { breached: false, count: 0 };
+    const text = await res.text();
+    for (const line of text.split("\n")) {
+      const [s, c] = line.trim().split(":");
+      if (s === suffix) return { breached: true, count: parseInt(c, 10) || 0 };
+    }
+    return { breached: false, count: 0 };
+  } catch {
+    // Network error / timeout / API down — fail open.
+    return { breached: false, count: 0 };
+  }
+}
+
 /** Sanitize an email for submission. Trims whitespace; lowercases the
     domain (RFC 5321 §2.3.11). The local part is left as-is to preserve
     case-sensitive providers (rare but legal). */

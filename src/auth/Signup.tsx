@@ -19,6 +19,7 @@ import {
 } from "./_fields";
 import { AUTH_STYLES } from "./_styles";
 import {
+  checkPasswordBreached,
   passwordHasEdgeWhitespace,
   sanitizeEmail,
   validateEmail,
@@ -26,6 +27,7 @@ import {
   validateSignupPassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import TurnstileWidget from "./_turnstile";
 import {
   buildAuthLink,
   computeAuthRedirect,
@@ -65,6 +67,9 @@ export default function Signup() {
   // (visually + screen-reader hidden, tabIndex -1). If it has a value at
   // submit, we silently no-op the request.
   const [honeypot, setHoneypot] = useState("");
+  // Cloudflare Turnstile token — empty when widget hasn't issued one yet
+  // (or when NEXT_PUBLIC_TURNSTILE_SITE_KEY isn't configured in dev).
+  const [turnstileToken, setTurnstileToken] = useState("");
   const isMounted = useIsMounted();
   // Suggest typo correction (e.g. "rahul@gmial.com" → "rahul@gmail.com").
   // Only computed when the user has touched the field and value is non-empty.
@@ -231,6 +236,45 @@ export default function Signup() {
 
       setError(null);
       setLoading(true);
+
+      // Have I Been Pwned check — k-anonymous, only first 5 SHA-1 chars
+      // leave the browser. Fails open if HIBP is unreachable.
+      const breach = await checkPasswordBreached(password);
+      if (!isMounted.current) return;
+      if (breach.breached) {
+        setError(
+          breach.count > 1000
+            ? `This password has been seen in ${breach.count.toLocaleString()} known data breaches. Choose something else for safety.`
+            : "This password has appeared in a known breach. Choose something else for safety.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Cloudflare Turnstile — verify the bot-check token before
+      // touching Supabase. Fails open if NEXT_PUBLIC_TURNSTILE_SITE_KEY
+      // isn't configured (the widget grants empty token in that case).
+      try {
+        const tsRes = await fetch("/api/send-welcome", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "turnstile-verify",
+            email: sanitizeEmail(email),
+            turnstileToken,
+          }),
+        });
+        if (!tsRes.ok) {
+          if (!isMounted.current) return;
+          setError("Bot check failed. Please retry.");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Network error on the verifier — fail open so a flaky check
+        // doesn't block legit users.
+      }
+
       const cleanEmail = sanitizeEmail(email);
       trackAuth({ type: "login_method_selected", method: "email" });
       trackAuth({ type: "login_submitted", method: "email" });
@@ -879,6 +923,17 @@ export default function Signup() {
                   </p>
                 )}
               </div>
+
+              {/* Cloudflare Turnstile — invisible bot check. Renders
+                  nothing visible when configured as size="invisible";
+                  no DOM at all when NEXT_PUBLIC_TURNSTILE_SITE_KEY
+                  is missing (dev / preview). */}
+              <TurnstileWidget
+                onToken={(tok) => setTurnstileToken(tok)}
+                onError={() => setTurnstileToken("")}
+                onExpired={() => setTurnstileToken("")}
+                size="invisible"
+              />
 
               {(() => {
                 // Three states: enabled CTA, in-flight (loading), or

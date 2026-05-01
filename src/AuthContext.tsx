@@ -703,8 +703,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Supabase returns fake success for existing emails (email enumeration protection).
       // Detect this: if user.identities is empty, the email already exists.
-      if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
-        return { success: false, error: "User already registered" };
+      // OWASP-recommended pattern: don't leak existence to the client.
+      // Send the user an "you already have an account" email instead of a
+      // verify email, and return success so the UI shows the same
+      // "Check your email" state regardless of whether the account is new.
+      const isExistingEmail =
+        data?.user &&
+        (!data.user.identities || data.user.identities.length === 0);
+      if (isExistingEmail) {
+        // Fire-and-forget — non-blocking. Server routes to the
+        // "existing-account" template via the action flag.
+        fetch("/api/send-welcome", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "signup-attempted-existing",
+            email: email.toLowerCase().trim(),
+            name,
+          }),
+        }).catch(() => {});
+        track("signup_attempted_existing");
+        // Return success to client — the UI shows the same "Check your
+        // email" screen, the user gets either a verification email (new
+        // account) or a "you already have an account, sign in here"
+        // email (existing account). Either way, attacker can't tell.
+        return { success: true };
       }
 
       // Record signup attempt server-side (fire-and-forget)
@@ -858,8 +881,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const existingServerToken = data?.user?.user_metadata?.active_device_token;
     const deviceToken = generateDeviceToken();
     storeDeviceToken(deviceToken);
+    // Build / update recent_devices history (max 5 entries, newest first).
+    // This is purely audit data for the Settings → Recent activity list;
+    // single-device enforcement still uses active_device_token alone.
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "";
+    const prevDevices = (data?.user?.user_metadata?.recent_devices as Array<{ id: string; ua?: string; at?: number }> | undefined) || [];
+    const filtered = prevDevices.filter((d) => d?.id && d.id !== deviceToken);
+    const recentDevices = [
+      { id: deviceToken, ua, at: Date.now() },
+      ...filtered,
+    ].slice(0, 5);
     try {
-      await client.auth.updateUser({ data: { active_device_token: deviceToken } });
+      await client.auth.updateUser({
+        data: { active_device_token: deviceToken, recent_devices: recentDevices },
+      });
       // Refresh so THIS tab's next getSession() returns metadata containing
       // the new token — eliminates the race where our own check would see
       // the stale pre-update snapshot.

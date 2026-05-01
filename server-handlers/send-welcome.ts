@@ -3,6 +3,7 @@
 /* Supports actions: "verify" (default), "reset", "password-changed", "verify-reminder" */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { verifyTurnstile } from "./_turnstile-verify";
 import { createHmac, randomBytes } from "crypto";
 import { resolve } from "dns/promises";
 
@@ -646,6 +647,27 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
     return res.status(200).json({ ok: true });
   }
 
+  if (action === "turnstile-verify") {
+    // Cloudflare Turnstile invisible CAPTCHA — verifies bot status.
+    // Token comes from the client widget. Fails open if
+    // TURNSTILE_SECRET_KEY isn't set (dev/preview without env vars).
+    const turnstileToken =
+      typeof req.body?.turnstileToken === "string"
+        ? req.body.turnstileToken
+        : "";
+    const clientIp =
+      (req.headers["cf-connecting-ip"] as string | undefined) ||
+      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0] ||
+      undefined;
+    const result = await verifyTurnstile(turnstileToken, clientIp);
+    if (!result.ok) {
+      return res
+        .status(403)
+        .json({ ok: false, error: "Bot check failed. Please retry." });
+    }
+    return res.status(200).json({ ok: true });
+  }
+
   if (action === "fail") {
     const ipCount = await incrRedisKey(ipKey, AUTH_LOCKOUT_SECONDS);
     const emailCount = emailKey ? await incrRedisKey(emailKey, AUTH_LOCKOUT_SECONDS) : 0;
@@ -771,7 +793,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // MX record validation — check domain can receive email
   // Skip for: reset (don't reveal if email exists), password-changed (notification only), verify-reminder
-  if (!["reset", "password-changed", "verify-reminder", "new_device_login"].includes(action)) {
+  if (!["reset", "password-changed", "verify-reminder", "new_device_login", "signup-attempted-existing"].includes(action)) {
     const hasMx = await validateMxRecord(normalizedEmail);
     if (!hasMx) {
       return res.status(400).json({ error: "This email domain does not appear to accept mail. Please use a valid email address." });
@@ -791,5 +813,91 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (action === "verify-reminder") {
     return handleVerifyReminder(req, res, normalizedEmail, name);
   }
+  if (action === "signup-attempted-existing") {
+    return handleSignupAttemptedExisting(req, res, normalizedEmail, name);
+  }
   return handleVerify(req, res, normalizedEmail, name, userId);
+}
+
+/* ─── handleSignupAttemptedExisting ──────────────────────────────────────
+   Triggered when a user runs the signup flow with an email that already
+   has an account. We DON'T tell the client (email enumeration defense).
+   Instead we send a "looks like you already have an account" email so
+   the legit user gets a useful pointer back to login/reset. */
+async function handleSignupAttemptedExisting(
+  req: VercelRequest,
+  res: VercelResponse,
+  email: string,
+  name: string,
+) {
+  if (await checkRateLimit(req, "signup-attempted-existing", 5)) {
+    return res
+      .status(429)
+      .json({ error: "Too many requests. Try again later." });
+  }
+  if (!RESEND_API_KEY) {
+    // Don't leak failure to the client — return 200.
+    return res.status(200).json({ ok: true, skipped: true });
+  }
+  const safeName = escapeHtml(name || "there");
+  try {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 10_000);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      signal: ac.signal,
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [email],
+        subject: "You already have a HireStepX account",
+        html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#FAF7F0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF7F0;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;border:1px solid #EBE5D2;overflow:hidden;">
+        <tr><td style="padding:32px 40px 16px;">
+          <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#0E0C08;">Hi ${safeName},</h1>
+          <p style="margin:0 0 16px;font-size:14px;color:#6E6759;line-height:1.6;">
+            Someone (probably you) just tried to sign up at HireStepX with this email — but you already have an account here.
+          </p>
+          <p style="margin:0 0 24px;font-size:14px;color:#6E6759;line-height:1.6;">
+            If it was you, head to login. If you don't remember your password, reset it.
+          </p>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding-right:8px;">
+                <a href="${APP_URL}/login" style="display:inline-block;padding:12px 22px;background:#312E81;color:#FAF7F0;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;">Log in</a>
+              </td>
+              <td>
+                <a href="${APP_URL}/forgot-password" style="display:inline-block;padding:12px 22px;background:#FAF7F0;color:#312E81;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;border:1px solid #312E81;">Reset password</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:24px 0 0;font-size:12px;color:#A39C8B;line-height:1.5;">
+            If it wasn't you who tried to sign up, you can safely ignore this email — your account hasn't changed.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      }),
+    });
+    clearTimeout(t);
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.warn(
+      "[signup-attempted-existing] email send failed:",
+      err instanceof Error ? err.message : "Unknown",
+    );
+    // Don't leak failure to client.
+    return res.status(200).json({ ok: true });
+  }
 }

@@ -27,6 +27,7 @@ import {
 } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 import {
+  checkPasswordBreached,
   passwordHasEdgeWhitespace,
   validateSignupPassword,
 } from "./auth/_validation";
@@ -221,6 +222,18 @@ export default function ResetPassword() {
     }
 
     setLoading(true);
+
+    // Have I Been Pwned check — refuse passwords seen in breaches.
+    const breach = await checkPasswordBreached(password);
+    if (breach.breached) {
+      setError(
+        breach.count > 1000
+          ? `This password has been seen in ${breach.count.toLocaleString()} known data breaches. Choose something else for safety.`
+          : "This password has appeared in a known breach. Choose something else for safety.",
+      );
+      setLoading(false);
+      return;
+    }
     // Wrap each Supabase call in a 15s timeout race so a hung network
     // request can't leave the user stuck forever on "Updating..."
     // Pattern matches CLAUDE.md guidance for getSession (browser

@@ -17,12 +17,16 @@ export function mapAuthError(raw: string | undefined): string {
   ) {
     return "Email or password is incorrect. Try again, or reset your password.";
   }
+  // Note: AuthContext.signup() now intercepts the "already exists"
+  // case BEFORE we reach this mapper, returns success, and triggers a
+  // separate "you already have an account" email — so the client never
+  // sees this branch on signup. Kept for legacy / OAuth pathways.
   if (
     msg.includes("already registered") ||
     msg.includes("already exists") ||
     msg.includes("user already")
   ) {
-    return "An account with this email already exists. Try logging in instead.";
+    return "We couldn't complete signup. If you've signed up before, check your email or try logging in.";
   }
   if (msg.includes("email not confirmed")) {
     return "Please verify your email first. Check your inbox for the confirmation link.";

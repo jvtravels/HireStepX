@@ -63,6 +63,32 @@ export default function SettingsPage() {
   const [signOutOthersError, setSignOutOthersError] = useState<string | null>(
     null,
   );
+  // Recent devices read from user_metadata. The first entry matches
+  // the current active_device_token (this is the device we're on now).
+  const [recentDevices, setRecentDevices] = useState<
+    Array<{ id: string; ua?: string; at?: number; isCurrent: boolean }>
+  >([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const client = await getSupabase();
+        const { data, error } = await client.auth.getUser();
+        if (cancelled || error || !data?.user) return;
+        const meta = data.user.user_metadata as
+          | { recent_devices?: Array<{ id: string; ua?: string; at?: number }>; active_device_token?: string }
+          | undefined;
+        const list = meta?.recent_devices || [];
+        const current = meta?.active_device_token;
+        setRecentDevices(
+          list.map((d) => ({ ...d, isCurrent: d.id === current })),
+        );
+      } catch {
+        /* non-fatal — devices list just stays empty */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Export
   const [exporting, setExporting] = useState(false);
@@ -234,6 +260,7 @@ export default function SettingsPage() {
           signOutOthersDone={signOutOthersDone}
           signOutOthersError={signOutOthersError}
           handleSignOutOtherDevices={handleSignOutOtherDevices}
+          recentDevices={recentDevices}
           focusOut={focusOut}
         />
       )}

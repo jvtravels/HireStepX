@@ -13,6 +13,7 @@ import { AUTH_STYLES } from "./_styles";
 import { sanitizeEmail, validateEmail } from "./_validation";
 import { detectEmailProvider, mapAuthError, useIsMounted } from "./_shell";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import TurnstileWidget from "./_turnstile";
 
 const EMAIL_MAX_LENGTH = 320;
 // 60s matches Stripe / Linear / Notion resend cooldowns.
@@ -36,6 +37,7 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const isMounted = useIsMounted();
+  const [turnstileToken, setTurnstileToken] = useState("");
 
   const emailV = validateEmail(email);
   const canSubmit = emailV.valid && !loading;
@@ -79,6 +81,28 @@ export default function ForgotPassword() {
       setError(null);
       setLoading(true);
       const cleanEmail = sanitizeEmail(email);
+
+      // Turnstile bot check — fail open if env var missing.
+      try {
+        const tsRes = await fetch("/api/send-welcome", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "turnstile-verify",
+            email: cleanEmail,
+            turnstileToken,
+          }),
+        });
+        if (!tsRes.ok) {
+          if (!isMounted.current) return;
+          setError("Bot check failed. Please retry.");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        /* fail open */
+      }
+
       try {
         const result = await submitReset(cleanEmail);
         if (!isMounted.current) return;
@@ -96,7 +120,7 @@ export default function ForgotPassword() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, submitReset, isMounted],
+    [canSubmit, email, submitReset, isMounted, turnstileToken],
   );
 
   const handleResend = useCallback(async () => {
@@ -521,6 +545,12 @@ export default function ForgotPassword() {
                     errorMessage={emailError}
                   />
 
+                  <TurnstileWidget
+                    onToken={(tok) => setTurnstileToken(tok)}
+                    onError={() => setTurnstileToken("")}
+                    onExpired={() => setTurnstileToken("")}
+                    size="invisible"
+                  />
                   {(() => {
                     const isGhost = !canSubmit && !loading;
                     return (
