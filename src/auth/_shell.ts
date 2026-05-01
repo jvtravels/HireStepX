@@ -164,6 +164,45 @@ export function suggestEmailCorrection(value: string): string | null {
   return null;
 }
 
+/* ─── Webmail provider detection ─── */
+
+export interface EmailProvider {
+  name: string;
+  url: string;
+}
+
+/** Detect the user's webmail provider from their email domain so we
+    can deep-link them to the right inbox tab after a verification email
+    is sent. Returns null for unsupported / corporate domains. */
+export function detectEmailProvider(email: string): EmailProvider | null {
+  const at = email.lastIndexOf("@");
+  if (at < 0) return null;
+  const domain = email.slice(at + 1).toLowerCase();
+  if (domain.includes("gmail") || domain.includes("googlemail")) {
+    return { name: "Gmail", url: "https://mail.google.com" };
+  }
+  if (
+    domain.includes("outlook") ||
+    domain.includes("hotmail") ||
+    domain.includes("live")
+  ) {
+    return { name: "Outlook", url: "https://outlook.live.com" };
+  }
+  if (domain.includes("yahoo")) {
+    return { name: "Yahoo", url: "https://mail.yahoo.com" };
+  }
+  if (domain.includes("proton")) {
+    return { name: "Proton", url: "https://mail.proton.me" };
+  }
+  if (domain.includes("icloud") || domain.includes("me.com")) {
+    return { name: "iCloud", url: "https://www.icloud.com/mail" };
+  }
+  if (domain.includes("rediffmail")) {
+    return { name: "Rediffmail", url: "https://mail.rediff.com" };
+  }
+  return null;
+}
+
 /* ─── Async-safe setter helper ─── */
 
 export function useSafeAsync<T extends (...args: never[]) => Promise<unknown>>(

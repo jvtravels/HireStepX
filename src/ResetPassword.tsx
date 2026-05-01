@@ -200,11 +200,28 @@ export default function ResetPassword() {
     }
 
     setLoading(true);
+    // Wrap each Supabase call in a 15s timeout race so a hung network
+    // request can't leave the user stuck forever on "Updating..."
+    // Pattern matches CLAUDE.md guidance for getSession (browser
+    // extension fetch hooks are a known cause of indefinite hangs).
+    const withTimeout = <T,>(p: Promise<T>, ms: number, label: string) =>
+      Promise.race<T>([
+        p,
+        new Promise<T>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+            ms,
+          ),
+        ),
+      ]);
     try {
       const client = await getSupabase();
-      const {
-        data: { session: currentSession },
-      } = await client.auth.getSession();
+      const sessionResult = await withTimeout(
+        client.auth.getSession(),
+        8000,
+        "getSession",
+      );
+      const currentSession = sessionResult.data.session;
 
       // Last-3 password reuse rejection (defence-in-depth; Supabase handles
       // canonical password hashing server-side).
@@ -224,14 +241,18 @@ export default function ResetPassword() {
 
       const updatedHashes = [newHash, ...passwordHashes].slice(0, 3);
 
-      const { error: updateError } = await client.auth.updateUser({
-        password,
-        data: {
-          custom_email_verified: true,
-          password_reset_used_at: serverTimestamp,
-          password_hashes: updatedHashes,
-        },
-      });
+      const { error: updateError } = await withTimeout(
+        client.auth.updateUser({
+          password,
+          data: {
+            custom_email_verified: true,
+            password_reset_used_at: serverTimestamp,
+            password_hashes: updatedHashes,
+          },
+        }),
+        15000,
+        "updateUser",
+      );
 
       if (updateError) {
         setError(updateError.message);
@@ -262,8 +283,17 @@ export default function ResetPassword() {
 
       setSuccess(true);
       setTimeout(() => router.push("/login"), 4000);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      // Log to console so we can debug what's hanging in production.
+      console.error("[reset-password] update failed:", msg, err);
+      if (msg.includes("timed out")) {
+        setError(
+          "This is taking longer than expected. Check your connection and try again.",
+        );
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

@@ -29,6 +29,7 @@ import { trackAuth, loginViewedEvent } from "./_analytics";
 import {
   buildAuthLink,
   computeAuthRedirect,
+  detectEmailProvider,
   mapAuthError,
   suggestEmailCorrection,
   useIsMounted,
@@ -305,19 +306,63 @@ export default function Signup() {
                 Click it to finish creating your account.
               </p>
 
-              {/* Action row: change email + try again. Stacked, spaced. */}
+              {/* Action row: webmail deep link + change email + try again. */}
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 12,
+                  gap: 14,
                   marginTop: 32,
+                  alignItems: "center",
                 }}
               >
+                {(() => {
+                  const provider = detectEmailProvider(email);
+                  if (!provider) return null;
+                  return (
+                    <a
+                      href={provider.url}
+                      target="_blank"
+                      rel="noopener"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        fontFamily: f.sans,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: t.cream,
+                        background: t.indigo,
+                        border: "1px solid transparent",
+                        borderRadius: 10,
+                        padding: "12px 20px",
+                        textDecoration: "none",
+                        boxShadow: shadows.cta,
+                        minWidth: 200,
+                      }}
+                    >
+                      Open {provider.name}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M7 17L17 7" />
+                        <polyline points="7 7 17 7 17 17" />
+                      </svg>
+                    </a>
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() => setSignupSent(false)}
-                  className="hsx-link-indigo"
                   style={{
                     fontFamily: f.sans,
                     fontSize: 14,
@@ -328,10 +373,11 @@ export default function Signup() {
                     textDecoration: "none",
                     cursor: "pointer",
                     padding: 0,
-                    alignSelf: "center",
                   }}
                 >
-                  Wrong email? Change it
+                  <span className="hsx-link-indigo">
+                    Wrong email? Change it
+                  </span>
                 </button>
                 <p
                   style={{

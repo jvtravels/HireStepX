@@ -12,7 +12,7 @@ import { tokens as t, fonts as f, shadows } from "./_tokens";
 import { Field, Wordmark, Spinner } from "./_fields";
 import { AUTH_STYLES } from "./_styles";
 import { sanitizeEmail, validateEmail } from "./_validation";
-import { mapAuthError, useIsMounted } from "./_shell";
+import { detectEmailProvider, mapAuthError, useIsMounted } from "./_shell";
 import { trackAuth, loginViewedEvent } from "./_analytics";
 
 const EMAIL_MAX_LENGTH = 320;
@@ -61,24 +61,7 @@ export default function ForgotPassword() {
   }, []);
 
   // Provider-aware webmail link so users land in the right inbox tab.
-  const provider = useMemo(() => {
-    const at = email.lastIndexOf("@");
-    if (at < 0) return null;
-    const domain = email.slice(at + 1).toLowerCase();
-    if (domain.includes("gmail") || domain.includes("googlemail"))
-      return { name: "Gmail", url: "https://mail.google.com" };
-    if (
-      domain.includes("outlook") ||
-      domain.includes("hotmail") ||
-      domain.includes("live")
-    )
-      return { name: "Outlook", url: "https://outlook.live.com" };
-    if (domain.includes("yahoo"))
-      return { name: "Yahoo", url: "https://mail.yahoo.com" };
-    if (domain.includes("proton"))
-      return { name: "Proton", url: "https://mail.proton.me" };
-    return null;
-  }, [email]);
+  const provider = useMemo(() => detectEmailProvider(email), [email]);
 
   const submitReset = useCallback(
     async (cleanEmail: string) => {
@@ -362,7 +345,6 @@ export default function ForgotPassword() {
                     setSent(false);
                     setCooldown(0);
                   }}
-                  className="hsx-link-indigo"
                   style={{
                     width: "100%",
                     fontFamily: f.sans,
@@ -377,7 +359,10 @@ export default function ForgotPassword() {
                     textDecoration: "none",
                   }}
                 >
-                  Wrong email? Try a different one
+                  {/* Underline scoped to text width, not full button width */}
+                  <span className="hsx-link-indigo">
+                    Wrong email? Try a different one
+                  </span>
                 </button>
 
                 <div
