@@ -113,8 +113,10 @@ describe("Flow 1: Onboarding", () => {
         ,
       );
     });
-    expect(screen.getAllByText(/your resume/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Drop your resume/i)).toBeInTheDocument();
+    // Heading text is split across an <em> for the italic-copper accent;
+    // matching by accessible name walks the full textContent, so it still
+    // catches the phrase "Drop your resume" regardless of internal markup.
+    expect(screen.getByRole("heading", { name: /Drop your resume/i })).toBeInTheDocument();
   });
 
   it("has progress indicators", async () => {

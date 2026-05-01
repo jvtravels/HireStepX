@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { c, font } from "./tokens";
+import { font } from "./tokens";
 import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
 import type { ResumeProfile } from "./dashboardData";
@@ -622,55 +622,32 @@ export default function Onboarding() {
     <div style={{ minHeight: "100vh", background: ot.cream, display: "flex", flexDirection: "column", position: "relative", color: ot.coal }}>
       {user && !user.emailVerified && <EmailVerificationBanner email={user.email} />}
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
-        @keyframes scoreReveal {
-          0%   { transform: scale(0.85); filter: brightness(1.1); box-shadow: 0 0 0 0 rgba(212,179,127,0.45); }
-          50%  { transform: scale(1.04); filter: brightness(1.25); box-shadow: 0 0 0 10px rgba(212,179,127,0); }
-          100% { transform: scale(1); filter: brightness(1); box-shadow: 0 0 0 0 rgba(212,179,127,0); }
-        }
-        @keyframes cardMorphIn {
-          0%   { opacity: 0; transform: translateY(4px); filter: blur(3px); }
-          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
-        }
-        .ob-score-reveal { animation: scoreReveal 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both; }
-        .ob-card-morph { animation: cardMorphIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        /* Removed: fake progressFill animation (18s stall → 92%) — replaced
-           by honest elapsed-seconds counter in ResumeLoadingState. */
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .skeleton-line { background: linear-gradient(90deg, rgba(245,242,237,0.03) 25%, rgba(245,242,237,0.07) 50%, rgba(245,242,237,0.03) 75%); background-size: 200% 100%; animation: shimmer 1.5s ease-in-out infinite; border-radius: 6px; }
-        .fade-up-1 { animation: fadeUp 0.35s ease-out 0ms both; }
-        .fade-up-2 { animation: fadeUp 0.35s ease-out 80ms both; }
-        .fade-up-3 { animation: fadeUp 0.35s ease-out 160ms both; }
+        /* Toast slide-up — used by the draftToast + autosave flash below.
+           Cream-themed; the dark-themed legacy keyframes have been pruned
+           after the cream-redesign deploy. */
         @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .ob-card { background: rgba(17,17,19,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(245,242,237,0.06); }
-        .ob-drop:hover { border-color: rgba(212,179,127,0.35) !important; background: rgba(212,179,127,0.02) !important; }
-        @media (max-width: 768px) {
-          .ob-s1-split { flex-direction: column !important; }
-          .ob-s1-left { max-width: 100% !important; }
-          .ob-s1-profile-grid { grid-template-columns: 1fr !important; }
-          .ob-s1-sg-grid { grid-template-columns: 1fr !important; }
-          .ob-s1-header { flex-direction: column !important; }
-          .ob-s1-header-text { max-width: 100% !important; }
-          .ob-s1-header-actions { position: static !important; margin-top: 8px !important; }
-          .ob-s1-name-score { grid-template-columns: 1fr !important; }
-          /* Mobile density: show only Skills by default; collapse rest behind details */
-          .ob-mobile-collapse { display: none !important; }
-          .ob-mobile-expanded .ob-mobile-collapse { display: flex !important; }
-          .ob-mobile-expanded .ob-card.ob-mobile-collapse { display: block !important; }
-          .ob-see-more { display: flex !important; }
-          .ob-footer-ctas { flex-direction: column-reverse !important; }
-          .ob-footer-ctas button { width: 100% !important; }
-        }
-        @media (min-width: 769px) { .ob-see-more { display: none !important; } }
+
+        /* Keeps the inner page content scrolling within the viewport on
+           short laptops; matches the production footer's responsive needs. */
         @media (max-height: 700px) {
           .ob-content-area { padding-top: 16px !important; padding-bottom: 16px !important; }
+        }
+        @media (max-width: 768px) {
+          .ob-footer-ctas { flex-direction: column-reverse !important; }
+          .ob-footer-ctas button { width: 100% !important; }
         }
       `}</style>
 
       <TopBar
-        step={1} emailUnverified={!!(user && !user.emailVerified)}
+        // 1 = upload, 2 = analyse, 3 = review. Drives the Stepper highlight.
+        step={
+          aiPhase === "analyzing" || resumeParsing
+            ? 2
+            : resumeParsed && aiPhase === "done"
+              ? 3
+              : 1
+        }
+        emailUnverified={!!(user && !user.emailVerified)}
         onNavigateHome={() => router.push("/")}
         onStepClick={() => {}}
         onLogout={async () => { await logout(); router.push("/"); }}
@@ -744,15 +721,14 @@ export default function Onboarding() {
             position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
             zIndex: 100, maxWidth: "calc(100vw - 32px)",
             padding: "12px 18px", borderRadius: 10,
-            background: "rgba(17,17,19,0.95)", border: `1px solid rgba(212,179,127,0.25)`,
-            backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
+            background: ot.white, border: `1px solid ${ot.line}`,
+            boxShadow: "0 10px 40px rgba(20,17,10,0.16)",
             display: "flex", alignItems: "center", gap: 10,
-            fontFamily: font.ui, fontSize: 13, color: c.chalk,
+            fontFamily: font.ui, fontSize: 13, color: ot.coal,
             animation: "toastIn 0.25s ease-out",
           }}
         >
-          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ot.success} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           {draftToast}
         </div>
       )}
@@ -767,9 +743,9 @@ export default function Onboarding() {
           style={{
             position: "fixed", bottom: 16, right: 16, zIndex: 99,
             padding: "6px 12px", borderRadius: 8,
-            background: "rgba(122,158,126,0.1)", border: `1px solid rgba(122,158,126,0.25)`,
+            background: ot.success100, border: `1px solid rgba(21, 128, 61, 0.25)`,
             display: "flex", alignItems: "center", gap: 6,
-            fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.sage,
+            fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: ot.success,
             animation: "toastIn 0.2s ease-out",
           }}
         >
