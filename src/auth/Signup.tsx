@@ -35,7 +35,9 @@ import {
 } from "./_shell";
 
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
-const NAME_MAX_LENGTH = 64;
+// Matches the server-side max in AuthContext.signup() so the input
+// can't even hold an over-length name (avoids "looks valid until submit").
+const NAME_MAX_LENGTH = 48;
 const EMAIL_MAX_LENGTH = 320;
 const PASSWORD_MAX_LENGTH = 256;
 

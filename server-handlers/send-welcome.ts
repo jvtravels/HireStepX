@@ -433,7 +433,22 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
   }
 
   if (!RESEND_API_KEY) {
-    console.error("RESEND_API_KEY not configured, skipping verification email");
+    // CRITICAL: signup will appear successful (200 + skipped:true) but no
+    // verification email goes out → user is permanently stuck unverified.
+    // Loud log + 500 in production so monitoring catches it; 200 in
+    // dev/preview so local signup flow doesn't error out.
+    const isProd = process.env.VERCEL_ENV === "production";
+    const msg =
+      "[CRITICAL] RESEND_API_KEY missing — verification email NOT sent. " +
+      `Signup completed for ${email} but they cannot verify.`;
+    console.error(msg);
+    if (isProd) {
+      // Surface to whatever monitoring is listening on console.error in
+      // production (Vercel Log Drains / Sentry server SDK if wired).
+      return res
+        .status(500)
+        .json({ ok: false, error: "Email service unavailable" });
+    }
     return res.status(200).json({ ok: true, skipped: true });
   }
 

@@ -433,12 +433,14 @@ export interface PasswordChecklistProps {
 }
 
 export function PasswordChecklist({ checks }: PasswordChecklistProps) {
+  // Required items match server-side rules in AuthContext.signup() so
+  // green checks here always mean the server will accept.
   const items: { key: keyof PasswordChecklistProps["checks"]; label: string; required: boolean }[] = [
     { key: "length", label: "At least 8 characters", required: true },
+    { key: "uppercase", label: "Uppercase letter", required: true },
+    { key: "number", label: "Number", required: true },
+    { key: "symbol", label: "Symbol", required: true },
     { key: "lowercase", label: "Lowercase letter", required: false },
-    { key: "uppercase", label: "Uppercase letter", required: false },
-    { key: "number", label: "Number", required: false },
-    { key: "symbol", label: "Symbol", required: false },
   ];
 
   return (

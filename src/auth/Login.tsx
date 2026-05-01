@@ -281,9 +281,33 @@ export default function Login() {
     });
   };
 
+  // Notices set by upstream redirects (verify-email handler, OAuth callback,
+  // expired reset link, etc.) — read from query params and surface here.
+  const verifiedParam = searchParams?.get("verified") ?? null;
+  const errorParam = searchParams?.get("error") ?? null;
+
+  // Map known error codes to user-facing copy. Falls back to a generic
+  // message for unrecognized codes so users never see raw error tokens.
+  const errorParamMessage = errorParam
+    ? errorParam === "verification-failed"
+      ? "We couldn't verify your email. The link may have expired — sign up again or try a fresh reset link."
+      : errorParam === "verification-expired"
+        ? "Your verification link has expired. Sign up again to receive a new one."
+        : errorParam === "session-expired"
+          ? "Your session expired. Please log in again."
+          : "Something went wrong. Try again or contact support."
+    : null;
+
+  const verifiedNotice =
+    verifiedParam === "true"
+      ? "Email verified — you're all set. Log in below to continue."
+      : verifiedParam === "already"
+        ? "This email is already verified. Log in below to continue."
+        : null;
+
   const displayError = isLocked
     ? `Account temporarily locked after too many attempts. Try again in ${Math.ceil(lockoutSeconds / 60)} minute${lockoutSeconds > 60 ? "s" : ""}.`
-    : error;
+    : error || errorParamMessage;
 
   return (
     <>
@@ -455,6 +479,29 @@ export default function Login() {
               </span>
               <div style={{ flex: 1, height: 1, background: t.line }} />
             </div>
+
+            {/* Success notice from upstream redirects (e.g. /api/verify-email
+                → /login?verified=true). Shown only when there's no error. */}
+            {!displayError && verifiedNotice && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="hsx-error-banner"
+                style={{
+                  background: t.success100,
+                  border: `1px solid ${t.success}`,
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  marginBottom: 16,
+                  fontFamily: f.sans,
+                  fontSize: 13,
+                  color: t.success,
+                  lineHeight: 1.4,
+                }}
+              >
+                {verifiedNotice}
+              </div>
+            )}
 
             {displayError && (
               <div
