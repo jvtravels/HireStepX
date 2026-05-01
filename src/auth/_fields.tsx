@@ -200,6 +200,7 @@ export function Field({
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
           placeholder={placeholder}
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus={autoFocus}
           inputMode={inputMode}
           enterKeyHint={enterKeyHint}

@@ -549,6 +549,7 @@ export default function Login() {
                 onAutofill={() => setEmailTouched(true)}
                 autoComplete="email"
                 placeholder="rahul@example.com"
+                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus={shouldAutoFocus}
                 inputMode="email"
                 enterKeyHint="next"

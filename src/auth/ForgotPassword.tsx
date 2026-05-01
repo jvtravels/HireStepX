@@ -525,6 +525,7 @@ export default function ForgotPassword() {
                     onAutofill={() => setEmailTouched(true)}
                     autoComplete="email"
                     placeholder="Enter your email"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus={shouldAutoFocus}
                     inputMode="email"
                     enterKeyHint="send"

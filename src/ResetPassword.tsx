@@ -728,6 +728,7 @@ export default function ResetPassword() {
                     onAutofill={() => setPasswordTouched(true)}
                     autoComplete="new-password"
                     placeholder="At least 8 characters"
+                    // eslint-disable-next-line jsx-a11y/no-autofocus -- gated on document.visibilityState
                     autoFocus={shouldAutoFocus}
                     enterKeyHint="next"
                     maxLength={PASSWORD_MAX_LENGTH}

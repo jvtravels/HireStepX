@@ -153,6 +153,7 @@ export default function CatalogueGrid({
             {isRenaming ? (
               <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
                 <input
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated rename
                   autoFocus
                   defaultValue={renameDraft}
                   aria-label="Resume title"

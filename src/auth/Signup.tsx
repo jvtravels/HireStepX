@@ -563,6 +563,7 @@ export default function Signup() {
                 onAutofill={() => setNameTouched(true)}
                 autoComplete="name"
                 placeholder="Rahul Sharma"
+                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus={shouldAutoFocus}
                 enterKeyHint="next"
                 maxLength={NAME_MAX_LENGTH}
