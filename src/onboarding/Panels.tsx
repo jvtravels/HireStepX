@@ -634,10 +634,12 @@ export function ProfileReadyState({
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
       <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 1320, margin: "0 auto" }}>
-        {/* Hero row */}
+        {/* Hero row — stretch so the right-side ScoreGauge card matches
+            the identity card's height. Avoids the void that appeared
+            below the gauge when the identity card had longer content. */}
         <div
           className="hsx-onb-hero-row"
-          style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "start" }}
+          style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, alignItems: "stretch" }}
         >
           {/* Identity card */}
           <section
@@ -1002,11 +1004,11 @@ function ScoreGauge({
 
   return (
     <section
-      style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "18px 20px", boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 14 }}
+      style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "18px 20px", boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 14, height: "100%" }}
     >
       <div
         className="hsx-onb-score-gauge"
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center" }}
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, textAlign: "center", flex: "1 1 auto", justifyContent: "center" }}
       >
         <div style={{ position: "relative", width: 180, height: 100 }}>
           <svg width="180" height="100" viewBox="0 0 180 100" aria-hidden="true">
