@@ -428,58 +428,73 @@ export default function Login({
               </div>
 
               {/* Primary CTA */}
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                aria-busy={loading || undefined}
-                className="hsx-login-cta"
-                style={{
-                  width: "100%",
-                  fontFamily: f.sans,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: t.cream,
-                  background: canSubmit ? t.indigo : t.indigoGray,
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "16px 18px",
-                  cursor: canSubmit ? "pointer" : "not-allowed",
-                  marginTop: 14,
-                  boxShadow: canSubmit ? shadows.cta : "none",
-                  letterSpacing: 0.1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  opacity: loading ? 0.85 : 1,
-                }}
-              >
-                {loading ? (
-                  <>
-                    <Spinner />
-                    Signing in…
-                  </>
-                ) : (
-                  <>
-                    Continue to practise
-                    <svg
-                      className="hsx-login-cta-arrow"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                      <polyline points="12 5 19 12 12 19" />
-                    </svg>
-                  </>
-                )}
-              </button>
+              {(() => {
+                const isGhost = !canSubmit && !loading;
+                const tooltip = isGhost
+                  ? !emailV.valid
+                    ? "Enter a valid email to continue"
+                    : !passwordV.valid
+                      ? "Enter your password to continue"
+                      : "Complete the form to continue"
+                  : undefined;
+                return (
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    aria-busy={loading || undefined}
+                    title={tooltip}
+                    className="hsx-login-cta"
+                    style={{
+                      width: "100%",
+                      fontFamily: f.sans,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: isGhost ? t.inkFaint : t.cream,
+                      background: isGhost ? t.creamSoft : t.indigo,
+                      border: isGhost
+                        ? `1px solid ${t.line}`
+                        : "1px solid transparent",
+                      borderRadius: 10,
+                      padding: "16px 18px",
+                      cursor: canSubmit ? "pointer" : "not-allowed",
+                      marginTop: 14,
+                      boxShadow: isGhost ? "none" : shadows.cta,
+                      letterSpacing: 0.1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 10,
+                      opacity: loading ? 0.95 : 1,
+                    }}
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner />
+                        Signing in…
+                      </>
+                    ) : (
+                      <>
+                        Continue to practise
+                        <svg
+                          className="hsx-login-cta-arrow"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                );
+              })()}
             </form>
           </div>
         </main>

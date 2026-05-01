@@ -122,9 +122,23 @@ export function Field({
   onAutofill,
 }: FieldProps) {
   const [focused, setFocused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const errorId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const hasError = invalid && !!errorMessage;
+
+  // Detect mobile viewport for a slimmer focus ring (4px → 2px).
+  // Mobile fields sit edge-to-edge so the larger halo visually inflates
+  // the focused field relative to its unfocused siblings.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 640px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  const ringWidth = isMobile ? 2 : 4;
 
   // Autofill detection — Chrome/Safari fire :-webkit-autofill which we hook
   // via a sentinel CSS animation. This lets us mark the field as "touched"
@@ -156,6 +170,7 @@ export function Field({
         {label}
       </label>
       <div
+        className="hsx-login-field-wrap"
         style={{
           position: "relative",
           background: t.white,
@@ -164,7 +179,7 @@ export function Field({
           }`,
           borderRadius: 10,
           boxShadow: focused
-            ? `0 0 0 4px ${invalid ? "rgba(185, 28, 28, 0.18)" : t.indigoRing}`
+            ? `0 0 0 ${ringWidth}px ${invalid ? "rgba(185, 28, 28, 0.18)" : t.indigoRing}`
             : "none",
           transition:
             "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",

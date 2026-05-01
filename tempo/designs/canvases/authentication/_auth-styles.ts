@@ -211,13 +211,21 @@ export const AUTH_STYLES = `
   /* Mobile (≤640px) — single column, shrunk paddings, lighter chrome */
   @media (max-width: 640px) {
     .hsx-login-topbar { padding: 20px 20px !important; gap: 12px !important; }
-    .hsx-login-main   { padding: clamp(20px, 3vh, 36px) 20px !important; }
+    /* Top-anchored layout — centering created huge gaps on phones since
+       the form is much shorter than the viewport. Sit content near top
+       so the keyboard doesn't shove things further. */
+    .hsx-login-main   {
+      justify-content: flex-start !important;
+      padding: 28px 20px 32px !important;
+    }
     .hsx-login-form   { max-width: 100% !important; }
+    /* Tighten hero → form distance on mobile so they read as one screen */
+    .hsx-login-hero   { margin-bottom: 20px !important; }
     .hsx-login-footer { padding: 24px 20px 32px !important; font-size: 11px !important; }
     .hsx-login-signup-prompt { font-size: 13px !important; }
-    .hsx-login-subtitle { font-size: 14px !important; margin-top: 14px !important; margin-bottom: 32px !important; line-height: 1.45 !important; }
+    .hsx-login-subtitle { font-size: 14px !important; margin-top: 12px !important; margin-bottom: 0 !important; line-height: 1.45 !important; }
     .hsx-login-form-fields { gap: 14px !important; }
-    .hsx-login-divider { margin: 16px 0 !important; }
+    .hsx-login-divider { margin: 14px 0 !important; }
     .hsx-login-google,
     .hsx-login-cta { padding: 13px 16px !important; font-size: 14px !important; }
     .hsx-login-field-input { font-size: 14.5px !important; padding: 10px 14px !important; }
