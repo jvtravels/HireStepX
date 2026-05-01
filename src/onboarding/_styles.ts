@@ -87,6 +87,7 @@ export const ONBOARDING_STYLES = `
     .hsx-onb-check,
     .hsx-onb-status,
     .hsx-onb-track,
+    .hsx-onb-state-enter,
     .hsx-onb-track:active > span:first-child {
       animation: none !important;
       transition: none !important;
@@ -100,6 +101,27 @@ export const ONBOARDING_STYLES = `
      tallest sibling — eliminates voids at the bottom of shorter
      content. */
   .hsx-onb-cell { display: flex; flex-direction: column; }
+
+  /* Smooth state-to-state transitions: each onboarding state
+     (empty / loading / ready) fades + slides up gently so the
+     540px → 1360px content shift between empty and ready feels
+     considered, not jarring. Honours prefers-reduced-motion via
+     the existing media-query block below. */
+  .hsx-onb-state-enter {
+    animation: hsx-onb-fade-up 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Mobile single-column fix: when the bento collapses below 900px,
+     the score card no longer needs height: 100% (no row to stretch
+     against), so we reset it to auto. Without this reset, the
+     marginTop: auto on the CTA pair tries to push to a non-existent
+     bottom and can leave odd whitespace inside the card on tall
+     mobile viewports. */
+  @media (max-width: 900px) {
+    .hsx-onb-hero-row > section.hsx-onb-score-shell {
+      height: auto !important;
+    }
+  }
 
   /* Primary CTA inside the score card. Inline styles can't drive
      :hover, so the hover/active/focus rules live here. Subtle lift

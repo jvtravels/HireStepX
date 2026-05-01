@@ -233,7 +233,7 @@ export function ResumeEmptyState({
   return (
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
-      <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
+      <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
         {/* Extra breathing room under the hero so the subtitle doesn't crowd
             the drop zone — supplements the stack's 16px gap. */}
         <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
@@ -410,7 +410,7 @@ export function ResumeLoadingState({
   return (
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
-      <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
+      <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
         <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center" }}>
           <h1
             style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal }}
@@ -654,7 +654,7 @@ export function ProfileReadyState({
   return (
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
-      <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 1320, margin: "0 auto" }}>
+      <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 1320, margin: "0 auto" }}>
         {/* Hero row — stretch so the right-side ScoreGauge card matches
             the identity card's height. Avoids the void that appeared
             below the gauge when the identity card had longer content. */}
@@ -1047,6 +1047,7 @@ function ScoreGauge({
 
   return (
     <section
+      className="hsx-onb-score-shell"
       style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "18px 20px", boxShadow: shadows.card, display: "flex", flexDirection: "column", gap: 14, height: "100%" }}
     >
       <div
