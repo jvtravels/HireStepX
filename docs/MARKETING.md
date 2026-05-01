@@ -1,9 +1,6 @@
 # HireStepX — Launch Marketing Document
 
-**Launch Date:** May 2, 2026
-**Product:** HireStepX — AI Mock Interview Platform
-**Company:** Silva Vitalis LLC
-**Website:** hirestepx.com
+**Launch Date:** May 2, 2026 **Product:** HireStepX — AI Mock Interview Platform **Company:** Silva Vitalis LLC **Website:** hirestepx.com
 
 ---
 
@@ -15,8 +12,8 @@ Confident, specific, no-fluff. Like a sharp friend who works in hiring — not a
 
 ### Tone Rules
 
-- Lead with outcomes, not features ("Land your dream job" > "AI-powered interviews")
-- Use numbers when possible ("40% improvement" > "significant improvement")
+- Lead with outcomes, not features ("Land your dream job" &gt; "AI-powered interviews")
+- Use numbers when possible ("40% improvement" &gt; "significant improvement")
 - Never say "revolutionary", "cutting-edge", "game-changing" — say what it actually does
 - Speak directly: "you", "your interview", "your resume"
 - Acknowledge the fear: interviews are stressful, say so
@@ -73,7 +70,7 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 ### Competitive Comparison
 
 | Alternative | Problem | HireStepX |
-|---|---|---|
+| --- | --- | --- |
 | YouTube/blogs | No practice, just theory | Actual mock interviews with AI |
 | Practicing alone | No feedback until rejection | Instant scored feedback after every answer |
 | Friends/peers | Inconsistent, biased, awkward | Objective scoring, available 24/7 |
@@ -97,7 +94,7 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 
 - 10 interview types: Behavioral, Technical, Strategic, Case Study, Campus Placement, HR Round, Panel, Management, Salary Negotiation, Government/PSU
 - 3 difficulty levels: Warmup, Standard, Intense
-- Mini sessions (3 questions, ~10 min) and full sessions (~25 min)
+- Mini sessions (3 questions, \~10 min) and full sessions (\~25 min)
 - Real-time conversational AI with follow-up questions
 - Voice-based (microphone) with text fallback
 - Multi-language: English, Hindi, Hinglish
@@ -108,7 +105,7 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 - Company-specific question patterns (50+ companies)
 - Role-appropriate interview types (auto-detected from target role)
 - Job description analysis — practice gaps from the actual JD
-- Guided 3-session curriculum: Warmup -> Skill Focus -> Full Simulation
+- Guided 3-session curriculum: Warmup -&gt; Skill Focus -&gt; Full Simulation
 
 ### Analytics & Feedback
 
@@ -147,7 +144,7 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 - Zero interview experience, high anxiety
 - Budget: Rs. 0-50/month
 - Needs: Practice behavioral questions, build confidence, understand what interviewers look for
-- Entry point: Free tier -> Single sessions as interview date approaches
+- Entry point: Free tier -&gt; Single sessions as interview date approaches
 
 ### Persona 2: Experienced Dev (Sneha, 27)
 
@@ -159,11 +156,11 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 
 ### Persona 3: Career Changer (Arjun, 30)
 
-- Mechanical engineer -> Product Manager transition
+- Mechanical engineer -&gt; Product Manager transition
 - Doesn't know PM interview format (case studies, product sense)
 - Budget: Rs. 50-150/month
 - Needs: Learn new interview type, practice strategic thinking questions
-- Entry point: Single sessions -> Starter
+- Entry point: Single sessions -&gt; Starter
 
 ### Persona 4: Recent Grad Job Seeker (Priya, 23)
 
@@ -171,14 +168,14 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 - Some internship experience, needs to articulate it better
 - Budget: Rs. 0-100/month
 - Needs: Improve answer structure, reduce filler words, get specific feedback
-- Entry point: Free tier -> Pro during active job hunt
+- Entry point: Free tier -&gt; Pro during active job hunt
 
 ---
 
 ## 7. Pricing Messaging
 
 | Plan | Price | Best For | Pitch |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Free** | Rs. 0 | First-timers, try before you buy | "3 free interviews. No credit card. See what you're missing." |
 | **Single Session** | Rs. 10/session | Interview tomorrow, need quick prep | "One focused practice session. Less than a cup of chai." |
 | **Starter** | Rs. 49/week | Active job seekers, weekly practice | "7 sessions a week. Build a real practice habit." |
@@ -186,14 +183,11 @@ Interview practice today is either expensive (Rs. 5,000+ per coaching session), 
 
 ### Pricing Objection Handling
 
-**"Why pay when ChatGPT is free?"**
-ChatGPT is text-only, no voice, no scoring, no resume integration, no progress tracking. HireStepX is a purpose-built interview simulator.
+**"Why pay when ChatGPT is free?**"ChatGPT is text-only, no voice, no scoring, no resume integration, no progress tracking. HireStepX is a purpose-built interview simulator.
 
-**"Rs. 149/month is expensive"**
-That's Rs. 5/day. A single career coaching session costs Rs. 3,000-10,000. One bad interview costs you a Rs. 20 LPA offer.
+**"Rs. 149/month is expensive**"That's Rs. 5/day. A single career coaching session costs Rs. 3,000-10,000. One bad interview costs you a Rs. 20 LPA offer.
 
-**"Why not just practice with friends?"**
-Friends aren't trained interviewers. They can't score you consistently, track improvement, or simulate company-specific formats.
+**"Why not just practice with friends?**"Friends aren't trained interviewers. They can't score you consistently, track improvement, or simulate company-specific formats.
 
 ---
 
@@ -240,6 +234,7 @@ Friends aren't trained interviewers. They can't score you consistently, track im
 > But here's the problem: most people practice by reading tips online or rehearsing in front of a mirror. That's like learning to swim by watching YouTube.
 >
 > Today we're launching HireStepX — an AI mock interview platform that:
+>
 > - Generates questions from your actual resume
 > - Simulates interviews for Google, TCS, Flipkart, and 50+ companies
 > - Scores you on communication, structure, and technical depth
@@ -283,53 +278,39 @@ Friends aren't trained interviewers. They can't score you consistently, track im
 
 ### Product Questions
 
-**"Is this actually useful?"**
-Our beta users improved scores by 15-30 points across 3 sessions. Specific feedback on filler words, missing metrics, and answer structure makes a measurable difference.
+**"Is this actually useful?**"Our beta users improved scores by 15-30 points across 3 sessions. Specific feedback on filler words, missing metrics, and answer structure makes a measurable difference.
 
-**"Does the AI actually listen to me?"**
-Yes. It uses speech recognition (Deepgram + browser fallback) to transcribe your answers in real-time, then evaluates content, structure, and delivery.
+**"Does the AI actually listen to me?**"Yes. It uses speech recognition (Deepgram + browser fallback) to transcribe your answers in real-time, then evaluates content, structure, and delivery.
 
-**"What if I don't have a resume?"**
-Resume is optional. You can still practice with just your target role and company. But resume-based questions are significantly more personalized.
+**"What if I don't have a resume?**"Resume is optional. You can still practice with just your target role and company. But resume-based questions are significantly more personalized.
 
-**"Can I practice in Hindi?"**
-Yes. HireStepX supports English, Hindi, and Hinglish. The AI asks and evaluates in your selected language.
+**"Can I practice in Hindi?**"Yes. HireStepX supports English, Hindi, and Hinglish. The AI asks and evaluates in your selected language.
 
-**"How long is a session?"**
-Mini sessions: ~10 minutes (3 questions). Full sessions: ~25 minutes. You choose.
+**"How long is a session?**"Mini sessions: \~10 minutes (3 questions). Full sessions: \~25 minutes. You choose.
 
 ### Privacy & Trust
 
-**"Is my data safe?"**
-Data encrypted via Supabase with row-level security. Recordings and transcripts never shared with employers or third parties. Delete everything anytime from Settings.
+**"Is my data safe?**"Data encrypted via Supabase with row-level security. Recordings and transcripts never shared with employers or third parties. Delete everything anytime from Settings.
 
-**"Do you sell my data?"**
-No. No ads, no data selling. Only Vercel web vitals for basic site performance.
+**"Do you sell my data?**"No. No ads, no data selling. Only Vercel web vitals for basic site performance.
 
-**"Can my employer see my practice sessions?"**
-No. There are no social features. Your data is completely private.
+**"Can my employer see my practice sessions?**"No. There are no social features. Your data is completely private.
 
 ### Pricing & Value
 
-**"Why should I pay when free alternatives exist?"**
-Free alternatives (ChatGPT, reading blogs) don't simulate the pressure of a real interview, don't score your voice answers, don't track improvement, and don't customize to your resume or company. HireStepX does all of that.
+**"Why should I pay when free alternatives exist?**"Free alternatives (ChatGPT, reading blogs) don't simulate the pressure of a real interview, don't score your voice answers, don't track improvement, and don't customize to your resume or company. HireStepX does all of that.
 
-**"Is the free tier actually useful?"**
-Yes. 3 full AI mock interviews with scoring, feedback, and analytics. Enough to experience the product and see your baseline score.
+**"Is the free tier actually useful?**"Yes. 3 full AI mock interviews with scoring, feedback, and analytics. Enough to experience the product and see your baseline score.
 
-**"Can I cancel anytime?"**
-Yes. All subscriptions cancel instantly. No lock-in, no questions.
+**"Can I cancel anytime?**"Yes. All subscriptions cancel instantly. No lock-in, no questions.
 
 ### Technical
 
-**"Does it work on mobile?"**
-Yes, on any modern browser. For best experience during mock interviews, use a laptop/desktop with a microphone.
+**"Does it work on mobile?**"Yes, on any modern browser. For best experience during mock interviews, use a laptop/desktop with a microphone.
 
-**"What browsers are supported?"**
-Chrome, Firefox, Safari, Edge. Any modern browser with microphone access.
+**"What browsers are supported?**"Chrome, Firefox, Safari, Edge. Any modern browser with microphone access.
 
-**"What if my internet is slow?"**
-The app caches data offline and retries failed requests. Sessions can continue even with intermittent connectivity.
+**"What if my internet is slow?**"The app caches data offline and retries failed requests. Sessions can continue even with intermittent connectivity.
 
 ---
 
@@ -346,7 +327,7 @@ The app caches data offline and retries failed requests. Sessions can continue e
 ### Testimonials
 
 - **Marcus T., Software Engineer:** "Landed dream job at Google" — practiced for a week, started getting callbacks
-- **Dana R., Career Changer -> PM:** "Two offers in three weeks" — AI caught gaps she didn't know she had
+- **Dana R., Career Changer -&gt; PM:** "Two offers in three weeks" — AI caught gaps she didn't know she had
 - **Priya K., Data Analyst, Recent Grad:** "First job out of college" — fixed filler word habit after AI feedback
 - **Rahul M., Campus Fresher:** "Cleared TCS NQT on first attempt" — practiced with campus placement mode
 - **Aisha J., Product Designer:** "Got into Flipkart after 3 rejections" — company-specific prep made the difference
@@ -362,7 +343,7 @@ Google, Apple, Microsoft, Meta, Amazon, McKinsey, Deloitte, Goldman Sachs, TCS, 
 ## 12. Competitor Positioning
 
 | Competitor | Their Approach | HireStepX Advantage |
-|---|---|---|
+| --- | --- | --- |
 | Pramp | Peer-to-peer mock interviews | No scheduling, no peer dependency. Available 24/7. Scored objectively. |
 | InterviewBit | DSA practice + text questions | Voice-based with real-time AI follow-ups. Resume-personalized. |
 | MockAI / similar | Generic AI interviews | Company-specific patterns. Resume-driven. Skill velocity tracking. |
