@@ -101,6 +101,23 @@ export const ONBOARDING_STYLES = `
      content. */
   .hsx-onb-cell { display: flex; flex-direction: column; }
 
+  /* Primary CTA inside the score card. Inline styles can't drive
+     :hover, so the hover/active/focus rules live here. Subtle lift
+     + slight darken — keeps the button feeling responsive without
+     becoming busy. */
+  .hsx-onb-cta-primary:not(:disabled):hover {
+    background: #1e1b4b !important;     /* indigo-deep */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px -4px rgba(20, 17, 10, 0.35);
+  }
+  .hsx-onb-cta-primary:not(:disabled):active {
+    transform: translateY(0);
+  }
+  .hsx-onb-cta-primary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.32);
+  }
+
   /* Responsive — collapse the 12-col bento progressively. At
      each breakpoint we override the inline gridColumn spans so
      cards land in sensible row groupings rather than stacking
