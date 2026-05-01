@@ -2,6 +2,10 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef, ty
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, type Profile } from "./supabase";
+import {
+  clearSessionStart,
+  isSessionExpiredByPreference,
+} from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
 
 import type { Session } from "@supabase/supabase-js";
@@ -482,6 +486,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return;
           }
+          // Enforce client-side "Stay signed in" TTL — if the session
+          // has aged past 24h (unchecked) or 30d (checked), force re-auth.
+          if (isSessionExpiredByPreference()) {
+            console.info("[auth] session expired by Stay-signed-in TTL — signing out");
+            setUser(null);
+            clearSessionStart();
+            await client.auth.signOut().catch(() => {});
+            clearTimeout(safetyTimer);
+            setLoading(false);
+            return;
+          }
           // Capture Google provider token if present (after OAuth redirect)
           if (session.provider_token) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
@@ -956,6 +971,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* expected */ }
     if (supabaseConfigured) { const client = await getSupabase(); await client.auth.signOut().catch(() => {}); }
+    clearSessionStart();
     track("logout");
     clearLastRoute();
     broadcastLogout();

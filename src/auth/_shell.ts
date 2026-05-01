@@ -91,12 +91,71 @@ export function isResetInProgress(): boolean {
   }
 }
 
-/* "Stay signed in" preference helpers used to live here. Removed —
-   Supabase sessions are always persistent across tabs (localStorage),
-   and toggling between localStorage / sessionStorage requires
-   reinitializing the singleton client which is bigger surface than
-   it's worth. The checkbox was a UX placebo. Re-add when there's a
-   real product decision on session lifetime. */
+/* ─── "Stay signed in" — real session-lifetime control ───
+   Supabase sessions live in localStorage by default and persist
+   indefinitely until the refresh token expires. We layer a client-
+   enforced TTL on top: the user's "Stay signed in" preference at
+   login dictates how long the session is allowed to live before we
+   force-sign-them-out, regardless of Supabase token state. */
+
+const STAY_SIGNED_IN_PREF = "hsx_stay_signed_in";
+const SESSION_STARTED_AT = "hsx_session_started_at";
+
+const STAY_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const NO_STAY_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export function readStaySignedInPref(): boolean {
+  try {
+    return localStorage.getItem(STAY_SIGNED_IN_PREF) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeStaySignedInPref(value: boolean) {
+  try {
+    localStorage.setItem(STAY_SIGNED_IN_PREF, value ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Call right before a successful login completes — records the
+    session-start timestamp + the user's stay-signed-in preference so
+    AuthContext can enforce expiry on subsequent mounts. */
+export function markSessionStart(staySignedIn: boolean) {
+  try {
+    writeStaySignedInPref(staySignedIn);
+    localStorage.setItem(SESSION_STARTED_AT, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearSessionStart() {
+  try {
+    localStorage.removeItem(SESSION_STARTED_AT);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Returns true if the current session has aged past the "Stay signed
+    in" preference's TTL and should be forcibly signed out.
+    Returns false if no start timestamp is recorded (treats as fresh). */
+export function isSessionExpiredByPreference(): boolean {
+  try {
+    const startRaw = localStorage.getItem(SESSION_STARTED_AT);
+    if (!startRaw) return false;
+    const start = parseInt(startRaw, 10);
+    if (Number.isNaN(start)) return false;
+    const stay = readStaySignedInPref();
+    const ttl = stay ? STAY_DURATION_MS : NO_STAY_DURATION_MS;
+    return Date.now() - start > ttl;
+  } catch {
+    return false;
+  }
+}
 
 /* ─── Build a /signup or /login link that preserves both
        plan + next params (Login → Signup, Signup → Login). ─── */

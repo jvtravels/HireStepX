@@ -9,6 +9,7 @@ import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
+  Checkbox,
   Wordmark,
   GoogleIcon,
   Spinner,
@@ -27,6 +28,8 @@ import {
   computeAuthRedirect,
   isResetInProgress,
   mapAuthError,
+  markSessionStart,
+  readStaySignedInPref,
   useIsMounted,
 } from "./_shell";
 
@@ -91,6 +94,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [staySignedIn, setStaySignedIn] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -146,8 +150,11 @@ export default function Login() {
   }, []);
 
   // Initialize lockout on the client (SSR-safe — runs after mount).
+  // Also hydrate the user's previous Stay-signed-in preference so the
+  // checkbox remembers what they picked last time.
   useEffect(() => {
     setLockoutSeconds(readLockoutSeconds());
+    setStaySignedIn(readStaySignedInPref());
   }, []);
 
   // Clear stale error banner when the user navigates back to this page
@@ -210,6 +217,8 @@ export default function Login() {
           reason: "unknown",
         });
       } else {
+        // Apply the same Stay-signed-in preference to OAuth flows.
+        markSessionStart(staySignedIn);
         trackAuth({
           type: "login_succeeded",
           method: "google",
@@ -259,6 +268,9 @@ export default function Login() {
           });
         } else {
           clearFailedAttempts();
+          // Record the user's Stay-signed-in preference so AuthContext
+          // can enforce the right TTL (30d if checked, 24h if not).
+          markSessionStart(staySignedIn);
           trackAuth({
             type: "login_succeeded",
             method: "email",
@@ -616,11 +628,17 @@ export default function Login() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "flex-end",
+                  justifyContent: "space-between",
                   marginTop: 2,
                   minHeight: 20,
                 }}
               >
+                <Checkbox
+                  checked={staySignedIn}
+                  onChange={setStaySignedIn}
+                  label="Stay signed in"
+                  description="Stay signed in for 30 days. Leave unchecked on shared devices — you'll be signed out after 24 hours."
+                />
                 <a
                   href="/forgot-password"
                   className="hsx-link-indigo"
