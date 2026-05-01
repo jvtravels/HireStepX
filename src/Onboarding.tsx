@@ -699,6 +699,7 @@ export default function Onboarding() {
               onReanalyze={handleReanalyze} onRemove={handleRemoveResume}
               onReplaceFile={() => fileInputRef.current?.click()}
               onStartInterview={handleStartInterview}
+              onGoToDashboard={handleGoToDashboard}
               starting={starting}
             />
           )}

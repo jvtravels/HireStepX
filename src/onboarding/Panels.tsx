@@ -552,6 +552,9 @@ export interface ProfileReadyStateProps {
       gauge renders a primary "Start mock interview" button under
       its stats so the user has a clear next step in the hero row. */
   onStartInterview?: () => void;
+  /** Optional secondary path. Pairs with onStartInterview to
+      render a "Dashboard" outline button next to the primary. */
+  onGoToDashboard?: () => void;
   starting?: boolean;
 }
 
@@ -566,6 +569,7 @@ export function ProfileReadyState({
   onRemove,
   onReplaceFile,
   onStartInterview,
+  onGoToDashboard,
   starting,
 }: ProfileReadyStateProps) {
   void resumeParsed; // kept for parity with the production interface
@@ -802,6 +806,7 @@ export function ProfileReadyState({
             displayName={trimmedName || undefined}
             initials={initials}
             onStartInterview={onStartInterview}
+            onGoToDashboard={onGoToDashboard}
             starting={starting}
           />
         </div>
@@ -973,6 +978,7 @@ function ScoreGauge({
   displayName,
   initials,
   onStartInterview,
+  onGoToDashboard,
   starting,
 }: {
   score: number | null;
@@ -985,6 +991,9 @@ function ScoreGauge({
       card so the user has a clear action right next to their score
       — no scrolling needed. */
   onStartInterview?: () => void;
+  /** Optional secondary path. When supplied alongside the primary,
+      the gauge card renders both as a button pair. */
+  onGoToDashboard?: () => void;
   starting?: boolean;
 }) {
   const color =
@@ -1078,20 +1087,21 @@ function ScoreGauge({
         </div>
       )}
 
-      {/* Primary CTA — only when caller wires it up. Sits at the
-          bottom of the score card so the user reads "you're at 80,
-          here's the action" in one downward sweep. The mtAuto pushes
-          this to the bottom even when the card is taller than its
-          content (height: 100% from the parent grid stretch). */}
+      {/* CTA pair — primary "Start mock interview" + secondary
+          "Dashboard". Side-by-side at the bottom of the score card.
+          The marginTop: auto pushes them to the floor even when the
+          card stretches taller than its content (parent grid uses
+          align-items: stretch). */}
       {onStartInterview && (
-        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}`, display: "flex", gap: 8 }}>
           <button
             type="button"
             onClick={onStartInterview}
             disabled={!!starting}
             className="hsx-onb-cta-primary"
             style={{
-              width: "100%",
+              flex: "1 1 auto",
+              minWidth: 0,
               height: 44,
               background: t.indigo,
               color: t.white,
@@ -1108,6 +1118,9 @@ function ScoreGauge({
               gap: 8,
               transition: "background 0.15s ease, transform 0.1s ease",
               opacity: starting ? 0.85 : 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {starting ? "Starting…" : "Start mock interview"}
@@ -1117,9 +1130,42 @@ function ScoreGauge({
               </svg>
             )}
           </button>
-          <p style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, textAlign: "center", margin: "10px 0 0" }}>
-            ~25 min · pause anytime
-          </p>
+          {onGoToDashboard && (
+            <button
+              type="button"
+              onClick={onGoToDashboard}
+              disabled={!!starting}
+              style={{
+                flexShrink: 0,
+                height: 44,
+                padding: "0 16px",
+                background: "transparent",
+                color: t.inkSoft,
+                border: `1px solid ${t.line}`,
+                borderRadius: 10,
+                fontFamily: f.sans,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: starting ? "not-allowed" : "pointer",
+                transition: "background 0.15s ease, border-color 0.15s ease, color 0.15s ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                if (!starting) {
+                  e.currentTarget.style.background = t.creamSoft;
+                  e.currentTarget.style.borderColor = t.inkSoft;
+                  e.currentTarget.style.color = t.coal;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = t.line;
+                e.currentTarget.style.color = t.inkSoft;
+              }}
+            >
+              Dashboard
+            </button>
+          )}
         </div>
       )}
     </section>
