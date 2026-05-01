@@ -225,6 +225,28 @@ export const ONBOARDING_STYLES = `
     .hsx-onb-hero h1 {
       font-size: clamp(1.625rem, 6.5vw, 2.5rem) !important;
     }
+    /* Profile-ready headline (post-analysis) is often long ("Senior
+       Product Designer with 5+ years of experience designing scalable
+       digital products across web and mobile platforms"). At the
+       desktop clamp it dominates the entire mobile screen at 5+
+       lines. Pin it to ~22px on phones so it stays scannable. */
+    .hsx-onb-profile-headline {
+      font-size: 1.375rem !important;
+      line-height: 1.25 !important;
+      margin-bottom: 8px !important;
+    }
+    /* Source row (Source: file · Re-analyze · Re-upload · Remove)
+       overflowed past the card on mobile. Wrap is enabled and the
+       source label takes full width on its own line; the action
+       buttons drop to a second line, evenly spaced. */
+    .hsx-onb-source-row > span:first-of-type,
+    .hsx-onb-source-row > span:nth-child(2) {
+      flex-basis: 100%;
+      flex-grow: 1;
+    }
+    .hsx-onb-source-row > span[aria-hidden="true"] {
+      display: none !important;
+    }
     /* Drop-zone padding — slightly tighter, keep it tappable. */
     .hsx-onb-drop {
       padding: 28px 18px !important;

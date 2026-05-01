@@ -678,6 +678,7 @@ export function ProfileReadyState({
             </div>
 
             <h1
+              className="hsx-onb-profile-headline"
               style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 3.2vw, 2.25rem)", lineHeight: 1.15, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0, marginBottom: 12 }}
             >
               {aiProfile.headline || "Your profile"}
@@ -761,7 +762,8 @@ export function ProfileReadyState({
             )}
 
             <div
-              style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}
+              className="hsx-onb-source-row"
+              style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
