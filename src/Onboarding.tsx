@@ -152,9 +152,18 @@ export default function Onboarding() {
     if (resumeParsing) return;
     draftToastFiredRef.current = true;
     setDraftToast(`Welcome back — we kept your resume (${fileName})`);
-    const t = setTimeout(() => setDraftToast(null), 5000);
+    // 3.5s auto-dismiss (was 5s — too long, felt stuck). The toast
+    // also has a manual close button now so it can't feel stuck.
+    const t = setTimeout(() => setDraftToast(null), 3500);
     return () => clearTimeout(t);
   }, [resumeParsed, fileName, resumeParsing]);
+
+  // Clear the welcome-back toast when the user starts a new upload.
+  // Keeping it visible during the loading state was the "stuck" feeling
+  // they reported — by then the message is no longer relevant.
+  useEffect(() => {
+    if (resumeParsing) setDraftToast(null);
+  }, [resumeParsing]);
 
   // ─── #19: Exit-intent hint ────────────────────────────────────────────────
   // If a user has uploaded a resume but not yet clicked "Start interview",
@@ -448,7 +457,18 @@ export default function Onboarding() {
         }
       }
       setResumeParsing(false);
-      if (!reanalyzedRef.current) setAiPhase("done");
+      // Always transition to "done" once handleFileUpload's analysis
+      // completes — whether the AI call succeeded or we fell back to
+      // the regex profile. The previous `if (!reanalyzedRef.current)`
+      // guard caused a real race: setAiProfile (line ~425) re-ran the
+      // re-analyze effect, which flipped reanalyzedRef.current to true
+      // when hasRealScore became true, and then this line skipped the
+      // setAiPhase("done") call → UI stayed stuck on "Reading your
+      // resume…" forever, even though server returned 200. Refresh
+      // showed the result because state rehydrated cleanly. Always
+      // setting "done" here is correct — there's no scenario where
+      // we want to remain in "analyzing" after this code path runs.
+      setAiPhase("done");
       const profileSave: Partial<Parameters<typeof updateUser>[0]> = {
         resumeFileName: file.name,
         resumeText: text,
@@ -743,7 +763,8 @@ export default function Onboarding() {
         </div>
       </div>
 
-      {/* #13 + #19 — welcome-back toast (resume restored) + exit-intent reassurance */}
+      {/* #13 + #19 — welcome-back toast (resume restored) + exit-intent reassurance.
+          Always renders a dismiss button so it can never feel "stuck". */}
       {draftToast && (
         <div
           role="status"
@@ -751,7 +772,7 @@ export default function Onboarding() {
           style={{
             position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
             zIndex: 100, maxWidth: "calc(100vw - 32px)",
-            padding: "12px 18px", borderRadius: 10,
+            padding: "12px 14px 12px 18px", borderRadius: 10,
             background: ot.white, border: `1px solid ${ot.line}`,
             boxShadow: "0 10px 40px rgba(20,17,10,0.16)",
             display: "flex", alignItems: "center", gap: 10,
@@ -760,7 +781,32 @@ export default function Onboarding() {
           }}
         >
           <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ot.success} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          {draftToast}
+          <span>{draftToast}</span>
+          <button
+            type="button"
+            onClick={() => setDraftToast(null)}
+            aria-label="Dismiss"
+            style={{
+              marginLeft: 4,
+              width: 22, height: 22,
+              border: "none",
+              background: "transparent",
+              color: ot.inkSoft,
+              cursor: "pointer",
+              borderRadius: 6,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = ot.creamSoft; e.currentTarget.style.color = ot.coal; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = ot.inkSoft; }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="6" y1="18" x2="18" y2="6" />
+            </svg>
+          </button>
         </div>
       )}
 
