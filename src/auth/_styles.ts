@@ -234,13 +234,10 @@ export const AUTH_STYLES = `
     .hsx-login-field-input::placeholder { font-size: 14px !important; }
     .hsx-login-field-label { font-size: 13px !important; margin-bottom: 6px !important; font-weight: 500 !important; }
     .hsx-login-wordmark { font-size: 19px !important; }
-    /* Stack the meta row vertically on mobile — at <640px the
-       "Stay signed in on this device" label is too wide to share a row
-       with "Forgot password" without unpredictable wrap behavior. */
+    /* Meta row stays side-by-side. The label was shortened to
+       "Stay signed in" so the row fits on a 375px viewport. */
     .hsx-login-meta-row {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      gap: 14px !important;
+      gap: 12px !important;
     }
   }
 

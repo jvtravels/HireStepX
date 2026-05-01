@@ -406,7 +406,7 @@ export default function Login({
                 <Checkbox
                   checked={staySignedIn}
                   onChange={setStaySignedIn}
-                  label="Stay signed in on this device"
+                  label="Stay signed in"
                   description="Keeps you signed in for 30 days on this device. Don't enable on shared computers."
                 />
                 <a
