@@ -616,12 +616,24 @@ export function ProfileReadyState({
   const visibleSkills = skillsExpanded ? aiProfile.topSkills : aiProfile.topSkills.slice(0, SKILLS_VISIBLE);
   const hiddenSkills = Math.max(0, aiProfile.topSkills.length - SKILLS_VISIBLE);
 
-  const trimmedName = (userName || "").trim();
+  // Name priority: editable userName > parsed resume name. Account name
+  // (often an institutional one) is intentionally NOT a fallback here.
+  const trimmedName =
+    (userName && userName.trim()) ||
+    (resumeParsed?.name && resumeParsed.name.trim()) ||
+    "";
+  const initials =
+    trimmedName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "?";
 
   return (
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
-      <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 1200, margin: "0 auto" }}>
+      <div className="hsx-onb-stack" style={{ width: "100%", maxWidth: 1320, margin: "0 auto" }}>
         {/* Hero row */}
         <div
           className="hsx-onb-hero-row"
@@ -769,14 +781,17 @@ export function ProfileReadyState({
             </div>
           </section>
 
-          {/* Score gauge + stats. We deliberately don't pass displayName
-              here — identity already lives in the topbar avatar; repeating
-              it inside the gauge card was redundant. */}
+          {/* Score gauge + stats. Identity row at top anchors "this score
+              belongs to Jay Vyas" — important when the topbar shows an
+              institutional account name and the resume name is the one the
+              AI session will personalise to. */}
           <ScoreGauge
             score={displayScore}
             tone={scoreTone as "success" | "warning" | "error" | "muted"}
             seniority={aiProfile.seniorityLevel}
             industries={aiProfile.industries}
+            displayName={trimmedName || undefined}
+            initials={initials}
           />
         </div>
 
@@ -926,11 +941,15 @@ function ScoreGauge({
   tone,
   seniority,
   industries,
+  displayName,
+  initials,
 }: {
   score: number | null;
   tone: "success" | "warning" | "error" | "muted";
   seniority?: string;
   industries?: string[];
+  displayName?: string;
+  initials?: string;
 }) {
   const color =
     tone === "success" ? t.success : tone === "warning" ? t.warning : tone === "error" ? t.error : t.inkSoft;
@@ -961,7 +980,7 @@ function ScoreGauge({
   const filled = circumference * pct;
 
   const industriesLabel = industries && industries.length > 0 ? industries.slice(0, 3).join(" · ") : null;
-  const hasStats = !!(seniority || industriesLabel);
+  const hasStats = !!(displayName || seniority || industriesLabel);
 
   return (
     <section
@@ -1010,6 +1029,14 @@ function ScoreGauge({
 
       {hasStats && (
         <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+          {displayName && initials && (
+            <StatRow
+              label="You"
+              value={displayName}
+              valueTone="indigo"
+              avatarInitials={initials}
+            />
+          )}
           {seniority && <StatRow label="Seniority" value={seniority} valueTone="indigo" />}
           {industriesLabel && <StatRow label="Industries" value={industriesLabel} />}
         </div>
@@ -1022,20 +1049,27 @@ function StatRow({
   label,
   value,
   valueTone,
+  avatarInitials,
 }: {
   label: string;
   value: string;
   valueTone?: "indigo";
+  avatarInitials?: string;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
       <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint, flexShrink: 0 }}>
         {label}
       </span>
       <span
         title={value}
-        style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: valueTone === "indigo" ? t.indigo : t.coal, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
+        style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: valueTone === "indigo" ? t.indigo : t.coal, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
       >
+        {avatarInitials && (
+          <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: 999, background: t.indigo100, color: t.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: f.serif, fontSize: 11, fontWeight: 400, flexShrink: 0 }}>
+            {avatarInitials}
+          </span>
+        )}
         {value}
       </span>
     </div>
