@@ -279,6 +279,7 @@ export function Checkbox({ checked, onChange, label, description }: CheckboxProp
         cursor: "pointer",
         fontFamily: f.sans,
         fontSize: 13,
+        lineHeight: "16px",
         color: t.inkSoft,
         userSelect: "none",
         position: "relative",

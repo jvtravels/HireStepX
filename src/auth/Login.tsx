@@ -556,6 +556,7 @@ export default function Login() {
                     fontFamily: f.sans,
                     fontSize: 13,
                     fontWeight: 500,
+                    lineHeight: "16px",
                     color: t.indigo,
                     textDecoration: "none",
                   }}
