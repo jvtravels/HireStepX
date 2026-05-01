@@ -772,8 +772,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true });
   }
 
-  // Auth rate limiting actions (don't require email validation)
-  if (["check", "fail", "success", "signup"].includes(action)) {
+  // Auth rate limiting + Turnstile verification actions (don't require
+  // email validation — Turnstile verifies a captcha token, not the email).
+  if (["check", "fail", "success", "signup", "turnstile-verify"].includes(action)) {
     return handleAuthCheck(req, res, action, email);
   }
 
