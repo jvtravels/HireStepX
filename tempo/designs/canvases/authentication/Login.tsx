@@ -207,6 +207,7 @@ export default function Login({
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
                 textAlign: "center",
+                textWrap: "balance",
                 margin: 0,
                 color: t.coal,
               }}

@@ -329,11 +329,13 @@ export default function Login() {
               id="login-heading"
               style={{
                 fontFamily: f.serif,
+                // Hero scale shared with Signup for brand consistency.
                 fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
                 lineHeight: 1.05,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
                 textAlign: "center",
+                textWrap: "balance",
                 margin: 0,
                 color: t.coal,
               }}

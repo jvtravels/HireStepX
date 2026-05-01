@@ -400,10 +400,10 @@ export default function Signup() {
               id="signup-heading"
               style={{
                 fontFamily: f.serif,
-                // Fluid hero — sized so "Practise like the real thing." fits
-                // on one line at desktop and wraps cleanly on mobile.
-                fontSize: "clamp(1.75rem, 4.2vw, 2.75rem)",
-                lineHeight: 1.1,
+                // Hero scale shared with Login for brand consistency.
+                // text-wrap: balance handles the longer copy gracefully.
+                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                lineHeight: 1.05,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
                 textAlign: "center",
