@@ -28,6 +28,14 @@ function clearObStep() { try { localStorage.removeItem(OB_STEP_KEY); localStorag
  */
 const ROLE_KEYWORDS = /\b(engineer|developer|designer|manager|director|lead|architect|analyst|consultant|specialist|coordinator|scientist|researcher|writer|editor|marketer|seller|recruiter|administrator|administrator|officer|associate|principal|staff|senior|junior|head|chief|vp|vice\s*president|founder|co[-\s]?founder|ceo|cto|cfo|coo|cpo|cmo|product|engineering|design|marketing|sales|operations|hr|finance|legal|data|software|frontend|backend|fullstack|full[-\s]?stack|devops|sre|security|qa|qe|test|intern|trainee|fresher|apprentice|technician|operator|teacher|professor|nurse|doctor|advisor|strategist|partner|liaison|representative|agent|executive|generalist|architect|programmer)\b/i;
 
+// Degree / subject / institution keywords — when a saved name field
+// contains these, it's almost certainly a parser mis-classification
+// from the pre-fix days (e.g. "BTech Computer Science", "DY PATIL
+// UNIVERSITY", "Bachelor Of Engineering"). looksLikePersonName uses
+// this in addition to ROLE_KEYWORDS so display-layer fallbacks
+// reject historical bad values, not just new uploads.
+const NON_NAME_KEYWORDS = /\b(?:university|college|institute|institution|academy|school|consultancy|consulting|services|solutions|technologies|technology|systems|limited|ltd|pvt|private|inc|corporation|corp|company|llc|btech|b\.tech|mtech|m\.tech|bsc|b\.sc|msc|m\.sc|bcom|b\.com|mcom|m\.com|bca|mca|llb|llm|mbbs|bds|mba|bachelor|bachelors|master|masters|diploma|graduate|graduation|postgraduate|undergraduate|phd|doctorate|fellowship|certification|certificate|computer|information|electronics|mechanical|electrical|civil|chemical|biotechnology|biotech|commerce|arts|economics|psychology|physics|chemistry|biology|mathematics|statistics)\b/i;
+
 function looksLikeJobTitle(s: string): boolean {
   if (!s || s.length < 2 || s.length > 80) return false;
   return ROLE_KEYWORDS.test(s);
@@ -65,6 +73,11 @@ function looksLikePersonName(s?: string | null): boolean {
   // Reject role/company-shaped strings: if it contains role keywords,
   // the parser probably mis-classified a job title as a name.
   if (ROLE_KEYWORDS.test(trimmed)) return false;
+  // Reject degree / subject / institution-shaped strings. Catches
+  // historical bad data like "BTech Computer Science", "DY PATIL
+  // UNIVERSITY", "MBA Finance" that may already be saved on a
+  // user's profile from before the parser fix landed.
+  if (NON_NAME_KEYWORDS.test(trimmed)) return false;
   // Max 5 tokens — "Dr. Jane Marie O'Brien-Smith" fits; "Jane Smith
   // is looking for a Senior Engineer role" doesn't.
   const tokens = trimmed.split(/\s+/);
@@ -95,7 +108,13 @@ export default function Onboarding() {
   const [aiProfile, setAiProfile] = useState<ResumeProfile | null>(null);
   const [aiPhase, setAiPhase] = useState<"idle" | "analyzing" | "done">("idle");
   const [analysisStage, setAnalysisStage] = useState(0);
-  const [userName, setUserName] = useState(user?.name || "");
+  // Gate the saved user.name through the person-name validator on
+  // mount so historical bad values (e.g. "BTech Computer Science",
+  // "DY PATIL UNIVERSITY") don't seed userName. The user can still
+  // type a real name and we'll save it.
+  const [userName, setUserName] = useState(
+    looksLikePersonName(user?.name) ? (user?.name || "") : ""
+  );
   const undoRef = useRef<{ fileName: string; resumeText: string; resumeParsed: ParsedResume | null; aiProfile: ResumeProfile | null; aiPhase: "idle" | "analyzing" | "done"; targetRole: string; userName: string } | null>(null);
   const analysisAbortRef = useRef<AbortController | null>(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -693,13 +712,15 @@ export default function Onboarding() {
         userEmail={user?.email || ""}
         userAvatar={undefined}
         // Name source priority: editable userName state > resume-parsed name
-        // > account name. Account names are often institutional (e.g.
-        // "DY PATIL UNIVERSITY") because users sign up with university
-        // emails — that's not what the AI session should personalise to.
+        // > account name. Each layer is gated through looksLikePersonName
+        // so a historical bad value (e.g. "BTech Computer Science",
+        // "DY PATIL UNIVERSITY") falls through instead of being shown.
+        // If all three fail, TopBar gracefully falls back to email-derived
+        // initials.
         userName={
-          (userName && userName.trim()) ||
-          (resumeParsed?.name && resumeParsed.name.trim()) ||
-          user?.name ||
+          (looksLikePersonName(userName) && userName.trim()) ||
+          (looksLikePersonName(resumeParsed?.name) && resumeParsed!.name.trim()) ||
+          (looksLikePersonName(user?.name) && (user!.name || "")) ||
           ""
         }
       />
