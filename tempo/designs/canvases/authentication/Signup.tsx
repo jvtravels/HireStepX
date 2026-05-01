@@ -53,7 +53,6 @@ export default function Signup({
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState(initialPassword);
   const [showPassword, setShowPassword] = useState(false);
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
@@ -178,33 +177,26 @@ export default function Signup({
             padding: "clamp(24px, 4vh, 64px) 24px",
           }}
         >
+          {/* Hero — full-width container with one-line headline at desktop.
+              CSS @media in _styles re-enables wrapping below 900px viewport. */}
           <div
-            className="hsx-login-form"
-            style={{ width: "100%", maxWidth: 540 }}
+            className="hsx-login-hero"
+            style={{
+              width: "100%",
+              textAlign: "center",
+              marginBottom: 36,
+            }}
           >
-            {/* Editorial headline — ONE copper italic moment */}
             <h1
               id="signup-heading"
               style={{
                 fontFamily: f.serif,
-                // Same scale as Login. The longer sentence needs more room than
-                // the 540px form column, so we break out of the parent: position
-                // relative + translateX(-50%) re-centers the heading on the
-                // parent's centerline regardless of parent width, while the
-                // explicit width pulls from the wider main area.
-                // textWrap:balance keeps any wrap visually even on narrow screens.
                 fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
                 lineHeight: 1.05,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
-                textAlign: "center",
-                textWrap: "balance",
+                whiteSpace: "nowrap",
                 margin: 0,
-                position: "relative",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "max-content",
-                maxWidth: "calc(100vw - 48px)",
                 color: t.coal,
               }}
             >
@@ -227,12 +219,20 @@ export default function Signup({
                 fontSize: 16,
                 lineHeight: 1.55,
                 color: t.inkSoft,
-                textAlign: "center",
                 marginTop: 18,
-                marginBottom: 28,
+                marginBottom: 0,
                 textWrap: "balance",
               }}
-            >Start practising. Improve with every answer. One step closerto your next interview.</p>
+            >
+              Start practising. Improve with every answer. One step closer to
+              your next interview.
+            </p>
+          </div>
+
+          <div
+            className="hsx-login-form"
+            style={{ width: "100%", maxWidth: 540 }}
+          >
 
             {/* Free tier signal — JetBrains Mono micro-cap, indigo accent */}
 
@@ -372,16 +372,6 @@ export default function Signup({
                     <PasswordChecklist checks={passwordV.checks} />
                   </>
                 )}
-              </div>
-
-              {/* Marketing consent — DPDP-compliant opt-in (unchecked default) */}
-              <div style={{ marginTop: 4 }}>
-                <Checkbox
-                  checked={marketingOptIn}
-                  onChange={setMarketingOptIn}
-                  label="Send me interview tips and product updates"
-                  description="Optional. We never share your email. Unsubscribe anytime."
-                />
               </div>
 
               <button

@@ -184,6 +184,24 @@ export const AUTH_STYLES = `
 
   /* ─── Responsive ─── */
 
+  /* Hero responsive wrap — desktop forces single line via white-space:nowrap;
+     below 900px the headline can no longer fit, so allow wrapping again with
+     text-wrap:balance for clean line breaks. */
+  @media (max-width: 900px) {
+    .hsx-login-hero h1 {
+      white-space: normal !important;
+      text-wrap: balance;
+    }
+  }
+
+  /* Very narrow viewports — clamp the hero font further so it never overflows
+     even at the clamp() floor. */
+  @media (max-width: 480px) {
+    .hsx-login-hero h1 {
+      font-size: clamp(1.875rem, 8vw, 2.5rem) !important;
+    }
+  }
+
   /* Tablet (≤960px) — modest tightening */
   @media (max-width: 960px) {
     .hsx-login-topbar { padding: 24px 32px !important; }

@@ -65,7 +65,6 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsAttempted, setTermsAttempted] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
@@ -392,22 +391,25 @@ export default function Signup() {
             padding: "clamp(24px, 4vh, 64px) 24px",
           }}
         >
+          {/* Hero — full-width container with one-line headline at desktop.
+              CSS @media in _styles re-enables wrapping below 760px viewport. */}
           <div
-            className="hsx-login-form"
-            style={{ width: "100%", maxWidth: 540 }}
+            className="hsx-login-hero"
+            style={{
+              width: "100%",
+              textAlign: "center",
+              marginBottom: 36,
+            }}
           >
             <h1
               id="signup-heading"
               style={{
                 fontFamily: f.serif,
-                // Hero scale shared with Login for brand consistency.
-                // text-wrap: balance handles the longer copy gracefully.
                 fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
                 lineHeight: 1.05,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
-                textAlign: "center",
-                textWrap: "balance",
+                whiteSpace: "nowrap",
                 margin: 0,
                 color: t.coal,
               }}
@@ -431,16 +433,20 @@ export default function Signup() {
                 fontSize: 16,
                 lineHeight: 1.55,
                 color: t.inkSoft,
-                textAlign: "center",
                 marginTop: 18,
-                marginBottom: 28,
+                marginBottom: 0,
                 textWrap: "balance",
               }}
             >
               Start practising. Improve with every answer. One step closer to
               your next interview.
             </p>
+          </div>
 
+          <div
+            className="hsx-login-form"
+            style={{ width: "100%", maxWidth: 540 }}
+          >
             <button
               type="button"
               className="hsx-login-google"
@@ -635,16 +641,6 @@ export default function Signup() {
                     Please accept the Terms to continue.
                   </p>
                 )}
-              </div>
-
-              {/* Optional: Marketing opt-in (DPDP-compliant unchecked default) */}
-              <div>
-                <Checkbox
-                  checked={marketingOptIn}
-                  onChange={setMarketingOptIn}
-                  label="Send me interview tips and product updates"
-                  description="Optional. We never share your email. Unsubscribe anytime."
-                />
               </div>
 
               <button

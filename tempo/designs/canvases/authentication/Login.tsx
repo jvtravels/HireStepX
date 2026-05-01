@@ -195,9 +195,16 @@ export default function Login({
             padding: "clamp(24px, 4vh, 64px) 24px",
           }}
         >
-          <div className="hsx-login-form" style={{ width: "100%", maxWidth: 540 }}>
-            {/* Editorial headline — copper italic accent on ONE word.
-                Instrument Serif ships only at weight 400; do not bump. */}
+          {/* Hero — full-width container with one-line headline at desktop.
+              CSS @media in _styles re-enables wrapping below 900px viewport. */}
+          <div
+            className="hsx-login-hero"
+            style={{
+              width: "100%",
+              textAlign: "center",
+              marginBottom: 36,
+            }}
+          >
             <h1
               id="login-heading"
               style={{
@@ -206,8 +213,7 @@ export default function Login({
                 lineHeight: 1.05,
                 fontWeight: 400,
                 letterSpacing: "-0.02em",
-                textAlign: "center",
-                textWrap: "balance",
+                whiteSpace: "nowrap",
                 margin: 0,
                 color: t.coal,
               }}
@@ -225,13 +231,23 @@ export default function Login({
               interviews
             </h1>
             <p
-              className="hsx-login-subtitle h-[50px]"
-              style={{ fontFamily: f.sans, fontSize: 16, lineHeight: 1.55, color: t.inkSoft, textAlign: "center", marginTop: 18, marginBottom: 44, textWrap: "balance" }}
+              className="hsx-login-subtitle"
+              style={{
+                fontFamily: f.sans,
+                fontSize: 16,
+                lineHeight: 1.55,
+                color: t.inkSoft,
+                marginTop: 18,
+                marginBottom: 0,
+                textWrap: "balance",
+              }}
             >
               Practise interviews. Improve how you think under pressure. One
               answer at a time.
             </p>
+          </div>
 
+          <div className="hsx-login-form" style={{ width: "100%", maxWidth: 540 }}>
             {/* Google CTA */}
             <button
               type="button"
