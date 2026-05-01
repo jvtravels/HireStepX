@@ -548,6 +548,11 @@ export interface ProfileReadyStateProps {
   onReanalyze: () => void;
   onRemove: () => void;
   onReplaceFile: () => void;
+  /** Optional CTA wired into the score card. When supplied, the
+      gauge renders a primary "Start mock interview" button under
+      its stats so the user has a clear next step in the hero row. */
+  onStartInterview?: () => void;
+  starting?: boolean;
 }
 
 export function ProfileReadyState({
@@ -560,6 +565,8 @@ export function ProfileReadyState({
   onReanalyze,
   onRemove,
   onReplaceFile,
+  onStartInterview,
+  starting,
 }: ProfileReadyStateProps) {
   void resumeParsed; // kept for parity with the production interface
   // Inline editable target-role — drafts locally so the user can revise before
@@ -794,6 +801,8 @@ export function ProfileReadyState({
             industries={aiProfile.industries}
             displayName={trimmedName || undefined}
             initials={initials}
+            onStartInterview={onStartInterview}
+            starting={starting}
           />
         </div>
 
@@ -963,6 +972,8 @@ function ScoreGauge({
   industries,
   displayName,
   initials,
+  onStartInterview,
+  starting,
 }: {
   score: number | null;
   tone: "success" | "warning" | "error" | "muted";
@@ -970,6 +981,11 @@ function ScoreGauge({
   industries?: string[];
   displayName?: string;
   initials?: string;
+  /** Optional primary CTA. When provided, renders inside the gauge
+      card so the user has a clear action right next to their score
+      — no scrolling needed. */
+  onStartInterview?: () => void;
+  starting?: boolean;
 }) {
   const color =
     tone === "success" ? t.success : tone === "warning" ? t.warning : tone === "error" ? t.error : t.inkSoft;
@@ -1059,6 +1075,51 @@ function ScoreGauge({
           )}
           {seniority && <StatRow label="Seniority" value={seniority} valueTone="indigo" />}
           {industriesLabel && <StatRow label="Industries" value={industriesLabel} />}
+        </div>
+      )}
+
+      {/* Primary CTA — only when caller wires it up. Sits at the
+          bottom of the score card so the user reads "you're at 80,
+          here's the action" in one downward sweep. The mtAuto pushes
+          this to the bottom even when the card is taller than its
+          content (height: 100% from the parent grid stretch). */}
+      {onStartInterview && (
+        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}` }}>
+          <button
+            type="button"
+            onClick={onStartInterview}
+            disabled={!!starting}
+            className="hsx-onb-cta-primary"
+            style={{
+              width: "100%",
+              height: 44,
+              background: t.indigo,
+              color: t.white,
+              border: 0,
+              borderRadius: 10,
+              fontFamily: f.sans,
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "-0.005em",
+              cursor: starting ? "wait" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "background 0.15s ease, transform 0.1s ease",
+              opacity: starting ? 0.85 : 1,
+            }}
+          >
+            {starting ? "Starting…" : "Start mock interview"}
+            {!starting && (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 7h10m-4-4 4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </button>
+          <p style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: t.inkFaint, textAlign: "center", margin: "10px 0 0" }}>
+            ~25 min · pause anytime
+          </p>
         </div>
       )}
     </section>

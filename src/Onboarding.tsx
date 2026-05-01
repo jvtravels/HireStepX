@@ -698,6 +698,8 @@ export default function Onboarding() {
               onTargetRoleChange={setTargetRole}
               onReanalyze={handleReanalyze} onRemove={handleRemoveResume}
               onReplaceFile={() => fileInputRef.current?.click()}
+              onStartInterview={handleStartInterview}
+              starting={starting}
             />
           )}
 
