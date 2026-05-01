@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SignUp from "@/SignUp";
+import Signup from "@/auth/Signup";
 
 export const metadata: Metadata = {
   title: "Sign Up | HireStepX",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <SignUp />;
+  return <Signup />;
 }

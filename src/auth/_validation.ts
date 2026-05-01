@@ -44,3 +44,65 @@ export function sanitizeEmail(value: string): string {
 export function passwordHasEdgeWhitespace(value: string): boolean {
   return value.length > 0 && value !== value.trim();
 }
+
+/** Name validator (signup). Names can be one word, multilingual, with
+    spaces, hyphens, apostrophes. Don't be over-prescriptive — that's
+    how systems wrongly reject "O'Brien" or "राहुल". */
+export function validateName(value: string): FieldValidation {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return { valid: false, message: null };
+  if (trimmed.length < 2) {
+    return { valid: false, message: "Please enter your name." };
+  }
+  if (trimmed.length > 64) {
+    return { valid: false, message: "Name must be 64 characters or fewer." };
+  }
+  return { valid: true, message: null };
+}
+
+/** Signup-grade password validator. Min 8 chars + at least 3 of:
+    lowercase / uppercase / digit / symbol. Returns score 0-4 for the
+    strength meter, plus a message when invalid. */
+export interface PasswordStrength extends FieldValidation {
+  score: 0 | 1 | 2 | 3 | 4;
+  label: string;
+}
+
+export function validateSignupPassword(value: string): PasswordStrength {
+  if (value.length === 0) {
+    return { valid: false, message: null, score: 0, label: "" };
+  }
+  if (value.length < 8) {
+    return {
+      valid: false,
+      message: "Must be at least 8 characters.",
+      score: 1,
+      label: "Too short",
+    };
+  }
+  let variety = 0;
+  if (/[a-z]/.test(value)) variety++;
+  if (/[A-Z]/.test(value)) variety++;
+  if (/[0-9]/.test(value)) variety++;
+  if (/[^A-Za-z0-9]/.test(value)) variety++;
+
+  const longBonus = value.length >= 14 ? 1 : 0;
+  const score = Math.min(4, variety + longBonus) as 0 | 1 | 2 | 3 | 4;
+
+  if (variety < 3) {
+    return {
+      valid: false,
+      message:
+        "Add an uppercase letter, a number, or a symbol to make it stronger.",
+      score: Math.max(1, score) as 0 | 1 | 2 | 3 | 4,
+      label: "Weak",
+    };
+  }
+
+  return {
+    valid: true,
+    message: null,
+    score,
+    label: score >= 4 ? "Strong" : "Good",
+  };
+}

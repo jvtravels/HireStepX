@@ -327,6 +327,67 @@ export function Checkbox({ checked, onChange, label, description }: CheckboxProp
   );
 }
 
+/* ─── Password Strength Meter ─── */
+
+export interface PasswordStrengthMeterProps {
+  /** 0 (empty) → 4 (strong) */
+  score: 0 | 1 | 2 | 3 | 4;
+  /** Display label, e.g. "Weak" / "Good" / "Strong" */
+  label?: string;
+}
+
+export function PasswordStrengthMeter({
+  score,
+  label,
+}: PasswordStrengthMeterProps) {
+  // 4 segment bars; how many are filled depends on score.
+  // Color graduates from error → warning → success.
+  const filled = Math.max(0, Math.min(4, score));
+  const colors = [t.line, t.error, t.error, t.warning ?? t.copper, t.success];
+  const barColor = colors[filled] ?? t.line;
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        marginTop: 8,
+      }}
+    >
+      <div style={{ display: "flex", gap: 4, flex: 1 }}>
+        {[0, 1, 2, 3].map((i) => (
+          <span
+            key={i}
+            style={{
+              flex: 1,
+              height: 4,
+              borderRadius: 2,
+              background: i < filled ? barColor : t.line,
+              transition: "background 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
+        ))}
+      </div>
+      {label && (
+        <span
+          style={{
+            fontFamily: f.mono,
+            fontSize: 10,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            color: filled <= 1 ? t.error : filled <= 2 ? t.inkSoft : t.success,
+            minWidth: 64,
+            textAlign: "right",
+          }}
+        >
+          {label}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /* ─── Wordmark ─── */
 
 export function Wordmark() {
