@@ -47,15 +47,16 @@ export function passwordHasEdgeWhitespace(value: string): boolean {
 
 /** Name validator (signup). Names can be one word, multilingual, with
     spaces, hyphens, apostrophes. Don't be over-prescriptive — that's
-    how systems wrongly reject "O'Brien" or "राहुल". */
+    how systems wrongly reject "O'Brien" or "राहुल". Max length matches
+    server-side cap in AuthContext.signup() (48 chars). */
 export function validateName(value: string): FieldValidation {
   const trimmed = value.trim();
   if (trimmed.length === 0) return { valid: false, message: null };
   if (trimmed.length < 2) {
     return { valid: false, message: "Please enter your name." };
   }
-  if (trimmed.length > 64) {
-    return { valid: false, message: "Name must be 64 characters or fewer." };
+  if (trimmed.length > 48) {
+    return { valid: false, message: "Name must be 48 characters or fewer." };
   }
   return { valid: true, message: null };
 }
@@ -69,10 +70,10 @@ export interface PasswordChecks {
   symbol: boolean;
 }
 
-/** Signup-grade password validator. Min 8 chars + at least 3 of:
-    lowercase / uppercase / digit / symbol. Returns score 0-4 for the
-    strength meter, individual checks for the live checklist, and an
-    actionable message when invalid. */
+/** Signup-grade password validator. Matches the server-side rules in
+    AuthContext.signup() exactly so the client checklist never shows
+    "all green" while the server rejects: length ≥8 + uppercase + digit
+    + symbol (all three required). Lowercase is recommended but optional. */
 export interface PasswordStrength extends FieldValidation {
   score: 0 | 1 | 2 | 3 | 4;
   label: string;
@@ -101,19 +102,25 @@ export function validateSignupPassword(value: string): PasswordStrength {
     };
   }
 
-  const variety =
-    Number(checks.lowercase) +
-    Number(checks.uppercase) +
-    Number(checks.number) +
-    Number(checks.symbol);
+  // Server-required criteria: uppercase, number, symbol (all three).
+  // Lowercase is bonus — boosts the strength meter but isn't required.
+  const requiredVariety =
+    Number(checks.uppercase) + Number(checks.number) + Number(checks.symbol);
+  const totalVariety = requiredVariety + Number(checks.lowercase);
   const longBonus = value.length >= 14 ? 1 : 0;
-  const score = Math.min(4, variety + longBonus) as 0 | 1 | 2 | 3 | 4;
+  const score = Math.min(4, totalVariety + longBonus - 1) as
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4;
+  const safeScore = Math.max(1, score) as 0 | 1 | 2 | 3 | 4;
 
-  if (variety < 3) {
+  if (requiredVariety < 3) {
     return {
       valid: false,
       message: null, // the checklist tells the user what's missing
-      score: Math.max(1, score) as 0 | 1 | 2 | 3 | 4,
+      score: safeScore,
       label: "Weak",
       checks,
     };
@@ -122,8 +129,8 @@ export function validateSignupPassword(value: string): PasswordStrength {
   return {
     valid: true,
     message: null,
-    score,
-    label: score >= 4 ? "Strong" : "Good",
+    score: safeScore,
+    label: safeScore >= 4 ? "Strong" : "Good",
     checks,
   };
 }

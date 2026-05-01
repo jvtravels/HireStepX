@@ -1,143 +1,227 @@
+/* HireStepX — Reset password (production)
+   Step 3 of the password-reset flow. User landed via the emailed token
+   link; we collect a new password + confirmation and submit.
+
+   Security model preserved from prior implementation:
+   - Recovery session must be active (Supabase auto-picks up the token from URL hash)
+   - One-shot enforcement (`password_reset_used_at` user_metadata)
+   - CSRF token in sessionStorage validated on submit
+   - Last-3-password reuse rejection (SHA-256 client hashes — defence in depth)
+   - All sessions invalidated on success (auth.signOut)
+   - Notification email fired post-update
+
+   Design matches the cream/coal/indigo auth surface (Login + ForgotPassword).
+   Discipline rule: Indigo is interactive · Copper is editorial · Never mix. */
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { c, font } from "./tokens";
+import { tokens as t, fonts as ft, shadows } from "./auth/_tokens";
+import {
+  Field,
+  Wordmark,
+  Spinner,
+  EyeIcon,
+  PasswordStrengthMeter,
+  PasswordChecklist,
+} from "./auth/_fields";
+import { AUTH_STYLES } from "./auth/_styles";
+import {
+  passwordHasEdgeWhitespace,
+  validateSignupPassword,
+} from "./auth/_validation";
 import { getSupabase, supabaseConfigured } from "./supabase";
 
-function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
-  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
-  if (/\d/.test(pw)) score++;
-  if (/[^a-zA-Z0-9]/.test(pw)) score++;
-  if (score <= 1) return { score, label: "Weak", color: c.ember };
-  if (score <= 2) return { score, label: "Fair", color: c.gilt };
-  if (score <= 3) return { score, label: "Good", color: c.sage };
-  return { score, label: "Strong", color: c.sage };
-}
+const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
+const PASSWORD_MAX_LENGTH = 128;
+// Reset links live for 30 minutes — surfaced via live countdown.
+const TOKEN_LIFETIME_SEC = 30 * 60;
 
-/** Simple CSRF protection: generate a random token per page load, stored in sessionStorage */
+type TokenStatus = "pending" | "valid" | "expired" | "used" | "invalid";
+
+/** Simple CSRF protection: random token per page load, stored in sessionStorage. */
 function generateCsrfToken(): string {
-  const token = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
-  try { sessionStorage.setItem("hirestepx_csrf_reset", token); } catch { /* noop */ }
+  const token =
+    crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+  try {
+    sessionStorage.setItem("hirestepx_csrf_reset", token);
+  } catch {
+    /* noop — restricted storage */
+  }
   return token;
 }
 function validateCsrfToken(token: string): boolean {
   try {
     const stored = sessionStorage.getItem("hirestepx_csrf_reset");
     return !!stored && stored === token;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export default function ResetPassword() {
   const router = useRouter();
+
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus>("pending");
+  const [email, setEmail] = useState<string | undefined>(undefined);
+
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [hasSession, setHasSession] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const csrfTokenRef = useRef<string>("");
-  const strength = getPasswordStrength(password);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmTouched, setConfirmTouched] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const csrfTokenRef = useRef<string>("");
+
+  const [shouldAutoFocus] = useState(() => {
+    if (typeof document === "undefined") return false;
+    return document.visibilityState === "visible";
+  });
+
+  // ── Live expiry countdown (visual only; backend authoritative) ──────────
+  const [secondsLeft, setSecondsLeft] = useState(TOKEN_LIFETIME_SEC);
+  useEffect(() => {
+    if (tokenStatus !== "valid") return;
+    const id = setInterval(
+      () => setSecondsLeft((s) => Math.max(0, s - 1)),
+      1000,
+    );
+    return () => clearInterval(id);
+  }, [tokenStatus]);
+
+  const expired = secondsLeft === 0;
+  const expiryLabel = useMemo(() => {
+    const m = Math.floor(secondsLeft / 60);
+    const s = secondsLeft % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }, [secondsLeft]);
+
+  // ── Recovery session check + token-status resolution ────────────────────
   useEffect(() => {
     if (!supabaseConfigured) {
+      setTokenStatus("invalid");
       setError("Password reset requires Supabase configuration.");
       return;
     }
-    // Supabase automatically picks up the recovery token from the URL hash
+    let cancelled = false;
     (async () => {
       try {
         const client = await getSupabase();
-        const { data: { session } } = await client.auth.getSession();
+        const {
+          data: { session },
+        } = await client.auth.getSession();
+        if (cancelled) return;
         if (!session) {
-          router.replace("/login?reset_error=link_expired");
+          setTokenStatus("expired");
           return;
         }
-        // Check if this reset link was already used
+        // One-shot: reject if this link was already used to reset.
         const usedAt = session.user.user_metadata?.password_reset_used_at;
-        if (usedAt && typeof usedAt === "number") {
+        if (typeof usedAt === "number") {
           const elapsed = Date.now() - usedAt;
           if (elapsed < 24 * 60 * 60 * 1000) {
             await client.auth.signOut().catch(() => {});
-            router.replace("/login?reset_error=link_used");
+            if (cancelled) return;
+            setTokenStatus("used");
             return;
           }
         }
-        // Generate CSRF token for this session — prevents cross-site form submission
         csrfTokenRef.current = generateCsrfToken();
-        setHasSession(true);
+        setEmail(session.user.email ?? undefined);
+        setTokenStatus("valid");
       } catch {
-        setError("Could not verify reset link. Please try again.");
+        if (!cancelled) {
+          setTokenStatus("invalid");
+        }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Auto-hide password — over-shoulder protection (matches Login).
+  useEffect(() => {
+    if (!showPassword) return;
+    const id = setTimeout(
+      () => setShowPassword(false),
+      PASSWORD_VISIBLE_TIMEOUT_MS,
+    );
+    return () => clearTimeout(id);
+  }, [showPassword]);
+
+  const pwV = validateSignupPassword(password);
+  const matches = password.length > 0 && password === confirm;
+  const canSubmit =
+    pwV.valid && matches && !loading && !expired && tokenStatus === "valid";
+
+  const passwordError = passwordTouched
+    ? pwV.message ||
+      (passwordHasEdgeWhitespace(password)
+        ? "Password has leading or trailing spaces — check your paste."
+        : null)
+    : null;
+  const confirmError =
+    confirmTouched && confirm.length > 0 && password !== confirm
+      ? "Passwords don't match."
+      : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setPasswordTouched(true);
+    setConfirmTouched(true);
+    setError(null);
+    if (!canSubmit) return;
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (password.length > 128) {
-      setError("Password must be 128 characters or fewer.");
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setError("Password must contain at least one number.");
-      return;
-    }
-    if (!/[^A-Za-z0-9]/.test(password)) {
-      setError("Password must contain at least one special character.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
+    // Hard length cap as defence-in-depth (validateSignupPassword enforces min).
+    if (password.length > PASSWORD_MAX_LENGTH) {
+      setError(`Password must be ${PASSWORD_MAX_LENGTH} characters or fewer.`);
       return;
     }
 
-    // CSRF check — ensure form was submitted from our own page
     if (!validateCsrfToken(csrfTokenRef.current)) {
-      setError("Security validation failed. Please refresh the page and try again.");
+      setError("Security validation failed. Please refresh and try again.");
       return;
     }
 
     setLoading(true);
     try {
       const client = await getSupabase();
-      const { data: { session: currentSession } } = await client.auth.getSession();
+      const {
+        data: { session: currentSession },
+      } = await client.auth.getSession();
 
-      // Password history check — prevent reuse of last 3 passwords
-      // Uses SHA-256 via Web Crypto API for proper hashing (client-side only; Supabase handles actual password security)
-      const passwordHashes: string[] = currentSession?.user?.user_metadata?.password_hashes || [];
-      const hashPassword = async (pw: string): Promise<string> => {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(pw);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-      };
-      const newHash = await hashPassword(password);
+      // Last-3 password reuse rejection (defence-in-depth; Supabase handles
+      // canonical password hashing server-side).
+      const passwordHashes: string[] =
+        currentSession?.user?.user_metadata?.password_hashes || [];
+      const newHash = await sha256Hex(password);
       if (passwordHashes.includes(newHash)) {
-        setError("You cannot reuse a recent password. Please choose a different one.");
+        setError("You can't reuse a recent password. Pick a different one.");
         setLoading(false);
         return;
       }
 
-      // Use server-validated timestamp from the session itself (not client Date.now() which can be forged)
+      // Server-derived timestamp from JWT exp (resists client clock manipulation).
       const serverTimestamp = currentSession?.expires_at
-        ? (currentSession.expires_at * 1000) - (3600 * 1000) // derive approximate server time from JWT exp (issued 1hr before exp)
-        : Date.now(); // fallback to client time if session unavailable
+        ? currentSession.expires_at * 1000 - 3600 * 1000
+        : Date.now();
 
-      // Keep last 3 password hashes for history check
       const updatedHashes = [newHash, ...passwordHashes].slice(0, 3);
 
       const { error: updateError } = await client.auth.updateUser({
@@ -151,224 +235,775 @@ export default function ResetPassword() {
 
       if (updateError) {
         setError(updateError.message);
-      } else {
-        // Send password-changed notification email (fire-and-forget)
-        const userEmail = currentSession?.user?.email;
-        if (userEmail) {
-          fetch("/api/send-welcome", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: userEmail, action: "password-changed" }),
-          }).catch(() => {});
-        }
-        // Sign out the recovery session so user must log in with new password
-        try { await client.auth.signOut(); } catch { /* best effort */ }
-        setSuccess(true);
-        setTimeout(() => router.push("/login"), 4000);
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+
+      // Fire-and-forget: notification email so user knows the change happened.
+      const userEmail = currentSession?.user?.email;
+      if (userEmail) {
+        fetch("/api/send-welcome", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userEmail,
+            action: "password-changed",
+          }),
+        }).catch(() => {});
+      }
+
+      // Sign out the recovery session — strict posture: every session
+      // (including current) is invalidated. User logs back in fresh.
+      try {
+        await client.auth.signOut();
+      } catch {
+        /* best effort */
+      }
+
+      setSuccess(true);
+      setTimeout(() => router.push("/login"), 4000);
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div style={{
-      minHeight: "100vh", background: c.obsidian,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: font.ui,
-    }}>
-      <div style={{
-        width: "100%", maxWidth: 400, padding: 32,
-        background: c.graphite, borderRadius: 16,
-        border: `1px solid ${c.border}`,
-      }}>
-        <h1 style={{
-          fontFamily: font.display, fontSize: 28, fontWeight: 400,
-          color: c.ivory, marginBottom: 8, textAlign: "center",
-        }}>
-          Reset Password
-        </h1>
-        <p style={{ fontSize: 13, color: c.stone, textAlign: "center", marginBottom: 28 }}>
-          Enter your new password below.
-        </p>
+  // Token-error copy — distinct per state (GitHub / Linear pattern).
+  const tokenSurface = (() => {
+    if (tokenStatus === "expired") {
+      return {
+        title: "This link has expired.",
+        body: "Reset links live for 30 minutes. Request a new one to continue.",
+      };
+    }
+    if (tokenStatus === "used") {
+      return {
+        title: "This link was already used.",
+        body:
+          "If you didn't reset your password, secure your account and request a fresh link.",
+      };
+    }
+    return {
+      title: "We couldn't verify this link.",
+      body:
+        "It may have been mistyped or tampered with. Request a new link to try again.",
+    };
+  })();
 
-        {success ? (
-          <div style={{
-            padding: 16, borderRadius: 10,
-            background: "rgba(122,158,126,0.1)", border: `1px solid rgba(122,158,126,0.3)`,
-            textAlign: "center",
-          }}>
-            <p style={{ color: c.sage, fontSize: 14, fontWeight: 500 }}>Password updated successfully!</p>
-            <p style={{ color: c.stone, fontSize: 12, marginTop: 4 }}>We've sent a security notification to your email. If you didn't make this change, check your inbox and contact support.</p>
-            <button
-              onClick={() => router.push("/login")}
+  // ── Success surface ─────────────────────────────────────────────────────
+  if (success) {
+    return (
+      <>
+        <style>{AUTH_STYLES}</style>
+        <div
+          style={{
+            background: t.cream,
+            minHeight: "100dvh",
+            fontFamily: ft.sans,
+            color: t.coal,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <header
+            className="hsx-login-topbar"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "32px 48px",
+              gap: 16,
+            }}
+          >
+            <a
+              href="/"
+              aria-label="HireStepX home"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <Wordmark />
+            </a>
+          </header>
+
+          <main
+            className="hsx-login-main"
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "clamp(24px, 4vh, 64px) 24px",
+            }}
+          >
+            <div
+              className="hsx-login-hero"
+              style={{ width: "100%", textAlign: "center", marginBottom: 32 }}
+            >
+              <h1
+                style={{
+                  fontFamily: ft.serif,
+                  fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                  lineHeight: 1.05,
+                  fontWeight: 400,
+                  letterSpacing: "-0.02em",
+                  whiteSpace: "nowrap",
+                  margin: 0,
+                  color: t.coal,
+                }}
+              >
+                Password{" "}
+                <em
+                  style={{
+                    fontStyle: "italic",
+                    fontWeight: 400,
+                    color: t.copper,
+                  }}
+                >
+                  updated
+                </em>
+              </h1>
+              <p
+                role="status"
+                aria-live="polite"
+                style={{
+                  fontFamily: ft.sans,
+                  fontSize: 16,
+                  lineHeight: 1.55,
+                  color: t.inkSoft,
+                  marginTop: 14,
+                  marginBottom: 0,
+                  textWrap: "balance",
+                }}
+              >
+                We&apos;ve signed you out of all devices for safety. Use your
+                new password to log back in.
+              </p>
+            </div>
+
+            <div
               style={{
-                marginTop: 12, fontFamily: font.ui, fontSize: 13, fontWeight: 600,
-                color: c.obsidian, background: c.gilt, border: "none",
-                borderRadius: 8, padding: "8px 20px", cursor: "pointer",
+                width: "100%",
+                maxWidth: 440,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
               }}
             >
-              Continue to Login
-            </button>
+              <a
+                href="/login"
+                className="hsx-login-cta"
+                style={{
+                  width: "100%",
+                  fontFamily: ft.sans,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: t.cream,
+                  background: t.indigo,
+                  border: "1px solid transparent",
+                  borderRadius: 10,
+                  padding: "16px 18px",
+                  cursor: "pointer",
+                  boxShadow: shadows.cta,
+                  letterSpacing: 0.1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  textDecoration: "none",
+                }}
+              >
+                Go to Log in
+                <svg
+                  className="hsx-login-cta-arrow"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </a>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  marginTop: 6,
+                  fontFamily: ft.sans,
+                  fontSize: 13,
+                  color: t.inkSoft,
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={t.success}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                  <polyline points="9 12 11 14 15 10" />
+                </svg>
+                Your account is secured.
+              </div>
+
+              <p
+                style={{
+                  fontFamily: ft.sans,
+                  fontSize: 13,
+                  color: t.inkSoft,
+                  textAlign: "center",
+                  marginTop: 10,
+                  lineHeight: 1.55,
+                }}
+              >
+                Didn&apos;t request this?{" "}
+                <a
+                  href="/contact"
+                  className="hsx-link-indigo"
+                  style={{
+                    color: t.indigo,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Secure your account
+                </a>
+                .
+              </p>
+            </div>
+          </main>
+        </div>
+      </>
+    );
+  }
+
+  // ── Main render: token-error or form ───────────────────────────────────
+  return (
+    <>
+      <style>{AUTH_STYLES}</style>
+      <div
+        style={{
+          background: t.cream,
+          minHeight: "100dvh",
+          fontFamily: ft.sans,
+          color: t.coal,
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <header
+          className="hsx-login-topbar"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "32px 48px",
+            gap: 16,
+          }}
+        >
+          <a
+            href="/"
+            aria-label="HireStepX home"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
+            <Wordmark />
+          </a>
+          <a
+            href="/login"
+            className="hsx-link-indigo"
+            style={{
+              fontFamily: ft.sans,
+              fontSize: 14,
+              fontWeight: 500,
+              color: t.indigo,
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            Back to Log in
+          </a>
+        </header>
+
+        <main
+          className="hsx-login-main"
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "clamp(24px, 4vh, 64px) 24px",
+          }}
+        >
+          <div
+            className="hsx-login-hero"
+            style={{ width: "100%", textAlign: "center", marginBottom: 32 }}
+          >
+            <h1
+              id="reset-heading"
+              style={{
+                fontFamily: ft.serif,
+                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                lineHeight: 1.05,
+                fontWeight: 400,
+                letterSpacing: "-0.02em",
+                whiteSpace: "nowrap",
+                margin: 0,
+                color: t.coal,
+              }}
+            >
+              Set a new{" "}
+              <em
+                style={{
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  color: t.copper,
+                }}
+              >
+                password
+              </em>
+            </h1>
+            <p
+              className="hsx-login-subtitle"
+              style={{
+                fontFamily: ft.sans,
+                fontSize: 16,
+                lineHeight: 1.55,
+                color: t.inkSoft,
+                marginTop: 14,
+                marginBottom: 0,
+                textWrap: "balance",
+              }}
+            >
+              {email ? (
+                <>
+                  Choose a strong password for{" "}
+                  <strong style={{ color: t.coal, fontWeight: 600 }}>
+                    {email}
+                  </strong>
+                  .
+                </>
+              ) : (
+                <>Choose something strong. You&apos;ll use this on every login.</>
+              )}
+            </p>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div style={{
-                padding: "10px 14px", borderRadius: 8, marginBottom: 16,
-                background: "rgba(196,112,90,0.1)", border: `1px solid rgba(196,112,90,0.3)`,
-              }}>
-                <p style={{ color: c.ember, fontSize: 12, marginBottom: !hasSession ? 8 : 0 }}>{error}</p>
-                {!hasSession && (
-                  <button
-                    type="button"
-                    onClick={() => router.push("/login")}
+
+          <div
+            className="hsx-login-form"
+            style={{ width: "100%", maxWidth: 440 }}
+          >
+            {tokenStatus !== "valid" ? (
+              tokenStatus === "pending" ? (
+                <div
+                  role="status"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "20px 18px",
+                    fontFamily: ft.sans,
+                    fontSize: 14,
+                    color: t.inkSoft,
+                    gap: 10,
+                  }}
+                >
+                  <Spinner />
+                  Verifying your link…
+                </div>
+              ) : (
+                <div
+                  role="alert"
+                  className="hsx-error-banner"
+                  style={{
+                    background: t.error100,
+                    border: `1px solid ${t.error}`,
+                    borderRadius: 10,
+                    padding: "16px 18px",
+                    fontFamily: ft.sans,
+                    fontSize: 14,
+                    color: t.error,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <strong style={{ fontWeight: 600 }}>
+                    {tokenSurface.title}
+                  </strong>
+                  <br />
+                  {tokenSurface.body}
+                  <div style={{ marginTop: 14 }}>
+                    <a
+                      href="/forgot-password"
+                      className="hsx-login-cta"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "12px 18px",
+                        borderRadius: 10,
+                        background: t.indigo,
+                        color: t.cream,
+                        fontWeight: 600,
+                        fontSize: 14,
+                        textDecoration: "none",
+                        boxShadow: shadows.cta,
+                      }}
+                    >
+                      Request a new link
+                    </a>
+                  </div>
+                </div>
+              )
+            ) : (
+              <>
+                {error && (
+                  <div
+                    role="alert"
+                    id="reset-error"
+                    className="hsx-error-banner"
                     style={{
-                      fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt,
-                      background: "none", border: `1px solid rgba(212,179,127,0.3)`,
-                      borderRadius: 10, padding: "6px 14px", cursor: "pointer",
+                      background: t.error100,
+                      border: `1px solid ${t.error}`,
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      marginBottom: 16,
+                      fontFamily: ft.sans,
+                      fontSize: 13,
+                      color: t.error,
+                      lineHeight: 1.4,
                     }}
                   >
-                    Request a new reset link
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div style={{ marginBottom: 16 }}>
-              <label htmlFor="reset-pw" style={{ fontSize: 12, fontWeight: 500, color: c.chalk, display: "block", marginBottom: 6 }}>
-                New Password
-              </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  id="reset-pw"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  disabled={!hasSession}
-                  maxLength={128}
-                  style={{
-                    width: "100%", padding: "10px 44px 10px 14px", borderRadius: 8,
-                    background: c.obsidian, border: `1px solid ${c.border}`,
-                    color: c.ivory, fontSize: 13, outline: "none", boxSizing: "border-box",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  style={{
-                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer", padding: 4,
-                    color: c.stone, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >
-                  {showPassword ? (
-                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                  ) : (
-                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  )}
-                </button>
-              </div>
-              {password.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-                    {[0, 1, 2, 3, 4].map(i => (
-                      <div key={i} style={{
-                        flex: 1, height: 3, borderRadius: 2,
-                        background: i < strength.score ? strength.color : c.border,
-                        transition: "background 0.2s",
-                      }} />
-                    ))}
+                    {error}
                   </div>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: strength.color }}>{strength.label}</span>
-                </div>
-              )}
-            </div>
+                )}
 
-            <div style={{ marginBottom: 24 }}>
-              <label htmlFor="reset-pw-confirm" style={{ fontSize: 12, fontWeight: 500, color: c.chalk, display: "block", marginBottom: 6 }}>
-                Confirm Password
-              </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  id="reset-pw-confirm"
-                  type={showConfirm ? "text" : "password"}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Re-enter your password"
-                  disabled={!hasSession}
-                  maxLength={128}
-                  style={{
-                    width: "100%", padding: "10px 44px 10px 14px", borderRadius: 8,
-                    background: c.obsidian, border: `1px solid ${c.border}`,
-                    color: c.ivory, fontSize: 13, outline: "none", boxSizing: "border-box",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  aria-label={showConfirm ? "Hide password" : "Show password"}
-                  style={{
-                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                    background: "none", border: "none", cursor: "pointer", padding: 4,
-                    color: c.stone, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
+                <form
+                  onSubmit={handleSubmit}
+                  aria-labelledby="reset-heading"
+                  aria-describedby={error ? "reset-error" : undefined}
+                  style={{ display: "flex", flexDirection: "column", gap: 14 }}
                 >
-                  {showConfirm ? (
-                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                  ) : (
-                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
+                  <Field
+                    label="New password"
+                    type={showPassword ? "text" : "password"}
+                    name="new-password"
+                    value={password}
+                    onChange={(v) => {
+                      setPassword(v);
+                      if (error) setError(null);
+                    }}
+                    onFocus={() => setPasswordTouched(true)}
+                    onAutofill={() => setPasswordTouched(true)}
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    autoFocus={shouldAutoFocus}
+                    enterKeyHint="next"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    invalid={
+                      !!error ||
+                      (passwordTouched && !pwV.valid && password.length > 0)
+                    }
+                    errorMessage={passwordError}
+                    rightSlot={
+                      <button
+                        type="button"
+                        className="hsx-eye-toggle"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        aria-pressed={showPassword}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: t.inkSoft,
+                          cursor: "pointer",
+                          padding: 4,
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <EyeIcon open={showPassword} />
+                      </button>
+                    }
+                  />
+
+                  {password.length > 0 && (
+                    <div style={{ marginTop: -2 }}>
+                      <PasswordStrengthMeter
+                        score={pwV.score}
+                        label={pwV.label}
+                      />
+                      <div style={{ marginTop: 12 }}>
+                        <PasswordChecklist checks={pwV.checks} />
+                      </div>
+                    </div>
                   )}
-                </button>
-              </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading || !hasSession}
+                  <Field
+                    label="Confirm password"
+                    type={showPassword ? "text" : "password"}
+                    name="confirm-password"
+                    value={confirm}
+                    onChange={setConfirm}
+                    onFocus={() => setConfirmTouched(true)}
+                    onAutofill={() => setConfirmTouched(true)}
+                    autoComplete="new-password"
+                    placeholder="Re-enter the password"
+                    enterKeyHint="go"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    invalid={!!confirmError}
+                    errorMessage={confirmError}
+                    rightSlot={
+                      matches ? (
+                        <span
+                          aria-label="Passwords match"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            color: t.success,
+                            padding: 4,
+                          }}
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </span>
+                      ) : undefined
+                    }
+                  />
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      fontFamily: ft.sans,
+                      fontSize: 13,
+                      color: t.inkSoft,
+                      marginTop: 2,
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={t.success}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                      <polyline points="9 12 11 14 15 10" />
+                    </svg>
+                    For safety, every device will be signed out.
+                  </div>
+
+                  {(() => {
+                    const isGhost = !canSubmit && !loading;
+                    const tooltip = isGhost
+                      ? expired
+                        ? "Request a fresh reset link to continue"
+                        : !pwV.valid
+                          ? "Choose a stronger password to continue"
+                          : !matches
+                            ? "Confirm your new password to continue"
+                            : "Complete the form to continue"
+                      : undefined;
+                    return (
+                      <button
+                        type="submit"
+                        disabled={!canSubmit}
+                        aria-busy={loading || undefined}
+                        title={tooltip}
+                        className="hsx-login-cta"
+                        style={{
+                          width: "100%",
+                          fontFamily: ft.sans,
+                          fontSize: 15,
+                          fontWeight: 600,
+                          color: isGhost ? t.inkFaint : t.cream,
+                          background: isGhost ? t.creamSoft : t.indigo,
+                          border: isGhost
+                            ? `1px solid ${t.line}`
+                            : "1px solid transparent",
+                          borderRadius: 10,
+                          padding: "16px 18px",
+                          cursor: canSubmit ? "pointer" : "not-allowed",
+                          marginTop: 4,
+                          boxShadow: isGhost ? "none" : shadows.cta,
+                          letterSpacing: 0.1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 10,
+                          opacity: loading ? 0.95 : 1,
+                        }}
+                      >
+                        {loading ? (
+                          <>
+                            <Spinner />
+                            Updating…
+                          </>
+                        ) : (
+                          <>
+                            Update password
+                            <svg
+                              className="hsx-login-cta-arrow"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                              <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
+
+                  <div
+                    aria-live="polite"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      marginTop: 6,
+                      fontFamily: ft.sans,
+                      fontSize: 13,
+                      color: expired ? t.error : t.inkSoft,
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={expired ? t.error : t.copper}
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                      <path d="M12 8v4" />
+                      <circle
+                        cx="12"
+                        cy="15"
+                        r="0.6"
+                        fill={expired ? t.error : t.copper}
+                        stroke="none"
+                      />
+                    </svg>
+                    {expired ? (
+                      "Link expired — request a new one."
+                    ) : (
+                      <>For your security, this link expires in {expiryLabel}.</>
+                    )}
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </main>
+
+        <footer
+          className="hsx-login-footer"
+          style={{
+            textAlign: "center",
+            padding: "24px 24px 32px",
+            fontFamily: ft.sans,
+            fontSize: 13,
+            color: t.inkSoft,
+            lineHeight: 1.6,
+          }}
+        >
+          <span
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={t.copper}
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+              <path d="M21 19a2 2 0 0 1-2 2h-1v-6h3v4z" />
+              <path d="M3 19a2 2 0 0 0 2 2h1v-6H3v4z" />
+            </svg>
+            Need help?{" "}
+            <a
+              href="/contact"
+              className="hsx-link-indigo"
               style={{
-                width: "100%", padding: "12px 0", borderRadius: 8, border: "none",
-                background: loading ? c.border : c.gilt, color: c.obsidian,
-                fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
+                color: t.indigo,
+                fontWeight: 600,
+                textDecoration: "none",
               }}
             >
-              {loading ? "Updating..." : "Update Password"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
-              style={{
-                width: "100%", padding: "10px 0", marginTop: 12,
-                background: "transparent", border: "none",
-                color: c.stone, fontSize: 13, cursor: "pointer",
-              }}
-            >
-              Back to Login
-            </button>
-          </form>
-        )}
+              Contact support
+            </a>
+          </span>
+        </footer>
       </div>
-    </div>
+    </>
   );
 }
