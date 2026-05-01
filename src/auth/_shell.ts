@@ -91,25 +91,12 @@ export function isResetInProgress(): boolean {
   }
 }
 
-/* ─── "Stay signed in" preference persistence ─── */
-
-const STAY_SIGNED_IN_KEY = "hsx_stay_signed_in";
-
-export function readStaySignedInPref(): boolean {
-  try {
-    return localStorage.getItem(STAY_SIGNED_IN_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function writeStaySignedInPref(value: boolean) {
-  try {
-    localStorage.setItem(STAY_SIGNED_IN_KEY, value ? "1" : "0");
-  } catch {
-    /* ignore */
-  }
-}
+/* "Stay signed in" preference helpers used to live here. Removed —
+   Supabase sessions are always persistent across tabs (localStorage),
+   and toggling between localStorage / sessionStorage requires
+   reinitializing the singleton client which is bigger surface than
+   it's worth. The checkbox was a UX placebo. Re-add when there's a
+   real product decision on session lifetime. */
 
 /* ─── Build a /signup or /login link that preserves both
        plan + next params (Login → Signup, Signup → Login). ─── */

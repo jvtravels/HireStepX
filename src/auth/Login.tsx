@@ -9,7 +9,6 @@ import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
-  Checkbox,
   Wordmark,
   GoogleIcon,
   Spinner,
@@ -28,9 +27,7 @@ import {
   computeAuthRedirect,
   isResetInProgress,
   mapAuthError,
-  readStaySignedInPref,
   useIsMounted,
-  writeStaySignedInPref,
 } from "./_shell";
 
 // Auto-hide password if visible for this long (over-shoulder protection)
@@ -94,7 +91,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [staySignedIn, setStaySignedIn] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -149,10 +145,8 @@ export default function Login() {
     trackAuth(loginViewedEvent("login"));
   }, []);
 
-  // Hydrate the "Stay signed in" preference from previous session, and
-  // initialize lockout on the client (SSR-safe — runs after mount).
+  // Initialize lockout on the client (SSR-safe — runs after mount).
   useEffect(() => {
-    setStaySignedIn(readStaySignedInPref());
     setLockoutSeconds(readLockoutSeconds());
   }, []);
 
@@ -166,14 +160,6 @@ export default function Login() {
     window.addEventListener("pageshow", handler);
     return () => window.removeEventListener("pageshow", handler);
   }, []);
-
-  // Persist the "Stay signed in" preference. Today this is consumed
-  // only as a UI memory; future commit will pass it through to
-  // useAuth().login() to control session lifetime (sessionStorage vs
-  // localStorage on the Supabase client).
-  useEffect(() => {
-    writeStaySignedInPref(staySignedIn);
-  }, [staySignedIn]);
 
   // Auto-hide password timeout
   useEffect(() => {
@@ -630,17 +616,11 @@ export default function Login() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
+                  justifyContent: "flex-end",
                   marginTop: 2,
                   minHeight: 20,
                 }}
               >
-                <Checkbox
-                  checked={staySignedIn}
-                  onChange={setStaySignedIn}
-                  label="Stay signed in"
-                  description="Keeps you signed in for 30 days on this device. Don't enable on shared computers."
-                />
                 <a
                   href="/forgot-password"
                   className="hsx-link-indigo"

@@ -65,39 +65,21 @@ function storeDeviceToken(token: string) {
   try { localStorage.setItem(DEVICE_TOKEN_KEY, token); } catch { /* expected */ }
 }
 
-/* ─── Session Fingerprint (detect session hijacking) ─── */
-const SESSION_FP_KEY = "hirestepx_session_fp";
+/* Session-fingerprint hijack detection used to live here. Removed —
+   the only path was storeSessionFingerprint() at login, but no code
+   ever read the stored value back to compare against a fresh
+   fingerprint. It looked like security but provided none, and wiring
+   the comparison would create false positives (UA changes on browser
+   updates, screen res changes when docking laptops, timezone shifts
+   when traveling) that lock out legitimate users.
 
-// getHeavySignals() with canvas+webgl fingerprinting previously lived here
-// but was never referenced. The lightweight signals below are what the
-// session-fingerprint check actually uses. Canvas/webgl signals were
-// expensive (~50-150ms on cold start) and contributed nothing, so they're
-// gone. If a future fraud-detection pass wants them, add back with a real
-// consumer and a Web Worker to keep them off the main thread.
+   Real session-hijack defence in this codebase comes from:
+   - Supabase HttpOnly secure cookies + SameSite=Lax
+   - Single-device token rotation (active_device_token in user_metadata)
+   - Server-side rate-limit on /api/send-welcome
+   - Lockout after 5 failed login attempts
 
-function computeSessionFingerprint(): string {
-  const signals = [
-    navigator.userAgent,
-    `${screen.width}x${screen.height}x${screen.colorDepth}`,
-    Intl.DateTimeFormat().resolvedOptions().timeZone,
-    navigator.language,
-    String(navigator.hardwareConcurrency || ""),
-    String((navigator as unknown as Record<string, unknown>).deviceMemory || ""),
-    navigator.platform || "",
-    String(new Date().getTimezoneOffset()),
-  ].join("|");
-  let hash = 5381;
-  for (let i = 0; i < signals.length; i++) hash = ((hash << 5) + hash) + signals.charCodeAt(i);
-  return (hash >>> 0).toString(36);
-}
-
-function storeSessionFingerprint() {
-  try { localStorage.setItem(SESSION_FP_KEY, computeSessionFingerprint()); } catch { /* expected */ }
-}
-
-// validateSessionFingerprint() was exported for a rollback path that was
-// never wired. The active path uses storeSessionFingerprint() on login +
-// compares in-memory; no localStorage comparison is performed today.
+   Add server-side IP-based heuristics if/when fraud signal warrants. */
 
 /* ─── Audit Logging (persists security events to audit_log table + function logs) ─── */
 function logAuditEvent(event: string, details?: Record<string, unknown>) {
@@ -615,8 +597,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setLoading(false);
             return;
           }
-          // Store session fingerprint for hijack detection
-          storeSessionFingerprint();
           // Single-device enforcement: only set new device token on genuine new logins,
           // not on session restores/refreshes (which also fire SIGNED_IN)
           if (event === "SIGNED_IN" && !getStoredDeviceToken()) {
@@ -729,9 +709,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } catch { /* verification email is best-effort */ }
 
-      // Store fingerprint now so it's ready for first login after email verification
-      storeSessionFingerprint();
-
       // Sign out so user must verify email before using the app
       await client.auth.signOut();
       setUser(null);
@@ -831,9 +808,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: "Email not confirmed" };
     }
 
-    // Successful login — clear lockout counter (client + server) and store session fingerprint
+    // Successful login — clear lockout counter (client + server)
     clearLoginLockout();
-    storeSessionFingerprint();
 
     // ─── Single-device enforcement — token rotation ───
     // New login wins: we generate a fresh device token, write it to
