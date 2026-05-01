@@ -131,7 +131,7 @@ export function TopBar({
             >
               {initials}
             </span>
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+            <span className="hsx-onb-account-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
               {display}
             </span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -236,7 +236,7 @@ export function ResumeEmptyState({
       <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
         {/* Extra breathing room under the hero so the subtitle doesn't crowd
             the drop zone — supplements the stack's 16px gap. */}
-        <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
+        <div className="hsx-login-hero hsx-onb-hero" style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
           <h1
             style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal, textWrap: "balance" }}
           >
@@ -411,7 +411,7 @@ export function ResumeLoadingState({
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
       <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
-        <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center" }}>
+        <div className="hsx-login-hero hsx-onb-hero" style={{ width: "100%", textAlign: "center" }}>
           <h1
             style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal }}
           >

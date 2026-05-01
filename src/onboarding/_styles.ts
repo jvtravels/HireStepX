@@ -168,4 +168,83 @@ export const ONBOARDING_STYLES = `
   @media (max-width: 540px) {
     .hsx-onb-score-gauge { grid-template-columns: 1fr !important; justify-items: center; text-align: center; }
   }
+
+  /* ───── MOBILE RESPONSIVENESS ─────
+     Production audit found cramped padding + over-sized chrome
+     on narrow viewports. These rules keep the desktop comp
+     intact and only kick in on phones. */
+
+  /* Tablets and below — start tightening padding. */
+  @media (max-width: 720px) {
+    /* Outer content wrapper from Onboarding.tsx */
+    .ob-content-area {
+      padding-left: 20px !important;
+      padding-right: 20px !important;
+      padding-top: 24px !important;
+      padding-bottom: 28px !important;
+    }
+    /* TopBar gets less side padding so the wordmark + avatar fit
+       comfortably. */
+    .hsx-login-topbar {
+      padding: 22px 24px !important;
+      gap: 12px !important;
+    }
+  }
+
+  /* Phones — full mobile mode. */
+  @media (max-width: 540px) {
+    .ob-content-area {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+      padding-top: 12px !important;
+      padding-bottom: 24px !important;
+    }
+    .hsx-login-topbar {
+      padding: 14px 16px !important;
+      gap: 8px !important;
+    }
+    /* Hide stepper text labels — keep numbers + connectors so
+       the user still sees progress without blowing up the
+       header width. */
+    .hsx-onb-stepper-label {
+      display: none !important;
+    }
+    /* Hide the avatar's user-name text — the circle alone is
+       enough on mobile and freed-up space prevents wordmark
+       collision. */
+    .hsx-onb-account-name {
+      display: none !important;
+    }
+    /* Hide breadcrumbs / muted topbar text on small screens. */
+    .hsx-onb-stepper-arrow {
+      display: none !important;
+    }
+    /* Hero serif — drop minimum so 32px doesn't feel huge at
+       375px width. clamp(1.625rem, 5vw, 3.5rem) gives a true
+       mobile-respectful 26px floor. */
+    .hsx-onb-hero h1 {
+      font-size: clamp(1.625rem, 6.5vw, 2.5rem) !important;
+    }
+    /* Drop-zone padding — slightly tighter, keep it tappable. */
+    .hsx-onb-drop {
+      padding: 28px 18px !important;
+    }
+    /* Score-card body padding — extra breathing room costs
+       precious viewport on phones. */
+    .hsx-onb-score-shell {
+      padding: 16px !important;
+    }
+    /* Cards inside the body grid — match. */
+    .hsx-onb-body-grid section {
+      padding: 14px !important;
+    }
+  }
+
+  /* Very narrow (folded phones, 360px). Type drops further so
+     the headline doesn't wrap awkwardly. */
+  @media (max-width: 380px) {
+    .hsx-onb-hero h1 {
+      font-size: 1.5rem !important;
+    }
+  }
 `;

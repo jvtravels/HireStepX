@@ -48,11 +48,12 @@ export function OnboardingStepper({ current }: { current: OnboardingStep }) {
               ) : (
                 <span aria-hidden="true">{i + 1}</span>
               )}
-              {step.label}
+              <span className="hsx-onb-stepper-label">{step.label}</span>
             </span>
             {i < STEPS.length - 1 && (
               <span
                 aria-hidden="true"
+                className="hsx-onb-stepper-arrow"
                 style={{ width: 14, height: 1, background: i < currentIdx ? t.lineStrong : t.line }}
               />
             )}
