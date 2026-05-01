@@ -893,7 +893,7 @@ export function ProfileReadyState({
 
             {/* Practice preview — a quick "what we'll cover" derived from the
                 top skills + gaps. Helps users anticipate the session. */}
-            <SectionCard label="What we'll practise">
+            <SectionCard label="Focus area">
               <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                 {(() => {
                   const items: string[] = [];
