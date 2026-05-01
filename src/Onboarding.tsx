@@ -6,11 +6,15 @@ import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
 import type { ResumeProfile } from "./dashboardData";
 import { track } from "@vercel/analytics";
+import { EmailVerificationBanner } from "./OnboardingPanels";
 import {
-  EmailVerificationBanner, TopBar,
-  ResumeEmptyState, ResumeLoadingState, ProfileReadyState,
+  TopBar,
+  ResumeEmptyState,
+  ResumeLoadingState,
+  ProfileReadyState,
   NavigationFooter,
-} from "./OnboardingPanels";
+} from "./onboarding/Panels";
+import { tokens as ot } from "./auth/_tokens";
 
 const OB_STEP_KEY = "hirestepx_ob_step";
 const OB_FORM_KEY = "hirestepx_ob_form";
@@ -615,7 +619,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,179,127,0.03) 0%, ${c.obsidian} 70%)`, display: "flex", flexDirection: "column", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: ot.cream, display: "flex", flexDirection: "column", position: "relative", color: ot.coal }}>
       {user && !user.emailVerified && <EmailVerificationBanner email={user.email} />}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
