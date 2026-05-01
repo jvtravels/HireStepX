@@ -163,6 +163,11 @@ export interface AccountSectionProps {
   resetLoading: boolean;
   resetSent: boolean;
   handlePasswordReset: () => void;
+  // Sessions — sign out every device except the current one
+  signOutOthersLoading: boolean;
+  signOutOthersDone: boolean;
+  signOutOthersError: string | null;
+  handleSignOutOtherDevices: () => void;
   // Blur handler (auto-save)
   focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
 }
@@ -173,6 +178,8 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     userName, email, tierLabel, subscriptionTier, isDirty,
     saving, saved, handleSave,
     resetLoading, resetSent, handlePasswordReset,
+    signOutOthersLoading, signOutOthersDone, signOutOthersError,
+    handleSignOutOtherDevices,
     focusOut,
   } = props;
 
@@ -279,6 +286,56 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           onMouseLeave={(e) => { if (!resetLoading && !resetSent) e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
         >
           {resetLoading ? "Sending..." : resetSent ? "Email Sent" : "Reset Password"}
+        </button>
+      </div>
+
+      <Divider />
+
+      {/* Sessions — sign out every other device that's signed in */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Active sessions</span>
+          <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
+            {signOutOthersError
+              ? signOutOthersError
+              : "Sign out every device except this one"}
+          </span>
+        </div>
+        <button
+          onClick={handleSignOutOtherDevices}
+          disabled={signOutOthersLoading || signOutOthersDone}
+          style={{
+            fontFamily: font.ui,
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: "0.02em",
+            color: signOutOthersDone ? c.sage : c.ivory,
+            background: signOutOthersDone
+              ? "rgba(122,158,126,0.08)"
+              : "rgba(245,242,237,0.04)",
+            border: `1px solid ${signOutOthersDone ? "rgba(122,158,126,0.2)" : c.border}`,
+            borderRadius: 10,
+            padding: "9px 20px",
+            cursor:
+              signOutOthersLoading || signOutOthersDone ? "default" : "pointer",
+            opacity: signOutOthersLoading ? 0.6 : 1,
+            transition: "all 0.2s ease",
+            whiteSpace: "nowrap",
+          }}
+          onMouseEnter={(e) => {
+            if (!signOutOthersLoading && !signOutOthersDone)
+              e.currentTarget.style.background = "rgba(245,242,237,0.06)";
+          }}
+          onMouseLeave={(e) => {
+            if (!signOutOthersLoading && !signOutOthersDone)
+              e.currentTarget.style.background = "rgba(245,242,237,0.04)";
+          }}
+        >
+          {signOutOthersLoading
+            ? "Signing out..."
+            : signOutOthersDone
+              ? "Signed out"
+              : "Sign out everywhere else"}
         </button>
       </div>
     </div>

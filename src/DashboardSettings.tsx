@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { c, font } from "./tokens";
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
-import { authHeaders, getPaymentHistory, type PaymentRecord } from "./supabase";
+import { authHeaders, getPaymentHistory, getSupabase, type PaymentRecord } from "./supabase";
 import type { PersistedState } from "./dashboardTypes";
 import { useDashboardCore, useDashboardUI, useDashboardSessions } from "./DashboardContext";
 import { DataLoadingSkeleton } from "./dashboardComponents";
@@ -56,6 +56,13 @@ export default function SettingsPage() {
   // Password
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+
+  // Sessions — sign out other devices
+  const [signOutOthersLoading, setSignOutOthersLoading] = useState(false);
+  const [signOutOthersDone, setSignOutOthersDone] = useState(false);
+  const [signOutOthersError, setSignOutOthersError] = useState<string | null>(
+    null,
+  );
 
   // Export
   const [exporting, setExporting] = useState(false);
@@ -143,6 +150,33 @@ export default function SettingsPage() {
     else showToast(result.error || "Failed to send reset email");
   };
 
+  const handleSignOutOtherDevices = async () => {
+    if (signOutOthersLoading || signOutOthersDone) return;
+    setSignOutOthersLoading(true);
+    setSignOutOthersError(null);
+    try {
+      const client = await getSupabase();
+      // Supabase v2: scope "others" invalidates every session except
+      // the one tied to the current refresh token, so this device
+      // stays signed in while every other browser/phone is kicked out.
+      const { error } = await client.auth.signOut({ scope: "others" });
+      if (error) {
+        setSignOutOthersError(error.message);
+        showToast("Couldn't sign out other devices. Try again.");
+        return;
+      }
+      setSignOutOthersDone(true);
+      showToast("All other devices signed out");
+      setTimeout(() => setSignOutOthersDone(false), 5000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setSignOutOthersError(msg);
+      showToast("Couldn't sign out other devices. Try again.");
+    } finally {
+      setSignOutOthersLoading(false);
+    }
+  };
+
   const difficultyVal = persisted.defaultDifficulty || "standard";
   const learningVal = authUser?.learningStyle || "direct";
   const experienceVal = authUser?.experienceLevel || "";
@@ -196,6 +230,10 @@ export default function SettingsPage() {
           handleSave={handleSave}
           resetLoading={resetLoading} resetSent={resetSent}
           handlePasswordReset={handlePasswordReset}
+          signOutOthersLoading={signOutOthersLoading}
+          signOutOthersDone={signOutOthersDone}
+          signOutOthersError={signOutOthersError}
+          handleSignOutOtherDevices={handleSignOutOtherDevices}
           focusOut={focusOut}
         />
       )}
