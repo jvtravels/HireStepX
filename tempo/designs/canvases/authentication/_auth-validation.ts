@@ -19,12 +19,16 @@ export function validateEmail(value: string): FieldValidation {
   return { valid: true, message: null };
 }
 
+/** Login-side password validator. Min length matches the signup-side
+    minimum (8) so the two flows agree on what counts as a "valid"
+    password and we don't show a misleading 6-char hint on Login that
+    no real account ever satisfies. */
 export function validatePassword(value: string): FieldValidation {
   if (value.length === 0) {
     return { valid: false, message: null };
   }
-  if (value.length < 6) {
-    return { valid: false, message: "Must be at least 6 characters." };
+  if (value.length < 8) {
+    return { valid: false, message: "Must be at least 8 characters." };
   }
   return { valid: true, message: null };
 }
