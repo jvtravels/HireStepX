@@ -439,6 +439,7 @@ export function ResumeLoadingState({
               border: `1px solid ${t.line}`,
               background: t.creamSoft,
               borderRadius: 10,
+              marginTop: 12,
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
