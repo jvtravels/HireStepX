@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HireStepX — Session Report (bento redesign)</title>
+
+<!-- ───────────────────────────────────────────────
+     SESSION REPORT — bento grid redesign
+
+     Problem with current layout: cards float at random sizes,
+     no information hierarchy, voids and dead space, no clear
+     scanning order. Users can't find the 3 things that matter
+     in 5 seconds.
+
+     Bento principles applied:
+       • Hero block (verdict + score + readiness) anchors top
+       • Tessellated rows — no half-empty cards
+       • Logical adjacency — wins beside fixes, skills beside
+         metrics, cross-session beside readiness
+       • Consistent corner radius (16px), padding (24px),
+         label treatment (mono caps, ink-3)
+       • One accent (amber) + 3 semantic colors (green, red, indigo)
+       • Each card has: label → primary value → context line
+       • Mobile collapses to single column at <860px
+
+     Information architecture (top → bottom):
+       ROW 1   HERO — overall verdict, score, band, confidence
+       ROW 2   What worked  |  What to fix  |  Red flags
+       ROW 3   Skill profile (wide)         |  Delivery metrics (narrow)
+       ROW 4   Per-question breakdown (wide)|  Cross-session trend (narrow)
+       ROW 5   Coach's note (wide)          |  Readiness + Next session CTA
+       ROW 6   Story reuse + Blind spots
+     ─────────────────────────────────────────────── -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  /* ───────── TOKENS ───────── */
+  :root {
+    --bg:            #faf7f0;
+    --surface:       #ffffff;
+    --surface-soft:  #fbf9f3;
+    --surface-warm:  #f3eee2;
+
+    --ink-1:         #14110a;
+    --ink-2:         #3a342a;
+    --ink-3:         #6e6759;
+    --ink-4:         #a39c8b;
+    --line:          #ebe5d2;
+    --line-strong:   #d6cdb5;
+
+    --amber:         #b45309;
+    --amber-soft:    #fdf3e7;
+    --green:         #15803d;
+    --green-soft:    #ecfdf3;
+    --red:           #b91c1c;
+    --red-soft:      #fef2f2;
+    --indigo:        #4f46e5;
+    --indigo-soft:   #eef2ff;
+    --slate:         #475569;
+
+    --black:         #0e0c08;
+
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+    --r-pill: 999px;
+
+    --shadow-card:   0 1px 0 rgba(20,17,10,.04),
+                     0 1px 2px rgba(20,17,10,.05),
+                     0 12px 32px -16px rgba(20,17,10,.10);
+
+    --t: .15s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ───────── RESET ───────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
+    color: var(--ink-1);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; }
+  ::selection { background: var(--ink-1); color: #fff; }
+
+  /* ───────── ATMOSPHERE ───────── */
+  .glow {
+    position: fixed;
+    top: -40%;
+    right: -20%;
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(closest-side, rgba(180,83,9,.08), transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ───────── PAGE / TOPBAR ───────── */
+  .page { position: relative; z-index: 1; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 36px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(250,247,240,.85);
+    backdrop-filter: saturate(140%) blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .wordmark-text {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.014em;
+    color: var(--ink-1);
+  }
+  .crumbs {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .crumbs .sep { color: var(--ink-4); }
+  .crumbs strong { color: var(--ink-1); font-weight: 600; }
+  .topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-ghost {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: var(--r-md);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-1);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background var(--t), border-color var(--t);
+  }
+  .btn-ghost:hover { background: var(--surface-soft); border-color: var(--ink-3); }
+  .btn-primary {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: var(--r-md);
+    background: var(--black);
+    color: #fff;
+    border: 0;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background var(--t), transform .1s var(--t);
+  }
+  .btn-primary:hover { background: #000; transform: translateY(-1px); }
+
+  /* ───────── BENTO CONTAINER ─────────
+     12-col grid, 16px gap. Cards span variable cols/rows but
+     ALWAYS resolve to clean rows. */
+  .bento {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 36px 56px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+  }
+
+  /* ───────── CARD BASE ───────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .label.tinted { color: var(--amber); }
+  .label.green { color: var(--green); }
+  .label.red { color: var(--red); }
+  .label.indigo { color: var(--indigo); }
+  .micro {
+    font-size: 12px;
+    color: var(--ink-3);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ─── Hero ─── */
+  .hero { grid-column: span 12; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 28px;
+    align-items: stretch;
+  }
+  .hero-score {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-right: 1px solid var(--line);
+    padding-right: 28px;
+  }
+  .hero-num {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 500;
+    font-size: 96px;
+    line-height: .92;
+    letter-spacing: -0.04em;
+    color: var(--ink-1);
+    font-variation-settings: "opsz" 144;
+  }
+  .hero-num .of {
+    font-family: "Fraunces", serif;
+    font-size: 28px;
+    color: var(--ink-4);
+    margin-left: 6px;
+    vertical-align: 22px;
+    font-weight: 400;
+  }
+  .hero-band {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    padding: 5px 12px;
+    background: var(--green-soft);
+    color: var(--green);
+    border-radius: var(--r-pill);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+  .hero-band .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(21,128,61,.18);
+  }
+  .hero-verdict {
+    font-family: "Fraunces", serif;
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.25;
+    color: var(--ink-1);
+    margin: 4px 0 0;
+    letter-spacing: -0.018em;
+  }
+  .hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+  }
+  .hero-meta .row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hero-meta .v {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    color: var(--ink-1);
+    line-height: 1.1;
+  }
+
+  /* ─── Wins / Fixes / Red flags ─── */
+  .col-wins   { grid-column: span 4; }
+  .col-fixes  { grid-column: span 4; }
+  .col-flags  { grid-column: span 4; }
+
+  .findings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .finding {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+  }
+  .finding .pin {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--green-soft);
+    color: var(--green);
+    display: inline-grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .finding.fix .pin { background: var(--amber-soft); color: var(--amber); }
+  .finding.flag .pin { background: var(--red-soft); color: var(--red); }
+  .finding p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+  .finding .quote {
+    display: block;
+    margin-top: 4px;
+    padding: 5px 8px;
+    background: rgba(180,83,9,.05);
+    border-left: 2px solid var(--amber);
+    color: var(--ink-3);
+    font-size: 12px;
+    font-style: italic;
+  }
+  .finding.flag .quote { border-color: var(--red); background: rgba(185,28,28,.04); }
+  .finding.win .quote { border-color: var(--green); background: rgba(21,128,61,.05); }
+
+  /* ─── Skill profile (wide) ─── */
+  .col-skills { grid-column: span 8; }
+
+  .skill-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 60px 60px;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .skill-row:last-child { border-bottom: 0; }
+  .skill-name { font-size: 13.5px; color: var(--ink-1); font-weight: 500; }
+  .skill-bar {
+    height: 8px;
+    background: var(--surface-warm);
+    border-radius: 999px;
+    position: relative;
+    overflow: hidden;
+  }
+  .skill-bar .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: linear-gradient(90deg, var(--amber), #d97706);
+    border-radius: 999px;
+  }
+  .skill-bar .cohort {
+    position: absolute;
+    top: -3px; bottom: -3px;
+    width: 2px;
+    background: var(--slate);
+    border-radius: 1px;
+  }
+  .skill-num {
+    font-family: "Fraunces", serif;
+    font-size: 18px;
+    color: var(--ink-1);
+    font-variation-settings: "opsz" 96;
+    text-align: right;
+  }
+  .skill-delta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 500;
+    text-align: right;
+  }
+  .skill-delta.down { color: var(--red); }
+
+  /* ─── Delivery metrics (narrow, paired with skills) ─── */
+  .col-delivery { grid-column: span 4; }
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .metric {
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .metric .v {
+    font-family: "Fraunces", serif;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--ink-1);
+    font-variation-settings: "opsz" 96;
+  }
+  .metric .v small {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: var(--ink-3);
+    margin-left: 3px;
+    font-weight: 400;
+  }
+  .metric .lbl {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px;
+    letter-spacing: .14em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .metric.warn .v { color: var(--amber); }
+  .metric.bad .v { color: var(--red); }
+
+  /* ─── Per-question (wide table-ish) ─── */
+  .col-pq { grid-column: span 8; }
+  .pq-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 60px 80px;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pq-row:last-child { border-bottom: 0; }
+  .pq-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface-warm);
+    color: var(--ink-3);
+    display: inline-grid;
+    place-items: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pq-q {
+    font-size: 13px;
+    color: var(--ink-1);
+    line-height: 1.45;
+  }
+  .pq-q .q-meta {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--ink-3);
+  }
+  .pq-score {
+    font-family: "Fraunces", serif;
+    font-size: 18px;
+    color: var(--ink-1);
+    text-align: right;
+    font-variation-settings: "opsz" 96;
+  }
+  .pq-verdict {
+    text-align: right;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .pq-verdict.strong { color: var(--green); }
+  .pq-verdict.complete { color: var(--ink-1); }
+  .pq-verdict.partial { color: var(--amber); }
+  .pq-verdict.weak { color: var(--red); }
+
+  /* ─── Cross-session (narrow) ─── */
+  .col-cross { grid-column: span 4; }
+  .trend {
+    height: 80px;
+    margin-top: 4px;
+    background:
+      linear-gradient(180deg, rgba(180,83,9,.10) 0%, rgba(180,83,9,0) 80%);
+    border-radius: var(--r-md);
+    position: relative;
+    overflow: hidden;
+  }
+  .trend svg { display: block; width: 100%; height: 100%; }
+  .trend-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .trend-stat .big {
+    font-family: "Fraunces", serif;
+    font-size: 28px;
+    color: var(--green);
+    font-variation-settings: "opsz" 96;
+  }
+  .trend-stat .lbl {
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  /* ─── Coach's note (wide) ─── */
+  .col-coach { grid-column: span 8; }
+  .coach-quote {
+    font-family: "Fraunces", serif;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--ink-1);
+    margin: 0;
+    letter-spacing: -0.012em;
+    font-variation-settings: "opsz" 96;
+  }
+  .coach-quote::before {
+    content: "“";
+    font-size: 56px;
+    color: var(--amber);
+    line-height: 0;
+    margin-right: 6px;
+    vertical-align: -22px;
+    font-variation-settings: "opsz" 144;
+  }
+
+  /* ─── Readiness + Next session (narrow) ─── */
+  .col-next { grid-column: span 4; }
+  .ring-wrap {
+    position: relative;
+    width: 110px; height: 110px;
+    align-self: center;
+  }
+  .ring-wrap svg { display: block; }
+  .ring-num {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: "Fraunces", serif;
+    font-size: 30px;
+    color: var(--ink-1);
+    font-variation-settings: "opsz" 96;
+  }
+  .ring-num small {
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    color: var(--ink-3);
+    display: block;
+    text-align: center;
+    margin-top: -2px;
+    font-weight: 500;
+  }
+  .next-cta {
+    width: 100%;
+    height: 44px;
+    margin-top: 12px;
+    background: var(--black);
+    color: #fff;
+    border: 0;
+    border-radius: var(--r-md);
+    font-size: 13.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform .1s var(--t), background var(--t);
+  }
+  .next-cta:hover { background: #000; transform: translateY(-1px); }
+
+  /* ─── Story reuse + Blind spots (full row) ─── */
+  .col-story { grid-column: span 6; }
+  .col-blind { grid-column: span 6; }
+
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .pill .count {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+  .pill.warn { background: var(--amber-soft); border-color: rgba(180,83,9,.2); color: var(--amber); }
+  .pill.warn .count { color: var(--amber); }
+
+  .blind-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+  }
+  .blind-row:last-child { border-bottom: 0; }
+  .blind-name { font-size: 13px; color: var(--ink-1); font-weight: 500; }
+  .blind-detail { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .blind-cta {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    border-bottom: 1px dashed rgba(180,83,9,.3);
+    transition: border-color var(--t);
+  }
+  .blind-cta:hover { border-color: var(--amber); }
+
+  /* ───────── RESPONSIVE ─────────
+     Below 1080px: 8-col grid (hero stays full)
+     Below 860px: single column, every card spans full
+     Below 540px: hero numerics shrink, padding tightens */
+  @media (max-width: 1080px) {
+    .bento { grid-template-columns: repeat(8, 1fr); }
+    .col-wins, .col-fixes, .col-flags { grid-column: span 8; }
+    .col-skills, .col-coach, .col-pq { grid-column: span 8; }
+    .col-delivery, .col-cross, .col-next { grid-column: span 8; }
+    .col-story, .col-blind { grid-column: span 8; }
+    .hero-grid { grid-template-columns: 1.4fr 1fr; }
+    .hero-meta:nth-child(3),
+    .hero-meta:nth-child(4) { display: none; }
+  }
+  @media (max-width: 860px) {
+    .bento { grid-template-columns: 1fr; padding: 20px; }
+    .bento > * { grid-column: span 1 !important; }
+    .hero-grid { grid-template-columns: 1fr; gap: 18px; }
+    .hero-score { border-right: 0; padding-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 18px; }
+    .hero-meta:nth-child(3),
+    .hero-meta:nth-child(4) { display: flex; }
+    .topbar { padding: 16px 20px; flex-wrap: wrap; gap: 8px; }
+    .crumbs { font-size: 12px; }
+    .hero-num { font-size: 72px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0s !important; }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="glow" aria-hidden="true"></div>
+
+<div class="page">
+
+  <!-- ─── TOPBAR ────────────────────────────────── -->
+  <header class="topbar" role="banner">
+    <a class="wordmark" href="/dashboard" aria-label="HireStepX home">
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <rect width="22" height="22" rx="6" fill="#0e0c08"/>
+        <rect x="5" y="14" width="5"  height="2.5" rx="1" fill="#fff" opacity=".55"/>
+        <rect x="5" y="9.75" width="8.5" height="2.5" rx="1" fill="#fff" opacity=".8"/>
+        <rect x="5" y="5.5" width="12" height="2.5" rx="1" fill="#fff"/>
+      </svg>
+      <span class="wordmark-text">HireStepX</span>
+    </a>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/dashboard">Dashboard</a>
+      <span class="sep">/</span>
+      <a href="/sessions">Sessions</a>
+      <span class="sep">/</span>
+      <strong>Razorpay · Behavioral · Apr 28</strong>
+    </nav>
+    <div class="topbar-actions">
+      <button class="btn-ghost">Share</button>
+      <button class="btn-ghost">Download PDF</button>
+      <button class="btn-primary">Practice next →</button>
+    </div>
+  </header>
+
+  <!-- ─── BENTO GRID ───────────────────────────── -->
+  <div class="bento">
+
+    <!-- HERO — verdict, score, band, confidence, level, duration -->
+    <section class="card hero">
+      <div class="hero-grid">
+
+        <!-- Score column -->
+        <div class="hero-score">
+          <span class="label">OVERALL</span>
+          <div class="hero-num">82<span class="of">/100</span></div>
+          <span class="hero-band">
+            <span class="dot"></span>
+            HIRE — Strong, with clear gaps
+          </span>
+          <p class="hero-verdict">
+            You showed strong stakeholder framing and clear ownership. Trade-off articulation is the next thing to sharpen.
+          </p>
+        </div>
+
+        <!-- Confidence -->
+        <div class="hero-meta">
+          <span class="label">CONFIDENCE</span>
+          <div>
+            <span class="v">±4</span>
+          </div>
+          <p class="micro">Score band ranges 78–86 given answer specificity.</p>
+        </div>
+
+        <!-- Calibration -->
+        <div class="hero-meta">
+          <span class="label">CALIBRATED FOR</span>
+          <div>
+            <span class="v">Razorpay</span>
+          </div>
+          <p class="micro">Founder-mode product company. Bias toward ownership + craft.</p>
+        </div>
+
+        <!-- Duration / questions -->
+        <div class="hero-meta">
+          <span class="label">SESSION</span>
+          <div>
+            <span class="v">14:32 · 5Q</span>
+          </div>
+          <p class="micro">3 follow-ups inserted dynamically.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ROW 2 — wins / fixes / red flags -->
+
+    <section class="card col-wins">
+      <div class="card-header">
+        <span class="label green">WHAT WORKED · 3</span>
+        <span class="micro">Quoted from your transcript</span>
+      </div>
+      <div class="findings">
+        <div class="finding win">
+          <span class="pin">✓</span>
+          <div>
+            <p>Anchored your scaling story to a real outage with named tools and times.</p>
+            <span class="quote">"…we had a 47-min Kafka rebalance window during peak…"</span>
+          </div>
+        </div>
+        <div class="finding win">
+          <span class="pin">✓</span>
+          <div>
+            <p>Structured Q3 in clean STAR — Situation, Task, Action, Result.</p>
+          </div>
+        </div>
+        <div class="finding win">
+          <span class="pin">✓</span>
+          <div>
+            <p>Owned the failure in Q5 without deflecting to the team.</p>
+            <span class="quote">"…that was on me — I should have run the rollback drill earlier."</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-fixes">
+      <div class="card-header">
+        <span class="label tinted">WHAT TO FIX · 3</span>
+        <span class="micro">Highest leverage first</span>
+      </div>
+      <div class="findings">
+        <div class="finding fix">
+          <span class="pin">!</span>
+          <div>
+            <p>Quantify Q2's impact — "improved performance" needs a number.</p>
+            <span class="quote">"…we improved performance significantly across the board."</span>
+          </div>
+        </div>
+        <div class="finding fix">
+          <span class="pin">!</span>
+          <div>
+            <p>Q4's trade-off was implied, not stated. Name what you gave up.</p>
+          </div>
+        </div>
+        <div class="finding fix">
+          <span class="pin">!</span>
+          <div>
+            <p>"We" appeared 14× vs "I" 6× — drop ownership ambiguity.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-flags">
+      <div class="card-header">
+        <span class="label red">RED FLAGS · 1</span>
+        <span class="micro">Would block at most loops</span>
+      </div>
+      <div class="findings">
+        <div class="finding flag">
+          <span class="pin">×</span>
+          <div>
+            <p>Vague claim about Postgres scaling — interviewer would push back on this in a real loop.</p>
+            <span class="quote">"…Postgres can't scale beyond 1TB anyway."</span>
+          </div>
+        </div>
+        <p class="micro" style="margin-top: 4px;">
+          Tip: hedge dubious technical claims with "in our setup" or "what I observed."
+        </p>
+      </div>
+    </section>
+
+    <!-- ROW 3 — skill profile (wide) + delivery metrics (narrow) -->
+
+    <section class="card col-skills">
+      <div class="card-header">
+        <div>
+          <span class="label">SKILL PROFILE</span>
+          <p class="micro" style="margin-top: 2px;">vs Razorpay senior PM cohort (n = 247)</p>
+        </div>
+        <span class="pill"><span class="count">+</span>Compare to last session</span>
+      </div>
+
+      <div>
+        <div class="skill-row">
+          <span class="skill-name">Ownership</span>
+          <div class="skill-bar"><div class="fill" style="width: 88%;"></div><div class="cohort" style="left: 72%;"></div></div>
+          <span class="skill-num">88</span>
+          <span class="skill-delta">▲ 12</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-name">Communication</span>
+          <div class="skill-bar"><div class="fill" style="width: 84%;"></div><div class="cohort" style="left: 78%;"></div></div>
+          <span class="skill-num">84</span>
+          <span class="skill-delta">▲ 6</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-name">Problem Framing</span>
+          <div class="skill-bar"><div class="fill" style="width: 80%;"></div><div class="cohort" style="left: 76%;"></div></div>
+          <span class="skill-num">80</span>
+          <span class="skill-delta">▲ 4</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-name">Trade-off Reasoning</span>
+          <div class="skill-bar"><div class="fill" style="width: 68%;"></div><div class="cohort" style="left: 80%;"></div></div>
+          <span class="skill-num">68</span>
+          <span class="skill-delta down">▼ 12</span>
+        </div>
+        <div class="skill-row">
+          <span class="skill-name">Impact Articulation</span>
+          <div class="skill-bar"><div class="fill" style="width: 72%;"></div><div class="cohort" style="left: 75%;"></div></div>
+          <span class="skill-num">72</span>
+          <span class="skill-delta down">▼ 3</span>
+        </div>
+      </div>
+
+      <p class="micro" style="margin-top: 6px;">
+        <span style="display:inline-block;width:10px;height:2px;background:var(--slate);vertical-align:3px;margin-right:6px;"></span>
+        cohort average · <span style="display:inline-block;width:10px;height:2px;background:var(--amber);vertical-align:3px;margin:0 6px 0 8px;"></span> your score
+      </p>
+    </section>
+
+    <section class="card col-delivery">
+      <div class="card-header">
+        <span class="label">DELIVERY</span>
+        <span class="micro">Spoken signals</span>
+      </div>
+      <div class="metric-grid">
+        <div class="metric">
+          <span class="lbl">PACE</span>
+          <div class="v">142<small>wpm</small></div>
+        </div>
+        <div class="metric warn">
+          <span class="lbl">FILLERS / MIN</span>
+          <div class="v">5.2</div>
+        </div>
+        <div class="metric">
+          <span class="lbl">SILENCE</span>
+          <div class="v">11<small>%</small></div>
+        </div>
+        <div class="metric">
+          <span class="lbl">ENERGY</span>
+          <div class="v">7.1<small>/10</small></div>
+        </div>
+      </div>
+      <p class="micro" style="margin-top: 4px;">
+        Filler rate is above the 3.5/min benchmark for senior interviews. Pace is on target.
+      </p>
+    </section>
+
+    <!-- ROW 4 — per question (wide) + cross-session (narrow) -->
+
+    <section class="card col-pq">
+      <div class="card-header">
+        <span class="label">PER-QUESTION BREAKDOWN</span>
+        <a href="#" class="micro" style="color:var(--amber);">View transcript →</a>
+      </div>
+      <div>
+        <div class="pq-row">
+          <span class="pq-num">1</span>
+          <div class="pq-q">
+            Tell me about a time you owned a difficult technical decision…
+            <span class="q-meta">2 min · 218 words · STAR ✓</span>
+          </div>
+          <span class="pq-score">85</span>
+          <span class="pq-verdict strong">STRONG</span>
+        </div>
+        <div class="pq-row">
+          <span class="pq-num">2</span>
+          <div class="pq-q">
+            Walk me through a project where impact wasn't quantified…
+            <span class="q-meta">1m 48s · 162 words · STAR partial</span>
+          </div>
+          <span class="pq-score">68</span>
+          <span class="pq-verdict partial">PARTIAL</span>
+        </div>
+        <div class="pq-row">
+          <span class="pq-num">3</span>
+          <div class="pq-q">
+            Describe a conflict with a peer where you held your position…
+            <span class="q-meta">2m 23s · 283 words · STAR ✓</span>
+          </div>
+          <span class="pq-score">88</span>
+          <span class="pq-verdict strong">STRONG</span>
+        </div>
+        <div class="pq-row">
+          <span class="pq-num">4</span>
+          <div class="pq-q">
+            How did you decide what NOT to build last quarter?
+            <span class="q-meta">2m 06s · 197 words · trade-off implied</span>
+          </div>
+          <span class="pq-score">72</span>
+          <span class="pq-verdict complete">COMPLETE</span>
+        </div>
+        <div class="pq-row">
+          <span class="pq-num">5</span>
+          <div class="pq-q">
+            Walk me through a moment a release broke in production…
+            <span class="q-meta">3m 11s · 401 words · STAR ✓ ownership ✓</span>
+          </div>
+          <span class="pq-score">90</span>
+          <span class="pq-verdict strong">STRONG</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-cross">
+      <div class="card-header">
+        <span class="label indigo">YOUR TREND · 6 SESSIONS</span>
+      </div>
+
+      <!-- Sparkline-ish trend, hand-drawn SVG -->
+      <div class="trend">
+        <svg viewBox="0 0 220 80" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="tg" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="rgba(180,83,9,.30)"/>
+              <stop offset="100%" stop-color="rgba(180,83,9,0)"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,60 L40,55 L80,50 L120,42 L160,30 L220,18 L220,80 L0,80 Z" fill="url(#tg)"/>
+          <path d="M0,60 L40,55 L80,50 L120,42 L160,30 L220,18" stroke="#b45309" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="220" cy="18" r="4" fill="#b45309"/>
+          <circle cx="220" cy="18" r="8" fill="#b45309" opacity=".15"/>
+        </svg>
+      </div>
+      <div class="trend-stat">
+        <span class="big">+18</span>
+        <span class="lbl">overall · 6 weeks</span>
+      </div>
+      <p class="micro">
+        Biggest single jump came after focused practice on Ownership questions (Apr 14).
+      </p>
+    </section>
+
+    <!-- ROW 5 — coach's note (wide) + readiness (narrow) -->
+
+    <section class="card col-coach">
+      <div class="card-header">
+        <span class="label">COACH'S NOTE</span>
+        <span class="micro">Cross-session memory · GPT-tier</span>
+      </div>
+      <p class="coach-quote">
+        Your ownership voice has tightened noticeably over the last three sessions — ‘I’ usage is up 28% and your stories are more specific. The next plateau is trade-off reasoning. When you say ‘we improved performance,’ name the cost: latency, dollars, headcount, time. That single habit moves you from 82 to 88+.
+      </p>
+      <div class="pill-list" style="margin-top: 6px;">
+        <span class="pill">3 weak follow-ups noticed</span>
+        <span class="pill warn"><span class="count">!</span>Trade-off pattern recurring</span>
+        <span class="pill">Story diversity: 4 unique</span>
+      </div>
+    </section>
+
+    <section class="card col-next">
+      <div class="card-header">
+        <span class="label">READINESS</span>
+        <span class="micro">For Razorpay senior PM</span>
+      </div>
+
+      <div class="ring-wrap" aria-label="74 percent ready">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#ebe5d2" stroke-width="9"/>
+          <circle cx="55" cy="55" r="46" fill="none"
+                  stroke="#b45309" stroke-width="9" stroke-linecap="round"
+                  stroke-dasharray="289 289"
+                  stroke-dashoffset="75"
+                  transform="rotate(-90 55 55)"/>
+        </svg>
+        <div class="ring-num">74%<small>ready</small></div>
+      </div>
+
+      <p class="micro" style="text-align: center; margin-top: 2px;">
+        2–3 more focused mocks would put you in the strong-hire band for this loop.
+      </p>
+
+      <button class="next-cta">
+        Drill weakest skill — 8 min
+        <span aria-hidden="true">→</span>
+      </button>
+    </section>
+
+    <!-- ROW 6 — story reuse + blind spots -->
+
+    <section class="card col-story">
+      <div class="card-header">
+        <div>
+          <span class="label">STORY DIVERSITY</span>
+          <p class="micro" style="margin-top: 2px;">Unique stories you've used across 6 sessions</p>
+        </div>
+        <span class="pill"><span class="count">4</span>unique</span>
+      </div>
+      <div class="pill-list">
+        <span class="pill">Kafka rebalance outage <span class="count">×4</span></span>
+        <span class="pill warn">Stripe migration <span class="count">×3</span></span>
+        <span class="pill">Onboarding redesign <span class="count">×2</span></span>
+        <span class="pill">Hiring conflict <span class="count">×1</span></span>
+      </div>
+      <p class="micro">
+        You're leaning on the Kafka story. Real interviewers compare notes — diversify across loops to avoid pattern-matching as a one-trick candidate.
+      </p>
+    </section>
+
+    <section class="card col-blind">
+      <div class="card-header">
+        <span class="label">BLIND SPOTS</span>
+        <span class="micro">Not yet practised</span>
+      </div>
+      <div>
+        <div class="blind-row">
+          <div>
+            <div class="blind-name">Influence without authority</div>
+            <div class="blind-detail">Common at Razorpay product loops. Not surfaced in any session yet.</div>
+          </div>
+          <a href="#" class="blind-cta">Practise →</a>
+        </div>
+        <div class="blind-row">
+          <div>
+            <div class="blind-name">Disagreeing with leadership</div>
+            <div class="blind-detail">Asked in 4 of 5 senior PM loops at Indian unicorns.</div>
+          </div>
+          <a href="#" class="blind-cta">Practise →</a>
+        </div>
+        <div class="blind-row">
+          <div>
+            <div class="blind-name">First-30-days plan</div>
+            <div class="blind-detail">Razorpay-style scrappy ownership question.</div>
+          </div>
+          <a href="#" class="blind-cta">Practise →</a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+</body>
+</html>

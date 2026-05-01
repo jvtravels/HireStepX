@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HireStepX — Resume Analysis (bento redesign)</title>
+
+<!-- ───────────────────────────────────────────────
+     RESUME ANALYSIS RESULT — bento grid redesign
+
+     Problems with current layout:
+       • 3 loose columns of unequal heights → voids at bottom
+         of shorter columns
+       • No clear scanning order — score is right, "worth
+         practising" is buried mid-page
+       • Cards feel randomly placed, not grouped by intent
+       • CTA narrow on right, easy to miss
+       • "Based on" attribution sits awkwardly between
+         actionable cards
+
+     Bento grid applied:
+       Each row uses 12 cols, cards stretch to row height.
+       Logical groupings replace random columns.
+
+     User's emotional flow on this screen:
+       1. "What does AI think of me?"      → HERO (identity)
+       2. "How do I score?"                  → SCORE (paired with hero)
+       3. "What's good?"                     → STRENGTHS
+       4. "What needs work?"                 → WORTH PRACTISING
+       5. "What proves my value?"            → KEY ACHIEVEMENTS
+       6. "Where have I been?"               → CAREER TRAJECTORY
+       7. "What can I do?"                   → TOP SKILLS
+       8. "OK what now?"                     → PRACTICE + CTA
+       9. (footer) "How did you decide this?"→ BASED ON
+
+     Information architecture (top → bottom):
+       ROW 1   HERO IDENTITY (8) | SCORE GAUGE (4)
+       ROW 2   STRENGTHS (4) | WORTH PRACTISING (4) | ACHIEVEMENTS (4)
+       ROW 3   CAREER TRAJECTORY (7) | TOP SKILLS (5)
+       ROW 4   READY-TO-PRACTICE (dark, 8) | BASED ON (4)
+     ─────────────────────────────────────────────── -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  /* ───────── TOKENS ───────── */
+  :root {
+    --bg:            #faf7f0;
+    --surface:       #ffffff;
+    --surface-soft:  #fbf9f3;
+    --surface-warm:  #f3eee2;
+
+    --ink-1:         #14110a;
+    --ink-2:         #3a342a;
+    --ink-3:         #6e6759;
+    --ink-4:         #a39c8b;
+    --line:          #ebe5d2;
+    --line-strong:   #d6cdb5;
+
+    --amber:         #b45309;
+    --amber-soft:    #fdf3e7;
+    --green:         #15803d;
+    --green-soft:    #ecfdf3;
+    --red:           #b91c1c;
+    --red-soft:      #fef2f2;
+    --indigo:        #312e81;
+    --indigo-deep:   #1e1b4b;
+    --indigo-soft:   #eef2ff;
+
+    --black:         #0e0c08;
+
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+    --r-pill: 999px;
+
+    --shadow-card:   0 1px 0 rgba(20,17,10,.04),
+                     0 1px 2px rgba(20,17,10,.05),
+                     0 12px 32px -16px rgba(20,17,10,.10);
+
+    --t: .15s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ───────── RESET ───────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, system-ui, sans-serif;
+    color: var(--ink-1);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; }
+  ::selection { background: var(--ink-1); color: #fff; }
+
+  /* ───────── ATMOSPHERE ───────── */
+  .glow {
+    position: fixed;
+    top: -40%;
+    right: -20%;
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(closest-side, rgba(180,83,9,.07), transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ───────── PAGE / TOPBAR ───────── */
+  .page { position: relative; z-index: 1; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 36px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(250,247,240,.85);
+    backdrop-filter: saturate(140%) blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .wordmark-text {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.014em;
+  }
+  .crumbs {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .crumbs .sep { color: var(--ink-4); }
+  .crumbs strong { color: var(--ink-1); font-weight: 600; }
+  .topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-ghost {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: var(--r-md);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-1);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background var(--t), border-color var(--t);
+  }
+  .btn-ghost:hover { background: var(--surface-soft); border-color: var(--ink-3); }
+
+  /* ───────── BENTO ───────── */
+  .bento {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 36px 56px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+  }
+
+  /* ───────── CARD BASE ───────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .label.green { color: var(--green); }
+  .label.amber { color: var(--amber); }
+  .label.red { color: var(--red); }
+  .micro {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ─── ROW 1: HERO + SCORE ─── */
+  .col-hero { grid-column: span 8; }
+  .col-score { grid-column: span 4; }
+
+  .hero-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--green-soft);
+    color: var(--green);
+    border-radius: var(--r-pill);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    align-self: flex-start;
+  }
+  .hero-status::before {
+    content: "✓";
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+  }
+
+  .hero-headline {
+    margin: 0;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 32px;
+    line-height: 1.1;
+    letter-spacing: -0.022em;
+    font-weight: 400;
+    color: var(--ink-1);
+    font-variation-settings: "opsz" 144;
+  }
+  .hero-summary {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
+  .hero-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .source {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+  .source svg {
+    width: 14px; height: 14px;
+    color: var(--ink-3);
+  }
+  .source-name {
+    color: var(--ink-2);
+    font-weight: 500;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+  }
+  .reupload {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--amber);
+    border-bottom: 1px dashed rgba(180,83,9,.3);
+    transition: border-color var(--t);
+  }
+  .reupload:hover { border-color: var(--amber); }
+
+  /* SCORE column */
+  .score-card {
+    align-items: center;
+    text-align: center;
+    padding: 26px 24px;
+  }
+  .gauge {
+    position: relative;
+    width: 180px;
+    height: 100px;
+    margin: 4px 0 8px;
+  }
+  .gauge svg { display: block; }
+  .gauge-num {
+    position: absolute;
+    inset: 28px 0 0;
+    text-align: center;
+    font-family: "Fraunces", serif;
+    font-size: 44px;
+    line-height: 1;
+    color: var(--ink-1);
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+  }
+  .gauge-num small {
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    color: var(--ink-4);
+    margin-left: 2px;
+    font-weight: 400;
+    vertical-align: 14px;
+  }
+  .gauge-band {
+    margin-top: 4px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    color: var(--amber);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .clarity-line {
+    margin: 8px 0 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    max-width: 26ch;
+  }
+  .score-meta {
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .score-meta .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12.5px;
+  }
+  .score-meta .row .k {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+  }
+  .score-meta .row .v {
+    color: var(--ink-1);
+    font-weight: 500;
+  }
+  .score-meta .row .v.amber { color: var(--amber); }
+
+  /* ─── ROW 2: triad ─── */
+  .col-strengths    { grid-column: span 4; }
+  .col-practising   { grid-column: span 4; }
+  .col-achievements { grid-column: span 4; }
+
+  /* Findings list flexes to fill available card height. Each finding
+     stretches to share vertical space evenly so cards in the same row
+     never have void at the bottom of one and crowding in another. */
+  .findings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 auto;
+  }
+  .finding {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    flex: 1 1 0;          /* equal vertical share within the list */
+    min-height: 76px;     /* floor so a 1-line item still has presence */
+  }
+  .finding .pin {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+    background: var(--green-soft);
+    color: var(--green);
+  }
+  .finding.fix .pin { background: var(--amber-soft); color: var(--amber); }
+  .finding.win .pin { background: var(--green-soft); color: var(--green); }
+  .finding.flag .pin { background: var(--red-soft); color: var(--red); }
+  .finding p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  /* Quant pill — neutral across all finding types. The pin colour
+     already carries the semantic (green ✓ / amber ! / green ★).
+     Doubling that signal on the pill made the cards feel inconsistent
+     between green / amber / green-with-star. */
+  .finding .quant {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-2);
+    background: var(--surface-warm);
+    border: 1px solid var(--line);
+    padding: 3px 7px;
+    border-radius: 5px;
+    letter-spacing: .01em;
+  }
+
+  /* ─── ROW 3: trajectory + skills ─── */
+  .col-trajectory { grid-column: span 7; }
+  .col-skills     { grid-column: span 5; }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    position: relative;
+  }
+  .timeline-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 28px;
+    bottom: -12px;
+    width: 1px;
+    background: var(--line-strong);
+  }
+  .timeline-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    background: var(--surface-warm);
+    border: 1px solid var(--line-strong);
+    color: var(--ink-3);
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 600;
+    font-size: 10.5px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .timeline-item.current .timeline-dot {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #fff;
+  }
+  .timeline-content {
+    padding-top: 4px;
+  }
+  .timeline-role {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-1);
+    line-height: 1.3;
+  }
+  .timeline-role .at {
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+  .timeline-meta {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .timeline-note {
+    margin: 4px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+  .trajectory-summary {
+    margin: 0 0 4px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+    padding: 10px 12px;
+    background: var(--amber-soft);
+    border-left: 2px solid var(--amber);
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* skills */
+  .pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--r-pill);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .pill.primary {
+    background: var(--ink-1);
+    border-color: var(--ink-1);
+    color: #fff;
+  }
+  .pill .yrs {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    font-weight: 600;
+    margin-left: 2px;
+  }
+  .pill.primary .yrs { color: rgba(255,255,255,.6); }
+
+  .skills-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .skills-section + .skills-section {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .skills-section .sec-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: var(--ink-4);
+    text-transform: uppercase;
+  }
+
+  /* ─── ROW 4: ready to practice + based on ─── */
+  .col-practice { grid-column: span 8; }
+  .col-based    { grid-column: span 4; }
+
+  /* Dark CTA card — the action moment, deserves contrast */
+  .card.dark {
+    background: var(--indigo-deep);
+    border-color: var(--indigo-deep);
+    color: #fff;
+  }
+  .card.dark .label { color: rgba(255,255,255,.55); }
+  .card.dark p.micro { color: rgba(255,255,255,.6); }
+
+  .practice-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  .practice-tracks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: var(--r-md);
+    transition: background var(--t), border-color var(--t);
+  }
+  .track:hover {
+    background: rgba(255,255,255,.07);
+    border-color: rgba(255,255,255,.16);
+  }
+  .track-checkbox {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    background: var(--amber);
+    color: var(--indigo-deep);
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .track-name {
+    font-size: 13.5px;
+    color: #fff;
+    font-weight: 500;
+  }
+  .track-name span {
+    color: rgba(255,255,255,.55);
+    font-weight: 400;
+  }
+  .track-meta {
+    margin-left: auto;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    color: rgba(255,255,255,.5);
+    text-transform: uppercase;
+  }
+
+  .practice-action {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+  }
+  .practice-headline {
+    margin: 0;
+    font-family: "Fraunces", serif;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: #fff;
+  }
+  .practice-headline em {
+    font-style: italic;
+    color: var(--amber);
+  }
+  .practice-sub {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255,255,255,.65);
+    line-height: 1.5;
+  }
+  .practice-cta {
+    width: 100%;
+    height: 46px;
+    background: #fff;
+    color: var(--indigo-deep);
+    border: 0;
+    border-radius: var(--r-md);
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform .1s var(--t), background var(--t);
+  }
+  .practice-cta:hover { background: var(--amber); color: #fff; transform: translateY(-1px); }
+  .practice-cta-arrow { transition: transform var(--t); }
+  .practice-cta:hover .practice-cta-arrow { transform: translateX(3px); }
+  .practice-meta {
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: rgba(255,255,255,.45);
+    text-transform: uppercase;
+  }
+
+  /* Based on attribution */
+  .based-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .based-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .based-tick {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--green-soft);
+    color: var(--green);
+    display: inline-grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 1080px) {
+    .bento { grid-template-columns: repeat(8, 1fr); }
+    .col-hero { grid-column: span 8; }
+    .col-score { grid-column: span 8; }
+    .col-strengths, .col-practising, .col-achievements { grid-column: span 8; }
+    .col-trajectory { grid-column: span 8; }
+    .col-skills { grid-column: span 8; }
+    .col-practice { grid-column: span 8; }
+    .col-based { grid-column: span 8; }
+    .practice-row { grid-template-columns: 1fr; gap: 18px; }
+  }
+  @media (max-width: 720px) {
+    .bento { grid-template-columns: 1fr; padding: 20px; }
+    .bento > * { grid-column: span 1 !important; }
+    .topbar { padding: 16px 20px; flex-wrap: wrap; gap: 8px; }
+    .crumbs { font-size: 12px; }
+    .hero-headline { font-size: 24px; }
+    .practice-headline { font-size: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0s !important; }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="glow" aria-hidden="true"></div>
+
+<div class="page">
+
+  <!-- ─── TOPBAR ────────────────────────────────── -->
+  <header class="topbar" role="banner">
+    <a class="wordmark" href="/dashboard" aria-label="HireStepX home">
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <rect width="22" height="22" rx="6" fill="#0e0c08"/>
+        <rect x="5" y="14" width="5"  height="2.5" rx="1" fill="#fff" opacity=".55"/>
+        <rect x="5" y="9.75" width="8.5" height="2.5" rx="1" fill="#fff" opacity=".8"/>
+        <rect x="5" y="5.5" width="12" height="2.5" rx="1" fill="#fff"/>
+      </svg>
+      <span class="wordmark-text">HireStepX</span>
+    </a>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/dashboard">Dashboard</a>
+      <span class="sep">/</span>
+      <a href="/onboarding">Setup</a>
+      <span class="sep">/</span>
+      <strong>Resume analysis</strong>
+    </nav>
+    <div class="topbar-actions">
+      <button class="btn-ghost">Skip for now</button>
+    </div>
+  </header>
+
+  <!-- ─── BENTO GRID ───────────────────────────── -->
+  <div class="bento">
+
+    <!-- ROW 1: HERO + SCORE -->
+
+    <section class="card col-hero">
+      <span class="hero-status">AI ANALYSIS COMPLETE</span>
+      <h1 class="hero-headline">Backend Engineer with 4+ years scaling fintech APIs</h1>
+      <p class="hero-summary">
+        Mid-career backend engineer with deep Python/Django + Postgres chops, shipped at Razorpay and Swiggy.
+        Strong on system design at small scale; less battle-tested on cross-functional product calls.
+        Aiming for senior backend roles at consumer fintech / B2B SaaS.
+      </p>
+
+      <div class="hero-meta-row">
+        <span class="source">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M3 1.5h6L11 4.5V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2.5a1 1 0 0 1 1-1z"/>
+            <path d="M9 1.5V4.5h2.5"/>
+          </svg>
+          Source: <span class="source-name">Rahul_Sharma_Resume.pdf</span>
+        </span>
+        <a href="#" class="reupload">Re-upload →</a>
+      </div>
+    </section>
+
+    <section class="card col-score score-card">
+      <span class="label">CLARITY SCORE</span>
+
+      <div class="gauge" aria-label="78 out of 100">
+        <svg width="180" height="100" viewBox="0 0 180 100">
+          <!-- track -->
+          <path d="M 16 90 A 74 74 0 0 1 164 90"
+            fill="none" stroke="#ebe5d2" stroke-width="10" stroke-linecap="round"/>
+          <!-- value 78% — arc from 0 to 0.78 along the path -->
+          <path d="M 16 90 A 74 74 0 0 1 164 90"
+            fill="none" stroke="#b45309" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="232 232"
+            stroke-dashoffset="51"/>
+        </svg>
+      </div>
+      <div class="gauge-num">78<small>/100</small></div>
+      <div class="gauge-band">FAIR</div>
+
+      <p class="clarity-line">
+        Strong foundation. With a few specific improvements, you'll stand out.
+      </p>
+
+      <div class="score-meta">
+        <div class="row">
+          <span class="k">SENIORITY</span>
+          <span class="v amber">Mid</span>
+        </div>
+        <div class="row">
+          <span class="k">INDUSTRIES</span>
+          <span class="v">Fintech · Food · B2B SaaS</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 2: STRENGTHS · WORTH PRACTISING · ACHIEVEMENTS -->
+
+    <section class="card col-strengths">
+      <div class="card-header">
+        <span class="label green">INTERVIEW STRENGTHS · 3</span>
+        <span class="micro">Backed by resume</span>
+      </div>
+      <div class="findings">
+        <div class="finding win">
+          <span class="pin">✓</span>
+          <div>
+            <p>Concrete metrics on every project — latency, scale, dollars saved.</p>
+            <span class="quant">8 / 8 projects</span>
+          </div>
+        </div>
+        <div class="finding win">
+          <span class="pin">✓</span>
+          <div>
+            <p>Comfortable articulating system-design tradeoffs at the database layer.</p>
+            <span class="quant">3 migrations led</span>
+          </div>
+        </div>
+        <div class="finding win">
+          <span class="pin">✓</span>
+          <div>
+            <p>Strong narrative arc on tenure — promotions show progression.</p>
+            <span class="quant">SDE-1 → SDE-3 in 18 mo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-practising">
+      <div class="card-header">
+        <span class="label amber">WORTH PRACTISING · 3</span>
+        <span class="micro">Highest leverage first</span>
+      </div>
+      <div class="findings">
+        <div class="finding fix">
+          <span class="pin">!</span>
+          <div>
+            <p>Behavioural answers tend to skip the conflict / disagreement beat.</p>
+            <span class="quant">3 / 5 stories</span>
+          </div>
+        </div>
+        <div class="finding fix">
+          <span class="pin">!</span>
+          <div>
+            <p>Limited frontend exposure — vulnerable to full-stack curveballs.</p>
+            <span class="quant">2 % JS / TS mentions</span>
+          </div>
+        </div>
+        <div class="finding fix">
+          <span class="pin">!</span>
+          <div>
+            <p>Hasn't articulated leadership stories at scale.</p>
+            <span class="quant">team size &gt; 3 people</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-achievements">
+      <div class="card-header">
+        <span class="label">KEY ACHIEVEMENTS · 3</span>
+        <span class="micro">Quantified</span>
+      </div>
+      <div class="findings">
+        <div class="finding win">
+          <span class="pin">★</span>
+          <div>
+            <p>Cut p99 latency on payouts API by adding Redis read-through cache.</p>
+            <span class="quant">1.2s → 280ms</span>
+          </div>
+        </div>
+        <div class="finding win">
+          <span class="pin">★</span>
+          <div>
+            <p>Led Postgres → CockroachDB migration for the wallet ledger; zero downtime.</p>
+            <span class="quant">11M+ rows</span>
+          </div>
+        </div>
+        <div class="finding win">
+          <span class="pin">★</span>
+          <div>
+            <p>Mentored 2 junior engineers through their first on-call rotation.</p>
+            <span class="quant">2 mentees · 6 mo</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 3: CAREER TRAJECTORY (wide) + TOP SKILLS (narrow) -->
+
+    <section class="card col-trajectory">
+      <div class="card-header">
+        <span class="label">CAREER TRAJECTORY</span>
+        <span class="micro">5 years · 3 companies</span>
+      </div>
+
+      <p class="trajectory-summary">
+        Trajectory is consistent with a senior IC track. First lead role likely 18–24 months out.
+      </p>
+
+      <div class="timeline">
+        <div class="timeline-item current">
+          <span class="timeline-dot">'25</span>
+          <div class="timeline-content">
+            <div class="timeline-role">SDE-3 <span class="at">at Razorpay · Payouts platform</span></div>
+            <p class="timeline-meta">Apr 2024 — Present · 12 months</p>
+            <p class="timeline-note">Owns API reliability for the payouts platform team.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <span class="timeline-dot">'23</span>
+          <div class="timeline-content">
+            <div class="timeline-role">SDE-2 → SDE-3 <span class="at">at Swiggy · Dispatch</span></div>
+            <p class="timeline-meta">Sep 2022 — Mar 2024 · 18 months</p>
+            <p class="timeline-note">Promoted in dispatch team within a year.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <span class="timeline-dot">'21</span>
+          <div class="timeline-content">
+            <div class="timeline-role">SDE-1 <span class="at">at Freshworks · Support backend</span></div>
+            <p class="timeline-meta">Jul 2020 — Aug 2022 · 25 months</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-skills">
+      <div class="card-header">
+        <span class="label">TOP SKILLS</span>
+        <span class="micro">Backed by resume mentions</span>
+      </div>
+
+      <div class="skills-section">
+        <span class="sec-label">CORE</span>
+        <div class="pill-list">
+          <span class="pill primary">Python <span class="yrs">5y</span></span>
+          <span class="pill primary">PostgreSQL <span class="yrs">4y</span></span>
+          <span class="pill primary">Django <span class="yrs">4y</span></span>
+        </div>
+      </div>
+
+      <div class="skills-section">
+        <span class="sec-label">PROFICIENT</span>
+        <div class="pill-list">
+          <span class="pill">AWS <span class="yrs">3y</span></span>
+          <span class="pill">Redis <span class="yrs">3y</span></span>
+          <span class="pill">Docker <span class="yrs">3y</span></span>
+          <span class="pill">REST APIs <span class="yrs">5y</span></span>
+          <span class="pill">Kafka <span class="yrs">2y</span></span>
+        </div>
+      </div>
+
+      <div class="skills-section">
+        <span class="sec-label">EMERGING</span>
+        <div class="pill-list">
+          <span class="pill">CockroachDB <span class="yrs">1y</span></span>
+          <span class="pill">gRPC <span class="yrs">1y</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 4: PRACTICE TRACKS + BASED ON -->
+
+    <section class="card dark col-practice">
+      <div class="practice-row">
+        <div class="practice-tracks">
+          <div class="card-header">
+            <span class="label">RECOMMENDED PRACTICE TRACKS · 3</span>
+          </div>
+
+          <div class="track">
+            <span class="track-checkbox">✓</span>
+            <span class="track-name">Backend system design</span>
+            <span class="track-meta">~25 min</span>
+          </div>
+          <div class="track">
+            <span class="track-checkbox">✓</span>
+            <span class="track-name">SQL performance</span>
+            <span class="track-meta">~15 min</span>
+          </div>
+          <div class="track">
+            <span class="track-checkbox">✓</span>
+            <span class="track-name">Behavioural <span>· ownership stories</span></span>
+            <span class="track-meta">~20 min</span>
+          </div>
+        </div>
+
+        <div class="practice-action">
+          <h2 class="practice-headline">Ready to <em>improve?</em></h2>
+          <p class="practice-sub">
+            Personalised plan with role-specific questions and AI feedback after every answer.
+          </p>
+          <button class="practice-cta">
+            Start mock interview
+            <svg class="practice-cta-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7h10m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <p class="practice-meta">~25 MIN · 10 QUESTIONS · PAUSE ANYTIME</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card col-based">
+      <div class="card-header">
+        <span class="label">BASED ON</span>
+        <span class="micro">4 inputs</span>
+      </div>
+      <div class="based-list">
+        <div class="based-item"><span class="based-tick">✓</span>Resume content &amp; structure</div>
+        <div class="based-item"><span class="based-tick">✓</span>Project depth &amp; impact</div>
+        <div class="based-item"><span class="based-tick">✓</span>Quantified achievements</div>
+        <div class="based-item"><span class="based-tick">✓</span>Industry &amp; role benchmarking</div>
+      </div>
+      <p class="micro">
+        Analysis runs locally where possible. Your data is never used to train models.
+      </p>
+    </section>
+
+  </div>
+</div>
+
+</body>
+</html>
