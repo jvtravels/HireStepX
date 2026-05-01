@@ -1332,38 +1332,13 @@ export function NavigationFooter({
     );
   }
 
-  // ── Dual-mode (post-resume): the primary "Start mock interview"
-  // CTA now lives inside the ScoreGauge card up top, so this footer
-  // only renders a low-emphasis secondary link to the dashboard +
-  // any quota / save status messages. Removes the duplicate indigo
-  // "Ready to improve?" card that used to sit here.
+  // ── Dual-mode (post-resume): all CTAs (Start mock interview +
+  // Dashboard) now live inside the ScoreGauge card. Skip link and
+  // quota hint were redundant with that — both removed. We only
+  // render save-status here as a small operational signal in case
+  // the background session-save fails.
   return (
     <div style={{ marginTop: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-      <button
-        type="button"
-        onClick={onGoToDashboard}
-        disabled={starting}
-        style={{
-          fontFamily: f.sans,
-          fontSize: 13.5,
-          fontWeight: 500,
-          color: t.inkSoft,
-          background: "transparent",
-          border: "none",
-          padding: "8px 12px",
-          cursor: starting ? "not-allowed" : "pointer",
-          textDecoration: "underline",
-          textDecorationColor: "rgba(110,103,89,0.35)",
-          textUnderlineOffset: 3,
-        }}
-      >
-        Skip for now — go to dashboard
-      </button>
-      {quotaHint && (
-        <div style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
-          {quotaHint}
-        </div>
-      )}
       {saveStatus === "saving" && (
         <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint }}>Saving…</div>
       )}
