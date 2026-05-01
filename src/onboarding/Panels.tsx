@@ -801,7 +801,7 @@ export function ProfileReadyState({
           <ScoreGauge
             score={displayScore}
             tone={scoreTone as "success" | "warning" | "error" | "muted"}
-            seniority={aiProfile.seniorityLevel}
+            yearsExperience={aiProfile.yearsExperience}
             industries={aiProfile.industries}
             displayName={trimmedName || undefined}
             initials={initials}
@@ -973,7 +973,7 @@ export function ProfileReadyState({
 function ScoreGauge({
   score,
   tone,
-  seniority,
+  yearsExperience,
   industries,
   displayName,
   initials,
@@ -983,7 +983,7 @@ function ScoreGauge({
 }: {
   score: number | null;
   tone: "success" | "warning" | "error" | "muted";
-  seniority?: string;
+  yearsExperience?: number | null;
   industries?: string[];
   displayName?: string;
   initials?: string;
@@ -1025,7 +1025,15 @@ function ScoreGauge({
   const filled = circumference * pct;
 
   const industriesLabel = industries && industries.length > 0 ? industries.slice(0, 3).join(" · ") : null;
-  const hasStats = !!(displayName || seniority || industriesLabel);
+  // "X+ yrs" if we have years; "<1 yr" if explicitly 0; otherwise null.
+  // Display format mirrors the rest of the product.
+  const experienceLabel =
+    typeof yearsExperience === "number"
+      ? yearsExperience >= 1
+        ? `${yearsExperience}+ yrs`
+        : "<1 yr"
+      : null;
+  const hasStats = !!(displayName || experienceLabel || industriesLabel);
 
   return (
     <section
@@ -1084,7 +1092,7 @@ function ScoreGauge({
               avatarInitials={initials}
             />
           )}
-          {seniority && <StatRow label="Seniority" value={seniority} />}
+          {experienceLabel && <StatRow label="Experience" value={experienceLabel} />}
           {industriesLabel && <StatRow label="Industries" value={industriesLabel} />}
         </div>
       )}
