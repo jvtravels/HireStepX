@@ -257,7 +257,10 @@ export default function Onboarding() {
       const savedAiProfile = (isAiResume(stored)
         ? { headline: stored.headline, summary: stored.summary, yearsExperience: stored.yearsExperience, seniorityLevel: stored.seniorityLevel, topSkills: stored.topSkills, keyAchievements: stored.keyAchievements, industries: stored.industries, interviewStrengths: stored.interviewStrengths, interviewGaps: stored.interviewGaps, careerTrajectory: stored.careerTrajectory, resumeScore: stored.resumeScore, improvements: stored.improvements }
         : null) || localResume?.aiProfile;
-      if (looksLikePersonName(data.name) && !userName) setUserName(data.name);
+      // Name is taken from signup (user.name) — no longer copied from
+      // the resume. Resume parsing produced too many false positives
+      // ("BTech Computer Science", "DY PATIL UNIVERSITY", etc.) and
+      // every signed-up user has already given us their real name.
       const isRealAiProfile = !!(savedAiProfile && savedAiProfile.headline
         && savedAiProfile.resumeScore != null
         && savedAiProfile.topSkills && savedAiProfile.topSkills.length > 0);
@@ -427,11 +430,10 @@ export default function Onboarding() {
       // proper headline; if the parser returned nothing usable we'd
       // rather show an empty field than "Unpause Studio".
       if (autoRole && !targetRole) setTargetRole(autoRole);
-      // Only seed the Name field when the parser returned something that
-      // actually looks like a person's name. Same rationale as the role
-      // gate above — parser would otherwise surface cities ("Mumbai") or
-      // free text from the resume header.
-      if (looksLikePersonName(data.name) && !userName) setUserName(data.name);
+      // Name comes from the signup form, not from resume parsing. The
+      // resume name regex produced too many false positives (institution
+      // names, degree lines like "BTech Computer Science"). Every signed-
+      // up user has already given us their real name; we trust that.
       analysisAbortRef.current?.abort();
       analysisAbortRef.current = new AbortController();
       const currentAbort = analysisAbortRef.current;
@@ -505,7 +507,11 @@ export default function Onboarding() {
           : { _type: "fallback", ...data },
       };
       if (!targetRole && autoRole) profileSave.targetRole = autoRole;
-      if (data.name) profileSave.name = data.name;
+      // Do NOT save data.name — we never overwrite the signup name with
+      // the resume parser's guess. This was the source of the
+      // "BTech Computer Science" / "DY PATIL UNIVERSITY" UI bugs:
+      // even when display logic filtered bad names, profileSave.name
+      // had already poisoned user.name in the database.
       if (data.location) profileSave.city = data.location;
       if (finalProfile.seniorityLevel) {
         const seniorityMap: Record<string, string> = {
@@ -711,15 +717,14 @@ export default function Onboarding() {
         onLogout={async () => { await logout(); router.push("/"); }}
         userEmail={user?.email || ""}
         userAvatar={undefined}
-        // Name source priority: editable userName state > resume-parsed name
-        // > account name. Each layer is gated through looksLikePersonName
-        // so a historical bad value (e.g. "BTech Computer Science",
-        // "DY PATIL UNIVERSITY") falls through instead of being shown.
-        // If all three fail, TopBar gracefully falls back to email-derived
-        // initials.
+        // Name comes from the signup flow only. We don't fall back to
+        // the resume parser anymore — see "BTech Computer Science" /
+        // "DY PATIL UNIVERSITY" bug class. The looksLikePersonName
+        // gate stays as defense-in-depth: any historical bad value
+        // already saved on user.name from before this cleanup falls
+        // through and TopBar renders email-initials instead.
         userName={
           (looksLikePersonName(userName) && userName.trim()) ||
-          (looksLikePersonName(resumeParsed?.name) && resumeParsed!.name.trim()) ||
           (looksLikePersonName(user?.name) && (user!.name || "")) ||
           ""
         }

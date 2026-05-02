@@ -638,12 +638,11 @@ export function ProfileReadyState({
   const visibleSkills = skillsExpanded ? aiProfile.topSkills : aiProfile.topSkills.slice(0, SKILLS_VISIBLE);
   const hiddenSkills = Math.max(0, aiProfile.topSkills.length - SKILLS_VISIBLE);
 
-  // Name priority: editable userName > parsed resume name. Account name
-  // (often an institutional one) is intentionally NOT a fallback here.
-  const trimmedName =
-    (userName && userName.trim()) ||
-    (resumeParsed?.name && resumeParsed.name.trim()) ||
-    "";
+  // Name comes from signup (passed in as userName prop). Resume parsing
+  // is no longer a fallback — it produced too many false positives
+  // (institutions, degree lines). If userName is empty, we render no
+  // name and use email-initials downstream.
+  const trimmedName = (userName && userName.trim()) || "";
   const initials =
     trimmedName
       .split(/\s+/)
