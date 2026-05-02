@@ -846,10 +846,17 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(255,255,255,0.14);
 }
 
-/* ─── Selection ─── */
+/* ─── Selection ───
+   Indigo + cream gives high contrast on BOTH the dark dashboard and
+   the cream-themed auth / marketing surfaces. The previous pale-beige
+   bg + near-white text was invisible against the cream background. */
 ::selection {
-  background: rgba(212, 179, 127, 0.25);
-  color: #F5F2ED;
+  background: #312E81; /* brand indigo */
+  color: #FAF7F0;      /* brand cream */
+}
+::-moz-selection {
+  background: #312E81;
+  color: #FAF7F0;
 }
 
 /* ─── Print Stylesheet ─── */
