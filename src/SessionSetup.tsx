@@ -485,7 +485,8 @@ export default function SessionSetup() {
   const sessionLengthLabel = sessionLength === "10m" ? "10 minutes" : sessionLength === "25m" ? "25 minutes" : "15 minutes";
 
   return (
-    <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column", color: c.ivory, fontFamily: font.ui }}>
+      <style>{AUTH_STYLES}</style>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
