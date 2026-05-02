@@ -61,14 +61,24 @@ export { NegotiationCoachingCard, DealSummaryCard, NegotiationLiveDashboard, Ann
 const stStackStyle: React.CSSProperties = { position: "fixed", top: "max(12px, env(safe-area-inset-top, 0px))", left: "50%", transform: "translateX(-50%)", zIndex: 100, display: "flex", flexDirection: "column", gap: 8, maxWidth: 500, width: "min(90%, calc(100vw - 32px))" };
 const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(180,83,9,0.14)", border: "1px solid rgba(180,83,9,0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 const stOfflineToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.18)", border: "1px solid rgba(185,28,28,0.30)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
-const stMicToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.16)", border: "1px solid rgba(185,28,28,0.24)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 const stGiltText: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.gilt };
 const stEmberText: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.ember };
 
+/* StatusToasts now only shows tab-conflict (rare, must be visible) and
+   genuine offline state. The mic-error path used to flash a top-fixed
+   toast on every Next-Question transition (QA bug 21: "sudden element
+   appears at top of screen"). The inline MicQuietBanner inside the
+   action zone handles user-facing mic guidance now — calmer, contextual,
+   not jarring. micError is preserved as a debug breadcrumb in the
+   browser console rather than splashed across the topbar. */
 export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline, micError }: {
   tabConflict: boolean; isOffline: boolean; micError: string;
 }) {
-  if (!tabConflict && !isOffline && !micError) return null;
+  // Mirror micError to the console for debugging while suppressing the toast.
+  useEffect(() => {
+    if (micError) console.warn("[interview] mic notice:", micError);
+  }, [micError]);
+  if (!tabConflict && !isOffline) return null;
   return (
     <div style={stStackStyle}>
       {tabConflict && (
@@ -81,12 +91,6 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
         <div role="alert" style={stOfflineToast}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
           <span style={stEmberText}>Offline — session saved locally</span>
-        </div>
-      )}
-      {micError && (
-        <div role="alert" style={stMicToast}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>
-          <span style={stEmberText}>{micError}</span>
         </div>
       )}
     </div>

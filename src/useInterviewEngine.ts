@@ -1340,11 +1340,28 @@ export function useInterviewEngine() {
             const microDelay = randomDelay(200, 500);
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
           } else {
-            setInterviewScript(prev => [
-              ...prev.slice(0, currentStep),
-              followUpStep,
-              ...prev.slice(currentStep),
-            ]);
+            setInterviewScript(prev => {
+              // Cap follow-ups so they can't push the total turn count
+              // unreasonably past the planned budget (QA bug 21: "Question 6
+              // of 3" with follow-ups stretching a mini session).
+              //
+              // The cap = baseQuestionCount + ceil(baseQuestionCount * 0.5).
+              // So a 3-question mini session gets at most 5 turns total, a
+              // 5-question session gets at most 8. Generous enough to allow
+              // 1-2 high-value probes without the session feeling endless.
+              const baseCount = prev.filter(s => s.type === "question").length;
+              const turnCount = prev.filter(s => s.type === "question" || s.type === "follow-up").length;
+              const maxTurns = baseCount + Math.ceil(baseCount * 0.5);
+              if (turnCount >= maxTurns) {
+                console.warn(`[interview] Skipping follow-up — turn cap reached (${turnCount}/${maxTurns})`);
+                return prev;
+              }
+              return [
+                ...prev.slice(0, currentStep),
+                followUpStep,
+                ...prev.slice(currentStep),
+              ];
+            });
           }
         } else if (!interviewEndedRef.current) {
           // Follow-up timed out or returned needsFollowUp=false
