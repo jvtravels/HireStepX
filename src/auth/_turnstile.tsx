@@ -20,7 +20,9 @@ declare global {
           "error-callback"?: () => void;
           "expired-callback"?: () => void;
           theme?: "auto" | "light" | "dark";
-          size?: "normal" | "compact" | "invisible" | "flexible";
+          // Cloudflare removed "invisible" — use appearance="execute"
+          // with a regular size for invisible-style behavior.
+          size?: "normal" | "compact" | "flexible";
           appearance?: "always" | "execute" | "interaction-only";
         },
       ) => string;
@@ -71,8 +73,12 @@ export interface TurnstileWidgetProps {
   onError?: () => void;
   /** Called when the issued token expires before submission. */
   onExpired?: () => void;
-  /** "invisible" runs without UI; "flexible" shows a checkbox-style box. */
-  size?: "invisible" | "flexible";
+  /** "invisible" → no visible UI (handled via appearance="execute").
+      "flexible" → checkbox-style box that resizes to its container.
+      Cloudflare removed "invisible" as a size literal in 2024 — it's
+      now controlled by `appearance`, not `size`. We accept "invisible"
+      as a public API token here and translate it internally. */
+  size?: "invisible" | "flexible" | "normal" | "compact";
 }
 
 /** Renders a Turnstile widget. If NEXT_PUBLIC_TURNSTILE_SITE_KEY is
@@ -100,14 +106,23 @@ export default function TurnstileWidget({
     }
     setStatus("loading");
     let cancelled = false;
+    // Translate our public "invisible" token into the new Cloudflare API:
+    //   size: "flexible" + appearance: "execute" runs the challenge
+    //   without visible UI for legitimate users (only shows interaction
+    //   prompts for suspicious traffic). Cloudflare deprecated
+    //   `size: "invisible"` — passing it now throws TurnstileError.
+    const isInvisible = size === "invisible";
+    const renderSize: "flexible" | "normal" | "compact" = isInvisible
+      ? "flexible"
+      : (size as "flexible" | "normal" | "compact");
     loadTurnstileScript()
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return;
         try {
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: SITE_KEY,
-            size,
-            appearance: size === "invisible" ? "execute" : "always",
+            size: renderSize,
+            appearance: isInvisible ? "execute" : "always",
             callback: (token) => onToken(token),
             "error-callback": () => onError?.(),
             "expired-callback": () => onExpired?.(),
