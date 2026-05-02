@@ -20,6 +20,7 @@ import {
 import { AUTH_STYLES } from "./_styles";
 import {
   checkPasswordBreached,
+  isDisposableEmail,
   passwordHasEdgeWhitespace,
   sanitizeEmail,
   validateEmail,
@@ -235,6 +236,19 @@ export default function Signup() {
       if (!canSubmit) return;
 
       setError(null);
+
+      // Disposable / throwaway-email block — runs before any network
+      // call so attackers farming free-tier credits via mailinator etc.
+      // hit a fast clean reject. Curated domain list; legitimate users
+      // never have one of these.
+      const cleanForDispoCheck = sanitizeEmail(email);
+      if (isDisposableEmail(cleanForDispoCheck)) {
+        setError(
+          "Please use a permanent email address — temporary inboxes aren't supported.",
+        );
+        return;
+      }
+
       setLoading(true);
 
       // Have I Been Pwned check — k-anonymous, only first 5 SHA-1 chars

@@ -102,6 +102,127 @@ export function sanitizeEmail(value: string): string {
   return trimmed.slice(0, at) + "@" + trimmed.slice(at + 1).toLowerCase();
 }
 
+/* ─── Disposable / throwaway email blocklist ───
+   Curated set of well-known temporary-mail providers. We reject these
+   at signup so attackers can't farm free-tier credits with infinite
+   throwaway addresses. Not exhaustive (the long-tail is endless) — we
+   cover the top providers; everything else is caught by the email-link
+   verification gate.
+
+   Add domains as we see abuse patterns. Keep this list short and
+   high-signal — false positives are worse than a few extras slipping
+   through (they CAN still verify their email, they're just rate-limited
+   downstream). */
+const DISPOSABLE_EMAIL_DOMAINS = new Set([
+  "10minutemail.com",
+  "10minutemail.net",
+  "20minutemail.com",
+  "30minutemail.com",
+  "tempmail.com",
+  "temp-mail.org",
+  "temp-mail.io",
+  "tempmailaddress.com",
+  "tempinbox.com",
+  "tempr.email",
+  "guerrillamail.com",
+  "guerrillamail.info",
+  "guerrillamail.net",
+  "guerrillamail.org",
+  "guerrillamailblock.com",
+  "sharklasers.com",
+  "grr.la",
+  "mailinator.com",
+  "mailinator.net",
+  "mailinator.org",
+  "mailinator2.com",
+  "yopmail.com",
+  "yopmail.fr",
+  "yopmail.net",
+  "trashmail.com",
+  "trashmail.de",
+  "trashmail.net",
+  "throwawaymail.com",
+  "throwaway.email",
+  "fakeinbox.com",
+  "getairmail.com",
+  "getnada.com",
+  "maildrop.cc",
+  "mailnesia.com",
+  "moakt.com",
+  "mohmal.com",
+  "mt2015.com",
+  "dispostable.com",
+  "discard.email",
+  "spamgourmet.com",
+  "spambox.us",
+  "mintemail.com",
+  "mytemp.email",
+  "harakirimail.com",
+  "inboxbear.com",
+  "burnermail.io",
+  "anonbox.net",
+  "anonaddy.me",
+  "instaaddr.com",
+  "tmpmail.org",
+  "tmpmail.net",
+]);
+
+/** Returns true if the email's domain is on the disposable / throwaway
+    provider list. Matches the domain exactly (no substring). */
+export function isDisposableEmail(value: string): boolean {
+  const at = value.lastIndexOf("@");
+  if (at < 0) return false;
+  const domain = value.slice(at + 1).trim().toLowerCase();
+  if (!domain) return false;
+  return DISPOSABLE_EMAIL_DOMAINS.has(domain);
+}
+
+/* ─── Plus-alias normalization for de-duplication ───
+   Big providers treat `rahul+anything@gmail.com` and `rahul@gmail.com`
+   as the same inbox. Without normalization, a single attacker farms
+   infinite free-tier accounts via gmail aliasing.
+
+   Returns a canonical "dedup key" for the email — strips +suffix on
+   providers known to ignore them, and removes dots on Gmail (which
+   also ignores them). For unknown domains the email is returned as-is
+   (lowercased domain only) — we don't aggressively normalize because
+   most corporate hosts respect plus-aliases as distinct inboxes. */
+const PLUS_ALIAS_PROVIDERS = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "fastmail.com",
+  "fastmail.fm",
+  "hey.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "protonmail.com",
+  "proton.me",
+  "pm.me",
+]);
+
+const GMAIL_DOMAINS = new Set(["gmail.com", "googlemail.com"]);
+
+export function normalizeEmailForDedup(value: string): string {
+  const trimmed = value.trim().toLowerCase();
+  const at = trimmed.lastIndexOf("@");
+  if (at < 0) return trimmed;
+  let local = trimmed.slice(0, at);
+  const domain = trimmed.slice(at + 1);
+  if (!domain) return trimmed;
+  if (PLUS_ALIAS_PROVIDERS.has(domain)) {
+    const plus = local.indexOf("+");
+    if (plus >= 0) local = local.slice(0, plus);
+  }
+  if (GMAIL_DOMAINS.has(domain)) {
+    local = local.replace(/\./g, "");
+  }
+  return `${local}@${domain}`;
+}
+
 /** Detect leading/trailing whitespace in a password — should warn the
     user before submit since most servers reject it as malformed. */
 export function passwordHasEdgeWhitespace(value: string): boolean {

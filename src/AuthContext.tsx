@@ -726,30 +726,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
-      // Detect existing-email signups across Supabase's three response shapes:
+      // Detect existing-email signups across Supabase's response shapes:
       //
       //   1. OWASP enumeration protection ON (default): data.user is
-      //      returned with `identities: []` — empty array. We fall through
-      //      to the existing-account email.
+      //      returned with `identities: []` — empty array. We fall
+      //      through to the existing-account email.
       //   2. Newer Supabase configs / "Confirm email" enabled but
       //      enumeration protection lax: data.user is returned with the
-      //      REAL user record (populated identities). The reliable signal
-      //      here is data.user.email_confirmed_at — when it's a non-null
-      //      timestamp the email is already verified, so a fresh
-      //      verification mail would be wrong.
+      //      REAL user record (populated identities). For an already-
+      //      VERIFIED email, email_confirmed_at is a non-null timestamp.
+      //      For an existing-but-UNVERIFIED email, identities are
+      //      populated AND email_confirmed_at is null — indistinguishable
+      //      from a fresh signup based on those fields alone. The tell
+      //      is data.user.created_at: a fresh signup has it within a few
+      //      seconds of "now"; an existing user's is older.
       //   3. Enumeration protection OFF entirely: Supabase returns an
       //      explicit "already registered" error — handled in the
       //      `if (error)` block above.
       //
-      // Hitting any of the three paths funnels into the same "Check your
-      // email" UX so legit users never read "couldn't complete signup".
+      // Hitting any path funnels into the same "Check your email" UX so
+      // legit users never read "couldn't complete signup", and we never
+      // double-fire a verification email at someone whose account already
+      // exists (verified or not).
       const userObj = data?.user as
-        | (typeof data.user & { email_confirmed_at?: string | null })
+        | (typeof data.user & {
+            email_confirmed_at?: string | null;
+            created_at?: string | null;
+          })
         | undefined;
-      const isExistingEmail = !!userObj && (
-        !userObj.identities || userObj.identities.length === 0 ||
-        !!userObj.email_confirmed_at
-      );
+      const createdAtMs = userObj?.created_at
+        ? new Date(userObj.created_at).getTime()
+        : NaN;
+      const looksOlderThanFreshSignup =
+        Number.isFinite(createdAtMs) && Date.now() - createdAtMs > 5_000;
+      const isExistingEmail =
+        !!userObj &&
+        (!userObj.identities ||
+          userObj.identities.length === 0 ||
+          !!userObj.email_confirmed_at ||
+          looksOlderThanFreshSignup);
       if (isExistingEmail) {
         // Fire-and-forget — non-blocking. Server routes to the
         // "existing-account" template via the action flag.
