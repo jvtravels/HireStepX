@@ -20,13 +20,39 @@
  * Normalize resume text before hashing. Stripping incidental whitespace
  * and case ensures a copy/paste with extra spaces or different line
  * endings doesn't bust the cache.
+ *
+ * The earlier version (NFC + lowercase + whitespace collapse) wasn't
+ * enough: pdfjs extractions of the same PDF in different browsers
+ * varied on smart-quote vs straight-quote, em-dash vs hyphen, NBSP
+ * vs regular space, and stray zero-width / BOM characters at column
+ * boundaries. Each variant produced a different SHA-256 hash, every
+ * browser missed the cache, and every miss triggered a fresh LLM
+ * call — and (because temperature > 0) a different score. The
+ * Unicode-folding pass below converges those near-identical variants
+ * to a single canonical form so the cache actually hits cross-browser.
  */
 export function normalizeResumeText(text: string): string {
   return (text || "")
-    .normalize("NFC")
+    .normalize("NFKC") // NFKC > NFC: also folds compatibility variants
     .toLowerCase()
+    // Smart quotes → straight quotes
+    .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+    // Unicode dashes / minus / hyphens → ASCII hyphen
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, "-")
+    // Bullets and middle-dot punctuation → ASCII bullet "-"
+    .replace(/[\u2022\u2023\u25E6\u2043\u00B7]/g, "-")
+    // Strip zero-width / BOM / formatting marks that survive PDF text
+    // extraction unevenly across browsers (ZWSP, ZWNJ, ZWJ, BOM, soft
+    // hyphen, word joiner, LRM/RLM, ZWNBSP).
+    .replace(/[\u00AD\u200B\u200C\u200D\u200E\u200F\u2060\uFEFF]/g, "")
+    // Non-breaking spaces and exotic spaces → regular space
+    .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, " ")
+    // Line endings → \n
     .replace(/\r\n?/g, "\n")
+    // Collapse intra-line runs of whitespace
     .replace(/[ \t]+/g, " ")
+    // Collapse 3+ blank lines to a single blank line
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

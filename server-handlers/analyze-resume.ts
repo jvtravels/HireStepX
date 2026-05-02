@@ -181,7 +181,15 @@ CRITICAL RULES:
     // worst case is 20s + ~3s pre-checks = ~23s, comfortably under Vercel's
     // 25s edge function ceiling on Hobby tier. The previous 15s+15s budget
     // could exceed the platform limit and produce client-side timeouts.
-    const result = await callLLM({ prompt, temperature: 0.4, maxTokens: 2500, jsonMode: true }, 10000, { userId: auth.userId, endpoint: "analyze-resume" });
+    //
+    // temperature: 0 — the analysis pipeline produces a numeric score
+    // (resumeScore) that the user sees as authoritative. With t > 0 the
+    // same resume text yielded different scores between runs (observed
+    // 75 ↔ 80 swing across browsers / re-uploads of the same PDF). The
+    // narrative fields (summary, headline) lose a sliver of variety at
+    // t=0, but determinism on the score is worth far more — users were
+    // losing trust in the number when it changed without input changing.
+    const result = await callLLM({ prompt, temperature: 0, maxTokens: 2500, jsonMode: true }, 10000, { userId: auth.userId, endpoint: "analyze-resume" });
     const tLLM = Date.now() - tLLM0;
 
     const rawProfile = extractJSON<Record<string, unknown>>(result.text);

@@ -53,6 +53,56 @@ describe("normalizeResumeText", () => {
     expect(normalizeResumeText("")).toBe("");
     expect(normalizeResumeText("   \n\n  ")).toBe("");
   });
+
+  // ─── Cross-browser PDF extraction parity ───
+  // pdfjs in different browsers produces slightly different unicode
+  // for the same source PDF. These tests pin the canonicalisation
+  // that absorbs those differences so the cache hits cross-browser.
+  it("folds smart quotes to straight quotes", () => {
+    const smart = "she said \u201chello\u201d and \u2018goodbye\u2019";
+    const straight = "she said \"hello\" and 'goodbye'";
+    expect(normalizeResumeText(smart)).toBe(normalizeResumeText(straight));
+  });
+
+  it("folds em-dash, en-dash, hyphen variants to ASCII hyphen", () => {
+    const fancy = "2020\u20132024 \u2014 led team";
+    const ascii = "2020-2024 - led team";
+    expect(normalizeResumeText(fancy)).toBe(normalizeResumeText(ascii));
+  });
+
+  it("folds bullet glyphs to ASCII hyphen", () => {
+    const bulletA = "\u2022 shipped feature";
+    const bulletB = "- shipped feature";
+    expect(normalizeResumeText(bulletA)).toBe(normalizeResumeText(bulletB));
+  });
+
+  it("strips zero-width / BOM / soft-hyphen marks", () => {
+    const dirty = "in\u00ADter\u200bview\ufeff";
+    const clean = "interview";
+    expect(normalizeResumeText(dirty)).toBe(normalizeResumeText(clean));
+  });
+
+  it("non-breaking space and exotic spaces fold to regular space", () => {
+    const nbsp = "hello\u00a0world";
+    const enSpace = "hello\u2002world";
+    const ideographic = "hello\u3000world";
+    const regular = "hello world";
+    expect(normalizeResumeText(nbsp)).toBe(normalizeResumeText(regular));
+    expect(normalizeResumeText(enSpace)).toBe(normalizeResumeText(regular));
+    expect(normalizeResumeText(ideographic)).toBe(normalizeResumeText(regular));
+  });
+
+  it("two pdfjs extractions of the same logical resume hash identically", async () => {
+    // Mimics the observed bug: same PDF, two browsers, slight unicode
+    // drift. Both should land on the same hash so the cache hits.
+    const browserA =
+      "Jane Doe\u2014Senior Engineer\n\u2022 Built systems\nLed\u00a0teams";
+    const browserB =
+      "Jane Doe-Senior Engineer\n- Built systems\nLed teams";
+    const hashA = await computeResumeTextHash(browserA);
+    const hashB = await computeResumeTextHash(browserB);
+    expect(hashA).toBe(hashB);
+  });
 });
 
 describe("computeResumeTextHash", () => {
