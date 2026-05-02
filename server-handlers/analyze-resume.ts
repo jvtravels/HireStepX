@@ -10,6 +10,7 @@ import {
   findCachedResumeVersion,
   persistResumeVersion,
 } from "./_resume-versioning";
+import { computeScoreBreakdown } from "./_resume-score";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -158,7 +159,14 @@ Return a JSON object with ALL of these fields filled in thoroughly:
   "summary": "A 2-3 sentence professional narrative covering their career arc, key strengths, and what makes them stand out. Write in third person. Be specific — reference actual companies, roles, or domains from the resume.",
   "yearsExperience": <number or null>,
   "seniorityLevel": "<one of: Entry, Mid, Senior, Staff, Lead, Principal, Director, VP, C-Suite>",
-  "resumeScore": <0-100 integer. Rubric: quantified achievements (20pts), relevant skills & keywords (20pts), formatting & structure (15pts), experience relevance & progression (20pts), education & certs (10pts), summary/objective clarity (15pts). Average resumes score 40-65. Be honest and calibrated.>,
+  "scoreBreakdown": {
+    "quantifiedAchievements": <integer 0-20. How well bullets use numbers, percentages, dollar amounts. 0 = no metrics anywhere; 10 = some bullets quantified; 20 = nearly every accomplishment has a metric.>,
+    "relevantSkills": <integer 0-20. Coverage of skills/keywords relevant to the target role. 0 = unrelated; 10 = partial overlap; 20 = comprehensive coverage including modern tools.>,
+    "formattingStructure": <integer 0-15. Clear section headings, consistent bullet style, scannability. 0 = wall of text; 8 = readable; 15 = ATS-perfect, recruiter-scannable.>,
+    "experienceProgression": <integer 0-20. Career trajectory clarity and progression. 0 = job-hopping with no growth; 10 = stable; 20 = clear upward arc with increasing scope.>,
+    "educationCerts": <integer 0-10. Education + relevant certifications/training for the target role. 0 = none listed; 5 = basic degree; 10 = strong relevant credentials.>,
+    "summaryClarity": <integer 0-15. Quality of the summary/objective at the top. 0 = missing; 8 = generic; 15 = sharp, role-aligned, differentiated.>
+  },
   "topSkills": ["List 6-8 of their strongest skills — include both technical skills and soft skills. Order by evidence strength in the resume."],
   "keyAchievements": ["3-5 specific accomplishments. Use exact numbers, percentages, and metrics from the resume. If no numbers exist, describe the impact qualitatively."],
   "industries": ["1-3 industries they have worked in"],
@@ -202,6 +210,31 @@ CRITICAL RULES:
     // (this response + any future cache-hit on this hash) gets a clean
     // shape regardless of LLM whims.
     const profile = normalizeResumeProfile(rawProfile);
+
+    // Compute resumeScore from the rubric subscores server-side.
+    //
+    // Why: previously the LLM was asked to internally sum a 6-criterion
+    // rubric and emit a single 0-100 integer. Holistic scoring is
+    // unstable across small input perturbations — same content in two
+    // file formats (.docx vs .pdf) drifted ±5 points because the model
+    // re-distributed weight differently between calls. Bounded
+    // subscores are far more stable: each criterion has a hard ceiling,
+    // so the same content can't drift far on any single dimension, and
+    // the deterministic post-LLM sum eliminates the "model does mental
+    // arithmetic" failure mode entirely.
+    //
+    // Bonus: subscores are now persisted, so the UI can later expose a
+    // "why this score?" breakdown instead of an opaque number.
+    const breakdown = computeScoreBreakdown(profile);
+    if (breakdown) {
+      profile.scoreBreakdown = breakdown;
+      profile.resumeScore = breakdown.total;
+    } else if (typeof profile.resumeScore !== "number") {
+      // Fallback path: LLM didn't emit either scoreBreakdown or
+      // resumeScore. Set null so the UI can surface "score unavailable"
+      // rather than a confusing 0.
+      profile.resumeScore = null;
+    }
 
     const totalMs = Date.now() - t0;
     console.log(`[analyze-resume] OK: llm=${tLLM}ms total=${totalMs}ms model=${result.model} user=${auth.userId?.slice(0, 8)}`);
