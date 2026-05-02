@@ -974,6 +974,30 @@ input[type="range"]::-moz-range-thumb {
   h2 { font-size: 18px !important; }
 }
 
+/* ─── Interview screen — tighter responsiveness for small phones (≤480) ───
+   The interview is the highest-stakes screen and the one most users will
+   land on from a phone. Existing rules cover ≤340 (foldable) and ≤768
+   (tablet). The 340–480 band — most Indian Android phones in portrait —
+   needed its own tightening. */
+@media (max-width: 480px) {
+  .iv-info-bar { padding: 0 !important; }
+  .iv-info-bar > div:first-child { padding: 8px 14px !important; flex-wrap: wrap; gap: 6px !important; }
+  .iv-info-bar > div:nth-child(2) { padding: 0 14px 8px !important; }
+  .iv-controls { gap: 6px !important; padding: 8px 12px max(8px, env(safe-area-inset-bottom, 8px)) !important; }
+  .iv-controls button { min-width: 44px; min-height: 44px; }
+  .iv-hide-mobile { display: none !important; }
+  /* Self-view tile shrinks on phone so it doesn't cover the question */
+  .iv-video-preview { width: 96px !important; height: 72px !important; top: 64px !important; right: 8px !important; }
+  /* Pace meter compresses gracefully */
+  .iv-pace-meter { max-width: 100% !important; }
+  /* Save toast shifts above the controls bar */
+  .iv-save-toast { left: 12px !important; bottom: max(72px, calc(env(safe-area-inset-bottom, 0px) + 72px)) !important; font-size: 11px !important; padding: 7px 12px !important; }
+  /* Mic-quiet banner full width */
+  .iv-mic-quiet { max-width: 100% !important; }
+  /* Reconnecting overlay card respects safe areas */
+  .iv-reconnecting > div { padding: 24px 20px 20px !important; }
+}
+
 @media print {
   body { background: #fff !important; color: #111 !important; }
   aside, .mobile-nav-toggle, [role="dialog"], [role="status"],

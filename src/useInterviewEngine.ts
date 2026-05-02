@@ -454,6 +454,15 @@ export function useInterviewEngine() {
   const [usedFallbackScore, setUsedFallbackScore] = useState(false);
   const [evalTimedOut, setEvalTimedOut] = useState(false);
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
+  /* ── micQuiet — surfaces when STT keeps reporting "no speech detected".
+     Drives the inline "Having trouble hearing you" banner so users get a
+     friendly nudge instead of waiting through a silent dead-end. */
+  const [micQuiet, setMicQuiet] = useState(false);
+  /* ── reconnecting — full-screen recovery state used when network drops
+     mid-session. Fired from the offline detector below. Auto-clears when
+     navigator.onLine flips back. */
+  const [reconnecting, setReconnecting] = useState(false);
+  const reconnectAttemptRef = useRef(1);
   const noSpeechCountRef = useRef(0);
   const silenceNudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const silenceNudgeFiredRef = useRef(false);
@@ -515,10 +524,40 @@ export function useInterviewEngine() {
     return () => clearInterval(t);
   }, [evaluating]);
 
+  /* Debounce ref for the reconnect overlay — see goOffline below. */
+  const reconnectDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const goOffline = () => setIsOffline(true);
+    const goOffline = () => {
+      setIsOffline(true);
+      // Mid-session offline → show full-screen reconnect overlay so the
+      // user knows their progress is safe. Skip if we haven't started
+      // (currentStep === 0) or the session is already done.
+      //
+      // 5-second debounce so a single 4G blip on flaky Indian networks
+      // doesn't slam the user with a full-screen overlay every few
+      // seconds. The inline StatusToasts.isOffline chip still fires
+      // immediately for fast feedback; the overlay is reserved for
+      // genuinely-stuck connection drops.
+      if (currentStepRef.current > 0 && !interviewEndedRef.current) {
+        if (reconnectDebounceRef.current) clearTimeout(reconnectDebounceRef.current);
+        reconnectDebounceRef.current = setTimeout(() => {
+          if (!navigator.onLine && !interviewEndedRef.current) {
+            reconnectAttemptRef.current += 1;
+            setReconnecting(true);
+          }
+          reconnectDebounceRef.current = null;
+        }, 5000);
+      }
+    };
     const goOnline = () => {
       setIsOffline(false);
+      setReconnecting(false);
+      // Cancel any pending debounce — connection recovered before the
+      // overlay was about to appear, so the user never needed to know.
+      if (reconnectDebounceRef.current) {
+        clearTimeout(reconnectDebounceRef.current);
+        reconnectDebounceRef.current = null;
+      }
       // Auto-retry queued evaluations
       retryQueuedEvals().catch(() => {});
       // Auto-retry question generation if still using fallback questions
@@ -528,7 +567,11 @@ export function useInterviewEngine() {
     };
     window.addEventListener("offline", goOffline);
     window.addEventListener("online", goOnline);
-    return () => { window.removeEventListener("offline", goOffline); window.removeEventListener("online", goOnline); };
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+      if (reconnectDebounceRef.current) clearTimeout(reconnectDebounceRef.current);
+    };
     // Mount-only network-listener wiring. fetchPersonalizedQuestions/saveWarning are read at fire-time inside goOnline; rebinding listeners on every saveWarning change would churn the network handlers and was explicitly avoided.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -621,6 +664,34 @@ export function useInterviewEngine() {
   }, {
     recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
   });
+
+  /* ── micQuiet poll ───────────────────────────────────────────────
+     Lift the noSpeechCountRef into React state so the inline
+     "Having trouble hearing you" banner can render. Poll every 1s
+     while listening (cheap — ref read is O(1)) and reset when phase
+     changes off listening or user starts speaking. */
+  useEffect(() => {
+    if (phase !== "listening") { setMicQuiet(false); return; }
+    const id = setInterval(() => {
+      const c = noSpeechCountRef.current;
+      // ≥2 no-speech errors → "trouble hearing"; STT itself bails to
+      // text-fallback at 3, so this is the warning *before* that fallback.
+      setMicQuiet(c >= 2);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  /* ── replayQuestion ──────────────────────────────────────────────
+     Re-speak the current AI turn. Wired to the RepeatButton in the
+     stage. Mirrors the voice-command "repeat" path (the engine
+     already supports "say that again" via STT pattern matching at
+     line ~1322), but exposed as a click action too. */
+  const replayQuestion = useCallback(() => {
+    if (!aiVoiceEnabled) return;
+    const stepObj = interviewScriptRef.current[currentStepRef.current];
+    if (!stepObj?.aiText) return;
+    speak(stepObj.aiText, () => {}, () => {}, interviewerGender).catch(() => {});
+  }, [aiVoiceEnabled, interviewerGender]);
 
   // Feature 3: Silence nudge — if user is silent for 15s during listening, speak a gentle prompt
   // Tracks actual silence: resets timer each time currentTranscript changes (user is actively speaking)
@@ -2077,6 +2148,9 @@ export function useInterviewEngine() {
     isOffline,
     saveWarning,
     micError,
+    micQuiet,
+    reconnecting,
+    reconnectAttempt: reconnectAttemptRef.current,
     usedFallbackScore,
     evalTimedOut,
     lastSessionId,
@@ -2132,6 +2206,7 @@ export function useInterviewEngine() {
     handleEnd,
     navigate: router,
     retryQuestions,
+    replayQuestion,
 
     // Refs the UI needs
     transcriptRef,

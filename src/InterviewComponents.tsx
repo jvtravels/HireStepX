@@ -1,5 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import { c, font } from "./tokens";
+import { e, ef } from "./interviewTokens";
+
+/* Bridge aliases — see InterviewPanels.tsx for the full rationale.
+   Lets existing inline-style call sites keep using `c.*` and `font.*`
+   while resolving to the editorial cream/copper palette. */
+const c = {
+  obsidian: e.cream, graphite: e.white, carbon: e.creamSoft, onyx: e.creamSoft,
+  ivory: e.coal, chalk: e.coal, stone: e.inkSoft,
+  gilt: e.copper, giltDark: "#92400E", giltLight: e.copper100,
+  sage: e.success, sageLight: e.success100,
+  ember: e.error, emberLight: e.error100,
+  slate: e.indigoGray, slateLight: e.indigo100,
+  border: e.line, borderHover: e.lineStrong, borderSubtle: "rgba(20,17,10,0.04)",
+  glass: "rgba(255,255,255,0.85)", glassBright: "rgba(255,255,255,0.95)",
+  glow: "rgba(180,83,9,0.06)", glowStrong: "rgba(180,83,9,0.12)",
+} as const;
+const font = { display: ef.serif, ui: ef.sans, mono: ef.mono } as const;
 
 declare global {
   interface Navigator {
@@ -101,11 +117,16 @@ function hashString(s: string): number {
 
 export function getPanelMembers(seed: string): PanelMember[] {
   const h = hashString(seed);
-  // Roles with assigned accent colors
+  // Roles with assigned accent colors — editorial palette so the panel
+  // avatars cohere with the cream/copper/indigo design system. Each role
+  // gets a distinct tint while staying on-brand:
+  //   Hiring Manager → copper (editorial accent — the "lead" voice)
+  //   Technical Lead → indigo (interactive — the "challenger" voice)
+  //   HR Partner     → success (warm green — the "supportive" voice)
   const roles: { title: string; color: string }[] = [
-    { title: "Hiring Manager", color: "#D4B37F" },   // gilt
-    { title: "Technical Lead", color: "#7A9E7E" },    // sage
-    { title: "HR Partner", color: "#A8B4C4" },        // soft blue-gray
+    { title: "Hiring Manager", color: "#B45309" },   // copper
+    { title: "Technical Lead", color: "#312E81" },   // indigo
+    { title: "HR Partner",     color: "#15803D" },   // success green
   ];
   // Distribute genders: use hash bits to decide. At least 1 male, 1 female.
   // Bit 0 → role[0] gender, bit 1 → role[1] gender, but clamp so we get mix
@@ -167,7 +188,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
   const colors = { excellent: c.sage, good: c.gilt, poor: c.ember };
   const labels = { excellent: "Excellent", good: "Good", poor: "Poor" };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(245,242,237,0.04)", border: `1px solid ${colors[quality]}30` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(20,17,10,0.10)", border: `1px solid ${colors[quality]}30` }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors[quality], boxShadow: `0 0 6px ${colors[quality]}60` }} />
       <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
     </div>
@@ -243,7 +264,7 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} style={{
             flex: 1, borderRadius: 2, height: 4,
-            background: i < current ? c.gilt : i === current ? "rgba(212,179,127,0.4)" : "rgba(245,242,237,0.08)",
+            background: i < current ? c.gilt : i === current ? "rgba(180,83,9,0.40)" : "rgba(20,17,10,0.13)",
             transition: "all 0.4s ease",
           }} />
         ))}
@@ -299,12 +320,13 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
   return (
     <div style={{ width: "100%" }} aria-live="polite" aria-label="AI interviewer speaking">
       <p style={{
-        fontFamily: font.ui, fontSize: 14, color: c.chalk,
-        lineHeight: 1.75, margin: 0, minHeight: 22,
+        fontFamily: font.display, fontSize: 22, color: c.ivory,
+        lineHeight: 1.35, margin: 0, minHeight: 30,
+        letterSpacing: "-0.01em", textWrap: "balance",
       }}>
         {displayText}
         {isTyping && charIndex < text.length && (
-          <span style={{ display: "inline-block", width: 2, height: 15, background: c.gilt, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
+          <span style={{ display: "inline-block", width: 2, height: 20, background: c.gilt, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
         )}
       </p>
     </div>
@@ -330,21 +352,22 @@ export const ControlButton = React.memo(function ControlButton({ icon, label, ac
       aria-label={label}
       style={{
         width: 48, height: 48, borderRadius: "50%",
-        background: danger ? c.ember : active ? "rgba(245,242,237,0.08)" : "rgba(245,242,237,0.04)",
-        border: `1px solid ${danger ? "rgba(196,112,90,0.3)" : active ? "rgba(245,242,237,0.15)" : c.border}`,
-        color: danger ? c.ivory : active ? c.ivory : c.stone,
+        background: danger ? e.copperSoft : active ? e.indigo100 : e.white,
+        border: `1px solid ${danger ? "rgba(180,83,9,0.30)" : active ? e.indigoRing : e.line}`,
+        color: danger ? e.copper : active ? e.indigo : e.inkSoft,
         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         transition: "all 0.2s ease", outline: "none",
+        boxShadow: "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
       }}
-      onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${danger ? c.ember : c.gilt}40`}
-      onBlur={(e) => e.currentTarget.style.boxShadow = "none"}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = danger ? "#d4614a" : "rgba(245,242,237,0.1)";
-        e.currentTarget.style.transform = "scale(1.05)";
+      onFocus={(ev) => ev.currentTarget.style.boxShadow = `0 0 0 4px ${danger ? "rgba(180,83,9,0.20)" : e.indigoRing}`}
+      onBlur={(ev) => ev.currentTarget.style.boxShadow = "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)"}
+      onMouseEnter={(ev) => {
+        ev.currentTarget.style.background = danger ? "rgba(180,83,9,0.18)" : active ? e.indigo100 : e.creamSoft;
+        ev.currentTarget.style.transform = "scale(1.05)";
       }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = danger ? c.ember : active ? "rgba(245,242,237,0.08)" : "rgba(245,242,237,0.04)";
-        e.currentTarget.style.transform = "scale(1)";
+      onMouseLeave={(ev) => {
+        ev.currentTarget.style.background = danger ? e.copperSoft : active ? e.indigo100 : e.white;
+        ev.currentTarget.style.transform = "scale(1)";
       }}
     >
       {icon}

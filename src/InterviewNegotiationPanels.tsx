@@ -1,5 +1,20 @@
 import React, { memo, useState } from "react";
-import { c, font } from "./tokens";
+import { e, ef } from "./interviewTokens";
+
+/* Bridge aliases — see InterviewPanels.tsx for the rationale. Resolves
+   existing inline-style call sites to the editorial cream/copper palette. */
+const c = {
+  obsidian: e.cream, graphite: e.white, carbon: e.creamSoft, onyx: e.creamSoft,
+  ivory: e.coal, chalk: e.coal, stone: e.inkSoft,
+  gilt: e.copper, giltDark: "#92400E", giltLight: e.copper100,
+  sage: e.success, sageLight: e.success100,
+  ember: e.error, emberLight: e.error100,
+  slate: e.indigoGray, slateLight: e.indigo100,
+  border: e.line, borderHover: e.lineStrong, borderSubtle: "rgba(20,17,10,0.04)",
+  glass: "rgba(255,255,255,0.85)", glassBright: "rgba(255,255,255,0.95)",
+  glow: "rgba(180,83,9,0.06)", glowStrong: "rgba(180,83,9,0.12)",
+} as const;
+const font = { display: ef.serif, ui: ef.sans, mono: ef.mono } as const;
 
 /* ═══════════════════════════════════════════════════════════════════
    Salary-negotiation presentational components.
@@ -65,8 +80,8 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
   return (
     <div style={{
       width: "100%", maxWidth: 480, borderRadius: 16,
-      background: "rgba(212,179,127,0.04)",
-      border: "1px solid rgba(212,179,127,0.15)",
+      background: "rgba(180,83,9,0.10)",
+      border: "1px solid rgba(180,83,9,0.18)",
       padding: "24px", display: "flex", flexDirection: "column", gap: 16,
       animation: "slideUp 0.5s ease",
     }}>
@@ -76,7 +91,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
         </svg>
         <span style={{ fontFamily: font.display, fontSize: 15, fontWeight: 600, color: c.ivory }}>Negotiation Playbook</span>
         {negotiationStyle && (
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, padding: "2px 8px", borderRadius: 6, background: "rgba(212,179,127,0.1)", marginLeft: "auto" }}>
+          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, padding: "2px 8px", borderRadius: 6, background: "rgba(180,83,9,0.16)", marginLeft: "auto" }}>
             {styleLabel} Manager
           </span>
         )}
@@ -103,8 +118,8 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
             onChange={e => setTargetInput(e.target.value)}
             style={{
               flex: 1, fontFamily: font.ui, fontSize: 13, padding: "8px 12px",
-              borderRadius: 8, background: "rgba(245,242,237,0.04)",
-              border: "1px solid rgba(245,242,237,0.1)", color: c.ivory,
+              borderRadius: 8, background: "rgba(20,17,10,0.04)",
+              border: "1px solid rgba(20,17,10,0.06)", color: c.ivory,
               outline: "none",
             }}
           />
@@ -118,7 +133,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {tips.map(tip => (
           <div key={tip.icon} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: c.gilt, minWidth: 20, height: 20, borderRadius: "50%", background: "rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{tip.icon}</span>
+            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: c.gilt, minWidth: 20, height: 20, borderRadius: "50%", background: "rgba(180,83,9,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{tip.icon}</span>
             <div>
               <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory }}>{tip.title}</span>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: "2px 0 0", lineHeight: 1.4 }}>{tip.desc}</p>
@@ -147,8 +162,8 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
                 style={{
                   flex: 1, minWidth: 100, fontFamily: font.ui, fontSize: 10, fontWeight: 500,
                   padding: "6px 8px", borderRadius: 8,
-                  background: "rgba(245,242,237,0.04)",
-                  border: "1px solid rgba(245,242,237,0.08)",
+                  background: "rgba(20,17,10,0.04)",
+                  border: "1px solid rgba(20,17,10,0.05)",
                   color: c.chalk, cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
@@ -311,8 +326,8 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
     return (
       <div style={{
         width: "100%", borderRadius: 16,
-        background: "rgba(212,179,127,0.03)",
-        border: "1px solid rgba(212,179,127,0.12)",
+        background: "rgba(180,83,9,0.07)",
+        border: "1px solid rgba(180,83,9,0.14)",
         padding: "20px", display: "flex", flexDirection: "column", gap: 14,
         animation: "slideUp 0.5s ease",
       }}>
@@ -325,7 +340,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
             <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Topics Discussed</p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {benefits.map(b => (
-                <span key={b} style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, padding: "3px 8px", borderRadius: 6, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.12)" }}>{b}</span>
+                <span key={b} style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, padding: "3px 8px", borderRadius: 6, background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.14)" }}>{b}</span>
               ))}
             </div>
           </div>
@@ -335,7 +350,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
             <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Try again with a different style</p>
             <div style={{ display: "flex", gap: 8 }}>
               {([{ style: "cooperative", label: "Friendly" }, { style: "aggressive", label: "Tough" }, { style: "defensive", label: "Evasive" }] as const).map(s => (
-                <button key={s.style} onClick={() => onReplay(s.style)} style={{ flex: 1, fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "8px 10px", borderRadius: 8, background: "rgba(245,242,237,0.04)", border: "1px solid rgba(245,242,237,0.08)", color: c.chalk, cursor: "pointer" }}>{s.label}</button>
+                <button key={s.style} onClick={() => onReplay(s.style)} style={{ flex: 1, fontFamily: font.ui, fontSize: 11, fontWeight: 500, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.04)", border: "1px solid rgba(20,17,10,0.05)", color: c.chalk, cursor: "pointer" }}>{s.label}</button>
               ))}
             </div>
           </div>
@@ -347,8 +362,8 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(212,179,127,0.03)",
-      border: "1px solid rgba(212,179,127,0.12)",
+      background: "rgba(180,83,9,0.07)",
+      border: "1px solid rgba(180,83,9,0.14)",
       padding: "20px", display: "flex", flexDirection: "column", gap: 14,
       animation: "slideUp 0.5s ease",
     }}>
@@ -364,7 +379,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
           ...(candidateAsk > 0 ? [{ label: "Your Ask", value: `₹${candidateAsk} LPA`, color: c.chalk }] : []),
           { label: "Final Package", value: `₹${finalOffer} LPA`, color: c.gilt },
         ].map(item => (
-          <div key={item.label} style={{ flex: 1, minWidth: 80, padding: "10px 12px", borderRadius: 10, background: "rgba(245,242,237,0.03)", border: "1px solid rgba(245,242,237,0.06)" }}>
+          <div key={item.label} style={{ flex: 1, minWidth: 80, padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
             <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</p>
             <p style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: item.color, margin: "4px 0 0" }}>{item.value}</p>
           </div>
@@ -373,7 +388,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
 
       {/* Improvement */}
       {improvement !== 0 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: improvement > 0 ? "rgba(122,158,126,0.06)" : "rgba(196,112,90,0.06)", border: `1px solid ${improvement > 0 ? "rgba(122,158,126,0.15)" : "rgba(196,112,90,0.15)"}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, background: improvement > 0 ? "rgba(21,128,61,0.10)" : "rgba(185,28,28,0.10)", border: `1px solid ${improvement > 0 ? "rgba(21,128,61,0.18)" : "rgba(185,28,28,0.18)"}` }}>
           <span style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 700, color: improvement > 0 ? c.sage : c.ember }}>
             {improvement > 0 ? "+" : ""}{improvement}%
           </span>
@@ -389,7 +404,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
           <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Benefits Discussed</p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {benefits.map(b => (
-              <span key={b} style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, padding: "3px 8px", borderRadius: 6, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.12)" }}>{b}</span>
+              <span key={b} style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, padding: "3px 8px", borderRadius: 6, background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.14)" }}>{b}</span>
             ))}
           </div>
         </div>
@@ -406,7 +421,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
               const captured = bandRange > 0 ? Math.round(((finalOffer - negotiationBand.initialOffer) / bandRange) * 100) : 0;
               const captureColor = captured >= 70 ? c.sage : captured >= 40 ? c.gilt : c.ember;
               return (
-                <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(245,242,237,0.03)", border: "1px solid rgba(245,242,237,0.06)" }}>
+                <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Band Captured</p>
                   <p style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: captureColor, margin: "2px 0 0" }}>{Math.max(0, captured)}%</p>
                   <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, margin: "2px 0 0" }}>of ₹{negotiationBand.initialOffer}–₹{negotiationBand.maxStretch} range</p>
@@ -415,7 +430,7 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
             })()}
             {/* Manager style faced */}
             {negotiationStyle && (
-              <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(245,242,237,0.03)", border: "1px solid rgba(245,242,237,0.06)" }}>
+              <div style={{ flex: 1, minWidth: 100, padding: "8px 10px", borderRadius: 8, background: "rgba(20,17,10,0.07)", border: "1px solid rgba(20,17,10,0.04)" }}>
                 <p style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>Manager Style</p>
                 <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, margin: "2px 0 0" }}>
                   {negotiationStyle === "aggressive" ? "Tough" : negotiationStyle === "defensive" ? "Evasive" : "Collaborative"}
@@ -445,8 +460,8 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
                 style={{
                   flex: 1, fontFamily: font.ui, fontSize: 11, fontWeight: 500,
                   padding: "8px 10px", borderRadius: 8,
-                  background: "rgba(245,242,237,0.04)",
-                  border: "1px solid rgba(245,242,237,0.08)",
+                  background: "rgba(20,17,10,0.04)",
+                  border: "1px solid rgba(20,17,10,0.05)",
                   color: c.chalk, cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
@@ -506,8 +521,8 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
   return (
     <div style={{
       width: "100%", borderRadius: 14,
-      background: "rgba(212,179,127,0.03)",
-      border: "1px solid rgba(212,179,127,0.1)",
+      background: "rgba(180,83,9,0.07)",
+      border: "1px solid rgba(180,83,9,0.16)",
       padding: "16px", display: "flex", flexDirection: "column", gap: 12,
       animation: "fadeUp 0.3s ease",
     }}>
@@ -518,7 +533,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           {Array.from({ length: liveState.totalPhases }).map((_, i) => (
             <div key={i} style={{
               flex: 1, height: 4, borderRadius: 2,
-              background: i <= liveState.phaseIdx ? c.gilt : "rgba(245,242,237,0.08)",
+              background: i <= liveState.phaseIdx ? c.gilt : "rgba(20,17,10,0.05)",
               transition: "background 0.3s ease",
             }} />
           ))}
@@ -529,7 +544,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
       </div>
 
       {/* Manager Style + Phase Guidance */}
-      <div style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.08)" }}>
+      <div style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.13)" }}>
         {styleInfo && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
             <span style={{ fontSize: 11 }}>{styleInfo.icon}</span>
@@ -550,12 +565,12 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
             <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Walk-away ₹{negotiationBand.walkAway}</span>
             <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Max ₹{negotiationBand.maxStretch}</span>
           </div>
-          <div style={{ position: "relative", height: 20, borderRadius: 10, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+          <div style={{ position: "relative", height: 20, borderRadius: 10, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             {/* Band range */}
             <div style={{
               position: "absolute", left: 0, top: 0, bottom: 0,
               width: "100%", borderRadius: 10,
-              background: "linear-gradient(90deg, rgba(196,112,90,0.2), rgba(212,179,127,0.2), rgba(122,158,126,0.2))",
+              background: "linear-gradient(90deg, rgba(185,28,28,0.24), rgba(180,83,9,0.24), rgba(21,128,61,0.24))",
             }} />
             {/* Highest offer marker */}
             {highestOffer > 0 && (() => {
@@ -603,7 +618,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
             <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textTransform: "uppercase", letterSpacing: "0.04em" }}>Leverage</span>
             <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: leverageColor }}>{liveState.leverage}%</span>
           </div>
-          <div style={{ height: 6, borderRadius: 3, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+          <div style={{ height: 6, borderRadius: 3, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             <div style={{ height: "100%", borderRadius: 3, width: `${liveState.leverage}%`, background: leverageColor, transition: "width 0.5s ease, background 0.3s ease" }} />
           </div>
         </div>
@@ -613,7 +628,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
               <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, textTransform: "uppercase", letterSpacing: "0.04em" }}>Voice</span>
               <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: voiceConfidence.score >= 60 ? c.sage : voiceConfidence.score >= 35 ? c.gilt : c.ember }}>{voiceConfidence.score}%</span>
             </div>
-            <div style={{ height: 6, borderRadius: 3, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+            <div style={{ height: 6, borderRadius: 3, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
               <div style={{
                 height: "100%", borderRadius: 3, width: `${voiceConfidence.score}%`,
                 background: voiceConfidence.score >= 60 ? c.sage : voiceConfidence.score >= 35 ? c.gilt : c.ember,
@@ -634,9 +649,9 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
           {liveState.topicsCovered.map(t => (
             <span key={t.topic} style={{
               fontFamily: font.ui, fontSize: 9, padding: "2px 6px", borderRadius: 4,
-              background: t.covered ? "rgba(122,158,126,0.12)" : "rgba(245,242,237,0.04)",
+              background: t.covered ? "rgba(21,128,61,0.14)" : "rgba(20,17,10,0.04)",
               color: t.covered ? c.sage : c.stone,
-              border: `1px solid ${t.covered ? "rgba(122,158,126,0.2)" : "rgba(245,242,237,0.06)"}`,
+              border: `1px solid ${t.covered ? "rgba(21,128,61,0.24)" : "rgba(20,17,10,0.04)"}`,
               textDecoration: t.covered ? "none" : "none",
               opacity: t.covered ? 1 : 0.6,
             }}>
@@ -724,7 +739,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
   return (
     <div style={{
       width: "100%", borderRadius: 14,
-      background: "rgba(245,242,237,0.02)",
+      background: "rgba(20,17,10,0.05)",
       border: `1px solid ${c.border}`,
       padding: "16px", display: "flex", flexDirection: "column", gap: 8,
     }}>
@@ -747,8 +762,8 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
             onKeyDown={(e) => { if (hasAnnotations && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setExpandedTurn(isExpanded ? null : idx); } }}
             style={{
               padding: "8px 12px", borderRadius: 10,
-              background: isUser ? "rgba(212,179,127,0.04)" : "rgba(245,242,237,0.02)",
-              border: `1px solid ${isExpanded ? "rgba(212,179,127,0.2)" : "rgba(245,242,237,0.05)"}`,
+              background: isUser ? "rgba(180,83,9,0.10)" : "rgba(20,17,10,0.05)",
+              border: `1px solid ${isExpanded ? "rgba(180,83,9,0.24)" : "rgba(20,17,10,0.08)"}`,
               cursor: hasAnnotations ? "pointer" : "default",
               transition: "border-color 0.2s ease",
             }}
@@ -770,7 +785,7 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
               )}
             </div>
             {isExpanded && turn.annotations.length > 0 && (
-              <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(245,242,237,0.06)", display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(20,17,10,0.04)", display: "flex", flexDirection: "column", gap: 4 }}>
                 {turn.annotations.map((a, ai) => (
                   <div key={ai} style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     <span style={{

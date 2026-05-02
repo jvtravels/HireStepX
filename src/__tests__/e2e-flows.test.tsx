@@ -247,7 +247,7 @@ describe("Flow 4: Interview Lifecycle", () => {
     });
     const endBtn = screen.getByLabelText("End interview");
     await act(async () => { fireEvent.click(endBtn); });
-    expect(screen.getByText(/End interview early/i)).toBeInTheDocument();
+    expect(screen.getByText(/End the interview/i)).toBeInTheDocument();
   });
 
   it("mic toggling works", async () => {
@@ -282,10 +282,12 @@ describe("Flow 4: Interview Lifecycle", () => {
     const endBtn = screen.getByLabelText("End interview");
     await act(async () => { fireEvent.click(endBtn); });
 
-    // Modal should be visible with confirm button
-    const buttons = screen.getAllByText(/End Interview/i);
-    expect(buttons.length).toBeGreaterThanOrEqual(2); // end button + modal confirm
-    expect(screen.getByText(/End interview early/i)).toBeInTheDocument();
+    // Modal should be visible with confirm button. Editorial copy:
+    // - end-button label is "End interview"
+    // - modal confirm button reads "End and see report"
+    expect(screen.getByLabelText("End interview")).toBeInTheDocument();
+    expect(screen.getByText(/End and see report/i)).toBeInTheDocument();
+    expect(screen.getByText(/End the interview/i)).toBeInTheDocument();
   });
 });
 

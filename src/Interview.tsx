@@ -1,11 +1,12 @@
 "use client";
-import { useEffect } from "react";
-import { c, font } from "./tokens";
+import { useEffect, useRef, useState } from "react";
+import { e, ef } from "./interviewTokens";
 import {
   StatusToasts, InterviewHeader, AvatarStage, PanelAvatarStage, QuestionCard,
   UserAnswerArea, CompletionCard, MicroFeedbackPanel,
   ControlsBar, TranscriptPanel, EndModal, EvaluatingOverlay,
   DealSummaryCard, AnnotatedReplayPanel, NegotiationLiveDashboard,
+  SaveToast, RepeatButton, MicQuietBanner, ReconnectingOverlay,
 } from "./InterviewPanels";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { useVideoRecorder } from "./useVideoRecorder";
@@ -119,7 +120,8 @@ function InterviewInner() {
     setShowTranscript, setShowEndModal, setAiVoiceEnabled,
     setMicError, setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
-    handleNextQuestion, skipSpeaking, handleEnd, navigate, retryQuestions,
+    handleNextQuestion, skipSpeaking, handleEnd, navigate, retryQuestions, replayQuestion,
+    micQuiet, reconnecting, reconnectAttempt,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
     micStreamRef, noSpeechCountRef, ttsCancelRef, interviewEndedRef,
@@ -153,12 +155,38 @@ function InterviewInner() {
     }
   }, [engine.phase, videoIsRecording, videoStopRecording]);
 
+  /* ── Auto-save toast ─────────────────────────────────────────────
+     Fires a 2.5s "Answer saved" pulse each time a new answer is
+     captured (detected via currentStep advancement after listening).
+     Pure visual feedback — the engine already persists via IDB.
+
+     Capped at SAVE_TOAST_MAX_SHOWS to avoid notification fatigue:
+     after the user has seen the same toast 3 times they understand
+     the pattern; further toasts are noise. */
+  const SAVE_TOAST_MAX_SHOWS = 3;
+  const [showSaveToast, setShowSaveToast] = useState(false);
+  const lastSavedStepRef = useRef<number>(-1);
+  const saveToastShownCountRef = useRef<number>(0);
+  const prevPhaseRef = useRef<string>(phase);
+  useEffect(() => {
+    // Trigger when phase moves out of "listening" with a new step count
+    const justSaved = prevPhaseRef.current === "listening" && phase !== "listening" && currentStep !== lastSavedStepRef.current && currentStep > 0;
+    prevPhaseRef.current = phase;
+    if (!justSaved) return;
+    lastSavedStepRef.current = currentStep;
+    if (saveToastShownCountRef.current >= SAVE_TOAST_MAX_SHOWS) return;
+    saveToastShownCountRef.current += 1;
+    setShowSaveToast(true);
+    const timeout = setTimeout(() => setShowSaveToast(false), 2500);
+    return () => clearTimeout(timeout);
+  }, [phase, currentStep]);
+
   return (
     <InterviewProvider value={engine}>
     <div style={{
-      width: "100vw", height: "100vh", background: c.obsidian,
+      width: "100vw", height: "100vh", background: e.cream,
       display: "flex", flexDirection: "column", overflow: "hidden",
-      fontFamily: font.ui,
+      fontFamily: ef.sans, color: e.coal,
     }}>
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -208,7 +236,7 @@ function InterviewInner() {
             position: "fixed", top: 80, right: 16, zIndex: 20,
             width: 160, height: 120, borderRadius: 12,
             overflow: "hidden", border: "2px solid rgba(245,242,237,0.1)",
-            background: c.obsidian, boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+            background: e.indigoDeep, boxShadow: "0 8px 24px -10px rgba(20,17,10,.30)",
           }}>
             <video
               ref={video.videoPreviewRef}
@@ -225,8 +253,8 @@ function InterviewInner() {
               padding: "2px 6px", borderRadius: 4,
               background: "rgba(0,0,0,0.6)",
             }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: c.ember, animation: "recordPulse 1.5s ease-in-out infinite" }} />
-              <span style={{ fontFamily: font.ui, fontSize: 10, color: c.ivory }}>REC</span>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#EF4444", animation: "recordPulse 1.5s ease-in-out infinite" }} />
+              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.cream }}>REC</span>
             </div>
           </div>
         )}
@@ -245,6 +273,14 @@ function InterviewInner() {
             isSalaryNegotiation={isSalaryNegotiation}
           />
 
+          {/* Repeat-the-question — only useful right after AI finishes
+              speaking, when user is about to answer. Hidden during
+              speaking/thinking/done because then it's either redundant or
+              would interrupt evaluation. */}
+          {phase === "listening" && step?.aiText && aiVoiceEnabled && (
+            <RepeatButton onClick={replayQuestion} />
+          )}
+
 {isSalaryNegotiation && liveNegotiationState && phase !== "done" && (
             <NegotiationLiveDashboard
               liveState={liveNegotiationState}
@@ -257,15 +293,23 @@ function InterviewInner() {
           )}
 
           {phase === "listening" && (
-            <UserAnswerArea
-              currentTranscript={currentTranscript} setCurrentTranscript={setCurrentTranscript}
-              speechUnavailable={speechUnavailable} setSpeechUnavailable={setSpeechUnavailable}
-              isMuted={isMuted} micStreamRef={micStreamRef} noSpeechCountRef={noSpeechCountRef}
-              setMicError={setMicError} handleNextQuestion={handleNextQuestion}
-              textareaRef={textareaRef} nextBtnRef={nextBtnRef}
-              currentStep={currentStep} interviewScriptLength={interviewScript.length}
-              liveMetrics={liveMetrics}
-            />
+            <>
+              <UserAnswerArea
+                currentTranscript={currentTranscript} setCurrentTranscript={setCurrentTranscript}
+                speechUnavailable={speechUnavailable} setSpeechUnavailable={setSpeechUnavailable}
+                isMuted={isMuted} micStreamRef={micStreamRef} noSpeechCountRef={noSpeechCountRef}
+                setMicError={setMicError} handleNextQuestion={handleNextQuestion}
+                textareaRef={textareaRef} nextBtnRef={nextBtnRef}
+                currentStep={currentStep} interviewScriptLength={interviewScript.length}
+                liveMetrics={liveMetrics}
+              />
+              {/* Mic-quiet warning — only fires once STT has reported
+                  ≥2 no-speech errors. Click "switch to typing" focuses
+                  the textarea inside UserAnswerArea. */}
+              {micQuiet && !speechUnavailable && !isMuted && (
+                <MicQuietBanner onSwitchToText={() => textareaRef.current?.focus()} />
+              )}
+            </>
           )}
 
           {phase === "done" && (
@@ -329,6 +373,16 @@ function InterviewInner() {
           currentQuestionNum={currentQuestionNum} totalQuestions={totalQuestions}
           isOffline={isOffline} handleEnd={handleEnd}
           setShowEndModal={setShowEndModal} endModalTriggerRef={endModalTriggerRef}
+        />
+      )}
+
+      {showSaveToast && phase !== "done" && !evaluating && !reconnecting && <SaveToast />}
+
+      {reconnecting && (
+        <ReconnectingOverlay
+          attempt={reconnectAttempt}
+          currentQuestion={currentQuestionNum}
+          totalQuestions={totalQuestions}
         />
       )}
 

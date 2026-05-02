@@ -94,7 +94,7 @@ describe("Interview", () => {
     const endBtn = screen.getByLabelText("End interview");
     await act(async () => { fireEvent.click(endBtn); });
 
-    expect(screen.getByText(/End interview early/i)).toBeInTheDocument();
+    expect(screen.getByText(/End the interview/i)).toBeInTheDocument();
   });
 
   it("has control button for mute", async () => {

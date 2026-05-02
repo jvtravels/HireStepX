@@ -1,10 +1,47 @@
 import React, { memo, useRef, useState, useEffect } from "react";
-import { c, font } from "./tokens";
+import { e, ef } from "./interviewTokens";
 import {
   WaveformVisualizer, NetworkIndicator, DotGridVisualizer,
   LiveCaptions, ControlButton, formatTime,
 } from "./InterviewComponents";
 import type { PanelMember } from "./InterviewComponents";
+
+/* Bridge aliases — keep existing inline-style call sites compiling while
+   we migrate from dark/gold (`c.*`, `font.*`) to editorial cream/copper.
+   `c` and `font` remap to the new editorial palette so colors that read
+   as "ivory text on obsidian" now render as "coal text on cream", and
+   the gilt accent becomes copper. This is a one-shot rebrand — once
+   InterviewPanels stabilizes on `e`/`ef`, drop these aliases. */
+const c = {
+  obsidian: e.cream,        // page bg
+  graphite: e.white,        // surface
+  carbon: e.creamSoft,      // elevated surface
+  onyx: e.creamSoft,        // hover surface
+  ivory: e.coal,            // primary text
+  chalk: e.coal,            // body text
+  stone: e.inkSoft,         // muted text
+  gilt: e.copper,           // editorial accent
+  giltDark: "#92400E",
+  giltLight: e.copper100,
+  sage: e.success,
+  sageLight: e.success100,
+  ember: e.error,
+  emberLight: e.error100,
+  slate: e.indigoGray,
+  slateLight: e.indigo100,
+  border: e.line,
+  borderHover: e.lineStrong,
+  borderSubtle: "rgba(20,17,10,0.04)",
+  glass: "rgba(255,255,255,0.85)",
+  glassBright: "rgba(255,255,255,0.95)",
+  glow: "rgba(180,83,9,0.06)",
+  glowStrong: "rgba(180,83,9,0.12)",
+} as const;
+const font = {
+  display: ef.serif,
+  ui: ef.sans,
+  mono: ef.mono,
+} as const;
 
 // Re-export the salary-negotiation components from their own file so
 // existing call sites (Interview.tsx) keep working unchanged. The split
@@ -22,9 +59,9 @@ export { NegotiationCoachingCard, DealSummaryCard, NegotiationLiveDashboard, Ann
    otherwise each render creates new style object references and memo is useless. */
 
 const stStackStyle: React.CSSProperties = { position: "fixed", top: "max(12px, env(safe-area-inset-top, 0px))", left: "50%", transform: "translateX(-50%)", zIndex: 100, display: "flex", flexDirection: "column", gap: 8, maxWidth: 500, width: "min(90%, calc(100vw - 32px))" };
-const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(212,179,127,0.12)", border: "1px solid rgba(212,179,127,0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
-const stOfflineToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(196,112,90,0.15)", border: "1px solid rgba(196,112,90,0.3)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
-const stMicToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(196,112,90,0.1)", border: "1px solid rgba(196,112,90,0.2)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
+const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(180,83,9,0.14)", border: "1px solid rgba(180,83,9,0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
+const stOfflineToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.18)", border: "1px solid rgba(185,28,28,0.30)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
+const stMicToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.16)", border: "1px solid rgba(185,28,28,0.24)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 const stGiltText: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.gilt };
 const stEmberText: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.ember };
 
@@ -78,8 +115,8 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
   return (
     <header className="iv-info-bar" style={{
       display: "flex", flexDirection: "column",
-      borderBottom: "1px solid rgba(245,242,237,0.04)",
-      background: "rgba(6,6,7,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+      borderBottom: `1px solid ${e.line}`,
+      background: e.cream,
       zIndex: 10, flexShrink: 0,
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 24px" }}>
@@ -87,7 +124,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
           <span style={{ fontFamily: font.display, fontSize: 15, fontWeight: 400, color: c.ivory, letterSpacing: "0.02em" }}>
             HireStepX
           </span>
-          <div style={{ width: 1, height: 16, background: "rgba(245,242,237,0.08)" }} />
+          <div style={{ width: 1, height: 16, background: "rgba(20,17,10,0.05)" }} />
           {displayCompany && (
             <>
               <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.ivory }}>{displayCompany}</span>
@@ -102,7 +139,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
           <NetworkIndicator />
           {llmLoading && currentStep <= 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, border: "1.5px solid rgba(212,179,127,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <div style={{ width: 10, height: 10, border: "1.5px solid rgba(180,83,9,0.30)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
               <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Personalizing questions...</span>
             </div>
           )}
@@ -111,13 +148,13 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
               onClick={onRetry}
               style={{
                 fontFamily: font.ui, fontSize: 10, fontWeight: 600,
-                color: c.gilt, background: "rgba(212,179,127,0.1)",
-                border: "1px solid rgba(212,179,127,0.25)", borderRadius: 6,
+                color: c.gilt, background: "rgba(180,83,9,0.16)",
+                border: "1px solid rgba(180,83,9,0.25)", borderRadius: 6,
                 padding: "4px 10px", cursor: "pointer",
                 transition: "background 0.2s",
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(212,179,127,0.2)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "rgba(212,179,127,0.1)")}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(180,83,9,0.24)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "rgba(180,83,9,0.16)")}
             >
               Retry personalized
             </button>
@@ -149,8 +186,8 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
                 background: i < Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
                   ? c.gilt
                   : i === Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
-                    ? "rgba(212,179,127,0.4)"
-                    : "rgba(245,242,237,0.08)",
+                    ? "rgba(180,83,9,0.40)"
+                    : "rgba(20,17,10,0.05)",
                 transition: "all 0.4s ease",
               }} />
             ))}
@@ -170,20 +207,28 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "20px 0" }}>
       <div style={{
-        width: 120, height: 120, borderRadius: "50%",
-        background: phase === "speaking" ? "rgba(212,179,127,0.06)" : "rgba(245,242,237,0.02)",
-        border: `2px solid ${phase === "speaking" ? "rgba(212,179,127,0.2)" : phase === "listening" ? "rgba(122,158,126,0.15)" : c.border}`,
+        width: 160, height: 160, borderRadius: "50%",
+        background: phase === "speaking"
+          ? "radial-gradient(closest-side, rgba(255,255,255,0.85), rgba(244,239,227,0.4) 70%, transparent 100%)"
+          : phase === "listening"
+          ? "radial-gradient(closest-side, rgba(229,226,242,0.6), rgba(255,255,255,0.3) 70%, transparent 100%)"
+          : "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.3) 70%, transparent 100%)",
+        border: `1px solid ${phase === "speaking" ? "rgba(180,83,9,0.20)" : phase === "listening" ? e.indigoRing : e.line}`,
         display: "flex", alignItems: "center", justifyContent: "center",
         transition: "all 0.4s ease",
-        boxShadow: phase === "speaking" ? "0 0 40px rgba(212,179,127,0.08)" : "none",
+        boxShadow: phase === "speaking"
+          ? "0 0 32px -8px rgba(180,83,9,0.18)"
+          : phase === "listening"
+          ? "0 0 32px -8px rgba(49,46,129,0.18)"
+          : "none",
       }}>
         <DotGridVisualizer active={phase === "speaking"} thinking={phase === "thinking"} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{interviewerName}</span>
+        <span style={{ fontFamily: font.display, fontSize: 17, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
         <span aria-live="polite" aria-atomic="true" role="status" style={{
-          fontFamily: font.ui, fontSize: 11, fontWeight: 500,
-          color: phase === "speaking" ? c.gilt : phase === "listening" ? c.sage : c.stone,
+          fontFamily: font.ui, fontSize: 12, fontWeight: 500,
+          color: phase === "speaking" ? e.copper : phase === "listening" ? e.indigo : e.inkSoft,
         }}>
           {/* Active-voice labels make turn-taking unambiguous: users
               previously talked over the AI because "Listening" reads
@@ -195,7 +240,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
       {phase === "listening" && !isMuted && !speechUnavailable && (
         <div style={{
           display: "flex", alignItems: "center", gap: 6, padding: "4px 12px",
-          borderRadius: 100, background: "rgba(122,158,126,0.08)", border: "1px solid rgba(122,158,126,0.15)",
+          borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
           animation: "fadeUp 0.3s ease",
         }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage, animation: "recordPulse 1s ease-in-out infinite" }} />
@@ -205,15 +250,15 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
       {phase === "speaking" && (
         <button onClick={skipSpeaking} style={{
           fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.chalk,
-          background: "rgba(245,242,237,0.06)", border: `1px solid ${c.border}`,
+          background: "rgba(20,17,10,0.04)", border: `1px solid ${c.border}`,
           // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
           // before, too small for reliable tap on mobile.
           borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
           display: "inline-flex", alignItems: "center", gap: 6,
           transition: "all 0.2s", marginTop: 4,
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,242,237,0.1)"; e.currentTarget.style.borderColor = "rgba(245,242,237,0.15)"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,242,237,0.06)"; e.currentTarget.style.borderColor = c.border; }}>
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(20,17,10,0.04)"; e.currentTarget.style.borderColor = c.border; }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Skip · Enter
         </button>
@@ -261,11 +306,19 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
             }}>
               <div style={{
                 width: size, height: size, borderRadius: "50%",
-                background: isActiveSpeaking ? `${member.color}10` : "rgba(245,242,237,0.02)",
-                border: `2px solid ${isActive ? `${member.color}50` : c.border}`,
+                background: isActiveSpeaking
+                  ? `radial-gradient(closest-side, rgba(255,255,255,0.85), ${member.color}1A 70%, transparent 100%)`
+                  : isActive
+                  ? "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.3) 70%, transparent 100%)"
+                  : e.white,
+                border: `1px solid ${isActive ? `${member.color}40` : e.line}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.4s ease",
-                boxShadow: isActiveSpeaking ? `0 0 30px ${member.color}15` : "none",
+                boxShadow: isActiveSpeaking
+                  ? `0 0 32px -8px ${member.color}33`
+                  : isActive
+                  ? "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)"
+                  : "none",
                 position: "relative",
               }}>
                 {isActive ? (
@@ -285,8 +338,8 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                   <div style={{
                     position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)",
                     padding: "1px 8px", borderRadius: 10,
-                    background: member.color, fontSize: 8, fontFamily: font.ui,
-                    fontWeight: 700, color: c.obsidian, letterSpacing: "0.04em",
+                    background: member.color, fontSize: 8, fontFamily: ef.sans,
+                    fontWeight: 700, color: e.white, letterSpacing: "0.04em",
                     textTransform: "uppercase", whiteSpace: "nowrap",
                   }}>
                     Speaking
@@ -295,8 +348,11 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{
-                  fontFamily: font.ui, fontSize: isActive ? (isMobile ? 11 : 13) : (isMobile ? 9 : 10), fontWeight: isActive ? 600 : 500,
-                  color: isActive ? c.ivory : c.stone,
+                  fontFamily: isActive ? ef.serif : ef.sans,
+                  fontSize: isActive ? (isMobile ? 13 : 15) : (isMobile ? 10 : 11),
+                  fontWeight: isActive ? 500 : 500,
+                  letterSpacing: isActive ? "-0.01em" : 0,
+                  color: isActive ? e.coal : e.inkSoft,
                   transition: "all 0.3s ease",
                   whiteSpace: "nowrap",
                 }}>
@@ -331,7 +387,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
       {phase === "listening" && !isMuted && !speechUnavailable && (
         <div style={{
           display: "flex", alignItems: "center", gap: 6, padding: "4px 12px",
-          borderRadius: 100, background: "rgba(122,158,126,0.08)", border: "1px solid rgba(122,158,126,0.15)",
+          borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
           animation: "fadeUp 0.3s ease",
         }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage, animation: "recordPulse 1s ease-in-out infinite" }} />
@@ -343,15 +399,15 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
       {phase === "speaking" && (
         <button onClick={skipSpeaking} style={{
           fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.chalk,
-          background: "rgba(245,242,237,0.06)", border: `1px solid ${c.border}`,
+          background: "rgba(20,17,10,0.04)", border: `1px solid ${c.border}`,
           // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
           // before, too small for reliable tap on mobile.
           borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
           display: "inline-flex", alignItems: "center", gap: 6,
           transition: "all 0.2s", marginTop: 4,
         }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(245,242,237,0.1)"; e.currentTarget.style.borderColor = "rgba(245,242,237,0.15)"; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "rgba(245,242,237,0.06)"; e.currentTarget.style.borderColor = c.border; }}>
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(20,17,10,0.04)"; e.currentTarget.style.borderColor = c.border; }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Skip · Enter
         </button>
@@ -375,9 +431,10 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
 }) {
   return (
     <div aria-live="polite" aria-atomic="true" style={{
-      width: "100%", background: c.graphite, borderRadius: 16,
-      border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "rgba(212,179,127,0.15)" : c.border}`,
-      padding: "20px 24px", transition: "all 0.4s ease",
+      width: "100%", background: e.white, borderRadius: 16,
+      border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "rgba(180,83,9,0.22)" : e.line}`,
+      padding: "22px 26px", transition: "all 0.4s ease",
+      boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
     }}>
       {panelPersona && (phase === "speaking" || phase === "listening") && (
         <div style={{
@@ -393,10 +450,10 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       )}
       {step?.scoreNote && phase !== "done" && phase !== "thinking" && (
         <p style={{
-          fontFamily: font.ui, fontSize: 11, color: "rgba(212,179,127,0.5)",
+          fontFamily: font.ui, fontSize: 11, color: "rgba(180,83,9,0.50)",
           margin: "0 0 10px", display: "flex", alignItems: "center", gap: 5,
         }}>
-          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(212,179,127,0.4)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(180,83,9,0.40)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
           {step.scoreNote}
         </p>
       )}
@@ -405,7 +462,11 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       ) : phase === "thinking" ? (
         <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>Preparing next question...</p>
       ) : step?.aiText ? (
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.75, margin: 0, opacity: phase === "listening" && !showCaptions ? 0.55 : 1 }}>{step.aiText}</p>
+        <p style={{
+          fontFamily: font.display, fontSize: 22, color: c.ivory,
+          lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em", textWrap: "balance",
+          opacity: phase === "listening" && !showCaptions ? 0.62 : 1,
+        }}>{step.aiText}</p>
       ) : null}
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
         <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining for this question`} style={{ marginTop: 16, opacity: isSalaryNegotiation ? 0.7 : 1, transition: "opacity 0.3s ease" }}>
@@ -420,7 +481,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
               color: timeRemaining <= 15 ? c.ember : timeRemaining <= 30 ? c.gilt : c.ivory,
             }}>{formatTime(timeRemaining)}</span>
           </div>
-          <div style={{ width: "100%", height: 3, borderRadius: 2, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+          <div style={{ width: "100%", height: 3, borderRadius: 2, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             <div style={{
               height: "100%", borderRadius: 2,
               background: timePercent >= 87.5 ? c.ember : timePercent >= 75 ? c.gilt : c.sage,
@@ -452,6 +513,18 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
   const hintDismissed = useRef(false);
   const [showHint, setShowHint] = useState(false);
 
+  /* ── Per-answer elapsed counter ────────────────────────────────────
+     UserAnswerArea is mounted only while phase === "listening", so a
+     local timer measures exactly "how long has the user been answering
+     this question". Used by the PaceMeter to surface the sweet-spot
+     guidance without coupling to engine-internal answerTimer state. */
+  const [answerSeconds, setAnswerSeconds] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => setAnswerSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   // Show hint once when transcript exceeds 20 chars in speech mode
   useEffect(() => {
     if (!hintDismissed.current && !speechUnavailable && currentTranscript.length > 20) {
@@ -462,8 +535,8 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(122,158,126,0.03)",
-      border: "1px solid rgba(122,158,126,0.12)",
+      background: "rgba(21,128,61,0.07)",
+      border: "1px solid rgba(21,128,61,0.14)",
       padding: "18px 24px", animation: "fadeUp 0.3s ease",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -479,7 +552,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "5px 10px", marginBottom: 8, borderRadius: 8,
-          background: "rgba(122,158,126,0.04)", border: "1px solid rgba(122,158,126,0.08)",
+          background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.13)",
         }}>
           <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, fontStyle: "italic" }}>
             Tip: If speech recognition misses a word, tap &lsquo;Edit&rsquo; to correct it before moving on.
@@ -516,7 +589,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               aria-label="Switch to speaking"
               style={{
                 fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.sage,
-                background: "rgba(122,158,126,0.06)", border: "1px solid rgba(122,158,126,0.15)",
+                background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
                 borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
                 display: "inline-flex", alignItems: "center", gap: 5, transition: "all 0.2s",
               }}>
@@ -544,7 +617,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                     onClick={() => setIsEditingTranscript(false)}
                     style={{
                       fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.sage,
-                      background: "rgba(122,158,126,0.06)", border: "1px solid rgba(122,158,126,0.15)",
+                      background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
                       borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
                       display: "inline-flex", alignItems: "center", gap: 5, transition: "all 0.2s",
                     }}>
@@ -597,8 +670,8 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
       {liveMetrics && (
         <div style={{
           display: "flex", alignItems: "center", gap: 16, padding: "8px 12px",
-          borderRadius: 8, background: "rgba(245,242,237,0.03)",
-          border: "1px solid rgba(245,242,237,0.06)", marginTop: 8,
+          borderRadius: 8, background: "rgba(20,17,10,0.07)",
+          border: "1px solid rgba(20,17,10,0.04)", marginTop: 8,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.wpm > 180 ? c.ember : liveMetrics.wpm < 100 ? c.gilt : c.sage }}>
@@ -642,22 +715,26 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           )}
           {liveMetrics.specificityHint && (
             <>
-              <div style={{ width: 1, height: 12, background: "rgba(245,242,237,0.08)" }} />
+              <div style={{ width: 1, height: 12, background: "rgba(20,17,10,0.05)" }} />
               <span style={{ fontFamily: font.ui, fontSize: 10, color: c.ember, fontStyle: "italic" }}>
                 {liveMetrics.specificityHint}
               </span>
             </>
           )}
-          {liveMetrics.lengthGuidance && (
-            <>
-              <div style={{ width: 1, height: 12, background: "rgba(245,242,237,0.08)" }} />
-              <span style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, fontStyle: "italic" }}>
-                {liveMetrics.lengthGuidance}
-              </span>
-            </>
-          )}
+          {/* lengthGuidance was previously rendered here. Removed because
+              the PaceMeter below conveys the same information ("Wrap it
+              up" / "Take your time…") with a visual sweet-spot bar — the
+              text-only chip duplicated what the bar shows. */}
         </div>
       )}
+      {/* Pace meter — supersedes the old lengthGuidance text chip. Sweet
+          spot 60-90s for most behavioral questions; the ceiling at 150s
+          nudges users to wrap up before the existing timeRemaining hits
+          zero. The bar + zone label combine "how long" with "is that
+          ok?" in one glance. */}
+      <div style={{ marginTop: 10 }}>
+        <PaceMeter seconds={answerSeconds} />
+      </div>
       <button
         ref={nextBtnRef}
         onClick={handleNextQuestion}
@@ -668,10 +745,10 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           border: "none", color: c.obsidian, cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
           transition: "all 0.2s ease",
-          boxShadow: "0 4px 16px rgba(212,179,127,0.2)",
+          boxShadow: "0 4px 16px rgba(180,83,9,0.24)",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(212,179,127,0.3)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(212,179,127,0.2)"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(180,83,9,0.30)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(180,83,9,0.24)"; }}
       >
         {currentStep < interviewScriptLength - 1 ? "Next Question" : "Finish"}
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -693,8 +770,8 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(122,158,126,0.04)",
-      border: "1px solid rgba(122,158,126,0.15)",
+      background: "rgba(21,128,61,0.10)",
+      border: "1px solid rgba(21,128,61,0.18)",
       padding: "32px", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center", gap: 14,
       animation: "slideUp 0.5s ease",
@@ -705,7 +782,7 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
       <p style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, margin: 0 }}>Session complete</p>
       <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0 }}>{currentQuestionNum} {isSalaryNegotiation ? "negotiation rounds" : "questions answered"} · {formatTime(elapsed)}</p>
       {(usedFallbackScore || evalTimedOut) && (
-        <p style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, margin: 0, padding: "6px 12px", borderRadius: 10, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.1)" }}>
+        <p style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, margin: 0, padding: "6px 12px", borderRadius: 10, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.16)" }}>
           {evalTimedOut ? "AI evaluation timed out" : "AI evaluation unavailable"} — score is estimated from session metrics
         </p>
       )}
@@ -750,9 +827,9 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
   const lastUserMsg = [...transcript].reverse().find(t => t.speaker === "user");
   if (!lastUserMsg) return null;
   return (
-    <div style={{ width: "100%", borderRadius: 12, padding: "12px 16px", background: "rgba(122,158,126,0.03)", border: "1px solid rgba(122,158,126,0.06)" }}>
+    <div style={{ width: "100%", borderRadius: 12, padding: "12px 16px", background: "rgba(21,128,61,0.07)", border: "1px solid rgba(21,128,61,0.10)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-        <div style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(122,158,126,0.35)" }} />
+        <div style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(21,128,61,0.35)" }} />
         <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Your last answer</span>
       </div>
       <p style={{
@@ -762,8 +839,8 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
       {microFeedback && (
         <div style={{
           marginTop: 6, padding: "5px 10px", borderRadius: 6,
-          background: microFeedback.includes("Strong") ? "rgba(122,158,126,0.08)" : "rgba(212,179,127,0.06)",
-          border: `1px solid ${microFeedback.includes("Strong") ? "rgba(122,158,126,0.15)" : "rgba(212,179,127,0.12)"}`,
+          background: microFeedback.includes("Strong") ? "rgba(21,128,61,0.13)" : "rgba(180,83,9,0.10)",
+          border: `1px solid ${microFeedback.includes("Strong") ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.14)"}`,
           display: "flex", alignItems: "center", gap: 6,
         }}>
           <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={microFeedback.includes("Strong") ? c.sage : c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -794,8 +871,8 @@ export const ControlsBar = memo(function ControlsBar({ isMuted, setIsMuted, aiVo
       // on iPhone 12+ were hitting this — the home bar covered ~34px of the
       // control strip at the default 10px padding.
       padding: "10px 24px max(10px, env(safe-area-inset-bottom, 10px))", gap: 12,
-      borderTop: "1px solid rgba(245,242,237,0.04)",
-      background: "rgba(6,6,7,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+      borderTop: `1px solid ${e.line}`,
+      background: e.cream,
       flexShrink: 0, zIndex: 10,
     }}>
       <ControlButton
@@ -857,7 +934,7 @@ export const ControlsBar = memo(function ControlsBar({ isMuted, setIsMuted, aiVo
       />
       {phase !== "done" && (
         <>
-          <div className="iv-hide-mobile" style={{ width: 1, height: 24, background: "rgba(245,242,237,0.08)", margin: "0 4px" }} />
+          <div className="iv-hide-mobile" style={{ width: 1, height: 24, background: "rgba(20,17,10,0.05)", margin: "0 4px" }} />
           <span ref={endModalTriggerRef} style={{ display: "inline-flex" }}>
             <ControlButton
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>}
@@ -926,7 +1003,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
         onClick={() => setShowTranscript(false)}
         style={{
           position: "fixed", inset: 0, zIndex: 49,
-          background: isMobile ? "transparent" : "rgba(0,0,0,0.5)",
+          background: isMobile ? "transparent" : "rgba(14,12,8,0.50)",
           backdropFilter: isMobile ? "none" : "blur(2px)",
           WebkitBackdropFilter: isMobile ? "none" : "blur(2px)",
           animation: "fadeUp 0.15s ease",
@@ -940,7 +1017,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
         borderRadius: "16px 16px 0 0",
         display: "flex", flexDirection: "column",
         zIndex: 50, animation: "slideUpSheet 0.25s ease",
-        boxShadow: "0 -8px 32px rgba(0,0,0,0.3)",
+        boxShadow: "0 -8px 32px rgba(14,12,8,0.30)",
       } : {
         position: "fixed", top: 0, right: 0, bottom: 0,
         width: 380, maxWidth: "100vw",
@@ -948,19 +1025,19 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
         borderLeft: `1px solid ${c.border}`,
         display: "flex", flexDirection: "column",
         zIndex: 50, animation: "slideInRight 0.25s ease",
-        boxShadow: "-8px 0 32px rgba(0,0,0,0.3)",
+        boxShadow: "-8px 0 32px rgba(14,12,8,0.30)",
       }}>
         {/* Drag handle (mobile only, decorative) */}
         {isMobile && (
           <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 0" }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)" }} />
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: e.lineStrong }} />
           </div>
         )}
         <div style={{
           padding: "14px 20px", borderBottom: `1px solid ${c.border}`,
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Transcript</span>
+          <span style={{ fontFamily: ef.serif, fontSize: 17, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>Transcript</span>
           <button onClick={() => setShowTranscript(false)} aria-label="Close transcript" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -977,7 +1054,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             <div key={`${msg.speaker}-${msg.time}-${i}`} style={{ display: "flex", gap: 10 }}>
               <div style={{
                 width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 2,
-                background: msg.speaker === "ai" ? "rgba(212,179,127,0.08)" : "rgba(122,158,126,0.08)",
+                background: msg.speaker === "ai" ? "rgba(180,83,9,0.13)" : "rgba(21,128,61,0.13)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 {msg.speaker === "ai" ? (
@@ -1032,55 +1109,55 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
       style={{
         position: "fixed", inset: 0, zIndex: 100,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
+        background: "rgba(14,12,8,0.70)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
         animation: "fadeUp 0.15s ease",
       }}>
       <div data-modal-content style={{
-        background: c.graphite, borderRadius: 16, border: `1px solid ${c.border}`,
-        padding: "32px", maxWidth: 400, width: "90%", textAlign: "center",
+        background: e.cream, borderRadius: 20, border: `1px solid ${e.line}`,
+        padding: "28px 28px 24px", maxWidth: 460, width: "92%",
+        boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
       }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: "50%", margin: "0 auto 20px",
-          background: "rgba(196,112,90,0.08)", border: "1px solid rgba(196,112,90,0.2)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+        <h3 id="end-modal-title" style={{
+          margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
+          lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
         }}>
-          <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5" strokeLinecap="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-        </div>
-        <h3 id="end-modal-title" style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>End interview early?</h3>
-        <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.6, marginBottom: 24 }}>
-          You've completed {currentQuestionNum} of {totalQuestions} questions. Ending now will still generate feedback based on your answers so far.
+          End the interview <em style={{ color: e.copper, fontStyle: "italic" }}>now</em>?
+        </h3>
+        <p style={{
+          margin: "10px 0 22px", fontFamily: ef.sans, fontSize: 14,
+          lineHeight: 1.55, color: e.inkSoft,
+        }}>
+          You&rsquo;ve answered <strong style={{ color: e.coal, fontWeight: 600 }}>{currentQuestionNum} of {totalQuestions}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
         </p>
         {isOffline && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "rgba(196,112,90,0.08)", border: "1px solid rgba(196,112,90,0.15)", marginBottom: 16 }}>
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.ember }}>You're offline — AI evaluation may fail. Your answers will be saved locally.</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.20)", marginBottom: 16 }}>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/></svg>
+            <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline — AI evaluation may fail. Your answers will be saved locally.</span>
           </div>
         )}
-        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={closeFocus}
             style={{
-              fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory,
-              background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`,
-              borderRadius: 8, padding: "10px 24px", cursor: "pointer",
+              fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,
+              background: "transparent", border: `1px solid ${e.line}`,
+              borderRadius: 999, padding: "10px 18px", cursor: "pointer",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.08)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; }}
           >
-            Continue
+            Keep going
           </button>
           <button onClick={handleEnd}
             style={{
-              fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory,
-              background: c.ember, border: "none",
-              borderRadius: 8, padding: "10px 24px", cursor: "pointer",
+              fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.cream,
+              background: e.copper, border: "none",
+              borderRadius: 999, padding: "10px 18px", cursor: "pointer",
+              boxShadow: "0 4px 12px -4px rgba(180,83,9,0.45)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.filter = "brightness(1.10)"; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.filter = "brightness(1)"; }}
           >
-            End Interview
+            End and see report
           </button>
         </div>
       </div>
@@ -1106,7 +1183,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+      background: "rgba(14,12,8,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
     }}>
       {!(usedFallbackScore || evalTimedOut) ? (
         <>
@@ -1122,7 +1199,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
         </>
       ) : (
         <>
-          <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
             <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h3 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>
@@ -1139,11 +1216,11 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
               onClick={() => { retryCountRef.current++; setEvalTimedOut(false); setUsedFallbackScore(false); setEvaluating(false); interviewEndedRef.current = false; handleEnd(); }}
               style={{
                 fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory,
-                background: "rgba(212,179,127,0.1)", border: "1px solid rgba(212,179,127,0.2)",
+                background: "rgba(180,83,9,0.16)", border: "1px solid rgba(180,83,9,0.24)",
                 borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "all 0.2s",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.2)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.1)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.24)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.16)"; }}
             >
               Retry Evaluation{retryCountRef.current > 0 ? ` (${maxRetries - retryCountRef.current} left)` : ""}
             </button>
@@ -1154,7 +1231,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
                 fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
                 background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
                 border: "none", borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(212,179,127,0.2)", transition: "all 0.2s",
+                boxShadow: "0 4px 16px rgba(180,83,9,0.24)", transition: "all 0.2s",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
@@ -1165,10 +1242,202 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
         </>
       )}
       {saveWarning && !(usedFallbackScore || evalTimedOut) && (
-        <div role="alert" style={{ marginTop: 12, padding: "12px 20px", borderRadius: 10, background: "rgba(196,112,90,0.1)", border: "1px solid rgba(196,112,90,0.2)", maxWidth: 400 }}>
+        <div role="alert" style={{ marginTop: 12, padding: "12px 20px", borderRadius: 10, background: "rgba(185,28,28,0.16)", border: "1px solid rgba(185,28,28,0.24)", maxWidth: 400 }}>
           <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{saveWarning}</p>
         </div>
       )}
+    </div>
+  );
+});
+
+/* ═══════════════════════════════════════════════
+   ADDED — robustness primitives ported from the
+   interview canvas. Match the existing dark/gold
+   visual language so they coexist with shipped UI.
+   ═══════════════════════════════════════════════ */
+
+/* ─── PaceMeter — sweet-spot bar shown while user is answering ─── */
+
+export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, max: 90 }, ceiling = 150 }: {
+  seconds: number;
+  ideal?: { min: number; max: number };
+  ceiling?: number;
+}) {
+  const pct = Math.min(100, (seconds / ceiling) * 100);
+  const idealStartPct = (ideal.min / ceiling) * 100;
+  const idealEndPct = (ideal.max / ceiling) * 100;
+  const zone = seconds < ideal.min ? "early" : seconds <= ideal.max ? "ideal" : seconds <= ceiling ? "late" : "over";
+  const labelMap = { early: "Take your time…", ideal: "Good pace", late: "Wrap it up", over: "Cut it short" } as const;
+  const tint = zone === "ideal" ? c.sage : zone === "early" ? c.stone : zone === "late" ? c.gilt : c.ember;
+  return (
+    <div role="meter" aria-label="Answer length pace" aria-valuemin={0} aria-valuemax={ceiling} aria-valuenow={Math.round(seconds)} className="iv-pace-meter" style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", maxWidth: 280 }}>
+      <div style={{ position: "relative", height: 4, background: "rgba(20,17,10,0.04)", borderRadius: 999, overflow: "hidden" }}>
+        <span aria-hidden style={{ position: "absolute", left: `${idealStartPct}%`, width: `${idealEndPct - idealStartPct}%`, top: 0, bottom: 0, background: "rgba(21,128,61,0.22)" }} />
+        <span aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: tint, opacity: 0.9, transition: "width 240ms ease, background 240ms ease" }} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: font.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, color: c.stone }}>
+        <span>{Math.floor(seconds)}s spoken</span>
+        <span style={{ color: tint }}>{labelMap[zone]}</span>
+      </div>
+    </div>
+  );
+});
+
+/* ─── RepeatButton — small ghost · "↻ Repeat" ─── */
+
+export const RepeatButton = memo(function RepeatButton({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="Repeat the question"
+      title="Repeat the question (Press R)"
+      className="iv-repeat-btn"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        background: "rgba(20,17,10,0.04)", border: `1px solid ${c.border}`,
+        borderRadius: 999, padding: "6px 12px", minHeight: 32,
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
+        fontFamily: font.ui, fontSize: 11, fontWeight: 500, color: c.chalk,
+        transition: "all 0.16s ease",
+      }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.background = "rgba(20,17,10,0.05)"; e.currentTarget.style.borderColor = c.borderHover; } }}
+      onMouseLeave={e => { e.currentTarget.style.background = "rgba(20,17,10,0.04)"; e.currentTarget.style.borderColor = c.border; }}
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <polyline points="1 4 1 10 7 10" />
+        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+      </svg>
+      Repeat
+    </button>
+  );
+});
+
+/* ─── SaveToast — bottom-left "Answer saved" pulse ─── */
+
+export const SaveToast = memo(function SaveToast({ message = "Answer saved" }: { message?: string }) {
+  return (
+    <div role="status" aria-live="polite" className="iv-save-toast" style={{
+      position: "fixed", left: 16, bottom: "max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px))",
+      display: "inline-flex", alignItems: "center", gap: 8,
+      background: e.coal, color: e.cream, padding: "8px 14px", borderRadius: 999,
+      fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
+      boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+      zIndex: 90, animation: "fadeUp 0.28s ease both",
+    }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7CC289" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+      {message}
+    </div>
+  );
+});
+
+/* ─── MicQuietBanner — "I'm having trouble hearing you" ─── */
+
+export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: { onSwitchToText?: () => void }) {
+  return (
+    <div role="alert" className="iv-mic-quiet" style={{
+      display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 14px",
+      background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.25)",
+      borderRadius: 12, maxWidth: 460, marginTop: 8,
+    }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+      </svg>
+      <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ivory }}>
+        Having trouble hearing you. Move closer to your mic
+        {onSwitchToText && (
+          <>
+            , or{" "}
+            <button
+              type="button"
+              onClick={onSwitchToText}
+              style={{ background: "transparent", border: "none", padding: 0, color: c.gilt, fontWeight: 600, cursor: "pointer", fontFamily: font.ui, fontSize: 12, textDecoration: "underline" }}
+            >
+              switch to typing
+            </button>
+          </>
+        )}
+        .
+      </span>
+    </div>
+  );
+});
+
+/* ─── ReconnectingOverlay — full-screen recovery on network drop ─── */
+
+export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, currentQuestion, totalQuestions, onPause }: {
+  attempt?: number;
+  currentQuestion: number;
+  totalQuestions: number;
+  onPause?: () => void;
+}) {
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="iv-reconnecting-title" className="iv-reconnecting" style={{
+      position: "fixed", inset: 0, zIndex: 220,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "rgba(14,12,8,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+      padding: 24,
+    }}>
+      <div style={{
+        maxWidth: 460, width: "100%",
+        background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 16,
+        padding: "32px 28px 24px", textAlign: "center",
+      }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: "50%", background: "rgba(180,83,9,0.10)",
+          display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 16,
+        }}>
+          <div style={{ width: 26, height: 26, border: `2.5px solid ${c.border}`, borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        </div>
+        <h2 id="iv-reconnecting-title" style={{
+          margin: 0, fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, letterSpacing: "-0.01em",
+        }}>
+          Reconnecting…
+        </h2>
+        <p style={{
+          margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.55,
+        }}>
+          Your network blipped. We&rsquo;ve saved everything up to question{" "}
+          <strong style={{ color: c.ivory }}>{currentQuestion} of {totalQuestions}</strong>
+          . You&rsquo;ll pick up where you left off.
+        </p>
+        <div style={{
+          marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "5px 12px", background: c.carbon, border: `1px solid ${c.border}`,
+          borderRadius: 999, fontFamily: font.mono, fontSize: 10,
+          textTransform: "uppercase", letterSpacing: 1.2, color: c.stone,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: 999, background: c.gilt }} />
+          Attempt {attempt} of 5
+        </div>
+        {onPause && (
+          <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 6 }}>
+            <button
+              type="button"
+              onClick={onPause}
+              style={{
+                background: "transparent", color: c.ivory,
+                border: `1px solid ${c.border}`, borderRadius: 10,
+                padding: "10px 18px", fontFamily: font.ui, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                transition: "all 0.16s ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.04)"; e.currentTarget.style.borderColor = c.borderHover; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = c.border; }}
+            >
+              Pause and resume later
+            </button>
+            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>
+              We&rsquo;ll email you a link to come back.
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 });
