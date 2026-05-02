@@ -139,6 +139,22 @@ export const ONBOARDING_STYLES = `
     outline: none;
     box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.32);
   }
+  /* Disabled primary CTA — explicit contrast pair instead of opacity
+     fade. Opacity-based dimming on cream backgrounds drops readable
+     contrast below WCAG AA (4.5:1) and reads as "broken" rather than
+     "intentionally inactive". This pair gives a clean inert look
+     while keeping the label fully legible. */
+  .hsx-onb-cta-primary:disabled {
+    background: #EBE5D2 !important;          /* line / cream-mute */
+    color: #6E6759 !important;               /* ink-soft */
+    box-shadow: none !important;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .hsx-onb-cta-primary:disabled .hsx-onb-cta-primary-arrow {
+    /* Arrow icon dimmed in lockstep with the label colour. */
+    opacity: 0.6;
+  }
 
   /* CTA pair (Start mock interview + Dashboard) inside the score
      card — at <520px the side-by-side layout wraps awkwardly. Stack
