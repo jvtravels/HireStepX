@@ -996,13 +996,17 @@ input[type="range"]::-moz-range-thumb {
 @keyframes hsx-viz-warn { 0%,100% { opacity: .85; } 50% { opacity: 1; } }
 .hsx-viz-warning { animation: hsx-viz-warn 1.8s ease-in-out infinite; }
 
-/* Halo behind visualizer — color-tinted per state */
-.hsx-viz-halo { position: absolute; inset: -28px; border-radius: 999px; pointer-events: none; transition: background 360ms ease; }
-.hsx-viz-halo--idle         { background: radial-gradient(closest-side, rgba(110,103,89,.06), transparent 70%); }
-.hsx-viz-halo--ai-speaking  { background: radial-gradient(closest-side, rgba(14,12,8,.08), transparent 70%); }
-.hsx-viz-halo--ai-thinking  { background: radial-gradient(closest-side, rgba(180,83,9,.10), transparent 70%); }
-.hsx-viz-halo--user-speaking{ background: radial-gradient(closest-side, rgba(49,46,129,.14), transparent 70%); }
-.hsx-viz-halo--warning      { background: radial-gradient(closest-side, rgba(161,98,7,.12), transparent 70%); }
+/* Halo behind visualizer — color-tinted per state.
+   Opacities bumped 1.6× from the original canvas mockup because
+   cream-on-cream gradients washed out — the original 6-14% tints
+   were nearly invisible. New range 12-22% reads clearly without
+   competing with the dotted sphere itself. */
+.hsx-viz-halo { position: absolute; inset: -32px; border-radius: 999px; pointer-events: none; transition: background 360ms ease; }
+.hsx-viz-halo--idle         { background: radial-gradient(closest-side, rgba(110,103,89,.12), transparent 70%); }
+.hsx-viz-halo--ai-speaking  { background: radial-gradient(closest-side, rgba(14,12,8,.14), transparent 70%); }
+.hsx-viz-halo--ai-thinking  { background: radial-gradient(closest-side, rgba(180,83,9,.18), transparent 70%); }
+.hsx-viz-halo--user-speaking{ background: radial-gradient(closest-side, rgba(49,46,129,.22), transparent 70%); }
+.hsx-viz-halo--warning      { background: radial-gradient(closest-side, rgba(161,98,7,.20), transparent 70%); }
 
 /* Voice rings — concentric pulses while user speaks */
 @keyframes hsx-ring-pulse { 0% { transform: scale(.92); opacity: .55; } 100% { transform: scale(1.45); opacity: 0; } }
@@ -1021,15 +1025,18 @@ input[type="range"]::-moz-range-thumb {
 .iv-canvas-endbtn:hover { background: rgba(180,83,9,.06); border-color: rgba(180,83,9,.35); }
 .iv-canvas-endbtn:active { transform: translateY(1px); }
 
-/* Canvas page entrance fade */
-@keyframes hsx-fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.iv-canvas-stage > * { animation: hsx-fade-up 520ms cubic-bezier(.16,1,.3,1) both; }
+/* Canvas page entrance fade.
+   Gentler now — old ramp fired all stage children + the halo + voice
+   rings + spinner simultaneously on mount, which felt jittery. New:
+   only the heading + visualizer block lead, and they fade faster (380ms
+   vs 520ms). Subsequent children inherit a single small delay so the
+   action zone doesn't feel like it's "loading in" beat by beat. */
+@keyframes hsx-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.iv-canvas-stage > * { animation: hsx-fade-up 380ms cubic-bezier(.16,1,.3,1) both; }
 .iv-canvas-stage > *:nth-child(1) { animation-delay: 0ms; }
-.iv-canvas-stage > *:nth-child(2) { animation-delay: 60ms; }
-.iv-canvas-stage > *:nth-child(3) { animation-delay: 140ms; }
-.iv-canvas-stage > *:nth-child(4) { animation-delay: 240ms; }
-.iv-canvas-stage > *:nth-child(5) { animation-delay: 320ms; }
-.iv-canvas-stage > *:nth-child(n+6) { animation-delay: 380ms; }
+.iv-canvas-stage > *:nth-child(2) { animation-delay: 80ms; }
+.iv-canvas-stage > *:nth-child(3) { animation-delay: 160ms; }
+.iv-canvas-stage > *:nth-child(n+4) { animation-delay: 220ms; }
 
 /* Reduced motion — kill animations */
 @media (prefers-reduced-motion: reduce) {
@@ -1098,6 +1105,11 @@ input[type="range"]::-moz-range-thumb {
   .iv-mic-quiet { max-width: 100% !important; }
   /* Reconnecting overlay card respects safe areas */
   .iv-reconnecting > div { padding: 24px 20px 20px !important; }
+  /* ContextChip — tighten on phone so the 3-segment chip stays one
+     visual unit and doesn't push other topbar items off-screen. */
+  .iv-canvas-contextchip { font-size: 9.5px !important; gap: 6px !important; padding: 4px 8px !important; max-width: 60vw !important; letter-spacing: 1.2px !important; }
+  /* Self-view tile becomes smaller card with a softer position */
+  .iv-canvas-selfview { width: 110px !important; height: 72px !important; right: 12px !important; bottom: 92px !important; }
 }
 
 @media print {

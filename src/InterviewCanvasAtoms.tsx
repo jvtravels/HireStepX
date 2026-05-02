@@ -92,20 +92,42 @@ export function CanvasProgressDots({ current, total }: { current: number; total:
 }
 
 /* ─── ContextChip ─── */
+/* Truncate long role/company strings so the chip doesn't overflow on
+   phone-portrait widths. Full string lives in the aria-label, so screen
+   readers + accessibility tools always get the unabbreviated value. */
+function truncateChip(s: string, max: number): string {
+  if (!s || s.length <= max) return s;
+  return s.slice(0, max - 1).trimEnd() + "…";
+}
 export function CanvasContextChip({ role, company, focus }: { role: string; company: string; focus: string }) {
+  // Each segment max ~14 chars on display; full strings stay in aria-label.
+  const roleShort = truncateChip(role, 16);
+  const companyShort = truncateChip(company, 14);
+  const focusShort = truncateChip(focus, 14);
   return (
-    <span aria-label={`Interviewing for ${role}${company ? " at " + company : ""}, focus: ${focus}`}
+    <span
+      aria-label={`Interviewing for ${role}${company ? " at " + company : ""}, focus: ${focus}`}
+      title={`${role}${company ? " · " + company : ""} · ${focus}`}
+      className="iv-canvas-contextchip"
       style={{
         display: "inline-flex", alignItems: "center", gap: 8,
         fontFamily: ef.mono, fontSize: 10.5, fontWeight: 500,
         textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft,
         background: e.creamSoft, border: `1px solid ${e.line}`,
-        padding: "5px 10px", borderRadius: 6, whiteSpace: "nowrap",
-      }}>
-      <span style={{ color: e.coal, fontWeight: 600 }}>{role}</span>
-      {company && (<><span aria-hidden style={{ color: e.inkFaint }}>·</span><span>{company}</span></>)}
+        padding: "5px 10px", borderRadius: 6,
+        // Allow wrapping at the segment boundaries on narrow screens.
+        // The CSS in index.css further tightens spacing under 480px so
+        // the chip stays one visual unit instead of three orphan pills.
+        whiteSpace: "nowrap",
+        maxWidth: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      }}
+    >
+      <span style={{ color: e.coal, fontWeight: 600 }}>{roleShort}</span>
+      {companyShort && (<><span aria-hidden style={{ color: e.inkFaint }}>·</span><span>{companyShort}</span></>)}
       <span aria-hidden style={{ color: e.inkFaint }}>·</span>
-      <span style={{ color: e.copper }}>{focus}</span>
+      <span style={{ color: e.copper }}>{focusShort}</span>
     </span>
   );
 }
@@ -489,9 +511,13 @@ export function CanvasSelfViewTile({ videoRef, initials = "RS" }: {
     <div aria-label="Your camera preview" className="iv-canvas-selfview" style={{
       position: "absolute", right: 24, bottom: 24,
       width: 148, height: 96, borderRadius: 12, overflow: "hidden",
-      background: e.indigoDeep,
-      border: "1px solid rgba(255,255,255,0.10)",
-      boxShadow: "0 1px 0 rgba(20,17,10,.04), 0 8px 24px -10px rgba(20,17,10,.30)",
+      // Cream-friendly framing: white border + warm shadow so the tile
+      // reads as a "card on cream" not "hole in the page". The dark
+      // gradient inside is the placeholder when the camera stream
+      // hasn't connected yet (real video fills it once available).
+      background: e.creamSoft,
+      border: `2px solid ${e.white}`,
+      boxShadow: "0 1px 0 rgba(20,17,10,.04), 0 8px 24px -10px rgba(20,17,10,.30), 0 0 0 1px rgba(20,17,10,.06)",
       zIndex: 5,
     }}>
       <video
@@ -509,10 +535,14 @@ export function CanvasSelfViewTile({ videoRef, initials = "RS" }: {
           fontFamily: ef.serif, fontSize: 14, fontWeight: 500, opacity: 0.0,
         }}>{initials}</span>
       </div>
+      {/* Recording badge — high-contrast against either the dark
+          gradient placeholder OR the live video frame. */}
       <span aria-hidden style={{
         position: "absolute", top: 8, left: 8, display: "inline-flex", alignItems: "center", gap: 4,
+        padding: "2px 6px", borderRadius: 4,
+        background: "rgba(14,12,8,0.65)",
         fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1,
-        color: e.cream, opacity: 0.85,
+        color: e.cream,
       }}>
         <span style={{ width: 5, height: 5, borderRadius: 999, background: "#EF4444" }} />
         Live

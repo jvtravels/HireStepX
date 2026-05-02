@@ -773,31 +773,56 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
 }) {
   return (
     <div style={{
-      width: "100%", borderRadius: 16,
-      background: "rgba(21,128,61,0.10)",
-      border: "1px solid rgba(21,128,61,0.18)",
-      padding: "32px", display: "flex", flexDirection: "column",
+      // Cream editorial card — replaces the auto-translated green tint.
+      // Soft success ring on the icon disc carries the "complete" signal
+      // without flooding the whole card with green.
+      width: "100%", borderRadius: 20,
+      background: e.cream,
+      border: `1px solid ${e.line}`,
+      padding: "28px", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center", gap: 14,
+      boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
       animation: "slideUp 0.5s ease",
     }}>
-      <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      <p style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, margin: 0 }}>Session complete</p>
-      <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0 }}>{currentQuestionNum} {isSalaryNegotiation ? "negotiation rounds" : "questions answered"} · {formatTime(elapsed)}</p>
+      <div style={{
+        width: 56, height: 56, borderRadius: 999,
+        background: e.success100, border: `1px solid rgba(21,128,61,0.22)`,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 4,
+      }}>
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={e.success} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+      </div>
+      <h2 style={{
+        margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
+        lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
+      }}>
+        Session <em style={{ color: e.copper, fontStyle: "italic" }}>complete</em>.
+      </h2>
+      <p style={{
+        fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, margin: 0,
+      }}>
+        <strong style={{ color: e.coal, fontWeight: 600 }}>{currentQuestionNum}</strong> {isSalaryNegotiation ? "negotiation rounds" : "questions answered"} · {formatTime(elapsed)}
+      </p>
       {(usedFallbackScore || evalTimedOut) && (
-        <p style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, margin: 0, padding: "6px 12px", borderRadius: 10, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.16)" }}>
+        <p style={{
+          fontFamily: ef.sans, fontSize: 12, color: e.copper, margin: 0,
+          padding: "6px 12px", borderRadius: 999,
+          background: e.copperSoft, border: `1px solid rgba(180,83,9,0.20)`,
+        }}>
           {evalTimedOut ? "AI evaluation timed out" : "AI evaluation unavailable"} — score is estimated from session metrics
         </p>
       )}
       {videoURL && (
-        <div style={{ width: "100%", marginTop: 12 }}>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 6 }}>Your recording:</p>
+        <div style={{ width: "100%", marginTop: 8 }}>
+          <p style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginBottom: 6 }}>Your recording</p>
           <video
             src={videoURL}
             controls
             playsInline
-            style={{ width: "100%", borderRadius: 10, border: `1px solid ${c.border}` }}
+            style={{ width: "100%", borderRadius: 10, border: `1px solid ${e.line}`, boxShadow: "0 1px 2px rgba(20,17,10,.04)" }}
           >
             <track kind="captions" />
           </video>
