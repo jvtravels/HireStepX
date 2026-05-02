@@ -1196,6 +1196,31 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
           <div style={{ width: 200, height: 3, borderRadius: 2, background: c.border, marginTop: 16, overflow: "hidden" }}>
             <div style={{ height: "100%", borderRadius: 2, background: c.gilt, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />
           </div>
+          {/* After 20s, give the user an escape hatch — the AI eval may
+              still be working, but they shouldn't have to wonder if it
+              hung. Clicking flips to the "AI evaluation unavailable"
+              panel below, which has the View Results CTA. */}
+          {evalElapsed >= 20 && (
+            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => { setUsedFallbackScore(true); }}
+                style={{
+                  fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.ivory,
+                  background: "transparent", border: `1px solid ${c.border}`,
+                  borderRadius: 999, padding: "7px 16px", cursor: "pointer",
+                  transition: "background 160ms ease, border-color 160ms ease",
+                }}
+                onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(245,242,237,0.06)"; ev.currentTarget.style.borderColor = c.borderHover; }}
+                onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = c.border; }}
+              >
+                Skip and use estimated score
+              </button>
+              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.7 }}>
+                You&rsquo;ll get a basic score now. Detailed AI feedback can take longer on slow connections.
+              </span>
+            </div>
+          )}
         </>
       ) : (
         <>

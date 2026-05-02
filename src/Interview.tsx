@@ -15,7 +15,6 @@ import {
   CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
   CanvasEditorialHeading,
   CanvasQuestionText, CanvasHintBubble, CanvasTextLink,
-  CanvasSkipLink,
   CanvasMetaRow, CanvasEndButton, CanvasSelfViewTile,
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
@@ -133,51 +132,147 @@ function mapConnectionStatus(isOffline: boolean): CanvasConnectionStatus {
 
 /* ── Italic-copper accent extraction ──────────────────────────────
    The canvas heading is "<plain> <italic-copper> <plain>." with one
-   accent word picked from the question. Without LLM cooperation we
-   pick a heuristic: the first noun/verb-shaped non-stopword that's
-   ≥4 chars, preferring known editorial words. Falls back to the
-   plain heading if no good candidate is found. */
+   accent word picked from the question.
+
+   Strategy (in order):
+     1. Match against known interview-question patterns and take the
+        emphasis word at the captured position. Catches ~80% of common
+        forms cleanly: "Tell me about a TIME you led", "Walk me through
+        a PROJECT where…", "Why X", "How would you SIZE the market…".
+     2. Fall back to a heuristic that prefers action verbs over nouns,
+        skips proper nouns (mid-sentence capitalized words like
+        company names), and prefers the priority editorial set.
+     3. Return null if no decent candidate found — caller renders
+        the plain heading instead. Better no accent than a bad one. */
+
+/** Words we love as accents — verbs of doing + emotionally-loaded nouns. */
 const ACCENT_PRIORITY = new Set([
+  // editorial nouns
   "time", "decision", "challenge", "conflict", "mistake", "failure", "success",
-  "leader", "leadership", "led", "convince", "persuade", "negotiate", "rate-limiter",
-  "design", "build", "ship", "deliver", "fix", "solve", "improve", "scale",
-  "regret", "proud", "learned", "taught", "changed", "impact",
+  "moment", "story", "example", "experience", "situation", "incident", "regret",
+  "lesson", "learning", "win", "loss", "tradeoff", "trade-off", "weakness",
+  // verbs of doing
+  "led", "convince", "persuade", "negotiate", "design", "build", "ship",
+  "deliver", "fix", "solve", "improve", "scale", "drive", "launch", "cut",
+  "rebuild", "rewrite", "migrate", "untangle", "refactor", "size", "estimate",
+  "prioritize", "decide", "balance", "handle", "manage", "lead", "mentor",
+  "coach", "influence", "align", "challenge", "push", "advocate",
+  // emotion / quality
+  "proud", "regret", "learned", "taught", "changed", "impact", "biggest",
+  "hardest", "toughest", "ready", "workable", "specific", "honest",
+  // question heads
   "why", "how", "when", "what", "where",
-  "easy", "hard", "tough", "specific", "team", "project", "story", "example",
-  "ready", "workable", "size", "reason",
 ]);
+
+/** Stopwords excluded from heuristic fallback. */
 const STOPWORDS = new Set([
   "a","an","the","of","to","in","on","at","by","for","with","from","is","are",
   "was","were","be","been","being","have","has","had","do","does","did","and",
-  "or","but","not","that","this","it","its","i","you","we","they","he","she",
-  "tell","me","about","walk","through","describe","share","talk","discuss",
+  "or","but","not","that","this","these","those","it","its","i","you","we",
+  "they","he","she","tell","me","about","walk","through","describe","share",
+  "talk","discuss","share","explain","give","take","let","know","think",
   "your","yours","mine","my","our","ours","their","theirs","his","her","hers",
   "can","could","would","should","will","may","might","just","only","also",
+  "very","really","quite","most","more","much","some","any","all","every",
+  "now","then","here","there","please","thank","thanks","sure",
 ]);
+
+/** Action verbs that work especially well as accents. */
+const ACTION_VERBS = new Set([
+  "led","convince","persuade","negotiate","design","build","ship","deliver",
+  "fix","solve","improve","scale","drive","launch","cut","rebuild","rewrite",
+  "migrate","untangle","refactor","size","estimate","prioritize","decide",
+  "balance","handle","manage","mentor","coach","influence","align","push",
+  "advocate","ask","tell","teach","learn","grow","change","start","end",
+  "stop","run","write","review","approve","reject","pick","choose","accept",
+]);
+
+/**
+ * Patterns: capture-group 1 must be the emphasis word. Tested against
+ * common question shapes — order matters (more specific first).
+ */
+const QUESTION_PATTERNS: RegExp[] = [
+  // "Tell me about a TIME (when/you) ..."
+  /\btell\s+me\s+about\s+(?:a|an)\s+(time|moment|situation|story|example|experience|incident|decision|challenge|mistake|conflict|win|loss|project|tradeoff|trade-off|lesson)\b/i,
+  // "Walk me through a PROJECT where ..."
+  /\bwalk\s+me\s+through\s+(?:a|an)\s+(project|situation|story|decision|moment|migration|launch|rewrite|negotiation|conflict|problem)\b/i,
+  // "Describe a CHALLENGE ..."
+  /\b(?:describe|share)\s+(?:a|an)\s+(time|moment|situation|story|example|experience|incident|decision|challenge|mistake|conflict|win|loss|project|tradeoff|trade-off|lesson|weakness)\b/i,
+  // "What's the BIGGEST ..." / "What's the TOUGHEST ..."
+  /\bwhat(?:'s| is| was)?\s+(?:the\s+|your\s+)?(biggest|hardest|toughest|smallest|best|worst|proudest|most|least)\b/i,
+  // "How would you SIZE the market"
+  /\bhow\s+would\s+you\s+(\w+)\b/i,
+  // "Why X and why Y" — accent the first "why"
+  /^\s*(why)\b/i,
+  // "Design a RATE-LIMITER for ..."
+  /\b(?:design|build|architect|sketch)\s+(?:a|an)\s+([a-z][a-z0-9-]+)\b/i,
+  // "Last one — WHY this company" / "Now — DESCRIBE ..."
+  /(?:^|—\s*|-\s*)(why|describe|tell|walk|share|explain|how|what|when|where)\b/i,
+];
+
+/** Returns true if `word` looks like a proper noun mid-sentence
+ * (capitalized but not the first token) — skip these so accents like
+ * "Flipkart" don't dominate. */
+function isLikelyProperNoun(word: string, isFirstToken: boolean): boolean {
+  if (isFirstToken) return false;
+  return /^[A-Z][a-z]/.test(word);
+}
+
 function pickAccent(text: string): { before: string; accent: string; after: string } | null {
   if (!text) return null;
   // Strip a leading bracketed persona tag like "[HR Partner] " before scanning
-  const cleaned = text.replace(/^\[[^\]]+\]\s*/, "");
-  // Tokenize with positions so we can rebuild with exact spacing
+  const cleaned = text.replace(/^\[[^\]]+\]\s*/, "").trim();
+  if (!cleaned) return null;
+
+  // Strategy 1 — known interview-question patterns
+  for (const pattern of QUESTION_PATTERNS) {
+    const m = cleaned.match(pattern);
+    if (!m || typeof m.index !== "number") continue;
+    const accent = m[1];
+    if (!accent || accent.length < 2) continue;
+    // Find the accent's exact location within the cleaned text
+    const accentStart = m.index + m[0].toLowerCase().lastIndexOf(accent.toLowerCase());
+    const accentEnd = accentStart + accent.length;
+    const before = cleaned.slice(0, accentStart).replace(/\s+$/, "");
+    const after = cleaned.slice(accentEnd).replace(/^\s+/, "").replace(/[.!?]+\s*$/, "");
+    if (!before && !after) continue;
+    return { before, accent, after };
+  }
+
+  // Strategy 2 — heuristic over tokens
   const tokenRegex = /[\p{L}\p{N}][\p{L}\p{N}'-]*/gu;
-  const tokens: { word: string; start: number; end: number }[] = [];
+  const tokens: { word: string; start: number; end: number; idx: number }[] = [];
+  let i = 0;
   for (const match of cleaned.matchAll(tokenRegex)) {
     if (typeof match.index !== "number") continue;
-    tokens.push({ word: match[0], start: match.index, end: match.index + match[0].length });
+    tokens.push({ word: match[0], start: match.index, end: match.index + match[0].length, idx: i++ });
   }
   if (tokens.length < 3) return null;
-  // First pass: prefer words from ACCENT_PRIORITY
-  let chosen = tokens.find(t => ACCENT_PRIORITY.has(t.word.toLowerCase()));
-  // Second pass: longest non-stopword ≥ 4 chars, skipping the first token
-  if (!chosen) {
-    const candidates = tokens.slice(1).filter(t => t.word.length >= 4 && !STOPWORDS.has(t.word.toLowerCase()));
-    if (candidates.length === 0) return null;
-    chosen = candidates.reduce((a, b) => (b.word.length > a.word.length ? b : a));
-  }
-  if (!chosen) return null;
+
+  // Score every token, pick the highest. Skip proper nouns and stopwords.
+  type Scored = { tok: typeof tokens[0]; score: number };
+  const scored: Scored[] = tokens
+    .map((tok) => {
+      const lower = tok.word.toLowerCase();
+      if (STOPWORDS.has(lower)) return { tok, score: -1 };
+      if (isLikelyProperNoun(tok.word, tok.idx === 0)) return { tok, score: -1 };
+      if (tok.word.length < 3) return { tok, score: -1 };
+      let score = tok.word.length; // length as a baseline
+      if (ACCENT_PRIORITY.has(lower)) score += 30;
+      if (ACTION_VERBS.has(lower)) score += 20;
+      // Earlier action verbs feel more like the question's "core verb"
+      if (ACTION_VERBS.has(lower) && tok.idx <= 6) score += 8;
+      // Penalize the very first token slightly — feels weak as an accent
+      if (tok.idx === 0) score -= 4;
+      return { tok, score };
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) return null;
+  const chosen = scored[0].tok;
   const before = cleaned.slice(0, chosen.start).replace(/\s+$/, "");
   const after = cleaned.slice(chosen.end).replace(/^\s+/, "").replace(/[.!?]+\s*$/, "");
-  // Don't bother if accent is the only word or both before/after are empty
   if (!before && !after) return null;
   return { before, accent: chosen.word, after };
 }
@@ -209,6 +304,117 @@ function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEn
         speechEnded={speechEnded}
       />
     </span>
+  );
+}
+
+/* SkipWithReason — replaces CanvasSkipLink in production. Click reveals
+   a tiny popover with 4 reasons (industry standard for question-quality
+   feedback loops). Selection fires posthog "interview_skip" + advances.
+   "Just skip" lets users skip without committing to a reason. */
+function SkipWithReason({ onConfirm }: { onConfirm: (reason: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  // Close on outside click / Escape
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (ev: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(ev.target as Node)) setOpen(false);
+    };
+    const onEsc = (ev: KeyboardEvent) => { if (ev.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [open]);
+  const reasons: { label: string; value: string }[] = [
+    { label: "Too easy",      value: "too_easy" },
+    { label: "Too hard",      value: "too_hard" },
+    { label: "Not relevant",  value: "not_relevant" },
+    { label: "Already answered", value: "already_answered" },
+  ];
+  return (
+    <div ref={containerRef} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Skip this question"
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          background: "transparent", border: "none", padding: "4px 6px", cursor: "pointer",
+          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.copper,
+          opacity: 0.85, transition: "opacity 160ms ease",
+        }}
+        onMouseEnter={(ev) => (ev.currentTarget.style.opacity = "1")}
+        onMouseLeave={(ev) => (ev.currentTarget.style.opacity = "0.85")}
+      >
+        <span>Skip question</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <polyline points="13 17 18 12 13 7" />
+          <polyline points="6 17 11 12 6 7" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Skip reason"
+          style={{
+            position: "absolute", bottom: "calc(100% + 8px)", right: 0,
+            minWidth: 220, background: e.cream, border: `1px solid ${e.line}`,
+            borderRadius: 14, boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 16px 32px -8px rgba(20,17,10,.18)",
+            padding: 8, zIndex: 30,
+            display: "flex", flexDirection: "column", gap: 2,
+          }}
+        >
+          <span style={{
+            fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+            letterSpacing: 1.4, color: e.inkSoft, padding: "6px 10px 4px",
+          }}>
+            Why are you skipping?
+          </span>
+          {reasons.map((r) => (
+            <button
+              key={r.value}
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onConfirm(r.value); }}
+              style={{
+                display: "block", textAlign: "left", width: "100%",
+                background: "transparent", border: "none",
+                padding: "8px 10px", borderRadius: 8, cursor: "pointer",
+                fontFamily: ef.sans, fontSize: 13, color: e.coal,
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(ev) => (ev.currentTarget.style.background = e.creamSoft)}
+              onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+            >
+              {r.label}
+            </button>
+          ))}
+          <div style={{ height: 1, background: e.line, margin: "4px 8px" }} />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { setOpen(false); onConfirm("no_reason"); }}
+            style={{
+              display: "block", textAlign: "left", width: "100%",
+              background: "transparent", border: "none",
+              padding: "8px 10px", borderRadius: 8, cursor: "pointer",
+              fontFamily: ef.sans, fontSize: 12, color: e.inkSoft,
+              fontStyle: "italic",
+            }}
+            onMouseEnter={(ev) => (ev.currentTarget.style.background = e.creamSoft)}
+            onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+          >
+            Just skip — no reason
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -372,7 +578,12 @@ function CanvasListeningActionZone({
             <span aria-hidden style={{ color: e.inkFaint }}>·</span>
           </>
         )}
-        <CanvasSkipLink onClick={handleNextQuestion} />
+        <SkipWithReason
+          onConfirm={(reason) => {
+            captureClientEvent("interview_skip", { reason });
+            handleNextQuestion();
+          }}
+        />
       </div>
 
       {/* Hint */}
