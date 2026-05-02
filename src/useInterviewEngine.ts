@@ -174,6 +174,31 @@ export function useInterviewEngine() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Back-button safety net (QA bug 22 part B):
+  //   The browser back button from /session/[id] used to land on
+  //   /interview, where the engine silently started a brand-new
+  //   session because the draft had already been deleted on
+  //   completion. Now: if /interview is entered without an explicit
+  //   start intent (?new=1 or ?resume=true) AND no restorable draft
+  //   is in localStorage, redirect to /dashboard. Combined with the
+  //   router.replace fix in handleEnd, this closes the back-button
+  //   "unexpectedly starts a new session" path entirely.
+  //
+  //   Legitimate entries (all preserved):
+  //     - Fresh start from SessionSetup → has ?new=1
+  //     - Resume from dashboard → has ?resume=true
+  //     - Page refresh mid-session → draftRef.current is populated
+  useEffect(() => {
+    const hasExplicitIntent = isNewSession || isResuming;
+    const hasRestorableDraft = !!draftRef.current;
+    if (!hasExplicitIntent && !hasRestorableDraft) {
+      console.warn("[interview] Entered /interview with no start intent and no draft — redirecting to /dashboard");
+      router.replace("/dashboard");
+    }
+    // Mount-only — re-running on prop changes would race with normal flow
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Override user's profile role/company with URL params (SessionSetup passes these)
   const effectiveUser = (targetRole || targetCompany) ? { ...user, ...(targetRole ? { targetRole } : {}), ...(targetCompany ? { targetCompany } : {}) } as typeof user : user;
   const fallbackScript = isMiniMode ? getMiniScript(effectiveUser, targetCompany, interviewType) : getScript(interviewType, interviewDifficulty, effectiveUser);
@@ -1730,7 +1755,9 @@ export function useInterviewEngine() {
     // mounts, and partial local saves survive page navigation.
     const escapeHatch = setTimeout(() => {
       console.warn("[interview] handleEnd exceeded 35s — forcing navigation to session detail");
-      try { router.push(`/session/${sessionId}`); } catch { /* best effort */ }
+      // replace not push — same reasoning as the success path: back-button
+      // from /session/[id] must not land on /interview.
+      try { router.replace(`/session/${sessionId}`); } catch { /* best effort */ }
       setEvaluating(false);
     }, 35_000);
     let score = 0;
@@ -1984,7 +2011,13 @@ export function useInterviewEngine() {
     }
 
     try {
-      router.push(`/session/${sessionId}`);
+      // router.replace (not push) — pressing the browser back button from
+      // /session/[id] should NOT land back on /interview, because the
+      // engine there auto-starts a fresh session when no draft exists,
+      // which surprised users (QA bug 22 part B). Replacing the history
+      // entry means back from the score page lands on whatever came
+      // before /interview (typically /interview-setup or /dashboard).
+      router.replace(`/session/${sessionId}`);
     } catch (navErr) {
       console.warn("[interview] Navigation failed:", navErr);
       toast("Session saved! Navigate to dashboard to view results.", "info");
