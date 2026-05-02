@@ -54,6 +54,7 @@ function isLoginLocked(): { locked: boolean; remainingSeconds: number } {
 }
 
 /* ─── Single-Device Session Enforcement ─── */
+const INACTIVITY_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours default (configurable: 4-8 hrs)
 const DEVICE_TOKEN_KEY = "hirestepx_device_token";
 
 function generateDeviceToken(): string {
@@ -1221,7 +1222,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Inactivity timeout — auto-logout after configurable period of no user activity
-  const INACTIVITY_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours default (configurable: 4-8 hrs)
   const lastActivityRef = useRef(Date.now());
 
   useEffect(() => {

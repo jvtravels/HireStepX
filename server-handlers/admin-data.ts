@@ -225,7 +225,7 @@ async function getOverview() {
     ? Math.round((llmRecent.filter(u => u.status === "error" || u.status === "timeout").length / llmRecent.length) * 100) : 0;
 
   return {
-    users: { total: totalUserCount, today: profiles.filter(p => false).length, thisWeek: weekUserCount, activeLastWeek, tierBreakdown },
+    users: { total: totalUserCount, today: profiles.filter(() => false).length, thisWeek: weekUserCount, activeLastWeek, tierBreakdown },
     sessions: { total: totalSessionCount, today: recentSessions.filter(s => s.created_at?.startsWith(today)).length, thisWeek: weekSessionCount, avgScore, perDay: sessionsPerDay },
     revenue: { totalPaise: totalRevenue, thisMonthPaise: revenueThisMonth, paymentCount: successPayments.length },
     llm: { tokensToday, fallbackRate, errorRate, totalCalls: llmRecent.length },

@@ -76,7 +76,7 @@ export default async function handler(req: Request): Promise<Response> {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch {
     console.error(JSON.stringify({
       level: "alert",
       source: "uptime-check",

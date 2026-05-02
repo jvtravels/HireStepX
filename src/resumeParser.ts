@@ -28,11 +28,6 @@ async function readDocx(file: File): Promise<string> {
     textParts.push(match[1]);
   }
 
-  // Also handle paragraph breaks <w:p> → newlines
-  let result = xmlText;
-  result = result.replace(/<\/w:p>/g, "\n");
-  result = result.replace(/<w:br[^/]*\/>/g, "\n");
-
   // Re-extract with paragraph awareness
   const lines: string[] = [];
   // Simpler approach: split by paragraph, extract text from each

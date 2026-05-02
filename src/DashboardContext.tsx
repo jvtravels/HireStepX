@@ -215,6 +215,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       saveState(updated);
       return updated;
     });
+    // We intentionally key on the individual user fields we read, not the whole user object — including `user` here would re-run on every auth refresh that mutates a different field (e.g. session counts) and stomp persisted state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name, user?.targetRole, user?.interviewDate, user?.resumeFileName, user?.hasCompletedOnboarding]);
 
   // Load data from Supabase on mount, with localStorage cache fallback
@@ -285,6 +287,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
     const timeout = setTimeout(() => { if (!cancelled) setDataLoading(false); }, 10000);
     return () => { cancelled = true; clearTimeout(timeout); };
+    // syncError is read inside one of the inner .catch handlers as a "don't overwrite" guard. Adding it as a dep would refetch the whole dashboard whenever the error string toggles, which is exactly the loop we're trying to avoid.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // Refetch sessions from Supabase (debounced to prevent rapid-fire calls)
@@ -402,7 +406,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const returnContext = useMemo(() => getReturnContext(recentSessions), [recentSessions]);
   const smartSchedule = useMemo(() => getSmartScheduleSuggestion(user), [user]);
   const prepPlan = useMemo(() => getImprovementPlan(user, recentSessions, skills, skillVelocity), [user, recentSessions, skills, skillVelocity]);
-  const curriculumState = useMemo(() => getCurriculumState(recentSessions, user ? { targetRole: user.targetRole, targetCompany: user.targetCompany } : null), [recentSessions, user?.targetRole, user?.targetCompany]);
+  const curriculumState = useMemo(() => getCurriculumState(recentSessions, user ? { targetRole: user.targetRole, targetCompany: user.targetCompany } : null), [recentSessions, user]);
   const badges = useMemo(() => computeBadges(recentSessions, skills, currentStreak), [recentSessions, skills, currentStreak]);
   const dailyChallenge = useMemo(() => getDailyChallenge(recentSessions, skills), [recentSessions, skills]);
   const practiceReminder = useMemo(() => getPracticeReminder(recentSessions, currentStreak), [recentSessions, currentStreak]);
@@ -425,6 +429,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     if (user.resumeFileName && user.resumeFileName !== persisted.resumeFileName) updates.resumeFileName = user.resumeFileName;
     if (user.interviewDate && user.interviewDate !== persisted.interviewDate) updates.interviewDate = user.interviewDate;
     if (Object.keys(updates).length > 0) updatePersisted(updates);
+    // Sync-from-user effect: re-runs only when user fields change. Including persisted.* would loop because this effect calls updatePersisted, which mutates persisted. updatePersisted is stable (useCallback with empty deps).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name, user?.targetRole, user?.resumeFileName, user?.interviewDate]);
 
   const displayName = user?.name || persisted.userName || "User";

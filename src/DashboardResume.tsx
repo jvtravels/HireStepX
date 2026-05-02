@@ -519,6 +519,8 @@ export default function DashboardResume() {
       setPhase("done");
       setNeedsReupload(true);
     }
+    // Re-runs only when the underlying resume payload changes. updateUser/targetRole are read inside the analysis branch but adding them would re-fire analysis whenever the user edits an unrelated field.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.resumeData, user?.resumeFileName, user?.resumeText]);
 
   /**

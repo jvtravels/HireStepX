@@ -247,6 +247,8 @@ export function useInterviewSTT(
       refs.recognitionRef.current = null;
       return;
     }
+    // The hook receives `refs` and `callbacks` as bag objects whose .current values are written via mutation; including the bags as deps would re-bind the STT chain on every parent render. Phase/mute/speechUnavailable are the actual triggers that should rewire STT.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isMuted, speechUnavailable]);
 
   // Capture mic stream for waveform visualizer
@@ -262,5 +264,7 @@ export function useInterviewSTT(
       refs.micStreamRef.current?.getTracks().forEach(t => t.stop());
       refs.micStreamRef.current = null;
     };
+    // refs.micStreamRef is mutated, not consumed — including it as a dep would rebind the mic on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isMuted]);
 }

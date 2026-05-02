@@ -341,6 +341,10 @@ export default function Onboarding() {
         if (autoRole) setTargetRole(autoRole);
       }
     }).catch(err => console.error("[onboarding-restore] PARSER ERROR:", err));
+    // Restore-from-stored-resume effect: only re-runs when the saved file changes.
+    // Including the rest (targetRole / resumeParsed / updateUser etc.) would re-trigger
+    // analysis whenever the user types a role, which is the exact opposite of what we want.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.resumeFileName, user?.resumeText]);
 
   // Auto re-analyze when profile is fallback/stale (e.g. previous analysis timed out)

@@ -224,6 +224,8 @@ export function useInterviewEngine() {
       }
     });
     return () => { cancelled = true; };
+    // Mount-only draft restore. The other values (draftKey/interviewType/isNewSession/isResuming/setters) are read once to decide whether to hydrate from IDB; re-running on their change would clobber freshly-typed answers with the persisted draft.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // LLM question generation — extracted so it can be retried
@@ -354,7 +356,7 @@ export function useInterviewEngine() {
       return;
     }
     fetchPersonalizedQuestions();
-  }, [fetchPersonalizedQuestions]);
+  }, [fetchPersonalizedQuestions, toast]);
 
   // Fetch on mount
   useEffect(() => {
@@ -431,7 +433,7 @@ export function useInterviewEngine() {
       document.removeEventListener("click", handler);
       document.removeEventListener("touchstart", handler);
     };
-  }, []);
+  }, [toast]);
 
   // Prevent accidental navigation/close during active interview
   useEffect(() => {
@@ -502,7 +504,7 @@ export function useInterviewEngine() {
     });
     panelVoicesReadyRef.current = voicePromise;
     return () => { cancelled = true; panelVoicesRef.current = {}; };
-  }, [isPanelInterview, panelMembers]);
+  }, [isPanelInterview, panelMembers, toast]);
 
   const [microFeedback, setMicroFeedback] = useState<string | null>(null);
 
@@ -527,6 +529,8 @@ export function useInterviewEngine() {
     window.addEventListener("offline", goOffline);
     window.addEventListener("online", goOnline);
     return () => { window.removeEventListener("offline", goOffline); window.removeEventListener("online", goOnline); };
+    // Mount-only network-listener wiring. fetchPersonalizedQuestions/saveWarning are read at fire-time inside goOnline; rebinding listeners on every saveWarning change would churn the network handlers and was explicitly avoided.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // AI Voice (Text-to-Speech)
@@ -593,15 +597,20 @@ export function useInterviewEngine() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       clearInterval(autoSaveInterval);
     };
+    // The draft-save fires every 15s and on unload; it reads draftKey/interviewScript/targetCompany/targetRole/totalQuestions latest-values inside the snapshot closure. Adding them as deps would re-bind the beforeunload listener on every keystroke (transcript/currentTranscript change) and was explicitly avoided.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, evaluating, transcript, currentTranscript, currentStep, elapsed, interviewType, interviewDifficulty, interviewFocus]);
 
   // Cancel speech + recognition on unmount or when voice toggled
   useEffect(() => {
     return () => {
+      // We deliberately read the latest ref.current at cleanup time — capturing now would abort an already-replaced STT instance and leak the new one. Refs here point to STT clients, not React-rendered DOM nodes.
       ttsCancelRef.current?.();
       recognitionRef.current?.stop();
+      /* eslint-disable react-hooks/exhaustive-deps */
       deepgramRef.current?.abort();
       sarvamRef.current?.abort();
+      /* eslint-enable react-hooks/exhaustive-deps */
     };
   }, [aiVoiceEnabled]);
 
@@ -644,6 +653,8 @@ export function useInterviewEngine() {
     return () => {
       if (silenceNudgeTimerRef.current) { clearTimeout(silenceNudgeTimerRef.current); silenceNudgeTimerRef.current = null; }
     };
+    // The nudge fires from a timeout at 15s; we read the latest `elapsed` and `interviewerGender` inside the timeout callback. Adding them as deps would reset the silence timer every second.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, aiVoiceEnabled, currentStep]);
 
   // Reset silence nudge timer when user starts speaking (transcript changes)
@@ -670,6 +681,8 @@ export function useInterviewEngine() {
       }
     }, 60_000);
     return () => clearTimeout(stallTimer);
+    // handleNextRef is a ref, not a state value — it never changes identity, so excluding it is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentStep, currentTranscript]);
 
   // Rambling interjection — if user has been speaking for 90s+, interject to wrap up
@@ -1525,9 +1538,13 @@ export function useInterviewEngine() {
     } else {
       setPhase("done");
     }
+    // handleNextQuestion is the central transition function. Many of the values flagged (aiVoiceEnabled / currentCity / interviewerGender / isPanelInterview / jobCity / jobDescription / negotiationScenario / negotiationStyle / targetSalary / toast / transcript) are read at *fire-time* from latest closures inside the callback body — adding them as deps would re-create the function on every keystroke and re-bind every effect that depends on it. The values we DO bind to are the minimum trigger set.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentStep, answerTimer, elapsed, interviewScript, interviewType, user, currentTranscript]);
 
   // Keep ref in sync for answer timer auto-advance
+  // handleNextRef is a ref; React doesn't warn that it's missing because writing to a ref is the explicit out for stale-closure problems.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { handleNextRef.current = handleNextQuestion; }, [handleNextQuestion]);
 
   // Skip AI speaking
@@ -1546,6 +1563,8 @@ export function useInterviewEngine() {
     } else {
       setTimeout(() => setPhase("done"), 1000);
     }
+    // interviewerGender is read inside the prefetchTTS branch but is derived from interviewerName which is derived from session-stable inputs; recomputing this callback when gender changes is unnecessary churn since gender effectively never changes within a session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentStep, interviewScript, aiVoiceEnabled]);
 
   // Keyboard shortcuts
@@ -1569,6 +1588,8 @@ export function useInterviewEngine() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+    // handleEnd is captured at fire-time inside the keydown handler; adding it as a dep would re-bind the listener whenever handleEnd's identity changes (which is on every transcript edit) and was explicitly avoided.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, handleNextQuestion, skipSpeaking, aiVoiceEnabled]);
 
   // Update document.title with current phase
@@ -1883,6 +1904,8 @@ export function useInterviewEngine() {
       clearTimeout(escapeHatch);
       setEvaluating(false);
     }
+    // handleEnd reads many derived values (draftKey/evalTimedOut/evaluating/interviewScript/jdAnalysisData/jobDescription/negotiationStyle/shouldUseResume/targetRole/targetSalary/toast/usedFallbackScore) at fire-time. It runs exactly once per session — re-creating the callback on each of these would only churn ref identity without changing behavior since handleEndRef holds the latest version.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, elapsed, interviewType, interviewDifficulty, interviewFocus, totalQuestions, user, updateUser, currentStep, interviewScript.length, transcript, currentTranscript]);
 
   // Auto-finalize once we hit the done phase. The closing step now has

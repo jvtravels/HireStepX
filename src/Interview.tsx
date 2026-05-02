@@ -146,11 +146,12 @@ function InterviewInner() {
   }, [phase, currentStep, totalQuestions, elapsed, interviewEndedRef]);
 
   // Stop video recording when interview ends
+  const { isRecording: videoIsRecording, stopRecording: videoStopRecording } = video;
   useEffect(() => {
-    if (engine.phase === "done" && video.isRecording) {
-      video.stopRecording();
+    if (engine.phase === "done" && videoIsRecording) {
+      videoStopRecording();
     }
-  }, [engine.phase, video.isRecording, video.stopRecording]);
+  }, [engine.phase, videoIsRecording, videoStopRecording]);
 
   return (
     <InterviewProvider value={engine}>

@@ -109,7 +109,7 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
     if (sessions.length > 50) sessions.length = 50;
     try {
       localStorage.setItem(RESULTS_KEY, JSON.stringify(sessions));
-    } catch (quotaErr) {
+    } catch {
       // Quota exceeded — aggressively prune to 10 and retry
       console.warn("[save] localStorage quota hit, pruning to 10 sessions");
       sessions.length = Math.min(sessions.length, 10);

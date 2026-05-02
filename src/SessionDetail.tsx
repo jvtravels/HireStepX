@@ -131,7 +131,10 @@ export default function SessionDetail() {
   const type = session ? normalizeType(session.type) : "";
 
   const speechMetrics = useMemo(() => session ? computeSpeechMetrics(session.transcript, session.duration) : null, [session]);
+  // Recompute when the loaded session changes — these read from localStorage but tying to `session` ensures they refresh after fetch.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const historicalAvg = useMemo(() => computeHistoricalAverages(), [session]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sessionHistory = useMemo(() => loadSessionHistory(), [session]);
 
   const generateExportText = useCallback(() => {
@@ -188,7 +191,7 @@ export default function SessionDetail() {
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(generateExportText()).then(() => { setCopied(true); toast("Report copied to clipboard", "success"); setTimeout(() => setCopied(false), 2000); });
-  }, [generateExportText]);
+  }, [generateExportText, toast]);
 
   const handleDownload = useCallback(() => {
     if (!session) return;
@@ -325,7 +328,7 @@ export default function SessionDetail() {
     a.href = url; a.download = `HireStepX_Certificate_${session.date.split("T")[0]}.png`; a.click();
     URL.revokeObjectURL(url);
     toast("Certificate downloaded", "success");
-  }, [generateCertificateImage, session]);
+  }, [generateCertificateImage, session, toast]);
 
   const handleShareLinkedIn = useCallback(async () => {
     if (!session) return;

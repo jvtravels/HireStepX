@@ -123,7 +123,7 @@ const PLANS = [
   { id: "monthly", tier: "pro", name: "Pro", price: "\u20B9149", period: "/mo", desc: `Best value \u2014 ${PRO_MONTHLY_LIMIT} sessions/month`, features: [`${PRO_MONTHLY_LIMIT} sessions/month`, "Everything in Starter", "AI coaching & improvement plan", "Analytics & trends", "Interview calendar", "Export PDF, CSV, JSON"], featured: true },
 ];
 
-export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
+export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, onPaymentSuccess }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; onPaymentSuccess: (tier: string, start: string, end: string) => void }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [sessionQty, setSessionQty] = useState(1);

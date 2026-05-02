@@ -466,7 +466,7 @@ export default function DashboardHome() {
       }, 10000);
     }
     prevBadgesRef.current = earnedIds;
-  }, [badges, user?.id]);
+  }, [badges, user?.id, showToast]);
 
   // Draft detection — must be before any early returns (Rules of Hooks)
   const draftKey = `hirestepx_interview_draft_${user?.id || "anon"}`;
@@ -508,11 +508,12 @@ export default function DashboardHome() {
 
 
   // Refresh draft relative time every 60s
+  const draftActive = !!hasDraft;
   useEffect(() => {
-    if (!hasDraft) return;
+    if (!draftActive) return;
     const timer = setInterval(() => setDraftTick(t => t + 1), 60000);
     return () => clearInterval(timer);
-  }, [!!hasDraft]);
+  }, [draftActive]);
 
   // All useMemo calls must be before any early returns (Rules of Hooks)
   // weakestSkill memo removed — was only used by the Hero CTA which was replaced by the compact streak widget

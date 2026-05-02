@@ -131,7 +131,7 @@ export async function adaptHandler(
   // Call the handler
   try {
     await handler(fakeReq, fakeRes);
-  } catch (err) {
+  } catch {
     if (!resolved) {
       resolved = true;
       resolve(

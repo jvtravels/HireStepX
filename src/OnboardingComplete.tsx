@@ -54,6 +54,8 @@ export default function OnboardingComplete() {
     }).catch(() => {
       router.replace(user.hasCompletedOnboarding ? "/dashboard" : "/onboarding");
     });
+    // Fire once per user — router/user.hasCompletedOnboarding/stateData.score are read inside async branches and re-running on their change would race the redirect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const score: number = (stateData.score as number) || 72;
