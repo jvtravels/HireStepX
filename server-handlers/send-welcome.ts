@@ -3,7 +3,6 @@
 /* Supports actions: "verify" (default), "reset", "password-changed", "verify-reminder" */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { verifyTurnstile } from "./_turnstile-verify";
 import { createHmac, randomBytes } from "crypto";
 import { resolve } from "dns/promises";
 
@@ -647,40 +646,14 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
     return res.status(200).json({ ok: true });
   }
 
-  if (action === "turnstile-verify") {
-    // Cloudflare Turnstile invisible CAPTCHA — verifies bot status.
-    // Token comes from the client widget. Fails open if
-    // TURNSTILE_SECRET_KEY isn't set (dev/preview without env vars).
-    const turnstileToken =
-      typeof req.body?.turnstileToken === "string"
-        ? req.body.turnstileToken
-        : "";
-    const clientIp =
-      (req.headers["cf-connecting-ip"] as string | undefined) ||
-      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0] ||
-      undefined;
-    const result = await verifyTurnstile(turnstileToken, clientIp);
-    if (!result.ok) {
-      // Log the underlying reason server-side for debugging — common
-      // failure modes: missing-token (client widget didn't load),
-      // invalid-input-response (Cloudflare widget domain restriction),
-      // siteverify-status-* (network), etc.
-      console.warn(
-        `[turnstile] verify failed: reason=${result.reason ?? "unknown"} hasToken=${!!turnstileToken} tokenLen=${turnstileToken.length}`,
-      );
-      return res.status(403).json({
-        ok: false,
-        error: "Bot check failed. Please retry.",
-        // Surface the reason on staging/preview so devs can debug
-        // without digging through server logs. Production keeps it
-        // opaque (don't reveal infrastructure detail to attackers).
-        ...(process.env.VERCEL_ENV !== "production"
-          ? { debugReason: result.reason ?? "unknown" }
-          : {}),
-      });
-    }
-    return res.status(200).json({ ok: true });
-  }
+  // Turnstile branch removed — bot prevention now lives in:
+  //   • email-link verification (mandatory before account activation)
+  //   • per-IP + per-email rate limits (auth-fail block above)
+  //   • honeypot field on the signup form
+  //   • disposable-email blocklist (add when needed)
+  // Ad blockers were rejecting Turnstile for ~5% of legitimate users,
+  // and the JS challenge produced no spam-prevention value we couldn't
+  // already get from email verification + rate limits.
 
   if (action === "fail") {
     const ipCount = await incrRedisKey(ipKey, AUTH_LOCKOUT_SECONDS);
@@ -788,7 +761,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Auth rate limiting + Turnstile verification actions (don't require
   // email validation — Turnstile verifies a captcha token, not the email).
-  if (["check", "fail", "success", "signup", "turnstile-verify"].includes(action)) {
+  if (["check", "fail", "success", "signup"].includes(action)) {
     return handleAuthCheck(req, res, action, email);
   }
 
