@@ -159,6 +159,36 @@ describe("computeResumeTextHash", () => {
     const b = "Skills: React, TypeScript, Node, Postgres"; // one new skill
     expect(await computeResumeTextHash(a)).not.toBe(await computeResumeTextHash(b));
   });
+
+  // ─── Target-role qualifier (cache key) ───
+  // Same resume text, different target role → different hash. The
+  // LLM's analysis is role-conditional (different strengths / gaps /
+  // headline); reusing yesterday's role's analysis under today's role
+  // would surface stale advice.
+  it("same text + different target roles produce different hashes", async () => {
+    const text = "Senior Engineer at Acme — built React + Node systems";
+    const asPM = await computeResumeTextHash(text, "Product Manager");
+    const asDesigner = await computeResumeTextHash(text, "Designer");
+    expect(asPM).not.toBe(asDesigner);
+  });
+
+  it("missing / empty role is back-compat with the role-agnostic hash", async () => {
+    const text = "Senior Engineer at Acme";
+    const noRole = await computeResumeTextHash(text);
+    const emptyRole = await computeResumeTextHash(text, "");
+    const whitespaceRole = await computeResumeTextHash(text, "   ");
+    expect(noRole).toBe(emptyRole);
+    expect(noRole).toBe(whitespaceRole);
+  });
+
+  it("role qualifier is case-insensitive (stable across UI casing)", async () => {
+    const text = "Senior Engineer at Acme";
+    const upper = await computeResumeTextHash(text, "Product Manager");
+    const lower = await computeResumeTextHash(text, "product manager");
+    const mixed = await computeResumeTextHash(text, "  Product Manager  ");
+    expect(upper).toBe(lower);
+    expect(upper).toBe(mixed);
+  });
 });
 
 describe("findCachedResumeVersion", () => {

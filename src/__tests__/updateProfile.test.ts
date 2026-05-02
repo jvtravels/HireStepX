@@ -96,6 +96,7 @@ describe("sanitizeUpdate", () => {
       "resume_data",
       "resume_file_name",
       "resume_text",
+      "resume_version_id",
       "session_length",
       "target_company",
       "target_role",

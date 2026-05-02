@@ -71,9 +71,26 @@ export async function sha256Hex(input: string): Promise<string> {
 /**
  * Compute the text_hash that gets stored on resume_versions. Single
  * helper so callers can't drift on the normalization step.
+ *
+ * Optionally accepts a `targetRole` qualifier. When the same resume
+ * text is analyzed against two different target roles, the LLM
+ * receives different context and emits different scores / strengths /
+ * gaps — caching by text alone would surface yesterday's "PM" analysis
+ * to a user who's now applying as a "Designer". The role is folded
+ * into the hash input so each (text, role) pair has its own cache
+ * entry. Empty / missing role → role-agnostic key (back-compat with
+ * pre-role rows that already exist in the DB).
  */
-export async function computeResumeTextHash(rawText: string): Promise<string> {
-  return sha256Hex(normalizeResumeText(rawText));
+export async function computeResumeTextHash(
+  rawText: string,
+  targetRole?: string | null,
+): Promise<string> {
+  const text = normalizeResumeText(rawText);
+  const role = (targetRole ?? "").trim().toLowerCase();
+  // Use a delimiter that can't appear in normalized text (newline pair
+  // is preserved at most as \n\n, never \n\x00, so no collision risk).
+  const composite = role ? `${text}\n\x00role=${role}` : text;
+  return sha256Hex(composite);
 }
 
 export interface ResumeVersionRow {

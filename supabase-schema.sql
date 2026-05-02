@@ -31,8 +31,17 @@ create table if not exists profiles (
   preferred_session_length integer,
   interview_types jsonb default '[]'::jsonb,
   resume_data jsonb,
+  -- Pointer to the resume_versions row that produced resume_data. Set
+  -- right after analyze-resume returns so a tab close mid-flight or a
+  -- new device on next login can resolve the canonical version. Soft
+  -- FK (no foreign key constraint) so a deleted version doesn't cascade
+  -- to the profile; readers should tolerate dangling pointers.
+  resume_version_id uuid,
   created_at timestamptz default now()
 );
+
+-- Backfill column on existing deployments. Idempotent — safe to re-run.
+alter table profiles add column if not exists resume_version_id uuid;
 
 -- 2. Interview sessions
 create table if not exists sessions (

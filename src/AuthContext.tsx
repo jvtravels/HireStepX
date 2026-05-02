@@ -211,6 +211,15 @@ export interface User {
   practiceTimestamps?: string[];
   resumeText?: string;
   resumeData?: StoredResume | null;
+  /**
+   * Pointer to the row in `resume_versions` whose AI parse produced
+   * `resumeData`. When a session is created, this id is captured into
+   * sessions.resume_version_id so the report can be replayed against
+   * the exact resume the user was scored against, even if they later
+   * re-upload. Set immediately after analyze-resume returns; cleared
+   * on resume removal.
+   */
+  resumeVersionId?: string | null;
   subscriptionTier?: "free" | "starter" | "pro" | "team";
   subscriptionStart?: string;
   subscriptionEnd?: string;
@@ -285,6 +294,7 @@ function profileToUser(profile: Profile, session: Session): User {
     // Older rows predating the _type discriminator fall through as
     // undefined — callers use isAiResume/isFallbackResume to narrow.
     resumeData: (profile.resume_data as StoredResume | null | undefined) || undefined,
+    resumeVersionId: (profile.resume_version_id as string | null | undefined) || null,
     subscriptionTier: (() => {
       const tier = (profile.subscription_tier as "free" | "starter" | "pro" | "team") || "free";
       // Auto-downgrade expired subscriptions
@@ -1127,6 +1137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updates.resumeFileName !== undefined) payload.resume_file_name = (updates.resumeFileName || "").slice(0, 255);
     if (updates.resumeText !== undefined) payload.resume_text = (updates.resumeText || "").slice(0, 50000);
     if (updates.resumeData !== undefined) payload.resume_data = updates.resumeData || null;
+    if (updates.resumeVersionId !== undefined) payload.resume_version_id = updates.resumeVersionId || null;
     if (updates.preferredSessionLength !== undefined) payload.preferred_session_length = updates.preferredSessionLength;
     if (updates.interviewTypes !== undefined) payload.interview_types = updates.interviewTypes;
     if (updates.practiceTimestamps !== undefined) payload.practice_timestamps = updates.practiceTimestamps;
@@ -1277,6 +1288,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, broadcastLogout, broadcastSessionRefreshed]);
 
   const resetPassword = useCallback(async (email: string): Promise<{ success: boolean; error?: string }> => {
+    // Email enumeration defense: server returns 200 regardless of
+    // whether the address is registered, so we don't surface a "no
+    // account" branch here. The UI shows the same "Check your email"
+    // confirmation either way. Probing /forgot-password to discover
+    // accounts is a common reconnaissance step before credential
+    // stuffing — closing the enumeration channel kills the recon.
     try {
       const res = await fetch("/api/send-welcome", {
         method: "POST",
@@ -1284,8 +1301,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email: email.toLowerCase().trim(), action: "reset" }),
       });
       if (res.status === 429) return { success: false, error: "Too many reset requests. Please try again later." };
-      if (res.status === 404) return { success: false, error: "No account found with this email address. Please check or sign up." };
-      if (!res.ok) return { success: false, error: "Failed to send reset email. Try again or contact support@hirestepx.com" };
+      // 4xx other than rate-limit shouldn't happen post-enumeration
+      // fix; treat as transient failure rather than leaking specifics.
+      if (!res.ok) return { success: false, error: "We couldn't send the reset email right now. Try again in a moment, or contact support@hirestepx.com" };
       return { success: true };
     } catch {
       return { success: false, error: "Connection error. Check your internet and try again." };

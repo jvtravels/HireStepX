@@ -38,6 +38,7 @@ export const ALLOWED_COLUMNS = new Set<string>([
   "resume_file_name",
   "resume_text",
   "resume_data",
+  "resume_version_id",
   "has_completed_onboarding",
   "cancel_at_period_end",
   "interview_focus",

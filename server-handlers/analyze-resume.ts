@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
+import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId, logServiceUsage } from "./_shared";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import {
@@ -120,12 +120,27 @@ export default async function handler(req: Request): Promise<Response> {
     // Cuts a meaningful chunk of LLM cost on re-uploads + makes the
     // "Re-analyze" button instant when the content hasn't actually
     // changed.
-    const textHash = await computeResumeTextHash(resumeText);
+    // Hash includes targetRole so a user analyzing the same resume
+    // against two different roles gets two distinct cache entries
+    // rather than seeing yesterday's role's analysis under today's
+    // role. See _resume-versioning.ts for rationale.
+    const textHash = await computeResumeTextHash(resumeText, typeof targetRole === "string" ? targetRole : null);
     if (auth.userId && SUPABASE_URL && SUPABASE_SERVICE_KEY) {
       const cached = await findCachedResumeVersion(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, textHash);
       if (cached?.parsed_data) {
         const totalMs = Date.now() - t0;
         console.log(`[analyze-resume] CACHE HIT user=${auth.userId.slice(0, 8)} version=${cached.id.slice(0, 8)} latency=${totalMs}ms`);
+        // Track cache hit so we can measure LLM cost savings — pair
+        // with the corresponding miss/race-sibling logs below to
+        // compute hit-rate over time.
+        logServiceUsage({
+          service: "resume_cache",
+          endpoint: "analyze-resume",
+          userId: auth.userId,
+          status: "success",
+          latencyMs: totalMs,
+          meta: { kind: "hit" },
+        });
         headers["X-Cache"] = "hit";
         headers["X-Resume-Version-Id"] = cached.id;
         // Normalize on read so cached rows that pre-date the renderer
@@ -252,6 +267,14 @@ CRITICAL RULES:
       const sibling = await findCachedResumeVersion(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, textHash);
       if (sibling?.parsed_data) {
         console.log(`[analyze-resume] CACHE RACE — sibling won user=${auth.userId.slice(0, 8)} version=${sibling.id.slice(0, 8)}`);
+        logServiceUsage({
+          service: "resume_cache",
+          endpoint: "analyze-resume",
+          userId: auth.userId,
+          status: "success",
+          latencyMs: Date.now() - t0,
+          meta: { kind: "race-sibling" },
+        });
         headers["X-Cache"] = "race-sibling";
         headers["X-Resume-Version-Id"] = sibling.id;
         const normalizedSibling = normalizeResumeProfile(sibling.parsed_data as Record<string, unknown>);
@@ -263,6 +286,17 @@ CRITICAL RULES:
       }
     }
 
+    // Genuine miss — we ran the LLM and are about to persist a fresh
+    // row. Log so we can track miss rate (and therefore LLM spend) by
+    // time window / user cohort.
+    logServiceUsage({
+      service: "resume_cache",
+      endpoint: "analyze-resume",
+      userId: auth.userId,
+      status: "success",
+      latencyMs: Date.now() - t0,
+      meta: { kind: "miss", model: result.model, llmMs: tLLM },
+    });
     headers["X-Cache"] = "miss";
 
     // Shadow-write the new version row. Best-effort — if the persistence

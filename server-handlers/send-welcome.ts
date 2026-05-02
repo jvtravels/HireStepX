@@ -353,7 +353,15 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       const users = userListData.users || userListData || [];
       const found = Array.isArray(users) && users.some((u: { email?: string }) => u.email?.toLowerCase() === normalizedEmail);
       if (!found) {
-        return res.status(404).json({ error: "No account found with this email address." });
+        // Email enumeration defense: don't reveal whether the email
+        // exists. Probing /forgot-password to enumerate accounts is a
+        // standard reconnaissance step before credential-stuffing
+        // attacks; returning 200 + generic copy here makes that probe
+        // useless. The client UI shows "Check your email" identically
+        // regardless of whether a real account got an email or not.
+        // Loud server-side log so we can still tell during ops review.
+        console.log(`[reset] no-op for unknown email (enumeration defense): ${normalizedEmail}`);
+        return res.status(200).json({ ok: true });
       }
     }
 
@@ -679,10 +687,29 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
   }
 
   if (action === "signup") {
+    // Two rate-limit dimensions, both must pass:
+    //
+    //   • Per-IP cap: AUTH_MAX_SIGNUP signups / AUTH_SIGNUP_WINDOW.
+    //     Catches spray-and-pray bot signups from a single IP.
+    //   • Per-email cap: 3 signup attempts on the same address per
+    //     24h. Without this an attacker on a clean IP could pound a
+    //     single email with 5 attempts; combined with the 60 s
+    //     verification cooldown elsewhere, 3/day is plenty for legit
+    //     users (typo → resend → finally land) but cuts off targeted
+    //     abuse.
     const signupKey = `rl:signup:ip:${ip}`;
-    const count = await incrRedisKey(signupKey, AUTH_SIGNUP_WINDOW);
-    if (count > AUTH_MAX_SIGNUP) {
+    const ipCount = await incrRedisKey(signupKey, AUTH_SIGNUP_WINDOW);
+    if (ipCount > AUTH_MAX_SIGNUP) {
       return res.status(429).json({ locked: true, message: "Too many signup attempts. Please try again later." });
+    }
+    if (normalizedEmail) {
+      const emailSignupKey = `rl:signup:email:${normalizedEmail}`;
+      const emailCount = await incrRedisKey(emailSignupKey, 24 * 60 * 60);
+      if (emailCount > 3) {
+        // Generic copy — don't tell an attacker their probe is hitting
+        // a real account vs no account.
+        return res.status(429).json({ locked: true, message: "Too many attempts for this email. Please try again later." });
+      }
     }
     return res.status(200).json({ ok: true });
   }

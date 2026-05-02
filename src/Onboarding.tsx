@@ -284,6 +284,12 @@ export default function Onboarding() {
             if (result && "profile" in result) {
               setAiProfile(result.profile);
               try { const cached = localStorage.getItem("hirestepx_resume"); if (cached) { const obj = JSON.parse(cached); obj.aiProfile = result.profile; localStorage.setItem("hirestepx_resume", JSON.stringify(obj)); } } catch { /* noop */ }
+              // Persist the version pointer to the user's profile if a
+              // new analysis ran. Skip when unchanged so we don't burn
+              // a write on a cache-hit.
+              if (result.resumeVersionId && result.resumeVersionId !== user?.resumeVersionId) {
+                updateUser({ resumeVersionId: result.resumeVersionId }).catch(() => { /* best-effort */ });
+              }
             }
           })
           .catch(err => { console.error("[onboarding] AI analysis error:", err instanceof Error ? err.message : err); })
@@ -329,6 +335,9 @@ export default function Onboarding() {
         if (result?.profile) {
           setAiProfile(result.profile);
           try { const cached = localStorage.getItem("hirestepx_resume"); if (cached) { const obj = JSON.parse(cached); obj.aiProfile = result.profile; localStorage.setItem("hirestepx_resume", JSON.stringify(obj)); } } catch { /* noop */ }
+          if (result.resumeVersionId && result.resumeVersionId !== user.resumeVersionId) {
+            updateUser({ resumeVersionId: result.resumeVersionId }).catch(() => { /* best-effort */ });
+          }
         }
       } catch (err) {
         console.error("[onboarding] Auto re-analysis failed:", err instanceof Error ? err.message : err);
@@ -440,12 +449,24 @@ export default function Onboarding() {
       setAiPhase("analyzing");
       let finalProfile: ResumeProfile = fallback;
       let aiSuccess = false;
+      // Captured from analyze-resume's response so we can pin the user's
+      // profile to the canonical resume_versions row immediately. If the
+      // tab closes between LLM completion and the updateUser PATCH, the
+      // version row is already durable on the server (analyze-resume
+      // persists it before responding); the user just won't have the
+      // pointer on their profile until next analysis. This still beats
+      // the previous behavior where the binding was localStorage-only.
+      let analyzedVersionId: string | null = null;
       try {
         const result = await Promise.race([
           analyzeResumeWithAI(text, targetRole || autoRole, currentAbort.signal),
-          // 40s budget — see DashboardResume.tsx comment. Matches server's
-          // worst-case Groq→Gemini fallback path plus pre-checks.
-          new Promise<null>((_, reject) => setTimeout(() => reject(new Error("timeout")), 40000)),
+          // 25s budget — aligned to the server's worst-case Groq→Gemini
+          // fallback (~10s + 10s + ~3s pre-checks = ~23s). The previous
+          // 40s ceiling let the client surface a "timeout" on requests
+          // the server had actually completed; users saw "timed out"
+          // for analyses that landed successfully in the DB. 25s leaves
+          // a 2s buffer for network jitter on the response path.
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error("timeout")), 25000)),
           new Promise<null>((_, reject) => {
             currentAbort.signal.addEventListener("abort", () => reject(new Error("aborted")));
           }),
@@ -453,6 +474,7 @@ export default function Onboarding() {
         if (result && typeof result === "object" && "profile" in result) {
           finalProfile = result.profile;
           setAiProfile(finalProfile);
+          analyzedVersionId = result.resumeVersionId ?? null;
           aiSuccess = true;
           if (finalProfile.headline && finalProfile.headline !== "Analyzing...") {
             // AI headlines look like "Senior Product Designer with 5+ years…"
@@ -505,6 +527,11 @@ export default function Onboarding() {
         resumeData: aiSuccess
           ? { _type: "ai", ...finalProfile }
           : { _type: "fallback", ...data },
+        // Pin the user's profile to the canonical resume_versions row.
+        // Sessions started after this point will capture this id so
+        // their report can be replayed against the exact resume the
+        // user was scored against.
+        resumeVersionId: analyzedVersionId,
       };
       if (!targetRole && autoRole) profileSave.targetRole = autoRole;
       // Do NOT save data.name — we never overwrite the signup name with

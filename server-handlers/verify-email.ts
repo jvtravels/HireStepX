@@ -2,7 +2,7 @@
 /* Validates HMAC token and sets email_confirmed_at on Supabase Auth user */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
+import { validateToken as validateTokenPure } from "./_email-verify-helpers";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -28,61 +28,10 @@ const EMAIL_SECRET = (() => {
   return (process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret").trim();
 })();
 
-/** Validate a verification token (supports both old deterministic and new nonce-based format) */
+/** Validate a verification token (delegates to pure helper so the
+ *  HMAC contract is unit-testable in isolation). */
 function validateToken(email: string, token: string): boolean {
-  // If the signing secret never got configured (production with no
-  // EMAIL_VERIFICATION_SECRET set), reject every token. Better to
-  // 4xx legitimate users with a clear "config" redirect than to
-  // accept tokens signed against an empty key, which is trivially
-  // forgeable.
-  if (!EMAIL_SECRET || EMAIL_SECRET.length < 16) return false;
-
-  const normalizedEmail = email.toLowerCase().trim();
-  const parts = token.split(".");
-
-  // New format: "<hmac>.<expiryWindow>.<nonce>" (3 parts)
-  if (parts.length === 3) {
-    const [hmacStr, expiryStr, nonce] = parts;
-    const expiry = parseInt(expiryStr, 10);
-    if (isNaN(expiry)) return false;
-
-    // Check expiry: valid for creation window + 1 window (≈24-48 hours)
-    const currentWindow = Math.floor(Date.now() / (24 * 60 * 60 * 1000));
-    if (currentWindow - expiry > 1) return false;
-
-    // Recreate HMAC with the same payload
-    const payload = `${normalizedEmail}:${expiry}:${nonce}`;
-    const expected = createHmac("sha256", EMAIL_SECRET).update(payload).digest("hex");
-    const expectedBuf = Buffer.from(expected);
-    const tokenBuf = Buffer.from(hmacStr);
-    if (expectedBuf.length !== tokenBuf.length) return false;
-    return timingSafeEqual(expectedBuf, tokenBuf);
-  }
-
-  // Old format: "<hmac>.<expiryWindow>" (2 parts — backwards compat)
-  if (parts.length === 2) {
-    const expiryStr = parts[1];
-    const expiry = parseInt(expiryStr, 10);
-    if (isNaN(expiry)) return false;
-
-    const currentWindow = Math.floor(Date.now() / (24 * 60 * 60 * 1000));
-    if (currentWindow - expiry > 1) return false;
-
-    const expectedPayload = `${normalizedEmail}:${expiry}`;
-    const expected = createHmac("sha256", EMAIL_SECRET).update(expectedPayload).digest("hex") + "." + expiry;
-    const tokenBuf = Buffer.from(token);
-    const expectedBuf = Buffer.from(expected);
-    if (tokenBuf.length !== expectedBuf.length) return false;
-    return timingSafeEqual(tokenBuf, expectedBuf);
-  }
-
-  // Legacy format: bare HMAC without expiry
-  if (parts.length === 1) {
-    const legacyExpected = createHmac("sha256", EMAIL_SECRET).update(normalizedEmail).digest("hex");
-    return token === legacyExpected;
-  }
-
-  return false;
+  return validateTokenPure(email, token, EMAIL_SECRET);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
