@@ -315,6 +315,21 @@ Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, 
 
 Each step: {"type":"intro|question|closing","aiText":"2-3 sentences spoken naturally by the interviewer","scoreNote":"specific evaluation criteria for this question"${interviewType === "panel" ? ',"persona":"Hiring Manager|Technical Lead|HR Partner"' : ""}}${panelNote}
 
+ACCENT MARKUP: Inside aiText, wrap exactly ONE emphasis word in *asterisks* — the single most evocative word the candidate would lock onto when reading the question. Pick a noun or verb (never a, the, is, you, your, etc.). One word only, never a phrase. Skip the markup entirely if no single word stands out. The asterisks render as italic-copper accent in the UI (typographic flair, not for spoken cadence). The TTS reads the word normally — asterisks are stripped before speech.
+
+Examples:
+  "Tell me about a *time* you led without authority. Walk me through what happened."
+  "Walk me through a *project* where you had to convince a senior leader. What was their objection?"
+  "How would you *size* the market for groceries delivery in India?"
+  "What's your *biggest* weakness as an engineer? Give me a recent example."
+  "Last one — *why* this company, and why now?"
+
+Bad examples (do not do):
+  "Tell me about *a time* you led" — multi-word, picks the article
+  "*Tell* me about a time you led" — picks a meaningless verb
+  "Tell *me* about a time you led" — picks a stopword
+  "Tell me about a *time you led*" — wraps a phrase
+
 ${isSalaryType
 ? `CRITICAL: This is a SALARY NEGOTIATION CONVERSATION, not a list of independent questions. Each question MUST flow logically from the previous one as a real hiring manager would speak.
 

@@ -143,3 +143,74 @@ describe("interviewAPI", () => {
     });
   });
 });
+
+/* ─── extractAccentMarkup — LLM accent parsing ─── */
+describe("extractAccentMarkup", () => {
+  let extractAccentMarkup: typeof import("../interviewAPI").extractAccentMarkup;
+  beforeEach(async () => {
+    extractAccentMarkup = (await import("../interviewAPI")).extractAccentMarkup;
+  });
+
+  it("extracts a single-word accent and strips the markup", () => {
+    const r = extractAccentMarkup("Tell me about a *time* you led without authority.");
+    expect(r.cleaned).toBe("Tell me about a time you led without authority.");
+    expect(r.accentSplit).toEqual({
+      before: "Tell me about a",
+      accent: "time",
+      after: "you led without authority",
+    });
+  });
+
+  it("preserves a leading [Persona] tag in cleaned text and accentSplit.before", () => {
+    const r = extractAccentMarkup("[Hiring Manager] How would you *size* the market for groceries?");
+    expect(r.cleaned).toBe("[Hiring Manager] How would you size the market for groceries?");
+    expect(r.accentSplit?.before).toBe("[Hiring Manager] How would you");
+    expect(r.accentSplit?.accent).toBe("size");
+  });
+
+  it("returns no accentSplit when LLM emits no markup", () => {
+    const r = extractAccentMarkup("Tell me about your last role.");
+    expect(r.cleaned).toBe("Tell me about your last role.");
+    expect(r.accentSplit).toBeUndefined();
+  });
+
+  it("rejects stopword accents and falls back to clean text", () => {
+    const r = extractAccentMarkup("Tell *me* about a time you led.");
+    expect(r.cleaned).toBe("Tell me about a time you led.");
+    expect(r.accentSplit).toBeUndefined();
+  });
+
+  it("rejects multi-word accents (regex won't match phrases)", () => {
+    const r = extractAccentMarkup("Tell me about *a time* you led.");
+    expect(r.accentSplit).toBeUndefined();
+  });
+
+  it("strips trailing punctuation from after-segment", () => {
+    const r = extractAccentMarkup("Walk me through a *project* where you led.");
+    expect(r.accentSplit?.after).toBe("where you led");
+  });
+
+  it("strips stray asterisks defensively when no valid marker is found", () => {
+    const r = extractAccentMarkup("Tell me ** about your role.");
+    expect(r.cleaned).toBe("Tell me  about your role.");
+    expect(r.accentSplit).toBeUndefined();
+  });
+
+  it("only takes the FIRST accent if LLM emits multiple", () => {
+    const r = extractAccentMarkup("Tell me about a *time* you *led* a team.");
+    expect(r.accentSplit?.accent).toBe("time");
+    // The second marker still gets stripped via stripStrayAsterisks fallback
+    expect(r.cleaned).not.toContain("*");
+  });
+
+  it("handles empty input", () => {
+    const r = extractAccentMarkup("");
+    expect(r.cleaned).toBe("");
+    expect(r.accentSplit).toBeUndefined();
+  });
+
+  it("rejects accents longer than 24 characters", () => {
+    const r = extractAccentMarkup("Tell me about a *supercalifragilisticexpialidocious* moment.");
+    expect(r.accentSplit).toBeUndefined();
+  });
+});

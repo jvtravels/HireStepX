@@ -20,6 +20,11 @@ export interface InterviewStep {
   waitForUser: boolean;
   scoreNote?: string;
   persona?: string; // For panel interviews: which interviewer is speaking
+  /** Italic-copper accent split for the editorial heading. Populated
+      by the LLM via *asterisk* markup in aiText, parsed client-side
+      and stripped before display. Optional — UI falls back to a
+      heuristic extractor when absent. */
+  accentSplit?: { before: string; accent: string; after: string };
 }
 
 export const scriptsByType: Record<string, InterviewStep[]> = {

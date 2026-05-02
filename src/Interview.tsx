@@ -1031,7 +1031,11 @@ function InterviewInner() {
                 />
               </CanvasPlainHeading>
             ) : (() => {
-              const accent = pickAccent(step.aiText);
+              // Prefer the LLM-marked accentSplit when available — it's
+              // hand-picked at question-generation time. Falls back to
+              // the local heuristic when LLM didn't comply or for
+              // cached/legacy questions without the field.
+              const accent = step.accentSplit ?? pickAccent(step.aiText);
               return accent ? (
                 <CanvasEditorialHeading
                   before={accent.before}

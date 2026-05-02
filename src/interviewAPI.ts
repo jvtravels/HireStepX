@@ -9,6 +9,75 @@ import { checkRateLimit } from "./rateLimit";
 const RESULTS_KEY = "hirestepx_sessions";
 const IDB_STORE = "drafts";
 
+/**
+ * Extract italic-copper accent markup from question text.
+ *
+ * The LLM is prompted to wrap one emphasis word per question in
+ * `*asterisks*` (markdown style). This parses the first such marker,
+ * splits the question into `{before, accent, after}`, and returns the
+ * cleaned text with markup stripped.
+ *
+ * Defensive parsing — if the LLM emits zero, multiple, or malformed
+ * markers, we return the cleaned text without an accentSplit. The UI
+ * then falls back to the heuristic extractor in Interview.tsx so the
+ * heading still renders correctly.
+ *
+ * Patterns rejected:
+ *   - Multi-word accents (`*lead a team*`) → use first word only
+ *   - Accents > 24 chars → likely LLM ran away with markup
+ *   - Markers spanning sentence boundaries
+ *   - Accent word that's a stopword (a, the, is, etc.)
+ */
+const ACCENT_MARKUP_STOPWORDS = new Set([
+  "a", "an", "the", "is", "are", "was", "were", "be", "to", "of", "in",
+  "on", "at", "by", "for", "with", "and", "or", "but", "you", "your",
+  "i", "me", "my", "we", "our",
+]);
+export function extractAccentMarkup(text: string): {
+  cleaned: string;
+  accentSplit?: { before: string; accent: string; after: string };
+} {
+  if (!text) return { cleaned: "" };
+  // Strip a leading bracketed persona tag like "[HR Partner] " before scanning,
+  // but preserve it in cleaned so panel personas still render correctly.
+  const personaMatch = text.match(/^(\[[^\]]+\]\s*)/);
+  const personaPrefix = personaMatch?.[1] ?? "";
+  const body = text.slice(personaPrefix.length);
+
+  // Match the first single-word *asterisk* marker. Allows hyphens/apostrophes.
+  // Word-boundary on both sides prevents mid-word matches like "*pro*duct".
+  const markerRegex = /\*([\p{L}][\p{L}\p{N}'-]{0,23})\*/u;
+  const m = body.match(markerRegex);
+  if (!m || typeof m.index !== "number") {
+    // No markup — strip any stray asterisks defensively and return clean text
+    return { cleaned: stripStrayAsterisks(text) };
+  }
+  const accent = m[1];
+  if (!accent || accent.length < 2 || ACCENT_MARKUP_STOPWORDS.has(accent.toLowerCase())) {
+    // LLM marked a stopword — unhelpful, drop the markup, fall through to heuristic
+    return { cleaned: stripStrayAsterisks(text) };
+  }
+  const beforeBody = body.slice(0, m.index).replace(/\s+$/, "");
+  const afterBody = body
+    .slice(m.index + m[0].length)
+    .replace(/^\s+/, "")
+    .replace(/[.!?]+\s*$/, ""); // strip trailing punctuation for editorial heading
+
+  // Build the cleaned full text (markup stripped) for non-heading uses
+  // (LiveCaptions during speaking, transcripts, etc.). Keep persona prefix.
+  const cleaned = stripStrayAsterisks(personaPrefix + body.replace(markerRegex, accent));
+
+  return {
+    cleaned,
+    accentSplit: { before: personaPrefix + beforeBody, accent, after: afterBody },
+  };
+}
+
+/** Defensive: strip any unmatched asterisks the LLM may have left behind. */
+function stripStrayAsterisks(text: string): string {
+  return text.replace(/\*+/g, "");
+}
+
 /** Retry a function with exponential backoff. Returns null after all retries fail. */
 async function withRetry<T>(
   fn: () => Promise<T>,
@@ -294,18 +363,22 @@ export async function fetchLLMQuestions(params: {
     }
     const questions = data.questions
       .map((q: { type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }) => {
-        const text = q.aiText || q.text || "";
+        const rawText = q.aiText || q.text || "";
+        // Extract LLM-marked italic-copper accent: *word* → accentSplit.
+        // Falls through to plain text if LLM didn't comply.
+        const { cleaned, accentSplit } = extractAccentMarkup(rawText);
         // Compute speakingDuration from word count (~150 WPM for TTS, 1.5s padding)
-        const wordCount = text.split(/\s+/).length;
+        const wordCount = cleaned.split(/\s+/).length;
         const estimatedMs = Math.max(3000, Math.round((wordCount / 150) * 60 * 1000) + 1500);
         return {
           type: (q.type || "question") as InterviewStep["type"],
-          aiText: text,
+          aiText: cleaned,
           thinkingDuration: q.type === "intro" ? 500 : 600,
           speakingDuration: estimatedMs,
           waitForUser: q.type !== "closing",
           scoreNote: q.scoreNote || "",
           ...(q.persona ? { persona: q.persona } : {}),
+          ...(accentSplit ? { accentSplit } : {}),
         };
       })
       .filter((q: InterviewStep) => q.aiText.length >= 10)
