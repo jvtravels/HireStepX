@@ -558,7 +558,6 @@ export interface ProfileReadyStateProps {
   onTargetRoleChange?: (v: string) => void;
   onReanalyze: () => void;
   onRemove: () => void;
-  onReplaceFile: () => void;
   /** Optional CTA wired into the score card. When supplied, the
       gauge renders a primary "Start mock interview" button under
       its stats so the user has a clear next step in the hero row. */
@@ -578,7 +577,6 @@ export function ProfileReadyState({
   onTargetRoleChange,
   onReanalyze,
   onRemove,
-  onReplaceFile,
   onStartInterview,
   onGoToDashboard,
   starting,
@@ -784,15 +782,6 @@ export function ProfileReadyState({
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                 </svg>
                 Re-analyze
-              </button>
-              <span style={{ width: 1, height: 12, background: t.line }} aria-hidden="true" />
-              <button
-                type="button"
-                onClick={onReplaceFile}
-                className="hsx-link-indigo"
-                style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, background: "transparent", border: "none", cursor: "pointer", textDecoration: "none", padding: 0 }}
-              >
-                Re-upload
               </button>
               <span style={{ width: 1, height: 12, background: t.line }} aria-hidden="true" />
               <button

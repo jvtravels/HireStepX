@@ -762,7 +762,6 @@ export default function Onboarding() {
               fileInputRef={fileInputRef} onUserNameChange={setUserName}
               onTargetRoleChange={setTargetRole}
               onReanalyze={handleReanalyze} onRemove={handleRemoveResume}
-              onReplaceFile={() => fileInputRef.current?.click()}
               onStartInterview={handleStartInterview}
               onGoToDashboard={handleGoToDashboard}
               starting={starting}
