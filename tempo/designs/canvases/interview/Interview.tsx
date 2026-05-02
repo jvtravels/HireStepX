@@ -287,7 +287,7 @@ export default function Interview({
           }}
         >
           {/* Question heading */}
-          <div style={{ maxWidth: 620, width: "100%" }}>
+          <div style={{ maxWidth: 960, width: "100%" }}>
             <EditorialHeading
               before={question.before}
               accent={question.accent}
