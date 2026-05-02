@@ -3,17 +3,19 @@ import { useEffect, useRef, useState } from "react";
 import { e, ef } from "./interviewTokens";
 import {
   StatusToasts, PanelAvatarStage,
-  UserAnswerArea, CompletionCard, MicroFeedbackPanel,
+  CompletionCard, MicroFeedbackPanel,
   TranscriptPanel, EndModal, EvaluatingOverlay,
   DealSummaryCard, AnnotatedReplayPanel, NegotiationLiveDashboard,
   SaveToast, RepeatButton, MicQuietBanner, ReconnectingOverlay,
-  InterviewCoachmarks,
+  PaceMeter, InterviewCoachmarks,
 } from "./InterviewPanels";
 import {
   CanvasWordmark, CanvasContextChip, CanvasProgressDots, CanvasStatusPill,
   CanvasMuteToggle, CanvasCameraToggle, CanvasAvatar,
   CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
+  CanvasEditorialHeading,
   CanvasQuestionText, CanvasHintBubble, CanvasTextLink,
+  CanvasSkipLink,
   CanvasMetaRow, CanvasEndButton, CanvasSelfViewTile,
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
@@ -104,25 +106,88 @@ function useMobileAudioResilience() {
   }, []);
 }
 
-/* Map engine phase → canvas visualizer state */
-function vizState(phase: string): CanvasVizState {
+/* Map engine phase → canvas visualizer state.
+   Listening only flips to user-speaking once the user actually starts
+   talking (currentTranscript has content). Empty listening = idle =
+   gray dots, matching the canvas "your-turn" baseline. */
+function vizState(phase: string, hasTranscript: boolean): CanvasVizState {
   if (phase === "speaking") return "ai-speaking";
   if (phase === "thinking") return "ai-thinking";
-  if (phase === "listening") return "user-speaking";
+  if (phase === "listening") return hasTranscript ? "user-speaking" : "idle";
   return "idle";
 }
 
-/* Map engine phase → canvas persona-label state */
-function personaState(phase: string): CanvasPersonaState {
+/* Map engine phase → canvas persona-label state. Same gating as
+   vizState — "your-turn" before the user speaks, "you-speaking" after. */
+function personaState(phase: string, hasTranscript: boolean): CanvasPersonaState {
   if (phase === "speaking") return "speaking";
   if (phase === "thinking") return "thinking";
-  if (phase === "listening") return "listening";
+  if (phase === "listening") return hasTranscript ? "you-speaking" : "your-turn";
   return "your-turn";
 }
 
 /* Map engine offline → canvas connection-status pill */
 function mapConnectionStatus(isOffline: boolean): CanvasConnectionStatus {
   return isOffline ? "offline" : "good";
+}
+
+/* ── Italic-copper accent extraction ──────────────────────────────
+   The canvas heading is "<plain> <italic-copper> <plain>." with one
+   accent word picked from the question. Without LLM cooperation we
+   pick a heuristic: the first noun/verb-shaped non-stopword that's
+   ≥4 chars, preferring known editorial words. Falls back to the
+   plain heading if no good candidate is found. */
+const ACCENT_PRIORITY = new Set([
+  "time", "decision", "challenge", "conflict", "mistake", "failure", "success",
+  "leader", "leadership", "led", "convince", "persuade", "negotiate", "rate-limiter",
+  "design", "build", "ship", "deliver", "fix", "solve", "improve", "scale",
+  "regret", "proud", "learned", "taught", "changed", "impact",
+  "why", "how", "when", "what", "where",
+  "easy", "hard", "tough", "specific", "team", "project", "story", "example",
+  "ready", "workable", "size", "reason",
+]);
+const STOPWORDS = new Set([
+  "a","an","the","of","to","in","on","at","by","for","with","from","is","are",
+  "was","were","be","been","being","have","has","had","do","does","did","and",
+  "or","but","not","that","this","it","its","i","you","we","they","he","she",
+  "tell","me","about","walk","through","describe","share","talk","discuss",
+  "your","yours","mine","my","our","ours","their","theirs","his","her","hers",
+  "can","could","would","should","will","may","might","just","only","also",
+]);
+function pickAccent(text: string): { before: string; accent: string; after: string } | null {
+  if (!text) return null;
+  // Strip a leading bracketed persona tag like "[HR Partner] " before scanning
+  const cleaned = text.replace(/^\[[^\]]+\]\s*/, "");
+  // Tokenize with positions so we can rebuild with exact spacing
+  const tokenRegex = /[\p{L}\p{N}][\p{L}\p{N}'-]*/gu;
+  const tokens: { word: string; start: number; end: number }[] = [];
+  for (const match of cleaned.matchAll(tokenRegex)) {
+    if (typeof match.index !== "number") continue;
+    tokens.push({ word: match[0], start: match.index, end: match.index + match[0].length });
+  }
+  if (tokens.length < 3) return null;
+  // First pass: prefer words from ACCENT_PRIORITY
+  let chosen = tokens.find(t => ACCENT_PRIORITY.has(t.word.toLowerCase()));
+  // Second pass: longest non-stopword ≥ 4 chars, skipping the first token
+  if (!chosen) {
+    const candidates = tokens.slice(1).filter(t => t.word.length >= 4 && !STOPWORDS.has(t.word.toLowerCase()));
+    if (candidates.length === 0) return null;
+    chosen = candidates.reduce((a, b) => (b.word.length > a.word.length ? b : a));
+  }
+  if (!chosen) return null;
+  const before = cleaned.slice(0, chosen.start).replace(/\s+$/, "");
+  const after = cleaned.slice(chosen.end).replace(/^\s+/, "").replace(/[.!?]+\s*$/, "");
+  // Don't bother if accent is the only word or both before/after are empty
+  if (!before && !after) return null;
+  return { before, accent: chosen.word, after };
+}
+
+/* Count actual back-and-forth exchanges (AI question + user answer pairs)
+   from the engine's transcript array — not the question number. */
+function countExchanges(transcript: Array<{ speaker: string }>): number {
+  if (!transcript || transcript.length === 0) return 0;
+  // An "exchange" = one user reply. Count user messages.
+  return transcript.filter(m => m.speaker === "user").length;
 }
 
 /* LiveCaptions wrapped to render inside the editorial heading slot.
@@ -147,6 +212,177 @@ function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEn
   );
 }
 
+/* CanvasListeningActionZone — production action zone matching the canvas:
+   live transcript card → KeycapButton CTA → "or type / Skip" links →
+   HintBubble. Replaces the old green-tinted UserAnswerArea card.
+
+   Press-Space-when-done UX: engine still auto-listens via STT, so the
+   keycap is a "send" affordance rather than true push-to-talk. Pressing
+   Space (when not focused on the textarea) calls handleNextQuestion. */
+function CanvasListeningActionZone({
+  currentTranscript, setCurrentTranscript,
+  speechUnavailable, setSpeechUnavailable,
+  handleNextQuestion, textareaRef, nextBtnRef,
+  isMuted, micQuiet, isCurrentFollowUp,
+  replayQuestion, aiVoiceEnabled, hasQuestion,
+}: {
+  currentTranscript: string;
+  setCurrentTranscript: (v: string) => void;
+  speechUnavailable: boolean;
+  setSpeechUnavailable: (v: boolean) => void;
+  handleNextQuestion: () => void;
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  nextBtnRef: React.RefObject<HTMLButtonElement | null>;
+  isMuted: boolean;
+  micQuiet: boolean;
+  isCurrentFollowUp?: boolean;
+  replayQuestion: () => void;
+  aiVoiceEnabled: boolean;
+  hasQuestion: boolean;
+}) {
+  const [typing, setTyping] = useState(speechUnavailable);
+  // Per-answer timer for the PaceMeter — local, resets when remounts
+  const [answerSeconds, setAnswerSeconds] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => setAnswerSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  // Press Space (outside textarea) to send the answer — matches the
+  // canvas KeycapButton affordance even though STT is auto-listening.
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.code !== "Space") return;
+      const target = ev.target as HTMLElement | null;
+      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || (target as HTMLElement).isContentEditable)) return;
+      if (!currentTranscript.trim()) return;
+      ev.preventDefault();
+      handleNextQuestion();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [currentTranscript, handleNextQuestion]);
+  const canSend = currentTranscript.trim().length > 0;
+  const showTyping = typing || speechUnavailable;
+  return (
+    <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+      {/* Live transcript card — only if we have something */}
+      {currentTranscript && !showTyping && (
+        <div role="log" aria-live="polite" aria-label="Live transcript of your answer" style={{
+          width: "100%", background: e.white, border: `1px solid ${e.line}`,
+          borderRadius: 14, padding: "14px 16px",
+          fontFamily: ef.serif, fontSize: 15, lineHeight: 1.55, color: e.coal,
+          minHeight: 72, maxHeight: 160, overflowY: "auto", textAlign: "left",
+          boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+        }}>
+          <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.copper, display: "block", marginBottom: 6 }}>
+            Live transcript
+          </span>
+          <span>{currentTranscript}</span>
+        </div>
+      )}
+
+      {/* Type-mode textarea fallback */}
+      {showTyping && (
+        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+          <textarea
+            ref={textareaRef}
+            value={currentTranscript}
+            onChange={(ev) => setCurrentTranscript(ev.target.value)}
+            placeholder="Type your answer…"
+            maxLength={3000}
+            style={{
+              width: "100%", minHeight: 120, padding: "14px 16px",
+              fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
+              background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
+              resize: "vertical", outline: "none",
+              boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
+            }}
+          />
+          {!speechUnavailable && (
+            <CanvasTextLink onClick={() => { setTyping(false); }}>
+              switch back to voice
+            </CanvasTextLink>
+          )}
+        </div>
+      )}
+
+      {/* Pace meter — only when actually answering */}
+      {currentTranscript.trim().length > 0 && (
+        <div style={{ width: "100%", maxWidth: 280 }}>
+          <PaceMeter seconds={answerSeconds} />
+        </div>
+      )}
+
+      {/* Mic-quiet banner */}
+      {micQuiet && !speechUnavailable && !isMuted && !showTyping && (
+        <MicQuietBanner onSwitchToText={() => { setTyping(true); setSpeechUnavailable(true); textareaRef.current?.focus(); }} />
+      )}
+
+      {/* Primary CTA — keycap button matching the canvas */}
+      <button
+        ref={nextBtnRef}
+        type="button"
+        onClick={handleNextQuestion}
+        disabled={!canSend}
+        aria-label="Send answer (or press Space)"
+        className="hsx-iv-keycap"
+        data-state={canSend ? "ready" : "disabled"}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 12,
+          fontFamily: ef.sans, fontSize: 13, fontWeight: 500,
+          color: canSend ? e.cream : e.coal,
+          background: canSend ? e.indigo : e.white,
+          border: `1px solid ${canSend ? e.indigo : e.line}`,
+          borderRadius: 999, padding: "10px 18px 10px 12px",
+          cursor: canSend ? "pointer" : "not-allowed",
+          opacity: canSend ? 1 : 0.7,
+          transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+          boxShadow: canSend
+            ? "0 6px 20px -6px rgba(49,46,129,0.40)"
+            : "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
+        }}
+      >
+        <kbd aria-hidden style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          minWidth: 56, height: 24, padding: "0 8px",
+          background: canSend ? "rgba(250,247,240,0.20)" : e.creamSoft,
+          border: `1px solid ${canSend ? "rgba(250,247,240,0.30)" : e.line}`,
+          borderRadius: 6, fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
+          color: canSend ? e.cream : e.inkSoft, letterSpacing: 0.6,
+        }}>
+          Space
+        </kbd>
+        <span>{canSend ? "Press Space when done" : "Start speaking…"}</span>
+      </button>
+
+      {/* Secondary action row — type / repeat / skip */}
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: "center" }}>
+        {!showTyping && (
+          <>
+            <CanvasTextLink onClick={() => { setTyping(true); textareaRef.current?.focus(); }}>
+              or type your answer instead
+            </CanvasTextLink>
+            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          </>
+        )}
+        {hasQuestion && aiVoiceEnabled && (
+          <>
+            <RepeatButton onClick={replayQuestion} />
+            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          </>
+        )}
+        <CanvasSkipLink onClick={handleNextQuestion} />
+      </div>
+
+      {/* Hint */}
+      {isCurrentFollowUp && (
+        <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
+      )}
+    </div>
+  );
+}
+
 function InterviewInner() {
   useEffect(() => { addInterviewPreconnects(); }, []);
   useMobileAudioResilience();
@@ -164,19 +400,19 @@ function InterviewInner() {
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
-    interviewScript, saveWarning, liveMetrics,
+    saveWarning,
     isSalaryNegotiation, negotiationBand, negotiationStyle,
     targetSalary, highestOffer, liveNegotiationState, voiceConfidence,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
     setShowTranscript, setShowEndModal,
-    setMicError, setEvalTimedOut, setUsedFallbackScore, setEvaluating,
+    setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
     handleNextQuestion, skipSpeaking, handleEnd, navigate, replayQuestion,
     micQuiet, reconnecting, reconnectAttempt,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
-    micStreamRef, noSpeechCountRef, ttsCancelRef, interviewEndedRef,
+    ttsCancelRef, interviewEndedRef,
   } = engine;
 
 
@@ -283,7 +519,11 @@ function InterviewInner() {
         <div className="iv-canvas-topbar-left" style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
           <CanvasWordmark />
           <span aria-hidden style={{ width: 1, height: 18, background: e.line, display: "inline-block" }} />
-          <CanvasContextChip role={displayRole} company={displayCompany} focus={displayFocus} />
+          <CanvasContextChip
+            role={displayRole || "Interview practice"}
+            company={displayCompany || ""}
+            focus={displayFocus || (isSalaryNegotiation ? "Negotiation" : isPanelInterview ? "Panel" : "General")}
+          />
         </div>
         <div className="iv-canvas-mobile-hide">
           <CanvasProgressDots
@@ -311,10 +551,11 @@ function InterviewInner() {
         gap: 22, padding: "32px 48px",
         position: "relative", overflow: "auto",
       }}>
-        {/* Question heading — italic-copper accent extraction comes via
-            LLM markup in a follow-up; for now the full question renders
-            in serif. The LiveCaptions wrapper preserves the existing
-            TTS-synced typewriter cadence during phase=speaking. */}
+        {/* Question heading — heuristic-driven italic-copper accent.
+            During phase=speaking we render plain serif because the
+            LiveCaptions typewriter would fight with the inline accent
+            mid-stream. Once speech ends and we're listening, the accent
+            renders. */}
         {step?.aiText && phase !== "done" && (
           <div style={{ maxWidth: 620, width: "100%" }}>
             {phase === "speaking" ? (
@@ -326,9 +567,18 @@ function InterviewInner() {
                   speechEnded={speechEnded}
                 />
               </CanvasPlainHeading>
-            ) : (
-              <CanvasPlainHeading>{step.aiText}</CanvasPlainHeading>
-            )}
+            ) : (() => {
+              const accent = pickAccent(step.aiText);
+              return accent ? (
+                <CanvasEditorialHeading
+                  before={accent.before}
+                  accent={accent.accent}
+                  after={accent.after}
+                />
+              ) : (
+                <CanvasPlainHeading>{step.aiText}</CanvasPlainHeading>
+              );
+            })()}
             {step?.scoreNote && phase !== "thinking" && (
               <div style={{ marginTop: 12 }}>
                 <CanvasQuestionText>{step.scoreNote}</CanvasQuestionText>
@@ -345,14 +595,14 @@ function InterviewInner() {
             width: 220, height: 220, borderRadius: 999,
             background: "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.4) 70%, transparent 100%)",
           }}>
-            <span className={`hsx-viz-halo hsx-viz-halo--${vizState(phase)}`} />
+            <span className={`hsx-viz-halo hsx-viz-halo--${vizState(phase, currentTranscript.trim().length > 0)}`} />
             {phase === "listening" && (
               <>
                 <span className="hsx-iv-ring" />
                 <span className="hsx-iv-ring hsx-iv-ring--delay" />
               </>
             )}
-            <CanvasVoiceVisualizer state={vizState(phase)} size={150} />
+            <CanvasVoiceVisualizer state={vizState(phase, currentTranscript.trim().length > 0)} size={150} />
           </div>
         )}
 
@@ -361,7 +611,7 @@ function InterviewInner() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minHeight: 52 }}>
             <CanvasPersonaLabel
               name={isPanelInterview && activePersona ? activePersona : interviewerName}
-              state={personaState(phase)}
+              state={personaState(phase, currentTranscript.trim().length > 0)}
             />
           </div>
         )}
@@ -378,31 +628,28 @@ function InterviewInner() {
           />
         )}
 
-        {/* Action zone — listening = answer panel + repeat/transcript links */}
+        {/* Action zone — listening: canvas composition.
+            Renders the live STT transcript card, type-mode textarea
+            fallback, KeycapButton CTA (Press Space when done), and
+            "or type" / Skip links. Engine wiring preserved via
+            currentTranscript / setCurrentTranscript / textareaRef /
+            handleNextQuestion / setSpeechUnavailable. */}
         {phase === "listening" && (
-          <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <UserAnswerArea
-              currentTranscript={currentTranscript} setCurrentTranscript={setCurrentTranscript}
-              speechUnavailable={speechUnavailable} setSpeechUnavailable={setSpeechUnavailable}
-              isMuted={isMuted} micStreamRef={micStreamRef} noSpeechCountRef={noSpeechCountRef}
-              setMicError={setMicError} handleNextQuestion={handleNextQuestion}
-              textareaRef={textareaRef} nextBtnRef={nextBtnRef}
-              currentStep={currentStep} interviewScriptLength={interviewScript.length}
-              liveMetrics={liveMetrics}
-            />
-            {micQuiet && !speechUnavailable && !isMuted && (
-              <MicQuietBanner onSwitchToText={() => textareaRef.current?.focus()} />
-            )}
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-              {step?.aiText && aiVoiceEnabled && <RepeatButton onClick={replayQuestion} />}
-              <CanvasTextLink onClick={() => setShowTranscript(t => !t)}>
-                {showTranscript ? "hide transcript" : "show transcript"}
-              </CanvasTextLink>
-            </div>
-            {isCurrentFollowUp && (
-              <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
-            )}
-          </div>
+          <CanvasListeningActionZone
+            currentTranscript={currentTranscript}
+            setCurrentTranscript={setCurrentTranscript}
+            speechUnavailable={speechUnavailable}
+            setSpeechUnavailable={setSpeechUnavailable}
+            handleNextQuestion={handleNextQuestion}
+            textareaRef={textareaRef}
+            nextBtnRef={nextBtnRef}
+            isMuted={isMuted}
+            micQuiet={micQuiet}
+            isCurrentFollowUp={isCurrentFollowUp}
+            replayQuestion={replayQuestion}
+            aiVoiceEnabled={aiVoiceEnabled}
+            hasQuestion={!!step?.aiText}
+          />
         )}
 
         {phase === "speaking" && (
@@ -491,7 +738,7 @@ function InterviewInner() {
       }}>
         <CanvasMetaRow
           elapsedSec={elapsed}
-          exchanges={Math.max(0, Math.min(currentQuestionNum, baseQuestionCount || totalQuestions))}
+          exchanges={countExchanges(transcript)}
         />
         <span className="iv-canvas-mobile-hide" style={{
           fontFamily: ef.sans, fontSize: 11, color: e.inkFaint, letterSpacing: 0.1,
