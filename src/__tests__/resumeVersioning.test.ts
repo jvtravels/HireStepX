@@ -211,6 +211,19 @@ describe("findCachedResumeVersion", () => {
     expect(url).toContain("ab%2Fc");
     expect(url).toContain("user%20with%20space");
   });
+
+  it("orders by created_at ASC — first-writer-wins semantics", async () => {
+    // Score determinism relies on always returning the EARLIEST row
+    // for a given (user, text_hash) pair, not the latest. If a user
+    // somehow has multiple rows for the same hash (legacy noise from
+    // before t=0 + structured subscores), picking the earliest gives
+    // them a stable score that doesn't flap. Pin the SQL contract.
+    const fetchMock = vi.fn().mockResolvedValue(ok([]));
+    await findCachedResumeVersion(SUPABASE_URL, SERVICE_KEY, "user-1", "abc", fetchMock as unknown as typeof fetch);
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("order=created_at.asc");
+    expect(url).not.toContain("order=created_at.desc");
+  });
 });
 
 describe("persistResumeVersion", () => {

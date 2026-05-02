@@ -106,9 +106,19 @@ export async function findCachedResumeVersion(
   if (!supabaseUrl || !serviceKey || !userId || !textHash) return null;
   try {
     // Find versions whose parent resume belongs to this user, with the
-    // matching text_hash, newest first. PostgREST inner-join via
-    // resumes!inner so we filter on user_id without leaking other users.
-    const url = `${supabaseUrl}/rest/v1/resume_versions?text_hash=eq.${encodeURIComponent(textHash)}&select=id,resume_id,version_number,text_hash,parsed_data,parse_source,is_latest,created_at,resumes!inner(user_id)&resumes.user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc&limit=1`;
+    // matching text_hash, OLDEST first (first-writer-wins). PostgREST
+    // inner-join via resumes!inner so we filter on user_id without
+    // leaking other users.
+    //
+    // Why oldest, not newest: in the rare case multiple rows exist for
+    // the same hash (e.g. legacy rows written before scoring became
+    // deterministic at temperature: 0), the earliest row is the
+    // canonical analysis. Picking it consistently means a user's
+    // displayed score never flaps even if there's stale duplication
+    // in the DB. With t=0 + structured subscores, all rows for the
+    // same hash should now be identical anyway — this is just
+    // defensive against historical noise.
+    const url = `${supabaseUrl}/rest/v1/resume_versions?text_hash=eq.${encodeURIComponent(textHash)}&select=id,resume_id,version_number,text_hash,parsed_data,parse_source,is_latest,created_at,resumes!inner(user_id)&resumes.user_id=eq.${encodeURIComponent(userId)}&order=created_at.asc&limit=1`;
     const res = await fetchImpl(url, {
       headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
     });

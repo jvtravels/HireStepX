@@ -239,6 +239,30 @@ CRITICAL RULES:
     const totalMs = Date.now() - t0;
     console.log(`[analyze-resume] OK: llm=${tLLM}ms total=${totalMs}ms model=${result.model} user=${auth.userId?.slice(0, 8)}`);
     headers["X-Timing"] = `llm=${tLLM},total=${totalMs},model=${result.model}`;
+
+    // Second cache check (post-LLM, pre-persist). Handles the narrow
+    // race where two browsers / tabs upload the same resume nearly
+    // simultaneously: both miss the first cache check, both run the
+    // LLM, but only one row should land in the DB. Whichever request
+    // finished its LLM call first will have already persisted; we
+    // defer to that row instead of writing a duplicate (which would
+    // multiply LLM cost AND open the door to score flapping if the
+    // sibling's run produced different output despite t=0).
+    if (auth.userId && SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+      const sibling = await findCachedResumeVersion(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, textHash);
+      if (sibling?.parsed_data) {
+        console.log(`[analyze-resume] CACHE RACE — sibling won user=${auth.userId.slice(0, 8)} version=${sibling.id.slice(0, 8)}`);
+        headers["X-Cache"] = "race-sibling";
+        headers["X-Resume-Version-Id"] = sibling.id;
+        const normalizedSibling = normalizeResumeProfile(sibling.parsed_data as Record<string, unknown>);
+        return new Response(JSON.stringify({
+          profile: normalizedSibling,
+          resumeVersionId: sibling.id,
+          cached: true,
+        }), { status: 200, headers });
+      }
+    }
+
     headers["X-Cache"] = "miss";
 
     // Shadow-write the new version row. Best-effort — if the persistence
