@@ -70,6 +70,11 @@ export default function Signup() {
   // Cloudflare Turnstile token — empty when widget hasn't issued one yet
   // (or when NEXT_PUBLIC_TURNSTILE_SITE_KEY isn't configured in dev).
   const [turnstileToken, setTurnstileToken] = useState("");
+  // Tracks whether the Turnstile widget itself errored out (script
+  // blocked by an extension, iframe failed to mount, network timeout
+  // to challenges.cloudflare.com, etc.). When true, we show clear
+  // user-facing guidance instead of a generic "Bot check failed".
+  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
   const isMounted = useIsMounted();
   // Suggest typo correction (e.g. "rahul@gmial.com" → "rahul@gmail.com").
   // Only computed when the user has touched the field and value is non-empty.
@@ -254,6 +259,16 @@ export default function Signup() {
       // Cloudflare Turnstile — verify the bot-check token before
       // touching Supabase. Fails open if NEXT_PUBLIC_TURNSTILE_SITE_KEY
       // isn't configured (the widget grants empty token in that case).
+      // If we already know the widget itself couldn't load, skip the
+      // server hit and surface the actionable guidance immediately.
+      if (turnstileBlocked || (!turnstileToken && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)) {
+        if (!isMounted.current) return;
+        setError(
+          "Bot check couldn't load. Disable ad-blockers or privacy extensions for this page, or try an incognito window.",
+        );
+        setLoading(false);
+        return;
+      }
       try {
         const tsRes = await fetch("/api/send-welcome", {
           method: "POST",
@@ -266,7 +281,20 @@ export default function Signup() {
         });
         if (!tsRes.ok) {
           if (!isMounted.current) return;
-          setError("Bot check failed. Please retry.");
+          // Use debugReason from the server (only present on staging/preview)
+          // to show a more specific message when available.
+          let detail = "";
+          try {
+            const data = (await tsRes.json()) as { debugReason?: string };
+            if (data.debugReason === "missing-token") {
+              detail = " Bot check widget didn't load — try disabling extensions.";
+            } else if (data.debugReason === "invalid-input-response") {
+              detail = " Bot check token rejected — please retry.";
+            } else if (data.debugReason === "timeout-or-duplicate") {
+              detail = " Bot check expired — please retry.";
+            }
+          } catch { /* response wasn't JSON, use default */ }
+          setError(`Bot check failed.${detail || " Please retry."}`);
           setLoading(false);
           return;
         }
@@ -929,11 +957,47 @@ export default function Signup() {
                   no DOM at all when NEXT_PUBLIC_TURNSTILE_SITE_KEY
                   is missing (dev / preview). */}
               <TurnstileWidget
-                onToken={(tok) => setTurnstileToken(tok)}
-                onError={() => setTurnstileToken("")}
+                onToken={(tok) => {
+                  setTurnstileToken(tok);
+                  // A real token cleared the blocked state — extension
+                  // got disabled / page reloaded clean.
+                  if (tok) setTurnstileBlocked(false);
+                }}
+                onError={() => {
+                  setTurnstileToken("");
+                  setTurnstileBlocked(true);
+                }}
                 onExpired={() => setTurnstileToken("")}
                 size="invisible"
               />
+
+              {/* Clear, actionable message when Turnstile can't load.
+                  This is almost always a browser extension wrapping
+                  fetch (uBlock, Brave Shields, Privacy Badger, etc.)
+                  or blocking challenges.cloudflare.com. */}
+              {turnstileBlocked && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  style={{
+                    background: "#FEF7E5",
+                    border: "1px solid #E0B85B",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    fontSize: 13,
+                    color: "#7A5A0F",
+                    lineHeight: 1.5,
+                    marginTop: 8,
+                  }}
+                >
+                  <strong style={{ display: "block", marginBottom: 4, fontWeight: 600 }}>
+                    Bot check couldn't load
+                  </strong>
+                  Disable ad-blockers / privacy extensions for this page,
+                  or try an incognito window. Once it loads we&apos;ll let
+                  you continue.
+                </div>
+              )}
 
               {(() => {
                 // Three states: enabled CTA, in-flight (loading), or
