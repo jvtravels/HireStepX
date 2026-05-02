@@ -9,6 +9,7 @@ import { ScoreTrendChart, SkillRadar } from "./DashboardCharts";
 import { useDashboardSessions, useDashboardCore, useDashboardUI, useDashboardSubscription } from "./DashboardContext";
 import { DataLoadingSkeleton, ProGate } from "./dashboardComponents";
 import type { ResumeProfile } from "./dashboardData";
+import { isAiResume } from "./resumeParser";
 
 /* ─── Humanize camelCase skill names ─── */
 function humanize(s: string) {
@@ -51,7 +52,14 @@ export default function AnalyticsPage() {
   useDocTitle("Analytics");
   const router = useRouter();
   const { user } = useAuth();
-  const resumeProfile = user?.resumeData as unknown as ResumeProfile | undefined;
+  // Use the discriminated-union guard so we only surface the AI-shape
+  // analysis. Fallback parses lack the rich rubric fields this page
+  // renders; treating them as ResumeProfile via a blind cast crashed
+  // the chart components when an older user account had a fallback
+  // resumeData row.
+  const resumeProfile: ResumeProfile | undefined = isAiResume(user?.resumeData)
+    ? user.resumeData
+    : undefined;
   const {
     recentSessions: allSessions, skills: sk, scoreTrend: trend,
     readinessScore, currentStreak, overallStats,

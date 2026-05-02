@@ -316,7 +316,7 @@ function profileToUser(profile: Profile, session: Session): User {
     sessionCredits: typeof profile.session_credits === "number" ? profile.session_credits : 0,
     lastStreakRewardDay: typeof profile.last_streak_reward_day === "number" ? profile.last_streak_reward_day : 0,
     emailVerified: session.user.user_metadata?.custom_email_verified === true || !!session.user.email_confirmed_at,
-    deletedAt: (profile as unknown as Record<string, unknown>).deleted_at as string | null | undefined,
+    deletedAt: profile.deleted_at,
   };
 }
 
@@ -782,8 +782,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : NaN;
       const looksOlderThanFreshSignup =
         Number.isFinite(createdAtMs) && Date.now() - createdAtMs > 5_000;
+
+      // Confirm-email startup probe (#33 from the audit).
+      //
+      // If Supabase's "Confirm email" project setting is OFF, every
+      // new signup comes back with email_confirmed_at IMMEDIATELY
+      // set — bypassing our verification flow entirely. Without this
+      // detection we'd misclassify the new user as "existing" (they
+      // hit the email_confirmed_at branch below) and silently route
+      // them through the "you already have an account" mail.
+      //
+      // The reliable distinguisher: created_at is fresh (<5s) AND
+      // identities is populated AND email_confirmed_at is set. That
+      // can only happen if Supabase auto-confirmed.
+      //
+      // When detected:
+      //   • Log CRITICAL so monitoring catches the misconfig
+      //   • Treat the user as a successfully-signed-up new user (the
+      //     verification email is moot — they're already confirmed)
+      //   • Do NOT route through the existing-account email path
+      const isFreshSignup =
+        Number.isFinite(createdAtMs) && Date.now() - createdAtMs <= 5_000;
+      const looksAutoConfirmed =
+        isFreshSignup &&
+        !!userObj?.email_confirmed_at &&
+        !!userObj?.identities &&
+        userObj.identities.length > 0;
+      if (looksAutoConfirmed) {
+        // eslint-disable-next-line no-console
+        console.error(
+          "[CRITICAL] Supabase auto-confirm appears enabled — new signup " +
+          "arrived with email_confirmed_at already set. Verification flow " +
+          "is bypassed. Toggle 'Confirm email' ON in Supabase Auth settings.",
+        );
+        track("supabase_autoconfirm_detected");
+      }
+
       const isExistingEmail =
         !!userObj &&
+        !looksAutoConfirmed &&
         (!userObj.identities ||
           userObj.identities.length === 0 ||
           !!userObj.email_confirmed_at ||

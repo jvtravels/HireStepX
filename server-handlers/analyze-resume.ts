@@ -11,6 +11,7 @@ import {
   persistResumeVersion,
 } from "./_resume-versioning";
 import { computeScoreBreakdown } from "./_resume-score";
+import { redactProfilePii } from "./_pii-redact";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -148,6 +149,11 @@ export default async function handler(req: Request): Promise<Response> {
         // a clean shape for the client. This is a one-time fix-up — the
         // bad shape stays in the DB but never reaches React.
         const normalizedCached = normalizeResumeProfile(cached.parsed_data as Record<string, unknown>);
+        // Redact PII on read too — pre-existing cache rows persisted
+        // before the redaction pass at write time may still contain
+        // PII the LLM echoed back. Idempotent: a clean profile is a
+        // no-op through the redactor.
+        redactProfilePii(normalizedCached);
         return new Response(JSON.stringify({
           profile: normalizedCached,
           resumeVersionId: cached.id,
@@ -226,6 +232,14 @@ CRITICAL RULES:
     // shape regardless of LLM whims.
     const profile = normalizeResumeProfile(rawProfile);
 
+    // Strip PII the LLM might have echoed into narrative fields. The
+    // resume parser strips PII before we ever send the text upstream,
+    // but defense-in-depth at the response boundary protects against
+    // both parser misses AND the model hallucinating fragments. The
+    // redacted profile is what gets cached + returned, so a future
+    // cache-hit also serves a clean payload.
+    redactProfilePii(profile);
+
     // Compute resumeScore from the rubric subscores server-side.
     //
     // Why: previously the LLM was asked to internally sum a 6-criterion
@@ -278,6 +292,7 @@ CRITICAL RULES:
         headers["X-Cache"] = "race-sibling";
         headers["X-Resume-Version-Id"] = sibling.id;
         const normalizedSibling = normalizeResumeProfile(sibling.parsed_data as Record<string, unknown>);
+        redactProfilePii(normalizedSibling);
         return new Response(JSON.stringify({
           profile: normalizedSibling,
           resumeVersionId: sibling.id,

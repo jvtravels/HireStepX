@@ -132,6 +132,9 @@ export interface Profile {
   referred_by: string | null;
   session_credits: number | null;
   last_streak_reward_day: number | null;
+  /** Soft-delete timestamp. Set when the user requests account
+      deletion; profile rows linger for the 30-day grace period. */
+  deleted_at: string | null;
   created_at: string;
 }
 
