@@ -3,6 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { validateToken as validateTokenPure } from "./_email-verify-helpers";
+import { consumeToken } from "./_used-tokens";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -66,6 +67,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("Supabase not configured for email verification");
     return res.redirect(302, `${APP_URL}/login?error=config`);
   }
+
+  // One-shot consumption check — reject replayed tokens BEFORE we
+  // touch the user record. This is the only defense against forged
+  // tokens if EMAIL_VERIFICATION_SECRET ever leaks (HMAC validates,
+  // but every forged token that survives this insert gets used at
+  // most once). See _used-tokens.ts for full rationale.
+  const consumption = await consumeToken(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+    token,
+    email,
+  );
+  if (consumption.ok && consumption.status === "already-used") {
+    // Token is well-formed + unexpired but already consumed. Don't
+    // distinguish "you clicked twice" from "someone replayed your
+    // link" in the user-facing copy — the action to take is the
+    // same (sign in, request a new link if needed). The legitimate
+    // double-click case ends up here on the second click, which is
+    // benign and produces a clean message.
+    console.warn(`[verify-email] replay attempt for already-used token (email=${email})`);
+    return res.redirect(302, `${APP_URL}/login?verified=already`);
+  }
+  if (!consumption.ok) {
+    // Infra fault — fail CLOSED. Refusing to verify on a 5xx is
+    // safer than allowing replay because the ledger is unreachable.
+    // Most common cause: the schema migration hasn't run yet.
+    console.error(
+      `[verify-email] used-token ledger unreachable: ${consumption.status}` +
+        ("message" in consumption ? ` — ${consumption.message}` : ""),
+    );
+    return res.redirect(302, `${APP_URL}/login?error=verification-failed`);
+  }
+  // consumption.status === "consumed" → first-time use, proceed.
 
   try {
     // Find user by email using Supabase Admin API generate_link (most reliable method)

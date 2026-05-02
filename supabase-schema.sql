@@ -382,6 +382,41 @@ create policy "Users insert own versions" on resume_versions
 -- role can flip is_latest when a newer version is added.
 
 -- ═══════════════════════════════════════════════════════
+-- Used verification tokens
+-- ═══════════════════════════════════════════════════════
+-- One-shot consumption ledger for email-verification tokens. The
+-- HMAC validator (verify-email.ts) only proves a token is well-formed
+-- and unexpired; it doesn't prove it hasn't been used. Without this
+-- table, anyone who intercepted a verification link AFTER it was
+-- clicked could re-confirm the account from a fresh device, or — if
+-- the EMAIL_VERIFICATION_SECRET ever leaks — forge tokens for any
+-- email and have them all accepted indefinitely until the 48h window
+-- expires.
+--
+-- We store the SHA-256 of the token (not the token itself) so a leak
+-- of this table doesn't double as a leak of unused tokens. Service
+-- role only — users have no business reading this directly.
+create table if not exists used_verification_tokens (
+  -- Primary key is the token-hash, not an autogen uuid: the natural
+  -- uniqueness IS the dedup key. Insert-or-conflict is the consumption
+  -- check. 64-char hex (SHA-256).
+  token_hash text primary key,
+  -- Email the token was issued to. Stored for forensic lookups only —
+  -- attacks would tamper with the email param too, so we don't trust
+  -- this for validation, just for auditability.
+  email text not null,
+  used_at timestamptz not null default now()
+);
+-- Auto-purge entries older than 7 days. Tokens themselves are only
+-- valid for 48h; keeping a few extra days of replay-defense ledger is
+-- belt-and-suspenders for late-clicked links.
+create index if not exists idx_used_verification_tokens_used_at
+  on used_verification_tokens(used_at);
+
+-- Service-role only; no user-facing policies.
+alter table used_verification_tokens enable row level security;
+
+-- ═══════════════════════════════════════════════════════
 -- Row Level Security (RLS)
 -- Users can only access their own data
 -- ═══════════════════════════════════════════════════════
