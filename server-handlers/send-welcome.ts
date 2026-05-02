@@ -661,9 +661,23 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
       undefined;
     const result = await verifyTurnstile(turnstileToken, clientIp);
     if (!result.ok) {
-      return res
-        .status(403)
-        .json({ ok: false, error: "Bot check failed. Please retry." });
+      // Log the underlying reason server-side for debugging — common
+      // failure modes: missing-token (client widget didn't load),
+      // invalid-input-response (Cloudflare widget domain restriction),
+      // siteverify-status-* (network), etc.
+      console.warn(
+        `[turnstile] verify failed: reason=${result.reason ?? "unknown"} hasToken=${!!turnstileToken} tokenLen=${turnstileToken.length}`,
+      );
+      return res.status(403).json({
+        ok: false,
+        error: "Bot check failed. Please retry.",
+        // Surface the reason on staging/preview so devs can debug
+        // without digging through server logs. Production keeps it
+        // opaque (don't reveal infrastructure detail to attackers).
+        ...(process.env.VERCEL_ENV !== "production"
+          ? { debugReason: result.reason ?? "unknown" }
+          : {}),
+      });
     }
     return res.status(200).json({ ok: true });
   }
