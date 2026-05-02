@@ -425,12 +425,76 @@ function SkipWithReason({ onConfirm }: { onConfirm: (reason: string) => void }) 
    Press-Space-when-done UX: engine still auto-listens via STT, so the
    keycap is a "send" affordance rather than true push-to-talk. Pressing
    Space (when not focused on the textarea) calls handleNextQuestion. */
+/* Per-interview-type pace sweet spots (seconds spoken).
+   Different rounds reward different answer lengths — generic 60-90s
+   was always wrong for fresher campus (too long) and technical/case
+   (too short). The interview type comes from the URL ?type= param. */
+function paceRangeFor(interviewType?: string | null): { min: number; max: number; ceiling: number } {
+  const t = (interviewType || "").toLowerCase();
+  if (t.includes("technical") || t.includes("system-design") || t.includes("case") || t.includes("strategic")) {
+    return { min: 90, max: 180, ceiling: 240 };
+  }
+  if (t.includes("campus") || t.includes("hr") || t.includes("salary") || t.includes("negotiation")) {
+    return { min: 30, max: 60, ceiling: 120 };
+  }
+  if (t.includes("management") || t.includes("panel")) {
+    return { min: 75, max: 120, ceiling: 180 };
+  }
+  // behavioral default
+  return { min: 60, max: 90, ceiling: 150 };
+}
+
+/* Compact one-line live metrics — restores the WPM/filler/words signal
+   that the canvas refactor dropped from view. Stays subtle (mono caps,
+   stone color) so it doesn't compete with the editorial heading. */
+function CanvasLiveMetricsRow({ metrics }: {
+  metrics: {
+    wordCount: number;
+    wpm: number;
+    fillerCount: number;
+    ownership?: "i-led" | "balanced" | "we-heavy" | null;
+    specificityHits?: number;
+  } | null;
+}) {
+  if (!metrics || metrics.wordCount < 4) return null;
+  const wpmTint = metrics.wpm > 180 ? e.error : metrics.wpm < 100 ? e.warning : e.success;
+  const fillerTint = metrics.fillerCount > 5 ? e.error : metrics.fillerCount > 2 ? e.warning : e.inkSoft;
+  const voiceLabel = metrics.ownership === "we-heavy" ? "we" : metrics.ownership === "i-led" ? "I" : "I/we";
+  const voiceTint = metrics.ownership === "we-heavy" ? e.warning : metrics.ownership === "i-led" ? e.success : e.inkSoft;
+  return (
+    <div role="status" aria-live="polite" aria-label="Live answer metrics" style={{
+      display: "inline-flex", alignItems: "center", gap: 14,
+      fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+      letterSpacing: 1.2, color: e.inkSoft,
+    }}>
+      <span><strong style={{ color: e.coal, fontWeight: 600 }}>{metrics.wordCount}</strong> words</span>
+      <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+      <span><strong style={{ color: wpmTint, fontWeight: 600 }}>{metrics.wpm}</strong> wpm</span>
+      <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+      <span><strong style={{ color: fillerTint, fontWeight: 600 }}>{metrics.fillerCount}</strong> fillers</span>
+      {metrics.ownership && (
+        <>
+          <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          <span><strong style={{ color: voiceTint, fontWeight: 600 }}>{voiceLabel}</strong> voice</span>
+        </>
+      )}
+      {typeof metrics.specificityHits === "number" && metrics.specificityHits > 0 && (
+        <>
+          <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          <span><strong style={{ color: e.success, fontWeight: 600 }}>{metrics.specificityHits}</strong> metrics</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function CanvasListeningActionZone({
   currentTranscript, setCurrentTranscript,
   speechUnavailable, setSpeechUnavailable,
   handleNextQuestion, textareaRef, nextBtnRef,
   isMuted, micQuiet, isCurrentFollowUp,
   replayQuestion, aiVoiceEnabled, hasQuestion,
+  liveMetrics, interviewType,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -445,29 +509,60 @@ function CanvasListeningActionZone({
   replayQuestion: () => void;
   aiVoiceEnabled: boolean;
   hasQuestion: boolean;
+  liveMetrics: {
+    wordCount: number; wpm: number; fillerCount: number;
+    lengthGuidance: string | null;
+    ownership?: "i-led" | "balanced" | "we-heavy" | null;
+    specificityHits?: number; specificityHint?: string | null;
+  } | null;
+  interviewType?: string | null;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
   const [answerSeconds, setAnswerSeconds] = useState(0);
+  const paceRange = paceRangeFor(interviewType);
   useEffect(() => {
     const start = Date.now();
     const id = setInterval(() => setAnswerSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
     return () => clearInterval(id);
   }, []);
-  // Press Space (outside textarea) to send the answer — matches the
-  // canvas KeycapButton affordance even though STT is auto-listening.
+  // Keyboard shortcuts:
+  //   Space (outside textarea) → send answer
+  //   R                        → repeat the question
+  //   T                        → switch to typing mode
+  //   Esc (in textarea)        → blur textarea
+  // Skipped when focus is in an editable element (textarea/input/contenteditable).
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.code !== "Space") return;
       const target = ev.target as HTMLElement | null;
-      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || (target as HTMLElement).isContentEditable)) return;
-      if (!currentTranscript.trim()) return;
-      ev.preventDefault();
-      handleNextQuestion();
+      const inEditable = target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || (target as HTMLElement).isContentEditable);
+      // Esc inside textarea → blur (lets Space be a Send shortcut after)
+      if (ev.key === "Escape" && inEditable) {
+        (target as HTMLElement).blur();
+        return;
+      }
+      if (inEditable) return;
+      if (ev.code === "Space" && currentTranscript.trim()) {
+        ev.preventDefault();
+        handleNextQuestion();
+        return;
+      }
+      if ((ev.key === "r" || ev.key === "R") && hasQuestion && aiVoiceEnabled) {
+        ev.preventDefault();
+        replayQuestion();
+        return;
+      }
+      if (ev.key === "t" || ev.key === "T") {
+        ev.preventDefault();
+        setTyping(true);
+        // small delay so React mounts the textarea before focus
+        setTimeout(() => textareaRef.current?.focus(), 0);
+        return;
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [currentTranscript, handleNextQuestion]);
+  }, [currentTranscript, handleNextQuestion, hasQuestion, aiVoiceEnabled, replayQuestion, textareaRef]);
   const canSend = currentTranscript.trim().length > 0;
   const showTyping = typing || speechUnavailable;
   return (
@@ -513,10 +608,13 @@ function CanvasListeningActionZone({
         </div>
       )}
 
-      {/* Pace meter — only when actually answering */}
+      {/* Live metrics + pace meter — only when actually answering */}
       {currentTranscript.trim().length > 0 && (
-        <div style={{ width: "100%", maxWidth: 280 }}>
-          <PaceMeter seconds={answerSeconds} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: "100%", maxWidth: 320 }}>
+          <CanvasLiveMetricsRow metrics={liveMetrics} />
+          <div style={{ width: "100%", maxWidth: 280 }}>
+            <PaceMeter seconds={answerSeconds} ideal={{ min: paceRange.min, max: paceRange.max }} ceiling={paceRange.ceiling} />
+          </div>
         </div>
       )}
 
@@ -562,12 +660,14 @@ function CanvasListeningActionZone({
         <span>{canSend ? "Press Space when done" : "Start speaking…"}</span>
       </button>
 
-      {/* Secondary action row — type / repeat / skip */}
+      {/* Secondary action row — type / repeat / start-over / skip.
+          Keyboard hints: each text link includes its hotkey for power
+          users (R for repeat, T for type). */}
       <div style={{ display: "inline-flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: "center" }}>
         {!showTyping && (
           <>
             <CanvasTextLink onClick={() => { setTyping(true); textareaRef.current?.focus(); }}>
-              or type your answer instead
+              or type your answer (T)
             </CanvasTextLink>
             <span aria-hidden style={{ color: e.inkFaint }}>·</span>
           </>
@@ -575,6 +675,39 @@ function CanvasListeningActionZone({
         {hasQuestion && aiVoiceEnabled && (
           <>
             <RepeatButton onClick={replayQuestion} />
+            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+          </>
+        )}
+        {/* Mid-answer start-over — only useful once the user has actually
+            said/typed something. Wipes the transcript and keeps the same
+            question active so they can re-answer cleanly. */}
+        {canSend && (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentTranscript("");
+                captureClientEvent("interview_answer_restart", {});
+                if (showTyping) textareaRef.current?.focus();
+              }}
+              aria-label="Start this answer over"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                background: "transparent", border: "none",
+                padding: "4px 6px", cursor: "pointer",
+                fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
+                color: e.inkSoft, transition: "color 160ms ease",
+              }}
+              onMouseEnter={(ev) => (ev.currentTarget.style.color = e.coal)}
+              onMouseLeave={(ev) => (ev.currentTarget.style.color = e.inkSoft)}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                <polyline points="3 3 3 8 8 8" />
+              </svg>
+              Start over
+            </button>
             <span aria-hidden style={{ color: e.inkFaint }}>·</span>
           </>
         )}
@@ -590,6 +723,14 @@ function CanvasListeningActionZone({
       {isCurrentFollowUp && (
         <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
       )}
+
+      {/* Subtle keyboard-shortcuts discoverability hint */}
+      <span aria-hidden style={{
+        fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase",
+        letterSpacing: 1, color: e.inkFaint, marginTop: 2,
+      }}>
+        Space · send  ·  R · repeat  ·  T · type  ·  Esc · unfocus
+      </span>
     </div>
   );
 }
@@ -611,7 +752,7 @@ function InterviewInner() {
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
-    saveWarning,
+    saveWarning, liveMetrics,
     isSalaryNegotiation, negotiationBand, negotiationStyle,
     targetSalary, highestOffer, liveNegotiationState, voiceConfidence,
 
@@ -860,6 +1001,8 @@ function InterviewInner() {
             replayQuestion={replayQuestion}
             aiVoiceEnabled={aiVoiceEnabled}
             hasQuestion={!!step?.aiText}
+            liveMetrics={liveMetrics}
+            interviewType={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("type") : null}
           />
         )}
 

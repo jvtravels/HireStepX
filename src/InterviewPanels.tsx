@@ -1493,8 +1493,8 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
   const tips = [
     {
       kbd: "Space",
-      title: "Hold to talk",
-      body: "Hold the spacebar to answer by voice. Release when you&rsquo;re done. Or just type — both work.",
+      title: "Voice or text",
+      body: "Just start speaking — we&rsquo;re always listening. Press <strong>Space</strong> when you&rsquo;re done. Or type instead — both work.",
     },
     {
       kbd: "R",
