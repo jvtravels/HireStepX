@@ -57,8 +57,10 @@ export default defineConfig({
       // tests on every component. Raise when Playwright + MSW integration
       // tests cover the UI paths.
       thresholds: {
-        // Global gate — see comment above for the 19% rationale (60%
-        // of the codebase is JSX UI we don't unit-test).
+        // Global gate — see comment above for the rationale (60% of
+        // the codebase is JSX UI we don't unit-test).
+        // Current: lines 20.6% / statements 19.7% / functions 17.8% /
+        // branches 16.7%. Ratchet floor 1 pt below to lock the gains.
         lines: 19,
         statements: 18,
         functions: 16,
@@ -71,18 +73,16 @@ export default defineConfig({
         // that ratchets upward as we add tests, rather than letting
         // the JSX-heavy aggregate disguise gaps in pure logic.
         //
-        // Current values (post: helpers extracted for resume score,
-        // resume versioning, disposable email, email-verify, razorpay
-        // signature, PII redaction, interview-engine helpers): ~8.8%
-        // statements / 7.8% branches / 8.5% functions / 8.5% lines.
-        // Floor is set 1 pt below current so CI turns red on any
-        // regression. Bump these up each time a new handler-tests
-        // batch lifts the actual numbers — the goal is monotonic.
+        // Current (post: evaluate-session / generate-questions /
+        // cancel-subscription / export-user-data helpers extracted +
+        // tested — 101 new tests): 13.26% statements / 12.64%
+        // branches / 18.93% functions / 12.61% lines. Floor set 1pt
+        // below to ratchet monotonically.
         "server-handlers/**": {
-          lines: 8,
-          statements: 8,
-          functions: 7,
-          branches: 7,
+          lines: 11,
+          statements: 12,
+          functions: 17,
+          branches: 11,
         },
       },
     },

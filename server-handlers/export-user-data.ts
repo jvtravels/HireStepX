@@ -9,6 +9,7 @@ import {
   supabaseUrl,
   supabaseAnonKey,
 } from "./_shared";
+import { buildExportEnvelope, buildExportFilename } from "./_export-user-data-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
@@ -83,24 +84,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     safeFetch(`/rest/v1/llm_usage?user_id=eq.${encodedId}&order=created_at.desc&limit=1000`),
   ]);
 
-  const exportData = {
-    _meta: {
-      format: "HireStepX User Data Export v1",
-      exportedAt: new Date().toISOString(),
-      userId,
-      userEmail,
-      notice: "This file contains all personal data stored for your account. Retain securely.",
-    },
-    profile: Array.isArray(profile) ? profile[0] || null : null,
+  const exportData = buildExportEnvelope({
+    userId,
+    userEmail,
+    profile,
     sessions,
     calendar_events: events,
     payments,
     feedback,
     interview_turns: interviewTurns,
     llm_usage: llmUsage,
-  };
+  });
 
-  const filename = `hirestepx-export-${userId.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
+  const filename = buildExportFilename(userId);
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
   return res.status(200).send(JSON.stringify(exportData, null, 2));

@@ -6,9 +6,14 @@ import {
   handlePreflightAndMethod,
   supabaseUrl,
   supabaseAnonKey,
-  escapeHtml,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import {
+  isCancellationBodyTooLarge,
+  parseSubscriptionProfile,
+  formatSubscriptionEndDate,
+  buildCancellationEmailHtml,
+} from "./_cancel-subscription-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -24,8 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handlePreflightAndMethod(req, res)) return;
 
   // Body size check
-  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  if (bodyContentLength > 1048576) {
+  if (isCancellationBodyTooLarge(req.headers["content-length"] as string | undefined)) {
     return res.status(413).json({ error: "Request too large" });
   }
 
@@ -66,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
     );
     const profiles = await profileRes.json();
-    const profile = Array.isArray(profiles) && profiles[0];
+    const profile = parseSubscriptionProfile(profiles);
     const subscriptionId = profile?.razorpay_subscription_id;
 
     // Cancel Razorpay subscription at cycle end (if active)
@@ -106,10 +110,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Send cancellation confirmation email (best-effort)
     if (RESEND_API_KEY && profile?.email) {
-      const endDate = profile.subscription_end
-        ? new Date(profile.subscription_end).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
-        : "the end of your billing period";
-      const safeName = escapeHtml(profile.name || "there");
+      const endDateText = formatSubscriptionEndDate(profile.subscription_end);
+      const html = buildCancellationEmailHtml({
+        userName: profile.name,
+        tier: profile.subscription_tier,
+        endDateText,
+        appUrl: APP_URL,
+      });
       try {
         await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -118,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             from: FROM_EMAIL,
             to: [profile.email],
             subject: "Subscription cancellation confirmed",
-            html: `<p>Hi ${safeName}, your HireStepX <strong>${profile.subscription_tier || "paid"}</strong> plan has been cancelled. You'll continue to have access until <strong>${endDate}</strong>.</p><p>Changed your mind? You can reactivate anytime from <a href="${APP_URL}/dashboard/settings">Settings</a>.</p><p style="color:#9A9590;font-size:12px;">— The HireStepX Team</p>`,
+            html,
           }),
         });
       } catch (emailErr) {

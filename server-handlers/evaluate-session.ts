@@ -6,6 +6,26 @@ import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
+import {
+  ROLE_SKILLS,
+  DEFAULT_BANDS,
+  applyBands,
+  resolveCompanyProfile,
+  computeCoreMetrics,
+  computeAdvancedDelivery,
+  filterGroundedItems,
+  filterGroundedRedFlags,
+  validateReportShape,
+  computeBlendedOverall,
+  normalizeThoughtBubble,
+  normalizeScoreConfidence,
+  normalizeStoryReuse,
+  normalizeBlindSpots,
+  normalizeReadiness,
+  normalizeCrossSessionInsights,
+  type WinOrFix as WinOrFixH,
+  type RedFlag as RedFlagH,
+} from "./_evaluate-session-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -286,205 +306,10 @@ interface SessionReport {
   model: string;
 }
 
-const ROLE_SKILLS: Record<string, string[]> = {
-  swe: ["Problem Framing", "Technical Depth", "Trade-off Reasoning", "Communication", "Ownership"],
-  pm: ["Product Sense", "Analytical", "Execution", "Influencing", "Customer Focus"],
-  em: ["Strategic Thinking", "People Management", "Execution", "Communication", "Conflict Handling"],
-  data: ["Analytical", "Technical Depth", "Business Impact", "Communication", "Ownership"],
-  behavioral: ["Structure", "Ownership", "Impact", "Communication", "Composure"],
-};
-
-/** Default score→band thresholds; company calibration can override. */
-const DEFAULT_BANDS = { strongHire: 85, hire: 70, leanHire: 55, noHire: 40 };
-
-function applyBands(score: number, bands: { strongHire: number; hire: number; leanHire: number; noHire: number }): SessionReport["band"] {
-  if (score >= bands.strongHire) return "strongHire";
-  if (score >= bands.hire) return "hire";
-  if (score >= bands.leanHire) return "leanHire";
-  if (score >= bands.noHire) return "noHire";
-  return "strongNoHire";
-}
-
-/**
- * Company profile registry — duplicated here (edge runtime) from
- * src/companyCalibration.ts so we don't pull the whole client module
- * into the handler bundle. Keep keys in sync.
- */
-const COMPANY_BANDS: Record<string, { label: string; bands: typeof DEFAULT_BANDS; skillWeights: Record<string, number>; note: string }> = {
-  amazon:       { label: "Amazon",              bands: { strongHire: 90, hire: 75, leanHire: 60, noHire: 42 }, skillWeights: { "Ownership": 1.3, "Impact": 1.2, "Technical Depth": 1.15, "Problem Framing": 1.1, "Influencing": 1.1 }, note: "Amazon Bar Raiser — Ownership + Deliver Results weighted heavily." },
-  google:       { label: "Google",              bands: { strongHire: 88, hire: 73, leanHire: 58, noHire: 42 }, skillWeights: { "Problem Framing": 1.2, "Technical Depth": 1.2, "Communication": 1.15, "Trade-off Reasoning": 1.1 }, note: "Google G&L + technical bar." },
-  meta:         { label: "Meta",                bands: { strongHire: 88, hire: 72, leanHire: 58, noHire: 42 }, skillWeights: { "Impact": 1.25, "Execution": 1.15, "Technical Depth": 1.1, "Problem Framing": 1.05 }, note: "Meta's signal-based E-level rubric — Impact above all." },
-  stripe:       { label: "Stripe",              bands: { strongHire: 87, hire: 72, leanHire: 57, noHire: 42 }, skillWeights: { "Communication": 1.3, "Problem Framing": 1.15, "Ownership": 1.1, "Technical Depth": 1.1, "Customer Focus": 1.05 }, note: "Stripe's high writing and clarity bar." },
-  netflix:      { label: "Netflix",             bands: { strongHire: 90, hire: 76, leanHire: 62, noHire: 45 }, skillWeights: { "Impact": 1.3, "Ownership": 1.2, "Influencing": 1.15, "Execution": 1.1 }, note: "Netflix keeper-test — senior by default." },
-  microsoft:    { label: "Microsoft",           bands: { strongHire: 86, hire: 71, leanHire: 56, noHire: 40 }, skillWeights: { "Technical Depth": 1.15, "Problem Framing": 1.1, "Communication": 1.1, "Impact": 1.1 }, note: "Microsoft Growth Mindset + technical rubric." },
-  apple:        { label: "Apple",               bands: { strongHire: 88, hire: 73, leanHire: 58, noHire: 42 }, skillWeights: { "Technical Depth": 1.2, "Problem Framing": 1.15, "Customer Focus": 1.15, "Ownership": 1.1 }, note: "Apple craft + secrecy culture — depth over breadth." },
-  "series-b":   { label: "Series-B Startup",    bands: { strongHire: 80, hire: 65, leanHire: 50, noHire: 35 }, skillWeights: { "Ownership": 1.2, "Execution": 1.15, "Impact": 1.1 }, note: "Series-B growth stage — bias toward ownership + execution." },
-  "early-stage":{ label: "Early-Stage Startup", bands: { strongHire: 78, hire: 62, leanHire: 48, noHire: 32 }, skillWeights: { "Ownership": 1.25, "Execution": 1.2 }, note: "Seed / Series-A — friendlier bar, scrappy ownership." },
-};
-
-const COMPANY_ALIASES: Record<string, string> = {
-  aws: "amazon", amzn: "amazon", alphabet: "google", facebook: "meta", fb: "meta",
-  msft: "microsoft", ms: "microsoft", nflx: "netflix", startup: "early-stage",
-};
-
-function resolveCompanyProfile(targetCompany: string | null | undefined) {
-  if (!targetCompany) return null;
-  const key = String(targetCompany).toLowerCase().replace(/[^a-z0-9-]/g, "");
-  if (!key) return null;
-  if (COMPANY_BANDS[key]) return COMPANY_BANDS[key];
-  if (COMPANY_ALIASES[key] && COMPANY_BANDS[COMPANY_ALIASES[key]]) return COMPANY_BANDS[COMPANY_ALIASES[key]];
-  for (const k of Object.keys(COMPANY_BANDS)) {
-    if (key.includes(k)) return COMPANY_BANDS[k];
-  }
-  return null;
-}
-
-/** Heuristic delivery metrics from the transcript — computed server-side for determinism. */
-function computeCoreMetrics(
-  transcript: EvaluateRequest["transcript"],
-  durationSec: number,
-): SessionReport["coreMetrics"] {
-  const candidateTurns = transcript.filter((t) => t.role === "candidate");
-  const allText = candidateTurns.map((t) => t.text).join(" ");
-  const words = allText.split(/\s+/).filter(Boolean);
-  const fillerRegex = /\b(um+|uh+|like|you know|so|actually|basically|literally)\b/gi;
-  const fillerMatches = allText.match(fillerRegex) || [];
-  const speakingMinutes = Math.max(durationSec / 60, 0.1);
-
-  // Silence ratio: inter-turn gaps between candidate's first audible word and last
-  let silenceMs = 0;
-  for (let i = 1; i < candidateTurns.length; i++) {
-    const prev = candidateTurns[i - 1];
-    const cur = candidateTurns[i];
-    if (prev.endMs != null && cur.startMs != null) {
-      const gap = cur.startMs - prev.endMs;
-      if (gap > 1500) silenceMs += gap;
-    }
-  }
-  const silenceRatio = durationSec > 0 ? Math.min(100, Math.round((silenceMs / (durationSec * 1000)) * 100)) : 0;
-
-  // Energy heuristic: answer-length variance + non-trivial vocabulary diversity → 0-100
-  // This is a placeholder; real prosody analysis comes in V2.
-  const uniqueWords = new Set(words.map((w) => w.toLowerCase())).size;
-  const diversity = words.length > 0 ? uniqueWords / words.length : 0;
-  const avgLen = candidateTurns.length > 0 ? words.length / candidateTurns.length : 0;
-  const energy = Math.max(0, Math.min(100, Math.round(40 + diversity * 80 + Math.min(avgLen, 30))));
-
-  return {
-    fillerPerMin: Math.round((fillerMatches.length / speakingMinutes) * 10) / 10,
-    silenceRatio,
-    paceWpm: Math.round(words.length / speakingMinutes),
-    energy,
-  };
-}
-
-/**
- * Advanced delivery signals — deterministic regex + arithmetic over the
- * transcript, no LLM. Beats Yoodli on the delivery side because we unify
- * these with content scoring on the same screen.
- */
-function computeAdvancedDelivery(transcript: EvaluateRequest["transcript"], durationSec: number): AdvancedDelivery {
-  const candidateTurns = transcript.filter((t) => t.role === "candidate");
-  const allText = candidateTurns.map((t) => t.text).join(" ");
-  const words = allText.split(/\s+/).filter(Boolean);
-  const speakingMinutes = Math.max(durationSec / 60, 0.1);
-
-  // Hedging density: "I think", "maybe", "kind of", etc.
-  const hedgeRegex = /\b(?:i\s+(?:think|guess|feel|believe|assume|suppose)|maybe|kind\s+of|sort\s+of|kinda|sorta|probably|perhaps|might|could\s+be|i'?m\s+not\s+sure)\b/gi;
-  const hedgeCount = (allText.match(hedgeRegex) || []).length;
-
-  // Lexical diversity — MTLD-lite: unique words over total, floor-clamped at
-  // very short answers to avoid noise. This correlates with perceived
-  // competence (McCarthy & Jarvis 2010 simplified).
-  const uniqueWords = new Set(words.map((w) => w.toLowerCase().replace(/[^a-z']/g, ""))).size;
-  const lexicalDiversity = words.length >= 20 ? uniqueWords / words.length : 0;
-
-  // First-person ownership ratio across candidate text.
-  const iCount = (allText.match(/\bI\b/g) || []).length;
-  const weCount = (allText.match(/\bwe\b/gi) || []).length;
-  const firstPersonRatio = iCount + weCount > 0 ? iCount / (iCount + weCount) : 0.5;
-
-  // Response latency — gap between interviewer turn end → candidate turn start.
-  // Only meaningful if timestamps are present.
-  const latencies: number[] = [];
-  for (let i = 1; i < transcript.length; i++) {
-    const prev = transcript[i - 1];
-    const cur = transcript[i];
-    if (prev.role === "interviewer" && cur.role === "candidate" && prev.endMs != null && cur.startMs != null) {
-      const gap = cur.startMs - prev.endMs;
-      if (gap >= 0 && gap < 30_000) latencies.push(gap); // sanity-clamp 0–30s
-    }
-  }
-  latencies.sort((a, b) => a - b);
-  const medianLatencyMs = latencies.length > 0 ? latencies[Math.floor(latencies.length / 2)] : 0;
-
-  // Self-correction rate — restarts per minute.
-  const scRegex = /\b(?:let\s+me\s+rephrase|actually(?:,|\s+let\s+me)|what\s+i\s+(?:meant|mean)\s+(?:to\s+say\s+)?(?:is|was)|sorry,?\s+i\s+misspoke|scratch\s+that|let\s+me\s+start\s+over)\b/gi;
-  const scCount = (allText.match(scRegex) || []).length;
-
-  return {
-    hedgingPerMin: Math.round((hedgeCount / speakingMinutes) * 10) / 10,
-    lexicalDiversity: Math.round(lexicalDiversity * 100) / 100,
-    firstPersonRatio: Math.round(firstPersonRatio * 100) / 100,
-    medianLatencyMs: Math.round(medianLatencyMs),
-    selfCorrectionRate: Math.round((scCount / speakingMinutes) * 10) / 10,
-  };
-}
-
-/**
- * Strip LLM-returned wins/fixes whose quotes can't be verified against the
- * candidate's own transcript. Cross-cutting fixes (questionIdx=-1) are allowed
- * without a quote since they apply to delivery, not a specific answer.
- */
-function filterGroundedItems(items: WinOrFix[] | undefined, candidateCorpus: string): WinOrFix[] {
-  if (!Array.isArray(items)) return [];
-  return items
-    .filter((w) => w && typeof w.text === "string" && w.text.trim().length > 0)
-    .filter((w) => {
-      if (w.questionIdx === -1 || !w.quote) return true; // cross-cutting
-      return typeof w.quote === "string" && candidateCorpus.includes(w.quote.trim());
-    })
-    .slice(0, 3);
-}
-
-/** Same grounding guard for red flags. Drops unknown types/severities. */
-function filterGroundedRedFlags(items: RedFlag[] | undefined, candidateCorpus: string): RedFlag[] {
-  if (!Array.isArray(items)) return [];
-  const validTypes: RedFlagType[] = ["blame", "missing_result", "we_without_i", "scope_drift", "contradiction", "vague"];
-  const validSeverities = ["high", "medium", "low"] as const;
-  return items
-    .filter((f) => f && validTypes.includes(f.type) && (validSeverities as readonly string[]).includes(f.severity))
-    .filter((f) => typeof f.title === "string" && f.title.trim().length > 0)
-    .filter((f) => {
-      if (f.questionIdx === -1 || !f.quote) return true;
-      return typeof f.quote === "string" && candidateCorpus.includes(f.quote.trim());
-    })
-    .slice(0, 4);
-}
-
-/** Validate LLM-returned report: every quote/citation must trace to real transcript text. */
-function validateReport(report: unknown, transcript: EvaluateRequest["transcript"]): report is SessionReport {
-  if (!report || typeof report !== "object") return false;
-  const r = report as Record<string, unknown>;
-  if (typeof r.overallScore !== "number" || r.overallScore < 0 || r.overallScore > 100) return false;
-  if (!Array.isArray(r.perQuestion)) return false;
-
-  // Build a searchable corpus of candidate text for citation verification
-  const candidateCorpus = transcript
-    .filter((t) => t.role === "candidate")
-    .map((t) => t.text)
-    .join("\n");
-
-  for (const pq of r.perQuestion as PerQuestionReport[]) {
-    if (pq.restructured && Array.isArray(pq.restructured.citations)) {
-      for (const c of pq.restructured.citations) {
-        if (typeof c.sourceStart !== "number" || typeof c.sourceEnd !== "number") continue;
-        if (c.sourceStart >= candidateCorpus.length || c.sourceEnd > candidateCorpus.length) return false;
-      }
-    }
-  }
-  return true;
-}
+/* Pure helpers (applyBands, resolveCompanyProfile, computeCoreMetrics,
+ * computeAdvancedDelivery, filterGroundedItems, filterGroundedRedFlags,
+ * validateReportShape, computeBlendedOverall, and post-LLM normalizers)
+ * extracted to ./_evaluate-session-helpers for unit testing. */
 
 export default async function handler(req: Request): Promise<Response> {
   const t0 = Date.now();
@@ -766,56 +591,13 @@ CRITICAL RULES:
     // Apply company calibration: re-weight skills + use company-specific bands.
     const rawSkills = Array.isArray(parsed.skills) ? parsed.skills.slice(0, 8) : [];
     const skillWeights = companyProfile?.skillWeights ?? {};
-    const weightedSkills = rawSkills.map((s) => ({
-      name: s.name,
-      score: s.score,
-      weight: Math.round((skillWeights[s.name] ?? 1.0) * 100) / 100,
-    }));
-    const totalWeight = weightedSkills.reduce((sum, w) => sum + w.weight, 0) || 1;
     const llmOverall = typeof parsed.overallScore === "number" ? parsed.overallScore : 50;
-    // Blend: 60% role-weighted composite, 40% LLM's holistic score. The
-    // composite keeps company calibration honest; the LLM component
-    // captures cross-cutting signals the weights don't model.
-    const composite = weightedSkills.length > 0
-      ? weightedSkills.reduce((sum, w) => sum + w.score * w.weight, 0) / totalWeight
-      : llmOverall;
-    const overallScore = Math.max(0, Math.min(100, Math.round(composite * 0.6 + llmOverall * 0.4)));
+    const { weightedSkills, overallScore } = computeBlendedOverall(rawSkills, skillWeights, llmOverall);
     const candidateCorpus = transcript.filter((t) => t.role === "candidate").map((t) => t.text).join("\n");
 
-    // Thought bubble: validate each segment has a known state + clamp timestamps.
-    const validStates = ["tracking", "losingThread", "probingForScope", "readyToMoveOn", "impressed", "concerned"];
-    const rawThoughtBubble = (parsed as Record<string, unknown>).thoughtBubble;
-    const thoughtBubble: ThoughtBubbleSegment[] = Array.isArray(rawThoughtBubble)
-      ? (rawThoughtBubble as ThoughtBubbleSegment[])
-          .filter((s) => s && validStates.includes(s.state) && typeof s.note === "string")
-          .map((s) => ({
-            startMs: Math.max(0, Math.floor(Number(s.startMs) || 0)),
-            endMs: Math.max(0, Math.floor(Number(s.endMs) || 0)),
-            state: s.state,
-            note: s.note.slice(0, 100),
-          }))
-          .filter((s) => s.endMs >= s.startMs)
-          .slice(0, 8)
-      : [];
-
-    const rawConf = (parsed as Record<string, unknown>).scoreConfidence;
-    const scoreConfidence =
-      typeof rawConf === "number" && isFinite(rawConf)
-        ? Math.max(0, Math.min(1, Math.round(rawConf * 100) / 100))
-        : 0.8;
-
-    const rawStoryReuse = (parsed as Record<string, unknown>).storyReuseFindings;
-    const storyReuseFindings: StoryReuseFinding[] = Array.isArray(rawStoryReuse)
-      ? (rawStoryReuse as StoryReuseFinding[])
-          .filter((f) => f && typeof f.storyLabel === "string" && Array.isArray(f.questionIndices) && f.questionIndices.length >= 2 && typeof f.concern === "string")
-          .map((f) => ({
-            storyLabel: f.storyLabel.slice(0, 60),
-            questionIndices: f.questionIndices.filter((i) => typeof i === "number" && i >= 0).slice(0, 6),
-            concern: f.concern.slice(0, 200),
-          }))
-          .filter((f) => f.questionIndices.length >= 2)
-          .slice(0, 3)
-      : [];
+    const thoughtBubble = normalizeThoughtBubble((parsed as Record<string, unknown>).thoughtBubble);
+    const scoreConfidence = normalizeScoreConfidence((parsed as Record<string, unknown>).scoreConfidence);
+    const storyReuseFindings = normalizeStoryReuse((parsed as Record<string, unknown>).storyReuseFindings);
 
     const report: SessionReport = {
       version: "mvp-6",
@@ -823,9 +605,9 @@ CRITICAL RULES:
       scoreConfidence,
       band: applyBands(overallScore, bands),
       verdict: typeof parsed.verdict === "string" ? parsed.verdict.slice(0, 200) : "",
-      wins: filterGroundedItems(parsed.wins as WinOrFix[] | undefined, candidateCorpus),
-      fixes: filterGroundedItems(parsed.fixes as WinOrFix[] | undefined, candidateCorpus),
-      redFlags: filterGroundedRedFlags((parsed as Record<string, unknown>).redFlags as RedFlag[] | undefined, candidateCorpus),
+      wins: filterGroundedItems(parsed.wins as WinOrFixH[] | undefined, candidateCorpus),
+      fixes: filterGroundedItems(parsed.fixes as WinOrFixH[] | undefined, candidateCorpus),
+      redFlags: filterGroundedRedFlags((parsed as Record<string, unknown>).redFlags as RedFlagH[] | undefined, candidateCorpus) as RedFlag[],
       coreMetrics,
       advancedDelivery,
       skills: weightedSkills,
@@ -871,56 +653,18 @@ CRITICAL RULES:
         : [],
       thoughtBubble,
       calibration: { companyLabel, note: companyNote, bands },
-      crossSessionInsights: (() => {
-        const raw = (parsed as Record<string, unknown>).crossSessionInsights;
-        if (!Array.isArray(raw)) return [];
-        if (priorReports.length === 0) return []; // Defense-in-depth against hallucinated history.
-        const validKinds = ["improvement", "regression", "persistent"];
-        return (raw as CrossSessionInsight[])
-          .filter((i) => i && validKinds.includes(i.kind) && typeof i.text === "string" && i.text.trim().length > 0)
-          .map((i) => ({
-            kind: i.kind,
-            text: i.text.slice(0, 220),
-            metric: typeof i.metric === "string" ? i.metric.slice(0, 40) : undefined,
-            delta: typeof i.delta === "number" && isFinite(i.delta) ? Math.round(i.delta * 10) / 10 : undefined,
-          }))
-          .slice(0, 4);
-      })(),
+      crossSessionInsights: normalizeCrossSessionInsights(
+        (parsed as Record<string, unknown>).crossSessionInsights,
+        priorReports.length,
+      ),
       priorSessionCount: priorReports.length,
       storyReuseFindings,
-      blindSpots: (() => {
-        const raw = (parsed as Record<string, unknown>).blindSpots;
-        if (!Array.isArray(raw)) return [];
-        return (raw as BlindSpot[])
-          .filter((b) => b && typeof b.competency === "string" && b.competency.trim().length > 0)
-          .map((b) => ({
-            competency: b.competency.slice(0, 60),
-            frequencyPct:
-              typeof b.frequencyPct === "number" && isFinite(b.frequencyPct) && b.frequencyPct >= 0 && b.frequencyPct <= 100
-                ? Math.round(b.frequencyPct)
-                : null,
-            note: typeof b.note === "string" ? b.note.slice(0, 160) : "",
-          }))
-          .slice(0, 5);
-      })(),
-      readiness: (() => {
-        const raw = (parsed as Record<string, unknown>).readiness as ReadinessForecast | undefined;
-        if (!raw || typeof raw !== "object") return null;
-        const validBands = ["strongHire", "hire", "leanHire"];
-        const validConf = ["low", "medium", "high"];
-        if (!validBands.includes(raw.targetBand)) return null;
-        return {
-          targetBand: raw.targetBand,
-          estimatedHours: Math.max(0, Math.min(500, Math.round(Number(raw.estimatedHours) || 0))),
-          estimatedSessions: Math.max(0, Math.min(100, Math.round(Number(raw.estimatedSessions) || 0))),
-          confidence: validConf.includes(raw.confidence) ? raw.confidence : "medium",
-          rationale: typeof raw.rationale === "string" ? raw.rationale.slice(0, 220) : "",
-        };
-      })(),
+      blindSpots: normalizeBlindSpots((parsed as Record<string, unknown>).blindSpots),
+      readiness: normalizeReadiness((parsed as Record<string, unknown>).readiness),
       model: result.model,
     };
 
-    if (!validateReport(report, transcript)) {
+    if (!validateReportShape(report, transcript)) {
       console.warn(`[evaluate-session] validation failed for session=${sessionId.slice(0, 8)}; returning anyway with warning`);
     }
 

@@ -10,6 +10,14 @@ import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
 import { matchCompanyKey } from "../data/company-guidance";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
+import {
+  extractQuestionsArray,
+  validateQuestionShape,
+  normalizePanelPersonas,
+  isSalaryNegotiationLengthOk,
+  computeStepCount,
+  type RawQuestion,
+} from "./_generate-questions-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -290,7 +298,7 @@ CROSS-PERSONA REFERENCE: at least one question (q3 or later) must reference what
       : "";
 
     const questionCount = isMini ? (isSalaryType ? 5 : 3) : 5;
-    const stepCount = questionCount + 2; // intro + questions + closing
+    const stepCount = computeStepCount({ mini: isMini, isSalaryType }); // intro + questions + closing
 
     const safeCandidateName = candidateName ? sanitizeForLLM(candidateName, 60) : "";
     const candidateCtx = safeCandidateName ? `- Candidate's name: ${safeCandidateName}. Address them by first name in the intro. Use the name EXACTLY as provided — do NOT rearrange or abbreviate it.\n` : "";
@@ -370,46 +378,24 @@ Requirements:
       return new Response(JSON.stringify({ error: "Failed to parse questions" }), { status: 500, headers });
     }
 
-    const questions = Array.isArray(parsed) ? parsed : parsed.questions || parsed.steps || parsed.interview_steps || Object.values(parsed)[0];
-
-    if (!Array.isArray(questions) || questions.length === 0) {
+    const questions = extractQuestionsArray(parsed);
+    if (!questions || questions.length === 0) {
       return new Response(JSON.stringify({ error: "Failed to generate valid questions" }), { status: 500, headers });
     }
 
     // Salary negotiation requires enough turns for a complete conversation arc
-    if (isSalaryType && questions.length < 4) {
+    if (!isSalaryNegotiationLengthOk(isSalaryType, questions.length)) {
       return new Response(JSON.stringify({ error: "Salary negotiation requires at least 4 turns" }), { status: 502, headers });
     }
 
     // Validate each question has required fields
-    for (const q of questions) {
-      const qObj = q as Record<string, unknown>;
-      if (typeof qObj.type !== "string" || typeof qObj.aiText !== "string" || !qObj.aiText) {
-        return new Response(JSON.stringify({ error: "LLM returned malformed question objects" }), { status: 502, headers });
-      }
+    if (!validateQuestionShape(questions)) {
+      return new Response(JSON.stringify({ error: "LLM returned malformed question objects" }), { status: 502, headers });
     }
 
     // For panel interviews: validate and fix persona assignments
     if (interviewType === "panel") {
-      const validPersonas = ["Hiring Manager", "Technical Lead", "HR Partner"];
-      const personaRotation = ["Hiring Manager", "Technical Lead", "HR Partner"];
-      let rotIdx = 0;
-      for (const q of questions) {
-        const qObj = q as Record<string, unknown>;
-        // Normalize persona (case-insensitive match)
-        if (typeof qObj.persona === "string") {
-          const lower = qObj.persona.toLowerCase();
-          const match = validPersonas.find(p => p.toLowerCase() === lower);
-          if (match) { qObj.persona = match; continue; }
-        }
-        // Assign round-robin if missing or invalid
-        if (qObj.type === "intro" || qObj.type === "closing") {
-          qObj.persona = "Hiring Manager";
-        } else {
-          qObj.persona = personaRotation[rotIdx % personaRotation.length];
-          rotIdx++;
-        }
-      }
+      normalizePanelPersonas(questions as RawQuestion[]);
     }
 
     // Include negotiation band in response so client can use it for follow-up constraints
