@@ -67,6 +67,9 @@ export function useInterviewEngine() {
   // Rambling interjection ref
   const ramblingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ramblingFiredRef = useRef(false);
+  // Soft 60s tracking interjection — gentler than rambling, says "I'm with you"
+  const softTrackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const softTrackFiredRef = useRef(false);
   // "I don't know" count for evaluation context
   const dontKnowCountRef = useRef(0);
   // Live session ID — created early so turns can be saved in real-time
@@ -814,6 +817,32 @@ export function useInterviewEngine() {
     }, 90_000);
     return () => {
       if (ramblingTimerRef.current) { clearTimeout(ramblingTimerRef.current); ramblingTimerRef.current = null; }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, aiVoiceEnabled, currentStep]);
+
+  // Soft tracking interjection — at 60s of speaking, signals "I'm
+  // following" without rushing the user. Distinct role from the 90s
+  // rambling cut-off: this one is a gentle acknowledgement, not a
+  // wrap-it-up nudge. Skipped if user has spoken < 25 words (very long
+  // pauses don't count as "they're really going at it").
+  useEffect(() => {
+    if (phase !== "listening" || !aiVoiceEnabled) {
+      if (softTrackTimerRef.current) { clearTimeout(softTrackTimerRef.current); softTrackTimerRef.current = null; }
+      softTrackFiredRef.current = false;
+      return;
+    }
+    softTrackFiredRef.current = false;
+    softTrackTimerRef.current = setTimeout(() => {
+      if (softTrackFiredRef.current || ramblingFiredRef.current || interviewEndedRef.current) return;
+      if (!currentTranscript || currentTranscript.trim().split(/\s+/).length < 25) return;
+      softTrackFiredRef.current = true;
+      const tracking = pickRandom(REACTIONS.softTracking);
+      setTranscript(prev => [...prev, { speaker: "ai", text: `[${tracking}]`, time: formatTime(elapsed) }]);
+      speak(tracking, () => {}, () => {}, interviewerGender).catch(() => {});
+    }, 60_000);
+    return () => {
+      if (softTrackTimerRef.current) { clearTimeout(softTrackTimerRef.current); softTrackTimerRef.current = null; }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, aiVoiceEnabled, currentStep]);
@@ -1631,6 +1660,45 @@ export function useInterviewEngine() {
           : recentScores.length >= 2 && recentAvg <= 2 ? "ease"
           : "hold";
 
+        // Emotional-state signals — derive simple trends from recent answers
+        // so the follow-up LLM can adjust tone (warm vs neutral vs probing).
+        // Filler-density rising = nervousness. Answer-length shrinking =
+        // disengagement. Hesitation markers = anxiety. The LLM uses these
+        // to decide whether to be encouraging, push harder, or pivot.
+        const userTurns = transcript.filter(m => m.speaker === "user").map(m => m.text);
+        const lastUserTurns = [...userTurns, answerText].slice(-3);
+        const candidateState = (() => {
+          if (lastUserTurns.length === 0) return undefined;
+          const FILLER = /\b(um+|uh+|like|basically|actually|sort of|kind of|you know|i mean)\b/gi;
+          const HESITATION = /\b(hmm+|er+|umm+|let me think|let me see|how do i say)\b/gi;
+          const lengths = lastUserTurns.map(t => t.split(/\s+/).filter(Boolean).length);
+          const fillerCounts = lastUserTurns.map(t => (t.match(FILLER) || []).length);
+          const hesitationCounts = lastUserTurns.map(t => (t.match(HESITATION) || []).length);
+          const totalWords = lengths.reduce((a, b) => a + b, 0);
+          const totalFillers = fillerCounts.reduce((a, b) => a + b, 0);
+          const totalHesitations = hesitationCounts.reduce((a, b) => a + b, 0);
+          // Trend: comparing latest vs earlier average. Positive = increasing.
+          const latestLen = lengths[lengths.length - 1];
+          const earlierAvgLen = lengths.length >= 2
+            ? lengths.slice(0, -1).reduce((a, b) => a + b, 0) / (lengths.length - 1)
+            : latestLen;
+          const lengthTrend: "shortening" | "stable" | "growing" =
+            latestLen < earlierAvgLen * 0.6 ? "shortening"
+            : latestLen > earlierAvgLen * 1.4 ? "growing"
+            : "stable";
+          const fillerDensity = totalWords > 0 ? totalFillers / totalWords : 0; // ~0.05+ is high
+          // Map to coarse labels the LLM can act on
+          const stress: "low" | "medium" | "high" =
+            totalHesitations >= 3 ? "high"
+            : totalHesitations >= 1 || fillerDensity > 0.06 ? "medium"
+            : "low";
+          const engagement: "engaged" | "fading" | "disengaged" =
+            lengthTrend === "shortening" && latestLen < 20 ? "disengaged"
+            : lengthTrend === "shortening" ? "fading"
+            : "engaged";
+          return { stress, engagement, fillerDensity: Math.round(fillerDensity * 100) / 100, lengthTrend };
+        })();
+
         pendingFollowUpRef.current = fetchFollowUp({
           question: currentStepObj!.aiText,
           answer: answerText,
@@ -1657,6 +1725,7 @@ export function useInterviewEngine() {
           highestOfferMade: highestOfferRef.current > 0 ? highestOfferRef.current : undefined,
           candidateTarget: targetSalary || undefined,
           negotiationScenario: negotiationScenario !== "standard" ? negotiationScenario : undefined,
+          candidateState,
         });
       } else {
         pendingFollowUpRef.current = null;

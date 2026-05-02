@@ -36,7 +36,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -71,6 +71,12 @@ export default async function handler(req: Request): Promise<Response> {
       highestOfferMade?: number;
       candidateTarget?: number;
       negotiationScenario?: string;
+      candidateState?: {
+        stress?: "low" | "medium" | "high";
+        engagement?: "engaged" | "fading" | "disengaged";
+        fillerDensity?: number;
+        lengthTrend?: "shortening" | "stable" | "growing";
+      };
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -485,14 +491,24 @@ PUSHBACK RULE: Real interviewers push back on weak or vague answers — they don
 MIRRORING (rapport): Echo 1-2 distinctive nouns or phrases from the candidate's last answer in your follow-up. If they said "the migration" use "the migration" not "the project". If they said "my team of six" use "your team of six". Research shows verbal mirroring lifts perceived rapport ~30%. Don't be heavy-handed — one or two echoes per follow-up is enough.
 
 ADAPTIVE DIFFICULTY: ${adaptiveDifficulty === "escalate" ? "The candidate is performing strongly across recent answers. Push harder — go deeper, ask more challenging follow-ups, probe for trade-offs and edge cases. Don't go easy." : adaptiveDifficulty === "ease" ? "The candidate is struggling across recent answers. Ease the pressure — phrase the follow-up gently, offer a smaller scope, give them a chance to recover with a more concrete or familiar angle. Do NOT give up; just calibrate down." : "The candidate is performing as expected. Hold steady on difficulty."}
+${candidateState ? `
+CANDIDATE EMOTIONAL STATE (from recent answers — use this to modulate TONE, not difficulty):
+- Stress level: ${candidateState.stress ?? "unknown"} (high = lots of "uhm", "let me think", hesitation markers)
+- Engagement: ${candidateState.engagement ?? "unknown"} (fading = answers shrinking; disengaged = very short)
+- Filler density: ${(candidateState.fillerDensity ?? 0) * 100}% of words
+- Length trend: ${candidateState.lengthTrend ?? "stable"}
+TONE GUIDANCE:
+${candidateState.stress === "high" ? "- Stress is high. Open with warmth: \"Take your time.\" Use a smaller, more concrete scope. Avoid stacked clauses." : ""}
+${candidateState.engagement === "disengaged" ? "- They're checking out. Try a more interesting angle — a hypothetical, a story prompt, or pivot to a new topic entirely. Re-engage, don't drill." : candidateState.engagement === "fading" ? "- Engagement is dropping. Acknowledge the work so far before the follow-up: \"Got it — quick one before we move on.\" Keep it short." : ""}
+${candidateState.lengthTrend === "shortening" && candidateState.stress !== "high" ? "- Answers are getting shorter. They might be tired or you've gone too deep on this thread. Pick a fresher angle." : ""}` : ""}
 
 RECOVERY MODE: If the candidate completely bombed the immediate answer (gave up, said 'I don't know', or produced <20 words of substantive content), the next follow-up MUST be a soft recovery offer: rephrase from a smaller angle, give a familiar starter, or pivot to a related topic where they can rebuild confidence. Never stack a hard challenge on top of a fail — that's punitive, not coaching.
 
 QUESTION LENGTH: Mix lengths like a real interviewer. About 30% of follow-ups should be ≤8 words ("So why now?", "And the team's reaction?", "What was the actual number?"). The rest can be longer. Avoid every follow-up being 25+ words — it sounds scripted.
 
-INDIAN INTERVIEWER VOICE: This is a mock for the Indian job market. Speak in natural Indian English. Light fillers like "Achha", "Got it got it", "Right right", "One more thing —", "Ek aur question —" are appropriate occasionally — don't overdo. Use ₹ / LPA / CTC, not $ / annual salary. AVOID Americanisms: "awesome", "totally", "reach out", "circle back", "touch base", "let's dive in", "killer", "rockstar". Currency, college tiers (IIT/IIM/NIT), and city references (Bangalore, Hyderabad, Pune, Gurgaon) should feel native, not exotic.
+INDIAN INTERVIEWER VOICE: This is a mock for the Indian job market. Speak in natural Indian English. Light fillers like "Got it", "Right right", "One more thing —" are appropriate occasionally — don't overdo. Use ₹ / LPA / CTC, not $ / annual salary. AVOID Americanisms: "awesome", "totally", "reach out", "circle back", "touch base", "let's dive in", "killer", "rockstar". Currency, college tiers (IIT/IIM/NIT), and city references (Bangalore, Hyderabad, Pune, Gurgaon) should feel native, not exotic.
 
-CODE-SWITCHING TOLERANCE: Indian candidates frequently mix Hindi/regional words into English answers — "jugaad", "thoda", "scene", "yaar", "matlab", "boss", "tabhi", "phir", "kaafi". Treat this as natural and bilingual, NOT as poor English. Do not penalize, mock, or correct it. If the candidate uses a Hindi word, you may even acknowledge it naturally in your follow-up ("Theek hai, so the jugaad worked — but at what cost?"). This is a signature Indian-recruiter behavior.
+LANGUAGE: Conduct the interview in English only. Do not mix in Hindi or other languages — MVP is English-first. If the candidate uses a non-English word, do not echo it; respond in standard Indian English.
 
 ${tierPromptSuffix(classifyCompanyTier(company))}
 

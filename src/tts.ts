@@ -778,12 +778,13 @@ function speakWithBrowser(
   utter.pitch = 1.0;
   utter.volume = 1.0;
   const voices = window.speechSynthesis.getVoices();
-  // Prefer Indian English voices, fall back to US English
+  // Prefer Indian English voices, fall back to US English. MVP is
+  // English-only; Hindi voice fallback removed (was hinting Hindi
+  // pronunciation when no Indian-English voice was available).
   const preferred = voices.find(
     (v) =>
       v.lang === "en-IN" ||
-      v.name.includes("Indian") ||
-      v.name.includes("Hindi"),
+      v.name.includes("Indian"),
   ) || voices.find(
     (v) =>
       v.name.includes("Samantha") ||

@@ -278,6 +278,7 @@ describe("REACTIONS bank", () => {
       "topicTransition",
       "dontKnowRedirect",
       "ramblingInterject",
+      "softTracking",
       "timePressure",
       "lastQuestion",
     ].sort();

@@ -40,6 +40,51 @@ async function getCompanyGuidance(company: string): Promise<string> {
   return dbBody || fallback;
 }
 
+/**
+ * Per-company TONE map — independent of question CONTENT (which lives in
+ * loadCompanyGuidance). This shapes how the interviewer SOUNDS: pace,
+ * formality, opening posture, what they pay attention to. Without this,
+ * a Razorpay HM and a TCS HM sound identical despite very different real-
+ * world interview experiences. Match is loose (substring) so "razorpay
+ * payments india" still hits "razorpay".
+ */
+function getCompanyTone(company: string): string {
+  if (!company) return "";
+  const c = company.toLowerCase();
+  const TONE_MAP: { match: string[]; tone: string }[] = [
+    {
+      match: ["razorpay", "cred", "zerodha", "groww", "khatabook", "phonepe", "paytm"],
+      tone: "Indian fintech / payments scrappy. Direct, fast-paced, allergic to fluff. Asks for concrete numbers ('what was the conversion lift?'), real customer stories, and probes operational detail. Light on small talk. Will challenge claims with 'walk me through that' rather than nodding through.",
+    },
+    {
+      match: ["flipkart", "swiggy", "zomato", "myntra", "meesho", "ola"],
+      tone: "Indian consumer-internet operator. Asks about scale ('what happens at 10x?'), unit economics, and Bharat-vs-India trade-offs. Pragmatic, mildly informal, uses 'aapne kya kiya' / 'tell me what you actually did' framing. Tests for execution under chaos.",
+    },
+    {
+      match: ["tcs", "infosys", "wipro", "cognizant", "tech mahindra", "hcl"],
+      tone: "Indian IT services structured. Process-oriented, hierarchical, slightly formal. Walks through your resume in order. Asks about onsite/offshore coordination, client interaction, methodology. Polite, measured, doesn't push hard but expects clarity.",
+    },
+    {
+      match: ["google", "amazon", "microsoft", "meta", "apple", "netflix", "uber"],
+      tone: "MNC product-tech rigorous. Frame answers in STAR; expect bar-raiser questioning. Probes for first-principles thinking, leadership principles (especially Amazon-style), and trade-off articulation. Less small-talk, more 'walk me through your reasoning'.",
+    },
+    {
+      match: ["mckinsey", "bain", "bcg", "kearney", "deloitte", "accenture"],
+      tone: "Consulting firm crisp. Tests structuring, hypothesis-driven thinking, and synthesis. Will interrupt to ask 'so what's your recommendation?'. Cares about MECE frameworks, back-of-envelope math, and the ability to drive to a clear point of view under time pressure.",
+    },
+    {
+      match: ["goldman", "morgan stanley", "jp morgan", "barclays", "citi", "deutsche"],
+      tone: "Investment bank / capital markets formal. Sharp, rapid-fire, expects technical accuracy on financial concepts. Will fact-check assertions. Uses precise language; sloppy answers get called out directly.",
+    },
+    {
+      match: ["startup", "early-stage", "seed", "series a", "yc", "y combinator"],
+      tone: "Early-stage founder/operator informal. Asks about hustle, ambiguity tolerance, what you'd ship in week 1. Cares less about credentials, more about how you think in scrappy environments. Will test with hypotheticals rooted in their actual product.",
+    },
+  ];
+  const matched = TONE_MAP.find(t => t.match.some(m => c.includes(m)));
+  return matched ? matched.tone : "";
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (!GROQ_KEY && !GEMINI_KEY) {
     return new Response(JSON.stringify({ error: "LLM not configured" }), {
@@ -75,7 +120,8 @@ export default async function handler(req: Request): Promise<Response> {
 
     const companyName = sanitizeForLLM(company, 100);
     const companySpecificGuidance = await getCompanyGuidance(companyName);
-    const companyContext = companyName ? `The candidate is interviewing at ${companyName}. ${companySpecificGuidance}` : "";
+    const companyTone = getCompanyTone(companyName);
+    const companyContext = companyName ? `The candidate is interviewing at ${companyName}. ${companySpecificGuidance}${companyTone ? `\nINTERVIEWER PERSONALITY for ${companyName}: ${companyTone}` : ""}` : "";
     const industryContext = industry ? `The industry is ${sanitizeForLLM(industry, 100)}.` : "";
     // Industry-specific question flavor — fintech reasons differently from
     // e-commerce or B2B SaaS. When the industry is one we can flavor, surface

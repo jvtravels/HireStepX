@@ -1,5 +1,9 @@
 /* Sarvam AI real-time STT via WebSocket — fallback after Deepgram */
-/* Indian English + Hindi + Hinglish code-switching via Saaras V3 */
+/* MVP: Indian English only. Sarvam's Saaras V3 model is still used as
+   the second-tier fallback because it handles Indian-accent English
+   significantly better than the Web Speech API. Multi-language /
+   code-switching support exists in the underlying model but is NOT
+   surfaced or advertised — to be enabled in a later release. */
 
 let _cachedApiKey: string | null = null;
 let _apiKeyExpiry = 0;
@@ -34,8 +38,8 @@ export interface SarvamSTTCallbacks {
 
 /**
  * Opens a Sarvam AI WebSocket, captures mic audio, and streams transcripts.
- * Uses Saaras V3 model with codemix mode for Hindi-English code-switching.
- * Returns a handle to stop/abort, or null if setup fails.
+ * Uses Saaras V3 model — handles Indian-accent English reliably. Returns
+ * a handle to stop/abort, or null if setup fails.
  */
 export async function createSarvamSTT(
   callbacks: SarvamSTTCallbacks,

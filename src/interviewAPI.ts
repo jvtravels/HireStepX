@@ -495,6 +495,14 @@ export async function fetchFollowUp(params: {
   highestOfferMade?: number;
   candidateTarget?: number;
   negotiationScenario?: string;
+  /** Emotional-state snapshot derived from the candidate's recent answers.
+      The follow-up LLM uses this to modulate tone (warm vs neutral vs probing). */
+  candidateState?: {
+    stress: "low" | "medium" | "high";
+    engagement: "engaged" | "fading" | "disengaged";
+    fillerDensity: number;
+    lengthTrend: "shortening" | "stable" | "growing";
+  };
 }): Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> {
   // Client-side rate limit: max 10 follow-ups per 60s
   if (!checkRateLimit("follow-up", 10, 60_000)) return null;

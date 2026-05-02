@@ -614,7 +614,7 @@ async function buildServiceDetails(
     {
       name: "Sarvam AI",
       type: "STT",
-      role: "Fallback (Hinglish)",
+      role: "Fallback (Indian English)",
       model: "saaras:v2",
       status: svcStatus(sv),
       usage: {
@@ -625,7 +625,7 @@ async function buildServiceDetails(
         avgLatencyMs: avgLat(sv),
       },
       limits: { freeRequestsPerDay: 50 },
-      notes: "Used for Hinglish code-switching. Check dashboard.sarvam.ai for usage.",
+      notes: "Used for Indian-English STT after Deepgram. Check dashboard.sarvam.ai for usage.",
     },
     {
       name: "Resend",
