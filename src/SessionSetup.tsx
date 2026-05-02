@@ -4,55 +4,12 @@ import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 
-/* Editorial brand bridge.
-   This file used to import `c, font` from the dark-luxury palette
-   (obsidian/gilt). It now imports the editorial palette (cream/indigo/copper)
-   from the same source-of-truth as production auth, onboarding, and the
-   interview surface, then re-exposes them under the legacy names so the
-   1100-line component below didn't need a 100+ site rewrite.
-
-   Discipline rule (preserved from auth/onboarding/interview):
+/* Editorial brand surface — same tokens as auth, onboarding, and the
+   interview surface. Discipline rule:
    Indigo is interactive · Copper is editorial · Never mix. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
-
-const c = {
-  /* Surfaces (was: dark backgrounds → now cream paper) */
-  obsidian: T.cream,
-  graphite: T.white,
-  carbon: T.white,
-  onyx: T.indigo100,
-  /* Text (was: light on dark → now dark on light) */
-  ivory: T.coal,
-  chalk: T.inkSoft,
-  stone: T.inkFaint,
-  /* Interactive accent (was: gilt gold → now indigo) */
-  gilt: T.indigo,
-  giltDark: T.indigoDeep,
-  giltLight: T.indigo100,
-  /* Status */
-  sage: T.success,
-  sageLight: T.success100,
-  ember: T.error,
-  emberLight: T.error100,
-  slate: T.indigoGray,
-  slateLight: T.inkFaint,
-  /* Lines & focus rings */
-  border: T.line,
-  borderHover: T.lineStrong,
-  borderSubtle: T.line,
-  glass: T.cream,
-  glassBright: T.creamSoft,
-  glow: T.indigoRing,
-  glowStrong: T.indigoRing,
-} as const;
-
-const font = {
-  display: F.serif,
-  ui: F.sans,
-  mono: F.mono,
-} as const;
 
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
@@ -178,8 +135,8 @@ function AutocompleteInput({
   return (
     <div>
       {label && (
-        <label htmlFor={id} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.chalk, display: "block", marginBottom: 8 }}>
-          {label} {required && <span style={{ color: c.ember }}>*</span>}
+        <label htmlFor={id} style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.inkSoft, display: "block", marginBottom: 8 }}>
+          {label} {required && <span style={{ color: T.error }}>*</span>}
         </label>
       )}
       <input
@@ -199,25 +156,25 @@ function AutocompleteInput({
         aria-describedby={error ? `${id}-error` : undefined}
         style={{
           width: "100%", padding: "12px 16px", borderRadius: 10,
-          background: c.graphite, border: `1.5px solid ${error ? c.ember : focused ? c.gilt : c.border}`,
-          color: c.ivory, fontFamily: font.ui, fontSize: 14,
+          background: T.white, border: `1.5px solid ${error ? T.error : focused ? T.indigo : T.line}`,
+          color: T.coal, fontFamily: F.sans, fontSize: 14,
           outline: "none", transition: "border-color 0.2s", boxSizing: "border-box",
         }}
       />
-      {error && <p id={`${id}-error`} role="alert" style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginTop: 4 }}>{error}</p>}
+      {error && <p id={`${id}-error`} role="alert" style={{ fontFamily: F.sans, fontSize: 11, color: T.error, marginTop: 4 }}>{error}</p>}
       {filtered.length > 0 && dropdownPos && createPortal(
         <div role="listbox" style={{
           position: "fixed", top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999,
-          background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 10,
+          background: T.white, border: `1px solid ${T.line}`, borderRadius: 10,
           boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)", maxHeight: 220, overflowY: "auto",
         }}>
           {filtered.map((s, i) => (
             <button key={s} role="option" aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
               style={{
                 display: "block", width: "100%", padding: "10px 16px", border: "none", textAlign: "left",
-                fontFamily: font.ui, fontSize: 13, cursor: "pointer",
+                fontFamily: F.sans, fontSize: 13, cursor: "pointer",
                 background: i === selectedIdx ? "rgba(49,46,129,0.08)" : "transparent",
-                color: i === selectedIdx ? c.ivory : c.chalk,
+                color: i === selectedIdx ? T.coal : T.inkSoft,
               }}>
               {s}
             </button>
@@ -485,7 +442,7 @@ export default function SessionSetup() {
   const sessionLengthLabel = sessionLength === "10m" ? "10 minutes" : sessionLength === "25m" ? "25 minutes" : "15 minutes";
 
   return (
-    <div style={{ minHeight: "100vh", background: c.obsidian, display: "flex", flexDirection: "column", color: c.ivory, fontFamily: font.ui }}>
+    <div style={{ minHeight: "100vh", background: T.cream, display: "flex", flexDirection: "column", color: T.coal, fontFamily: F.sans }}>
       <style>{AUTH_STYLES}</style>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
@@ -494,7 +451,7 @@ export default function SessionSetup() {
         @keyframes launchPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } }
         @keyframes countdownPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes countdownFade { 0% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0.6; transform: scale(0.95); } }
-        .ob-card { background: ${c.graphite}; border: 1px solid ${c.border}; }
+        .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         .ob-mic-pulse { animation: pulse 2s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -511,12 +468,12 @@ export default function SessionSetup() {
       {showDraftBanner && draft && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          padding: "14px 24px", background: "rgba(49,46,129,0.1)",
+          padding: "14px 24px", background: T.indigo100,
           borderBottom: `1px solid rgba(49,46,129,0.2)`,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
           backdropFilter: "blur(8px)",
         }}>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory }}>
+          <span style={{ fontFamily: F.sans, fontSize: 13, color: T.coal }}>
             You have an unfinished <strong>{draft.type}</strong> session ({Math.floor(draft.elapsed / 60)}m {draft.elapsed % 60}s in).
           </span>
           <button onClick={() => {
@@ -524,16 +481,16 @@ export default function SessionSetup() {
             router.push(`/interview?type=${draft.type}&difficulty=${draft.difficulty}&focus=${draft.focus || "general"}&resume=true`);
           }} style={{
             padding: "6px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian,
-            fontFamily: font.ui, fontSize: 12, fontWeight: 600,
+            background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: T.cream,
+            fontFamily: F.sans, fontSize: 12, fontWeight: 600,
           }}>Resume</button>
           <button onClick={() => {
             localStorage.removeItem(`hirestepx_interview_draft_${user?.id || "anon"}`);
             setShowDraftBanner(false);
           }} style={{
             padding: "6px 16px", borderRadius: 10, cursor: "pointer",
-            background: "transparent", border: `1px solid ${c.border}`, color: c.stone,
-            fontFamily: font.ui, fontSize: 12, fontWeight: 500,
+            background: "transparent", border: `1px solid ${T.line}`, color: T.inkFaint,
+            fontFamily: F.sans, fontSize: 12, fontWeight: 500,
           }}>Discard</button>
         </div>
       )}
@@ -559,17 +516,17 @@ export default function SessionSetup() {
                   onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(stepNum); } } : undefined}
                   style={{
                     width: 26, height: 26, borderRadius: "50%",
-                    background: isCompleted ? `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})` : isCurrent ? "rgba(49,46,129,0.1)" : "transparent",
-                    border: `1.5px solid ${step >= stepNum ? c.gilt : "rgba(14,12,8,0.08)"}`,
+                    background: isCompleted ? `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})` : isCurrent ? T.indigo100 : "transparent",
+                    border: `1.5px solid ${step >= stepNum ? T.indigo : "rgba(14,12,8,0.08)"}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
                     boxShadow: isCurrent ? "0 0 12px rgba(49,46,129,0.15)" : "none",
                     cursor: canClick ? "pointer" : "default",
                   }}>
                   {isCompleted ? (
-                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.obsidian} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.cream} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                   ) : (
-                    <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: isCurrent ? c.gilt : c.stone }}>{stepNum}</span>
+                    <span style={{ fontFamily: F.mono, fontSize: 10, fontWeight: 600, color: isCurrent ? T.indigo : T.inkFaint }}>{stepNum}</span>
                   )}
                 </div>
                 <span
@@ -577,8 +534,8 @@ export default function SessionSetup() {
                   tabIndex={canClick ? 0 : undefined}
                   onClick={canClick ? () => setStep(stepNum) : undefined}
                   onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(stepNum); } } : undefined}
-                  style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? c.ivory : c.stone, fontWeight: isCurrent ? 500 : 400, cursor: canClick ? "pointer" : "default" }}>{label}</span>
-                {i < 1 && <div style={{ width: 24, height: 1, background: isCompleted ? `linear-gradient(90deg, ${c.gilt}, rgba(49,46,129,0.2))` : "rgba(14,12,8,0.06)", transition: "background 0.4s", borderRadius: 1 }} />}
+                  style={{ fontFamily: F.sans, fontSize: 11, color: isCurrent ? T.coal : T.inkFaint, fontWeight: isCurrent ? 500 : 400, cursor: canClick ? "pointer" : "default" }}>{label}</span>
+                {i < 1 && <div style={{ width: 24, height: 1, background: isCompleted ? `linear-gradient(90deg, ${T.indigo}, rgba(49,46,129,0.2))` : "rgba(14,12,8,0.06)", transition: "background 0.4s", borderRadius: 1 }} />}
               </div>
             );
           })}
@@ -594,12 +551,12 @@ export default function SessionSetup() {
           {step === 1 && (
             <div>
               <div style={{ marginBottom: 32 }} className="fade-up-1">
-                <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 1 — Your Session</p>
-                <h2 style={{ fontFamily: font.display, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
+                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 1 — Your Session</p>
+                <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h2>
-                <p style={{ fontFamily: font.ui, fontSize: 15, color: c.stone, lineHeight: 1.7 }}>
+                <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, lineHeight: 1.7 }}>
                   Choose your target role, interview focus, and session length. AI will tailor questions to your profile.
                 </p>
               </div>
@@ -609,10 +566,10 @@ export default function SessionSetup() {
                 <div className="ob-card fade-up-1" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                     </div>
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Target Role</span>
-                    <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, fontWeight: 400, marginLeft: 4 }}>— AI tailors questions to this role</span>
+                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Target Role</span>
+                    <span style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, fontWeight: 400, marginLeft: 4 }}>— AI tailors questions to this role</span>
                   </div>
                   <div className="ob-s2-role-grid">
                     <div>
@@ -638,11 +595,11 @@ export default function SessionSetup() {
                 <div className="ob-card fade-up-2" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Interview Focus <span style={{ color: c.ember, fontWeight: 400 }}>*</span></span>
+                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Interview Focus <span style={{ color: T.error, fontWeight: 400 }}>*</span></span>
                   </div>
-                  <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 16, paddingLeft: 36 }}>
+                  <p style={{ fontFamily: F.sans, fontSize: 12, color: T.inkFaint, marginBottom: 16, paddingLeft: 36 }}>
                     {isFirstTimer && !showAllFocus
                       ? "We picked the best types for your role. Or explore all 10 interview types below."
                       : "Choose what you want to practice. AI will prepare questions based on your selection."}
@@ -676,23 +633,23 @@ export default function SessionSetup() {
                             style={{
                               padding: "14px 18px", borderRadius: 12, cursor: "pointer", transition: "all 0.2s ease", textAlign: "left",
                               background: sel ? "rgba(49,46,129,0.08)" : "transparent",
-                              border: `1.5px solid ${sel ? c.gilt : c.border}`,
+                              border: `1.5px solid ${sel ? T.indigo : T.line}`,
                               boxShadow: sel ? "0 0 16px rgba(49,46,129,0.06)" : "none",
-                              display: "flex", alignItems: "center", gap: 12, color: sel ? c.gilt : c.stone,
+                              display: "flex", alignItems: "center", gap: 12, color: sel ? T.indigo : T.inkFaint,
                               position: "relative",
                             }}>
                             {isRecommended && (
-                              <span style={{ position: "absolute", top: -8, right: 12, fontFamily: font.ui, fontSize: 9, fontWeight: 700, color: c.obsidian, background: c.gilt, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
+                              <span style={{ position: "absolute", top: -8, right: 12, fontFamily: F.sans, fontSize: 9, fontWeight: 700, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
                             )}
-                            <div style={{ width: 36, height: 36, borderRadius: 9, background: sel ? "rgba(49,46,129,0.1)" : "rgba(14,12,8,0.03)", border: `1px solid ${sel ? "rgba(49,46,129,0.2)" : "rgba(14,12,8,0.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 9, background: sel ? T.indigo100 : "rgba(14,12,8,0.03)", border: `1px solid ${sel ? "rgba(49,46,129,0.2)" : "rgba(14,12,8,0.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {opt.icon}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block" }}>{opt.value}</span>
-                              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4 }}>{opt.desc}</span>
+                              <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal, display: "block" }}>{opt.value}</span>
+                              <span style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, lineHeight: 1.4 }}>{opt.desc}</span>
                             </div>
-                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? c.gilt : "rgba(14,12,8,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {sel && <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.gilt }} />}
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? T.indigo : "rgba(14,12,8,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {sel && <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.indigo }} />}
                             </div>
                           </button>
                         );
@@ -701,7 +658,7 @@ export default function SessionSetup() {
                   </div>
                   {isFirstTimer && !showAllFocus && (
                     <button onClick={() => setShowAllFocus(true)}
-                      style={{ display: "flex", alignItems: "center", gap: 6, margin: "14px auto 0", fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.gilt, background: "none", border: "none", cursor: "pointer", padding: "6px 12px" }}
+                      style={{ display: "flex", alignItems: "center", gap: 6, margin: "14px auto 0", fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: T.indigo, background: "none", border: "none", cursor: "pointer", padding: "6px 12px" }}
                       onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
                     >
@@ -715,9 +672,9 @@ export default function SessionSetup() {
                 <div className="ob-card fade-up-3" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Session Length</span>
+                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Session Length</span>
                   </div>
                   <div className="ob-s2-session-grid">
                     {[
@@ -732,25 +689,25 @@ export default function SessionSetup() {
                           style={{
                             padding: "16px 14px", borderRadius: 12, cursor: "pointer", textAlign: "center", position: "relative",
                             background: sel ? "rgba(49,46,129,0.08)" : "transparent",
-                            border: `1.5px solid ${sel ? c.gilt : c.border}`,
+                            border: `1.5px solid ${sel ? T.indigo : T.line}`,
                             boxShadow: sel ? "0 0 16px rgba(49,46,129,0.06)" : "none",
                             transition: "all 0.2s", opacity: locked ? 0.5 : 1,
                           }}>
                           {has15minTaste && opt.value === "15m" ? (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: c.obsidian, background: c.sage, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Free taste!</span>
+                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: F.sans, fontSize: 10, fontWeight: 700, color: T.cream, background: T.success, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Free taste!</span>
                           ) : "recommended" in opt && opt.recommended && !locked && (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: c.obsidian, background: c.gilt, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Recommended</span>
+                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: F.sans, fontSize: 10, fontWeight: 700, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Recommended</span>
                           )}
                           {locked && (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: c.gilt, background: "rgba(49,46,129,0.1)", border: "1px solid rgba(49,46,129,0.2)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 3 }}>
+                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: F.sans, fontSize: 10, fontWeight: 700, color: T.indigo, background: T.indigo100, border: "1px solid rgba(49,46,129,0.2)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 3 }}>
                               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                               Upgrade
                             </span>
                           )}
-                          <span style={{ fontFamily: font.ui, fontSize: 20, fontWeight: 600, color: sel ? c.gilt : c.ivory, display: "block", marginBottom: 2 }}>{opt.label}</span>
-                          <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: sel ? c.ivory : c.chalk, display: "block", marginBottom: 2 }}>{opt.desc}</span>
-                          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, display: "block", marginBottom: 2 }}>{opt.sub}</span>
-                          {"detail" in opt && <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, opacity: 0.7, display: "block", lineHeight: 1.3 }}>{opt.detail}</span>}
+                          <span style={{ fontFamily: F.sans, fontSize: 20, fontWeight: 600, color: sel ? T.indigo : T.coal, display: "block", marginBottom: 2 }}>{opt.label}</span>
+                          <span style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: sel ? T.coal : T.inkSoft, display: "block", marginBottom: 2 }}>{opt.desc}</span>
+                          <span style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, display: "block", marginBottom: 2 }}>{opt.sub}</span>
+                          {"detail" in opt && <span style={{ fontFamily: F.sans, fontSize: 10, color: T.inkFaint, opacity: 0.7, display: "block", lineHeight: 1.3 }}>{opt.detail}</span>}
                         </button>
                       );
                     })}
@@ -768,12 +725,12 @@ export default function SessionSetup() {
           {step === 2 && (
             <div>
               <div style={{ marginBottom: 32 }} className="fade-up-1">
-                <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 2 — Almost There</p>
-                <h2 style={{ fontFamily: font.display, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
+                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 2 — Almost There</p>
+                <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
                   Allow permissions &{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>review</em>
                 </h2>
-                <p style={{ fontFamily: font.ui, fontSize: 15, color: c.stone, lineHeight: 1.7 }}>
+                <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, lineHeight: 1.7 }}>
                   We need microphone access for the interview. Review your profile below, then you're ready to go.
                 </p>
               </div>
@@ -787,26 +744,26 @@ export default function SessionSetup() {
                   background: micStatus === "granted" ? "rgba(21,128,61,0.03)" : undefined,
                 }}>
                   <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: micStatus === "granted" ? "rgba(21,128,61,0.08)" : "rgba(14,12,8,0.03)", border: `1px solid ${micStatus === "granted" ? "rgba(21,128,61,0.2)" : "rgba(14,12,8,0.06)"}` }}>
-                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={micStatus === "granted" ? c.sage : c.stone} strokeWidth="1.5" strokeLinecap="round">
+                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={micStatus === "granted" ? T.success : T.inkFaint} strokeWidth="1.5" strokeLinecap="round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                     </svg>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: micStatus === "granted" ? c.sage : c.ivory }}>
+                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: micStatus === "granted" ? T.success : T.coal }}>
                       {micStatus === "granted" ? "Microphone connected" : micStatus === "denied" ? "Mic denied — you can type instead" : "Microphone"}
                     </span>
                     {micStatus === "granted" && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <div style={{ width: 60, height: 3, borderRadius: 2, background: "rgba(14,12,8,0.06)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", borderRadius: 2, background: micTestState === "fail" ? c.ember : c.sage, width: `${Math.max(5, micLevel)}%`, transition: "width 0.1s" }} />
+                            <div style={{ height: "100%", borderRadius: 2, background: micTestState === "fail" ? T.error : T.success, width: `${Math.max(5, micLevel)}%`, transition: "width 0.1s" }} />
                           </div>
-                          <span style={{ fontFamily: font.ui, fontSize: 10, color: micTestState === "fail" ? c.ember : c.sage }}>
+                          <span style={{ fontFamily: F.sans, fontSize: 10, color: micTestState === "fail" ? T.error : T.success }}>
                             {micTestState === "testing" ? "Say something..." : micTestState === "pass" ? "Mic working" : micTestState === "fail" ? "No audio detected" : "Live"}
                           </span>
                         </div>
                         {micTestState === "fail" && (
-                          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, lineHeight: 1.4 }}>
+                          <span style={{ fontFamily: F.sans, fontSize: 11, color: T.error, lineHeight: 1.4 }}>
                             We didn't pick up any audio. Check that the correct mic is selected in your browser and try again.
                           </span>
                         )}
@@ -828,12 +785,12 @@ export default function SessionSetup() {
                         requestMic();
                       }
                     }}
-                      style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, background: "rgba(49,46,129,0.08)", border: `1px solid rgba(49,46,129,0.2)`, borderRadius: 8, padding: "7px 16px", cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
+                      style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: T.indigo, background: "rgba(49,46,129,0.08)", border: `1px solid rgba(49,46,129,0.2)`, borderRadius: 8, padding: "7px 16px", cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.15)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.08)"; }}>
                       {micStatus === "requesting" ? (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ width: 12, height: 12, border: "2px solid rgba(49,46,129,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                          <div style={{ width: 12, height: 12, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
                           Requesting...
                         </span>
                       ) : micTestState === "fail" ? "Re-test Mic" : micStatus === "denied" ? "Retry" : "Allow"}
@@ -845,28 +802,28 @@ export default function SessionSetup() {
                 <div className="ob-card fade-up-2" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                     <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Your Profile</span>
+                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Your Profile</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                     {[
-                      { label: "Name", value: user?.name?.trim() || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, editStep: 0 },
-                      { label: "Resume", value: user?.resumeFileName || "Not uploaded", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, editStep: 0 },
-                      { label: "Target Role", value: targetRole || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, editStep: 1 },
-                      { label: "Target Company", value: targetCompany || "Exploring", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg>, editStep: 1 },
-                      { label: "Location", value: currentCity && jobCity && currentCity !== jobCity ? `${currentCity} → ${jobCity}` : jobCity || currentCity || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, editStep: 1 },
-                      { label: "Interview Focus", value: interviewFocus.length > 0 ? interviewFocus.join(", ") : "None selected", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, editStep: 1 },
-                      { label: "Session Length", value: sessionLengthLabel, icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, editStep: 1 },
+                      { label: "Name", value: user?.name?.trim() || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, editStep: 0 },
+                      { label: "Resume", value: user?.resumeFileName || "Not uploaded", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, editStep: 0 },
+                      { label: "Target Role", value: targetRole || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, editStep: 1 },
+                      { label: "Target Company", value: targetCompany || "Exploring", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg>, editStep: 1 },
+                      { label: "Location", value: currentCity && jobCity && currentCity !== jobCity ? `${currentCity} → ${jobCity}` : jobCity || currentCity || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, editStep: 1 },
+                      { label: "Interview Focus", value: interviewFocus.length > 0 ? interviewFocus.join(", ") : "None selected", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, editStep: 1 },
+                      { label: "Session Length", value: sessionLengthLabel, icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, editStep: 1 },
                     ].map((item, i, arr) => (
                       <div key={item.label}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
                             <span style={{ flexShrink: 0, display: "flex" }}>{item.icon}</span>
-                            <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, flexShrink: 0 }}>{item.label}</span>
+                            <span style={{ fontFamily: F.sans, fontSize: 13, color: T.inkFaint, flexShrink: 0 }}>{item.label}</span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: item.value === "Not set" || item.value === "Not uploaded" || item.value === "None selected" ? "rgba(154,149,144,0.5)" : c.ivory, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
+                            <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: item.value === "Not set" || item.value === "Not uploaded" || item.value === "None selected" ? "rgba(154,149,144,0.5)" : T.coal, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
                               {item.value}
                             </span>
                             {item.editStep > 0 && (
@@ -876,7 +833,7 @@ export default function SessionSetup() {
                                 onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.3"; }}
                                 aria-label={`Edit ${item.label}`}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                               </button>
                             )}
                           </div>
@@ -886,17 +843,17 @@ export default function SessionSetup() {
                     ))}
                   </div>
                   {user?.resumeText && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 10, background: "rgba(14,12,8,0.02)", border: `1px solid ${c.border}`, marginTop: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 10, background: "rgba(14,12,8,0.02)", border: `1px solid ${T.line}`, marginTop: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>Use resume for personalized questions</span>
+                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>Use resume for personalized questions</span>
                       </div>
                       <div role="switch" aria-checked={useResume} tabIndex={0} onClick={() => setUseResume(!useResume)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setUseResume(!useResume); } }} style={{
                         width: 36, height: 20, borderRadius: 10, padding: 2,
-                        background: useResume ? c.sage : c.border,
+                        background: useResume ? T.success : T.line,
                         transition: "background 0.2s", cursor: "pointer",
                       }}>
-                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: c.ivory, transform: useResume ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
+                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: T.coal, transform: useResume ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
                       </div>
                     </div>
                   )}
@@ -906,13 +863,13 @@ export default function SessionSetup() {
                     <div role="button" tabIndex={0} onClick={() => setJobDescription(prev => prev || " ")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setJobDescription(prev => prev || " "); } }} style={{
                       display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "10px 0",
                     }}>
-                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round">
+                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                       </svg>
-                      <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>
+                      <span style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
                         {jobDescription.trim() ? "Job description added" : "Paste a job description (optional)"}
                       </span>
-                      {jobDescription.trim() && <span style={{ fontFamily: font.ui, fontSize: 10, color: c.sage }}>&#10003;</span>}
+                      {jobDescription.trim() && <span style={{ fontFamily: F.sans, fontSize: 10, color: T.success }}>&#10003;</span>}
                     </div>
                     {jobDescription !== "" && (
                       <textarea
@@ -922,13 +879,13 @@ export default function SessionSetup() {
                         rows={4}
                         maxLength={2000}
                         style={{
-                          width: "100%", fontFamily: font.ui, fontSize: 12, color: c.chalk,
-                          background: T.creamSoft, border: `1px solid ${c.border}`,
+                          width: "100%", fontFamily: F.sans, fontSize: 12, color: T.inkSoft,
+                          background: T.creamSoft, border: `1px solid ${T.line}`,
                           borderRadius: 10, padding: "12px 14px", outline: "none", resize: "vertical",
                           lineHeight: 1.6, boxSizing: "border-box",
                         }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = c.gilt; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = c.border; if (!e.currentTarget.value.trim()) { setJobDescription(""); setJdAnalysis(null); } }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = T.indigo; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = T.line; if (!e.currentTarget.value.trim()) { setJobDescription(""); setJdAnalysis(null); } }}
                         // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated action: textarea opened by clicking "paste JD"
                         autoFocus
                       />
@@ -940,9 +897,9 @@ export default function SessionSetup() {
                         onClick={analyzeJDMatch}
                         disabled={jdAnalyzing}
                         style={{
-                          marginTop: 8, fontFamily: font.ui, fontSize: 12, fontWeight: 500,
-                          padding: "8px 16px", borderRadius: 8, border: `1px solid ${c.gilt}`,
-                          background: "transparent", color: c.gilt, cursor: jdAnalyzing ? "default" : "pointer",
+                          marginTop: 8, fontFamily: F.sans, fontSize: 12, fontWeight: 500,
+                          padding: "8px 16px", borderRadius: 8, border: `1px solid ${T.indigo}`,
+                          background: "transparent", color: T.indigo, cursor: jdAnalyzing ? "default" : "pointer",
                           opacity: jdAnalyzing ? 0.6 : 1, transition: "all 0.2s",
                         }}
                       >
@@ -954,35 +911,35 @@ export default function SessionSetup() {
                     {jdAnalysis && (
                       <div style={{
                         marginTop: 12, padding: 16, borderRadius: 12,
-                        background: "rgba(250,247,240,0.85)", border: `1px solid ${c.border}`,
+                        background: "rgba(250,247,240,0.85)", border: `1px solid ${T.line}`,
                       }}>
                         {/* Match Score Header */}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
                               width: 40, height: 40, borderRadius: "50%",
-                              background: `conic-gradient(${jdAnalysis.matchScore >= 70 ? c.sage : jdAnalysis.matchScore >= 50 ? c.gilt : c.ember} ${jdAnalysis.matchScore * 3.6}deg, ${c.border} 0deg)`,
+                              background: `conic-gradient(${jdAnalysis.matchScore >= 70 ? T.success : jdAnalysis.matchScore >= 50 ? T.indigo : T.error} ${jdAnalysis.matchScore * 3.6}deg, ${T.line} 0deg)`,
                               display: "flex", alignItems: "center", justifyContent: "center",
                             }}>
-                              <div style={{ width: 30, height: 30, borderRadius: "50%", background: c.graphite, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.ivory }}>{jdAnalysis.matchScore}</span>
+                              <div style={{ width: 30, height: 30, borderRadius: "50%", background: T.white, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <span style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.coal }}>{jdAnalysis.matchScore}</span>
                               </div>
                             </div>
                             <div>
-                              <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{jdAnalysis.matchLabel}</div>
-                              <div style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Resume vs Job Description</div>
+                              <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>{jdAnalysis.matchLabel}</div>
+                              <div style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint }}>Resume vs Job Description</div>
                             </div>
                           </div>
-                          <button onClick={() => setJdAnalysis(null)} style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", fontSize: 16 }} aria-label="Close analysis">&times;</button>
+                          <button onClick={() => setJdAnalysis(null)} style={{ background: "none", border: "none", color: T.inkFaint, cursor: "pointer", fontSize: 16 }} aria-label="Close analysis">&times;</button>
                         </div>
 
                         {/* Matched Skills */}
                         {jdAnalysis.matchedSkills.length > 0 && (
                           <div style={{ marginBottom: 10 }}>
-                            <div style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.sage, marginBottom: 4 }}>&#10003; Skills You Have</div>
+                            <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.success, marginBottom: 4 }}>&#10003; Skills You Have</div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                               {jdAnalysis.matchedSkills.map((s, i) => (
-                                <span key={i} style={{ fontFamily: font.ui, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: c.sage, border: "1px solid rgba(21,128,61,0.2)" }}>{s}</span>
+                                <span key={i} style={{ fontFamily: F.sans, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: T.success, border: "1px solid rgba(21,128,61,0.2)" }}>{s}</span>
                               ))}
                             </div>
                           </div>
@@ -991,10 +948,10 @@ export default function SessionSetup() {
                         {/* Missing Skills */}
                         {jdAnalysis.missingSkills.length > 0 && (
                           <div style={{ marginBottom: 10 }}>
-                            <div style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.ember, marginBottom: 4 }}>&#10007; Skills to Highlight</div>
+                            <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.error, marginBottom: 4 }}>&#10007; Skills to Highlight</div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                               {jdAnalysis.missingSkills.map((s, i) => (
-                                <span key={i} style={{ fontFamily: font.ui, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(196,112,90,0.1)", color: c.ember, border: "1px solid rgba(196,112,90,0.2)" }}>{s}</span>
+                                <span key={i} style={{ fontFamily: F.sans, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(196,112,90,0.1)", color: T.error, border: "1px solid rgba(196,112,90,0.2)" }}>{s}</span>
                               ))}
                             </div>
                           </div>
@@ -1003,17 +960,17 @@ export default function SessionSetup() {
                         {/* Interview Tips */}
                         {jdAnalysis.interviewTips.length > 0 && (
                           <div style={{ marginBottom: 8 }}>
-                            <div style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, marginBottom: 4 }}>Interview Tips for This Role</div>
+                            <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.indigo, marginBottom: 4 }}>Interview Tips for This Role</div>
                             {jdAnalysis.interviewTips.map((tip, i) => (
-                              <div key={i} style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, lineHeight: 1.5, marginBottom: 2 }}>&#8226; {tip}</div>
+                              <div key={i} style={{ fontFamily: F.sans, fontSize: 11, color: T.inkSoft, lineHeight: 1.5, marginBottom: 2 }}>&#8226; {tip}</div>
                             ))}
                           </div>
                         )}
 
                         {/* Suggested Focus */}
                         {jdAnalysis.suggestedFocus && (
-                          <div style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(49,46,129,0.08)", border: "1px solid rgba(49,46,129,0.15)" }}>
-                            Recommended focus: <strong style={{ color: c.gilt }}>{jdAnalysis.suggestedFocus}</strong>
+                          <div style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(49,46,129,0.08)", border: "1px solid rgba(49,46,129,0.15)" }}>
+                            Recommended focus: <strong style={{ color: T.indigo }}>{jdAnalysis.suggestedFocus}</strong>
                           </div>
                         )}
                       </div>
@@ -1029,12 +986,12 @@ export default function SessionSetup() {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button onClick={goBack}
                 style={{
-                  fontFamily: font.ui, fontSize: 14, fontWeight: 500, padding: "14px 20px", borderRadius: 10,
-                  border: `1px solid ${c.border}`, background: "transparent", color: c.chalk,
+                  fontFamily: F.sans, fontSize: 14, fontWeight: 500, padding: "14px 20px", borderRadius: 10,
+                  border: `1px solid ${T.line}`, background: "transparent", color: T.inkSoft,
                   cursor: "pointer", transition: "all 0.2s ease", display: "inline-flex", alignItems: "center", gap: 6,
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = c.chalk; e.currentTarget.style.color = c.ivory; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = c.border; e.currentTarget.style.color = c.chalk; }}>
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.inkSoft; e.currentTarget.style.color = T.coal; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.line; e.currentTarget.style.color = T.inkSoft; }}>
                 <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
@@ -1042,9 +999,9 @@ export default function SessionSetup() {
               {step < TOTAL_STEPS ? (
                 <button onClick={goNext} disabled={!canProceedStep1}
                   style={{
-                    fontFamily: font.ui, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
-                    background: !canProceedStep1 ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-                    color: !canProceedStep1 ? "rgba(49,46,129,0.4)" : c.obsidian,
+                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
+                    background: !canProceedStep1 ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
+                    color: !canProceedStep1 ? "rgba(49,46,129,0.4)" : T.cream,
                     cursor: !canProceedStep1 ? "not-allowed" : "pointer",
                     transition: "all 0.25s ease", display: "inline-flex", alignItems: "center", gap: 8,
                     boxShadow: !canProceedStep1 ? "none" : "0 8px 24px rgba(49,46,129,0.2)",
@@ -1058,9 +1015,9 @@ export default function SessionSetup() {
                 <>
                   <button onClick={handleStart} disabled={starting || !isOnline}
                     style={{
-                      fontFamily: font.ui, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
-                      background: (starting || !isOnline) ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-                      color: (starting || !isOnline) ? "rgba(49,46,129,0.4)" : c.obsidian,
+                      fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
+                      background: (starting || !isOnline) ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
+                      color: (starting || !isOnline) ? "rgba(49,46,129,0.4)" : T.cream,
                       cursor: (starting || !isOnline) ? "not-allowed" : "pointer",
                       transition: "all 0.25s ease", display: "inline-flex", alignItems: "center", gap: 8,
                       boxShadow: (starting || !isOnline) ? "none" : "0 8px 24px rgba(49,46,129,0.2)",
@@ -1068,13 +1025,13 @@ export default function SessionSetup() {
                     onMouseEnter={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(49,46,129,0.3)"; } }}
                     onMouseLeave={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(49,46,129,0.2)"; } }}>
                     {starting ? (
-                      <div style={{ width: 16, height: 16, border: "2.5px solid rgba(49,46,129,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                      <div style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
                     ) : (
                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
                     )}
                     {starting ? "Starting..." : micStatus === "granted" ? "Start Practice Interview" : "Start with Text Input"}
                   </button>
-                  <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 8 }}>
+                  <p style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, textAlign: "center", marginTop: 8 }}>
                     {micStatus !== "granted"
                       ? "You can type your answers instead of speaking"
                       : "Your practice interview will start immediately"}
@@ -1085,7 +1042,7 @@ export default function SessionSetup() {
                     const msg = `Hey! I'm prepping${roleText}${companyText} on HireStepX. Want to practice together? Try it out — it's free!\n\nhttps://app.hirestepx.com/session/new`;
                     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                   }} style={{
-                    fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: "#25D366",
+                    fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: "#25D366",
                     background: "rgba(37,211,102,0.06)", border: "1px solid rgba(37,211,102,0.15)",
                     borderRadius: 8, padding: "8px 16px", cursor: "pointer", marginTop: 8,
                     display: "inline-flex", alignItems: "center", gap: 6,
@@ -1100,10 +1057,10 @@ export default function SessionSetup() {
             {/* Save status indicator */}
             {saveStatus !== "idle" && (
               <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, animation: "fadeUp 0.25s ease-out" }}>
-                {saveStatus === "saving" && <div style={{ width: 10, height: 10, border: "1.5px solid rgba(49,46,129,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />}
-                {saveStatus === "saved" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
-                {saveStatus === "error" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>}
-                <span style={{ fontFamily: font.ui, fontSize: 11, color: saveStatus === "error" ? c.ember : saveStatus === "saved" ? c.sage : c.stone }}>
+                {saveStatus === "saving" && <div style={{ width: 10, height: 10, border: `1.5px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />}
+                {saveStatus === "saved" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+                {saveStatus === "error" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.error} strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>}
+                <span style={{ fontFamily: F.sans, fontSize: 11, color: saveStatus === "error" ? T.error : saveStatus === "saved" ? T.success : T.inkFaint }}>
                   {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Progress saved" : "Save failed — your data is safe locally"}
                 </span>
               </div>
@@ -1117,27 +1074,27 @@ export default function SessionSetup() {
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          background: c.obsidian, animation: "launchIn 0.4s ease",
+          background: T.cream, animation: "launchIn 0.4s ease",
         }}>
           {countdown > 0 ? (
             <>
               <div key={countdown} style={{
                 width: 120, height: 120, borderRadius: "50%",
                 background: `linear-gradient(135deg, rgba(49,46,129,0.12), rgba(49,46,129,0.04))`,
-                border: "2px solid rgba(49,46,129,0.3)",
+                border: `2px solid ${T.indigoRing}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 marginBottom: 32,
                 animation: "countdownPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}>
                 <span style={{
-                  fontFamily: font.display, fontSize: 56, fontWeight: 600,
-                  color: c.gilt, lineHeight: 1,
+                  fontFamily: F.serif, fontSize: 56, fontWeight: 600,
+                  color: T.indigo, lineHeight: 1,
                   animation: "countdownFade 1s ease",
                 }}>
                   {countdown}
                 </span>
               </div>
-              <p style={{ fontFamily: font.ui, fontSize: 15, color: c.stone, letterSpacing: "0.02em" }}>
+              <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, letterSpacing: "0.02em" }}>
                 Get ready...
               </p>
             </>
@@ -1150,9 +1107,9 @@ export default function SessionSetup() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 animation: "launchPulse 1.2s ease-in-out infinite",
               }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
               </div>
-              <h2 style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 8, letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontFamily: F.serif, fontSize: 28, fontWeight: 400, color: T.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>
                 Let's go!
               </h2>
             </>
