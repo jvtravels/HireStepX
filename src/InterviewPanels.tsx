@@ -1441,3 +1441,123 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
     </div>
   );
 });
+
+/* ─── InterviewCoachmarks — first-time onboarding overlay ─────────────
+   Voice-first interview is unfamiliar. Shows once per user on the first
+   session ever, then never again. Three short callouts cover the
+   non-obvious affordances: hold-spacebar, press-R to repeat, auto-save.
+   Dismissal is persisted in localStorage so existing users don't see
+   it on subsequent sessions. */
+
+const COACHMARK_LS_KEY = "hsx-iv-coachmarks-dismissed-v1";
+
+export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
+  // Default false → don't even render until we've checked localStorage.
+  // Avoids a flash for returning users.
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(COACHMARK_LS_KEY) !== "true") setOpen(true);
+    } catch { /* localStorage may be blocked (Safari private mode); silently skip */ }
+  }, []);
+  const dismiss = () => {
+    try { localStorage.setItem(COACHMARK_LS_KEY, "true"); } catch { /* ignore */ }
+    setOpen(false);
+  };
+  if (!open) return null;
+  const tips = [
+    {
+      kbd: "Space",
+      title: "Hold to talk",
+      body: "Hold the spacebar to answer by voice. Release when you&rsquo;re done. Or just type — both work.",
+    },
+    {
+      kbd: "R",
+      title: "Repeat the question",
+      body: "Press R or tap the Repeat button if you missed what was asked. Real interviewers do it too.",
+    },
+    {
+      kbd: "✓",
+      title: "Saved automatically",
+      body: "Your answers save after every question. If your network blips, you won&rsquo;t lose anything.",
+    },
+  ];
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="iv-coachmark-title"
+      className="iv-coachmark-backdrop"
+      onClick={(ev) => { if (ev.target === ev.currentTarget) dismiss(); }}
+      onKeyDown={(ev) => { if (ev.key === "Escape") dismiss(); }}
+    >
+      <div className="iv-coachmark-card iv-coachmark">
+        <h2
+          id="iv-coachmark-title"
+          style={{
+            margin: 0, fontFamily: ef.serif, fontSize: 26, fontWeight: 400,
+            lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
+          }}
+        >
+          A quick <em style={{ color: e.copper, fontStyle: "italic" }}>three things</em>.
+        </h2>
+        <p style={{
+          margin: "8px 0 22px", fontFamily: ef.sans, fontSize: 13,
+          color: e.inkSoft, lineHeight: 1.55,
+        }}>
+          Takes ten seconds. We won&rsquo;t show this again.
+        </p>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+          {tips.map((tip, i) => (
+            <li key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <span
+                aria-hidden
+                style={{
+                  flexShrink: 0,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  minWidth: 36, height: 28, padding: "0 8px",
+                  background: e.creamSoft, border: `1px solid ${e.line}`,
+                  borderRadius: 8, fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
+                  color: e.inkSoft, letterSpacing: 0.6,
+                }}
+              >
+                {tip.kbd}
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{
+                  fontFamily: ef.sans, fontSize: 14, fontWeight: 500, color: e.coal,
+                }}>
+                  {tip.title}
+                </span>
+                <span
+                  style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.5 }}
+                  // Tip body uses HTML entities for typographic apostrophes.
+                  dangerouslySetInnerHTML={{ __html: tip.body }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={dismiss}
+            autoFocus
+            style={{
+              background: e.indigo, color: e.cream, border: "none",
+              borderRadius: 999, padding: "10px 22px",
+              fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
+              cursor: "pointer",
+              boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+              transition: "filter 0.16s ease",
+            }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.filter = "brightness(1.10)"; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.filter = "brightness(1)"; }}
+          >
+            Got it — let&rsquo;s start
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});

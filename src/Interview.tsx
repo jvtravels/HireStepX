@@ -2,12 +2,22 @@
 import { useEffect, useRef, useState } from "react";
 import { e, ef } from "./interviewTokens";
 import {
-  StatusToasts, InterviewHeader, AvatarStage, PanelAvatarStage, QuestionCard,
+  StatusToasts, PanelAvatarStage,
   UserAnswerArea, CompletionCard, MicroFeedbackPanel,
-  ControlsBar, TranscriptPanel, EndModal, EvaluatingOverlay,
+  TranscriptPanel, EndModal, EvaluatingOverlay,
   DealSummaryCard, AnnotatedReplayPanel, NegotiationLiveDashboard,
   SaveToast, RepeatButton, MicQuietBanner, ReconnectingOverlay,
+  InterviewCoachmarks,
 } from "./InterviewPanels";
+import {
+  CanvasWordmark, CanvasContextChip, CanvasProgressDots, CanvasStatusPill,
+  CanvasMuteToggle, CanvasCameraToggle, CanvasAvatar,
+  CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
+  CanvasQuestionText, CanvasHintBubble, CanvasTextLink,
+  CanvasMetaRow, CanvasEndButton, CanvasSelfViewTile,
+  type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
+} from "./InterviewCanvasAtoms";
+import { LiveCaptions } from "./InterviewComponents";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { useVideoRecorder } from "./useVideoRecorder";
 import { InterviewProvider } from "./InterviewContext";
@@ -94,6 +104,49 @@ function useMobileAudioResilience() {
   }, []);
 }
 
+/* Map engine phase → canvas visualizer state */
+function vizState(phase: string): CanvasVizState {
+  if (phase === "speaking") return "ai-speaking";
+  if (phase === "thinking") return "ai-thinking";
+  if (phase === "listening") return "user-speaking";
+  return "idle";
+}
+
+/* Map engine phase → canvas persona-label state */
+function personaState(phase: string): CanvasPersonaState {
+  if (phase === "speaking") return "speaking";
+  if (phase === "thinking") return "thinking";
+  if (phase === "listening") return "listening";
+  return "your-turn";
+}
+
+/* Map engine offline → canvas connection-status pill */
+function mapConnectionStatus(isOffline: boolean): CanvasConnectionStatus {
+  return isOffline ? "offline" : "good";
+}
+
+/* LiveCaptions wrapped to render inside the editorial heading slot.
+   Reuses the existing TTS-synced typewriter logic but inherits the
+   parent <h1>'s serif typography. */
+function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEnded }: {
+  text: string;
+  ttsDurationMs?: number;
+  speakingDuration?: number;
+  speechEnded?: boolean;
+}) {
+  return (
+    <span style={{ display: "inline" }}>
+      <LiveCaptions
+        text={text}
+        isTyping
+        speakingDuration={speakingDuration}
+        actualDuration={ttsDurationMs}
+        speechEnded={speechEnded}
+      />
+    </span>
+  );
+}
+
 function InterviewInner() {
   useEffect(() => { addInterviewPreconnects(); }, []);
   useMobileAudioResilience();
@@ -106,9 +159,8 @@ function InterviewInner() {
     showEndModal, tabConflict, isOffline, micError,
     usedFallbackScore, evalTimedOut, lastSessionId,
     evaluating, evalElapsed, aiVoiceEnabled,
-    showCaptions, currentTranscript, microFeedback,
+    currentTranscript, microFeedback,
     totalQuestions, baseQuestionCount, currentQuestionNum, isCurrentFollowUp,
-    timeRemaining, timePercent,
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
@@ -117,10 +169,10 @@ function InterviewInner() {
     targetSalary, highestOffer, liveNegotiationState, voiceConfidence,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
-    setShowTranscript, setShowEndModal, setAiVoiceEnabled,
+    setShowTranscript, setShowEndModal,
     setMicError, setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
-    handleNextQuestion, skipSpeaking, handleEnd, navigate, retryQuestions, replayQuestion,
+    handleNextQuestion, skipSpeaking, handleEnd, navigate, replayQuestion,
     micQuiet, reconnecting, reconnectAttempt,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
@@ -212,153 +264,251 @@ function InterviewInner() {
         }
       `}</style>
 
+      {/* First-time onboarding — three quick callouts, then never again */}
+      <InterviewCoachmarks />
+
       <StatusToasts tabConflict={tabConflict} isOffline={isOffline} micError={micError} />
 
-      <InterviewHeader
-        displayCompany={displayCompany} displayRole={displayRole} displayFocus={displayFocus}
-        llmLoading={llmLoading} currentStep={currentStep} phase={phase} elapsed={elapsed}
-        currentQuestionNum={currentQuestionNum} totalQuestions={totalQuestions}
-        baseQuestionCount={baseQuestionCount} isCurrentFollowUp={isCurrentFollowUp}
-        saveWarning={saveWarning} onRetry={retryQuestions}
-        isSalaryNegotiation={isSalaryNegotiation}
-      />
-
-      {/* ─── Center Stage ─── */}
-      <div className="iv-center" style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        overflow: "auto", padding: "24px 24px 0",
-        position: "relative",
+      {/* ═════════════════════════════════════════════════════════════
+          TOPBAR — canvas composition
+          Wordmark · ContextChip   ProgressDots   StatusPill ·
+                                                  Mute · Camera · Avatar
+          ═════════════════════════════════════════════════════════════ */}
+      <header className="iv-canvas-topbar" style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "18px 32px", gap: 16,
+        borderBottom: `1px solid ${e.line}`, background: e.cream,
+        flexShrink: 0, zIndex: 10,
       }}>
-        {/* Video preview - small self-view */}
-        {video.videoEnabled && (
-          <div className="iv-video-preview" style={{
-            position: "fixed", top: 80, right: 16, zIndex: 20,
-            width: 160, height: 120, borderRadius: 12,
-            overflow: "hidden", border: "2px solid rgba(245,242,237,0.1)",
-            background: e.indigoDeep, boxShadow: "0 8px 24px -10px rgba(20,17,10,.30)",
-          }}>
-            <video
-              ref={video.videoPreviewRef}
-              autoPlay
-              muted
-              playsInline
-              style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }}
-            >
-              <track kind="captions" />
-            </video>
-            <div style={{
-              position: "absolute", bottom: 4, left: 4,
-              display: "flex", alignItems: "center", gap: 4,
-              padding: "2px 6px", borderRadius: 4,
-              background: "rgba(0,0,0,0.6)",
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#EF4444", animation: "recordPulse 1.5s ease-in-out infinite" }} />
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.cream }}>REC</span>
-            </div>
+        <div className="iv-canvas-topbar-left" style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
+          <CanvasWordmark />
+          <span aria-hidden style={{ width: 1, height: 18, background: e.line, display: "inline-block" }} />
+          <CanvasContextChip role={displayRole} company={displayCompany} focus={displayFocus} />
+        </div>
+        <div className="iv-canvas-mobile-hide">
+          <CanvasProgressDots
+            current={Math.max(1, Math.min(currentQuestionNum, baseQuestionCount || totalQuestions))}
+            total={baseQuestionCount || totalQuestions}
+          />
+        </div>
+        <div className="iv-canvas-topbar-right" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          <div className="iv-canvas-mobile-hide">
+            <CanvasStatusPill status={mapConnectionStatus(isOffline)} />
+          </div>
+          <CanvasMuteToggle muted={isMuted} onClick={() => setIsMuted(m => !m)} />
+          <CanvasCameraToggle on={video.videoEnabled} onClick={video.toggleVideo} />
+          <CanvasAvatar />
+        </div>
+      </header>
+
+      {/* ═════════════════════════════════════════════════════════════
+          STAGE — canvas composition
+          ═════════════════════════════════════════════════════════════ */}
+      <main className="iv-canvas-stage" style={{
+        flex: 1,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "flex-start",
+        gap: 22, padding: "32px 48px",
+        position: "relative", overflow: "auto",
+      }}>
+        {/* Question heading — italic-copper accent extraction comes via
+            LLM markup in a follow-up; for now the full question renders
+            in serif. The LiveCaptions wrapper preserves the existing
+            TTS-synced typewriter cadence during phase=speaking. */}
+        {step?.aiText && phase !== "done" && (
+          <div style={{ maxWidth: 620, width: "100%" }}>
+            {phase === "speaking" ? (
+              <CanvasPlainHeading>
+                <LiveCaptionsAsHeading
+                  text={step.aiText}
+                  ttsDurationMs={ttsDurationMs}
+                  speakingDuration={step.speakingDuration}
+                  speechEnded={speechEnded}
+                />
+              </CanvasPlainHeading>
+            ) : (
+              <CanvasPlainHeading>{step.aiText}</CanvasPlainHeading>
+            )}
+            {step?.scoreNote && phase !== "thinking" && (
+              <div style={{ marginTop: 12 }}>
+                <CanvasQuestionText>{step.scoreNote}</CanvasQuestionText>
+              </div>
+            )}
           </div>
         )}
 
-        <div style={{ width: "100%", maxWidth: 560, display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+        {/* Visualizer in its soft disc + halo + voice rings while listening */}
+        {phase !== "done" && (
+          <div style={{
+            position: "relative",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 220, height: 220, borderRadius: 999,
+            background: "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.4) 70%, transparent 100%)",
+          }}>
+            <span className={`hsx-viz-halo hsx-viz-halo--${vizState(phase)}`} />
+            {phase === "listening" && (
+              <>
+                <span className="hsx-iv-ring" />
+                <span className="hsx-iv-ring hsx-iv-ring--delay" />
+              </>
+            )}
+            <CanvasVoiceVisualizer state={vizState(phase)} size={150} />
+          </div>
+        )}
 
-{isPanelInterview && panelMembers ? (
-            <PanelAvatarStage phase={phase} panelMembers={panelMembers} activePersona={activePersona} isMuted={isMuted} speechUnavailable={speechUnavailable} skipSpeaking={skipSpeaking} />
-          ) : (
-            <AvatarStage phase={phase} interviewerName={interviewerName} isMuted={isMuted} speechUnavailable={speechUnavailable} skipSpeaking={skipSpeaking} />
-          )}
-
-          <QuestionCard step={step} phase={phase} showCaptions={showCaptions} timeRemaining={timeRemaining} timePercent={timePercent}
-            panelPersona={isPanelInterview && panelMembers ? panelMembers.find(m => m.title === activePersona) || null : null}
-            actualDuration={ttsDurationMs} speechEnded={speechEnded}
-            isSalaryNegotiation={isSalaryNegotiation}
-          />
-
-          {/* Repeat-the-question — only useful right after AI finishes
-              speaking, when user is about to answer. Hidden during
-              speaking/thinking/done because then it's either redundant or
-              would interrupt evaluation. */}
-          {phase === "listening" && step?.aiText && aiVoiceEnabled && (
-            <RepeatButton onClick={replayQuestion} />
-          )}
-
-{isSalaryNegotiation && liveNegotiationState && phase !== "done" && (
-            <NegotiationLiveDashboard
-              liveState={liveNegotiationState}
-              negotiationBand={negotiationBand}
-              highestOffer={highestOffer}
-              targetSalary={targetSalary}
-              voiceConfidence={voiceConfidence}
-              negotiationStyle={negotiationStyle}
+        {/* Persona name + state */}
+        {phase !== "done" && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minHeight: 52 }}>
+            <CanvasPersonaLabel
+              name={isPanelInterview && activePersona ? activePersona : interviewerName}
+              state={personaState(phase)}
             />
-          )}
+          </div>
+        )}
 
-          {phase === "listening" && (
-            <>
-              <UserAnswerArea
-                currentTranscript={currentTranscript} setCurrentTranscript={setCurrentTranscript}
-                speechUnavailable={speechUnavailable} setSpeechUnavailable={setSpeechUnavailable}
-                isMuted={isMuted} micStreamRef={micStreamRef} noSpeechCountRef={noSpeechCountRef}
-                setMicError={setMicError} handleNextQuestion={handleNextQuestion}
-                textareaRef={textareaRef} nextBtnRef={nextBtnRef}
-                currentStep={currentStep} interviewScriptLength={interviewScript.length}
-                liveMetrics={liveMetrics}
+        {/* Salary-negotiation live dashboard slots above the action zone */}
+        {isSalaryNegotiation && liveNegotiationState && phase !== "done" && (
+          <NegotiationLiveDashboard
+            liveState={liveNegotiationState}
+            negotiationBand={negotiationBand}
+            highestOffer={highestOffer}
+            targetSalary={targetSalary}
+            voiceConfidence={voiceConfidence}
+            negotiationStyle={negotiationStyle}
+          />
+        )}
+
+        {/* Action zone — listening = answer panel + repeat/transcript links */}
+        {phase === "listening" && (
+          <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <UserAnswerArea
+              currentTranscript={currentTranscript} setCurrentTranscript={setCurrentTranscript}
+              speechUnavailable={speechUnavailable} setSpeechUnavailable={setSpeechUnavailable}
+              isMuted={isMuted} micStreamRef={micStreamRef} noSpeechCountRef={noSpeechCountRef}
+              setMicError={setMicError} handleNextQuestion={handleNextQuestion}
+              textareaRef={textareaRef} nextBtnRef={nextBtnRef}
+              currentStep={currentStep} interviewScriptLength={interviewScript.length}
+              liveMetrics={liveMetrics}
+            />
+            {micQuiet && !speechUnavailable && !isMuted && (
+              <MicQuietBanner onSwitchToText={() => textareaRef.current?.focus()} />
+            )}
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+              {step?.aiText && aiVoiceEnabled && <RepeatButton onClick={replayQuestion} />}
+              <CanvasTextLink onClick={() => setShowTranscript(t => !t)}>
+                {showTranscript ? "hide transcript" : "show transcript"}
+              </CanvasTextLink>
+            </div>
+            {isCurrentFollowUp && (
+              <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
+            )}
+          </div>
+        )}
+
+        {phase === "speaking" && (
+          <button
+            type="button"
+            onClick={skipSpeaking}
+            style={{
+              fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.inkSoft,
+              background: e.white, border: `1px solid ${e.line}`,
+              borderRadius: 999, padding: "8px 16px", minHeight: 36,
+              cursor: "pointer", transition: "all 160ms ease",
+              display: "inline-flex", alignItems: "center", gap: 6,
+            }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.background = e.white; }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <polygon points="5 4 15 12 5 20 5 4" />
+              <line x1="19" y1="5" x2="19" y2="19" />
+            </svg>
+            Skip — Enter
+          </button>
+        )}
+
+        {(phase === "thinking" || phase === "speaking") && (
+          <MicroFeedbackPanel transcript={transcript} microFeedback={microFeedback} />
+        )}
+
+        {phase === "done" && (
+          <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", gap: 16 }}>
+            {isSalaryNegotiation && (
+              <DealSummaryCard
+                transcript={transcript}
+                negotiationBand={negotiationBand}
+                negotiationStyle={negotiationStyle}
+                onReplay={(style) => {
+                  const params = new URLSearchParams(window.location.search);
+                  params.set("negotiationStyle", style);
+                  navigate.push(`/interview?${params.toString()}`);
+                  window.location.reload();
+                }}
               />
-              {/* Mic-quiet warning — only fires once STT has reported
-                  ≥2 no-speech errors. Click "switch to typing" focuses
-                  the textarea inside UserAnswerArea. */}
-              {micQuiet && !speechUnavailable && !isMuted && (
-                <MicQuietBanner onSwitchToText={() => textareaRef.current?.focus()} />
-              )}
-            </>
-          )}
+            )}
+            {isSalaryNegotiation && transcript.length > 2 && (
+              <AnnotatedReplayPanel transcript={transcript} negotiationBand={negotiationBand} />
+            )}
+            <CompletionCard
+              currentQuestionNum={currentQuestionNum} elapsed={elapsed}
+              usedFallbackScore={usedFallbackScore} evalTimedOut={evalTimedOut}
+              evaluating={evaluating} handleEnd={handleEnd}
+              videoURL={video.videoURL}
+              isSalaryNegotiation={isSalaryNegotiation}
+            />
+          </div>
+        )}
 
-          {phase === "done" && (
-            <>
-              {isSalaryNegotiation && (
-                <DealSummaryCard
-                  transcript={transcript}
-                  negotiationBand={negotiationBand}
-                  negotiationStyle={negotiationStyle}
-                  onReplay={(style) => {
-                    // Replay the negotiation with a different hiring manager style
-                    const params = new URLSearchParams(window.location.search);
-                    params.set("negotiationStyle", style);
-                    navigate.push(`/interview?${params.toString()}`);
-                    window.location.reload();
-                  }}
-                />
-              )}
-              {isSalaryNegotiation && transcript.length > 2 && (
-                <AnnotatedReplayPanel
-                  transcript={transcript}
-                  negotiationBand={negotiationBand}
-                />
-              )}
-              <CompletionCard
-                currentQuestionNum={currentQuestionNum} elapsed={elapsed}
-                usedFallbackScore={usedFallbackScore} evalTimedOut={evalTimedOut}
-                evaluating={evaluating} handleEnd={handleEnd}
-                videoURL={video.videoURL}
-                isSalaryNegotiation={isSalaryNegotiation}
-              />
-            </>
-          )}
+        {/* Panel-interview persona indicator floats top-center on desktop */}
+        {isPanelInterview && panelMembers && phase !== "done" && (
+          <div className="iv-canvas-mobile-hide" style={{
+            position: "absolute", top: 22, left: "50%", transform: "translateX(-50%)",
+          }}>
+            <PanelAvatarStage
+              phase={phase} panelMembers={panelMembers} activePersona={activePersona}
+              isMuted={isMuted} speechUnavailable={speechUnavailable} skipSpeaking={skipSpeaking}
+            />
+          </div>
+        )}
 
-          {(phase === "thinking" || phase === "speaking") && (
-            <MicroFeedbackPanel transcript={transcript} microFeedback={microFeedback} />
-          )}
+        {llmLoading && currentStep <= 1 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 10, height: 10, border: `1.5px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions…</span>
+          </div>
+        )}
+      </main>
 
-        </div>
-      </div>
+      {/* ═════════════════════════════════════════════════════════════
+          FOOTER — canvas composition
+          MetaRow            trustLine            EndButton
+          ═════════════════════════════════════════════════════════════ */}
+      <footer className="iv-canvas-footer" style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 32px max(14px, env(safe-area-inset-bottom, 14px))",
+        gap: 16, borderTop: `1px solid ${e.line}`, background: e.cream,
+        flexShrink: 0, zIndex: 10,
+      }}>
+        <CanvasMetaRow
+          elapsedSec={elapsed}
+          exchanges={Math.max(0, Math.min(currentQuestionNum, baseQuestionCount || totalQuestions))}
+        />
+        <span className="iv-canvas-mobile-hide" style={{
+          fontFamily: ef.sans, fontSize: 11, color: e.inkFaint, letterSpacing: 0.1,
+        }}>
+          Recording for your review only · never shared
+        </span>
+        {phase !== "done" && (
+          <span ref={endModalTriggerRef as React.Ref<HTMLSpanElement>} style={{ display: "inline-flex" }}>
+            <CanvasEndButton onClick={() => { ttsCancelRef.current?.(); ttsCancelRef.current = null; setShowEndModal(true); }} />
+          </span>
+        )}
+      </footer>
 
-      <ControlsBar
-        isMuted={isMuted} setIsMuted={setIsMuted}
-        aiVoiceEnabled={aiVoiceEnabled} setAiVoiceEnabled={setAiVoiceEnabled}
-        showTranscript={showTranscript} setShowTranscript={setShowTranscript}
-        phase={phase} ttsCancelRef={ttsCancelRef}
-        setShowEndModal={setShowEndModal} endModalTriggerRef={endModalTriggerRef}
-        videoEnabled={video.videoEnabled} onToggleVideo={video.toggleVideo}
-      />
+      {/* Self-view tile (camera-on overlay, bottom-right) */}
+      {video.videoEnabled && phase !== "done" && (
+        <CanvasSelfViewTile videoRef={video.videoPreviewRef} />
+      )}
 
       {showTranscript && (
         <TranscriptPanel

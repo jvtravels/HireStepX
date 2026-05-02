@@ -63,8 +63,9 @@ describe("Interview", () => {
       );
     });
 
-    // Should show HireStepX branding
-    expect(screen.getByText("HireStepX")).toBeInTheDocument();
+    // Should show HireStepX branding (wordmark uses aria-label since the
+    // italic-X is rendered in a separate span for typography)
+    expect(screen.getByLabelText("HireStepX")).toBeInTheDocument();
     // Should show timer starting at 00:00
     expect(screen.getAllByText("00:00").length).toBeGreaterThanOrEqual(1);
   });

@@ -231,7 +231,7 @@ describe("Flow 4: Interview Lifecycle", () => {
         ,
       );
     });
-    expect(screen.getByText("HireStepX")).toBeInTheDocument();
+    expect(screen.getByLabelText("HireStepX")).toBeInTheDocument();
     expect(screen.getAllByText("00:00").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByLabelText(/^Mute \(Alt\+M\)/)).toBeInTheDocument();
   });
@@ -633,7 +633,7 @@ describe("Flow 11: Edge Cases", () => {
       );
     });
     // Should still render without crashing
-    expect(screen.getByText("HireStepX")).toBeInTheDocument();
+    expect(screen.getByLabelText("HireStepX")).toBeInTheDocument();
   });
 
   it("dashboard handles user with no practice history", async () => {
