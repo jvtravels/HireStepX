@@ -802,17 +802,61 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
       <button
         onClick={handleEnd}
         disabled={evaluating}
+        aria-label={evaluating ? "Loading your feedback" : "View your interview feedback"}
         style={{
-          fontFamily: font.ui, fontSize: 13, fontWeight: 600, width: "100%",
-          padding: "12px 24px", borderRadius: 10, marginTop: 8,
-          background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-          border: "none", color: c.obsidian, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-          transition: "all 0.2s ease",
+          // Use editorial indigo CTA so it reads unambiguously as the
+          // primary action — copper would clash with the editorial
+          // "copper-is-accent-not-CTA" rule.
+          fontFamily: ef.sans, fontSize: 14, fontWeight: 500, width: "100%",
+          padding: "13px 24px", borderRadius: 999, marginTop: 12,
+          background: evaluating ? e.lineStrong : e.indigo,
+          border: "none", color: e.cream,
+          cursor: evaluating ? "wait" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms ease",
+          // Strong shadow so the button reads as elevated and clickable —
+          // QA bug 33 reported it looked flat / non-interactive.
+          boxShadow: evaluating
+            ? "none"
+            : "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)",
+        }}
+        onMouseEnter={(ev) => {
+          if (evaluating) return;
+          ev.currentTarget.style.transform = "translateY(-1px)";
+          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.20), 0 12px 28px -4px rgba(49,46,129,.55)";
+        }}
+        onMouseLeave={(ev) => {
+          if (evaluating) return;
+          ev.currentTarget.style.transform = "translateY(0)";
+          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)";
+        }}
+        onMouseDown={(ev) => {
+          if (evaluating) return;
+          ev.currentTarget.style.transform = "translateY(0)";
+          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.20) inset";
+        }}
+        onFocus={(ev) => {
+          ev.currentTarget.style.boxShadow = `0 0 0 4px ${e.indigoRing}, 0 8px 20px -4px rgba(49,46,129,.42)`;
+        }}
+        onBlur={(ev) => {
+          if (evaluating) { ev.currentTarget.style.boxShadow = "none"; return; }
+          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)";
         }}
       >
-        View Feedback
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        {evaluating ? (
+          <>
+            <span style={{ width: 14, height: 14, border: `2px solid rgba(250,247,240,0.30)`, borderTopColor: e.cream, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            Generating your report…
+          </>
+        ) : (
+          <>
+            View feedback
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1)" }}>
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </>
+        )}
       </button>
     </div>
   );

@@ -801,7 +801,18 @@ export function useInterviewEngine() {
     : (step?.persona || interviewerName);
   const totalQuestions = useMemo(() => interviewScript.filter(s => s.type === "question" || s.type === "follow-up").length, [interviewScript]);
   const baseQuestionCount = useMemo(() => interviewScript.filter(s => s.type === "question").length, [interviewScript]);
-  const currentQuestionNum = useMemo(() => interviewScript.slice(0, currentStep + 1).filter(s => s.type === "question" || s.type === "follow-up").length, [interviewScript, currentStep]);
+  /* currentQuestionNum is the BASE-question position (1..baseQuestionCount).
+     A follow-up keeps the same number as its parent question — so a user
+     mid-followup-on-Q3 sees "Question 3 of 5", not "Question 4 of 5".
+     This also caps at baseQuestionCount so a back-button re-entry that
+     restored a high currentStep can't overflow to "Question 10 of 5"
+     (QA bug 33). The follow-up indicator is conveyed separately via
+     isCurrentFollowUp, so display layers can render "Q3 · follow-up". */
+  const currentQuestionNum = useMemo(() => {
+    if (interviewScript.length === 0 || baseQuestionCount === 0) return 0;
+    const baseSoFar = interviewScript.slice(0, currentStep + 1).filter(s => s.type === "question").length;
+    return Math.min(Math.max(0, baseSoFar), baseQuestionCount);
+  }, [interviewScript, currentStep, baseQuestionCount]);
   const isCurrentFollowUp = step?.type === "follow-up";
 
   // Interview flow: thinking -> speaking (with TTS) -> listening
