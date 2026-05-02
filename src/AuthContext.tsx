@@ -726,15 +726,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
-      // Supabase returns fake success for existing emails (email enumeration protection).
-      // Detect this: if user.identities is empty, the email already exists.
-      // OWASP-recommended pattern: don't leak existence to the client.
-      // Send the user an "you already have an account" email instead of a
-      // verify email, and return success so the UI shows the same
-      // "Check your email" state regardless of whether the account is new.
-      const isExistingEmail =
-        data?.user &&
-        (!data.user.identities || data.user.identities.length === 0);
+      // Detect existing-email signups across Supabase's three response shapes:
+      //
+      //   1. OWASP enumeration protection ON (default): data.user is
+      //      returned with `identities: []` — empty array. We fall through
+      //      to the existing-account email.
+      //   2. Newer Supabase configs / "Confirm email" enabled but
+      //      enumeration protection lax: data.user is returned with the
+      //      REAL user record (populated identities). The reliable signal
+      //      here is data.user.email_confirmed_at — when it's a non-null
+      //      timestamp the email is already verified, so a fresh
+      //      verification mail would be wrong.
+      //   3. Enumeration protection OFF entirely: Supabase returns an
+      //      explicit "already registered" error — handled in the
+      //      `if (error)` block above.
+      //
+      // Hitting any of the three paths funnels into the same "Check your
+      // email" UX so legit users never read "couldn't complete signup".
+      const userObj = data?.user as
+        | (typeof data.user & { email_confirmed_at?: string | null })
+        | undefined;
+      const isExistingEmail = !!userObj && (
+        !userObj.identities || userObj.identities.length === 0 ||
+        !!userObj.email_confirmed_at
+      );
       if (isExistingEmail) {
         // Fire-and-forget — non-blocking. Server routes to the
         // "existing-account" template via the action flag.
