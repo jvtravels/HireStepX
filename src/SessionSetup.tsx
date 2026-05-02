@@ -594,9 +594,10 @@ export default function SessionSetup() {
           {step === 1 && (
             <div>
               <div style={{ marginBottom: 32 }} className="fade-up-1">
-                <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: c.gilt, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 1 — Your Session</p>
-                <h2 style={{ fontFamily: font.display, fontSize: 32, fontWeight: 400, color: c.ivory, letterSpacing: "-0.025em", lineHeight: 1.2, marginBottom: 10 }}>
-                  Set up your practice session
+                <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 1 — Your Session</p>
+                <h2 style={{ fontFamily: font.display, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
+                  Let&apos;s get you{" "}
+                  <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h2>
                 <p style={{ fontFamily: font.ui, fontSize: 15, color: c.stone, lineHeight: 1.7 }}>
                   Choose your target role, interview focus, and session length. AI will tailor questions to your profile.
@@ -767,9 +768,10 @@ export default function SessionSetup() {
           {step === 2 && (
             <div>
               <div style={{ marginBottom: 32 }} className="fade-up-1">
-                <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: c.gilt, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 2 — Almost There</p>
-                <h2 style={{ fontFamily: font.display, fontSize: 32, fontWeight: 400, color: c.ivory, letterSpacing: "-0.025em", lineHeight: 1.2, marginBottom: 10 }}>
-                  Allow permissions & review
+                <p style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 2 — Almost There</p>
+                <h2 style={{ fontFamily: font.display, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: c.ivory, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
+                  Allow permissions &{" "}
+                  <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>review</em>
                 </h2>
                 <p style={{ fontFamily: font.ui, fontSize: 15, color: c.stone, lineHeight: 1.7 }}>
                   We need microphone access for the interview. Review your profile below, then you're ready to go.
@@ -781,10 +783,10 @@ export default function SessionSetup() {
                 <div className={`ob-card fade-up-1 ${micStatus !== "granted" ? "ob-mic-pulse" : ""}`} style={{
                   borderRadius: 12, padding: "14px 20px",
                   display: "flex", alignItems: "center", gap: 14,
-                  border: `1px solid ${micStatus === "granted" ? "rgba(122,158,126,0.15)" : "rgba(49,46,129,0.15)"}`,
-                  background: micStatus === "granted" ? "rgba(122,158,126,0.03)" : undefined,
+                  border: `1px solid ${micStatus === "granted" ? "rgba(21,128,61,0.15)" : "rgba(49,46,129,0.15)"}`,
+                  background: micStatus === "granted" ? "rgba(21,128,61,0.03)" : undefined,
                 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: micStatus === "granted" ? "rgba(122,158,126,0.08)" : "rgba(14,12,8,0.03)", border: `1px solid ${micStatus === "granted" ? "rgba(122,158,126,0.2)" : "rgba(14,12,8,0.06)"}` }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: micStatus === "granted" ? "rgba(21,128,61,0.08)" : "rgba(14,12,8,0.03)", border: `1px solid ${micStatus === "granted" ? "rgba(21,128,61,0.2)" : "rgba(14,12,8,0.06)"}` }}>
                     <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={micStatus === "granted" ? c.sage : c.stone} strokeWidth="1.5" strokeLinecap="round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                     </svg>
@@ -980,7 +982,7 @@ export default function SessionSetup() {
                             <div style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.sage, marginBottom: 4 }}>&#10003; Skills You Have</div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                               {jdAnalysis.matchedSkills.map((s, i) => (
-                                <span key={i} style={{ fontFamily: font.ui, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(122,158,126,0.1)", color: c.sage, border: "1px solid rgba(122,158,126,0.2)" }}>{s}</span>
+                                <span key={i} style={{ fontFamily: font.ui, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: c.sage, border: "1px solid rgba(21,128,61,0.2)" }}>{s}</span>
                               ))}
                             </div>
                           </div>
