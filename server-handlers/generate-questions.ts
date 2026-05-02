@@ -328,8 +328,29 @@ If unclear, default to IAS-style interview tone.`,
     // technically valid — anchoring to "your role at <company>" or "the <project>
     // you led" makes the experience feel like a real recruiter who actually read
     // the resume.
-    const resumeGroundingDirective = (resumeText || resumeTopSkills?.length || resumeIntelligence)
-      ? `\nRESUME GROUNDING (mandatory): at least ONE question (Q2 or Q3) MUST reference a specific detail from the candidate's resume — a past role, a project, a company name, or a specific skill they listed. Phrasing like "I see you led X at Y — tell me about..." or "You list <skill> on your resume — walk me through where you applied it." This makes the AI feel like an interviewer who actually read the resume, not a generic question generator.`
+    /* Resume grounding has two modes depending on signal strength.
+     *
+     *   RICH (>=400 chars of resume text OR resume intelligence summary):
+     *     Mandate at least one resume-anchored question. The model has
+     *     enough material to reference a specific role/project/skill.
+     *
+     *   SPARSE (<400 chars of resume text):
+     *     Forbid any specific past company/title/project mentions.
+     *     The model is much more likely to hallucinate "your time at
+     *     Microsoft" when the resume contains 80 chars of "Software
+     *     Engineer with 3 years experience". Falls back to generic
+     *     resume-aware framings ("based on your experience...") that
+     *     can't fabricate.
+     */
+    const resumeWordCount = resumeText ? resumeText.trim().split(/\s+/).length : 0;
+    const resumeIsSparse = resumeText
+      ? resumeWordCount < 60 && !resumeIntelligence && !(resumeTopSkills?.length)
+      : false;
+
+    const resumeGroundingDirective = resumeIsSparse
+      ? `\nRESUME GROUNDING (sparse-resume guard): The candidate's resume contains only ${resumeWordCount} words and no parsed intelligence. ABSOLUTELY DO NOT invent specific past employers, job titles, project names, technologies, schools, or metrics. Phrases like "your time at Google", "the migration you led at Razorpay", "your work on the Stripe integration", or "your B.Tech from IIT" are FORBIDDEN unless the exact term appears in the resume text. When you want to anchor to experience, use ungrounded framings: "based on your experience…", "in your most recent role…", "drawing from a project you've worked on…". Hallucinating one specific detail destroys candidate trust for the entire session.`
+      : (resumeText || resumeTopSkills?.length || resumeIntelligence)
+      ? `\nRESUME GROUNDING (mandatory): at least ONE question (Q2 or Q3) MUST reference a specific detail from the candidate's resume — a past role, a project, a company name, or a specific skill they listed. Phrasing like "I see you led X at Y — tell me about..." or "You list <skill> on your resume — walk me through where you applied it." This makes the AI feel like an interviewer who actually read the resume, not a generic question generator. CRITICAL: only reference details that are explicitly present in the resume text/skills/intelligence above. Never invent a company, title, project, or metric that isn't there.`
       : "";
 
     const panelNote = interviewType === "panel"
@@ -358,6 +379,18 @@ ${typeGuidance ? `\n${typeGuidance}\n` : ""}${resumeGroundingDirective}${industr
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
+
+DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
+${questionCount >= 4 ? `
+- Q1 (warmup): low-stakes, broad, easy to start. "Tell me about your most recent role" / "What's a project you're proud of?". No trick angles.
+- Q2 (foundational): tests one specific competency directly. Concrete, but not yet probing for trade-offs or failure modes.
+- Q${Math.ceil(questionCount / 2)} (standard): mid-difficulty, the bar-setting question. Expects structure (STAR / framework) and at least one specific metric.
+- Q${questionCount - 1} (stretch): probes a hard moment — failure, ambiguity, conflict, trade-off under constraints. Multi-part is fine here.
+- Q${questionCount} (signature): the hardest question. Tests judgment, not knowledge. Requires the candidate to take a position and defend it. This is the question they'll remember from the session.` : `
+- Q1 (warmup): broad and easy. "Tell me about yourself" or "Why this role?".
+- Q${Math.max(2, questionCount - 1)} (standard): bar-setting, requires structure and a specific metric.
+- Q${questionCount} (stretch): probes failure, ambiguity, or judgment under constraints.`}
+Do NOT make every question equally hard — that's a screening test, not an interview. The escalation itself is part of what reveals signal.
 
 Each step: {"type":"intro|question|closing","aiText":"2-3 sentences spoken naturally by the interviewer","scoreNote":"specific evaluation criteria for this question"${interviewType === "panel" ? ',"persona":"Hiring Manager|Technical Lead|HR Partner"' : ""}}${panelNote}
 

@@ -893,31 +893,54 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
 
 /* ─── Micro-feedback on last answer ─── */
 
+/* MicroFeedbackPanel — editorial recap of the last user answer + a
+   tiny strength/improvement chip. Cream card, mono caps label, no
+   green tints (those felt "alert-y" against the editorial palette). */
 export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript, microFeedback }: {
   transcript: { speaker: string; text: string }[];
   microFeedback: string | null;
 }) {
   const lastUserMsg = [...transcript].reverse().find(t => t.speaker === "user");
   if (!lastUserMsg) return null;
+  const isStrong = microFeedback?.includes("Strong") ?? false;
   return (
-    <div style={{ width: "100%", borderRadius: 12, padding: "12px 16px", background: "rgba(21,128,61,0.07)", border: "1px solid rgba(21,128,61,0.10)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-        <div style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(21,128,61,0.35)" }} />
-        <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Your last answer</span>
+    <div style={{
+      width: "100%", borderRadius: 14, padding: "12px 16px",
+      background: e.white, border: `1px solid ${e.line}`,
+      boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <span style={{
+          fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+          letterSpacing: 1.4, color: e.copper,
+        }}>
+          Your last answer
+        </span>
       </div>
       <p style={{
-        fontFamily: font.ui, fontSize: 12, color: "rgba(197,192,186,0.5)", lineHeight: 1.5, margin: 0,
-        overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
-      }}>{lastUserMsg.text}</p>
+        fontFamily: ef.serif, fontSize: 13, color: e.indigoGray,
+        lineHeight: 1.55, margin: 0, fontStyle: "italic",
+        overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2,
+        WebkitBoxOrient: "vertical" as const,
+      }}>
+        &ldquo;{lastUserMsg.text}&rdquo;
+      </p>
       {microFeedback && (
         <div style={{
-          marginTop: 6, padding: "5px 10px", borderRadius: 6,
-          background: microFeedback.includes("Strong") ? "rgba(21,128,61,0.13)" : "rgba(180,83,9,0.10)",
-          border: `1px solid ${microFeedback.includes("Strong") ? "rgba(21,128,61,0.18)" : "rgba(180,83,9,0.14)"}`,
-          display: "flex", alignItems: "center", gap: 6,
+          marginTop: 8, padding: "5px 10px", borderRadius: 999,
+          display: "inline-flex", alignItems: "center", gap: 6,
+          background: isStrong ? "rgba(21,128,61,0.10)" : "rgba(180,83,9,0.10)",
+          border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "rgba(180,83,9,0.20)"}`,
         }}>
-          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={microFeedback.includes("Strong") ? c.sage : c.gilt} strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: microFeedback.includes("Strong") ? c.sage : c.gilt }}>{microFeedback}</span>
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            {isStrong ? <polyline points="20 6 9 17 4 12" /> : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>}
+          </svg>
+          <span style={{
+            fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
+            color: isStrong ? e.success : e.copper,
+          }}>
+            {microFeedback}
+          </span>
         </div>
       )}
     </div>
@@ -1026,20 +1049,25 @@ export const ControlsBar = memo(function ControlsBar({ isMuted, setIsMuted, aiVo
 const TranscriptFilters = memo(function TranscriptFilters({ panelMembers, activeFilter, setActiveFilter }: {
   panelMembers: PanelMember[]; activeFilter: string; setActiveFilter: (v: string) => void;
 }) {
-  const filters = [{ label: "All", value: "all", color: c.ivory }, ...panelMembers.map(m => ({ label: m.name.split(" ")[0], value: m.title, color: m.color }))];
+  const filters = [{ label: "All", value: "all", color: e.coal }, ...panelMembers.map(m => ({ label: m.name.split(" ")[0], value: m.title, color: m.color }))];
   return (
-    <div style={{ display: "flex", gap: 4, padding: "8px 20px", borderBottom: `1px solid ${c.border}`, overflow: "auto" }}>
-      {filters.map(f => (
-        <button key={f.value} onClick={() => setActiveFilter(f.value)} style={{
-          fontFamily: font.ui, fontSize: 10, fontWeight: 600, padding: "3px 10px",
-          borderRadius: 100, border: `1px solid ${activeFilter === f.value ? `${f.color}40` : "transparent"}`,
-          background: activeFilter === f.value ? `${f.color}12` : "transparent",
-          color: activeFilter === f.value ? f.color : c.stone,
-          cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s",
-        }}>
-          {f.label}
-        </button>
-      ))}
+    <div style={{ display: "flex", gap: 6, padding: "10px 20px", borderBottom: `1px solid ${e.line}`, overflow: "auto" }}>
+      {filters.map(f => {
+        const isActive = activeFilter === f.value;
+        return (
+          <button key={f.value} onClick={() => setActiveFilter(f.value)} style={{
+            fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
+            padding: "4px 12px", borderRadius: 999,
+            border: `1px solid ${isActive ? `${f.color}55` : e.line}`,
+            background: isActive ? `${f.color}14` : e.white,
+            color: isActive ? f.color : e.inkSoft,
+            cursor: "pointer", whiteSpace: "nowrap",
+            transition: "all 160ms ease",
+          }}>
+            {f.label}
+          </button>
+        );
+      })}
     </div>
   );
 });
@@ -1084,21 +1112,21 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
       />
       <div className="iv-transcript-panel" style={isMobile ? {
         position: "fixed", bottom: 0, left: 0, right: 0,
-        maxHeight: "40vh",
-        background: c.graphite,
-        borderTop: `1px solid ${c.border}`,
-        borderRadius: "16px 16px 0 0",
+        maxHeight: "60vh",
+        background: e.cream,
+        borderTop: `1px solid ${e.line}`,
+        borderRadius: "20px 20px 0 0",
         display: "flex", flexDirection: "column",
         zIndex: 50, animation: "slideUpSheet 0.25s ease",
-        boxShadow: "0 -8px 32px rgba(14,12,8,0.30)",
+        boxShadow: "0 -8px 32px rgba(20,17,10,.18)",
       } : {
         position: "fixed", top: 0, right: 0, bottom: 0,
-        width: 380, maxWidth: "100vw",
-        background: c.graphite,
-        borderLeft: `1px solid ${c.border}`,
+        width: 400, maxWidth: "100vw",
+        background: e.cream,
+        borderLeft: `1px solid ${e.line}`,
         display: "flex", flexDirection: "column",
         zIndex: 50, animation: "slideInRight 0.25s ease",
-        boxShadow: "-8px 0 32px rgba(14,12,8,0.30)",
+        boxShadow: "-8px 0 32px rgba(20,17,10,.18)",
       }}>
         {/* Drag handle (mobile only, decorative) */}
         {isMobile && (
@@ -1107,11 +1135,30 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
           </div>
         )}
         <div style={{
-          padding: "14px 20px", borderBottom: `1px solid ${c.border}`,
+          padding: "16px 20px", borderBottom: `1px solid ${e.line}`,
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <span style={{ fontFamily: ef.serif, fontSize: 17, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>Transcript</span>
-          <button onClick={() => setShowTranscript(false)} aria-label="Close transcript" style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
+          <div>
+            <span style={{ fontFamily: ef.serif, fontSize: 19, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
+              Transcript
+            </span>
+            <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
+              Recording for your review only
+            </span>
+          </div>
+          <button
+            onClick={() => setShowTranscript(false)}
+            aria-label="Close transcript"
+            style={{
+              background: e.white, border: `1px solid ${e.line}`,
+              borderRadius: 999, width: 32, height: 32,
+              color: e.inkSoft, cursor: "pointer",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              transition: "background 160ms ease, color 160ms ease",
+            }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; ev.currentTarget.style.color = e.coal; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.background = e.white; ev.currentTarget.style.color = e.inkSoft; }}
+          >
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -1119,34 +1166,57 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
         {panelMembers && panelMembers.length > 0 && (
           <TranscriptFilters panelMembers={panelMembers} activeFilter={transcriptFilter} setActiveFilter={setTranscriptFilter} />
         )}
-        <div ref={transcriptRef} aria-live="polite" aria-label="Interview transcript" style={{ flex: 1, overflow: "auto", padding: "14px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div ref={transcriptRef} aria-live="polite" aria-label="Interview transcript" style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
           {transcript.length === 0 && (
-            <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center", padding: "40px 0" }}>Transcript will appear here...</p>
+            <p style={{ fontFamily: ef.serif, fontSize: 14, fontStyle: "italic", color: e.inkSoft, textAlign: "center", padding: "40px 0" }}>
+              The conversation will appear here as you talk.
+            </p>
           )}
-          {filteredTranscript.map((msg, i) => (
-            <div key={`${msg.speaker}-${msg.time}-${i}`} style={{ display: "flex", gap: 10 }}>
-              <div style={{
-                width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 2,
-                background: msg.speaker === "ai" ? "rgba(180,83,9,0.13)" : "rgba(21,128,61,0.13)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                {msg.speaker === "ai" ? (
-                  <svg aria-hidden="true" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><circle cx="12" cy="12" r="3"/></svg>
-                ) : (
-                  <svg aria-hidden="true" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                )}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: msg.speaker === "ai" ? ((() => { if (panelMembers) { const match = msg.text.match(/^\[(.+?)\]/); if (match) { const member = panelMembers.find(m => m.title.toLowerCase() === match[1].toLowerCase()); if (member) return member.color; } } return c.gilt; })()) : c.sage }}>
-                    {msg.speaker === "ai" ? ((() => { if (panelMembers) { const match = msg.text.match(/^\[(.+?)\]/); if (match) { const member = panelMembers.find(m => m.title.toLowerCase() === match[1].toLowerCase()); if (member) return member.name; } } return interviewerName; })()) : "You"}
-                  </span>
-                  <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{msg.time}</span>
+          {filteredTranscript.map((msg, i) => {
+            const isAi = msg.speaker === "ai";
+            // Resolve panel persona color/name once per message
+            const panelMatch = panelMembers && isAi ? msg.text.match(/^\[(.+?)\]/) : null;
+            const panelMember = panelMatch
+              ? panelMembers!.find(m => m.title.toLowerCase() === panelMatch[1].toLowerCase())
+              : null;
+            const speakerColor = isAi ? (panelMember?.color ?? e.copper) : e.indigo;
+            const speakerName = isAi ? (panelMember?.name ?? interviewerName) : "You";
+            const displayText = panelMembers && isAi ? msg.text.replace(/^\[.+?\]\s*/, "") : msg.text;
+            return (
+              <div key={`${msg.speaker}-${msg.time}-${i}`} style={{ display: "flex", gap: 10 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1,
+                  background: isAi ? `${speakerColor}1A` : "rgba(49,46,129,0.12)",
+                  border: `1px solid ${isAi ? `${speakerColor}33` : "rgba(49,46,129,0.20)"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {isAi ? (
+                    <svg aria-hidden="true" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={speakerColor} strokeWidth="2.4" strokeLinecap="round"><circle cx="12" cy="12" r="3" fill={speakerColor} /></svg>
+                  ) : (
+                    <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={speakerColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  )}
                 </div>
-                <p style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, lineHeight: 1.55, margin: 0, wordBreak: "break-word", overflowWrap: "break-word" }}>{panelMembers && msg.speaker === "ai" ? msg.text.replace(/^\[.+?\]\s*/, "") : msg.text}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                    <span style={{
+                      fontFamily: ef.sans, fontSize: 11, fontWeight: 600,
+                      color: speakerColor,
+                    }}>
+                      {speakerName}
+                    </span>
+                    <span style={{ fontFamily: ef.mono, fontSize: 10, color: e.inkFaint }}>{msg.time}</span>
+                  </div>
+                  <p style={{
+                    fontFamily: isAi ? ef.serif : ef.sans,
+                    fontSize: 13.5, color: e.coal, lineHeight: 1.55,
+                    margin: 0, wordBreak: "break-word", overflowWrap: "break-word",
+                  }}>
+                    {displayText}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </>
