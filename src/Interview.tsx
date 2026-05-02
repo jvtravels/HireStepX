@@ -190,24 +190,71 @@ const ACTION_VERBS = new Set([
 /**
  * Patterns: capture-group 1 must be the emphasis word. Tested against
  * common question shapes — order matters (more specific first).
+ *
+ * Aim: cover ~95% of behavioral/HR/case/technical/salary/management
+ * question stems without a LLM round-trip. Each pattern was hand-picked
+ * from the actual question banks the engine ships.
  */
 const QUESTION_PATTERNS: RegExp[] = [
+  /* ─── Behavioral STAR-style ─── */
   // "Tell me about a TIME (when/you) ..."
-  /\btell\s+me\s+about\s+(?:a|an)\s+(time|moment|situation|story|example|experience|incident|decision|challenge|mistake|conflict|win|loss|project|tradeoff|trade-off|lesson)\b/i,
+  /\btell\s+me\s+about\s+(?:a|an)\s+(time|moment|situation|story|example|experience|incident|decision|challenge|mistake|conflict|win|loss|project|tradeoff|trade-off|lesson|weakness|failure|success)\b/i,
+  // "Tell me about your LAST ..." / "Tell me about your BIGGEST ..."
+  /\btell\s+me\s+about\s+your\s+(last|first|biggest|hardest|proudest|toughest|favorite|worst)\b/i,
   // "Walk me through a PROJECT where ..."
-  /\bwalk\s+me\s+through\s+(?:a|an)\s+(project|situation|story|decision|moment|migration|launch|rewrite|negotiation|conflict|problem)\b/i,
+  /\bwalk\s+me\s+through\s+(?:a|an|your)\s+(project|situation|story|decision|moment|migration|launch|rewrite|negotiation|conflict|problem|approach|process|day|week)\b/i,
   // "Describe a CHALLENGE ..."
-  /\b(?:describe|share)\s+(?:a|an)\s+(time|moment|situation|story|example|experience|incident|decision|challenge|mistake|conflict|win|loss|project|tradeoff|trade-off|lesson|weakness)\b/i,
-  // "What's the BIGGEST ..." / "What's the TOUGHEST ..."
-  /\bwhat(?:'s| is| was)?\s+(?:the\s+|your\s+)?(biggest|hardest|toughest|smallest|best|worst|proudest|most|least)\b/i,
+  /\b(?:describe|share|recall|recount)\s+(?:a|an|your)\s+(time|moment|situation|story|example|experience|incident|decision|challenge|mistake|conflict|win|loss|project|tradeoff|trade-off|lesson|weakness|approach|strength|failure)\b/i,
+  // "Give me an EXAMPLE of ..."
+  /\bgive\s+(?:me|us)\s+(?:a|an)\s+(example|instance|case|story|scenario)\b/i,
+  // "Think of a TIME ..."
+  /\bthink\s+of\s+(?:a|an)\s+(time|moment|situation|story|example|experience|project)\b/i,
+
+  /* ─── Self-reflective ─── */
+  // "What's the BIGGEST ..." / "What was your TOUGHEST ..."
+  /\bwhat(?:'s| is| was|'ve| has)\s+(?:the\s+|your\s+|been\s+)?(biggest|hardest|toughest|smallest|best|worst|proudest|most|least|favorite|riskiest|costliest|fastest|slowest|hardest)\b/i,
+  // "What's your BIGGEST weakness" — emphasize "weakness"
+  /\bwhat(?:'s| is)\s+your\s+(?:biggest\s+|greatest\s+)?(weakness|strength|fear|regret|gap|blind\s*spot|edge|advantage)\b/i,
+  // "How do you HANDLE ..." / "How do you APPROACH ..."
+  /\bhow\s+do\s+you\s+(handle|approach|manage|deal|tackle|prioritize|decide|measure|track|prepare|recover|stay|keep|grow|learn)\b/i,
   // "How would you SIZE the market"
   /\bhow\s+would\s+you\s+(\w+)\b/i,
   // "Why X and why Y" — accent the first "why"
   /^\s*(why)\b/i,
+  // "What motivates / drives / energizes you"
+  /\bwhat\s+(motivates|drives|energizes|excites|inspires|frustrates|scares)\s+you\b/i,
+
+  /* ─── Future / aspirational ─── */
+  // "Where do you see yourself ..."
+  /\bwhere\s+do\s+you\s+(see|want|hope|expect)\b/i,
+  // "What are your GOALS / PLANS"
+  /\bwhat\s+(?:are|is)\s+your\s+(goals|plans|aspirations|priorities|objectives|hopes|dreams|ambitions)\b/i,
+
+  /* ─── Technical / case ─── */
   // "Design a RATE-LIMITER for ..."
-  /\b(?:design|build|architect|sketch)\s+(?:a|an)\s+([a-z][a-z0-9-]+)\b/i,
-  // "Last one — WHY this company" / "Now — DESCRIBE ..."
-  /(?:^|—\s*|-\s*)(why|describe|tell|walk|share|explain|how|what|when|where)\b/i,
+  /\b(?:design|build|architect|sketch|model|prototype|spec)\s+(?:a|an)\s+([a-z][a-z0-9-]+)\b/i,
+  // "How would you SCALE / OPTIMIZE / DEBUG ..."
+  /\bhow\s+would\s+you\s+(scale|optimize|debug|refactor|test|validate|measure|monitor|secure|migrate)\b/i,
+  // "Estimate the NUMBER of ..."
+  /\bestimate\s+(?:the\s+)?(number|size|cost|revenue|impact|reach|share|adoption|growth)\b/i,
+  // "Walk me through your APPROACH ..."
+  /\bwalk\s+me\s+through\s+your\s+(approach|process|thinking|reasoning|design|architecture)\b/i,
+
+  /* ─── Salary negotiation ─── */
+  // "Is X workable / acceptable / reasonable for you"
+  /\bis\s+(?:that|this|₹?[\d.,]+\s*(?:lpa|k|cr)?)\s+(workable|acceptable|reasonable|fair|comfortable|doable)\b/i,
+  // "What's your EXPECTATION / RANGE / NUMBER"
+  /\bwhat(?:'s| is| are)\s+your\s+(expectations?|range|number|target|ask|requirement|floor|ceiling|bottom\s*line)\b/i,
+  // "Help me UNDERSTAND ..."
+  /\bhelp\s+me\s+(understand|see|figure|work|think)\b/i,
+
+  /* ─── Open-ended / conversational ─── */
+  // "Last one — WHY this company"
+  /(?:^|—\s*|-\s*)(why|describe|tell|walk|share|explain|how|what|when|where|consider|imagine)\b/i,
+  // "Now — DESCRIBE ..."
+  /^now\s*[—-]\s*(\w+)\b/i,
+  // "Let's start EASY" / "Let's start with ..."
+  /\blet(?:'s| us)\s+start\s+(?:with\s+|by\s+)?(easy|simple|small|big|hard|tough|warm|fresh|over)\b/i,
 ];
 
 /** Returns true if `word` looks like a proper noun mid-sentence
@@ -425,6 +472,61 @@ function SkipWithReason({ onConfirm }: { onConfirm: (reason: string) => void }) 
    Press-Space-when-done UX: engine still auto-listens via STT, so the
    keycap is a "send" affordance rather than true push-to-talk. Pressing
    Space (when not focused on the textarea) calls handleNextQuestion. */
+/* CountdownPill — subtle per-question time-remaining indicator.
+   Engine already counts down per-question and auto-advances at zero.
+   This surfaces it visually so users see the limit. Stays muted until
+   < 30s remaining, then warms; urgent red < 15s. Hidden when there's
+   no meaningful budget to show (e.g., remaining > 10 minutes). */
+function CountdownPill({ secondsRemaining, percent }: { secondsRemaining: number; percent: number }) {
+  // Don't render at all when budget is very large or negative — avoids
+  // shoving "9:42 left" into a soft conversational round.
+  if (secondsRemaining > 600 || secondsRemaining <= 0) return null;
+  const m = Math.floor(secondsRemaining / 60);
+  const s = secondsRemaining % 60;
+  const time = `${m}:${s.toString().padStart(2, "0")}`;
+  const urgent = secondsRemaining <= 15;
+  const warning = !urgent && secondsRemaining <= 30;
+  const tint = urgent ? e.error : warning ? e.warning : e.inkSoft;
+  const bg = urgent
+    ? "rgba(185,28,28,0.08)"
+    : warning
+    ? "rgba(161,98,7,0.08)"
+    : e.creamSoft;
+  const border = urgent
+    ? "rgba(185,28,28,0.25)"
+    : warning
+    ? "rgba(161,98,7,0.25)"
+    : e.line;
+  return (
+    <div role="timer" aria-label={`${time} remaining for this question`} aria-live={urgent ? "assertive" : "off"} style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      padding: "5px 12px 5px 10px", borderRadius: 999,
+      background: bg, border: `1px solid ${border}`,
+      fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
+      color: tint, letterSpacing: 0.4,
+    }}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <span>{time}</span>
+      {/* Thin progress bar inside the pill — drains as time passes */}
+      <span aria-hidden style={{
+        width: 28, height: 3, borderRadius: 2,
+        background: urgent ? "rgba(185,28,28,0.20)" : "rgba(20,17,10,0.10)",
+        overflow: "hidden", marginLeft: 2,
+      }}>
+        <span style={{
+          display: "block", height: "100%", borderRadius: 2,
+          background: tint, width: `${Math.max(0, 100 - percent)}%`,
+          transition: "width 1s linear, background 0.5s ease",
+        }} />
+      </span>
+    </div>
+  );
+}
+
 /* Per-interview-type pace sweet spots (seconds spoken).
    Different rounds reward different answer lengths — generic 60-90s
    was always wrong for fresher campus (too long) and technical/case
@@ -495,6 +597,7 @@ function CanvasListeningActionZone({
   isMuted, micQuiet, isCurrentFollowUp,
   replayQuestion, aiVoiceEnabled, hasQuestion,
   liveMetrics, interviewType,
+  timeRemaining, timePercent,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -516,6 +619,8 @@ function CanvasListeningActionZone({
     specificityHits?: number; specificityHint?: string | null;
   } | null;
   interviewType?: string | null;
+  timeRemaining: number;
+  timePercent: number;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -607,6 +712,11 @@ function CanvasListeningActionZone({
           )}
         </div>
       )}
+
+      {/* Per-question countdown — always visible during listening so
+          users see the budget. Stays muted when budget is large; warms
+          and turns urgent in the last 30/15 seconds. */}
+      <CountdownPill secondsRemaining={timeRemaining} percent={timePercent} />
 
       {/* Live metrics + pace meter — only when actually answering */}
       {currentTranscript.trim().length > 0 && (
@@ -749,6 +859,7 @@ function InterviewInner() {
     evaluating, evalElapsed, aiVoiceEnabled,
     currentTranscript, microFeedback,
     totalQuestions, baseQuestionCount, currentQuestionNum, isCurrentFollowUp,
+    timeRemaining, timePercent,
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
@@ -1003,6 +1114,8 @@ function InterviewInner() {
             hasQuestion={!!step?.aiText}
             liveMetrics={liveMetrics}
             interviewType={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("type") : null}
+            timeRemaining={timeRemaining}
+            timePercent={timePercent}
           />
         )}
 
