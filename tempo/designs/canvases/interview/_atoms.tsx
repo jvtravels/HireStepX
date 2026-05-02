@@ -802,13 +802,46 @@ export function CameraToggle({
 /* ─── SelfViewTile — small webcam preview when camera is on ─────────── */
 
 export function SelfViewTile({ initials = "RS" }: { initials?: string }) {
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const [streamReady, setStreamReady] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    let stream: MediaStream | null = null;
+    const start = async () => {
+      try {
+        if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return;
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
+          audio: false,
+        });
+        if (!active) {
+          stream.getTracks().forEach((tr) => tr.stop());
+          return;
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => undefined);
+          setStreamReady(true);
+        }
+      } catch {
+        // Permission denied or no camera — silhouette fallback stays visible.
+      }
+    };
+    start();
+    return () => {
+      active = false;
+      if (stream) stream.getTracks().forEach((tr) => tr.stop());
+    };
+  }, []);
+
   return (
     <div
       aria-label="Your camera preview"
       style={{
         position: "absolute",
         right: 24,
-        bottom: 24,
+        top: 80,
         width: 148,
         height: 96,
         borderRadius: 12,
@@ -824,8 +857,25 @@ export function SelfViewTile({ initials = "RS" }: { initials?: string }) {
         zIndex: 5,
       }}
     >
-      {/* Faux silhouette so designers see the framing — replaced with
-          MediaStream <video> in production. */}
+      {/* Live camera feed — getUserMedia request fires on mount. */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          transform: "scaleX(-1)",
+          opacity: streamReady ? 1 : 0,
+          transition: "opacity 280ms ease",
+        }}
+      />
+      {/* Silhouette fallback — visible until stream is ready or on permission denied. */}
       <div
         aria-hidden
         style={{
@@ -834,6 +884,8 @@ export function SelfViewTile({ initials = "RS" }: { initials?: string }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          opacity: streamReady ? 0 : 1,
+          transition: "opacity 280ms ease",
         }}
       >
         <div
