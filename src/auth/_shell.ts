@@ -18,18 +18,21 @@ export function mapAuthError(raw: string | undefined): string {
     return "Email or password is incorrect. Try again, or reset your password.";
   }
   // Note: AuthContext.signup() now intercepts the "already exists"
-  // case BEFORE we reach this mapper, returns success, and triggers a
-  // separate "you already have an account" email — so the client never
-  // sees this branch on signup. Kept for legacy / OAuth pathways.
+  // case BEFORE we reach this mapper (both the fake-success path and
+  // the explicit-error path), returns success, and triggers a
+  // separate "you already have an account" email. The branch below is
+  // a safety net for legacy / OAuth pathways. Reworded to focus on
+  // the most common cause — pending verification — and offer the
+  // sign-in path explicitly.
   if (
     msg.includes("already registered") ||
     msg.includes("already exists") ||
     msg.includes("user already")
   ) {
-    return "We couldn't complete signup. If you've signed up before, check your email or try logging in.";
+    return "This email is already in our system. Check your inbox for a pending verification link, or sign in instead.";
   }
-  if (msg.includes("email not confirmed")) {
-    return "Please verify your email first. Check your inbox for the confirmation link.";
+  if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+    return "Your email isn't verified yet. Check your inbox for the verification link, or use \"Forgot password\" to resend it.";
   }
   if (msg.includes("rate limit") || msg.includes("too many requests")) {
     return "Too many attempts. Try again in a few minutes.";

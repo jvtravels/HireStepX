@@ -698,6 +698,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        // OWASP-aligned UX even when Supabase returns an explicit
+        // "already registered" error (instead of the fake-success
+        // path we handle below). Fire the "you already have an
+        // account" email and return success — UI then shows the
+        // same "Check your email" state regardless of whether the
+        // account is new, existing-verified, or existing-pending-
+        // verification. User never reads "couldn't complete signup".
+        const lower = (error.message || "").toLowerCase();
+        const isAlreadyRegistered =
+          lower.includes("already registered") ||
+          lower.includes("already exists") ||
+          lower.includes("user already");
+        if (isAlreadyRegistered) {
+          fetch("/api/send-welcome", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "signup-attempted-existing",
+              email: email.toLowerCase().trim(),
+              name,
+            }),
+          }).catch(() => {});
+          track("signup_attempted_existing");
+          return { success: true };
+        }
         return { success: false, error: error.message };
       }
 
