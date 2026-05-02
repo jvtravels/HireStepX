@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 
 import { useAuth } from "./AuthContext";
-import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, retryUnlockAudio, isAutoplayBlocked, unlockAudio } from "./tts";
+import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, retryUnlockAudio, isAutoplayBlocked } from "./tts";
 import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
@@ -401,8 +401,21 @@ export function useInterviewEngine() {
   const [showEndModal, setShowEndModal] = useState(false);
   const endModalTriggerRef = useRef<HTMLSpanElement>(null);
 
-  // Ensure audio is unlocked on interview mount (belt-and-suspenders for Q1 voice)
-  useEffect(() => { unlockAudio(); }, []);
+  // Force-reset and re-unlock audio on every interview mount.
+  //
+  // Why retryUnlockAudio() instead of unlockAudio():
+  //   When the user navigates to /score from a session and then back to
+  //   /interview to restart, React mounts a fresh InterviewInner but the
+  //   tts.ts module-level `_audioUnlocked` flag is still `true` from the
+  //   previous mount — so unlockAudio() early-returns. The previous
+  //   AudioContext is no longer valid, however; the next speak() call
+  //   fails with NotAllowedError, sets `_autoplayBlocked = true`
+  //   permanently, and every subsequent speak() short-circuits silently.
+  //   Result: question shows but no voice plays for the entire session.
+  //
+  // retryUnlockAudio() resets both flags and re-runs the unlock, which
+  // succeeds because the navigation itself was a fresh user gesture.
+  useEffect(() => { retryUnlockAudio(); }, []);
 
   // Multi-tab guard
   const [tabConflict, setTabConflict] = useState(false);
