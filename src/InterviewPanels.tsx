@@ -185,7 +185,11 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           fontFamily: font.ui, fontSize: 11, fontWeight: 500,
           color: phase === "speaking" ? c.gilt : phase === "listening" ? c.sage : c.stone,
         }}>
-          {phase === "thinking" ? "Preparing..." : phase === "speaking" ? "Speaking..." : phase === "listening" ? "Listening" : "Complete"}
+          {/* Active-voice labels make turn-taking unambiguous: users
+              previously talked over the AI because "Listening" reads
+              as passive ("AI is listening?" vs "It's my turn to talk").
+              "Your turn" + "AI is speaking" closes that gap. */}
+          {phase === "thinking" ? "AI is preparing…" : phase === "speaking" ? "AI is speaking…" : phase === "listening" ? "Your turn — speak now" : "Complete"}
         </span>
       </div>
       {phase === "listening" && !isMuted && !speechUnavailable && (

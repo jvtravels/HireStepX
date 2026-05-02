@@ -51,6 +51,45 @@ function extractRoleFromExperience(experience?: { title?: string }[]): string {
 }
 
 /**
+ * Map a target role string into a coarse domain bucket the server
+ * understands. Used as the resume_versions.domain qualifier so a user
+ * who switches roles (PM → designer → SDE) gets a separate resume row
+ * per domain rather than overwriting the previous one. Default
+ * "general" keeps things working when the role is empty / unknown.
+ */
+function roleToDomain(role: string | null | undefined): string {
+  const r = (role || "").toLowerCase();
+  if (!r) return "general";
+  if (/\b(designer|design|ux|ui|product\s*designer|graphic|visual)\b/.test(r)) return "design";
+  if (/\b(product\s*manager|pm|product\s*owner|po)\b/.test(r)) return "pm";
+  if (/\b(sales|account\s*executive|business\s*development|bd|bdr|sdr)\b/.test(r)) return "sales";
+  if (/\b(engineer|developer|programmer|sde|swe|architect|devops|sre)\b/.test(r)) return "sde";
+  if (/\b(data\s*scientist|ml|machine\s*learning|analyst|data\s*analyst|research)\b/.test(r)) return "data";
+  if (/\b(marketing|growth|content|seo|copywriter)\b/.test(r)) return "marketing";
+  return "general";
+}
+
+/**
+ * Compute SHA-256 hex of the file's bytes. The server validates this
+ * cheaply before storing — it's used as a stable file identity (not
+ * just the text hash) so we can detect "same file uploaded twice"
+ * even after re-saves that change whitespace. Web Crypto only; falls
+ * back to null if SubtleCrypto is unavailable.
+ */
+async function computeFileHash(file: File): Promise<string | null> {
+  try {
+    if (typeof crypto === "undefined" || !crypto.subtle) return null;
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Shape check for a human name. Defensive fallback in case the resume
  * parser ever returns a stray city / role / company here again.
  *
@@ -373,6 +412,8 @@ export default function Onboarding() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+    // handleStart is a stable wrapper around finalizeOnboarding that has no closure-state of its own; rebinding the listener every render to capture a fresh ref would churn for no behavioral gain.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeParsed, aiPhase, userName, starting]);
 
   // ─── File handling ───
@@ -406,6 +447,12 @@ export default function Onboarding() {
     try {
       const { extractResumeText, parseResumeDataAsync } = await import("./resumeParser");
       const { analyzeResumeWithAI } = await import("./dashboardData");
+      // Compute file-byte hash in parallel with text extraction. Used
+      // by the server-side resume cache as a stable file-identity key
+      // alongside text_hash, so re-uploads of the same file converge
+      // on the same cached analysis even when pdf.js versions tweak
+      // whitespace. Best-effort — null on browsers without SubtleCrypto.
+      const fileHashPromise = computeFileHash(file);
       const text = await extractResumeText(file);
       if (!text || text.trim().length < 30) {
         const fileExt = file.name.split(".").pop()?.toLowerCase();
@@ -457,9 +504,19 @@ export default function Onboarding() {
       // pointer on their profile until next analysis. This still beats
       // the previous behavior where the binding was localStorage-only.
       let analyzedVersionId: string | null = null;
+      // Resolve the file hash before the analyze call so the server can
+      // dedupe by file identity. Awaiting here adds a few ms over the
+      // text extraction we already did — typically <50ms for a 200KB
+      // PDF. Worth it for cache parity.
+      const fileHash = await fileHashPromise;
+      const effectiveRole = targetRole || autoRole;
       try {
         const result = await Promise.race([
-          analyzeResumeWithAI(text, targetRole || autoRole, currentAbort.signal),
+          analyzeResumeWithAI(text, effectiveRole, currentAbort.signal, {
+            domain: roleToDomain(effectiveRole),
+            fileName: file.name,
+            fileHash: fileHash ?? undefined,
+          }),
           // 25s budget — aligned to the server's worst-case Groq→Gemini
           // fallback (~10s + 10s + ~3s pre-checks = ~23s). The previous
           // 40s ceiling let the client surface a "timeout" on requests
@@ -663,6 +720,8 @@ export default function Onboarding() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // handleStartInterview is a stable wrapper around finalizeOnboarding; including it would re-bind keydown each render with no behavioral change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeParsed, aiPhase, userName, starting, resumeParsing]);
 
   const isBusy = resumeParsing || aiPhase === "analyzing";
@@ -675,10 +734,25 @@ export default function Onboarding() {
     analysisAbortRef.current?.abort();
     analysisAbortRef.current = new AbortController();
     const ac = analysisAbortRef.current;
-    const timer = setTimeout(() => ac.abort(), 30000);
+    const timer = setTimeout(() => ac.abort(), 25000);
     import("./dashboardData").then(({ analyzeResumeWithAI }) => {
-      analyzeResumeWithAI(resumeText, targetRole, ac.signal)
-        .then(r => { if (r && typeof r === "object" && "profile" in r) setAiProfile(r.profile); })
+      // Re-analyze runs against the resume the user already has stored.
+      // Thread domain through so the server keys the cache by both
+      // text_hash and the user's current target role; without this,
+      // a "Re-analyze after changing my role" would surface yesterday's
+      // role's analysis from the cache.
+      analyzeResumeWithAI(resumeText, targetRole, ac.signal, {
+        domain: roleToDomain(targetRole),
+        fileName: fileName || user?.resumeFileName || undefined,
+      })
+        .then(r => {
+          if (r && typeof r === "object" && "profile" in r) {
+            setAiProfile(r.profile);
+            if (r.resumeVersionId && r.resumeVersionId !== user?.resumeVersionId) {
+              updateUser({ resumeVersionId: r.resumeVersionId }).catch(() => { /* best-effort */ });
+            }
+          }
+        })
         .catch(err => { console.error("[onboarding] Re-analyze failed:", err instanceof Error ? err.message : err); })
         .finally(() => { clearTimeout(timer); setAiPhase("done"); });
     });

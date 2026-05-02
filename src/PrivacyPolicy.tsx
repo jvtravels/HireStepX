@@ -76,20 +76,32 @@ You can clear this data at any time through your browser settings.`,
 - Content Security Policy headers are enforced to prevent cross-site scripting.`,
   },
   {
-    title: "8. Children's Privacy",
+    title: "8. DPDP Act compliance (India)",
+    body: `HireStepX complies with India's Digital Personal Data Protection Act, 2023 (DPDP Act). Specifically:
+
+- We process your personal data only for the purpose for which you've given consent — running your interview practice and generating your reports.
+- We do not sell, rent, or share your personal data with advertisers, brokers, or third parties for marketing.
+- Your data is processed and stored on infrastructure with India-compatible data residency. Where third-party processors are involved (LLM, voice, payments), each is bound by a data processing agreement.
+- You have the right to access, correct, or delete your data, withdraw consent, and nominate a representative. Use the controls in your account settings, or email us.
+- Our Data Protection Officer / Grievance Officer can be reached at privacy@hirestepx.com. We respond to verified data requests within 30 days.
+
+These rights apply to all users globally, not just Indian residents.`,
+  },
+  {
+    title: "9. Children's Privacy",
     body: "HireStepX is not intended for children under 18. We do not knowingly collect data from minors. If you believe a minor has created an account, please contact us and we will promptly delete it.",
   },
   {
-    title: "9. Changes to This Policy",
+    title: "10. Changes to This Policy",
     body: "We may update this privacy policy from time to time. When we do, we will update the \"Last updated\" date at the top of this page. Continued use of the service after changes constitutes acceptance of the revised policy.",
   },
   {
-    title: "10. Governing Jurisdiction",
-    body: "This privacy policy is governed by the laws of India. Any disputes arising from this policy shall be subject to the exclusive jurisdiction of courts in India.",
+    title: "11. Governing Jurisdiction",
+    body: "This privacy policy is governed by the laws of India and the DPDP Act, 2023. Any disputes arising from this policy shall be subject to the exclusive jurisdiction of courts in India.",
   },
   {
-    title: "11. Contact Us",
-    body: "For privacy concerns, data requests, or questions about this policy, contact us at support@hirestepx.com.",
+    title: "12. Contact Us",
+    body: "For privacy concerns, data requests, or questions about this policy, contact us at privacy@hirestepx.com (data protection / grievances) or support@hirestepx.com (general).",
   },
 ];
 

@@ -20,153 +20,17 @@ import { computeMicroFeedback } from "./interviewMicroFeedback";
 import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
 import { computeFallbackScores, loadPreviousScores, processLLMEvaluation, extractNegotiationFacts } from "./interviewEvaluation";
-
-/* ─── Helpers ─── */
-
-/* ─── Persona normalization (shared across panel interview logic) ─── */
-const PERSONA_NORM: Record<string, string> = { "hiring manager": "Hiring Manager", "technical lead": "Technical Lead", "hr partner": "HR Partner" };
-function normalizePersona(persona: string): string {
-  return PERSONA_NORM[persona.toLowerCase()] || persona;
-}
-
-/* ─── Answer-quality-aware reaction phrases ─── */
-/* Instead of random acknowledgments, react based on what the user actually said */
-const REACTIONS = {
-  strong: [
-    "That's a really strong example.",
-    "Great — I like how specific you were.",
-    "Excellent. That's the kind of detail I'm looking for.",
-    "Very well articulated.",
-    "Good answer — you clearly thought that through.",
-    "I appreciate the specificity there.",
-  ],
-  decent: [
-    "Achha, got it.",
-    "Right, right.",
-    "Okay, got it got it.",
-    "Hmm, okay.",
-    "Theek hai.",
-    "Fair enough.",
-  ],
-  weak: [
-    "Achha… let me ask something else.",
-    "Okay, let's move on.",
-    "Hmm, I see.",
-    "Noted.",
-    "Okay.",
-  ],
-  short: [
-    "Achha, but let's keep going.",
-    "Okay — we'll come back to depth later.",
-    "Right, moving on.",
-    "Hmm, that was brief — let's continue.",
-  ],
-  followUpBridge: [
-    "Actually, before we move on —",
-    "Hold on, I want to dig deeper on that.",
-    "Wait — one more thing about what you just said.",
-    "Let me push on that a bit more.",
-    "I'm curious about something you mentioned —",
-    "Before the next topic, I want to understand —",
-  ],
-  topicTransition: [
-    "Achha —",
-    "So —",
-    "Okay, next.",
-    "Right.",
-    "Ek aur question —",
-    "One more thing —",
-    "Now —",
-  ],
-  dontKnowRedirect: [
-    "That's okay — let me rephrase that differently.",
-    "No worries. Let me ask this from another angle.",
-    "That's honest. Let me try a different approach.",
-    "Fair enough — let me give you something closer to your experience.",
-    "Okay, let's pivot. Think about it this way instead —",
-  ],
-  ramblingInterject: [
-    "Achha, but can you get to the outcome quickly?",
-    "I want to make sure we cover everything — what was the result?",
-    "Sorry to cut in — what was the bottom line?",
-    "Got the context. Now tell me — what happened?",
-    "Let me pause you there. What was the actual impact?",
-  ],
-  timePressure: [
-    "We're running short on time, so let me pick up the pace.",
-    "Just a couple more questions — let's keep it tight.",
-    "We have a few minutes left. Let's make them count.",
-  ],
-  lastQuestion: [
-    "Alright, last question for you.",
-    "One final question before we wrap up.",
-    "Last one — make it count.",
-  ],
-};
-
-/** Detect "I don't know" or surrender responses */
-function isIDontKnowAnswer(text: string): boolean {
-  if (!text || text.length < 5) return false;
-  const lower = text.toLowerCase().trim();
-  const patterns = [
-    /^i don'?t know/,
-    /^i'?m not sure/,
-    /^i have no idea/,
-    /^i haven'?t (done|experienced|faced)/,
-    /^no experience with/,
-    /^i can'?t (think of|recall|remember)/,
-    /^nothing comes to mind/,
-    /^i don'?t have (an? )?(example|answer|experience)/,
-    /^pass$/,
-    /^skip$/,
-    /^i'?ll skip/,
-  ];
-  return patterns.some(p => p.test(lower)) || (lower.length < 30 && /don'?t know|not sure|no idea|can'?t think/i.test(lower));
-}
-
-/* ─── Session interviewer personality ─── */
-type InterviewerPersonality = "balanced" | "tough" | "friendly" | "time-pressed";
-function pickPersonality(): InterviewerPersonality {
-  const roll = Math.random();
-  if (roll < 0.3) return "tough";
-  if (roll < 0.55) return "friendly";
-  if (roll < 0.7) return "time-pressed";
-  return "balanced";
-}
-
-/** Assess answer quality for reaction selection */
-function assessAnswerQuality(answer: string): "strong" | "decent" | "weak" | "short" {
-  if (!answer || answer.startsWith("[Answer recorded") || answer.length < 15) return "short";
-  const words = answer.trim().split(/\s+/).length;
-  if (words < 25) return "short";
-  const hasMetrics = /\d+%|\d+x|₹[\d,]+|\$[\d,]+|\d+ (users|customers|months|days|people|team|engineers|percent)/i.test(answer);
-  const hasStructure = /first|second|then|finally|result|outcome|impact|as a result|because of this|the key/i.test(answer);
-  const hasFirstPerson = /\bI\b/.test(answer);
-  const hasSpecific = /specifically|for example|for instance|in particular|one time|at my|at our|we decided/i.test(answer);
-  const qualitySignals = [hasMetrics, hasStructure, hasFirstPerson, hasSpecific].filter(Boolean).length;
-  if (qualitySignals >= 3 && words >= 50) return "strong";
-  if (qualitySignals >= 1 && words >= 35) return "decent";
-  return "weak";
-}
-
-/* ─── Silence nudge phrases — spoken when user pauses too long during answer ─── */
-const SILENCE_NUDGES = [
-  "Take your time…",
-  "Whenever you're ready.",
-  "No rush — take a moment to think.",
-  "Feel free to continue.",
-  "I'm listening.",
-  "Still with me? Take your time.",
-];
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-/** Random delay in [min, max] ms */
-function randomDelay(min: number, max: number): number {
-  return min + Math.floor(Math.random() * (max - min));
-}
+import {
+  normalizePersona,
+  REACTIONS,
+  isIDontKnowAnswer,
+  pickPersonality,
+  assessAnswerQuality,
+  SILENCE_NUDGES,
+  pickRandom,
+  randomDelay,
+} from "./_interview-engine-helpers";
+import type { InterviewerPersonality } from "./_interview-engine-helpers";
 
 /* ─── Draft data shape (for IDB restore) ─── */
 interface InterviewDraft {
