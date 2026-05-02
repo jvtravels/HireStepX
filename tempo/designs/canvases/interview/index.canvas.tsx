@@ -11,6 +11,7 @@ import type { TempoPage, TempoStoryboard } from "tempo-sdk";
 import CanvasProviders from "../../../CanvasProviders";
 import Interview from "./Interview";
 import Reconnecting from "./Reconnecting";
+import SessionSetup from "./SessionSetup";
 
 const page: TempoPage = {
   name: "Interview",
@@ -567,4 +568,96 @@ export const MutedScreen: TempoStoryboard = {
     </CanvasProviders>
   ),
   layout: { x: 1490, y: 5370, width: 1440, height: 1024 },
+};
+
+/* ─── Row 6 (cont.) + Row 7 — Session Setup (pre-interview) ─────────────
+   Single-page progressive form. Each storyboard shows a different
+   moment a user might land on so the team can review states side by side.
+   Industry patterns baked in: smart defaults, "Recommended" social proof,
+   resume-aware pre-fill, recent quick-picks, real autocomplete with
+   keyboard hints, validation, and a mobile pass. */
+
+export const SetupEmpty: TempoStoryboard = {
+  name: "23. Setup — first touch (empty)",
+  render: () => (
+    <CanvasProviders>
+      <SessionSetup />
+    </CanvasProviders>
+  ),
+  layout: { x: 2980, y: 5370, width: 1440, height: 1280 },
+};
+
+export const SetupFilled: TempoStoryboard = {
+  name: "24. Setup — filled, happy path",
+  render: () => (
+    <CanvasProviders>
+      <SessionSetup
+        role="Frontend Developer"
+        company="Google"
+        focus="technical"
+      />
+    </CanvasProviders>
+  ),
+  layout: { x: 4470, y: 5370, width: 1440, height: 1380 },
+};
+
+export const SetupReturningUser: TempoStoryboard = {
+  name: "25. Setup — returning user (resume + recent)",
+  render: () => (
+    <CanvasProviders>
+      <SessionSetup
+        role="Product Manager"
+        company="Flipkart"
+        focus="behavioral"
+        showResumeBanner
+        showRecent
+        userName="Priya Kumar"
+      />
+    </CanvasProviders>
+  ),
+  layout: { x: 0, y: 6750, width: 1440, height: 1480 },
+};
+
+export const SetupCompanyAutocomplete: TempoStoryboard = {
+  name: "26. Setup — company autocomplete open",
+  render: () => (
+    <CanvasProviders>
+      <SessionSetup
+        role="Software Engineer"
+        company="G"
+        focus="system-design"
+        showCompanyAutocomplete
+      />
+    </CanvasProviders>
+  ),
+  layout: { x: 1490, y: 6750, width: 1440, height: 1380 },
+};
+
+export const SetupValidationErrors: TempoStoryboard = {
+  name: "27. Setup — validation errors",
+  render: () => (
+    <CanvasProviders>
+      <SessionSetup
+        role=""
+        company=""
+        showErrors
+      />
+    </CanvasProviders>
+  ),
+  layout: { x: 2980, y: 6750, width: 1440, height: 1080 },
+};
+
+export const SetupMobile: TempoStoryboard = {
+  name: "28. Setup — mobile (narrow viewport)",
+  render: () => (
+    <CanvasProviders>
+      <SessionSetup
+        role="SDE-2"
+        company="Razorpay"
+        focus="system-design"
+        compact
+      />
+    </CanvasProviders>
+  ),
+  layout: { x: 4470, y: 6750, width: 480, height: 1620 },
 };

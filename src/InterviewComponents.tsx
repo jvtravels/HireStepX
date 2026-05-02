@@ -1,21 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { e, ef } from "./interviewTokens";
 
-/* Bridge aliases — see InterviewPanels.tsx for the full rationale.
-   Lets existing inline-style call sites keep using `c.*` and `font.*`
-   while resolving to the editorial cream/copper palette. */
-const c = {
-  obsidian: e.cream, graphite: e.white, carbon: e.creamSoft, onyx: e.creamSoft,
-  ivory: e.coal, chalk: e.coal, stone: e.inkSoft,
-  gilt: e.copper, giltDark: "#92400E", giltLight: e.copper100,
-  sage: e.success, sageLight: e.success100,
-  ember: e.error, emberLight: e.error100,
-  slate: e.indigoGray, slateLight: e.indigo100,
-  border: e.line, borderHover: e.lineStrong, borderSubtle: "rgba(20,17,10,0.04)",
-  glass: "rgba(255,255,255,0.85)", glassBright: "rgba(255,255,255,0.95)",
-  glow: "rgba(180,83,9,0.06)", glowStrong: "rgba(180,83,9,0.12)",
-} as const;
-const font = { display: ef.serif, ui: ef.sans, mono: ef.mono } as const;
+/* Bridge aliases removed — call sites use e/ef directly. */
 
 declare global {
   interface Navigator {
@@ -185,12 +171,12 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
       clearInterval(id);
     };
   }, []);
-  const colors = { excellent: c.sage, good: c.gilt, poor: c.ember };
+  const colors = { excellent: e.success, good: e.copper, poor: e.error };
   const labels = { excellent: "Excellent", good: "Good", poor: "Poor" };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(20,17,10,0.10)", border: `1px solid ${colors[quality]}30` }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors[quality], boxShadow: `0 0 6px ${colors[quality]}60` }} />
-      <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
+      <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
     </div>
   );
 });
@@ -238,7 +224,7 @@ export const DotGridVisualizer = React.memo(function DotGridVisualizer({ active,
       {dots.map((scale, i) => (
         <div key={i} style={{
           width: 8, height: 8, borderRadius: "50%",
-          background: c.gilt,
+          background: e.copper,
           opacity: active ? Math.min(0.9, scale) : thinking ? Math.min(0.4, scale + 0.05) : 0.1,
           transform: `scale(${active ? 0.5 + scale * 0.5 : thinking ? 0.5 + scale * 0.3 : 0.6})`,
           transition: active ? "all 0.1s ease" : "all 0.3s ease",
@@ -253,10 +239,10 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
   return (
     <div style={{ width: "100%", maxWidth: 480 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.ivory }}>
+        <span style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 600, color: e.coal }}>
           Question {current} of {total}
         </span>
-        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone }}>
+        <span style={{ fontFamily: ef.mono, fontSize: 11, color: e.inkSoft }}>
           {Math.round((current / total) * 100)}%
         </span>
       </div>
@@ -264,7 +250,7 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} style={{
             flex: 1, borderRadius: 2, height: 4,
-            background: i < current ? c.gilt : i === current ? "rgba(180,83,9,0.40)" : "rgba(20,17,10,0.13)",
+            background: i < current ? e.copper : i === current ? "rgba(180,83,9,0.40)" : "rgba(20,17,10,0.13)",
             transition: "all 0.4s ease",
           }} />
         ))}
@@ -320,13 +306,13 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
   return (
     <div style={{ width: "100%" }} aria-live="polite" aria-label="AI interviewer speaking">
       <p style={{
-        fontFamily: font.display, fontSize: 22, color: c.ivory,
+        fontFamily: ef.serif, fontSize: 22, color: e.coal,
         lineHeight: 1.35, margin: 0, minHeight: 30,
         letterSpacing: "-0.01em", textWrap: "balance",
       }}>
         {displayText}
         {isTyping && charIndex < text.length && (
-          <span style={{ display: "inline-block", width: 2, height: 20, background: c.gilt, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
+          <span style={{ display: "inline-block", width: 2, height: 20, background: e.copper, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
         )}
       </p>
     </div>

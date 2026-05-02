@@ -44,7 +44,7 @@ Best post times:
 3. Mistake 2: Using "we" instead of "I"
 4. Mistake 3: No measurable outcome
 5. Mistake 4: 8-minute monologue
-6. CTA: "Practice STAR with HireStepX → ₹10/session"
+6. CTA: "Practice STAR with HireStepX
 
 ### L3 — Wed — Static
 

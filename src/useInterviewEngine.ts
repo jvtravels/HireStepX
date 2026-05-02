@@ -10,6 +10,8 @@ import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript } from "./interviewScripts";
 import { saveSessionResult, fetchLLMQuestions, fetchLLMEvaluation, fetchFollowUp, retryQueuedEvals, getAdaptiveHints } from "./interviewAPI";
 import { initLiveSession, saveInterviewTurn } from "./supabase";
+import { deriveCandidateState } from "./_emotional-state";
+import { checkFollowUpCap } from "./_follow-up-cap";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
 import type { SarvamSTTHandle } from "./sarvamSTT";
@@ -1370,19 +1372,10 @@ export function useInterviewEngine() {
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
           } else {
             setInterviewScript(prev => {
-              // Cap follow-ups so they can't push the total turn count
-              // unreasonably past the planned budget (QA bug 21: "Question 6
-              // of 3" with follow-ups stretching a mini session).
-              //
-              // The cap = baseQuestionCount + ceil(baseQuestionCount * 0.5).
-              // So a 3-question mini session gets at most 5 turns total, a
-              // 5-question session gets at most 8. Generous enough to allow
-              // 1-2 high-value probes without the session feeling endless.
-              const baseCount = prev.filter(s => s.type === "question").length;
-              const turnCount = prev.filter(s => s.type === "question" || s.type === "follow-up").length;
-              const maxTurns = baseCount + Math.ceil(baseCount * 0.5);
-              if (turnCount >= maxTurns) {
-                console.warn(`[interview] Skipping follow-up — turn cap reached (${turnCount}/${maxTurns})`);
+              // Cap check — see src/_follow-up-cap.ts for the formula.
+              const cap = checkFollowUpCap({ script: prev });
+              if (!cap.allowed) {
+                console.warn(`[interview] Skipping follow-up — turn cap reached (${cap.currentTurns}/${cap.maxTurns})`);
                 return prev;
               }
               return [
@@ -1660,44 +1653,9 @@ export function useInterviewEngine() {
           : recentScores.length >= 2 && recentAvg <= 2 ? "ease"
           : "hold";
 
-        // Emotional-state signals — derive simple trends from recent answers
-        // so the follow-up LLM can adjust tone (warm vs neutral vs probing).
-        // Filler-density rising = nervousness. Answer-length shrinking =
-        // disengagement. Hesitation markers = anxiety. The LLM uses these
-        // to decide whether to be encouraging, push harder, or pivot.
+        // Emotional-state signals — see src/_emotional-state.ts.
         const userTurns = transcript.filter(m => m.speaker === "user").map(m => m.text);
-        const lastUserTurns = [...userTurns, answerText].slice(-3);
-        const candidateState = (() => {
-          if (lastUserTurns.length === 0) return undefined;
-          const FILLER = /\b(um+|uh+|like|basically|actually|sort of|kind of|you know|i mean)\b/gi;
-          const HESITATION = /\b(hmm+|er+|umm+|let me think|let me see|how do i say)\b/gi;
-          const lengths = lastUserTurns.map(t => t.split(/\s+/).filter(Boolean).length);
-          const fillerCounts = lastUserTurns.map(t => (t.match(FILLER) || []).length);
-          const hesitationCounts = lastUserTurns.map(t => (t.match(HESITATION) || []).length);
-          const totalWords = lengths.reduce((a, b) => a + b, 0);
-          const totalFillers = fillerCounts.reduce((a, b) => a + b, 0);
-          const totalHesitations = hesitationCounts.reduce((a, b) => a + b, 0);
-          // Trend: comparing latest vs earlier average. Positive = increasing.
-          const latestLen = lengths[lengths.length - 1];
-          const earlierAvgLen = lengths.length >= 2
-            ? lengths.slice(0, -1).reduce((a, b) => a + b, 0) / (lengths.length - 1)
-            : latestLen;
-          const lengthTrend: "shortening" | "stable" | "growing" =
-            latestLen < earlierAvgLen * 0.6 ? "shortening"
-            : latestLen > earlierAvgLen * 1.4 ? "growing"
-            : "stable";
-          const fillerDensity = totalWords > 0 ? totalFillers / totalWords : 0; // ~0.05+ is high
-          // Map to coarse labels the LLM can act on
-          const stress: "low" | "medium" | "high" =
-            totalHesitations >= 3 ? "high"
-            : totalHesitations >= 1 || fillerDensity > 0.06 ? "medium"
-            : "low";
-          const engagement: "engaged" | "fading" | "disengaged" =
-            lengthTrend === "shortening" && latestLen < 20 ? "disengaged"
-            : lengthTrend === "shortening" ? "fading"
-            : "engaged";
-          return { stress, engagement, fillerDensity: Math.round(fillerDensity * 100) / 100, lengthTrend };
-        })();
+        const candidateState = deriveCandidateState([...userTurns, answerText]);
 
         pendingFollowUpRef.current = fetchFollowUp({
           question: currentStepObj!.aiText,

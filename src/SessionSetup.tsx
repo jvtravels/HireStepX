@@ -4,7 +4,56 @@ import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 
-import { c, font } from "./tokens";
+/* Editorial brand bridge.
+   This file used to import `c, font` from the dark-luxury palette
+   (obsidian/gilt). It now imports the editorial palette (cream/indigo/copper)
+   from the same source-of-truth as production auth, onboarding, and the
+   interview surface, then re-exposes them under the legacy names so the
+   1100-line component below didn't need a 100+ site rewrite.
+
+   Discipline rule (preserved from auth/onboarding/interview):
+   Indigo is interactive · Copper is editorial · Never mix. */
+import { tokens as T, fonts as F } from "./auth/_tokens";
+import { Wordmark } from "./auth/_fields";
+import { AUTH_STYLES } from "./auth/_styles";
+
+const c = {
+  /* Surfaces (was: dark backgrounds → now cream paper) */
+  obsidian: T.cream,
+  graphite: T.white,
+  carbon: T.white,
+  onyx: T.indigo100,
+  /* Text (was: light on dark → now dark on light) */
+  ivory: T.coal,
+  chalk: T.inkSoft,
+  stone: T.inkFaint,
+  /* Interactive accent (was: gilt gold → now indigo) */
+  gilt: T.indigo,
+  giltDark: T.indigoDeep,
+  giltLight: T.indigo100,
+  /* Status */
+  sage: T.success,
+  sageLight: T.success100,
+  ember: T.error,
+  emberLight: T.error100,
+  slate: T.indigoGray,
+  slateLight: T.inkFaint,
+  /* Lines & focus rings */
+  border: T.line,
+  borderHover: T.lineStrong,
+  borderSubtle: T.line,
+  glass: T.cream,
+  glassBright: T.creamSoft,
+  glow: T.indigoRing,
+  glowStrong: T.indigoRing,
+} as const;
+
+const font = {
+  display: F.serif,
+  ui: F.sans,
+  mono: F.mono,
+} as const;
+
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
 import { getSupabase } from "./supabase";
@@ -160,14 +209,14 @@ function AutocompleteInput({
         <div role="listbox" style={{
           position: "fixed", top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999,
           background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 10,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxHeight: 220, overflowY: "auto",
+          boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)", maxHeight: 220, overflowY: "auto",
         }}>
           {filtered.map((s, i) => (
             <button key={s} role="option" aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
               style={{
                 display: "block", width: "100%", padding: "10px 16px", border: "none", textAlign: "left",
                 fontFamily: font.ui, fontSize: 13, cursor: "pointer",
-                background: i === selectedIdx ? "rgba(212,179,127,0.08)" : "transparent",
+                background: i === selectedIdx ? "rgba(49,46,129,0.08)" : "transparent",
                 color: i === selectedIdx ? c.ivory : c.chalk,
               }}>
               {s}
@@ -461,8 +510,8 @@ export default function SessionSetup() {
       {showDraftBanner && draft && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          padding: "14px 24px", background: "rgba(212,179,127,0.1)",
-          borderBottom: `1px solid rgba(212,179,127,0.2)`,
+          padding: "14px 24px", background: "rgba(49,46,129,0.1)",
+          borderBottom: `1px solid rgba(49,46,129,0.2)`,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
           backdropFilter: "blur(8px)",
         }}>
@@ -488,12 +537,10 @@ export default function SessionSetup() {
         </div>
       )}
 
-      {/* ─── Top Bar (matches Onboarding) ─── */}
-      <div style={{ padding: "18px 40px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", borderBottom: `1px solid rgba(245,242,237,0.04)`, background: "rgba(6,6,7,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 10 }}>
-        {/* Logo */}
-        <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} title="Back to dashboard">
-          <div style={{ width: 6, height: 6, borderRadius: 2, background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, boxShadow: "0 0 8px rgba(212,179,127,0.3)" }} />
-          <span style={{ fontFamily: font.display, fontSize: 17, fontWeight: 400, color: c.ivory, letterSpacing: "0.02em" }}>HireStepX</span>
+      {/* ─── Top Bar — same 3-col grid + tokens used by auth + onboarding. ─── */}
+      <div style={{ padding: "32px 48px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", borderBottom: `1px solid ${T.line}`, background: T.cream, gap: 16 }}>
+        <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ justifySelf: "start", cursor: "pointer" }} title="Back to dashboard">
+          <Wordmark />
         </div>
         {/* Stepper */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -511,11 +558,11 @@ export default function SessionSetup() {
                   onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(stepNum); } } : undefined}
                   style={{
                     width: 26, height: 26, borderRadius: "50%",
-                    background: isCompleted ? `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})` : isCurrent ? "rgba(212,179,127,0.1)" : "transparent",
-                    border: `1.5px solid ${step >= stepNum ? c.gilt : "rgba(245,242,237,0.08)"}`,
+                    background: isCompleted ? `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})` : isCurrent ? "rgba(49,46,129,0.1)" : "transparent",
+                    border: `1.5px solid ${step >= stepNum ? c.gilt : "rgba(14,12,8,0.08)"}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-                    boxShadow: isCurrent ? "0 0 12px rgba(212,179,127,0.15)" : "none",
+                    boxShadow: isCurrent ? "0 0 12px rgba(49,46,129,0.15)" : "none",
                     cursor: canClick ? "pointer" : "default",
                   }}>
                   {isCompleted ? (
@@ -530,7 +577,7 @@ export default function SessionSetup() {
                   onClick={canClick ? () => setStep(stepNum) : undefined}
                   onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(stepNum); } } : undefined}
                   style={{ fontFamily: font.ui, fontSize: 11, color: isCurrent ? c.ivory : c.stone, fontWeight: isCurrent ? 500 : 400, cursor: canClick ? "pointer" : "default" }}>{label}</span>
-                {i < 1 && <div style={{ width: 24, height: 1, background: isCompleted ? `linear-gradient(90deg, ${c.gilt}, rgba(212,179,127,0.2))` : "rgba(245,242,237,0.06)", transition: "background 0.4s", borderRadius: 1 }} />}
+                {i < 1 && <div style={{ width: 24, height: 1, background: isCompleted ? `linear-gradient(90deg, ${c.gilt}, rgba(49,46,129,0.2))` : "rgba(14,12,8,0.06)", transition: "background 0.4s", borderRadius: 1 }} />}
               </div>
             );
           })}
@@ -559,7 +606,7 @@ export default function SessionSetup() {
                 {/* ── Section 1: Role & Company ── */}
                 <div className="ob-card fade-up-1" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                     </div>
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Target Role</span>
@@ -588,7 +635,7 @@ export default function SessionSetup() {
                 {/* ── Section 2: Interview Focus ── */}
                 <div className="ob-card fade-up-2" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Interview Focus <span style={{ color: c.ember, fontWeight: 400 }}>*</span></span>
@@ -626,23 +673,23 @@ export default function SessionSetup() {
                           <button key={opt.value} className="ob-focus-card" onClick={() => setInterviewFocus([opt.value])}
                             style={{
                               padding: "14px 18px", borderRadius: 12, cursor: "pointer", transition: "all 0.2s ease", textAlign: "left",
-                              background: sel ? "rgba(212,179,127,0.08)" : "transparent",
+                              background: sel ? "rgba(49,46,129,0.08)" : "transparent",
                               border: `1.5px solid ${sel ? c.gilt : c.border}`,
-                              boxShadow: sel ? "0 0 16px rgba(212,179,127,0.06)" : "none",
+                              boxShadow: sel ? "0 0 16px rgba(49,46,129,0.06)" : "none",
                               display: "flex", alignItems: "center", gap: 12, color: sel ? c.gilt : c.stone,
                               position: "relative",
                             }}>
                             {isRecommended && (
                               <span style={{ position: "absolute", top: -8, right: 12, fontFamily: font.ui, fontSize: 9, fontWeight: 700, color: c.obsidian, background: c.gilt, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
                             )}
-                            <div style={{ width: 36, height: 36, borderRadius: 9, background: sel ? "rgba(212,179,127,0.1)" : "rgba(245,242,237,0.03)", border: `1px solid ${sel ? "rgba(212,179,127,0.2)" : "rgba(245,242,237,0.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 9, background: sel ? "rgba(49,46,129,0.1)" : "rgba(14,12,8,0.03)", border: `1px solid ${sel ? "rgba(49,46,129,0.2)" : "rgba(14,12,8,0.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {opt.icon}
                             </div>
                             <div style={{ flex: 1 }}>
                               <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block" }}>{opt.value}</span>
                               <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4 }}>{opt.desc}</span>
                             </div>
-                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? c.gilt : "rgba(245,242,237,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? c.gilt : "rgba(14,12,8,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {sel && <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.gilt }} />}
                             </div>
                           </button>
@@ -665,7 +712,7 @@ export default function SessionSetup() {
                 {/* ── Section 3: Session Length ── */}
                 <div className="ob-card fade-up-3" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     </div>
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Session Length</span>
@@ -682,9 +729,9 @@ export default function SessionSetup() {
                         <button key={opt.value} onClick={() => { if (locked) setShowUpgradeModal(true); else setSessionLength(opt.value); }}
                           style={{
                             padding: "16px 14px", borderRadius: 12, cursor: "pointer", textAlign: "center", position: "relative",
-                            background: sel ? "rgba(212,179,127,0.08)" : "transparent",
+                            background: sel ? "rgba(49,46,129,0.08)" : "transparent",
                             border: `1.5px solid ${sel ? c.gilt : c.border}`,
-                            boxShadow: sel ? "0 0 16px rgba(212,179,127,0.06)" : "none",
+                            boxShadow: sel ? "0 0 16px rgba(49,46,129,0.06)" : "none",
                             transition: "all 0.2s", opacity: locked ? 0.5 : 1,
                           }}>
                           {has15minTaste && opt.value === "15m" ? (
@@ -693,7 +740,7 @@ export default function SessionSetup() {
                             <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: c.obsidian, background: c.gilt, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Recommended</span>
                           )}
                           {locked && (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: c.gilt, background: "rgba(212,179,127,0.1)", border: "1px solid rgba(212,179,127,0.2)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 3 }}>
+                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: font.ui, fontSize: 10, fontWeight: 700, color: c.gilt, background: "rgba(49,46,129,0.1)", border: "1px solid rgba(49,46,129,0.2)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 3 }}>
                               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                               Upgrade
                             </span>
@@ -733,10 +780,10 @@ export default function SessionSetup() {
                 <div className={`ob-card fade-up-1 ${micStatus !== "granted" ? "ob-mic-pulse" : ""}`} style={{
                   borderRadius: 12, padding: "14px 20px",
                   display: "flex", alignItems: "center", gap: 14,
-                  border: `1px solid ${micStatus === "granted" ? "rgba(122,158,126,0.15)" : "rgba(212,179,127,0.15)"}`,
+                  border: `1px solid ${micStatus === "granted" ? "rgba(122,158,126,0.15)" : "rgba(49,46,129,0.15)"}`,
                   background: micStatus === "granted" ? "rgba(122,158,126,0.03)" : undefined,
                 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: micStatus === "granted" ? "rgba(122,158,126,0.08)" : "rgba(245,242,237,0.03)", border: `1px solid ${micStatus === "granted" ? "rgba(122,158,126,0.2)" : "rgba(245,242,237,0.06)"}` }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: micStatus === "granted" ? "rgba(122,158,126,0.08)" : "rgba(14,12,8,0.03)", border: `1px solid ${micStatus === "granted" ? "rgba(122,158,126,0.2)" : "rgba(14,12,8,0.06)"}` }}>
                     <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={micStatus === "granted" ? c.sage : c.stone} strokeWidth="1.5" strokeLinecap="round">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                     </svg>
@@ -748,7 +795,7 @@ export default function SessionSetup() {
                     {micStatus === "granted" && (
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ width: 60, height: 3, borderRadius: 2, background: "rgba(245,242,237,0.06)", overflow: "hidden" }}>
+                          <div style={{ width: 60, height: 3, borderRadius: 2, background: "rgba(14,12,8,0.06)", overflow: "hidden" }}>
                             <div style={{ height: "100%", borderRadius: 2, background: micTestState === "fail" ? c.ember : c.sage, width: `${Math.max(5, micLevel)}%`, transition: "width 0.1s" }} />
                           </div>
                           <span style={{ fontFamily: font.ui, fontSize: 10, color: micTestState === "fail" ? c.ember : c.sage }}>
@@ -778,12 +825,12 @@ export default function SessionSetup() {
                         requestMic();
                       }
                     }}
-                      style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, background: "rgba(212,179,127,0.08)", border: `1px solid rgba(212,179,127,0.2)`, borderRadius: 8, padding: "7px 16px", cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.15)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.08)"; }}>
+                      style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, background: "rgba(49,46,129,0.08)", border: `1px solid rgba(49,46,129,0.2)`, borderRadius: 8, padding: "7px 16px", cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.15)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.08)"; }}>
                       {micStatus === "requesting" ? (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ width: 12, height: 12, border: "2px solid rgba(212,179,127,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                          <div style={{ width: 12, height: 12, border: "2px solid rgba(49,46,129,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
                           Requesting...
                         </span>
                       ) : micTestState === "fail" ? "Re-test Mic" : micStatus === "denied" ? "Retry" : "Allow"}
@@ -794,7 +841,7 @@ export default function SessionSetup() {
                 {/* ── Your Profile Card ── */}
                 <div className="ob-card fade-up-2" style={{ borderRadius: 16, padding: "24px 28px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Your Profile</span>
@@ -831,12 +878,12 @@ export default function SessionSetup() {
                             )}
                           </div>
                         </div>
-                        {i < arr.length - 1 && <div style={{ height: 1, background: "rgba(245,242,237,0.04)" }} />}
+                        {i < arr.length - 1 && <div style={{ height: 1, background: "rgba(14,12,8,0.04)" }} />}
                       </div>
                     ))}
                   </div>
                   {user?.resumeText && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 10, background: "rgba(245,242,237,0.02)", border: `1px solid ${c.border}`, marginTop: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 10, background: "rgba(14,12,8,0.02)", border: `1px solid ${c.border}`, marginTop: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>Use resume for personalized questions</span>
@@ -873,7 +920,7 @@ export default function SessionSetup() {
                         maxLength={2000}
                         style={{
                           width: "100%", fontFamily: font.ui, fontSize: 12, color: c.chalk,
-                          background: "rgba(6,6,7,0.5)", border: `1px solid ${c.border}`,
+                          background: T.creamSoft, border: `1px solid ${c.border}`,
                           borderRadius: 10, padding: "12px 14px", outline: "none", resize: "vertical",
                           lineHeight: 1.6, boxSizing: "border-box",
                         }}
@@ -904,7 +951,7 @@ export default function SessionSetup() {
                     {jdAnalysis && (
                       <div style={{
                         marginTop: 12, padding: 16, borderRadius: 12,
-                        background: "rgba(6,6,7,0.6)", border: `1px solid ${c.border}`,
+                        background: "rgba(250,247,240,0.85)", border: `1px solid ${c.border}`,
                       }}>
                         {/* Match Score Header */}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -962,7 +1009,7 @@ export default function SessionSetup() {
 
                         {/* Suggested Focus */}
                         {jdAnalysis.suggestedFocus && (
-                          <div style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.15)" }}>
+                          <div style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(49,46,129,0.08)", border: "1px solid rgba(49,46,129,0.15)" }}>
                             Recommended focus: <strong style={{ color: c.gilt }}>{jdAnalysis.suggestedFocus}</strong>
                           </div>
                         )}
@@ -993,14 +1040,14 @@ export default function SessionSetup() {
                 <button onClick={goNext} disabled={!canProceedStep1}
                   style={{
                     fontFamily: font.ui, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
-                    background: !canProceedStep1 ? "rgba(212,179,127,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-                    color: !canProceedStep1 ? "rgba(212,179,127,0.4)" : c.obsidian,
+                    background: !canProceedStep1 ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                    color: !canProceedStep1 ? "rgba(49,46,129,0.4)" : c.obsidian,
                     cursor: !canProceedStep1 ? "not-allowed" : "pointer",
                     transition: "all 0.25s ease", display: "inline-flex", alignItems: "center", gap: 8,
-                    boxShadow: !canProceedStep1 ? "none" : "0 8px 24px rgba(212,179,127,0.2)",
+                    boxShadow: !canProceedStep1 ? "none" : "0 8px 24px rgba(49,46,129,0.2)",
                   }}
-                  onMouseEnter={(e) => { if (canProceedStep1) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(212,179,127,0.3)"; } }}
-                  onMouseLeave={(e) => { if (canProceedStep1) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(212,179,127,0.2)"; } }}>
+                  onMouseEnter={(e) => { if (canProceedStep1) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(49,46,129,0.3)"; } }}
+                  onMouseLeave={(e) => { if (canProceedStep1) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(49,46,129,0.2)"; } }}>
                   Continue
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
@@ -1009,16 +1056,16 @@ export default function SessionSetup() {
                   <button onClick={handleStart} disabled={starting || !isOnline}
                     style={{
                       fontFamily: font.ui, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
-                      background: (starting || !isOnline) ? "rgba(212,179,127,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-                      color: (starting || !isOnline) ? "rgba(212,179,127,0.4)" : c.obsidian,
+                      background: (starting || !isOnline) ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                      color: (starting || !isOnline) ? "rgba(49,46,129,0.4)" : c.obsidian,
                       cursor: (starting || !isOnline) ? "not-allowed" : "pointer",
                       transition: "all 0.25s ease", display: "inline-flex", alignItems: "center", gap: 8,
-                      boxShadow: (starting || !isOnline) ? "none" : "0 8px 24px rgba(212,179,127,0.2)",
+                      boxShadow: (starting || !isOnline) ? "none" : "0 8px 24px rgba(49,46,129,0.2)",
                     }}
-                    onMouseEnter={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(212,179,127,0.3)"; } }}
-                    onMouseLeave={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(212,179,127,0.2)"; } }}>
+                    onMouseEnter={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(49,46,129,0.3)"; } }}
+                    onMouseLeave={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(49,46,129,0.2)"; } }}>
                     {starting ? (
-                      <div style={{ width: 16, height: 16, border: "2.5px solid rgba(212,179,127,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                      <div style={{ width: 16, height: 16, border: "2.5px solid rgba(49,46,129,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
                     ) : (
                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
                     )}
@@ -1050,7 +1097,7 @@ export default function SessionSetup() {
             {/* Save status indicator */}
             {saveStatus !== "idle" && (
               <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, animation: "fadeUp 0.25s ease-out" }}>
-                {saveStatus === "saving" && <div style={{ width: 10, height: 10, border: "1.5px solid rgba(212,179,127,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />}
+                {saveStatus === "saving" && <div style={{ width: 10, height: 10, border: "1.5px solid rgba(49,46,129,0.3)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 1s linear infinite" }} />}
                 {saveStatus === "saved" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
                 {saveStatus === "error" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>}
                 <span style={{ fontFamily: font.ui, fontSize: 11, color: saveStatus === "error" ? c.ember : saveStatus === "saved" ? c.sage : c.stone }}>
@@ -1073,8 +1120,8 @@ export default function SessionSetup() {
             <>
               <div key={countdown} style={{
                 width: 120, height: 120, borderRadius: "50%",
-                background: `linear-gradient(135deg, rgba(212,179,127,0.12), rgba(212,179,127,0.04))`,
-                border: "2px solid rgba(212,179,127,0.3)",
+                background: `linear-gradient(135deg, rgba(49,46,129,0.12), rgba(49,46,129,0.04))`,
+                border: "2px solid rgba(49,46,129,0.3)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 marginBottom: 32,
                 animation: "countdownPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -1095,8 +1142,8 @@ export default function SessionSetup() {
             <>
               <div style={{
                 width: 64, height: 64, borderRadius: 16, marginBottom: 24,
-                background: `linear-gradient(135deg, rgba(212,179,127,0.15), rgba(212,179,127,0.05))`,
-                border: "1px solid rgba(212,179,127,0.25)",
+                background: `linear-gradient(135deg, rgba(49,46,129,0.15), rgba(49,46,129,0.05))`,
+                border: "1px solid rgba(49,46,129,0.25)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 animation: "launchPulse 1.2s ease-in-out infinite",
               }}>
