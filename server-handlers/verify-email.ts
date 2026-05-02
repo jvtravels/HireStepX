@@ -7,10 +7,36 @@ import { createHmac, timingSafeEqual } from "crypto";
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
-const EMAIL_SECRET = process.env.EMAIL_VERIFICATION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret";
+
+/* Verification-token signing secret. MUST match the secret used by
+   send-welcome.ts when issuing the token — they're two halves of the
+   same HMAC contract. Production requires EMAIL_VERIFICATION_SECRET
+   to be set; dev/preview falls back to the service role key for
+   convenience, never in production. See send-welcome.ts for the
+   rationale on why we don't permanently fall back to the service
+   role key (token forgery blast radius on key leak). */
+const EMAIL_SECRET = (() => {
+  const dedicated = (process.env.EMAIL_VERIFICATION_SECRET || "").trim();
+  if (dedicated) return dedicated;
+  if (process.env.VERCEL_ENV === "production") {
+    console.error(
+      "[CRITICAL] EMAIL_VERIFICATION_SECRET is unset in production. " +
+      "Verification links will be rejected until this is configured.",
+    );
+    return "";
+  }
+  return (process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret").trim();
+})();
 
 /** Validate a verification token (supports both old deterministic and new nonce-based format) */
 function validateToken(email: string, token: string): boolean {
+  // If the signing secret never got configured (production with no
+  // EMAIL_VERIFICATION_SECRET set), reject every token. Better to
+  // 4xx legitimate users with a clear "config" redirect than to
+  // accept tokens signed against an empty key, which is trivially
+  // forgeable.
+  if (!EMAIL_SECRET || EMAIL_SECRET.length < 16) return false;
+
   const normalizedEmail = email.toLowerCase().trim();
   const parts = token.split(".");
 

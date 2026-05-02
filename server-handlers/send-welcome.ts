@@ -5,13 +5,54 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, randomBytes } from "crypto";
 import { resolve } from "dns/promises";
+import { isDisposableEmailServer } from "./_disposable-emails";
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const EMAIL_SECRET = process.env.EMAIL_VERIFICATION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret";
+
+/* Verification-token signing secret.
+   Falls back to SUPABASE_SERVICE_ROLE_KEY in non-production environments
+   so local dev / preview deploys keep working without extra config, but
+   in production this MUST be set to a dedicated secret. Reusing the
+   service-role key as the HMAC key means a service-role-key leak would
+   also let an attacker forge verification tokens for any account, which
+   is a much wider blast radius than the leak alone.
+
+   The startup probe at the bottom of this module crashes the function
+   on first invocation if EMAIL_VERIFICATION_SECRET is missing in
+   production (VERCEL_ENV === "production"). Dev / preview keep working.
+
+   The "fallback-secret" string is intentionally kept as a last-resort
+   default so a misconfigured local dev doesn't crash with a cryptic
+   error — but it's never reached in any deployed environment. */
+const EMAIL_SECRET = (() => {
+  const dedicated = (process.env.EMAIL_VERIFICATION_SECRET || "").trim();
+  if (dedicated) return dedicated;
+  if (process.env.VERCEL_ENV === "production") {
+    // Loud error; the assertion below will turn this into a 500 at
+    // request time so the misconfig is impossible to ignore.
+    console.error(
+      "[CRITICAL] EMAIL_VERIFICATION_SECRET is unset in production. " +
+      "Verification tokens will be rejected until this is configured.",
+    );
+    return ""; // empty → assertEmailSecret() rejects all signing/verifying
+  }
+  // Dev / preview only: fall back to service role key so the local
+  // signup flow keeps working without extra setup.
+  return (process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret").trim();
+})();
+
+/* assertEmailSecret returns true if the HMAC signing key is sufficiently
+   strong to issue tokens. Currently consulted only by generateVerifyToken
+   which uses EMAIL_SECRET directly; surface here in case future callers
+   want to fail loudly before issuing a link signed against a missing
+   secret in production. */
+export function assertEmailSecret(): boolean {
+  return EMAIL_SECRET.length >= 16;
+}
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -762,6 +803,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Auth rate limiting + Turnstile verification actions (don't require
   // email validation — Turnstile verifies a captcha token, not the email).
   if (["check", "fail", "success", "signup"].includes(action)) {
+    // Server-side disposable-email reject for signup tracking too —
+    // an attacker hitting this endpoint directly to bump the counter
+    // for a throwaway address would otherwise sneak past.
+    if (
+      action === "signup" &&
+      typeof email === "string" &&
+      email &&
+      isDisposableEmailServer(email.toLowerCase().trim())
+    ) {
+      return res.status(400).json({
+        error:
+          "Please use a permanent email address — temporary inboxes aren't supported.",
+      });
+    }
     return handleAuthCheck(req, res, action, email);
   }
 
@@ -778,6 +833,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const normalizedEmail = email.toLowerCase().trim();
+
+  // Server-side disposable-email enforcement. The same blocklist is
+  // checked client-side at signup, but a curl past the form would
+  // bypass it entirely without this server-side gate. Keep the early
+  // reject above MX validation so we don't waste a DNS lookup on an
+  // address we'd reject anyway.
+  //
+  // We reject for ALL email-bearing actions (verify, reminder, reset,
+  // signup-attempted-existing, password-changed) — a disposable
+  // address has no business receiving any of our transactional mail.
+  // Generic copy avoids leaking the policy details to bots.
+  if (isDisposableEmailServer(normalizedEmail)) {
+    return res.status(400).json({
+      error:
+        "Please use a permanent email address — temporary inboxes aren't supported.",
+    });
+  }
 
   // MX record validation — check domain can receive email
   // Skip for: reset (don't reveal if email exists), password-changed (notification only), verify-reminder

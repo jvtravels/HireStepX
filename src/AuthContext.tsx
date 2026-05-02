@@ -664,7 +664,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true };
     }
 
-    // Server-side password policy enforcement (cannot be bypassed via DevTools)
+    // Password policy enforcement.
+    //
+    // This catches every signup that flows through our app (whether
+    // from the form, the autofill path, or a programmatic in-tab
+    // call). It does NOT catch a curl that hits Supabase directly with
+    // the project URL + anon key — that's a Supabase project-level
+    // concern. To close that surface, also configure password policy
+    // in the Supabase Auth settings (Dashboard > Authentication >
+    // Settings > Auth > Password requirements). Both layers should
+    // agree: ≥8 chars, ≥1 uppercase, ≥1 digit, ≥1 symbol, ≤128 chars.
+    //
+    // Server-handlers/_disposable-emails.ts enforces the same password
+    // rules via validatePasswordServer() for any future endpoint that
+    // accepts a password — keep the rules in sync if you tighten one.
     if (!password || password.length < 8) return { success: false, error: "Password must be at least 8 characters." };
     if (password.length > 128) return { success: false, error: "Password must be 128 characters or fewer." };
     if (!/[A-Z]/.test(password)) return { success: false, error: "Password must include an uppercase letter." };
