@@ -641,13 +641,6 @@ export function ProfileReadyState({
   // (institutions, degree lines). If userName is empty, we render no
   // name and use email-initials downstream.
   const trimmedName = (userName && userName.trim()) || "";
-  const initials =
-    trimmedName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "?";
 
   return (
     <>
@@ -804,8 +797,6 @@ export function ProfileReadyState({
             tone={scoreTone as "success" | "warning" | "error" | "muted"}
             yearsExperience={aiProfile.yearsExperience}
             industries={aiProfile.industries}
-            displayName={trimmedName || undefined}
-            initials={initials}
             onStartInterview={onStartInterview}
             onGoToDashboard={onGoToDashboard}
             starting={starting}
@@ -976,8 +967,6 @@ function ScoreGauge({
   tone,
   yearsExperience,
   industries,
-  displayName,
-  initials,
   onStartInterview,
   onGoToDashboard,
   starting,
@@ -986,8 +975,6 @@ function ScoreGauge({
   tone: "success" | "warning" | "error" | "muted";
   yearsExperience?: number | null;
   industries?: string[];
-  displayName?: string;
-  initials?: string;
   /** Optional primary CTA. When provided, renders inside the gauge
       card so the user has a clear action right next to their score
       — no scrolling needed. */
@@ -1034,7 +1021,7 @@ function ScoreGauge({
         ? `${yearsExperience}+ yrs`
         : "<1 yr"
       : null;
-  const hasStats = !!(displayName || experienceLabel || industriesLabel);
+  const hasStats = !!(experienceLabel || industriesLabel);
 
   return (
     <section
@@ -1088,14 +1075,11 @@ function ScoreGauge({
         <div style={{ borderTop: `1px solid ${t.line}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           {/* These rows display data — not clickable. Black ink keeps
               indigo reserved for actually-interactive elements
-              (CTAs, links). Reduces visual noise. */}
-          {displayName && initials && (
-            <StatRow
-              label="You"
-              value={displayName}
-              avatarInitials={initials}
-            />
-          )}
+              (CTAs, links). Reduces visual noise.
+
+              The "You" row was removed: identity is already anchored
+              by the topbar avatar + the hero greeting, so repeating
+              it inside the score card was redundant chrome. */}
           {experienceLabel && <StatRow label="Experience" value={experienceLabel} />}
           {industriesLabel && <StatRow label="Industries" value={industriesLabel} />}
         </div>
