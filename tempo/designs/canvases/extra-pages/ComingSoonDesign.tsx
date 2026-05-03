@@ -269,8 +269,8 @@ export default function ComingSoonDesign({
                 marginRight: "auto",
               }}
             >
-              An AI coach that runs realistic mocks, hears your answers, and gives feedback that
-              gets specific. Built for the way candidates in India actually interview.
+              An AI coach for Indian candidates. Realistic mocks, specific
+              feedback, no judgment.
             </p>
 
             {/* ─── Live counter — placed contextually, immediately above
