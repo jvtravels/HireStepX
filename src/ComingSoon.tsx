@@ -787,7 +787,7 @@ export default function ComingSoon() {
           }}
         >
           <span>
-            Made in Mumbai 🇮🇳 · ₹ INR
+            Made in Mumbai 🇮🇳
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 18 }}>
             <a
@@ -796,14 +796,6 @@ export default function ComingSoon() {
               style={{ color: T.inkSoft, textDecoration: "none", padding: "4px 6px", borderRadius: 6 }}
             >
               Privacy
-            </a>
-            <a
-              href="mailto:hello@hirestepx.com"
-              aria-label="Email HireStepX at hello@hirestepx.com"
-              className="cs-footer-link hsx-link-indigo"
-              style={{ color: T.inkSoft, textDecoration: "none", padding: "4px 6px", borderRadius: 6 }}
-            >
-              hello@hirestepx.com
             </a>
           </span>
         </footer>
