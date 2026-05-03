@@ -29,6 +29,10 @@
     {
       "path": "/api/cron/weekly-summary",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/aggregate-question-feedback",
+      "schedule": "0 9 * * 1"
     }
   ]
 }
