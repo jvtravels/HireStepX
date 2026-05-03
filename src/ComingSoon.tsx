@@ -203,13 +203,20 @@ export default function ComingSoon() {
           box-shadow: 0 0 0 3px rgba(185,28,28,0.18);
         }
         .cs-cta {
-          transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, opacity 160ms ease;
+          transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                      box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+                      background 180ms ease, opacity 160ms ease;
         }
+        /* Inline style sets background:indigo, so hover/active need !important
+           to win specificity. Same pattern as hsx-onb-cta-primary. */
         .cs-cta:not(:disabled):hover {
           transform: translateY(-1px);
-          background: ${T.indigoDeep};
+          background: ${T.indigoDeep} !important;
           box-shadow: 0 4px 12px -2px rgba(20,17,10,.18), 0 18px 36px -12px rgba(49,46,129,0.5);
         }
+        .cs-cta:not(:disabled):hover svg { transform: translateX(3px); }
+        .cs-cta:not(:disabled):active { transform: translateY(0); }
+        .cs-cta svg { transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1); }
         .cs-cta:disabled { cursor: not-allowed; opacity: 0.6; }
         .cs-feature-tile {
           transition: transform 220ms cubic-bezier(.2,.7,.2,1), box-shadow 220ms ease;
