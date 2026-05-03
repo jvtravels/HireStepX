@@ -50,7 +50,7 @@ describe("isDisposableEmailServer", () => {
     expect(isDisposableEmailServer("a@")).toBe(false);
     // @ts-expect-error - testing defensive non-string input
     expect(isDisposableEmailServer(null)).toBe(false);
-    // @ts-expect-error
+    // @ts-expect-error - testing defensive non-string input
     expect(isDisposableEmailServer(undefined)).toBe(false);
   });
 
@@ -110,11 +110,11 @@ describe("validatePasswordServer", () => {
 
   it("rejects empty / non-string input", () => {
     expect(validatePasswordServer("").ok).toBe(false);
-    // @ts-expect-error
+    // @ts-expect-error - testing defensive non-string input
     expect(validatePasswordServer(null).ok).toBe(false);
-    // @ts-expect-error
+    // @ts-expect-error - testing defensive non-string input
     expect(validatePasswordServer(undefined).ok).toBe(false);
-    // @ts-expect-error
+    // @ts-expect-error - testing defensive non-string input
     expect(validatePasswordServer(12345).ok).toBe(false);
   });
 

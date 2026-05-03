@@ -131,7 +131,7 @@ describe("validateToken — invalid formats", () => {
   it("rejects non-string token / email defensively", () => {
     // @ts-expect-error testing defensive non-string input
     expect(validateToken(null, "tok", TEST_SECRET)).toBe(false);
-    // @ts-expect-error
+    // @ts-expect-error testing defensive non-string input
     expect(validateToken("user@x.com", null, TEST_SECRET)).toBe(false);
   });
 });

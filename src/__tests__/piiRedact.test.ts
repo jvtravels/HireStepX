@@ -110,7 +110,7 @@ describe("redactPii", () => {
     expect(redactPii("")).toBe("");
     // @ts-expect-error - testing non-string input
     expect(redactPii(null)).toBe(null);
-    // @ts-expect-error
+    // @ts-expect-error - testing non-string input
     expect(redactPii(undefined)).toBe(undefined);
   });
 

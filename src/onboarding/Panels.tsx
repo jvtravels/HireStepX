@@ -273,6 +273,7 @@ export function ResumeEmptyState({
 
         <label
           htmlFor="resume-file-input"
+          aria-label="Upload resume — drag a file here or click to browse"
           className="hsx-onb-drop"
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -684,7 +685,9 @@ export function ProfileReadyState({
                 </span>
                 {roleEditing ? (
                   <input
-                    autoFocus
+                    /* Inline-edit pattern: focus on mount via ref+effect rather
+                       than autoFocus, which a11y tooling flags as disorienting. */
+                    ref={(el) => { if (el && document.activeElement !== el) el.focus(); }}
                     type="text"
                     value={roleDraft}
                     onChange={(e) => setRoleDraft(e.target.value)}

@@ -8,6 +8,9 @@ import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-un
 import { useOnlineOfflineRecovery } from "./_recovery";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
 import { useBackchannels } from "./_backchannels";
+import { useListeningInterjections } from "./_listening-interjections";
+import { buildThinkingPhrase } from "./_thinking-phrase";
+import { pickInitialNegotiationStyle, computeNegotiationPhase } from "./_negotiation-state";
 import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
@@ -30,10 +33,8 @@ import { computeFallbackScores, loadPreviousScores, processLLMEvaluation, extrac
 import {
   normalizePersona,
   REACTIONS,
-  isIDontKnowAnswer,
   pickPersonality,
   assessAnswerQuality,
-  SILENCE_NUDGES,
   pickRandom,
   randomDelay,
 } from "./_interview-engine-helpers";
@@ -71,12 +72,9 @@ export function useInterviewEngine() {
 
   // Session-level interviewer personality (persists for entire interview)
   const [personality] = useState<InterviewerPersonality>(() => pickPersonality());
-  // Rambling interjection ref
-  const ramblingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ramblingFiredRef = useRef(false);
-  // Soft 60s tracking interjection — gentler than rambling, says "I'm with you"
-  const softTrackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const softTrackFiredRef = useRef(false);
+  /* Rambling / soft-tracking refs are owned by useListeningInterjections
+     (see ./_listening-interjections.ts) — declared there and surfaced
+     back here for backchannel coordination. */
   // "I don't know" count for evaluation context
   const dontKnowCountRef = useRef(0);
   // Live session ID — created early so turns can be saved in real-time
@@ -103,26 +101,10 @@ export function useInterviewEngine() {
   const negotiationRound = parseInt(searchParams.get("round") || "1", 10);
   // Highest offer the AI has made so far (for monotonic enforcement)
   const highestOfferRef = useRef<number>(0);
-  // Negotiation style: adaptive based on previous session scores, else random
-  const [negotiationStyle] = useState(() => {
-    if (interviewType !== "salary-negotiation") return undefined;
-    try {
-      const raw = localStorage.getItem("hirestepx_sessions");
-      if (raw) {
-        const sessions = JSON.parse(raw) as { type?: string; score?: number }[];
-        const negSessions = sessions.filter(s => s.type === "salary-negotiation" && typeof s.score === "number");
-        if (negSessions.length > 0) {
-          const avgScore = negSessions.slice(0, 3).reduce((sum, s) => sum + (s.score || 0), 0) / Math.min(negSessions.length, 3);
-          // Low scores → cooperative (easier), mid → defensive, high → aggressive (hardest)
-          if (avgScore >= 78) return "aggressive" as const;
-          if (avgScore >= 65) return "defensive" as const;
-          return "cooperative" as const;
-        }
-      }
-    } catch { /* localStorage access failed — use random */ }
-    const styles = ["cooperative", "aggressive", "defensive"] as const;
-    return styles[Math.floor(Math.random() * styles.length)];
-  });
+  /* Negotiation style: adaptive based on previous session scores, else random.
+     See ./_negotiation-state.ts. Picked once per session — kept stable so the
+     AI's tone doesn't drift mid-interview. */
+  const [negotiationStyle] = useState(() => pickInitialNegotiationStyle(interviewType));
   // Negotiation pushback tracker: counts how many times the candidate has pushed back/rejected
   // Used for tone shifts and strategic pause decisions
   const negPushbackCountRef = useRef(0);
@@ -483,8 +465,8 @@ export function useInterviewEngine() {
   const [reconnecting, setReconnecting] = useState(false);
   const reconnectAttemptRef = useRef(1);
   const noSpeechCountRef = useRef(0);
-  const silenceNudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const silenceNudgeFiredRef = useRef(false);
+  /* Silence-nudge refs are owned by useListeningInterjections — see
+     ./_listening-interjections.ts. */
   /* Conversational continuity — accumulates noun-phrase mentions
      across answers and pipes them to the follow-up LLM as
      `previousMentions`. See src/_noun-phrase-memory.ts. */
@@ -674,133 +656,19 @@ export function useInterviewEngine() {
     speak(stepObj.aiText, () => {}, () => {}, interviewerGender).catch(() => {});
   }, [aiVoiceEnabled, interviewerGender]);
 
-  // Feature 3: Silence nudge — if user is silent for 15s during listening, speak a gentle prompt
-  // Tracks actual silence: resets timer each time currentTranscript changes (user is actively speaking)
-  const lastTranscriptChangeRef = useRef(0);
-  useEffect(() => {
-    if (phase !== "listening" || !aiVoiceEnabled) {
-      if (silenceNudgeTimerRef.current) { clearTimeout(silenceNudgeTimerRef.current); silenceNudgeTimerRef.current = null; }
-      return;
-    }
-    silenceNudgeFiredRef.current = false;
-    lastTranscriptChangeRef.current = Date.now();
-    /* Silence nudge bumped 15s → 25s. The 15s threshold fired too
-       aggressively in real conditions — many candidates take 10-15s to
-       gather their first thought, and getting nudged at 15s reads as
-       "you're being slow", which spikes anxiety. 25s is closer to the
-       point where silence becomes genuinely awkward without rushing
-       thinkers. The "smart skip" check below additionally suppresses
-       the nudge if the user is actively typing in the textarea — they
-       aren't silent, they're choosing the keyboard.
-    */
-    const SILENCE_NUDGE_MS = 25_000;
-    const startNudgeTimer = () => {
-      if (silenceNudgeTimerRef.current) clearTimeout(silenceNudgeTimerRef.current);
-      silenceNudgeTimerRef.current = setTimeout(() => {
-        if (silenceNudgeFiredRef.current || interviewEndedRef.current) return;
-        // Smart skip — user is composing in the textarea, not silent
-        const ta = textareaRef.current;
-        if (ta && document.activeElement === ta && ta.value.trim().length > 0) {
-          startNudgeTimer();
-          return;
-        }
-        // Only nudge if user has been actually silent (no transcript change)
-        const silenceDuration = Date.now() - lastTranscriptChangeRef.current;
-        if (silenceDuration < SILENCE_NUDGE_MS - 1000) {
-          startNudgeTimer();
-          return;
-        }
-        silenceNudgeFiredRef.current = true;
-        const nudge = pickRandom(SILENCE_NUDGES);
-        setTranscript(prev => [...prev, { speaker: "ai", text: `[${nudge}]`, time: formatTime(elapsed) }]);
-        speak(nudge, () => {}, () => {}, interviewerGender).catch(() => {});
-      }, SILENCE_NUDGE_MS);
-    };
-    startNudgeTimer();
-    return () => {
-      if (silenceNudgeTimerRef.current) { clearTimeout(silenceNudgeTimerRef.current); silenceNudgeTimerRef.current = null; }
-    };
-    // The nudge fires from a timeout at 15s; we read the latest `elapsed` and `interviewerGender` inside the timeout callback. Adding them as deps would reset the silence timer every second.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, aiVoiceEnabled, currentStep]);
-
-  // Reset silence nudge timer when user starts speaking (transcript changes)
-  useEffect(() => {
-    if (phase !== "listening" || !aiVoiceEnabled || !currentTranscript) return;
-    // User is speaking — mark timestamp and cancel pending nudge
-    lastTranscriptChangeRef.current = Date.now();
-    if (silenceNudgeTimerRef.current) { clearTimeout(silenceNudgeTimerRef.current); silenceNudgeTimerRef.current = null; }
-    silenceNudgeFiredRef.current = true; // Don't nudge once they've started
-  }, [currentTranscript, phase, aiVoiceEnabled]);
-
-  // Hard-cap on dead silence: if listening phase has zero transcript activity
-  // for 60s (e.g. STT silently failed or user walked away), auto-advance with
-  // an empty answer so the interview never stalls forever.
-  useEffect(() => {
-    if (phase !== "listening") return;
-    const stallTimer = setTimeout(() => {
-      if (interviewEndedRef.current) return;
-      const silenceDuration = Date.now() - lastTranscriptChangeRef.current;
-      // Only fire if no transcript activity at all for 60s+
-      if (silenceDuration >= 60_000 && !currentTranscript) {
-        console.warn("[interview] listening phase stalled 60s — auto-advancing");
-        if (handleNextRef.current) handleNextRef.current();
-      }
-    }, 60_000);
-    return () => clearTimeout(stallTimer);
-    // handleNextRef is a ref, not a state value — it never changes identity, so excluding it is correct.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, currentStep, currentTranscript]);
-
-  // Rambling interjection — if user has been speaking for 90s+, interject to wrap up
-  useEffect(() => {
-    if (phase !== "listening" || !aiVoiceEnabled) {
-      if (ramblingTimerRef.current) { clearTimeout(ramblingTimerRef.current); ramblingTimerRef.current = null; }
-      ramblingFiredRef.current = false;
-      return;
-    }
-    ramblingFiredRef.current = false;
-    ramblingTimerRef.current = setTimeout(() => {
-      if (ramblingFiredRef.current || interviewEndedRef.current) return;
-      // Only interject if user is actually speaking (has transcript)
-      if (!currentTranscript || currentTranscript.trim().split(/\s+/).length < 40) return;
-      ramblingFiredRef.current = true;
-      const interjection = pickRandom(REACTIONS.ramblingInterject);
-      setTranscript(prev => [...prev, { speaker: "ai", text: `[${interjection}]`, time: formatTime(elapsed) }]);
-      speak(interjection, () => {}, () => {}, interviewerGender).catch(() => {});
-      toast("Tip: Keep answers under 90 seconds for best impact.", "info");
-    }, 90_000);
-    return () => {
-      if (ramblingTimerRef.current) { clearTimeout(ramblingTimerRef.current); ramblingTimerRef.current = null; }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, aiVoiceEnabled, currentStep]);
-
-  // Soft tracking interjection — at 60s of speaking, signals "I'm
-  // following" without rushing the user. Distinct role from the 90s
-  // rambling cut-off: this one is a gentle acknowledgement, not a
-  // wrap-it-up nudge. Skipped if user has spoken < 25 words (very long
-  // pauses don't count as "they're really going at it").
-  useEffect(() => {
-    if (phase !== "listening" || !aiVoiceEnabled) {
-      if (softTrackTimerRef.current) { clearTimeout(softTrackTimerRef.current); softTrackTimerRef.current = null; }
-      softTrackFiredRef.current = false;
-      return;
-    }
-    softTrackFiredRef.current = false;
-    softTrackTimerRef.current = setTimeout(() => {
-      if (softTrackFiredRef.current || ramblingFiredRef.current || interviewEndedRef.current) return;
-      if (!currentTranscript || currentTranscript.trim().split(/\s+/).length < 25) return;
-      softTrackFiredRef.current = true;
-      const tracking = pickRandom(REACTIONS.softTracking);
-      setTranscript(prev => [...prev, { speaker: "ai", text: `[${tracking}]`, time: formatTime(elapsed) }]);
-      speak(tracking, () => {}, () => {}, interviewerGender).catch(() => {});
-    }, 60_000);
-    return () => {
-      if (softTrackTimerRef.current) { clearTimeout(softTrackTimerRef.current); softTrackTimerRef.current = null; }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, aiVoiceEnabled, currentStep]);
+  /* Listening-phase interjections (silence nudge, hard-cap stall,
+     rambling cut-off, soft tracking) — see ./_listening-interjections.ts.
+     Returns the firing refs that the backchannel hook needs to coordinate
+     with, plus a reset for the silence-nudge guard. */
+  const {
+    resetSilenceNudge,
+    ramblingFiredRef,
+    softTrackFiredRef,
+  } = useListeningInterjections({
+    phase, aiVoiceEnabled, currentStep, currentTranscript, elapsed,
+    interviewerGender, interviewEndedRef, textareaRef, handleNextRef,
+    setTranscript, speak, toast, formatTime,
+  });
 
   /* Real-time backchannels — see ./_backchannels.ts. Default OFF
      behind localStorage flag "hsx-backchannels". Only fires once per
@@ -892,113 +760,28 @@ export function useInterviewEngine() {
       prefetchTTS(step.aiText, interviewerGender);
     }
 
-    // Whether this step should get a reaction phrase (question/follow-up, not first step).
-    // Smart silence: real interviewers go quiet specifically after a vague answer
-    // that's missing one detail — the silence pulls the missing detail out of the
-    // candidate (Stivers et al. 2009). Random silence after strong answers is just
-    // weird, so we gate on (a) decent answer with (b) no concrete metric / number.
-    const baseShouldUseThinkingPhrase = currentStep > 0 && (step.type === "question" || step.type === "follow-up" || (step.type === "closing" && interviewType === "salary-negotiation"));
-    const lastQ = lastAnswerQualityRef.current;
-    const lastA = lastAnswerTextRef.current || "";
-    const lastHasMetric = /\d+%|\d+x|₹[\d,]+|\$[\d,]+|\d+\s*(users|customers|months|days|people|team|engineers|percent|crore|lakh|lpa)/i.test(lastA);
-    // Silence is most powerful when the answer was decent-but-vague (good content,
-    // no number). Skip for salary-neg (silence reads as pressure tactic, not coaching)
-    // and for genuinely weak answers (silence on weak feels punitive — they need help).
-    const silenceProductive = baseShouldUseThinkingPhrase && lastQ === "decent" && !lastHasMetric && interviewType !== "salary-negotiation";
-    const shouldUseThinkingPhrase = baseShouldUseThinkingPhrase && !(silenceProductive && Math.random() < 0.4);
-
-    // Build context-aware reaction phrase
-    let thinkingPhrase: string | null = null;
-    if (shouldUseThinkingPhrase) {
-      const quality = lastAnswerQualityRef.current;
-      const lastAnswer = lastAnswerTextRef.current;
-      const isIDontKnow = isIDontKnowAnswer(lastAnswer);
-
-      if (interviewType === "salary-negotiation") {
-        // Track pushback for tone shifts
-        const rejectPat = /\b(not acceptable|too low|can.?t accept|not enough|walk away|no deal|way too low|not interested|that.?s insulting)\b/i;
-        const acceptPat = /\b(i accept|sounds good|deal|that works|i agree|agreed)\b/i;
-        if (rejectPat.test(lastAnswer) && !acceptPat.test(lastAnswer)) {
-          negPushbackCountRef.current++;
-        }
-        const pushbacks = negPushbackCountRef.current;
-
-        // Salary-negotiation: hiring manager reactions — tone shifts based on pushback count
-        if (isIDontKnow) {
-          thinkingPhrase = pickRandom([
-            "I need you to share your expectations so we can work this out.",
-            "Help me understand what you're looking for — I can't make this work without your input.",
-            "Let me rephrase that.",
-          ]);
-        } else if (pushbacks >= 3) {
-          // Exhaustion/firmness — after 3+ pushbacks, manager gets serious
-          thinkingPhrase = pickRandom([
-            "Hmm, let me think about this seriously.",
-            "Okay... I hear you. Let me see what I can do.",
-            "Look, I want to make this work.",
-            "Alright, let me be straight with you.",
-          ]);
-        } else if (quality === "strong") {
-          thinkingPhrase = pushbacks >= 1
-            ? pickRandom(["Hmm, that's a fair point.", "I hear you. Let me think about that.", "Okay, you make a good case."])
-            : pickRandom(["That's fair.", "I hear you.", "Okay, let me think about that.", "That's a reasonable ask.", "I appreciate the clarity."]);
-        } else if (quality === "weak") {
-          thinkingPhrase = pickRandom([
-            "Hmm, okay.", "I see.", "Let me address that.",
-            "Alright.", "Noted.",
-          ]);
-        } else {
-          thinkingPhrase = pickRandom([
-            "Okay.", "Got it.", "I understand.", "Right.", "Sure.",
-          ]);
-        }
-      } else if (isIDontKnow && step.type !== "follow-up") {
-        // "I don't know" response — redirect gracefully
-        thinkingPhrase = pickRandom(REACTIONS.dontKnowRedirect);
-        dontKnowCountRef.current++;
-      } else if (step.type === "follow-up") {
-        // Follow-ups get bridge phrases that signal "I'm probing deeper"
-        thinkingPhrase = pickRandom(REACTIONS.followUpBridge);
-      } else {
-        // Personality-modulated reactions
-        let reaction: string;
-        if (personality === "tough") {
-          reaction = quality === "strong" ? pickRandom(["Okay.", "Alright, noted.", "Fair."]) :
-                     quality === "weak" ? pickRandom(["Hmm.", "Okay… I was hoping for more specifics.", "Let's move on."]) :
-                     pickRandom(REACTIONS[quality]);
-        } else if (personality === "friendly") {
-          reaction = quality === "strong" ? pickRandom(["That's great! Really well put.", "Excellent example — I love the detail.", "Very impressive."]) :
-                     quality === "weak" ? pickRandom(["Okay, no problem. Let's try another.", "That's fine — let's keep going."]) :
-                     pickRandom(REACTIONS[quality]);
-        } else if (personality === "time-pressed") {
-          reaction = pickRandom(["Got it.", "Okay.", "Right.", "Noted."]);
-        } else {
-          reaction = pickRandom(REACTIONS[quality]);
-        }
-
-        // Time pressure announcements
-        const questionsRemaining = interviewScript.filter((s, i) => i > currentStep && s.type === "question").length;
-        let transition: string;
-        if (questionsRemaining === 1 && !lastQuestionSpokenRef.current) {
-          lastQuestionSpokenRef.current = true;
-          transition = pickRandom(REACTIONS.lastQuestion);
-        } else if (questionsRemaining <= 2 && !timePressureSpokenRef.current && currentStep > 2) {
-          timePressureSpokenRef.current = true;
-          transition = pickRandom(REACTIONS.timePressure);
-        } else {
-          transition = pickRandom(REACTIONS.topicTransition);
-        }
-        // Dedupe stacked fillers: if reaction and transition both start with a
-        // small filler word (Hmm/Okay/Right/Got it/I see), drop the reaction so
-        // we don't get "Hmm, okay. Right, let me ask…" — sounds robotic.
-        const fillerStart = /^(hmm|okay|right|got it|i see|alright|sure|noted|achha|acha|theek hai)/i;
-        if (fillerStart.test(reaction.trim()) && fillerStart.test(transition.trim())) {
-          thinkingPhrase = transition;
-        } else {
-          thinkingPhrase = `${reaction} ${transition}`;
-        }
-      }
-    }
+    /* Build the pre-question "thinking phrase" (acknowledgement +
+       transition) — see ./_thinking-phrase.ts for the decision tree.
+       The pure helper returns counter deltas which we apply here so
+       the engine still owns its mutable refs. */
+    const questionsRemaining = interviewScript.filter((s, i) => i > currentStep && s.type === "question").length;
+    const tp = buildThinkingPhrase({
+      currentStep,
+      stepType: step.type,
+      interviewType,
+      lastAnswerQuality: lastAnswerQualityRef.current,
+      lastAnswerText: lastAnswerTextRef.current || "",
+      personality,
+      questionsRemaining,
+      pushbackCount: negPushbackCountRef.current,
+      lastQuestionSpoken: lastQuestionSpokenRef.current,
+      timePressureSpoken: timePressureSpokenRef.current,
+    });
+    if (tp.pushbackDelta) negPushbackCountRef.current += tp.pushbackDelta;
+    if (tp.dontKnowDelta) dontKnowCountRef.current += tp.dontKnowDelta;
+    if (tp.markedLastQuestionSpoken) lastQuestionSpokenRef.current = true;
+    if (tp.markedTimePressureSpoken) timePressureSpokenRef.current = true;
+    const thinkingPhrase = tp.phrase;
 
     const startSpeaking = () => {
       if (isStale()) return;
@@ -1027,7 +810,7 @@ export function useInterviewEngine() {
         if (step.waitForUser) {
           setPhase("listening");
           // Reset silence nudge for the new listening phase
-          silenceNudgeFiredRef.current = false;
+          resetSilenceNudge();
           const nextStep = interviewScript[currentStep + 1];
           if (nextStep && aiVoiceEnabled) {
             prefetchTTS(nextStep.aiText, interviewerGender);
@@ -1237,7 +1020,7 @@ export function useInterviewEngine() {
       // For salary-neg: speak thinking phrase IMMEDIATELY to eliminate dead air,
       // then wait for follow-up API in background. This means the user hears
       // "Hmm, let me think about that..." within 0.5s instead of 6s silence.
-      if (isSalaryNegConversation && shouldUseThinkingPhrase && thinkingPhrase && aiVoiceEnabled) {
+      if (isSalaryNegConversation && (thinkingPhrase !== null) && thinkingPhrase && aiVoiceEnabled) {
         const isHeavyPushback = negPushbackCountRef.current >= 3;
         const walkAwayPatCheck = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
         const isWalkAway = walkAwayPatCheck.test(lastAnswerTextRef.current);
@@ -1365,7 +1148,7 @@ export function useInterviewEngine() {
           } else {
             const quality = lastAnswerQualityRef.current;
             const pauseRange = quality === "strong" ? [1200, 2000] : quality === "decent" ? [800, 1400] : [500, 900];
-            const microDelay = shouldUseThinkingPhrase ? randomDelay(pauseRange[0], pauseRange[1]) : step.thinkingDuration;
+            const microDelay = (thinkingPhrase !== null) ? randomDelay(pauseRange[0], pauseRange[1]) : step.thinkingDuration;
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startWithThinkingPhrase(); }, microDelay);
           }
         }
@@ -1377,7 +1160,7 @@ export function useInterviewEngine() {
             const microDelay = randomDelay(200, 500);
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
           } else {
-            const microDelay = shouldUseThinkingPhrase ? randomDelay(800, 1500) : step.thinkingDuration;
+            const microDelay = (thinkingPhrase !== null) ? randomDelay(800, 1500) : step.thinkingDuration;
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startWithThinkingPhrase(); }, microDelay);
           }
         }
@@ -1385,7 +1168,7 @@ export function useInterviewEngine() {
     } else {
       // Quality-aware pause before next question
       const quality = lastAnswerQualityRef.current;
-      const pauseRange = shouldUseThinkingPhrase
+      const pauseRange = (thinkingPhrase !== null)
         ? (quality === "strong" ? [1200, 2000] : quality === "decent" ? [800, 1400] : [500, 900])
         : [step.thinkingDuration, step.thinkingDuration];
       const microDelay = randomDelay(pauseRange[0], pauseRange[1]);
@@ -1494,16 +1277,11 @@ export function useInterviewEngine() {
     // Generate micro-feedback with dynamic difficulty awareness
     setMicroFeedback(null);
     if (answerText.length > 10 && !answerText.startsWith("[Answer recorded")) {
-      // Compute current negotiation phase for phase-aware feedback
-      let negPhase: string | undefined;
-      if (interviewType === "salary-negotiation") {
-        const negotiationPhases = ["offer-reaction", "probe-expectations", "counter-offer", "benefits-discussion", "closing-pressure", "closing"];
-        const questionSteps = interviewScript.filter(s => s.type === "question" || s.type === "follow-up");
-        const currentQIdx = interviewScript.slice(0, currentStep + 1).filter(s => s.type === "question" || s.type === "follow-up").length;
-        const ratio = questionSteps.length > 1 ? (currentQIdx - 1) / (questionSteps.length - 1) : 0;
-        const phaseIdx = Math.min(Math.round(ratio * (negotiationPhases.length - 1)), negotiationPhases.length - 1);
-        negPhase = negotiationPhases[phaseIdx];
-      }
+      // Compute current negotiation phase for phase-aware feedback (no-op for non-negotiation types)
+      const negPhase = computeNegotiationPhase({
+        interviewType, currentStep,
+        scriptStepTypes: interviewScript.map(s => s.type),
+      });
       const { feedback, score: answerScore } = computeMicroFeedback(answerText, interviewType, answerQualityRef.current, negPhase);
       answerQualityRef.current.push(answerScore);
       if (feedback) setMicroFeedback(feedback);
@@ -1563,20 +1341,18 @@ export function useInterviewEngine() {
         pendingFollowUpRef.current = null;
       }
 
-      // Determine negotiation phase from position ratio (not absolute index) so it works
-      // even when follow-ups change the total question count mid-interview
-      const questionSteps = interviewScript.filter(s => s.type === "question" || s.type === "follow-up");
-      const currentQuestionIdx = interviewScript.slice(0, currentStep + 1).filter(s => s.type === "question" || s.type === "follow-up").length;
-      const totalQs = questionSteps.length;
-      const negotiationPhases = ["offer-reaction", "probe-expectations", "counter-offer", "benefits-discussion", "closing-pressure", "closing"];
-      let salaryPhase: string | undefined;
-      if (isSalaryNegType) {
-        // Map position ratio to phase: first Q → offer-reaction, last Q → closing
-        // Edge case: single question → jump to closing; otherwise use ratio
-        const ratio = totalQs > 1 ? (currentQuestionIdx - 1) / (totalQs - 1) : 1;
-        const phaseIdx = Math.min(Math.round(ratio * (negotiationPhases.length - 1)), negotiationPhases.length - 1);
-        salaryPhase = negotiationPhases[phaseIdx] || "offer-reaction";
-      }
+      /* Determine negotiation phase from position ratio (not absolute index) so
+         it works even when follow-ups change the total question count
+         mid-interview. See ./_negotiation-state.ts. The follow-up payload
+         also needs the raw question index + total count for prompt
+         construction, so we still compute those here. */
+      const stepTypes = interviewScript.map(s => s.type);
+      const isQuestionLike = (t: string) => t === "question" || t === "follow-up";
+      const totalQs = stepTypes.filter(isQuestionLike).length;
+      const currentQuestionIdx = stepTypes.slice(0, currentStep + 1).filter(isQuestionLike).length;
+      const salaryPhase: string | undefined = computeNegotiationPhase({
+        interviewType, currentStep, scriptStepTypes: stepTypes,
+      });
 
       if (depth <= 2) {
         followUpDepthRef.current = depth;
@@ -1895,7 +1671,10 @@ export function useInterviewEngine() {
           }),
         ]);
         if (evaluation) {
-          const processed = processLLMEvaluation(evaluation as unknown as Record<string, unknown>, fallback.score);
+          /* Spread to plain object so TS accepts it as Record<string, unknown>
+             — interface types don't satisfy index signatures directly, but
+             the spread preserves the runtime shape. Avoids the double cast. */
+          const processed = processLLMEvaluation({ ...evaluation }, fallback.score);
           score = processed.score;
           aiFeedback = processed.feedback;
           skillScores = processed.skillScores;

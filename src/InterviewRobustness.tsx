@@ -13,7 +13,7 @@
  * ReconnectingOverlay, InterviewCoachmarks. All re-exported from
  * InterviewPanels.tsx for backwards-compat with existing imports.
  */
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { e, ef } from "./interviewTokens";
 
 /* ─── PaceMeter — sweet-spot bar shown while user is answering ─── */
@@ -211,15 +211,31 @@ const COACHMARK_LS_KEY = "hsx-iv-coachmarks-dismissed-v1";
 
 export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
   const [open, setOpen] = useState(false);
+  const dismissBtnRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
     try {
       if (localStorage.getItem(COACHMARK_LS_KEY) !== "true") setOpen(true);
     } catch { /* localStorage may be blocked (Safari private mode); silently skip */ }
   }, []);
-  const dismiss = () => {
+  const dismiss = useCallback(() => {
     try { localStorage.setItem(COACHMARK_LS_KEY, "true"); } catch { /* ignore */ }
     setOpen(false);
-  };
+  }, []);
+  /* Escape-to-dismiss is bound at the document level rather than on the
+     dialog div, because attaching keyboard handlers to a non-interactive
+     element trips jsx-a11y/no-noninteractive-element-interactions. Focus
+     the primary action on mount so keyboard users land somewhere useful
+     without resorting to autoFocus (also a11y-flagged). */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === "Escape") dismiss(); };
+    document.addEventListener("keydown", onKey);
+    const t = window.setTimeout(() => dismissBtnRef.current?.focus(), 0);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      window.clearTimeout(t);
+    };
+  }, [open, dismiss]);
   if (!open) return null;
   const tips = [
     {
@@ -238,14 +254,18 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
       body: "Your answers save after every question. If your network blips, you won&rsquo;t lose anything.",
     },
   ];
+  /* Backdrop click-to-dismiss is a standard modal affordance; the keyboard
+     equivalent (Escape) is wired at the document level in the useEffect
+     above, so the no-key-events rule's underlying concern is satisfied
+     even though it can't see the document listener. */
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="iv-coachmark-title"
       className="iv-coachmark-backdrop"
       onClick={(ev) => { if (ev.target === ev.currentTarget) dismiss(); }}
-      onKeyDown={(ev) => { if (ev.key === "Escape") dismiss(); }}
     >
       <div className="iv-coachmark-card iv-coachmark">
         <h2
@@ -296,9 +316,9 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
         </ul>
         <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
           <button
+            ref={dismissBtnRef}
             type="button"
             onClick={dismiss}
-            autoFocus
             style={{
               background: e.indigo, color: e.cream, border: "none",
               borderRadius: 999, padding: "10px 22px",

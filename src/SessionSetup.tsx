@@ -816,17 +816,6 @@ export default function SessionSetup() {
               </div>
             );
           })()}
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="hsx-link-indigo"
-            style={{
-              fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.indigo,
-              textDecoration: "none", background: "none", border: "none", padding: 0, cursor: "pointer",
-            }}
-          >
-            Skip for now
-          </button>
         </div>
       </div>
 
