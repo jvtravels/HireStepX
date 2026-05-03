@@ -800,10 +800,12 @@ export default function SessionSetup() {
           .ob-s2-focus-grid { grid-template-columns: 1fr 1fr !important; }
           .ob-s2-session-grid { grid-template-columns: 1fr !important; }
           .ob-permissions-grid { grid-template-columns: 1fr !important; }
-          /* On narrow viewports the inline icon+copy+action layout wraps
-             ugly. Stack the action below so the button can go full-width. */
-          .hsx-permission-card { flex-wrap: wrap !important; }
-          .hsx-permission-actions { width: 100%; justify-content: flex-end; padding-top: 4px; }
+          /* Keep the icon+copy+action row inline on mobile — wrapping made
+             the granted card ~2× taller than it needed to be. Compact the
+             padding + icon tile so everything still fits in 320-360px. */
+          .hsx-permission-card { padding: 12px !important; gap: 10px !important; }
+          .hsx-permission-card > span:first-child { width: 32px !important; height: 32px !important; }
+          .hsx-permission-actions { padding-top: 0 !important; }
           /* Focus chip labels ("Technical Leadership") need slightly less
              padding to fit comfortably in the 2-col mobile grid. */
           .ob-focus-card { padding: 12px !important; }
