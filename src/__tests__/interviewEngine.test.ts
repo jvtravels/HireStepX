@@ -279,6 +279,7 @@ describe("REACTIONS bank", () => {
       "dontKnowRedirect",
       "ramblingInterject",
       "softTracking",
+      "backchannels",
       "timePressure",
       "lastQuestion",
     ].sort();

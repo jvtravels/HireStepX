@@ -3,7 +3,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 
 import { useAuth } from "./AuthContext";
-import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, retryUnlockAudio, isAutoplayBlocked } from "./tts";
+import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked } from "./tts";
+import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
+import { useOnlineOfflineRecovery } from "./_recovery";
+import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
+import { useBackchannels } from "./_backchannels";
 import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
@@ -148,21 +152,15 @@ export function useInterviewEngine() {
           localStorage.removeItem(draftKey);
           deleteFromIDB(draftKey);
         } else {
-          // Page refresh or explicit resume — try to restore
+          // Page refresh or explicit resume — validate via shared helper
+          // (TTL check, shape check, interview-type match) — see ./_session-draft.ts.
           const parsed = JSON.parse(raw);
-          const DRAFT_TTL = 24 * 60 * 60 * 1000; // 24 hours
-          const isExpired = parsed?.savedAt && Date.now() - parsed.savedAt > DRAFT_TTL;
-          if (isExpired) {
+          const valid = validateRestoredDraft(parsed, interviewType);
+          if (valid) {
+            draftRef.current = valid;
+          } else {
             localStorage.removeItem(draftKey);
             deleteFromIDB(draftKey);
-          } else if (parsed && Array.isArray(parsed.transcript) && typeof parsed.currentStep === "number" && parsed.currentStep > 0) {
-            // Reject draft if interview type doesn't match current session
-            if (parsed.interviewType && parsed.interviewType !== interviewType) {
-              localStorage.removeItem(draftKey);
-              deleteFromIDB(draftKey);
-            } else {
-              draftRef.current = parsed;
-            }
           }
         }
       }
@@ -432,21 +430,8 @@ export function useInterviewEngine() {
   const [showEndModal, setShowEndModal] = useState(false);
   const endModalTriggerRef = useRef<HTMLSpanElement>(null);
 
-  // Force-reset and re-unlock audio on every interview mount.
-  //
-  // Why retryUnlockAudio() instead of unlockAudio():
-  //   When the user navigates to /score from a session and then back to
-  //   /interview to restart, React mounts a fresh InterviewInner but the
-  //   tts.ts module-level `_audioUnlocked` flag is still `true` from the
-  //   previous mount — so unlockAudio() early-returns. The previous
-  //   AudioContext is no longer valid, however; the next speak() call
-  //   fails with NotAllowedError, sets `_autoplayBlocked = true`
-  //   permanently, and every subsequent speak() short-circuits silently.
-  //   Result: question shows but no voice plays for the entire session.
-  //
-  // retryUnlockAudio() resets both flags and re-runs the unlock, which
-  // succeeds because the navigation itself was a fresh user gesture.
-  useEffect(() => { retryUnlockAudio(); }, []);
+  // Audio unlock — see ./_audio-unlock.ts for the why.
+  useForceAudioUnlockOnMount();
 
   // Multi-tab guard
   const [tabConflict, setTabConflict] = useState(false);
@@ -462,22 +447,8 @@ export function useInterviewEngine() {
     return () => ch.close();
   }, []);
 
-  // Retry audio unlock on any user click inside the interview page
-  // This recovers from autoplay blocks when the user interacts with the page
-  useEffect(() => {
-    const handler = () => {
-      if (isAutoplayBlocked()) {
-        retryUnlockAudio();
-        toast("Audio re-enabled. Voice will play on next question.", "info");
-      }
-    };
-    document.addEventListener("click", handler, { once: false });
-    document.addEventListener("touchstart", handler, { once: false });
-    return () => {
-      document.removeEventListener("click", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [toast]);
+  // Click-recovery for autoplay blocks — see ./_audio-unlock.ts.
+  useClickRecoverAutoplay(toast);
 
   // Prevent accidental navigation/close during active interview
   useEffect(() => {
@@ -494,6 +465,10 @@ export function useInterviewEngine() {
   // Offline + save status + mic error
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [saveWarning, setSaveWarning] = useState("");
+  // Mirror saveWarning to a ref so the recovery hook can read it
+  // at fire-time without re-binding window listeners on each change.
+  const saveWarningRef = useRef("");
+  useEffect(() => { saveWarningRef.current = saveWarning; }, [saveWarning]);
   const [micError, setMicError] = useState("");
   const [usedFallbackScore, setUsedFallbackScore] = useState(false);
   const [evalTimedOut, setEvalTimedOut] = useState(false);
@@ -572,64 +547,25 @@ export function useInterviewEngine() {
     return () => clearInterval(t);
   }, [evaluating]);
 
-  /* Debounce ref for the reconnect overlay — see goOffline below. */
-  const reconnectDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    const goOffline = () => {
-      setIsOffline(true);
-      // Mid-session offline → show full-screen reconnect overlay so the
-      // user knows their progress is safe. Skip if we haven't started
-      // (currentStep === 0) or the session is already done.
-      //
-      // 5-second debounce so a single 4G blip on flaky Indian networks
-      // doesn't slam the user with a full-screen overlay every few
-      // seconds. The inline StatusToasts.isOffline chip still fires
-      // immediately for fast feedback; the overlay is reserved for
-      // genuinely-stuck connection drops.
-      if (currentStepRef.current > 0 && !interviewEndedRef.current) {
-        if (reconnectDebounceRef.current) clearTimeout(reconnectDebounceRef.current);
-        reconnectDebounceRef.current = setTimeout(() => {
-          if (!navigator.onLine && !interviewEndedRef.current) {
-            reconnectAttemptRef.current += 1;
-            setReconnecting(true);
-          }
-          reconnectDebounceRef.current = null;
-        }, 5000);
-      }
-    };
-    const goOnline = () => {
-      setIsOffline(false);
-      setReconnecting(false);
-      // Cancel any pending debounce — connection recovered before the
-      // overlay was about to appear, so the user never needed to know.
-      if (reconnectDebounceRef.current) {
-        clearTimeout(reconnectDebounceRef.current);
-        reconnectDebounceRef.current = null;
-      }
-      // Auto-retry queued evaluations
-      retryQueuedEvals().catch(() => {});
-      // Auto-retry question generation if still using fallback questions
-      if (saveWarning.includes("practice questions") || saveWarning.includes("retry")) {
-        fetchPersonalizedQuestions();
-      }
-    };
-    window.addEventListener("offline", goOffline);
-    window.addEventListener("online", goOnline);
-    return () => {
-      window.removeEventListener("offline", goOffline);
-      window.removeEventListener("online", goOnline);
-      if (reconnectDebounceRef.current) clearTimeout(reconnectDebounceRef.current);
-    };
-    // Mount-only network-listener wiring. fetchPersonalizedQuestions/saveWarning are read at fire-time inside goOnline; rebinding listeners on every saveWarning change would churn the network handlers and was explicitly avoided.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // AI Voice (Text-to-Speech)
+  // AI Voice (Text-to-Speech). Refs declared early so the recovery
+  // hook below can read interviewEndedRef without a forward reference.
   const [aiVoiceEnabled, setAiVoiceEnabled] = useState(true);
   const [showCaptions, setShowCaptions] = useState(false);
   const ttsCancelRef = useRef<(() => void) | null>(null);
   const ttsInstanceIdRef = useRef(0);
   const interviewEndedRef = useRef(false);
+
+  // Online/offline recovery — see ./_recovery.ts for the debounce reasoning.
+  useOnlineOfflineRecovery({
+    setIsOffline,
+    setReconnecting,
+    reconnectAttemptRef,
+    currentStepRef,
+    interviewEndedRef,
+    retryQueuedEvals,
+    fetchPersonalizedQuestions,
+    saveWarningRef,
+  });
 
   // Cleanup TTS/WebSocket on tab close
   useEffect(() => {
@@ -650,17 +586,14 @@ export function useInterviewEngine() {
       return;
     }
     const saveDraft = () => {
-      const draftData = {
-        transcript,
-        // Include the in-progress answer so users don't lose words mid-typing
-        // when they refresh / close the tab. Restored into currentTranscript
-        // on resume — see the draft-restore block earlier in this hook.
-        currentTranscript,
-        currentStep, elapsed, interviewType, interviewDifficulty, interviewFocus,
+      // Snapshot shape lives in src/_session-draft.ts (testable + reusable).
+      const draftData = buildDraftSnapshot({
+        transcript, currentTranscript,
+        currentStep, elapsed,
+        interviewType, interviewDifficulty, interviewFocus,
         targetRole, targetCompany,
         script: interviewScript,
-        savedAt: Date.now(),
-      };
+      });
       try { localStorage.setItem(draftKey, JSON.stringify(draftData)); } catch { /* expected: localStorage may be unavailable */ }
       saveToIDB(draftKey, draftData);
     };
@@ -868,6 +801,21 @@ export function useInterviewEngine() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, aiVoiceEnabled, currentStep]);
+
+  /* Real-time backchannels — see ./_backchannels.ts. Default OFF
+     behind localStorage flag "hsx-backchannels". Only fires once per
+     question, after 30s + 40 words + 1.5s stillness, and only if
+     neither rambling nor softTracking has fired. */
+  useBackchannels({
+    phase,
+    aiVoiceEnabled,
+    currentStep,
+    currentTranscript,
+    speak: (text) => speak(text, () => {}, () => {}, interviewerGender),
+    pickLine: () => pickRandom(REACTIONS.backchannels),
+    ramblingFiredRef,
+    softTrackFiredRef,
+  });
 
   const step = interviewScript[currentStep] ?? (interviewScript.length > 0 ? interviewScript[interviewScript.length - 1] : null);
   const rawPersona = step?.persona || (panelMembers ? panelMembers[0].title : "");

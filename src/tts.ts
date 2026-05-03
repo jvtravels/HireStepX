@@ -893,14 +893,24 @@ export async function speakAs(
 }
 
 /* ─── Unified speak function ─── */
+import { stripProsodyMarkup } from "./_prosody";
 /**
  * Strip markdown / collapse whitespace before sending text to TTS providers.
  * Saves billable characters on the free tier and removes literal "**" / "##"
  * that some engines pronounce. Idempotent.
+ *
+ * Also defensively strips prosody markup (`_emphasis_`, `[pause]`, etc.)
+ * — the prosody renderers in src/_prosody.ts are wired in but the LLM
+ * prompt doesn't yet emit them. If the model starts producing markup
+ * before we live-test the provider-specific renderers, this guard
+ * prevents literal pronunciation of "underscore time underscore" etc.
  */
 function sanitizeForTTS(text: string): string {
   if (!text) return text;
-  return text
+  // Strip prosody markup first — the markdown stripper below would
+  // otherwise treat _word_ italic as content to preserve.
+  const noMarkup = stripProsodyMarkup(text);
+  return noMarkup
     .replace(/```[\s\S]*?```/g, " ")          // fenced code blocks
     .replace(/`([^`]+)`/g, "$1")              // inline code
     .replace(/\*\*([^*]+)\*\*/g, "$1")        // bold

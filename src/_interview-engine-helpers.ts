@@ -122,6 +122,19 @@ export const REACTIONS = {
     "Yeah, makes sense — continue.",
     "Mm, okay.",
   ],
+  /* Real-time backchannels — short single-syllable acknowledgements
+     fired during a brief pause mid-answer. Closer to natural human
+     "mm-hmm"s than the longer softTracking lines. Kept VERY short so
+     the audio finishes before the user resumes speaking, even if they
+     pause for only ~1 second. */
+  backchannels: [
+    "Mm-hmm.",
+    "Right.",
+    "Got it.",
+    "Okay.",
+    "Mm.",
+    "Yeah.",
+  ],
   timePressure: [
     "We're running short on time, so let me pick up the pace.",
     "Just a couple more questions — let's keep it tight.",
