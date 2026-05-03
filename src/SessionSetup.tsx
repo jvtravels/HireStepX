@@ -277,8 +277,8 @@ function PermissionCard({
   level?: number;
   /** Whether the analyser has detected speech yet — flips the prompt copy. */
   voiceDetected?: boolean;
-  /** Distinguishes "blocked" (user denied) vs "no-device" (no hardware). */
-  denyReason?: "blocked" | "no-device" | null;
+  /** Distinguishes user-denied vs missing hardware vs in-use-by-other-app. */
+  denyReason?: "blocked" | "no-device" | "in-use" | null;
   /** When true and status === "denied" with reason "blocked", show the
    *  iOS Safari recovery path (different from desktop). */
   isIOS?: boolean;
@@ -288,7 +288,9 @@ function PermissionCard({
   cameraStream?: MediaStream | null;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
   useEffect(() => {
+    setVideoReady(false);
     if (videoRef.current && cameraStream) {
       videoRef.current.srcObject = cameraStream;
     }
@@ -317,6 +319,11 @@ function PermissionCard({
       return kind === "mic"
         ? "No microphone detected. Connect one and retry."
         : "No camera detected — you can still proceed without one.";
+    }
+    if (denyReason === "in-use") {
+      return kind === "mic"
+        ? "Microphone is in use by another app. Close it and retry."
+        : "Camera is in use by another app. Close it and retry.";
     }
     if (kind === "mic") {
       return isIOS
@@ -375,7 +382,12 @@ function PermissionCard({
             autoPlay
             muted
             playsInline
-            style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }}
+            onLoadedData={() => setVideoReady(true)}
+            style={{
+              width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)",
+              opacity: videoReady ? 1 : 0,
+              transition: "opacity 250ms ease",
+            }}
           />
         </span>
       ) : (
@@ -413,7 +425,7 @@ function PermissionCard({
         <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
           {status === "requesting" && "Waiting for your permission…"}
-          {isGranted && kind === "camera" && "Camera ready"}
+          {isGranted && kind === "camera" && "Looking good"}
           {isGranted && kind === "mic" && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <MicMeter level={level ?? 0} active />
@@ -593,7 +605,7 @@ export default function SessionSetup() {
      interview surface itself can launch with everything granted — no
      mid-interview permission prompt that breaks the flow. */
   type PermStatus = "idle" | "requesting" | "granted" | "denied";
-  type DenyReason = "blocked" | "no-device";
+  type DenyReason = "blocked" | "no-device" | "in-use";
   const [micStatus, setMicStatus] = useState<PermStatus>("idle");
   const [cameraStatus, setCameraStatus] = useState<PermStatus | "skipped">("idle");
   // Stream is mirrored into state so the PermissionCard can render a live
@@ -644,7 +656,9 @@ export default function SessionSetup() {
 
   const reasonFromError = (err: unknown): DenyReason => {
     const name = (err as { name?: string })?.name;
-    return name === "NotFoundError" || name === "OverconstrainedError" ? "no-device" : "blocked";
+    if (name === "NotFoundError" || name === "OverconstrainedError") return "no-device";
+    if (name === "NotReadableError" || name === "TrackStartError") return "in-use";
+    return "blocked";
   };
 
   /* Tab-scoped opt-in flags. Survive a refresh, drop on tab close.
@@ -783,6 +797,53 @@ export default function SessionSetup() {
     };
   }, []);
 
+  /* React to OS-level permission revoke. If the user goes to browser
+     settings while this page is open and revokes mic/camera, the stream
+     ends silently — without this listener the UI lies. We listen on the
+     PermissionStatus object and flip status back to "denied" + clear
+     the opt-in. Tracks via revoked-mid-session for analytics. */
+  useEffect(() => {
+    const perms = (navigator as Navigator & { permissions?: { query: (d: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
+    if (!perms?.query) return;
+    let micStatusObj: PermissionStatus | null = null;
+    let camStatusObj: PermissionStatus | null = null;
+    const onMicChange = () => {
+      if (micStatusObj && micStatusObj.state !== "granted" && micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(t => t.stop());
+        micStreamRef.current = null;
+        stopLevelMeter();
+        setMicStatus("denied");
+        setMicDenyReason("blocked");
+        writeOptIn(OPTIN_MIC, false);
+        track("permission_revoked", { kind: "mic" });
+      }
+    };
+    const onCamChange = () => {
+      if (camStatusObj && camStatusObj.state !== "granted" && cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(t => t.stop());
+        cameraStreamRef.current = null;
+        setCameraStream(null);
+        setCameraStatus("denied");
+        setCameraDenyReason("blocked");
+        writeOptIn(OPTIN_CAM, false);
+        track("permission_revoked", { kind: "camera" });
+      }
+    };
+    perms.query({ name: "microphone" as PermissionName }).then((s) => {
+      micStatusObj = s;
+      s.addEventListener?.("change", onMicChange);
+    }).catch(() => undefined);
+    perms.query({ name: "camera" as PermissionName }).then((s) => {
+      camStatusObj = s;
+      s.addEventListener?.("change", onCamChange);
+    }).catch(() => undefined);
+    return () => {
+      micStatusObj?.removeEventListener?.("change", onMicChange);
+      camStatusObj?.removeEventListener?.("change", onCamChange);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const formComplete = !!targetRole.trim() && interviewFocus.length > 0;
   const canProceed = formComplete && micStatus === "granted";
 
@@ -839,9 +900,45 @@ export default function SessionSetup() {
         @keyframes launchPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } }
         @keyframes countdownPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes countdownFade { 0% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0.6; transform: scale(0.95); } }
+        @keyframes hsxAccentIn { 0% { opacity: 0; transform: translateY(6px); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes hsxBadgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(49,46,129,0.35); } 50% { box-shadow: 0 0 0 6px rgba(49,46,129,0); } }
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         .ob-mic-pulse { animation: pulse 2s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* ─── Editorial accent entrance ─────────────────────────────────
+           Hero "ready" italic-copper word slides in 100ms after the
+           rest of the headline so the eye lands on it. Small, tasteful. */
+        .hsx-setup-hero-h1 em { animation: hsxAccentIn 600ms 120ms cubic-bezier(.2,.7,.2,1) both; }
+        /* "For you" recommendation badge — single soft pulse on first
+           render so a returning user's eye finds the suggestion. */
+        .hsx-recommend-badge { animation: hsxBadgePulse 1.6s ease-out 1; }
+
+        /* ─── Focus rings (a11y) ─────────────────────────────────────────
+           Default browser :focus-visible is inconsistent across browsers
+           on a card-heavy form. Custom indigo halo on every interactive
+           surface. Matches the existing AutocompleteInput focus state. */
+        .ob-focus-card:focus-visible,
+        .hsx-setup-cta:focus-visible,
+        .hsx-permission-card button:focus-visible,
+        .hsx-link-indigo:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px ${T.indigoRing}, 0 1px 2px rgba(20,17,10,.04);
+        }
+
+        /* ─── prefers-reduced-motion ─────────────────────────────────────
+           Disable transforms / scale / pulse / countdown animations.
+           Fades remain (they're informational, not motion-sensitive). */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 100ms !important;
+            scroll-behavior: auto !important;
+          }
+          .ob-mic-pulse { animation: none !important; }
+          .hsx-recommend-badge { animation: none !important; }
+        }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -885,9 +982,12 @@ export default function SessionSetup() {
           /* On phones a centered short CTA looks lonely — let it span the
              form again so the tap target is generous. */
           /* On phones the CTA is full-width AND the zone above it gets a
-             1px hairline + extra padding so it reads as the commit zone. */
-          .hsx-setup-cta { width: 100% !important; min-width: 0 !important; padding: 16px 24px !important; font-size: 15px !important; }
+             1px hairline + extra padding so it reads as the commit zone.
+             min-height 48 ensures Apple HIG touch target floor. */
+          .hsx-setup-cta { width: 100% !important; min-width: 0 !important; padding: 16px 24px !important; font-size: 15px !important; min-height: 48px !important; }
           .hsx-setup-cta-zone { border-top: 1px solid #EBE5D2; padding-top: 28px !important; margin-top: 32px !important; }
+          /* Time pill bumps to 13/regular for legibility on phones. */
+          .hsx-setup-time-pill { font-size: 13px !important; padding: 6px 14px !important; }
         }
         @media (max-width: 500px) {
           /* Drop the name to keep the right cluster from overflowing —
@@ -938,11 +1038,11 @@ export default function SessionSetup() {
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h2>
                 <p style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
-                  Tell us a few things and we&apos;ll personalise the experience for you.
+                  Tell us a few things and we&apos;ll personalize the experience for you.
                 </p>
                 {/* Time pill — answers the unspoken "how long is this going to take?".
                     No question count: the engine adapts question depth to the 15-min window. */}
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
+                <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
@@ -954,6 +1054,15 @@ export default function SessionSetup() {
               <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
                 {/* ── Role & Company — canvas-style: clean field rows, no card chrome ── */}
                 <div className="fade-up-1">
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
+                      <span>About the role</span>
+                      <span style={{ color: T.copper, fontSize: 12 }}>*</span>
+                    </div>
+                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
+                      We tailor questions to the role and company you're targeting.
+                    </div>
+                  </div>
                   <div className="ob-s2-role-grid">
                     <div>
                       <AutocompleteInput id="setup-role" value={targetRole} onChange={(v) => { setTargetRole(v); setRoleTouched(true); }} suggestions={ROLE_SUGGESTIONS} placeholder="e.g. Senior Engineering Manager..." label="Role" required error={roleTouched && !targetRole.trim() ? "Required to personalize your questions" : undefined} />
@@ -977,7 +1086,29 @@ export default function SessionSetup() {
                         : "Choose one area to focus on."}
                     </div>
                   </div>
-                  <div className="ob-s2-focus-grid">
+                  <div
+                    className="ob-s2-focus-grid"
+                    role="radiogroup"
+                    aria-label="Interview focus"
+                    onKeyDown={(e) => {
+                      // Roving tabindex: arrow keys move selection between
+                      // chips, Home/End jump to first/last. Standard ARIA
+                      // radiogroup interaction model.
+                      if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(e.key)) return;
+                      e.preventDefault();
+                      const focusables = (e.currentTarget as HTMLDivElement).querySelectorAll<HTMLButtonElement>("button[role=radio]");
+                      const arr = Array.from(focusables);
+                      if (arr.length === 0) return;
+                      const currentIdx = arr.findIndex((b) => b.getAttribute("aria-checked") === "true");
+                      let nextIdx = currentIdx === -1 ? 0 : currentIdx;
+                      if (e.key === "ArrowRight" || e.key === "ArrowDown") nextIdx = (currentIdx + 1) % arr.length;
+                      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") nextIdx = (currentIdx - 1 + arr.length) % arr.length;
+                      else if (e.key === "Home") nextIdx = 0;
+                      else if (e.key === "End") nextIdx = arr.length - 1;
+                      arr[nextIdx]?.click();
+                      arr[nextIdx]?.focus();
+                    }}
+                  >
                     {(() => {
                       const allOpts = [
                         { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "Tell stories about how you handled past situations" },
@@ -1006,6 +1137,10 @@ export default function SessionSetup() {
                             type="button"
                             role="radio"
                             aria-checked={sel}
+                            /* Roving tabindex: only the selected (or first
+                               if none selected) chip is in the tab order;
+                               arrow keys move between siblings. */
+                            tabIndex={sel ? 0 : -1}
                             style={{
                               padding: 14, borderRadius: 12, cursor: "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
                               background: sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
@@ -1015,7 +1150,7 @@ export default function SessionSetup() {
                               position: "relative", fontFamily: F.sans,
                             }}>
                             {isRecommended && (
-                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 9, fontWeight: 700, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
+                              <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
                             )}
                             <span style={{ width: 32, height: 32, borderRadius: 6, background: T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {opt.icon}
