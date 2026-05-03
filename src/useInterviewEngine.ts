@@ -11,11 +11,12 @@ import { useBackchannels } from "./_backchannels";
 import { useListeningInterjections } from "./_listening-interjections";
 import { buildThinkingPhrase } from "./_thinking-phrase";
 import { pickInitialNegotiationStyle, computeNegotiationPhase } from "./_negotiation-state";
+import { runEvaluationFlow } from "./_evaluation-flow";
 import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript } from "./interviewScripts";
-import { saveSessionResult, fetchLLMQuestions, fetchLLMEvaluation, fetchFollowUp, retryQueuedEvals, getAdaptiveHints } from "./interviewAPI";
+import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints } from "./interviewAPI";
 import { initLiveSession, saveInterviewTurn } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
@@ -29,7 +30,7 @@ import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
 import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
-import { computeFallbackScores, loadPreviousScores, processLLMEvaluation, extractNegotiationFacts } from "./interviewEvaluation";
+import { extractNegotiationFacts } from "./interviewEvaluation";
 import {
   normalizePersona,
   REACTIONS,
@@ -1620,106 +1621,45 @@ export function useInterviewEngine() {
     }, 18_000);
 
     try {
-    const fallback = computeFallbackScores({
-      transcript: evalTranscript, currentStep, scriptLength: interviewScript.length,
-      difficulty: interviewDifficulty, elapsed, interviewType,
+    /* End-of-session evaluation — see ./_evaluation-flow.ts. The flow is
+       pure async (LLM race + fallback merge + offline retry queueing); it
+       never throws and never calls setState. We apply its side-effect
+       signals here so React state stays inside the engine. */
+    const outcome = await runEvaluationFlow({
+      evalTranscript,
+      currentStep,
+      scriptLength: interviewScript.length,
+      difficulty: interviewDifficulty,
+      elapsed,
+      interviewType,
+      originalQuestions: interviewScript
+        .filter(s => s.type === "question" || s.type === "follow-up")
+        .map(s => s.aiText),
+      role: targetRole || user?.targetRole || "the role",
+      company: user?.targetCompany,
+      resumeText: shouldUseResume ? user?.resumeText : undefined,
+      jobDescription: jobDescription || undefined,
+      negotiationBand: negotiationBandRef.current,
+      targetSalary,
+      highestOfferMade: highestOfferRef.current,
+      negotiationStyle: negotiationStyle || undefined,
+      evalAbort,
+      sessionId,
     });
-    score = fallback.score;
-    const fallbackSkillScores = fallback.skillScores;
 
-    let idealAnswers: { question: string; ideal: string; candidateSummary: string; rating?: string; starBreakdown?: Record<string, string>; workedWell?: string; toImprove?: string }[] = [];
-    let starAnalysis: { overall: number; breakdown: Record<string, number>; tip: string } | undefined;
-    let strengths: string[] | undefined;
-    let improvements: string[] | undefined;
-    let nextSteps: string[] | undefined;
+    score = outcome.score;
+    aiFeedback = outcome.aiFeedback;
+    skillScores = outcome.skillScores;
+    const idealAnswers = outcome.idealAnswers;
+    const starAnalysis = outcome.starAnalysis;
+    const strengths = outcome.strengths;
+    const improvements = outcome.improvements;
+    const nextSteps = outcome.nextSteps;
 
-    if (fallback.hasAnyAnswers) {
-      try {
-        const originalQuestions = interviewScript
-          .filter(s => s.type === "question" || s.type === "follow-up")
-          .map(s => s.aiText);
-
-        const previousScores = loadPreviousScores();
-
-        // Race the LLM evaluation against the 40s abort signal
-        const evaluation = await Promise.race([
-          fetchLLMEvaluation({
-            transcript: evalTranscript,
-            type: interviewType,
-            difficulty: interviewDifficulty,
-            role: targetRole || user?.targetRole || "the role",
-            company: user?.targetCompany,
-            questions: originalQuestions,
-            resumeText: shouldUseResume ? user?.resumeText : undefined,
-            jobDescription: jobDescription || undefined,
-            previousScores,
-            negotiationContext: interviewType === "salary-negotiation" ? {
-              initialOffer: negotiationBandRef.current?.initialOffer,
-              maxStretch: negotiationBandRef.current?.maxStretch,
-              candidateTarget: targetSalary || undefined,
-              highestOfferMade: highestOfferRef.current > 0 ? highestOfferRef.current : undefined,
-              negotiationStyle: negotiationStyle || undefined,
-            } : undefined,
-          }),
-          new Promise<null>((_, reject) => {
-            if (evalAbort.signal.aborted) {
-              reject(new Error("Evaluation timed out after 18 seconds."));
-              return;
-            }
-            const onAbort = () => reject(new Error("Evaluation timed out after 18 seconds."));
-            evalAbort.signal.addEventListener("abort", onAbort, { once: true });
-          }),
-        ]);
-        if (evaluation) {
-          /* Spread to plain object so TS accepts it as Record<string, unknown>
-             — interface types don't satisfy index signatures directly, but
-             the spread preserves the runtime shape. Avoids the double cast. */
-          const processed = processLLMEvaluation({ ...evaluation }, fallback.score);
-          score = processed.score;
-          aiFeedback = processed.feedback;
-          skillScores = processed.skillScores;
-          idealAnswers = processed.idealAnswers;
-          if (processed.starAnalysis) starAnalysis = processed.starAnalysis;
-          if (processed.strengths) strengths = processed.strengths;
-          if (processed.improvements) improvements = processed.improvements;
-          if (processed.nextSteps) nextSteps = processed.nextSteps;
-        } else {
-          setUsedFallbackScore(true);
-          skillScores = fallbackSkillScores;
-          aiFeedback = "Evaluation unavailable — score estimated from session metrics. Your estimated score is based on answer count, length, structure, and specificity. Practice again for a full AI evaluation.";
-        }
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : "Could not get AI feedback. Using estimated score.";
-        if (errMsg.toLowerCase().includes("timed out") || errMsg.toLowerCase().includes("timeout")) {
-          setEvalTimedOut(true);
-          toast("Evaluation took too long — using estimated scores.", "info");
-        } else {
-          setUsedFallbackScore(true);
-        }
-        skillScores = fallbackSkillScores;
-        aiFeedback = aiFeedback || "Evaluation unavailable — score estimated from session metrics. Your score reflects answer count, length, and structure. Try again for full AI analysis.";
-        setSaveWarning(errMsg);
-        if (!navigator.onLine || errMsg.toLowerCase().includes("network") || errMsg.toLowerCase().includes("fetch")) {
-          try {
-            const retryKey = `hirestepx_eval_retry_${sessionId}`;
-            await saveToIDB(retryKey, {
-              transcript: evalTranscript,
-              type: interviewType,
-              difficulty: interviewDifficulty,
-              role: targetRole || user?.targetRole || "the role",
-              company: user?.targetCompany,
-              questions: interviewScriptRef.current.filter(s => s.type === "question" || s.type === "follow-up").map(s => s.aiText),
-              sessionId,
-              queuedAt: Date.now(),
-            });
-          } catch { /* IDB save is best-effort */ }
-        }
-      }
-    } else {
-      setUsedFallbackScore(true);
-      skillScores = fallbackSkillScores;
-      aiFeedback = "No answers were recorded in this session. Try speaking clearly into your microphone, or use the text input option.";
-    }
+    if (outcome.usedFallback) setUsedFallbackScore(true);
+    if (outcome.evalTimedOut) setEvalTimedOut(true);
+    if (outcome.saveWarning) setSaveWarning(outcome.saveWarning);
+    if (outcome.toastMessage) toast(outcome.toastMessage, "info");
 
     // Refresh auth token before saving results — capped so a hung network
     // request can't trap the user on the loading spinner.
