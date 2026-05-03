@@ -884,7 +884,10 @@ export default function SessionSetup() {
           .ob-focus-card span:nth-child(2) { font-size: 12px !important; }
           /* On phones a centered short CTA looks lonely — let it span the
              form again so the tap target is generous. */
-          .hsx-setup-cta { width: 100% !important; }
+          /* On phones the CTA is full-width AND the zone above it gets a
+             1px hairline + extra padding so it reads as the commit zone. */
+          .hsx-setup-cta { width: 100% !important; min-width: 0 !important; padding: 16px 24px !important; font-size: 15px !important; }
+          .hsx-setup-cta-zone { border-top: 1px solid #EBE5D2; padding-top: 28px !important; margin-top: 32px !important; }
         }
         @media (max-width: 500px) {
           /* Drop the name to keep the right cluster from overflowing —
@@ -929,14 +932,23 @@ export default function SessionSetup() {
 
           <div>
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
-              <div style={{ marginBottom: 36, textAlign: "center" }} className="fade-up-1">
-                <h2 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(2.5rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
+              <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1">
+                <h2 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h2>
                 <p style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
                   Tell us a few things and we&apos;ll personalise the experience for you.
                 </p>
+                {/* Time pill — answers the unspoken "how long is this going to take?".
+                    No question count: the engine adapts question depth to the 15-min window. */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  ~15 minutes
+                </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -968,16 +980,16 @@ export default function SessionSetup() {
                   <div className="ob-s2-focus-grid">
                     {(() => {
                       const allOpts = [
-                        { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "STAR-format questions about past experiences" },
-                        { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Vision-setting, roadmap & business alignment" },
-                        { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "System design, architecture & tech decisions" },
-                        { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Analyze real business scenarios & problems" },
-                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "College interview prep — projects, goals & teamwork" },
-                        { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Personality, cultural fit & soft skills" },
-                        { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "Leadership style, team building & change management" },
-                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Multi-interviewer format with varied perspectives" },
-                        { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Practice negotiating compensation & benefits" },
-                        { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Public service motivation, ethics & current affairs" },
+                        { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "Tell stories about how you handled past situations" },
+                        { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Show how you set vision and align teams" },
+                        { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "Walk through architecture and tech tradeoffs" },
+                        { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Solve real business problems out loud" },
+                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork — fresher style" },
+                        { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Culture fit, motivation, salary expectations" },
+                        { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "How you lead, hire, and handle change" },
+                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
+                        { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
+                        { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
                       ];
                       const visibleOpts = (isFirstTimer && !showAllFocus)
                         ? (() => {
@@ -1073,7 +1085,7 @@ export default function SessionSetup() {
           {/* ─── Single canvas-style "Start practice" CTA + trust line.
                 The CTA stays clickable when only the mic is missing — it
                 triggers the prompt instead of failing silently. */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 40 }}>
+          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 24 }}>
             {(() => {
               const needsMic = formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
@@ -1105,15 +1117,15 @@ export default function SessionSetup() {
                   aria-label={ctaTitle ?? ctaLabel}
                   className="hsx-setup-cta"
                   style={{
-                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, border: "1px solid transparent",
+                    fontFamily: F.sans, fontSize: 16, fontWeight: 600, padding: "18px 36px", borderRadius: 12, border: "1px solid transparent",
                     background: T.indigo, color: T.cream,
                     cursor: isHardDisabled ? "not-allowed" : "pointer",
                     opacity: isHardDisabled ? 0.45 : needsMic ? 0.85 : 1,
-                    transition: "all 160ms ease",
-                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    boxShadow: isHardDisabled ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                    transition: "all 180ms cubic-bezier(.2,.7,.2,1)",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 12,
+                    boxShadow: isHardDisabled ? "none" : "0 2px 4px rgba(20,17,10,.10), 0 12px 28px -10px rgba(49,46,129,.45)",
                     letterSpacing: 0.1,
-                    minWidth: 220,
+                    minWidth: 320,
                   }}
                 >
                   {starting ? (
