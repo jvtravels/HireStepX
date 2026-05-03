@@ -262,7 +262,7 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
   kind, label, sublabel, sublabelTone, status, onRequest, onSkip, onDisable,
-  level, voiceDetected, denyReason, isIOS,
+  level, voiceDetected, denyReason, isIOS, cameraStream,
 }: {
   kind: "mic" | "camera";
   label: string;
@@ -282,7 +282,17 @@ function PermissionCard({
   /** When true and status === "denied" with reason "blocked", show the
    *  iOS Safari recovery path (different from desktop). */
   isIOS?: boolean;
+  /** Live MediaStream — when present and kind === "camera" + status ===
+   *  "granted", we render a small mirrored video preview in the icon
+   *  slot so the user can verify framing/lighting before launching. */
+  cameraStream?: MediaStream | null;
 }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
   const isGranted = status === "granted";
   const isDenied = status === "denied";
   const isSkipped = status === "skipped";
@@ -340,31 +350,61 @@ function PermissionCard({
         opacity: isSkipped ? 0.7 : 1,
       }}
     >
-      <span
-        aria-hidden
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 6,
-          /* Icon-tile background uses the same -100 tint family as the
-             card surface for visual coherence. Skipped uses creamSoft —
-             no raw coal-rgba. */
-          background: isGranted
-            ? T.success100
-            : isDenied
-              ? T.error100
-              : isSkipped
-                ? T.creamSoft
-                : T.indigo100,
-          color: isGranted ? T.success : isDenied ? T.error : isSkipped ? T.inkFaint : T.coal,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </span>
+      {kind === "camera" && isGranted && cameraStream ? (
+        /* Live preview — replaces the icon tile with a 4:3 thumbnail of
+           the user's camera feed. Mirrored (scaleX(-1)) per self-view
+           convention. Same border radius family as the icon tile. */
+        <span
+          aria-label="Live camera preview"
+          className="hsx-permission-cam-preview"
+          style={{
+            width: 64,
+            height: 48,
+            borderRadius: 6,
+            overflow: "hidden",
+            background: T.creamSoft,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            border: `1px solid ${T.success}`,
+          }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }}
+          />
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 6,
+            /* Icon-tile background uses the same -100 tint family as the
+               card surface for visual coherence. Skipped uses creamSoft —
+               no raw coal-rgba. */
+            background: isGranted
+              ? T.success100
+              : isDenied
+                ? T.error100
+                : isSkipped
+                  ? T.creamSoft
+                  : T.indigo100,
+            color: isGranted ? T.success : isDenied ? T.error : isSkipped ? T.inkFaint : T.coal,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          {icon}
+        </span>
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal, display: "flex", alignItems: "center", gap: 8 }}>
           <span>{label}</span>
@@ -556,6 +596,9 @@ export default function SessionSetup() {
   type DenyReason = "blocked" | "no-device";
   const [micStatus, setMicStatus] = useState<PermStatus>("idle");
   const [cameraStatus, setCameraStatus] = useState<PermStatus | "skipped">("idle");
+  // Stream is mirrored into state so the PermissionCard can render a live
+  // <video> preview. Ref alone wouldn't trigger a re-render in the child.
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [micDenyReason, setMicDenyReason] = useState<DenyReason | null>(null);
   const [cameraDenyReason, setCameraDenyReason] = useState<DenyReason | null>(null);
   const [micLevel, setMicLevel] = useState(0);
@@ -653,6 +696,7 @@ export default function SessionSetup() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       cameraStreamRef.current = stream;
+      setCameraStream(stream);
       setCameraStatus("granted");
       writeOptIn(OPTIN_CAM, true);
       track("permission_granted", { kind: "camera" });
@@ -668,6 +712,7 @@ export default function SessionSetup() {
   const skipCamera = () => {
     cameraStreamRef.current?.getTracks().forEach(t => t.stop());
     cameraStreamRef.current = null;
+    setCameraStream(null);
     setCameraStatus("skipped");
     writeOptIn(OPTIN_CAM, false);
     track("permission_skipped", { kind: "camera" });
@@ -678,6 +723,7 @@ export default function SessionSetup() {
   const disableCamera = () => {
     cameraStreamRef.current?.getTracks().forEach(t => t.stop());
     cameraStreamRef.current = null;
+    setCameraStream(null);
     setCameraStatus("skipped");
     writeOptIn(OPTIN_CAM, false);
   };
@@ -828,6 +874,9 @@ export default function SessionSetup() {
              padding + icon tile so everything still fits in 320-360px. */
           .hsx-permission-card { padding: 12px !important; gap: 10px !important; }
           .hsx-permission-card > span:first-child { width: 32px !important; height: 32px !important; }
+          /* Camera preview is a wider rectangle — keep its aspect on mobile
+             instead of being collapsed to the 32-square icon-tile size. */
+          .hsx-permission-cam-preview { width: 56px !important; height: 42px !important; }
           .hsx-permission-actions { padding-top: 0 !important; }
           /* Focus chip labels ("Technical Leadership") need slightly less
              padding to fit comfortably in the 2-col mobile grid. */
@@ -1012,6 +1061,7 @@ export default function SessionSetup() {
                       onDisable={disableCamera}
                       denyReason={cameraDenyReason}
                       isIOS={isIOS}
+                      cameraStream={cameraStream}
                     />
                   </div>
                 </div>
