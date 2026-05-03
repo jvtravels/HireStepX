@@ -19,7 +19,7 @@
    - Supabase `waitlist` table (email + created_at, upsert on conflict)
    - Vercel analytics: track("waitlist_signup", { email, source }) */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { tokens as T, fonts as F, shadows } from "./auth/_tokens";
 import { Wordmark } from "./auth/_fields";
@@ -28,15 +28,52 @@ import { getSupabase, supabaseConfigured } from "./supabase";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* PII-safe analytics — Vercel Analytics is third-party, so we never
+   send raw email. Hash via SubtleCrypto + send domain only.
+   Domain is enough for funnel analysis ("which TLDs convert") without
+   exposing the user. Falls back to "hashed" string if SubtleCrypto
+   isn't available (very old browsers, non-secure contexts). */
+async function hashEmail(email: string): Promise<string> {
+  try {
+    if (typeof crypto?.subtle?.digest !== "function") return "unavailable";
+    const enc = new TextEncoder().encode(email.toLowerCase());
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+      .slice(0, 16); // first 64 bits — enough to count unique submissions, not enough to reverse
+  } catch {
+    return "unavailable";
+  }
+}
+
+/* Bot-protection thresholds.
+   - HONEYPOT_FIELD: hidden input that real users never fill, bots almost always do.
+   - MIN_SUBMIT_MS: time between page-load and submit. Anything faster than
+     this is a bot — humans need ~1.5-3 seconds minimum to type an email. */
+const HONEYPOT_FIELD = "cs_company_url";
+const MIN_SUBMIT_MS = 1500;
+
 export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [count, setCount] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  // Submission lock — prevents double-fires from rapid clicks /
+  // bot loops, independent of React's async state.
+  const submittingRef = useRef(false);
+  // Mount timestamp for the "submitted too fast" bot heuristic.
+  const mountedAtRef = useRef<number>(Date.now());
+  // Honeypot value — kept in a ref so it doesn't trigger re-renders.
+  const honeypotRef = useRef<HTMLInputElement | null>(null);
+  // Success-card focus target so keyboard + SR users land cleanly
+  // when the form unmounts.
+  const successRef = useRef<HTMLDivElement | null>(null);
 
   /* Fetch live waitlist count — deferred to idle so it never blocks
-     LCP. Re-runs when status flips to "done" so the count includes
-     the user's own signup. */
+     LCP. Re-runs when status flips to "done" so the count is fresh
+     for any future surface that reads it (currently the success
+     card hides the counter, but state is still useful). */
   useEffect(() => {
     if (!supabaseConfigured) return;
     let cancelled = false;
@@ -69,31 +106,74 @@ export default function ComingSoon() {
     return () => { cancelled = true; };
   }, [status]);
 
+  /* Move focus to the success card when status flips to "done" so
+     keyboard + SR users land on the confirmation rather than losing
+     focus to <body>. */
+  useEffect(() => {
+    if (status === "done" && successRef.current) {
+      successRef.current.focus();
+    }
+  }, [status]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Concurrency lock — block double submits even if React state
+    // hasn't propagated yet.
+    if (submittingRef.current) return;
+
+    // Bot heuristic 1: honeypot. Real users can't see this input;
+    // bots that auto-fill every field will populate it. We log the
+    // attempt and silently flip to "done" so the bot thinks it won.
+    const honeypotValue = honeypotRef.current?.value ?? "";
+    if (honeypotValue.trim() !== "") {
+      track("waitlist_signup_blocked", { reason: "honeypot" });
+      setStatus("done"); // silent decoy — keeps the bot from retrying
+      return;
+    }
+
+    // Bot heuristic 2: too-fast submission (<1.5s after mount).
+    if (Date.now() - mountedAtRef.current < MIN_SUBMIT_MS) {
+      track("waitlist_signup_blocked", { reason: "too_fast" });
+      setStatus("done"); // silent decoy
+      return;
+    }
+
     const trimmed = email.trim();
     if (!EMAIL_RE.test(trimmed)) {
       setErrorMsg("Please enter a valid email address.");
       setStatus("error");
       return;
     }
+
     setErrorMsg("");
     setStatus("sending");
+    submittingRef.current = true;
+
+    // Pre-compute PII-safe analytics payload — hash + domain only.
+    const emailHash = await hashEmail(trimmed);
+    const domain = trimmed.split("@")[1] ?? "";
+
     try {
       if (supabaseConfigured) {
         const client = await getSupabase();
-        await client.from("waitlist").upsert(
+        const { error } = await client.from("waitlist").upsert(
           { email: trimmed, created_at: new Date().toISOString() },
           { onConflict: "email" },
         );
+        // Surface real Supabase errors instead of fake-success.
+        if (error) throw error;
       }
-      track("waitlist_signup", { email: trimmed, source: "coming_soon" });
+      track("waitlist_signup", { email_hash: emailHash, domain, source: "coming_soon" });
       setStatus("done");
-    } catch {
-      // Even on error, mark as done so the user sees confirmation —
-      // their analytics event still fires and is the source of truth.
-      track("waitlist_signup", { email: trimmed, source: "coming_soon" });
-      setStatus("done");
+    } catch (err) {
+      // Real error state — user sees retry copy, NOT fake confirmation.
+      const reason = (err as { message?: string })?.message ?? "unknown";
+      track("waitlist_signup_failed", { domain, reason: reason.slice(0, 80), source: "coming_soon" });
+      setErrorMsg("We couldn't save your email. Please try again — or email hello@hirestepx.com.");
+      setStatus("error");
+    } finally {
+      submittingRef.current = false;
     }
   };
 
@@ -330,8 +410,7 @@ export default function ComingSoon() {
                 marginRight: "auto",
               }}
             >
-              An AI coach that runs realistic mocks, hears your answers, and gives feedback that
-              gets specific. Built for the way candidates in India actually interview.
+              An AI coach for Indian candidates. Realistic mocks, specific feedback, no judgment.
             </p>
 
             {/* Live counter — only renders when we have a real number from
@@ -380,10 +459,16 @@ export default function ComingSoon() {
             )}
 
             {/* ─── 3. Email capture / success ────────────────────────── */}
+            {/* Wrapper carries the skip-link id so it survives the
+                form-to-success swap. Whichever child renders, the
+                skip-link target stays valid. */}
+            <div id="cs-waitlist-form">
             {isDone ? (
               <div
+                ref={successRef}
                 role="status"
                 aria-live="polite"
+                tabIndex={-1}
                 style={{
                   marginTop: count !== null && count > 0 ? 14 : 36,
                   maxWidth: 520,
@@ -395,6 +480,7 @@ export default function ComingSoon() {
                   border: `1px solid ${T.success}`,
                   boxShadow: shadows.card,
                   textAlign: "center",
+                  outline: "none",
                 }}
               >
                 <div
@@ -435,7 +521,6 @@ export default function ComingSoon() {
               </div>
             ) : (
               <form
-                id="cs-waitlist-form"
                 onSubmit={handleSubmit}
                 aria-labelledby="cs-form-label"
                 aria-describedby="cs-form-hint"
@@ -453,6 +538,27 @@ export default function ComingSoon() {
                 <label htmlFor="cs-email" className="cs-sr-only" id="cs-form-label">
                   Email address — join the HireStepX waitlist
                 </label>
+                {/* Honeypot — visually hidden from sighted users + SR users
+                    (aria-hidden + tabIndex=-1), but auto-fillers grab it.
+                    A non-empty value on submit silently flips us to the
+                    "done" decoy so the bot thinks it succeeded. */}
+                <input
+                  ref={honeypotRef}
+                  type="text"
+                  name={HONEYPOT_FIELD}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  defaultValue=""
+                  style={{
+                    position: "absolute",
+                    left: -10000,
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: "none",
+                  }}
+                />
                 <div
                   className={`cs-input-wrap${status === "error" ? " is-error" : ""}`}
                   style={{
@@ -578,6 +684,7 @@ export default function ComingSoon() {
             {/* SR-only live region — production version mirrors form state. */}
             <div role="status" aria-live="polite" className="cs-sr-only">
               {ariaLiveMessage}
+            </div>
             </div>
           </div>
 
