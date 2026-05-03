@@ -261,7 +261,8 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
    collapses to a success row. Denied shows a help line + retry. Same
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
-  kind, label, sublabel, sublabelTone, status, onRequest, onSkip, level, voiceDetected,
+  kind, label, sublabel, sublabelTone, status, onRequest, onSkip, onDisable,
+  level, voiceDetected, denyReason, isIOS,
 }: {
   kind: "mic" | "camera";
   label: string;
@@ -270,10 +271,17 @@ function PermissionCard({
   status: "idle" | "requesting" | "granted" | "denied" | "skipped";
   onRequest: () => void;
   onSkip?: () => void;
+  /** Turn-off link shown on granted camera so users can opt out post-grant. */
+  onDisable?: () => void;
   /** Live mic level 0-100 — only used when kind === "mic" && status === "granted". */
   level?: number;
   /** Whether the analyser has detected speech yet — flips the prompt copy. */
   voiceDetected?: boolean;
+  /** Distinguishes "blocked" (user denied) vs "no-device" (no hardware). */
+  denyReason?: "blocked" | "no-device" | null;
+  /** When true and status === "denied" with reason "blocked", show the
+   *  iOS Safari recovery path (different from desktop). */
+  isIOS?: boolean;
 }) {
   const isGranted = status === "granted";
   const isDenied = status === "denied";
@@ -292,8 +300,25 @@ function PermissionCard({
     </svg>
   );
 
+  // Skipped renders dimmer + greyer so it's visually distinct from idle.
+  const denyCopy = (() => {
+    if (!isDenied) return null;
+    if (denyReason === "no-device") {
+      return kind === "mic"
+        ? "No microphone detected. Connect one and retry."
+        : "No camera detected — you can still proceed without one.";
+    }
+    if (kind === "mic") {
+      return isIOS
+        ? "Blocked. Tap aA in the address bar → Website Settings → Microphone → Allow, then retry."
+        : "Blocked. Open browser settings → allow microphone, then retry.";
+    }
+    return "Blocked — you can still proceed without camera.";
+  })();
+
   return (
     <div
+      className="hsx-permission-card"
       style={{
         padding: 14,
         borderRadius: 12,
@@ -308,6 +333,7 @@ function PermissionCard({
         alignItems: "center",
         gap: 12,
         transition: "all 220ms cubic-bezier(.2,.7,.2,1)",
+        opacity: isSkipped ? 0.7 : 1,
       }}
     >
       <span
@@ -316,8 +342,14 @@ function PermissionCard({
           width: 36,
           height: 36,
           borderRadius: 6,
-          background: isGranted ? "rgba(21,128,61,0.10)" : isDenied ? "rgba(185,28,28,0.08)" : T.indigo100,
-          color: isGranted ? T.success : isDenied ? T.error : T.coal,
+          background: isGranted
+            ? "rgba(21,128,61,0.10)"
+            : isDenied
+              ? "rgba(185,28,28,0.08)"
+              : isSkipped
+                ? "rgba(14,12,8,0.04)"
+                : T.indigo100,
+          color: isGranted ? T.success : isDenied ? T.error : isSkipped ? T.inkFaint : T.coal,
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
@@ -343,13 +375,11 @@ function PermissionCard({
               </span>
             </span>
           )}
-          {isDenied && (kind === "mic"
-            ? "Blocked. Open browser settings → allow microphone, then retry."
-            : "Blocked — you can still proceed without camera.")}
+          {isDenied && denyCopy}
           {isSkipped && "Skipped for this session."}
         </div>
       </div>
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      <div className="hsx-permission-actions" style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         {status === "idle" && (
           <button
             type="button"
@@ -372,6 +402,21 @@ function PermissionCard({
           <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: T.success, color: T.cream, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
           </span>
+        )}
+        {isGranted && kind === "camera" && onDisable && (
+          <button
+            type="button"
+            onClick={onDisable}
+            aria-label="Turn camera off for this session"
+            style={{
+              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
+              padding: "6px 10px", borderRadius: 6,
+              background: "transparent", color: T.inkSoft, border: 0,
+              cursor: "pointer",
+            }}
+          >
+            Turn off
+          </button>
         )}
         {isDenied && (
           <button
@@ -501,14 +546,21 @@ export default function SessionSetup() {
      interview surface itself can launch with everything granted — no
      mid-interview permission prompt that breaks the flow. */
   type PermStatus = "idle" | "requesting" | "granted" | "denied";
+  type DenyReason = "blocked" | "no-device";
   const [micStatus, setMicStatus] = useState<PermStatus>("idle");
   const [cameraStatus, setCameraStatus] = useState<PermStatus | "skipped">("idle");
+  const [micDenyReason, setMicDenyReason] = useState<DenyReason | null>(null);
+  const [cameraDenyReason, setCameraDenyReason] = useState<DenyReason | null>(null);
   const [micLevel, setMicLevel] = useState(0);
   const [voiceDetected, setVoiceDetected] = useState(false);
   const micStreamRef = useRef<MediaStream | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number | null>(null);
+
+  // iOS detection — Safari/iOS has a different "go to settings" path that
+  // most users won't intuit, so we render iOS-specific recovery copy.
+  const isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   const startLevelMeter = (stream: MediaStream) => {
     try {
@@ -540,30 +592,54 @@ export default function SessionSetup() {
     audioCtxRef.current = null;
   };
 
+  const reasonFromError = (err: unknown): DenyReason => {
+    const name = (err as { name?: string })?.name;
+    return name === "NotFoundError" || name === "OverconstrainedError" ? "no-device" : "blocked";
+  };
+
   const requestMic = async () => {
     setMicStatus("requesting");
+    setMicDenyReason(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
       setMicStatus("granted");
       startLevelMeter(stream);
-    } catch {
+      track("permission_granted", { kind: "mic" });
+    } catch (e) {
+      const reason = reasonFromError(e);
+      setMicDenyReason(reason);
       setMicStatus("denied");
+      track("permission_denied", { kind: "mic", reason });
     }
   };
 
   const requestCamera = async () => {
     setCameraStatus("requesting");
+    setCameraDenyReason(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       cameraStreamRef.current = stream;
       setCameraStatus("granted");
-    } catch {
+      track("permission_granted", { kind: "camera" });
+    } catch (e) {
+      const reason = reasonFromError(e);
+      setCameraDenyReason(reason);
       setCameraStatus("denied");
+      track("permission_denied", { kind: "camera", reason });
     }
   };
 
   const skipCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    cameraStreamRef.current = null;
+    setCameraStatus("skipped");
+    track("permission_skipped", { kind: "camera" });
+  };
+
+  // Allow a granted camera to be turned off — gives the user the same
+  // pre-call control they'd expect from Zoom/Meet.
+  const disableCamera = () => {
     cameraStreamRef.current?.getTracks().forEach(t => t.stop());
     cameraStreamRef.current = null;
     setCameraStatus("skipped");
@@ -602,11 +678,11 @@ export default function SessionSetup() {
   }, []);
 
   const formComplete = !!targetRole.trim() && interviewFocus.length > 0;
-  const canProceedStep1 = formComplete && micStatus === "granted";
+  const canProceed = formComplete && micStatus === "granted";
 
   // Launch interview
   const handleStart = () => {
-    if (!canProceedStep1) return;
+    if (!canProceed) return;
     if (!navigator.onLine) {
       toast("You're offline. Please check your internet connection before starting.", "error");
       return;
@@ -632,6 +708,21 @@ export default function SessionSetup() {
     }, 3000);
   };
 
+  // Power-user shortcut: ⌘/Ctrl+Enter from anywhere on the page launches.
+  // If the form is complete but mic is missing, the shortcut prompts for
+  // mic instead of starting. Listed in the title-attr help text.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || !(e.metaKey || e.ctrlKey)) return;
+      e.preventDefault();
+      if (canProceed && !starting && isOnline) handleStart();
+      else if (formComplete && micStatus !== "granted" && micStatus !== "requesting") void requestMic();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canProceed, starting, isOnline, formComplete, micStatus]);
+
   return (
     <div style={{ minHeight: "100vh", background: T.cream, display: "flex", flexDirection: "column", color: T.coal, fontFamily: F.sans }}>
       <style>{AUTH_STYLES}</style>
@@ -650,6 +741,10 @@ export default function SessionSetup() {
         .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 600px) {
           .ob-permissions-grid { grid-template-columns: 1fr !important; }
+          /* On narrow viewports the inline icon+copy+action layout wraps
+             ugly. Stack the action below so the button can go full-width. */
+          .hsx-permission-card { flex-wrap: wrap !important; }
+          .hsx-permission-actions { width: 100%; justify-content: flex-end; padding-top: 4px; }
         }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         @media (max-width: 1024px) {
@@ -834,6 +929,8 @@ export default function SessionSetup() {
                       onRequest={requestMic}
                       level={micLevel}
                       voiceDetected={voiceDetected}
+                      denyReason={micDenyReason}
+                      isIOS={isIOS}
                     />
                     <PermissionCard
                       kind="camera"
@@ -843,6 +940,9 @@ export default function SessionSetup() {
                       status={cameraStatus}
                       onRequest={requestCamera}
                       onSkip={skipCamera}
+                      onDisable={disableCamera}
+                      denyReason={cameraDenyReason}
+                      isIOS={isIOS}
                     />
                   </div>
                 </div>
@@ -863,6 +963,7 @@ export default function SessionSetup() {
                 : needsMic
                   ? "Allow microphone to start"
                   : "Start practice";
+              const shortcutHint = isIOS ? "" : " · ⌘/Ctrl + Enter";
               const ctaTitle = !formComplete
                 ? "Pick a target role and interview focus to continue."
                 : needsMic
@@ -871,7 +972,7 @@ export default function SessionSetup() {
                     : "We need microphone access to start a voice interview."
                   : !isOnline
                     ? "You're offline. Reconnect to start."
-                    : undefined;
+                    : `Start your practice interview${shortcutHint}`;
               const onCtaClick = () => {
                 if (needsMic) { void requestMic(); return; }
                 handleStart();
