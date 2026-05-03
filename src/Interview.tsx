@@ -375,7 +375,12 @@ function CanvasLiveMetricsRow({ metrics }: {
   const voiceLabel = metrics.ownership === "we-heavy" ? "we" : metrics.ownership === "i-led" ? "I" : "I/we";
   const voiceTint = metrics.ownership === "we-heavy" ? e.warning : metrics.ownership === "i-led" ? e.success : e.inkSoft;
   return (
-    <div role="status" aria-live="polite" aria-label="Live answer metrics" style={{
+    /* The metrics tick every second (word count, pace, ownership). Live-
+       announcing every tick would spam screen-reader users — they'd hear
+       "47 words" / "48 words" / "49 words" continuously while answering.
+       aria-live="off" suppresses live updates; the role="status" still
+       lets a SR user navigate to it on demand and read the current values. */
+    <div role="status" aria-live="off" aria-label="Live answer metrics" style={{
       display: "inline-flex", alignItems: "center", gap: 14,
       fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
       letterSpacing: 1.2, color: e.inkSoft,
@@ -485,7 +490,12 @@ function CanvasListeningActionZone({
     <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
       {/* Live transcript card — only if we have something */}
       {currentTranscript && !showTyping && (
-        <div role="log" aria-live="polite" aria-label="Live transcript of your answer" style={{
+        /* role="log" implies polite; aria-relevant="additions" so SR only
+           reads new words as the user speaks, not the full accumulated
+           transcript on every interim STT update. Without this, NVDA would
+           re-announce "I led a team of six" on every word while the user
+           is mid-sentence — aggressively confusing. */
+        <div role="log" aria-relevant="additions" aria-label="Live transcript of your answer" style={{
           width: "100%", background: e.white, border: `1px solid ${e.line}`,
           borderRadius: 14, padding: "14px 16px",
           fontFamily: ef.serif, fontSize: 15, lineHeight: 1.55, color: e.coal,

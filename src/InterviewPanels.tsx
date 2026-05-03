@@ -418,7 +418,13 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
   isSalaryNegotiation?: boolean;
 }) {
   return (
-    <div aria-live="polite" aria-atomic="true" style={{
+    /* aria-live="polite" + aria-atomic="true" means each phase change
+       (thinking → speaking → listening) re-announces the full card. The
+       child LiveCaptions is aria-hidden so the typing animation doesn't
+       race the announce. aria-relevant="text" so DOM additions inside
+       (timer pip etc.) don't trigger a re-announce — only text content
+       changes do. */
+    <div aria-live="polite" aria-atomic="true" aria-relevant="text" style={{
       width: "100%", background: e.white, borderRadius: 16,
       border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "rgba(180,83,9,0.22)" : e.line}`,
       /* The card cross-fades its border tint between phases (cream → copper
@@ -565,7 +571,11 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           >&times;</button>
         </div>
       )}
-      <div role="log" aria-live="polite" aria-label="Speech transcript" style={{ minHeight: 60, marginBottom: 10 }}>
+      {/* role="log" already implies aria-live="polite" — explicitly
+          setting both was causing double-announcement on some screen
+          readers. aria-relevant="additions" so SR only reads NEW text
+          (the user's incremental words), not full text replacements. */}
+      <div role="log" aria-relevant="additions" aria-label="Your speech transcript" style={{ minHeight: 60, marginBottom: 10 }}>
         {speechUnavailable ? (
           <>
             <textarea
@@ -1160,7 +1170,12 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
         {panelMembers && panelMembers.length > 0 && (
           <TranscriptFilters panelMembers={panelMembers} activeFilter={transcriptFilter} setActiveFilter={setTranscriptFilter} />
         )}
-        <div ref={transcriptRef} aria-live="polite" aria-label="Interview transcript" style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* role="log" implies polite live-region; we override aria-relevant
+            to "additions" so SR only announces NEW transcript entries, not
+            the full panel re-render when filters change. The transcript can
+            grow long — without this, every backchannel ("Mm-hmm") fired
+            would force a re-read of the whole conversation. */}
+        <div ref={transcriptRef} role="log" aria-relevant="additions" aria-label="Interview transcript" style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
           {transcript.length === 0 && (
             <p style={{ fontFamily: ef.serif, fontSize: 14, fontStyle: "italic", color: e.inkSoft, textAlign: "center", padding: "40px 0" }}>
               The conversation will appear here as you talk.

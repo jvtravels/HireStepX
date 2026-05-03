@@ -104,11 +104,18 @@ describe("LiveCaptions", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("has aria-live region for accessibility", () => {
+  /* The typing animation is intentionally aria-hidden — its parent
+     QuestionCard already announces the full question once per phase
+     change. Without this, screen readers would re-announce the question
+     on every char-by-char typing tick. */
+  it("hides the typing region from assistive tech to avoid char-by-char re-announcements", () => {
     const { container } = render(<LiveCaptions text="Hello" isTyping={true} />);
-    const liveRegion = container.querySelector("[aria-live]");
-    expect(liveRegion).toBeTruthy();
-    expect(liveRegion?.getAttribute("aria-live")).toBe("polite");
+    const region = container.querySelector("[aria-hidden]");
+    expect(region).toBeTruthy();
+    expect(region?.getAttribute("aria-hidden")).toBe("true");
+    /* And critically — there is NO aria-live in this subtree, since the
+       parent owns the announcement. */
+    expect(container.querySelector("[aria-live]")).toBeNull();
   });
 });
 

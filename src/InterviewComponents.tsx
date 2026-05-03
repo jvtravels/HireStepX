@@ -303,8 +303,13 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
 
   if (!isTyping && !displayText) return null;
 
+  /* The typing animation streams text char-by-char. We INTENTIONALLY mark
+     this region aria-hidden so screen readers don't replay every keystroke
+     update — the parent QuestionCard is already aria-live="polite"
+     aria-atomic="true" which announces the full question once per phase
+     transition. The visible animation is purely sighted-user candy. */
   return (
-    <div style={{ width: "100%" }} aria-live="polite" aria-label="AI interviewer speaking">
+    <div style={{ width: "100%" }} aria-hidden="true">
       <p style={{
         fontFamily: ef.serif, fontSize: 22, color: e.coal,
         lineHeight: 1.35, margin: 0, minHeight: 30,

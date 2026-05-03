@@ -12,6 +12,13 @@ import { useListeningInterjections } from "./_listening-interjections";
 import { buildThinkingPhrase } from "./_thinking-phrase";
 import { pickInitialNegotiationStyle, computeNegotiationPhase } from "./_negotiation-state";
 import { runEvaluationFlow } from "./_evaluation-flow";
+import {
+  isRepeatRequest,
+  computeAdaptiveDifficulty,
+  buildConversationHistory,
+  pickNegotiationCoachingHint,
+  extractRecentFollowUps,
+} from "./_advance-helpers";
 import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
@@ -1230,13 +1237,10 @@ export function useInterviewEngine() {
       return;
     }
 
-    // "Repeat that question" voice command — if the candidate's only utterance
-    // is a request to repeat, re-speak the current AI turn instead of treating
-    // it as an answer. Real interviewers do this naturally and it's frustrating
-    // to be forced to type "..." or skip just to hear the question again.
-    const repeatPat = /^(?:sorry,?\s+)?(?:can you|could you|please)?\s*(?:repeat|say|ask)\s*(?:that|the\s+question|it|again)?(?:\s+please)?\s*\??$/i;
-    const altRepeatPat = /^(?:one more time|come again|say (?:that )?again|i didn'?t (?:hear|catch) (?:that|you))\s*\??$/i;
-    if ((repeatPat.test(rawTranscript) || altRepeatPat.test(rawTranscript)) && rawTranscript.length < 60) {
+    /* "Repeat that question" voice command — if the candidate's only
+       utterance is a request to repeat, re-speak the current AI turn
+       instead of treating it as an answer. See ./_advance-helpers.ts. */
+    if (isRepeatRequest(rawTranscript)) {
       const currentStepObj = interviewScript[currentStep];
       if (currentStepObj?.aiText && aiVoiceEnabled) {
         setCurrentTranscript("");
@@ -1315,38 +1319,20 @@ export function useInterviewEngine() {
         && !isLastStep && hasRealAnswer);
 
     if (canFollowUp) {
-      // Cross-question memory: build conversation history for context
-      // Salary-neg needs longer excerpts to preserve salary numbers and competing offer details
-      const qLimit = isSalaryNegType ? 250 : 150;
-      const aLimit = isSalaryNegType ? 200 : 120;
-      const earlierTopics: string[] = [];
-      // Filter: skip thinking phrases, system notes, and "[Answer recorded]" entries
-      const thinkingPhraseRe = /^(Hmm|Let me|Okay|Alright|Interesting|I see|Good|That's|Right|So,|Well,|Mm)/;
-      for (const t of transcript) {
-        if (t.speaker === "ai" && !t.text.startsWith("[")) {
-          // Skip short thinking phrases (< 40 chars and starts with common fillers)
-          if (t.text.length < 40 && thinkingPhraseRe.test(t.text)) continue;
-          earlierTopics.push(`Q: ${t.text.slice(0, qLimit)}`);
-        } else if (t.speaker === "user" && !t.text.startsWith("[")) {
-          earlierTopics.push(`A: ${t.text.slice(0, aLimit)}`);
-        }
-      }
-      // Add current exchange
-      earlierTopics.push(`Q: ${currentStepObj!.aiText.slice(0, qLimit)}`);
-      earlierTopics.push(`A: ${answerText.slice(0, aLimit)}`);
-      // Salary-neg: keep ALL turns (typically 12-16 total) — every number and promise matters
-      // Regular interviews: keep last 20 turns to save prompt space
-      const conversationHistory = (isSalaryNegType ? earlierTopics : earlierTopics.slice(-20)).join("\n");
-
-      // Collect recent follow-up Q&A pairs
-      const recentFollowUps: string[] = [];
-      for (let i = Math.max(0, currentStep - 4); i <= currentStep; i++) {
-        const s = interviewScript[i];
-        if (s?.type === "follow-up") {
-          recentFollowUps.push(`Q: ${s.aiText}`);
-        }
-      }
-      if (answerText) recentFollowUps.push(`A: ${answerText}`);
+      /* Conversation history + recent follow-ups for the LLM payload —
+         see ./_advance-helpers.ts. Both are pure transformations of
+         the transcript + script + current Q&A. */
+      const conversationHistory = buildConversationHistory({
+        transcript,
+        currentQuestionText: currentStepObj!.aiText,
+        currentAnswerText: answerText,
+        isSalaryNeg: isSalaryNegType,
+      });
+      const recentFollowUps = extractRecentFollowUps({
+        script: interviewScript,
+        currentStep,
+        currentAnswerText: answerText,
+      });
 
       // For salary negotiation: always depth 0 (each response is a new conversational turn, not a stacked follow-up)
       // For other types: increment depth for follow-up chains
@@ -1383,35 +1369,26 @@ export function useInterviewEngine() {
           ? extractNegotiationFacts([...transcript, { speaker: "user", text: answerText, time: "" }])
           : undefined;
 
-        // Mid-session coaching: show a non-intrusive hint after key phases
-        // Only show once per phase transition to avoid spam
-        if (isSalaryNegType && negotiationFacts && salaryPhase && !negCoachingShownRef.current.has(salaryPhase)) {
-          let hint: string | null = null;
-          if (salaryPhase === "counter-offer" && !negotiationFacts.candidateCounter && !negotiationFacts.deflectedNumbers) {
-            hint = "💡 Tip: Name a specific number — candidates who anchor first tend to get better outcomes.";
-          } else if (salaryPhase === "benefits-discussion" && negotiationFacts.topicsRaised.length === 0) {
-            hint = "💡 Tip: Ask about equity, joining bonus, or flexibility — total package often matters more than base.";
-          } else if (salaryPhase === "closing-pressure" && !negotiationFacts.hasCompetingOffers && !negotiationFacts.mentionedBATNA) {
-            hint = "💡 Tip: Mentioning competing offers or alternatives gives you stronger leverage at closing.";
-          } else if (salaryPhase === "probe-expectations" && negotiationFacts.acceptedImmediately) {
-            hint = "💡 Tip: Accepting too quickly leaves value on the table. Try countering or exploring the full package first.";
-          }
+        /* Mid-session coaching hint (salary-negotiation only) — fires once
+           per phase, when the candidate is missing a known high-leverage
+           move. See pickNegotiationCoachingHint in ./_advance-helpers.ts. */
+        if (isSalaryNegType && negotiationFacts && salaryPhase) {
+          const hint = pickNegotiationCoachingHint({
+            phase: salaryPhase as Parameters<typeof pickNegotiationCoachingHint>[0]["phase"],
+            facts: negotiationFacts,
+            alreadyShown: negCoachingShownRef.current,
+          });
           if (hint) {
             negCoachingShownRef.current.add(salaryPhase);
             // Delay hint so it doesn't overlap with the micro-feedback
-            setTimeout(() => toast(hint!, "info"), 2500);
+            setTimeout(() => toast(hint, "info"), 2500);
           }
         }
 
-        // Adaptive difficulty: trend over the last 3 answer-quality scores tells
-        // the follow-up LLM whether to escalate or ease up. Keeps the experience
-        // calibrated to how the candidate is actually performing in this session.
-        const recentScores = answerQualityRef.current.slice(-3);
-        const recentAvg = recentScores.length > 0 ? recentScores.reduce((a, b) => a + b, 0) / recentScores.length : 0;
-        const adaptiveDifficulty: "escalate" | "ease" | "hold" =
-          recentScores.length >= 2 && recentAvg >= 4 ? "escalate"
-          : recentScores.length >= 2 && recentAvg <= 2 ? "ease"
-          : "hold";
+        /* Adaptive difficulty: rolling-3 average of answer scores tells the
+           follow-up LLM whether to escalate or ease up. See
+           computeAdaptiveDifficulty in ./_advance-helpers.ts. */
+        const adaptiveDifficulty = computeAdaptiveDifficulty(answerQualityRef.current);
 
         // Emotional-state signals — see src/_emotional-state.ts.
         const userTurns = transcript.filter(m => m.speaker === "user").map(m => m.text);
