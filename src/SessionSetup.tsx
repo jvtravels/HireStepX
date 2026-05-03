@@ -273,7 +273,7 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
   kind, label, sublabel, sublabelTone, status, onRequest, onSkip, onDisable,
-  level, voiceDetected, denyReason, isIOS, cameraStream,
+  level, voiceDetected, denyReason, isIOS, cameraStream, faceLooksGood,
 }: {
   kind: "mic" | "camera";
   label: string;
@@ -297,6 +297,9 @@ function PermissionCard({
    *  "granted", we render a small mirrored video preview in the icon
    *  slot so the user can verify framing/lighting before launching. */
   cameraStream?: MediaStream | null;
+  /** Brightness-heuristic confirmation that the user is in frame and lit.
+   *  Used to flip "Looking good" → "You look great". */
+  faceLooksGood?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
@@ -368,38 +371,51 @@ function PermissionCard({
         opacity: isSkipped ? 0.7 : 1,
       }}
     >
-      {kind === "camera" && isGranted && cameraStream ? (
-        /* Live preview — replaces the icon tile with a 4:3 thumbnail of
-           the user's camera feed. Mirrored (scaleX(-1)) per self-view
-           convention. Same border radius family as the icon tile. */
+      {kind === "camera" ? (
+        /* Camera always reserves the 4:3 preview slot (64×48 desktop,
+           56×42 mobile) regardless of state — when no stream is attached,
+           an icon sits centered inside. This prevents CLS when the
+           permission flips idle → granted. The preview tile and the
+           icon-only tile share dimensions; only the inner content swaps. */
         <span
-          aria-label="Live camera preview"
+          aria-label={isGranted && cameraStream ? "Live camera preview" : undefined}
+          aria-hidden={!(isGranted && cameraStream)}
           className="hsx-permission-cam-preview"
           style={{
             width: 64,
             height: 48,
             borderRadius: 6,
             overflow: "hidden",
-            background: T.creamSoft,
+            background: isGranted
+              ? T.success100
+              : isDenied
+                ? T.error100
+                : isSkipped
+                  ? T.creamSoft
+                  : T.indigo100,
+            color: isGranted ? T.success : isDenied ? T.error : isSkipped ? T.inkFaint : T.coal,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            border: `1px solid ${T.success}`,
+            border: isGranted && cameraStream ? `1px solid ${T.success}` : "none",
+            transition: "background 220ms ease, border-color 220ms ease",
           }}
         >
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            onLoadedData={() => setVideoReady(true)}
-            style={{
-              width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)",
-              opacity: videoReady ? 1 : 0,
-              transition: "opacity 250ms ease",
-            }}
-          />
+          {isGranted && cameraStream ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              onLoadedData={() => setVideoReady(true)}
+              style={{
+                width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)",
+                opacity: videoReady ? 1 : 0,
+                transition: "opacity 250ms ease",
+              }}
+            />
+          ) : icon}
         </span>
       ) : (
         <span
@@ -436,7 +452,11 @@ function PermissionCard({
         <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
           {status === "requesting" && "Waiting for your permission…"}
-          {isGranted && kind === "camera" && "Looking good"}
+          {isGranted && kind === "camera" && (
+            <span style={{ color: faceLooksGood ? T.success : T.inkSoft, transition: "color 240ms ease" }}>
+              {faceLooksGood ? "You look great" : "Looking good"}
+            </span>
+          )}
           {isGranted && kind === "mic" && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <MicMeter level={level ?? 0} active />
@@ -622,6 +642,11 @@ export default function SessionSetup() {
   // Stream is mirrored into state so the PermissionCard can render a live
   // <video> preview. Ref alone wouldn't trigger a re-render in the child.
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  // "You look great" — flips on once we've seen ~4 stable frames with
+  // a non-trivial brightness average. Heuristic, not real face-detection,
+  // but works on every browser without an extra dependency.
+  const [faceLooksGood, setFaceLooksGood] = useState(false);
+  const faceSamplerRef = useRef<{ stop: () => void } | null>(null);
   const [micDenyReason, setMicDenyReason] = useState<DenyReason | null>(null);
   const [cameraDenyReason, setCameraDenyReason] = useState<DenyReason | null>(null);
   const [micLevel, setMicLevel] = useState(0);
@@ -799,6 +824,59 @@ export default function SessionSetup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Brightness-based "face looks good" sampler. Every 500ms, paint
+     the current preview frame into a 4×4 canvas, average the pixels.
+     If brightness > 30 (out of 255) for 4 consecutive samples, flip
+     to "You look great". The check defends against pitch-black /
+     covered-lens / virtual-camera-still-loading conditions. Released
+     when the stream goes away. */
+  useEffect(() => {
+    if (!cameraStream) {
+      setFaceLooksGood(false);
+      faceSamplerRef.current?.stop();
+      faceSamplerRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    let stableCount = 0;
+    const video = document.createElement("video");
+    video.srcObject = cameraStream;
+    video.muted = true;
+    video.playsInline = true;
+    video.play().catch(() => undefined);
+    const canvas = document.createElement("canvas");
+    canvas.width = 4;
+    canvas.height = 4;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    const tick = () => {
+      if (cancelled) return;
+      try {
+        ctx.drawImage(video, 0, 0, 4, 4);
+        const data = ctx.getImageData(0, 0, 4, 4).data;
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 4) sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+        const avg = sum / (data.length / 4);
+        if (avg > 30) {
+          stableCount++;
+          if (stableCount >= 4 && !cancelled) setFaceLooksGood(true);
+        } else {
+          stableCount = 0;
+        }
+      } catch { /* video not yet ready */ }
+    };
+    const id = window.setInterval(tick, 500);
+    faceSamplerRef.current = {
+      stop: () => {
+        cancelled = true;
+        clearInterval(id);
+        try { video.pause(); } catch { /* noop */ }
+        video.srcObject = null;
+      },
+    };
+    return () => faceSamplerRef.current?.stop();
+  }, [cameraStream]);
+
   // Stop preview streams + level meter on unmount.
   useEffect(() => {
     return () => {
@@ -903,6 +981,26 @@ export default function SessionSetup() {
 
   return (
     <div style={{ minHeight: "100vh", background: T.cream, display: "flex", flexDirection: "column", color: T.coal, fontFamily: F.sans }}>
+      {/* Skip-to-content link — visually hidden until keyboard focus.
+          Standard a11y pattern; keyboard users tab past the topbar
+          straight to the form. */}
+      <a
+        href="#hsx-setup-form"
+        className="hsx-skip-link"
+        style={{
+          position: "absolute", left: 12, top: 12, zIndex: 100,
+          padding: "8px 14px", borderRadius: 8,
+          background: T.indigo, color: T.cream,
+          fontFamily: F.sans, fontSize: 13, fontWeight: 500,
+          textDecoration: "none",
+          transform: "translateY(-200%)",
+          transition: "transform 160ms ease",
+        }}
+        onFocus={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+        onBlur={(e) => { e.currentTarget.style.transform = "translateY(-200%)"; }}
+      >
+        Skip to setup form
+      </a>
       <style>{AUTH_STYLES}</style>
       <style>{`
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
@@ -913,6 +1011,16 @@ export default function SessionSetup() {
         @keyframes countdownFade { 0% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0.6; transform: scale(0.95); } }
         @keyframes hsxAccentIn { 0% { opacity: 0; transform: translateY(6px); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0); } }
         @keyframes hsxBadgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(49,46,129,0.35); } 50% { box-shadow: 0 0 0 6px rgba(49,46,129,0); } }
+        @keyframes hsxShimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+        /* Skeleton placeholder for elements that load async (identity
+           chip while useAuth resolves). Reserves space + telegraphs
+           "loading" without flashing or shifting. */
+        .hsx-shimmer {
+          background-image: linear-gradient(90deg, ${T.creamSoft} 0%, ${T.line} 40%, ${T.creamSoft} 80%);
+          background-size: 200px 100%;
+          background-repeat: no-repeat;
+          animation: hsxShimmer 1.4s ease-in-out infinite;
+        }
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         .ob-mic-pulse { animation: pulse 2s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -1023,11 +1131,21 @@ export default function SessionSetup() {
           <Wordmark />
         </div>
         <div style={{ justifySelf: "center" }} />
-        {/* Identity chip + escape link — matches the auth/onboarding pattern. */}
-        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Identity chip — always reserves a fixed-height slot so the
+            topbar doesn't reflow when useAuth resolves (zero CLS).
+            Renders a shimmer placeholder while user is null. */}
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 14, minHeight: 30 }}>
           {(() => {
             const trimmed = (user?.name || "").trim();
-            if (!trimmed) return null;
+            if (!trimmed) {
+              // Shimmer placeholder — same dimensions as the loaded chip.
+              return (
+                <div aria-hidden style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className="hsx-shimmer" style={{ width: 30, height: 30, borderRadius: 999, background: T.creamSoft }} />
+                  <span className="hsx-shimmer hsx-setup-identity-name" style={{ width: 96, height: 14, borderRadius: 4, background: T.creamSoft }} />
+                </div>
+              );
+            }
             const initials = trimmed.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
             return (
               <div title={trimmed} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.coal }}>
@@ -1048,15 +1166,15 @@ export default function SessionSetup() {
 
       {/* ─── Content ─── */}
       <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto" }}>
-        <div style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
+        <div id="hsx-setup-form" style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
 
           <div>
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
               <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1">
-                <h2 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
+                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
-                </h2>
+                </h1>
                 <p style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
                   Tell us a few things and we&apos;ll personalize the experience for you.
                 </p>
@@ -1234,6 +1352,7 @@ export default function SessionSetup() {
                       denyReason={cameraDenyReason}
                       isIOS={isIOS}
                       cameraStream={cameraStream}
+                      faceLooksGood={faceLooksGood}
                     />
                   </div>
                 </div>
@@ -1277,10 +1396,16 @@ export default function SessionSetup() {
                   aria-label={ctaTitle ?? ctaLabel}
                   className="hsx-setup-cta"
                   style={{
-                    fontFamily: F.sans, fontSize: 16, fontWeight: 600, padding: "18px 36px", borderRadius: 12, border: "1px solid transparent",
-                    background: T.indigo, color: T.cream,
+                    fontFamily: F.sans, fontSize: 16, fontWeight: 600, padding: "18px 36px", borderRadius: 12,
+                    /* Disabled state uses a fully-saturated neutral pair
+                       (creamSoft + inkSoft) so contrast stays AA and the
+                       button is unmistakably non-actionable. Avoids the
+                       contrast trap of "indigo at 45% opacity on cream". */
+                    background: isHardDisabled ? T.creamSoft : T.indigo,
+                    color: isHardDisabled ? T.inkSoft : T.cream,
+                    border: `1px solid ${isHardDisabled ? T.line : "transparent"}`,
                     cursor: isHardDisabled ? "not-allowed" : "pointer",
-                    opacity: isHardDisabled ? 0.45 : needsMic ? 0.85 : 1,
+                    opacity: needsMic && !isHardDisabled ? 0.85 : 1,
                     transition: "all 180ms cubic-bezier(.2,.7,.2,1)",
                     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 12,
                     boxShadow: isHardDisabled ? "none" : "0 2px 4px rgba(20,17,10,.10), 0 12px 28px -10px rgba(49,46,129,.45)",
