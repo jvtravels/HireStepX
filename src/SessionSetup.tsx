@@ -322,10 +322,14 @@ function PermissionCard({
       style={{
         padding: 14,
         borderRadius: 12,
+        /* Same gradient grammar as the selected focus chip:
+             linear-gradient(180deg, <tint-100>, white)
+           Keeps the success/error tint at the same subtlety as the
+           indigo100 used for selection — no raw rgbas. */
         background: isGranted
-          ? `linear-gradient(180deg, rgba(21,128,61,0.08), ${T.white})`
+          ? `linear-gradient(180deg, ${T.success100}, ${T.white})`
           : isDenied
-            ? `linear-gradient(180deg, rgba(185,28,28,0.06), ${T.white})`
+            ? `linear-gradient(180deg, ${T.error100}, ${T.white})`
             : T.white,
         border: `1px solid ${isGranted ? T.success : isDenied ? T.error : T.line}`,
         boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
@@ -342,12 +346,15 @@ function PermissionCard({
           width: 36,
           height: 36,
           borderRadius: 6,
+          /* Icon-tile background uses the same -100 tint family as the
+             card surface for visual coherence. Skipped uses creamSoft —
+             no raw coal-rgba. */
           background: isGranted
-            ? "rgba(21,128,61,0.10)"
+            ? T.success100
             : isDenied
-              ? "rgba(185,28,28,0.08)"
+              ? T.error100
               : isSkipped
-                ? "rgba(14,12,8,0.04)"
+                ? T.creamSoft
                 : T.indigo100,
           color: isGranted ? T.success : isDenied ? T.error : isSkipped ? T.inkFaint : T.coal,
           display: "inline-flex",
@@ -771,6 +778,9 @@ export default function SessionSetup() {
              padding to fit comfortably in the 2-col mobile grid. */
           .ob-focus-card { padding: 12px !important; }
           .ob-focus-card span:nth-child(2) { font-size: 12px !important; }
+          /* On phones a centered short CTA looks lonely — let it span the
+             form again so the tap target is generous. */
+          .hsx-setup-cta { width: 100% !important; }
         }
         @media (max-width: 500px) {
           /* Drop the name to keep the right cluster from overflowing —
@@ -849,29 +859,18 @@ export default function SessionSetup() {
                   </div>
                 </div>
 
-                {/* ── Interview Focus — canvas-style: clean label, 5-col grid, "Not sure?" link ── */}
+                {/* ── Interview Focus — canvas-style: clean label, 5-col grid ── */}
                 <div className="fade-up-2">
-                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, gap: 12 }}>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
-                        <span>Interview focus</span>
-                        <span style={{ color: T.copper, fontSize: 12 }}>*</span>
-                      </div>
-                      <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                        {isFirstTimer && !showAllFocus
-                          ? "We picked the best for your role. Explore all 10 below."
-                          : "Choose one area to focus on."}
-                      </div>
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
+                      <span>Interview focus</span>
+                      <span style={{ color: T.copper, fontSize: 12 }}>*</span>
                     </div>
-                    <button
-                      type="button"
-                      aria-label="Use the recommended focus"
-                      onClick={() => { setShowAllFocus(true); setInterviewFocus([recommendedFocus]); }}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: T.indigo, background: "transparent", border: 0, cursor: "pointer", padding: 0 }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                      Not sure? Use the recommendation.
-                    </button>
+                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
+                      {isFirstTimer && !showAllFocus
+                        ? "We picked the best for your role. Explore all 10 below."
+                        : "Choose one area to focus on."}
+                    </div>
                   </div>
                   <div className="ob-s2-focus-grid">
                     {(() => {
@@ -980,7 +979,7 @@ export default function SessionSetup() {
           {/* ─── Single canvas-style "Start practice" CTA + trust line.
                 The CTA stays clickable when only the mic is missing — it
                 triggers the prompt instead of failing silently. */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12, marginTop: 40 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 40 }}>
             {(() => {
               const needsMic = formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
@@ -1010,9 +1009,9 @@ export default function SessionSetup() {
                   disabled={isHardDisabled}
                   title={ctaTitle}
                   aria-label={ctaTitle ?? ctaLabel}
+                  className="hsx-setup-cta"
                   style={{
-                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "16px 28px", borderRadius: 10, border: "1px solid transparent",
-                    width: "100%",
+                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "14px 28px", borderRadius: 10, border: "1px solid transparent",
                     background: T.indigo, color: T.cream,
                     cursor: isHardDisabled ? "not-allowed" : "pointer",
                     opacity: isHardDisabled ? 0.45 : needsMic ? 0.85 : 1,
@@ -1020,6 +1019,7 @@ export default function SessionSetup() {
                     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
                     boxShadow: isHardDisabled ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
                     letterSpacing: 0.1,
+                    minWidth: 220,
                   }}
                 >
                   {starting ? (
