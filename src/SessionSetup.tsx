@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
@@ -13,11 +13,9 @@ import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
 import { useToast } from "./Toast";
-import { getSupabase } from "./supabase";
 import { unlockAudio, prefetchTTS } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
-import { CITY_SUGGESTIONS } from "../data/city-tiers";
 
 /* ─── Suggestions ─── */
 const ROLE_SUGGESTIONS = [
@@ -186,18 +184,6 @@ function AutocompleteInput({
   );
 }
 
-/* ─── Draft recovery ─── */
-function loadDraft(userId?: string): { type: string; difficulty: string; focus: string; elapsed: number; savedAt: number } | null {
-  try {
-    const key = `hirestepx_interview_draft_${userId || "anon"}`;
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const draft = JSON.parse(raw);
-    if (!draft.savedAt || Date.now() - draft.savedAt > 2 * 60 * 60 * 1000) { localStorage.removeItem(key); return null; }
-    if (!draft.elapsed || draft.elapsed < 10) { localStorage.removeItem(key); return null; }
-    return draft;
-  } catch { return null; }
-}
 
 /* ─── Intro text for TTS pre-fetch ─── */
 const introByType: Record<string, string> = {
@@ -240,22 +226,17 @@ function getRecommendedFocus(role?: string): string {
 }
 
 /* ═══════════════════════════════════════════════
-   SESSION SETUP — 2-Step Flow (matches Onboarding)
-   Step 1: Target Role + Company, Interview Focus, Session Length
-   Step 2: Mic permission + Your Profile summary
+   SESSION SETUP — single-page flow (matches the SetupEmpty canvas)
+   Target role + Company + Interview focus → Start practice.
+   The interview page itself handles mic permission when needed.
    ═══════════════════════════════════════════════ */
-const TOTAL_STEPS = 2;
 
 export default function SessionSetup() {
   const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const preselectedFocus = searchParams.get("type");
-  const [draft] = useState(() => loadDraft(user?.id));
-  const [showDraftBanner, setShowDraftBanner] = useState(!!draft);
 
-  // Steps
-  const [step, setStep] = useState(1);
   const [targetRole, setTargetRole] = useState(user?.targetRole || "");
   const [roleTouched, setRoleTouched] = useState(false);
   const [targetCompany, setTargetCompany] = useState(() => {
@@ -267,8 +248,6 @@ export default function SessionSetup() {
     if (rd && rd._type === "fallback") return rd.experience?.[0]?.company || "";
     return "";
   });
-  const [currentCity, setCurrentCity] = useState(user?.city || "");
-  const [jobCity, setJobCity] = useState("");
   const recommendedFocus = getRecommendedFocus(user?.targetRole);
   const [interviewFocus, setInterviewFocus] = useState<string[]>(() => {
     if (preselectedFocus) {
@@ -277,16 +256,14 @@ export default function SessionSetup() {
     }
     return [getRecommendedFocus(user?.targetRole)];
   });
-  const sessionCountForDefault = user?.practiceTimestamps?.length ?? 0;
-  const [sessionLength, setSessionLength] = useState(
-    (!user?.subscriptionTier || user.subscriptionTier === "free") && sessionCountForDefault === 1 ? "15m" : "10m"
-  );
-  // negotiationStyle is now randomly assigned per session in useInterviewEngine
+  // Session length is fixed at 15m — the canvas-aligned setup screen no
+  // longer asks the user to choose. The interview engine still respects
+  // the URL param so this constant keeps the contract intact.
+  const SESSION_LENGTH = "15m";
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";
   const isFirstTimer = !user?.practiceTimestamps || user.practiceTimestamps.length === 0;
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
-  const has15minTaste = isFreeUser && freeSessionCount === 1;
   const [showAllFocus, setShowAllFocus] = useState(false);
   const atSessionLimit = isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT;
   const { toast } = useToast();
@@ -307,12 +284,6 @@ export default function SessionSetup() {
     } catch { /* noop */ }
   }, [toast]);
 
-  // Mic check
-  const [micStatus, setMicStatus] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
-  const [micLevel, setMicLevel] = useState(0);
-  const streamRef = useRef<MediaStream | null>(null);
-  const animFrameRef = useRef<number>(0);
-
   // Launch
   const [starting, setStarting] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -329,89 +300,12 @@ export default function SessionSetup() {
   }, []);
   const [launching, setLaunching] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [saveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [useResume, setUseResume] = useState(true);
-  const [jobDescription, setJobDescription] = useState("");
-  const [jdAnalysis, setJdAnalysis] = useState<{
-    matchScore: number;
-    matchLabel: string;
-    matchedSkills: string[];
-    missingSkills: string[];
-    keyStrengths: string[];
-    gaps: string[];
-    interviewTips: string[];
-    suggestedFocus: string;
-  } | null>(null);
-  const [jdAnalyzing, setJdAnalyzing] = useState(false);
 
   const canProceedStep1 = !!targetRole.trim() && interviewFocus.length > 0;
 
-  const analyzeJDMatch = useCallback(async () => {
-    if (!jobDescription.trim() || !user?.resumeText) return;
-    setJdAnalyzing(true);
-    try {
-      const sb = await getSupabase();
-      const token = (await sb.auth.getSession()).data.session?.access_token;
-      const res = await fetch("/api/analyze-jd-match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ resumeText: user.resumeText, jobDescription: jobDescription.trim() }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setJdAnalysis(data.analysis);
-      }
-    } catch { /* non-critical */ }
-    setJdAnalyzing(false);
-  }, [jobDescription, user?.resumeText]);
-
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const [micTestState, setMicTestState] = useState<"idle" | "testing" | "pass" | "fail">("idle");
-  const micTestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestMic = useCallback(async () => {
-    setMicStatus("requesting");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      setMicStatus("granted");
-      const ctx = new AudioContext();
-      audioCtxRef.current = ctx;
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
-      ctx.createMediaStreamSource(stream).connect(analyser);
-      const buf = new Uint8Array(analyser.frequencyBinCount);
-
-      // Start mic pre-test: listen for 3s, check if any voice detected
-      setMicTestState("testing");
-      let peakLevel = 0;
-      const poll = () => {
-        analyser.getByteFrequencyData(buf);
-        const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
-        const level = Math.min(100, Math.round((avg / 128) * 100));
-        if (level > peakLevel) peakLevel = level;
-        setMicLevel(level);
-        animFrameRef.current = requestAnimationFrame(poll);
-      };
-      poll();
-
-      // After 3 seconds, evaluate whether voice was detected
-      micTestTimerRef.current = setTimeout(() => {
-        setMicTestState(peakLevel > 3 ? "pass" : "fail");
-      }, 3000);
-    } catch { setMicStatus("denied"); }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      audioCtxRef.current?.close().catch(() => {});
-      if (micTestTimerRef.current) clearTimeout(micTestTimerRef.current);
-    };
-  }, []);
-
   // Launch interview
   const handleStart = () => {
+    if (!canProceedStep1) return;
     if (!navigator.onLine) {
       toast("You're offline. Please check your internet connection before starting.", "error");
       return;
@@ -419,27 +313,18 @@ export default function SessionSetup() {
     setStarting(true);
     unlockAudio();
     const focusType = focusToType[interviewFocus[0]] || "behavioral";
-    track("session_start", { type: focusType, role: targetRole, sessionLength });
-    streamRef.current?.getTracks().forEach(t => t.stop());
+    track("session_start", { type: focusType, role: targetRole, sessionLength: SESSION_LENGTH });
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);
     setLaunching(true);
     setCountdown(3);
     setTimeout(() => setCountdown(2), 1000);
     setTimeout(() => setCountdown(1), 2000);
-    if (jdAnalysis) {
-      try { sessionStorage.setItem("hirestepx_jd_analysis", JSON.stringify(jdAnalysis)); } catch { /* quota */ }
-    }
     setTimeout(() => {
       setCountdown(0);
-      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}${currentCity ? `&currentCity=${encodeURIComponent(currentCity)}` : ""}${jobCity ? `&jobCity=${encodeURIComponent(jobCity)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${sessionLength}${useResume ? "" : "&useResume=false"}${jobDescription.trim() ? `&jd=${encodeURIComponent(jobDescription.trim().slice(0, 2000))}` : ""}${micStatus === "denied" ? "&nomic=1" : ""}`);
+      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}`);
     }, 3000);
   };
-
-  const goBack = () => { if (step > 1) setStep(step - 1); else router.push("/dashboard"); };
-  const goNext = () => { if (step < TOTAL_STEPS) setStep(step + 1); };
-
-  const sessionLengthLabel = sessionLength === "10m" ? "10 minutes" : sessionLength === "25m" ? "25 minutes" : "15 minutes";
 
   return (
     <div style={{ minHeight: "100vh", background: T.cream, display: "flex", flexDirection: "column", color: T.coal, fontFamily: F.sans }}>
@@ -467,82 +352,12 @@ export default function SessionSetup() {
         }
       `}</style>
 
-      {/* Draft recovery banner */}
-      {showDraftBanner && draft && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          padding: "14px 24px", background: T.indigo100,
-          borderBottom: `1px solid rgba(49,46,129,0.2)`,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 16,
-          backdropFilter: "blur(8px)",
-        }}>
-          <span style={{ fontFamily: F.sans, fontSize: 13, color: T.coal }}>
-            You have an unfinished <strong>{draft.type}</strong> session ({Math.floor(draft.elapsed / 60)}m {draft.elapsed % 60}s in).
-          </span>
-          <button onClick={() => {
-            unlockAudio();
-            router.push(`/interview?type=${draft.type}&difficulty=${draft.difficulty}&focus=${draft.focus || "general"}&resume=true`);
-          }} style={{
-            padding: "6px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-            background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`, color: T.cream,
-            fontFamily: F.sans, fontSize: 12, fontWeight: 600,
-          }}>Resume</button>
-          <button onClick={() => {
-            localStorage.removeItem(`hirestepx_interview_draft_${user?.id || "anon"}`);
-            setShowDraftBanner(false);
-          }} style={{
-            padding: "6px 16px", borderRadius: 10, cursor: "pointer",
-            background: "transparent", border: `1px solid ${T.line}`, color: T.inkFaint,
-            fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-          }}>Discard</button>
-        </div>
-      )}
-
       {/* ─── Top Bar — same 3-col grid + tokens used by auth + onboarding. ─── */}
       <div style={{ padding: "32px 48px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", borderBottom: `1px solid ${T.line}`, background: T.cream, gap: 16 }}>
         <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ justifySelf: "start", cursor: "pointer" }} title="Back to dashboard">
           <Wordmark />
         </div>
-        {/* Stepper */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {["Session", "Ready"].map((label, i) => {
-            const stepNum = i + 1;
-            const isCompleted = step > stepNum;
-            const isCurrent = step === stepNum;
-            const canClick = isCompleted;
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div
-                  role={canClick ? "button" : undefined}
-                  tabIndex={canClick ? 0 : undefined}
-                  onClick={canClick ? () => setStep(stepNum) : undefined}
-                  onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(stepNum); } } : undefined}
-                  style={{
-                    width: 26, height: 26, borderRadius: "50%",
-                    background: isCompleted ? `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})` : isCurrent ? T.indigo100 : "transparent",
-                    border: `1.5px solid ${step >= stepNum ? T.indigo : "rgba(14,12,8,0.08)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-                    boxShadow: isCurrent ? "0 0 12px rgba(49,46,129,0.15)" : "none",
-                    cursor: canClick ? "pointer" : "default",
-                  }}>
-                  {isCompleted ? (
-                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.cream} strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  ) : (
-                    <span style={{ fontFamily: F.mono, fontSize: 10, fontWeight: 600, color: isCurrent ? T.indigo : T.inkFaint }}>{stepNum}</span>
-                  )}
-                </div>
-                <span
-                  role={canClick ? "button" : undefined}
-                  tabIndex={canClick ? 0 : undefined}
-                  onClick={canClick ? () => setStep(stepNum) : undefined}
-                  onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStep(stepNum); } } : undefined}
-                  style={{ fontFamily: F.sans, fontSize: 11, color: isCurrent ? T.coal : T.inkFaint, fontWeight: isCurrent ? 500 : 400, cursor: canClick ? "pointer" : "default" }}>{label}</span>
-                {i < 1 && <div style={{ width: 24, height: 1, background: isCompleted ? `linear-gradient(90deg, ${T.indigo}, rgba(49,46,129,0.2))` : "rgba(14,12,8,0.06)", transition: "background 0.4s", borderRadius: 1 }} />}
-              </div>
-            );
-          })}
-        </div>
+        <div style={{ justifySelf: "center" }} />
         {/* Identity chip + escape link — matches the auth/onboarding pattern. */}
         <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 14 }}>
           {(() => {
@@ -576,11 +391,9 @@ export default function SessionSetup() {
 
       {/* ─── Content ─── */}
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "clamp(24px, 4vh, 64px) 32px 80px", overflow: "auto" }}>
-        <div key={step} style={{ width: "100%", maxWidth: step === 2 ? "min(680px, calc(100vw - 32px))" : "min(1080px, calc(100vw - 32px))", transition: "max-width 0.4s ease", animation: "fadeUp 0.3s ease" }}>
+        <div style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
 
-          {/* ════════════════ STEP 1: Set up your session ════════════════ */}
-          {step === 1 && (
-            <div>
+          <div>
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
               <div style={{ marginBottom: 36, textAlign: "center" }} className="fade-up-1">
                 <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2.5rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0, whiteSpace: "nowrap" }}>
@@ -602,16 +415,6 @@ export default function SessionSetup() {
                     <div>
                       <AutocompleteInput id="setup-company" value={targetCompany} onChange={setTargetCompany} suggestions={COMPANY_SUGGESTIONS} placeholder="e.g. Google, Stripe..." label="Company (optional)" />
                     </div>
-                    {!isFirstTimer && (
-                      <div>
-                        <AutocompleteInput id="setup-current-city" value={currentCity} onChange={setCurrentCity} suggestions={CITY_SUGGESTIONS} placeholder="e.g. Chennai, Pune..." label="Current City" />
-                      </div>
-                    )}
-                    {!isFirstTimer && (
-                      <div>
-                        <AutocompleteInput id="setup-job-city" value={jobCity} onChange={setJobCity} suggestions={CITY_SUGGESTIONS} placeholder="e.g. Bangalore, Remote..." label="Job Location" />
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -631,12 +434,12 @@ export default function SessionSetup() {
                     </div>
                     <button
                       type="button"
-                      aria-label="Pick Mixed if you're unsure"
-                      onClick={() => { setShowAllFocus(true); setInterviewFocus(["Behavioral"]); }}
+                      aria-label="Use the recommended focus"
+                      onClick={() => { setShowAllFocus(true); setInterviewFocus([recommendedFocus]); }}
                       style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: T.indigo, background: "transparent", border: 0, cursor: "pointer", padding: 0 }}
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
-                      Not sure? Start with Behavioral.
+                      Not sure? Use the recommendation.
                     </button>
                   </div>
                   <div className="ob-s2-focus-grid">
@@ -703,415 +506,44 @@ export default function SessionSetup() {
                   )}
                 </div>
 
-                {/* ── Session length — canvas-style: clean label, no card chrome ── */}
-                <div className="fade-up-3">
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Session length</div>
-                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>Pick how much time you want to spend.</div>
-                  </div>
-                  <div className="ob-s2-session-grid">
-                    {[
-                      { value: "10m", label: "10 min", desc: "Quick warmup", sub: "2–3 questions", detail: "Good for a confidence check or a single topic", paidOnly: false },
-                      { value: "15m", label: "15 min", desc: "Standard interview", sub: "4–5 questions with follow-ups", detail: "Closest to a real interview round", recommended: true, paidOnly: true },
-                      { value: "25m", label: "25 min", desc: "Full simulation", sub: "6–8 questions, deep follow-ups", detail: "End-to-end mock with detailed scoring", paidOnly: true },
-                    ].map(opt => {
-                      const locked = opt.paidOnly && isFreeUser && !(has15minTaste && opt.value === "15m");
-                      const sel = sessionLength === opt.value;
-                      return (
-                        <button key={opt.value} onClick={() => { if (locked) setShowUpgradeModal(true); else setSessionLength(opt.value); }}
-                          style={{
-                            padding: "16px 14px", borderRadius: 12, cursor: "pointer", textAlign: "center", position: "relative",
-                            background: sel ? "rgba(49,46,129,0.08)" : "transparent",
-                            border: `1.5px solid ${sel ? T.indigo : T.line}`,
-                            boxShadow: sel ? "0 0 16px rgba(49,46,129,0.06)" : "none",
-                            transition: "all 0.2s", opacity: locked ? 0.5 : 1,
-                          }}>
-                          {has15minTaste && opt.value === "15m" ? (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: F.sans, fontSize: 10, fontWeight: 700, color: T.cream, background: T.success, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Free taste!</span>
-                          ) : "recommended" in opt && opt.recommended && !locked && (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: F.sans, fontSize: 10, fontWeight: 700, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Recommended</span>
-                          )}
-                          {locked && (
-                            <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontFamily: F.sans, fontSize: 10, fontWeight: 700, color: T.indigo, background: T.indigo100, border: "1px solid rgba(49,46,129,0.2)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 3 }}>
-                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                              Upgrade
-                            </span>
-                          )}
-                          <span style={{ fontFamily: F.sans, fontSize: 20, fontWeight: 600, color: sel ? T.indigo : T.coal, display: "block", marginBottom: 2 }}>{opt.label}</span>
-                          <span style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: sel ? T.coal : T.inkSoft, display: "block", marginBottom: 2 }}>{opt.desc}</span>
-                          <span style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, display: "block", marginBottom: 2 }}>{opt.sub}</span>
-                          {"detail" in opt && <span style={{ fontFamily: F.sans, fontSize: 10, color: T.inkFaint, opacity: 0.7, display: "block", lineHeight: 1.3 }}>{opt.detail}</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Negotiation style is now randomly assigned per session in useInterviewEngine */}
-
-                {/* ── Section 4: Interview Language — hidden for now ── */}
               </div>
             </div>
-          )}
 
-          {/* ════════════════ STEP 2: Permissions & Review ════════════════ */}
-          {step === 2 && (
-            <div>
-              <div style={{ marginBottom: 32 }} className="fade-up-1">
-                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 2 — Almost There</p>
-                <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
-                  Allow permissions &{" "}
-                  <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>review</em>
-                </h2>
-                <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, lineHeight: 1.7 }}>
-                  We need microphone access for the interview. Review your profile below, then you're ready to go.
-                </p>
-              </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                {/* ── Mic Permission — compact inline bar ── */}
-                <div className={`ob-card fade-up-1 ${micStatus !== "granted" ? "ob-mic-pulse" : ""}`} style={{
-                  borderRadius: 12, padding: "14px 20px",
-                  display: "flex", alignItems: "center", gap: 14,
-                  border: `1px solid ${micStatus === "granted" ? "rgba(21,128,61,0.15)" : "rgba(49,46,129,0.15)"}`,
-                  background: micStatus === "granted" ? "rgba(21,128,61,0.03)" : undefined,
-                }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: micStatus === "granted" ? "rgba(21,128,61,0.08)" : "rgba(14,12,8,0.03)", border: `1px solid ${micStatus === "granted" ? "rgba(21,128,61,0.2)" : "rgba(14,12,8,0.06)"}` }}>
-                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={micStatus === "granted" ? T.success : T.inkFaint} strokeWidth="1.5" strokeLinecap="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    </svg>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: micStatus === "granted" ? T.success : T.coal }}>
-                      {micStatus === "granted" ? "Microphone connected" : micStatus === "denied" ? "Mic denied — you can type instead" : "Microphone"}
-                    </span>
-                    {micStatus === "granted" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ width: 60, height: 3, borderRadius: 2, background: "rgba(14,12,8,0.06)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", borderRadius: 2, background: micTestState === "fail" ? T.error : T.success, width: `${Math.max(5, micLevel)}%`, transition: "width 0.1s" }} />
-                          </div>
-                          <span style={{ fontFamily: F.sans, fontSize: 10, color: micTestState === "fail" ? T.error : T.success }}>
-                            {micTestState === "testing" ? "Say something..." : micTestState === "pass" ? "Mic working" : micTestState === "fail" ? "No audio detected" : "Live"}
-                          </span>
-                        </div>
-                        {micTestState === "fail" && (
-                          <span style={{ fontFamily: F.sans, fontSize: 11, color: T.error, lineHeight: 1.4 }}>
-                            We didn't pick up any audio. Check that the correct mic is selected in your browser and try again.
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {(micStatus !== "granted" || micTestState === "fail") && (
-                    <button onClick={() => {
-                      if (micTestState === "fail") {
-                        // Re-test: stop existing stream and re-request
-                        cancelAnimationFrame(animFrameRef.current);
-                        streamRef.current?.getTracks().forEach(t => t.stop());
-                        audioCtxRef.current?.close().catch(() => {});
-                        setMicStatus("idle");
-                        setMicTestState("idle");
-                        setMicLevel(0);
-                        setTimeout(() => requestMic(), 100);
-                      } else {
-                        requestMic();
-                      }
-                    }}
-                      style={{ fontFamily: F.sans, fontSize: 12, fontWeight: 600, color: T.indigo, background: "rgba(49,46,129,0.08)", border: `1px solid rgba(49,46,129,0.2)`, borderRadius: 8, padding: "7px 16px", cursor: "pointer", transition: "all 0.2s", flexShrink: 0 }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.15)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.08)"; }}>
-                      {micStatus === "requesting" ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ width: 12, height: 12, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                          Requesting...
-                        </span>
-                      ) : micTestState === "fail" ? "Re-test Mic" : micStatus === "denied" ? "Retry" : "Allow"}
-                    </button>
-                  )}
-                </div>
-
-                {/* ── Your Profile Card ── */}
-                <div className="ob-card fade-up-2" style={{ borderRadius: 16, padding: "24px 28px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </div>
-                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Your Profile</span>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                    {[
-                      { label: "Name", value: user?.name?.trim() || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, editStep: 0 },
-                      { label: "Resume", value: user?.resumeFileName || "Not uploaded", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, editStep: 0 },
-                      { label: "Target Role", value: targetRole || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, editStep: 1 },
-                      { label: "Target Company", value: targetCompany || "Exploring", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg>, editStep: 1 },
-                      { label: "Location", value: currentCity && jobCity && currentCity !== jobCity ? `${currentCity} → ${jobCity}` : jobCity || currentCity || "Not set", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, editStep: 1 },
-                      { label: "Interview Focus", value: interviewFocus.length > 0 ? interviewFocus.join(", ") : "None selected", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, editStep: 1 },
-                      { label: "Session Length", value: sessionLengthLabel, icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, editStep: 1 },
-                    ].map((item, i, arr) => (
-                      <div key={item.label}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 0" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                            <span style={{ flexShrink: 0, display: "flex" }}>{item.icon}</span>
-                            <span style={{ fontFamily: F.sans, fontSize: 13, color: T.inkFaint, flexShrink: 0 }}>{item.label}</span>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: item.value === "Not set" || item.value === "Not uploaded" || item.value === "None selected" ? "rgba(154,149,144,0.5)" : T.coal, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
-                              {item.value}
-                            </span>
-                            {item.editStep > 0 && (
-                              <button
-                                onClick={() => setStep(item.editStep)}
-                                style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", opacity: 0.3, transition: "opacity 0.2s" }}
-                                onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.8"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.3"; }}
-                                aria-label={`Edit ${item.label}`}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {i < arr.length - 1 && <div style={{ height: 1, background: "rgba(14,12,8,0.04)" }} />}
-                      </div>
-                    ))}
-                  </div>
-                  {user?.resumeText && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: 10, background: "rgba(14,12,8,0.02)", border: `1px solid ${T.line}`, marginTop: 16 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <span style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>Use resume for personalized questions</span>
-                      </div>
-                      <div role="switch" aria-checked={useResume} tabIndex={0} onClick={() => setUseResume(!useResume)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setUseResume(!useResume); } }} style={{
-                        width: 36, height: 20, borderRadius: 10, padding: 2,
-                        background: useResume ? T.success : T.line,
-                        transition: "background 0.2s", cursor: "pointer",
-                      }}>
-                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: T.coal, transform: useResume ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Job Description Paste */}
-                  <div style={{ marginTop: 16 }}>
-                    <div role="button" tabIndex={0} onClick={() => setJobDescription(prev => prev || " ")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setJobDescription(prev => prev || " "); } }} style={{
-                      display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "10px 0",
-                    }}>
-                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T.inkFaint} strokeWidth="1.5" strokeLinecap="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                      </svg>
-                      <span style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
-                        {jobDescription.trim() ? "Job description added" : "Paste a job description (optional)"}
-                      </span>
-                      {jobDescription.trim() && <span style={{ fontFamily: F.sans, fontSize: 10, color: T.success }}>&#10003;</span>}
-                    </div>
-                    {jobDescription !== "" && (
-                      <textarea
-                        value={jobDescription}
-                        onChange={(e) => { setJobDescription(e.target.value); setJdAnalysis(null); }}
-                        placeholder="Paste the job posting here — questions will be tailored to this specific role..."
-                        rows={4}
-                        maxLength={2000}
-                        style={{
-                          width: "100%", fontFamily: F.sans, fontSize: 12, color: T.inkSoft,
-                          background: T.creamSoft, border: `1px solid ${T.line}`,
-                          borderRadius: 10, padding: "12px 14px", outline: "none", resize: "vertical",
-                          lineHeight: 1.6, boxSizing: "border-box",
-                        }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = T.indigo; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = T.line; if (!e.currentTarget.value.trim()) { setJobDescription(""); setJdAnalysis(null); } }}
-                        // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated action: textarea opened by clicking "paste JD"
-                        autoFocus
-                      />
-                    )}
-
-                    {/* Analyze button - show when JD has content and user has resume */}
-                    {jobDescription.trim().length > 30 && user?.resumeText && !jdAnalysis && (
-                      <button
-                        onClick={analyzeJDMatch}
-                        disabled={jdAnalyzing}
-                        style={{
-                          marginTop: 8, fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-                          padding: "8px 16px", borderRadius: 8, border: `1px solid ${T.indigo}`,
-                          background: "transparent", color: T.indigo, cursor: jdAnalyzing ? "default" : "pointer",
-                          opacity: jdAnalyzing ? 0.6 : 1, transition: "all 0.2s",
-                        }}
-                      >
-                        {jdAnalyzing ? "Analyzing match..." : "Compare with my resume"}
-                      </button>
-                    )}
-
-                    {/* JD Match Results */}
-                    {jdAnalysis && (
-                      <div style={{
-                        marginTop: 12, padding: 16, borderRadius: 12,
-                        background: "rgba(250,247,240,0.85)", border: `1px solid ${T.line}`,
-                      }}>
-                        {/* Match Score Header */}
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{
-                              width: 40, height: 40, borderRadius: "50%",
-                              background: `conic-gradient(${jdAnalysis.matchScore >= 70 ? T.success : jdAnalysis.matchScore >= 50 ? T.indigo : T.error} ${jdAnalysis.matchScore * 3.6}deg, ${T.line} 0deg)`,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>
-                              <div style={{ width: 30, height: 30, borderRadius: "50%", background: T.white, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <span style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.coal }}>{jdAnalysis.matchScore}</span>
-                              </div>
-                            </div>
-                            <div>
-                              <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>{jdAnalysis.matchLabel}</div>
-                              <div style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint }}>Resume vs Job Description</div>
-                            </div>
-                          </div>
-                          <button onClick={() => setJdAnalysis(null)} style={{ background: "none", border: "none", color: T.inkFaint, cursor: "pointer", fontSize: 16 }} aria-label="Close analysis">&times;</button>
-                        </div>
-
-                        {/* Matched Skills */}
-                        {jdAnalysis.matchedSkills.length > 0 && (
-                          <div style={{ marginBottom: 10 }}>
-                            <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.success, marginBottom: 4 }}>&#10003; Skills You Have</div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                              {jdAnalysis.matchedSkills.map((s, i) => (
-                                <span key={i} style={{ fontFamily: F.sans, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(21,128,61,0.1)", color: T.success, border: "1px solid rgba(21,128,61,0.2)" }}>{s}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Missing Skills */}
-                        {jdAnalysis.missingSkills.length > 0 && (
-                          <div style={{ marginBottom: 10 }}>
-                            <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.error, marginBottom: 4 }}>&#10007; Skills to Highlight</div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                              {jdAnalysis.missingSkills.map((s, i) => (
-                                <span key={i} style={{ fontFamily: F.sans, fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "rgba(196,112,90,0.1)", color: T.error, border: "1px solid rgba(196,112,90,0.2)" }}>{s}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Interview Tips */}
-                        {jdAnalysis.interviewTips.length > 0 && (
-                          <div style={{ marginBottom: 8 }}>
-                            <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.indigo, marginBottom: 4 }}>Interview Tips for This Role</div>
-                            {jdAnalysis.interviewTips.map((tip, i) => (
-                              <div key={i} style={{ fontFamily: F.sans, fontSize: 11, color: T.inkSoft, lineHeight: 1.5, marginBottom: 2 }}>&#8226; {tip}</div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Suggested Focus */}
-                        {jdAnalysis.suggestedFocus && (
-                          <div style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "rgba(49,46,129,0.08)", border: "1px solid rgba(49,46,129,0.15)" }}>
-                            Recommended focus: <strong style={{ color: T.indigo }}>{jdAnalysis.suggestedFocus}</strong>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ─── Navigation — Step 1 uses a wide canvas-style CTA + trust line.
-                Step 2 keeps the Back/Start pair so the user can reverse out. ─── */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 40 }}>
-            <div style={{ display: step === 1 ? "block" : "flex", width: "100%", alignItems: "center", gap: 12 }}>
-              {step !== 1 && (
-                <button onClick={goBack}
-                  style={{
-                    fontFamily: F.sans, fontSize: 14, fontWeight: 500, padding: "14px 20px", borderRadius: 10,
-                    border: `1px solid ${T.line}`, background: "transparent", color: T.inkSoft,
-                    cursor: "pointer", transition: "all 0.2s ease", display: "inline-flex", alignItems: "center", gap: 6,
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.inkSoft; e.currentTarget.style.color = T.coal; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.line; e.currentTarget.style.color = T.inkSoft; }}>
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                  Back
-                </button>
+          {/* ─── Single canvas-style "Start practice" CTA + trust line. ─── */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12, marginTop: 40 }}>
+            <button
+              type="button"
+              onClick={handleStart}
+              disabled={!canProceedStep1 || starting || !isOnline}
+              style={{
+                fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "16px 28px", borderRadius: 10, border: "1px solid transparent",
+                width: "100%",
+                background: T.indigo, color: T.cream,
+                cursor: (!canProceedStep1 || starting || !isOnline) ? "not-allowed" : "pointer",
+                opacity: (!canProceedStep1 || starting || !isOnline) ? 0.5 : 1,
+                transition: "all 160ms ease",
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+                boxShadow: (!canProceedStep1 || starting || !isOnline) ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                letterSpacing: 0.1,
+              }}
+            >
+              {starting ? (
+                <div style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+              ) : null}
+              {starting ? "Starting…" : "Start practice"}
+              {!starting && (
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
               )}
+            </button>
 
-              {step < TOTAL_STEPS ? (
-                <button onClick={goNext} disabled={!canProceedStep1}
-                  style={{
-                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "16px 28px", borderRadius: 10, border: "1px solid transparent",
-                    width: "100%",
-                    background: T.indigo,
-                    color: T.cream,
-                    cursor: !canProceedStep1 ? "not-allowed" : "pointer",
-                    opacity: !canProceedStep1 ? 0.5 : 1,
-                    transition: "all 160ms ease", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    boxShadow: !canProceedStep1 ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-                    letterSpacing: 0.1,
-                  }}>
-                  Continue
-                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                </button>
-              ) : (
-                <>
-                  <button onClick={handleStart} disabled={starting || !isOnline}
-                    style={{
-                      fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
-                      background: (starting || !isOnline) ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
-                      color: (starting || !isOnline) ? "rgba(49,46,129,0.4)" : T.cream,
-                      cursor: (starting || !isOnline) ? "not-allowed" : "pointer",
-                      transition: "all 0.25s ease", display: "inline-flex", alignItems: "center", gap: 8,
-                      boxShadow: (starting || !isOnline) ? "none" : "0 8px 24px rgba(49,46,129,0.2)",
-                    }}
-                    onMouseEnter={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(49,46,129,0.3)"; } }}
-                    onMouseLeave={(e) => { if (!starting && isOnline) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(49,46,129,0.2)"; } }}>
-                    {starting ? (
-                      <div style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                    ) : (
-                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
-                    )}
-                    {starting ? "Starting..." : micStatus === "granted" ? "Start Practice Interview" : "Start with Text Input"}
-                  </button>
-                  <p style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, textAlign: "center", marginTop: 8 }}>
-                    {micStatus !== "granted"
-                      ? "You can type your answers instead of speaking"
-                      : "Your practice interview will start immediately"}
-                  </p>
-                  <button onClick={() => {
-                    const roleText = targetRole ? ` for ${targetRole}` : "";
-                    const companyText = targetCompany ? ` at ${targetCompany}` : "";
-                    const msg = `Hey! I'm prepping${roleText}${companyText} on HireStepX. Want to practice together? Try it out — it's free!\n\nhttps://app.hirestepx.com/session/new`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
-                  }} style={{
-                    fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: "#25D366",
-                    background: "rgba(37,211,102,0.06)", border: "1px solid rgba(37,211,102,0.15)",
-                    borderRadius: 8, padding: "8px 16px", cursor: "pointer", marginTop: 8,
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                  }}>
-                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    Invite a friend to practice
-                  </button>
-                </>
-              )}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Your responses stay private and are never shared.
             </div>
 
-            {/* Trust line — only on Step 1, mirrors the canvas footer. */}
-            {step === 1 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                Your responses stay private and are never shared.
-              </div>
-            )}
-
-            {/* Save status indicator */}
-            {saveStatus !== "idle" && (
-              <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, animation: "fadeUp 0.25s ease-out" }}>
-                {saveStatus === "saving" && <div style={{ width: 10, height: 10, border: `1.5px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />}
-                {saveStatus === "saved" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
-                {saveStatus === "error" && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.error} strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>}
-                <span style={{ fontFamily: F.sans, fontSize: 11, color: saveStatus === "error" ? T.error : saveStatus === "saved" ? T.success : T.inkFaint }}>
-                  {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Progress saved" : "Save failed — your data is safe locally"}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -1173,7 +605,6 @@ export default function SessionSetup() {
           currentTier={user?.subscriptionTier || "free"}
           onPaymentSuccess={(_tier: string, _start: string, _end: string) => {
             setShowUpgradeModal(false);
-            if (sessionLength === "10m") setSessionLength("15m");
           }}
         />
       )}
