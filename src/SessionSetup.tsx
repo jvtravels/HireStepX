@@ -608,11 +608,21 @@ export default function SessionSetup() {
      We need these because navigator.permissions.query for
      "camera" / "microphone" returns "prompt" (not "granted") on Safari,
      Firefox, and many Chromium builds even when the OS grant is cached.
-     Without a hint, refresh = camera mysteriously turns off. */
+     Without a hint, refresh = camera mysteriously turns off.
+
+     Tri-state — true = user opted in, false = user explicitly opted out
+     (skipped or turned off), null = no decision yet. The "false" state
+     is what makes the difference: the browser's permissions.query
+     still says "granted" after a Turn off, so without this distinction
+     a refresh would happily re-acquire the stream against the user's
+     last action. */
   const OPTIN_MIC = "hsx_setup_mic_optin";
   const OPTIN_CAM = "hsx_setup_camera_optin";
-  const readOptIn = (k: string) => {
-    try { return sessionStorage.getItem(k) === "1"; } catch { return false; }
+  const readOptIn = (k: string): boolean | null => {
+    try {
+      const v = sessionStorage.getItem(k);
+      return v === "1" ? true : v === "0" ? false : null;
+    } catch { return null; }
   };
   const writeOptIn = (k: string, on: boolean) => {
     try { sessionStorage.setItem(k, on ? "1" : "0"); } catch { /* private mode */ }
@@ -674,31 +684,44 @@ export default function SessionSetup() {
 
   /* Probe existing permission grants + tab-scoped opt-in on mount so a
      refresh doesn't toss the user back to "idle".
-     - permissions.query reliably says "granted" on Chromium-on-Android
-       and a portion of desktop Chrome.
-     - On Safari/Firefox/many Chromium builds it says "prompt" even when
-       the grant is cached. Hence the sessionStorage opt-in fallback —
-       if the user opted in earlier this tab, re-call getUserMedia.
-       If the OS grant is still cached, browser returns the stream
-       silently. If revoked, the catch path handles it. */
+
+     Decision matrix:
+       opt-in === true   → re-acquire (user opted in earlier this tab)
+       opt-in === false  → DO NOT auto-restore (user explicitly turned
+                            it off / skipped — overrides browser cache)
+       opt-in === null   → consult permissions.query; if browser says
+                            "granted" we treat it as opt-in.
+
+     Without the explicit-false handling, "Turn off" on the camera card
+     followed by a refresh would helpfully re-enable the camera, which
+     ignores the user's most recent action. */
   useEffect(() => {
     let mounted = true;
     const probe = async () => {
-      let micGranted = readOptIn(OPTIN_MIC);
-      let camGranted = readOptIn(OPTIN_CAM);
+      const micPref = readOptIn(OPTIN_MIC);
+      const camPref = readOptIn(OPTIN_CAM);
+      let micGranted = micPref === true;
+      let camGranted = camPref === true;
       const perms = (navigator as Navigator & { permissions?: { query: (d: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
       if (perms?.query) {
-        try {
-          const mic = await perms.query({ name: "microphone" as PermissionName });
-          if (mic.state === "granted") micGranted = true;
-        } catch { /* unsupported — keep storage hint */ }
-        try {
-          const cam = await perms.query({ name: "camera" as PermissionName });
-          if (cam.state === "granted") camGranted = true;
-        } catch { /* unsupported — keep storage hint */ }
+        if (micPref !== false) {
+          try {
+            const mic = await perms.query({ name: "microphone" as PermissionName });
+            if (mic.state === "granted") micGranted = true;
+          } catch { /* unsupported */ }
+        }
+        if (camPref !== false) {
+          try {
+            const cam = await perms.query({ name: "camera" as PermissionName });
+            if (cam.state === "granted") camGranted = true;
+          } catch { /* unsupported */ }
+        }
       }
       if (mounted && micGranted) void requestMic();
       if (mounted && camGranted) void requestCamera();
+      // Reflect explicit-skipped camera in UI so the user sees their
+      // choice persisted instead of an idle "Allow" card.
+      if (mounted && camPref === false && !camGranted) setCameraStatus("skipped");
     };
     void probe();
     return () => { mounted = false; };
