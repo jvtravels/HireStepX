@@ -65,9 +65,29 @@ export function getCohortAverage(roleFamily: RoleFamily | string, skillName: str
  */
 
 export interface LiveCohort {
-  byName: Record<string, { avg: number; n: number }>;
+  /* p50/p75/p90 are present only when the API returns them — older
+     cached payloads from before the percentile rollout will be missing
+     them, so callers must treat them as optional. */
+  byName: Record<string, { avg: number; n: number; p50?: number; p75?: number; p90?: number }>;
   totalSessions: number;
   lastUpdated: string;
+}
+
+/** Bucket a user's score into a "Top X%" badge string vs the live cohort.
+ *  Returns null when the live cohort lacks percentile data (older
+ *  caches) or the sample is too small to be meaningful. */
+export function bucketPercentile(
+  liveCohort: LiveCohort | null,
+  skillName: string,
+  userScore: number,
+  minSample = 25,
+): "Top 10%" | "Top 25%" | "Top 50%" | null {
+  const live = liveCohort?.byName?.[skillName];
+  if (!live || live.n < minSample) return null;
+  if (typeof live.p90 === "number" && userScore >= live.p90) return "Top 10%";
+  if (typeof live.p75 === "number" && userScore >= live.p75) return "Top 25%";
+  if (typeof live.p50 === "number" && userScore >= live.p50) return "Top 50%";
+  return null;
 }
 
 let LIVE_COHORT_PROMISE: Promise<LiveCohort | null> | null = null;

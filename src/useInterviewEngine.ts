@@ -621,9 +621,23 @@ export function useInterviewEngine() {
     };
   }, [aiVoiceEnabled]);
 
+  /* Mid-answer interrupt support: when the AI talks OVER the candidate
+     (rambling cut-off at 90s), this ref turns on for the duration of
+     the AI's speech. The wrapped STT setter below discards transcript
+     updates while it's on so the AI's own voice — captured back through
+     the speaker→mic loop — doesn't get attributed to the candidate's
+     answer. The ref lives in the engine (not the listening-interjections
+     hook) because it needs to be readable by both the STT setter
+     wrapper here and the rambling effect that toggles it. */
+  const bargeInActiveRef = useRef(false);
+  const setCurrentTranscriptGuarded = useCallback((value: React.SetStateAction<string>) => {
+    if (bargeInActiveRef.current) return;
+    setCurrentTranscript(value);
+  }, []);
+
   // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
   useInterviewSTT(phase, isMuted, speechUnavailable, {
-    setCurrentTranscript, setMicError, setSpeechUnavailable, setShowCaptions,
+    setCurrentTranscript: setCurrentTranscriptGuarded, setMicError, setSpeechUnavailable, setShowCaptions,
     toast, textareaRef, interviewEndedRef,
   }, {
     recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
@@ -669,6 +683,7 @@ export function useInterviewEngine() {
     phase, aiVoiceEnabled, currentStep, currentTranscript, elapsed,
     interviewerGender, interviewEndedRef, textareaRef, handleNextRef,
     setTranscript, speak, toast, formatTime,
+    bargeInActiveRef,
   });
 
   /* Real-time backchannels — see ./_backchannels.ts. Default OFF

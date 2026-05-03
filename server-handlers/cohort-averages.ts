@@ -28,7 +28,11 @@ const LOOKBACK_DAYS = 60;
 const MAX_SESSIONS = 1500;
 
 interface SkillAverages {
-  [skill: string]: { avg: number; n: number };
+  /* p50/p75/p90 added so the UI can render "Top 10%" / "Top 25%" /
+     "Top 50%" badges, not just the avg comparison. avg is kept for
+     backward compatibility with callers that already render the
+     deviation from cohort mean. */
+  [skill: string]: { avg: number; n: number; p50?: number; p75?: number; p90?: number };
 }
 interface CachedResult {
   byName: SkillAverages;
@@ -70,12 +74,26 @@ async function fetchCorpus(): Promise<SessionRow[]> {
   return (await res.json()) as SessionRow[];
 }
 
+/* Pick a percentile from a SORTED ascending array. Linear interpolation
+   between the two surrounding samples — same algorithm as numpy default. */
+function quantile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+  const idx = (sorted.length - 1) * p;
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
 /**
- * Compute per-skill averages from raw sessions. Each row's skill_scores can
- * be either Record<string, number> or Record<string, { score: number }>.
+ * Compute per-skill averages and percentiles from raw sessions. Each
+ * row's skill_scores can be either Record<string, number> or
+ * Record<string, { score: number }>. We retain raw arrays to compute
+ * p50/p75/p90 in addition to the running average.
  */
 function aggregate(rows: SessionRow[]): CachedResult {
-  const sums = new Map<string, { total: number; count: number }>();
+  const buckets = new Map<string, number[]>();
   for (const row of rows) {
     if (!row.skill_scores || typeof row.skill_scores !== "object") continue;
     for (const [name, raw] of Object.entries(row.skill_scores)) {
@@ -86,16 +104,26 @@ function aggregate(rows: SessionRow[]): CachedResult {
         if (typeof s === "number" && isFinite(s)) score = s;
       }
       if (score === null || score < 0 || score > 100) continue;
-      const cur = sums.get(name) || { total: 0, count: 0 };
-      cur.total += score;
-      cur.count += 1;
-      sums.set(name, cur);
+      const cur = buckets.get(name) || [];
+      cur.push(score);
+      buckets.set(name, cur);
     }
   }
   const byName: SkillAverages = {};
-  for (const [name, { total, count }] of sums.entries()) {
-    if (count < 5) continue; // require minimum sample for a meaningful average
-    byName[name] = { avg: Math.round(total / count), n: count };
+  for (const [name, scores] of buckets.entries()) {
+    if (scores.length < 5) continue; // require minimum sample for a meaningful average
+    /* Percentiles need a sorted copy. Sort in place — we don't reuse
+       the array after this point. Mutating bucket is faster than slice
+       for our typical 1k-element arrays. */
+    scores.sort((a, b) => a - b);
+    const total = scores.reduce((s, v) => s + v, 0);
+    byName[name] = {
+      avg: Math.round(total / scores.length),
+      n: scores.length,
+      p50: Math.round(quantile(scores, 0.5)),
+      p75: Math.round(quantile(scores, 0.75)),
+      p90: Math.round(quantile(scores, 0.9)),
+    };
   }
   return { byName, totalSessions: rows.length, lastUpdated: new Date().toISOString() };
 }

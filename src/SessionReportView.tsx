@@ -19,7 +19,7 @@ import {
   type SessionReportReadiness,
   type SessionTrendPoint,
 } from "./dashboardData";
-import { fetchLiveCohort, resolveCohort, type LiveCohort, type RoleFamily } from "./roleBenchmarks";
+import { fetchLiveCohort, resolveCohort, bucketPercentile, type LiveCohort, type RoleFamily } from "./roleBenchmarks";
 import { detectBias, countBias, BIAS_LABELS, type BiasPatternKind } from "./biasDetector";
 import { useAuth } from "./AuthContext";
 
@@ -300,10 +300,14 @@ function bandForPace(v: number) { return v >= 140 && v <= 180 ? "green" : (v >= 
 function bandForEnergy(v: number) { return v >= 60 ? "green" : v >= 40 ? "amber" : "red"; }
 
 /** Skill bar — user score + cohort average overlay (static priors from roleBenchmarks). */
-function SkillBar({ name, score, cohort }: {
+function SkillBar({ name, score, cohort, percentile }: {
   name: string;
   score: number;
   cohort: { avg: number; n: number; live: boolean } | null;
+  /* Pre-computed "Top X%" badge from the live cohort's percentile
+     buckets. Null means either no live data or the user didn't beat
+     the p50 bar (no badge to show). */
+  percentile: "Top 10%" | "Top 25%" | "Top 50%" | null;
 }) {
   const pct = Math.max(0, Math.min(100, score));
   const barColor = pct >= 70 ? c.sage : pct >= 50 ? c.gilt : c.ember;
@@ -318,7 +322,28 @@ function SkillBar({ name, score, cohort }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory }}>{name}</span>
+        <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.ivory }}>{name}</span>
+          {/* Percentile badge — only renders when the user genuinely beat
+              the p50 of the live cohort. Designed to be quietly motivating,
+              not bragging — small font, subtle background, paired with
+              the skill name so the meaning is obvious. */}
+          {percentile && (
+            <span
+              title={`You beat ${percentile === "Top 10%" ? "90%" : percentile === "Top 25%" ? "75%" : "50%"} of recent ${name.toLowerCase()} scores`}
+              style={{
+                fontFamily: font.mono, fontSize: 9, fontWeight: 600,
+                letterSpacing: 0.4, textTransform: "uppercase",
+                padding: "2px 6px", borderRadius: 4,
+                background: percentile === "Top 10%" ? "rgba(143,166,127,0.20)" : "rgba(245,242,237,0.08)",
+                color: percentile === "Top 10%" ? c.sage : c.ivory,
+                border: `1px solid ${percentile === "Top 10%" ? "rgba(143,166,127,0.40)" : "rgba(245,242,237,0.15)"}`,
+              }}
+            >
+              {percentile}
+            </span>
+          )}
+        </span>
         <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
           {delta != null && cohort && (
             <span
@@ -1145,7 +1170,13 @@ export const SessionReportView = memo(function SessionReportView({
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {report.skills.map((s) => (
-                  <SkillBar key={s.name} name={s.name} score={s.score} cohort={resolveCohort(liveCohort, roleFamily, s.name)} />
+                  <SkillBar
+                    key={s.name}
+                    name={s.name}
+                    score={s.score}
+                    cohort={resolveCohort(liveCohort, roleFamily, s.name)}
+                    percentile={bucketPercentile(liveCohort, s.name, s.score)}
+                  />
                 ))}
               </div>
             </div>

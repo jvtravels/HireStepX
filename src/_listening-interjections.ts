@@ -59,6 +59,10 @@ export interface ListeningInterjectionsConfig {
   speak: Speak;
   toast: Toast;
   formatTime: FormatTime;
+  /** Optional barge-in ref. The engine creates and owns this so it can
+   *  also wrap its STT setter to read the same ref — the hook just
+   *  toggles it on/off around the rambling speak() call. */
+  bargeInActiveRef?: RefObject<boolean>;
 }
 
 export interface ListeningInterjectionsHandle {
@@ -67,6 +71,13 @@ export interface ListeningInterjectionsHandle {
   /** Backchannel coordination — backchannel hook reads these to avoid stacking. */
   ramblingFiredRef: RefObject<boolean>;
   softTrackFiredRef: RefObject<boolean>;
+  /** TRUE while the AI is actively talking over the candidate (mid-answer
+   *  interrupt for the rambling cut-off). The engine wraps its STT result
+   *  setter to check this ref and discard transcript updates while it's
+   *  on, so the AI's own voice doesn't get transcribed back into the
+   *  candidate's answer. Goes false again when the interjection finishes
+   *  speaking or errors out — never gets stuck on. */
+  bargeInActiveRef: RefObject<boolean>;
 }
 
 const SILENCE_NUDGE_MS = 25_000;
@@ -88,6 +99,11 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
   const softTrackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const softTrackFiredRef = useRef(false);
   const lastTranscriptChangeRef = useRef(0);
+  /* The engine owns the canonical barge-in ref (so it can also wrap its
+     STT setter against it). If not provided, we fall back to a local ref
+     so the hook still works in isolation / in tests. */
+  const localBargeInRef = useRef(false);
+  const bargeInActiveRef = cfg.bargeInActiveRef ?? localBargeInRef;
 
   /* ── 1. Silence nudge ──────────────────────────────────────────── */
   useEffect(() => {
@@ -159,7 +175,14 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentStep, currentTranscript]);
 
-  /* ── 3. Rambling interject (90s + 40 words) ────────────────────── */
+  /* ── 3. Rambling interject (90s + 40 words) — talks OVER the candidate
+        ──────────────────────────────────────────────────────────────────
+     Real interviewers cut you off when you've been going for 90 seconds
+     with no end in sight. We do the same: speak the interjection on top
+     of the candidate's voice, and flip `bargeInActiveRef` so the engine
+     discards STT input for the duration — otherwise the AI's own voice
+     gets transcribed back into the answer through the speaker→mic loop.
+     The flag is always cleared in a finally so it can never get stuck on. */
   useEffect(() => {
     if (phase !== "listening" || !aiVoiceEnabled) {
       if (ramblingTimerRef.current) { clearTimeout(ramblingTimerRef.current); ramblingTimerRef.current = null; }
@@ -173,8 +196,12 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
       ramblingFiredRef.current = true;
       const interjection = pickRandom(REACTIONS.ramblingInterject);
       setTranscript(prev => [...prev, { speaker: "ai", text: `[${interjection}]`, time: formatTime(elapsed) }]);
-      speak(interjection, () => {}, () => {}, interviewerGender).catch(() => {});
       toast("Tip: Keep answers under 90 seconds for best impact.", "info");
+
+      bargeInActiveRef.current = true;
+      const finishBargeIn = () => { bargeInActiveRef.current = false; };
+      speak(interjection, finishBargeIn, finishBargeIn, interviewerGender)
+        .catch(() => { bargeInActiveRef.current = false; });
     }, RAMBLING_MS);
     return () => {
       if (ramblingTimerRef.current) { clearTimeout(ramblingTimerRef.current); ramblingTimerRef.current = null; }
@@ -208,5 +235,6 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
     resetSilenceNudge: () => { silenceNudgeFiredRef.current = false; },
     ramblingFiredRef,
     softTrackFiredRef,
+    bargeInActiveRef,
   };
 }
