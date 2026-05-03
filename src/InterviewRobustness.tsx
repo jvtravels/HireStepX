@@ -207,7 +207,10 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
    session ever, then never again. Three short callouts cover the
    non-obvious affordances. Dismissal persists in localStorage. */
 
-const COACHMARK_LS_KEY = "hsx-iv-coachmarks-dismissed-v1";
+/* v2: expanded from 3 tips to 5 — added the "I may stay quiet" and
+   "I may interrupt" social cues. Bumping the key reshows the coachmark
+   for existing users once so they see the new expectations. */
+const COACHMARK_LS_KEY = "hsx-iv-coachmarks-dismissed-v2";
 
 export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
   const [open, setOpen] = useState(false);
@@ -237,16 +240,32 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
     };
   }, [open, dismiss]);
   if (!open) return null;
+  /* Five tips, intentionally chosen to set expectations about how the
+     conversation actually unfolds. The first three are mechanics
+     (input modes, repeat, autosave); the last two are social cues
+     candidates need to know upfront — that the AI may stay silent on
+     purpose, and may interrupt if they ramble. Without these, users
+     interpret silence as a bug and interruption as the AI being broken. */
   const tips = [
     {
       kbd: "Space",
-      title: "Voice or text",
-      body: "Just start speaking — we&rsquo;re always listening. Press <strong>Space</strong> when you&rsquo;re done. Or type instead — both work.",
+      title: "Voice or text — both work",
+      body: "Just start speaking. We&rsquo;re always listening. Press <strong>Space</strong> when you&rsquo;re done, or type instead.",
     },
     {
       kbd: "R",
       title: "Repeat the question",
-      body: "Press R or tap the Repeat button if you missed what was asked. Real interviewers do it too.",
+      body: "Press R or tap Repeat if you missed what was asked. Real interviewers do it too.",
+    },
+    {
+      kbd: "···",
+      title: "Sometimes I&rsquo;ll stay quiet",
+      body: "If your answer is good but vague, I might not jump in right away. The silence is a hint — there&rsquo;s usually one more detail worth adding.",
+    },
+    {
+      kbd: "→",
+      title: "I may interrupt",
+      body: "If you&rsquo;ve been going for a while, I&rsquo;ll cut in to keep us on time. Don&rsquo;t take it personally — same as a real interview.",
     },
     {
       kbd: "✓",
