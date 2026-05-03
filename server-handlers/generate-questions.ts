@@ -402,6 +402,18 @@ Each step: {"type":"intro|question|closing","aiText":"2-3 sentences spoken natur
 
 ACCENT MARKUP: Inside aiText, wrap exactly ONE emphasis word in *asterisks* — the single most evocative word the candidate would lock onto when reading the question. Pick a noun or verb (never a, the, is, you, your, etc.). One word only, never a phrase. Skip the markup entirely if no single word stands out. The asterisks render as italic-copper accent in the UI (typographic flair, not for spoken cadence). The TTS reads the word normally — asterisks are stripped before speech.
 
+PROSODY MARKUP (separate from accent markup, for the SPOKEN cadence): Sprinkle these markers sparingly inside aiText so the TTS engine can render natural pauses. Use AT MOST 1-2 markers per question — too many breaks the cadence and feels stilted.
+  [pause]       — short pause (~250ms), use after a setup clause or before a probe ("Walk me through it. [pause] What was the hardest part?")
+  [pause:long]  — longer pause (~600ms), only at a natural section break or before a stretch question
+  _word_        — slight verbal stress on a single word (separate from the visual *accent* markup; this one influences spoken delivery)
+  __word__      — strong verbal stress (use rarely, for genuinely emphatic words)
+Do NOT use these markers in intro or closing text — they're for question cadence only. Skip them entirely if a question reads cleanly without any pauses.
+
+Examples:
+  "Tell me about a *time* you took an unpopular decision. [pause] What did the team say?"
+  "Walk me through your toughest debug. [pause] And — what's the _one_ thing you'd do differently?"
+  "Why this company, [pause] and why now?"
+
 Examples:
   "Tell me about a *time* you led without authority. Walk me through what happened."
   "Walk me through a *project* where you had to convince a senior leader. What was their objection?"

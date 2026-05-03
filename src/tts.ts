@@ -893,24 +893,48 @@ export async function speakAs(
 }
 
 /* ─── Unified speak function ─── */
-import { stripProsodyMarkup } from "./_prosody";
+import { stripProsodyMarkup, renderForCartesia } from "./_prosody";
+
+/* Prosody-rendering feature flag. When ON, `_emphasis_` and `[pause]`
+   markers in the LLM output get rendered to provider-native cadence
+   (Cartesia respects ellipsis as a measurable pause, so the renderer
+   converts `[pause]` → `… ` and drops the inline emphasis markers
+   since Cartesia doesn't expose SSML on the realtime endpoint). When
+   OFF, markers are stripped entirely — the safe default until we've
+   verified the rendered audio sounds right on real devices.
+
+   Same shape as the backchannels flag — flip via DevTools or the
+   exported helper below. */
+const PROSODY_FLAG_KEY = "hsx-prosody";
+function isProsodyEnabled(): boolean {
+  try { return typeof localStorage !== "undefined" && localStorage.getItem(PROSODY_FLAG_KEY) === "on"; }
+  catch { return false; }
+}
+export function setProsodyEnabled(enabled: boolean): void {
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (enabled) localStorage.setItem(PROSODY_FLAG_KEY, "on");
+    else localStorage.removeItem(PROSODY_FLAG_KEY);
+  } catch { /* localStorage may be blocked (Safari private mode) */ }
+}
+
 /**
  * Strip markdown / collapse whitespace before sending text to TTS providers.
  * Saves billable characters on the free tier and removes literal "**" / "##"
  * that some engines pronounce. Idempotent.
  *
- * Also defensively strips prosody markup (`_emphasis_`, `[pause]`, etc.)
- * — the prosody renderers in src/_prosody.ts are wired in but the LLM
- * prompt doesn't yet emit them. If the model starts producing markup
- * before we live-test the provider-specific renderers, this guard
- * prevents literal pronunciation of "underscore time underscore" etc.
+ * Prosody markup handling: when the feature flag is ON, `[pause]` and
+ * friends are converted to provider-native pauses (ellipsis for the
+ * Cartesia/browser path). When OFF (default), they're stripped — same
+ * defensive guard as before, so a model emitting markup before we
+ * live-test never speaks "underscore time underscore" literally.
  */
 function sanitizeForTTS(text: string): string {
   if (!text) return text;
-  // Strip prosody markup first — the markdown stripper below would
-  // otherwise treat _word_ italic as content to preserve.
-  const noMarkup = stripProsodyMarkup(text);
-  return noMarkup
+  // Render or strip prosody markup first — the markdown stripper below
+  // would otherwise treat _word_ italic as content to preserve.
+  const prosodyHandled = isProsodyEnabled() ? renderForCartesia(text) : stripProsodyMarkup(text);
+  return prosodyHandled
     .replace(/```[\s\S]*?```/g, " ")          // fenced code blocks
     .replace(/`([^`]+)`/g, "$1")              // inline code
     .replace(/\*\*([^*]+)\*\*/g, "$1")        // bold

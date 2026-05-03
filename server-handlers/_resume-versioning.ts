@@ -44,7 +44,11 @@ export function normalizeResumeText(text: string): string {
     .replace(/[\u2022\u2023\u25E6\u2043\u00B7]/g, "-")
     // Strip zero-width / BOM / formatting marks that survive PDF text
     // extraction unevenly across browsers (ZWSP, ZWNJ, ZWJ, BOM, soft
-    // hyphen, word joiner, LRM/RLM, ZWNBSP).
+    // hyphen, word joiner, LRM/RLM, ZWNBSP). The class includes ZWJ
+    // (\u200D) — the linter warns because ZWJ can combine with surrounding
+    // chars, but stripping orphan ZWJs out of extracted text is exactly
+    // what we want here, so the warning is suppressed with intent.
+    // eslint-disable-next-line no-misleading-character-class
     .replace(/[\u00AD\u200B\u200C\u200D\u200E\u200F\u2060\uFEFF]/g, "")
     // Non-breaking spaces and exotic spaces → regular space
     .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, " ")
