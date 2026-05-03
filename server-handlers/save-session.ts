@@ -24,6 +24,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import { computeCurrentStreak, pickStreakMilestone } from "./_streak-reward";
 import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -254,6 +255,42 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} streakReward=${streakReward ? streakReward.milestone : "-"} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
+
+  // ─── Eager grading kickoff ───
+  // The session row is durable in the DB at this point. Kick off the
+  // LLM grading asynchronously so the report is already cached by
+  // the time the user navigates to it — eliminates the 30s wait at
+  // the most fragile point in the funnel. Fire-and-forget; never
+  // blocks save-session, never throws. Idempotent at the handler
+  // level (evaluate-session checks report_json cache before calling
+  // the LLM, so this can race with the user's actual report-view
+  // request without producing two LLM calls).
+  //
+  // Skipped when:
+  //   - No transcript in the body (degenerate session)
+  //   - No Authorization header (shouldn't happen post-auth, but
+  //     guard against it because we forward this header verbatim)
+  //   - resolveBaseUrl returns null (no APP_URL + unparseable req.url)
+  const authHeader = req.headers.get("authorization");
+  const baseUrl = resolveBaseUrl(req.url);
+  const transcript = Array.isArray(body.transcript)
+    ? (body.transcript as Array<{ role: string; text: string }>)
+    : [];
+  if (authHeader && baseUrl && transcript.length > 0) {
+    kickoffEagerGrade({
+      baseUrl,
+      authorization: authHeader,
+      sessionId: sessionRow.id,
+      transcript,
+      meta: {
+        type: sessionRow.type,
+        focus: sessionRow.focus,
+        role: asString(body.type, 64),
+        targetCompany: asString((body as { targetCompany?: unknown }).targetCompany, 64) || undefined,
+        duration: sessionRow.duration,
+      },
+    });
+  }
 
   await captureServerEvent("interview_completed", distinctIdFrom(req, auth.userId), {
     session_id: sessionRow.id,
