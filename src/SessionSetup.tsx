@@ -604,6 +604,20 @@ export default function SessionSetup() {
     return name === "NotFoundError" || name === "OverconstrainedError" ? "no-device" : "blocked";
   };
 
+  /* Tab-scoped opt-in flags. Survive a refresh, drop on tab close.
+     We need these because navigator.permissions.query for
+     "camera" / "microphone" returns "prompt" (not "granted") on Safari,
+     Firefox, and many Chromium builds even when the OS grant is cached.
+     Without a hint, refresh = camera mysteriously turns off. */
+  const OPTIN_MIC = "hsx_setup_mic_optin";
+  const OPTIN_CAM = "hsx_setup_camera_optin";
+  const readOptIn = (k: string) => {
+    try { return sessionStorage.getItem(k) === "1"; } catch { return false; }
+  };
+  const writeOptIn = (k: string, on: boolean) => {
+    try { sessionStorage.setItem(k, on ? "1" : "0"); } catch { /* private mode */ }
+  };
+
   const requestMic = async () => {
     setMicStatus("requesting");
     setMicDenyReason(null);
@@ -612,8 +626,10 @@ export default function SessionSetup() {
       micStreamRef.current = stream;
       setMicStatus("granted");
       startLevelMeter(stream);
+      writeOptIn(OPTIN_MIC, true);
       track("permission_granted", { kind: "mic" });
     } catch (e) {
+      writeOptIn(OPTIN_MIC, false);
       const reason = reasonFromError(e);
       setMicDenyReason(reason);
       setMicStatus("denied");
@@ -628,8 +644,10 @@ export default function SessionSetup() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       cameraStreamRef.current = stream;
       setCameraStatus("granted");
+      writeOptIn(OPTIN_CAM, true);
       track("permission_granted", { kind: "camera" });
     } catch (e) {
+      writeOptIn(OPTIN_CAM, false);
       const reason = reasonFromError(e);
       setCameraDenyReason(reason);
       setCameraStatus("denied");
@@ -641,6 +659,7 @@ export default function SessionSetup() {
     cameraStreamRef.current?.getTracks().forEach(t => t.stop());
     cameraStreamRef.current = null;
     setCameraStatus("skipped");
+    writeOptIn(OPTIN_CAM, false);
     track("permission_skipped", { kind: "camera" });
   };
 
@@ -650,25 +669,36 @@ export default function SessionSetup() {
     cameraStreamRef.current?.getTracks().forEach(t => t.stop());
     cameraStreamRef.current = null;
     setCameraStatus("skipped");
+    writeOptIn(OPTIN_CAM, false);
   };
 
-  /* Probe existing browser permission grants on mount so returning users
-     don't have to re-click "Allow". navigator.permissions.query for
-     microphone/camera isn't supported on Safari pre-16 — wrap in
-     try/catch so unsupported browsers fall back to the manual flow. */
+  /* Probe existing permission grants + tab-scoped opt-in on mount so a
+     refresh doesn't toss the user back to "idle".
+     - permissions.query reliably says "granted" on Chromium-on-Android
+       and a portion of desktop Chrome.
+     - On Safari/Firefox/many Chromium builds it says "prompt" even when
+       the grant is cached. Hence the sessionStorage opt-in fallback —
+       if the user opted in earlier this tab, re-call getUserMedia.
+       If the OS grant is still cached, browser returns the stream
+       silently. If revoked, the catch path handles it. */
   useEffect(() => {
     let mounted = true;
     const probe = async () => {
+      let micGranted = readOptIn(OPTIN_MIC);
+      let camGranted = readOptIn(OPTIN_CAM);
       const perms = (navigator as Navigator & { permissions?: { query: (d: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
-      if (!perms?.query) return;
-      try {
-        const mic = await perms.query({ name: "microphone" as PermissionName });
-        if (mounted && mic.state === "granted") void requestMic();
-      } catch { /* unsupported */ }
-      try {
-        const cam = await perms.query({ name: "camera" as PermissionName });
-        if (mounted && cam.state === "granted") void requestCamera();
-      } catch { /* unsupported */ }
+      if (perms?.query) {
+        try {
+          const mic = await perms.query({ name: "microphone" as PermissionName });
+          if (mic.state === "granted") micGranted = true;
+        } catch { /* unsupported — keep storage hint */ }
+        try {
+          const cam = await perms.query({ name: "camera" as PermissionName });
+          if (cam.state === "granted") camGranted = true;
+        } catch { /* unsupported — keep storage hint */ }
+      }
+      if (mounted && micGranted) void requestMic();
+      if (mounted && camGranted) void requestCamera();
     };
     void probe();
     return () => { mounted = false; };
