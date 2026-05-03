@@ -103,19 +103,25 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
           {displayCompany && (
             <>
               <span style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal }}>{displayCompany}</span>
-              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>·</span>
+              <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>·</span>
             </>
           )}
-          <span style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal }}>{displayRole}</span>
-          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>·</span>
-          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper }}>{displayFocus}</span>
+          {/* Role + focus chips wrapped in iv-hide-mobile because at ≤480px
+              the header was carrying 11 datapoints in 40px — wordmark +
+              dot + company + dot + role + dot + focus + (right side) network
+              + spinner + dot + timer. On a 360-wide phone that wrapped
+              ungracefully. Company stays (it's the most identifying chip);
+              role + focus drop out. Both still appear in the score report. */}
+          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal }}>{displayRole}</span>
+          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>·</span>
+          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper }}>{displayFocus}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <NetworkIndicator />
           {llmLoading && currentStep <= 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 10, height: 10, border: "1.5px solid rgba(180,83,9,0.30)", borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>Personalizing questions...</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions...</span>
             </div>
           )}
           {!llmLoading && saveWarning && saveWarning.includes("retry") && currentStep <= 1 && onRetry && (
@@ -142,16 +148,16 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
       </div>
       {phase !== "done" && (
         <div style={{ padding: "0 24px 10px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontFamily: ef.sans, fontSize: isSalaryNegotiation ? 13 : 11, fontWeight: 600, color: isCurrentFollowUp ? e.copper : e.coal }}>
+          <div style={{ marginBottom: 4 }}>
+            {/* The numeric "X%" indicator that lived here was redundant with
+                the visible pip fill below — pure visual noise. The pips ARE
+                the percentage; reading both takes longer than reading either. */}
+            <span style={{ fontFamily: ef.sans, fontSize: isSalaryNegotiation ? 13 : 12, fontWeight: 600, color: isCurrentFollowUp ? e.copper : e.coal }}>
               {isSalaryNegotiation
                 ? `${getNegPhaseLabel(currentQuestionNum)} · Round ${Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)} of ${baseQuestionCount || totalQuestions}`
                 : isCurrentFollowUp
                 ? `Follow-up · Question ${Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)} of ${baseQuestionCount || totalQuestions}`
                 : `Question ${currentQuestionNum} of ${baseQuestionCount || totalQuestions}`}
-            </span>
-            <span style={{ fontFamily: ef.mono, fontSize: 10, color: e.inkSoft }}>
-              {Math.round((Math.min(currentQuestionNum, baseQuestionCount || totalQuestions) / (baseQuestionCount || totalQuestions)) * 100)}%
             </span>
           </div>
           <div style={{ display: "flex", gap: 3, height: 3 }}>
@@ -163,7 +169,11 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
                   : i === Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
                     ? "rgba(180,83,9,0.40)"
                     : "rgba(20,17,10,0.05)",
-                transition: "all 0.4s ease",
+                /* Animate just `background` — the only thing that actually changes
+                   between fill states. `transition: all` would force the browser to
+                   interpolate every property on every render, including layout-
+                   triggering ones like `flex`. */
+                transition: "background 0.4s ease",
               }} />
             ))}
           </div>
@@ -190,7 +200,10 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           : "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.3) 70%, transparent 100%)",
         border: `1px solid ${phase === "speaking" ? "rgba(180,83,9,0.20)" : phase === "listening" ? e.indigoRing : e.line}`,
         display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 0.4s ease",
+        /* Avatar halo cross-fades between phases — animate the visual properties
+           that actually change (background, border, shadow) and let layout
+           settle without `all`-induced re-interpolation. */
+        transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
         boxShadow: phase === "speaking"
           ? "0 0 32px -8px rgba(180,83,9,0.18)"
           : phase === "listening"
@@ -230,7 +243,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           // before, too small for reliable tap on mobile.
           borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
           display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "all 0.2s", marginTop: 4,
+          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
         }}
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
         onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
@@ -275,7 +288,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
           return (
             <div key={member.title} role="img" aria-label={`${member.name}, ${member.title}${isActive ? (phase === "speaking" ? ", currently speaking" : phase === "thinking" ? ", preparing question" : "") : ""}`} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-              transition: "all 0.4s ease",
+              transition: "opacity 0.4s ease, transform 0.4s ease",
               opacity: isActive ? 1 : 0.5,
               transform: isActive ? "translateY(-4px)" : "translateY(0)",
             }}>
@@ -288,7 +301,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                   : e.white,
                 border: `1px solid ${isActive ? `${member.color}40` : e.line}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.4s ease",
+                transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
                 boxShadow: isActiveSpeaking
                   ? `0 0 32px -8px ${member.color}33`
                   : isActive
@@ -328,7 +341,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                   fontWeight: isActive ? 500 : 500,
                   letterSpacing: isActive ? "-0.01em" : 0,
                   color: isActive ? e.coal : e.inkSoft,
-                  transition: "all 0.3s ease",
+                  transition: "color 0.3s ease, font-size 0.3s ease",
                   whiteSpace: "nowrap",
                 }}>
                   {member.name}
@@ -379,7 +392,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
           // before, too small for reliable tap on mobile.
           borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
           display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "all 0.2s", marginTop: 4,
+          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
         }}
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
         onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
@@ -408,7 +421,11 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
     <div aria-live="polite" aria-atomic="true" style={{
       width: "100%", background: e.white, borderRadius: 16,
       border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "rgba(180,83,9,0.22)" : e.line}`,
-      padding: "22px 26px", transition: "all 0.4s ease",
+      /* The card cross-fades its border tint between phases (cream → copper
+         when AI speaks, copper → cream when listening). Animate only the
+         specific properties that change — `transition: all` would trigger
+         repaints on every styled child too. */
+      padding: "22px 26px", transition: "border-color 0.4s ease, opacity 0.4s ease",
       boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
     }}>
       {panelPersona && (phase === "speaking" || phase === "listening") && (
@@ -424,11 +441,17 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
         </div>
       )}
       {step?.scoreNote && phase !== "done" && phase !== "thinking" && (
+        /* scoreNote was rgba(180,83,9,0.50) at 11px — under WCAG AA on cream
+           (contrast ~3.2:1, fails the 4.5:1 floor for text under 14px).
+           Bumped to 0.78 + size 12 to clear the threshold while keeping the
+           hint visually subordinate to the question. The icon stroke also
+           moves to 0.65 alpha so it stays pinned to the text rather than
+           ghosting in. */
         <p style={{
-          fontFamily: ef.sans, fontSize: 11, color: "rgba(180,83,9,0.50)",
+          fontFamily: ef.sans, fontSize: 12, color: "rgba(180,83,9,0.78)",
           margin: "0 0 10px", display: "flex", alignItems: "center", gap: 5,
         }}>
-          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(180,83,9,0.40)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(180,83,9,0.65)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
           {step.scoreNote}
         </p>
       )}
@@ -446,7 +469,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
         <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining for this question`} style={{ marginTop: 16, opacity: isSalaryNegotiation ? 0.7 : 1, transition: "opacity 0.3s ease" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.inkSoft }}>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.inkSoft }}>
               {isSalaryNegotiation
                 ? timeRemaining <= 15 ? "Wrapping up..." : "Take your time"
                 : timeRemaining <= 15 ? "Wrapping up..." : timeRemaining <= 30 ? "30s remaining" : "Time remaining"}
@@ -566,7 +589,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                 fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.success,
                 background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
                 borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
-                display: "inline-flex", alignItems: "center", gap: 5, transition: "all 0.2s",
+                display: "inline-flex", alignItems: "center", gap: 5, transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
               }}>
               <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
               Switch to speaking
@@ -594,7 +617,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                       fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.success,
                       background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
                       borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
-                      display: "inline-flex", alignItems: "center", gap: 5, transition: "all 0.2s",
+                      display: "inline-flex", alignItems: "center", gap: 5, transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
                     }}>
                     Done editing
                   </button>
@@ -1356,7 +1379,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
               style={{
                 fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,
                 background: "rgba(180,83,9,0.16)", border: "1px solid rgba(180,83,9,0.24)",
-                borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "all 0.2s",
+                borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.24)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.16)"; }}
@@ -1370,7 +1393,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
                 fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.cream,
                 background: `linear-gradient(135deg, ${e.copper}, ${"#92400E"})`,
                 border: "none", borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(180,83,9,0.24)", transition: "all 0.2s",
+                boxShadow: "0 4px 16px rgba(180,83,9,0.24)", transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}

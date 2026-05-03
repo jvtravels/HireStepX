@@ -61,7 +61,7 @@ export const RepeatButton = memo(function RepeatButton({ onClick, disabled = fal
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.5 : 1,
         fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.coal,
-        transition: "all 0.16s ease",
+        transition: "background 0.16s ease, border-color 0.16s ease",
       }}
       onMouseEnter={ev => { if (!disabled) { ev.currentTarget.style.background = "rgba(20,17,10,0.05)"; ev.currentTarget.style.borderColor = e.lineStrong; } }}
       onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}
@@ -129,7 +129,18 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
   );
 });
 
-/* ─── ReconnectingOverlay — full-screen recovery on network drop ─── */
+/* ─── ReconnectingOverlay — recovery on network drop ─────────────────
+ *
+ * For the first 2 reconnect attempts, this renders as an inline TOAST
+ * at the top of the screen — the network blip is usually 5–10s, and
+ * full-screen modal dimming for that duration over-weights what is
+ * almost always a transient hiccup. Users get a clear "we know" signal
+ * without losing visual contact with the question they were answering.
+ *
+ * From attempt 3 onwards, it escalates to the full-screen modal with
+ * the pause-and-resume option — at that point the outage is genuinely
+ * sustained and blocking interaction is the right move.
+ */
 
 export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, currentQuestion, totalQuestions, onPause }: {
   attempt?: number;
@@ -137,6 +148,38 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
   totalQuestions: number;
   onPause?: () => void;
 }) {
+  const escalate = attempt >= 3;
+
+  /* ─── Lightweight inline banner (attempts 1–2) ──────────────────── */
+  if (!escalate) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="iv-reconnecting-banner"
+        style={{
+          position: "fixed",
+          top: "max(56px, calc(env(safe-area-inset-top, 0px) + 56px))",
+          left: "50%", transform: "translateX(-50%)",
+          zIndex: 220, maxWidth: 480, width: "min(92%, calc(100vw - 32px))",
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 14px",
+          background: "rgba(180,83,9,0.14)",
+          border: "1px solid rgba(180,83,9,0.30)",
+          borderRadius: 10,
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          boxShadow: "0 4px 16px rgba(20,17,10,0.10)",
+        }}
+      >
+        <div style={{ width: 14, height: 14, border: `2px solid rgba(180,83,9,0.30)`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+        <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
+          Reconnecting… your progress is safe (Q{currentQuestion} of {totalQuestions}).
+        </span>
+      </div>
+    );
+  }
+
+  /* ─── Escalated full-screen modal (attempt 3+) ──────────────────── */
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="iv-reconnecting-title" className="iv-reconnecting" style={{
       position: "fixed", inset: 0, zIndex: 220,
@@ -185,7 +228,7 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
                 background: "transparent", color: e.coal,
                 border: `1px solid ${e.line}`, borderRadius: 10,
                 padding: "10px 18px", fontFamily: ef.sans, fontSize: 13, fontWeight: 500, cursor: "pointer",
-                transition: "all 0.16s ease",
+                transition: "background 0.16s ease, border-color 0.16s ease",
               }}
               onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
               onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = e.line; }}
