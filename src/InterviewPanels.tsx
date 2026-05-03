@@ -218,11 +218,19 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
           color: phase === "speaking" ? e.copper : phase === "listening" ? e.indigo : e.inkSoft,
         }}>
-          {/* Active-voice labels make turn-taking unambiguous: users
-              previously talked over the AI because "Listening" reads
-              as passive ("AI is listening?" vs "It's my turn to talk").
-              "Your turn" + "AI is speaking" closes that gap. */}
-          {phase === "thinking" ? "AI is preparing…" : phase === "speaking" ? "AI is speaking…" : phase === "listening" ? "Your turn — speak now" : "Complete"}
+          {/* Active-voice labels with the interviewer's first name —
+              "Priya is preparing…" reads as a person doing work, not
+              a system label. Falls back to "AI" if the name isn't
+              available (defensive — getInterviewerName always returns
+              a name in practice). The "Your turn" branch is the only
+              one addressed to the user, so it stays as-is. */}
+          {(() => {
+            const firstName = interviewerName?.split(" ")[0] || "AI";
+            if (phase === "thinking") return `${firstName} is preparing…`;
+            if (phase === "speaking") return `${firstName} is speaking…`;
+            if (phase === "listening") return "Your turn — speak now";
+            return "Complete";
+          })()}
         </span>
       </div>
       {phase === "listening" && !isMuted && !speechUnavailable && (

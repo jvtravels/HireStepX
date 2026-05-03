@@ -106,6 +106,107 @@ function toTurns(transcript: DashboardSession["transcript"]): Array<{ role: "int
 }
 
 /** Metric tile — single core-metric card. */
+/**
+ * Progressive loading state for the session report. The LLM grading
+ * pipeline can take 15-30s end-to-end (LLM call + structured parse +
+ * cross-session insight rollup). The previous static "~10 seconds"
+ * copy made anything past 10s feel broken; this version walks the
+ * user through what's happening so the wait reads as "deliberate
+ * work" rather than "stuck".
+ *
+ * Phases tick on a timer; the actual report can land at any phase
+ * and the parent unmounts this component immediately, so the timer
+ * never overruns the data. Each phase has its own headline + sub-
+ * copy so the user gets a steady drip of progress.
+ */
+function ReportLoadingState() {
+  const [phase, setPhase] = useState<0 | 1 | 2 | 3>(0);
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase(1), 4000);
+    const t2 = setTimeout(() => setPhase(2), 12000);
+    const t3 = setTimeout(() => setPhase(3), 22000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
+  const stages: Array<{ headline: string; sub: string }> = [
+    {
+      headline: "Reviewing your answers…",
+      sub: "Parsing each response for structure, evidence, and clarity.",
+    },
+    {
+      headline: "Scoring delivery and structure…",
+      sub: "Measuring fillers, pacing, and STAR adherence across answers.",
+    },
+    {
+      headline: "Building your coaching plan…",
+      sub: "Picking the highest-leverage moves — what to keep, what to refine next time.",
+    },
+    {
+      headline: "Almost there…",
+      sub: "Wrapping up — comparing this session to your trend and prepping the report.",
+    },
+  ];
+  const stage = stages[phase];
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        background: c.graphite,
+        borderRadius: 14,
+        border: `1px solid ${c.border}`,
+        padding: "48px 32px",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          border: `3px solid rgba(212,179,127,0.18)`,
+          borderTopColor: c.gilt,
+          borderRadius: "50%",
+          margin: "0 auto 16px",
+          animation: "reportspin 0.9s linear infinite",
+        }}
+      />
+      <style>{`@keyframes reportspin { to { transform: rotate(360deg); } }`}</style>
+      <p
+        style={{
+          fontFamily: font.display,
+          fontSize: 20,
+          color: c.ivory,
+          margin: "0 0 6px",
+          // 200ms cross-fade between stage headlines so the text
+          // change feels intentional rather than abrupt.
+          transition: "opacity 0.2s",
+        }}
+        key={`headline-${phase}`}
+      >
+        {stage.headline}
+      </p>
+      <p
+        style={{
+          fontFamily: font.ui,
+          fontSize: 13,
+          color: c.stone,
+          margin: 0,
+          maxWidth: 360,
+          marginLeft: "auto",
+          marginRight: "auto",
+          lineHeight: 1.55,
+        }}
+        key={`sub-${phase}`}
+      >
+        {stage.sub}
+      </p>
+    </div>
+  );
+}
+
 function MetricTile({ label, value, unit, target, good }: {
   label: string; value: number | string; unit?: string; target: string; good: "green" | "amber" | "red";
 }) {
@@ -960,23 +1061,10 @@ export const SessionReportView = memo(function SessionReportView({
         Back to Dashboard
       </button>
 
-      {/* Loading */}
-      {loading && !report && (
-        <div role="status" aria-live="polite" style={{
-          background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`,
-          padding: "48px 32px", textAlign: "center",
-        }}>
-          <div style={{
-            width: 40, height: 40, border: `3px solid rgba(212,179,127,0.18)`, borderTopColor: c.gilt,
-            borderRadius: "50%", margin: "0 auto 16px", animation: "reportspin 0.9s linear infinite",
-          }} />
-          <style>{`@keyframes reportspin { to { transform: rotate(360deg); } }`}</style>
-          <p style={{ fontFamily: font.display, fontSize: 20, color: c.ivory, margin: "0 0 6px" }}>Grading your interview…</p>
-          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, margin: 0 }}>
-            Analyzing your answers, delivery, and structure. ~10 seconds.
-          </p>
-        </div>
-      )}
+      {/* Loading — progressive narrative so users don't think it's
+          stuck when LLM evaluation goes past 10s. The phase advances
+          on a timer; the actual report can land at any phase. */}
+      {loading && !report && <ReportLoadingState />}
 
       {/* Error */}
       {!loading && errorMsg && !report && (
