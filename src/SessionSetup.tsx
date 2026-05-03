@@ -164,7 +164,7 @@ function AutocompleteInput({
         <div role="listbox" style={{
           position: "fixed", top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999,
           background: T.white, border: `1px solid ${T.line}`, borderRadius: 10,
-          boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)", maxHeight: 220, overflowY: "auto",
+          boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)", maxHeight: 260, overflowY: "auto",
         }}>
           {filtered.map((s, i) => (
             <button key={s} role="option" aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
@@ -177,6 +177,17 @@ function AutocompleteInput({
               {s}
             </button>
           ))}
+          {/* Keyboard hint — invites power users to navigate without
+              the mouse. Sticky bottom so it stays visible during scroll. */}
+          <div style={{
+            position: "sticky", bottom: 0,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "8px 14px", background: T.creamSoft, borderTop: `1px solid ${T.line}`,
+            fontFamily: F.mono, fontSize: 10, color: T.inkFaint, letterSpacing: 0.4,
+          }}>
+            <span>↑↓ navigate</span>
+            <span>↵ select · esc to close</span>
+          </div>
         </div>,
         document.body,
       )}
@@ -914,6 +925,15 @@ export default function SessionSetup() {
            render so a returning user's eye finds the suggestion. */
         .hsx-recommend-badge { animation: hsxBadgePulse 1.6s ease-out 1; }
 
+        /* ─── Completed-zone dim ─────────────────────────────────────────
+           Once the user has met the form requirements (role + focus + mic
+           granted), Focus and Permissions sections fade to 88% opacity
+           so the CTA visually owns the page. Hovering or focusing inside
+           a section restores full opacity — users can still change
+           selections without fighting the dim. */
+        .hsx-completed-zone { transition: opacity 320ms ease; }
+        .hsx-completed-zone:hover, .hsx-completed-zone:focus-within { opacity: 1 !important; }
+
         /* ─── Focus rings (a11y) ─────────────────────────────────────────
            Default browser :focus-visible is inconsistent across browsers
            on a card-heavy form. Custom indigo halo on every interactive
@@ -1040,14 +1060,19 @@ export default function SessionSetup() {
                 <p style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
                   Tell us a few things and we&apos;ll personalize the experience for you.
                 </p>
-                {/* Time pill — answers the unspoken "how long is this going to take?".
-                    No question count: the engine adapts question depth to the 15-min window. */}
-                <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  ~15 minutes
+                {/* Time pill + value-reframe — answers "how long?" and ties
+                    the time investment to outcome in one breath. */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
+                  <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    ~15 minutes
+                  </div>
+                  <p style={{ fontFamily: F.sans, fontSize: 13, color: T.inkSoft, margin: 0, fontStyle: "italic" }}>
+                    Practice once. Walk into your interview ready.
+                  </p>
                 </div>
               </div>
 
@@ -1074,7 +1099,7 @@ export default function SessionSetup() {
                 </div>
 
                 {/* ── Interview Focus — canvas-style: clean label, 5-col grid ── */}
-                <div className="fade-up-2">
+                <div className="fade-up-2 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
                       <span>Interview focus</span>
@@ -1177,7 +1202,7 @@ export default function SessionSetup() {
                 </div>
 
                 {/* ── Permissions — mic compulsory, camera optional ── */}
-                <div className="fade-up-3">
+                <div className="fade-up-3 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
