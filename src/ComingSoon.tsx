@@ -586,7 +586,7 @@ export default function ComingSoon() {
                     required
                     autoComplete="email"
                     inputMode="email"
-                    placeholder="you@work.com"
+                    placeholder="you@email.com"
                     aria-required="true"
                     aria-invalid={status === "error"}
                     aria-describedby="cs-form-hint"
