@@ -225,13 +225,43 @@ function getRecommendedFocus(role?: string): string {
   return "Behavioral";
 }
 
+/* ─── MicMeter ──────────────────────────────────────────────────────────
+   3-bar live audio meter rendered inside the mic permission card once
+   the stream is granted. Bars rise as the analyser sees more energy,
+   and turn green once a voice threshold has been crossed. */
+function MicMeter({ level, active }: { level: number; active: boolean }) {
+  // Three thresholds spread across 0-100 so the bars fill in sequence,
+  // not in lockstep — feels like a real meter.
+  const heights = [
+    Math.max(20, Math.min(100, level * 1.6)),
+    Math.max(15, Math.min(100, level * 1.1)),
+    Math.max(10, Math.min(100, level * 0.7)),
+  ];
+  return (
+    <span aria-hidden style={{ display: "inline-flex", alignItems: "flex-end", gap: 3, height: 16 }}>
+      {heights.map((h, i) => (
+        <span
+          key={i}
+          style={{
+            width: 3,
+            height: `${active ? h : 20}%`,
+            background: active && level > 6 ? T.success : T.inkFaint,
+            borderRadius: 2,
+            transition: "height 80ms linear, background 200ms ease",
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
 /* ─── PermissionCard ────────────────────────────────────────────────────
    A two-state tile: idle / requesting / granted / denied (+ skipped for
    camera). The idle state shows a primary "Allow …" button. Granted
    collapses to a success row. Denied shows a help line + retry. Same
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
-  kind, label, sublabel, sublabelTone, status, onRequest, onSkip,
+  kind, label, sublabel, sublabelTone, status, onRequest, onSkip, level, voiceDetected,
 }: {
   kind: "mic" | "camera";
   label: string;
@@ -240,6 +270,10 @@ function PermissionCard({
   status: "idle" | "requesting" | "granted" | "denied" | "skipped";
   onRequest: () => void;
   onSkip?: () => void;
+  /** Live mic level 0-100 — only used when kind === "mic" && status === "granted". */
+  level?: number;
+  /** Whether the analyser has detected speech yet — flips the prompt copy. */
+  voiceDetected?: boolean;
 }) {
   const isGranted = status === "granted";
   const isDenied = status === "denied";
@@ -300,7 +334,15 @@ function PermissionCard({
         <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
           {status === "requesting" && "Waiting for your permission…"}
-          {isGranted && (kind === "mic" ? "Microphone ready" : "Camera ready")}
+          {isGranted && kind === "camera" && "Camera ready"}
+          {isGranted && kind === "mic" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <MicMeter level={level ?? 0} active />
+              <span style={{ color: voiceDetected ? T.success : T.inkSoft }}>
+                {voiceDetected ? "Sounds great" : "Say \"hello\" to test"}
+              </span>
+            </span>
+          )}
           {isDenied && (kind === "mic"
             ? "Blocked. Open browser settings → allow microphone, then retry."
             : "Blocked — you can still proceed without camera.")}
@@ -461,8 +503,42 @@ export default function SessionSetup() {
   type PermStatus = "idle" | "requesting" | "granted" | "denied";
   const [micStatus, setMicStatus] = useState<PermStatus>("idle");
   const [cameraStatus, setCameraStatus] = useState<PermStatus | "skipped">("idle");
+  const [micLevel, setMicLevel] = useState(0);
+  const [voiceDetected, setVoiceDetected] = useState(false);
   const micStreamRef = useRef<MediaStream | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
+  const startLevelMeter = (stream: MediaStream) => {
+    try {
+      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      const ctx = new Ctx();
+      audioCtxRef.current = ctx;
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      let peak = 0;
+      const tick = () => {
+        analyser.getByteFrequencyData(buf);
+        const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
+        const level = Math.min(100, Math.round((avg / 128) * 100));
+        if (level > peak) peak = level;
+        setMicLevel(level);
+        if (peak > 18) setVoiceDetected(true);
+        animFrameRef.current = requestAnimationFrame(tick);
+      };
+      animFrameRef.current = requestAnimationFrame(tick);
+    } catch { /* analyser optional */ }
+  };
+
+  const stopLevelMeter = () => {
+    if (animFrameRef.current != null) cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = null;
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null;
+  };
 
   const requestMic = async () => {
     setMicStatus("requesting");
@@ -470,6 +546,7 @@ export default function SessionSetup() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       micStreamRef.current = stream;
       setMicStatus("granted");
+      startLevelMeter(stream);
     } catch {
       setMicStatus("denied");
     }
@@ -492,10 +569,33 @@ export default function SessionSetup() {
     setCameraStatus("skipped");
   };
 
-  // Stop preview streams on unmount — the interview surface re-requests
-  // permissions itself (browsers cache the grant, so it's instant).
+  /* Probe existing browser permission grants on mount so returning users
+     don't have to re-click "Allow". navigator.permissions.query for
+     microphone/camera isn't supported on Safari pre-16 — wrap in
+     try/catch so unsupported browsers fall back to the manual flow. */
+  useEffect(() => {
+    let mounted = true;
+    const probe = async () => {
+      const perms = (navigator as Navigator & { permissions?: { query: (d: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
+      if (!perms?.query) return;
+      try {
+        const mic = await perms.query({ name: "microphone" as PermissionName });
+        if (mounted && mic.state === "granted") void requestMic();
+      } catch { /* unsupported */ }
+      try {
+        const cam = await perms.query({ name: "camera" as PermissionName });
+        if (mounted && cam.state === "granted") void requestCamera();
+      } catch { /* unsupported */ }
+    };
+    void probe();
+    return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Stop preview streams + level meter on unmount.
   useEffect(() => {
     return () => {
+      stopLevelMeter();
       micStreamRef.current?.getTracks().forEach(t => t.stop());
       cameraStreamRef.current?.getTracks().forEach(t => t.stop());
     };
@@ -732,6 +832,8 @@ export default function SessionSetup() {
                       sublabelTone="copper"
                       status={micStatus}
                       onRequest={requestMic}
+                      level={micLevel}
+                      voiceDetected={voiceDetected}
                     />
                     <PermissionCard
                       kind="camera"
@@ -749,38 +851,72 @@ export default function SessionSetup() {
             </div>
 
 
-          {/* ─── Single canvas-style "Start practice" CTA + trust line. ─── */}
+          {/* ─── Single canvas-style "Start practice" CTA + trust line.
+                The CTA stays clickable when only the mic is missing — it
+                triggers the prompt instead of failing silently. */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12, marginTop: 40 }}>
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={!canProceedStep1 || starting || !isOnline}
-              style={{
-                fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "16px 28px", borderRadius: 10, border: "1px solid transparent",
-                width: "100%",
-                background: T.indigo, color: T.cream,
-                cursor: (!canProceedStep1 || starting || !isOnline) ? "not-allowed" : "pointer",
-                opacity: (!canProceedStep1 || starting || !isOnline) ? 0.5 : 1,
-                transition: "all 160ms ease",
-                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
-                boxShadow: (!canProceedStep1 || starting || !isOnline) ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-                letterSpacing: 0.1,
-              }}
-            >
-              {starting ? (
-                <div style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-              ) : null}
-              {starting ? "Starting…" : "Start practice"}
-              {!starting && (
-                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-              )}
-            </button>
+            {(() => {
+              const needsMic = formComplete && micStatus !== "granted" && micStatus !== "requesting";
+              const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
+              const ctaLabel = starting
+                ? "Starting…"
+                : needsMic
+                  ? "Allow microphone to start"
+                  : "Start practice";
+              const ctaTitle = !formComplete
+                ? "Pick a target role and interview focus to continue."
+                : needsMic
+                  ? micStatus === "denied"
+                    ? "Microphone is blocked. Open browser settings to allow it, then try again."
+                    : "We need microphone access to start a voice interview."
+                  : !isOnline
+                    ? "You're offline. Reconnect to start."
+                    : undefined;
+              const onCtaClick = () => {
+                if (needsMic) { void requestMic(); return; }
+                handleStart();
+              };
+              return (
+                <button
+                  type="button"
+                  onClick={onCtaClick}
+                  disabled={isHardDisabled}
+                  title={ctaTitle}
+                  aria-label={ctaTitle ?? ctaLabel}
+                  style={{
+                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "16px 28px", borderRadius: 10, border: "1px solid transparent",
+                    width: "100%",
+                    background: T.indigo, color: T.cream,
+                    cursor: isHardDisabled ? "not-allowed" : "pointer",
+                    opacity: isHardDisabled ? 0.45 : needsMic ? 0.85 : 1,
+                    transition: "all 160ms ease",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    boxShadow: isHardDisabled ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                    letterSpacing: 0.1,
+                  }}
+                >
+                  {starting ? (
+                    <span style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                  ) : null}
+                  {ctaLabel}
+                  {!starting && (
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                  )}
+                </button>
+              );
+            })()}
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              Your responses stay private and are never shared.
+            <div aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft, minHeight: 18 }}>
+              {micStatus === "granted" && cameraStatus === "granted" && "Mic and camera ready — you're all set."}
+              {micStatus === "granted" && cameraStatus !== "granted" && "Mic ready. Camera is optional."}
+              {micStatus !== "granted" && (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  Your responses stay private and are never shared.
+                </>
+              )}
             </div>
 
           </div>
