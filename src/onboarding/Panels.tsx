@@ -328,15 +328,69 @@ export function ResumeEmptyState({
           </div>
         </label>
 
-        <div
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}
+        {/* Trust pills — first-time users hesitate to upload a resume
+            (PII concern). The previous single-line copy was too subtle.
+            Three concrete pills are easier to scan and each addresses
+            a specific worry: TLS, no-sale assertion, deletion right.
+            DPDP Act 2023 explicitly requires the deletion right; we
+            surface it here at the moment of friction. */}
+        <ul
+          aria-label="How we handle your resume"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 8,
+            margin: 0,
+            padding: 0,
+            listStyle: "none",
+            fontFamily: f.sans,
+            fontSize: 12,
+            color: t.inkSoft,
+            lineHeight: 1.4,
+          }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
-            <polyline points="9 12 11 14 15 10" />
-          </svg>
-          Parsed once, never shared. You can delete it any time.
-        </div>
+          {[
+            { label: "Encrypted in transit (TLS)", icon: "lock" },
+            { label: "Never sold or shared", icon: "shield" },
+            { label: "Delete any time (DPDP)", icon: "trash" },
+          ].map((p) => (
+            <li
+              key={p.label}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "5px 10px",
+                background: t.creamSoft,
+                border: `1px solid ${t.line}`,
+                borderRadius: 999,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {p.icon === "lock" && (
+                  <>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </>
+                )}
+                {p.icon === "shield" && (
+                  <>
+                    <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                    <polyline points="9 12 11 14 15 10" />
+                  </>
+                )}
+                {p.icon === "trash" && (
+                  <>
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  </>
+                )}
+              </svg>
+              {p.label}
+            </li>
+          ))}
+        </ul>
 
         {onSkip && (
           <div style={{ textAlign: "center" }}>

@@ -62,6 +62,16 @@ export interface DeepgramSTTCallbacks {
   onEnd: () => void;
   /** Fired when Deepgram VAD detects speech start. Use for barge-in (cancel TTS). */
   onSpeechStarted?: () => void;
+  /**
+   * Fired on each finalized chunk with Deepgram's confidence (0-1).
+   * Indian English accuracy is roughly 85-92%; chunks below ~0.65 mean
+   * the LLM may grade the wrong text. Engines can use this to surface
+   * a "speak clearly or edit later" hint to the user, or to log low
+   * confidence to service_usage for ops review. Optional — Deepgram
+   * sometimes omits the field; callers should treat undefined as
+   * "no signal", not "low confidence".
+   */
+  onConfidence?: (confidence: number) => void;
 }
 
 /**
@@ -263,6 +273,12 @@ registerProcessor('pcm-processor', PCMProcessor);
         if (msg.is_final) {
           finalText += transcript + " ";
           callbacks.onTranscript(finalText, "");
+          // Surface confidence on finalized chunks only — interim
+          // confidences fluctuate noisily as Deepgram revises its
+          // hypothesis. Final is the contract we want to expose.
+          if (typeof alt.confidence === "number" && callbacks.onConfidence) {
+            callbacks.onConfidence(alt.confidence);
+          }
         } else {
           callbacks.onTranscript(finalText, transcript);
         }

@@ -8,6 +8,7 @@ import {
   evaluateSessionWithAI,
   saveStoryToNotebook,
   fetchRecentSessionScores,
+  FREE_SESSION_LIMIT,
   type SessionReport,
   type SessionReportBand,
   type SessionReportPerQuestion,
@@ -1521,6 +1522,150 @@ export const SessionReportView = memo(function SessionReportView({
               </a>
             </div>
           </div>
+
+          {/* In-report upgrade nudge — fires when a free-tier user has
+              hit (or exceeded) the 3-session free limit. This is the
+              CONVERSION moment: they just finished session 3, they're
+              looking at their report (the highest-value moment in the
+              product), and the value of unlimited practice is visceral.
+              Putting this anywhere else — a separate paywall page, a
+              dashboard banner — loses the moment to a navigation. The
+              same pattern Calm/Headspace use: paywall right after the
+              high-value moment, not separated.
+
+              Visibility rule: free tier AND finished ≥ FREE_SESSION_LIMIT
+              sessions. We use practiceTimestamps from the user profile
+              as the cheapest source of truth (already loaded into
+              AuthContext, no extra fetch). */}
+          {(() => {
+            const tier = user?.subscriptionTier || "free";
+            const completedSessions =
+              user?.practiceTimestamps && Array.isArray(user.practiceTimestamps)
+                ? user.practiceTimestamps.length
+                : 0;
+            if (tier !== "free" || completedSessions < FREE_SESSION_LIMIT) {
+              return null;
+            }
+            return (
+              <div
+                className="sr-print-hide"
+                style={{
+                  marginTop: 18,
+                  borderRadius: 14,
+                  padding: "26px 28px",
+                  background: `linear-gradient(135deg, rgba(212,179,127,0.08) 0%, rgba(212,179,127,0.02) 100%)`,
+                  border: `1px solid rgba(212,179,127,0.30)`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 24,
+                  flexWrap: "wrap",
+                }}
+                data-testid="report-upgrade-nudge"
+              >
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <div
+                    style={{
+                      fontFamily: font.mono,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      color: c.gilt,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Free trial complete
+                  </div>
+                  <h3
+                    style={{
+                      fontFamily: font.display,
+                      fontSize: 22,
+                      fontWeight: 400,
+                      color: c.ivory,
+                      margin: "0 0 6px",
+                      letterSpacing: "-0.01em",
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    Keep practising — get unlimited sessions for{" "}
+                    <span style={{ color: c.gilt }}>₹149/mo</span>
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: font.ui,
+                      fontSize: 13,
+                      color: c.stone,
+                      lineHeight: 1.55,
+                      margin: 0,
+                    }}
+                  >
+                    30 sessions / month. Cancel anytime. ₹4.97 per session at
+                    Pro tier vs ₹10 single. Full reports, analytics, and
+                    interview calendar included.
+                  </p>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    alignItems: "stretch",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      track("report_upgrade_nudge_clicked", {
+                        plan: "monthly",
+                        sessionId: session.id,
+                      });
+                      router.push("/pricing?plan=monthly");
+                    }}
+                    style={{
+                      fontFamily: font.ui,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: c.obsidian,
+                      background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "12px 22px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 8px 24px rgba(212,179,127,0.20)",
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    Go Pro — ₹149/mo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      track("report_upgrade_nudge_clicked", {
+                        plan: "single",
+                        sessionId: session.id,
+                      });
+                      router.push("/pricing?plan=single");
+                    }}
+                    style={{
+                      fontFamily: font.ui,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: c.chalk,
+                      background: "transparent",
+                      border: `1px solid rgba(245,242,237,0.18)`,
+                      borderRadius: 10,
+                      padding: "10px 22px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Or buy 1 session — ₹10
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Trust + usefulness polls — diagnostic signal for tuning the rubric */}
           <div className="sr-print-hide" style={{

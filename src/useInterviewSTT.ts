@@ -9,6 +9,12 @@ import { createSarvamSTT, type SarvamSTTHandle } from "./sarvamSTT";
 import { createSpeechRecognition } from "./speechRecognition";
 import type { SpeechRecognitionInstance, SpeechRecognitionEvent } from "./speechRecognition";
 import type { ToastType } from "./Toast";
+import {
+  createSttConfidenceState,
+  updateSttConfidence,
+  resetSttConfidence,
+  snapshotSttConfidence,
+} from "./_stt-confidence";
 
 export interface STTCallbacks {
   setCurrentTranscript: (text: string) => void;
@@ -18,6 +24,14 @@ export interface STTCallbacks {
   toast: (msg: string, type?: ToastType) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   interviewEndedRef: React.MutableRefObject<boolean>;
+  /**
+   * Optional: notified when STT confidence indicates the LLM may be
+   * grading misheard text. UI can use this to show a "speak clearly"
+   * hint or log to service_usage. Fires at most once per turn (when
+   * the heuristic crosses the threshold). Caller is responsible for
+   * resetting state when a new turn begins.
+   */
+  onLowSttConfidence?: (snapshot: { mean: number; min: number; lowFraction: number }) => void;
 }
 
 export interface STTRefs {
@@ -109,14 +123,38 @@ export function useInterviewSTT(
       let preservedFinalText = "";
       let lastFinalText = "";
 
+      // Per-turn STT confidence tracker. Resets each time we open a
+      // fresh Deepgram handle (which corresponds to a new "listening"
+      // phase entry). Fires onLowSttConfidence at most once per turn
+      // when the heuristic threshold is crossed, so the UI doesn't
+      // flicker the "low confidence" hint on/off as new chunks land.
+      const sttConf = createSttConfidenceState();
+      let lowConfFired = false;
+
       const tryDeepgram = async () => {
         if (stopped) return;
         lastFinalText = "";
+        resetSttConfidence(sttConf);
+        lowConfFired = false;
         const handle = await createDeepgramSTT({
           onTranscript: (finalText, interim) => {
             if (stopped) return;
             lastFinalText = finalText;
             callbacks.setCurrentTranscript(preservedFinalText + finalText + interim);
+          },
+          onConfidence: (confidence) => {
+            if (stopped) return;
+            updateSttConfidence(sttConf, confidence);
+            if (lowConfFired || !callbacks.onLowSttConfidence) return;
+            const snap = snapshotSttConfidence(sttConf);
+            if (snap.shouldHint) {
+              lowConfFired = true;
+              callbacks.onLowSttConfidence({
+                mean: snap.mean,
+                min: snap.min,
+                lowFraction: snap.lowFraction,
+              });
+            }
           },
           onError: (error) => {
             if (stopped) return;
