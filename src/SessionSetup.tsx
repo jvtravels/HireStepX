@@ -540,7 +540,35 @@ export default function SessionSetup() {
             );
           })}
         </div>
-        <div />
+        {/* Identity chip + escape link — matches the auth/onboarding pattern. */}
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 14 }}>
+          {(() => {
+            const trimmed = (user?.name || "").trim();
+            if (!trimmed) return null;
+            const initials = trimmed.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
+            return (
+              <div title={trimmed} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.coal }}>
+                <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: T.indigo100, color: T.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: F.serif, fontSize: 13, fontWeight: 400, flexShrink: 0 }}>
+                  {initials || (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  )}
+                </span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{trimmed}</span>
+              </div>
+            );
+          })()}
+          <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); router.push("/dashboard"); }}
+            className="hsx-link-indigo"
+            style={{ fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.indigo, textDecoration: "none" }}
+          >
+            Skip for now
+          </a>
+        </div>
       </div>
 
       {/* ─── Content ─── */}

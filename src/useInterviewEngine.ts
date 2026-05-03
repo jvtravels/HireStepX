@@ -12,6 +12,7 @@ import { saveSessionResult, fetchLLMQuestions, fetchLLMEvaluation, fetchFollowUp
 import { initLiveSession, saveInterviewTurn } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
+import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
 import type { SarvamSTTHandle } from "./sarvamSTT";
@@ -509,6 +510,10 @@ export function useInterviewEngine() {
   const noSpeechCountRef = useRef(0);
   const silenceNudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const silenceNudgeFiredRef = useRef(false);
+  /* Conversational continuity — accumulates noun-phrase mentions
+     across answers and pipes them to the follow-up LLM as
+     `previousMentions`. See src/_noun-phrase-memory.ts. */
+  const mentionsMemoryRef = useRef<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const nextBtnRef = useRef<HTMLButtonElement>(null);
   const [evaluating, setEvaluating] = useState(false);
@@ -746,14 +751,29 @@ export function useInterviewEngine() {
     }
     silenceNudgeFiredRef.current = false;
     lastTranscriptChangeRef.current = Date.now();
+    /* Silence nudge bumped 15s → 25s. The 15s threshold fired too
+       aggressively in real conditions — many candidates take 10-15s to
+       gather their first thought, and getting nudged at 15s reads as
+       "you're being slow", which spikes anxiety. 25s is closer to the
+       point where silence becomes genuinely awkward without rushing
+       thinkers. The "smart skip" check below additionally suppresses
+       the nudge if the user is actively typing in the textarea — they
+       aren't silent, they're choosing the keyboard.
+    */
+    const SILENCE_NUDGE_MS = 25_000;
     const startNudgeTimer = () => {
       if (silenceNudgeTimerRef.current) clearTimeout(silenceNudgeTimerRef.current);
       silenceNudgeTimerRef.current = setTimeout(() => {
         if (silenceNudgeFiredRef.current || interviewEndedRef.current) return;
-        // Only nudge if user has been actually silent (no transcript change) for 15s
+        // Smart skip — user is composing in the textarea, not silent
+        const ta = textareaRef.current;
+        if (ta && document.activeElement === ta && ta.value.trim().length > 0) {
+          startNudgeTimer();
+          return;
+        }
+        // Only nudge if user has been actually silent (no transcript change)
         const silenceDuration = Date.now() - lastTranscriptChangeRef.current;
-        if (silenceDuration < 14_000) {
-          // User spoke recently — restart timer for the remaining silence gap
+        if (silenceDuration < SILENCE_NUDGE_MS - 1000) {
           startNudgeTimer();
           return;
         }
@@ -761,7 +781,7 @@ export function useInterviewEngine() {
         const nudge = pickRandom(SILENCE_NUDGES);
         setTranscript(prev => [...prev, { speaker: "ai", text: `[${nudge}]`, time: formatTime(elapsed) }]);
         speak(nudge, () => {}, () => {}, interviewerGender).catch(() => {});
-      }, 15_000);
+      }, SILENCE_NUDGE_MS);
     };
     startNudgeTimer();
     return () => {
@@ -1657,6 +1677,17 @@ export function useInterviewEngine() {
         const userTurns = transcript.filter(m => m.speaker === "user").map(m => m.text);
         const candidateState = deriveCandidateState([...userTurns, answerText]);
 
+        // Conversational continuity — extract noun phrases from this
+        // answer and accumulate into the rolling memory ref. See
+        // src/_noun-phrase-memory.ts.
+        const newPhrases = extractNounPhrases(answerText);
+        if (newPhrases.length > 0) {
+          mentionsMemoryRef.current = appendToMemory(mentionsMemoryRef.current, newPhrases);
+        }
+        const previousMentions = mentionsMemoryRef.current.length > 0
+          ? mentionsMemoryRef.current
+          : undefined;
+
         pendingFollowUpRef.current = fetchFollowUp({
           question: currentStepObj!.aiText,
           answer: answerText,
@@ -1684,6 +1715,7 @@ export function useInterviewEngine() {
           candidateTarget: targetSalary || undefined,
           negotiationScenario: negotiationScenario !== "standard" ? negotiationScenario : undefined,
           candidateState,
+          previousMentions,
         });
       } else {
         pendingFollowUpRef.current = null;
@@ -1730,6 +1762,39 @@ export function useInterviewEngine() {
     // interviewerGender is read inside the prefetchTTS branch but is derived from interviewerName which is derived from session-stable inputs; recomputing this callback when gender changes is unnecessary churn since gender effectively never changes within a session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentStep, interviewScript, aiVoiceEnabled]);
+
+  /* Retake the just-sent answer.
+     Real interviews have an "actually let me redo that" moment —
+     candidate hits Send, immediately realizes the answer landed badly,
+     wants to start over before the interviewer reacts. We give them a
+     window during phase=thinking before the follow-up locks in:
+       1. Cancel the pending follow-up fetch (so we don't get a probe
+          based on the discarded answer)
+       2. Strip the last user message from the transcript
+       3. Clear currentTranscript
+       4. Revert phase to listening on the same question
+     Engine state stays consistent — it's as if the user never sent. */
+  const retakeLastAnswer = useCallback(() => {
+    if (phase !== "thinking") return;
+    if (interviewEndedRef.current) return;
+    if (pendingFollowUpRef.current) {
+      pendingFollowUpRef.current = null;
+    }
+    setTranscript(prev => {
+      // Drop the last user message + any AI placeholder rendered after it
+      const lastUserIdx = (() => {
+        for (let i = prev.length - 1; i >= 0; i--) if (prev[i].speaker === "user") return i;
+        return -1;
+      })();
+      if (lastUserIdx === -1) return prev;
+      return prev.slice(0, lastUserIdx);
+    });
+    setCurrentTranscript("");
+    setPhase("listening");
+    // Analytics fire happens at the call site (Interview.tsx) where
+    // posthog is already imported, to keep this engine helper free of
+    // browser-only deps.
+  }, [phase]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -2304,6 +2369,7 @@ export function useInterviewEngine() {
     // Action functions
     handleNextQuestion,
     skipSpeaking,
+    retakeLastAnswer,
     handleEnd,
     navigate: router,
     retryQuestions,

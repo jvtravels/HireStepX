@@ -36,7 +36,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -77,6 +77,7 @@ export default async function handler(req: Request): Promise<Response> {
         fillerDensity?: number;
         lengthTrend?: "shortening" | "stable" | "growing";
       };
+      previousMentions?: string[];
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -491,6 +492,11 @@ PUSHBACK RULE: Real interviewers push back on weak or vague answers — they don
 MIRRORING (rapport): Echo 1-2 distinctive nouns or phrases from the candidate's last answer in your follow-up. If they said "the migration" use "the migration" not "the project". If they said "my team of six" use "your team of six". Research shows verbal mirroring lifts perceived rapport ~30%. Don't be heavy-handed — one or two echoes per follow-up is enough.
 
 ADAPTIVE DIFFICULTY: ${adaptiveDifficulty === "escalate" ? "The candidate is performing strongly across recent answers. Push harder — go deeper, ask more challenging follow-ups, probe for trade-offs and edge cases. Don't go easy." : adaptiveDifficulty === "ease" ? "The candidate is struggling across recent answers. Ease the pressure — phrase the follow-up gently, offer a smaller scope, give them a chance to recover with a more concrete or familiar angle. Do NOT give up; just calibrate down." : "The candidate is performing as expected. Hold steady on difficulty."}
+${previousMentions && previousMentions.length > 0 ? `
+PREVIOUS MENTIONS (specific things the candidate has said this session — pickable hooks for cross-question references):
+${previousMentions.slice(-8).map(p => `  • ${sanitizeForLLM(p, 80)}`).join("\n")}
+USAGE: When following up, you may reference one of these explicitly: "Earlier you mentioned <X> — how does that connect to what you just described?" or "You said <X> a moment ago. Tell me more about that." Use at most ONE per follow-up; don't enumerate.
+` : ""}
 ${candidateState ? `
 CANDIDATE EMOTIONAL STATE (from recent answers — use this to modulate TONE, not difficulty):
 - Stress level: ${candidateState.stress ?? "unknown"} (high = lots of "uhm", "let me think", hesitation markers)

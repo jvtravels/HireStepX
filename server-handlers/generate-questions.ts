@@ -373,7 +373,13 @@ CROSS-PERSONA REFERENCE: at least one question (q3 or later) must reference what
     const tierSuffix = tierPromptSuffix(classifyCompanyTier(companyName));
     // Anxiety-reduction directive (Saks & McCarthy 2006). Real interviews
     // open with low-stakes warmth before the substantive questions start.
-    const warmupBeat = `\nINTRO WARMTH: The 'intro' step should open with one warm, low-stakes line BEFORE diving into format/structure — a real "settling in" beat, not corporate fluff. Examples: "Hope you're doing well today.", "Thanks for making time — let's keep this conversational.". Then proceed to context. Two extra seconds of warmth here measurably improves candidate performance.`;
+    const warmupBeat = `\nINTRO WARMTH: The 'intro' step should open with one warm, low-stakes line BEFORE diving into format/structure — a real "settling in" beat, not corporate fluff. Examples: "Hope you're doing well today.", "Thanks for making time — let's keep this conversational.". Then proceed to context. Two extra seconds of warmth here measurably improves candidate performance.
+
+INTRO EXPECTATIONS (mandatory, after the warmth line): The intro MUST set 3 explicit expectations so the candidate isn't guessing:
+  1. How long: "We have about ${isMini ? "10" : "25"} minutes." (use the actual session length)
+  2. How many questions: "I'll ask ${questionCount} questions, with follow-ups based on your answers." (use the actual count)
+  3. Permission: "Take your time on each. You can ask me to repeat the question anytime, or just type if you'd rather not speak."
+Real interviews open this way — it dramatically reduces anxiety. Phrase it naturally, not as a checklist; spread the three across 1-2 sentences.`;
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${typeGuidance ? `\n${typeGuidance}\n` : ""}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}
 Context:

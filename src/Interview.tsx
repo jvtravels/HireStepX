@@ -682,7 +682,7 @@ function InterviewInner() {
     setShowTranscript, setShowEndModal,
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
-    handleNextQuestion, skipSpeaking, handleEnd, navigate, replayQuestion,
+    handleNextQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
     micQuiet, reconnecting, reconnectAttempt,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
@@ -958,6 +958,39 @@ function InterviewInner() {
 
         {(phase === "thinking" || phase === "speaking") && (
           <MicroFeedbackPanel transcript={transcript} microFeedback={microFeedback} />
+        )}
+
+        {/* Retake the just-sent answer — only useful during the brief
+            "thinking" window before the AI's follow-up locks in.
+            Real interviews allow "actually let me redo that"; this is
+            our equivalent. Wired to engine.retakeLastAnswer which
+            cancels the pending follow-up, drops the last user message,
+            and reverts phase=listening. */}
+        {phase === "thinking" && (
+          <button
+            type="button"
+            onClick={() => {
+              captureClientEvent("interview_retake_answer", {});
+              retakeLastAnswer();
+            }}
+            aria-label="Retake the answer you just sent"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.copper,
+              background: "transparent", border: `1px solid rgba(180,83,9,0.35)`,
+              borderRadius: 999, padding: "7px 14px", cursor: "pointer",
+              transition: "background 160ms ease",
+            }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(180,83,9,0.08)"; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            Actually, let me redo that
+          </button>
         )}
 
         {phase === "done" && (
