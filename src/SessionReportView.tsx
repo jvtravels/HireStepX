@@ -484,12 +484,51 @@ function SkillBar({ name, score, cohort, percentile }: {
 }
 
 /** Per-question card — collapsed shows verdict + score, expanded shows full coaching. */
-function QuestionCard({ q, index, sessionId }: { q: SessionReportPerQuestion; index: number; sessionId: string }) {
+function QuestionCard({ q, index, sessionId, sessionCompany, sessionRole, sessionFocus }: {
+  q: SessionReportPerQuestion;
+  index: number;
+  sessionId: string;
+  /* Denormalised setup metadata so the active-learning feedback row can
+     send (company, role, focus) alongside the thumbs without re-joining
+     to the sessions table at aggregate time. Optional with empty-string
+     defaults — older callers keep working. */
+  sessionCompany?: string;
+  sessionRole?: string;
+  sessionFocus?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveCoachedState, setSaveCoachedState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  /* Local optimistic state for the per-question thumbs. Latest click wins;
+     server is upsert-keyed on (user, session, question_index). */
+  const [thumbs, setThumbs] = useState<"up" | "down" | "real" | null>(null);
   const verdictMeta = VERDICT_META[q.verdict] || VERDICT_META.partial;
   const starChips: Array<"S" | "T" | "A" | "R"> = ["S", "T", "A", "R"];
+
+  const submitThumbs = async (next: "up" | "down" | "real") => {
+    /* Toggle off if clicking the same one again. Optimistic UI — never
+       blocks the user's interaction on the network call. */
+    const newValue = thumbs === next ? null : next;
+    setThumbs(newValue);
+    if (!newValue) return; // toggling off doesn't need a server round-trip
+    track("question_feedback", { sessionId, questionIdx: index, thumbs: next });
+    try {
+      const { apiFetch } = await import("./apiClient");
+      await apiFetch("/api/question-feedback", {
+        sessionId,
+        questionIndex: index,
+        questionText: q.question || "",
+        thumbs: next,
+        company: sessionCompany || "",
+        role: sessionRole || "",
+        focus: sessionFocus || "",
+      });
+    } catch (err) {
+      /* Fire-and-forget: feedback isn't critical. Log but don't roll back
+         the optimistic UI — a failed submission still expressed intent. */
+      console.warn("[QuestionCard] thumbs submit failed:", err instanceof Error ? err.message : err);
+    }
+  };
 
   const onSave = async () => {
     if (saveState === "saving" || saveState === "saved") return;
@@ -811,7 +850,86 @@ function QuestionCard({ q, index, sessionId }: { q: SessionReportPerQuestion; in
           )}
         </div>
       )}
+      {/* Per-question feedback row — active-learning loop. Three signals:
+          ↑ realistic / well-targeted   ↓ off-base / generic
+          ★ this matched my real interview (highest-value signal — drives
+          curated-bank updates and retrieval re-weighting). Always visible
+          (collapsed or expanded), since most users won't expand the card
+          but most CAN give a one-tap signal. */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "flex-end",
+        gap: 6, padding: "8px 18px", borderTop: `1px solid ${c.border}`,
+        background: "rgba(245,242,237,0.02)",
+      }}>
+        <span style={{
+          fontFamily: font.mono, fontSize: 9, fontWeight: 600,
+          letterSpacing: 0.6, textTransform: "uppercase",
+          color: c.stone, marginRight: "auto",
+        }}>
+          Was this question useful?
+        </span>
+        <ThumbsButton
+          active={thumbs === "up"}
+          onClick={() => submitThumbs("up")}
+          ariaLabel="Mark as realistic"
+          tooltip="Realistic / well-targeted"
+          activeColor={c.sage}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill={thumbs === "up" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+        </ThumbsButton>
+        <ThumbsButton
+          active={thumbs === "down"}
+          onClick={() => submitThumbs("down")}
+          ariaLabel="Mark as off-base"
+          tooltip="Off-base / generic"
+          activeColor={c.ember}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill={thumbs === "down" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>
+        </ThumbsButton>
+        <ThumbsButton
+          active={thumbs === "real"}
+          onClick={() => submitThumbs("real")}
+          ariaLabel="This matched my real interview"
+          tooltip="This matched my real interview"
+          activeColor={c.gilt}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill={thumbs === "real" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </ThumbsButton>
+      </div>
     </div>
+  );
+}
+
+/* Small inline thumbs button — shared by the three feedback options
+   above. Active state lights up in the option's signal color (sage /
+   ember / gilt); inactive sits quiet on the surface. */
+function ThumbsButton({ active, onClick, ariaLabel, tooltip, activeColor, children }: {
+  active: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+  tooltip: string;
+  activeColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      aria-pressed={active}
+      title={tooltip}
+      style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        width: 28, height: 28, borderRadius: 6,
+        background: active ? `${activeColor}20` : "transparent",
+        border: `1px solid ${active ? `${activeColor}55` : "rgba(245,242,237,0.10)"}`,
+        color: active ? activeColor : c.stone,
+        cursor: "pointer",
+        transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
+      }}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -1308,7 +1426,17 @@ export const SessionReportView = memo(function SessionReportView({
                 Per-question Review
               </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {report.perQuestion.map((q, i) => <QuestionCard key={i} q={q} index={i} sessionId={session.id} />)}
+                {report.perQuestion.map((q, i) => (
+                  <QuestionCard
+                    key={i}
+                    q={q}
+                    index={i}
+                    sessionId={session.id}
+                    sessionCompany={session.company || ""}
+                    sessionRole={session.role || ""}
+                    sessionFocus={session.focus || session.type || ""}
+                  />
+                ))}
               </div>
             </div>
           )}

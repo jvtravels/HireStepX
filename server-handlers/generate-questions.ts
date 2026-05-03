@@ -11,6 +11,12 @@ import { matchRoleKey } from "../data/role-competencies";
 import { matchCompanyKey } from "../data/company-guidance";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import {
+  retrieveReferenceQuestions,
+  formatReferencesForPrompt,
+  inferRoleFamily,
+  normaliseFocus,
+} from "./_question-retrieval";
+import {
   extractQuestionsArray,
   validateQuestionShape,
   normalizePanelPersonas,
@@ -380,8 +386,23 @@ INTRO EXPECTATIONS (mandatory, after the warmth line): The intro MUST set 3 expl
   2. How many questions: "I'll ask ${questionCount} questions, with follow-ups based on your answers." (use the actual count)
   3. Permission: "Take your time on each. You can ask me to repeat the question anytime, or just type if you'd rather not speak."
 Real interviews open this way — it dramatically reduces anxiety. Phrase it naturally, not as a checklist; spread the three across 1-2 sentences.`;
+
+    /* Retrieve curated reference questions and inject them as STYLE
+       anchors. The retrieval is hierarchical (exact → role+focus → focus
+       → none), so it gracefully degrades for combinations not in the
+       bank. The formatter includes the "do not copy verbatim"
+       instruction inline so callers can't accidentally drop it. See
+       server-handlers/_question-retrieval.ts. */
+    const retrievalResult = retrieveReferenceQuestions({
+      company: companyName,
+      roleFamily: inferRoleFamily(targetRole) ?? undefined,
+      focus: normaliseFocus(interviewFocus) ?? undefined,
+      limit: 4,
+    });
+    const referenceBlock = formatReferencesForPrompt(retrievalResult);
+
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}
+${typeGuidance ? `\n${typeGuidance}\n` : ""}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.

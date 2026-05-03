@@ -102,6 +102,31 @@ create table if not exists feedback (
   created_at timestamptz default now()
 );
 
+-- 4b. Per-question feedback (active-learning loop)
+-- Captures the user's signal on EACH generated question so we can mine
+-- under-performing patterns and feed corrections back into the curated
+-- bank. Distinct from `feedback` (above) which is whole-session sentiment.
+-- thumbs: 'up' = realistic / good question; 'down' = off-base / generic;
+--         'real' = candidate marks "this matched my real interview"
+create table if not exists question_feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  session_id text references sessions(id) on delete cascade not null,
+  question_index integer not null,           -- ordinal in the session script
+  question_text text not null,                -- exact text shown to candidate
+  thumbs text check (thumbs in ('up', 'down', 'real')) not null,
+  -- denormalised setup so we can aggregate without joining sessions
+  company text default '',
+  role text default '',
+  focus text default '',
+  comment text default '',
+  created_at timestamptz default now()
+);
+create index if not exists idx_question_feedback_user on question_feedback(user_id, created_at desc);
+create index if not exists idx_question_feedback_company_focus on question_feedback(company, focus, created_at desc);
+-- Upsert key: latest thumbs per (user, session, question) wins
+create unique index if not exists ux_question_feedback_per_question on question_feedback(user_id, session_id, question_index);
+
 -- 5. Payments
 create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
@@ -498,6 +523,19 @@ create policy "Users can update own feedback" on feedback
 drop policy if exists "Users can delete own feedback" on feedback;
 create policy "Users can delete own feedback" on feedback
   for delete using ((auth.uid())::text = user_id::text);
+
+-- Question feedback (active-learning loop): users CRUD their own only.
+-- Service role aggregates across all rows for the curation pipeline.
+alter table question_feedback enable row level security;
+drop policy if exists "Users can view own question feedback" on question_feedback;
+create policy "Users can view own question feedback" on question_feedback
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can insert own question feedback" on question_feedback;
+create policy "Users can insert own question feedback" on question_feedback
+  for insert with check ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can update own question feedback" on question_feedback;
+create policy "Users can update own question feedback" on question_feedback
+  for update using ((auth.uid())::text = user_id::text);
 
 -- Payments: users can only view their own payments (insert via service role only)
 drop policy if exists "Users can view own payments" on payments;

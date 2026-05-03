@@ -1,0 +1,189 @@
+/* HireStepX — Reference-question retrieval
+ *
+ * Hierarchical fallback retrieval over the curated question bank
+ * (data/interview-question-bank.ts). Returns up to K reference entries
+ * for a (company × roleFamily × focus) query, with explicit "tier"
+ * metadata so the calling LLM prompt knows how tight the match is and
+ * can adjust its instruction accordingly.
+ *
+ * Tier semantics:
+ *   1 = exact (company × roleFamily × focus)
+ *   2 = same role + focus, any company
+ *   3 = same focus only, any role/company
+ *   4 = nothing matched — caller falls through to pure-LLM generation
+ *
+ * Pure module: no React, no DB, no fetch. The bank is in-memory at edge
+ * cold-start; lookups are O(n) over a small list (≤200 entries) so no
+ * index needed yet. When we swap to vector RAG (Phase 3), the surface
+ * area of this module stays the same — only the implementation behind
+ * `retrieveReferenceQuestions` changes.
+ */
+
+import {
+  QUESTION_BANK,
+  type BankEntry,
+  type CompanyKey,
+  type RoleFamily,
+  type FocusArea,
+} from "../data/interview-question-bank";
+
+export type RetrievalTier = 1 | 2 | 3 | 4;
+
+export interface RetrievalQuery {
+  /** Free-text company name from the user's setup form. Normalised here. */
+  company?: string;
+  /** Inferred role family (swe / pm / em / data / design / behavioral). */
+  roleFamily?: RoleFamily;
+  /** Interview focus area (behavioral / technical / case-study / etc). */
+  focus?: FocusArea;
+  /** How many references to return. Default 5, hard-capped at 8. */
+  limit?: number;
+}
+
+export interface RetrievalResult {
+  entries: BankEntry[];
+  tier: RetrievalTier;
+  /** True only when entries.length > 0. False is a signal to caller
+   *  that no relevant references were found. */
+  hasMatches: boolean;
+}
+
+/* ─── Company-name normalisation ────────────────────────────────────
+   Users write "Flipkart", "FlipKart", "flipkart.com" — collapse to
+   the bank's canonical key. Returns null when nothing matches; the
+   retrieval then falls through to non-company tiers. */
+const COMPANY_ALIASES: Record<string, CompanyKey> = {
+  google: "google", "google india": "google",
+  amazon: "amazon", "amazon india": "amazon", "aws": "amazon",
+  microsoft: "microsoft", "ms": "microsoft", "msft": "microsoft",
+  meta: "meta", facebook: "meta", fb: "meta",
+  flipkart: "flipkart",
+  razorpay: "razorpay",
+  swiggy: "swiggy",
+  zomato: "zomato",
+  phonepe: "phonepe", "phone pe": "phonepe",
+  paytm: "paytm",
+  tcs: "tcs", "tata consultancy services": "tcs",
+  infosys: "infosys",
+  wipro: "wipro",
+  uber: "uber",
+  atlassian: "atlassian",
+};
+
+export function normaliseCompany(raw: string | undefined): CompanyKey | null {
+  if (!raw) return null;
+  const cleaned = raw.toLowerCase().replace(/[^a-z\s]/g, "").trim();
+  if (!cleaned) return null;
+  if (COMPANY_ALIASES[cleaned]) return COMPANY_ALIASES[cleaned];
+  // Loose contains check for things like "Flipkart Internet Pvt Ltd"
+  for (const [alias, key] of Object.entries(COMPANY_ALIASES)) {
+    if (cleaned.includes(alias)) return key;
+  }
+  return null;
+}
+
+/* ─── Role-family inference ─────────────────────────────────────────
+   The LLM prompt receives the user's free-text role ("Senior PM",
+   "SDE-3", "Lead UX"). Map to the role family our bank uses. */
+export function inferRoleFamily(rawRole: string | undefined): RoleFamily | null {
+  if (!rawRole) return null;
+  const r = rawRole.toLowerCase();
+  if (/\b(pm|product manager|product owner|apm|gpm|cpo|product lead)\b/.test(r)) return "pm";
+  if (/\b(em|engineering manager|tech lead|staff engineer|principal engineer|director)\b/.test(r)) return "em";
+  if (/\b(data scientist|ml engineer|data engineer|analyst|ds|data analyst)\b/.test(r)) return "data";
+  if (/\b(designer|ux|ui|product designer|design lead)\b/.test(r)) return "design";
+  if (/\b(swe|sde|software engineer|developer|programmer|engineer|backend|frontend|fullstack|full stack)\b/.test(r)) return "swe";
+  // Default: behavioral applies to most non-technical generic roles.
+  return "behavioral";
+}
+
+/* ─── Focus normalisation ───────────────────────────────────────────
+   Map the user-facing focus value to the bank's FocusArea. */
+const FOCUS_MAP: Record<string, FocusArea> = {
+  behavioral: "behavioral", general: "general",
+  technical: "technical", "system-design": "system-design",
+  "case-study": "case-study", "campus-placement": "campus-placement",
+  hr: "hr", panel: "panel", "salary-negotiation": "salary-negotiation",
+  leadership: "leadership", strategic: "case-study",
+};
+export function normaliseFocus(raw: string | undefined): FocusArea | null {
+  if (!raw) return null;
+  return FOCUS_MAP[raw.toLowerCase()] || null;
+}
+
+/* ─── Recency weight ────────────────────────────────────────────────
+   Older quarters get downweighted so 2024 questions don't outrank a
+   fresh 2026 entry on a tie. Decay is mild — interview formats
+   evolve gradually, not abruptly. */
+function recencyWeight(addedQuarter: string): number {
+  const m = addedQuarter.match(/^(\d{4})-Q([1-4])$/);
+  if (!m) return 0.5;
+  const yearVal = parseInt(m[1], 10) + (parseInt(m[2], 10) - 1) * 0.25;
+  const nowYear = new Date().getFullYear() + Math.floor(new Date().getMonth() / 3) * 0.25;
+  const ageYears = Math.max(0, nowYear - yearVal);
+  return 1 / (1 + ageYears * 0.4);
+}
+
+/* ─── The retrieval ────────────────────────────────────────────────
+   Run the four tiers in order; return the first that gives ≥1 match.
+   Within a tier, sort by recencyWeight DESC. */
+export function retrieveReferenceQuestions(query: RetrievalQuery): RetrievalResult {
+  const limit = Math.min(query.limit ?? 5, 8);
+  const company = normaliseCompany(query.company);
+  const roleFamily = query.roleFamily ?? null;
+  const focus = query.focus ?? null;
+
+  const sortByRecency = (a: BankEntry, b: BankEntry) =>
+    recencyWeight(b.addedQuarter) - recencyWeight(a.addedQuarter);
+
+  /* Tier 1: exact match */
+  if (company && roleFamily && focus) {
+    const exact = QUESTION_BANK.filter(e =>
+      e.company === company && e.roleFamily === roleFamily && e.focus === focus,
+    ).sort(sortByRecency).slice(0, limit);
+    if (exact.length > 0) return { entries: exact, tier: 1, hasMatches: true };
+  }
+
+  /* Tier 2: same role + focus, any company */
+  if (roleFamily && focus) {
+    const t2 = QUESTION_BANK.filter(e =>
+      e.roleFamily === roleFamily && e.focus === focus,
+    ).sort(sortByRecency).slice(0, limit);
+    if (t2.length > 0) return { entries: t2, tier: 2, hasMatches: true };
+  }
+
+  /* Tier 3: same focus only */
+  if (focus) {
+    const t3 = QUESTION_BANK.filter(e => e.focus === focus)
+      .sort(sortByRecency).slice(0, limit);
+    if (t3.length > 0) return { entries: t3, tier: 3, hasMatches: true };
+  }
+
+  /* Tier 4: no match — caller should fall through to pure LLM generation */
+  return { entries: [], tier: 4, hasMatches: false };
+}
+
+/* ─── Prompt-injection formatter ────────────────────────────────────
+   Render retrieved entries as a section the LLM prompt can include.
+   The CRITICAL instruction — "use as STYLE inspiration, do NOT copy
+   verbatim" — is part of the rendered block so it can never be
+   accidentally omitted by callers. */
+export function formatReferencesForPrompt(result: RetrievalResult): string {
+  if (!result.hasMatches) return "";
+  const tierDescription =
+    result.tier === 1 ? "exact match for this company, role, and focus"
+    : result.tier === 2 ? "same role + focus at peer companies"
+    : result.tier === 3 ? "same focus area, broader role pool"
+    : "no direct match";
+  const lines: string[] = [];
+  lines.push("");
+  lines.push(`REAL-WORLD REFERENCE QUESTIONS (tier ${result.tier} — ${tierDescription}):`);
+  lines.push("These are HAND-CURATED, VERIFIED questions from real recent interviews. Use them as STYLE and DEPTH anchors. DO NOT copy them verbatim — generate fresh questions that match the format, specificity, and tone but use different wording, scenarios, or angles. The candidate must not see these literal strings.");
+  lines.push("");
+  for (const e of result.entries) {
+    lines.push(`  - ${e.text}`);
+    if (e.styleNote) lines.push(`    [pattern: ${e.styleNote}]`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}

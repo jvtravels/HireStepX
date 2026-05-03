@@ -12,6 +12,13 @@ export interface DashboardSession {
   change: number;
   duration: string;
   difficulty?: string;
+  /* Setup metadata used by the per-question feedback aggregator
+     (active-learning loop). The session row in Supabase already stores
+     these; making them optional here lets older dashboard list mappers
+     keep working while the report view passes them through to
+     QuestionCard for the thumbs-feedback payload. */
+  company?: string;
+  focus?: string;
   topStrength: string;
   topWeakness: string;
   feedback: string;
