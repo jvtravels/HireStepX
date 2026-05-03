@@ -225,10 +225,162 @@ function getRecommendedFocus(role?: string): string {
   return "Behavioral";
 }
 
+/* ─── PermissionCard ────────────────────────────────────────────────────
+   A two-state tile: idle / requesting / granted / denied (+ skipped for
+   camera). The idle state shows a primary "Allow …" button. Granted
+   collapses to a success row. Denied shows a help line + retry. Same
+   visual language as the focus chips so it feels native to the form. */
+function PermissionCard({
+  kind, label, sublabel, sublabelTone, status, onRequest, onSkip,
+}: {
+  kind: "mic" | "camera";
+  label: string;
+  sublabel: string;
+  sublabelTone: "copper" | "muted";
+  status: "idle" | "requesting" | "granted" | "denied" | "skipped";
+  onRequest: () => void;
+  onSkip?: () => void;
+}) {
+  const isGranted = status === "granted";
+  const isDenied = status === "denied";
+  const isSkipped = status === "skipped";
+  const icon = kind === "mic" ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="9" y="2" width="6" height="12" rx="3" />
+      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+      <line x1="8" y1="22" x2="16" y2="22" />
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M23 7l-7 5 7 5V7z" />
+      <rect x="1" y="5" width="15" height="14" rx="2" />
+    </svg>
+  );
+
+  return (
+    <div
+      style={{
+        padding: 14,
+        borderRadius: 12,
+        background: isGranted
+          ? `linear-gradient(180deg, rgba(21,128,61,0.08), ${T.white})`
+          : isDenied
+            ? `linear-gradient(180deg, rgba(185,28,28,0.06), ${T.white})`
+            : T.white,
+        border: `1px solid ${isGranted ? T.success : isDenied ? T.error : T.line}`,
+        boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        transition: "all 220ms cubic-bezier(.2,.7,.2,1)",
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 6,
+          background: isGranted ? "rgba(21,128,61,0.10)" : isDenied ? "rgba(185,28,28,0.08)" : T.indigo100,
+          color: isGranted ? T.success : isDenied ? T.error : T.coal,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal, display: "flex", alignItems: "center", gap: 8 }}>
+          <span>{label}</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: sublabelTone === "copper" ? T.copper : T.inkFaint }}>· {sublabel}</span>
+        </div>
+        <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
+          {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
+          {status === "requesting" && "Waiting for your permission…"}
+          {isGranted && (kind === "mic" ? "Microphone ready" : "Camera ready")}
+          {isDenied && (kind === "mic"
+            ? "Blocked. Open browser settings → allow microphone, then retry."
+            : "Blocked — you can still proceed without camera.")}
+          {isSkipped && "Skipped for this session."}
+        </div>
+      </div>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        {status === "idle" && (
+          <button
+            type="button"
+            onClick={onRequest}
+            style={{
+              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
+              padding: "8px 14px", borderRadius: 8,
+              background: T.indigo, color: T.cream, border: "1px solid transparent",
+              cursor: "pointer", transition: "all 160ms ease",
+              boxShadow: "0 1px 2px rgba(20,17,10,.08)",
+            }}
+          >
+            Allow
+          </button>
+        )}
+        {status === "requesting" && (
+          <span style={{ width: 16, height: 16, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        )}
+        {isGranted && (
+          <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: T.success, color: T.cream, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </span>
+        )}
+        {isDenied && (
+          <button
+            type="button"
+            onClick={onRequest}
+            style={{
+              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
+              padding: "8px 14px", borderRadius: 8,
+              background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`,
+              cursor: "pointer", transition: "all 160ms ease",
+            }}
+          >
+            Retry
+          </button>
+        )}
+        {kind === "camera" && status === "idle" && onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            style={{
+              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
+              padding: "8px 12px", borderRadius: 8,
+              background: "transparent", color: T.inkSoft, border: "0",
+              cursor: "pointer",
+            }}
+          >
+            Skip
+          </button>
+        )}
+        {isSkipped && onRequest && (
+          <button
+            type="button"
+            onClick={onRequest}
+            style={{
+              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
+              padding: "8px 14px", borderRadius: 8,
+              background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`,
+              cursor: "pointer",
+            }}
+          >
+            Enable
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════
    SESSION SETUP — single-page flow (matches the SetupEmpty canvas)
-   Target role + Company + Interview focus → Start practice.
-   The interview page itself handles mic permission when needed.
+   Target role + Company + Interview focus + Permissions → Start practice.
    ═══════════════════════════════════════════════ */
 
 export default function SessionSetup() {
@@ -301,7 +453,56 @@ export default function SessionSetup() {
   const [launching, setLaunching] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
-  const canProceedStep1 = !!targetRole.trim() && interviewFocus.length > 0;
+  /* ── Permissions ───────────────────────────────────────────────────────
+     Mic is compulsory (voice-first interview); camera is optional and the
+     user can skip it. We request permissions on this screen so the
+     interview surface itself can launch with everything granted — no
+     mid-interview permission prompt that breaks the flow. */
+  type PermStatus = "idle" | "requesting" | "granted" | "denied";
+  const [micStatus, setMicStatus] = useState<PermStatus>("idle");
+  const [cameraStatus, setCameraStatus] = useState<PermStatus | "skipped">("idle");
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
+  const requestMic = async () => {
+    setMicStatus("requesting");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+      setMicStatus("granted");
+    } catch {
+      setMicStatus("denied");
+    }
+  };
+
+  const requestCamera = async () => {
+    setCameraStatus("requesting");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      cameraStreamRef.current = stream;
+      setCameraStatus("granted");
+    } catch {
+      setCameraStatus("denied");
+    }
+  };
+
+  const skipCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    cameraStreamRef.current = null;
+    setCameraStatus("skipped");
+  };
+
+  // Stop preview streams on unmount — the interview surface re-requests
+  // permissions itself (browsers cache the grant, so it's instant).
+  useEffect(() => {
+    return () => {
+      micStreamRef.current?.getTracks().forEach(t => t.stop());
+      cameraStreamRef.current?.getTracks().forEach(t => t.stop());
+    };
+  }, []);
+
+  const formComplete = !!targetRole.trim() && interviewFocus.length > 0;
+  const canProceedStep1 = formComplete && micStatus === "granted";
 
   // Launch interview
   const handleStart = () => {
@@ -322,7 +523,12 @@ export default function SessionSetup() {
     setTimeout(() => setCountdown(1), 2000);
     setTimeout(() => {
       setCountdown(0);
-      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}`);
+      // Release the preview streams — the interview surface re-acquires
+      // them. The browser keeps the permission grant so this is instant.
+      micStreamRef.current?.getTracks().forEach(t => t.stop());
+      cameraStreamRef.current?.getTracks().forEach(t => t.stop());
+      const cameraParam = cameraStatus === "granted" ? "&camera=1" : "";
+      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}`);
     }, 3000);
   };
 
@@ -341,6 +547,10 @@ export default function SessionSetup() {
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) {
+          .ob-permissions-grid { grid-template-columns: 1fr !important; }
+        }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         @media (max-width: 1024px) {
           .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
@@ -504,6 +714,35 @@ export default function SessionSetup() {
                       Show all 10 interview types
                     </button>
                   )}
+                </div>
+
+                {/* ── Permissions — mic compulsory, camera optional ── */}
+                <div className="fade-up-3">
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</div>
+                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
+                      We&apos;ll only use these for this practice session. Nothing is recorded or shared.
+                    </div>
+                  </div>
+                  <div className="ob-permissions-grid">
+                    <PermissionCard
+                      kind="mic"
+                      label="Microphone"
+                      sublabel="Required"
+                      sublabelTone="copper"
+                      status={micStatus}
+                      onRequest={requestMic}
+                    />
+                    <PermissionCard
+                      kind="camera"
+                      label="Camera"
+                      sublabel="Optional"
+                      sublabelTone="muted"
+                      status={cameraStatus}
+                      onRequest={requestCamera}
+                      onSkip={skipCamera}
+                    />
+                  </div>
                 </div>
 
               </div>
