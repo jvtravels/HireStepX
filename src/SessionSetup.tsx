@@ -454,9 +454,12 @@ export default function SessionSetup() {
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         .ob-mic-pulse { animation: pulse 2s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .ob-s2-focus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        @media (max-width: 1024px) {
+          .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
         @media (max-width: 600px) {
           .ob-s2-role-grid { grid-template-columns: 1fr !important; }
           .ob-s2-focus-grid { grid-template-columns: 1fr 1fr !important; }
@@ -572,33 +575,26 @@ export default function SessionSetup() {
       </div>
 
       {/* ─── Content ─── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 32px", overflow: "auto" }}>
-        <div key={step} style={{ width: "100%", maxWidth: step === 2 ? "min(680px, calc(100vw - 32px))" : "min(960px, calc(100vw - 32px))", transition: "max-width 0.4s ease", animation: "fadeUp 0.3s ease" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "clamp(24px, 4vh, 64px) 32px 80px", overflow: "auto" }}>
+        <div key={step} style={{ width: "100%", maxWidth: step === 2 ? "min(680px, calc(100vw - 32px))" : "min(1080px, calc(100vw - 32px))", transition: "max-width 0.4s ease", animation: "fadeUp 0.3s ease" }}>
 
           {/* ════════════════ STEP 1: Set up your session ════════════════ */}
           {step === 1 && (
             <div>
-              <div style={{ marginBottom: 32 }} className="fade-up-1">
-                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>Step 1 — Your Session</p>
-                <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2rem, 4.4vw, 3rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.08, marginBottom: 10 }}>
+              {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
+              <div style={{ marginBottom: 36, textAlign: "center" }} className="fade-up-1">
+                <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2.5rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0, whiteSpace: "nowrap" }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h2>
-                <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, lineHeight: 1.7 }}>
-                  Choose your target role, interview focus, and session length. AI will tailor questions to your profile.
+                <p style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
+                  Tell us a few things and we&apos;ll personalise the experience for you.
                 </p>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                {/* ── Section 1: Role & Company ── */}
-                <div className="ob-card fade-up-1" style={{ borderRadius: 16, padding: "24px 28px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                    </div>
-                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Target Role</span>
-                    <span style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, fontWeight: 400, marginLeft: 4 }}>— AI tailors questions to this role</span>
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+                {/* ── Role & Company — canvas-style: clean field rows, no card chrome ── */}
+                <div className="fade-up-1">
                   <div className="ob-s2-role-grid">
                     <div>
                       <AutocompleteInput id="setup-role" value={targetRole} onChange={(v) => { setTargetRole(v); setRoleTouched(true); }} suggestions={ROLE_SUGGESTIONS} placeholder="e.g. Senior Engineering Manager..." label="Role" required error={roleTouched && !targetRole.trim() ? "Required to personalize your questions" : undefined} />
@@ -619,19 +615,30 @@ export default function SessionSetup() {
                   </div>
                 </div>
 
-                {/* ── Section 2: Interview Focus ── */}
-                <div className="ob-card fade-up-2" style={{ borderRadius: 16, padding: "24px 28px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                {/* ── Interview Focus — canvas-style: clean label, 5-col grid, "Not sure?" link ── */}
+                <div className="fade-up-2">
+                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, gap: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
+                        <span>Interview focus</span>
+                        <span style={{ color: T.copper, fontSize: 12 }}>*</span>
+                      </div>
+                      <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
+                        {isFirstTimer && !showAllFocus
+                          ? "We picked the best for your role. Explore all 10 below."
+                          : "Choose one area to focus on."}
+                      </div>
                     </div>
-                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Interview Focus <span style={{ color: T.error, fontWeight: 400 }}>*</span></span>
+                    <button
+                      type="button"
+                      aria-label="Pick Mixed if you're unsure"
+                      onClick={() => { setShowAllFocus(true); setInterviewFocus(["Behavioral"]); }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: T.indigo, background: "transparent", border: 0, cursor: "pointer", padding: 0 }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+                      Not sure? Start with Behavioral.
+                    </button>
                   </div>
-                  <p style={{ fontFamily: F.sans, fontSize: 12, color: T.inkFaint, marginBottom: 16, paddingLeft: 36 }}>
-                    {isFirstTimer && !showAllFocus
-                      ? "We picked the best types for your role. Or explore all 10 interview types below."
-                      : "Choose what you want to practice. AI will prepare questions based on your selection."}
-                  </p>
                   <div className="ob-s2-focus-grid">
                     {(() => {
                       const allOpts = [
@@ -658,27 +665,27 @@ export default function SessionSetup() {
                         const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
                         return (
                           <button key={opt.value} className="ob-focus-card" onClick={() => setInterviewFocus([opt.value])}
+                            type="button"
+                            role="radio"
+                            aria-checked={sel}
                             style={{
-                              padding: "14px 18px", borderRadius: 12, cursor: "pointer", transition: "all 0.2s ease", textAlign: "left",
-                              background: sel ? "rgba(49,46,129,0.08)" : "transparent",
-                              border: `1.5px solid ${sel ? T.indigo : T.line}`,
-                              boxShadow: sel ? "0 0 16px rgba(49,46,129,0.06)" : "none",
-                              display: "flex", alignItems: "center", gap: 12, color: sel ? T.indigo : T.inkFaint,
-                              position: "relative",
+                              padding: 14, borderRadius: 12, cursor: "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
+                              background: sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
+                              border: `1px solid ${sel ? T.indigo : T.line}`,
+                              boxShadow: sel ? `0 0 0 3px ${T.indigoRing}` : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
+                              display: "flex", alignItems: "center", gap: 10, color: T.coal,
+                              position: "relative", fontFamily: F.sans,
                             }}>
                             {isRecommended && (
-                              <span style={{ position: "absolute", top: -8, right: 12, fontFamily: F.sans, fontSize: 9, fontWeight: 700, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
+                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 9, fontWeight: 700, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
                             )}
-                            <div style={{ width: 36, height: 36, borderRadius: 9, background: sel ? T.indigo100 : "rgba(14,12,8,0.03)", border: `1px solid ${sel ? "rgba(49,46,129,0.2)" : "rgba(14,12,8,0.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <span style={{ width: 32, height: 32, borderRadius: 6, background: T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               {opt.icon}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal, display: "block" }}>{opt.value}</span>
-                              <span style={{ fontFamily: F.sans, fontSize: 11, color: T.inkFaint, lineHeight: 1.4 }}>{opt.desc}</span>
-                            </div>
-                            <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${sel ? T.indigo : "rgba(14,12,8,0.12)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {sel && <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.indigo }} />}
-                            </div>
+                            </span>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: T.coal, flex: 1, lineHeight: 1.2 }}>{opt.value}</span>
+                            <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                            </span>
                           </button>
                         );
                       });
@@ -696,13 +703,11 @@ export default function SessionSetup() {
                   )}
                 </div>
 
-                {/* ── Section 3: Session Length ── */}
-                <div className="ob-card fade-up-3" style={{ borderRadius: 16, padding: "24px 28px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(49,46,129,0.06)", border: "1px solid rgba(49,46,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <span style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 600, color: T.coal }}>Session Length</span>
+                {/* ── Session length — canvas-style: clean label, no card chrome ── */}
+                <div className="fade-up-3">
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Session length</div>
+                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>Pick how much time you want to spend.</div>
                   </div>
                   <div className="ob-s2-session-grid">
                     {[
@@ -1009,35 +1014,39 @@ export default function SessionSetup() {
             </div>
           )}
 
-          {/* ─── Navigation (centered inline, matches Onboarding) ─── */}
+          {/* ─── Navigation — Step 1 uses a wide canvas-style CTA + trust line.
+                Step 2 keeps the Back/Start pair so the user can reverse out. ─── */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 40 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button onClick={goBack}
-                style={{
-                  fontFamily: F.sans, fontSize: 14, fontWeight: 500, padding: "14px 20px", borderRadius: 10,
-                  border: `1px solid ${T.line}`, background: "transparent", color: T.inkSoft,
-                  cursor: "pointer", transition: "all 0.2s ease", display: "inline-flex", alignItems: "center", gap: 6,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.inkSoft; e.currentTarget.style.color = T.coal; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.line; e.currentTarget.style.color = T.inkSoft; }}>
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                Back
-              </button>
+            <div style={{ display: step === 1 ? "block" : "flex", width: "100%", alignItems: "center", gap: 12 }}>
+              {step !== 1 && (
+                <button onClick={goBack}
+                  style={{
+                    fontFamily: F.sans, fontSize: 14, fontWeight: 500, padding: "14px 20px", borderRadius: 10,
+                    border: `1px solid ${T.line}`, background: "transparent", color: T.inkSoft,
+                    cursor: "pointer", transition: "all 0.2s ease", display: "inline-flex", alignItems: "center", gap: 6,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.inkSoft; e.currentTarget.style.color = T.coal; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.line; e.currentTarget.style.color = T.inkSoft; }}>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  Back
+                </button>
+              )}
 
               {step < TOTAL_STEPS ? (
                 <button onClick={goNext} disabled={!canProceedStep1}
                   style={{
-                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "14px 40px", borderRadius: 10, border: "none",
-                    background: !canProceedStep1 ? "rgba(49,46,129,0.15)" : `linear-gradient(135deg, ${T.indigo}, ${T.indigoDeep})`,
-                    color: !canProceedStep1 ? "rgba(49,46,129,0.4)" : T.cream,
+                    fontFamily: F.sans, fontSize: 15, fontWeight: 600, padding: "16px 28px", borderRadius: 10, border: "1px solid transparent",
+                    width: "100%",
+                    background: T.indigo,
+                    color: T.cream,
                     cursor: !canProceedStep1 ? "not-allowed" : "pointer",
-                    transition: "all 0.25s ease", display: "inline-flex", alignItems: "center", gap: 8,
-                    boxShadow: !canProceedStep1 ? "none" : "0 8px 24px rgba(49,46,129,0.2)",
-                  }}
-                  onMouseEnter={(e) => { if (canProceedStep1) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(49,46,129,0.3)"; } }}
-                  onMouseLeave={(e) => { if (canProceedStep1) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(49,46,129,0.2)"; } }}>
+                    opacity: !canProceedStep1 ? 0.5 : 1,
+                    transition: "all 160ms ease", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    boxShadow: !canProceedStep1 ? "none" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                    letterSpacing: 0.1,
+                  }}>
                   Continue
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                 </button>
               ) : (
                 <>
@@ -1081,6 +1090,16 @@ export default function SessionSetup() {
                 </>
               )}
             </div>
+
+            {/* Trust line — only on Step 1, mirrors the canvas footer. */}
+            {step === 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Your responses stay private and are never shared.
+              </div>
+            )}
 
             {/* Save status indicator */}
             {saveStatus !== "idle" && (
