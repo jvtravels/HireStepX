@@ -739,26 +739,49 @@ export default function SessionSetup() {
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
         .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+        /* ─── Responsive layout ─────────────────────────────────────────
+           Three breakpoints: tablet (≤1024), small (≤600), tiny (≤500). */
+        .hsx-setup-topbar { padding: 32px 48px; }
+        .hsx-setup-content { padding: clamp(24px, 4vh, 64px) 32px 80px; }
+        .hsx-setup-hero-h1 { white-space: nowrap; }
+        .hsx-setup-identity-name { display: inline; }
+
+        @media (max-width: 1024px) {
+          .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 760px) {
+          /* The hero clamp settles to its floor here and the nowrap
+             starts overflowing. Let it wrap. */
+          .hsx-setup-hero-h1 { white-space: normal !important; text-wrap: balance; }
+        }
         @media (max-width: 600px) {
+          .hsx-setup-topbar { padding: 16px 20px !important; }
+          .hsx-setup-content { padding: 20px 20px 64px !important; }
+          .ob-s2-role-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+          .ob-s2-focus-grid { grid-template-columns: 1fr 1fr !important; }
+          .ob-s2-session-grid { grid-template-columns: 1fr !important; }
           .ob-permissions-grid { grid-template-columns: 1fr !important; }
           /* On narrow viewports the inline icon+copy+action layout wraps
              ugly. Stack the action below so the button can go full-width. */
           .hsx-permission-card { flex-wrap: wrap !important; }
           .hsx-permission-actions { width: 100%; justify-content: flex-end; padding-top: 4px; }
+          /* Focus chip labels ("Technical Leadership") need slightly less
+             padding to fit comfortably in the 2-col mobile grid. */
+          .ob-focus-card { padding: 12px !important; }
+          .ob-focus-card span:nth-child(2) { font-size: 12px !important; }
         }
-        .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        @media (max-width: 1024px) {
-          .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
-        }
-        @media (max-width: 600px) {
-          .ob-s2-role-grid { grid-template-columns: 1fr !important; }
-          .ob-s2-focus-grid { grid-template-columns: 1fr 1fr !important; }
-          .ob-s2-session-grid { grid-template-columns: 1fr !important; }
+        @media (max-width: 500px) {
+          /* Drop the name to keep the right cluster from overflowing —
+             avatar + Skip remain. The full name still appears via title
+             attr on the avatar block. */
+          .hsx-setup-identity-name { display: none !important; }
         }
       `}</style>
 
       {/* ─── Top Bar — same 3-col grid + tokens used by auth + onboarding. ─── */}
-      <div style={{ padding: "32px 48px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", borderBottom: `1px solid ${T.line}`, background: T.cream, gap: 16 }}>
+      <div className="hsx-setup-topbar" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", borderBottom: `1px solid ${T.line}`, background: T.cream, gap: 16 }}>
         <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ justifySelf: "start", cursor: "pointer" }} title="Back to dashboard">
           <Wordmark />
         </div>
@@ -779,7 +802,7 @@ export default function SessionSetup() {
                     </svg>
                   )}
                 </span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{trimmed}</span>
+                <span className="hsx-setup-identity-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{trimmed}</span>
               </div>
             );
           })()}
@@ -798,13 +821,13 @@ export default function SessionSetup() {
       </div>
 
       {/* ─── Content ─── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "clamp(24px, 4vh, 64px) 32px 80px", overflow: "auto" }}>
+      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto" }}>
         <div style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
 
           <div>
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
               <div style={{ marginBottom: 36, textAlign: "center" }} className="fade-up-1">
-                <h2 style={{ fontFamily: F.serif, fontSize: "clamp(2.5rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0, whiteSpace: "nowrap" }}>
+                <h2 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(2.5rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h2>
