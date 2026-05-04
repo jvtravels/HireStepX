@@ -555,6 +555,7 @@ Return a JSON object with EXACTLY this shape:
 
 CRITICAL RULES:
 - Pair each interviewer question with the candidate answer that follows it. Skip pairs where the candidate didn't answer (use verdict="skipped", restructured=null, topPerformerAnswer=null).
+- HARD RULE: if the candidate answer starts with the literal token "[SKIPPED" (case-sensitive), the candidate explicitly skipped that question. Force verdict="skipped", score=0, restructured=null. STILL emit a topPerformerAnswer (this is a coaching opportunity — show what a strong candidate would have said). Set explanation to a one-line note acknowledging the skip without judgment.
 - Every skill score must be justified by transcript evidence.
 - Restructured answer MUST NOT invent numbers, company names, or outcomes not present in the candidate's words. If quantification is missing, frame it as a gap ("you could add the exact % here") rather than making one up.
 - TopPerformerAnswer IS allowed to invent realistic details — that's its purpose. It should showcase STAR structure, quantified impact, first-person ownership, and role-appropriate scope. Aim for what a strong L5/Senior would say at the target company.

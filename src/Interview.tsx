@@ -192,9 +192,29 @@ function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEn
    a tiny popover with 4 reasons (industry standard for question-quality
    feedback loops). Selection fires posthog "interview_skip" + advances.
    "Just skip" lets users skip without committing to a reason. */
-function SkipWithReason({ onConfirm }: { onConfirm: (reason: string) => void }) {
+function SkipWithReason({
+  onConfirm,
+  canSkip,
+  skipsUsed,
+  skipBudget,
+}: {
+  onConfirm: (reason: string) => void;
+  canSkip: boolean;
+  skipsUsed: number;
+  skipBudget: number;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // Soft-disable: button still rendered for affordance/discoverability
+  // but click is a no-op + tooltip explains why. The handler-side
+  // toast (in handleSkipQuestion) backs this up if a click slips through.
+  const remaining = Math.max(0, skipBudget - skipsUsed);
+  const tooltip =
+    skipBudget === 0
+      ? "Skips aren't allowed in this interview type — every turn matters."
+      : !canSkip
+        ? `You've used your ${skipBudget} skip${skipBudget === 1 ? "" : "s"}. Work through this one, even partially.`
+        : `${remaining} skip${remaining === 1 ? "" : "s"} left`;
   // Close on outside click / Escape
   useEffect(() => {
     if (!open) return;
@@ -219,20 +239,24 @@ function SkipWithReason({ onConfirm }: { onConfirm: (reason: string) => void }) 
     <div ref={containerRef} style={{ position: "relative", display: "inline-block" }}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { if (canSkip) setOpen((v) => !v); }}
+        disabled={!canSkip}
+        title={tooltip}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Skip this question"
+        aria-label={canSkip ? `Skip this question (${remaining} left)` : "Skip not available"}
         style={{
           display: "inline-flex", alignItems: "center", gap: 6,
-          background: "transparent", border: "none", padding: "4px 6px", cursor: "pointer",
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.copper,
-          opacity: 0.85, transition: "opacity 160ms ease",
+          background: "transparent", border: "none", padding: "4px 6px",
+          cursor: canSkip ? "pointer" : "not-allowed",
+          fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
+          color: canSkip ? e.copper : e.inkFaint,
+          opacity: canSkip ? 0.85 : 0.5, transition: "opacity 160ms ease",
         }}
-        onMouseEnter={(ev) => (ev.currentTarget.style.opacity = "1")}
-        onMouseLeave={(ev) => (ev.currentTarget.style.opacity = "0.85")}
+        onMouseEnter={(ev) => { if (canSkip) ev.currentTarget.style.opacity = "1"; }}
+        onMouseLeave={(ev) => { ev.currentTarget.style.opacity = canSkip ? "0.85" : "0.5"; }}
       >
-        <span>Skip question</span>
+        <span>Skip question{canSkip && skipBudget > 0 ? ` · ${remaining} left` : ""}</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <polyline points="13 17 18 12 13 7" />
@@ -432,17 +456,19 @@ function CanvasLiveMetricsRow({ metrics }: {
 function CanvasListeningActionZone({
   currentTranscript, setCurrentTranscript,
   speechUnavailable, setSpeechUnavailable,
-  handleNextQuestion, textareaRef, nextBtnRef,
+  handleNextQuestion, handleSkipQuestion, textareaRef, nextBtnRef,
   isMuted, micQuiet, isCurrentFollowUp,
   replayQuestion, aiVoiceEnabled, hasQuestion,
   liveMetrics, interviewType,
   timeRemaining, timePercent,
+  skipsUsed, skipBudget, canSkip,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
   speechUnavailable: boolean;
   setSpeechUnavailable: (v: boolean) => void;
   handleNextQuestion: () => void;
+  handleSkipQuestion: (reason: string) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   nextBtnRef: React.RefObject<HTMLButtonElement | null>;
   isMuted: boolean;
@@ -460,6 +486,9 @@ function CanvasListeningActionZone({
   interviewType?: string | null;
   timeRemaining: number;
   timePercent: number;
+  skipsUsed: number;
+  skipBudget: number;
+  canSkip: boolean;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -688,9 +717,12 @@ function CanvasListeningActionZone({
           </>
         )}
         <SkipWithReason
+          canSkip={canSkip}
+          skipsUsed={skipsUsed}
+          skipBudget={skipBudget}
           onConfirm={(reason) => {
             captureClientEvent("interview_skip", { reason });
-            handleNextQuestion();
+            handleSkipQuestion(reason);
           }}
         />
       </div>
@@ -738,7 +770,8 @@ function InterviewInner() {
     setShowTranscript, setShowEndModal,
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
-    handleNextQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
+    handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
+    skipsUsed, skipBudget, canSkip,
     micQuiet, reconnecting, reconnectAttempt,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
@@ -1003,6 +1036,7 @@ function InterviewInner() {
             speechUnavailable={speechUnavailable}
             setSpeechUnavailable={setSpeechUnavailable}
             handleNextQuestion={handleNextQuestion}
+            handleSkipQuestion={handleSkipQuestion}
             textareaRef={textareaRef}
             nextBtnRef={nextBtnRef}
             isMuted={isMuted}
@@ -1015,6 +1049,9 @@ function InterviewInner() {
             interviewType={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("type") : null}
             timeRemaining={timeRemaining}
             timePercent={timePercent}
+            skipsUsed={skipsUsed}
+            skipBudget={skipBudget}
+            canSkip={canSkip}
           />
         )}
 

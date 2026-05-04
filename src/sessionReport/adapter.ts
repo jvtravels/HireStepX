@@ -323,12 +323,31 @@ function adaptQuestion(
   allRedFlags: SessionReportRedFlag[]
 ): Question {
   const myFlags = allRedFlags.filter((f) => f.questionIdx === q.idx);
+  // A skipped question is a free coaching surface — we keep the
+  // exemplar/restructured content but replace the candidate's answer
+  // body with an explicit "Skipped" line so the report doesn't show
+  // the "[SKIPPED — reason: …]" sentinel verbatim.
+  const isSkipped = q.verdict === "skipped" || /^\[SKIPPED/i.test(q.answerText || "");
+  const skipReasonMatch = (q.answerText || "").match(/reason:\s*([a-z_]+)/i);
+  const skipReasonLabel: Record<string, string> = {
+    too_easy: "marked it too easy",
+    too_hard: "marked it too hard",
+    not_relevant: "marked it not relevant",
+    already_answered: "said they'd already covered this",
+    no_reason: "skipped without a reason",
+  };
+  const reasonText = skipReasonMatch ? (skipReasonLabel[skipReasonMatch[1]] || "skipped") : "skipped";
   return {
     index: q.idx + 1, // prod is 0-indexed; UX is 1-indexed
     text: q.question,
-    score: q.score,
-    band: q.verdict === "skipped" ? "weak" : q.verdict,
-    answer: highlightAnswer(q.answerText),
+    score: isSkipped ? 0 : q.score,
+    // band is the report's color/label — coerce "skipped" to "weak"
+    // for the band tone (copper/error). The skipped state itself is
+    // signaled by the answer-body line and a 0 score in the row.
+    band: isSkipped || q.verdict === "skipped" ? "weak" : q.verdict,
+    answer: isSkipped
+      ? [{ text: `(Skipped — you ${reasonText}. Counted as 0/100.)` }]
+      : highlightAnswer(q.answerText),
     restructured: q.restructured ? plainSpans(q.restructured.text) : undefined,
     topPerformerAnswer: q.topPerformerAnswer
       ? plainSpans(q.topPerformerAnswer.text)

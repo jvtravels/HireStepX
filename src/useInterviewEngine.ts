@@ -513,6 +513,21 @@ export function useInterviewEngine() {
 
   // Panel interview: 3 members with gender-matched voices
   const isPanelInterview = interviewType === "panel";
+
+  /* ─── Skip-question budget ───
+     Per the product policy: skips are real but cost something (the
+     question scores 0 with verdict "skipped"). Budget by interview
+     type — warmup unlimited (just practice), behavioral/standard 1,
+     panel 2 (longer session), salary negotiation 0 (every turn is
+     a real move). The button disables once exhausted. */
+  const skipBudget = useMemo<number>(() => {
+    if (isMiniMode) return 99; // warmup → effectively unlimited
+    if (interviewType === "salary-negotiation") return 0;
+    if (interviewType === "panel") return 2;
+    return 1; // behavioral / technical / case-study / strategic / etc.
+  }, [interviewType, isMiniMode]);
+  const [skipsUsed, setSkipsUsed] = useState(0);
+  const canSkip = skipsUsed < skipBudget && skipBudget > 0;
   const panelMembers = useMemo(() =>
     isPanelInterview ? getPanelMembers(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`) : null,
     [isPanelInterview, interviewType, interviewFocus, targetCompany, user?.id]
@@ -1509,6 +1524,53 @@ export function useInterviewEngine() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { handleNextRef.current = handleNextQuestion; }, [handleNextQuestion]);
 
+  /* ─── Skip current question ───
+     Bypasses the empty-answer guard in handleNextQuestion (which is
+     correct for a regular submission but blocks legitimate skips).
+     Marks the answer with a sentinel "[SKIPPED]" + reason so the
+     evaluator definitely classifies the verdict as "skipped" and the
+     report scores it 0/100 with a clear "Skipped" label. The exemplar
+     and restructured-answer content still get generated for that Q —
+     a skipped question becomes a free coaching surface in the report
+     ("here's what an L4 candidate would have said"). */
+  const handleSkipQuestion = useCallback((reason: string) => {
+    if (phase !== "listening") return;
+    if (skipsUsed >= skipBudget) {
+      toast(
+        skipBudget === 0
+          ? "Skips aren't allowed in this interview type — every turn matters."
+          : `You've used your ${skipBudget} skip${skipBudget === 1 ? "" : "s"}. Work through this one, even partially.`,
+        "info",
+      );
+      return;
+    }
+    try { ttsCancelRef.current?.(); } catch { /* ignore TTS cleanup */ }
+    try { recognitionRef.current?.stop(); } catch { /* ignore STT cleanup */ }
+
+    const sentinel = `[SKIPPED — reason: ${reason || "no_reason"}]`;
+    const skippedEntry = { speaker: "user" as const, text: sentinel, time: formatTime(elapsed) };
+    setTranscript((prev) => [...prev, skippedEntry]);
+    setCurrentTranscript("");
+    setSkipsUsed((n) => n + 1);
+
+    // Advance to next step. We don't go through the follow-up pipeline
+    // (skipped questions don't deserve probes). Mirrors the no-followup
+    // path in handleNextQuestion's late branches.
+    advancingRef.current = true;
+    const nextIdx = currentStep + 1;
+    if (nextIdx >= interviewScript.length) {
+      setPhase("done");
+      advancingRef.current = false;
+      return;
+    }
+    setCurrentStep(nextIdx);
+    setPhase("thinking");
+    advancingRef.current = false;
+    // setCurrentStep / setPhase / setTranscript / setCurrentTranscript / setSkipsUsed
+    // are React useState setters — stable references, never change identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, skipsUsed, skipBudget, currentStep, interviewScript, elapsed, toast]);
+
   // Skip AI speaking
   const skipSpeaking = useCallback(() => {
     if (phase !== "speaking") return;
@@ -2076,9 +2138,15 @@ export function useInterviewEngine() {
 
     // Action functions
     handleNextQuestion,
+    handleSkipQuestion,
     skipSpeaking,
     retakeLastAnswer,
     handleEnd,
+
+    // Skip budget — used by Interview.tsx to enable/disable the skip CTA
+    skipsUsed,
+    skipBudget,
+    canSkip,
     navigate: router,
     retryQuestions,
     replayQuestion,
