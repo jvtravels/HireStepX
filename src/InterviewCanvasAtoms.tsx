@@ -267,9 +267,11 @@ export function CanvasEditorialHeading({ before = "", accent, after = "", traili
   before?: string; accent: string; after?: string; trailing?: string;
 }) {
   return (
+    /* line-height locked to the same value as CanvasPlainHeading so the
+       phase swap (speaking → listening) doesn't shift the heading height. */
     <h1 style={{
       fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
-      lineHeight: 1.18, fontWeight: 400, letterSpacing: "-0.015em",
+      lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: 0, textWrap: "balance",
     }}>
       {before && <>{before} </>}

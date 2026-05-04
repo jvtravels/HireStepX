@@ -260,12 +260,18 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
 });
 
 /* ─── Live Captions (synced to TTS voice playback) ─── */
-export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, speakingDuration, actualDuration, speechEnded }: {
+export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, speakingDuration, actualDuration, speechEnded, variant = "card" }: {
   text: string; isTyping: boolean; speakingDuration?: number;
   /** Real TTS audio duration in ms — reported by TTS provider after audio loads */
   actualDuration?: number;
   /** Set to true when TTS voice finishes — triggers fast-complete of remaining text */
   speechEnded?: boolean;
+  /** "card" stamps its own serif/22px (legacy panel layout). "inherit"
+      defers to the parent — used inside CanvasPlainHeading where the
+      h1's clamp() font controls typography. Mismatched type between
+      typewriter and final heading is what caused the visible "jerk"
+      when speaking → listening swapped the renderer. */
+  variant?: "card" | "inherit";
 }) {
   const [displayText, setDisplayText] = useState("");
   const [charIndex, setCharIndex] = useState(0);
@@ -310,11 +316,21 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
      transition. The visible animation is purely sighted-user candy. */
   return (
     <div style={{ width: "100%" }} aria-hidden="true">
-      <p style={{
-        fontFamily: ef.serif, fontSize: 22, color: e.coal,
-        lineHeight: 1.35, margin: 0, minHeight: 30,
-        letterSpacing: "-0.01em", textWrap: "balance",
-      }}>
+      <p style={
+        variant === "inherit"
+          ? {
+              // Inherit parent's font/size/spacing/color so we don't fight
+              // the surrounding heading. Only structural styles stay local.
+              font: "inherit", color: "inherit",
+              lineHeight: "inherit", letterSpacing: "inherit",
+              margin: 0, textWrap: "balance",
+            }
+          : {
+              fontFamily: ef.serif, fontSize: 22, color: e.coal,
+              lineHeight: 1.35, margin: 0, minHeight: 30,
+              letterSpacing: "-0.01em", textWrap: "balance",
+            }
+      }>
         {displayText}
         {isTyping && charIndex < text.length && (
           <span style={{ display: "inline-block", width: 2, height: 20, background: e.copper, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />

@@ -67,6 +67,22 @@ export function useInterviewSTT(
       let deepgramCleanup: (() => void) | null = null;
       let sarvamCleanup: (() => void) | null = null;
 
+      // Rolling-silence safety timer. Hoisted above all STT branches so
+      // every provider's onTranscript can re-arm it. Previous version was
+      // a fixed 30s timer from listening-start, which yanked users into
+      // text mode mid-answer for any STAR response longer than 30s.
+      let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+      const SAFETY_SILENCE_MS = 30_000;
+      const armSafetyTimer = () => {
+        if (safetyTimer) clearTimeout(safetyTimer);
+        safetyTimer = setTimeout(() => {
+          if (!stopped && !callbacks.interviewEndedRef.current && phase === "listening") {
+            console.warn("[interview] Listening safety timeout — enabling text fallback");
+            handleFallbackToText("Having trouble hearing you? Type your answer instead.");
+          }
+        }, SAFETY_SILENCE_MS);
+      };
+
       const handleMicDenied = () => {
         callbacks.setMicError("Microphone access denied. Check browser permissions.");
         callbacks.setSpeechUnavailable(true);
@@ -86,7 +102,10 @@ export function useInterviewSTT(
         console.warn("[STT] Trying Sarvam AI fallback...");
         const handle = await createSarvamSTT({
           onTranscript: (finalText, interim) => {
-            if (!stopped) callbacks.setCurrentTranscript(finalText + interim);
+            if (!stopped) {
+              if (finalText || interim) armSafetyTimer();
+              callbacks.setCurrentTranscript(finalText + interim);
+            }
           },
           onError: (error) => {
             if (stopped) return;
@@ -123,6 +142,10 @@ export function useInterviewSTT(
       let preservedFinalText = "";
       let lastFinalText = "";
 
+      // Arm the silence timer for the listening phase. Re-armed on every
+      // transcript update from any STT provider below.
+      armSafetyTimer();
+
       // Per-turn STT confidence tracker. Resets each time we open a
       // fresh Deepgram handle (which corresponds to a new "listening"
       // phase entry). Fires onLowSttConfidence at most once per turn
@@ -139,6 +162,12 @@ export function useInterviewSTT(
         const handle = await createDeepgramSTT({
           onTranscript: (finalText, interim) => {
             if (stopped) return;
+            // Any speech detected → re-arm the silence timer. Without this
+            // a 60s STAR answer would trip the 30s safety and yank the user
+            // into text mode mid-thought.
+            if ((finalText && finalText !== lastFinalText) || interim) {
+              armSafetyTimer();
+            }
             lastFinalText = finalText;
             callbacks.setCurrentTranscript(preservedFinalText + finalText + interim);
           },
@@ -228,11 +257,13 @@ export function useInterviewSTT(
             handleFallbackToText("Microphone issue detected. Try unmuting or refreshing.");
           }
         };
-        // Wrap onresult to reset counters on successful speech
+        // Wrap onresult to reset counters AND re-arm the silence safety
+        // timer on successful speech.
         recognition.onresult = ((origOnResult) => {
           return (event: SpeechRecognitionEvent) => {
             refs.noSpeechCountRef.current = 0;
             recognitionRestartCountRef.current = 0;
+            armSafetyTimer();
             origOnResult(event);
           };
         })(recognition.onresult);
@@ -261,15 +292,8 @@ export function useInterviewSTT(
 
       tryDeepgram();
 
-      const safetyTimer = setTimeout(() => {
-        if (!stopped && !callbacks.interviewEndedRef.current && phase === "listening") {
-          console.warn("[interview] Listening safety timeout — enabling text fallback");
-          handleFallbackToText("Having trouble hearing you? Type your answer instead.");
-        }
-      }, 30_000);
-
       return () => {
-        clearTimeout(safetyTimer);
+        if (safetyTimer) clearTimeout(safetyTimer);
         stopped = true;
         deepgramCleanup?.();
         sarvamCleanup?.();

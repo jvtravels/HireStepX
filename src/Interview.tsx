@@ -175,6 +175,7 @@ function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEn
       <LiveCaptions
         text={text}
         isTyping
+        variant="inherit"
         speakingDuration={speakingDuration}
         actualDuration={ttsDurationMs}
         speechEnded={speechEnded}
