@@ -17,6 +17,7 @@ next-env.d.ts
 /playwright/.cache/
 /playwright/.auth/
 tsconfig.tsbuildinfo
+*.tsbuildinfo
 # Vitest coverage — regenerated on every `npm run test:coverage` run.
 /coverage/
 *.lcov
