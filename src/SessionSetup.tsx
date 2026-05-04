@@ -591,9 +591,7 @@ export default function SessionSetup() {
   const SESSION_LENGTH = "15m";
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";
-  const isFirstTimer = !user?.practiceTimestamps || user.practiceTimestamps.length === 0;
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
-  const [showAllFocus, setShowAllFocus] = useState(false);
   const atSessionLimit = isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT;
   const { toast } = useToast();
 
@@ -1231,15 +1229,19 @@ export default function SessionSetup() {
                       <span style={{ color: T.copper, fontSize: 12 }}>*</span>
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      {isFirstTimer && !showAllFocus
-                        ? "We picked the best for your role. Explore all 10 below."
-                        : "Choose one area to focus on."}
+                      Choose one area to focus on. The recommended pick for your role is highlighted.
                     </div>
                   </div>
                   <div
                     className="ob-s2-focus-grid"
                     role="radiogroup"
                     aria-label="Interview focus"
+                    /* tabIndex={-1} so the radiogroup is programmatically
+                       focusable (satisfies jsx-a11y/interactive-supports-focus)
+                       without inserting it into the tab order — focus actually
+                       lives on the inner radio buttons via the roving-tabindex
+                       pattern the onKeyDown below maintains. */
+                    tabIndex={-1}
                     onKeyDown={(e) => {
                       // Roving tabindex: arrow keys move selection between
                       // chips, Home/End jump to first/last. Standard ARIA
@@ -1272,14 +1274,13 @@ export default function SessionSetup() {
                         { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
                         { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
                       ];
-                      const visibleOpts = (isFirstTimer && !showAllFocus)
-                        ? (() => {
-                            const top3 = new Set([recommendedFocus, "Behavioral", "HR Round"]);
-                            if (recommendedFocus === "Behavioral") top3.add("Strategic");
-                            return allOpts.filter(o => top3.has(o.value));
-                          })()
-                        : allOpts;
-                      return visibleOpts.map(opt => {
+                      /* All 10 focus options shown by default — the previous
+                         "show 3 then expand" pattern added a click for first-
+                         timers without giving them more information than
+                         showing the full grid would. The recommended focus is
+                         still flagged with the "For you" badge so it remains
+                         the path of least resistance. */
+                      return allOpts.map(opt => {
                         const sel = interviewFocus[0] === opt.value;
                         const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
                         return (
@@ -1314,16 +1315,6 @@ export default function SessionSetup() {
                       });
                     })()}
                   </div>
-                  {isFirstTimer && !showAllFocus && (
-                    <button onClick={() => setShowAllFocus(true)}
-                      style={{ display: "flex", alignItems: "center", gap: 6, margin: "14px auto 0", fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: T.indigo, background: "none", border: "none", cursor: "pointer", padding: "6px 12px" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-                      Show all 10 interview types
-                    </button>
-                  )}
                 </div>
 
                 {/* ── Permissions — mic compulsory, camera optional ── */}
