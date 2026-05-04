@@ -25,7 +25,7 @@ export const InterviewResultHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "1. Hire — score 72",
-  layout: { x: 0, y: 0, width: 1440, height: 2400 },
+  layout: { x: 0, y: 0, width: 1440, height: 3000 },
 };
 
 const LEAN_HIRE: InterviewResultData = {
@@ -67,7 +67,7 @@ export const InterviewResultLeanHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "2. Lean Hire — score 58",
-  layout: { x: 1490, y: 0, width: 1440, height: 2400 },
+  layout: { x: 1490, y: 0, width: 1440, height: 3000 },
 };
 
 const STRONG_HIRE: InterviewResultData = {
@@ -103,6 +103,21 @@ const STRONG_HIRE: InterviewResultData = {
     name: "Ownership",
     tip: "Push for stronger I-statements on outcomes you owned end-to-end vs contributed to.",
   },
+  scoreConfidence: "high",
+  scoreConfidenceNote: undefined,
+  readinessSentence: "You're at the role bar. Run 2 more sessions to lock in consistency, then call it.",
+  storyReuseFindings: [
+    {
+      storyLabel: "API migration story",
+      body: "Used in 4 of last 5 sessions — pair with one more strong narrative before your real round.",
+    },
+  ],
+  blindSpots: [
+    {
+      title: "Negotiation under pressure",
+      body: "Strong on technical signal; we haven't seen you under salary-negotiation pressure yet. Run a negotiation drill before your real interview.",
+    },
+  ],
 };
 
 export const InterviewResultStrongHire: TempoStoryboard = {
@@ -112,7 +127,7 @@ export const InterviewResultStrongHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "3. Strong Hire — score 89",
-  layout: { x: 0, y: 2450, width: 1440, height: 2400 },
+  layout: { x: 0, y: 3050, width: 1440, height: 3000 },
 };
 
 const NO_HIRE: InterviewResultData = {
@@ -158,7 +173,7 @@ export const InterviewResultNoHire: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "4. No Hire — score 38",
-  layout: { x: 1490, y: 2450, width: 1440, height: 2400 },
+  layout: { x: 1490, y: 3050, width: 1440, height: 3000 },
 };
 
 /* ── Salary-negotiation context ──────────────────────────────────────
@@ -218,7 +233,7 @@ export const InterviewResultNegotiation: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "5. Salary negotiation — score 64",
-  layout: { x: 0, y: 4900, width: 1440, height: 2400 },
+  layout: { x: 0, y: 6100, width: 1440, height: 3000 },
 };
 
 /* ── Graceful degradation: first-session, missing optional fields ──
@@ -241,10 +256,18 @@ const FIRST_SESSION_PARTIAL: InterviewResultData = {
   daysUntilInterview: undefined,
   aiVerdict:
     "First session in this role context. Useful baseline — clear structure, room to add quantified outcomes. We'll surface trend + percentile from session #2 onwards.",
-  // Reuse DEFAULT_RESULT.questions as-is. Questions 2-6 already lack
-  // restructured + topPerformerAnswer, demonstrating how those tabs
-  // disable gracefully when the LLM-rewrite pipeline hasn't generated
-  // those variants. Question 1 keeps them so the contrast is visible.
+  // First-session contract: cross-session insights, story-reuse,
+  // blind-spots, trend-strip, and Coach's Notes all collapse to
+  // nothing. Confidence chip flips to "low" because we have no
+  // cohort baseline yet. Demonstrates conditional rendering.
+  scoreConfidence: "low",
+  scoreConfidenceNote: "First session — score will recalibrate as we learn your patterns",
+  priorSessionCount: 0,
+  crossSessionInsights: undefined,
+  storyReuseFindings: undefined,
+  blindSpots: undefined,
+  thoughtBubble: undefined,
+  readinessSentence: undefined,
 };
 
 export const InterviewResultFirstSession: TempoStoryboard = {
@@ -254,7 +277,7 @@ export const InterviewResultFirstSession: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "6. First session — partial data (graceful degrade)",
-  layout: { x: 1490, y: 4900, width: 1440, height: 2400 },
+  layout: { x: 1490, y: 6100, width: 1440, height: 3000 },
 };
 
 /* ── Long session (10 questions) — triggers progressive disclosure ──
@@ -302,5 +325,5 @@ export const InterviewResultLongSession: TempoStoryboard = {
     </CanvasProviders>
   ),
   name: "7. Long session — 10 questions (progressive disclosure)",
-  layout: { x: 0, y: 7350, width: 1440, height: 2400 },
+  layout: { x: 0, y: 9150, width: 1440, height: 3000 },
 };
