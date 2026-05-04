@@ -845,6 +845,49 @@ export function cleanupTTS() {
   if (_wsIdleTimer) { clearTimeout(_wsIdleTimer); _wsIdleTimer = null; }
 }
 
+/**
+ * Hard-mute the TTS pipeline NOW. Used by skipSpeaking() to silence
+ * already-buffered audio that the regular cancel() handler can't yank
+ * fast enough. Cartesia's WebSocket has up to ~1.5s of pre-decoded
+ * PCM in flight when you cancel; Azure has the entire sentence
+ * pre-rendered. Both leak after the user pressed Space.
+ *
+ * Suspend (not close) the AudioContext: suspend silences output
+ * within a frame and is reversible — the next speak() call resumes it
+ * and works normally. Closing would force a costly recreate cycle.
+ *
+ * Also stops every <audio> element on the page that's currently
+ * playing — Azure speakWithBrowser path uses HTMLAudioElement.
+ */
+export function hardMuteTTS() {
+  // 1. Cancel the current handle (idempotent w/ cleanupTTS)
+  _activeCancel?.();
+  _activeCancel = null;
+
+  // 2. Suspend the Cartesia AudioContext immediately (silences in-flight PCM)
+  try {
+    const w = window as unknown as { __hirestepxAudioCtx?: AudioContext };
+    const ctx = w.__hirestepxAudioCtx;
+    if (ctx && ctx.state !== "closed") {
+      ctx.suspend().catch(() => { /* best effort */ });
+    }
+  } catch { /* SSR / restricted */ }
+
+  // 3. Pause any HTMLAudioElement currently rendering Azure / browser TTS
+  try {
+    document.querySelectorAll("audio").forEach((el) => {
+      try { el.pause(); } catch { /* expected */ }
+    });
+  } catch { /* DOM unavailable */ }
+
+  // 4. Cancel native speechSynthesis (browser TTS fallback)
+  try {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  } catch { /* expected */ }
+}
+
 /* ─── Speak with a specific voice (for panel interviews) ─── */
 export async function speakAs(
   text: string,
@@ -929,12 +972,26 @@ export function setProsodyEnabled(enabled: boolean): void {
  * defensive guard as before, so a model emitting markup before we
  * live-test never speaks "underscore time underscore" literally.
  */
+// Indic / non-Latin script ranges that, when present, cause TTS providers
+// (Cartesia, Azure) to auto-detect language and switch voice mid-sentence.
+// The most common offender is Devanagari leaking from the LLM output (the
+// model occasionally code-switches to Hindi when the candidate's STT had
+// Hindi tokens in it). Stripping these here pins the AI's voice to en-IN
+// regardless of provider language-detection. We do NOT touch the candidate's
+// own answer text — only what the AI is about to say.
+//
+// Uses Unicode property escapes (the `u` flag + `\p{Script=…}`) for clarity
+// and to avoid the eslint no-misleading-character-class warning on raw
+// codepoint ranges that include surrogate pairs.
+const NON_LATIN_SCRIPT_RE = /[\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Gurmukhi}\p{Script=Gujarati}\p{Script=Oriya}\p{Script=Tamil}\p{Script=Telugu}\p{Script=Kannada}\p{Script=Malayalam}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const NON_LATIN_SCRIPT_STRIP_RE = /[\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Gurmukhi}\p{Script=Gujarati}\p{Script=Oriya}\p{Script=Tamil}\p{Script=Telugu}\p{Script=Kannada}\p{Script=Malayalam}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+/gu;
+
 function sanitizeForTTS(text: string): string {
   if (!text) return text;
   // Render or strip prosody markup first — the markdown stripper below
   // would otherwise treat _word_ italic as content to preserve.
   const prosodyHandled = isProsodyEnabled() ? renderForCartesia(text) : stripProsodyMarkup(text);
-  return prosodyHandled
+  let cleaned = prosodyHandled
     .replace(/```[\s\S]*?```/g, " ")          // fenced code blocks
     .replace(/`([^`]+)`/g, "$1")              // inline code
     .replace(/\*\*([^*]+)\*\*/g, "$1")        // bold
@@ -944,6 +1001,14 @@ function sanitizeForTTS(text: string): string {
     .replace(/[ \t]+/g, " ")                  // collapse spaces
     .replace(/\s*\n\s*/g, " ")                // collapse newlines
     .trim();
+  // Hindi-voice-leak guard. If any non-Latin script slipped through (LLM
+  // code-switching), strip it and warn so we can trace which prompt let
+  // it through. Replacement char is " " so we don't merge words.
+  if (NON_LATIN_SCRIPT_RE.test(cleaned)) {
+    console.warn("[tts] non-Latin script detected in AI output — stripping to pin en-IN voice");
+    cleaned = cleaned.replace(NON_LATIN_SCRIPT_STRIP_RE, " ").replace(/\s{2,}/g, " ").trim();
+  }
+  return cleaned;
 }
 
 /**

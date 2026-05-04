@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 
 import { useAuth } from "./AuthContext";
-import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked } from "./tts";
+import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS } from "./tts";
 import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
 import { useOnlineOfflineRecovery } from "./_recovery";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
@@ -686,10 +686,30 @@ export function useInterviewEngine() {
     setCurrentTranscript(value);
   }, []);
 
+  /* Reset the barge-in flag whenever the phase changes. Some
+     listening-interjection paths set `bargeInActiveRef.current = true`
+     to silence STT writes during a planned interjection but didn't
+     always reset on exit — leaving the ref stuck-true would silently
+     suppress STT for the rest of the session. Phase transitions are
+     the natural reset boundary. */
+  useEffect(() => {
+    bargeInActiveRef.current = false;
+  }, [phase]);
+
   // Explicit user-triggered STT restart counter. Bumped by Space-to-
   // start-speaking and the "Tap to start" button in the listening UI.
   // Gives users an actionable recovery when auto-start fails silently.
   const [sttRestartTrigger, setSttRestartTrigger] = useState(0);
+
+  /** Per-turn STT confidence snapshot from useInterviewSTT.
+   *  Set when the STT pipeline fires onLowSttConfidence; cleared on
+   *  every step change. handleNextQuestion reads this to decide whether
+   *  to warn the user before submitting potentially-misheard text. */
+  const sttLowConfidenceRef = useRef<{ mean: number; min: number; lowFraction: number } | null>(null);
+  /** Timestamp of the last "we may have misheard you" prompt so we don't
+   *  repeat-block the same submission. Two-tap pattern. */
+  const lastLowConfidencePromptRef = useRef<number>(0);
+  useEffect(() => { sttLowConfidenceRef.current = null; lastLowConfidencePromptRef.current = 0; }, [currentStep]);
   const restartListening = useCallback(() => {
     if (phase !== "listening") return;
     setCurrentTranscript("");
@@ -701,6 +721,7 @@ export function useInterviewEngine() {
   useInterviewSTT(phase, isMuted, speechUnavailable, {
     setCurrentTranscript: setCurrentTranscriptGuarded, setMicError, setSpeechUnavailable, setShowCaptions,
     toast, textareaRef, interviewEndedRef,
+    onLowSttConfidence: (snapshot) => { sttLowConfidenceRef.current = snapshot; },
   }, {
     recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
   }, sttRestartTrigger);
@@ -788,6 +809,13 @@ export function useInterviewEngine() {
   // Interview flow: thinking -> speaking (with TTS) -> listening
   const flowGenerationRef = useRef(0);
   const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> | null>(null);
+  /** Originating step index for the in-flight follow-up. When the
+   *  follow-up resolves we verify the engine has advanced exactly one
+   *  step from this — otherwise the user already moved past the question
+   *  the follow-up was generated for, and applying it now would inject
+   *  Q3's answer-shaped reply into Q5's slot (the cross-question
+   *  conflation that produced bug #6). */
+  const pendingFollowUpStepRef = useRef<number>(-1);
   const followUpDepthRef = useRef(0);
   // Atomic follow-up insertion counter — prevents race when two follow-ups resolve simultaneously
   const followUpInsertCountRef = useRef(0);
@@ -1140,6 +1168,17 @@ export function useInterviewEngine() {
 
       Promise.race([pendingFollowUp, timeout]).then(result => {
         if (isStale() || interviewEndedRef.current) return;
+        // Drop stale follow-ups: we only apply if the engine is exactly one
+        // step past the originating question. If the user advanced further
+        // (slow LLM, fast typer), the result describes a question they no
+        // longer remember — applying it would conflate turns. Bug #6 root.
+        const originatingStep = pendingFollowUpStepRef.current;
+        if (originatingStep >= 0 && currentStep !== originatingStep + 1) {
+          console.warn(`[interview] dropping stale follow-up — originated at step ${originatingStep}, engine now at ${currentStep}`);
+          pendingFollowUpStepRef.current = -1;
+          return;
+        }
+        pendingFollowUpStepRef.current = -1;
         // Track highest AI offer for monotonic enforcement
         if (isSalaryNegConversation && result?.followUpText) {
           const offerRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakh|lakhs)/g;
@@ -1345,6 +1384,26 @@ export function useInterviewEngine() {
       return;
     }
 
+    // STT-confidence gate: if the running confidence on this turn was low,
+    // warn the user before letting their probably-misheard answer go to
+    // the eval LLM. Two-tap pattern — first tap shows the warning + lets
+    // them edit/retry; second tap (within 8s) sends as-is.
+    const sttSnap = sttLowConfidenceRef.current;
+    const STT_CONFIRM_WINDOW_MS = 8000;
+    if (
+      sttSnap && sttSnap.mean < 0.55 && rawTranscript &&
+      Date.now() - lastLowConfidencePromptRef.current > STT_CONFIRM_WINDOW_MS
+    ) {
+      lastLowConfidencePromptRef.current = Date.now();
+      toast(
+        "We may have misheard parts of that — review the captured text or tap Send again to submit anyway.",
+        "info",
+      );
+      advancingRef.current = false;
+      clearTimeout(advancingSafetyTimer);
+      return;
+    }
+
     // Store answer quality for contextual reaction in next thinking phase
     lastAnswerQualityRef.current = assessAnswerQuality(answerText);
     lastAnswerTextRef.current = answerText;
@@ -1485,6 +1544,10 @@ export function useInterviewEngine() {
           ? mentionsMemoryRef.current
           : undefined;
 
+        // Tag the in-flight request with the step it's answering. If the
+        // engine has advanced past the next step by the time this resolves,
+        // we'll drop the result (see check at the consumer site).
+        pendingFollowUpStepRef.current = currentStep;
         pendingFollowUpRef.current = fetchFollowUp({
           question: currentStepObj!.aiText,
           answer: answerText,
@@ -1596,9 +1659,13 @@ export function useInterviewEngine() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, skipsUsed, skipBudget, currentStep, interviewScript, elapsed, toast]);
 
-  // Skip AI speaking
+  // Skip AI speaking. Hard-mute first so already-buffered Cartesia PCM
+  // and pre-rendered Azure audio actually stop within the same frame —
+  // the regular cancel() doesn't yank fast enough on those providers
+  // and users hear 1-2s of voice after pressing Space.
   const skipSpeaking = useCallback(() => {
     if (phase !== "speaking") return;
+    hardMuteTTS();
     ttsCancelRef.current?.();
     ttsCancelRef.current = null;
     setIsRecording(false);
