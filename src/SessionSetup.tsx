@@ -950,18 +950,25 @@ export default function SessionSetup() {
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);
     setLaunching(true);
-    setCountdown(3);
-    setTimeout(() => setCountdown(2), 1000);
-    setTimeout(() => setCountdown(1), 2000);
+    // Pre-roll budget: 800ms total. Chrome's gesture-activation window is
+    // ~5s but the activation is "consumed" by certain async hops; keeping
+    // the click → router.push() chain under ~1s preserves a fresh gesture
+    // for the new page's AudioContext. The previous 3s pre-roll routinely
+    // blew past the activation, which is why TTS-Azure was logging
+    // "autoplay blocked … disabling voice for session" on landing.
+    setCountdown(1);
     setTimeout(() => {
       setCountdown(0);
+      // One more unlock attempt right before navigation — if the gesture
+      // is still warm this primes the new page's audio path before mount.
+      unlockAudio();
       // Release the preview streams — the interview surface re-acquires
       // them. The browser keeps the permission grant so this is instant.
       micStreamRef.current?.getTracks().forEach(t => t.stop());
       cameraStreamRef.current?.getTracks().forEach(t => t.stop());
       const cameraParam = cameraStatus === "granted" ? "&camera=1" : "";
       router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}`);
-    }, 3000);
+    }, 800);
   };
 
   // Power-user shortcut: ⌘/Ctrl+Enter from anywhere on the page launches.

@@ -21,6 +21,7 @@ import {
 import { LiveCaptions } from "./InterviewComponents";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
+import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
 import { useVideoRecorder } from "./useVideoRecorder";
 import { InterviewProvider } from "./InterviewContext";
 import ErrorBoundary from "./ErrorBoundary";
@@ -720,6 +721,22 @@ function InterviewInner() {
     ttsCancelRef, interviewEndedRef,
   } = engine;
 
+  // Tap-to-begin overlay — bulletproof recovery for the "autoplay blocked,
+  // voice disabled for session" cascade. The mount-time unlock + click
+  // recovery handle 95% of cases; this surface catches the remaining ones
+  // (slow router, restored from bfcache, strict media policies, etc).
+  // Polls because isAutoplayBlocked() flips to true only AFTER the first
+  // failed TTS attempt — there's no event we can subscribe to.
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  useEffect(() => {
+    if (phase === "done") return;
+    const id = setInterval(() => {
+      if (isAutoplayBlocked() && !autoplayBlocked) {
+        setAutoplayBlocked(true);
+      }
+    }, 600);
+    return () => clearInterval(id);
+  }, [phase, autoplayBlocked]);
 
   // Track interview abandonment — fires when user leaves before handleEnd runs
   useEffect(() => {
@@ -1135,6 +1152,63 @@ function InterviewInner() {
           setEvaluating={setEvaluating} interviewEndedRef={interviewEndedRef}
           handleEnd={handleEnd} lastSessionId={lastSessionId} navigate={navigate}
         />
+      )}
+
+      {/* Tap-to-begin recovery — appears only when the browser blocked
+          AudioContext autoplay (logs as "[TTS-Azure] autoplay blocked …
+          disabling voice for session"). Single tap re-arms audio AND
+          replays the current question, so the candidate can hear the
+          question they just missed instead of starting mid-flight. */}
+      {autoplayBlocked && phase !== "done" && !evaluating && (
+        <button
+          type="button"
+          onClick={() => {
+            retryUnlockAudio();
+            setAutoplayBlocked(false);
+            // Re-speak whatever question was on screen but went silent.
+            // replayQuestion is gated on aiVoiceEnabled inside the engine,
+            // so this is a no-op for users who explicitly muted voice.
+            if (aiVoiceEnabled) replayQuestion();
+          }}
+          aria-label="Tap anywhere to enable voice and replay the current question"
+          style={{
+            position: "fixed", inset: 0, zIndex: 250,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            gap: 14, padding: 32,
+            background: "rgba(20,17,10,0.55)", backdropFilter: "blur(6px)",
+            border: 0, cursor: "pointer", color: e.cream,
+            fontFamily: ef.sans, textAlign: "center",
+            animation: "fadeIn 220ms cubic-bezier(0.16,1,0.3,1)",
+          }}
+        >
+          <span aria-hidden style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 64, height: 64, borderRadius: 999,
+            background: "rgba(250,247,240,0.10)",
+            border: `1px solid rgba(250,247,240,0.22)`,
+            marginBottom: 6,
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 5L6 9H2v6h4l5 4V5z" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+          </span>
+          <span style={{
+            fontFamily: ef.serif, fontSize: 24, fontWeight: 500,
+            letterSpacing: -0.2, color: e.cream,
+          }}>
+            Tap to enable voice
+          </span>
+          <span style={{
+            fontFamily: ef.sans, fontSize: 13, opacity: 0.8,
+            color: e.cream, maxWidth: 360, lineHeight: 1.5,
+          }}>
+            Your browser paused audio playback. One tap unlocks the AI&apos;s voice
+            and replays the current question.
+          </span>
+        </button>
       )}
     </div>
     </InterviewProvider>
