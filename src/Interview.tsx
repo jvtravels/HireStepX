@@ -520,7 +520,9 @@ function CanvasListeningActionZone({
             maxLength={3000}
             style={{
               width: "100%", minHeight: 120, padding: "14px 16px",
-              fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
+              // Instrument Serif matches the live-transcript card so the
+              // user's answer reads the same whether they spoke or typed.
+              fontFamily: ef.serif, fontSize: 16, lineHeight: 1.55, color: e.coal,
               background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
               resize: "vertical", outline: "none",
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
