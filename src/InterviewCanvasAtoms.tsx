@@ -67,43 +67,35 @@ export function CanvasStatusPill({ status }: { status: CanvasConnectionStatus })
    elapsed clock already lives in the footer's CanvasMetaRow, so the
    topbar slot is now empty rather than carrying a duplicate. */
 
-/* ─── ContextChip ─── */
-/* Truncate long role/company strings so the chip doesn't overflow on
-   phone-portrait widths. Full string lives in the aria-label, so screen
-   readers + accessibility tools always get the unabbreviated value. */
-function truncateChip(s: string, max: number): string {
-  if (!s || s.length <= max) return s;
-  return s.slice(0, max - 1).trimEnd() + "…";
-}
+/* ─── ContextChip ───
+   Shows full role / company / focus — earlier this truncated to 14-16
+   chars per segment which produced "SENIOR PRODUCT…" for any role
+   longer than "Senior Engineer". Roles like "Senior Product Designer",
+   "Engineering Manager", "Staff Software Engineer" are common; users
+   want to see them in full.
+
+   Strategy: drop JS truncation entirely; allow each segment to break
+   onto a new line on narrow viewports via flex-wrap. The chip becomes
+   slightly taller on phones (rare) instead of hiding information. */
 export function CanvasContextChip({ role, company, focus }: { role: string; company: string; focus: string }) {
-  // Each segment max ~14 chars on display; full strings stay in aria-label.
-  const roleShort = truncateChip(role, 16);
-  const companyShort = truncateChip(company, 14);
-  const focusShort = truncateChip(focus, 14);
   return (
     <span
       aria-label={`Interviewing for ${role}${company ? " at " + company : ""}, focus: ${focus}`}
       title={`${role}${company ? " · " + company : ""} · ${focus}`}
       className="iv-canvas-contextchip"
       style={{
-        display: "inline-flex", alignItems: "center", gap: 8,
+        display: "inline-flex", alignItems: "center", flexWrap: "wrap",
+        rowGap: 4, columnGap: 8,
         fontFamily: ef.mono, fontSize: 10.5, fontWeight: 500,
         textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft,
         background: e.creamSoft, border: `1px solid ${e.line}`,
         padding: "5px 10px", borderRadius: 6,
-        // Allow wrapping at the segment boundaries on narrow screens.
-        // The CSS in index.css further tightens spacing under 480px so
-        // the chip stays one visual unit instead of three orphan pills.
-        whiteSpace: "nowrap",
-        maxWidth: "100%",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
       }}
     >
-      <span style={{ color: e.coal, fontWeight: 600 }}>{roleShort}</span>
-      {companyShort && (<><span aria-hidden style={{ color: e.inkFaint }}>·</span><span>{companyShort}</span></>)}
+      <span style={{ color: e.coal, fontWeight: 600 }}>{role}</span>
+      {company && (<><span aria-hidden style={{ color: e.inkFaint }}>·</span><span>{company}</span></>)}
       <span aria-hidden style={{ color: e.inkFaint }}>·</span>
-      <span style={{ color: e.copper }}>{focusShort}</span>
+      <span style={{ color: e.copper }}>{focus}</span>
     </span>
   );
 }
