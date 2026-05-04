@@ -521,10 +521,13 @@ Example good questions (notice variety in structure):
 Example bad question: "Tell me about a time you led a cross-functional project." (behavioral, NOT salary negotiation)
 Example bad question: "What salary range are you expecting?" (too generic — should follow from previous turn)`
 : `IMPORTANT closing rules:
-- The closing step MUST be a wrap-up summary, NOT an open-ended question
-- Do NOT ask "Do you have any questions?" or similar — the system handles that separately
-- The closing should thank the candidate, summarize their performance highlights, and give one specific improvement tip
-- Example closing: "Great session! You demonstrated strong strategic thinking, especially around prioritization. To improve, try anchoring your examples with specific metrics — numbers make your stories more compelling."
+- The closing step MUST be a brief, in-character wrap-up — exactly like a real interviewer ending a call. NOT an open-ended question.
+- DO NOT evaluate the candidate's performance. You are generating the closing BEFORE the interview runs, so you have no idea how it went. Phrases like "Great session", "You did well", "Strong strategic thinking", "To improve, try X" are HALLUCINATED PRAISE — the candidate may have answered poorly and your false praise will contradict the score they receive on the report screen. The system delivers real, evaluation-based feedback separately. Trust that. Stay in character.
+- DO NOT ask "Do you have any questions?" or similar — the system handles that separately
+- DO thank the candidate for their time, mention next steps neutrally, and end professionally
+- Keep it 2-3 sentences max. No flattery, no critique, no fabricated highlights.
+- Example closing: "Thanks for taking the time today. We'll review the conversation and our team will follow up with next steps shortly. Best of luck."
+- Example closing: "That covers what I wanted to discuss. Appreciate you walking through these scenarios with me — we'll be in touch on next steps."
 
 Example good question: "Walk me through a system you designed that had to handle 10x growth. What were the key architectural trade-offs you made, and how did you validate them?"
 Example bad question: "Tell me about your experience." (too vague, not role-specific)`}
