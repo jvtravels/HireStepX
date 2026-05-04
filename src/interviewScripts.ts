@@ -308,11 +308,17 @@ export function getScript(type: string | null, difficulty: string | null, user: 
 
   const isPanel = typeKey === "panel";
 
+  /* Fallback intro lines used when LLM personalization fails OR for
+     scripted (non-LLM) sessions. Deliberately DO NOT enumerate the
+     question count — real interviewers don't say "I have 5 questions
+     for you" and that specificity reads as scripted, breaking the
+     conversational tone. The LLM prompt has the same rule for the
+     dynamic path. */
   const personalizedIntro: InterviewStep = {
     type: "intro",
     aiText: isPanel
-      ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. We'll be focusing on the ${role} position${companyContext}${industryContext}.${resumeContext} ${difficulty === "warmup" ? "This will be conversational — no pressure." : difficulty === "intense" ? "We'll be pushing you a bit today." : "We have 5 questions for you today."} We'll each ask from our side. Shall we begin?`
-      : `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your mock interview. We'll be focusing on ${(typeKey).replace(/-/g, " ")} questions for the ${role} position${companyContext}${industryContext}.${resumeContext} ${difficulty === "warmup" ? "This will be conversational — no pressure, just practice." : difficulty === "intense" ? "I'll be pushing you today — expect quick follow-ups and high expectations." : "I have 5 questions for you. Feel free to take your time."} Shall we begin?`,
+      ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. We'll be focusing on the ${role} position${companyContext}${industryContext}.${resumeContext} ${difficulty === "warmup" ? "This will be conversational — no pressure." : difficulty === "intense" ? "We'll be pushing you a bit today." : "Take your time on each one."} We'll each ask from our side. Shall we begin?`
+      : `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your mock interview. We'll be focusing on ${(typeKey).replace(/-/g, " ")} questions for the ${role} position${companyContext}${industryContext}.${resumeContext} ${difficulty === "warmup" ? "This will be conversational — no pressure, just practice." : difficulty === "intense" ? "I'll be pushing you today — expect quick follow-ups and high expectations." : "Feel free to take your time on each."} Shall we begin?`,
     thinkingDuration: 1000,
     speakingDuration: 6000,
     waitForUser: true,
