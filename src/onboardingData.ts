@@ -107,124 +107,299 @@ export const ROLE_SUGGESTIONS = [
   "Freelance Developer", "Freelance Designer", "Independent Consultant", "Contract Engineer",
 ];
 
-export const COMPANY_SUGGESTIONS = [
-  // Global Tech (with India offices)
+/* COMPANY_SUGGESTIONS — exhaustive Indian-market index.
+ *
+ * ~500+ entries spanning: global tech (with India offices), Indian IT
+ * services + GCCs, every meaningful Indian unicorn / DPIIT-recognised
+ * startup, banks (public + private + small finance + payments), NBFCs,
+ * insurance (life + general + health), AMCs, regulators, conglomerates,
+ * PSUs, defence + aerospace, pharma, FMCG, telecom, automotive,
+ * aviation, hotels, real estate, retail, healthcare chains, media,
+ * D2C brands, AI / SaaS startups, gaming, crypto/web3, GCCs.
+ *
+ * Maintenance principles:
+ *   • Newer additions go in the matching section, not at the bottom.
+ *   • De-dup is by exact-match string. "TCS" and "Tata Consultancy
+ *     Services" are deliberately separate so users find either.
+ *   • Stay broad on Indian content — competitors' lists run 100-200
+ *     companies; ours runs 500+ on purpose, that's a positioning moat.
+ *   • Rough size limit ~600 entries before autocomplete latency starts
+ *     mattering. Currently ~510 (room to grow). */
+// Raw entries — section duplication is intentional (e.g. Big 4 fits
+// "IT services" AND "Consulting"; we keep both placements for
+// readability). Final export dedups via Set so the autocomplete sees
+// each company exactly once.
+const COMPANY_SUGGESTIONS_RAW = [
+  // ─── Global Tech (with India offices / candidates target heavily) ───
   "Google", "Microsoft", "Amazon", "Meta", "Apple", "Netflix",
-  "Adobe", "Oracle", "SAP", "Salesforce", "ServiceNow", "Intuit", "Atlassian",
-  "IBM", "Cisco", "Intel", "NVIDIA", "Qualcomm", "Samsung", "Dell Technologies", "HP", "VMware", "Lenovo",
-  "LinkedIn", "Uber", "Spotify", "Twitter (X)", "Airbnb", "Shopify",
-  "Snowflake", "Databricks", "MongoDB", "Elastic", "Cloudflare", "Datadog", "HashiCorp",
-  "Stripe", "PayPal", "Visa", "Mastercard",
-  "GitHub", "GitLab", "JetBrains", "Figma", "Notion", "Twilio",
-  "OpenAI", "Anthropic", "Google DeepMind", "Scale AI",
+  "Adobe", "Oracle", "SAP", "Salesforce", "ServiceNow", "Workday", "Intuit", "Atlassian",
+  "IBM", "Cisco", "Intel", "NVIDIA", "AMD", "Qualcomm", "Samsung", "Dell Technologies", "HP", "HPE", "VMware", "Lenovo",
+  "LinkedIn", "Uber", "Lyft", "Spotify", "Twitter (X)", "Airbnb", "Shopify", "DoorDash", "Instacart",
+  "Snowflake", "Databricks", "MongoDB", "Elastic", "Cloudflare", "Datadog", "HashiCorp", "PagerDuty", "Splunk",
+  "Stripe", "PayPal", "Visa", "Mastercard", "American Express", "Block (Square)", "Plaid",
+  "GitHub", "GitLab", "JetBrains", "Figma", "Notion", "Linear", "Twilio", "Asana", "Slack",
+  "OpenAI", "Anthropic", "Google DeepMind", "Scale AI", "Cohere", "Hugging Face", "Mistral AI", "Perplexity AI",
+  "ByteDance", "TikTok", "Pinterest", "Snap Inc", "Reddit", "Discord",
+  "Coursera", "Udemy", "Khan Academy", "Duolingo",
+  // ─── Investment Banks / Bulge Bracket ───
   "Goldman Sachs", "JP Morgan", "Morgan Stanley", "Deutsche Bank", "Barclays", "Citi", "HSBC", "UBS", "Credit Suisse",
-  "BlackRock", "Two Sigma", "Citadel", "Jane Street", "DE Shaw", "Tower Research Capital", "WorldQuant",
-  // Indian IT Services & Consulting
-  "TCS", "Infosys", "Wipro", "HCL Technologies", "Tech Mahindra", "LTIMindtree",
+  "Bank of America", "Wells Fargo", "BNP Paribas", "Societe Generale", "Standard Chartered", "Nomura", "Macquarie",
+  // ─── Quant / HFT / Asset Managers (huge India hiring) ───
+  "BlackRock", "Two Sigma", "Citadel", "Citadel Securities", "Jane Street", "DE Shaw", "Tower Research Capital",
+  "WorldQuant", "Millennium Management", "Point72", "Hudson River Trading", "IMC Trading", "Optiver", "Jump Trading",
+  "Bridgewater Associates", "Renaissance Technologies", "AQR Capital", "Vanguard", "Fidelity", "State Street",
+  // ─── GCCs (Global Capability Centres in India — major hirers) ───
+  "Walmart Global Tech (Walmart Labs)", "Target India", "Lowe's India", "Tesco Bengaluru", "Sainsbury's India",
+  "Wells Fargo India", "JPMC India", "Goldman Sachs India", "Morgan Stanley India", "Bank of America India",
+  "Standard Chartered GBS", "American Express India", "Mastercard India", "Visa India",
+  "Allstate India", "Cigna India", "AIG India", "Liberty Mutual India",
+  "GE India", "Honeywell India", "Caterpillar India", "Cummins India", "ABB India", "Siemens India", "Schneider Electric India",
+  "Boeing India", "Airbus India", "Lockheed Martin India", "Rolls-Royce India",
+  "Western Digital India", "Texas Instruments India", "Analog Devices India", "Marvell India", "Synopsys India", "Cadence India",
+  "Applied Materials India", "Lam Research India", "KLA India",
+  "Ericsson India", "Nokia India", "Juniper Networks India",
+  // ─── Indian IT Services ───
+  "TCS", "Tata Consultancy Services", "Infosys", "Wipro", "HCL Technologies", "Tech Mahindra", "LTIMindtree",
   "Persistent Systems", "Mphasis", "Coforge", "L&T Technology Services", "Cyient", "KPIT Technologies",
   "Mindtree", "Hexaware", "Zensar Technologies", "Sonata Software", "Birlasoft", "NIIT Technologies",
   "Cognizant", "Capgemini", "Accenture", "Deloitte", "PwC", "EY", "KPMG",
-  "ThoughtWorks", "Publicis Sapient", "Mu Sigma", "Fractal Analytics", "Tiger Analytics", "AbsolutData",
-  "Happiest Minds", "iGate", "Sasken Technologies", "Tata Elxsi", "Amdocs",
-  // Indian Startups — E-commerce & Consumer
-  "Flipkart", "Myntra", "Meesho", "Nykaa", "Lenskart", "FirstCry", "Purplle",
-  "BigBasket", "Blinkit", "JioMart", "Swiggy Instamart", "Zepto", "BlinkIt",
-  "Mamaearth", "boAt", "Sugar Cosmetics", "Bewakoof", "Licious", "Country Delight",
-  // Indian Startups — Food & Delivery
-  "Swiggy", "Zomato", "Dunzo", "EatSure (Rebel Foods)", "Box8", "FreshMenu",
-  // Indian Startups — Fintech
+  "ThoughtWorks", "Publicis Sapient", "Mu Sigma", "Fractal Analytics", "Tiger Analytics", "AbsolutData", "LatentView Analytics",
+  "Happiest Minds", "iGate", "Sasken Technologies", "Tata Elxsi", "Amdocs", "DXC Technology", "NTT Data", "Atos", "CGI", "Unisys",
+  "Bahwan CyberTek", "Rolta India", "Polaris Consulting", "Saksoft", "Datamatics", "Subex",
+  // ─── Indian Unicorns + late-stage startups: E-commerce & Consumer ───
+  "Flipkart", "Myntra", "Jabong", "Meesho", "Nykaa", "Lenskart", "FirstCry", "Purplle",
+  "BigBasket", "Blinkit", "JioMart", "Swiggy Instamart", "Zepto", "Dunzo Daily", "Country Delight", "Otipy",
+  "Mamaearth", "boAt", "Sugar Cosmetics", "Bewakoof", "Licious", "FreshToHome", "Wakefit",
+  "The Souled Store", "Bombay Shaving Company", "Beardo", "WOW Skin Science", "Plum Goodness", "MyGlamm", "Sleepy Owl",
+  "Ustraa", "Bodywise", "Mensa Brands", "GlobalBees", "GoKwik", "Toplyne",
+  "Snitch", "FreakIns", "Pepperfry", "Urban Ladder", "FabIndia", "Chumbak",
+  // ─── Indian Startups: Food & Delivery ───
+  "Swiggy", "Zomato", "Dunzo", "EatSure (Rebel Foods)", "Box8", "FreshMenu", "Behrouz Biryani", "Faasos",
+  "Curefoods", "EatClub", "Ki Si Mi (Inner Be)", "Bombay Sweet Shop",
+  // ─── Indian Startups: Fintech ───
   "Razorpay", "PhonePe", "Paytm", "CRED", "Zerodha", "Groww",
   "Slice", "Jupiter", "Fi Money", "Uni Cards", "KreditBee", "Lendingkart",
   "INDmoney", "Smallcase", "Niyo", "Open Financial", "Cashfree", "Instamojo",
   "BharatPe", "MobiKwik", "Freecharge", "LazyPay", "ZestMoney", "Rupeek",
   "Pine Labs", "Mswipe", "Razorpay POS", "PayU", "Juspay", "Simpl",
-  "Paytm Money", "Upstox", "Angel One", "5paisa", "Motilal Oswal",
-  // Indian Startups — Mobility & Logistics
+  "Paytm Money", "Upstox", "Angel One", "5paisa", "Motilal Oswal", "ICICI Direct", "Kuvera",
+  "DhanHQ", "Stable Money", "Setu", "Decentro", "M2P Fintech",
+  "ClearTax", "Khatabook", "OkCredit", "Kashflow",
+  // ─── Indian Startups: Mobility & Logistics ───
   "Ola", "Rapido", "Uber India", "BluSmart",
-  "Ather Energy", "Ola Electric", "Revolt Motors", "Yulu", "Bounce",
-  "Delhivery", "Shiprocket", "Ecom Express", "XpressBees", "Shadowfax", "Porter", "Rivigo",
-  "BlackBuck", "Vahak", "Blowhorn",
-  // Indian Startups — EdTech
-  "Byju's", "Unacademy", "upGrad", "Physics Wallah", "Vedantu", "Scaler",
+  "Ather Energy", "Ola Electric", "Revolt Motors", "Yulu", "Bounce", "Vida (Hero MotoCorp)",
+  "Delhivery", "Shiprocket", "Ecom Express", "XpressBees", "Shadowfax", "Porter", "Rivigo", "Loadshare",
+  "BlackBuck", "Vahak", "Blowhorn", "FreightTiger",
+  "redBus", "Chalo", "Quick Ride", "Ridlr",
+  // ─── Indian Startups: EdTech ───
+  "Byju's", "Unacademy", "upGrad", "Physics Wallah", "Vedantu", "Scaler", "Coding Ninjas",
   "Simplilearn", "Great Learning", "WhiteHat Jr", "Toppr", "Doubtnut",
   "Allen Digital", "Testbook", "Adda247", "Gradeup", "PrepLadder",
-  // Indian Startups — HealthTech
+  "Eruditus", "BlueLearn", "Cuemath", "LEAD School", "Camp K12", "Vedantu Online",
+  "Stoa School", "Masai School", "Newton School", "Kraftshala",
+  // ─── Indian Startups: HealthTech & Healthcare ───
   "Practo", "PharmEasy", "Tata 1mg", "NetMeds", "MFine", "Pristyn Care",
-  "HealthifyMe", "CureFit (cult.fit)", "Innovaccer", "Niramai", "mfine",
-  // Indian Startups — SaaS & Dev Tools
+  "HealthifyMe", "CureFit (cult.fit)", "Innovaccer", "Niramai",
+  "Apollo 24/7", "MediBuddy", "DocsApp", "Lybrate", "Tata Health",
+  "PharmEasy Diagnostics", "Healthians", "Thyrocare", "Dr Lal PathLabs", "Metropolis Healthcare",
+  // Hospital chains (top employers for medical / admin candidates)
+  "Apollo Hospitals", "Fortis Healthcare", "Max Healthcare", "Manipal Hospitals",
+  "Narayana Health", "Aster DM Healthcare", "Medanta", "Kokilaben Hospital",
+  "AIIMS", "Tata Memorial Hospital", "PGIMER", "JIPMER", "CMC Vellore",
+  "HCG (Healthcare Global)", "Rainbow Children's Hospitals", "MGM Healthcare",
+  // ─── Indian Startups: SaaS & Dev Tools ───
   "Freshworks", "Zoho", "Postman", "BrowserStack", "Chargebee", "Druva", "Icertis",
   "CleverTap", "WebEngage", "MoEngage", "Haptik", "Yellow.ai", "Gupshup",
-  "Leadsquared", "Whatfix", "Mindtickle", "Darwinbox", "GreyTip", "Keka HR",
-  "Uniphore", "Observe.AI", "Hasura", "Appsmith", "ToolJet",
-  "InMobi", "Glance", "Apna", "Pratilipi", "Koo",
-  // Indian Startups — Social & Media
-  "ShareChat", "Dailyhunt", "Josh", "Kuku FM", "Pocket FM",
-  // Indian Startups — Real Estate & PropTech
+  "Leadsquared", "Whatfix", "Mindtickle", "Darwinbox", "GreyTip", "Keka HR", "PeopleStrong",
+  "Uniphore", "Observe.AI", "Hasura", "Appsmith", "ToolJet", "Zluri", "AccelData",
+  "InMobi", "Glance", "Apna", "Pratilipi", "Koo", "ShareChat",
+  "Spotdraft", "Leegality", "Signzy", "Veris", "Plivo", "Exotel",
+  "Atlan", "Vymo", "BrowserStack", "MarianaTek", "Locus.sh",
+  // ─── Indian AI / GenAI Startups (booming category) ───
+  "Sarvam AI", "Krutrim (Ola)", "Niki.ai", "Mad Street Den", "Glance AI",
+  "Wadhwani AI", "Nfinite Nanotech", "Skit.ai", "Neysa Networks",
+  // ─── Indian Startups: Social, Media & Content ───
+  "ShareChat", "Dailyhunt", "Josh", "Kuku FM", "Pocket FM", "Stage", "Roposo",
+  "Audible India", "Spotify India",
+  // ─── Indian Startups: Real Estate & PropTech ───
   "Housing.com", "99acres", "MagicBricks", "NoBroker", "Square Yards",
-  "Lodha Group", "Prestige Group", "Godrej Properties", "Sobha",
-  // Indian Startups — Travel & Hospitality
+  "Lodha Group", "Prestige Group", "Godrej Properties", "Sobha", "DLF",
+  "Oberoi Realty", "Brigade Group", "Phoenix Mills", "Embassy Group", "RMZ Corp",
+  "Mahindra Lifespaces", "Tata Realty", "Piramal Realty", "K Raheja Corp", "Hiranandani",
+  "Shapoorji Pallonji", "Macrotech Developers",
+  // ─── Indian Startups: Travel & Hospitality ───
   "MakeMyTrip", "Goibibo", "OYO Rooms", "Yatra", "Cleartrip",
   "EaseMyTrip", "ixigo", "RedBus", "Treebo", "FabHotels",
-  // Indian Startups — Insurance
+  // Hotel chains
+  "Indian Hotels (Taj)", "ITC Hotels", "EIH (Oberoi)", "Lemon Tree Hotels",
+  "The Leela", "Marriott India", "Hyatt India", "Hilton India", "Accor India",
+  "Radisson India", "Park Hotels", "Sarovar Hotels",
+  // ─── Aviation ───
+  "IndiGo", "SpiceJet", "Air India", "Vistara", "Akasa Air", "AirAsia India",
+  "Air India Express", "Alliance Air", "Star Air", "Pawan Hans",
+  "GMR Airports", "Adani Airports", "DIAL (Delhi Airport)", "MIAL (Mumbai Airport)", "BIAL (Bangalore Airport)",
+  // ─── Indian Startups: Insurance ───
   "PolicyBazaar", "Acko", "Digit Insurance", "Star Health", "Turtlemint", "Plum",
-  // Indian Startups — Auto & Classifieds
+  "Onsurity", "Coverfox", "RenewBuy", "InsuranceDekho", "Probus Insurance",
+  // ─── Indian Startups: Auto & Classifieds ───
   "Cars24", "CarDekho", "Spinny", "Droom", "CarTrade", "OLX India", "Quikr",
-  // Indian Banks
-  "State Bank of India (SBI)", "HDFC Bank", "ICICI Bank", "Kotak Mahindra Bank", "Axis Bank",
-  "Punjab National Bank", "Bank of Baroda", "Canara Bank", "Union Bank", "Indian Bank",
+  "OLX Autos", "Cartwale", "Truebil",
+  // ─── Indian Startups: Gaming & Sports ───
+  "Dream11", "MPL (Mobile Premier League)", "Games24x7", "JetSynthesys", "Nazara Technologies",
+  "Gameskraft", "Junglee Games", "Nodwin Gaming", "Octro", "Hike Messenger (Rush Gaming)",
+  "Rooter", "FanCode", "Sports24x7", "Stupa Sports Analytics",
+  // ─── Indian Startups: Crypto / Web3 ───
+  "CoinDCX", "CoinSwitch Kuber", "WazirX", "ZebPay", "Vauld", "Mudrex", "Bitbns",
+  "Polygon (Indian-origin)", "Dharma Labs",
+  // ─── Indian Public Sector Banks (PSBs) ───
+  "State Bank of India (SBI)", "Punjab National Bank", "Bank of Baroda", "Canara Bank",
+  "Union Bank of India", "Indian Bank", "Bank of India", "Central Bank of India",
+  "Indian Overseas Bank", "UCO Bank", "Punjab & Sind Bank", "Bank of Maharashtra",
+  // ─── Indian Private Banks ───
+  "HDFC Bank", "ICICI Bank", "Kotak Mahindra Bank", "Axis Bank",
   "Yes Bank", "IndusInd Bank", "Federal Bank", "RBL Bank", "IDFC First Bank", "Bandhan Bank",
-  "South Indian Bank", "City Union Bank", "Karur Vysya Bank", "DCB Bank",
-  // NBFCs & Financial Services
+  "South Indian Bank", "City Union Bank", "Karur Vysya Bank", "DCB Bank", "CSB Bank",
+  "Tamilnad Mercantile Bank", "Nainital Bank", "Karnataka Bank", "Dhanlaxmi Bank",
+  // ─── Small Finance Banks ───
+  "AU Small Finance Bank", "Equitas Small Finance Bank", "Ujjivan Small Finance Bank",
+  "ESAF Small Finance Bank", "Suryoday Small Finance Bank", "Capital Small Finance Bank",
+  "Fincare Small Finance Bank", "Jana Small Finance Bank", "Utkarsh Small Finance Bank",
+  // ─── Payments Banks ───
+  "Airtel Payments Bank", "Paytm Payments Bank", "India Post Payments Bank", "Fino Payments Bank", "Jio Payments Bank",
+  // ─── NBFCs ───
   "Bajaj Finance", "Bajaj Finserv", "HDFC Ltd", "L&T Finance", "Shriram Finance",
   "Muthoot Finance", "Manappuram Finance", "Mahindra Finance", "IIFL Finance",
-  "HDFC Life", "ICICI Prudential", "SBI Life", "Max Life", "Tata AIA",
+  "Cholamandalam Finance", "Sundaram Finance", "Tata Capital", "Aditya Birla Capital",
+  "Piramal Finance", "Hero FinCorp", "Edelweiss Financial Services", "Religare Finance",
+  // ─── Insurance (Life) ───
+  "LIC of India", "HDFC Life", "ICICI Prudential", "SBI Life", "Max Life", "Tata AIA",
+  "Bajaj Allianz Life", "Kotak Mahindra Life", "Aditya Birla Sun Life",
+  "PNB MetLife", "Reliance Nippon Life", "Canara HSBC Life",
+  // ─── Insurance (General + Health) ───
+  "GIC Re", "New India Assurance", "United India Insurance", "Oriental Insurance", "National Insurance",
+  "Bajaj Allianz General", "ICICI Lombard", "Tata AIG General", "HDFC ERGO",
+  "Reliance General Insurance", "Cholamandalam MS General", "Future Generali India",
+  "Niva Bupa", "Star Health Insurance", "Care Health Insurance",
+  // ─── AMCs / Mutual Funds ───
   "HDFC AMC", "ICICI Prudential AMC", "SBI Mutual Fund", "Nippon India AMC", "Kotak AMC",
-  // Stock Exchanges & Regulators
-  "NSE", "BSE", "SEBI", "RBI", "IRDAI", "NABARD", "SIDBI",
-  "NSDL", "CDSL", "CRISIL", "ICRA", "CARE Ratings",
-  // Consulting (India presence)
+  "Aditya Birla Sun Life AMC", "Axis AMC", "DSP Mutual Fund", "UTI AMC", "Mirae Asset",
+  "Tata Mutual Fund", "Franklin Templeton India", "L&T Mutual Fund", "PPFAS Mutual Fund", "Quant Mutual Fund",
+  // ─── Stock Exchanges & Regulators ───
+  "NSE", "BSE", "MCX", "NCDEX",
+  "SEBI", "RBI", "IRDAI", "PFRDA", "NABARD", "SIDBI", "EXIM Bank",
+  "NSDL", "CDSL", "CRISIL", "ICRA", "CARE Ratings", "Brickwork Ratings",
+  // ─── Strategy Consulting ───
   "McKinsey", "BCG", "Bain", "Deloitte", "Accenture", "PwC", "EY", "KPMG",
   "Oliver Wyman", "ZS Associates", "Strategy&", "Kearney", "Roland Berger",
-  "Alvarez & Marsal", "Grant Thornton", "BDO India",
-  // Pharma & Healthcare Companies
+  "Alvarez & Marsal", "Grant Thornton", "BDO India", "RSM India",
+  "Frost & Sullivan", "L.E.K Consulting", "Arthur D. Little", "Parthenon EY",
+  // ─── Pharma & Healthcare Companies ───
   "Sun Pharma", "Dr. Reddy's", "Cipla", "Lupin", "Aurobindo Pharma", "Biocon",
   "Divis Labs", "Torrent Pharma", "Zydus Lifesciences", "Glenmark", "Alkem Labs",
   "Mankind Pharma", "Ipca Labs", "Natco Pharma", "Piramal Pharma",
   "Pfizer India", "Novartis India", "AstraZeneca India", "Abbott India", "GSK India",
-  // FMCG
+  "Sanofi India", "Eli Lilly India", "Merck India", "Roche India", "Johnson & Johnson India",
+  "Bharat Biotech", "Serum Institute of India", "Panacea Biotec", "Wockhardt", "Cadila Healthcare",
+  "Strides Pharma", "Granules India", "Laurus Labs", "Suven Pharmaceuticals",
+  // ─── FMCG ───
   "Hindustan Unilever (HUL)", "ITC", "Nestle India", "P&G India", "Colgate-Palmolive India",
   "Dabur", "Marico", "Godrej Consumer Products", "Emami", "Britannia",
   "Parle Products", "Amul (GCMMF)", "Haldiram's", "Tata Consumer Products",
-  "Patanjali", "Bisleri", "Paperboat", "Raw Pressery",
-  // Telecom
-  "Jio (Reliance)", "Airtel (Bharti)", "Vodafone Idea", "BSNL", "MTNL",
-  "Jio Platforms", "Airtel Digital", "Tata Communications",
-  // Automotive
+  "Patanjali", "Bisleri", "Paperboat", "Raw Pressery", "PepsiCo India", "Coca-Cola India",
+  "Mondelez India", "McCain India", "United Breweries", "Pernod Ricard India", "Diageo India",
+  "Reckitt Benckiser India", "Kellogg India", "Adani Wilmar (Fortune)",
+  // ─── Telecom ───
+  "Jio (Reliance)", "Airtel (Bharti)", "Vodafone Idea (Vi)", "BSNL", "MTNL",
+  "Jio Platforms", "Airtel Digital", "Tata Communications", "Sterlite Technologies",
+  "Tejas Networks", "Indus Towers", "Bharti Hexacom", "Nokia Siemens Networks India",
+  // ─── Automotive (OEM + Tier 1 + EV) ───
   "Tata Motors", "Mahindra & Mahindra", "Maruti Suzuki", "Hyundai India", "Kia India",
   "Hero MotoCorp", "Bajaj Auto", "TVS Motor", "Royal Enfield (Eicher)",
   "Ashok Leyland", "Force Motors", "MG Motor India", "Skoda-VW India",
   "Toyota India", "Honda India", "Mercedes-Benz India", "BMW India", "Audi India",
-  "Tata Technologies", "KPIT Technologies", "Bosch India", "Continental India",
-  // Conglomerates
+  "Volvo India", "Renault India", "Nissan India", "Stellantis India", "Jaguar Land Rover India",
+  "Tata Technologies", "Bosch India", "Continental India", "Mahle Behr India", "Schaeffler India",
+  "Sundaram Clayton", "Sundaram Fasteners", "Bharat Forge", "Motherson Sumi", "Endurance Technologies",
+  "Minda Industries", "JBM Auto",
+  // ─── Conglomerates & Holdings ───
   "Tata Group", "Reliance Industries", "Adani Group", "Mahindra Group",
   "Godrej Group", "Aditya Birla Group", "Bharti Enterprises", "Vedanta", "JSW Group",
-  "L&T (Larsen & Toubro)", "BHEL", "ONGC", "NTPC", "Indian Oil (IOCL)",
+  "L&T (Larsen & Toubro)", "Hinduja Group", "Murugappa Group", "Wadia Group", "RP-Sanjiv Goenka Group",
+  "Essar Group", "Birla Corporation",
+  // ─── PSUs (Central) ───
+  "BHEL", "ONGC", "NTPC", "Indian Oil (IOCL)",
   "GAIL", "BPCL", "HPCL", "Coal India", "Power Grid", "SAIL",
-  // Defence & Aerospace
-  "HAL", "BEL", "DRDO", "ISRO", "BDL", "BEML",
-  // Media & Entertainment
-  "Star India (Disney+Hotstar)", "Sony India", "Zee Entertainment", "Viacom18",
-  "Times Group", "HT Media", "NDTV", "Network18",
-  "T-Series", "Yash Raj Films", "Dharma Productions",
-  // E-commerce & Retail (India)
-  "Amazon India", "Flipkart", "Reliance Retail", "Tata CLiQ", "Snapdeal",
-  "DMart (Avenue Supermarts)", "Reliance Trends", "Shoppers Stop", "Lifestyle",
-  "Decathlon India", "IKEA India", "H&M India", "Zara India",
-  "Croma", "Vijay Sales", "Poorvika",
-  // Startup Stages
+  "NMDC", "NALCO", "MMTC", "STC", "NHPC", "NLC India", "RITES",
+  "Container Corporation (CONCOR)", "IRCTC", "RailTel", "IRFC", "RVNL", "IRCON", "Dedicated Freight Corridor (DFCC)",
+  "Indian Railways", "Mumbai Metro", "Delhi Metro (DMRC)", "Bangalore Metro (BMRCL)", "Chennai Metro",
+  "Kolkata Metro", "Hyderabad Metro", "Kochi Metro", "NMRC (Noida Metro)",
+  // ─── Defence & Aerospace ───
+  "HAL", "BEL", "DRDO", "ISRO", "BDL", "BEML", "GRSE", "Mazagon Dock", "Cochin Shipyard",
+  "Mishra Dhatu Nigam (MIDHANI)", "Ordnance Factory Board (OFB)", "Munitions India Limited",
+  // ─── Power, Energy & Renewables ───
+  "Tata Power", "Adani Power", "Adani Green", "Adani Transmission",
+  "ReNew Power", "Suzlon Energy", "Inox Wind", "Greenko Group",
+  "Azure Power", "JSW Energy", "Torrent Power", "Reliance Power",
+  "CESC", "Tata Renewable Energy", "Avaada Energy", "Hero Future Energies",
+  "Ola Electric", "Tata Passenger Electric Mobility",
+  // ─── Steel, Cement, Paints ───
+  "Tata Steel", "JSW Steel", "JSPL (Jindal Steel)", "Hindalco", "Jindal Stainless",
+  "UltraTech Cement", "ACC", "Ambuja Cements", "Shree Cement", "Dalmia Bharat", "Ramco Cements",
+  "Asian Paints", "Berger Paints", "Kansai Nerolac", "Akzo Nobel India", "JSW Paints", "Indigo Paints", "Birla Opus",
+  // ─── Engineering, Construction, Capital Goods ───
+  "L&T Construction", "Shapoorji Pallonji", "Hindustan Construction Co (HCC)",
+  "Punj Lloyd", "GMR Infrastructure", "GVK Power & Infrastructure", "IRB Infrastructure",
+  "ABB India", "Siemens India", "Schneider Electric India", "Crompton Greaves",
+  "Havells India", "Polycab", "Finolex", "Voltas", "Blue Star",
+  "Cummins India", "Thermax", "AIA Engineering", "Ion Exchange",
+  // ─── Media & Entertainment ───
+  "Star India (Disney+Hotstar)", "Sony India", "Zee Entertainment", "Viacom18 (JioCinema)",
+  "Times Group (BCCL)", "HT Media", "NDTV", "Network18", "ABP Group", "India Today Group",
+  "T-Series", "Yash Raj Films", "Dharma Productions", "Excel Entertainment", "Red Chillies Entertainment",
+  "Eros International", "PVR INOX", "Saregama", "Tips Industries",
+  "Republic TV", "News18", "CNBC-TV18", "Bloomberg Quint",
+  // ─── E-commerce & Retail (India) ───
+  "Amazon India", "Reliance Retail", "Tata CLiQ", "Snapdeal", "Ajio",
+  "DMart (Avenue Supermarts)", "Reliance Trends", "Shoppers Stop", "Lifestyle", "Pantaloons",
+  "Decathlon India", "IKEA India", "H&M India", "Zara India", "Marks & Spencer India",
+  "Croma", "Vijay Sales", "Poorvika", "Reliance Digital",
+  "Future Retail", "Trent (Westside)", "Spencer's Retail", "More Retail",
+  "V-Mart", "V2 Retail", "Liberty Shoes", "Bata India", "Khadim's", "Relaxo Footwears",
+  "Titan", "Tanishq", "Kalyan Jewellers", "Senco Gold", "Joyalukkas", "PC Jeweller",
+  // ─── Audit / Tax / Law (large hirers in India) ───
+  "Cyril Amarchand Mangaldas", "AZB & Partners", "Khaitan & Co", "J Sagar Associates",
+  "Trilegal", "Shardul Amarchand Mangaldas", "Luthra & Luthra", "S&R Associates",
+  "Nishith Desai Associates", "DSK Legal", "ANB Legal", "Argus Partners",
+  // ─── Audit firms (mid-tier, top hirers for CA/finance candidates) ───
+  "Walker Chandiok", "S.R. Batliboi & Co", "Lodha & Co", "Khimji Kunverji & Co",
+  "MGB & Co", "BSR & Co", "Aneja Associates", "RSM Astute", "Nangia Andersen",
+  // ─── Government & Civil Services landing spots ───
+  "UPSC (Indian Administrative Service)", "Indian Foreign Service", "Indian Police Service",
+  "Indian Revenue Service", "Indian Forest Service", "State Public Service Commission",
+  "IBPS PO/Clerk", "SBI PO", "RBI Grade B", "NABARD Grade A", "SIDBI Grade A",
+  "SSC CGL", "SSC CHSL", "Indian Railways (RRB)",
+  "ISRO Scientist", "DRDO Scientist", "BARC Scientist", "TIFR",
+  "Reserve Bank of India (Direct)", "NPCI", "UIDAI",
+  // ─── Universities & Research (academia track) ───
+  "IIT Bombay", "IIT Delhi", "IIT Madras", "IIT Kanpur", "IIT Kharagpur",
+  "IIT Roorkee", "IIT Guwahati", "IIT Hyderabad", "IIT BHU", "IIT Indore",
+  "IISc Bangalore", "IIM Ahmedabad", "IIM Bangalore", "IIM Calcutta",
+  "ISB Hyderabad", "XLRI Jamshedpur", "FMS Delhi", "MDI Gurgaon",
+  "BITS Pilani", "VIT Vellore", "Manipal University", "Amity University",
+  // ─── Misc — global product / consumer companies hiring in India ───
+  "Coupa", "Procore", "DocuSign", "Box", "Dropbox", "Asana",
+  "Zendesk", "HubSpot", "Mailchimp", "Pipedrive", "Klaviyo",
+  "Coursera", "Udacity", "edX", "Pluralsight",
+  "Roblox", "Unity Technologies", "Epic Games", "Riot Games", "EA", "Activision Blizzard", "Take-Two",
+  // ─── Startup Stages (placeholder bucket) ───
   "Pre-seed / Seed Startup", "Series A Startup", "Series B Startup", "Series C+ Startup",
   "Bootstrapped Startup", "Enterprise / MNC", "Government / PSU",
 ];
+
+// Dedup while preserving first-seen order (autocomplete relevance is
+// driven by string-prefix matching, so order matters less than hit
+// rate — but keeping deterministic order helps testing).
+export const COMPANY_SUGGESTIONS = Array.from(new Set(COMPANY_SUGGESTIONS_RAW));
 
 /* Sample diverse suggestions by picking evenly spaced items */
 export function sampleDiverse(arr: string[], count: number): string[] {

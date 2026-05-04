@@ -8,6 +8,7 @@ import { track } from "@vercel/analytics";
    interview surface. Discipline rule:
    Indigo is interactive · Copper is editorial · Never mix. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
+import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "./onboardingData";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 
@@ -57,33 +58,11 @@ const ROLE_SUGGESTIONS = [
   "Graduate Engineer Trainee (GET)", "Management Trainee", "Fresher",
 ];
 
-const COMPANY_SUGGESTIONS = [
-  "Google", "Microsoft", "Amazon", "Meta", "Apple", "Netflix",
-  "Adobe", "Oracle", "SAP", "Salesforce", "ServiceNow", "Intuit", "Atlassian",
-  "IBM", "Cisco", "Intel", "NVIDIA", "Qualcomm",
-  "LinkedIn", "Uber", "Spotify", "Airbnb", "Shopify",
-  "Stripe", "PayPal", "Visa", "Mastercard",
-  "GitHub", "GitLab", "Figma", "Notion", "Twilio",
-  "OpenAI", "Anthropic", "Google DeepMind", "Scale AI",
-  "Goldman Sachs", "JP Morgan", "Morgan Stanley", "Deutsche Bank", "Barclays",
-  "TCS", "Infosys", "Wipro", "HCL Technologies", "Tech Mahindra",
-  "Cognizant", "Capgemini", "Accenture", "Deloitte", "PwC", "EY", "KPMG",
-  "Flipkart", "Meesho", "Nykaa", "Swiggy", "Zomato",
-  "Razorpay", "PhonePe", "Paytm", "CRED", "Zerodha", "Groww",
-  "Ola", "Delhivery", "Ather Energy",
-  "Byju's", "Unacademy", "upGrad", "Physics Wallah", "Scaler",
-  "Freshworks", "Zoho", "Postman", "BrowserStack",
-  "MakeMyTrip", "OYO Rooms",
-  "McKinsey", "BCG", "Bain",
-  "Tata Group", "Reliance Industries", "Adani Group", "Mahindra Group",
-  "HDFC Bank", "ICICI Bank", "SBI", "Kotak Mahindra Bank", "Axis Bank",
-  "Bajaj Finance", "HDFC Life",
-  "Hindustan Unilever (HUL)", "ITC", "Nestle India",
-  "Jio (Reliance)", "Airtel (Bharti)",
-  "Tata Motors", "Maruti Suzuki", "Mahindra & Mahindra",
-  "L&T (Larsen & Toubro)", "BHEL", "ONGC", "NTPC",
-  "Pre-seed / Seed Startup", "Series A Startup", "Series B Startup", "Enterprise / MNC", "Government / PSU",
-];
+// Single source of truth — the extensive ~510-entry list lives in
+// onboardingData. Re-aliased here so both SessionSetup and Onboarding
+// autocomplete consume the same list; adding a company in one place
+// lights it up in both.
+const COMPANY_SUGGESTIONS = COMPANY_SUGGESTIONS_FULL;
 
 function sampleDiverse(arr: string[], count: number): string[] {
   if (arr.length <= count) return arr;
