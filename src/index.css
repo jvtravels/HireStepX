@@ -1021,8 +1021,20 @@ input[type="range"]::-moz-range-thumb {
 /* Push-to-talk keycap — soft glow when active */
 .hsx-iv-keycap[data-state="active"] { box-shadow: 0 0 0 6px rgba(49,46,129,.10), 0 6px 22px -6px rgba(49,46,129,.45); }
 
-/* End-button hover — copper wash */
-.iv-canvas-endbtn:hover { background: rgba(180,83,9,.06); border-color: rgba(180,83,9,.35); }
+/* End-button — neutral default, danger on hover/focus.
+   Copper is editorial-only per the brand rule, so the inert state stays
+   neutral. The red wash at hover/focus telegraphs the destructive action
+   without screaming for attention while a candidate is mid-answer. */
+.iv-canvas-endbtn:hover,
+.iv-canvas-endbtn:focus-visible {
+  color: #B91C1C;                                /* error / red-700 */
+  background: rgba(185,28,28,.06);
+  border-color: rgba(185,28,28,.35);
+}
+.iv-canvas-endbtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(185,28,28,.18);
+}
 .iv-canvas-endbtn:active { transform: translateY(1px); }
 
 /* Canvas page entrance fade.

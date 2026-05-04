@@ -480,6 +480,9 @@ export function CanvasMetaRow({ elapsedSec, exchanges }: { elapsedSec: number; e
 }
 
 /* ─── EndButton (footer right) ─── */
+/* Neutral by default — copper is reserved for editorial moments, not
+   destructive UI. Goes red (e.error) on hover/focus to telegraph the
+   destructive intent at the moment of decision. CSS lives in iv-canvas-endbtn. */
 export function CanvasEndButton({ onClick }: { onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick}
@@ -487,10 +490,10 @@ export function CanvasEndButton({ onClick }: { onClick?: () => void }) {
       className="iv-canvas-endbtn"
       style={{
         display: "inline-flex", alignItems: "center", gap: 6,
-        fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.copper,
+        fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.inkSoft,
         background: "transparent", border: `1px solid ${e.line}`,
         borderRadius: 999, padding: "8px 14px", cursor: "pointer",
-        transition: "all 160ms ease",
+        transition: "color 160ms ease, border-color 160ms ease, background 160ms ease",
       }}>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
