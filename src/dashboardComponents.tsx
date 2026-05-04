@@ -32,16 +32,17 @@ const RESULTS_REPORT_MVP_ENABLED = (() => {
 })();
 
 /**
- * Feature flag for the V2 report view. Defaults to OFF until QA lands.
- * Flip to ON via Vercel env (NEXT_PUBLIC_REPORT_V2=true) for staged rollout.
- * When ON, V2 supersedes the V1 MVP view — both gates still apply
- * (transcript length ≥ 2, etc.).
+ * Feature flag for the V2 report view. Defaults to ON — V2 is now the
+ * production results surface. Set NEXT_PUBLIC_REPORT_V2=false in Vercel
+ * env to roll back to the legacy SessionReportView without a deploy.
+ * Both gates still apply (transcript length ≥ 2, etc.).
  */
 const REPORT_V2_ENABLED = (() => {
   try {
     const env = (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_REPORT_V2 : undefined);
-    return env === "true" || env === "1";
-  } catch { return false; }
+    // Explicit "false" / "0" disables; everything else (including unset) enables.
+    return env !== "false" && env !== "0";
+  } catch { return true; }
 })();
 
 declare global {
