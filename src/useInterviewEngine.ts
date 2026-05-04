@@ -1092,6 +1092,17 @@ export function useInterviewEngine() {
       // For salary-neg: speak thinking phrase IMMEDIATELY to eliminate dead air,
       // then wait for follow-up API in background. This means the user hears
       // "Hmm, let me think about that..." within 0.5s instead of 6s silence.
+      //
+      // NOTE: we deliberately do NOT add the thinking phrase to the transcript.
+      // It's a UX bridge ("Got it." / "I understand." / "Sure.") to fill TTS
+      // dead-air; treating it as a real conversational turn produced the
+      // observed bug where the report transcript showed:
+      //     [ai] Got it.
+      //     [ai] I appreciate you sharing your thoughts...
+      // as TWO separate AI turns. Worse, the eval LLM read those bridges as
+      // substantive turns and the per-question pairing got confused. Bridges
+      // are now spoken-only — the substantive follow-up that arrives via
+      // pendingFollowUp.then() is the canonical AI turn.
       if (isSalaryNegConversation && (thinkingPhrase !== null) && thinkingPhrase && aiVoiceEnabled) {
         const isHeavyPushback = negPushbackCountRef.current >= 3;
         const walkAwayPatCheck = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
@@ -1100,10 +1111,11 @@ export function useInterviewEngine() {
         const strategicPause = (isWalkAway || isHeavyPushback) ? randomDelay(1500, 2500) : undefined;
         const phraseDelay = strategicPause ?? randomDelay(150, 400);
 
-        // Speak thinking phrase immediately and add to transcript so eval LLM can see it
+        // Speak thinking phrase immediately. NOT added to transcript — see
+        // note above. The TTS-only path keeps the no-dead-air UX without
+        // polluting the conversation log.
         setTimeout(() => {
           if (isStale() || interviewEndedRef.current) return;
-          setTranscript(prev => [...prev, { speaker: "ai", text: thinkingPhrase!, time: formatTime(elapsed) }]);
           const phraseInstanceId = ++ttsInstanceIdRef.current;
           speak(thinkingPhrase!, () => {}, () => {}, interviewerGender).then(handle => {
             if (ttsInstanceIdRef.current === phraseInstanceId) {
@@ -1162,12 +1174,14 @@ export function useInterviewEngine() {
             }).catch(() => {});
           }
           if (isSalaryNegConversation) {
-            // Salary negotiation: replace the next pre-generated question with the dynamic response.
-            // Also mark ALL subsequent pre-generated questions as "stale" by clearing their aiText
-            // so they'll be replaced by future follow-ups rather than playing stale scripts.
+            // Salary negotiation: replace the next pre-generated QUESTION with the
+            // dynamic response. The CLOSING step is intentionally excluded — we
+            // observed (sessions ea2689e9 / d1c2d3d0) that follow-ups
+            // were replacing the closing slot, leaving the interview to end
+            // abruptly without an AI wrap-up turn after the user's final reply
+            // ("Suddenly interview ends" — bug report #21e). Closings always run.
             setInterviewScript(prev => {
-              // Find next question OR closing to replace with contextual response
-              const nextQuestionIdx = prev.findIndex((s, i) => i > currentStep && (s.type === "question" || s.type === "closing"));
+              const nextQuestionIdx = prev.findIndex((s, i) => i > currentStep && s.type === "question");
               if (nextQuestionIdx > currentStep) {
                 // Replace the next question with the dynamic response
                 const updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
