@@ -18,7 +18,8 @@ import {
   CanvasMetaRow, CanvasEndButton, CanvasSelfViewTile,
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
-import { LiveCaptions } from "./InterviewComponents";
+/* LiveCaptions import dropped along with LiveCaptionsAsHeading — see
+   the question-flicker fix in the speaking-phase render below. */
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
@@ -161,28 +162,9 @@ function countExchanges(transcript: Array<{ speaker: string }>): number {
   return transcript.filter(m => m.speaker === "user").length;
 }
 
-/* LiveCaptions wrapped to render inside the editorial heading slot.
-   Reuses the existing TTS-synced typewriter logic but inherits the
-   parent <h1>'s serif typography. */
-function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEnded }: {
-  text: string;
-  ttsDurationMs?: number;
-  speakingDuration?: number;
-  speechEnded?: boolean;
-}) {
-  return (
-    <span style={{ display: "inline" }}>
-      <LiveCaptions
-        text={text}
-        isTyping
-        variant="inherit"
-        speakingDuration={speakingDuration}
-        actualDuration={ttsDurationMs}
-        speechEnded={speechEnded}
-      />
-    </span>
-  );
-}
+/* LiveCaptionsAsHeading was the canvas-style typewriter wrapper. Removed
+   together with the QuestionCard typewriter to fix the question-text
+   flicker bug — see the render-site comment in the speaking phase. */
 
 /* SkipWithReason — replaces CanvasSkipLink in production. Click reveals
    a tiny popover with 4 reasons (industry standard for question-quality
@@ -725,7 +707,6 @@ function InterviewInner() {
     timeRemaining, timePercent,
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
-    ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
     isSalaryNegotiation, negotiationBand, negotiationStyle,
     targetSalary, highestOffer, liveNegotiationState, voiceConfidence,
@@ -904,16 +885,13 @@ function InterviewInner() {
           const displayText = step.aiTextDisplay ?? step.aiText;
           return (
           <div style={{ maxWidth: 620, width: "100%" }}>
-            {phase === "speaking" ? (
-              <CanvasPlainHeading>
-                <LiveCaptionsAsHeading
-                  text={displayText}
-                  ttsDurationMs={ttsDurationMs}
-                  speakingDuration={step.speakingDuration}
-                  speechEnded={speechEnded}
-                />
-              </CanvasPlainHeading>
-            ) : (() => {
+            {/* Speaking phase used to swap the editorial heading for a
+                LiveCaptions typewriter — but that animation reset the text
+                to empty on every phase change, producing a "question
+                vanishes then re-types" flicker. Now: render the same
+                accent-split heading from speaking onwards so the question
+                appears in full as soon as the AI starts talking. */}
+            {(() => {
               // Prefer the LLM-marked accentSplit when available — it's
               // hand-picked at question-generation time. Falls back to
               // the local heuristic when LLM didn't comply or for
@@ -1131,7 +1109,7 @@ function InterviewInner() {
         <span className="iv-canvas-mobile-hide" style={{
           fontFamily: ef.sans, fontSize: 11, color: e.inkFaint, letterSpacing: 0.1,
         }}>
-          Recording for your review only · never shared
+          Audio is never recorded · transcript only
         </span>
         {phase !== "done" && (
           <span ref={endModalTriggerRef as React.Ref<HTMLSpanElement>} style={{ display: "inline-flex" }}>

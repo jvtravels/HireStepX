@@ -465,6 +465,12 @@ alter table profiles add column if not exists last_streak_reward_day integer def
 -- Re-engagement cron uses this to rate-limit emails per user (see re-engage-users.ts).
 alter table profiles add column if not exists re_engage_sent timestamptz;
 
+-- Idempotency tracking for session-start counting. /api/record-session-start
+-- appends the sessionId here when the user enters /interview, so save-session
+-- knows not to double-bump practice_timestamps on completion. Last 50 ids
+-- retained — older ones get pruned on each write.
+alter table profiles add column if not exists started_session_ids jsonb default '[]'::jsonb;
+
 alter table profiles enable row level security;
 alter table sessions enable row level security;
 alter table calendar_events enable row level security;

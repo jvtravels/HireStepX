@@ -195,6 +195,28 @@ export function useInterviewEngine() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Count the session at START, not at completion. Without this, users
+     could enter /interview, abandon halfway, and never have it counted
+     against their quota — letting them test-drive sessions for free.
+     The endpoint is idempotent on sessionId (handles React StrictMode
+     double-mount and any client retry); save-session.ts checks the
+     same started_session_ids list to avoid double-bumping on completion.
+     Fire-and-forget — the engine never blocks on this. */
+  useEffect(() => {
+    if (!user?.id) return; // anon sessions don't count
+    const sessionId = liveSessionIdRef.current;
+    (async () => {
+      try {
+        const { apiFetch } = await import("./apiClient");
+        await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
+      } catch (err) {
+        console.warn("[interview] record-session-start failed:", err instanceof Error ? err.message : err);
+      }
+    })();
+    // Mount-only: liveSessionIdRef is stable for this engine instance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   // Override user's profile role/company with URL params (SessionSetup passes these)
   const effectiveUser = (targetRole || targetCompany) ? { ...user, ...(targetRole ? { targetRole } : {}), ...(targetCompany ? { targetCompany } : {}) } as typeof user : user;
   const fallbackScript = isMiniMode ? getMiniScript(effectiveUser, targetCompany, interviewType) : getScript(interviewType, interviewDifficulty, effectiveUser);
@@ -608,6 +630,11 @@ export function useInterviewEngine() {
       } catch { /* noop */ }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
+    /* Immediate seed-save on mount so a fast refresh (within the first
+       15s of the autosave interval) still has a draft to restore. Without
+       this, a user who refreshes 3 seconds in lands on the dashboard
+       because hasRestorableDraft is false. */
+    saveDraft();
     const autoSaveInterval = setInterval(saveDraft, 15_000);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);

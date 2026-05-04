@@ -79,8 +79,16 @@ export const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
  * Discard reasons (caller should also call deleteFromIDB):
  *   - Older than DRAFT_TTL_MS
  *   - Not the expected shape
- *   - Less than 1 step in (intro doesn't need restoring)
+ *   - Negative / non-numeric currentStep
  *   - Interview type mismatch (user started a different session)
+ *
+ * NOTE: currentStep === 0 is now considered VALID (the user is on the
+ * intro). Earlier this rejected step 0 on the theory "intro doesn't need
+ * restoring", but combined with the engine's redirect-to-dashboard
+ * fallback, that meant a refresh on the intro screen kicked the user
+ * back to the dashboard mid-interview. Restoring step 0 is harmless —
+ * it just resumes the engine from the same place it would have
+ * naturally re-mounted to.
  */
 export function validateRestoredDraft(
   parsed: unknown,
@@ -89,7 +97,7 @@ export function validateRestoredDraft(
   if (!parsed || typeof parsed !== "object") return null;
   const draft = parsed as Partial<InterviewDraftSnapshot>;
   if (!Array.isArray(draft.transcript)) return null;
-  if (typeof draft.currentStep !== "number" || draft.currentStep <= 0) return null;
+  if (typeof draft.currentStep !== "number" || draft.currentStep < 0) return null;
   if (typeof draft.savedAt === "number" && Date.now() - draft.savedAt > DRAFT_TTL_MS) return null;
   if (expectedInterviewType && draft.interviewType && draft.interviewType !== expectedInterviewType) return null;
   return draft as InterviewDraftSnapshot;

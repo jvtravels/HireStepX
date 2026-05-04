@@ -176,7 +176,7 @@ export default async function handler(req: Request): Promise<Response> {
   let streakReward: { milestone: number; bonusCredits: number } | null = null;
   try {
     const getRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,session_credits,last_streak_reward_day`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,session_credits,last_streak_reward_day,started_session_ids`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_KEY,
@@ -188,11 +188,16 @@ export default async function handler(req: Request): Promise<Response> {
       const arr = await getRes.json().catch(() => []);
       const row = Array.isArray(arr) && arr[0] ? arr[0] : {};
       const existing: string[] = Array.isArray(row.practice_timestamps) ? row.practice_timestamps : [];
+      const startedIds: string[] = Array.isArray(row.started_session_ids) ? row.started_session_ids : [];
       const currentCredits: number = typeof row.session_credits === "number" ? row.session_credits : 0;
       const lastRewardDay: number = typeof row.last_streak_reward_day === "number" ? row.last_streak_reward_day : 0;
 
-      // Cap at 500 entries to keep the column small; the oldest are least useful.
-      const next = [...existing, nowIso].slice(-500);
+      /* Sessions are now counted at START via /api/record-session-start.
+         If the engine already recorded this sessionId there, skip the
+         append here so the user doesn't double-count. Streak math still
+         runs on the existing timestamps (which include the start). */
+      const alreadyCounted = startedIds.includes(sessionRow.id);
+      const next = alreadyCounted ? existing : [...existing, nowIso].slice(-500);
 
       // Streak math extracted to ./_streak-reward.ts and unit-tested.
       const streakDays = computeCurrentStreak(next);

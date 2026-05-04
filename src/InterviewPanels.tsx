@@ -2,7 +2,7 @@ import React, { memo, useRef, useState, useEffect } from "react";
 import { e, ef } from "./interviewTokens";
 import {
   WaveformVisualizer, NetworkIndicator, DotGridVisualizer,
-  LiveCaptions, ControlButton, formatTime,
+  ControlButton, formatTime,
 } from "./InterviewComponents";
 import type { PanelMember } from "./InterviewComponents";
 // PaceMeter is used inside UserAnswerArea below; the rest are imported
@@ -240,7 +240,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           animation: "fadeUp 0.3s ease",
         }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
-          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Recording</span>
+          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
       {phase === "speaking" && (
@@ -387,7 +387,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
           animation: "fadeUp 0.3s ease",
         }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
-          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Recording</span>
+          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
 
@@ -414,15 +414,15 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
 
 /* ─── Question Card with timer ─── */
 
-export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptions, timeRemaining, timePercent, panelPersona, actualDuration, speechEnded, isSalaryNegotiation }: {
+export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptions, timeRemaining, timePercent, panelPersona, isSalaryNegotiation }: {
   step: { aiText: string; scoreNote?: string; speakingDuration: number } | undefined;
   phase: string; showCaptions: boolean;
   timeRemaining: number; timePercent: number;
   panelPersona?: { name: string; title: string; color: string } | null;
-  /** Real TTS audio duration in ms — from TTS provider */
-  actualDuration?: number;
-  /** True when TTS voice playback has finished */
-  speechEnded?: boolean;
+  /* actualDuration / speechEnded props were used by the typewriter
+     animation that's been removed to fix the question-text-flicker bug.
+     Callers may still pass them — we just ignore them silently via the
+     React-component prop-spread pattern. */
   isSalaryNegotiation?: boolean;
 }) {
   return (
@@ -469,15 +469,22 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           {step.scoreNote}
         </p>
       )}
-      {phase === "speaking" ? (
-        <LiveCaptions text={step?.aiText || ""} isTyping={true} speakingDuration={step?.speakingDuration} actualDuration={actualDuration} speechEnded={speechEnded} />
-      ) : phase === "thinking" ? (
-        <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>Preparing next question...</p>
+      {/* Question text rendering — static across speaking + listening so the
+          question doesn't "vanish then re-type" between phases. The earlier
+          LiveCaptions typewriter animation reset to empty on phase change,
+          producing a jarring flash where the question briefly disappeared
+          before the AI voice started reading it. Now: full text appears as
+          soon as the AI starts speaking and stays put. The opacity dip in
+          listening phase (without captions) keeps the visual focus on the
+          user's own answer. */}
+      {phase === "thinking" ? (
+        <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>Preparing next question…</p>
       ) : step?.aiText ? (
         <p style={{
           fontFamily: ef.serif, fontSize: 22, color: e.coal,
           lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em", textWrap: "balance",
           opacity: phase === "listening" && !showCaptions ? 0.62 : 1,
+          transition: "opacity 0.3s ease",
         }}>{step.aiText}</p>
       ) : null}
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
@@ -1155,7 +1162,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
               Transcript
             </span>
             <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
-              Recording for your review only
+              Live transcript · audio is never recorded
             </span>
           </div>
           <button
