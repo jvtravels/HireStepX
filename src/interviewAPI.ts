@@ -6,6 +6,7 @@ import { apiFetch } from "./apiClient";
 import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
 import { extractAccentMarkup } from "./_accent-parser";
+import { stripProsodyMarkup } from "./_prosody";
 
 const RESULTS_KEY = "hirestepx_sessions";
 const IDB_STORE = "drafts";
@@ -309,7 +310,10 @@ export async function fetchLLMQuestions(params: {
         const estimatedMs = Math.max(3000, Math.round((wordCount / 150) * 60 * 1000) + 1500);
         return {
           type: (q.type || "question") as InterviewStep["type"],
+          // aiText keeps prosody markup ([pause], _word_) for TTS to render
+          // as SSML breaks/emphasis; aiTextDisplay strips everything for UI.
           aiText: cleaned,
+          aiTextDisplay: stripProsodyMarkup(cleaned),
           thinkingDuration: q.type === "intro" ? 500 : 600,
           speakingDuration: estimatedMs,
           waitForUser: q.type !== "closing",

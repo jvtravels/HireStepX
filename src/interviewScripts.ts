@@ -14,7 +14,16 @@ function shuffleAndPick<T>(arr: T[], n: number): T[] {
 
 export interface InterviewStep {
   type: "intro" | "question" | "follow-up" | "closing";
+  /** TTS-ready text. Carries prosody markup ([pause], [pause:long],
+      _word_, __word__) so renderForCartesia/renderForAzure can build
+      pauses and emphasis. NEVER render this directly to the UI — the
+      brackets and underscores will leak. Use aiTextDisplay instead. */
   aiText: string;
+  /** Display-ready text. Fully sanitized: no prosody markers, no stray
+      asterisks, no emotion directives. Populated wherever aiText is
+      assigned from an LLM source. UI falls back to aiText when this
+      isn't set (legacy/scripted questions where the two are equal). */
+  aiTextDisplay?: string;
   thinkingDuration: number;
   speakingDuration: number;
   waitForUser: boolean;

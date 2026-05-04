@@ -895,12 +895,18 @@ function InterviewInner() {
             LiveCaptions typewriter would fight with the inline accent
             mid-stream. Once speech ends and we're listening, the accent
             renders. */}
-        {step?.aiText && phase !== "done" && (
+        {step?.aiText && phase !== "done" && (() => {
+          // aiTextDisplay is the fully sanitized version (no [pause:long],
+          // no *foo*, no _word_). Falls back to aiText for legacy/scripted
+          // steps where the two are equal. Never render step.aiText raw —
+          // that path is reserved for TTS, which needs the markup intact.
+          const displayText = step.aiTextDisplay ?? step.aiText;
+          return (
           <div style={{ maxWidth: 620, width: "100%" }}>
             {phase === "speaking" ? (
               <CanvasPlainHeading>
                 <LiveCaptionsAsHeading
-                  text={step.aiText}
+                  text={displayText}
                   ttsDurationMs={ttsDurationMs}
                   speakingDuration={step.speakingDuration}
                   speechEnded={speechEnded}
@@ -911,7 +917,7 @@ function InterviewInner() {
               // hand-picked at question-generation time. Falls back to
               // the local heuristic when LLM didn't comply or for
               // cached/legacy questions without the field.
-              const accent = step.accentSplit ?? pickAccent(step.aiText);
+              const accent = step.accentSplit ?? pickAccent(displayText);
               return accent ? (
                 <CanvasEditorialHeading
                   before={accent.before}
@@ -919,7 +925,7 @@ function InterviewInner() {
                   after={accent.after}
                 />
               ) : (
-                <CanvasPlainHeading>{step.aiText}</CanvasPlainHeading>
+                <CanvasPlainHeading>{displayText}</CanvasPlainHeading>
               );
             })()}
             {step?.scoreNote && phase !== "thinking" && (
@@ -928,7 +934,8 @@ function InterviewInner() {
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* Visualizer in its soft disc + halo + voice rings while listening */}
         {phase !== "done" && (

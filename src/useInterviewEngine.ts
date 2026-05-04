@@ -8,6 +8,8 @@ import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-un
 import { useOnlineOfflineRecovery } from "./_recovery";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
 import { useBackchannels } from "./_backchannels";
+import { extractAccentMarkup } from "./_accent-parser";
+import { stripProsodyMarkup } from "./_prosody";
 import { useListeningInterjections } from "./_listening-interjections";
 import { buildThinkingPhrase } from "./_thinking-phrase";
 import { pickInitialNegotiationStyle, computeNegotiationPhase } from "./_negotiation-state";
@@ -1022,7 +1024,12 @@ export function useInterviewEngine() {
       const fallbackWords = fallbackText.split(/\s+/).length;
       const fallbackMs = Math.max(3000, Math.round((fallbackWords / 150) * 60 * 1000) + 1500);
       const fallbackStep: InterviewStep = {
-        type: "question", aiText: fallbackText,
+        type: "question",
+        aiText: fallbackText,
+        // Fallback strings are mostly engine-authored constants, but a
+        // couple of paths feed through scoreNote builders that may carry
+        // stale markup. Sanitize defensively so the UI is never lied to.
+        aiTextDisplay: stripProsodyMarkup(fallbackText),
         thinkingDuration: 300, speakingDuration: fallbackMs, waitForUser,
         scoreNote,
       };
@@ -1080,17 +1087,23 @@ export function useInterviewEngine() {
         if (result?.needsFollowUp && result.followUpText && currentStepRef.current === currentStep) {
           // Preserve persona from the original question (or from API response) for panel interviews
           const followUpPersona = isPanelInterview ? ((result as { persona?: string }).persona || step.persona) : undefined;
+          // Sanitize the LLM's raw follow-up the same way batch questions
+          // get sanitized in interviewAPI.ts — without this, [pause:long]
+          // and *foo* markers leaked straight into the rendered question.
+          const { cleaned: followUpCleaned, accentSplit: followUpAccent } = extractAccentMarkup(result.followUpText);
           // Compute speakingDuration from word count (~150 WPM for TTS, with a 2s floor)
-          const followUpWords = result.followUpText.split(/\s+/).length;
+          const followUpWords = followUpCleaned.split(/\s+/).length;
           const followUpSpeakMs = Math.max(3000, Math.round((followUpWords / 150) * 60 * 1000) + 1500);
           const followUpStep: InterviewStep = {
             type: isSalaryNegConversation ? "question" : "follow-up",
-            aiText: result.followUpText,
+            aiText: followUpCleaned,
+            aiTextDisplay: stripProsodyMarkup(followUpCleaned),
             thinkingDuration: 300,
             speakingDuration: followUpSpeakMs,
             waitForUser: true,
             scoreNote: isSalaryNegConversation ? "Salary negotiation response — evaluate negotiation strategy" : "Dynamic follow-up based on candidate's answer",
             persona: followUpPersona,
+            ...(followUpAccent ? { accentSplit: followUpAccent } : {}),
           };
           // Persist follow-up to DB in real-time
           if (user?.id) {
