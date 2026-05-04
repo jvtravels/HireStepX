@@ -25,6 +25,66 @@ export function hasStoredSession(): boolean {
   return false;
 }
 
+/**
+ * Synchronous fast-path session reader. Pulls the supabase-js auth
+ * blob out of localStorage and reconstructs a usable Session object,
+ * bypassing the `client.auth.getSession()` navigator-lock acquisition
+ * that browser extensions (Jam, Loom, Hotjar, screen-recorders) can
+ * hang by wrapping window.fetch.
+ *
+ * Returns null when:
+ *   • no token stored
+ *   • the token is malformed
+ *   • the access_token has expired (we let the slow path refresh it)
+ *
+ * The returned object is structurally compatible with the parts of
+ * Session our AuthContext actually reads (`access_token`, `user`,
+ * `user.user_metadata`, `user.app_metadata`, `user.email`,
+ * `user.id`). Less-used Session fields are omitted; consumers that
+ * need them must wait for the SDK's getSession to resolve.
+ */
+export function readSessionFromLocalStorage(): Session | null {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!url) return null;
+    const ref = new URL(url).hostname.split(".")[0];
+    if (!ref) return null;
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_at?: number;
+      expires_in?: number;
+      token_type?: string;
+      provider_token?: string | null;
+      provider_refresh_token?: string | null;
+      user?: Session["user"];
+      currentSession?: { access_token?: string; user?: Session["user"]; expires_at?: number };
+    };
+    const token = parsed.access_token || parsed.currentSession?.access_token;
+    const user = parsed.user || parsed.currentSession?.user;
+    const expiresAt = parsed.expires_at || parsed.currentSession?.expires_at || 0;
+    if (!token || !user) return null;
+    // Reject expired tokens — let the slow path's refresh handle it.
+    // 30s skew so we don't ship a token that's about to die mid-request.
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (expiresAt && expiresAt - 30 < nowSec) return null;
+    return {
+      access_token: token,
+      refresh_token: parsed.refresh_token ?? "",
+      expires_at: expiresAt,
+      expires_in: parsed.expires_in ?? Math.max(0, expiresAt - nowSec),
+      token_type: (parsed.token_type ?? "bearer") as "bearer",
+      provider_token: parsed.provider_token ?? null,
+      provider_refresh_token: parsed.provider_refresh_token ?? null,
+      user,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /* ─── Login Rate Limiting (client-side) ─── */
 const LOGIN_ATTEMPTS_KEY = "hirestepx_login_attempts";
 const LOGIN_LOCKOUT_KEY = "hirestepx_login_lockout";
@@ -466,22 +526,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Still register the listener below, but don't do getSession
         setLoading(true); // stays loading until onAuthStateChange fires SIGNED_IN
       } else {
-      // Restore session from local JWT
+      // Restore session from local JWT.
+      //
+      // FAST PATH first: read the supabase-js storage slot synchronously
+      // and reconstruct a usable Session. This avoids the
+      // navigator-lock acquisition that browser extensions (Jam.dev,
+      // Loom, Hotjar, screen-recorders) wrap via window.fetch, which
+      // can hang `client.auth.getSession()` for the full 8s timeout.
+      // The token in localStorage is the source of truth — getSession()
+      // returns the same object after merely refreshing if expired.
+      //
+      // We then run getSession() in the background (no await) so any
+      // refresh-needed cases still flow through the SDK's normal path
+      // (onAuthStateChange will fire if the token changes). If the
+      // local copy turns out to be expired, we drop back to the slow
+      // path with a 3s timeout (was 8s — still long enough for a real
+      // network round-trip, short enough that the user doesn't sit on
+      // a spinner).
       try {
-        // Race getSession() against an 8s timeout. Some browser extensions
-        // (Jam.dev, Loom, Hotjar) wrap window.fetch and silently hang the
-        // Supabase navigator-lock acquisition. Without this race, the page
-        // would sit on the loading spinner until the 10s safety timer fires
-        // and the user couldn't even see the login form. Falling through
-        // to "no session" lets the form render; sign-in itself uses a
-        // separate code path that doesn't share the same lock contention.
-        const session = await Promise.race([
-          client.auth.getSession().then(r => r.data.session ?? null),
-          new Promise<null>((resolve) => setTimeout(() => {
-            console.warn("[auth] getSession() exceeded 8s — treating as no session (browser extension may be blocking fetch)");
-            resolve(null);
-          }, 8000)),
-        ]);
+        let session = readSessionFromLocalStorage();
+        if (!session) {
+          session = await Promise.race([
+            client.auth.getSession().then(r => r.data.session ?? null),
+            new Promise<null>((resolve) => setTimeout(() => {
+              console.warn("[auth] getSession() exceeded 3s — treating as no session (browser extension may be blocking fetch)");
+              resolve(null);
+            }, 3000)),
+          ]);
+        } else {
+          // Background refresh — fire-and-forget. If the SDK manages to
+          // resolve quickly it'll merely confirm what we already have;
+          // if it hangs we're already past it. onAuthStateChange will
+          // surface any token rotation.
+          client.auth.getSession().catch(() => { /* fire-and-forget */ });
+        }
         if (session) {
           // Block unverified email users — sign them out immediately
           // Google OAuth users are always verified; email/password users must pass our custom verification
