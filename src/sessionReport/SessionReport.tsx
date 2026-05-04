@@ -1,17 +1,15 @@
-/* Session Report V2 — production entry component.
+/* Session Report — production entry component.
    Owns the LLM evaluation pipeline (loading / error / abort / retry),
    recent-score + cohort fetches, share-link wiring, PDF print hook,
-   and analytics. Delegates all rendering to `SessionReportV2View` —
+   and analytics. Delegates all rendering to `SessionReportView` —
    the pure presentation port of the canvas design.
 
-   Mirrors the contract of the legacy `SessionReportView`:
+   Contract:
      props: { session, onBack }
      side-effects: evaluateSessionWithAI(), fetchRecentSessionScores(),
                    fetchLiveCohort(), POST /api/share-report, window.print()
 
-   Loaded via `next/dynamic` from `dashboardComponents.tsx` behind the
-   NEXT_PUBLIC_REPORT_V2 flag, so the legacy view still ships in
-   bundles where the flag is off. */
+   Loaded via `next/dynamic` from `dashboardComponents.tsx`. */
 
 "use client";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -21,7 +19,7 @@ import {
   evaluateSessionWithAI,
   fetchRecentSessionScores,
   saveStoryToNotebook,
-  type SessionReport,
+  type SessionReport as SessionReportData,
   type SessionTrendPoint,
 } from "../dashboardData";
 import {
@@ -31,13 +29,13 @@ import {
 } from "../roleBenchmarks";
 import type { DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
-import SessionReportV2View from "./SessionReportV2View";
+import SessionReportView from "./SessionReportView";
 import { sessionReportToInterviewResult } from "./adapter";
 import { t, f } from "./tokens";
 
-/* ─── Helpers — duplicated from legacy view to keep V2 self-contained.
-   Keeping these here (vs importing from SessionReportView.tsx) lets the
-   legacy view be deleted in Phase 2 without breaking the V2 entry. */
+/* ─── Helpers — small pure functions for transcript shaping + role-
+   family inference + duration parsing. Kept local so the entry stays
+   self-contained. */
 
 function roleToFamily(role: string | undefined): RoleFamily {
   const r = (role || "").toLowerCase();
@@ -67,7 +65,7 @@ function parseDurationSec(s: string | undefined): number {
   return (m ? parseInt(m[1], 10) * 60 : 0) + (ss ? parseInt(ss[1], 10) : 0);
 }
 
-/* ─── Loading + error UIs — match the V2 cream surface ─────────────── */
+/* ─── Loading + error UIs — cream surface to match the report ──────── */
 
 function LoadingShell({ onBack }: { onBack: () => void }) {
   // Phase-walking copy mirrors the legacy ProgressiveLoadingState — gives
@@ -216,7 +214,7 @@ function ErrorShell({
 
 /* ─── Main entry component ─────────────────────────────────────────── */
 
-export const SessionReportV2 = memo(function SessionReportV2({
+export const SessionReport = memo(function SessionReport({
   session,
   onBack,
 }: {
@@ -225,7 +223,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
 }) {
   const router = useRouter();
   const { user } = useAuth();
-  const [report, setReport] = useState<SessionReport | null>(null);
+  const [report, setReport] = useState<SessionReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
@@ -267,7 +265,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
             score: res.overallScore,
             band: res.band,
             model: res.model,
-            view: "v2",
+            view: "main",
           });
         }
       } catch (err) {
@@ -278,7 +276,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
           sessionId: session.id,
           latencyMs: Date.now() - t0,
           error: msg.slice(0, 120),
-          view: "v2",
+          view: "main",
         });
       } finally {
         if (!cancelled) setLoading(false);
@@ -299,7 +297,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
         sessionId: session.id,
         score: report.overallScore,
         band: report.band,
-        view: "v2",
+        view: "main",
       });
     }
   }, [report, session.id]);
@@ -348,14 +346,14 @@ export const SessionReportV2 = memo(function SessionReportV2({
 
   /* ── Action handlers ── */
   const onRetry = useCallback(() => {
-    track("report_retry_requested", { sessionId: session.id, view: "v2" });
+    track("report_retry_requested", { sessionId: session.id, view: "main" });
     setReport(null);
     setErrorMsg("");
     setReloadTick((tk) => tk + 1);
   }, [session.id]);
 
   const onDownloadPdf = useCallback(() => {
-    track("report_pdf_downloaded", { sessionId: session.id, view: "v2" });
+    track("report_pdf_downloaded", { sessionId: session.id, view: "main" });
     if (typeof window !== "undefined") window.print();
   }, [session.id]);
 
@@ -363,7 +361,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
     track("report_action_clicked", {
       action: "share",
       sessionId: session.id,
-      view: "v2",
+      view: "main",
     });
     try {
       const { apiFetch } = await import("../apiClient");
@@ -394,7 +392,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
       }
     } catch (err) {
       console.error(
-        "[reportV2] share failed:",
+        "[sessionReport] share failed:",
         err instanceof Error ? err.message : err
       );
       if (typeof window !== "undefined") {
@@ -439,9 +437,9 @@ export const SessionReportV2 = memo(function SessionReportV2({
         action: "try_again",
         sessionId: session.id,
         questionIdx,
-        view: "v2",
+        view: "main",
       });
-      // Find the source question on the report (idx in V2 view-model is
+      // Find the source question on the report (idx in view-model is
       // 1-based; report is 0-based). Best-effort focus payload — falls
       // through to the generic /session/new when missing.
       const q = report?.perQuestion[questionIdx - 1];
@@ -459,7 +457,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
         action: "drill_skill",
         sessionId: session.id,
         skill: skillName,
-        view: "v2",
+        view: "main",
       });
       const slug = skillName.toLowerCase().replace(/\s+/g, "-");
       router.push(`/session/new?type=behavioral&focus=${encodeURIComponent(slug)}`);
@@ -476,7 +474,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
         action: "save_story",
         sessionId: session.id,
         questionIdx: q.idx,
-        view: "v2",
+        view: "main",
       });
       try {
         // Derive a short title — first 60 chars of the question, trimmed.
@@ -492,7 +490,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
           window.alert("Saved to your Notebook.");
         }
       } catch (err) {
-        console.error("[reportV2] save story failed:", err instanceof Error ? err.message : err);
+        console.error("[sessionReport] save story failed:", err instanceof Error ? err.message : err);
         if (typeof window !== "undefined") {
           window.alert("Could not save the story. Please try again.");
         }
@@ -506,7 +504,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
       track("report_trust_poll_submitted", {
         sessionId: session.id,
         fair: value === "yes",
-        view: "v2",
+        view: "main",
       });
     },
     [session.id]
@@ -517,7 +515,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
       track("report_usefulness_poll_submitted", {
         sessionId: session.id,
         useful: value === "yes",
-        view: "v2",
+        view: "main",
       });
     },
     [session.id]
@@ -535,7 +533,7 @@ export const SessionReportV2 = memo(function SessionReportV2({
   }
 
   return (
-    <SessionReportV2View
+    <SessionReportView
       data={viewData}
       onBack={onBack}
       onDownloadPdf={onDownloadPdf}

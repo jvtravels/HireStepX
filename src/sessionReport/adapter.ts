@@ -1,10 +1,10 @@
-/* Session Report V2 — adapter from prod `SessionReport` (mvp-6) to
-   the V2 view-model (`InterviewResultData`).
+/* Session Report — adapter from prod `SessionReport` (mvp-6) to
+   the view-model (`InterviewResultData`).
 
    The view layer never touches `SessionReport` directly — every shape
    conversion (verdict rename, thought-bubble 6→3 collapse, length-
    verdict slug, length highlights, weakest-skill derivation, score-
-   confidence number→union, etc.) happens here so the V2 component can
+   confidence number→union, etc.) happens here so the view component can
    stay a pure presentation component.
 
    Side-effect-free; all inputs in, view-model out. Unit-testable. */
@@ -190,7 +190,7 @@ function pickWeakestSkill(
 }
 
 /** Map prod's 9 delivery numbers (4 core + 5 advanced) onto the 6 tiles
- *  the V2 design budgeted for. We keep the 4 core + medianLatency +
+ *  the canvas design budgeted for. We keep the 4 core + medianLatency +
  *  selfCorrectionRate; hedging/lexicalDiversity/firstPersonRatio drop —
  *  per the audit, they're either redundant with red-flags or low-signal
  *  per pixel of report real estate. */
@@ -330,7 +330,7 @@ function adaptInsights(
   }));
 }
 
-/** Collapse prod's 6 thought-bubble states to the 3 the V2 design
+/** Collapse prod's 6 thought-bubble states to the 3 the canvas design
  *  uses. Mapping:
  *    tracking, impressed, readyToMoveOn → engaged
  *    losingThread, probingForScope     → drifting

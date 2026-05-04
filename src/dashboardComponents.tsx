@@ -6,44 +6,11 @@ import type { DashboardSession } from "./dashboardTypes";
 import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
 import { SectionErrorBoundary } from "./ErrorBoundary";
 
-// MVP results report — lazy-loaded so the legacy view still ships in bundles
-// where the flag is off.
-const SessionReportView = dynamic(() => import("./SessionReportView").then((m) => ({ default: m.SessionReportView })), {
+// Cream/indigo/copper results report — ported from the `interview-result`
+// Tempo canvas. Lazy-loaded to keep the dashboard hero bundle slim.
+const SessionReport = dynamic(() => import("./sessionReport/SessionReport").then((m) => ({ default: m.SessionReport })), {
   ssr: false,
 });
-
-// V2 results report — cream/indigo/copper editorial surface ported
-// from the `interview-result` Tempo canvas. Lazy-loaded so the V1
-// bundle is unaffected when the flag is off.
-const SessionReportV2 = dynamic(() => import("./sessionReportV2/SessionReportV2").then((m) => ({ default: m.SessionReportV2 })), {
-  ssr: false,
-});
-
-/**
- * Feature flag for the new MVP report view. Controlled via env at build time
- * (NEXT_PUBLIC_RESULTS_REPORT_MVP=true) so we can flip rollout without a deploy
- * using Vercel's env vars. Defaults to ON now that the component exists.
- */
-const RESULTS_REPORT_MVP_ENABLED = (() => {
-  try {
-    const env = (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_RESULTS_REPORT_MVP : undefined);
-    return env !== "false" && env !== "0";
-  } catch { return true; }
-})();
-
-/**
- * Feature flag for the V2 report view. Defaults to ON — V2 is now the
- * production results surface. Set NEXT_PUBLIC_REPORT_V2=false in Vercel
- * env to roll back to the legacy SessionReportView without a deploy.
- * Both gates still apply (transcript length ≥ 2, etc.).
- */
-const REPORT_V2_ENABLED = (() => {
-  try {
-    const env = (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_REPORT_V2 : undefined);
-    // Explicit "false" / "0" disables; everything else (including unset) enables.
-    return env !== "false" && env !== "0";
-  } catch { return true; }
-})();
 
 declare global {
   interface Window {
@@ -700,22 +667,13 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
   // session has enough transcript to evaluate. Fall back to the legacy
   // layout otherwise (keeps the rollout safe + reversible).
   const transcriptLen = (session.transcript || []).filter((t) => t.text && t.text.trim().length > 0).length;
-  if (RESULTS_REPORT_MVP_ENABLED && transcriptLen >= 2) {
+  if (transcriptLen >= 2) {
     // Wrap so a crash during evaluation (bad LLM payload, shape drift, etc.)
     // doesn't replace the whole dashboard with a blank screen — user gets a
     // retry button and stays in the dashboard shell.
-    // V2 supersedes V1 when the secondary flag is on; both share the
-    // same evaluation pipeline + transcript guard.
-    if (REPORT_V2_ENABLED) {
-      return (
-        <SectionErrorBoundary label="results report v2">
-          <SessionReportV2 session={session} onBack={onBack} />
-        </SectionErrorBoundary>
-      );
-    }
     return (
       <SectionErrorBoundary label="results report">
-        <SessionReportView session={session} onBack={onBack} />
+        <SessionReport session={session} onBack={onBack} />
       </SectionErrorBoundary>
     );
   }

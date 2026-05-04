@@ -1,4 +1,4 @@
-/* HireStepX — Session Report V2 (production view)
+/* HireStepX — Session Report (production view)
    Best-in-class post-session results screen. Ported from the
    `interview-result` Tempo canvas. Goal: deliver feedback that feels
    coach-grade, not LLM-generic, and that justifies the price.
@@ -7,7 +7,7 @@
    The adapter at `./adapter.ts` translates the production SessionReport
    schema into the InterviewResultData view-model this component
    consumes. Production-only wiring (loading, error, abort, share,
-   PDF, analytics) lives at `./SessionReportV2.tsx` (the entry).
+   PDF, analytics) lives at `./SessionReport.tsx` (the entry).
 
    Sections (top → bottom):
      1. Header — back, download PDF, share
@@ -25,7 +25,7 @@
 
 import { useState } from "react";
 import { t, f, shadows } from "./tokens";
-import { SESSION_REPORT_V2_STYLES } from "./styles";
+import { SESSION_REPORT_STYLES } from "./styles";
 import type {
   AnswerSpan,
   BiasFinding,
@@ -1974,7 +1974,7 @@ function FooterSection({
 
 /* ─── Main component ──────────────────────────────────────────────── */
 
-export interface SessionReportV2ViewProps {
+export interface SessionReportViewProps {
   data: InterviewResultData;
   /** Back navigation handler — wired by `dashboardComponents.tsx` to
    *  return to the dashboard. Optional so the canvas/storybook usage
@@ -2001,7 +2001,7 @@ export interface SessionReportV2ViewProps {
   onUsefulAnswer?: (value: "yes" | "no") => void;
 }
 
-export default function SessionReportV2View({
+export default function SessionReportView({
   data,
   onBack,
   onDownloadPdf,
@@ -2011,7 +2011,7 @@ export default function SessionReportV2View({
   onSaveTopStory,
   onTrustAnswer,
   onUsefulAnswer,
-}: SessionReportV2ViewProps) {
+}: SessionReportViewProps) {
   // Pick the highest-scoring question so the "Save top story" CTA
   // points at the right answer. Falls back to the first question.
   const topStoryIdx =
@@ -2023,7 +2023,7 @@ export default function SessionReportV2View({
       : 1;
   return (
     <>
-      <style>{SESSION_REPORT_V2_STYLES}</style>
+      <style>{SESSION_REPORT_STYLES}</style>
       <div
         style={{
           background: t.cream,

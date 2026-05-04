@@ -1,14 +1,14 @@
-/* Session Report V2 — scoped styles.
+/* Session Report — scoped styles.
    Ported verbatim from `tempo/designs/canvases/interview-result/_styles.ts`.
    All selectors are prefixed with `.ir-` (interview-result) and applied
-   only inside the V2 view's root. The block is injected via
-   `<style>{SESSION_REPORT_V2_STYLES}</style>` at component-mount so the
+   only inside the view's root. The block is injected via
+   `<style>{SESSION_REPORT_STYLES}</style>` at component-mount so the
    rest of the app (dark-luxury chrome) stays unaffected.
 
-   Print rules + V2-specific overrides are appended at the end of this
+   Print rules + scoped overrides are appended at the end of this
    file so a single source of CSS truth ships with the report. */
 
-export const SESSION_REPORT_V2_STYLES = `
+export const SESSION_REPORT_STYLES = `
   .ir-row { display: flex; gap: 16px; flex-wrap: wrap; }
   .ir-tile-grid {
     display: grid;

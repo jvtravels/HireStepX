@@ -1,4 +1,4 @@
-/* Session Report V2 — view-model types.
+/* Session Report — view-model types.
    These are the props the view component consumes. Distinct from the
    `SessionReport` schema in `dashboardData.ts` so the report layer can
    evolve without forcing a server-side schema bump. The adapter

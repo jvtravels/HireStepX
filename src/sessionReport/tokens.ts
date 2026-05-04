@@ -1,10 +1,10 @@
-/* Session Report V2 — local design tokens.
+/* Session Report — local design tokens.
    These mirror the canvas at `tempo/designs/canvases/design-system/_tokens.ts`
-   verbatim. The V2 report is an opinionated cream/indigo/copper editorial
+   verbatim. The report is an opinionated cream/indigo/copper editorial
    surface that reads as its own "world" inside the otherwise dark-luxury
    product chrome — same pattern as a reading-pane in an email client.
 
-   Kept self-contained in `src/sessionReportV2/` so the rest of the app
+   Kept self-contained in `src/sessionReport/` so the rest of the app
    can keep using `src/tokens.ts` (obsidian/gilt) without conflict, and
    so a future reskin of either side touches one file, not both. */
 
