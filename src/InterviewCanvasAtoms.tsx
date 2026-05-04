@@ -509,7 +509,11 @@ export function CanvasSelfViewTile({ videoRef, initials = "RS" }: {
 }) {
   return (
     <div aria-label="Your camera preview" className="iv-canvas-selfview" style={{
-      position: "absolute", right: 24, bottom: 24,
+      // Sits above the footer (~64-72px tall + safe-area). bottom:84
+      // clears the footer rule on every supported viewport, including
+      // iOS safe-area home-indicator phones. zIndex 11 wins over the
+      // footer's zIndex 10 so the tile is never clipped behind it.
+      position: "absolute", right: 24, bottom: 84,
       width: 148, height: 96, borderRadius: 12, overflow: "hidden",
       // Cream-friendly framing: white border + warm shadow so the tile
       // reads as a "card on cream" not "hole in the page". The dark
@@ -518,7 +522,7 @@ export function CanvasSelfViewTile({ videoRef, initials = "RS" }: {
       background: e.creamSoft,
       border: `2px solid ${e.white}`,
       boxShadow: "0 1px 0 rgba(20,17,10,.04), 0 8px 24px -10px rgba(20,17,10,.30), 0 0 0 1px rgba(20,17,10,.06)",
-      zIndex: 5,
+      zIndex: 11,
     }}>
       <video
         ref={videoRef}
