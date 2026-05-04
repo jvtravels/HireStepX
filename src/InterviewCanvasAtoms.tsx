@@ -108,8 +108,9 @@ export function CanvasContextChip({ role, company, focus }: { role: string; comp
   );
 }
 
-/* ─── Avatar ─── */
-export function CanvasAvatar({ initials = "RS" }: { initials?: string }) {
+/* ─── Avatar ─── default kept neutral ("You") so a missing prop never
+   leaks fake initials of someone who isn't the logged-in user. */
+export function CanvasAvatar({ initials = "You" }: { initials?: string }) {
   return (
     <span aria-label="Account" style={{
       display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -479,7 +480,7 @@ export function CanvasEndButton({ onClick }: { onClick?: () => void }) {
 }
 
 /* ─── SelfViewTile (camera-on overlay) ─── */
-export function CanvasSelfViewTile({ videoRef, initials = "RS" }: {
+export function CanvasSelfViewTile({ videoRef, initials = "You" }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   initials?: string;
 }) {

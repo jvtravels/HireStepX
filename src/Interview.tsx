@@ -22,6 +22,23 @@ import { LiveCaptions } from "./InterviewComponents";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
+import { useAuth } from "./AuthContext";
+
+/* Derive 1-2 letter initials from a logged-in user's display name, falling
+   back to the email's local part. Returns "" when nothing usable exists —
+   the avatar then shows a neutral icon instead of guessing. */
+function userInitials(name?: string | null, email?: string | null): string {
+  const source = (name && name.trim()) || (email && email.split("@")[0]) || "";
+  if (!source) return "";
+  const parts = source
+    .replace(/[._-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
 import { useVideoRecorder } from "./useVideoRecorder";
 import { InterviewProvider } from "./InterviewContext";
 import ErrorBoundary from "./ErrorBoundary";
@@ -691,6 +708,8 @@ function CanvasListeningActionZone({
 function InterviewInner() {
   useEffect(() => { addInterviewPreconnects(); }, []);
   useMobileAudioResilience();
+  const { user } = useAuth();
+  const myInitials = userInitials(user?.name, user?.email) || "You";
   const engine = useInterviewEngine();
   const video = useVideoRecorder();
 
@@ -857,7 +876,7 @@ function InterviewInner() {
           </div>
           <CanvasMuteToggle muted={isMuted} onClick={() => setIsMuted(m => !m)} />
           <CanvasCameraToggle on={video.videoEnabled} onClick={video.toggleVideo} />
-          <CanvasAvatar />
+          <CanvasAvatar initials={myInitials} />
         </div>
       </header>
 
@@ -1115,7 +1134,7 @@ function InterviewInner() {
 
       {/* Self-view tile (camera-on overlay, bottom-right) */}
       {video.videoEnabled && phase !== "done" && (
-        <CanvasSelfViewTile videoRef={video.videoPreviewRef} />
+        <CanvasSelfViewTile videoRef={video.videoPreviewRef} initials={myInitials} />
       )}
 
       {showTranscript && (
