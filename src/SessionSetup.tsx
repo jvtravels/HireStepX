@@ -9,6 +9,7 @@ import { track } from "@vercel/analytics";
    Indigo is interactive · Copper is editorial · Never mix. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "./onboardingData";
+import { profileFromRole, type InterviewFocus } from "./roleInterviewMatrix";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 
@@ -596,6 +597,29 @@ export default function SessionSetup() {
     () => [...COMPANY_SUGGESTIONS_FULL, ...userCompanies],
     [userCompanies],
   );
+
+  /* ─── Role → focus filter ───
+     Classify the typed role into (family, seniority) and use that to
+     compute the focuses real interviews for this role would include.
+     See `roleInterviewMatrix.ts` for the matrix logic.
+
+     Fallback rules:
+       • Empty role → no filter (show all 10) so first-time users
+         aren't penalized for not having typed yet.
+       • Unclassified role (family === "other") → no filter, since
+         our regex missed; better to overshow than misroute.
+       • Otherwise → use the matrix.
+
+     `relevantFocusSet` exposes a fast lookup we use both to filter
+     the option list and to auto-clear a stale focus selection when
+     the user changes their role. */
+  const roleProfile = useMemo(() => profileFromRole(targetRole), [targetRole]);
+  const relevantFocusSet = useMemo<Set<InterviewFocus> | null>(() => {
+    const trimmed = targetRole.trim();
+    if (!trimmed) return null;
+    if (roleProfile.family === "other") return null;
+    return new Set(roleProfile.focuses);
+  }, [targetRole, roleProfile]);
   const [targetCompany, setTargetCompany] = useState(() => {
     if (user?.targetCompany) return user.targetCompany;
     // Fallback variant carries job history — pull the latest employer if
@@ -613,6 +637,24 @@ export default function SessionSetup() {
     }
     return [getRecommendedFocus(user?.targetRole)];
   });
+
+  /* Auto-correct the focus selection when the user changes their role
+     so the chip set and the selected chip stay coherent. If the
+     currently-picked focus is no longer relevant for the new role,
+     swap to a sensible default (the role's recommended focus if it's
+     in the new relevant set, else the first available). Empty/unknown
+     role → no filter → no auto-correct. */
+  useEffect(() => {
+    if (!relevantFocusSet) return;
+    const current = interviewFocus[0];
+    if (current && relevantFocusSet.has(current as InterviewFocus)) return;
+    const recommended = getRecommendedFocus(targetRole);
+    const fallback = relevantFocusSet.has(recommended as InterviewFocus)
+      ? recommended
+      : roleProfile.focuses[0] || "Behavioral";
+    setInterviewFocus([fallback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relevantFocusSet]);
   // Session length is fixed at 15m — the canvas-aligned setup screen no
   // longer asks the user to choose. The interview engine still respects
   // the URL param so this constant keeps the contract intact.
@@ -1296,9 +1338,11 @@ export default function SessionSetup() {
                       <span style={{ color: T.copper, fontSize: 12 }}>*</span>
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      {recommendedFocus && recommendedFocus !== "Behavioral"
-                        ? "Choose one area to focus on. The recommended pick for your role is highlighted."
-                        : "Choose one area to focus on."}
+                      {relevantFocusSet
+                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
+                        : recommendedFocus && recommendedFocus !== "Behavioral"
+                          ? "Choose one area to focus on. The recommended pick for your role is highlighted."
+                          : "Choose one area to focus on."}
                     </div>
                   </div>
                   <div
@@ -1343,13 +1387,18 @@ export default function SessionSetup() {
                         { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
                         { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
                       ];
-                      /* All 10 focus options shown by default — the previous
-                         "show 3 then expand" pattern added a click for first-
-                         timers without giving them more information than
-                         showing the full grid would. The recommended focus is
-                         still flagged with the "For you" badge so it remains
-                         the path of least resistance. */
-                      return allOpts.map(opt => {
+                      /* Role-aware filtering: when the user has typed a
+                         classifiable role, hide focuses that real interview
+                         loops for that role wouldn't include (e.g. don't
+                         show "Technical Leadership" to a Customer Success
+                         rep, don't show "Campus Placement" to a Senior
+                         Engineering Manager). When the role is empty or
+                         unclassified, show all 10 — see relevantFocusSet
+                         derivation above. */
+                      const filtered = relevantFocusSet
+                        ? allOpts.filter((o) => relevantFocusSet.has(o.value as InterviewFocus))
+                        : allOpts;
+                      return filtered.map(opt => {
                         const sel = interviewFocus[0] === opt.value;
                         const isRecommended = opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
                         return (
