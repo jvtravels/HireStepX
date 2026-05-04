@@ -8,6 +8,7 @@ import type { PanelMember } from "./InterviewComponents";
 // PaceMeter is used inside UserAnswerArea below; the rest are imported
 // for re-export at the bottom of this file.
 import { PaceMeter } from "./InterviewRobustness";
+import { stripProsodyMarkup } from "./_prosody";
 
 /* Bridge aliases removed — all inline-style call sites now reference
    `e.*` and `ef.*` directly from interviewTokens.ts. The rebrand is
@@ -487,7 +488,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em", textWrap: "balance",
           opacity: phase === "listening" && !showCaptions ? 0.62 : 1,
           transition: "opacity 0.3s ease",
-        }}>{step.aiText}</p>
+        }}>{stripProsodyMarkup(step.aiText)}</p>
       ) : null}
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
         <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining for this question`} style={{ marginTop: 16, opacity: isSalaryNegotiation ? 0.7 : 1, transition: "opacity 0.3s ease" }}>
@@ -1207,7 +1208,11 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
               : null;
             const speakerColor = isAi ? (panelMember?.color ?? e.copper) : e.indigo;
             const speakerName = isAi ? (panelMember?.name ?? interviewerName) : "You";
-            const displayText = panelMembers && isAi ? msg.text.replace(/^\[.+?\]\s*/, "") : msg.text;
+            // Strip the leading [Title] panel-tag for AI rows in panel mode
+            // before rendering. Then strip prosody markup ([pause], _emph_)
+            // from any AI text — those are TTS hints, never visible.
+            const rawText = panelMembers && isAi ? msg.text.replace(/^\[.+?\]\s*/, "") : msg.text;
+            const displayText = isAi ? stripProsodyMarkup(rawText) : rawText;
             return (
               <div key={`${msg.speaker}-${msg.time}-${i}`} style={{ display: "flex", gap: 10 }}>
                 <div style={{
@@ -1352,15 +1357,18 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      background: "rgba(14,12,8,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+      // Cream surface — matches the SessionReport view that loads next so
+      // the user doesn't see a dark→cream flash. Slight backdrop blur
+      // keeps a sense of overlay depth without the dark wash.
+      background: "rgba(250,247,240,0.96)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
     }}>
       {!(usedFallbackScore || evalTimedOut) ? (
         <>
-          <div style={{ width: 48, height: 48, border: `3px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite", marginBottom: 24 }} />
-          <h3 style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 600, color: e.coal, marginBottom: 8 }}>Analyzing your performance...</h3>
-          <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft }}>AI is evaluating your answers and generating personalized feedback</p>
+          <div style={{ width: 48, height: 48, border: `3px solid ${e.line}`, borderTopColor: "#312E81", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginBottom: 24 }} />
+          <h3 style={{ fontFamily: ef.serif, fontSize: 26, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
+          <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft }}>Reading your transcript and drafting per-question coach notes…</p>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, opacity: 0.7, marginTop: 4 }}>
-            {evalElapsed < 10 ? "This usually takes 10\u201330 seconds." : evalElapsed < 25 ? `Almost there... (${evalElapsed}s)` : `Taking longer than usual... (${evalElapsed}s)`}
+            {evalElapsed < 10 ? "This usually takes 10\u201330 seconds." : evalElapsed < 25 ? `Almost there… (${evalElapsed}s)` : `Taking longer than usual… (${evalElapsed}s)`}
           </p>
           <div style={{ width: 200, height: 3, borderRadius: 2, background: e.line, marginTop: 16, overflow: "hidden" }}>
             <div style={{ height: "100%", borderRadius: 2, background: e.copper, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />

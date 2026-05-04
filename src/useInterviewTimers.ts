@@ -43,16 +43,23 @@ export function useInterviewTimers(
   useEffect(() => { setAnswerTimer(0); }, [currentStep]);
   useEffect(() => { autoAdvancedRef.current = false; }, [currentStep]);
 
-  // Answer timer with 120s limit and auto-advance
+  // Answer timer with 120s limit and auto-advance.
+  // Only ticks while the user is actually answering (phase === "listening").
+  // Previously the timer counted up during "speaking" and "thinking" too,
+  // which meant the visible "time remaining" was draining while the AI was
+  // still asking the question — confusing for the user, especially on
+  // longer prompts. The auto-advance threshold also fired against an
+  // inflated counter. This gate fixes both.
   useEffect(() => {
     if (phase === "done") return;
     const timer = setInterval(() => setAnswerTimer(t => {
       if (!tabVisibleRef.current) return t;
+      if (phase !== "listening") return t;
       const next = t + 1;
-      if (next === (timeLimit - 20) && phase === "listening" && !autoAdvancedRef.current) {
+      if (next === (timeLimit - 20) && !autoAdvancedRef.current) {
         toast("20 seconds remaining for this answer.", "info");
       }
-      if (next >= timeLimit && phase === "listening" && !autoAdvancedRef.current) {
+      if (next >= timeLimit && !autoAdvancedRef.current) {
         autoAdvancedRef.current = true;
         toast("Time's up — moving to the next question.", "info");
         handleNextRef.current();

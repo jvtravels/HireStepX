@@ -109,6 +109,29 @@ export default async function handler(req: Request): Promise<Response> {
 
     const isSalaryNeg = type === "salary-negotiation";
 
+    /* ─── Anchor derivation ───
+       The number the LLM PRESENTED in turn 1 (parsed from initialOfferText)
+       is the canonical anchor — not negotiationBand.initialOffer, which is
+       a generated band figure that can drift from what the candidate
+       actually heard. The headline number is the LARGEST LPA figure in the
+       opening offer (component sums like "₹22 fixed + ₹4 variable + ₹4 ESOPs"
+       are smaller individual parts; the total CTC headline is the biggest).
+       Falls back to band.initialOffer when initialOfferText is missing. */
+    function parseHeadlineLPA(text: string): number | null {
+      if (!text) return null;
+      const re = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakh|lakhs|Cr|cr|crore)/g;
+      const nums: number[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        const v = parseFloat(m[1]);
+        const isCrore = /cr|crore/i.test(m[0]);
+        nums.push(isCrore ? v * 100 : v);
+      }
+      return nums.length > 0 ? Math.max(...nums) : null;
+    }
+    const presentedAnchor = isSalaryNeg ? parseHeadlineLPA(initialOfferText || "") : null;
+    const canonicalInitialOffer = presentedAnchor ?? negotiationBand?.initialOffer ?? null;
+
     // For salary negotiation: determine conversation phase from content + index
     // Content-based detection: analyze what's happened so far to pick the right phase
     function detectSalaryPhase(): string {
@@ -241,10 +264,14 @@ YOUR GOAL: Summarize the SPECIFIC deal and set concrete next steps. Rebuild warm
 - If they want to think: "Absolutely. The offer stands until [date]. But I'll be honest — I'd love an answer sooner so I can lock in the headcount."`,
       };
 
-      // Extract the initial offer from conversation history so the LLM can reference exact numbers
-      const offerCtx = initialOfferText
-        ? `\nINITIAL OFFER YOU PRESENTED: "${sanitizeForLLM(initialOfferText, 500)}"\nYou MUST use these exact numbers when referencing the offer. Do NOT invent different figures.`
+      // Extract the initial offer from conversation history so the LLM can reference exact numbers.
+      // Pin the headline anchor explicitly so the LLM cannot round or drift.
+      const anchorLine = canonicalInitialOffer !== null
+        ? `\nPINNED INITIAL OFFER: ₹${canonicalInitialOffer} LPA. This is your starting anchor. NEVER write a different number for "initial offer" — not ₹${(canonicalInitialOffer - 0.4).toFixed(1)}, not ₹${(canonicalInitialOffer + 0.4).toFixed(1)}, not anything close. Echo ₹${canonicalInitialOffer} exactly.`
         : "";
+      const offerCtx = initialOfferText
+        ? `\nINITIAL OFFER YOU PRESENTED: "${sanitizeForLLM(initialOfferText, 500)}"\nYou MUST use these exact numbers when referencing the offer. Do NOT invent different figures.${anchorLine}`
+        : anchorLine;
 
       // Build structured facts context so the LLM has precise anchors
       const factsLines: string[] = [];
@@ -584,9 +611,11 @@ Respond JSON only:
           console.warn(`[follow-up] LLM offered ₹${num} LPA near maxStretch ₹${negotiationBand.maxStretch} — adding approval context`);
           clamped = clamped.replace(match[0], `${match[0]}, which I'd need leadership sign-off for,`);
         } else if (num < negotiationBand.walkAway) {
-          // LLM offered below walk-away — clamp to initial offer
-          console.warn(`[follow-up] LLM offered ₹${num} LPA, below walkAway ₹${negotiationBand.walkAway} — clamping`);
-          clamped = clamped.replace(match[0], `₹${negotiationBand.initialOffer} LPA`);
+          // LLM offered below walk-away — clamp to the canonical initial offer
+          // (the value actually presented in turn 1, not the band's seed).
+          const clampTo = canonicalInitialOffer ?? negotiationBand.initialOffer;
+          console.warn(`[follow-up] LLM offered ₹${num} LPA, below walkAway ₹${negotiationBand.walkAway} — clamping to ₹${clampTo}`);
+          clamped = clamped.replace(match[0], `₹${clampTo} LPA`);
         }
       }
       // Monotonic enforcement: no offer can go below the highest previous offer
@@ -635,6 +664,65 @@ Respond JSON only:
             const clampedVal = Math.max(realisticCounter, highestOfferMade || negotiationBand.initialOffer);
             console.warn(`[follow-up] Cost guard: ₹${costNum} exceeds candidate target ₹${candidateTarget} — clamping to ₹${clampedVal}`);
             clamped = clamped.replace(costMatch[0], `₹${clampedVal} LPA`);
+          }
+        }
+      }
+      // Final pass: catch the "above our initial offer of ₹X LPA" pattern
+      // where X drifted from the actual presented anchor. Replace any
+      // "initial offer of ₹N LPA" with the canonical anchor.
+      // Also catch "₹A — which is ₹B above our initial offer of ₹C" where
+      // B is the delta (A - canonicalInitialOffer); LLMs frequently get
+      // this arithmetic wrong (the user-reported "29.6 above offer of 29.6"
+      // bug). Recompute B from A and the canonical anchor.
+      if (canonicalInitialOffer !== null) {
+        clamped = clamped.replace(
+          /(initial offer(?:\s+of)?\s+|our\s+offer\s+of\s+|original\s+offer\s+of\s+|starting\s+offer\s+of\s+)₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakh|lakhs)/gi,
+          (_full, prefix) => `${prefix}₹${canonicalInitialOffer} LPA`,
+        );
+        // Recompute the "₹A — that's ₹B above our initial offer of ₹C" delta.
+        clamped = clamped.replace(
+          /₹\s*(\d+(?:\.\d+)?)\s*LPA([^.]*?)which is\s+₹\s*(\d+(?:\.\d+)?)\s*LPA\s+above\s+our\s+(initial|original|starting)\s+offer\s+of\s+₹\s*(\d+(?:\.\d+)?)\s*LPA/gi,
+          (_full, hi, mid, _delta, kind, _anchor) => {
+            const top = parseFloat(hi);
+            const realDelta = Math.round((top - canonicalInitialOffer) * 10) / 10;
+            return `₹${top} LPA${mid}which is ₹${realDelta} LPA above our ${kind} offer of ₹${canonicalInitialOffer} LPA`;
+          },
+        );
+      }
+      // Echo-verification guard: when the LLM paraphrases the candidate's
+      // own stated number ("I understand you're asking for ₹X"), it must
+      // match what the candidate actually said. The user-reported bug
+      // where "50 lakhs" became "5 lakhs" was a digit-drop in this echo.
+      // Scan the candidate's most recent turn for a target number and
+      // patch any obvious mis-echo in the LLM's reply.
+      const candTargetRe = /(\d+(?:\.\d+)?)\s*(lakhs?|lpa|l\b|crore|cr)/gi;
+      let lastCandNum: number | null = null;
+      let lastCandLabel: "LPA" | "Cr" = "LPA";
+      let cm: RegExpExecArray | null;
+      candTargetRe.lastIndex = 0;
+      while ((cm = candTargetRe.exec(answer || "")) !== null) {
+        const v = parseFloat(cm[1]);
+        const isCrore = /cr|crore/i.test(cm[2]);
+        if (Number.isFinite(v) && v > 0) {
+          lastCandNum = isCrore ? v * 100 : v;
+          lastCandLabel = isCrore ? "Cr" : "LPA";
+        }
+      }
+      if (lastCandNum !== null && clamped) {
+        // Look for "you're asking for ₹X" or "you mentioned ₹X" patterns
+        // where X is wildly different from the candidate's stated number.
+        const echoRe = /(asking for|requesting|mentioned|you said|targeting)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/gi;
+        let em: RegExpExecArray | null;
+        while ((em = echoRe.exec(clamped)) !== null) {
+          const echoed = parseFloat(em[2]);
+          // 10x off (digit-drop or digit-add) is the obvious failure mode
+          if (echoed > 0 && (echoed * 10 === lastCandNum || echoed / 10 === lastCandNum)) {
+            console.warn(`[follow-up] Echo mismatch: candidate said ${lastCandNum}, LLM echoed ${echoed} — patching`);
+            const replacement = em[0].replace(
+              /(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i,
+              `₹${lastCandNum} ${lastCandLabel}`,
+            );
+            clamped = clamped.replace(em[0], replacement);
           }
         }
       }

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { e, ef } from "./interviewTokens";
+import { stripProsodyMarkup } from "./_prosody";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -273,39 +274,58 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
       when speaking → listening swapped the renderer. */
   variant?: "card" | "inherit";
 }) {
+  // Strip prosody markup ([pause], _emphasis_, etc.) before rendering.
+  // The parent passes raw aiText so TTS can still process the markup;
+  // the visible layer must always be clean. Without this, "[pause]"
+  // tokens leak onto the screen.
+  const cleanText = useMemo(() => stripProsodyMarkup(text || ""), [text]);
+
   const [displayText, setDisplayText] = useState("");
   const [charIndex, setCharIndex] = useState(0);
 
   useEffect(() => {
     setDisplayText("");
     setCharIndex(0);
-  }, [text]);
+  }, [cleanText]);
 
-  // When speech ends, instantly show all remaining text (no gradual flush)
+  // When speech ends, instantly show all remaining text. Rising-edge
+  // detection prevents a stale speechEnded=true from a prior turn from
+  // flushing a freshly-arrived next-question text immediately — the
+  // bug where the question appeared in full and only THEN started
+  // typing was caused by speechEnded persisting across turns.
+  const wasSpeechEndedRef = useRef(false);
+  // On every cleanText change, reset the rising-edge tracker so the
+  // next true-transition counts as a new edge for the new question.
   useEffect(() => {
-    if (!speechEnded || charIndex >= text.length) return;
-    setDisplayText(text);
-    setCharIndex(text.length);
+    wasSpeechEndedRef.current = false;
+  }, [cleanText]);
+  useEffect(() => {
+    const isRisingEdge = !!speechEnded && !wasSpeechEndedRef.current;
+    wasSpeechEndedRef.current = !!speechEnded;
+    if (!isRisingEdge) return;
+    if (charIndex >= cleanText.length) return;
+    setDisplayText(cleanText);
+    setCharIndex(cleanText.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [speechEnded]);
+  }, [speechEnded, cleanText]);
 
   useEffect(() => {
-    if (!isTyping || charIndex >= text.length || speechEnded) return;
+    if (!isTyping || charIndex >= cleanText.length || speechEnded) return;
     // Use actualDuration from TTS if available, else fall back to speakingDuration estimate
-    const duration = actualDuration || speakingDuration || Math.max(2500, (text.split(/\s+/).length / 175) * 60 * 1000);
+    const duration = actualDuration || speakingDuration || Math.max(2500, (cleanText.split(/\s+/).length / 175) * 60 * 1000);
     // Calculate per-char delay to finish typing in sync with voice
     // Leave a small buffer (200ms) so typing finishes just before voice ends
-    const remainingChars = text.length - charIndex;
-    const elapsedRatio = charIndex / text.length;
+    const remainingChars = cleanText.length - charIndex;
+    const elapsedRatio = charIndex / cleanText.length;
     const remainingDuration = duration * (1 - elapsedRatio) - 200;
     const msPerChar = Math.max(12, remainingDuration / remainingChars);
     const delay = Math.max(12, Math.min(70, msPerChar + (Math.random() * 4 - 2)));
     const timer = setTimeout(() => {
-      setDisplayText(text.slice(0, charIndex + 1));
+      setDisplayText(cleanText.slice(0, charIndex + 1));
       setCharIndex(charIndex + 1);
     }, delay);
     return () => clearTimeout(timer);
-  }, [charIndex, text, isTyping, speakingDuration, actualDuration, speechEnded]);
+  }, [charIndex, cleanText, isTyping, speakingDuration, actualDuration, speechEnded]);
 
   if (!isTyping && !displayText) return null;
 
@@ -332,7 +352,7 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
             }
       }>
         {displayText}
-        {isTyping && charIndex < text.length && (
+        {isTyping && charIndex < cleanText.length && (
           <span style={{ display: "inline-block", width: 2, height: 20, background: e.copper, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
         )}
       </p>

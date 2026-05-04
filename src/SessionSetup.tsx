@@ -927,13 +927,16 @@ export default function SessionSetup() {
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);
     setLaunching(true);
-    // Pre-roll budget: 800ms total. Chrome's gesture-activation window is
-    // ~5s but the activation is "consumed" by certain async hops; keeping
-    // the click → router.push() chain under ~1s preserves a fresh gesture
-    // for the new page's AudioContext. The previous 3s pre-roll routinely
-    // blew past the activation, which is why TTS-Azure was logging
-    // "autoplay blocked … disabling voice for session" on landing.
-    setCountdown(1);
+    // Pre-roll budget: ~900ms total — three 250ms beats (3-2-1) plus a
+    // brief "Let's go!" frame. Chrome's gesture-activation window is ~5s
+    // and the count beats are synchronous setState calls, so the chain
+    // stays well within the audio-unlock budget. Earlier we collapsed
+    // this to a single beat to be safe; users found it confusing because
+    // a single "1" → "Let's go!" reads as off-by-one rather than a
+    // proper countdown.
+    setCountdown(3);
+    setTimeout(() => setCountdown(2), 250);
+    setTimeout(() => setCountdown(1), 500);
     setTimeout(() => {
       setCountdown(0);
       // One more unlock attempt right before navigation — if the gesture
@@ -945,7 +948,7 @@ export default function SessionSetup() {
       cameraStreamRef.current?.getTracks().forEach(t => t.stop());
       const cameraParam = cameraStatus === "granted" ? "&camera=1" : "";
       router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}`);
-    }, 800);
+    }, 900);
   };
 
   // Power-user shortcut: ⌘/Ctrl+Enter from anywhere on the page launches.
