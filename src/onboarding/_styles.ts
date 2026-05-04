@@ -285,4 +285,14 @@ export const ONBOARDING_STYLES = `
       font-size: 1.5rem !important;
     }
   }
+
+  /* Footer CTAs already stack via the parent's @media 768 rule;
+     pin a comfortable touch-floor + tighter padding on phones. */
+  @media (max-width: 540px) {
+    .ob-footer-ctas button {
+      min-height: 48px !important;
+      padding: 12px 18px !important;
+      font-size: 14px !important;
+    }
+  }
 `;

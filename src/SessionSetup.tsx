@@ -1224,6 +1224,15 @@ export default function SessionSetup() {
              attr on the avatar block. */
           .hsx-setup-identity-name { display: none !important; }
         }
+        @media (max-width: 420px) {
+          /* Tiny-phone refinements (≤iPhone SE-class viewports) — squeeze
+             padding + grids further so cards don't overflow. */
+          .hsx-setup-topbar { padding: 12px 14px !important; gap: 8px !important; }
+          .hsx-setup-content { padding: 16px 14px 56px !important; }
+          .ob-s2-focus-grid { grid-template-columns: 1fr !important; }
+          .hsx-permission-card { padding: 10px !important; gap: 8px !important; }
+          .hsx-setup-cta { font-size: 14px !important; padding: 14px 18px !important; }
+        }
       `}</style>
 
       {/* ─── Top Bar — same 3-col grid + tokens used by auth + onboarding. ─── */}
@@ -1258,7 +1267,7 @@ export default function SessionSetup() {
                     </svg>
                   )}
                 </span>
-                <span className="hsx-setup-identity-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{trimmed}</span>
+                <span className="hsx-setup-identity-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "min(160px, 28vw)" }}>{trimmed}</span>
               </div>
             );
           })()}

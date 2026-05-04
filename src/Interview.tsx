@@ -894,14 +894,26 @@ function InterviewInner() {
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @media (max-width: 600px) {
           .iv-info-bar { flex-wrap: wrap; gap: 8px !important; padding: 10px 16px !important; }
+          .iv-info-bar-row { padding: 10px 16px !important; gap: 8px !important; flex-wrap: wrap !important; }
+          .iv-canvas-topbar { padding: 12px 16px !important; gap: 10px !important; padding-top: max(12px, env(safe-area-inset-top, 12px)) !important; }
+          .iv-canvas-topbar-left { gap: 10px !important; min-width: 0 !important; flex: 1 1 auto !important; overflow: hidden !important; }
+          .iv-canvas-topbar-right { gap: 6px !important; flex-shrink: 0 !important; }
+          .iv-canvas-mobile-hide { display: none !important; }
+          .iv-canvas-stage { padding: 16px 14px !important; gap: 14px !important; }
           .iv-center { padding: 16px !important; }
           .iv-controls { padding: 8px 12px !important; gap: 6px !important; }
           .iv-controls button { min-width: 48px !important; min-height: 48px !important; }
           .iv-controls .iv-hide-mobile { display: none !important; }
-          .iv-transcript-panel { width: 100% !important; max-width: none !important; position: fixed !important; bottom: 0 !important; top: auto !important; right: 0 !important; left: 0 !important; height: 60vh !important; border-radius: 20px 20px 0 0 !important; animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important; }
+          .iv-transcript-panel { width: 100% !important; max-width: none !important; position: fixed !important; bottom: 0 !important; top: auto !important; right: 0 !important; left: 0 !important; height: min(60vh, calc(100vh - 96px)) !important; max-height: calc(100vh - 96px) !important; border-radius: 20px 20px 0 0 !important; animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important; }
           /* Video preview default is 160×120 — 43% of a 375px viewport.
-             Shrinks to ~90px to stay out of the way of the main stage. */
-          .iv-video-preview { width: 90px !important; height: 68px !important; top: 64px !important; right: 8px !important; }
+             Shrinks to ~90px to stay out of the way of the main stage.
+             top respects notch/safe-area-inset on iOS. */
+          .iv-video-preview { width: 90px !important; height: 68px !important; top: calc(64px + env(safe-area-inset-top, 0px)) !important; right: 8px !important; }
+        }
+        @media (max-width: 420px) {
+          .iv-canvas-topbar { padding: 10px 12px !important; }
+          .iv-canvas-stage { padding: 12px 10px !important; }
+          .iv-info-bar-row { padding: 8px 12px !important; }
         }
         @keyframes slideUpSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @media (hover: none) and (pointer: coarse) {

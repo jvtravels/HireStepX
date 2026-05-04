@@ -2043,10 +2043,11 @@ export default function SessionReportView({
         <main
           id="ir-main"
           aria-label="Interview report"
+          className="ir-main-container"
           style={{
             maxWidth: 1240,
             margin: "0 auto",
-            padding: "0 32px",
+            padding: "0 clamp(14px, 4vw, 32px)",
             display: "flex",
             flexDirection: "column",
             gap: 16,

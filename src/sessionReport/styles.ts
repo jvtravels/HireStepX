@@ -18,6 +18,9 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 880px) {
     .ir-tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
+  @media (max-width: 480px) {
+    .ir-tile-grid { grid-template-columns: 1fr; gap: 10px; }
+  }
   .ir-skill-bar-wrap { position: relative; height: 8px; border-radius: 99px; overflow: visible; }
   .ir-skill-bar-bg { position: absolute; inset: 0; border-radius: 99px; }
   .ir-skill-bar-fg {
@@ -82,6 +85,13 @@ export const SESSION_REPORT_STYLES = `
      reflow so the You/Avg labels stack above the row. */
   @media (max-width: 768px) {
     .ir-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+    .ir-hero-grid > * { min-width: 0 !important; }
+    .ir-jump-nav { margin-left: -16px !important; margin-right: -16px !important; }
+    .ir-jump-nav-inner { padding: 0 16px !important; }
+    .ir-skill-name { min-width: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ir-trend-strip { gap: 12px !important; padding: 12px 14px !important; }
+    .ir-coach-notes-grid { grid-template-columns: 1fr !important; }
+    .ir-bias-grid { grid-template-columns: 1fr !important; }
     .ir-strengths-improvements { grid-template-columns: 1fr !important; gap: 18px !important; }
     .ir-skills-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
     .ir-skill-row {
@@ -102,6 +112,17 @@ export const SESSION_REPORT_STYLES = `
     .ir-next-steps-grid { grid-template-columns: 1fr !important; }
     .ir-q-trigger-band { display: none !important; }
     .ir-pill-bar { gap: 6px !important; }
+  }
+  @media (max-width: 420px) {
+    .ir-skill-row {
+      grid-template-columns: 1fr 42px 42px !important;
+      column-gap: 6px !important;
+    }
+    .ir-cta-primary, .ir-cta-ghost { padding: 9px 12px !important; font-size: 12px !important; }
+    .ir-pill { padding: 5px 10px !important; font-size: 11px !important; }
+    .ir-tab-btn { margin-right: 12px !important; font-size: 12px !important; }
+    .ir-trend-strip { padding: 10px 12px !important; gap: 10px !important; }
+    .ir-thought-track { height: 22px !important; }
   }
 
   /* ─── Sparkline ─── */
