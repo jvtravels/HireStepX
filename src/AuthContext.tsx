@@ -1299,6 +1299,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { channel.removeEventListener("message", handleMessage); channel.close(); };
   }, []);
 
+  // Save-retry queue: when the user is signed in, install the auto-drain
+  // hooks that retry failed cloud-saves (transcripts that didn't make it
+  // to Supabase due to flaky networks, fetch wrappers, etc.). The queue
+  // persists in IndexedDB and survives across tabs / sessions, so a
+  // session that "saved locally — will sync when online" will actually
+  // sync on the next online event or 5-minute poll.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cleanup: (() => void) | null = null;
+    void Promise.all([
+      import("./saveRetryQueue"),
+      import("./interviewAPI"),
+    ]).then(([{ installAutoDrain }, { saveSessionResult }]) => {
+      cleanup = installAutoDrain((payload, uid) =>
+        saveSessionResult(payload, uid).then((r) => ({ cloudOk: r.cloudOk })),
+      );
+    }).catch(() => { /* IDB / module load unavailable — skip */ });
+    return () => { cleanup?.(); };
+  }, [user?.id]);
+
   // Inactivity timeout — auto-logout after configurable period of no user activity
   const lastActivityRef = useRef(Date.now());
 

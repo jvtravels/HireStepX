@@ -1888,34 +1888,39 @@ export function useInterviewEngine() {
 
     let localOk = false;
     let cloudOk = false;
+    // Build the payload once so we can both attempt the save AND enqueue
+    // it for retry if the cloud write fails. Sharing the literal across
+    // both paths means the retry is byte-identical to what the user just
+    // saw fail — no drift between online success and offline retry.
+    const savePayload = {
+      id: sessionId,
+      date: new Date().toISOString(),
+      type: interviewType,
+      difficulty: interviewDifficulty,
+      focus: interviewFocus,
+      duration: elapsed,
+      score,
+      questions: totalQuestions,
+      transcript: evalTranscript,
+      ai_feedback: aiFeedback,
+      skill_scores: skillScores,
+      ideal_answers: idealAnswers.length > 0 ? idealAnswers : undefined,
+      starAnalysis,
+      strengths,
+      improvements,
+      nextSteps,
+      resumeUsed: !!user?.resumeText,
+      // Frozen at engine init — see resumeVersionIdRef above for why.
+      resumeVersionId: resumeVersionIdRef.current,
+      jobDescription: jobDescription || undefined,
+      jdAnalysis: jdAnalysisData || null,
+    };
     try {
       // Race the entire save against a 10s ceiling — Supabase PATCH on slow
       // networks has been observed to hang indefinitely. Fallback to local-only
       // save so the user still lands on /session/{id} with their transcript.
       const saveResult = await Promise.race([
-        saveSessionResult({
-          id: sessionId,
-          date: new Date().toISOString(),
-          type: interviewType,
-          difficulty: interviewDifficulty,
-          focus: interviewFocus,
-          duration: elapsed,
-          score,
-          questions: totalQuestions,
-          transcript: evalTranscript,
-          ai_feedback: aiFeedback,
-          skill_scores: skillScores,
-          ideal_answers: idealAnswers.length > 0 ? idealAnswers : undefined,
-          starAnalysis,
-          strengths,
-          improvements,
-          nextSteps,
-          resumeUsed: !!user?.resumeText,
-          // Frozen at engine init — see resumeVersionIdRef above for why.
-          resumeVersionId: resumeVersionIdRef.current,
-          jobDescription: jobDescription || undefined,
-          jdAnalysis: jdAnalysisData || null,
-        }, user?.id),
+        saveSessionResult(savePayload, user?.id),
         new Promise<{ localOk: boolean; cloudOk: boolean; streakReward?: { milestone: number; bonusCredits: number } | null }>((resolve) => setTimeout(() => {
           console.warn("[interview] saveSessionResult timeout (10s) — proceeding with whatever landed");
           resolve({ localOk: true, cloudOk: false, streakReward: null });
@@ -1936,11 +1941,28 @@ export function useInterviewEngine() {
       }
     } catch (saveErr) {
       console.error("[interview] saveSessionResult threw:", saveErr);
+      // Even when the in-line save throws, enqueue for background retry
+      // so we don't lose the session.
+      if (user?.id) {
+        const errMsg = saveErr instanceof Error ? saveErr.message : String(saveErr);
+        void import("./saveRetryQueue").then(({ enqueueSave }) =>
+          enqueueSave(savePayload, user.id, errMsg)
+        ).catch(() => { /* IDB unavailable */ });
+      }
     }
 
     if (!cloudOk && localOk) {
       setSaveWarning("Session saved locally but could not sync to cloud.");
       toast("Session saved locally — will sync when online.", "info");
+      // Enqueue the cloud-save for background retry. We have a userId
+      // (cloud was attempted), the payload is intact, and the retry
+      // queue handles backoff + 5-attempt cap + 14-day pruning.
+      // Fire-and-forget — don't block the route to /session/{id}.
+      if (user?.id) {
+        void import("./saveRetryQueue").then(({ enqueueSave }) =>
+          enqueueSave(savePayload, user.id, "cloud save returned cloudOk=false")
+        ).catch(() => { /* IDB unavailable — local-only is still saved */ });
+      }
     } else if (!localOk && !cloudOk) {
       try {
         await saveToIDB(`hirestepx_unsaved_${sessionId}`, {
