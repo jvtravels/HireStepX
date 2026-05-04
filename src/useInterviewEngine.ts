@@ -1487,6 +1487,15 @@ export function useInterviewEngine() {
       if (nextStep?.type === "question" || nextStep?.type === "intro" || nextStep?.type === "closing") {
         followUpDepthRef.current = 0;
       }
+      /* Phase MUST flip to "thinking" in the same batched update as
+         setCurrentStep — otherwise the new step renders for one frame
+         against the old "listening" phase, which renders the next
+         question STATICALLY before the typewriter starts. The user-
+         facing symptom was a "question briefly visible → vanishes →
+         re-types" flash. React 18 batches both setStates here so the
+         next render has both new step AND phase=thinking — the typewriter
+         then takes over cleanly when the speak() effect fires. */
+      setPhase("thinking");
       setCurrentStep(currentStep + 1);
     } else {
       setPhase("done");

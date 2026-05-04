@@ -18,8 +18,7 @@ import {
   CanvasMetaRow, CanvasEndButton, CanvasSelfViewTile,
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
-/* LiveCaptions import dropped along with LiveCaptionsAsHeading — see
-   the question-flicker fix in the speaking-phase render below. */
+import { LiveCaptions } from "./InterviewComponents";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
@@ -162,9 +161,32 @@ function countExchanges(transcript: Array<{ speaker: string }>): number {
   return transcript.filter(m => m.speaker === "user").length;
 }
 
-/* LiveCaptionsAsHeading was the canvas-style typewriter wrapper. Removed
-   together with the QuestionCard typewriter to fix the question-text
-   flicker bug — see the render-site comment in the speaking phase. */
+/* Canvas-style typewriter wrapper that types the AI's question in sync
+   with TTS audio duration. Inherits the parent <h1>'s serif typography
+   via variant="inherit". The flicker that previously affected this was
+   fixed at the engine level — handleNextQuestion now sets phase=thinking
+   in the SAME batched update as setCurrentStep, so the new step never
+   renders against the old phase. The intermediate "thinking" state masks
+   the LiveCaptions empty-mount frame. */
+function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEnded }: {
+  text: string;
+  ttsDurationMs?: number;
+  speakingDuration?: number;
+  speechEnded?: boolean;
+}) {
+  return (
+    <span style={{ display: "inline" }}>
+      <LiveCaptions
+        text={text}
+        isTyping
+        variant="inherit"
+        speakingDuration={speakingDuration}
+        actualDuration={ttsDurationMs}
+        speechEnded={speechEnded}
+      />
+    </span>
+  );
+}
 
 /* SkipWithReason — replaces CanvasSkipLink in production. Click reveals
    a tiny popover with 4 reasons (industry standard for question-quality
@@ -707,6 +729,7 @@ function InterviewInner() {
     timeRemaining, timePercent,
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
+    ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
     isSalaryNegotiation, negotiationBand, negotiationStyle,
     targetSalary, highestOffer, liveNegotiationState, voiceConfidence,
@@ -885,13 +908,23 @@ function InterviewInner() {
           const displayText = step.aiTextDisplay ?? step.aiText;
           return (
           <div style={{ maxWidth: 620, width: "100%" }}>
-            {/* Speaking phase used to swap the editorial heading for a
-                LiveCaptions typewriter — but that animation reset the text
-                to empty on every phase change, producing a "question
-                vanishes then re-types" flicker. Now: render the same
-                accent-split heading from speaking onwards so the question
-                appears in full as soon as the AI starts talking. */}
-            {(() => {
+            {/* Speaking: typewriter typed in sync with TTS audio.
+                Listening: static accent-split or plain heading.
+                The flicker that used to appear at phase transitions
+                (question briefly visible → vanishes → re-types) was
+                fixed at the engine level — handleNextQuestion now
+                batches setPhase("thinking") with setCurrentStep so the
+                new step never renders briefly against the old phase. */}
+            {phase === "speaking" ? (
+              <CanvasPlainHeading>
+                <LiveCaptionsAsHeading
+                  text={displayText}
+                  ttsDurationMs={ttsDurationMs}
+                  speakingDuration={step.speakingDuration}
+                  speechEnded={speechEnded}
+                />
+              </CanvasPlainHeading>
+            ) : (() => {
               // Prefer the LLM-marked accentSplit when available — it's
               // hand-picked at question-generation time. Falls back to
               // the local heuristic when LLM didn't comply or for

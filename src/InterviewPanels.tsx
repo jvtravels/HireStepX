@@ -2,7 +2,7 @@ import React, { memo, useRef, useState, useEffect } from "react";
 import { e, ef } from "./interviewTokens";
 import {
   WaveformVisualizer, NetworkIndicator, DotGridVisualizer,
-  ControlButton, formatTime,
+  LiveCaptions, ControlButton, formatTime,
 } from "./InterviewComponents";
 import type { PanelMember } from "./InterviewComponents";
 // PaceMeter is used inside UserAnswerArea below; the rest are imported
@@ -414,15 +414,15 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
 
 /* ─── Question Card with timer ─── */
 
-export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptions, timeRemaining, timePercent, panelPersona, isSalaryNegotiation }: {
+export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptions, timeRemaining, timePercent, panelPersona, actualDuration, speechEnded, isSalaryNegotiation }: {
   step: { aiText: string; scoreNote?: string; speakingDuration: number } | undefined;
   phase: string; showCaptions: boolean;
   timeRemaining: number; timePercent: number;
   panelPersona?: { name: string; title: string; color: string } | null;
-  /* actualDuration / speechEnded props were used by the typewriter
-     animation that's been removed to fix the question-text-flicker bug.
-     Callers may still pass them — we just ignore them silently via the
-     React-component prop-spread pattern. */
+  /** Real TTS audio duration in ms — drives typewriter sync. */
+  actualDuration?: number;
+  /** True when TTS playback finishes — flushes typewriter to full text. */
+  speechEnded?: boolean;
   isSalaryNegotiation?: boolean;
 }) {
   return (
@@ -469,15 +469,17 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           {step.scoreNote}
         </p>
       )}
-      {/* Question text rendering — static across speaking + listening so the
-          question doesn't "vanish then re-type" between phases. The earlier
-          LiveCaptions typewriter animation reset to empty on phase change,
-          producing a jarring flash where the question briefly disappeared
-          before the AI voice started reading it. Now: full text appears as
-          soon as the AI starts speaking and stays put. The opacity dip in
-          listening phase (without captions) keeps the visual focus on the
-          user's own answer. */}
-      {phase === "thinking" ? (
+      {/* Question text rendering:
+            speaking → typewriter typed in sync with TTS audio
+            thinking → "Preparing next question…"
+            listening → static text (typewriter completed)
+          The flicker that previously appeared between currentStep increment
+          and phase=speaking is fixed at the engine level — handleNextQuestion
+          batches setPhase("thinking") with setCurrentStep so the new step
+          never renders against the old listening phase. */}
+      {phase === "speaking" ? (
+        <LiveCaptions text={step?.aiText || ""} isTyping={true} speakingDuration={step?.speakingDuration} actualDuration={actualDuration} speechEnded={speechEnded} />
+      ) : phase === "thinking" ? (
         <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>Preparing next question…</p>
       ) : step?.aiText ? (
         <p style={{
