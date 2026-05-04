@@ -84,67 +84,74 @@ export default async function handler(req: Request): Promise<Response> {
     utm_campaign: asString(body.utm_campaign, 100),
   };
 
-  /* Upsert via PostgREST so a duplicate email returns ok (idempotent
-     re-signup). on_conflict requires the email column to be UNIQUE or
-     PRIMARY KEY in the schema — see supabase-schema.sql. The
-     return=minimal Prefer header avoids fetching the row back. */
-  try {
-    const url = `${SUPABASE_URL}/rest/v1/waitlist?on_conflict=email`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_SERVICE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal",
-      },
-      body: JSON.stringify(payload),
-    });
+  /* PostgREST insert with progressive fallback. We try the most
+     desirable behavior first (upsert with all UTM columns) and fall
+     back through three tiers — each strips assumptions until something
+     works. This is robust against an existing table whose schema
+     predates this code. */
+  const baseUrl = `${SUPABASE_URL}/rest/v1/waitlist`;
+  const baseHeaders = {
+    apikey: SUPABASE_SERVICE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+    "Content-Type": "application/json",
+    Prefer: "resolution=merge-duplicates,return=minimal",
+  };
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error(`[waitlist-signup] supabase ${res.status}: ${errText.slice(0, 300)}`);
+  type Attempt = { url: string; body: Record<string, unknown>; description: string };
+  const attempts: Attempt[] = [
+    /* T1: upsert on email with all the columns we'd ideally store. */
+    { url: `${baseUrl}?on_conflict=email`, body: payload, description: "full upsert" },
+    /* T2: same body, no on_conflict (the table may have a different
+       UNIQUE constraint, e.g. id-based PK with email as plain column). */
+    { url: baseUrl, body: payload, description: "plain insert with UTM" },
+    /* T3: minimal body — drops UTM/source/referrer. Catches tables
+       that have email + created_at only. */
+    { url: baseUrl, body: { email }, description: "minimal email-only insert" },
+  ];
 
-      /* Surface specific failure modes the user can act on. PostgREST
-         returns the column name in the error message for missing-column
-         cases, so we pattern-match. */
-      if (/relation .* does not exist|table .* not found/i.test(errText)) {
+  let lastErrText = "";
+  let lastStatus = 0;
+  for (const attempt of attempts) {
+    try {
+      const res = await fetch(attempt.url, {
+        method: "POST",
+        headers: baseHeaders,
+        body: JSON.stringify(attempt.body),
+      });
+      if (res.ok) {
+        if (attempt !== attempts[0]) {
+          console.warn(`[waitlist-signup] succeeded on fallback "${attempt.description}"`);
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
+      }
+      lastErrText = await res.text().catch(() => "");
+      lastStatus = res.status;
+
+      /* Duplicate-key conflict on a non-upsert path = success from the
+         user's perspective (their email is already on the list). */
+      if (/duplicate key|unique constraint/i.test(lastErrText)) {
+        return new Response(JSON.stringify({ ok: true, alreadySignedUp: true }), { status: 200, headers });
+      }
+
+      /* Hard failures we should NOT retry past — table missing means
+         the schema isn't applied; further retries won't help. */
+      if (/relation .* does not exist|relation "waitlist" does not exist|table .* not found/i.test(lastErrText)) {
+        console.error(`[waitlist-signup] table missing: ${lastErrText.slice(0, 200)}`);
         return new Response(JSON.stringify({
           error: "Waitlist isn't set up yet — please email hello@hirestepx.com to get on the list.",
         }), { status: 503, headers });
       }
-      if (/column .* does not exist|not-null constraint|violates/i.test(errText)) {
-        /* Schema mismatch — the columns we send don't match what the
-           table expects. Retry with just the bare-minimum email column
-           so a partially-migrated environment still captures the email. */
-        const retryRes = await fetch(url, {
-          method: "POST",
-          headers: {
-            apikey: SUPABASE_SERVICE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            "Content-Type": "application/json",
-            Prefer: "resolution=merge-duplicates,return=minimal",
-          },
-          body: JSON.stringify({ email }),
-        });
-        if (retryRes.ok) {
-          return new Response(JSON.stringify({ ok: true, schemaMigrationPending: true }), { status: 200, headers });
-        }
-        const retryText = await retryRes.text().catch(() => "");
-        console.error(`[waitlist-signup] minimal retry also failed: ${retryText.slice(0, 200)}`);
-      }
 
-      return new Response(JSON.stringify({
-        error: "We couldn't save your email. Please try again — or email hello@hirestepx.com.",
-      }), { status: 500, headers });
+      console.warn(`[waitlist-signup] attempt "${attempt.description}" failed HTTP ${res.status}: ${lastErrText.slice(0, 200)}`);
+      /* Otherwise loop to next fallback. */
+    } catch (err) {
+      lastErrText = err instanceof Error ? err.message : String(err);
+      console.warn(`[waitlist-signup] attempt "${attempt.description}" threw: ${lastErrText.slice(0, 200)}`);
     }
-
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[waitlist-signup] threw: ${msg.slice(0, 200)}`);
-    return new Response(JSON.stringify({
-      error: "We couldn't save your email. Please try again — or email hello@hirestepx.com.",
-    }), { status: 500, headers });
   }
+
+  console.error(`[waitlist-signup] all attempts failed. last status=${lastStatus} body=${lastErrText.slice(0, 300)}`);
+  return new Response(JSON.stringify({
+    error: "We couldn't save your email. Please try again — or email hello@hirestepx.com.",
+  }), { status: 500, headers });
 }
