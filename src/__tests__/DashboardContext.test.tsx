@@ -86,6 +86,35 @@ describe("DashboardContext", () => {
     expect(screen.getByTestId("sessionsRemaining").textContent).toBe("3");
   });
 
+  // ─── Regression: started-but-not-completed sessions count toward limit ───
+  // Previously, sessionsUsed was derived from `recentSessions.length`
+  // (rows in the sessions table — only set on completion). A user
+  // who started 2 interviews and abandoned both still saw "3 of 3
+  // remaining" because the rows never got written. Practice timestamps
+  // are bumped on /api/record-session-start (interview start) so
+  // they're the right signal — completed OR abandoned both count.
+  it("counts STARTED sessions, not just completed (uses practiceTimestamps)", async () => {
+    mockUser.practiceTimestamps = [
+      "2026-05-04T10:00:00Z",
+      "2026-05-04T11:00:00Z",
+    ];
+    await act(async () => { renderWithProviders(); });
+    expect(screen.getByTestId("sessionsRemaining").textContent).toBe("1");
+    mockUser.practiceTimestamps = []; // reset for other tests
+  });
+
+  it("clamps to 0 remaining when practiceTimestamps exceeds the cap", async () => {
+    mockUser.practiceTimestamps = [
+      "2026-05-04T10:00:00Z",
+      "2026-05-04T11:00:00Z",
+      "2026-05-04T12:00:00Z",
+      "2026-05-04T13:00:00Z", // 4 — over the 3-session cap
+    ];
+    await act(async () => { renderWithProviders(); });
+    expect(screen.getByTestId("sessionsRemaining").textContent).toBe("0");
+    mockUser.practiceTimestamps = [];
+  });
+
   it("can toggle upgrade modal", async () => {
     await act(async () => { renderWithProviders(); });
     expect(screen.getByTestId("showUpgrade").textContent).toBe("false");

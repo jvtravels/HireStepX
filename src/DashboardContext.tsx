@@ -462,13 +462,32 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Subscription info
+  //
+  // sessionsUsed counts CONSUMPTION, not just completion. A free-tier
+  // user who starts an interview but abandons it before save-session
+  // still spent a quota slot — they used the LLM tokens, the question
+  // generation, the STT minutes. Counting only finished rows in the
+  // sessions table (the previous behaviour: `recentSessions.length`)
+  // let users get unlimited do-overs by quitting any interview that
+  // wasn't going well.
+  //
+  // The right signal is profile.practice_timestamps, which the server
+  // bumps on session START via /api/record-session-start (and dedupes
+  // at completion via save-session's started_session_ids check, so
+  // there's no double-counting). This is what SessionSetup already
+  // uses — DashboardContext was the lone holdout.
+  const practiceTimestamps = user?.practiceTimestamps && Array.isArray(user.practiceTimestamps)
+    ? user.practiceTimestamps
+    : [];
   const isFree = !user?.subscriptionTier || user.subscriptionTier === "free";
   const isStarter = user?.subscriptionTier === "starter";
   const isPro = user?.subscriptionTier === "pro";
-  const sessionsUsed = recentSessions.length;
+  const sessionsUsed = practiceTimestamps.length;
   const sessionsRemaining = Math.max(0, FREE_SESSION_LIMIT - sessionsUsed);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
-  const sessionsThisWeek = recentSessions.filter(s => new Date(s.date) >= weekStart).length;
+  const sessionsThisWeek = practiceTimestamps.filter((t) => {
+    try { return new Date(t).getTime() >= weekStart.getTime(); } catch { return false; }
+  }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
   const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT) || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT);
 
