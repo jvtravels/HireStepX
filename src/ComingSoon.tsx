@@ -155,14 +155,22 @@ export default function ComingSoon() {
     const domain = trimmed.split("@")[1] ?? "";
 
     try {
-      if (supabaseConfigured) {
-        const client = await getSupabase();
-        const { error } = await client.from("waitlist").upsert(
-          { email: trimmed, created_at: new Date().toISOString() },
-          { onConflict: "email" },
-        );
-        // Surface real Supabase errors instead of fake-success.
-        if (error) throw error;
+      /* Server-side path: avoids the supabase-js + RLS mismatch that
+         was failing every signup with a generic error. The endpoint
+         uses the service-role key, so RLS is bypassed and we get
+         actionable error messages back when the schema isn't ready. */
+      const res = await fetch("/api/waitlist-signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: trimmed,
+          source: "coming_soon",
+          referrer: typeof document !== "undefined" ? document.referrer.slice(0, 200) : "",
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Signup failed (HTTP ${res.status})`);
       }
       track("waitlist_signup", { email_hash: emailHash, domain, source: "coming_soon" });
       setStatus("done");
@@ -170,7 +178,11 @@ export default function ComingSoon() {
       // Real error state — user sees retry copy, NOT fake confirmation.
       const reason = (err as { message?: string })?.message ?? "unknown";
       track("waitlist_signup_failed", { domain, reason: reason.slice(0, 80), source: "coming_soon" });
-      setErrorMsg("We couldn't save your email. Please try again — or email hello@hirestepx.com.");
+      /* Show the server's specific message when available — it might be
+         "this email is already on the list" or similar actionable text. */
+      setErrorMsg(reason && reason !== "unknown" && reason.length < 200
+        ? reason
+        : "We couldn't save your email. Please try again — or email hello@hirestepx.com.");
       setStatus("error");
     } finally {
       submittingRef.current = false;
