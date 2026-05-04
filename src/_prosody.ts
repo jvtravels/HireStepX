@@ -44,18 +44,12 @@ export type TTSProvider = "cartesia" | "azure" | "browser";
 export function stripProsodyMarkup(text: string): string {
   if (!text) return text;
   return text
-    .replace(/__([^_\n]+)__/g, "$1")              // strong emphasis (underscore)
-    .replace(/(?<!_)_([^_\n]+)_(?!_)/g, "$1")     // emphasis (underscore)
-    .replace(/\*\*([^*\n]+)\*\*/g, "$1")          // strong emphasis (asterisk)
-    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "$1") // emphasis (asterisk)
-    .replace(/\[pause:long\]/gi, ", ")            // long pause → comma + space
-    .replace(/\[pause:short\]/gi, " ")            // short pause variant → whitespace
-    .replace(/\[pause\]/gi, " ")                  // short pause → just whitespace
-    .replace(/\[breath\]/gi, " ")                 // breath → whitespace
-    .replace(/\[emotion:[^\]]*\]/gi, " ")         // any emotion directive → drop
-    .replace(/\*+/g, "")                          // any stray asterisks → drop
-    .replace(/\s+([,.!?;:])/g, "$1")              // tidy up spaces before punctuation
-    .replace(/\s{2,}/g, " ")                      // collapse double-spaces
+    .replace(/__([^_\n]+)__/g, "$1")          // strong emphasis
+    .replace(/(?<!_)_([^_\n]+)_(?!_)/g, "$1") // emphasis
+    .replace(/\[pause:long\]/gi, ", ")        // long pause → comma + space
+    .replace(/\[pause\]/gi, " ")              // short pause → just whitespace
+    .replace(/\[breath\]/gi, " ")             // breath → whitespace
+    .replace(/\s{2,}/g, " ")                  // collapse double-spaces
     .trim();
 }
 

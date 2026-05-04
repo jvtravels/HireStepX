@@ -20,7 +20,6 @@ import {
 } from "./InterviewCanvasAtoms";
 import { LiveCaptions } from "./InterviewComponents";
 import { pickAccent } from "./_accent-parser";
-import { stripProsodyMarkup } from "./_prosody";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { useVideoRecorder } from "./useVideoRecorder";
 import { InterviewProvider } from "./InterviewContext";
@@ -523,9 +522,7 @@ function CanvasListeningActionZone({
               width: "100%", minHeight: 120, padding: "14px 16px",
               fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
               background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
-              // Locked: the visible browser-native grabber undermines the
-              // editorial card aesthetic. Card auto-grows via minHeight + scroll.
-              resize: "none", outline: "none",
+              resize: "vertical", outline: "none",
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
             }}
           />
@@ -843,18 +840,12 @@ function InterviewInner() {
             LiveCaptions typewriter would fight with the inline accent
             mid-stream. Once speech ends and we're listening, the accent
             renders. */}
-        {step?.aiText && phase !== "done" && (() => {
-          // Sanitize once — strips TTS markup ([pause:long], *emphasis*,
-          // _emphasis_, [emotion:warm]) so it never leaks into the heading.
-          // We keep the raw step.aiText untouched for TTS, which still
-          // needs the directives for SSML rendering.
-          const displayText = stripProsodyMarkup(step.aiText);
-          return (
+        {step?.aiText && phase !== "done" && (
           <div style={{ maxWidth: 620, width: "100%" }}>
             {phase === "speaking" ? (
               <CanvasPlainHeading>
                 <LiveCaptionsAsHeading
-                  text={displayText}
+                  text={step.aiText}
                   ttsDurationMs={ttsDurationMs}
                   speakingDuration={step.speakingDuration}
                   speechEnded={speechEnded}
@@ -864,17 +855,16 @@ function InterviewInner() {
               // Prefer the LLM-marked accentSplit when available — it's
               // hand-picked at question-generation time. Falls back to
               // the local heuristic when LLM didn't comply or for
-              // cached/legacy questions without the field. Sanitize each
-              // segment defensively in case directives slipped through.
-              const accent = step.accentSplit ?? pickAccent(displayText);
+              // cached/legacy questions without the field.
+              const accent = step.accentSplit ?? pickAccent(step.aiText);
               return accent ? (
                 <CanvasEditorialHeading
-                  before={stripProsodyMarkup(accent.before)}
-                  accent={stripProsodyMarkup(accent.accent)}
-                  after={stripProsodyMarkup(accent.after)}
+                  before={accent.before}
+                  accent={accent.accent}
+                  after={accent.after}
                 />
               ) : (
-                <CanvasPlainHeading>{displayText}</CanvasPlainHeading>
+                <CanvasPlainHeading>{step.aiText}</CanvasPlainHeading>
               );
             })()}
             {step?.scoreNote && phase !== "thinking" && (
@@ -883,8 +873,7 @@ function InterviewInner() {
               </div>
             )}
           </div>
-          );
-        })()}
+        )}
 
         {/* Visualizer in its soft disc + halo + voice rings while listening */}
         {phase !== "done" && (
