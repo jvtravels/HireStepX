@@ -503,6 +503,57 @@ export const SESSION_REPORT_V2_STYLES = `
   /* ─── Anchor scroll spacing for inline jumps from wins/fixes ─── */
   .ir-q-anchor { scroll-margin-top: 80px; }
 
+  /* ─── Bias / perception-optimizer panel ─── */
+  .ir-bias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .ir-bias-card {
+    background: rgba(49,46,129,0.04);
+    border: 1px solid rgba(49,46,129,0.12);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .ir-bias-card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .ir-bias-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 700; color: #312E81; line-height: 1;
+  }
+  .ir-bias-label {
+    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-size: 13px; color: #2A241B; font-weight: 600;
+  }
+  .ir-bias-example {
+    display: block;
+    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-size: 11px; color: #6E6759; font-style: italic;
+    margin: 4px 0 6px;
+  }
+  .ir-bias-tip {
+    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-size: 12px; color: #312E81; line-height: 1.4;
+  }
+
+  /* ─── Trust + useful dual polls (footer) ─── */
+  .ir-poll-row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    font-family: 'Satoshi', 'Inter', sans-serif;
+    font-size: 12px; color: #6E6759;
+  }
+  .ir-poll-yes, .ir-poll-no {
+    background: transparent;
+    border: 1px solid #EBE5D2;
+    border-radius: 999px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-family: inherit; font-size: 12px; color: #6E6759;
+    transition: all 160ms;
+  }
+  .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #B45309; color: #B45309; }
+  .ir-poll-yes.active, .ir-poll-no.active { background: #F4E5D8; border-color: #B45309; color: #B45309; font-weight: 600; }
+
   /* ─── Print styles ───
      PDF generation goes through window.print(). We hide chrome (jump
      nav, header buttons, sticky CTAs, footer thumbs) and force every

@@ -20,6 +20,7 @@ import { track } from "@vercel/analytics";
 import {
   evaluateSessionWithAI,
   fetchRecentSessionScores,
+  saveStoryToNotebook,
   type SessionReport,
   type SessionTrendPoint,
 } from "../dashboardData";
@@ -413,6 +414,14 @@ export const SessionReportV2 = memo(function SessionReportV2({
       daysUntilInterview,
       targetRole: user?.targetRole || session.role,
       targetCompany: user?.targetCompany || session.company,
+      // Bias-detector softening for non-native English speakers. Reads
+      // a conventional `nonNativeEnglish` flag off the auth user when
+      // present; defaults to false. Safe lookup via `in` so we don't
+      // widen the AuthContext user type just for this surface.
+      nonNativeEnglish:
+        user && typeof user === "object" && "nonNativeEnglish" in user
+          ? Boolean((user as Record<string, unknown>).nonNativeEnglish)
+          : false,
     });
   }, [
     report,
@@ -458,6 +467,62 @@ export const SessionReportV2 = memo(function SessionReportV2({
     [router, session.id]
   );
 
+  const onSaveTopStory = useCallback(
+    async (questionIdxOneBased: number) => {
+      // questionIdx in the view is 1-based; report perQuestion is 0-based.
+      const q = report?.perQuestion[questionIdxOneBased - 1];
+      if (!q) return;
+      track("report_action_clicked", {
+        action: "save_story",
+        sessionId: session.id,
+        questionIdx: q.idx,
+        view: "v2",
+      });
+      try {
+        // Derive a short title — first 60 chars of the question, trimmed.
+        const title = q.question.length > 60 ? `${q.question.slice(0, 60)}…` : q.question;
+        await saveStoryToNotebook({
+          sessionId: session.id,
+          questionIdx: q.idx,
+          title,
+          question: q.question,
+          answerText: q.answerText,
+        });
+        if (typeof window !== "undefined") {
+          window.alert("Saved to your Notebook.");
+        }
+      } catch (err) {
+        console.error("[reportV2] save story failed:", err instanceof Error ? err.message : err);
+        if (typeof window !== "undefined") {
+          window.alert("Could not save the story. Please try again.");
+        }
+      }
+    },
+    [report, session.id]
+  );
+
+  const onTrustAnswer = useCallback(
+    (value: "yes" | "no") => {
+      track("report_trust_poll_submitted", {
+        sessionId: session.id,
+        fair: value === "yes",
+        view: "v2",
+      });
+    },
+    [session.id]
+  );
+
+  const onUsefulAnswer = useCallback(
+    (value: "yes" | "no") => {
+      track("report_usefulness_poll_submitted", {
+        sessionId: session.id,
+        useful: value === "yes",
+        view: "v2",
+      });
+    },
+    [session.id]
+  );
+
 
   /* ── Render gates ── */
   if (loading) return <LoadingShell onBack={onBack} />;
@@ -477,6 +542,9 @@ export const SessionReportV2 = memo(function SessionReportV2({
       onShare={onShare}
       onTryQuestionAgain={onTryQuestionAgain}
       onDrillSkill={onDrillSkill}
+      onSaveTopStory={onSaveTopStory}
+      onTrustAnswer={onTrustAnswer}
+      onUsefulAnswer={onUsefulAnswer}
     />
   );
 });

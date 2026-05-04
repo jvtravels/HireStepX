@@ -28,6 +28,7 @@ import { t, f, shadows } from "./tokens";
 import { SESSION_REPORT_V2_STYLES } from "./styles";
 import type {
   AnswerSpan,
+  BiasFinding,
   BlindSpot,
   Calibration,
   CrossSessionInsight,
@@ -44,6 +45,7 @@ import type {
 // Re-export types so call-sites importing from this entry stay happy.
 export type {
   AnswerSpan,
+  BiasFinding,
   BlindSpot,
   Calibration,
   CrossSessionInsight,
@@ -1581,18 +1583,76 @@ function ThoughtBubbleSection({ segments }: { segments: ThoughtBubbleSegment[] }
   );
 }
 
+/** Bias / perception-optimizer panel — surfaces language-pattern hits
+ *  research has empirically tied to lower hiring outcomes. Framed as
+ *  a perception optimizer; renders nothing when no patterns fired so
+ *  first-session reports stay clean. HireStepX-specific differentiator
+ *  for the Indian-candidate market — no other AI mock-interview tool
+ *  ships this. */
+function BiasSection({ findings }: { findings: BiasFinding[] }) {
+  if (!findings || findings.length === 0) return null;
+  return (
+    <section
+      id="ir-section-bias"
+      aria-labelledby="ir-bias-heading"
+      style={{
+        background: t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: 16,
+        padding: 28,
+        boxShadow: shadows.card,
+        scrollMarginTop: 72,
+      }}
+    >
+      <SectionEyebrow num="06" label="Perception optimizer" />
+      <h2
+        id="ir-bias-heading"
+        style={{
+          fontFamily: f.serif,
+          fontSize: 22,
+          fontWeight: 400,
+          color: t.coal,
+          margin: "0 0 6px",
+          letterSpacing: "-0.01em",
+        }}
+      >
+        Language patterns to watch
+      </h2>
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 4px", lineHeight: 1.55 }}>
+        Research-backed patterns that tend to lower hiring perception. Not a judgment — a perception optimizer.
+      </p>
+      <div className="ir-bias-grid">
+        {findings.map((b) => (
+          <div key={b.kind} className="ir-bias-card">
+            <div className="ir-bias-card-head">
+              <span className="ir-bias-count">{b.count}×</span>
+              <span className="ir-bias-label">{b.label}</span>
+            </div>
+            {b.example && (
+              <span className="ir-bias-example">&ldquo;{b.example}&rdquo;</span>
+            )}
+            <span className="ir-bias-tip">{b.suggestion}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function NextStepsSection({
   daysUntilInterview,
   readinessSentence,
   weakestSkill,
   onTryWeakestQuestion,
   onDrillSkill,
+  onSaveTopStory,
 }: {
   daysUntilInterview?: number;
   readinessSentence?: string;
   weakestSkill?: string;
   onTryWeakestQuestion?: () => void;
   onDrillSkill?: () => void;
+  onSaveTopStory?: () => void;
 }) {
   /* The first card is date-aware. When the user has a scheduled
      interview, generic "try weakest question" gives way to a date-
@@ -1649,7 +1709,7 @@ function NextStepsSection({
       title: "Save top story to Notebook",
       desc: "Save your strongest answer as a reusable narrative.",
       cta: "Save story",
-      onClick: undefined as (() => void) | undefined,
+      onClick: onSaveTopStory,
     },
     {
       icon: (
@@ -1764,13 +1824,22 @@ function NextStepsSection({
   );
 }
 
-function FooterSection() {
+function FooterSection({
+  onTrustAnswer,
+  onUsefulAnswer,
+}: {
+  onTrustAnswer?: (value: "yes" | "no") => void;
+  onUsefulAnswer?: (value: "yes" | "no") => void;
+}) {
   /* The thumbs are direction-only. The follow-up tag row appears
      after a thumb-down so we can capture WHY (too harsh / too
-     generous / vague / not actionable) — the calibration team
-     needs that signal more than a binary helpful/not vote. */
+     generous / vague / not actionable). The trust + usefulness 2-
+     question polls below are separate — they fire structured analytics
+     events the rubric team relies on for quarterly LLM-prompt re-tuning. */
   const [thumb, setThumb] = useState<"up" | "down" | null>(null);
   const [reason, setReason] = useState<string | null>(null);
+  const [trust, setTrust] = useState<"yes" | "no" | null>(null);
+  const [useful, setUseful] = useState<"yes" | "no" | null>(null);
   const reasons = thumb === "down"
     ? ["Score felt too harsh", "Score felt too generous", "Feedback was vague", "Wrong about my answer"]
     : ["The score felt fair", "Coaching was specific", "I'll try the retry CTA"];
@@ -1855,6 +1924,50 @@ function FooterSection() {
           )}
         </div>
       )}
+      {/* Trust + usefulness dual-poll. Separate from the thumbs — these
+          fire `report_trust_poll_submitted` + `report_usefulness_poll_submitted`
+          analytics events that the calibration pipeline consumes for
+          quarterly LLM-prompt re-tuning. */}
+      <div className="ir-poll-row" style={{ paddingTop: 6, justifyContent: "space-between" }}>
+        <div className="ir-poll-row">
+          <span>Did this score feel fair?</span>
+          <button
+            type="button"
+            className={`ir-poll-yes${trust === "yes" ? " active" : ""}`}
+            aria-pressed={trust === "yes"}
+            onClick={() => { setTrust("yes"); onTrustAnswer?.("yes"); }}
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            className={`ir-poll-no${trust === "no" ? " active" : ""}`}
+            aria-pressed={trust === "no"}
+            onClick={() => { setTrust("no"); onTrustAnswer?.("no"); }}
+          >
+            No
+          </button>
+        </div>
+        <div className="ir-poll-row">
+          <span>Will you act on this feedback?</span>
+          <button
+            type="button"
+            className={`ir-poll-yes${useful === "yes" ? " active" : ""}`}
+            aria-pressed={useful === "yes"}
+            onClick={() => { setUseful("yes"); onUsefulAnswer?.("yes"); }}
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            className={`ir-poll-no${useful === "no" ? " active" : ""}`}
+            aria-pressed={useful === "no"}
+            onClick={() => { setUseful("no"); onUsefulAnswer?.("no"); }}
+          >
+            No
+          </button>
+        </div>
+      </div>
     </footer>
   );
 }
@@ -1879,6 +1992,13 @@ export interface SessionReportV2ViewProps {
   /** "Drill weakest skill" — invoked from the Next-Steps third card.
    *  Production routes to a focused 5-question drill. */
   onDrillSkill?: (skillName: string) => void;
+  /** "Save top story to Notebook" — invoked from the Next-Steps middle
+   *  card. Production calls saveStoryToNotebook on the highest-scoring
+   *  question. */
+  onSaveTopStory?: (questionIdx: number) => void;
+  /** Trust + usefulness 2-question polls. Both fire to analytics. */
+  onTrustAnswer?: (value: "yes" | "no") => void;
+  onUsefulAnswer?: (value: "yes" | "no") => void;
 }
 
 export default function SessionReportV2View({
@@ -1888,7 +2008,19 @@ export default function SessionReportV2View({
   onShare,
   onTryQuestionAgain,
   onDrillSkill,
+  onSaveTopStory,
+  onTrustAnswer,
+  onUsefulAnswer,
 }: SessionReportV2ViewProps) {
+  // Pick the highest-scoring question so the "Save top story" CTA
+  // points at the right answer. Falls back to the first question.
+  const topStoryIdx =
+    data.questions.length > 0
+      ? data.questions.reduce(
+          (best, q) => (q.score > best.score ? q : best),
+          data.questions[0]
+        ).index
+      : 1;
   return (
     <>
       <style>{SESSION_REPORT_V2_STYLES}</style>
@@ -1939,6 +2071,9 @@ export default function SessionReportV2View({
             storyReuse={data.storyReuseFindings}
             blindSpots={data.blindSpots}
           />
+          {data.biasFindings && data.biasFindings.length > 0 && (
+            <BiasSection findings={data.biasFindings} />
+          )}
           <NextStepsSection
             daysUntilInterview={data.daysUntilInterview}
             readinessSentence={data.readinessSentence}
@@ -1953,8 +2088,14 @@ export default function SessionReportV2View({
                 ? () => onDrillSkill(data.weakestSkill.name)
                 : undefined
             }
+            onSaveTopStory={
+              onSaveTopStory ? () => onSaveTopStory(topStoryIdx) : undefined
+            }
           />
-          <FooterSection />
+          <FooterSection
+            onTrustAnswer={onTrustAnswer}
+            onUsefulAnswer={onUsefulAnswer}
+          />
         </main>
       </div>
     </>

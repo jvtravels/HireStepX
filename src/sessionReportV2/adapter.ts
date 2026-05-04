@@ -16,8 +16,10 @@ import type {
   SessionReportCrossSessionInsight,
 } from "../dashboardData";
 import type { DashboardSession } from "../dashboardTypes";
+import { detectBias, countBias, BIAS_LABELS, type BiasPatternKind } from "../biasDetector";
 import type {
   AnswerSpan,
+  BiasFinding,
   CrossSessionInsight,
   DeliveryMetric,
   InterviewResultData,
@@ -50,6 +52,9 @@ export interface AdapterContext {
   targetRole?: string;
   /** Target company override — falls back to session.company. */
   targetCompany?: string;
+  /** Non-native English flag — softens the bias detector for hedging
+   *  patterns that are politeness, not authority erosion. */
+  nonNativeEnglish?: boolean;
 }
 
 export function sessionReportToInterviewResult(
@@ -125,7 +130,45 @@ export function sessionReportToInterviewResult(
     readinessSentence: report.readiness
       ? `~${report.readiness.estimatedHours} hours over ~${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band — ${report.readiness.confidence} confidence. ${report.readiness.rationale}`
       : undefined,
+    biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
   };
+}
+
+/** Aggregate bias-pattern hits across all answers, attach a
+ *  representative example for each non-zero kind, emit only kinds that
+ *  fired. Returns undefined when no bias signal — panel collapses to
+ *  nothing in that case. */
+function buildBiasFindings(
+  perQuestion: SessionReportPerQuestion[],
+  nonNativeEnglish: boolean | undefined
+): BiasFinding[] | undefined {
+  const opts = { nonNativeEnglish };
+  const allAnswers = perQuestion.map((q) => q.answerText || "");
+  const counts = countBias(allAnswers, opts);
+  const findings: BiasFinding[] = [];
+  (Object.keys(counts) as BiasPatternKind[]).forEach((kind) => {
+    const n = counts[kind];
+    if (n === 0) return;
+    let example: string | undefined;
+    let suggestion = "";
+    for (const answer of allAnswers) {
+      const hits = detectBias(answer, opts);
+      const first = hits.find((h) => h.kind === kind);
+      if (first) {
+        example = first.text;
+        suggestion = first.suggestion;
+        break;
+      }
+    }
+    findings.push({
+      kind,
+      label: BIAS_LABELS[kind],
+      count: n,
+      example,
+      suggestion,
+    });
+  });
+  return findings.length > 0 ? findings : undefined;
 }
 
 /* ─── Field-level helpers ───────────────────────────────────────────── */

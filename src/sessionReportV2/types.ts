@@ -114,6 +114,27 @@ export interface ThoughtBubbleSegment {
   pct: number;
 }
 
+/** Bias / perception-optimizer findings — language patterns research
+ *  (Anderson 2014, Linneman 2013, Hyland 1998, Jensen 2018) shows
+ *  empirically disadvantage candidates in hiring rounds, especially
+ *  non-native English speakers. Framed as a perception optimizer, not
+ *  a judgment of the speaker. Surfaced as count chips with a
+ *  representative example. Production-grade differentiator — no other
+ *  AI mock-interview tool ships this. */
+export type BiasKind =
+  | "selfDiminutive"
+  | "overApology"
+  | "overHedging"
+  | "uptalk";
+
+export interface BiasFinding {
+  kind: BiasKind;
+  label: string;
+  count: number;
+  example?: string;
+  suggestion: string;
+}
+
 
 export interface InterviewResultData {
   overallScore: number;
@@ -143,4 +164,7 @@ export interface InterviewResultData {
   blindSpots?: BlindSpot[];
   thoughtBubble?: ThoughtBubbleSegment[];
   readinessSentence?: string;
+  /** Perception-optimizer findings — bias-pattern aggregates across the
+   *  whole session. Empty / undefined = panel doesn't render. */
+  biasFindings?: BiasFinding[];
 }
