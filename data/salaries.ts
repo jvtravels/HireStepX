@@ -327,27 +327,37 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   "cloud-engineer": { /* alias — falls back to devops-sre */ },
 
   // ─── UX / PRODUCT DESIGNER ────────────────────────────────────
+  // Bands refreshed FY2024-25 from levels.fyi (India), AmbitionBox, and
+  // levelup-internal reference offers. ESOPs ARE real at Indian unicorns
+  // and growth-stage startups for senior+ PDs, but liquidity varies — the
+  // realistic-cash-equivalent of an ESOP grant is ~50-70% of nominal at
+  // listed-track unicorns, lower at private startups. The total ranges
+  // below assume ESOP at face-value; candidates should mentally discount.
+  // IT-services typically grants no equity to design roles.
   "ux-designer": {
     faang: {
-      entry: s([15, 22], [1, 3], RSU(4, 8), [20, 32], { hot_skills: ["Figma", "User Research", "Design Systems"] }),
-      mid: s([25, 35], [3, 5], RSU(8, 15), [35, 52], {}),
-      senior: s([35, 50], [5, 8], RSU(12, 25), [48, 78], { negotiation_leverage: "high" }),
-      lead: s([45, 65], [6, 12], RSU(18, 35), [65, 105], {}),
+      entry: s([18, 26], [1, 3], RSU(5, 10), [24, 39], { hot_skills: ["Figma", "User Research", "Design Systems"] }),
+      mid: s([28, 42], [3, 6], RSU(10, 20), [41, 68], {}),
+      senior: s([40, 58], [6, 10], RSU(15, 32), [61, 100], { negotiation_leverage: "high", notes: "Top FAANG senior PDs at Bangalore offices regularly clear ₹70-90 LPA total comp." }),
+      lead: s([55, 75], [8, 15], RSU(22, 45), [85, 135], { negotiation_leverage: "high" }),
     },
     "indian-unicorn": {
-      entry: s([5, 9], [0.3, 1], ESOP(0.5, 2), [6, 12], {}),
-      mid: s([12, 20], [1, 2], ESOP(2, 4), [14, 25], {}),
-      senior: s([20, 32], [2, 4], ESOP(3, 8), [24, 40], {}),
+      entry: s([6, 10], [0.5, 1], ESOP(0.5, 2), [7, 13], { hot_skills: ["Figma", "Product thinking", "0-to-1 design"] }),
+      mid: s([14, 22], [1.5, 3], ESOP(2, 5), [17, 30], {}),
+      senior: s([24, 36], [3, 6], ESOP(4, 10), [31, 52], { negotiation_leverage: "high", notes: "Top-tier unicorns (Razorpay/CRED/Zerodha/Zepto) hit ₹40-55 LPA at senior. Standard tier (Flipkart/Swiggy/Meesho) lands ₹30-42 LPA." }),
+      lead: s([35, 50], [5, 10], ESOP(8, 18), [48, 78], { negotiation_leverage: "high", notes: "Lead/Principal PD or Design Manager. Often a leveling-arbitrage opportunity — IC ladder caps lower than EM ladder at most unicorns." }),
     },
     "it-services": {
-      entry: s([3, 5], [0.1, 0.3], NO_EQ, [3, 5], { negotiation_leverage: "low" }),
-      mid: s([5, 10], [0.3, 0.8], NO_EQ, [5, 11], {}),
-      senior: s([10, 18], [0.8, 1.5], NO_EQ, [11, 20], {}),
+      entry: s([3.5, 5.5], [0.1, 0.4], NO_EQ, [3.5, 6], { negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.4, 1], NO_EQ, [6.5, 12], { notes: "Design at services firms (TCS Interactive, Infosys Wongdoody, etc.) pays 30-40% below product-company benchmarks. Consider switching to product after 2-3 yrs." }),
+      senior: s([11, 20], [1, 2], NO_EQ, [12, 22], {}),
+      lead: s([18, 30], [2, 4], NO_EQ, [20, 34], {}),
     },
     "startup-growth": {
-      entry: s([4, 7], [0.2, 0.5], ESOP(0.5, 1.5), [5, 9], {}),
-      mid: s([8, 16], [0.5, 2], ESOP(1, 3), [10, 20], {}),
-      senior: s([16, 28], [2, 4], ESOP(3, 6), [20, 36], {}),
+      entry: s([5, 8], [0.3, 0.6], ESOP(0.5, 2), [6, 11], { notes: "Pre-Series-B startups: prefer higher base over higher ESOP — most early-stage equity expires worthless." }),
+      mid: s([10, 18], [0.8, 2], ESOP(1.5, 4), [12, 24], {}),
+      senior: s([18, 30], [2.5, 5], ESOP(3, 8), [24, 43], { negotiation_leverage: "high", notes: "Senior at Series B/C — push for cash + cash-out clauses on ESOPs (90-day exercise window, full acceleration on liquidity)." }),
+      lead: s([25, 42], [4, 8], ESOP(6, 15), [35, 65], { negotiation_leverage: "high" }),
     },
   },
 
