@@ -419,11 +419,10 @@ CROSS-PERSONA REFERENCE: at least one question (q3 or later) must reference what
     // open with low-stakes warmth before the substantive questions start.
     const warmupBeat = `\nINTRO WARMTH: The 'intro' step should open with one warm, low-stakes line BEFORE diving into format/structure — a real "settling in" beat, not corporate fluff. Examples: "Hope you're doing well today.", "Thanks for making time — let's keep this conversational.". Then proceed to context. Two extra seconds of warmth here measurably improves candidate performance.
 
-INTRO EXPECTATIONS (mandatory, after the warmth line): The intro MUST set 3 explicit expectations so the candidate isn't guessing:
-  1. How long: "We have about ${isMini ? "10" : "25"} minutes." (use the actual session length)
-  2. How many questions: "I'll ask ${questionCount} questions, with follow-ups based on your answers." (use the actual count)
-  3. Permission: "Take your time on each. You can ask me to repeat the question anytime, or just type if you'd rather not speak."
-Real interviews open this way — it dramatically reduces anxiety. Phrase it naturally, not as a checklist; spread the three across 1-2 sentences.`;
+INTRO FRAMING (mandatory, after the warmth line): The intro should ground the candidate in what's coming WITHOUT enumerating like a script. Real interviewers DO NOT say "I have 5 questions for you" — that reads as canned. Instead, weave in two soft signals across 1-2 natural sentences:
+  1. Approximate timing — phrase loosely: "We have about ${isMini ? "ten" : "twenty-five"} minutes together", "I've blocked ${isMini ? "ten" : "twenty-five"} minutes", or just "we'll keep this to ${isMini ? "around ten" : "about twenty-five"}". Avoid digits when written out reads more naturally.
+  2. Permission to navigate the conversation — phrase as invitation, not instruction: "Take your time", "feel free to ask me to repeat anything", "you can type if that's easier". Pick ONE; don't list all three.
+NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include the literal session-length number in digits ("25 min", "10 minutes"). The candidate doesn't need a curriculum — they need to feel they're in a conversation. Two short sentences MAX after the warmth beat. If it sounds like a meeting agenda, rewrite it.`;
 
     /* Retrieve curated reference questions and inject them as STYLE
        anchors. The retrieval is hierarchical (exact → role+focus → focus
