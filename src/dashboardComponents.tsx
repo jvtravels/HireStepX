@@ -12,6 +12,13 @@ const SessionReportView = dynamic(() => import("./SessionReportView").then((m) =
   ssr: false,
 });
 
+// V2 results report — cream/indigo/copper editorial surface ported
+// from the `interview-result` Tempo canvas. Lazy-loaded so the V1
+// bundle is unaffected when the flag is off.
+const SessionReportV2 = dynamic(() => import("./sessionReportV2/SessionReportV2").then((m) => ({ default: m.SessionReportV2 })), {
+  ssr: false,
+});
+
 /**
  * Feature flag for the new MVP report view. Controlled via env at build time
  * (NEXT_PUBLIC_RESULTS_REPORT_MVP=true) so we can flip rollout without a deploy
@@ -22,6 +29,19 @@ const RESULTS_REPORT_MVP_ENABLED = (() => {
     const env = (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_RESULTS_REPORT_MVP : undefined);
     return env !== "false" && env !== "0";
   } catch { return true; }
+})();
+
+/**
+ * Feature flag for the V2 report view. Defaults to OFF until QA lands.
+ * Flip to ON via Vercel env (NEXT_PUBLIC_REPORT_V2=true) for staged rollout.
+ * When ON, V2 supersedes the V1 MVP view — both gates still apply
+ * (transcript length ≥ 2, etc.).
+ */
+const REPORT_V2_ENABLED = (() => {
+  try {
+    const env = (typeof process !== "undefined" ? process.env?.NEXT_PUBLIC_REPORT_V2 : undefined);
+    return env === "true" || env === "1";
+  } catch { return false; }
 })();
 
 declare global {
@@ -683,6 +703,15 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
     // Wrap so a crash during evaluation (bad LLM payload, shape drift, etc.)
     // doesn't replace the whole dashboard with a blank screen — user gets a
     // retry button and stays in the dashboard shell.
+    // V2 supersedes V1 when the secondary flag is on; both share the
+    // same evaluation pipeline + transcript guard.
+    if (REPORT_V2_ENABLED) {
+      return (
+        <SectionErrorBoundary label="results report v2">
+          <SessionReportV2 session={session} onBack={onBack} />
+        </SectionErrorBoundary>
+      );
+    }
     return (
       <SectionErrorBoundary label="results report">
         <SessionReportView session={session} onBack={onBack} />
