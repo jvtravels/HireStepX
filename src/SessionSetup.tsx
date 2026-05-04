@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
@@ -59,10 +59,45 @@ const ROLE_SUGGESTIONS = [
 ];
 
 // Single source of truth — the extensive ~510-entry list lives in
-// onboardingData. Re-aliased here so both SessionSetup and Onboarding
-// autocomplete consume the same list; adding a company in one place
-// lights it up in both.
-const COMPANY_SUGGESTIONS = COMPANY_SUGGESTIONS_FULL;
+// onboardingData (COMPANY_SUGGESTIONS_FULL).
+//
+// User-added companies (typed during salary-negotiation setup when the
+// company isn't in the canonical list) get appended via localStorage,
+// so a candidate's "Razorpay X" stays visible in their next session
+// without polluting the global list. Stored as JSON array of strings
+// at hsx_user_companies; capped at 50 entries (FIFO) for sanity.
+const USER_COMPANIES_KEY = "hsx_user_companies";
+const USER_COMPANIES_CAP = 50;
+
+function loadUserCompanies(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(USER_COMPANIES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((s): s is string => typeof s === "string" && s.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function saveUserCompany(name: string): void {
+  if (typeof window === "undefined") return;
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  // Skip if already in the canonical list — no need to remember it.
+  const lower = trimmed.toLowerCase();
+  if (COMPANY_SUGGESTIONS_FULL.some((c) => c.toLowerCase() === lower)) return;
+  try {
+    const existing = loadUserCompanies();
+    if (existing.some((c) => c.toLowerCase() === lower)) return;
+    const next = [...existing, trimmed].slice(-USER_COMPANIES_CAP);
+    window.localStorage.setItem(USER_COMPANIES_KEY, JSON.stringify(next));
+  } catch {
+    /* localStorage may be unavailable / quota exceeded — silent */
+  }
+}
 
 function sampleDiverse(arr: string[], count: number): string[] {
   if (arr.length <= count) return arr;
@@ -551,6 +586,16 @@ export default function SessionSetup() {
 
   const [targetRole, setTargetRole] = useState(user?.targetRole || "");
   const [roleTouched, setRoleTouched] = useState(false);
+  const [companyTouched, setCompanyTouched] = useState(false);
+  // User-added companies persisted in localStorage. Re-read on mount so
+  // companies typed in prior sessions show up in this session's dropdown.
+  const [userCompanies] = useState<string[]>(() => loadUserCompanies());
+  // Merged list seeded into AutocompleteInput suggestions. User entries
+  // appear at the END so canonical brands win the type-ahead by default.
+  const COMPANY_SUGGESTIONS = useMemo(
+    () => [...COMPANY_SUGGESTIONS_FULL, ...userCompanies],
+    [userCompanies],
+  );
   const [targetCompany, setTargetCompany] = useState(() => {
     if (user?.targetCompany) return user.targetCompany;
     // Fallback variant carries job history — pull the latest employer if
@@ -914,11 +959,30 @@ export default function SessionSetup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const formComplete = !!targetRole.trim() && interviewFocus.length > 0;
+  // Salary-negotiation interviews need a specific company anchor — the
+  // LLM grounds the offer band, equity policy, and negotiation style on
+  // company tier. An unspecified target makes the negotiation generic
+  // and the offer numbers calibration-less. So company is *required*
+  // for that focus only; for other focuses it stays optional.
+  const isNegotiationFocus = interviewFocus[0] === "Salary Negotiation";
+  const companyRequired = isNegotiationFocus;
+  const companyMissing = companyRequired && !targetCompany.trim();
+  const formComplete =
+    !!targetRole.trim() &&
+    interviewFocus.length > 0 &&
+    !companyMissing;
   const canProceed = formComplete && micStatus === "granted";
 
   // Launch interview
   const handleStart = () => {
+    // If negotiation focus and company is missing, surface the error
+    // and bail. The button is already disabled via canProceed but
+    // keyboard shortcuts (⌘+Enter) bypass the disabled state.
+    if (companyMissing) {
+      setCompanyTouched(true);
+      toast("Pick a company before starting a salary-negotiation interview.", "error");
+      return;
+    }
     if (!canProceed) return;
     if (!navigator.onLine) {
       toast("You're offline. Please check your internet connection before starting.", "error");
@@ -926,6 +990,10 @@ export default function SessionSetup() {
     }
     setStarting(true);
     unlockAudio();
+    // Persist user-typed company so it shows up in the dropdown next
+    // session. No-op when the company is already in the canonical list
+    // or when targetCompany is empty (non-negotiation focus).
+    if (targetCompany.trim()) saveUserCompany(targetCompany);
     const focusType = focusToType[interviewFocus[0]] || "behavioral";
     track("session_start", { type: focusType, role: targetRole, sessionLength: SESSION_LENGTH });
     const introText = introByType[focusType] || introByType.behavioral;
@@ -1202,7 +1270,20 @@ export default function SessionSetup() {
                       <AutocompleteInput id="setup-role" value={targetRole} onChange={(v) => { setTargetRole(v); setRoleTouched(true); }} suggestions={ROLE_SUGGESTIONS} placeholder="e.g. Senior Engineering Manager..." label="Role" required error={roleTouched && !targetRole.trim() ? "Required to personalize your questions" : undefined} />
                     </div>
                     <div>
-                      <AutocompleteInput id="setup-company" value={targetCompany} onChange={setTargetCompany} suggestions={COMPANY_SUGGESTIONS} placeholder="e.g. Google, Stripe..." label="Company (optional)" />
+                      <AutocompleteInput
+                        id="setup-company"
+                        value={targetCompany}
+                        onChange={(v) => { setTargetCompany(v); setCompanyTouched(true); }}
+                        suggestions={COMPANY_SUGGESTIONS}
+                        placeholder={isNegotiationFocus ? "Required for salary negotiation — e.g. Razorpay, Google" : "e.g. Google, Stripe..."}
+                        label={isNegotiationFocus ? "Company" : "Company (optional)"}
+                        required={companyRequired}
+                        error={
+                          companyTouched && companyMissing
+                            ? "Required — we calibrate the offer band to this company"
+                            : undefined
+                        }
+                      />
                     </div>
                   </div>
                 </div>
