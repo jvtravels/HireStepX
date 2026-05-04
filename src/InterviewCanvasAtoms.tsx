@@ -62,30 +62,55 @@ export function CanvasStatusPill({ status }: { status: CanvasConnectionStatus })
   );
 }
 
-/* ─── ProgressDots ─── */
+/* ─── ProgressDots ─── (legacy — kept for type compatibility, not rendered)
+   Real interviews are time-bounded, not question-bounded. The dots-of-N
+   stepper lied about the experience: questions are dynamic, only time is
+   the constraint. Replaced in the topbar by CanvasElapsedClock below. */
 export function CanvasProgressDots({ current, total }: { current: number; total: number }) {
   return (
-    <div role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={current}
-      aria-valuetext={`Question ${current} of ${total}`}
-      style={{ display: "inline-flex", alignItems: "center", gap: 14 }}>
-      <span style={{
-        fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
-        letterSpacing: 1.4, color: e.inkSoft,
+    <CanvasElapsedClock elapsedSec={0} aria-hidden ariaLabel={`Question ${current} of ${total}`} />
+  );
+}
+
+/* ─── ElapsedClock ─── editorial elapsed-time pill for the topbar.
+   Mono digits, balanced kerning, deliberately understated so it reads as
+   a constant background metric rather than a stressor. The breathing dot
+   on the left is the live "session in progress" indicator. */
+export function CanvasElapsedClock({
+  elapsedSec,
+  ariaLabel,
+}: {
+  elapsedSec: number;
+  ariaLabel?: string;
+  // Allow aria-hidden on the legacy compat shim
+  ["aria-hidden"]?: boolean;
+}) {
+  const safe = Math.max(0, Math.floor(elapsedSec));
+  const m = Math.floor(safe / 60);
+  const s = safe % 60;
+  const display = `${m}:${s.toString().padStart(2, "0")}`;
+  return (
+    <div
+      role="timer"
+      aria-live="off"
+      aria-label={ariaLabel ?? `Elapsed time ${m} minutes ${s} seconds`}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 10,
+        fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
+        textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft,
+      }}
+    >
+      <span aria-hidden style={{
+        width: 6, height: 6, borderRadius: 999, background: e.copper,
+        boxShadow: `0 0 0 3px rgba(180,83,9,.12)`,
+        animation: "iv-canvas-elapsed-pulse 2200ms ease-in-out infinite",
+      }} />
+      <span aria-hidden>Elapsed</span>
+      <span aria-hidden style={{
+        fontFamily: ef.mono, fontSize: 12, color: e.coal, fontVariantNumeric: "tabular-nums",
+        letterSpacing: 0.4,
       }}>
-        Question {current} of {total}
-      </span>
-      <span style={{ display: "inline-flex", gap: 6 }}>
-        {Array.from({ length: total }).map((_, i) => {
-          const filled = i < current;
-          const isCurrent = i === current - 1;
-          return (
-            <span key={i} style={{
-              width: isCurrent ? 14 : 6, height: 6, borderRadius: 999,
-              background: filled ? (isCurrent ? e.coal : e.indigo) : e.lineStrong,
-              transition: "all 220ms cubic-bezier(0.16, 1, 0.3, 1)",
-            }} />
-          );
-        })}
+        {display}
       </span>
     </div>
   );

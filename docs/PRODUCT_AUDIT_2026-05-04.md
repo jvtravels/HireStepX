@@ -1,7 +1,6 @@
 # HireStepX — In-Depth Product Audit
 
-**Date**: 2026-05-04
-**Methodology**: Code-level inspection (~3,500 LOC of landing + interview + report read in detail), competitive benchmarking against Pramp, Interviewing.io, InterviewBuddy, Final Round AI, and a calibrated scoring rubric where each level has explicit criteria.
+**Date**: 2026-05-04 **Methodology**: Code-level inspection (\~3,500 LOC of landing + interview + report read in detail), competitive benchmarking against Pramp, Interviewing.io, InterviewBuddy, Final Round AI, and a calibrated scoring rubric where each level has explicit criteria.
 
 ---
 
@@ -24,7 +23,7 @@ I'll cite **file:line evidence** for every claim, name competitors I'm comparing
 ## TL;DR scorecard
 
 | Dimension | Score | One-line justification |
-|---|---|---|
+| --- | --- | --- |
 | Positioning & messaging | **8.5** | Sharply Indian, sharply specific, sharply priced — top of the category |
 | Visual & interaction design | **8.0** | Premium token system, motion discipline, *unusually polished* for a one-founder-class product |
 | Information architecture | **6.5** | Funnel mostly clean; dashboard overloaded; navigation lightly chaotic in mid-app |
@@ -106,7 +105,7 @@ This is the *product*. It deserves the most scrutiny.
 
 **What's weak:**
 
-- **No avatar / no video.** This is the biggest experiential gap. Pramp has video peer-to-peer; Final Round AI shows an avatar; HireStepX shows a dot-grid visualizer. **Even a static photo + animated audio waveform would lift "feels like a real interview" by a full point.** Cost: a single illustration or stock photo per persona, ~1 day of work.
+- **No avatar / no video.** This is the biggest experiential gap. Pramp has video peer-to-peer; Final Round AI shows an avatar; HireStepX shows a dot-grid visualizer. **Even a static photo + animated audio waveform would lift "feels like a real interview" by a full point.** Cost: a single illustration or stock photo per persona, \~1 day of work.
 - **AI personality is functional, not memorable.** The 15 names are great. But "Priya" doesn't feel different from "Arjun" — same questions, same tone, same pacing. Real interviewers have **vibes**. The negotiation-mode personas (`negotiate-personas.ts` if exists) appear to differentiate by hardness; the regular interview personas don't appear to have personality variants. This is a V1.1 unlock — design 3-4 personality archetypes (warm, terse, skeptical, friendly), assign to names.
 - **No intermediate save / pause.** Once you start, you commit. Competitors (Interviewing.io) let you pause and resume. For a 30-min mock, this matters when life interrupts.
 - **Question repertoire breadth not visible to me.** Per CLAUDE.md there are 10 focus types (now 11 by the directory listing — Behavioral, Campus Placement, Case Study, Government:PSU, HR Round, Management, Panel Interview, Salary Negotiations, Strategic, Teaching). I haven't read the question banks; **if depth-per-type is shallow, repeat usage will feel stale fast.**
@@ -161,12 +160,12 @@ That's **11 distinct insight surfaces** in one report. For comparison:
 ## 6. Funnel & monetization — 7.0/10
 
 | Tier | Price | Limit | Effective ₹/session |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Free | ₹0 | 3 sessions total | — |
 | Single | ₹10 | per session | ₹10 |
 | Starter | ₹49/wk | 7/wk | ₹7 |
 | Pro | ₹149/mo | 30/mo | ₹4.97 |
-| Annual | ₹1,199/yr | unlimited | <₹100/mo equivalent |
+| Annual | ₹1,199/yr | unlimited | &lt;₹100/mo equivalent |
 
 **What's right:**
 
@@ -256,7 +255,7 @@ This is where I have to be most honest. **Nothing here is technically un-replica
 4. **In-report upgrade nudge after free sessions** — at session 3 of 3, the report should end with "Get unlimited practice for ₹149/mo" inline, not require a navigation away. Cost: 0.5 day. Value: directly impacts free→paid conversion.
 5. **Demo video on landing without signup** — verify the "Watch a session in 90 seconds" video actually plays; if it's a placeholder, ship a real one. Cost: 1 day to record + post-process. Value: this single change has the biggest top-of-funnel impact you can ship.
 
-**Total V1.1 scope: ~4 engineering-days.** That's the gap between 7.6 and 8.5.
+**Total V1.1 scope: \~4 engineering-days.** That's the gap between 7.6 and 8.5.
 
 ---
 
@@ -272,7 +271,7 @@ This is where I have to be most honest. **Nothing here is technically un-replica
 ## Final calibrated rating: **7.6 / 10**
 
 | Tier | Description | Where HireStepX sits |
-|---|---|---|
+| --- | --- | --- |
 | 9.0+ | Defines the category | — |
 | 8.0–8.9 | Production-grade, 1+ standout | Report (8.5), Positioning (8.5), Foundation (8.0), Design (8.0) |
 | 7.0–7.9 | Solid, market-competitive | Funnel (7.0), Trust (7.5) |

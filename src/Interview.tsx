@@ -10,7 +10,7 @@ import {
   PaceMeter, InterviewCoachmarks,
 } from "./InterviewPanels";
 import {
-  CanvasWordmark, CanvasContextChip, CanvasProgressDots, CanvasStatusPill,
+  CanvasWordmark, CanvasContextChip, CanvasElapsedClock, CanvasStatusPill,
   CanvasMuteToggle, CanvasCameraToggle, CanvasAvatar,
   CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
   CanvasEditorialHeading,
@@ -700,7 +700,7 @@ function InterviewInner() {
     usedFallbackScore, evalTimedOut, lastSessionId,
     evaluating, evalElapsed, aiVoiceEnabled,
     currentTranscript, microFeedback,
-    totalQuestions, baseQuestionCount, currentQuestionNum, isCurrentFollowUp,
+    totalQuestions, currentQuestionNum, isCurrentFollowUp,
     timeRemaining, timePercent,
     displayRole, displayCompany, displayFocus, interviewerName,
     isPanelInterview, panelMembers, activePersona,
@@ -831,10 +831,10 @@ function InterviewInner() {
           />
         </div>
         <div className="iv-canvas-mobile-hide">
-          <CanvasProgressDots
-            current={Math.max(1, Math.min(currentQuestionNum, baseQuestionCount || totalQuestions))}
-            total={baseQuestionCount || totalQuestions}
-          />
+          {/* Time, not question count — real interviews don't say "this is
+              question 3 of 4". The countdown for the current answer lives
+              in the answer area; this is the all-up session clock. */}
+          <CanvasElapsedClock elapsedSec={elapsed} />
         </div>
         <div className="iv-canvas-topbar-right" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <div className="iv-canvas-mobile-hide">

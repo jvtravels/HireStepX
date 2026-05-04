@@ -169,6 +169,13 @@ body {
   50% { opacity: 0.7; transform: scale(1.02); }
 }
 
+/* Topbar elapsed-clock dot — slow, deliberate breath so it reads as a
+   live indicator without competing with the voice visualizer for attention. */
+@keyframes iv-canvas-elapsed-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.18); }
+}
+
 @keyframes subtleFloat {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   33% { transform: translateY(-6px) rotate(0.5deg); }
