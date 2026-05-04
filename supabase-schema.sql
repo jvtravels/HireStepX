@@ -102,6 +102,25 @@ create table if not exists feedback (
   created_at timestamptz default now()
 );
 
+-- 4c. Coming-soon / launch waitlist
+-- Public anon-insertable list of emails captured before launch via the
+-- ComingSoon page. Email is the primary key so the upsert {onConflict:'email'}
+-- pattern in src/ComingSoon.tsx works without creating duplicates.
+-- Anonymous SELECT is intentionally NOT granted — waitlist emails are
+-- private; only the service role reads them (for the launch broadcast).
+create table if not exists waitlist (
+  email text primary key,
+  created_at timestamptz default now(),
+  source text default 'coming_soon',
+  -- Optional referral / UTM fields for future attribution. Nullable so
+  -- existing form callers (which only send email + created_at) still work.
+  referrer text default '',
+  utm_source text default '',
+  utm_medium text default '',
+  utm_campaign text default ''
+);
+create index if not exists idx_waitlist_created on waitlist(created_at desc);
+
 -- 4b. Per-question feedback (active-learning loop)
 -- Captures the user's signal on EACH generated question so we can mine
 -- under-performing patterns and feed corrections back into the curated
@@ -529,6 +548,18 @@ create policy "Users can update own feedback" on feedback
 drop policy if exists "Users can delete own feedback" on feedback;
 create policy "Users can delete own feedback" on feedback
   for delete using ((auth.uid())::text = user_id::text);
+
+-- Waitlist: anyone (including unauthenticated visitors on the
+-- ComingSoon page) can INSERT their email. Nobody can SELECT — the
+-- service role reads it for the launch broadcast. Update/delete
+-- locked too; admin tooling uses the service role.
+alter table waitlist enable row level security;
+drop policy if exists "Anyone can insert waitlist email" on waitlist;
+create policy "Anyone can insert waitlist email" on waitlist
+  for insert to anon, authenticated with check (true);
+drop policy if exists "Service role manages waitlist" on waitlist;
+create policy "Service role manages waitlist" on waitlist
+  for all to service_role using (true) with check (true);
 
 -- Question feedback (active-learning loop): users CRUD their own only.
 -- Service role aggregates across all rows for the curation pipeline.
