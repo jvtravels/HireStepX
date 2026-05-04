@@ -53,6 +53,10 @@ export function useInterviewSTT(
   speechUnavailable: boolean,
   callbacks: STTCallbacks,
   refs: STTRefs,
+  /** Bump to force STT to stop + restart cleanly. Wired to the
+   *  Space-to-start-speaking shortcut + the "Tap to start" button so
+   *  users have an explicit trigger when auto-start fails silently. */
+  restartTrigger = 0,
 ) {
   const recognitionRestartCountRef = useRef(0);
   const deepgramRetryRef = useRef(0);
@@ -309,9 +313,9 @@ export function useInterviewSTT(
       refs.recognitionRef.current = null;
       return;
     }
-    // The hook receives `refs` and `callbacks` as bag objects whose .current values are written via mutation; including the bags as deps would re-bind the STT chain on every parent render. Phase/mute/speechUnavailable are the actual triggers that should rewire STT.
+    // The hook receives `refs` and `callbacks` as bag objects whose .current values are written via mutation; including the bags as deps would re-bind the STT chain on every parent render. Phase/mute/speechUnavailable/restartTrigger are the actual triggers that should rewire STT.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, isMuted, speechUnavailable]);
+  }, [phase, isMuted, speechUnavailable, restartTrigger]);
 
   // Capture mic stream for waveform visualizer
   useEffect(() => {

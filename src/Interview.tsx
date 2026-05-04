@@ -456,7 +456,7 @@ function CanvasLiveMetricsRow({ metrics }: {
 function CanvasListeningActionZone({
   currentTranscript, setCurrentTranscript,
   speechUnavailable, setSpeechUnavailable,
-  handleNextQuestion, handleSkipQuestion, textareaRef, nextBtnRef,
+  handleNextQuestion, handleSkipQuestion, restartListening, textareaRef, nextBtnRef,
   isMuted, micQuiet, isCurrentFollowUp,
   replayQuestion, aiVoiceEnabled, hasQuestion,
   liveMetrics, interviewType,
@@ -469,6 +469,10 @@ function CanvasListeningActionZone({
   setSpeechUnavailable: (v: boolean) => void;
   handleNextQuestion: () => void;
   handleSkipQuestion: (reason: string) => void;
+  /** Explicit user-initiated STT restart. When the answer area is empty,
+   *  the primary button is wired to this so the user has a clear "Tap
+   *  to start speaking" affordance + Space shortcut. */
+  restartListening: () => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   nextBtnRef: React.RefObject<HTMLButtonElement | null>;
   isMuted: boolean;
@@ -624,15 +628,40 @@ function CanvasListeningActionZone({
         <MicQuietBanner onSwitchToText={() => { setTyping(true); setSpeechUnavailable(true); textareaRef.current?.focus(); }} />
       )}
 
-      {/* Primary CTA — keycap button matching the canvas */}
+      {/* Primary CTA — keycap button matching the canvas.
+          State machine:
+            • voice mode + empty transcript → "Tap to start speaking"
+              click triggers explicit STT restart (Space shortcut too)
+            • voice mode + has transcript → "Press Space when done"
+              click submits the answer
+            • typing mode + empty → disabled placeholder
+            • typing mode + filled → "Press Enter to send" submits
+          The empty-voice state used to be a disabled "Start speaking…"
+          placeholder — users had no way to trigger STT explicitly when
+          auto-start failed silently. */}
       <button
         ref={nextBtnRef}
         type="button"
-        onClick={handleNextQuestion}
-        disabled={!canSend}
-        aria-label="Send answer (or press Space)"
+        onClick={() => {
+          if (showTyping) {
+            handleNextQuestion();
+          } else if (canSend) {
+            handleNextQuestion();
+          } else {
+            // Voice mode, no transcript yet — explicit STT (re)start
+            restartListening();
+          }
+        }}
+        disabled={showTyping && !canSend}
+        aria-label={
+          showTyping
+            ? "Send answer"
+            : canSend
+              ? "Send answer (or press Space)"
+              : "Tap to start speaking (or press Space)"
+        }
         className="hsx-iv-keycap"
-        data-state={canSend ? "ready" : "disabled"}
+        data-state={canSend || (!showTyping) ? "ready" : "disabled"}
         style={{
           display: "inline-flex", alignItems: "center", gap: 12,
           fontFamily: ef.sans, fontSize: 13, fontWeight: 500,
@@ -640,8 +669,8 @@ function CanvasListeningActionZone({
           background: canSend ? e.indigo : e.white,
           border: `1px solid ${canSend ? e.indigo : e.line}`,
           borderRadius: 999, padding: "10px 18px 10px 12px",
-          cursor: canSend ? "pointer" : "not-allowed",
-          opacity: canSend ? 1 : 0.7,
+          cursor: (canSend || (!showTyping)) ? "pointer" : "not-allowed",
+          opacity: canSend ? 1 : !showTyping ? 0.92 : 0.7,
           transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
           boxShadow: canSend
             ? "0 6px 20px -6px rgba(49,46,129,0.40)"
@@ -661,7 +690,7 @@ function CanvasListeningActionZone({
         <span>
           {showTyping
             ? (canSend ? "Press Enter to send" : "Type your answer…")
-            : (canSend ? "Press Space when done" : "Start speaking…")}
+            : (canSend ? "Press Space when done" : "Tap to start speaking")}
         </span>
       </button>
 
@@ -771,6 +800,7 @@ function InterviewInner() {
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
+    restartListening,
     skipsUsed, skipBudget, canSkip,
     micQuiet, reconnecting, reconnectAttempt,
 
@@ -1058,6 +1088,7 @@ function InterviewInner() {
             setSpeechUnavailable={setSpeechUnavailable}
             handleNextQuestion={handleNextQuestion}
             handleSkipQuestion={handleSkipQuestion}
+            restartListening={restartListening}
             textareaRef={textareaRef}
             nextBtnRef={nextBtnRef}
             isMuted={isMuted}

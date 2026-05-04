@@ -686,13 +686,24 @@ export function useInterviewEngine() {
     setCurrentTranscript(value);
   }, []);
 
+  // Explicit user-triggered STT restart counter. Bumped by Space-to-
+  // start-speaking and the "Tap to start" button in the listening UI.
+  // Gives users an actionable recovery when auto-start fails silently.
+  const [sttRestartTrigger, setSttRestartTrigger] = useState(0);
+  const restartListening = useCallback(() => {
+    if (phase !== "listening") return;
+    setCurrentTranscript("");
+    setSttRestartTrigger((n) => n + 1);
+    toast("Listening — speak when ready", "info");
+  }, [phase, toast]);
+
   // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
   useInterviewSTT(phase, isMuted, speechUnavailable, {
     setCurrentTranscript: setCurrentTranscriptGuarded, setMicError, setSpeechUnavailable, setShowCaptions,
     toast, textareaRef, interviewEndedRef,
   }, {
     recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
-  });
+  }, sttRestartTrigger);
 
   /* ── micQuiet poll ───────────────────────────────────────────────
      Lift the noSpeechCountRef into React state so the inline
@@ -1638,7 +1649,14 @@ export function useInterviewEngine() {
     // browser-only deps.
   }, [phase]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts.
+  //   speaking: Enter / Space → skip AI speech (interrupt)
+  //   listening + has transcript: Space → submit answer
+  //   listening + empty transcript: Space → explicit STT restart
+  //                                 ("I'm ready, listen now" trigger)
+  //   listening: Enter → submit (legacy, even with empty answer
+  //                              hits the empty-guard toast)
+  //   done: Enter → close out the interview
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === "TEXTAREA") {
@@ -1648,8 +1666,19 @@ export function useInterviewEngine() {
         }
         return;
       }
-      if (e.key === "Enter" && phase === "listening") {
-        handleNextQuestion();
+      if (phase === "listening") {
+        if (e.key === "Enter") {
+          handleNextQuestion();
+        } else if (e.key === " ") {
+          e.preventDefault();
+          // If the user has already started speaking → Space submits.
+          // If nothing yet → Space (re)starts STT capture and toasts.
+          if (currentTranscript.trim().length > 0) {
+            handleNextQuestion();
+          } else {
+            restartListening();
+          }
+        }
       } else if ((e.key === "Enter" || e.key === " ") && phase === "speaking") {
         e.preventDefault();
         skipSpeaking();
@@ -1661,7 +1690,7 @@ export function useInterviewEngine() {
     return () => window.removeEventListener("keydown", handler);
     // handleEnd is captured at fire-time inside the keydown handler; adding it as a dep would re-bind the listener whenever handleEnd's identity changes (which is on every transcript edit) and was explicitly avoided.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, handleNextQuestion, skipSpeaking, aiVoiceEnabled]);
+  }, [phase, handleNextQuestion, skipSpeaking, aiVoiceEnabled, restartListening, currentTranscript]);
 
   // Update document.title with current phase
   useEffect(() => {
@@ -2156,6 +2185,9 @@ export function useInterviewEngine() {
     skipSpeaking,
     retakeLastAnswer,
     handleEnd,
+    /** User-initiated STT restart — bound to Space-to-start and the
+     *  "Tap to start speaking" button in the listening UI. */
+    restartListening,
 
     // Skip budget — used by Interview.tsx to enable/disable the skip CTA
     skipsUsed,
