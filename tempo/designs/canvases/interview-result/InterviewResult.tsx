@@ -67,8 +67,21 @@ export interface Question {
   score: number;
   band: "weak" | "partial" | "strong" | "complete";
   answer: AnswerSpan[];
+  /** AI-rewritten version of the candidate's answer in clean STAR
+   *  structure, preserving their language and specifics. Distinct
+   *  from `topPerformerAnswer` which is aspirational. */
+  restructured?: AnswerSpan[];
+  /** Aspirational answer at the role bar — what an L4-equivalent
+   *  candidate at this company would say. Pedagogically the most
+   *  valuable column; surfaces side-by-side with the user's answer. */
+  topPerformerAnswer?: AnswerSpan[];
   star: { situation: boolean; task: boolean; action: boolean; result: boolean; learning: boolean };
   metrics: { wordCount: number; responseSec: number; firstPersonRatioPct: number; quantificationCount: number };
+  /** Coaching note — framing flips with band. Weak/partial reads as
+   *  "why it scored low + what to fix"; strong/complete reads as
+   *  "why it landed + how to keep it". The component picks the
+   *  heading from band so high-scoring questions also get an
+   *  actionable replication signal. */
   whyScored: string;
 }
 
@@ -76,6 +89,21 @@ export interface InterviewResultData {
   overallScore: number;          // 0-100
   verdict: Verdict;
   scoreDelta: number;            // signed; e.g. +16 vs last interview
+  /** Cohort-percentile (0-100). "You did better than X% of L4 frontend
+   *  candidates targeting Google." Computed server-side from the
+   *  bucket of comparable sessions. */
+  percentile?: number;
+  /** Recent score history (most recent last) for the inline sparkline.
+   *  4-6 entries lands best — shorter is noisy, longer wraps. */
+  recentScores?: number[];
+  /** Readiness number — "how close am I to the role bar?". Derived
+   *  from overall score + role-cohort gap; the headline number users
+   *  actually want, distinct from this session's score. */
+  readiness?: { pct: number; etaWeeks: number };
+  /** Days until the user's scheduled interview, if any. Used by the
+   *  Next Steps section to swap the generic "Try weakest" card with a
+   *  date-aware prep plan. */
+  daysUntilInterview?: number;
   company: string;
   role: string;
   level: string;
@@ -95,6 +123,10 @@ export const DEFAULT_RESULT: InterviewResultData = {
   overallScore: 72,
   verdict: "hire",
   scoreDelta: 16,
+  percentile: 68,
+  recentScores: [42, 48, 56, 56, 72],
+  readiness: { pct: 72, etaWeeks: 2 },
+  daysUntilInterview: 9,
   company: "Google",
   role: "Frontend Developer",
   level: "L4",
@@ -149,6 +181,23 @@ export const DEFAULT_RESULT: InterviewResultData = {
       metrics: { wordCount: 78, responseSec: 168, firstPersonRatioPct: 22, quantificationCount: 0 },
       whyScored:
         "Missing a clear result with numbers. Add measurable impact (load-time delta, complaint volume change) and one sentence on what you took away from the project.",
+      restructured: [
+        { text: "At my last company, our analytics dashboard was loading in over 8 seconds and we were getting weekly complaints from operations. " },
+        { text: "I was the only frontend engineer assigned, so I owned the investigation. " },
+        { text: "I profiled the page, found we were calling a deprecated v1 API that fan-outs to 12 backend services, and rewrote it against the v3 batch endpoint. I also added optimistic skeleton loaders so the perceived wait dropped before the real fix landed. " },
+        { text: "Load time went from 8.4s to 1.6s — an 81% improvement", highlight: "quantified" },
+        { text: " — and dashboard-related complaints dropped to zero over the next month. " },
+        { text: "What I took away: profiling first, fixing second. I'd been about to add a cache before I had any data on where time was actually going." },
+      ],
+      topPerformerAnswer: [
+        { text: "I'll give you a recent one. Our customer-facing pricing dashboard was loading in 8s p95, which was tanking conversion on the trial signup funnel — we'd lost about " },
+        { text: "12% of intent-to-trial conversions over the prior quarter", highlight: "quantified" },
+        { text: ". I scoped this as a 2-week fix, not a 6-week rewrite, so I had to be surgical about what to touch. " },
+        { text: "I instrumented Real-User-Monitoring across the page, identified that 70% of the latency was in a single API fan-out, and replaced it with a server-side batch + edge-cached response. I also added a graceful skeleton state for the remaining 1.5s. " },
+        { text: "We shipped in 9 days. p95 dropped to 1.2s, conversion recovered to baseline within two weeks", highlight: "quantified" },
+        { text: ". The trade-off I deliberately accepted: the new endpoint is slightly stale (60s TTL), which is fine for pricing but I documented it for the team. " },
+        { text: "The lesson I keep coming back to: instrument before you optimize. I'd guessed it was the chart library; it was actually the data-fetch waterfall." },
+      ],
     },
     {
       index: 2,
@@ -276,6 +325,120 @@ function ScoreGauge({ score, color }: { score: number; color: string }) {
   );
 }
 
+/** Inline sparkline for the recent-score trend. Replaces the
+ *  text-only "+16 vs last interview" delta with a 4-6 point shape so
+ *  users see the trajectory, not just the latest delta. The current
+ *  point is copper-coded so it stands apart from the indigo line. */
+function Sparkline({ points }: { points: number[] }) {
+  if (!points || points.length < 2) return null;
+  const w = 96;
+  const h = 28;
+  const pad = 3;
+  const innerW = w - pad * 2;
+  const innerH = h - pad * 2;
+  const min = Math.min(...points, 30);
+  const max = Math.max(...points, 90);
+  const range = Math.max(1, max - min);
+  const xs = points.map((_, i) => pad + (i / (points.length - 1)) * innerW);
+  const ys = points.map((p) => pad + innerH - ((p - min) / range) * innerH);
+  const path = points.map((_, i) => `${i === 0 ? "M" : "L"} ${xs[i].toFixed(1)} ${ys[i].toFixed(1)}`).join(" ");
+  const area = `${path} L ${xs[xs.length - 1].toFixed(1)} ${(h - pad).toFixed(1)} L ${xs[0].toFixed(1)} ${(h - pad).toFixed(1)} Z`;
+  return (
+    <svg className="ir-spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-label="Recent session scores">
+      <path className="ir-spark-area" d={area} />
+      <path className="ir-spark-line" d={path} />
+      {points.map((_, i) => (
+        <circle
+          key={i}
+          className={i === points.length - 1 ? "ir-spark-dot-current" : "ir-spark-dot"}
+          cx={xs[i]}
+          cy={ys[i]}
+          r={i === points.length - 1 ? 2.5 : 1.6}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Readiness badge — the "how close am I to the role bar" signal.
+ *  Sits above the score gauge so it reads as the headline number,
+ *  not the session score. For interview-prep users this is more
+ *  useful than the per-session score. */
+function ReadinessHeadline({
+  readiness,
+  daysUntil,
+  role,
+  level,
+  company,
+}: {
+  readiness: { pct: number; etaWeeks: number };
+  daysUntil?: number;
+  role: string;
+  level: string;
+  company: string;
+}) {
+  const color =
+    readiness.pct >= 80 ? t.success : readiness.pct >= 60 ? t.copper : t.error;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "12px 18px",
+        borderRadius: 12,
+        background: "linear-gradient(135deg, rgba(212,179,127,0.06), rgba(49,46,129,0.04))",
+        border: `1px solid ${t.line}`,
+        marginBottom: 18,
+        flexWrap: "wrap",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+          Readiness
+        </span>
+        <span style={{ fontFamily: f.serif, fontSize: 28, color, lineHeight: 1, letterSpacing: "-0.01em" }}>
+          {readiness.pct}%
+        </span>
+      </div>
+      <span style={{ height: 22, width: 1, background: t.line }} aria-hidden="true" />
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, flex: 1, minWidth: 240, lineHeight: 1.45 }}>
+        For <strong style={{ color: t.coal, fontWeight: 600 }}>{level} {role}</strong> at <strong>{company}</strong>.
+        {readiness.pct >= 80 ? (
+          <> You&apos;re interview-ready — focus on consistency.</>
+        ) : (
+          <> ~{readiness.etaWeeks} {readiness.etaWeeks === 1 ? "week" : "weeks"} of focused prep to close the gap.</>
+        )}
+      </p>
+      {typeof daysUntil === "number" && daysUntil > 0 && (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 12px",
+            borderRadius: 999,
+            background: t.copperSoft,
+            color: t.copper,
+            fontFamily: f.mono,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          INTERVIEW IN {daysUntil}D
+        </span>
+      )}
+    </div>
+  );
+}
+
 /* ─── Sections ─────────────────────────────────────────────────────── */
 
 function Header() {
@@ -346,8 +509,22 @@ function HeroSection({ data }: { data: InterviewResultData }) {
         boxShadow: shadows.card,
       }}
     >
+      {/* Readiness headline — the "how close am I to the role bar" signal.
+          Sits above session score because for an interview-prep product
+          it's the headline number users actually want, not "how this
+          session went". Falls through silently if no readiness data. */}
+      {data.readiness && (
+        <ReadinessHeadline
+          readiness={data.readiness}
+          daysUntil={data.daysUntilInterview}
+          role={data.role}
+          level={data.level}
+          company={data.company}
+        />
+      )}
+
       {/* Top row: company / role / level / difficulty pills */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+      <div className="ir-pill-bar" style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
         <span className="ir-pill">
           <span style={{ fontSize: 13 }}>🟢</span>
           {data.company}
@@ -381,7 +558,7 @@ function HeroSection({ data }: { data: InterviewResultData }) {
         </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) 2fr", gap: 32, alignItems: "center" }}>
+      <div className="ir-hero-grid" style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) 2fr", gap: 32, alignItems: "center" }}>
         {/* Score gauge column */}
         <div>
           <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
@@ -407,7 +584,7 @@ function HeroSection({ data }: { data: InterviewResultData }) {
               <span style={{ fontSize: 24, color: t.inkFaint, marginLeft: 4, fontFamily: f.mono }}>/100</span>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
             <span
               style={{
                 display: "inline-flex",
@@ -423,16 +600,35 @@ function HeroSection({ data }: { data: InterviewResultData }) {
             >
               {verdict.label}
             </span>
-            {data.scoreDelta !== 0 && (
+            {/* Sparkline replaces the text-only delta — shows trajectory
+                across recent sessions, not just one-back comparison.
+                Falls back to the text delta if recentScores is missing. */}
+            {data.recentScores && data.recentScores.length >= 2 ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+                <Sparkline points={data.recentScores} />
+                {data.scoreDelta !== 0 && (
+                  <span style={{ color: data.scoreDelta > 0 ? t.success : t.error, fontWeight: 600 }}>
+                    {data.scoreDelta > 0 ? "↑" : "↓"} {Math.abs(data.scoreDelta)}
+                  </span>
+                )}
+              </span>
+            ) : data.scoreDelta !== 0 ? (
               <span style={{ fontFamily: f.sans, fontSize: 13, color: data.scoreDelta > 0 ? t.success : t.error, fontWeight: 600 }}>
                 {data.scoreDelta > 0 ? "↑" : "↓"} {Math.abs(data.scoreDelta)} pts
-                <span style={{ color: t.inkSoft, fontWeight: 400, marginLeft: 4 }}>vs last interview</span>
+                <span style={{ color: t.inkSoft, fontWeight: 400, marginLeft: 4 }}>vs last</span>
               </span>
-            )}
+            ) : null}
           </div>
-          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, marginTop: 14, margin: "14px 0 0" }}>
-            Great effort! You&apos;re close to being interview-ready.
-          </p>
+          {/* Percentile sub-stat — turns the gauge from chrome that
+              duplicates the number into a line that adds new info:
+              "you're better than X% of comparable candidates". This
+              is what users actually want from the cohort comparison. */}
+          {typeof data.percentile === "number" && (
+            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "12px 0 0" }}>
+              <span style={{ color: t.coal, fontWeight: 600, fontFamily: f.serif, fontSize: 16 }}>Top {100 - data.percentile}%</span>{" "}
+              of {data.level} {data.role.split(" ").slice(0, 2).join(" ")} candidates targeting {data.company}.
+            </p>
+          )}
         </div>
 
         {/* Verdict + strengths/improvements column */}
@@ -458,7 +654,7 @@ function HeroSection({ data }: { data: InterviewResultData }) {
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          <div className="ir-strengths-improvements" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
             <div>
               <div style={{ fontFamily: f.mono, fontSize: 11, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
                 Top Strengths
@@ -595,15 +791,15 @@ function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: 
           </span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
+      <div className="ir-skills-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {skills.map((s) => {
             const pct = (s.score / max) * 100;
             const avgPct = s.roleAvg ? (s.roleAvg / max) * 100 : null;
             const delta = s.roleAvg ? s.score - s.roleAvg : null;
             return (
-              <div key={s.name} style={{ display: "grid", gridTemplateColumns: "180px 1fr 60px 50px", gap: 14, alignItems: "center" }}>
-                <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{s.name}</span>
+              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: "180px 1fr 60px 50px", gap: 14, alignItems: "center" }}>
+                <span className="ir-skill-name" style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{s.name}</span>
                 <div className="ir-skill-bar-wrap" style={{ background: t.line }}>
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
                   <div
@@ -617,10 +813,11 @@ function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: 
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} />
                   )}
                 </div>
-                <span style={{ fontFamily: f.mono, fontSize: 14, color: t.coal, textAlign: "right", fontWeight: 600 }}>
+                <span className="ir-skill-score" style={{ fontFamily: f.mono, fontSize: 14, color: t.coal, textAlign: "right", fontWeight: 600 }}>
                   {s.score}
                 </span>
                 <span
+                  className="ir-skill-delta"
                   style={{
                     fontFamily: f.mono,
                     fontSize: 12,
@@ -728,51 +925,181 @@ function HighlightLegend() {
   );
 }
 
+/** Render a single answer body — handles plain string + highlighted
+ *  spans the same way. Used for the user's answer, the AI-restructured
+ *  version, and the top-performer exemplar. */
+function AnswerBody({
+  spans,
+  bg,
+  border,
+}: {
+  spans: AnswerSpan[];
+  bg?: string;
+  border?: string;
+}) {
+  return (
+    <div
+      style={{
+        background: bg ?? t.creamSoft,
+        border: `1px solid ${border ?? t.line}`,
+        borderRadius: 12,
+        padding: "16px 18px",
+        fontFamily: f.sans,
+        fontSize: 14,
+        lineHeight: 1.7,
+        color: t.coal,
+      }}
+    >
+      {spans.map((span, i) => (
+        <span
+          key={i}
+          className={
+            span.highlight === "filler" ? "ir-highlight-filler"
+            : span.highlight === "hedge" ? "ir-highlight-hedge"
+            : span.highlight === "quantified" ? "ir-highlight-quant"
+            : span.highlight === "firstPerson" ? "ir-highlight-first"
+            : undefined
+          }
+        >
+          {span.text}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function QuestionDetail({ q }: { q: Question }) {
-  const [tab, setTab] = useState<"answer" | "star" | "analysis">("answer");
+  /* Tabs now drive the LEFT column content (Answer / Restructured /
+     Top Performer). The middle (STAR + metrics) and right (coaching)
+     columns stay constant — they're about the user's answer regardless
+     of which version is being inspected. The Top Performer tab is the
+     pedagogically most valuable surface (Final Round AI's moat); we
+     render it as a distinct column so candidates can compare side-by-
+     side, not just read coaching prose. */
+  const [tab, setTab] = useState<"answer" | "restructured" | "exemplar">("answer");
+  const isStrong = q.band === "strong" || q.band === "complete";
+  const coachHeading = isStrong ? "Why it landed" : "Why it scored low";
+  const coachColor = isStrong ? t.success : t.copper;
+  const coachBg = isStrong ? "rgba(21,128,61,0.05)" : "rgba(212,179,127,0.06)";
+  const coachBorder = isStrong ? "rgba(21,128,61,0.18)" : t.copper100;
   return (
     <div style={{ padding: "0 18px 18px" }}>
-      {/* Tab strip */}
+      {/* Tab strip — Answer / Restructured / Top Performer */}
       <div role="tablist" aria-label="Per-question detail" style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16 }}>
-        <button type="button" role="tab" aria-selected={tab === "answer"} className="ir-tab-btn" onClick={() => setTab("answer")}>Your Answer</button>
-        <button type="button" role="tab" aria-selected={tab === "star"} className="ir-tab-btn" onClick={() => setTab("star")}>Restructured (STAR)</button>
-        <button type="button" role="tab" aria-selected={tab === "analysis"} className="ir-tab-btn" onClick={() => setTab("analysis")}>Analysis</button>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 18 }}>
-        {/* Answer column */}
-        <div>
-          <div
+        <button type="button" role="tab" aria-selected={tab === "answer"} className="ir-tab-btn" onClick={() => setTab("answer")}>
+          Your Answer
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "restructured"}
+          className="ir-tab-btn"
+          onClick={() => setTab("restructured")}
+          disabled={!q.restructured}
+          style={!q.restructured ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
+        >
+          Restructured (STAR)
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "exemplar"}
+          className="ir-tab-btn"
+          onClick={() => setTab("exemplar")}
+          disabled={!q.topPerformerAnswer}
+          style={!q.topPerformerAnswer ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
+        >
+          Top Performer Answer
+          <span
             style={{
-              background: t.creamSoft,
-              border: `1px solid ${t.line}`,
-              borderRadius: 12,
-              padding: "16px 18px",
-              fontFamily: f.sans,
-              fontSize: 14,
-              lineHeight: 1.7,
-              color: t.coal,
+              marginLeft: 6,
+              padding: "1px 6px",
+              borderRadius: 999,
+              background: t.copperSoft,
+              color: t.copper,
+              fontFamily: f.mono,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
             }}
           >
-            {q.answer.map((span, i) => (
-              <span
-                key={i}
-                className={
-                  span.highlight === "filler" ? "ir-highlight-filler"
-                  : span.highlight === "hedge" ? "ir-highlight-hedge"
-                  : span.highlight === "quantified" ? "ir-highlight-quant"
-                  : span.highlight === "firstPerson" ? "ir-highlight-first"
-                  : undefined
-                }
-              >
-                {span.text}
-              </span>
-            ))}
-          </div>
-          <HighlightLegend />
+            EXEMPLAR
+          </span>
+        </button>
+      </div>
+
+      <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 18 }}>
+        {/* Answer column — content driven by selected tab. The exemplar
+            tab has a distinct frame (sage tint + corner badge) so the
+            user's eye knows this isn't their own answer. */}
+        <div>
+          {tab === "answer" && (
+            <>
+              <AnswerBody spans={q.answer} />
+              <HighlightLegend />
+            </>
+          )}
+          {tab === "restructured" && q.restructured && (
+            <>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    padding: "3px 8px",
+                    borderRadius: 999,
+                    background: t.indigo100,
+                    color: t.indigo,
+                    fontFamily: f.mono,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  AI-RESTRUCTURED
+                </span>
+                <AnswerBody spans={q.restructured} bg={t.white} border={t.line} />
+              </div>
+              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
+                Same content as your answer, reorganized into clean STAR. Save this as your reference version.
+              </p>
+            </>
+          )}
+          {tab === "exemplar" && q.topPerformerAnswer && (
+            <>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    padding: "3px 8px",
+                    borderRadius: 999,
+                    background: "rgba(21,128,61,0.10)",
+                    color: t.success,
+                    fontFamily: f.mono,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  EXEMPLAR
+                </span>
+                <AnswerBody
+                  spans={q.topPerformerAnswer}
+                  bg="rgba(21,128,61,0.04)"
+                  border="rgba(21,128,61,0.20)"
+                />
+              </div>
+              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
+                What an L4-equivalent candidate at this company would say. Use it as a reference shape, not a script — the goal is to internalize the structure.
+              </p>
+            </>
+          )}
         </div>
 
-        {/* STAR + metrics column */}
+        {/* STAR + metrics column — invariant across tabs */}
         <div
           style={{
             background: t.white,
@@ -806,11 +1133,14 @@ function QuestionDetail({ q }: { q: Question }) {
           </dl>
         </div>
 
-        {/* Coaching column */}
+        {/* Coaching column — heading flips by band so high-scoring
+            questions get a "why it landed + how to keep it" treatment
+            instead of repeating "why it scored low" against a green
+            score. Sage tint when strong, copper tint when weak. */}
         <div
           style={{
-            background: "rgba(212, 179, 127, 0.06)",
-            border: `1px solid ${t.copper100}`,
+            background: coachBg,
+            border: `1px solid ${coachBorder}`,
             borderRadius: 12,
             padding: "16px 18px",
             display: "flex",
@@ -818,17 +1148,23 @@ function QuestionDetail({ q }: { q: Question }) {
             gap: 12,
           }}
         >
-          <div style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
-            Why it scored low
+          <div style={{ fontFamily: f.mono, fontSize: 11, color: coachColor, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
+            {coachHeading}
           </div>
           <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55, margin: 0, flex: 1 }}>
             {q.whyScored}
           </p>
           <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start" }}>
-            Try this question again
+            {isStrong ? "Save to Notebook" : "Try this question again"}
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15A9 9 0 1 1 5.64 5.64L1 10" />
+              {isStrong ? (
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              ) : (
+                <>
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15A9 9 0 1 1 5.64 5.64L1 10" />
+                </>
+              )}
             </svg>
           </button>
         </div>
@@ -939,22 +1275,50 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
   );
 }
 
-function NextStepsSection() {
+function NextStepsSection({ daysUntilInterview }: { daysUntilInterview?: number }) {
+  /* The first card is date-aware. When the user has a scheduled
+     interview, generic "try weakest question" gives way to a date-
+     pinned prep plan ("Your interview is in 4 days — here's a 3-
+     session schedule"). Calendar feature is in production already —
+     this surface ties to it. Falls back to the generic card otherwise. */
+  const hasScheduledInterview = typeof daysUntilInterview === "number" && daysUntilInterview > 0;
+  const sessionsToFit = hasScheduledInterview
+    ? Math.min(6, Math.max(2, Math.floor((daysUntilInterview as number) * 0.6)))
+    : 0;
+
+  const firstCard = hasScheduledInterview
+    ? {
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        ),
+        iconBg: "rgba(196,112,90,0.10)",
+        iconColor: t.error,
+        title: `Build your ${daysUntilInterview}-day prep plan`,
+        desc: `Your interview is ${daysUntilInterview} days away. Schedule ${sessionsToFit} focused sessions on your weakest skill.`,
+        cta: "Schedule now",
+      }
+    : {
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="6" />
+            <circle cx="12" cy="12" r="2" />
+          </svg>
+        ),
+        iconBg: "rgba(196,112,90,0.10)",
+        iconColor: t.error,
+        title: "Try your weakest question again",
+        desc: "Improve your answer for Q1 and see your score go up.",
+        cta: "Retry now",
+      };
+
   const cards = [
-    {
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" />
-          <circle cx="12" cy="12" r="6" />
-          <circle cx="12" cy="12" r="2" />
-        </svg>
-      ),
-      iconBg: "rgba(196,112,90,0.10)",
-      iconColor: t.error,
-      title: "Try your weakest question again",
-      desc: "Improve your answer for Q1 and see your score go up.",
-      cta: "Retry now",
-    },
+    firstCard,
     {
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -994,7 +1358,7 @@ function NextStepsSection() {
       <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 18px", letterSpacing: "-0.01em" }}>
         Recommended Next Steps
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div className="ir-next-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         {cards.map((c) => (
           <div
             key={c.title}
@@ -1057,37 +1421,96 @@ function NextStepsSection() {
 }
 
 function FooterSection() {
+  /* The thumbs are direction-only. The follow-up tag row appears
+     after a thumb-down so we can capture WHY (too harsh / too
+     generous / vague / not actionable) — the calibration team
+     needs that signal more than a binary helpful/not vote. */
+  const [thumb, setThumb] = useState<"up" | "down" | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
+  const reasons = thumb === "down"
+    ? ["Score felt too harsh", "Score felt too generous", "Feedback was vague", "Wrong about my answer"]
+    : ["The score felt fair", "Coaching was specific", "I'll try the retry CTA"];
   return (
     <footer
       style={{
         display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
+        flexDirection: "column",
+        gap: 10,
         padding: "8px 4px",
-        flexWrap: "wrap",
-        gap: 12,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
-          <polyline points="9 12 11 14 15 10" />
-        </svg>
-        Your data is private and secure.
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-        Was this report helpful?
-        <button type="button" className="ir-thumb-btn" aria-label="Helpful">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+            <polyline points="9 12 11 14 15 10" />
           </svg>
-        </button>
-        <button type="button" className="ir-thumb-btn" aria-label="Not helpful">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
-          </svg>
-        </button>
+          Your data is private and secure.
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+          Was this report helpful?
+          <button
+            type="button"
+            className={`ir-thumb-btn${thumb === "up" ? " active" : ""}`}
+            aria-label="Helpful"
+            aria-pressed={thumb === "up"}
+            onClick={() => { setThumb(thumb === "up" ? null : "up"); setReason(null); }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`ir-thumb-btn${thumb === "down" ? " active" : ""}`}
+            aria-label="Not helpful"
+            aria-pressed={thumb === "down"}
+            onClick={() => { setThumb(thumb === "down" ? null : "down"); setReason(null); }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+            </svg>
+          </button>
+        </div>
       </div>
+      {/* Reason tag row — only shown after a thumb is selected so we
+          don't waste the user's attention on a default-state survey. */}
+      {thumb && (
+        <div
+          className="ir-feedback-row"
+          role="group"
+          aria-label="What was off?"
+          style={{ justifyContent: "flex-end", paddingTop: 4 }}
+        >
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+            {thumb === "down" ? "What was off?" : "What worked?"}
+          </span>
+          {reasons.map((r) => (
+            <button
+              key={r}
+              type="button"
+              className={`ir-feedback-tag${reason === r ? " active" : ""}`}
+              aria-pressed={reason === r}
+              onClick={() => setReason(reason === r ? null : r)}
+            >
+              {r}
+            </button>
+          ))}
+          {reason && (
+            <span style={{ fontFamily: f.sans, fontSize: 11, color: t.success, fontWeight: 500 }}>
+              ✓ Thanks — recorded
+            </span>
+          )}
+        </div>
+      )}
     </footer>
   );
 }
@@ -1126,7 +1549,7 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
           <CoreMetricsSection metrics={data.metrics} />
           <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
           <PerQuestionSection questions={data.questions} />
-          <NextStepsSection />
+          <NextStepsSection daysUntilInterview={data.daysUntilInterview} />
           <FooterSection />
         </main>
       </div>

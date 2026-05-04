@@ -155,3 +155,63 @@ export const InterviewResultNoHire: TempoStoryboard = {
   name: "4. No Hire — score 38",
   layout: { x: 1490, y: 2450, width: 1440, height: 2400 },
 };
+
+/* ── Salary-negotiation context ──────────────────────────────────────
+   The negotiation interview type has a separate evaluation rubric in
+   production (anchor strength, BATNA articulation, concession rate).
+   Storyboard #5 demonstrates how the same report shape carries the
+   negotiation-specific metrics + skills without breaking layout —
+   labels and skill names change; structure does not. */
+
+const NEGOTIATION: InterviewResultData = {
+  ...DEFAULT_RESULT,
+  overallScore: 64,
+  verdict: "leanHire",
+  scoreDelta: 6,
+  percentile: 54,
+  recentScores: [50, 56, 58, 64],
+  readiness: { pct: 64, etaWeeks: 1 },
+  daysUntilInterview: 5,
+  role: "Senior PM (Salary Negotiation)",
+  level: "L5",
+  difficulty: "Hard",
+  aiVerdict:
+    "You held your anchor well and articulated trade-offs clearly. Practice deflecting the budget question without conceding, and tighten your BATNA framing — those are the two moves that close the L4-to-L5 negotiation gap.",
+  strengths: [
+    "Anchored at 32 LPA without flinching when challenged",
+    "Articulated impact in measurable terms (3 hires, 4× pipeline)",
+    "Held silence after the counter-offer landed",
+  ],
+  improvements: [
+    "Deflect 'what's your current CTC?' instead of disclosing",
+    "Tighten BATNA framing — current offer comparison was vague",
+    "Stop using 'I'd be open to…' — concedes negotiating room",
+  ],
+  metrics: [
+    { label: "Anchor strength", value: 78, unit: "/100", targetLabel: "Target 70+", band: "good" },
+    { label: "Concession rate", value: 12, unit: "%", targetLabel: "Target <15%", band: "good" },
+    { label: "Silence held (sec)", value: 4.2, targetLabel: "Target 3+", band: "good" },
+    { label: "Disclosure leaks", value: 2, targetLabel: "Target 0", band: "needsWork" },
+  ],
+  skills: [
+    { name: "Anchor Discipline", score: 78, roleAvg: 62 },
+    { name: "BATNA Framing", score: 58, roleAvg: 64 },
+    { name: "Pushback Handling", score: 70, roleAvg: 60 },
+    { name: "Trade-off Articulation", score: 72, roleAvg: 64 },
+    { name: "Silence Tolerance", score: 65, roleAvg: 50 },
+  ],
+  weakestSkill: {
+    name: "BATNA Framing",
+    tip: "Lead with a concrete alternative ('my current offer is X at Y') before negotiating — vague BATNAs collapse under direct pressure.",
+  },
+};
+
+export const InterviewResultNegotiation: TempoStoryboard = {
+  render: () => (
+    <CanvasProviders>
+      <InterviewResult data={NEGOTIATION} />
+    </CanvasProviders>
+  ),
+  name: "5. Salary negotiation — score 64",
+  layout: { x: 0, y: 4900, width: 1440, height: 2400 },
+};
