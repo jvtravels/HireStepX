@@ -5,7 +5,7 @@ import {
   StatusToasts, PanelAvatarStage,
   CompletionCard, MicroFeedbackPanel,
   TranscriptPanel, EndModal, EvaluatingOverlay,
-  DealSummaryCard, AnnotatedReplayPanel, NegotiationLiveDashboard,
+  DealSummaryCard, AnnotatedReplayPanel,
   SaveToast, RepeatButton, MicQuietBanner, ReconnectingOverlay,
   PaceMeter, InterviewCoachmarks,
 } from "./InterviewPanels";
@@ -733,7 +733,6 @@ function InterviewInner() {
     ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
     isSalaryNegotiation, negotiationBand, negotiationStyle,
-    targetSalary, highestOffer, liveNegotiationState, voiceConfidence,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
     setShowTranscript, setShowEndModal,
@@ -986,17 +985,10 @@ function InterviewInner() {
           </div>
         )}
 
-        {/* Salary-negotiation live dashboard slots above the action zone */}
-        {isSalaryNegotiation && liveNegotiationState && phase !== "done" && (
-          <NegotiationLiveDashboard
-            liveState={liveNegotiationState}
-            negotiationBand={negotiationBand}
-            highestOffer={highestOffer}
-            targetSalary={targetSalary}
-            voiceConfidence={voiceConfidence}
-            negotiationStyle={negotiationStyle}
-          />
-        )}
+        {/* NegotiationLiveDashboard removed per user feedback — the
+            phase / leverage / topics-discussed strip turned the
+            interview into a coaching surface and broke immersion. The
+            same signals are surfaced post-session in the report. */}
 
         {/* Action zone — listening: canvas composition.
             Renders the live STT transcript card, type-mode textarea
