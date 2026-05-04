@@ -261,13 +261,20 @@ export default function ComingSoon() {
         @media (max-width: 760px) {
           .cs-hero h1 { font-size: clamp(1.75rem, 8vw, 2.4rem); white-space: normal; text-wrap: balance; }
           .cs-subtitle { font-size: 15px; }
-          .cs-main { padding: 32px 24px 56px; }
+          .cs-main { padding: 32px 24px 40px; }
           .cs-topbar { padding: 20px 24px; }
+          /* Tighten the gap between the hero microcopy and the
+             feature tiles — the desktop 96px gap reads as a dead zone
+             on phones where the eye doesn't have to travel as far. */
+          .cs-features { margin-top: 40px !important; }
+          /* Footer was 24px 48px which left enormous whitespace under
+             "Made in Mumbai 🇮🇳" / "Privacy" on phones. Bring it in. */
+          .cs-footer { padding: 16px 20px !important; }
         }
         @media (max-width: 600px) {
           .cs-form { flex-direction: column; }
-          .cs-features { grid-template-columns: 1fr; }
-          .cs-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+          .cs-features { grid-template-columns: 1fr; gap: 12px; margin-top: 32px !important; }
+          .cs-footer { flex-direction: row; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px !important; }
         }
 
         @media (prefers-reduced-motion: reduce) {
