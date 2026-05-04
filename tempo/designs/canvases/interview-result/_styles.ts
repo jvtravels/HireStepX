@@ -91,6 +91,8 @@ export const INTERVIEW_RESULT_STYLES = `
     .ir-skill-row .ir-skill-score { grid-area: score; }
     .ir-skill-row .ir-skill-delta { grid-area: delta; }
     .ir-pq-detail-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+    /* Metrics strip stays horizontal but allows tighter wrap on phones. */
+    .ir-pq-metrics-strip { gap: 12px !important; padding: 10px 12px !important; }
     .ir-next-steps-grid { grid-template-columns: 1fr !important; }
     .ir-q-trigger-band { display: none !important; }
     .ir-pill-bar { gap: 6px !important; }
@@ -237,4 +239,261 @@ export const INTERVIEW_RESULT_STYLES = `
     height: 1px;
     background: #EBE5D2;
   }
+
+  /* ─── Calibration banner ───
+     Sits under the verdict pill. Single-line context for what
+     "Hire" actually means at this company/level — turns the abstract
+     verdict into a calibrated rubric users can defend. */
+  .ir-calibration {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(49,46,129,0.05);
+    border: 1px solid rgba(49,46,129,0.12);
+    border-radius: 8px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 12px;
+    color: #312E81;
+    line-height: 1.4;
+  }
+  .ir-calibration-bands {
+    color: #6E6759;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* ─── Score-confidence chip ───
+     Conditional. Only fires when scoreConfidence isn't "high" so users
+     understand the LLM is hedging on this particular session. Sits
+     adjacent to the verdict pill, copper-tinted to read as caution. */
+  .ir-confidence-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(180,83,9,0.08);
+    color: #B45309;
+    border: 1px dashed rgba(180,83,9,0.40);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ─── Trend strip ───
+     One-line cross-session deltas between hero and core metrics.
+     Renders only when priorSessionCount >= 3. Gives users a "are
+     things getting better?" answer without scrolling. */
+  .ir-trend-strip {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 22px;
+    background: linear-gradient(90deg, rgba(49,46,129,0.04), rgba(212,179,127,0.04));
+    border: 1px solid #EBE5D2;
+    border-radius: 12px;
+    flex-wrap: wrap;
+  }
+  .ir-trend-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #B45309;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .ir-trend-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 13px;
+    color: #2A241B;
+  }
+  .ir-trend-item-label { color: #6E6759; font-size: 12px; }
+  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ir-trend-delta-flat { color: #A39C8B; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  /* ─── Per-Q inline pills (frequency + length verdict) ─── */
+  .ir-q-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: #FFFFFF;
+    border: 1px solid #EBE5D2;
+    color: #6E6759;
+  }
+  .ir-q-meta-pill.too-short  { color: #B91C1C; border-color: rgba(196,112,90,0.30); background: rgba(196,112,90,0.06); }
+  .ir-q-meta-pill.too-long   { color: #B45309; border-color: rgba(180,83,9,0.30);  background: rgba(180,83,9,0.06); }
+  .ir-q-meta-pill.just-right { color: #15803D; border-color: rgba(21,128,61,0.30); background: rgba(21,128,61,0.06); }
+  .ir-q-meta-pill.high-freq  { color: #B45309; border-color: rgba(180,83,9,0.30);  background: rgba(180,83,9,0.06); }
+
+  /* Red-flag inline badge (count, on the trigger row) */
+  .ir-q-redflag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(196,112,90,0.10);
+    color: #B91C1C;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* Red-flag list inside the expanded panel (coach column) */
+  .ir-redflag-list { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 6px; }
+  .ir-redflag-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 8px 10px;
+    background: rgba(196,112,90,0.05);
+    border-left: 2px solid #B91C1C;
+    border-radius: 4px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #2A241B;
+  }
+  .ir-redflag-item-title { color: #B91C1C; font-weight: 600; }
+  .ir-redflag-item-quote { color: #6E6759; font-style: italic; display: block; margin-top: 2px; }
+
+  /* Likely follow-up callout (coach column, weak/partial only) */
+  .ir-likely-followup {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: rgba(49,46,129,0.05);
+    border: 1px solid rgba(49,46,129,0.15);
+    border-radius: 8px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 12px;
+    color: #312E81;
+    line-height: 1.5;
+  }
+  .ir-likely-followup-eyebrow {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    color: #312E81;
+  }
+
+  /* What-makes-it-strong list (under exemplar tab) */
+  .ir-strong-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; }
+  .ir-strong-list-item {
+    display: flex; gap: 8px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 13px;
+    color: #2A241B;
+    line-height: 1.5;
+  }
+  .ir-strong-list-marker {
+    flex-shrink: 0;
+    margin-top: 6px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #15803D;
+  }
+
+  /* ─── Coach's Notes section (cross-session aggregator) ─── */
+  .ir-coach-notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .ir-coach-note-card {
+    background: #FAF7F0;
+    border: 1px solid #EBE5D2;
+    border-left: 3px solid #B45309;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .ir-coach-note-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: #B45309;
+    margin-bottom: 6px;
+  }
+  .ir-coach-note-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 16px;
+    color: #2A241B;
+    line-height: 1.3;
+    margin: 0 0 6px;
+  }
+  .ir-coach-note-body {
+    font-family: 'Satoshi', sans-serif;
+    font-size: 13px;
+    color: #6E6759;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .ir-coach-note-card.regression { border-left-color: #B91C1C; }
+  .ir-coach-note-card.regression .ir-coach-note-eyebrow { color: #B91C1C; }
+  .ir-coach-note-card.persistent { border-left-color: #B45309; }
+  .ir-coach-note-card.story-reuse { border-left-color: #312E81; }
+  .ir-coach-note-card.story-reuse .ir-coach-note-eyebrow { color: #312E81; }
+  .ir-coach-note-card.blind-spot { border-left-color: #A39C8B; }
+  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #6E6759; }
+
+  /* ─── Thought-bubble timeline (collapsed by default) ─── */
+  .ir-thought-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px dashed #D6CDB5;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 12px;
+    color: #6E6759;
+    cursor: pointer;
+    transition: border-color 160ms, color 160ms;
+  }
+  .ir-thought-toggle:hover { border-color: #312E81; color: #312E81; }
+  .ir-thought-track {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #EBE5D2;
+    margin-top: 12px;
+  }
+  .ir-thought-seg-engaged   { background: rgba(21,128,61,0.40); }
+  .ir-thought-seg-drifting  { background: rgba(212,179,127,0.55); }
+  .ir-thought-seg-concerned { background: rgba(196,112,90,0.50); }
+  .ir-thought-legend {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 10px;
+    font-family: 'Satoshi', sans-serif;
+    font-size: 11px;
+    color: #6E6759;
+  }
+  .ir-thought-legend-swatch {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: -2px;
+  }
+
+  /* ─── Anchor scroll spacing for inline jumps from wins/fixes ─── */
+  .ir-q-anchor { scroll-margin-top: 80px; }
 `;

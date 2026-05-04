@@ -61,6 +61,27 @@ export interface AnswerSpan {
   highlight?: HighlightKind;
 }
 
+/** Red-flag types mirror the production SessionReportRedFlagType union.
+ *  Surfacing these inline on the question card (count badge) and in the
+ *  expanded coach column (titled list with quote) is the highest-signal
+ *  diagnosis we can give — these are the patterns hiring managers
+ *  actually flag in debriefs. */
+export type RedFlagType =
+  | "blame" | "missing_result" | "we_without_i"
+  | "scope_drift" | "contradiction" | "vague";
+
+export interface RedFlag {
+  type: RedFlagType;
+  severity: "high" | "medium" | "low";
+  title: string;
+  explanation: string;
+  /** Verbatim slice of the candidate's answer that triggered the flag.
+   *  Concrete evidence beats abstract critique 10:1. */
+  quote?: string;
+}
+
+export type LengthVerdict = "tooShort" | "justRight" | "tooLong";
+
 export interface Question {
   index: number;
   text: string;
@@ -75,6 +96,10 @@ export interface Question {
    *  candidate at this company would say. Pedagogically the most
    *  valuable column; surfaces side-by-side with the user's answer. */
   topPerformerAnswer?: AnswerSpan[];
+  /** 2-3 short bullets explaining what makes the exemplar strong.
+   *  Renders under the exemplar tab so the user has a decoder for
+   *  what to pattern-match — not just admire the prose. */
+  whatMakesItStrong?: string[];
   star: { situation: boolean; task: boolean; action: boolean; result: boolean; learning: boolean };
   metrics: { wordCount: number; responseSec: number; firstPersonRatioPct: number; quantificationCount: number };
   /** Coaching note — framing flips with band. Weak/partial reads as
@@ -83,6 +108,62 @@ export interface Question {
    *  heading from band so high-scoring questions also get an
    *  actionable replication signal. */
   whyScored: string;
+  /** Question-level red flags (blame, vagueness, scope drift, etc.).
+   *  Renders as a count badge on the trigger and a titled list with
+   *  quote in the expanded panel. Empty / undefined = no flags. */
+  redFlags?: RedFlag[];
+  /** Length verdict — too short / just right / too long. Tied to band:
+   *  60-word answers usually score weak regardless of content. */
+  lengthVerdict?: LengthVerdict;
+  /** Frequency this question (or its template) is asked at this
+   *  company/role/level. Drives a "high-frequency" pill on the
+   *  trigger so users prioritize practice. */
+  frequencyPct?: number;
+  frequencyNote?: string;
+  /** Likely follow-up the interviewer would press on — only renders
+   *  on weak/partial bands in the coach column. Pre-empts the
+   *  question the user will get asked next. */
+  likelyFollowUp?: string;
+}
+
+export interface CalibrationBand {
+  label: string;
+  minScore: number;
+}
+
+export interface Calibration {
+  /** "Google L4", "Stripe Senior", etc. Surfaces in the banner
+   *  to anchor what "Hire" means in this context. */
+  companyLabel: string;
+  /** One-line calibration note — typically explains the role-bar
+   *  shift relative to the platform default. */
+  note?: string;
+  bands: CalibrationBand[];
+}
+
+export interface CrossSessionInsight {
+  kind: "regression" | "persistent" | "improvement";
+  title: string;
+  body: string;
+}
+
+export interface StoryReuseFinding {
+  storyLabel: string;
+  body: string;
+}
+
+export interface BlindSpot {
+  title: string;
+  body: string;
+}
+
+export type ThoughtBubbleState = "engaged" | "drifting" | "concerned";
+
+export interface ThoughtBubbleSegment {
+  state: ThoughtBubbleState;
+  /** % of total session duration this state covered. Sum across
+   *  segments should be 100. */
+  pct: number;
 }
 
 export interface InterviewResultData {
@@ -115,6 +196,35 @@ export interface InterviewResultData {
   skills: Skill[];
   weakestSkill: { name: string; tip: string };
   questions: Question[];
+  /** Score confidence — when the LLM hedges on a session ("medium" /
+   *  "low"), we surface a chip next to the verdict so users know to
+   *  weight it accordingly. "high" or undefined = no chip. */
+  scoreConfidence?: "high" | "medium" | "low";
+  scoreConfidenceNote?: string;
+  /** Calibration — anchors what "Hire" / "Lean Hire" / etc. means at
+   *  this specific company+level. Single-line banner under the
+   *  verdict pill. */
+  calibration?: Calibration;
+  /** Number of prior sessions in this role context. ≥3 unlocks the
+   *  trend-strip section. */
+  priorSessionCount?: number;
+  /** Cross-session insights — regressions, persistent gaps,
+   *  improvements. Aggregated into the Coach's Notes section. */
+  crossSessionInsights?: CrossSessionInsight[];
+  /** Story reuse — when the user leans on the same anecdote across
+   *  sessions, the coach flags it ("you've used the dashboard story
+   *  in 3 of 4 sessions"). */
+  storyReuseFindings?: StoryReuseFinding[];
+  /** Blind spots — topics the user hasn't been pressed on yet but
+   *  should expect at this role bar. */
+  blindSpots?: BlindSpot[];
+  /** Thought-bubble timeline — opt-in horizontal track showing
+   *  interviewer-state across the session. Collapsed by default. */
+  thoughtBubble?: ThoughtBubbleSegment[];
+  /** Granular readiness sentence — overrides the default 5-stat block
+   *  with a one-line "X hours over Y sessions" estimate. Higher signal
+   *  than the percentages it replaces. */
+  readinessSentence?: string;
 }
 
 /* ─── Defaults / mock ──────────────────────────────────────────────── */
@@ -148,6 +258,8 @@ export const DEFAULT_RESULT: InterviewResultData = {
     { label: "Silence ratio", value: 18, unit: "%", targetLabel: "Target 0–20%", band: "good" },
     { label: "Pace (WPM)", value: 172, targetLabel: "Target 140–180", band: "good" },
     { label: "Energy", value: 68, unit: "/100", targetLabel: "Target 60–100", band: "good" },
+    { label: "Median latency", value: 1.8, unit: "s", targetLabel: "Target <2.0s", band: "good" },
+    { label: "Self-correction rate", value: 0.6, unit: "/min", targetLabel: "Target <1.0", band: "good" },
   ],
   skills: [
     { name: "Technical Depth", score: 78, roleAvg: 66 },
@@ -181,6 +293,26 @@ export const DEFAULT_RESULT: InterviewResultData = {
       metrics: { wordCount: 78, responseSec: 168, firstPersonRatioPct: 22, quantificationCount: 0 },
       whyScored:
         "Missing a clear result with numbers. Add measurable impact (load-time delta, complaint volume change) and one sentence on what you took away from the project.",
+      lengthVerdict: "tooShort",
+      frequencyPct: 84,
+      frequencyNote: "Asked in 84% of behavioral rounds at this level",
+      likelyFollowUp: "What would you do differently if you had to do it over again? Practitioners who blank on this have given a story without internalising the lesson.",
+      redFlags: [
+        {
+          type: "missing_result",
+          severity: "high",
+          title: "No quantified result",
+          explanation: "The answer ends without a measurable outcome. Always close with a number — load time, % change, $-impact, count.",
+          quote: "we basically changed a few things and it improved.",
+        },
+        {
+          type: "vague",
+          severity: "medium",
+          title: "Vague action description",
+          explanation: "\"Some old API\" and \"changed a few things\" lose the interviewer. Name the API, name the change.",
+          quote: "we were using some old api and it was not good.",
+        },
+      ],
       restructured: [
         { text: "At my last company, our analytics dashboard was loading in over 8 seconds and we were getting weekly complaints from operations. " },
         { text: "I was the only frontend engineer assigned, so I owned the investigation. " },
@@ -198,6 +330,11 @@ export const DEFAULT_RESULT: InterviewResultData = {
         { text: ". The trade-off I deliberately accepted: the new endpoint is slightly stale (60s TTL), which is fine for pricing but I documented it for the team. " },
         { text: "The lesson I keep coming back to: instrument before you optimize. I'd guessed it was the chart library; it was actually the data-fetch waterfall." },
       ],
+      whatMakesItStrong: [
+        "Opens with business impact (12% conversion drop), not technical preamble.",
+        "Names a deliberate trade-off (60s TTL staleness) and explains why it's acceptable.",
+        "Closes with a reusable lesson, not a generic platitude.",
+      ],
     },
     {
       index: 2,
@@ -208,6 +345,8 @@ export const DEFAULT_RESULT: InterviewResultData = {
       star: { situation: true, task: true, action: true, result: true, learning: true },
       metrics: { wordCount: 142, responseSec: 195, firstPersonRatioPct: 38, quantificationCount: 3 },
       whyScored: "Strong STAR coverage with quantified delivery outcomes.",
+      lengthVerdict: "justRight",
+      frequencyPct: 71,
     },
     {
       index: 3,
@@ -218,6 +357,18 @@ export const DEFAULT_RESULT: InterviewResultData = {
       star: { situation: true, task: true, action: true, result: false, learning: false },
       metrics: { wordCount: 96, responseSec: 145, firstPersonRatioPct: 24, quantificationCount: 1 },
       whyScored: "Story is well-told but the impact is fuzzy. Lead with the outcome, then the journey.",
+      lengthVerdict: "justRight",
+      frequencyPct: 62,
+      likelyFollowUp: "If the project failed, would you still be proud of it? Tests whether you've separated process pride from outcome pride.",
+      redFlags: [
+        {
+          type: "we_without_i",
+          severity: "medium",
+          title: "\"We\" without \"I\"",
+          explanation: "Three uses of \"we\" with no clarifying \"I owned X\". Interviewers can't grade what they can't attribute.",
+          quote: "we shipped it and we got really good feedback.",
+        },
+      ],
     },
     {
       index: 4,
@@ -228,6 +379,10 @@ export const DEFAULT_RESULT: InterviewResultData = {
       star: { situation: true, task: true, action: true, result: false, learning: true },
       metrics: { wordCount: 120, responseSec: 188, firstPersonRatioPct: 31, quantificationCount: 1 },
       whyScored: "Trade-offs were stated but not quantified. Practise giving rough numbers — RPS, latency, storage — even when estimating.",
+      lengthVerdict: "justRight",
+      frequencyPct: 92,
+      frequencyNote: "Near-universal at L4 frontend rounds",
+      likelyFollowUp: "How would your design change if the read-write ratio flipped? Common probe to test whether your trade-offs were principled or memorised.",
     },
     {
       index: 5,
@@ -238,6 +393,8 @@ export const DEFAULT_RESULT: InterviewResultData = {
       star: { situation: true, task: true, action: true, result: true, learning: false },
       metrics: { wordCount: 110, responseSec: 156, firstPersonRatioPct: 35, quantificationCount: 2 },
       whyScored: "Solid structured answer; one missing element is the learning takeaway.",
+      lengthVerdict: "justRight",
+      frequencyPct: 48,
     },
     {
       index: 6,
@@ -248,8 +405,63 @@ export const DEFAULT_RESULT: InterviewResultData = {
       star: { situation: false, task: false, action: false, result: false, learning: false },
       metrics: { wordCount: 64, responseSec: 92, firstPersonRatioPct: 18, quantificationCount: 0 },
       whyScored: "Asked thoughtful questions about team rituals and on-call. Could push further into product strategy.",
+      lengthVerdict: "justRight",
+      frequencyPct: 100,
+      frequencyNote: "Always asked — how you handle this colours the whole impression",
     },
   ],
+  scoreConfidence: "medium",
+  scoreConfidenceNote: "Two short answers limit signal — score may move ±5 with longer responses",
+  calibration: {
+    companyLabel: "Google L4 Frontend",
+    note: "L4 bar at Google trends ~6 points stricter than the platform default",
+    bands: [
+      { label: "Strong Hire", minScore: 85 },
+      { label: "Hire", minScore: 72 },
+      { label: "Lean Hire", minScore: 60 },
+    ],
+  },
+  priorSessionCount: 4,
+  crossSessionInsights: [
+    {
+      kind: "improvement",
+      title: "Filler rate down 38% over 4 sessions",
+      body: "From 6.8/min in your first session to 4.2/min today. Keep the same warm-up reading aloud.",
+    },
+    {
+      kind: "persistent",
+      title: "Quantification still your weakest signal",
+      body: "Across 4 sessions, only 22% of your answers close with a number. This is the single change that lifts you from Hire to Strong Hire.",
+    },
+    {
+      kind: "regression",
+      title: "First-person ratio dropped on Q1, Q3",
+      body: "You used \"we\" 11 times today vs 4 in session #3. Watch the pronouns — they're the easiest leak in behavioural rounds.",
+    },
+  ],
+  storyReuseFindings: [
+    {
+      storyLabel: "Dashboard performance fix",
+      body: "Used in 3 of your last 4 sessions. Strong story, but pair it with a second one (system migration, cross-team negotiation) before your real round.",
+    },
+  ],
+  blindSpots: [
+    {
+      title: "Conflict-with-manager scenarios",
+      body: "Not asked yet, but trends 64% at Google L4. Prepare one short story before your scheduled interview.",
+    },
+    {
+      title: "Tech-stack opinion questions",
+      body: "Expect \"why React over Vue?\" — be ready to defend the choice without disparaging alternatives.",
+    },
+  ],
+  thoughtBubble: [
+    { state: "engaged", pct: 58 },
+    { state: "drifting", pct: 28 },
+    { state: "concerned", pct: 14 },
+  ],
+  readinessSentence:
+    "~12 hours over ~6 sessions to reach the Hire band consistently — medium confidence based on your 4-session pattern.",
 };
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
@@ -397,7 +609,8 @@ function JumpNav() {
     { num: "02", label: "Delivery", href: "#ir-section-metrics" },
     { num: "03", label: "Skills", href: "#ir-section-skills" },
     { num: "04", label: "Questions", href: "#ir-section-questions" },
-    { num: "05", label: "Next Steps", href: "#ir-section-next" },
+    { num: "05", label: "Coach Notes", href: "#ir-section-coach-notes" },
+    { num: "06", label: "Next Steps", href: "#ir-section-next" },
   ];
   return (
     <nav aria-label="Jump to section" className="ir-jump-nav">
@@ -489,6 +702,89 @@ function ReadinessHeadline({
         </span>
       )}
     </div>
+  );
+}
+
+/** Calibration banner — single-line context for what the verdict
+ *  actually means at this company/level. Anchors abstract bands
+ *  ("Hire") in concrete score thresholds users can defend in a
+ *  conversation. Renders inline under the verdict pill. */
+function CalibrationBanner({ calibration }: { calibration: Calibration }) {
+  return (
+    <span className="ir-calibration" role="note" aria-label="Calibration context">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 2v20M2 12h20" />
+      </svg>
+      <span>
+        Calibrated to <strong style={{ fontWeight: 600 }}>{calibration.companyLabel}</strong>
+      </span>
+      <span className="ir-calibration-bands">
+        {calibration.bands.map((b, i) => (
+          <span key={b.label}>
+            {i > 0 ? " · " : " — "}
+            {b.label} ≥ {b.minScore}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+/** Score-confidence chip — only fires when LLM confidence is medium
+ *  or low. Tells users "this score is hedged" so they don't over-
+ *  index on a single session. */
+function ScoreConfidenceChip({ level, note }: { level: "medium" | "low"; note?: string }) {
+  return (
+    <span className="ir-confidence-chip" title={note} aria-label={`Score confidence: ${level}${note ? ". " + note : ""}`}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="13" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      {level === "low" ? "Low confidence" : "Medium confidence"}
+    </span>
+  );
+}
+
+/** Trend strip — cross-session deltas in a single line. Renders only
+ *  when priorSessionCount ≥ 3 (need at least 3 prior + this = 4 for
+ *  trend to be meaningful). Sits between Hero and Core Metrics so
+ *  the "are things getting better?" answer comes immediately after
+ *  the headline score. */
+function TrendStrip({
+  priorSessionCount,
+  insights,
+}: {
+  priorSessionCount: number;
+  insights: CrossSessionInsight[];
+}) {
+  // Pull the most signal-rich items: 1 improvement + 1 persistent + 1 regression
+  const improvements = insights.filter((i) => i.kind === "improvement").slice(0, 1);
+  const persistent = insights.filter((i) => i.kind === "persistent").slice(0, 1);
+  const regressions = insights.filter((i) => i.kind === "regression").slice(0, 1);
+  const items = [...improvements, ...persistent, ...regressions];
+  if (items.length === 0) return null;
+  return (
+    <section
+      aria-label="Cross-session trend"
+      className="ir-trend-strip"
+      style={{ scrollMarginTop: 72 }}
+    >
+      <span className="ir-trend-eyebrow">Across {priorSessionCount + 1} sessions</span>
+      {items.map((it) => {
+        const cls =
+          it.kind === "improvement" ? "ir-trend-delta-up"
+          : it.kind === "regression" ? "ir-trend-delta-down"
+          : "ir-trend-delta-flat";
+        const arrow = it.kind === "improvement" ? "↑" : it.kind === "regression" ? "↓" : "→";
+        return (
+          <span key={it.title} className="ir-trend-item">
+            <span className={cls}>{arrow}</span>
+            <span style={{ fontWeight: 600 }}>{it.title}</span>
+          </span>
+        );
+      })}
+    </section>
   );
 }
 
@@ -662,6 +958,9 @@ function HeroSection({ data }: { data: InterviewResultData }) {
             >
               {verdict.label}
             </span>
+            {data.scoreConfidence && data.scoreConfidence !== "high" && (
+              <ScoreConfidenceChip level={data.scoreConfidence} note={data.scoreConfidenceNote} />
+            )}
             {/* Sparkline replaces the text-only delta — shows trajectory
                 across recent sessions, not just one-back comparison.
                 Falls back to the text delta if recentScores is missing. */}
@@ -714,6 +1013,16 @@ function HeroSection({ data }: { data: InterviewResultData }) {
             <p style={{ fontFamily: f.serif, fontSize: 19, color: t.coal, lineHeight: 1.45, margin: 0 }}>
               {data.aiVerdict}
             </p>
+            {data.calibration && (
+              <div style={{ marginTop: 12 }}>
+                <CalibrationBanner calibration={data.calibration} />
+                {data.calibration.note && (
+                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, margin: "6px 0 0" }}>
+                    {data.calibration.note}.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="ir-strengths-improvements" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
@@ -1129,13 +1438,20 @@ function QuestionDetail({ q }: { q: Question }) {
         </button>
       </div>
 
-      <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 18 }}>
-        {/* Answer column — content driven by selected tab. The exemplar
-            tab has a distinct frame (sage tint + corner badge) so the
-            user's eye knows this isn't their own answer.
-            Each tab content lives inside a role="tabpanel" with id +
-            aria-labelledby wiring back to its trigger so screen
-            readers announce the relationship correctly. */}
+      {/* The previous 3-column grid (1.5fr 1fr 1fr) created severe vertical
+          imbalance: the answer column was short, the metrics column was
+          medium, and the coaching column was very tall — leaving big dead
+          whitespace on the left and right while the middle felt cramped.
+          New layout: 2 columns. Left holds the answer + STAR/metrics strip
+          stacked, right holds the coaching panel. Both columns now carry
+          comparable content density so heights align naturally. */}
+      <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18, alignItems: "start" }}>
+        {/* LEFT column — answer (tab-driven) + horizontal STAR/metrics strip
+            stacked underneath. The metrics strip used to be its own column;
+            it's a more honest fit as a footer to the answer because it
+            describes the answer. Each tab content lives inside a
+            role="tabpanel" wired to its trigger via aria-labelledby. */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div>
           {tab === "answer" && (
             <div role="tabpanel" id={`${idBase}-answer-panel`} aria-labelledby={`${idBase}-answer-tab`}>
@@ -1199,42 +1515,67 @@ function QuestionDetail({ q }: { q: Question }) {
               <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
                 What an L4-equivalent candidate at this company would say. Use it as a reference shape, not a script — the goal is to internalize the structure.
               </p>
+              {q.whatMakesItStrong && q.whatMakesItStrong.length > 0 && (
+                <>
+                  <div style={{ fontFamily: f.mono, fontSize: 11, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginTop: 14 }}>
+                    What makes it strong
+                  </div>
+                  <ul className="ir-strong-list">
+                    {q.whatMakesItStrong.map((bullet) => (
+                      <li key={bullet} className="ir-strong-list-item">
+                        <span className="ir-strong-list-marker" aria-hidden="true" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           )}
         </div>
 
-        {/* STAR + metrics column — invariant across tabs */}
+        {/* STAR + metrics — now a HORIZONTAL strip under the answer.
+            STAR chips on the left, metric tiles flowing on the right
+            with vertical dividers between them. Reads as one band of
+            quick-glance numbers describing the answer above it,
+            instead of a 200px-wide column of dt/dd rows competing for
+            visual weight with the coaching panel beside it. */}
         <div
+          className="ir-pq-metrics-strip"
           style={{
             background: t.white,
             border: `1px solid ${t.line}`,
             borderRadius: 12,
-            padding: "16px 18px",
+            padding: "12px 16px",
             display: "flex",
-            flexDirection: "column",
-            gap: 14,
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 16,
           }}
         >
-          <div style={{ display: "flex", gap: 14, justifyContent: "space-around" }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <StarChip active={q.star.situation} letter="S" label="Situation" />
             <StarChip active={q.star.task} letter="T" label="Task" />
             <StarChip active={q.star.action} letter="A" label="Action" />
             <StarChip active={q.star.result} letter="R" label="Result" />
             <StarChip active={q.star.learning} letter="L" label="Learning" />
           </div>
-          <div style={{ height: 1, background: t.line }} />
-          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "1fr auto", rowGap: 8, columnGap: 12, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-            <dt>Word Count</dt>
-            <dd style={{ margin: 0, color: t.coal, fontFamily: f.mono, fontSize: 13 }}>{q.metrics.wordCount} words</dd>
-            <dt>Response Length</dt>
-            <dd style={{ margin: 0, color: t.coal, fontFamily: f.mono, fontSize: 13 }}>{q.metrics.responseSec.toFixed(1)} sec</dd>
-            <dt>First-Person Ratio</dt>
-            <dd style={{ margin: 0, color: t.coal, fontFamily: f.mono, fontSize: 13 }}>{q.metrics.firstPersonRatioPct}%</dd>
-            <dt>Quantification Count</dt>
-            <dd style={{ margin: 0, color: q.metrics.quantificationCount === 0 ? t.error : t.coal, fontFamily: f.mono, fontSize: 13, fontWeight: 600 }}>
-              {q.metrics.quantificationCount}
-            </dd>
-          </dl>
+          <span aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: t.line }} />
+          {/* Each metric: stacked label-over-value tile. Mono numerals stay
+              prominent; small uppercase label sits quietly above. The strip
+              flex-wraps on narrower viewports so nothing truncates. */}
+          {[
+            { label: "Words", value: `${q.metrics.wordCount}`, tone: t.coal },
+            { label: "Length", value: `${q.metrics.responseSec.toFixed(1)}s`, tone: t.coal },
+            { label: "First-person", value: `${q.metrics.firstPersonRatioPct}%`, tone: t.coal },
+            { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.error : t.coal },
+          ].map((m) => (
+            <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
+              <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
+              <span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>
+            </div>
+          ))}
+        </div>
         </div>
 
         {/* Coaching column — heading flips by band so high-scoring
@@ -1255,10 +1596,34 @@ function QuestionDetail({ q }: { q: Question }) {
           <div style={{ fontFamily: f.mono, fontSize: 11, color: coachColor, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
             {coachHeading}
           </div>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55, margin: 0, flex: 1 }}>
+          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55, margin: 0 }}>
             {q.whyScored}
           </p>
-          <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start" }}>
+          {q.redFlags && q.redFlags.length > 0 && (
+            <ul className="ir-redflag-list" aria-label="Red flags">
+              {q.redFlags.map((rf) => (
+                <li key={rf.title} className="ir-redflag-item">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.error} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
+                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span style={{ flex: 1 }}>
+                    <span className="ir-redflag-item-title">{rf.title}.</span>{" "}
+                    {rf.explanation}
+                    {rf.quote && <span className="ir-redflag-item-quote">&ldquo;{rf.quote}&rdquo;</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {!isStrong && q.likelyFollowUp && (
+            <div className="ir-likely-followup">
+              <span className="ir-likely-followup-eyebrow">Likely follow-up</span>
+              {q.likelyFollowUp}
+            </div>
+          )}
+          <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start", marginTop: "auto" }}>
             {isStrong ? "Save to Notebook" : "Try this question again"}
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {isStrong ? (
@@ -1365,6 +1730,38 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
                 <span className="ir-q-trigger-text" style={{ flex: 1, fontFamily: f.sans, fontSize: 14, color: t.coal, fontWeight: open ? 600 : 500 }}>
                   {q.text}
                 </span>
+                {/* Inline meta pills — frequency / length verdict / red-flag
+                    count. These are 1-glance qualifiers that change how a
+                    user prioritises this question card. Hidden on narrow
+                    viewports where they'd cause the trigger row to wrap. */}
+                {q.frequencyPct !== undefined && q.frequencyPct >= 70 && (
+                  <span
+                    className="ir-q-meta-pill high-freq ir-q-trigger-band"
+                    title={q.frequencyNote ?? `${q.frequencyPct}% of rounds`}
+                  >
+                    {q.frequencyPct}% asked
+                  </span>
+                )}
+                {q.lengthVerdict && q.lengthVerdict !== "justRight" && (
+                  <span
+                    className={`ir-q-meta-pill ${q.lengthVerdict === "tooShort" ? "too-short" : "too-long"} ir-q-trigger-band`}
+                  >
+                    {q.lengthVerdict === "tooShort" ? "Too short" : "Too long"}
+                  </span>
+                )}
+                {q.redFlags && q.redFlags.length > 0 && (
+                  <span
+                    className="ir-q-redflag-badge ir-q-trigger-band"
+                    aria-label={`${q.redFlags.length} red flag${q.redFlags.length === 1 ? "" : "s"}`}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    {q.redFlags.length} flag{q.redFlags.length === 1 ? "" : "s"}
+                  </span>
+                )}
                 <span
                   className="ir-q-trigger-band"
                   style={{
@@ -1437,7 +1834,151 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
   );
 }
 
-function NextStepsSection({ daysUntilInterview }: { daysUntilInterview?: number }) {
+/** Coach's Notes — conditional aggregation of cross-session insights,
+ *  story-reuse findings, and blind spots. Renders nothing when none
+ *  of those data points are present (first session, single-session
+ *  view, etc.). When it does fire it gives users the "what would my
+ *  coach say if they reviewed all my sessions?" perspective that's
+ *  hard to get from a per-session report. */
+function CoachNotesSection({
+  insights,
+  storyReuse,
+  blindSpots,
+}: {
+  insights?: CrossSessionInsight[];
+  storyReuse?: StoryReuseFinding[];
+  blindSpots?: BlindSpot[];
+}) {
+  const hasInsights = insights && insights.length > 0;
+  const hasStoryReuse = storyReuse && storyReuse.length > 0;
+  const hasBlindSpots = blindSpots && blindSpots.length > 0;
+  if (!hasInsights && !hasStoryReuse && !hasBlindSpots) return null;
+  return (
+    <section
+      id="ir-section-coach-notes"
+      aria-labelledby="ir-coach-notes-heading"
+      style={{
+        background: t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: 16,
+        padding: 28,
+        boxShadow: shadows.card,
+        scrollMarginTop: 72,
+      }}
+    >
+      <SectionEyebrow num="05" label="What your coach would say" />
+      <h2
+        id="ir-coach-notes-heading"
+        style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 6px", letterSpacing: "-0.01em" }}
+      >
+        Coach&apos;s Notes
+      </h2>
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.5 }}>
+        Patterns we&apos;ve noticed across your last few sessions — the perspective a human coach would bring.
+      </p>
+      <div className="ir-coach-notes-grid">
+        {hasInsights && insights!.map((it) => (
+          <article
+            key={it.title}
+            className={`ir-coach-note-card ${it.kind === "regression" ? "regression" : "persistent"}`}
+          >
+            <div className="ir-coach-note-eyebrow">
+              {it.kind === "regression" ? "↓ Regression" : it.kind === "improvement" ? "↑ Improvement" : "Persistent gap"}
+            </div>
+            <h3 className="ir-coach-note-title">{it.title}</h3>
+            <p className="ir-coach-note-body">{it.body}</p>
+          </article>
+        ))}
+        {hasStoryReuse && storyReuse!.map((s) => (
+          <article key={s.storyLabel} className="ir-coach-note-card story-reuse">
+            <div className="ir-coach-note-eyebrow">↻ Story reuse</div>
+            <h3 className="ir-coach-note-title">{s.storyLabel}</h3>
+            <p className="ir-coach-note-body">{s.body}</p>
+          </article>
+        ))}
+        {hasBlindSpots && blindSpots!.map((b) => (
+          <article key={b.title} className="ir-coach-note-card blind-spot">
+            <div className="ir-coach-note-eyebrow">◌ Blind spot</div>
+            <h3 className="ir-coach-note-title">{b.title}</h3>
+            <p className="ir-coach-note-body">{b.body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Thought-bubble timeline — opt-in horizontal stacked bar showing
+ *  interviewer-state across the session ("engaged" / "drifting" /
+ *  "concerned"). Collapsed behind a toggle by default because it's
+ *  high-novelty / low-frequency-of-need; users who want it deeply,
+ *  expand it. We collapse the production 6-state model to 3 because
+ *  more bands wash visually at this scale. */
+function ThoughtBubbleSection({ segments }: { segments: ThoughtBubbleSegment[] }) {
+  const [open, setOpen] = useState(false);
+  if (!segments || segments.length === 0) return null;
+  const totalPct = segments.reduce((acc, s) => acc + s.pct, 0);
+  return (
+    <section
+      aria-label="Interviewer attention timeline"
+      style={{
+        background: t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: 16,
+        padding: "16px 22px",
+        boxShadow: shadows.card,
+        scrollMarginTop: 72,
+      }}
+    >
+      <button
+        type="button"
+        className="ir-thought-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+        {open ? "Hide" : "Show"} interviewer&apos;s attention timeline
+        <svg
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 200ms" }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 4px", lineHeight: 1.5 }}>
+            Modelled from latency patterns, hedging density, and your transitions. Approximate — read it as a sketch, not a transcript.
+          </p>
+          <div
+            className="ir-thought-track"
+            role="img"
+            aria-label={`Interviewer attention: ${segments.map((s) => `${s.pct}% ${s.state}`).join(", ")}`}
+          >
+            {segments.map((s, i) => (
+              <div
+                key={i}
+                className={`ir-thought-seg-${s.state}`}
+                style={{ width: `${(s.pct / Math.max(totalPct, 1)) * 100}%` }}
+                title={`${s.pct}% ${s.state}`}
+              />
+            ))}
+          </div>
+          <div className="ir-thought-legend" aria-hidden="true">
+            <span><span className="ir-thought-legend-swatch ir-thought-seg-engaged" />Engaged</span>
+            <span><span className="ir-thought-legend-swatch ir-thought-seg-drifting" />Drifting</span>
+            <span><span className="ir-thought-legend-swatch ir-thought-seg-concerned" />Concerned</span>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function NextStepsSection({ daysUntilInterview, readinessSentence }: { daysUntilInterview?: number; readinessSentence?: string }) {
   /* The first card is date-aware. When the user has a scheduled
      interview, generic "try weakest question" gives way to a date-
      pinned prep plan ("Your interview is in 4 days — here's a 3-
@@ -1520,10 +2061,25 @@ function NextStepsSection({ daysUntilInterview }: { daysUntilInterview?: number 
         scrollMarginTop: 72,
       }}
     >
-      <SectionEyebrow num="05" label="What to do now" />
-      <h2 id="ir-next-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 18px", letterSpacing: "-0.01em" }}>
+      <SectionEyebrow num="06" label="What to do now" />
+      <h2 id="ir-next-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 6px", letterSpacing: "-0.01em" }}>
         Recommended Next Steps
       </h2>
+      {readinessSentence && (
+        <p
+          style={{
+            fontFamily: f.sans,
+            fontSize: 14,
+            color: t.coal,
+            margin: "0 0 18px",
+            lineHeight: 1.55,
+            paddingLeft: 12,
+            borderLeft: `2px solid ${t.copper}`,
+          }}
+        >
+          {readinessSentence}
+        </p>
+      )}
       <div className="ir-next-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         {cards.map((c) => (
           <div
@@ -1721,10 +2277,27 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
         >
           <JumpNav />
           <HeroSection data={data} />
+          {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && data.crossSessionInsights && (
+            <TrendStrip
+              priorSessionCount={data.priorSessionCount}
+              insights={data.crossSessionInsights}
+            />
+          )}
           <CoreMetricsSection metrics={data.metrics} />
           <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
+          {data.thoughtBubble && data.thoughtBubble.length > 0 && (
+            <ThoughtBubbleSection segments={data.thoughtBubble} />
+          )}
           <PerQuestionSection questions={data.questions} />
-          <NextStepsSection daysUntilInterview={data.daysUntilInterview} />
+          <CoachNotesSection
+            insights={data.crossSessionInsights}
+            storyReuse={data.storyReuseFindings}
+            blindSpots={data.blindSpots}
+          />
+          <NextStepsSection
+            daysUntilInterview={data.daysUntilInterview}
+            readinessSentence={data.readinessSentence}
+          />
           <FooterSection />
         </main>
       </div>
