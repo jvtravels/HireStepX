@@ -432,8 +432,12 @@ function PermissionCard({
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
           {status === "requesting" && "Waiting for your permission…"}
           {isGranted && kind === "camera" && (
+            // Concrete signals beat vibe-text. Tells the user what we
+            // actually checked rather than complimenting them.
             <span style={{ color: faceLooksGood ? T.success : T.inkSoft, transition: "color 240ms ease" }}>
-              {faceLooksGood ? "You look great" : "Looking good"}
+              {faceLooksGood
+                ? "✓ Centered, well-lit, in focus"
+                : "Checking framing & lighting…"}
             </span>
           )}
           {isGranted && kind === "mic" && (
@@ -1211,7 +1215,9 @@ export default function SessionSetup() {
                       <span style={{ color: T.copper, fontSize: 12 }}>*</span>
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      Choose one area to focus on. The recommended pick for your role is highlighted.
+                      {recommendedFocus && recommendedFocus !== "Behavioral"
+                        ? "Choose one area to focus on. The recommended pick for your role is highlighted."
+                        : "Choose one area to focus on."}
                     </div>
                   </div>
                   <div

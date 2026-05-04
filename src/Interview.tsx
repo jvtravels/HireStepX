@@ -553,9 +553,10 @@ function CanvasListeningActionZone({
             maxLength={3000}
             style={{
               width: "100%", minHeight: 120, padding: "14px 16px",
-              // Instrument Serif matches the live-transcript card so the
-              // user's answer reads the same whether they spoke or typed.
-              fontFamily: ef.serif, fontSize: 16, lineHeight: 1.55, color: e.coal,
+              // Sans-serif (Satoshi/Inter) for the user's answer — typed
+              // text reads cleaner in sans, and it visually separates the
+              // candidate's voice from the AI's serif question.
+              fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
               background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
               resize: "vertical", outline: "none",
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
@@ -894,6 +895,13 @@ function InterviewInner() {
         alignItems: "center", justifyContent: "flex-start",
         gap: 22, padding: "32px 48px",
         position: "relative", overflow: "auto",
+        // Constrain reading width — on widescreens the question + controls
+        // sprawl across the whole viewport. Clamping to ~half-width
+        // (matches modern reading-research recommendations) keeps the eye
+        // tracking the question without large saccades. Mobile / narrow
+        // viewports still flow naturally because of the maxWidth ceiling
+        // (not a hard width) and the existing iv-canvas-stage media rules.
+        maxWidth: 760, margin: "0 auto", width: "100%",
       }}>
         {/* Question heading — heuristic-driven italic-copper accent.
             During phase=speaking we render plain serif because the
@@ -907,7 +915,7 @@ function InterviewInner() {
           // that path is reserved for TTS, which needs the markup intact.
           const displayText = step.aiTextDisplay ?? step.aiText;
           return (
-          <div style={{ maxWidth: 620, width: "100%" }}>
+          <div style={{ maxWidth: 720, width: "100%" }}>
             {/* Speaking: typewriter typed in sync with TTS audio.
                 Listening: static accent-split or plain heading.
                 The flicker that used to appear at phase transitions

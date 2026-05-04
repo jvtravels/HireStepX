@@ -66,6 +66,9 @@ export function sessionReportToInterviewResult(
   const role = ctx.targetRole || session.role || "Candidate";
   const level = report.calibration?.companyLabel?.split(" ").slice(-1)[0] || "—";
   const difficulty = capitalize(session.difficulty || "Standard");
+  const isNegotiation =
+    /negotiat|salary/i.test(session.type || "") ||
+    /negotiat|salary/i.test(session.focus || "");
 
   const scoreDelta = computeScoreDelta(ctx.recentScores);
   const weakestSkill = pickWeakestSkill(report.skills);
@@ -90,7 +93,7 @@ export function sessionReportToInterviewResult(
     aiVerdict: report.verdict,
     strengths: report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
-    metrics: buildMetrics(report),
+    metrics: isNegotiation ? buildNegotiationMetrics(report) : buildMetrics(report),
     skills: buildSkills(report.skills),
     weakestSkill: {
       name: weakestSkill?.name || "—",
@@ -236,6 +239,72 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       unit: "/min",
       targetLabel: "Target <1.0",
       band: bandForSelfCorrection(advancedDelivery.selfCorrectionRate),
+    },
+  ];
+}
+
+/** Negotiation-specific delivery metrics. The interview-result canvas
+ *  storyboard already showed a different metric set for negotiations
+ *  (anchor strength, concession rate, silence held, disclosure leaks).
+ *  Best-effort derivations from the candidate's transcript text — these
+ *  are heuristic and replaceable when the LLM scoring pipeline starts
+ *  emitting first-class negotiation signals on `report`. */
+function buildNegotiationMetrics(report: SessionReport): DeliveryMetric[] {
+  const candidateAnswers = report.perQuestion.map((q) => q.answerText || "");
+  const allText = candidateAnswers.join(" ");
+
+  // Anchor strength — % of negotiation answers where the candidate stated
+  // a specific number anchor (₹X LPA / X lakhs). High = anchored hard.
+  const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
+  const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
+  const anchorStrength = candidateAnswers.length > 0
+    ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
+    : 0;
+
+  // Concession rate — count "I'd be open to / I can lower / how about / fine
+  // with X" type concessions. Low concession = strong negotiator.
+  const concessionRe = /\b(i.?d\s+be\s+open|i\s+can\s+lower|fine\s+with|how\s+about|let.?s\s+meet\s+at|i.?ll\s+take|happy\s+with|i\s+accept)\b/gi;
+  const concessions = (allText.match(concessionRe) || []).length;
+  const concessionRate = Math.min(100, concessions * 10);
+
+  // Disclosure leaks — count times candidate volunteered current CTC or
+  // hard target without a deflect. Detection heuristic: "my current ctc",
+  // "i make / i earn / i'm at ₹X".
+  const leakRe = /\b(my\s+current\s+(ctc|salary|package)|i\s+(make|earn|.?m\s+at|currently\s+make)|currently\s+earning)\b/gi;
+  const leaks = (allText.match(leakRe) || []).length;
+
+  // Silence tolerance proxy — use median latency as the closest existing
+  // signal. A candidate who pauses before responding to pushback often
+  // performs better than one who rushes. Above 1.5s median = composed.
+  const medianLatencySec = round1(report.advancedDelivery.medianLatencyMs / 1000);
+
+  return [
+    {
+      label: "Anchor strength",
+      value: anchorStrength,
+      unit: "/100",
+      targetLabel: "Target 70+",
+      band: anchorStrength >= 70 ? "good" : anchorStrength >= 50 ? "ok" : "needsWork",
+    },
+    {
+      label: "Concession rate",
+      value: concessionRate,
+      unit: "%",
+      targetLabel: "Target <15%",
+      band: concessionRate < 15 ? "good" : concessionRate < 30 ? "ok" : "needsWork",
+    },
+    {
+      label: "Median latency",
+      value: medianLatencySec,
+      unit: "s",
+      targetLabel: "Target 1.5–4s",
+      band: medianLatencySec >= 1.5 && medianLatencySec <= 4 ? "good" : medianLatencySec < 1 ? "needsWork" : "ok",
+    },
+    {
+      label: "Disclosure leaks",
+      value: leaks,
+      targetLabel: "Target 0",
+      band: leaks === 0 ? "good" : leaks <= 1 ? "ok" : "needsWork",
     },
   ];
 }
