@@ -935,6 +935,21 @@ function InterviewInner() {
         // (not a hard width) and the existing iv-canvas-stage media rules.
         maxWidth: 760, margin: "0 auto", width: "100%",
       }}>
+        {/* Panel avatar stage — three avatars in a row above the question.
+            In panel mode this REPLACES the single visualizer + persona
+            label below; rendering it inline (vs absolute-positioned)
+            prevents the avatar row from overlapping the question text
+            on the constrained-width stage. */}
+        {isPanelInterview && panelMembers && phase !== "done" && (
+          <PanelAvatarStage
+            phase={phase}
+            panelMembers={panelMembers}
+            activePersona={activePersona}
+            isMuted={isMuted}
+            speechUnavailable={speechUnavailable}
+            skipSpeaking={skipSpeaking}
+          />
+        )}
         {/* Question heading — heuristic-driven italic-copper accent.
             During phase=speaking we render plain serif because the
             LiveCaptions typewriter would fight with the inline accent
@@ -989,8 +1004,10 @@ function InterviewInner() {
           );
         })()}
 
-        {/* Visualizer in its soft disc + halo + voice rings while listening */}
-        {phase !== "done" && (
+        {/* Visualizer in its soft disc + halo + voice rings while listening.
+            Hidden in panel mode — the PanelAvatarStage above already shows
+            the active persona's dot-grid visualizer in the active avatar. */}
+        {phase !== "done" && !isPanelInterview && (
           <div style={{
             position: "relative",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -1008,11 +1025,15 @@ function InterviewInner() {
           </div>
         )}
 
-        {/* Persona name + state */}
-        {phase !== "done" && (
+        {/* Persona name + state. In panel mode this is redundant — the
+            PanelAvatarStage above already shows each panelist's name +
+            title + speaking-state badge. Hide here to avoid the visual
+            duplicate (the bug screenshot showed "Hiring Manager — speaking"
+            stacked under the panel row). */}
+        {phase !== "done" && !isPanelInterview && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minHeight: 52 }}>
             <CanvasPersonaLabel
-              name={isPanelInterview && activePersona ? activePersona : interviewerName}
+              name={interviewerName}
               state={personaState(phase, currentTranscript.trim().length > 0)}
             />
           </div>
@@ -1142,17 +1163,10 @@ function InterviewInner() {
           </div>
         )}
 
-        {/* Panel-interview persona indicator floats top-center on desktop */}
-        {isPanelInterview && panelMembers && phase !== "done" && (
-          <div className="iv-canvas-mobile-hide" style={{
-            position: "absolute", top: 22, left: "50%", transform: "translateX(-50%)",
-          }}>
-            <PanelAvatarStage
-              phase={phase} panelMembers={panelMembers} activePersona={activePersona}
-              isMuted={isMuted} speechUnavailable={speechUnavailable} skipSpeaking={skipSpeaking}
-            />
-          </div>
-        )}
+        {/* (PanelAvatarStage moved inline above the question — was here
+            absolute-positioned, which overlapped the question heading
+            on the narrowed-width canvas stage. The inline render at the
+            top of <main> replaces this block.) */}
 
         {llmLoading && currentStep <= 1 && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
