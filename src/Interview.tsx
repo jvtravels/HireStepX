@@ -516,6 +516,16 @@ function CanvasListeningActionZone({
             ref={textareaRef}
             value={currentTranscript}
             onChange={(ev) => setCurrentTranscript(ev.target.value)}
+            // Enter sends, Shift+Enter inserts a newline. Mirrors the
+            // legacy textarea + every chat UI the user has muscle memory
+            // for. Without this, users had no keyboard path to send
+            // while focused in the textarea.
+            onKeyDown={(ev) => {
+              if (ev.key === "Enter" && !ev.shiftKey && currentTranscript.trim()) {
+                ev.preventDefault();
+                handleNextQuestion();
+              }
+            }}
             placeholder="Type your answer…"
             maxLength={3000}
             style={{
@@ -528,11 +538,16 @@ function CanvasListeningActionZone({
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
             }}
           />
-          {!speechUnavailable && (
-            <CanvasTextLink onClick={() => { setTyping(false); }}>
-              switch back to voice
-            </CanvasTextLink>
-          )}
+          {/* Always available — including after the safety-timeout flipped
+              speechUnavailable=true. Resetting both flags here lets the
+              engine re-attempt STT, otherwise the user is permanently
+              locked into typing once a single mic-quiet window fires. */}
+          <CanvasTextLink onClick={() => {
+            setTyping(false);
+            setSpeechUnavailable(false);
+          }}>
+            switch back to voice
+          </CanvasTextLink>
         </div>
       )}
 
@@ -588,9 +603,13 @@ function CanvasListeningActionZone({
           borderRadius: 6, fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
           color: canSend ? e.cream : e.inkSoft, letterSpacing: 0.6,
         }}>
-          Space
+          {showTyping ? "Enter" : "Space"}
         </kbd>
-        <span>{canSend ? "Press Space when done" : "Start speaking…"}</span>
+        <span>
+          {showTyping
+            ? (canSend ? "Press Enter to send" : "Type your answer…")
+            : (canSend ? "Press Space when done" : "Start speaking…")}
+        </span>
       </button>
 
       {/* Secondary action row — type / repeat / start-over / skip.
