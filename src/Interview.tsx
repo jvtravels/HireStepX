@@ -10,7 +10,7 @@ import {
   PaceMeter, InterviewCoachmarks,
 } from "./InterviewPanels";
 import {
-  CanvasWordmark, CanvasContextChip, CanvasElapsedClock, CanvasStatusPill,
+  CanvasWordmark, CanvasContextChip, CanvasStatusPill,
   CanvasMuteToggle, CanvasCameraToggle, CanvasAvatar,
   CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
   CanvasEditorialHeading,
@@ -830,12 +830,10 @@ function InterviewInner() {
             focus={displayFocus || (isSalaryNegotiation ? "Negotiation" : isPanelInterview ? "Panel" : "General")}
           />
         </div>
-        <div className="iv-canvas-mobile-hide">
-          {/* Time, not question count — real interviews don't say "this is
-              question 3 of 4". The countdown for the current answer lives
-              in the answer area; this is the all-up session clock. */}
-          <CanvasElapsedClock elapsedSec={elapsed} />
-        </div>
+        {/* Topbar middle was a question-count stepper which lied (real
+            interviews are time-bounded, not question-bounded). The session
+            elapsed clock already lives in the footer's CanvasMetaRow, so
+            this slot stays empty rather than duplicating the same number. */}
         <div className="iv-canvas-topbar-right" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <div className="iv-canvas-mobile-hide">
             <CanvasStatusPill status={mapConnectionStatus(isOffline)} />
