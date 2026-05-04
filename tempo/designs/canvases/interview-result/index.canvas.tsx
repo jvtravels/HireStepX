@@ -1,6 +1,11 @@
 import type { TempoPage, TempoStoryboard } from 'tempo-sdk';
 import CanvasProviders from "../../../CanvasProviders";
-import InterviewResult, { DEFAULT_RESULT, type InterviewResultData } from './InterviewResult';
+import InterviewResult, {
+  DEFAULT_RESULT,
+  type InterviewResultData,
+  type AnswerSpan,
+  type Question,
+} from './InterviewResult';
 
 const page: TempoPage = {
   name: "Interview result",
@@ -214,4 +219,88 @@ export const InterviewResultNegotiation: TempoStoryboard = {
   ),
   name: "5. Salary negotiation — score 64",
   layout: { x: 0, y: 4900, width: 1440, height: 2400 },
+};
+
+/* ── Graceful degradation: first-session, missing optional fields ──
+   Real signal that the report holds up when the optional fields the
+   server CAN'T compute on session #1 (percentile, recentScores,
+   readiness) aren't present. The hero collapses to score-only;
+   sparkline doesn't render; readiness band is omitted; tabs gracefully
+   disable Restructured + Top Performer when those answers haven't
+   been generated yet (e.g. pre-LLM-rewrite path). */
+
+const FIRST_SESSION_PARTIAL: InterviewResultData = {
+  ...DEFAULT_RESULT,
+  overallScore: 56,
+  verdict: "leanHire",
+  scoreDelta: 0,
+  // Intentionally absent: percentile, recentScores, readiness, daysUntilInterview
+  percentile: undefined,
+  recentScores: undefined,
+  readiness: undefined,
+  daysUntilInterview: undefined,
+  aiVerdict:
+    "First session in this role context. Useful baseline — clear structure, room to add quantified outcomes. We'll surface trend + percentile from session #2 onwards.",
+  // Reuse DEFAULT_RESULT.questions as-is. Questions 2-6 already lack
+  // restructured + topPerformerAnswer, demonstrating how those tabs
+  // disable gracefully when the LLM-rewrite pipeline hasn't generated
+  // those variants. Question 1 keeps them so the contrast is visible.
+};
+
+export const InterviewResultFirstSession: TempoStoryboard = {
+  render: () => (
+    <CanvasProviders>
+      <InterviewResult data={FIRST_SESSION_PARTIAL} />
+    </CanvasProviders>
+  ),
+  name: "6. First session — partial data (graceful degrade)",
+  layout: { x: 1490, y: 4900, width: 1440, height: 2400 },
+};
+
+/* ── Long session (10 questions) — triggers progressive disclosure ──
+   Pro users on Panel + Strategy tracks see 10+ questions per session.
+   The PerQuestionSection caps the primary view at 3 cards with a
+   "Show 7 more questions" reveal so the report stays scannable. This
+   storyboard demonstrates the reveal in its initial state. */
+
+/* Build the 9 trailing questions as plain object literals so the
+   validator's minimal tsconfig (no full ES lib) doesn't trip on
+   Array.from / Pick / satisfies / etc. Verbose but bulletproof. */
+const COLLAPSED_BODY: AnswerSpan[] = [{ text: "(answer collapsed — expand to view)" }];
+const STAR_FULL = { situation: true, task: true, action: true, result: true, learning: false };
+const COACHING_PLACEHOLDER = "Coaching note for this question would render here.";
+
+const LONG_SESSION_QUESTIONS: Question[] = [
+  /* The first question is hand-crafted (instead of pulled from
+     DEFAULT_RESULT.questions[0]) so the validator's strict tsconfig
+     doesn't trip on numeric-index access of an imported array
+     literal. Functionally identical; the storyboard's purpose is
+     showing the progressive-disclosure reveal anyway. */
+  { index: 1,  text: "Tell me about a time you solved a difficult problem.",                              score: 48, band: "weak",     answer: COLLAPSED_BODY, star: { situation: true, task: true, action: true, result: false, learning: false }, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 78, responseSec: 168, firstPersonRatioPct: 22, quantificationCount: 0 } },
+  { index: 2,  text: "How do you align engineering with product priorities?",                              score: 88, band: "strong",   answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 102, responseSec: 138, firstPersonRatioPct: 26, quantificationCount: 0 } },
+  { index: 3,  text: "Walk me through your most ambiguous decision in the last 6 months.",                 score: 72, band: "complete", answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 114, responseSec: 156, firstPersonRatioPct: 27, quantificationCount: 1 } },
+  { index: 4,  text: "Describe a technical trade-off you'd defend even if leadership disagreed.",          score: 60, band: "partial",  answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 126, responseSec: 174, firstPersonRatioPct: 28, quantificationCount: 2 } },
+  { index: 5,  text: "How do you onboard a new engineer in your first month with them?",                  score: 78, band: "complete", answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 138, responseSec: 192, firstPersonRatioPct: 29, quantificationCount: 0 } },
+  { index: 6,  text: "Tell me about a time you killed a project that wasn't working.",                     score: 55, band: "partial",  answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 150, responseSec: 210, firstPersonRatioPct: 30, quantificationCount: 1 } },
+  { index: 7,  text: "Where do you see frontend tooling going in the next 2 years?",                      score: 70, band: "complete", answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 162, responseSec: 228, firstPersonRatioPct: 31, quantificationCount: 2 } },
+  { index: 8,  text: "How do you quantify the impact of a refactor with no user-facing change?",          score: 64, band: "partial",  answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 174, responseSec: 246, firstPersonRatioPct: 32, quantificationCount: 0 } },
+  { index: 9,  text: "Describe a disagreement with a senior peer that you handled well.",                  score: 82, band: "strong",   answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 186, responseSec: 264, firstPersonRatioPct: 33, quantificationCount: 1 } },
+  { index: 10, text: "What's the question you wish I'd asked you today?",                                  score: 90, band: "strong",   answer: COLLAPSED_BODY, star: STAR_FULL, whyScored: COACHING_PLACEHOLDER, metrics: { wordCount: 198, responseSec: 282, firstPersonRatioPct: 34, quantificationCount: 2 } },
+];
+
+const LONG_SESSION: InterviewResultData = {
+  ...DEFAULT_RESULT,
+  overallScore: 76,
+  scoreDelta: 4,
+  questions: LONG_SESSION_QUESTIONS,
+};
+
+export const InterviewResultLongSession: TempoStoryboard = {
+  render: () => (
+    <CanvasProviders>
+      <InterviewResult data={LONG_SESSION} />
+    </CanvasProviders>
+  ),
+  name: "7. Long session — 10 questions (progressive disclosure)",
+  layout: { x: 0, y: 7350, width: 1440, height: 2400 },
 };

@@ -113,4 +113,128 @@ export const INTERVIEW_RESULT_STYLES = `
   }
   .ir-feedback-tag:hover { border-color: #B45309; color: #B45309; }
   .ir-feedback-tag.active { background: #F4E5D8; border-color: #B45309; color: #B45309; }
+
+  /* ─── Accessibility — focus rings + skip link ───
+     Every interactive element gets a visible focus ring so keyboard
+     users can see where they are. The :focus-visible variant only
+     paints when the user is actually navigating with a keyboard
+     (not on mouse click), so we don't pollute the visual on-click. */
+  .ir-cta-primary:focus-visible,
+  .ir-cta-ghost:focus-visible,
+  .ir-tab-btn:focus-visible,
+  .ir-thumb-btn:focus-visible,
+  .ir-feedback-tag:focus-visible,
+  .ir-q-card-trigger:focus-visible,
+  .ir-jump-link:focus-visible {
+    outline: 2px solid #312E81;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(49, 46, 129, 0.15);
+  }
+  .ir-skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    padding: 8px 16px;
+    background: #312E81;
+    color: #FAF7F0;
+    text-decoration: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 100;
+  }
+  .ir-skip-link:focus {
+    left: 8px;
+    outline: 2px solid #B45309;
+    outline-offset: 2px;
+  }
+
+  /* ─── Reduced motion ───
+     Users who set prefers-reduced-motion (system pref or
+     vestibular-disorder accommodation) get all animations disabled.
+     Static fills replace the bar-fill transitions; we don't suppress
+     state changes, just kinetic transitions. */
+  @media (prefers-reduced-motion: reduce) {
+    .ir-skill-bar-fg,
+    .ir-cta-primary,
+    .ir-cta-ghost,
+    .ir-tab-btn,
+    .ir-thumb-btn,
+    .ir-feedback-tag,
+    .ir-jump-link {
+      transition: none !important;
+    }
+    .ir-cta-primary:hover { transform: none !important; }
+  }
+
+  /* ─── Section navigation ───
+     Sticky jump-to-section row at the top of <main>. Lets users
+     skip directly to the section they care about — for power users
+     reviewing their 5th report this beats scrolling past every
+     section. Indigo underline on the active anchor. */
+  .ir-jump-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(250, 247, 240, 0.92);
+    backdrop-filter: saturate(140%) blur(8px);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    border-bottom: 1px solid #EBE5D2;
+    padding: 10px 0;
+    margin: 0 -32px 16px;
+  }
+  .ir-jump-nav-inner {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 0 32px;
+    scrollbar-width: none;
+  }
+  .ir-jump-nav-inner::-webkit-scrollbar { display: none; }
+  .ir-jump-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6E6759;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 160ms, background 160ms;
+  }
+  .ir-jump-link:hover { color: #312E81; background: #E5E2F2; }
+  .ir-jump-link-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #A39C8B;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── Section eyebrow numbers ───
+     Each section card has a small "01" / "02" / "03" eyebrow so the
+     user has a sense of progression. Mono font, copper accent,
+     tightly tracked. */
+  .ir-section-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .ir-section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #B45309;
+    letter-spacing: 0.10em;
+  }
+  .ir-section-rule {
+    flex: 1;
+    height: 1px;
+    background: #EBE5D2;
+  }
 `;

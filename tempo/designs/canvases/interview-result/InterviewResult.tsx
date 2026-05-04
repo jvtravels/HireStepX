@@ -343,8 +343,22 @@ function Sparkline({ points }: { points: number[] }) {
   const ys = points.map((p) => pad + innerH - ((p - min) / range) * innerH);
   const path = points.map((_, i) => `${i === 0 ? "M" : "L"} ${xs[i].toFixed(1)} ${ys[i].toFixed(1)}`).join(" ");
   const area = `${path} L ${xs[xs.length - 1].toFixed(1)} ${(h - pad).toFixed(1)} L ${xs[0].toFixed(1)} ${(h - pad).toFixed(1)} Z`;
+  // Build an accessible name with the actual values so screen-reader
+  // users can hear "Recent session scores: 42, 48, 56, 56, 72" instead
+  // of just "Recent session scores".
+  const trend = points[points.length - 1] - points[0];
+  const trendVerb = trend > 0 ? "trending up" : trend < 0 ? "trending down" : "flat";
+  const a11y = `Recent session scores: ${points.join(", ")}. Currently ${points[points.length - 1]}, ${trendVerb} from ${points[0]}.`;
   return (
-    <svg className="ir-spark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-label="Recent session scores">
+    <svg
+      className="ir-spark"
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      role="img"
+      aria-label={a11y}
+    >
+      <title>{a11y}</title>
       <path className="ir-spark-area" d={area} />
       <path className="ir-spark-line" d={path} />
       {points.map((_, i) => (
@@ -357,6 +371,45 @@ function Sparkline({ points }: { points: number[] }) {
         />
       ))}
     </svg>
+  );
+}
+
+/** Section eyebrow — small "01", "02"... numeric label + dividing
+ *  rule. Gives users a sense of progression through the report and
+ *  acts as a low-weight visual anchor on each section card without
+ *  competing with the section heading. */
+function SectionEyebrow({ num, label }: { num: string; label: string }) {
+  return (
+    <div className="ir-section-eyebrow">
+      <span className="ir-section-num">{num} · {label.toUpperCase()}</span>
+      <span className="ir-section-rule" aria-hidden="true" />
+    </div>
+  );
+}
+
+/** Sticky jump-to-section nav at the top of <main>. Power users
+ *  reviewing their 5th report skip directly to per-question without
+ *  scrolling past every section card. Renders nothing on screens
+ *  too narrow to fit the row (handled by overflow-x in CSS). */
+function JumpNav() {
+  const items = [
+    { num: "01", label: "Overview", href: "#ir-section-hero" },
+    { num: "02", label: "Delivery", href: "#ir-section-metrics" },
+    { num: "03", label: "Skills", href: "#ir-section-skills" },
+    { num: "04", label: "Questions", href: "#ir-section-questions" },
+    { num: "05", label: "Next Steps", href: "#ir-section-next" },
+  ];
+  return (
+    <nav aria-label="Jump to section" className="ir-jump-nav">
+      <div className="ir-jump-nav-inner">
+        {items.map((i) => (
+          <a key={i.href} href={i.href} className="ir-jump-link">
+            <span className="ir-jump-link-num">{i.num}</span>
+            {i.label}
+          </a>
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -501,14 +554,23 @@ function HeroSection({ data }: { data: InterviewResultData }) {
   const verdict = VERDICT_META[data.verdict];
   return (
     <section
+      id="ir-section-hero"
+      aria-labelledby="ir-hero-heading"
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
         borderRadius: 16,
         padding: 28,
         boxShadow: shadows.card,
+        scrollMarginTop: 72, // accommodate sticky jump-nav on anchor scroll
       }}
     >
+      {/* Visually hidden h1 — the report's primary heading. SR users hear
+          this as the page title; sighted users see the readiness headline +
+          score gauge as the visual primary. */}
+      <h1 id="ir-hero-heading" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
+        Interview Report — {data.role} at {data.company}, scored {data.overallScore} out of 100
+      </h1>
       {/* Readiness headline — the "how close am I to the role bar" signal.
           Sits above session score because for an interview-prep product
           it's the headline number users actually want, not "how this
@@ -697,16 +759,20 @@ function HeroSection({ data }: { data: InterviewResultData }) {
 function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
   return (
     <section
+      id="ir-section-metrics"
+      aria-labelledby="ir-metrics-heading"
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
         borderRadius: 16,
         padding: 28,
         boxShadow: shadows.card,
+        scrollMarginTop: 72,
       }}
     >
+      <SectionEyebrow num="02" label="How you delivered" />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
-        <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
+        <h2 id="ir-metrics-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
           Core Delivery Metrics
         </h2>
         <button
@@ -768,16 +834,20 @@ function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: 
   const max = 100;
   return (
     <section
+      id="ir-section-skills"
+      aria-labelledby="ir-skills-heading"
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
         borderRadius: 16,
         padding: 28,
         boxShadow: shadows.card,
+        scrollMarginTop: 72,
       }}
     >
+      <SectionEyebrow num="03" label="Where you stand vs role bar" />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
+        <h2 id="ir-skills-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
           Skills Breakdown
         </h2>
         <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
@@ -800,7 +870,20 @@ function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: 
             return (
               <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: "180px 1fr 60px 50px", gap: 14, alignItems: "center" }}>
                 <span className="ir-skill-name" style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{s.name}</span>
-                <div className="ir-skill-bar-wrap" style={{ background: t.line }}>
+                <div
+                  className="ir-skill-bar-wrap"
+                  style={{ background: t.line }}
+                  role="progressbar"
+                  aria-label={`${s.name} score`}
+                  aria-valuenow={s.score}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuetext={
+                    s.roleAvg !== undefined
+                      ? `${s.score} out of 100. Role average is ${s.roleAvg}.`
+                      : `${s.score} out of 100.`
+                  }
+                >
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
                   <div
                     className="ir-skill-bar-fg"
@@ -810,7 +893,7 @@ function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: 
                     }}
                   />
                   {avgPct !== null && (
-                    <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} />
+                    <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}
                 </div>
                 <span className="ir-skill-score" style={{ fontFamily: f.mono, fontSize: 14, color: t.coal, textAlign: "right", fontWeight: 600 }}>
@@ -982,17 +1065,32 @@ function QuestionDetail({ q }: { q: Question }) {
   const coachColor = isStrong ? t.success : t.copper;
   const coachBg = isStrong ? "rgba(21,128,61,0.05)" : "rgba(212,179,127,0.06)";
   const coachBorder = isStrong ? "rgba(21,128,61,0.18)" : t.copper100;
+  /* Stable IDs for the tab/panel ARIA wiring. Using the question
+     index so multiple expanded panels in the report don't collide. */
+  const idBase = `ir-tab-${q.index}`;
   return (
     <div style={{ padding: "0 18px 18px" }}>
       {/* Tab strip — Answer / Restructured / Top Performer */}
-      <div role="tablist" aria-label="Per-question detail" style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16 }}>
-        <button type="button" role="tab" aria-selected={tab === "answer"} className="ir-tab-btn" onClick={() => setTab("answer")}>
+      <div role="tablist" aria-label={`Question ${q.index} answer views`} style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16 }}>
+        <button
+          type="button"
+          role="tab"
+          id={`${idBase}-answer-tab`}
+          aria-selected={tab === "answer"}
+          aria-controls={`${idBase}-answer-panel`}
+          tabIndex={tab === "answer" ? 0 : -1}
+          className="ir-tab-btn"
+          onClick={() => setTab("answer")}
+        >
           Your Answer
         </button>
         <button
           type="button"
           role="tab"
+          id={`${idBase}-restructured-tab`}
           aria-selected={tab === "restructured"}
+          aria-controls={`${idBase}-restructured-panel`}
+          tabIndex={tab === "restructured" ? 0 : -1}
           className="ir-tab-btn"
           onClick={() => setTab("restructured")}
           disabled={!q.restructured}
@@ -1003,7 +1101,10 @@ function QuestionDetail({ q }: { q: Question }) {
         <button
           type="button"
           role="tab"
+          id={`${idBase}-exemplar-tab`}
           aria-selected={tab === "exemplar"}
+          aria-controls={`${idBase}-exemplar-panel`}
+          tabIndex={tab === "exemplar" ? 0 : -1}
           className="ir-tab-btn"
           onClick={() => setTab("exemplar")}
           disabled={!q.topPerformerAnswer}
@@ -1031,16 +1132,19 @@ function QuestionDetail({ q }: { q: Question }) {
       <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 18 }}>
         {/* Answer column — content driven by selected tab. The exemplar
             tab has a distinct frame (sage tint + corner badge) so the
-            user's eye knows this isn't their own answer. */}
+            user's eye knows this isn't their own answer.
+            Each tab content lives inside a role="tabpanel" with id +
+            aria-labelledby wiring back to its trigger so screen
+            readers announce the relationship correctly. */}
         <div>
           {tab === "answer" && (
-            <>
+            <div role="tabpanel" id={`${idBase}-answer-panel`} aria-labelledby={`${idBase}-answer-tab`}>
               <AnswerBody spans={q.answer} />
               <HighlightLegend />
-            </>
+            </div>
           )}
           {tab === "restructured" && q.restructured && (
-            <>
+            <div role="tabpanel" id={`${idBase}-restructured-panel`} aria-labelledby={`${idBase}-restructured-tab`}>
               <div style={{ position: "relative" }}>
                 <span
                   style={{
@@ -1064,10 +1168,10 @@ function QuestionDetail({ q }: { q: Question }) {
               <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
                 Same content as your answer, reorganized into clean STAR. Save this as your reference version.
               </p>
-            </>
+            </div>
           )}
           {tab === "exemplar" && q.topPerformerAnswer && (
-            <>
+            <div role="tabpanel" id={`${idBase}-exemplar-panel`} aria-labelledby={`${idBase}-exemplar-tab`}>
               <div style={{ position: "relative" }}>
                 <span
                   style={{
@@ -1095,7 +1199,7 @@ function QuestionDetail({ q }: { q: Question }) {
               <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
                 What an L4-equivalent candidate at this company would say. Use it as a reference shape, not a script — the goal is to internalize the structure.
               </p>
-            </>
+            </div>
           )}
         </div>
 
@@ -1175,8 +1279,23 @@ function QuestionDetail({ q }: { q: Question }) {
 
 function PerQuestionSection({ questions }: { questions: Question[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0); // first card open by default
+  /* Progressive disclosure — for the average 5-6 question session,
+     showing all rows expanded is fine. But Pro users do panel/long
+     sessions of 10+ questions; rendering all of them by default
+     overwhelms the report. Show 3 expanded triggers; defer the rest
+     behind a single "Show N more questions" reveal. */
+  const PRIMARY_COUNT = 3;
+  const [showAll, setShowAll] = useState<boolean>(questions.length <= PRIMARY_COUNT);
+  const visible = showAll ? questions : questions.slice(0, PRIMARY_COUNT);
+  const hiddenCount = questions.length - visible.length;
+  const handleExpandAll = () => {
+    setShowAll(true);
+    setOpenIdx(null);
+  };
   return (
     <section
+      id="ir-section-questions"
+      aria-labelledby="ir-questions-heading"
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
@@ -1184,33 +1303,45 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
         padding: 0,
         boxShadow: shadows.card,
         overflow: "hidden",
+        scrollMarginTop: 72,
       }}
     >
+      <div style={{ padding: "24px 28px 0" }}>
+        <SectionEyebrow num="04" label="Question by question" />
+      </div>
       <header
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "baseline",
-          padding: "24px 28px 16px",
+          padding: "0 28px 16px",
         }}
       >
-        <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
+        <h2 id="ir-questions-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
           Per-Question Review <span style={{ color: t.inkFaint, fontSize: 16, marginLeft: 6 }}>({questions.length})</span>
         </h2>
-        <button type="button" style={{ background: "transparent", border: "none", color: t.indigo, fontFamily: f.sans, fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
-          Expand all
-        </button>
+        {showAll ? (
+          <button
+            type="button"
+            onClick={() => setOpenIdx(null)}
+            style={{ background: "transparent", border: "none", color: t.indigo, fontFamily: f.sans, fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+          >
+            Collapse all
+          </button>
+        ) : null}
       </header>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {questions.map((q, idx) => {
+        {visible.map((q, idx) => {
           const open = openIdx === idx;
           const band = BAND_META[q.band];
+          const panelId = `ir-q-panel-${q.index}`;
           return (
             <li key={q.index} style={{ borderTop: `1px solid ${t.line}` }}>
               <button
                 type="button"
                 className="ir-q-card-trigger"
                 aria-expanded={open}
+                aria-controls={panelId}
                 onClick={() => setOpenIdx(open ? null : idx)}
               >
                 <span
@@ -1231,10 +1362,11 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
                 >
                   {q.index}
                 </span>
-                <span style={{ flex: 1, fontFamily: f.sans, fontSize: 14, color: t.coal, fontWeight: open ? 600 : 500 }}>
+                <span className="ir-q-trigger-text" style={{ flex: 1, fontFamily: f.sans, fontSize: 14, color: t.coal, fontWeight: open ? 600 : 500 }}>
                   {q.text}
                 </span>
                 <span
+                  className="ir-q-trigger-band"
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -1266,11 +1398,41 @@ function PerQuestionSection({ questions }: { questions: Question[] }) {
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
-              {open && <QuestionDetail q={q} />}
+              {/* tabpanel role + id wires up to the trigger's
+                  aria-controls so screen readers announce the
+                  detail panel as the controlled region. */}
+              <div id={panelId} role="region" hidden={!open}>
+                {open && <QuestionDetail q={q} />}
+              </div>
             </li>
           );
         })}
       </ul>
+      {/* Progressive-disclosure reveal — only renders when there are
+          questions beyond the primary 3. Long-session reports (panel
+          / 10+ Q) stay scannable on first load. */}
+      {hiddenCount > 0 && (
+        <div
+          style={{
+            borderTop: `1px solid ${t.line}`,
+            padding: "14px 28px",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <button
+            type="button"
+            className="ir-cta-ghost"
+            onClick={handleExpandAll}
+            aria-label={`Show ${hiddenCount} more question${hiddenCount === 1 ? "" : "s"}`}
+          >
+            Show {hiddenCount} more question{hiddenCount === 1 ? "" : "s"}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -1347,15 +1509,19 @@ function NextStepsSection({ daysUntilInterview }: { daysUntilInterview?: number 
   ];
   return (
     <section
+      id="ir-section-next"
+      aria-labelledby="ir-next-heading"
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
         borderRadius: 16,
         padding: 28,
         boxShadow: shadows.card,
+        scrollMarginTop: 72,
       }}
     >
-      <h2 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 18px", letterSpacing: "-0.01em" }}>
+      <SectionEyebrow num="05" label="What to do now" />
+      <h2 id="ir-next-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: "0 0 18px", letterSpacing: "-0.01em" }}>
         Recommended Next Steps
       </h2>
       <div className="ir-next-steps-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
@@ -1534,8 +1700,16 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
           paddingBottom: 48,
         }}
       >
+        {/* Skip link — keyboard users tabbing into the page can jump
+            directly past the header + jump-nav to the report content.
+            Visually hidden until focused; standard a11y pattern. */}
+        <a href="#ir-section-hero" className="ir-skip-link">
+          Skip to report
+        </a>
         <Header />
         <main
+          id="ir-main"
+          aria-label="Interview report"
           style={{
             maxWidth: 1240,
             margin: "0 auto",
@@ -1545,6 +1719,7 @@ export default function InterviewResult({ data = DEFAULT_RESULT }: InterviewResu
             gap: 16,
           }}
         >
+          <JumpNav />
           <HeroSection data={data} />
           <CoreMetricsSection metrics={data.metrics} />
           <SkillsSection skills={data.skills} weakest={data.weakestSkill} />
