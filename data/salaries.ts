@@ -336,10 +336,10 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   // IT-services typically grants no equity to design roles.
   "ux-designer": {
     faang: {
-      entry: s([18, 26], [1, 3], RSU(5, 10), [24, 39], { hot_skills: ["Figma", "User Research", "Design Systems"] }),
-      mid: s([28, 42], [3, 6], RSU(10, 20), [41, 68], {}),
-      senior: s([40, 58], [6, 10], RSU(15, 32), [61, 100], { negotiation_leverage: "high", notes: "Top FAANG senior PDs at Bangalore offices regularly clear ₹70-90 LPA total comp." }),
-      lead: s([55, 75], [8, 15], RSU(22, 45), [85, 135], { negotiation_leverage: "high" }),
+      entry: s([20, 28], [1, 3], RSU(6, 12), [27, 43], { hot_skills: ["Figma", "User Research", "Design Systems"] }),
+      mid: s([32, 48], [3, 6], RSU(12, 24), [47, 78], {}),
+      senior: s([48, 68], [6, 12], RSU(20, 40), [74, 120], { negotiation_leverage: "high", notes: "Microsoft/Google/Meta India senior PD median ₹85-95 LPA total comp; high performers cross ₹110 LPA. The previous band floor of ₹61 LPA was off — Microsoft alone offers ₹70+ as the standard floor for senior product designers in 2024-25." }),
+      lead: s([60, 85], [10, 18], RSU(28, 55), [98, 158], { negotiation_leverage: "high", notes: "Lead/Principal/Staff PD at top FAANG India routinely lands ₹120-150 LPA total comp." }),
     },
     "indian-unicorn": {
       entry: s([6, 10], [0.5, 1], ESOP(0.5, 2), [7, 13], { hot_skills: ["Figma", "Product thinking", "0-to-1 design"] }),

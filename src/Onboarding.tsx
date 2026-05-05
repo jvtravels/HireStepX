@@ -127,12 +127,25 @@ function looksLikePersonName(s?: string | null): boolean {
 
 export default function Onboarding() {
   const router = useRouter();
-  const { user, updateUser, logout } = useAuth();
+  const { user, updateUser, logout, loading: authLoading } = useAuth();
 
   const startingRef = useRef(false);
+  // Track whether we should render the onboarding UI at all. The bug
+  // user reported was: returning users (hasCompletedOnboarding = true)
+  // saw the resume section flash for ~1-2s before being redirected to
+  // /dashboard. That happened because Onboarding mounted IMMEDIATELY
+  // and only checked hasCompletedOnboarding inside a useEffect — by
+  // the time the redirect fired, React had already painted a frame
+  // (or several) of onboarding content.
+  //
+  // Now: while AuthContext is still loading OR if the user has
+  // already completed onboarding, we render a minimal cream screen
+  // (matches /loading.tsx) and let the redirect fire silently. The
+  // jerk-then-redirect flicker is gone.
+  const shouldRedirectAway = !!user?.hasCompletedOnboarding && !startingRef.current;
   useEffect(() => {
-    if (user?.hasCompletedOnboarding && !startingRef.current) router.replace("/dashboard");
-  }, [user?.hasCompletedOnboarding, router]);
+    if (shouldRedirectAway) router.replace("/dashboard");
+  }, [shouldRedirectAway, router]);
 
   // ─── Resume state ───
   const [fileName, setFileName] = useState("");
@@ -786,6 +799,33 @@ export default function Onboarding() {
     setFileName(s.fileName); setResumeText(s.resumeText); setResumeParsed(s.resumeParsed); setAiProfile(s.aiProfile); setAiPhase(s.aiPhase); setTargetRole(s.targetRole); setUserName(s.userName);
     setShowUndo(false); clearTimeout(undoTimerRef.current); undoRef.current = null;
   };
+
+  // Anti-flicker: skip rendering the onboarding shell when AuthContext
+  // is still loading OR when we know we're about to redirect to
+  // /dashboard. Returning a clean cream screen instead of the resume
+  // section means returning users no longer see a 1-2s flash of
+  // onboarding before the redirect fires. Matches /loading.tsx style.
+  if (authLoading || shouldRedirectAway) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        style={{ minHeight: "100vh", background: ot.cream, display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <div
+          style={{
+            width: 36, height: 36,
+            border: "2px solid rgba(212,179,127,0.15)",
+            borderTopColor: "#312E81",
+            borderRadius: "50%",
+            animation: "ob-spin 800ms linear infinite",
+          }}
+        />
+        <style>{`@keyframes ob-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: ot.cream, display: "flex", flexDirection: "column", position: "relative", color: ot.coal }}>

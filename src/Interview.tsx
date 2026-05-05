@@ -22,6 +22,7 @@ import { LiveCaptions } from "./InterviewComponents";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
+import { stripProsodyMarkup } from "./_prosody";
 import { useAuth } from "./AuthContext";
 
 /* Derive 1-2 letter initials from a logged-in user's display name, falling
@@ -1002,7 +1003,13 @@ function InterviewInner() {
           // no *foo*, no _word_). Falls back to aiText for legacy/scripted
           // steps where the two are equal. Never render step.aiText raw —
           // that path is reserved for TTS, which needs the markup intact.
-          const displayText = step.aiTextDisplay ?? step.aiText;
+          //
+          // Belt-and-suspenders: strip prosody markup unconditionally at
+          // the render layer. The user-reported "[pause] is still there"
+          // bug came from script-generated questions where the engine
+          // didn't set aiTextDisplay (only follow-ups had it set), so the
+          // fallback to step.aiText leaked [pause] tokens into the heading.
+          const displayText = stripProsodyMarkup(step.aiTextDisplay ?? step.aiText);
           return (
           <div style={{ maxWidth: 720, width: "100%" }}>
             {/* Speaking: typewriter typed in sync with TTS audio.
@@ -1026,7 +1033,17 @@ function InterviewInner() {
               // hand-picked at question-generation time. Falls back to
               // the local heuristic when LLM didn't comply or for
               // cached/legacy questions without the field.
-              const accent = step.accentSplit ?? pickAccent(displayText);
+              const rawAccent = step.accentSplit ?? pickAccent(displayText);
+              // accentSplit may carry prosody markup if it was assembled
+              // before stripping (LLM-marked accents on raw aiText). Strip
+              // each segment defensively so [pause] never escapes.
+              const accent = rawAccent
+                ? {
+                    before: stripProsodyMarkup(rawAccent.before),
+                    accent: stripProsodyMarkup(rawAccent.accent),
+                    after: stripProsodyMarkup(rawAccent.after),
+                  }
+                : null;
               return accent ? (
                 <CanvasEditorialHeading
                   before={accent.before}

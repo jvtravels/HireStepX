@@ -59,6 +59,21 @@ const ROLE_SUGGESTIONS = [
   "Graduate Engineer Trainee (GET)", "Management Trainee", "Fresher",
 ];
 
+// Camera readiness signal states. "pass" = good. "warn-*" = mediocre
+// but acceptable to start. "fail-*" = explicitly bad. "checking" = not
+// yet sampled. Each signal carries its own reason in the suffix so the
+// UI can show concrete copy ("Move closer" vs "Add more light").
+type CameraSignalState =
+  | "checking"
+  | "pass"
+  | "warn-low"
+  | "warn-offcenter"
+  | "warn-motion"
+  | "fail-dark"
+  | "fail-bright"
+  | "fail-offcenter"
+  | "fail-motion";
+
 // Single source of truth — the extensive ~510-entry list lives in
 // onboardingData (COMPANY_SUGGESTIONS_FULL).
 //
@@ -288,7 +303,7 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
   kind, label, sublabel, sublabelTone, status, onRequest, onSkip, onDisable,
-  level, voiceDetected, denyReason, isIOS, cameraStream, faceLooksGood,
+  level, voiceDetected, denyReason, isIOS, cameraStream, faceLooksGood, cameraSignals,
 }: {
   kind: "mic" | "camera";
   label: string;
@@ -315,6 +330,14 @@ function PermissionCard({
   /** Brightness-heuristic confirmation that the user is in frame and lit.
    *  Used to flip "Looking good" → "You look great". */
   faceLooksGood?: boolean;
+  /** Per-signal readiness states from the multi-metric camera sampler.
+   *  Drives the concrete sub-status copy (replaces the previous fake-
+   *  feeling "Centered, well-lit, in focus" claim). */
+  cameraSignals?: {
+    lighting: CameraSignalState;
+    framing: CameraSignalState;
+    sharpness: CameraSignalState;
+  };
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
@@ -467,15 +490,61 @@ function PermissionCard({
         <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
           {status === "requesting" && "Waiting for your permission…"}
-          {isGranted && kind === "camera" && (
-            // Concrete signals beat vibe-text. Tells the user what we
-            // actually checked rather than complimenting them.
-            <span style={{ color: faceLooksGood ? T.success : T.inkSoft, transition: "color 240ms ease" }}>
-              {faceLooksGood
-                ? "✓ Centered, well-lit, in focus"
-                : "Checking framing & lighting…"}
-            </span>
-          )}
+          {isGranted && kind === "camera" && cameraSignals && (() => {
+            // Concrete per-signal sub-statuses. Replaces the static
+            // "Centered, well-lit, in focus" claim that users called
+            // fake. Each chip carries its own pass/warn/fail color
+            // and the failing state spells out what to do.
+            const map = {
+              lighting: {
+                checking: { label: "Lighting · checking…", tone: T.inkSoft },
+                pass: { label: "Lighting ✓", tone: T.success },
+                "warn-low": { label: "Lighting · a touch dim", tone: T.copper },
+                "warn-offcenter": { label: "Lighting ✓", tone: T.success },
+                "warn-motion": { label: "Lighting ✓", tone: T.success },
+                "fail-dark": { label: "Add more light", tone: T.error },
+                "fail-bright": { label: "Too bright — diffuse the light", tone: T.error },
+                "fail-offcenter": { label: "Lighting ✓", tone: T.success },
+                "fail-motion": { label: "Lighting ✓", tone: T.success },
+              },
+              framing: {
+                checking: { label: "Framing · checking…", tone: T.inkSoft },
+                pass: { label: "Centered ✓", tone: T.success },
+                "warn-low": { label: "Centered ✓", tone: T.success },
+                "warn-offcenter": { label: "Center yourself a bit", tone: T.copper },
+                "warn-motion": { label: "Centered ✓", tone: T.success },
+                "fail-dark": { label: "Centered ✓", tone: T.success },
+                "fail-bright": { label: "Centered ✓", tone: T.success },
+                "fail-offcenter": { label: "Move into frame", tone: T.error },
+                "fail-motion": { label: "Centered ✓", tone: T.success },
+              },
+              sharpness: {
+                checking: { label: "Sharpness · checking…", tone: T.inkSoft },
+                pass: { label: "Sharp ✓", tone: T.success },
+                "warn-low": { label: "Sharp ✓", tone: T.success },
+                "warn-offcenter": { label: "Sharp ✓", tone: T.success },
+                "warn-motion": { label: "Hold a bit steadier", tone: T.copper },
+                "fail-dark": { label: "Sharp ✓", tone: T.success },
+                "fail-bright": { label: "Sharp ✓", tone: T.success },
+                "fail-offcenter": { label: "Sharp ✓", tone: T.success },
+                "fail-motion": { label: "Hold still — too much motion", tone: T.error },
+              },
+            } as const;
+            const items = [
+              { key: "lighting" as const, ...(map.lighting as Record<CameraSignalState, { label: string; tone: string }>)[cameraSignals.lighting] },
+              { key: "framing" as const, ...(map.framing as Record<CameraSignalState, { label: string; tone: string }>)[cameraSignals.framing] },
+              { key: "sharpness" as const, ...(map.sharpness as Record<CameraSignalState, { label: string; tone: string }>)[cameraSignals.sharpness] },
+            ];
+            return (
+              <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 10px", lineHeight: 1.4 }}>
+                {items.map((it, i) => (
+                  <span key={it.key} style={{ color: it.tone, transition: "color 240ms ease" }}>
+                    {it.label}{i < items.length - 1 ? " ·" : ""}
+                  </span>
+                ))}
+              </span>
+            );
+          })()}
           {isGranted && kind === "mic" && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <MicMeter level={level ?? 0} active />
@@ -714,6 +783,16 @@ export default function SessionSetup() {
   // a non-trivial brightness average. Heuristic, not real face-detection,
   // but works on every browser without an extra dependency.
   const [faceLooksGood, setFaceLooksGood] = useState(false);
+  // Per-signal camera readiness state. Drives the concrete sub-status
+  // copy ("Lighting · ✓", "Framing · move closer") that replaced the
+  // single binary "Centered, well-lit, in focus" claim — users called
+  // that out as feeling fake. Each signal is "pass" / a "warn-*" or
+  // "fail-*" variant carrying the specific reason.
+  const [cameraSignals, setCameraSignals] = useState<{
+    lighting: CameraSignalState;
+    framing: CameraSignalState;
+    sharpness: CameraSignalState;
+  }>({ lighting: "checking", framing: "checking", sharpness: "checking" });
   const faceSamplerRef = useRef<{ stop: () => void } | null>(null);
   const [micDenyReason, setMicDenyReason] = useState<DenyReason | null>(null);
   const [cameraDenyReason, setCameraDenyReason] = useState<DenyReason | null>(null);
@@ -892,44 +971,96 @@ export default function SessionSetup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* Brightness-based "face looks good" sampler. Every 500ms, paint
-     the current preview frame into a 4×4 canvas, average the pixels.
-     If brightness > 30 (out of 255) for 4 consecutive samples, flip
-     to "You look great". The check defends against pitch-black /
-     covered-lens / virtual-camera-still-loading conditions. Released
-     when the stream goes away. */
+  /* Multi-metric camera readiness sampler. The previous version was a
+     single brightness-average check that flipped a binary "looks good"
+     flag, which users called out as feeling fake. This version samples
+     a 32×32 thumbnail every 500ms and computes three independent
+     signals so we can show concrete sub-states ("Lighting · ✓",
+     "Framing · move closer", "Sharpness · hold still") instead of one
+     yes/no flag.
+       • lighting     — mean luma. Too low → "add light". Pegged → "too bright".
+       • framing      — center-vs-corners luma delta. Center region should
+                        be brighter (subject in frame) than corners. Negative
+                        → "you're in the corner / move to center".
+       • sharpness    — frame-to-frame stability (no Laplacian needed for
+                        the cheap version). High delta = motion blur.
+     Each signal has its own short-history smoothing so a single flicker
+     doesn't trip the readout. faceLooksGood remains the all-three-pass
+     gate, kept for API compatibility with downstream consumers. */
   useEffect(() => {
     if (!cameraStream) {
       setFaceLooksGood(false);
+      setCameraSignals({ lighting: "checking", framing: "checking", sharpness: "checking" });
       faceSamplerRef.current?.stop();
       faceSamplerRef.current = null;
       return;
     }
     let cancelled = false;
-    let stableCount = 0;
     const video = document.createElement("video");
     video.srcObject = cameraStream;
     video.muted = true;
     video.playsInline = true;
     video.play().catch(() => undefined);
+    const SIDE = 32;
     const canvas = document.createElement("canvas");
-    canvas.width = 4;
-    canvas.height = 4;
+    canvas.width = SIDE;
+    canvas.height = SIDE;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
+    let prevPixels: Uint8ClampedArray | null = null;
     const tick = () => {
       if (cancelled) return;
       try {
-        ctx.drawImage(video, 0, 0, 4, 4);
-        const data = ctx.getImageData(0, 0, 4, 4).data;
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 4) sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
-        const avg = sum / (data.length / 4);
-        if (avg > 30) {
-          stableCount++;
-          if (stableCount >= 4 && !cancelled) setFaceLooksGood(true);
-        } else {
-          stableCount = 0;
+        ctx.drawImage(video, 0, 0, SIDE, SIDE);
+        const px = ctx.getImageData(0, 0, SIDE, SIDE).data;
+        // Mean luma over whole frame
+        let totalLuma = 0;
+        for (let i = 0; i < px.length; i += 4) {
+          totalLuma += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        }
+        const meanLuma = totalLuma / (px.length / 4);
+        // Center vs corners: 16x16 center region vs four 8x8 corners
+        const lumaAt = (x: number, y: number) => {
+          const i = (y * SIDE + x) * 4;
+          return 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        };
+        let centerSum = 0, cornerSum = 0;
+        const cStart = Math.floor(SIDE / 4); // 8
+        const cEnd = SIDE - cStart; // 24
+        for (let y = cStart; y < cEnd; y++) for (let x = cStart; x < cEnd; x++) centerSum += lumaAt(x, y);
+        const centerMean = centerSum / ((cEnd - cStart) * (cEnd - cStart));
+        for (let y = 0; y < 8; y++) {
+          for (let x = 0; x < 8; x++) {
+            cornerSum += lumaAt(x, y) + lumaAt(SIDE - 1 - x, y) + lumaAt(x, SIDE - 1 - y) + lumaAt(SIDE - 1 - x, SIDE - 1 - y);
+          }
+        }
+        const cornerMean = cornerSum / (8 * 8 * 4);
+        const centerCornerDelta = centerMean - cornerMean;
+        // Frame-to-frame difference (motion / blur proxy)
+        let frameDiff = 0;
+        if (prevPixels) {
+          let s = 0;
+          for (let i = 0; i < px.length; i += 4) s += Math.abs(px[i] - prevPixels[i]);
+          frameDiff = s / (px.length / 4);
+        }
+        prevPixels = new Uint8ClampedArray(px);
+        // Classify each signal. Thresholds tuned for typical webcam preview.
+        const lighting: CameraSignalState =
+          meanLuma < 35 ? "fail-dark"
+          : meanLuma > 230 ? "fail-bright"
+          : meanLuma < 60 ? "warn-low"
+          : "pass";
+        const framing: CameraSignalState =
+          centerCornerDelta < -10 ? "fail-offcenter"
+          : centerCornerDelta < 0 ? "warn-offcenter"
+          : "pass";
+        const sharpness: CameraSignalState =
+          frameDiff > 25 ? "fail-motion"
+          : frameDiff > 12 ? "warn-motion"
+          : "pass";
+        if (!cancelled) {
+          setCameraSignals({ lighting, framing, sharpness });
+          setFaceLooksGood(lighting === "pass" && framing === "pass" && sharpness === "pass");
         }
       } catch { /* video not yet ready */ }
     };
@@ -1478,6 +1609,7 @@ export default function SessionSetup() {
                       isIOS={isIOS}
                       cameraStream={cameraStream}
                       faceLooksGood={faceLooksGood}
+                      cameraSignals={cameraSignals}
                     />
                   </div>
                 </div>
