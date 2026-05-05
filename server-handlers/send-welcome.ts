@@ -327,6 +327,24 @@ async function handleVerifyReminder(req: VercelRequest, res: VercelResponse, nor
 
 // ─── Password Reset Email Handler ───────────────────────────────────────────
 async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEmail: string) {
+  // Email-format validation. The user reported password-reset emails
+  // being sent for "completely invalid/garbage" addresses — Supabase's
+  // generate_link doesn't validate format, it just looks up the user
+  // record. We validate here BEFORE the admin API call so:
+  //   • garbage like "asdfgh" returns a generic 200 (enumeration defense)
+  //     without spending a Supabase admin call
+  //   • the existing "user not found" path stays untouched for real
+  //     well-formed but unregistered addresses
+  // Stricter than RFC 5322 — matches the client-side validator in
+  // src/auth/_validation.ts so client + server agree on what's valid.
+  const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
+  if (!EMAIL_RE.test(normalizedEmail) || /\.\./.test(normalizedEmail)) {
+    // Generic 200 (enumeration defense) — client UI shows the same
+    // "Check your email" confirmation regardless. Loud server log so
+    // ops can still spot patterns of invalid-email probing.
+    console.log(`[reset] no-op for invalid email format: ${normalizedEmail.slice(0, 50)}`);
+    return res.status(200).json({ ok: true });
+  }
   // Rate limit: max 3 reset emails per IP per hour
   if (await checkRateLimit(req, "reset", 3)) {
     return res.status(429).json({ error: "Too many reset requests. Try again later." });
@@ -365,40 +383,60 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       }
     }
 
-    // Generate a Supabase recovery link via admin API
-    const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: "recovery",
-        email: normalizedEmail,
-        options: { redirectTo: `${APP_URL}/reset-password` },
-      }),
-    });
-
-    if (!linkRes.ok) {
-      const errText = await linkRes.text().catch(() => "");
-      console.error("generate_link failed:", linkRes.status, errText);
-      // Don't reveal whether user exists — always return success
-      return res.status(200).json({ ok: true });
+    // Reset-link reuse: if a valid link was issued in the last 50 minutes,
+    // reuse it instead of generating a new one. Solves both:
+    //   #8 multiple valid reset links — only one is ever in active emails
+    //   #9 reuse existing link on resend — same link gets resent for
+    //      network/email-delivery retries within the window
+    // Cache TTL is 50 minutes (Supabase recovery links default to 1 hour;
+    // we expire 10 min early so we never resend a near-dead link).
+    const cacheKey = `reset_link:${normalizedEmail}`;
+    let resetUrl: string | null = null;
+    const cached = await getRedisString(cacheKey);
+    if (cached) {
+      resetUrl = cached;
+      console.log(`[reset] reusing cached link for ${normalizedEmail}`);
     }
 
-    const linkData = await linkRes.json();
-    const actionLink = linkData.action_link || linkData.properties?.action_link;
+    if (!resetUrl) {
+      // Generate a Supabase recovery link via admin API
+      const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "recovery",
+          email: normalizedEmail,
+          options: { redirectTo: `${APP_URL}/reset-password` },
+        }),
+      });
 
-    if (!actionLink || typeof actionLink !== "string") {
-      console.error("No action_link in generate_link response:", JSON.stringify(linkData).slice(0, 300));
-      return res.status(200).json({ ok: true });
+      if (!linkRes.ok) {
+        const errText = await linkRes.text().catch(() => "");
+        console.error("generate_link failed:", linkRes.status, errText);
+        // Don't reveal whether user exists — always return success
+        return res.status(200).json({ ok: true });
+      }
+
+      const linkData = await linkRes.json();
+      const actionLink = linkData.action_link || linkData.properties?.action_link;
+
+      if (!actionLink || typeof actionLink !== "string") {
+        console.error("No action_link in generate_link response:", JSON.stringify(linkData).slice(0, 300));
+        return res.status(200).json({ ok: true });
+      }
+
+      // Rewrite the redirect_to in the action link so user lands on our reset page
+      const linkUrl = new URL(actionLink);
+      linkUrl.searchParams.set("redirect_to", `${APP_URL}/reset-password`);
+      resetUrl = linkUrl.toString();
+
+      // Cache the fresh link so the next request within 50min reuses it
+      await setRedisString(cacheKey, resetUrl, 50 * 60);
     }
-
-    // Rewrite the redirect_to in the action link so user lands on our reset page
-    const linkUrl = new URL(actionLink);
-    linkUrl.searchParams.set("redirect_to", `${APP_URL}/reset-password`);
-    const resetUrl = linkUrl.toString();
     const safeEmail = escapeHtml(normalizedEmail);
 
     // Send reset email via Resend
@@ -627,7 +665,7 @@ const AUTH_SIGNUP_WINDOW = 3600;
 async function getRedisValue(key: string): Promise<number> {
   const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
   const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return 0;
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return inMemFallbackGetNum(key);
   try {
     const r = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
@@ -635,23 +673,78 @@ async function getRedisValue(key: string): Promise<number> {
     if (!r.ok) return 0;
     const d = await r.json();
     return parseInt(d.result || "0", 10);
-  } catch { return 0; }
+  } catch { return inMemFallbackGetNum(key); }
+}
+
+async function getRedisString(key: string): Promise<string | null> {
+  const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return inMemFallbackGetStr(key);
+  try {
+    const r = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return typeof d.result === "string" && d.result.length > 0 ? d.result : null;
+  } catch { return inMemFallbackGetStr(key); }
+}
+
+async function setRedisString(key: string, value: string, ttl: number): Promise<void> {
+  const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) { inMemFallbackSetStr(key, value, ttl); return; }
+  try {
+    await fetch(`${UPSTASH_URL}/setex/${encodeURIComponent(key)}/${ttl}/${encodeURIComponent(value)}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+  } catch { inMemFallbackSetStr(key, value, ttl); }
+}
+
+/* ─── In-memory fallback for when Upstash isn't configured ───
+   Keeps server-side login lockout + reset-link cache working in dev
+   and as a defense-in-depth if Redis is briefly unavailable. Per-
+   Vercel-instance only — cold starts reset state. Strong production
+   defense still requires Redis (set UPSTASH_REDIS_REST_URL +
+   UPSTASH_REDIS_REST_TOKEN), but this stops the "no Redis = no
+   lockout at all" bypass that the user reported (#5: incognito
+   resets attempt count). */
+const _inMemStore = new Map<string, { value: string; expiresAt: number }>();
+function inMemFallbackGetStr(key: string): string | null {
+  const entry = _inMemStore.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { _inMemStore.delete(key); return null; }
+  return entry.value;
+}
+function inMemFallbackGetNum(key: string): number {
+  const v = inMemFallbackGetStr(key);
+  return v ? parseInt(v, 10) || 0 : 0;
+}
+function inMemFallbackSetStr(key: string, value: string, ttlSec: number): void {
+  _inMemStore.set(key, { value, expiresAt: Date.now() + ttlSec * 1000 });
+}
+function inMemFallbackIncr(key: string, ttlSec: number): number {
+  const cur = inMemFallbackGetNum(key);
+  const next = cur + 1;
+  inMemFallbackSetStr(key, String(next), ttlSec);
+  return next;
 }
 
 async function incrRedisKey(key: string, ttl: number): Promise<number> {
   const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
   const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return 0;
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return inMemFallbackIncr(key, ttl);
   try {
     const r = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify([["INCR", key], ["EXPIRE", key, ttl]]),
     });
-    if (!r.ok) return 0;
+    if (!r.ok) return inMemFallbackIncr(key, ttl);
     const results = await r.json();
     return results[0]?.result || 0;
-  } catch { return 0; }
+  } catch { return inMemFallbackIncr(key, ttl); }
 }
 
 async function delRedisKey(key: string): Promise<void> {
