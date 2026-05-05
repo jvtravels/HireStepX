@@ -348,10 +348,18 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       lead: s([35, 50], [5, 10], ESOP(8, 18), [48, 78], { negotiation_leverage: "high", notes: "Lead/Principal PD or Design Manager. Often a leveling-arbitrage opportunity — IC ladder caps lower than EM ladder at most unicorns." }),
     },
     "it-services": {
-      entry: s([3.5, 5.5], [0.1, 0.4], NO_EQ, [3.5, 6], { negotiation_leverage: "low" }),
-      mid: s([6, 11], [0.4, 1], NO_EQ, [6.5, 12], { notes: "Design at services firms (TCS Interactive, Infosys Wongdoody, etc.) pays 30-40% below product-company benchmarks. Consider switching to product after 2-3 yrs." }),
-      senior: s([11, 20], [1, 2], NO_EQ, [12, 22], {}),
-      lead: s([18, 30], [2, 4], NO_EQ, [20, 34], {}),
+      // 2025 AmbitionBox / Glassdoor for TCS / Infosys / Wipro UX designers:
+      //   Avg ₹6.5–7.7 LPA. Experienced (6-9 yrs) ₹6.1–11 LPA.
+      //   Senior roles cap around ₹12.9 LPA. The previous bands here
+      //   (senior [11, 20] / lead [18, 30]) were calibrated against
+      //   product-company benchmarks — way over reality, which is why
+      //   a TCS senior designer was being offered ₹16 LPA in the
+      //   simulator (user-reported, contradicted by AmbitionBox snippet
+      //   showing ₹6.5-7.7 avg).
+      entry: s([3.5, 5.5], [0.1, 0.4], NO_EQ, [3.5, 6], { negotiation_leverage: "low", notes: "TCS / Infosys / Wipro UX/UI Designer fresher band. AmbitionBox 2025 avg: ₹4-6 LPA." }),
+      mid: s([5, 8], [0.3, 0.7], NO_EQ, [5.5, 9], { negotiation_leverage: "low", notes: "Mid-level (3-5 yrs) at services firms. Compensation 30-40% below product-company benchmarks — consider switching after 2-3 yrs." }),
+      senior: s([8, 11], [0.5, 1.5], NO_EQ, [9, 13], { negotiation_leverage: "low", notes: "Senior UX (6-9 yrs) at TCS Interactive / Infosys Wongdoody. Caps around ₹12.9 LPA per AmbitionBox 2025." }),
+      lead: s([12, 17], [1, 2], NO_EQ, [13, 19], { negotiation_leverage: "medium", notes: "Lead/Principal UX at services firms — 10+ yrs. Higher-end roles cross into Design Manager titles which can hit ₹18-22 LPA but those are exception, not norm." }),
     },
     "startup-growth": {
       entry: s([5, 8], [0.3, 0.6], ESOP(0.5, 2), [6, 11], { notes: "Pre-Series-B startups: prefer higher base over higher ESOP — most early-stage equity expires worthless." }),
