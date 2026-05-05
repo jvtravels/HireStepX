@@ -4,9 +4,13 @@ import "./setup-next-navigation";
 import { DashboardProvider, useDashboard } from "../DashboardContext";
 
 // Mock auth
-const mockUser = {
+const mockUser: {
+  id: string; name: string; email: string; targetRole: string;
+  subscriptionTier: "free"; resumeFileName: string | null;
+  hasCompletedOnboarding: boolean; practiceTimestamps: string[];
+} = {
   id: "u1", name: "Test User", email: "test@test.com",
-  targetRole: "EM", subscriptionTier: "free" as const,
+  targetRole: "EM", subscriptionTier: "free",
   resumeFileName: null, hasCompletedOnboarding: true,
   practiceTimestamps: [],
 };
