@@ -564,6 +564,25 @@ function CanvasListeningActionZone({
   const showTyping = typing || speechUnavailable;
   return (
     <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+      {/* Empty-state listening hint — shown briefly before STT picks up
+          the first word. Fills the dead-zone between phase=listening
+          and currentTranscript getting any content. Animated dots
+          give the user visual confirmation that the mic is hot,
+          paired with the visualizer disc above. */}
+      {!currentTranscript && !showTyping && (
+        <div aria-hidden style={{
+          width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+          fontFamily: ef.sans, fontSize: 13, fontStyle: "italic", color: e.inkSoft,
+          padding: "10px 16px",
+        }}>
+          <span>Listening</span>
+          <span className="hsx-dot-pulse" aria-hidden style={{ display: "inline-flex", gap: 3 }}>
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: e.copper, animation: "hsx-dot-bounce 1.2s ease-in-out 0s infinite" }} />
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: e.copper, animation: "hsx-dot-bounce 1.2s ease-in-out 0.18s infinite" }} />
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: e.copper, animation: "hsx-dot-bounce 1.2s ease-in-out 0.36s infinite" }} />
+          </span>
+        </div>
+      )}
       {/* Live transcript card — only if we have something */}
       {currentTranscript && !showTyping && (
         /* role="log" implies polite; aria-relevant="additions" so SR only
@@ -945,6 +964,7 @@ function InterviewInner() {
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes hsx-dot-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-3px); opacity: 1; } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes recordPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
