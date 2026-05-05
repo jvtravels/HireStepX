@@ -2,12 +2,32 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { c, font } from "../tokens";
 import { useAuth } from "../AuthContext";
+import { isResetInProgress } from "../auth/_shell";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const { isLoggedIn, loading, logout, user } = useAuth();
+  // Hide the Dashboard button when the user is in a recovery flow
+  // (clicked password reset link). Without this guard, a user who hits
+  // the breach-error or token-expired state on /reset-password and
+  // navigates back to landing would see Dashboard and bypass the
+  // reset requirement, entering the app on a partial recovery
+  // session. Re-checks every 2s in case another tab finishes/cancels
+  // the reset while this tab is open.
+  const [resetting, setResetting] = useState(false);
+  useEffect(() => {
+    const update = () => setResetting(isResetInProgress());
+    update();
+    const id = setInterval(update, 2000);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "hsx_reset_in_progress") update();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => { clearInterval(id); window.removeEventListener("storage", onStorage); };
+  }, []);
+  const showDashboard = isLoggedIn && !resetting;
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -68,7 +88,7 @@ export function Nav() {
         ))}
         {loading ? (
           <div style={{ width: 140, height: 36 }} />
-        ) : isLoggedIn ? (
+        ) : showDashboard ? (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Link href="/dashboard" className="premium-btn" style={{
               fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
@@ -153,7 +173,7 @@ export function Nav() {
             </a>
           ))}
           <div style={{ width: 40, height: 1, background: c.border, margin: "4px 0" }} />
-          {loading ? null : isLoggedIn ? (
+          {loading ? null : showDashboard ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{
