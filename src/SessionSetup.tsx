@@ -1172,16 +1172,16 @@ export default function SessionSetup() {
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);
     setLaunching(true);
-    // Pre-roll budget: ~900ms total — three 250ms beats (3-2-1) plus a
-    // brief "Let's go!" frame. Chrome's gesture-activation window is ~5s
-    // and the count beats are synchronous setState calls, so the chain
-    // stays well within the audio-unlock budget. Earlier we collapsed
-    // this to a single beat to be safe; users found it confusing because
-    // a single "1" → "Let's go!" reads as off-by-one rather than a
-    // proper countdown.
+    // Pre-roll budget: ~2.0s total — three 600ms beats (3-2-1) plus a
+    // brief "Let's go!" frame. The previous 250ms-per-beat felt too
+    // rushed (users could barely register one number before the next
+    // appeared); 600ms matches what real-world countdown timers use
+    // (sports timers, broadcast intros). Still well within Chrome's
+    // ~5s gesture-activation window for the AudioContext unlock that
+    // happens at the end of the chain.
     setCountdown(3);
-    setTimeout(() => setCountdown(2), 250);
-    setTimeout(() => setCountdown(1), 500);
+    setTimeout(() => setCountdown(2), 600);
+    setTimeout(() => setCountdown(1), 1200);
     setTimeout(() => {
       setCountdown(0);
       // One more unlock attempt right before navigation — if the gesture
@@ -1193,7 +1193,7 @@ export default function SessionSetup() {
       cameraStreamRef.current?.getTracks().forEach(t => t.stop());
       const cameraParam = cameraStatus === "granted" ? "&camera=1" : "";
       router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}`);
-    }, 900);
+    }, 1900);
   };
 
   // Power-user shortcut: ⌘/Ctrl+Enter from anywhere on the page launches.

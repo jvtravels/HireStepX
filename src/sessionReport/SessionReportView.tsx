@@ -103,8 +103,12 @@ function MetricBand({ band }: { band: DeliveryMetric["band"] }) {
 }
 
 function ScoreGauge({ score, color }: { score: number; color: string }) {
-  /* Half-doughnut. 180° arc; pct of arc filled.
-     Designed for 280×140 canvas; pure SVG so it scales clean. */
+  /* Half-doughnut with the score number rendered INSIDE the SVG so
+     positioning is bulletproof across viewport widths. The previous
+     version positioned the score with absolute CSS over the SVG
+     parent — scaling and overflow caused the number to drift above
+     the arc on narrow screens (user-reported #7). Now everything is
+     in the same SVG coordinate system. */
   const r = 110;
   const cx = 140;
   const cy = 140;
@@ -112,7 +116,13 @@ function ScoreGauge({ score, color }: { score: number; color: string }) {
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const filled = len * pct;
   return (
-    <svg width="280" height="160" viewBox="0 0 280 160" aria-hidden="true">
+    <svg
+      width="280"
+      height="170"
+      viewBox="0 0 280 170"
+      role="img"
+      aria-label={`Score ${score} out of 100`}
+    >
       <path
         d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`}
         stroke={t.line}
@@ -128,6 +138,29 @@ function ScoreGauge({ score, color }: { score: number; color: string }) {
         strokeDasharray={`${filled} ${len}`}
         fill="none"
       />
+      {/* Score number — anchored in SVG coords so it can never
+          drift outside the arc regardless of CSS scaling. */}
+      <text
+        x={cx}
+        y={cy - 14}
+        textAnchor="middle"
+        fontFamily={f.serif}
+        fontSize="60"
+        fill={t.coal}
+        style={{ letterSpacing: "-0.02em" }}
+      >
+        {score}
+      </text>
+      <text
+        x={cx}
+        y={cy + 14}
+        textAnchor="middle"
+        fontFamily={f.mono}
+        fontSize="14"
+        fill={t.inkFaint}
+      >
+        / 100
+      </text>
     </svg>
   );
 }
@@ -527,25 +560,11 @@ function HeroSection({ data }: { data: InterviewResultData }) {
           <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
             Overall Score
           </div>
-          <div style={{ position: "relative", display: "inline-block" }}>
+          {/* Score number rendered inside the SVG (see ScoreGauge above) —
+              no overlay div needed. The previous CSS-overlay approach
+              caused the number to drift above the arc on narrow widths. */}
+          <div style={{ display: "inline-block" }}>
             <ScoreGauge score={data.overallScore} color={verdict.color} />
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: 36,
-                textAlign: "center",
-                fontFamily: f.serif,
-                fontSize: 64,
-                lineHeight: 1,
-                color: t.coal,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {data.overallScore}
-              <span style={{ fontSize: 24, color: t.inkFaint, marginLeft: 4, fontFamily: f.mono }}>/100</span>
-            </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
             <span

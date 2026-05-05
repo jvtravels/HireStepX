@@ -956,9 +956,19 @@ export function useInterviewEngine() {
           const panelGender = isPanelInterview && normalizedPersona && panelMembers
             ? panelMembers.find(m => m.title === normalizedPersona)?.gender
             : undefined;
+          // Bug fix: when the Cartesia voice library fails to load,
+          // panelVoiceId is null and we fall through to speak() which
+          // previously always used `interviewerGender` (the global
+          // interviewer's gender, not the current panelist's). Result:
+          // every panelist — male or female — used the same fallback
+          // voice and "Deepika Iyer" sounded male / "Rahul" sounded
+          // female. Now the panel member's own gender drives the
+          // Azure voice selection so the gender at least matches even
+          // if individual voices don't differ.
+          const fallbackGender = isPanelInterview ? (panelGender ?? interviewerGender) : interviewerGender;
           return panelVoiceId
             ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onSpeechEnd, panelGender, onDurationKnown)
-            : speak(step.aiText, onSpeechEnd, onSpeechEnd, interviewerGender, onDurationKnown);
+            : speak(step.aiText, onSpeechEnd, onSpeechEnd, fallbackGender, onDurationKnown);
         };
         speakPanel().then(handle => {
           if (ttsInstanceIdRef.current === instanceId) {
@@ -2049,13 +2059,18 @@ export function useInterviewEngine() {
 
   // Auto-finalize once we hit the done phase. The closing step now has
   // waitForUser: false so the engine reaches "done" automatically — fire
-  // handleEnd so the user never has to press a button or sit on a dead screen.
+  // handleEnd so the user never has to press a button or sit on a dead
+  // screen. Reduced from 600ms → 100ms per user feedback: the
+  // intermediate "View Feedback" CompletionCard was visible during
+  // that window and confused users (the engine was already moving on,
+  // but they saw a button-with-instructions UI). Near-zero delay
+  // means the EvaluatingOverlay takes over almost immediately.
   useEffect(() => {
     if (phase !== "done") return;
     if (interviewEndedRef.current) return;
     const t = setTimeout(() => {
       if (!interviewEndedRef.current) handleEnd();
-    }, 600);
+    }, 100);
     return () => clearTimeout(t);
   }, [phase, handleEnd]);
 

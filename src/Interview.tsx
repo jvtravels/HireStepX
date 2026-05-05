@@ -1028,6 +1028,19 @@ function InterviewInner() {
                   speechEnded={speechEnded}
                 />
               </CanvasPlainHeading>
+            ) : phase === "thinking" ? (
+              // Bug: full question text was flashing on screen for a
+              // few seconds during the "thinking" phase before the
+              // typewriter started during "speaking" — the user saw
+              // the answer instantly, then it vanished, then it
+              // re-typed. Root cause: the editorial-heading branch
+              // below rendered the full displayText for any non-
+              // speaking phase, including thinking. Fix: render
+              // nothing during thinking — the typewriter takes over
+              // cleanly when phase flips to speaking.
+              <CanvasPlainHeading>
+                <span style={{ visibility: "hidden" }}>{displayText}</span>
+              </CanvasPlainHeading>
             ) : (() => {
               // Prefer the LLM-marked accentSplit when available — it's
               // hand-picked at question-generation time. Falls back to
@@ -1213,13 +1226,23 @@ function InterviewInner() {
             {isSalaryNegotiation && transcript.length > 2 && (
               <AnnotatedReplayPanel transcript={transcript} negotiationBand={negotiationBand} />
             )}
-            <CompletionCard
-              currentQuestionNum={currentQuestionNum} elapsed={elapsed}
-              usedFallbackScore={usedFallbackScore} evalTimedOut={evalTimedOut}
-              evaluating={evaluating} handleEnd={handleEnd}
-              videoURL={video.videoURL}
-              isSalaryNegotiation={isSalaryNegotiation}
-            />
+            {/* CompletionCard suppressed by default per user feedback —
+                it surfaced an intermediate "View Feedback" button screen
+                between interview-end and the EvaluatingOverlay that
+                confused users (the engine was already moving on but they
+                saw an actionable button). Shown only when the eval has
+                hard-failed (usedFallbackScore || evalTimedOut), where
+                the user genuinely needs to click through to view the
+                fallback-scored report. */}
+            {(usedFallbackScore || evalTimedOut) && (
+              <CompletionCard
+                currentQuestionNum={currentQuestionNum} elapsed={elapsed}
+                usedFallbackScore={usedFallbackScore} evalTimedOut={evalTimedOut}
+                evaluating={evaluating} handleEnd={handleEnd}
+                videoURL={video.videoURL}
+                isSalaryNegotiation={isSalaryNegotiation}
+              />
+            )}
           </div>
         )}
 
