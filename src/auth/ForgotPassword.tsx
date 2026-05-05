@@ -14,7 +14,7 @@ import { sanitizeEmail, validateEmail } from "./_validation";
 import { detectEmailProvider, mapAuthError, useIsMounted } from "./_shell";
 import { trackAuth, loginViewedEvent } from "./_analytics";
 
-const EMAIL_MAX_LENGTH = 320;
+const EMAIL_MAX_LENGTH = 254; // RFC 5321 hard ceiling
 // 60s matches Stripe / Linear / Notion resend cooldowns.
 const RESEND_COOLDOWN_SEC = 60;
 

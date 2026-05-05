@@ -256,6 +256,7 @@ export default function SettingsPage() {
           handleSave={handleSave}
           resetLoading={resetLoading} resetSent={resetSent}
           handlePasswordReset={handlePasswordReset}
+          isOAuthOnly={authUser?.signedInVia === "google"}
           signOutOthersLoading={signOutOthersLoading}
           signOutOthersDone={signOutOthersDone}
           signOutOthersError={signOutOthersError}

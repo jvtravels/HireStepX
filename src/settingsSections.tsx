@@ -195,6 +195,11 @@ export interface AccountSectionProps {
   resetLoading: boolean;
   resetSent: boolean;
   handlePasswordReset: () => void;
+  /** True when the signed-in user authenticated via Google (or any
+   *  OAuth provider) — they don't have an internal-app password to
+   *  reset, so the section hides. Resetting via email link only
+   *  changes a password they don't use, which confused users. */
+  isOAuthOnly: boolean;
   // Sessions — sign out every device except the current one
   signOutOthersLoading: boolean;
   signOutOthersDone: boolean;
@@ -216,7 +221,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
     editName, setEditName, editCompany, setEditCompany, editIndustry, setEditIndustry,
     userName, email, tierLabel, subscriptionTier, isDirty,
     saving, saved, handleSave,
-    resetLoading, resetSent, handlePasswordReset,
+    resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
     signOutOthersLoading, signOutOthersDone, signOutOthersError,
     handleSignOutOtherDevices,
     recentDevices,
@@ -307,7 +312,13 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
 
       <Divider />
 
-      {/* Password */}
+      {/* Password — hidden for OAuth-only users (Google, etc.).
+          They sign in with their Google account; we don't store a
+          password they could reset. The previous flow let them
+          trigger a "reset" that changed an internal password they
+          never use, which confused users into thinking their Google
+          password was being reset. */}
+      {!isOAuthOnly && (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Password</span>
@@ -328,6 +339,17 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
           {resetLoading ? "Sending..." : resetSent ? "Email Sent" : "Reset Password"}
         </button>
       </div>
+      )}
+      {isOAuthOnly && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, display: "block", marginBottom: 3 }}>Password</span>
+            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>
+              You signed in with Google — manage your password in your Google Account.
+            </span>
+          </div>
+        </div>
+      )}
 
       <Divider />
 

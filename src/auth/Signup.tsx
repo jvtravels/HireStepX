@@ -41,9 +41,18 @@ import {
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
 // Matches the server-side max in AuthContext.signup() so the input
 // can't even hold an over-length name (avoids "looks valid until submit").
-const NAME_MAX_LENGTH = 48;
-const EMAIL_MAX_LENGTH = 320;
-const PASSWORD_MAX_LENGTH = 256;
+// Lengths capped tighter than RFC permits because:
+//   • NAME 40 chars: real names rarely exceed this; the visual overflow
+//     past field width was making signup forms look broken.
+//   • EMAIL 254 chars: RFC 5321 hard ceiling. The previous 320 was based
+//     on RFC 5322 (longest theoretically possible address) but no real
+//     mail server accepts addresses above 254.
+//   • PASSWORD 128: bcrypt input cap is 72 bytes; anything longer is
+//     effectively truncated. Trimming visible cap to 128 prevents the
+//     misleading "I set a 200-char password" UX.
+const NAME_MAX_LENGTH = 40;
+const EMAIL_MAX_LENGTH = 254;
+const PASSWORD_MAX_LENGTH = 128;
 
 export default function Signup() {
   const router = useRouter();

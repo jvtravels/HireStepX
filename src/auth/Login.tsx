@@ -35,8 +35,8 @@ import {
 
 // Auto-hide password if visible for this long (over-shoulder protection)
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
-const EMAIL_MAX_LENGTH = 320;
-const PASSWORD_MAX_LENGTH = 256;
+const EMAIL_MAX_LENGTH = 254; // RFC 5321 hard ceiling — no real mail server accepts longer
+const PASSWORD_MAX_LENGTH = 128;
 
 // Login lockout — share key with the existing SignUp.tsx so the two
 // surfaces don't diverge on lockout state.
@@ -97,6 +97,22 @@ export default function Login() {
   const [staySignedIn, setStaySignedIn] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+
+  // Anti-autofill: clear fields on mount if the browser auto-populated
+  // them without user interaction. Spec: "saved credentials may appear
+  // as suggestions only — fields should remain empty until the user
+  // explicitly selects a suggestion." We can't disable the dropdown
+  // (browsers ignore autoComplete="off" on login fields), so we use a
+  // delayed clear that only runs if the user hasn't typed/clicked yet.
+  const userInteractedRef = React.useRef(false);
+  React.useEffect(() => {
+    const id = setTimeout(() => {
+      if (userInteractedRef.current) return;
+      setEmail((cur) => (cur && !userInteractedRef.current ? "" : cur));
+      setPassword((cur) => (cur && !userInteractedRef.current ? "" : cur));
+    }, 250);
+    return () => clearTimeout(id);
+  }, []);
   const [loading, setLoading] = useState(false);
   const [googleInFlight, setGoogleInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -436,8 +452,8 @@ export default function Login() {
                 textWrap: "balance",
               }}
             >
-              Practise interviews. Improve how you think under pressure. One
-              answer at a time.
+              Practise interviews with an AI coach. Get scored, structured
+              feedback after every session.
             </p>
           </div>
 
@@ -544,6 +560,7 @@ export default function Login() {
               aria-labelledby="login-heading"
               aria-describedby={displayError ? "login-error" : undefined}
               className="hsx-login-form-fields"
+              autoComplete="off"
               style={{ display: "flex", flexDirection: "column", gap: 18 }}
             >
               <Field
@@ -552,6 +569,7 @@ export default function Login() {
                 name="email"
                 value={email}
                 onChange={(v) => {
+                  userInteractedRef.current = true;
                   setEmail(v);
                   if (error) setError(null);
                 }}
@@ -561,7 +579,7 @@ export default function Login() {
                   }
                   setEmailTouched(true);
                 }}
-                onAutofill={() => setEmailTouched(true)}
+                onAutofill={() => { userInteractedRef.current = true; setEmailTouched(true); }}
                 autoComplete="email"
                 placeholder="rahul@example.com"
                 // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -578,6 +596,7 @@ export default function Login() {
                 name="password"
                 value={password}
                 onChange={(v) => {
+                  userInteractedRef.current = true;
                   setPassword(v);
                   if (error) setError(null);
                 }}
@@ -590,7 +609,7 @@ export default function Login() {
                   }
                   setPasswordTouched(true);
                 }}
-                onAutofill={() => setPasswordTouched(true)}
+                onAutofill={() => { userInteractedRef.current = true; setPasswordTouched(true); }}
                 autoComplete="current-password"
                 placeholder="Enter your password"
                 enterKeyHint="go"

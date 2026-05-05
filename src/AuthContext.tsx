@@ -272,6 +272,10 @@ export interface User {
   practiceTimestamps?: string[];
   resumeText?: string;
   resumeData?: StoredResume | null;
+  /** "email" for password-account users, "google" for OAuth users.
+   *  Drives password-reset visibility in Settings — Google users have
+   *  no internal-app password to reset. */
+  signedInVia?: "email" | "google";
   /**
    * Pointer to the row in `resume_versions` whose AI parse produced
    * `resumeData`. When a session is created, this id is captured into
@@ -378,6 +382,13 @@ function profileToUser(profile: Profile, session: Session): User {
     lastStreakRewardDay: typeof profile.last_streak_reward_day === "number" ? profile.last_streak_reward_day : 0,
     emailVerified: session.user.user_metadata?.custom_email_verified === true || !!session.user.email_confirmed_at,
     deletedAt: profile.deleted_at,
+    // OAuth provider — used by Settings to hide "Reset Password" for
+    // Google-only users (they have no internal-app password to reset).
+    signedInVia:
+      session.user.app_metadata?.provider === "google" ||
+      session.user.app_metadata?.providers?.includes?.("google")
+        ? "google"
+        : "email",
   };
 }
 

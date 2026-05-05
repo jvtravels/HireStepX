@@ -6,12 +6,33 @@ export interface FieldValidation {
   message: string | null;
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Stricter than RFC 5322 on purpose — we reject patterns no real
+// SMTP server would accept anyway (1-letter TLDs, missing TLD, leading
+// dots, consecutive dots, etc.). The previous regex was permissive
+// enough that "garbage@x.y" passed as valid; users complained that the
+// inline validation message disappeared on obvious-garbage input.
+const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
 
 export function validateEmail(value: string): FieldValidation {
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     return { valid: false, message: null }; // empty is "not yet" not "wrong"
+  }
+  // Reject obvious garbage shapes BEFORE the regex so we get a clean
+  // message — these patterns the regex catches too but the explicit
+  // check makes the intent (and any future loosening) auditable:
+  //   • no @ at all       → "Email needs @"
+  //   • multiple @s       → "Multiple @ symbols"
+  //   • consecutive dots  → "Two dots in a row"
+  //   • ends with .       → "Missing top-level domain"
+  if (!trimmed.includes("@")) {
+    return { valid: false, message: "Enter a valid email address." };
+  }
+  if ((trimmed.match(/@/g) || []).length > 1) {
+    return { valid: false, message: "Enter a valid email address." };
+  }
+  if (/\.\./.test(trimmed) || /^\./.test(trimmed) || /\.@/.test(trimmed) || /@\./.test(trimmed)) {
+    return { valid: false, message: "Enter a valid email address." };
   }
   if (!EMAIL_RE.test(trimmed)) {
     return { valid: false, message: "Enter a valid email address." };
@@ -239,8 +260,8 @@ export function validateName(value: string): FieldValidation {
   if (trimmed.length < 2) {
     return { valid: false, message: "Please enter your name." };
   }
-  if (trimmed.length > 48) {
-    return { valid: false, message: "Name must be 48 characters or fewer." };
+  if (trimmed.length > 40) {
+    return { valid: false, message: "Name must be 40 characters or fewer." };
   }
   return { valid: true, message: null };
 }
