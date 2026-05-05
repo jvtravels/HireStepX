@@ -8,7 +8,6 @@ import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-un
 import { useOnlineOfflineRecovery } from "./_recovery";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
 import { useBackchannels } from "./_backchannels";
-import { useMicActivity } from "./useMicActivity";
 import { extractAccentMarkup } from "./_accent-parser";
 import { stripProsodyMarkup } from "./_prosody";
 import { useListeningInterjections } from "./_listening-interjections";
@@ -1837,25 +1836,6 @@ export function useInterviewEngine() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, currentStep, interviewScript, aiVoiceEnabled]);
 
-  /* Mic activity hook — drives two features:
-       1. Barge-in: during speaking phase, if the user starts answering
-          before the AI finishes (past the 4s arm window), we hard-mute
-          TTS and flip to listening so their first words aren't lost.
-       2. Visible mic-activity ring around the visualizer during
-          listening — the `level` value pulses a CSS scale so the user
-          gets visual confirmation their mic is hot.
-     Skipped when ai voice is off (speaking phase doesn't exist) or
-     mic is muted / unavailable. */
-  const { level: micLevel } = useMicActivity({
-    enabled: aiVoiceEnabled && !isMuted && !speechUnavailable && (phase === "listening" || phase === "speaking"),
-    isSpeaking: phase === "speaking",
-    onBargeIn: () => {
-      console.info("[interview] barge-in detected — preempting TTS");
-      skipSpeaking();
-    },
-    bargeInArmAfterMs: 4000,
-  });
-
   /* Retake the just-sent answer.
      Real interviews have an "actually let me redo that" moment —
      candidate hits Send, immediately realizes the answer landed badly,
@@ -2465,9 +2445,6 @@ export function useInterviewEngine() {
      *  answer; the CTA flips from "Start speaking" to "View result"
      *  which calls handleEnd to trigger the report. */
     isLastStep: currentStep >= interviewScript.length - 1 && interviewScript.length > 0,
-    /** Live mic loudness 0-1 for the listening-phase ring + barge-in
-     *  feedback. Updated ~10x/s. */
-    micLevel,
 
     // Skip budget — used by Interview.tsx to enable/disable the skip CTA
     skipsUsed,

@@ -209,57 +209,6 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, aiVoiceEnabled, currentStep]);
 
-  /* ── 4b. End-of-turn auto-submit ────────────────────────────────────
-     Real interviewers detect end-of-turn from prosody + silence and
-     start responding without waiting for the candidate to consciously
-     "submit". Forcing the user to remember to press Space breaks the
-     conversational illusion (it's an app pattern, not a conversation
-     pattern).
-
-     Heuristic:
-       • User has produced a meaningful answer (≥ 10 words)
-       • Transcript hasn't changed for 1.8 seconds
-       • Phase is still "listening"
-       • Rambling/soft-track haven't already preempted us
-     Then call handleNextRef.current() to submit the turn.
-
-     1.8s is the sweet spot from VAD literature — long enough that a
-     thinking-pause ("hmm... well...") doesn't false-trigger, short
-     enough that the AI doesn't feel slow to respond. Users who pause
-     longer to think can re-trigger STT by speaking again; the timer
-     resets on every transcript change. */
-  const autoSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoSubmitFiredRef = useRef(false);
-  useEffect(() => { autoSubmitFiredRef.current = false; }, [currentStep]);
-  useEffect(() => {
-    if (phase !== "listening") {
-      if (autoSubmitTimerRef.current) { clearTimeout(autoSubmitTimerRef.current); autoSubmitTimerRef.current = null; }
-      return;
-    }
-    if (autoSubmitFiredRef.current) return;
-    if (autoSubmitTimerRef.current) clearTimeout(autoSubmitTimerRef.current);
-    const wordCount = currentTranscript.trim().split(/\s+/).filter(Boolean).length;
-    if (wordCount < 10) return;
-    autoSubmitTimerRef.current = setTimeout(() => {
-      if (autoSubmitFiredRef.current || interviewEndedRef.current) return;
-      // Re-check at fire-time: if user resumed talking inside the
-      // 1.8s window, the deps changed and a new timer was scheduled
-      // — this old one will only fire if it survived.
-      const ta = textareaRef.current;
-      if (ta && document.activeElement === ta) return; // user typing — don't auto-submit
-      const finalWordCount = currentTranscript.trim().split(/\s+/).filter(Boolean).length;
-      if (finalWordCount < 10) return;
-      autoSubmitFiredRef.current = true;
-      console.info(`[interview] auto-submit on 1.8s silence (${finalWordCount} words)`);
-      handleNextRef.current?.();
-    }, 1800);
-    return () => {
-      if (autoSubmitTimerRef.current) { clearTimeout(autoSubmitTimerRef.current); autoSubmitTimerRef.current = null; }
-    };
-    // handleNextRef + textareaRef are refs — stable identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, currentStep, currentTranscript]);
-
   /* ── 4. Soft tracking (60s + 25 words) ─────────────────────────── */
   useEffect(() => {
     if (phase !== "listening" || !aiVoiceEnabled) {
