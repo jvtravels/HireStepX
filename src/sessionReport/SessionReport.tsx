@@ -270,7 +270,15 @@ export const SessionReport = memo(function SessionReport({
         }
       } catch (err) {
         if (cancelled || ac.signal.aborted) return;
-        const msg = err instanceof Error ? err.message : "Failed to generate report";
+        const raw = err instanceof Error ? err.message : "Failed to generate report";
+        // The raw upstream error is full of provider-internal noise like
+        //   `Evaluation error: Gemini error 503: { "error": { "code": 503, "message": "This model is currently experienci...`
+        // Translate known transient cases into a plain-English message.
+        const looksTransient = /\b(429|500|502|503|504)\b/.test(raw)
+          || /overload|currently experiencing|temporarily unavailable|rate.?limit/i.test(raw);
+        const msg = looksTransient
+          ? "Our scoring service is briefly overloaded. Please try again in a few seconds — your transcript is safe and nothing was lost."
+          : raw;
         setErrorMsg(msg);
         track("report_llm_failed", {
           sessionId: session.id,

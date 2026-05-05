@@ -184,23 +184,49 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
     return timeoutMs;
   };
 
-  const tryProvider = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }, isFallback: boolean): Promise<LLMResult> => {
+  // Transient: 429 (rate limit), 500/502/503/504 (overload/gateway). These
+  // recover within ~1s in practice — Gemini's "model is currently
+  // experiencing high traffic" 503 is the canonical case. Retry once with
+  // a short backoff before failing over to the next provider, so the
+  // user-visible "Couldn't generate your report" doesn't fire on a blip.
+  const isTransient = (msg: string): boolean =>
+    /\b(429|500|502|503|504)\b/.test(msg) || /overload|rate.?limit|temporar/i.test(msg);
+
+  const callOnce = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }): Promise<LLMResult> => {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), providerTimeout(provider.name));
     try {
       const result = await provider.call(ac.signal);
       clearTimeout(timer);
-      // Await so the row is written before the edge isolate terminates.
-      await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success" });
       return result;
-    } catch (err) {
+    } finally {
       clearTimeout(timer);
-      const msg = err instanceof Error ? err.message : "";
-      const errName = err instanceof Error ? err.name : "";
-      const isTimeout = errName === "AbortError" || msg.includes("aborted") || msg.includes("abort");
-      console.error(`[LLM] ${provider.name} failed (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 150)}`);
-      await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200) });
-      throw err;
+    }
+  };
+
+  const tryProvider = async (provider: { name: string; call: (s: AbortSignal) => Promise<LLMResult> }, isFallback: boolean): Promise<LLMResult> => {
+    let attempt = 0;
+    // up to 2 attempts per provider (1 initial + 1 retry on transient)
+    while (true) {
+      attempt++;
+      try {
+        const result = await callOnce(provider);
+        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: result.model, isFallback, promptTokens: result.tokensUsed?.prompt ?? 0, completionTokens: result.tokensUsed?.completion ?? 0, totalTokens: result.tokensUsed?.total ?? 0, latencyMs: result.latencyMs ?? 0, status: "success" });
+        return result;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        const errName = err instanceof Error ? err.name : "";
+        const isTimeout = errName === "AbortError" || msg.includes("aborted") || msg.includes("abort");
+        const transient = isTransient(msg);
+        if (attempt < 2 && transient && !isTimeout) {
+          console.warn(`[LLM] ${provider.name} transient error (${msg.slice(0, 80)}) — retrying after 800ms`);
+          await new Promise((r) => setTimeout(r, 800));
+          continue;
+        }
+        console.error(`[LLM] ${provider.name} failed (${isTimeout ? "timeout" : "error"}): ${msg.slice(0, 150)}`);
+        await logUsage({ userId: meta?.userId, endpoint: meta?.endpoint, model: provider.name, isFallback, promptTokens: 0, completionTokens: 0, totalTokens: 0, latencyMs: 0, status: isTimeout ? "timeout" : "error", errorMessage: msg.slice(0, 200) });
+        throw err;
+      }
     }
   };
 

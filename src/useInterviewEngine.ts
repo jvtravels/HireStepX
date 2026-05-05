@@ -835,6 +835,45 @@ export function useInterviewEngine() {
     const step = interviewScript[currentStep];
     if (!step) return;
 
+    /* Runtime closing-step sanitizer for salary-negotiation.
+       The LLM occasionally fabricates a final ₹ figure in the closing
+       step that's BELOW the highest offer it actually made earlier in
+       the conversation (user reported: initial offer ₹16 LPA →
+       closing announced "agreed on ₹15.5 LPA total CTC"). The static
+       sanitizer in interviewAPI.ts catches LLM-time hallucinations,
+       but we also defend at runtime in case the script was mutated
+       (e.g. by follow-up replacement paths that build closing text
+       from band data). Strategy: if the closing step contains a ₹
+       figure that's lower than highestOfferRef, replace with a safe
+       template that doesn't commit to a specific number and instead
+       defers to HR. The actual final number is communicated in the
+       written offer, not the live closing line. */
+    if (
+      interviewType === "salary-negotiation"
+      && step.type === "closing"
+      && typeof step.aiText === "string"
+    ) {
+      const offerNumMatch = step.aiText.match(/₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore|Cr)/);
+      const announcedNum = offerNumMatch ? parseFloat(offerNumMatch[1]) : null;
+      const highest = highestOfferRef.current;
+      const announcedBelowHighest = announcedNum !== null && highest > 0 && announcedNum < highest;
+      const hasAnyNumber = announcedNum !== null;
+      // Sanitize whenever closing announces a number that's below the highest
+      // offer made — that's the catastrophic case. Also sanitize if it announces
+      // ANY number we can't verify (highest === 0 means we never tracked an offer).
+      if (announcedBelowHighest || (hasAnyNumber && highest === 0)) {
+        const safeClosing = highest > 0
+          ? `Great — I think we've had a really productive conversation. Based on everything we've discussed, including offers up to ₹${highest} LPA, let me finalise the numbers internally and have HR send you the formal offer letter with the complete breakdown. What's your notice period situation?`
+          : "Great — I think we've had a really productive conversation. Let me put together the final numbers based on everything we've discussed and have HR send you the formal offer letter with the complete breakdown. What's your notice period situation?";
+        console.warn(
+          `[interview] salary-neg closing step announced ₹${announcedNum} LPA `
+          + `(highest offer made: ₹${highest} LPA) — replacing with safe template`,
+        );
+        step.aiText = safeClosing;
+        if (typeof step.aiTextDisplay === "string") step.aiTextDisplay = safeClosing;
+      }
+    }
+
     // Guard: if step is already playing and only the script length changed (not currentStep),
     // don't restart. This prevents follow-up insertions from interrupting active TTS or recording.
     if (currentStep === 0 && introStartedRef.current && step.aiText === introStartedRef.current) {

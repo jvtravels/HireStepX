@@ -299,8 +299,9 @@ export async function fetchLLMQuestions(params: {
       console.warn("[questions] generate-questions returned invalid data:", JSON.stringify(data).slice(0, 300));
       return null;
     }
+    const isSalaryNeg = params.type === "salary-negotiation";
     const questions = data.questions
-      .map((q: { type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }) => {
+      .map((q: { type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }, idx: number) => {
         const rawText = q.aiText || q.text || "";
         // Extract LLM-marked italic-copper accent: *word* → accentSplit.
         // Falls through to plain text if LLM didn't comply.
@@ -308,18 +309,50 @@ export async function fetchLLMQuestions(params: {
         // Compute speakingDuration from word count (~150 WPM for TTS, 1.5s padding)
         const wordCount = cleaned.split(/\s+/).length;
         const estimatedMs = Math.max(3000, Math.round((wordCount / 150) * 60 * 1000) + 1500);
+
+        /* ─── Salary-negotiation safety net ───
+           The script-generation prompt at server-handlers/generate-questions.ts
+           explicitly tells the LLM "ONLY step 2 (initial offer) should
+           contain ₹ numbers; steps 3-6 must NOT invent counter-offer
+           numbers". The LLM doesn't always comply. The user-reported
+           bug: closing step shipped with "agreed on ₹15.5 LPA total
+           CTC" — a number that was BELOW the initial offer (₹16),
+           lower than every offer made during the conversation, and
+           pure invention.
+
+           Fix: in salary-neg mode, for any step EXCEPT the initial
+           offer (step index 1, the first "question" after intro),
+           strip any ₹ amounts and replace with the safe template if
+           the cleaned text contains a salary number. The initial
+           offer (which legitimately needs numbers) is left untouched.
+           A follow-up replacement at runtime can still inject real
+           numbers based on actual conversation; this just blocks the
+           script's hallucinated ones. */
+        let safeAiText = cleaned;
+        let safeDisplay = stripProsodyMarkup(cleaned);
+        const stepType = q.type || "question";
+        const isInitialOffer = isSalaryNeg && idx === 1 && (stepType === "question" || stepType === "intro");
+        if (isSalaryNeg && !isInitialOffer && /₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakh|lakhs|cr|crore|Cr)/.test(cleaned)) {
+          console.warn(`[questions] salary-neg step ${idx} (${stepType}) contained an invented ₹ number — replacing with safe template:`, cleaned.slice(0, 100));
+          if (stepType === "closing") {
+            safeAiText = "I think we've had a really productive conversation. Let me put together the final numbers based on everything we've discussed and have HR send you the formal offer letter. What's your notice period situation?";
+          } else {
+            safeAiText = "Based on what you've shared, let me think about what makes sense here. What matters most to you in the overall package?";
+          }
+          safeDisplay = safeAiText;
+        }
         return {
-          type: (q.type || "question") as InterviewStep["type"],
+          type: stepType as InterviewStep["type"],
           // aiText keeps prosody markup ([pause], _word_) for TTS to render
           // as SSML breaks/emphasis; aiTextDisplay strips everything for UI.
-          aiText: cleaned,
-          aiTextDisplay: stripProsodyMarkup(cleaned),
+          aiText: safeAiText,
+          aiTextDisplay: safeDisplay,
           thinkingDuration: q.type === "intro" ? 500 : 600,
           speakingDuration: estimatedMs,
           waitForUser: q.type !== "closing",
           scoreNote: q.scoreNote || "",
           ...(q.persona ? { persona: q.persona } : {}),
-          ...(accentSplit ? { accentSplit } : {}),
+          ...(accentSplit && safeAiText === cleaned ? { accentSplit } : {}),
         };
       })
       .filter((q: InterviewStep) => q.aiText.length >= 10)

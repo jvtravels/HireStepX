@@ -82,7 +82,16 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
 export function extractCandidateSalaryNumber(answer: string): string | null {
   if (!answer) return null;
 
-  const salaryNumRe = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakh|lakhs|l\b)/gi;
+  // Tolerant of common Indian-English STT mishears for "lakhs":
+  //   "legs"  — Deepgram occasionally renders this when the speaker
+  //             stresses the "h" → "leghs"
+  //   "lacks" — common substitution for "lakhs"
+  //   "lac"   — singular form (sometimes transcribed as "lakh")
+  //   "lax"   — short STT form
+  // The user-reported session had "20 legs per annum" — without this
+  // tolerance the regex missed the number entirely and the
+  // candidateTarget never got set, breaking downstream clamps.
+  const salaryNumRe = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lacs?|legs|lax|l\b)/gi;
   const currentCtcRe = /(?:currently|current(?:ly)?|earning|getting|drawing|my ctc|i'm at|making|take home|i get|i earn)\s.*?(\d+(?:\.\d+)?)/i;
   const targetRe = /(?:expecting|looking for|want|need|asking|target|hoping|would like|i'd like|i want|i need|looking at|aiming)\s.*?(\d+(?:\.\d+)?)/i;
 

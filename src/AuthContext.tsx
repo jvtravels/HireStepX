@@ -1243,6 +1243,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     track("logout");
     clearLastRoute();
     broadcastLogout();
+    /* User-reported "Logout got stuck": Nav.tsx, DashboardLayout, and
+       DashboardSettings all call logout() without an await/redirect.
+       Without navigation, the dashboard tree stays mounted with user=null
+       and components that previously assumed a user (DashboardContext,
+       OutcomePromptBanner fetch, saveRetryQueue) flap — surfacing as
+       React error #418 + a stale "/api/user-outcome" 401/405 in the
+       console. Force a hard navigation to / so the app remounts clean.
+       Hard nav (not router.push) because we need every cached client-side
+       module state cleared too. */
+    if (typeof window !== "undefined") {
+      try { window.location.assign("/"); } catch { /* SSR / sandbox */ }
+    }
   }, [user?.id, broadcastLogout]);
 
   const updateUser = useCallback(async (updates: Partial<User>) => {

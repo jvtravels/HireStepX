@@ -1011,7 +1011,7 @@ function InterviewInner() {
           // fallback to step.aiText leaked [pause] tokens into the heading.
           const displayText = stripProsodyMarkup(step.aiTextDisplay ?? step.aiText);
           return (
-          <div style={{ maxWidth: 720, width: "100%" }}>
+          <div style={{ maxWidth: 920, width: "100%" }}>
             {/* Speaking: typewriter typed in sync with TTS audio.
                 Listening: static accent-split or plain heading.
                 The flicker that used to appear at phase transitions
