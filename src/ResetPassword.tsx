@@ -98,9 +98,27 @@ export default function ResetPassword() {
   // Mark "reset in progress" so other auth tabs (Login/Signup/ForgotPassword)
   // don't auto-redirect to /dashboard when this tab's recovery session
   // briefly propagates to localStorage. Cleared on unmount.
+  //
+  // Audit P0 #1: also sign out the recovery session on unmount when
+  // the user did NOT complete the reset. Without this, abandoning
+  // the flow (closed tab, hit breach error, clicked Contact Support,
+  // browser-back) leaves an open recovery session in localStorage —
+  // any subsequent navigation to /dashboard would enter the app on a
+  // partial-auth session that wasn't supposed to grant access. The
+  // success path already signs out (the strict-posture sign-out at
+  // handleSubmit:341), so we only need to handle the abandon path.
+  const completedRef = useRef(false);
   useEffect(() => {
     setResetInProgress(true);
-    return () => setResetInProgress(false);
+    return () => {
+      setResetInProgress(false);
+      if (!completedRef.current) {
+        // Fire-and-forget — the engine isn't around to await on unmount.
+        getSupabase()
+          .then((c) => c.auth.signOut())
+          .catch(() => { /* expected: client may be torn down */ });
+      }
+    };
   }, []);
 
   // ── Live expiry countdown (visual only; backend authoritative) ──────────
@@ -163,6 +181,29 @@ export default function ResetPassword() {
             return;
           }
         }
+
+        // True one-shot: write `password_reset_opened_at` on first
+        // mount (audit P0 #9). If a SECOND tab opens the same link
+        // (legit double-click OR attacker who got the email first),
+        // the second tab sees a recent open-timestamp and rejects.
+        // Window is 5 min — long enough for a slow-loading tab to
+        // recover, short enough that yesterday's stale flag doesn't
+        // block today's legit reset.
+        const openedAt = userData.user.user_metadata?.password_reset_opened_at;
+        if (typeof openedAt === "number" && Date.now() - openedAt < 5 * 60 * 1000) {
+          // The link is "in use elsewhere" — sign out cleanly + reject.
+          await client.auth.signOut().catch(() => {});
+          if (cancelled) return;
+          setTokenStatus("used");
+          return;
+        }
+        // Mark the link as opened. Best-effort — if this fails the
+        // legit reset still proceeds; we just lose the one-shot guard
+        // for this session.
+        client.auth.updateUser({
+          data: { password_reset_opened_at: Date.now() },
+        }).catch(() => { /* ignore */ });
+
         csrfTokenRef.current = generateCsrfToken();
         setEmail(userData.user.email ?? undefined);
         setTokenStatus("valid");
@@ -233,6 +274,13 @@ export default function ResetPassword() {
       );
       setLoading(false);
       return;
+    }
+    // HIBP unreachable — fail-open but log so ops can spot patterns.
+    // Audit P1 #10. We don't block here because users on networks
+    // that block HIBP shouldn't be permanently locked out of password
+    // reset; instead we surface an ops signal.
+    if (breach.unknown) {
+      console.warn("[reset-password] HIBP breach check unreachable — proceeding without verification");
     }
     // Wrap each Supabase call in a 15s timeout race so a hung network
     // request can't leave the user stuck forever on "Updating..."
@@ -343,6 +391,7 @@ export default function ResetPassword() {
         /* best effort */
       }
 
+      completedRef.current = true; // suppress unmount signOut (already done above)
       setSuccess(true);
       setTimeout(() => router.push("/login"), 4000);
     } catch (err) {

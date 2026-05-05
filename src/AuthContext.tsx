@@ -1214,6 +1214,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logAuditEvent("logout", { userId: user?.id });
     resetClient();
     setUser(null);
+    // Audit P0 #6: clear server-side `active_device_token` BEFORE
+    // signOut so a stolen JWT from this device can't pass the
+    // single-device check after we walk away. Race-conditioned with
+    // signOut on purpose — if updateUser fails or times out, we
+    // still proceed to signOut. Best-effort defense in depth on top
+    // of the JWT revocation that signOut performs.
+    if (supabaseConfigured) {
+      try {
+        const client = await getSupabase();
+        await Promise.race([
+          client.auth.updateUser({ data: { active_device_token: null } }),
+          new Promise((resolve) => setTimeout(resolve, 1500)),
+        ]);
+      } catch { /* expected: token may already be invalid */ }
+    }
     // Clear stored session tokens BEFORE signOut to prevent the routing guard
     // from re-restoring the session via hasStoredSession() retry logic
     try {
@@ -1222,6 +1237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) localStorage.removeItem(key);
       }
     } catch { /* expected */ }
+    try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
     if (supabaseConfigured) { const client = await getSupabase(); await client.auth.signOut().catch(() => {}); }
     clearSessionStart();
     track("logout");

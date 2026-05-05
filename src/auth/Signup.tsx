@@ -273,6 +273,17 @@ export default function Signup() {
         setLoading(false);
         return;
       }
+      // HIBP unreachable — surface soft warning instead of failing
+      // silently. We still proceed (fail-open) so users on networks
+      // that block HIBP aren't permanently blocked from signing up,
+      // but they get told we couldn't check and can pick a stronger
+      // one if they want. Audit P1 #10.
+      if (breach.unknown) {
+        // Non-blocking — log it for ops + surface as a console hint
+        // (we don't want to spam the form with a network-failure
+        // banner that gates submit).
+        console.warn("[signup] HIBP breach check unreachable — proceeding without verification");
+      }
 
       // No client-side bot check. Bot prevention now lives on
       // the server: rate limits, honeypot field, email-link verification
