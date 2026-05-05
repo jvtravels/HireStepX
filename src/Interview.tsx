@@ -503,20 +503,6 @@ function CanvasListeningActionZone({
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
   const [answerSeconds, setAnswerSeconds] = useState(0);
-  /* Mid-pause stillness — we surface a "Still here, take your time"
-     subtitle when the transcript has been quiet for 6+ seconds AND the
-     user has fewer than 10 words (auto-submit threshold). Bridges the
-     awkward dead-air between "started speaking" and "produced enough
-     to auto-submit". */
-  const [stillnessMs, setStillnessMs] = useState(0);
-  const lastTranscriptChangeRef = useRef(Date.now());
-  useEffect(() => { lastTranscriptChangeRef.current = Date.now(); setStillnessMs(0); }, [currentTranscript]);
-  useEffect(() => {
-    const id = setInterval(() => setStillnessMs(Date.now() - lastTranscriptChangeRef.current), 500);
-    return () => clearInterval(id);
-  }, []);
-  const transcriptWordCount = currentTranscript.trim().split(/\s+/).filter(Boolean).length;
-  const showStillHere = transcriptWordCount > 0 && transcriptWordCount < 10 && stillnessMs > 6000;
   const paceRange = paceRangeFor(interviewType);
   useEffect(() => {
     const start = Date.now();
@@ -582,18 +568,6 @@ function CanvasListeningActionZone({
             Live transcript
           </span>
           <span>{currentTranscript}</span>
-          {/* Mid-pause "I'm still here" reassurance — only when user
-              has started but has fewer than 10 words and has paused
-              for 6+ seconds. Reduces the "did the AI give up?" anxiety
-              between starting and auto-submit threshold. */}
-          {showStillHere && (
-            <div style={{
-              fontFamily: ef.sans, fontSize: 12, color: e.inkSoft,
-              fontStyle: "italic", marginTop: 8, opacity: 0.85,
-            }}>
-              I&apos;m still here — take your time.
-            </div>
-          )}
         </div>
       )}
 
