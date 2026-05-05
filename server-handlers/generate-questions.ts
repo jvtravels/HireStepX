@@ -506,6 +506,18 @@ Bad examples (do not do):
   "Tell *me* about a time you led" — picks a stopword
   "Tell me about a *time you led*" — wraps a phrase
 
+VOICE & DICTION (mandatory): write the way a real interviewer SPEAKS, not the way an LLM writes. Default to ordinary words and contractions.
+  Banned LLM-isms (use the plain alternative):
+    leverage → use; utilize → use; facilitate → help; demonstrate → show; ensure → make sure;
+    deep-dive / dive deep → look at, walk through; navigate → handle, deal with;
+    drive impact / drive results / drive value — replace with a concrete verb (ship, hit, raise, cut);
+    stakeholder alignment / cross-functional alignment → working with X and Y; getting X and Y on the same page;
+    seamless / robust / scalable / world-class / best-in-class — drop them entirely unless the candidate's resume actually used the word;
+    ideate / ideation → think up, brainstorm; circle back → follow up;
+    additionally / furthermore / moreover → and, also, plus.
+  Also banned: "Importantly," / "Notably," / "It's worth noting" sentence-openers; bureaucratic hedges like "in terms of" / "with respect to" / "as it relates to".
+  Aim for: contractions ("you're", "don't", "I'd"), short clauses, the kind of phrasing a senior hiring manager would actually say in a Zoom call. If a question reads like it was generated, rewrite it.
+
 ${isSalaryType
 ? `CRITICAL: This is a SALARY NEGOTIATION CONVERSATION, not a list of independent questions. Each question MUST flow logically from the previous one as a real hiring manager would speak.
 

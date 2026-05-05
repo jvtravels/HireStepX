@@ -554,6 +554,17 @@ Return a JSON object with EXACTLY this shape:
 }
 
 CRITICAL RULES:
+- VOICE & DICTION (applies to ALL prose fields, especially topPerformerAnswer.text and restructured.text): write the way a real candidate SPEAKS in an interview, not the way an LLM writes. Default to ordinary words, contractions, and short clauses.
+  Banned LLM-isms (use the plain alternative):
+    leverage → use; utilize → use; facilitate → help; demonstrate → show; ensure → make sure;
+    deep-dive / dive deep → look at, walk through; navigate → handle, deal with;
+    drive impact / drive results / drive value — replace with a concrete verb (ship, hit, raise, cut);
+    stakeholder alignment / cross-functional alignment → working with X and Y; getting X and Y on the same page;
+    seamless / robust / scalable / world-class / best-in-class — drop them unless the candidate actually used the word;
+    ideate / ideation → think up, brainstorm; circle back → follow up;
+    additionally / furthermore / moreover → and, also, plus.
+  Also banned: "Importantly," / "Notably," / "It's worth noting" sentence-openers; bureaucratic hedges like "in terms of" / "with respect to" / "as it relates to".
+  Aim for: contractions ("I'd", "we're", "didn't"), specific verbs, the kind of phrasing a real senior would say to a hiring manager. A top-performer answer should sound like a sharp engineer/PM telling a story, NOT like a press release. If a sentence reads like it was generated, rewrite it.
 - Pair each interviewer question with the candidate answer that follows it. Skip pairs where the candidate didn't answer (use verdict="skipped", restructured=null, topPerformerAnswer=null).
 - HARD RULE: if the candidate answer starts with the literal token "[SKIPPED" (case-sensitive), the candidate explicitly skipped that question. Force verdict="skipped", score=0, restructured=null. STILL emit a topPerformerAnswer (this is a coaching opportunity — show what a strong candidate would have said). Set explanation to a one-line note acknowledging the skip without judgment.
 - Every skill score must be justified by transcript evidence.

@@ -102,6 +102,18 @@ export interface Question {
   whatMakesItStrong?: string[];
   star: { situation: boolean; task: boolean; action: boolean; result: boolean; learning: boolean };
   metrics: { wordCount: number; responseSec: number; firstPersonRatioPct: number; quantificationCount: number };
+  /** Optional focus-aware metric tiles that REPLACE the default 4
+   *  (Words / Length / First-person / Quantified) when present. Used
+   *  when the interview focus has different signals worth surfacing —
+   *  e.g. salary-negotiation should show "Counter named", "Package
+   *  items", "BATNA mention", "Phases reached" instead of generic
+   *  word count + first-person ratio.
+   *
+   *  When omitted, the default 4-tile layout renders unchanged so
+   *  existing usages aren't affected. The label/value pair drives the
+   *  uppercase mono header + numeric value below. `tone` controls the
+   *  value's color; pass t.error for "this is a red flag" tiles. */
+  focusMetrics?: Array<{ label: string; value: string; tone?: string }>;
   /** Coaching note — framing flips with band. Weak/partial reads as
    *  "why it scored low + what to fix"; strong/complete reads as
    *  "why it landed + how to keep it". The component picks the
@@ -1563,16 +1575,19 @@ function QuestionDetail({ q }: { q: Question }) {
           <span aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: t.line }} />
           {/* Each metric: stacked label-over-value tile. Mono numerals stay
               prominent; small uppercase label sits quietly above. The strip
-              flex-wraps on narrower viewports so nothing truncates. */}
-          {[
+              flex-wraps on narrower viewports so nothing truncates.
+              Focus-aware override: if Question.focusMetrics is provided
+              (e.g. for salary-neg / technical / case-study sessions),
+              render those tiles instead of the generic 4. */}
+          {(q.focusMetrics ?? [
             { label: "Words", value: `${q.metrics.wordCount}`, tone: t.coal },
             { label: "Length", value: `${q.metrics.responseSec.toFixed(1)}s`, tone: t.coal },
             { label: "First-person", value: `${q.metrics.firstPersonRatioPct}%`, tone: t.coal },
             { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.error : t.coal },
-          ].map((m) => (
+          ]).map((m) => (
             <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
               <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
-              <span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>
+              <span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 600, color: m.tone ?? t.coal, marginTop: 2 }}>{m.value}</span>
             </div>
           ))}
         </div>
