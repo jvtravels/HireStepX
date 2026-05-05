@@ -212,22 +212,21 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
   /* ── 4b. End-of-turn auto-submit ────────────────────────────────────
      Real interviewers detect end-of-turn from prosody + silence and
      start responding without waiting for the candidate to consciously
-     "submit". Forcing the user to remember to press Space breaks the
-     conversational illusion (it's an app pattern, not a conversation
-     pattern).
+     "submit".
 
-     Heuristic:
-       • User has produced a meaningful answer (≥ 10 words)
-       • Transcript hasn't changed for 1.8 seconds
-       • Phase is still "listening"
-       • Rambling/soft-track haven't already preempted us
-     Then call handleNextRef.current() to submit the turn.
+     Adaptive silence window:
+       •  10-25 words  → 1.4s  (short answers / acks resolve fast)
+       •  25-80 words  → 1.8s  (the VAD-literature sweet spot)
+       •  80+ words    → 2.4s  (give thinkers room to land complex answers)
+     Long answers naturally include thinking pauses ("...so what
+     happened was...") and a 1.8s window false-fires on those. Short
+     greetings or numeric answers ("twenty lakhs") shouldn't wait the
+     full 1.8s — they're clearly done.
 
-     1.8s is the sweet spot from VAD literature — long enough that a
-     thinking-pause ("hmm... well...") doesn't false-trigger, short
-     enough that the AI doesn't feel slow to respond. Users who pause
-     longer to think can re-trigger STT by speaking again; the timer
-     resets on every transcript change. */
+     Also includes a "trailing-conjunction guard": if the last spoken
+     token is a coordinating word ("and", "but", "so", "because", "or",
+     "if", "while", "with"), the user is mid-sentence — bump the wait
+     by 700ms so we don't cut them off. */
   const autoSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoSubmitFiredRef = useRef(false);
   useEffect(() => { autoSubmitFiredRef.current = false; }, [currentStep]);
@@ -238,21 +237,32 @@ export function useListeningInterjections(cfg: ListeningInterjectionsConfig): Li
     }
     if (autoSubmitFiredRef.current) return;
     if (autoSubmitTimerRef.current) clearTimeout(autoSubmitTimerRef.current);
-    const wordCount = currentTranscript.trim().split(/\s+/).filter(Boolean).length;
+    const tokens = currentTranscript.trim().split(/\s+/).filter(Boolean);
+    const wordCount = tokens.length;
     if (wordCount < 10) return;
+    // Adaptive base window
+    let waitMs: number;
+    if (wordCount < 25) waitMs = 1400;
+    else if (wordCount < 80) waitMs = 1800;
+    else waitMs = 2400;
+    // Trailing-conjunction guard
+    const lastToken = (tokens[tokens.length - 1] || "").toLowerCase().replace(/[.,!?;:]+$/, "");
+    const trailingConjunctions = new Set([
+      "and", "but", "so", "because", "or", "if", "while", "with",
+      "for", "to", "of", "the", "a", "an", "is", "was", "were", "are",
+      "in", "on", "at", "by", "as", "than", "then", "though", "although",
+    ]);
+    if (trailingConjunctions.has(lastToken)) waitMs += 700;
     autoSubmitTimerRef.current = setTimeout(() => {
       if (autoSubmitFiredRef.current || interviewEndedRef.current) return;
-      // Re-check at fire-time: if user resumed talking inside the
-      // 1.8s window, the deps changed and a new timer was scheduled
-      // — this old one will only fire if it survived.
       const ta = textareaRef.current;
       if (ta && document.activeElement === ta) return; // user typing — don't auto-submit
       const finalWordCount = currentTranscript.trim().split(/\s+/).filter(Boolean).length;
       if (finalWordCount < 10) return;
       autoSubmitFiredRef.current = true;
-      console.info(`[interview] auto-submit on 1.8s silence (${finalWordCount} words)`);
+      console.info(`[interview] auto-submit on ${waitMs}ms silence (${finalWordCount} words, lastToken="${lastToken}")`);
       handleNextRef.current?.();
-    }, 1800);
+    }, waitMs);
     return () => {
       if (autoSubmitTimerRef.current) { clearTimeout(autoSubmitTimerRef.current); autoSubmitTimerRef.current = null; }
     };

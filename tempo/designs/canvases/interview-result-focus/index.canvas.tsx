@@ -4,6 +4,12 @@ import { CaseStudyStrongDemo } from './FocusAwareReport';
 import { SalaryNegStrongDemo } from './FocusAwareReport';
 import { SalaryNegWeakDemo } from './FocusAwareReport';
 import { TechnicalPartialDemo } from './FocusAwareReport';
+import { SystemDesignPartialDemo } from './FocusAwareReport';
+import { StrategicStrongDemo } from './FocusAwareReport';
+import { CampusPlacementPartialDemo } from './FocusAwareReport';
+import { HRWeakDemo } from './FocusAwareReport';
+import { PanelStrongDemo } from './FocusAwareReport';
+import { GovernmentPartialDemo } from './FocusAwareReport';
 
 const page: TempoPage = {
   name: "Interview Result Focus",
@@ -39,4 +45,40 @@ export const SalaryNegStrong: TempoStoryboard = {
   render: () => <SalaryNegStrongDemo />,
   name: "5. Salary Neg — strong (84) · same scenario, right rubric",
   layout: { x: 0, y: 6950, width: 1100, height: 2000 },
+};
+
+export const SystemDesign: TempoStoryboard = {
+  render: () => <SystemDesignPartialDemo />,
+  name: "6. System Design — partial (62) · skipped requirements",
+  layout: { x: 0, y: 9000, width: 1100, height: 1900 },
+};
+
+export const Strategic: TempoStoryboard = {
+  render: () => <StrategicStrongDemo />,
+  name: "7. Strategic — strong (80) · 4 stakeholders, 3 horizons",
+  layout: { x: 0, y: 10950, width: 1100, height: 1900 },
+};
+
+export const CampusPlacement: TempoStoryboard = {
+  render: () => <CampusPlacementPartialDemo />,
+  name: "8. Campus Placement — partial (58) · vague project role",
+  layout: { x: 0, y: 12900, width: 1100, height: 1900 },
+};
+
+export const HR: TempoStoryboard = {
+  render: () => <HRWeakDemo />,
+  name: "9. HR Round — weak (42) · badmouthing + generic motivation",
+  layout: { x: 0, y: 14850, width: 1100, height: 1900 },
+};
+
+export const Panel: TempoStoryboard = {
+  render: () => <PanelStrongDemo />,
+  name: "10. Panel — strong (78) · per-panelist tone calibration",
+  layout: { x: 0, y: 16800, width: 1100, height: 2200 },
+};
+
+export const Government: TempoStoryboard = {
+  render: () => <GovernmentPartialDemo />,
+  name: "11. Government / PSU — partial (60) · no current affairs cited",
+  layout: { x: 0, y: 19050, width: 1100, height: 1900 },
 };

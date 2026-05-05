@@ -442,6 +442,183 @@ const SALARY_NEG_STRONG: MockResult = {
   ],
 };
 
+/* ─── Phase 2 + Phase 3 mock data ─────────────────────────────── */
+
+const SYSTEM_DESIGN_PARTIAL: MockResult = {
+  focus: "system-design",
+  candidateName: "Vikram",
+  role: "Senior Software Engineer",
+  company: "PhonePe",
+  overallScore: 62,
+  scoreBand: "partial",
+  scoreDelta: 5,
+  /* Requirements, Capacity, Decomposition, DB, Scaling, Failure modes */
+  axisScores: [40, 30, 75, 65, 70, 50],
+  questions: [
+    {
+      index: 1,
+      text: "Design a system to handle 100M daily UPI transactions with p99 < 200ms.",
+      score: 62,
+      band: "partial",
+      whyScored: "Strong on decomposition (you named LB → API → Redis → Postgres → Kafka cleanly) and scaling (sharded by user_id, async writes via queue). Two gaps: you skipped requirements gathering and went straight to architecture, and you didn't state capacity numbers — 'we'd handle high traffic' isn't enough at this scale.",
+      metricValues: [6, false, true, 2],
+      universalValues: [3, 142, 4],
+      redFlags: [
+        { type: "skipped-requirements", evidence: "30" },
+        { type: "no-capacity-numbers", evidence: "" },
+      ],
+      followUp: "What if 99.99% availability is required during festival peaks?",
+    },
+  ],
+};
+
+const STRATEGIC_STRONG: MockResult = {
+  focus: "strategic",
+  candidateName: "Anjali",
+  role: "VP of Engineering",
+  company: "Razorpay",
+  overallScore: 80,
+  scoreBand: "strong",
+  scoreDelta: 6,
+  /* Vision, Stakeholder, Resource, Time horizon, Conviction, Influence */
+  axisScores: [85, 90, 75, 80, 78, 70],
+  questions: [
+    {
+      index: 1,
+      text: "You inherit a 60-person engineering org with 3 missed quarterly goals. What's your 90-day plan?",
+      score: 82,
+      band: "strong",
+      whyScored: "Excellent stakeholder mapping — you named 4 distinct constituencies (engineering, product, sales, board) and held the trade-off between them. Vision was concrete ('in 3 years we ship weekly with 40 fewer engineers'). The bet you named — that 3 missed quarters were a process problem, not a talent problem — was specific and falsifiable. Light on influence reasoning: you didn't address how you'd build CEO alignment if your read of the problem differed.",
+      metricValues: [4, 3, 5, true],
+      universalValues: [2, 148, 1],
+      redFlags: [],
+      followUp: "How would you build alignment with the CEO if they thought it was a talent problem?",
+    },
+  ],
+};
+
+const CAMPUS_PLACEMENT_PARTIAL: MockResult = {
+  focus: "campus-placement",
+  candidateName: "Rohan",
+  role: "Software Engineer (Fresher)",
+  company: "Infosys",
+  overallScore: 58,
+  scoreBand: "partial",
+  scoreDelta: 0,
+  /* Project ownership, Project depth, Fundamentals, Enthusiasm, Coachability, Communication */
+  axisScores: [45, 40, 70, 65, 50, 75],
+  questions: [
+    {
+      index: 1,
+      text: "Walk me through your final-year project. What was your specific contribution?",
+      score: 56,
+      band: "partial",
+      whyScored: "You communicated cleanly and showed enthusiasm, but the project section drifted into 'we' for most of the architecture description, and your tech-stack reasoning was surface-level ('we used MongoDB' without why). Fundamentals were solid when probed. Strongest signal: you mentioned a specific bug you debugged — that landed.",
+      metricValues: [38, 2, 5, 1],
+      universalValues: [3, 150, 3],
+      redFlags: [
+        { type: "vague-project-role", evidence: "we built the backend" },
+        { type: "surface-only-tech", evidence: "MongoDB / Express / React without justification" },
+      ],
+      followUp: "What was the hardest bug you debugged in this project, and how did you find it?",
+    },
+  ],
+};
+
+const HR_WEAK: MockResult = {
+  focus: "hr",
+  candidateName: "Karthik",
+  role: "Senior Product Manager",
+  company: "Flipkart",
+  overallScore: 42,
+  scoreBand: "weak",
+  scoreDelta: -3,
+  /* Specificity, Authenticity, Coherence, Salary realism, Cultural alignment, Red-flag absence */
+  axisScores: [30, 35, 50, 40, 45, 25],
+  questions: [
+    {
+      index: 1,
+      text: "Why are you leaving your current role?",
+      score: 38,
+      band: "weak",
+      whyScored: "Your answer leaned negative — 'my current manager doesn't appreciate me' — which HR reads as 'this candidate will badmouth us next.' The motivation for joining Flipkart was generic ('great company, great opportunity'). No specific research showed: no mention of Flipkart's recent product launches, engineering blog, or cultural attributes you actually researched.",
+      metricValues: [1, 1, false, 4],
+      universalValues: [4, 156, 2],
+      redFlags: [
+        { type: "badmouthing", evidence: "my current manager doesn't appreciate me" },
+        { type: "generic-motivation", evidence: "great company, great opportunity" },
+        { type: "vague-trajectory", evidence: "" },
+      ],
+      followUp: "What specifically about Flipkart's product strategy resonates with your background?",
+    },
+  ],
+};
+
+const PANEL_STRONG: MockResult = {
+  focus: "panel",
+  candidateName: "Meera",
+  role: "Senior Software Engineer",
+  company: "Swiggy",
+  overallScore: 78,
+  scoreBand: "strong",
+  scoreDelta: 4,
+  /* Persona, Tone, Consistency, Acknowledgment, Engagement balance, Routing */
+  axisScores: [85, 75, 90, 70, 80, 75],
+  questions: [
+    {
+      index: 1,
+      text: "[Hiring Manager] Tell me about a time you led a peer team that disagreed with you.",
+      score: 84,
+      band: "strong",
+      whyScored: "You answered the manager directly, framed the story around influence and outcomes (manager-track lens), then naturally pivoted at the end — 'On the technical side, the trade-off was between X and Y, which I'd love to dig into with [Tech Lead]' — that bridge was a strong signal. You also held eye contact with all three panelists when scanning the room.",
+      metricValues: [3, 90, 2, 1],
+      universalValues: [2, 152, 1],
+      redFlags: [],
+      followUp: "[Tech Lead] What was the technical trade-off you wanted to dig into?",
+    },
+    {
+      index: 2,
+      text: "[HR Partner] How do you handle stress during high-pressure releases?",
+      score: 72,
+      band: "partial",
+      whyScored: "Tone-shifted nicely (more conversational, less technical) for the HR partner. But you missed the underlying concern — they were probing for burnout risk and team-health awareness. You answered the literal question (what you do when stressed) instead of addressing what HR actually wanted to know.",
+      metricValues: [3, 100, 1, 0],
+      universalValues: [3, 148, 2],
+      redFlags: [
+        { type: "missed-the-real-question", evidence: "burnout risk + team-health awareness" },
+      ],
+      followUp: "How do you spot burnout in a teammate before they do?",
+    },
+  ],
+};
+
+const GOVERNMENT_PARTIAL: MockResult = {
+  focus: "government",
+  candidateName: "Aditya",
+  role: "Assistant Section Officer (UPSC)",
+  company: "Government of India",
+  overallScore: 60,
+  scoreBand: "partial",
+  scoreDelta: 0,
+  /* Ethics, Service, Current affairs, Hierarchy, Regulatory, Specific examples */
+  axisScores: [70, 55, 40, 80, 65, 50],
+  questions: [
+    {
+      index: 1,
+      text: "If your senior asks you to expedite a file that violates due process, what do you do?",
+      score: 64,
+      band: "partial",
+      whyScored: "Your ethics framing was strong — you distinguished between hierarchical respect and procedural integrity, and used 'with respect, sir' framing throughout. Hierarchy tone was appropriate. But your answer stayed abstract: you didn't cite any specific RTI Act provisions or recent rulings (e.g. the Vineeta Sharma judgment) that would back your position. Specifics matter more than principles in government rounds.",
+      metricValues: [4, 0, 6, 0],
+      universalValues: [3, 138, 2],
+      redFlags: [
+        { type: "no-current-affairs", evidence: "no specific Act or ruling cited" },
+      ],
+      followUp: "What's a recent Supreme Court ruling on administrative discretion that informed your view?",
+    },
+  ],
+};
+
 /* Demo wrappers — each renders the report with preset data. The
    storyboards in index.canvas.tsx import these by name. */
 export function BehavioralStrongDemo() { return <FocusAwareReport result={BEHAVIORAL_STRONG} />; }
@@ -449,6 +626,12 @@ export function TechnicalPartialDemo() { return <FocusAwareReport result={TECHNI
 export function CaseStudyStrongDemo() { return <FocusAwareReport result={CASE_STUDY_STRONG} />; }
 export function SalaryNegWeakDemo() { return <FocusAwareReport result={SALARY_NEG_WEAK} />; }
 export function SalaryNegStrongDemo() { return <FocusAwareReport result={SALARY_NEG_STRONG} />; }
+export function SystemDesignPartialDemo() { return <FocusAwareReport result={SYSTEM_DESIGN_PARTIAL} />; }
+export function StrategicStrongDemo() { return <FocusAwareReport result={STRATEGIC_STRONG} />; }
+export function CampusPlacementPartialDemo() { return <FocusAwareReport result={CAMPUS_PLACEMENT_PARTIAL} />; }
+export function HRWeakDemo() { return <FocusAwareReport result={HR_WEAK} />; }
+export function PanelStrongDemo() { return <FocusAwareReport result={PANEL_STRONG} />; }
+export function GovernmentPartialDemo() { return <FocusAwareReport result={GOVERNMENT_PARTIAL} />; }
 
 export default function FocusAwareReport({ result }: FocusAwareReportProps) {
   const rubric = RUBRICS_BY_FOCUS[result.focus];
@@ -465,6 +648,12 @@ export default function FocusAwareReport({ result }: FocusAwareReportProps) {
     technical: "Technical",
     "case-study": "Case Study",
     "salary-negotiation": "Salary Negotiation",
+    "system-design": "System Design",
+    strategic: "Strategic / Leadership",
+    "campus-placement": "Campus Placement",
+    hr: "HR Round",
+    panel: "Panel",
+    government: "Government / PSU",
   };
 
   const bandLabel = result.scoreBand === "strong" ? "Strong" : result.scoreBand === "partial" ? "Lean Hire" : "Below Bar";
