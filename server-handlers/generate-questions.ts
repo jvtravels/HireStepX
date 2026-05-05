@@ -391,15 +391,26 @@ If unclear, default to IAS-style interview tone.`,
       ? resumeWordCount < 60 && !resumeIntelligence && !(resumeTopSkills?.length)
       : false;
 
-    /* ROLE-PIVOT GUARD.
+    /* ROLE-PIVOT HANDLING.
        User report: resume said Designer, target role was Content
        Strategist, but the AI generated questions like "tell me about
-       a project where you leveraged your design skills". The mistake
-       is treating the resume's apparent role as the role being
-       interviewed for. Candidates pivoting between roles are common
-       and the AI must frame every question around the TARGET ROLE,
-       using resume experience only as transferable evidence. */
-    const rolePivotGuard = `\nTARGET ROLE PRIORITY (mandatory): the candidate is interviewing for ${targetRole}. EVERY question must be framed around the competencies of ${targetRole} — not the role implied by the resume. Candidates frequently pivot between roles, so the resume's job titles describe their PAST role, not their TARGET role. Treat past experience as TRANSFERABLE EVIDENCE for ${targetRole} competencies, never as proof they're already in the target role. WRONG: "tell me about a project where you leveraged your design skills" (when target is Content Strategist). RIGHT: "tell me about a project where you shaped messaging or narrative for a product audience — what was your process for finding the voice?". When you reference resume specifics, do it to bridge: "I see you led design for X at Y — walk me through how you partnered with content/PM there, since this Content Strategist role will need that muscle". Never assume the candidate's past role IS the target role.`;
+       a project where you leveraged your design skills". A real
+       interviewer in this situation does five specific things — this
+       directive teaches the LLM to mirror them rather than just
+       silently rephrasing past-role questions. */
+    const rolePivotGuard = `\nTARGET ROLE PRIORITY (mandatory): the candidate is interviewing for ${targetRole}. The resume describes their PAST work — it may or may not match ${targetRole}. When the resume's apparent role differs from ${targetRole}, treat this as a ROLE PIVOT and behave like a real interviewer would:
+
+  (1) ACKNOWLEDGE THE PIVOT IN Q1 OR Q2. A real interviewer doesn't pretend not to notice. Open with something like: "I see your background is mostly in <past-role>, and you're targeting ${targetRole} — walk me through that transition. What pulled you toward ${targetRole}?". This is the SINGLE most important pivot question — without it, the candidate feels the AI didn't read their resume.
+
+  (2) PROBE PIVOT MOTIVATION + SKILL-UP. At least one question must test how seriously they've prepared: "What have you done in the last 6-12 months to build ${targetRole} muscle?" or "Beyond reading, what concrete projects or freelance work have you done that's specifically ${targetRole}?". Pivots are risky hires — hiring managers want to see deliberate practice, not just curiosity.
+
+  (3) BRIDGE PAST EXPERIENCE EXPLICITLY. Don't ask design questions framed as ${targetRole} questions; ask the candidate to BRIDGE: "I see you led design systems at <Co> — what's the version of that thinking that transfers to ${targetRole}?". The candidate should do the translation work, not you.
+
+  (4) TEST TARGET-ROLE COMPETENCIES FROM SCRATCH. At least 1-2 questions must test ${targetRole} competencies WITHOUT leaning on past experience: "Walk me through how you'd build the ${targetRole} strategy for a product launch from scratch — assume no existing playbook." This separates curious applicants from prepared ones.
+
+  (5) NEVER ASSUME PAST ROLE = TARGET ROLE. WRONG: "tell me about a project where you leveraged your design skills" (target = Content Strategist). RIGHT (option A — bridge): "I see you led design for AI-driven platforms — what's the messaging/narrative version of that work, and how would you approach it as a Content Strategist?". RIGHT (option B — fresh): "Tell me about a piece of writing or communication you shaped — even outside design — that you're proud of, and walk me through your process."
+
+When the resume's apparent role MATCHES ${targetRole} (no pivot), skip directives (1) and (2) and treat the resume as direct evidence. Use your judgement to detect this — if the resume's job titles, skills, and projects clearly align with ${targetRole}, it's not a pivot.`;
 
     const resumeGroundingDirective = resumeIsSparse
       ? `\nRESUME GROUNDING (sparse-resume guard): The candidate's resume contains only ${resumeWordCount} words and no parsed intelligence. ABSOLUTELY DO NOT invent specific past employers, job titles, project names, technologies, schools, or metrics. Phrases like "your time at Google", "the migration you led at Razorpay", "your work on the Stripe integration", or "your B.Tech from IIT" are FORBIDDEN unless the exact term appears in the resume text. When you want to anchor to experience, use ungrounded framings: "based on your experience…", "in your most recent role…", "drawing from a project you've worked on…". Hallucinating one specific detail destroys candidate trust for the entire session.${rolePivotGuard}`
