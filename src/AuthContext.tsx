@@ -602,7 +602,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
           }
           try {
-            const profile = await getProfile(session.user.id);
+            // 5s timeout on profile fetch. Without this, any extension-
+            // wrapped fetch (Loom / Jam / Hotjar) that silently hangs
+            // pushes the whole auth init past the 10s safety timeout —
+            // user sees `[auth] safety timeout: forcing loading=false
+            // after 10000 ms` and the app boots with user=null even
+            // though their session is valid. The catch below builds a
+            // basic user from JWT user_metadata so they're not logged
+            // out; profile data hydrates on next route nav.
+            const profile = await Promise.race([
+              getProfile(session.user.id),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("getProfile timeout (5s)")), 5000),
+              ),
+            ]);
             if (profile) {
               setUser(profileToUser(profile, session));
               // ─── Single-device enforcement (restore path) ───
@@ -729,14 +742,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
           }
           try {
-            const profile = await getProfile(session.user.id);
+            // Same 5s timeout guard as the restore path above — see
+            // there for rationale.
+            const profile = await Promise.race([
+              getProfile(session.user.id),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("getProfile timeout (5s)")), 5000),
+              ),
+            ]);
             if (profile) {
               setUser(profileToUser(profile, session));
             } else {
               await ensureProfile(session);
             }
           } catch {
-            await ensureProfile(session);
+            // Profile fetch hung or failed — build a basic user from
+            // the session JWT so the app can boot. ensureProfile may
+            // also have created the row server-side; either way the
+            // next route nav re-fetches.
+            const meta = session.user.user_metadata || {};
+            setUser({
+              id: session.user.id,
+              name: meta.name || meta.full_name || "",
+              email: session.user.email || "",
+              targetRole: "",
+              resumeFileName: null,
+              hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
+              emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
+            });
+            // Best-effort row creation in the background.
+            ensureProfile(session).catch(() => { /* expected on hang */ });
           }
           setLoading(false);
         } else if (event === "SIGNED_OUT") {
