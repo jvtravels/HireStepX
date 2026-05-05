@@ -421,11 +421,20 @@ export function useInterviewEngine() {
   const [phase, setPhase] = useState<"thinking" | "speaking" | "listening" | "done">("thinking");
   const [isRecording, setIsRecording] = useState(false);
 
+  /** Manual-start gate. Defined here (early) because both the STT hook
+   *  and the answer-timer need to read it. See the longer comment near
+   *  `restartListening` below for rationale. */
+  const [awaitingSpeechStart, setAwaitingSpeechStart] = useState(true);
+  useEffect(() => { setAwaitingSpeechStart(true); }, [currentStep]);
+
   // Timers: elapsed clock, answer timer with auto-advance, tab visibility
+  // Pass a "frozen" phase to the timer when we're awaiting the user's
+  // manual speech-start tap so the per-question countdown doesn't burn
+  // seconds before they realise it's their turn.
   const {
     elapsed, setElapsed, answerTimer, timeRemaining, timePercent,
     handleNextRef,
-  } = useInterviewTimers(phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation");
+  } = useInterviewTimers(awaitingSpeechStart ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation");
 
   // TTS-caption sync: actual audio duration (from TTS provider) and speech-ended flag
   const [ttsDurationMs, setTtsDurationMs] = useState<number | undefined>(undefined);
@@ -701,6 +710,9 @@ export function useInterviewEngine() {
   // Gives users an actionable recovery when auto-start fails silently.
   const [sttRestartTrigger, setSttRestartTrigger] = useState(0);
 
+  /* Manual-start gate state is declared earlier (just after `phase`) so
+     the timer + STT hooks can read it. Rationale lives there. */
+
   /** Per-turn STT confidence snapshot from useInterviewSTT.
    *  Set when the STT pipeline fires onLowSttConfidence; cleared on
    *  every step change. handleNextQuestion reads this to decide whether
@@ -714,11 +726,15 @@ export function useInterviewEngine() {
     if (phase !== "listening") return;
     setCurrentTranscript("");
     setSttRestartTrigger((n) => n + 1);
+    setAwaitingSpeechStart(false);
     toast("Listening — speak when ready", "info");
   }, [phase, toast]);
 
   // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
-  useInterviewSTT(phase, isMuted, speechUnavailable, {
+  // STT is gated behind awaitingSpeechStart — we pretend phase isn't yet
+  // "listening" so the hook doesn't auto-start until the user clicks the
+  // "Start speaking" button.
+  useInterviewSTT(awaitingSpeechStart ? "speaking" : phase, isMuted, speechUnavailable, {
     setCurrentTranscript: setCurrentTranscriptGuarded, setMicError, setSpeechUnavailable, setShowCaptions,
     toast, textareaRef, interviewEndedRef,
     onLowSttConfidence: (snapshot) => { sttLowConfidenceRef.current = snapshot; },
@@ -2331,6 +2347,10 @@ export function useInterviewEngine() {
     /** User-initiated STT restart — bound to Space-to-start and the
      *  "Tap to start speaking" button in the listening UI. */
     restartListening,
+    /** True when the engine is in the listening phase but waiting on
+     *  the user to click "Start speaking" before STT + the answer
+     *  countdown begin. */
+    awaitingSpeechStart,
 
     // Skip budget — used by Interview.tsx to enable/disable the skip CTA
     skipsUsed,

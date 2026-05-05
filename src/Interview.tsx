@@ -463,6 +463,7 @@ function CanvasListeningActionZone({
   liveMetrics, interviewType,
   timeRemaining, timePercent,
   skipsUsed, skipBudget, canSkip,
+  awaitingSpeechStart,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -494,6 +495,7 @@ function CanvasListeningActionZone({
   skipsUsed: number;
   skipBudget: number;
   canSkip: boolean;
+  awaitingSpeechStart: boolean;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -611,8 +613,12 @@ function CanvasListeningActionZone({
 
       {/* Per-question countdown — always visible during listening so
           users see the budget. Stays muted when budget is large; warms
-          and turns urgent in the last 30/15 seconds. */}
-      <CountdownPill secondsRemaining={timeRemaining} percent={timePercent} />
+          and turns urgent in the last 30/15 seconds. Hidden while we're
+          awaiting the "Start speaking" tap so a frozen 100% bar doesn't
+          mislead the user into thinking time is already counting. */}
+      {!awaitingSpeechStart && (
+        <CountdownPill secondsRemaining={timeRemaining} percent={timePercent} />
+      )}
 
       {/* Live metrics + pace meter — only when actually answering */}
       {currentTranscript.trim().length > 0 && (
@@ -631,69 +637,85 @@ function CanvasListeningActionZone({
 
       {/* Primary CTA — keycap button matching the canvas.
           State machine:
-            • voice mode + empty transcript → "Tap to start speaking"
-              click triggers explicit STT restart (Space shortcut too)
+            • voice mode + awaiting start → clean "Start speaking" pill
+              (no keycap chip — the Space keycap was confusing users into
+              thinking they had to press it; the click target is now
+              just the labelled button. Space shortcut still works.)
             • voice mode + has transcript → "Press Space when done"
-              click submits the answer
             • typing mode + empty → disabled placeholder
-            • typing mode + filled → "Press Enter to send" submits
-          The empty-voice state used to be a disabled "Start speaking…"
-          placeholder — users had no way to trigger STT explicitly when
-          auto-start failed silently. */}
-      <button
-        ref={nextBtnRef}
-        type="button"
-        onClick={() => {
-          if (showTyping) {
-            handleNextQuestion();
-          } else if (canSend) {
-            handleNextQuestion();
-          } else {
-            // Voice mode, no transcript yet — explicit STT (re)start
-            restartListening();
+            • typing mode + filled → "Press Enter to send" submits */}
+      {!showTyping && !canSend ? (
+        <button
+          ref={nextBtnRef}
+          type="button"
+          onClick={() => restartListening()}
+          aria-label="Start speaking"
+          className="hsx-iv-keycap"
+          data-state="ready"
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+            fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
+            color: e.cream, background: e.indigo,
+            border: `1px solid ${e.indigo}`,
+            borderRadius: 999, padding: "12px 26px",
+            cursor: "pointer",
+            transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+            boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
+          }}
+        >
+          {/* simple mic glyph — no keycap */}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <rect x="9" y="3" width="6" height="12" rx="3" />
+            <path d="M5 11a7 7 0 0 0 14 0" />
+            <line x1="12" y1="18" x2="12" y2="22" />
+          </svg>
+          <span>Start speaking</span>
+        </button>
+      ) : (
+        <button
+          ref={nextBtnRef}
+          type="button"
+          onClick={() => handleNextQuestion()}
+          disabled={showTyping && !canSend}
+          aria-label={
+            showTyping
+              ? "Send answer"
+              : "Send answer (or press Space)"
           }
-        }}
-        disabled={showTyping && !canSend}
-        aria-label={
-          showTyping
-            ? "Send answer"
-            : canSend
-              ? "Send answer (or press Space)"
-              : "Tap to start speaking (or press Space)"
-        }
-        className="hsx-iv-keycap"
-        data-state={canSend || (!showTyping) ? "ready" : "disabled"}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 12,
-          fontFamily: ef.sans, fontSize: 13, fontWeight: 500,
-          color: canSend ? e.cream : e.coal,
-          background: canSend ? e.indigo : e.white,
-          border: `1px solid ${canSend ? e.indigo : e.line}`,
-          borderRadius: 999, padding: "10px 18px 10px 12px",
-          cursor: (canSend || (!showTyping)) ? "pointer" : "not-allowed",
-          opacity: canSend ? 1 : !showTyping ? 0.92 : 0.7,
-          transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
-          boxShadow: canSend
-            ? "0 6px 20px -6px rgba(49,46,129,0.40)"
-            : "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
-        }}
-      >
-        <kbd aria-hidden style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          minWidth: 56, height: 24, padding: "0 8px",
-          background: canSend ? "rgba(250,247,240,0.20)" : e.creamSoft,
-          border: `1px solid ${canSend ? "rgba(250,247,240,0.30)" : e.line}`,
-          borderRadius: 6, fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
-          color: canSend ? e.cream : e.inkSoft, letterSpacing: 0.6,
-        }}>
-          {showTyping ? "Enter" : "Space"}
-        </kbd>
-        <span>
-          {showTyping
-            ? (canSend ? "Press Enter to send" : "Type your answer…")
-            : (canSend ? "Press Space when done" : "Tap to start speaking")}
-        </span>
-      </button>
+          className="hsx-iv-keycap"
+          data-state={canSend ? "ready" : "disabled"}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 12,
+            fontFamily: ef.sans, fontSize: 13, fontWeight: 500,
+            color: canSend ? e.cream : e.coal,
+            background: canSend ? e.indigo : e.white,
+            border: `1px solid ${canSend ? e.indigo : e.line}`,
+            borderRadius: 999, padding: "10px 18px 10px 12px",
+            cursor: canSend ? "pointer" : "not-allowed",
+            opacity: canSend ? 1 : 0.7,
+            transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+            boxShadow: canSend
+              ? "0 6px 20px -6px rgba(49,46,129,0.40)"
+              : "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
+          }}
+        >
+          <kbd aria-hidden style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            minWidth: 56, height: 24, padding: "0 8px",
+            background: canSend ? "rgba(250,247,240,0.20)" : e.creamSoft,
+            border: `1px solid ${canSend ? "rgba(250,247,240,0.30)" : e.line}`,
+            borderRadius: 6, fontFamily: ef.mono, fontSize: 11, fontWeight: 500,
+            color: canSend ? e.cream : e.inkSoft, letterSpacing: 0.6,
+          }}>
+            {showTyping ? "Enter" : "Space"}
+          </kbd>
+          <span>
+            {showTyping
+              ? (canSend ? "Press Enter to send" : "Type your answer…")
+              : "Press Space when done"}
+          </span>
+        </button>
+      )}
 
       {/* Secondary action row — type / repeat / start-over / skip.
           Keyboard hints: each text link includes its hotkey for power
@@ -801,7 +823,7 @@ function InterviewInner() {
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
-    restartListening,
+    restartListening, awaitingSpeechStart,
     skipsUsed, skipBudget, canSkip,
     micQuiet, reconnecting, reconnectAttempt,
 
@@ -1146,6 +1168,7 @@ function InterviewInner() {
             skipsUsed={skipsUsed}
             skipBudget={skipBudget}
             canSkip={canSkip}
+            awaitingSpeechStart={awaitingSpeechStart}
           />
         )}
 
