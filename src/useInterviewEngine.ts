@@ -1289,15 +1289,25 @@ export function useInterviewEngine() {
             }).catch(() => {});
           }
           if (isSalaryNegConversation) {
-            // Salary negotiation: replace the next pre-generated QUESTION with the
-            // dynamic response. The CLOSING step is intentionally excluded — we
-            // observed (sessions ea2689e9 / d1c2d3d0) that follow-ups
-            // were replacing the closing slot, leaving the interview to end
-            // abruptly without an AI wrap-up turn after the user's final reply
-            // ("Suddenly interview ends" — bug report #21e). Closings always run.
+            // Salary negotiation: replace the ABOUT-TO-SPEAK question slot
+            // with the dynamic response generated from the user's PREVIOUS
+            // answer. Until this fix the findIndex used `i > currentStep`,
+            // which skipped over the about-to-speak Q2 and wrote the
+            // follow-up into Q3 — so Q2 played as scripted, the user
+            // answered Q2, and THEN Q3 played a probe of Q1. User report
+            // verbatim: "User answered Q1, AI asked Q2, user answered Q2,
+            // AI asked a follow-up on Q1." Using `i >= currentStep` puts
+            // the follow-up where it belongs — as the AI's immediate next
+            // turn after the answer that originated it.
+            //
+            // The CLOSING step is intentionally excluded — we observed
+            // (sessions ea2689e9 / d1c2d3d0) that follow-ups were replacing
+            // the closing slot, leaving the interview to end abruptly
+            // without an AI wrap-up turn ("Suddenly interview ends" — bug
+            // #21e). Closings always run.
             setInterviewScript(prev => {
-              const nextQuestionIdx = prev.findIndex((s, i) => i > currentStep && s.type === "question");
-              if (nextQuestionIdx > currentStep) {
+              const nextQuestionIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "question");
+              if (nextQuestionIdx >= currentStep && nextQuestionIdx >= 0) {
                 // Replace the next question with the dynamic response
                 const updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
                 // Mark remaining pre-generated questions (after the replaced one) with adaptive placeholders
@@ -1324,6 +1334,26 @@ export function useInterviewEngine() {
               }
               return prev;
             });
+            /* setInterviewScript replaces the slot at currentStep with a
+               brand-new object (followUpStep), but startSpeaking reads
+               `step.aiText` from the closure-captured reference of the
+               OLD object. Without this mutation, Q2's original scripted
+               text would still be spoken even though the script array
+               now contains the follow-up. Mirror followUpStep's content
+               onto the closure's step so the about-to-fire startSpeaking
+               speaks the dynamic response. Only do this when the replaced
+               slot IS currentStep — if it's a later question slot
+               (shouldn't happen with the i >= currentStep change above,
+               but defensive), we leave step alone and the follow-up will
+               surface on the next step naturally. */
+            if (step.type === "question" || step.type === "follow-up") {
+              step.aiText = followUpStep.aiText;
+              if (typeof followUpStep.aiTextDisplay === "string") step.aiTextDisplay = followUpStep.aiTextDisplay;
+              step.speakingDuration = followUpStep.speakingDuration;
+              if (followUpStep.scoreNote) step.scoreNote = followUpStep.scoreNote;
+              const fuAccent = (followUpStep as { accentSplit?: { before: string; accent: string; after: string } }).accentSplit;
+              if (fuAccent) (step as { accentSplit?: typeof fuAccent }).accentSplit = fuAccent;
+            }
             // Thinking phrase already spoken — go directly to main response
             // Brief pause for natural transition from thinking phrase to main speech
             const microDelay = randomDelay(200, 500);
