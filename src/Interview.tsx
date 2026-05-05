@@ -831,7 +831,7 @@ function InterviewInner() {
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
-    restartListening, awaitingSpeechStart, isLastStep,
+    restartListening, awaitingSpeechStart, isLastStep, micLevel,
     skipsUsed, skipBudget, canSkip,
     micQuiet, reconnecting, reconnectAttempt,
 
@@ -1116,11 +1116,23 @@ function InterviewInner() {
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 220, height: 220, borderRadius: 999,
             background: "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.4) 70%, transparent 100%)",
+            // Live mic-level pulse: scale the whole disc 1.0 → ~1.08
+            // proportional to RMS during listening. Visible confirmation
+            // that the mic is hot, mirroring how a real interviewer
+            // gives micro-cues (eye contact, leaning in) when they
+            // hear you.
+            transform: phase === "listening" ? `scale(${1 + Math.min(0.08, (micLevel || 0) * 0.16)})` : undefined,
+            transition: "transform 90ms linear",
           }}>
             <span className={`hsx-viz-halo hsx-viz-halo--${vizState(phase, currentTranscript.trim().length > 0)}`} />
             {phase === "listening" && (
               <>
-                <span className="hsx-iv-ring" />
+                <span className="hsx-iv-ring" style={{
+                  // Mic-reactive ring opacity — the higher the level,
+                  // the brighter the ring. Falls back to CSS animation
+                  // when there's no mic energy yet.
+                  opacity: 0.4 + Math.min(0.6, (micLevel || 0) * 1.2),
+                }} />
                 <span className="hsx-iv-ring hsx-iv-ring--delay" />
               </>
             )}

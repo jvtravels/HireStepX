@@ -70,10 +70,17 @@ const MIN_WORDS_INTO_ANSWER = 40;
 const STILLNESS_MS = 1500;
 
 function isFeatureEnabled(): boolean {
+  // Backchannels are now ON by default — without them, long answers
+  // (60+ seconds) feel like recording a voicemail instead of talking
+  // to an interviewer. Power users can opt out by explicitly setting
+  // localStorage["hsx-backchannels"] = "off".
   try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(FEATURE_FLAG_KEY) === "on";
+    if (typeof localStorage === "undefined") return true;
+    const v = localStorage.getItem(FEATURE_FLAG_KEY);
+    if (v === "off") return false;
+    return true;
   } catch {
-    return false;
+    return true;
   }
 }
 
