@@ -1,0 +1,43 @@
+import type { MetadataRoute } from "next";
+
+/* Robots.txt — controls what crawlers can index. The disallow list keeps
+   authenticated/private surfaces out of search results. Authenticated
+   surfaces don't render meaningful content for an unauthenticated bot
+   anyway, but explicit blocking saves crawl budget and keeps SERP
+   noise down (no "/dashboard" pages competing with the marketing
+   landing for brand queries). */
+export default function robots(): MetadataRoute.Robots {
+  const baseUrl = "https://hirestepx.com";
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/api/",
+          "/dashboard",
+          "/dashboard/",
+          "/interview",
+          "/interview/",
+          "/onboarding",
+          "/onboarding/",
+          "/session/",
+          "/sessions",
+          "/notebook",
+          "/calendar",
+          "/settings",
+          "/profile/",
+          "/resume",
+          "/auth/",
+          "/reset-password",
+          "/forgot-password",
+          /* Share-token URLs are public-by-design but ephemeral —
+             no SEO value, all crawl-budget cost. */
+          "/report/share/",
+        ],
+      },
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
+  };
+}
