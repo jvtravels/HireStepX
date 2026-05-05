@@ -11,7 +11,7 @@ export interface FieldValidation {
 // dots, consecutive dots, etc.). The previous regex was permissive
 // enough that "garbage@x.y" passed as valid; users complained that the
 // inline validation message disappeared on obvious-garbage input.
-const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
 
 export function validateEmail(value: string): FieldValidation {
   const trimmed = value.trim();
@@ -72,11 +72,19 @@ export interface BreachResult {
   breached: boolean;
   /** How many times this password has been seen across breaches. */
   count: number;
+  /** True when the breach API was unreachable / timed out and we
+   *  could not actually check this password. UI should surface this
+   *  as a soft warning ("we couldn't check — pick something fresh
+   *  to be safe") rather than blocking the user. Fails open on the
+   *  block path; informs on the UI path. Audit P1 #10. */
+  unknown?: boolean;
 }
 
 /** Check if a password has appeared in known data breaches.
     Fails open — if the API is unreachable or errors, returns
-    `{ breached: false, count: 0 }` rather than blocking signup. */
+    `{ breached: false, count: 0, unknown: true }` rather than blocking
+    signup. The `unknown` flag lets the UI show a soft warning so users
+    aren't silently submitting a possibly-breached password. */
 export async function checkPasswordBreached(
   password: string,
 ): Promise<BreachResult> {
@@ -100,7 +108,7 @@ export async function checkPasswordBreached(
       },
     );
     clearTimeout(t);
-    if (!res.ok) return { breached: false, count: 0 };
+    if (!res.ok) return { breached: false, count: 0, unknown: true };
     const text = await res.text();
     for (const line of text.split("\n")) {
       const [s, c] = line.trim().split(":");
@@ -108,8 +116,9 @@ export async function checkPasswordBreached(
     }
     return { breached: false, count: 0 };
   } catch {
-    // Network error / timeout / API down — fail open.
-    return { breached: false, count: 0 };
+    // Network error / timeout / API down — fail open with `unknown`
+    // so the UI can surface a soft warning.
+    return { breached: false, count: 0, unknown: true };
   }
 }
 

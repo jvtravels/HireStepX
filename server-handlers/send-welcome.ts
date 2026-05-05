@@ -337,7 +337,7 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
   //     well-formed but unregistered addresses
   // Stricter than RFC 5322 — matches the client-side validator in
   // src/auth/_validation.ts so client + server agree on what's valid.
-  const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
+  const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
   if (!EMAIL_RE.test(normalizedEmail) || /\.\./.test(normalizedEmail)) {
     // Generic 200 (enumeration defense) — client UI shows the same
     // "Check your email" confirmation regardless. Loud server log so
@@ -348,6 +348,22 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
   // Rate limit: max 3 reset emails per IP per hour
   if (await checkRateLimit(req, "reset", 3)) {
     return res.status(429).json({ error: "Too many reset requests. Try again later." });
+  }
+
+  // Audit P0 #8: per-email rate limit. With the link-reuse cache the
+  // legit user only ever generates ONE link per 50 minutes, so 5/24h
+  // is plenty for legit retries (typo email → resend → final). An
+  // attacker on a botnet (different IPs) bypasses the per-IP limit
+  // and can otherwise spam-DoS a single victim's inbox until our
+  // domain reputation drops.
+  const emailResetKey = `rl:reset:email:${normalizedEmail}`;
+  const emailResetCount = await incrRedisKey(emailResetKey, 24 * 60 * 60);
+  if (emailResetCount > 5) {
+    // Generic 200 (enumeration defense) — the user's UI shows the
+    // same "check your email" confirmation regardless. Loud server
+    // log so ops can spot abuse.
+    console.warn(`[reset] per-email rate limit hit for ${normalizedEmail.slice(0, 50)} (count=${emailResetCount})`);
+    return res.status(200).json({ ok: true });
   }
 
   if (!RESEND_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
