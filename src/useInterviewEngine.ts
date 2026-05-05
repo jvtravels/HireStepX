@@ -1252,34 +1252,31 @@ export function useInterviewEngine() {
       pendingFollowUpRef.current = null;
       const timeout = new Promise<null>(r => setTimeout(() => r(null), isSalaryNegConversation ? 13000 : 4000));
 
-      // Speak the thinking phrase IMMEDIATELY whenever a follow-up is
-      // in flight. Eliminates 1-3s of dead air between the user's
-      // submit and the AI's next turn — the LLM call runs in the
-      // background while the user hears "Got it, let me think..."
-      // within ~300ms of submitting. Previously this fired only for
-      // salary-neg; behavioral / panel / system-design interviews
-      // had the same dead-air gap and now get the same treatment.
+      // For salary-neg: speak thinking phrase IMMEDIATELY to eliminate dead air,
+      // then wait for follow-up API in background. This means the user hears
+      // "Hmm, let me think about that..." within 0.5s instead of 6s silence.
       //
-      // NOTE: we deliberately do NOT add the thinking phrase to the
-      // transcript. It's a UX bridge to fill TTS dead-air; treating
-      // it as a real conversational turn produced a bug where the
-      // report transcript showed:
+      // NOTE: we deliberately do NOT add the thinking phrase to the transcript.
+      // It's a UX bridge ("Got it." / "I understand." / "Sure.") to fill TTS
+      // dead-air; treating it as a real conversational turn produced the
+      // observed bug where the report transcript showed:
       //     [ai] Got it.
       //     [ai] I appreciate you sharing your thoughts...
-      // as TWO separate AI turns and the eval LLM mis-paired
-      // questions+answers. Bridges are spoken-only — the substantive
-      // follow-up that arrives via pendingFollowUp.then() is the
-      // canonical AI turn.
-      if ((thinkingPhrase !== null) && thinkingPhrase && aiVoiceEnabled) {
-        const isHeavyPushback = isSalaryNegConversation && negPushbackCountRef.current >= 3;
+      // as TWO separate AI turns. Worse, the eval LLM read those bridges as
+      // substantive turns and the per-question pairing got confused. Bridges
+      // are now spoken-only — the substantive follow-up that arrives via
+      // pendingFollowUp.then() is the canonical AI turn.
+      if (isSalaryNegConversation && (thinkingPhrase !== null) && thinkingPhrase && aiVoiceEnabled) {
+        const isHeavyPushback = negPushbackCountRef.current >= 3;
         const walkAwayPatCheck = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
-        const isWalkAway = isSalaryNegConversation && walkAwayPatCheck.test(lastAnswerTextRef.current);
-        // Salary-neg gets a strategic pause for walk-away/heavy pushback
-        // (1.5-2.5s) so the AI's response has emotional weight. All other
-        // cases use a snappy 150-400ms gap.
+        const isWalkAway = walkAwayPatCheck.test(lastAnswerTextRef.current);
+        // Reduced pauses: strategic pause for walk-away/pushback (1.5-2.5s), normal (150-400ms)
         const strategicPause = (isWalkAway || isHeavyPushback) ? randomDelay(1500, 2500) : undefined;
         const phraseDelay = strategicPause ?? randomDelay(150, 400);
 
+        // Speak thinking phrase immediately. NOT added to transcript — see
+        // note above. The TTS-only path keeps the no-dead-air UX without
+        // polluting the conversation log.
         setTimeout(() => {
           if (isStale() || interviewEndedRef.current) return;
           const phraseInstanceId = ++ttsInstanceIdRef.current;
