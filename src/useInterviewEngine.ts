@@ -767,7 +767,30 @@ export function useInterviewEngine() {
     if (!aiVoiceEnabled) return;
     const stepObj = interviewScriptRef.current[currentStepRef.current];
     if (!stepObj?.aiText) return;
-    speak(stepObj.aiText, () => {}, () => {}, interviewerGender).catch(() => {});
+    /* Multi-click guard. User report: "Clicking the repeat button
+       multiple times together, multiple AI voices are talking
+       together." Without cancellation, every click started a fresh
+       TTS handle and the previous handles kept streaming, so 3 rapid
+       clicks meant 3 overlapping voices.
+       Hard-mute first to yank already-buffered Cartesia PCM / Azure
+       audio in the same frame (cancel() alone is too lazy on those
+       providers); then call the prior handle's cancel() to release
+       the WebSocket; then start a new handle and store its cancel
+       in ttsCancelRef so the next click (or any other code path —
+       skipSpeaking, step transitions, end-interview) preempts it. */
+    hardMuteTTS();
+    ttsCancelRef.current?.();
+    ttsCancelRef.current = null;
+    const instanceId = ++ttsInstanceIdRef.current;
+    speak(stepObj.aiText, () => {}, () => {}, interviewerGender).then((handle) => {
+      if (ttsInstanceIdRef.current === instanceId) {
+        ttsCancelRef.current = handle.cancel;
+      } else {
+        // A newer click already preempted us — cancel this handle so
+        // its audio doesn't leak in.
+        handle.cancel();
+      }
+    }).catch(() => { /* TTS provider error — silent; the visual question is still on screen */ });
   }, [aiVoiceEnabled, interviewerGender]);
 
   /* Listening-phase interjections (silence nudge, hard-cap stall,
