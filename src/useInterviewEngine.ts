@@ -2351,6 +2351,12 @@ export function useInterviewEngine() {
      *  the user to click "Start speaking" before STT + the answer
      *  countdown begin. */
     awaitingSpeechStart,
+    /** True when the current step is the final step of the interview.
+     *  Drives the "View result" button on the last turn — once the user
+     *  has reached the closing/last question, there's nothing left to
+     *  answer; the CTA flips from "Start speaking" to "View result"
+     *  which calls handleEnd to trigger the report. */
+    isLastStep: currentStep >= interviewScript.length - 1 && interviewScript.length > 0,
 
     // Skip budget — used by Interview.tsx to enable/disable the skip CTA
     skipsUsed,

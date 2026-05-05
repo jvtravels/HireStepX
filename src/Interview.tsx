@@ -464,6 +464,7 @@ function CanvasListeningActionZone({
   timeRemaining, timePercent,
   skipsUsed, skipBudget, canSkip,
   awaitingSpeechStart,
+  isLastStep, onViewResult,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -496,6 +497,8 @@ function CanvasListeningActionZone({
   skipBudget: number;
   canSkip: boolean;
   awaitingSpeechStart: boolean;
+  isLastStep: boolean;
+  onViewResult: () => void;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -645,6 +648,35 @@ function CanvasListeningActionZone({
             • typing mode + empty → disabled placeholder
             • typing mode + filled → "Press Enter to send" submits */}
       {!showTyping && !canSend ? (
+        isLastStep ? (
+          /* Last question reached — there's nothing left to answer.
+             Replace the "Start speaking" CTA with "View result" so the
+             user can trigger the report directly. */
+          <button
+            ref={nextBtnRef}
+            type="button"
+            onClick={() => onViewResult()}
+            aria-label="View result"
+            className="hsx-iv-keycap"
+            data-state="ready"
+            style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
+              color: e.cream, background: e.indigo,
+              border: `1px solid ${e.indigo}`,
+              borderRadius: 999, padding: "12px 26px",
+              cursor: "pointer",
+              transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+              boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+            <span>View result</span>
+          </button>
+        ) : (
         <button
           ref={nextBtnRef}
           type="button"
@@ -671,6 +703,7 @@ function CanvasListeningActionZone({
           </svg>
           <span>Start speaking</span>
         </button>
+        )
       ) : (
         <button
           ref={nextBtnRef}
@@ -823,7 +856,7 @@ function InterviewInner() {
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
-    restartListening, awaitingSpeechStart,
+    restartListening, awaitingSpeechStart, isLastStep,
     skipsUsed, skipBudget, canSkip,
     micQuiet, reconnecting, reconnectAttempt,
 
@@ -1169,6 +1202,8 @@ function InterviewInner() {
             skipBudget={skipBudget}
             canSkip={canSkip}
             awaitingSpeechStart={awaitingSpeechStart}
+            isLastStep={isLastStep}
+            onViewResult={handleEnd}
           />
         )}
 
