@@ -484,10 +484,25 @@ export function CanvasEndButton({ onClick }: { onClick?: () => void }) {
 }
 
 /* ─── SelfViewTile (camera-on overlay) ─── */
-export function CanvasSelfViewTile({ videoRef, initials = "You" }: {
+export function CanvasSelfViewTile({ videoRef, initials = "You", stream = null }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   initials?: string;
+  /* The active MediaStream. Passed in so we can re-attach srcObject
+     after the <video> element mounts. The hook's `startRecording`
+     attaches once at acquisition time, but on the first toggle the
+     SelfView tile doesn't exist yet (it's gated behind videoEnabled),
+     so the initial assignment is to a null ref and the feed never
+     wires up. This effect fixes that race. */
+  stream?: MediaStream | null;
 }) {
+  React.useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (stream && el.srcObject !== stream) {
+      el.srcObject = stream;
+      el.play().catch(() => { /* autoplay-blocked browsers — user toggle already counts as gesture */ });
+    }
+  }, [stream, videoRef]);
   return (
     <div aria-label="Your camera preview" className="iv-canvas-selfview" style={{
       // Sits above the footer (~64-72px tall + safe-area). bottom:84

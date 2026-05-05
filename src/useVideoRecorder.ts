@@ -4,6 +4,14 @@ export function useVideoRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoURL, setVideoURL] = useState<string | null>(null);
+  /* The active camera stream. Held in state (not just a ref) so the
+     consumer can `useEffect` against it to re-attach `srcObject` when
+     the <video> element mounts. Without this, the SelfView tile only
+     mounts AFTER `videoEnabled` flips to true, which means the
+     `videoPreviewRef.current` was null at the moment we tried to
+     assign srcObject — so the tile rendered with no feed (the
+     "Camera feed not working" bug report). */
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -16,6 +24,7 @@ export function useVideoRecorder() {
         audio: false, // audio is handled separately by speech recognition
       });
       streamRef.current = stream;
+      setMediaStream(stream);
 
       if (videoPreviewRef.current) {
         videoPreviewRef.current.srcObject = stream;
@@ -40,6 +49,7 @@ export function useVideoRecorder() {
         // Stop all tracks
         streamRef.current?.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
+        setMediaStream(null);
       };
 
       mediaRecorderRef.current = recorder;
@@ -86,6 +96,7 @@ export function useVideoRecorder() {
     videoEnabled,
     videoURL,
     videoPreviewRef,
+    mediaStream,
     startRecording,
     stopRecording,
     toggleVideo,

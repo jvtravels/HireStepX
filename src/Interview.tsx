@@ -1310,7 +1310,7 @@ function InterviewInner() {
 
       {/* Self-view tile (camera-on overlay, bottom-right) */}
       {video.videoEnabled && phase !== "done" && (
-        <CanvasSelfViewTile videoRef={video.videoPreviewRef} initials={myInitials} />
+        <CanvasSelfViewTile videoRef={video.videoPreviewRef} initials={myInitials} stream={video.mediaStream} />
       )}
 
       {showTranscript && (
