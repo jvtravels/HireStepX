@@ -421,52 +421,20 @@ export function useInterviewEngine() {
   const [phase, setPhase] = useState<"thinking" | "speaking" | "listening" | "done">("thinking");
   const [isRecording, setIsRecording] = useState(false);
 
-  /** Listening grace window.
-   *  Real-interview UX: when the AI finishes speaking, STT and the
-   *  answer-timer should engage automatically — like a real
-   *  conversation. No "tap to start" friction.
-   *
-   *  But two failure modes pushed us to a manual button at one point:
-   *    (a) Per-question timer burning seconds while TTS audio was
-   *        still trailing in the user's headphones.
-   *    (b) STT capturing the tail of the AI's voice on cheap mics,
-   *        garbling the user's transcript.
-   *
-   *  Both collapse to the same fix: hold STT + timer for ~700ms after
-   *  phase flips to "listening". TTS providers report speech-end a
-   *  beat before the audio actually ends in the speaker, so the grace
-   *  buffer absorbs that tail without breaking the conversational
-   *  feel. After grace, everything engages without user intervention.
-   *
-   *  This state ALSO drives the legacy `awaitingSpeechStart` external
-   *  contract (consumed by Interview.tsx's button) — kept true while
-   *  the grace is active so the pill renders "Start speaking" as a
-   *  fallback affordance for users who'd rather click than wait. The
-   *  button is no longer required to begin — the grace timer fires
-   *  automatically. */
-  const [listeningGraceActive, setListeningGraceActive] = useState(false);
-  const [awaitingSpeechStart, setAwaitingSpeechStart] = useState(false);
-  useEffect(() => {
-    if (phase !== "listening") {
-      setListeningGraceActive(false);
-      setAwaitingSpeechStart(false);
-      return;
-    }
-    // Phase just flipped to listening. Engage the grace window.
-    setListeningGraceActive(true);
-    setAwaitingSpeechStart(false); // auto-start by default; only set true if we want the manual pill
-    const t = setTimeout(() => setListeningGraceActive(false), 700);
-    return () => clearTimeout(t);
-  }, [phase, currentStep]);
+  /** Manual-start gate. Defined here (early) because both the STT hook
+   *  and the answer-timer need to read it. See the longer comment near
+   *  `restartListening` below for rationale. */
+  const [awaitingSpeechStart, setAwaitingSpeechStart] = useState(true);
+  useEffect(() => { setAwaitingSpeechStart(true); }, [currentStep]);
 
-  // Timers: elapsed clock, answer timer with auto-advance, tab visibility.
-  // Pass a "frozen" phase during the listening-grace window so the
-  // per-question countdown doesn't tick while TTS audio is still
-  // trailing off — see the comment block above for rationale.
+  // Timers: elapsed clock, answer timer with auto-advance, tab visibility
+  // Pass a "frozen" phase to the timer when we're awaiting the user's
+  // manual speech-start tap so the per-question countdown doesn't burn
+  // seconds before they realise it's their turn.
   const {
     elapsed, setElapsed, answerTimer, timeRemaining, timePercent,
     handleNextRef,
-  } = useInterviewTimers(listeningGraceActive ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation");
+  } = useInterviewTimers(awaitingSpeechStart ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation");
 
   // TTS-caption sync: actual audio duration (from TTS provider) and speech-ended flag
   const [ttsDurationMs, setTtsDurationMs] = useState<number | undefined>(undefined);
@@ -758,18 +726,15 @@ export function useInterviewEngine() {
     if (phase !== "listening") return;
     setCurrentTranscript("");
     setSttRestartTrigger((n) => n + 1);
-    // User explicitly tapped — short-circuit any remaining grace window
-    // so STT engages immediately.
-    setListeningGraceActive(false);
     setAwaitingSpeechStart(false);
     toast("Listening — speak when ready", "info");
   }, [phase, toast]);
 
   // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
-  // STT is held back during the 700ms listening-grace window so it
-  // doesn't capture the tail of the AI's voice on cheap mics. After
-  // grace, it engages automatically — no user click needed.
-  useInterviewSTT(listeningGraceActive ? "speaking" : phase, isMuted, speechUnavailable, {
+  // STT is gated behind awaitingSpeechStart — we pretend phase isn't yet
+  // "listening" so the hook doesn't auto-start until the user clicks the
+  // "Start speaking" button.
+  useInterviewSTT(awaitingSpeechStart ? "speaking" : phase, isMuted, speechUnavailable, {
     setCurrentTranscript: setCurrentTranscriptGuarded, setMicError, setSpeechUnavailable, setShowCaptions,
     toast, textareaRef, interviewEndedRef,
     onLowSttConfidence: (snapshot) => { sttLowConfidenceRef.current = snapshot; },

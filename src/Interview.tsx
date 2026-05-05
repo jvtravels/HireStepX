@@ -616,11 +616,12 @@ function CanvasListeningActionZone({
 
       {/* Per-question countdown — always visible during listening so
           users see the budget. Stays muted when budget is large; warms
-          and turns urgent in the last 30/15 seconds. The 700ms
-          listening-grace window inside the engine holds the timer at
-          0 ticks until TTS audio has truly faded; the pill renders
-          full-bar during that window and starts ticking right after. */}
-      <CountdownPill secondsRemaining={timeRemaining} percent={timePercent} />
+          and turns urgent in the last 30/15 seconds. Hidden while we're
+          awaiting the "Start speaking" tap so a frozen 100% bar doesn't
+          mislead the user into thinking time is already counting. */}
+      {!awaitingSpeechStart && (
+        <CountdownPill secondsRemaining={timeRemaining} percent={timePercent} />
+      )}
 
       {/* Live metrics + pace meter — only when actually answering */}
       {currentTranscript.trim().length > 0 && (
@@ -637,24 +638,50 @@ function CanvasListeningActionZone({
         <MicQuietBanner onSwitchToText={() => { setTyping(true); setSpeechUnavailable(true); textareaRef.current?.focus(); }} />
       )}
 
-      {/* Primary CTA — single keycap pill that adapts to the answer
-          state. STT runs automatically while listening; the pill is
-          a passive hint until the user has something to send.
+      {/* Primary CTA — keycap button matching the canvas.
           State machine:
-            • last step + no transcript → "View result" (ends the
-              interview directly; nothing left to answer)
-            • voice mode + empty transcript → "Listening… (Space when done)"
-              passive, hints the keyboard shortcut. No click required.
+            • voice mode + awaiting start → clean "Start speaking" pill
+              (no keycap chip — the Space keycap was confusing users into
+              thinking they had to press it; the click target is now
+              just the labelled button. Space shortcut still works.)
             • voice mode + has transcript → "Press Space when done"
-              click submits.
             • typing mode + empty → disabled placeholder
             • typing mode + filled → "Press Enter to send" submits */}
-      {isLastStep && !canSend && !showTyping ? (
+      {!showTyping && !canSend ? (
+        isLastStep ? (
+          /* Last question reached — there's nothing left to answer.
+             Replace the "Start speaking" CTA with "View result" so the
+             user can trigger the report directly. */
+          <button
+            ref={nextBtnRef}
+            type="button"
+            onClick={() => onViewResult()}
+            aria-label="View result"
+            className="hsx-iv-keycap"
+            data-state="ready"
+            style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
+              color: e.cream, background: e.indigo,
+              border: `1px solid ${e.indigo}`,
+              borderRadius: 999, padding: "12px 26px",
+              cursor: "pointer",
+              transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+              boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+            <span>View result</span>
+          </button>
+        ) : (
         <button
           ref={nextBtnRef}
           type="button"
-          onClick={() => onViewResult()}
-          aria-label="View result"
+          onClick={() => restartListening()}
+          aria-label="Start speaking"
           className="hsx-iv-keycap"
           data-state="ready"
           style={{
@@ -668,25 +695,25 @@ function CanvasListeningActionZone({
             boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
           }}
         >
+          {/* simple mic glyph — no keycap */}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
+            <rect x="9" y="3" width="6" height="12" rx="3" />
+            <path d="M5 11a7 7 0 0 0 14 0" />
+            <line x1="12" y1="18" x2="12" y2="22" />
           </svg>
-          <span>View result</span>
+          <span>Start speaking</span>
         </button>
+        )
       ) : (
         <button
           ref={nextBtnRef}
           type="button"
-          onClick={() => {
-            if (canSend) handleNextQuestion();
-            else if (!showTyping) restartListening();
-          }}
+          onClick={() => handleNextQuestion()}
           disabled={showTyping && !canSend}
           aria-label={
             showTyping
-              ? canSend ? "Send answer" : "Type your answer"
-              : canSend ? "Send answer (or press Space)" : "Listening — Space when done"
+              ? "Send answer"
+              : "Send answer (or press Space)"
           }
           className="hsx-iv-keycap"
           data-state={canSend ? "ready" : "disabled"}
@@ -697,8 +724,8 @@ function CanvasListeningActionZone({
             background: canSend ? e.indigo : e.white,
             border: `1px solid ${canSend ? e.indigo : e.line}`,
             borderRadius: 999, padding: "10px 18px 10px 12px",
-            cursor: canSend || !showTyping ? "pointer" : "not-allowed",
-            opacity: canSend ? 1 : 0.92,
+            cursor: canSend ? "pointer" : "not-allowed",
+            opacity: canSend ? 1 : 0.7,
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
             boxShadow: canSend
               ? "0 6px 20px -6px rgba(49,46,129,0.40)"
@@ -718,9 +745,7 @@ function CanvasListeningActionZone({
           <span>
             {showTyping
               ? (canSend ? "Press Enter to send" : "Type your answer…")
-              : canSend
-                ? "Press Space when done"
-                : "Listening… press Space when done"}
+              : "Press Space when done"}
           </span>
         </button>
       )}
