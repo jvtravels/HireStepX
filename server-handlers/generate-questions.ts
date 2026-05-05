@@ -391,11 +391,21 @@ If unclear, default to IAS-style interview tone.`,
       ? resumeWordCount < 60 && !resumeIntelligence && !(resumeTopSkills?.length)
       : false;
 
+    /* ROLE-PIVOT GUARD.
+       User report: resume said Designer, target role was Content
+       Strategist, but the AI generated questions like "tell me about
+       a project where you leveraged your design skills". The mistake
+       is treating the resume's apparent role as the role being
+       interviewed for. Candidates pivoting between roles are common
+       and the AI must frame every question around the TARGET ROLE,
+       using resume experience only as transferable evidence. */
+    const rolePivotGuard = `\nTARGET ROLE PRIORITY (mandatory): the candidate is interviewing for ${targetRole}. EVERY question must be framed around the competencies of ${targetRole} — not the role implied by the resume. Candidates frequently pivot between roles, so the resume's job titles describe their PAST role, not their TARGET role. Treat past experience as TRANSFERABLE EVIDENCE for ${targetRole} competencies, never as proof they're already in the target role. WRONG: "tell me about a project where you leveraged your design skills" (when target is Content Strategist). RIGHT: "tell me about a project where you shaped messaging or narrative for a product audience — what was your process for finding the voice?". When you reference resume specifics, do it to bridge: "I see you led design for X at Y — walk me through how you partnered with content/PM there, since this Content Strategist role will need that muscle". Never assume the candidate's past role IS the target role.`;
+
     const resumeGroundingDirective = resumeIsSparse
-      ? `\nRESUME GROUNDING (sparse-resume guard): The candidate's resume contains only ${resumeWordCount} words and no parsed intelligence. ABSOLUTELY DO NOT invent specific past employers, job titles, project names, technologies, schools, or metrics. Phrases like "your time at Google", "the migration you led at Razorpay", "your work on the Stripe integration", or "your B.Tech from IIT" are FORBIDDEN unless the exact term appears in the resume text. When you want to anchor to experience, use ungrounded framings: "based on your experience…", "in your most recent role…", "drawing from a project you've worked on…". Hallucinating one specific detail destroys candidate trust for the entire session.`
+      ? `\nRESUME GROUNDING (sparse-resume guard): The candidate's resume contains only ${resumeWordCount} words and no parsed intelligence. ABSOLUTELY DO NOT invent specific past employers, job titles, project names, technologies, schools, or metrics. Phrases like "your time at Google", "the migration you led at Razorpay", "your work on the Stripe integration", or "your B.Tech from IIT" are FORBIDDEN unless the exact term appears in the resume text. When you want to anchor to experience, use ungrounded framings: "based on your experience…", "in your most recent role…", "drawing from a project you've worked on…". Hallucinating one specific detail destroys candidate trust for the entire session.${rolePivotGuard}`
       : (resumeText || resumeTopSkills?.length || resumeIntelligence)
-      ? `\nRESUME GROUNDING (mandatory): at least ONE question (Q2 or Q3) MUST reference a specific detail from the candidate's resume — a past role, a project, a company name, or a specific skill they listed. Phrasing like "I see you led X at Y — tell me about..." or "You list <skill> on your resume — walk me through where you applied it." This makes the AI feel like an interviewer who actually read the resume, not a generic question generator. CRITICAL: only reference details that are explicitly present in the resume text/skills/intelligence above. Never invent a company, title, project, or metric that isn't there.`
-      : "";
+      ? `\nRESUME GROUNDING (mandatory): at least ONE question (Q2 or Q3) MUST reference a specific detail from the candidate's resume — a past role, a project, a company name, or a specific skill they listed. Phrasing like "I see you led X at Y — tell me about..." or "You list <skill> on your resume — walk me through where you applied it." This makes the AI feel like an interviewer who actually read the resume, not a generic question generator. CRITICAL: only reference details that are explicitly present in the resume text/skills/intelligence above. Never invent a company, title, project, or metric that isn't there.${rolePivotGuard}`
+      : rolePivotGuard;
 
     const panelNote = interviewType === "panel"
       ? `\nThis is a PANEL interview with three panelists. Include a "persona" field in EVERY question object.
