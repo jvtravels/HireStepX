@@ -1311,6 +1311,22 @@ export default function SessionSetup() {
         .hsx-setup-hero-h1 { white-space: nowrap; }
         .hsx-setup-identity-name { display: inline; }
 
+        /* Small desktop (≤1280px, e.g. 13" laptops at 1280×800) — compress
+           the hero + spacing aggressively so the form + CTA fit without scroll. */
+        @media (max-width: 1280px) {
+          .hsx-setup-topbar { padding: 12px 32px !important; }
+          .hsx-setup-content { padding: 12px 32px 32px !important; }
+          .hsx-setup-hero-h1 { font-size: clamp(1.5rem, 3vw, 2rem) !important; line-height: 1.1 !important; }
+          .hsx-setup-hero { margin-bottom: 14px !important; }
+          .hsx-setup-hero-sub { margin-top: 6px !important; font-size: 13px !important; line-height: 1.45 !important; }
+          .hsx-setup-hero-pillrow { margin-top: 8px !important; gap: 4px !important; }
+          .hsx-setup-hero-pillrow p { font-size: 12px !important; }
+          .hsx-setup-time-pill { font-size: 11px !important; padding: 4px 10px !important; }
+          .hsx-setup-form-sections { gap: 16px !important; }
+          .hsx-setup-cta-zone { margin-top: 16px !important; padding-top: 12px !important; gap: 8px !important; }
+          .hsx-setup-cta { padding: 14px 28px !important; font-size: 14px !important; }
+          .ob-focus-card { padding: 10px !important; }
+        }
         @media (max-width: 1024px) {
           .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
         }
@@ -1411,17 +1427,17 @@ export default function SessionSetup() {
 
           <div>
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
-              <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1">
+              <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1 hsx-setup-hero">
                 <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
                   Let&apos;s get you{" "}
                   <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
                 </h1>
-                <p style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
+                <p className="hsx-setup-hero-sub" style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
                   Tell us a few things and we&apos;ll personalize the experience for you.
                 </p>
                 {/* Time pill + value-reframe — answers "how long?" and ties
                     the time investment to outcome in one breath. */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
+                <div className="hsx-setup-hero-pillrow" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
                   <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <circle cx="12" cy="12" r="10" />
@@ -1435,7 +1451,7 @@ export default function SessionSetup() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+              <div className="hsx-setup-form-sections" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
                 {/* ── Role & Company — canvas-style: clean field rows, no card chrome ── */}
                 <div className="fade-up-1">
                   <div style={{ marginBottom: 14 }}>
