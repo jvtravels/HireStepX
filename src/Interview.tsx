@@ -549,7 +549,7 @@ function CanvasListeningActionZone({
   const canSend = currentTranscript.trim().length > 0;
   const showTyping = typing || speechUnavailable;
   return (
-    <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+    <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
       {/* Live transcript card — only if we have something */}
       {currentTranscript && !showTyping && (
         /* role="log" implies polite; aria-relevant="additions" so SR only
@@ -1023,15 +1023,16 @@ function InterviewInner() {
         flex: 1,
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "flex-start",
-        gap: 22, padding: "32px 48px",
+        gap: 28, padding: "40px 64px",
         position: "relative", overflow: "auto",
         // Constrain reading width — on widescreens the question + controls
-        // sprawl across the whole viewport. Clamping to ~half-width
-        // (matches modern reading-research recommendations) keeps the eye
-        // tracking the question without large saccades. Mobile / narrow
-        // viewports still flow naturally because of the maxWidth ceiling
-        // (not a hard width) and the existing iv-canvas-stage media rules.
-        maxWidth: 760, margin: "0 auto", width: "100%",
+        // sprawl across the whole viewport, but the previous 760 ceiling
+        // was actively cramping the question heading (920) and the
+        // listening action zone, forcing wraps that the editorial
+        // type-scale wasn't meant to take. Bumped to 1100 so the
+        // question, transcript card, and metrics row all breathe.
+        // Mobile / narrow viewports still flow naturally via media rules.
+        maxWidth: 1100, margin: "0 auto", width: "100%",
       }}>
         {/* Panel avatar stage — three avatars in a row above the question.
             In panel mode this REPLACES the single visualizer + persona
@@ -1267,7 +1268,7 @@ function InterviewInner() {
         )}
 
         {phase === "done" && (
-          <div style={{ width: "100%", maxWidth: 620, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", gap: 18 }}>
             {isSalaryNegotiation && (
               <DealSummaryCard
                 transcript={transcript}
