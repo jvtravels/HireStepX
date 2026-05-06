@@ -10,6 +10,7 @@ import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceL
 import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
+import { formatGranularBand } from "./india-salary-bands-2025";
 
 export interface SalaryLookupParams {
   role: string;
@@ -448,6 +449,18 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
      Returns "" for roles without a special framing rule. */
   const familyFraming = buildFamilyCompFraming(roleKey);
 
+  /* Granular role band — the 2025 India market grid covering 80+
+     specific roles (Frontend Developer, Senior Product Designer,
+     GenAI Engineer, Enterprise Sales Manager, etc.) at the
+     candidate's exact YOE bucket and company tier. Layered ON TOP
+     of the existing salaryContext so the LLM has both:
+       • coarse band from salaries.ts → drives the numeric clamp
+       • granular band from this lookup → tells the LLM the
+         realistic 2025 range for the candidate's specific role
+     If the role-text doesn't match any granular role, returns ""
+     and we fall back to the coarse band only. */
+  const granularBand = formatGranularBand(params.role, safeTier, exp);
+
   return `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
 - Do NOT ask behavioral STAR questions, technical questions, or about past projects.
 - Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company. In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions).${ctcStructureNote}${familyFraming}
@@ -463,7 +476,7 @@ NEGOTIATION FLOW — Each question MUST follow this progression:
 4. COUNTER-OFFER: Based on their response, present an improved package. Trade levers: base vs joining bonus vs flexible work vs relocation support vs learning budget. Example: "I can stretch the base to ₹X, or keep it at ₹Y and add a ₹Z joining bonus — which works better for you?"
 5. CLOSING: Finalize with timeline. "If we can agree on this, when can you join? What's your notice period situation?"
 
-${salaryContext}
+${salaryContext}${granularBand}
 
 ${equityRule}
 EQUITY VESTING DETAILS (use when candidate asks):
