@@ -168,7 +168,14 @@ const FOCUS_MAP: Record<string, FocusArea> = {
   technical: "technical", "system-design": "system-design",
   "case-study": "case-study", "campus-placement": "campus-placement",
   hr: "hr", panel: "panel", "salary-negotiation": "salary-negotiation",
-  leadership: "leadership", strategic: "case-study",
+  leadership: "leadership",
+  /* Strategic now has its own retrieval bucket (was aliased to
+     case-study). Strategic = defending a position to senior
+     stakeholders; case-study = framework-driven analysis under
+     interviewer guidance. Different question shapes; should not
+     share a pool. Falls back to case-study at tier 2 if strategic
+     doesn't have a tier-1 hit for the (company × role) combo. */
+  strategic: "strategic",
   /* Management gets its own focus bucket (was silently falling back
      to behavioral). EM-level probes — scaling, hiring/firing, perf
      mgmt, x-functional alignment — surface in tier-1 retrieval. */

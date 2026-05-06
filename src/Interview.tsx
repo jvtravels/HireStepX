@@ -23,6 +23,7 @@ import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
 import { stripProsodyMarkup } from "./_prosody";
+import { detectNegotiationTactic } from "./_negotiation-tactics";
 import { useAuth } from "./AuthContext";
 
 /* Derive 1-2 letter initials from a logged-in user's display name, falling
@@ -831,17 +832,22 @@ function CanvasListeningActionZone({
       {isCurrentFollowUp && (
         <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
       )}
-      {/* Salary-neg coaching: AI is probing the candidate's current
-          CTC. Revealing it too early loses leverage — surface a
-          quick coaching tip so the candidate can deflect. Match
-          common phrasings: "what's your current CTC", "current
-          package", "how much are you making", etc. */}
-      {interviewType === "salary-negotiation" &&
-        /\b(?:current\s+(?:ctc|salary|package|comp(?:ensation)?)|what\s+(?:are|do)\s+you\s+(?:making|earning|getting)|your\s+(?:present|existing)\s+(?:ctc|salary)|how\s+much\s+(?:are|do)\s+you\s+(?:make|earn|get))\b/i.test(currentQuestionText) && (
-        <CanvasHintBubble>
-          Tip: deflect — focus on what you'll bring, not what you currently earn. "I'm focused on the value of this role; I'd love to hear what range you have in mind."
-        </CanvasHintBubble>
-      )}
+      {/* Salary-neg tactic recognition. Run the AI question through
+          the tactic detector and surface the coaching note for the
+          first match. The current-CTC tip is just one of ~8 tactics
+          this catches (anchors, flinches, deadlines, fake-empathy,
+          split-authority, package-redirect, loss-framing). One bubble
+          per turn — pure pattern match, no LLM. */}
+      {interviewType === "salary-negotiation" && (() => {
+        const tactic = detectNegotiationTactic(currentQuestionText);
+        if (!tactic) return null;
+        return (
+          <CanvasHintBubble>
+            <strong style={{ color: e.copper, marginRight: 6 }}>{tactic.label}:</strong>
+            {tactic.coaching}
+          </CanvasHintBubble>
+        );
+      })()}
 
       {/* Subtle keyboard-shortcuts discoverability hint */}
       <span aria-hidden style={{

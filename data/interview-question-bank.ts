@@ -61,7 +61,13 @@ export type FocusArea =
   /* Government / PSU is a distinct focus (was missing entirely).
      UPSC personality-test format, SSB defence rounds, RBI Grade B
      descriptive-paper rounds, ISRO/DRDO scientist viva. */
-  | "government-psu";
+  | "government-psu"
+  /* Strategic was aliased to case-study, but the formats genuinely
+     differ: case = framework + structured analysis under interviewer
+     guidance; strategic = defending a position / vision / bet to
+     senior stakeholders (board, investors, exec leadership). Split
+     so retrieval doesn't conflate the two. */
+  | "strategic";
 
 export interface BankEntry {
   /** Question text — anchored, never shown verbatim to the user. */
@@ -898,5 +904,131 @@ export const QUESTION_BANK: BankEntry[] = [
     company: "phonepe", roleFamily: "em", focus: "management",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Soft-signal-reading EM probe. Wants: behavioral-data signals (Slack quietness, code-review-tone shift, meeting-camera-off rate), structured intervention (skip-levels, anonymous pulse, public acknowledgement of the change).",
+  },
+
+  /* ── HR Round (additions) ─────────────────────────────────────── */
+  {
+    text: "Tell me about yourself — keep it to 90 seconds, focused on what's relevant for this role.",
+    company: "tcs", roleFamily: "campus", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "warmup",
+    styleNote: "TCS NQT HR opener. The 90-second cap is real — over-running signals weak self-editing. Should hit: education + flagship project + why-TCS-fit, in that order.",
+  },
+  {
+    text: "Walk me through your three biggest projects in the last role. Which one are you proudest of, and why?",
+    company: "infosys", roleFamily: "swe", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Infosys InfyTQ HR. The 'proudest' framing tests self-knowledge + ability to defend a choice (not just describe). 'All three were great' = duck.",
+  },
+  {
+    text: "Personal Experience Interview (PEI): Tell me about a time you led a team through a difficult moment. Where exactly did your leadership show up?",
+    company: "mckinsey", roleFamily: "consultant", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "McKinsey PEI Leadership dimension. Story must be quantified, candidate must own a clear personal action, and 'where exactly' probe is mandatory — push for the specific moment + the specific words used.",
+  },
+  {
+    text: "PEI: Walk me through a time you had a strong personal conviction about something but the evidence forced you to change your mind. How did you handle the change?",
+    company: "mckinsey", roleFamily: "consultant", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "McKinsey PEI Personal Impact dimension. Tests intellectual honesty + willingness to update beliefs. Stories where 'I was actually right all along' fail the dimension.",
+  },
+  {
+    text: "Recruiter screen: tell me what attracts you to Amazon specifically vs. other big tech, in 60 seconds.",
+    company: "amazon", roleFamily: "swe", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Amazon recruiter screen filter. Generic 'big tech, good comp, good problems' fails. Ground in specific LP language ('Customer Obsession') + specific Amazon product / business context the candidate has researched.",
+  },
+  {
+    text: "Stripe writing screen: 'In 4 sentences, explain to me why you want to work at Stripe specifically. Then we'll discuss it.'",
+    company: "stripe", roleFamily: "swe", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Stripe HR-screen culture-bar test. Length cap is unusually short on purpose; tests Stripe's signature writing-clarity bar even at HR stage. Generic + over-length = soft reject.",
+  },
+
+  /* ── Strategic focus (was aliased to case-study; now distinct) ─ */
+  {
+    text: "You're a Senior PM and the CEO wants to kill your roadmap's flagship feature to redirect engineers to a board-pitched bet. The data on your feature is strong. Walk me through the conversation.",
+    company: "swiggy", roleFamily: "pm", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Strategic stakeholder defense. Tests: bringing data, separating ego from argument, offering a phased compromise vs. all-or-nothing, knowing when to fold. 'I'd push back firmly' alone fails — wants the actual sequence of moves.",
+  },
+  {
+    text: "You're CTO. The board wants you to commit to a major GenAI bet that you privately think is overhyped for your company's current scale. How do you frame your honest position?",
+    company: "razorpay", roleFamily: "em", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "CTO board-honesty probe. Tests: separating tech opinion from career incentive, framing risk in board-readable terms (capex, opportunity cost, timeline), proposing a smaller experiment vs. full commit OR clean refusal.",
+  },
+  {
+    text: "Walk me through a strategic bet you made that didn't pay off. Be specific about what you'd do differently with hindsight.",
+    company: "google", roleFamily: "pm", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Google PM 'L5+ judgment' question. Wants a real bet (not a tactical miss), the reasoning at the time of the call (steelmanning past-self), and a specific changed mental model — not 'I'd do it the same way'.",
+  },
+  {
+    text: "You're a founding PM at a Series B. Your CEO wants to expand to 3 new geographies in the next 12 months. You think one is wrong. What do you do?",
+    company: "atlassian", roleFamily: "pm", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Founder-tier strategic disagreement. Wants: data-backed counter (TAM, ops cost, customer-acquisition unit econ), willingness to commit to a deadline ('let's revisit in 90 days'), AND knowing when to follow if CEO holds firm.",
+  },
+  {
+    text: "VP Engineering: justify your headcount ask to the CFO who's pushing for a 15% cut across the org. You can't lose any senior people.",
+    company: "flipkart", roleFamily: "em", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "VP-Eng exec-defense round. Tests: tying engineering investment to business OKRs, proposing alternatives to headcount cut (vendor consolidation, process leverage), willingness to accept a smaller cut as a negotiated outcome.",
+  },
+  {
+    text: "You're advising a portfolio company's CEO on a pivot that will alienate 60% of their existing customers but unlock a 10x larger market. What's your recommendation?",
+    company: "bain", roleFamily: "consultant", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "MBB strategic-pivot advisory. Wants: framework (existing-cohort retention vs. new-cohort capture economics, transition risk, board readiness), conviction (no MECE-fence-sitting), and personal stake ('I'd recommend X, here's the data threshold that would change my mind').",
+  },
+  {
+    text: "Two consumer trends collide: India's premiumisation push (₹50K+ smartphones rising) and the Bharat market's price sensitivity. As Head of Product at a phone OEM, what's your 3-year strategy?",
+    company: "bcg", roleFamily: "consultant", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "BCG-style strategic case with India-specific signals. Tests: dual-segment strategy without one cannibalizing the other, distribution-channel reality (offline-heavy in Bharat), competitive pressure (Chinese OEMs).",
+  },
+  {
+    text: "You're a Director of Engineering at a unicorn that just IPO'd. Your CEO wants to publicly commit to '50% AI-coded code in 2 years'. You think it's irresponsible. How do you handle?",
+    company: "phonepe", roleFamily: "em", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Public-company strategic risk. Tests: understanding that public commitments lock in execution risk, framing concerns in compliance/disclosure terms, proposing a softer commit ('we'll measure and report' vs. 'we'll deliver 50%').",
+  },
+
+  /* ── Panel Interview (cross-persona handoffs) ──────────────────── */
+  {
+    text: "[Hiring Manager opens] Walk me through your most impactful project in the last 18 months — what was the business outcome? [Tech Lead enters mid-answer] Hmm, but that scaling number — what was your p99 read latency before vs. after? [HR Partner closes] How did the team feel during the crunch?",
+    company: "atlassian", roleFamily: "behavioral", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Real Atlassian panel handoff. Tests: same story told three ways (business → technical → human). Candidates who can pivot framing without re-explaining win; candidates who repeat the same answer to all three personae fail.",
+  },
+  {
+    text: "[Tech Lead] Walk me through a system migration you owned. [Hiring Manager picks up] Building on what you just said — how did you sell that migration timeline to the VP when they pushed for half the schedule?",
+    company: "google", roleFamily: "em", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Cross-persona reference + escalation pivot. Tests: technical credibility AND stakeholder communication on the same fact pattern. Don't repeat what you said to Tech Lead — extend it.",
+  },
+  {
+    text: "[HR Partner observes] You mentioned to my colleague that you fired an underperformer. Tell me what you said in the room — the actual words, not the summary.",
+    company: "amazon", roleFamily: "em", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "HR Partner deep-empathy probe building on a previous panelist's question. Wants the actual phrasing used, not a sanitized recap. Vulnerability + specificity = signal.",
+  },
+  {
+    text: "[Hiring Manager → Tech Lead handoff] OK my colleague will go deeper on the architecture, but before they do — give me the one-sentence elevator version of why you chose X over Y.",
+    company: "razorpay", roleFamily: "swe", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Panel handoff that pre-frames the next interviewer. Tests: ability to summarize a deep technical decision in business terms before the technical deep-dive starts. The TL is listening for the summary too.",
+  },
+  {
+    text: "[Tech Lead, skeptical] You said you'd use Kafka here. Picking up on the cost concern Sarah raised earlier — is Kafka still the right choice given the budget constraint, or were you anchored to your last team's stack?",
+    company: "stripe", roleFamily: "swe", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Stripe panel — Tech Lead drilling on a constraint introduced by Hiring Manager (Sarah). Tests: willingness to revise on new info vs. defending past-self, awareness of stack-anchoring bias.",
+  },
+  {
+    text: "[HR Partner closing] Across our three conversations today, what did you learn about us that surprised you? And — be honest — what made you most nervous about joining?",
+    company: "atlassian", roleFamily: "behavioral", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Panel closing reflective probe. Tests: self-awareness + genuine engagement with the panel content (vs. canned closer). 'Nothing makes me nervous' = soft signal you weren't really listening.",
   },
 ];

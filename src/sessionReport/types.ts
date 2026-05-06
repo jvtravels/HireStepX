@@ -181,5 +181,9 @@ export interface InterviewResultData {
     outcome: "accepted" | "walked_away" | "no_agreement";
     /** Highest number the candidate stated as their target. */
     candidateAsk: number | null;
+    /** Where the final / current offer falls within the band (0–100).
+     *  Useful for "your offer is the 32nd percentile of the role/tier
+     *  band" framing. Null if no offers were extracted. */
+    percentileWithinBand?: number | null;
   };
 }

@@ -181,7 +181,21 @@ function buildNegotiationOutcome(report: SessionReport): InterviewResultData["ne
     ? offers[offers.length - 1].total
     : null;
 
-  return { offers, finalTotal, outcome, candidateAsk };
+  // % of the gap between the AI's initial offer and the candidate's
+  // stated ask that the final offer closed. Useful for "you closed
+  // 65% of the gap" framing in the report.
+  let percentileWithinBand: number | null = null;
+  if (offers.length > 0) {
+    const initialOffer = offers[0].total;
+    const latestOffer = offers[offers.length - 1].total;
+    if (candidateAsk !== null && candidateAsk > initialOffer) {
+      percentileWithinBand = Math.max(0, Math.min(100, Math.round(
+        ((latestOffer - initialOffer) / (candidateAsk - initialOffer)) * 100,
+      )));
+    }
+  }
+
+  return { offers, finalTotal, outcome, candidateAsk, percentileWithinBand };
 }
 
 /** Aggregate bias-pattern hits across all answers, attach a

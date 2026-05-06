@@ -110,8 +110,12 @@ describe("normaliseFocus", () => {
     expect(normaliseFocus("salary-negotiation")).toBe("salary-negotiation");
   });
 
-  it("aliases strategic → case-study", () => {
-    expect(normaliseFocus("strategic")).toBe("case-study");
+  it("preserves strategic as its own focus bucket (was aliased to case-study pre-2026-Q2)", () => {
+    /* Strategic split from case-study. The bank now has dedicated
+       strategic entries (CEO disagreement, board commitment defense,
+       founder pivot) that are distinct from framework-driven case
+       analysis. Tier-1 retrieval should hit those. */
+    expect(normaliseFocus("strategic")).toBe("strategic");
   });
 
   it("preserves new management and government-psu focuses without aliasing", () => {

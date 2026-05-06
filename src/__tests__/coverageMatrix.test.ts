@@ -59,6 +59,18 @@ const HIGH_TRAFFIC_COMBOS: ReadonlyArray<readonly [CompanyKey, RoleFamily, Focus
   ["ssb", "defence", "government-psu"],
   ["isro", "scientist", "government-psu"],
   ["rbi", "civil-services", "government-psu"],
+  // HR Round (lifted to 11 entries from 5)
+  ["mckinsey", "consultant", "hr"],
+  ["amazon", "swe", "hr"],
+  ["stripe", "swe", "hr"],
+  // Strategic (was silently aliased to case-study; now has dedicated bucket)
+  ["swiggy", "pm", "strategic"],
+  ["razorpay", "em", "strategic"],
+  ["bain", "consultant", "strategic"],
+  // Panel Interview (cross-persona handoff entries)
+  ["atlassian", "behavioral", "panel"],
+  ["google", "em", "panel"],
+  ["amazon", "em", "panel"],
 ];
 
 function hasTier1(combo: readonly [CompanyKey, RoleFamily, FocusArea]): boolean {

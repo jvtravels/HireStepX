@@ -781,6 +781,9 @@ function NegotiationOutcomeSection({
           {finalRaised !== null && (
             <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "10px 0 0" }}>
               You moved the offer up by <strong style={{ color: t.coal }}>₹{finalRaised} LPA</strong> from the opening number.
+              {typeof outcome.percentileWithinBand === "number" && (
+                <> {" "} You closed <strong style={{ color: t.coal }}>{outcome.percentileWithinBand}%</strong> of the gap to your stated ask.</>
+              )}
             </p>
           )}
         </div>
