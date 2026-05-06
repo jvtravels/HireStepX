@@ -527,6 +527,7 @@ ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]
 
 RULES:
 - REPAIR FIRST: If the candidate's answer is a confusion / clarification signal — e.g. "what?", "what are you offering me?", "I don't understand", "can you repeat", "wait what", "huh?", "say that again", "I'm confused", "didn't catch that", a question back to you about the offer itself, or under 8 words asking for clarification — DO NOT push forward with a new probe. Recap your most recent offer plainly with the exact ₹ numbers (base / variable / bonus / total CTC) and ask if that's clear. One short paragraph. Don't add new asks until the candidate signals they're tracking. This rule overrides the rest of the phase script.
+- HEAR THEM: If the candidate's answer signals frustration that you're repeating yourself — "already mentioned", "as I said", "I told you", "multiple times", "already said", "told you before", "again" used reproachfully, "for the third/Nth time", or any short answer that references having previously answered — you MUST: (1) explicitly acknowledge ("you're right, you already mentioned that — apologies"), (2) make a CONCRETE move on the same turn (a real ₹ counter, a specific trade, or an explicit concession). Asking another open-ended question after this signal is the failure mode of this whole interview type. Do NOT do it.
 - NO COUNTER-DODGE: If the candidate has ALREADY stated a number (CANDIDATE FACTS shows candidateCounter) AND they directly ask for your counter ("what's your counter?", "what can you offer?", "what's your best?", "give me a number"), you MUST respond with a SPECIFIC ₹ figure — not another probe. Do NOT say "to make progress I need to understand your expectations first" — they've given you their expectations. Counter with a real number from your band, ideally between your initial offer and their ask. Saying "tell me more about your reasoning" after they've already shared market data + asked for a counter feels evasive and unrealistic.
 - TOPICAL COHERENCE: Stay on the topic the candidate just raised. If they were sharing market data, your next move is to acknowledge or counter that data — NOT to suddenly ask "what about joining bonus?". If they just talked about base salary, follow up on base or total CTC, not equity. Topic switches are allowed only when (a) you've genuinely closed the previous thread, or (b) you're using a non-cash lever as a deliberate trade ("I can't move on base, but I can add ₹X joining bonus"). Random topic jumps make the conversation feel like a script, not a negotiation.
 - NO WORD SALAD: Re-read your draft before finishing. Reject phrasings that don't parse — "absolute top of what I can approve earlier", "let me revisit the breakdown of our offer to see if we can meet you somewhere in the middle" without specifying NEW numbers, etc. If a sentence doesn't say a concrete thing (a number, a trade, a clear next step, an acknowledgement), cut it.
@@ -990,6 +991,42 @@ Respond JSON only:
         },
       );
       void buyoutCapRe;
+
+      /* Counter-offer enforcement. If the phase is counter-offer (we
+         have a candidate number + we're past idx 1) AND the LLM
+         response contains NO ₹ figure at all, the model probed
+         instead of countering. Substitute a deterministic counter
+         pulled from the band so the user sees an actual move. The
+         user-visible failure mode this fixes: 5-turn sessions where
+         the AI never counters with numbers despite the candidate
+         having stated their target + market data. */
+      if (salaryPhase === "counter-offer" && parsed.followUpText) {
+        const hasRupee = /₹\s*\d/.test(parsed.followUpText);
+        if (!hasRupee && negotiationBand) {
+          const initial = canonicalInitialOffer ?? negotiationBand.initialOffer;
+          const targetN =
+            (typeof candidateTarget === "number" && candidateTarget > 0)
+              ? candidateTarget
+              : (negotiationFacts?.candidateCounter
+                ? parseFloat(negotiationFacts.candidateCounter.replace(/[^\d.]/g, ""))
+                : null);
+          // Counter PARTWAY: split the difference, weighted toward our
+          // anchor, capped by maxStretch / minOffer so we never invent
+          // an out-of-band number.
+          const lo = initial;
+          const hi = Math.min(negotiationBand.maxStretch, Math.max(lo + 0.5, lo + 1));
+          let counter = (typeof targetN === "number" && Number.isFinite(targetN) && targetN > lo)
+            ? Math.min(hi, lo + (targetN - lo) * 0.45)
+            : Math.min(hi, lo + 1);
+          counter = Math.round(counter * 10) / 10;
+          const acknowledgement =
+            (typeof targetN === "number" && Number.isFinite(targetN))
+              ? `You're at ₹${targetN} LPA, I'm at ₹${initial} LPA — let me close some of that gap. `
+              : "";
+          parsed.followUpText = `${acknowledgement}I can stretch to ₹${counter} LPA total CTC for this role. Where I'd land that: bump base by the difference, keep the variable structure, and I'll throw in our standard benefits. Does that move us closer to a yes, or is there a specific lever you'd want me to revisit?`;
+          console.warn(`[follow-up] Counter-offer enforcement fired: substituted deterministic counter at ₹${counter} LPA (no ₹ in LLM output during counter-offer phase)`);
+        }
+      }
     }
 
     // Intent-mismatch validator: catch cases where LLM ignores the detected intent

@@ -1371,7 +1371,10 @@ export function useInterviewEngine() {
                     // session with "we'll follow up shortly" feels dismissive
                     // and unrealistic. Acknowledge the open state and pin a
                     // concrete next step.
-                    const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do))\b/i;
+                    // Includes frustration / "already mentioned" — these
+                    // are signs the candidate is still pushing, not winding
+                    // down. Closing on these would feel dismissive.
+                    const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do)|already (?:mentioned|said|told)|as i (?:said|mentioned|told)|i (?:said|mentioned|told you) (?:that|this|earlier|before)|mentioned (?:multiple times|earlier|before)|told you|for the (?:second|third|fourth|nth) time|like to have higher|highest base)\b/i;
                     const stillNegotiating = stillNegotiatingPat.test(lastAnswerTextRef.current || "");
                     let closingText = "Thanks for working through this with me. We'll review the conversation and follow up with next steps shortly.";
                     if (facts.acceptedImmediately) {
