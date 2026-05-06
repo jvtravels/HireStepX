@@ -158,7 +158,7 @@ export default function ResetPassword() {
           setTokenStatus("expired");
           return;
         }
-        // One-shot: reject if this link was already used to reset.
+        // One-shot: reject if THIS specific link was already used.
         // CRITICAL: We must NOT read user_metadata off `session.user` —
         // that's parsed from the JWT in the email link's access_token,
         // which was issued BEFORE any reset flag was written. Reading
@@ -172,9 +172,39 @@ export default function ResetPassword() {
           return;
         }
         const usedAt = userData.user.user_metadata?.password_reset_used_at;
+        /* JWT-iat-aware one-shot guard.
+           Previously: any password_reset_used_at within the last 24h
+           blocked the reset. That meant a user who successfully reset
+           on Monday couldn't reset again until Tuesday — and a user
+           who requested a NEW link after a successful reset hit the
+           same wall.
+           New rule: only block if THIS session's JWT was issued
+           BEFORE the previous reset (i.e. it's the same link being
+           replayed). If the session's iat is AFTER usedAt, this is a
+           fresh link from a fresh email and should be allowed.
+           Supabase's own one-time recovery token already prevents
+           literal replay of the same link; this guard is defense in
+           depth against session-leak attacks. */
         if (typeof usedAt === "number") {
-          const elapsed = Date.now() - usedAt;
-          if (elapsed < 24 * 60 * 60 * 1000) {
+          const sessionIatMs = (() => {
+            try {
+              const at = session?.access_token;
+              if (!at) return null;
+              const payload = JSON.parse(atob(at.split(".")[1]));
+              return typeof payload.iat === "number" ? payload.iat * 1000 : null;
+            } catch { return null; }
+          })();
+          const isReplayOfOldLink = sessionIatMs !== null && sessionIatMs <= usedAt;
+          if (isReplayOfOldLink) {
+            await client.auth.signOut().catch(() => {});
+            if (cancelled) return;
+            setTokenStatus("used");
+            return;
+          }
+          // Fallback: if we couldn't parse iat, fall back to a short
+          // 60-second window (just enough to absorb a fast double-
+          // click of the email link, not a full day's lockout).
+          if (sessionIatMs === null && Date.now() - usedAt < 60 * 1000) {
             await client.auth.signOut().catch(() => {});
             if (cancelled) return;
             setTokenStatus("used");
@@ -332,15 +362,25 @@ export default function ResetPassword() {
       const cachedSessionResult = await withTimeout(client.auth.getSession(), 4000, "getSession");
       const currentSession = cachedSessionResult.data.session;
 
-      // Server-side double-check: the mount handler already wrote
-      // `password_reset_opened_at`; the same `password_reset_used_at`
-      // it should have read still applies here. Both come from the
-      // session.user.user_metadata cache (no extra network hop).
+      // Server-side double-check: same JWT-iat-aware logic as the
+      // mount handler. Block only if the session was issued BEFORE
+      // the last successful reset (i.e. this is a replay of an old
+      // link). A fresh link issued after the previous reset has a
+      // newer iat and is allowed through.
       const cachedUser = currentSession?.user;
       const lastUsedAt = cachedUser?.user_metadata?.password_reset_used_at;
       if (typeof lastUsedAt === "number") {
-        const elapsed = Date.now() - lastUsedAt;
-        if (elapsed < 24 * 60 * 60 * 1000) {
+        const sessionIatMs = (() => {
+          try {
+            const at = currentSession?.access_token;
+            if (!at) return null;
+            const payload = JSON.parse(atob(at.split(".")[1]));
+            return typeof payload.iat === "number" ? payload.iat * 1000 : null;
+          } catch { return null; }
+        })();
+        const isReplayOfOldLink = sessionIatMs !== null && sessionIatMs <= lastUsedAt;
+        const fallbackBlock = sessionIatMs === null && Date.now() - lastUsedAt < 60 * 1000;
+        if (isReplayOfOldLink || fallbackBlock) {
           setError(
             "This reset link was already used. Request a new one to change your password again.",
           );

@@ -474,60 +474,61 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       }
     }
 
-    // Reset-link reuse: if a valid link was issued in the last 50 minutes,
-    // reuse it instead of generating a new one. Solves both:
-    //   #8 multiple valid reset links — only one is ever in active emails
-    //   #9 reuse existing link on resend — same link gets resent for
-    //      network/email-delivery retries within the window
-    // Cache TTL is 50 minutes (Supabase recovery links default to 1 hour;
-    // we expire 10 min early so we never resend a near-dead link).
-    const cacheKey = `reset_link:${normalizedEmail}`;
+    /* Always generate a fresh recovery link.
+       Previous behaviour cached the link for 50 minutes and served the
+       SAME link on subsequent "send reset" clicks. The intent was to
+       avoid token rotation during legitimate retries (idempotent
+       resend). In practice it broke the more common case:
+         1. User receives link L1, clicks it → token T1 consumed,
+            recovery session created. Reset succeeds OR fails.
+         2. User asks for a new link (legitimately — first one
+            failed, or they want to change again).
+         3. Server hit the 50-min cache → returned L1 (with already-
+            consumed T1). User clicks L1 → "expired" because T1 is
+            gone.
+         4. User has to wait 50 minutes for the cache to expire
+            before any new link they request actually works.
+       Fix: drop the cache. Each user-initiated send rotates the
+       Supabase recovery token (T1 → T2) and emails the latest. The
+       per-IP (3/h) and per-email (5/24h) rate limits already prevent
+       a runaway resend loop, and "only the latest link works" matches
+       what users expect from every other reset flow they've used. */
     let resetUrl: string | null = null;
-    const cached = await getRedisString(cacheKey);
-    if (cached) {
-      resetUrl = cached;
-      console.log(`[reset] reusing cached link for ${normalizedEmail}`);
+
+    // Generate a Supabase recovery link via admin API
+    const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "recovery",
+        email: normalizedEmail,
+        options: { redirectTo: `${APP_URL}/reset-password` },
+      }),
+    });
+
+    if (!linkRes.ok) {
+      const errText = await linkRes.text().catch(() => "");
+      console.error("generate_link failed:", linkRes.status, errText);
+      // Don't reveal whether user exists — always return success
+      return res.status(200).json({ ok: true });
     }
 
-    if (!resetUrl) {
-      // Generate a Supabase recovery link via admin API
-      const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "recovery",
-          email: normalizedEmail,
-          options: { redirectTo: `${APP_URL}/reset-password` },
-        }),
-      });
+    const linkData = await linkRes.json();
+    const actionLink = linkData.action_link || linkData.properties?.action_link;
 
-      if (!linkRes.ok) {
-        const errText = await linkRes.text().catch(() => "");
-        console.error("generate_link failed:", linkRes.status, errText);
-        // Don't reveal whether user exists — always return success
-        return res.status(200).json({ ok: true });
-      }
-
-      const linkData = await linkRes.json();
-      const actionLink = linkData.action_link || linkData.properties?.action_link;
-
-      if (!actionLink || typeof actionLink !== "string") {
-        console.error("No action_link in generate_link response:", JSON.stringify(linkData).slice(0, 300));
-        return res.status(200).json({ ok: true });
-      }
-
-      // Rewrite the redirect_to in the action link so user lands on our reset page
-      const linkUrl = new URL(actionLink);
-      linkUrl.searchParams.set("redirect_to", `${APP_URL}/reset-password`);
-      resetUrl = linkUrl.toString();
-
-      // Cache the fresh link so the next request within 50min reuses it
-      await setRedisString(cacheKey, resetUrl, 50 * 60);
+    if (!actionLink || typeof actionLink !== "string") {
+      console.error("No action_link in generate_link response:", JSON.stringify(linkData).slice(0, 300));
+      return res.status(200).json({ ok: true });
     }
+
+    // Rewrite the redirect_to in the action link so user lands on our reset page
+    const linkUrl = new URL(actionLink);
+    linkUrl.searchParams.set("redirect_to", `${APP_URL}/reset-password`);
+    resetUrl = linkUrl.toString();
     const safeEmail = escapeHtml(normalizedEmail);
 
     // Send reset email via Resend
@@ -767,31 +768,12 @@ async function getRedisValue(key: string): Promise<number> {
   } catch { return inMemFallbackGetNum(key); }
 }
 
-async function getRedisString(key: string): Promise<string | null> {
-  const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
-  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return inMemFallbackGetStr(key);
-  try {
-    const r = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
-      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-    });
-    if (!r.ok) return null;
-    const d = await r.json();
-    return typeof d.result === "string" && d.result.length > 0 ? d.result : null;
-  } catch { return inMemFallbackGetStr(key); }
-}
-
-async function setRedisString(key: string, value: string, ttl: number): Promise<void> {
-  const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
-  const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) { inMemFallbackSetStr(key, value, ttl); return; }
-  try {
-    await fetch(`${UPSTASH_URL}/setex/${encodeURIComponent(key)}/${ttl}/${encodeURIComponent(value)}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-    });
-  } catch { inMemFallbackSetStr(key, value, ttl); }
-}
+/* getRedisString / setRedisString were used to cache the recovery link
+   for 50 minutes between resends (so multiple "send reset" clicks
+   reused the same Supabase token). That cache caused stale-link bugs
+   — we now always generate a fresh link per request. The helpers
+   remain available below as inMemFallbackGetStr / inMemFallbackSetStr
+   in case a future feature needs Redis-backed strings. */
 
 /* ─── In-memory fallback for when Upstash isn't configured ───
    Keeps server-side login lockout + reset-link cache working in dev
