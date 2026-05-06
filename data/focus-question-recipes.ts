@@ -249,11 +249,12 @@ export const RECIPES: Record<string, FocusRecipe> = {
     inviteCandidateQuestions: false,
     pacingNote: "Salary-neg has its own dedicated arc in TYPE_GUIDANCE (intro → offer → probe → counter → benefits → close). This recipe is informational only.",
     scoringRubric: [
-      { dimension: "Anchor strength", description: "Did the candidate state their target with confident rationale (market data, competing offer, current package + reasonable jump)? Or did they wait for the AI's offer?", weight: 0.25 },
-      { dimension: "Counter-offer judgement", description: "When offered below target, did they push back with specific levers (base vs. variable, joining bonus, equity, role title, start date)? Or accept too quickly / over-demand?", weight: 0.25 },
-      { dimension: "Trade-off awareness", description: "Did they think about the WHOLE package — equity vesting, ESOP liquidity risk, notice buyout, flexibility — not just CTC headline?", weight: 0.20 },
+      { dimension: "Anchor strength", description: "Did the candidate state their target with confident rationale (market data, competing offer, current package + reasonable jump)? Or did they wait for the AI's offer?", weight: 0.20 },
+      { dimension: "Counter-offer judgement", description: "When offered below target, did they push back with specific levers (base vs. variable, joining bonus, equity, role title, start date)? Or accept too quickly / over-demand?", weight: 0.20 },
+      { dimension: "Trade-off awareness", description: "Did they think about the WHOLE package — equity vesting, ESOP liquidity risk, notice buyout, flexibility — not just CTC headline?", weight: 0.18 },
+      { dimension: "Structural fluency", description: "Did the candidate recognise structural levers that don't change CTC for the employer but raise net wealth for them? E.g. NPS 14% restructuring (saves 30%+ tax on routed amount), exercise-window extension (30-60% ESOP NPV swing), ESPP enrolment, basic-floor adjustment. 2026 standard — these are the single largest negotiable items at senior offers and most candidates miss them.", weight: 0.15 },
       { dimension: "Tactical composure", description: "Stayed warm + professional under pushback; didn't reveal floor or get rattled by 'budget is tight' / 'we have other candidates' tactics.", weight: 0.15 },
-      { dimension: "Walk-away discipline", description: "Knew where their walk-away was. Didn't accept below it; didn't bluff a walk they couldn't follow through on.", weight: 0.15 },
+      { dimension: "Walk-away discipline", description: "Knew where their walk-away was. Didn't accept below it; didn't bluff a walk they couldn't follow through on.", weight: 0.12 },
     ],
   },
 

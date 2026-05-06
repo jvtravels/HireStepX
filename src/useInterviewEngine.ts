@@ -106,16 +106,7 @@ export function useInterviewEngine() {
   // Negotiation band (populated by LLM question generation for salary-neg)
   const negotiationBandRef = useRef<NegotiationBandData | null>(null);
   // Candidate's target salary (set via warm-up calibration card)
-  const [targetSalary, setTargetSalary] = useState<number | null>(() => {
-    // Hydrate from the salary-neg prep card on the setup screen.
-    // Falls through to existing setTargetSalary callers when null.
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = window.localStorage.getItem("hsx_neg_prep_target");
-      const n = raw ? parseFloat(raw) : NaN;
-      return Number.isFinite(n) && n > 0 ? n : null;
-    } catch { return null; }
-  });
+  const [targetSalary, setTargetSalary] = useState<number | null>(null);
   // Multi-round scenario mode
   const [negotiationScenario, setNegotiationScenario] = useState<string>(() => searchParams.get("scenario") || "standard");
   const negotiationRound = parseInt(searchParams.get("round") || "1", 10);
@@ -1818,20 +1809,6 @@ export function useInterviewEngine() {
           // back-to-back sessions feel like meeting a different
           // hiring manager. Deterministic by interviewer name.
           personaTrait: isSalaryNegType ? getPersonaTrait(interviewerName) : undefined,
-          // Pre-session prep — hydrated from localStorage at engine
-          // mount. Optional; null when the candidate skipped the prep
-          // card. When present, the AI gets a more honest starting
-          // mental model of the candidate's frame.
-          ...(isSalaryNegType ? (() => {
-            try {
-              const wa = parseFloat(localStorage.getItem("hsx_neg_prep_walkaway") || "");
-              const co = parseFloat(localStorage.getItem("hsx_neg_prep_competing") || "");
-              const out: { candidateWalkAway?: number; candidateCompetingOffer?: number } = {};
-              if (Number.isFinite(wa) && wa > 0) out.candidateWalkAway = wa;
-              if (Number.isFinite(co) && co > 0) out.candidateCompetingOffer = co;
-              return out;
-            } catch { return {}; }
-          })() : {}),
           candidateState,
           previousMentions,
         });

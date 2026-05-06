@@ -791,61 +791,6 @@ function NegotiationOutcomeSection({
         </div>
       )}
 
-      {/* Side-by-side comparison — final offer vs candidate ask vs
-          (when present in localStorage) the candidate's pre-session
-          competing offer. Helps the candidate see "did I beat my BATNA"
-          at a glance. Reads localStorage on mount; no prop plumbing
-          needed since prep values already live there. */}
-      {(() => {
-        if (typeof window === "undefined") return null;
-        if (state !== "accepted" || finalTotal === null) return null;
-        let competing: number | null = null;
-        try {
-          const raw = window.localStorage.getItem("hsx_neg_prep_competing");
-          const n = raw ? parseFloat(raw) : NaN;
-          competing = Number.isFinite(n) && n > 0 ? n : null;
-        } catch { /* private mode */ }
-        if (competing === null && candidateAsk === null) return null;
-        const rows: Array<{ label: string; value: number; tone: "neutral" | "good" | "warn" }> = [
-          { label: "Final offer", value: finalTotal, tone: "good" },
-        ];
-        if (candidateAsk !== null) rows.push({ label: "Your stated ask", value: candidateAsk, tone: "neutral" });
-        if (competing !== null) rows.push({ label: "Your competing offer", value: competing, tone: finalTotal >= competing ? "good" : "warn" });
-        const max = Math.max(...rows.map(r => r.value));
-        return (
-          <div style={{ marginTop: 22, padding: 16, background: t.cream, border: `1px solid ${t.line}`, borderRadius: 12 }}>
-            <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
-              Side-by-side
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {rows.map((r, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, minWidth: 130 }}>{r.label}</span>
-                  <div style={{ flex: 1, height: 8, background: t.white, border: `1px solid ${t.line}`, borderRadius: 999, overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%",
-                      width: `${(r.value / max) * 100}%`,
-                      background: r.tone === "good" ? "#15803d" : r.tone === "warn" ? "#B45309" : "#71717a",
-                      transition: "width 250ms ease",
-                    }} />
-                  </div>
-                  <span style={{ fontFamily: f.serif, fontSize: 14, fontWeight: 600, color: t.coal, minWidth: 70, textAlign: "right" }}>
-                    ₹{r.value} LPA
-                  </span>
-                </div>
-              ))}
-            </div>
-            {competing !== null && (
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "12px 0 0" }}>
-                {finalTotal >= competing
-                  ? `You beat your competing offer by ₹${(finalTotal - competing).toFixed(1)} LPA.`
-                  : `Your competing offer is ₹${(competing - finalTotal).toFixed(1)} LPA higher — consider whether non-cash factors (scope, growth, equity) close the gap before deciding.`}
-              </p>
-            )}
-          </div>
-        );
-      })()}
-
       {/* Email template — accepted deals only */}
       {state === "accepted" && finalTotal !== null && (
         <details style={{ marginTop: 22 }}>

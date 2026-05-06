@@ -220,50 +220,6 @@ const focusToType: Record<string, string> = {
   "Government / PSU": "government-psu",
 };
 
-/** Salary-neg prep input. Persists to localStorage so the engine can
- *  read it on session start. Numeric only; allows decimals. */
-function NegPrepInput({ id, label, placeholder, storageKey }: {
-  id: string; label: string; placeholder: string; storageKey: string;
-}) {
-  const [value, setValue] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    try { return window.localStorage.getItem(storageKey) || ""; } catch { return ""; }
-  });
-  const onChange = (v: string) => {
-    // Allow only digits + a single decimal
-    const cleaned = v.replace(/[^\d.]/g, "").replace(/^(\d*\.\d*).*/, "$1");
-    setValue(cleaned);
-    try {
-      if (cleaned) window.localStorage.setItem(storageKey, cleaned);
-      else window.localStorage.removeItem(storageKey);
-    } catch { /* private mode — silently degrade */ }
-  };
-  return (
-    <div>
-      <label htmlFor={id} style={{ display: "block", fontFamily: F.sans, fontSize: 12, fontWeight: 500, color: T.coal, marginBottom: 4 }}>
-        {label}
-      </label>
-      <input
-        id={id}
-        type="text"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{
-          width: "100%", boxSizing: "border-box",
-          fontFamily: F.sans, fontSize: 14, color: T.coal,
-          background: T.white, border: `1px solid ${T.line}`,
-          borderRadius: 8, padding: "10px 12px", minHeight: 40,
-          outline: "none", transition: "border-color 0.15s ease",
-        }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = T.copper; }}
-        onBlur={(e) => { e.currentTarget.style.borderColor = T.line; }}
-      />
-    </div>
-  );
-}
-
 function getRecommendedFocus(role?: string): string {
   if (!role) return "Behavioral";
   const r = role.toLowerCase();
@@ -1602,31 +1558,6 @@ export default function SessionSetup() {
                     })()}
                   </div>
                 </div>
-
-                {/* ── Salary-neg prep card — only shown when focus is
-                       Salary Negotiation. Three optional ₹ fields (target,
-                       walk-away, competing offer). Persisted to
-                       localStorage as `hsx_neg_prep` and read by the
-                       engine to feed the LLM as candidate-known facts.
-                       Pre-session prep is what real candidates do; this
-                       closes the asymmetric-info gap where the AI knew
-                       the band and the candidate didn't even know their
-                       own ask. */}
-                {isNegotiationFocus && (
-                  <div className="fade-up-3 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Quick negotiation prep <span style={{ color: T.inkSoft, fontWeight: 400 }}>(optional, but worth a minute)</span></div>
-                      <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                        Real candidates think these through before the call. We&apos;ll feed your inputs into the simulation so it reacts realistically.
-                      </div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                      <NegPrepInput id="neg-target" label="Your target (₹ LPA)" placeholder="e.g. 18" storageKey="hsx_neg_prep_target" />
-                      <NegPrepInput id="neg-walkaway" label="Your walk-away (₹ LPA)" placeholder="e.g. 14" storageKey="hsx_neg_prep_walkaway" />
-                      <NegPrepInput id="neg-competing" label="Competing offer (optional, ₹ LPA)" placeholder="e.g. 17" storageKey="hsx_neg_prep_competing" />
-                    </div>
-                  </div>
-                )}
 
                 {/* ── Permissions — mic compulsory, camera optional ── */}
                 <div className="fade-up-3 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
