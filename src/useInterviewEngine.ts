@@ -37,6 +37,7 @@ import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime }
 import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
+import { cleanSalarySttArtifacts } from "./_salary-stt-cleanup";
 import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
 import { extractNegotiationFacts } from "./interviewEvaluation";
@@ -1490,7 +1491,16 @@ export function useInterviewEngine() {
     try { recognitionRef.current?.stop(); } catch { /* ignore STT cleanup errors */ }
 
     const rawTranscript = currentTranscript.trim();
-    const answerText = rawTranscript || (answerTimer > 2 ? `[Answer recorded — ${answerTimer}s]` : "");
+    // Salary-negotiation interviews routinely capture STT mishears for
+    // Indian comp vocabulary ("legs" → "lakhs", "celery" → "salary",
+    // "NMCTC" → "CTC"). Run a domain-specific normalizer before the
+    // text is committed to transcript / sent to follow-up evaluation —
+    // both the candidate's display copy and the LLM's input become
+    // intelligible. No-op for other interview types.
+    const cleanedTranscript = interviewType === "salary-negotiation"
+      ? cleanSalarySttArtifacts(rawTranscript)
+      : rawTranscript;
+    const answerText = cleanedTranscript || (answerTimer > 2 ? `[Answer recorded — ${answerTimer}s]` : "");
 
     // Block completely empty answers (silence with no speech detected)
     if (!answerText) {

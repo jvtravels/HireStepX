@@ -516,6 +516,7 @@ CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
 ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}
 
 RULES:
+- REPAIR FIRST: If the candidate's answer is a confusion / clarification signal — e.g. "what?", "what are you offering me?", "I don't understand", "can you repeat", "wait what", "huh?", "say that again", "I'm confused", "didn't catch that", a question back to you about the offer itself, or under 8 words asking for clarification — DO NOT push forward with a new probe. Recap your most recent offer plainly with the exact ₹ numbers (base / variable / bonus / total CTC) and ask if that's clear. One short paragraph. Don't add new asks until the candidate signals they're tracking. This rule overrides the rest of the phase script.
 - MATCH INTENT: Re-read the candidate's answer above. Accepted → acknowledge and close. Rejected → acknowledge and counter. Question → answer it. NEVER ignore what they said.
 - MIRROR FIRST: Start by paraphrasing what the candidate said. "I heard ₹X from you..." or "So your concern is..."
 - BE SPECIFIC: Use exact ₹ numbers in any counter-offer. Never say "some flexibility" — say "I can stretch to ₹X."
