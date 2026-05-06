@@ -696,6 +696,30 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "IT services 2026 reality: variable target ≠ variable realised. Q4 FY25 actuals: TCS 100%, Wipro 90%, Infosys 65%. Counter by asking for fixed-CTC framing instead of total-CTC ('₹14L hike on FIXED, not on inclusive-of-variable'). Senior IT services bands have higher variable share AND lower realisation — push to convert variable to fixed where possible.",
   },
   {
+    text: "We're offering ₹48 LPA fixed + ₹15 LPA RSU (Apple stock, 25/25/25/25 over 4 years). Apple India's RSU refresh cycle is annual at ~₹10 LPA. Your competing offer at Razorpay was ₹52 LPA + ESOPs — how do you weigh that against listed-company liquidity?",
+    company: "apple", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "Big Tech India 2026 standard. Listed-stock RSUs (Apple/Microsoft/Google) are tradable on vest day; ESOPs at unicorns are illiquid until buyback or IPO. Discount unicorn ESOPs by 30-50% face value when comparing. Refresh grants stack — by year 3, total annual vest can be 1.5-2x year-1.",
+  },
+  {
+    text: "Our seed-stage budget is ₹22 LPA fixed plus 0.4% equity (1.6L shares at face value ₹10, current 409A ₹250). We can't move on cash but we can go up to 0.6%. We've raised our seed; Series A is targeted in 18 months.",
+    company: "stripe", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "Early-stage / seed-Series-A-style offer (using Stripe as the recognised proxy). Apply 70-80% expected-value discount to face equity — most early ESOPs expire worthless. Negotiate: (a) extended exercise window (7+ yrs vs 90 days), (b) acceleration on change-of-control, (c) refresh-grant policy at next round. Headline equity % is meaningless without these terms.",
+  },
+  {
+    text: "₹38 LPA fixed + ₹6 LPA target variable + ESPP at 15% discount (Freshworks NASDAQ-listed). We can stretch to ₹40 LPA but variable doesn't move. What does it take to get you across the line?",
+    company: "freshworks", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "standard",
+    styleNote: "Listed Indian SaaS unicorn (Freshworks went public 2021). ESPP at 15% discount with look-back is real liquidity vs unicorn ESOP — ~17.6% guaranteed gross return per cycle when maxed. Counter by anchoring on competing tier rather than 'across the line' — the latter signals desperation. Listed SaaS is 1.2-1.4x unicorn cash bands at senior, well below FAANG.",
+  },
+  {
+    text: "Our offer is ₹62 LPA fixed + 20% target bonus + ₹40 LPA RSU vesting 4 years. New grants are 25/25/25/25, but we have a legacy 5/15/40/40 option for senior hires who commit to 4-year tenure. Which would you prefer?",
+    company: "amazon", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "Amazon 2026 vesting structure question — they historically used 5/15/40/40 (back-loaded, retention-focused) and now offer 25/25/25/25 to compete with Google/Microsoft. Front-loaded is better for shorter-tenure plans (1-2 years), back-loaded gives more if you stay the full 4 years. Pick based on your honest tenure intent, not on which sounds bigger at year-1.",
+  },
+  {
     text: "Why do you want to join the IAS specifically, and not the IRS or IFS where your optional subject would give you a better edge?",
     company: "upsc", roleFamily: "civil-services", focus: "government-psu",
     addedQuarter: "2026-Q2", difficulty: "intense",

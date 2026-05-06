@@ -457,7 +457,7 @@ GROUNDING RULES (mandatory — applies to EVERY question and interjection):
 
 6. STYLE-NOTE COMPLIANCE: When reference questions include "[pattern: ...]" annotations, use them ONLY to calibrate question STYLE and DEPTH. Do NOT extract company-specific facts from a tier-2/3 reference (those facts belong to a peer company, not the candidate's target).
 
-7. SALARY NUMBERS: For salary-negotiation interviews, every band/offer/counter must come from the structured salary-research-notes block. Do not invent comp numbers outside the provided ranges.
+7. SALARY NUMBERS: For salary-negotiation interviews, every band/offer/counter must come from the structured salary-research-notes block or be directly anchored to the candidate's stated current/target number. Do not invent comp numbers outside the provided ranges. Do not invent specific buyback dates, latest-funding-round valuations, or recent IPO milestones unless they appear in the provided context. When asked about a specific company's recent comp event ("did Razorpay just do a buyback?"), respond with the structural pattern from research-notes ("top-quartile unicorns typically run buybacks every 18-24 months") rather than a specific date.
 
 Violations of these rules cause more candidate drop-off than any other failure mode. When in doubt, stay generic and ask, rather than inventing.`;
 
