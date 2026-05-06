@@ -53,21 +53,53 @@ export interface RetrievalResult {
    the bank's canonical key. Returns null when nothing matches; the
    retrieval then falls through to non-company tiers. */
 const COMPANY_ALIASES: Record<string, CompanyKey> = {
-  google: "google", "google india": "google",
+  // FAANG / Big Tech
+  google: "google", "google india": "google", alphabet: "google",
   amazon: "amazon", "amazon india": "amazon", "aws": "amazon",
   microsoft: "microsoft", "ms": "microsoft", "msft": "microsoft",
   meta: "meta", facebook: "meta", fb: "meta",
+  apple: "apple",
+  netflix: "netflix",
+  uber: "uber",
+  atlassian: "atlassian",
+  stripe: "stripe",
+  linkedin: "linkedin",
+  adobe: "adobe",
+  // Indian unicorns
   flipkart: "flipkart",
   razorpay: "razorpay",
   swiggy: "swiggy",
   zomato: "zomato",
   phonepe: "phonepe", "phone pe": "phonepe",
   paytm: "paytm",
-  tcs: "tcs", "tata consultancy services": "tcs",
+  cred: "cred",
+  zerodha: "zerodha",
+  meesho: "meesho",
+  oyo: "oyo",
+  freshworks: "freshworks",
+  zoho: "zoho",
+  // IT services
+  tcs: "tcs", "tata consultancy services": "tcs", "tata consultancy": "tcs",
   infosys: "infosys",
   wipro: "wipro",
-  uber: "uber",
-  atlassian: "atlassian",
+  cognizant: "cognizant",
+  accenture: "accenture",
+  // Consulting
+  mckinsey: "mckinsey", "mckinsey and company": "mckinsey",
+  bcg: "bcg", "boston consulting group": "bcg",
+  bain: "bain", "bain and company": "bain",
+  deloitte: "deloitte",
+  // Banking / Quant
+  goldman: "goldman", "goldman sachs": "goldman",
+  jpmc: "jpmc", "jp morgan": "jpmc", "jpmorgan": "jpmc", "jp morgan chase": "jpmc",
+  "morgan stanley": "morgan-stanley",
+  "jane street": "jane-street", janestreet: "jane-street",
+  "de shaw": "de-shaw", deshaw: "de-shaw",
+  citadel: "citadel",
+  // AI labs
+  openai: "openai",
+  anthropic: "anthropic",
+  sarvam: "sarvam", "sarvam ai": "sarvam",
 };
 
 export function normaliseCompany(raw: string | undefined): CompanyKey | null {
@@ -88,10 +120,19 @@ export function normaliseCompany(raw: string | undefined): CompanyKey | null {
 export function inferRoleFamily(rawRole: string | undefined): RoleFamily | null {
   if (!rawRole) return null;
   const r = rawRole.toLowerCase();
-  if (/\b(pm|product manager|product owner|apm|gpm|cpo|product lead)\b/.test(r)) return "pm";
+  // Order matters — more specific patterns must precede generic ones.
+  // (e.g. "ML Engineer" must hit "ml" before "engineer" hits "swe".)
+  if (/\b(ml engineer|ai engineer|llm engineer|genai|machine learning engineer|applied scientist|research engineer)\b/.test(r)) return "ml";
+  if (/\b(quant|quantitative researcher|quantitative trader|quantitative developer|trader|systematic)\b/.test(r)) return "quant";
+  // Consulting-specific titles only — exclude generic "partner" / "manager"
+  // which over-trigger on "HR Partner", "Account Manager", etc.
+  if (/\b(consultant|management consultant|strategy consultant|associate consultant|engagement manager)\b/.test(r)) return "consultant";
+  if (/\b(writer|copywriter|editor|technical writer|ux writer|content designer|screenwriter|journalist)\b/.test(r)) return "writer";
+  if (/\b(pm|product manager|product owner|apm|gpm|cpo|product lead|product analyst)\b/.test(r)) return "pm";
   if (/\b(em|engineering manager|tech lead|staff engineer|principal engineer|director)\b/.test(r)) return "em";
-  if (/\b(data scientist|ml engineer|data engineer|analyst|ds|data analyst)\b/.test(r)) return "data";
-  if (/\b(designer|ux|ui|product designer|design lead)\b/.test(r)) return "design";
+  if (/\b(data scientist|data engineer|data analyst|ds|business intelligence|analytics engineer)\b/.test(r)) return "data";
+  if (/\b(senior designer|design lead|design manager|design director|head of design|principal designer)\b/.test(r)) return "designer-senior";
+  if (/\b(designer|ux|ui|product designer)\b/.test(r)) return "design";
   if (/\b(swe|sde|software engineer|developer|programmer|engineer|backend|frontend|fullstack|full stack)\b/.test(r)) return "swe";
   // Default: behavioral applies to most non-technical generic roles.
   return "behavioral";

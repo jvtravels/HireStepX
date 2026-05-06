@@ -52,13 +52,27 @@ describe("inferRoleFamily", () => {
     expect(inferRoleFamily("Full Stack Engineer")).toBe("swe");
   });
 
-  it("infers EM, data, and design correctly", () => {
+  it("infers EM, data, ml, and design correctly", () => {
     expect(inferRoleFamily("Engineering Manager")).toBe("em");
     expect(inferRoleFamily("Tech Lead")).toBe("em");
     expect(inferRoleFamily("Data Scientist")).toBe("data");
-    expect(inferRoleFamily("ML Engineer")).toBe("data");
+    // ML/AI Engineer maps to its own family (was "data" before bank
+    // expansion in 2026-Q2). Tier-1/2 retrieval prefers dedicated ML
+    // entries from OpenAI/Anthropic/Razorpay/Sarvam over generic data.
+    expect(inferRoleFamily("ML Engineer")).toBe("ml");
+    expect(inferRoleFamily("AI Engineer")).toBe("ml");
     expect(inferRoleFamily("Product Designer")).toBe("design");
     expect(inferRoleFamily("UX Lead")).toBe("design");
+  });
+
+  it("infers consultant and quant families when title is specific", () => {
+    expect(inferRoleFamily("Management Consultant")).toBe("consultant");
+    expect(inferRoleFamily("Engagement Manager")).toBe("consultant");
+    expect(inferRoleFamily("Quantitative Researcher")).toBe("quant");
+    expect(inferRoleFamily("Quant Trader")).toBe("quant");
+    // Generic "Partner" / "Manager" must NOT trip the consultant regex
+    expect(inferRoleFamily("HR Partner")).toBe("behavioral");
+    expect(inferRoleFamily("Account Manager")).toBe("behavioral");
   });
 
   it("falls back to behavioral for unrecognised generic roles", () => {
@@ -110,8 +124,10 @@ describe("retrieveReferenceQuestions", () => {
   });
 
   it("falls back to tier 2 (role + focus, any company) when no exact match", () => {
+    /* TCS doesn't have any PM case-study entries; bank has Flipkart,
+       BCG, Atlassian etc. → expect tier-2 (role+focus, any company). */
     const result = retrieveReferenceQuestions({
-      company: "Atlassian", // we have only behavioral for atlassian, no PM case-study
+      company: "TCS",
       roleFamily: "pm",
       focus: "case-study",
     });
@@ -125,16 +141,18 @@ describe("retrieveReferenceQuestions", () => {
   });
 
   it("falls back to tier 3 (focus only) when role+focus combo is rare", () => {
+    /* No (writer, system-design) entries exist anywhere in the bank.
+       Should drop to tier 3 — any system-design entry. */
     const result = retrieveReferenceQuestions({
-      company: "Atlassian",
-      roleFamily: "design", // no design entries at all in current bank
-      focus: "case-study",
+      company: "TCS",
+      roleFamily: "writer",
+      focus: "system-design",
     });
     expect(result.tier).toBe(3);
     expect(result.hasMatches).toBe(true);
-    /* All returned should be case-study (any role/company). */
+    /* All returned should be system-design (any role/company). */
     for (const e of result.entries) {
-      expect(e.focus).toBe("case-study");
+      expect(e.focus).toBe("system-design");
     }
   });
 
@@ -185,7 +203,7 @@ describe("formatReferencesForPrompt", () => {
     expect(t1).toMatch(/exact match/);
 
     const t3 = formatReferencesForPrompt(retrieveReferenceQuestions({
-      company: "Atlassian", roleFamily: "design", focus: "case-study",
+      company: "TCS", roleFamily: "writer", focus: "system-design",
     }));
     expect(t3).toMatch(/tier 3/);
   });
