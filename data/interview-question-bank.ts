@@ -659,8 +659,42 @@ export const QUESTION_BANK: BankEntry[] = [
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Sophisticated closing move. Sounds friendly but is asking you to drop your last leverage. Counter: 'Let me think about it overnight' — never reveal your floor at the table.",
   },
-
-  /* ── UPSC Civil Services Personality Test (PT) ────────────────── */
+  {
+    text: "Our offer is ₹38 LPA fixed + 15% bonus + ₹65 LPA RSUs vesting 25/25/25/25 over 4 years. We also have a 15% ESPP discount with a 6-month look-back. Where do you see this against your other options?",
+    company: "microsoft", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "Big Tech / GCC India 2026 standard structure for senior SWE/PM. Candidate should ask if ESPP is automatic enrolment, the look-back FMV reference, and clarify RSU 30%+ sell-to-cover at vest. ESPP alone is worth ~5-10% of base if maxed (10-15% of salary contributable up to $25K/yr in parent currency).",
+  },
+  {
+    text: "We can't budge on the cash, but we can move the post-termination ESOP exercise window from 90 days to 7 years. How does that change the package for you?",
+    company: "cred", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "Top-quartile unicorn 2026 lever — the exercise-window concession. 90-day → 7-year windows changes effective ESOP NPV by 30-60% for long-tenure candidates. Offer-stage negotiable; almost never re-opened post-signing. Senior candidates who don't ask leave real money on the table.",
+  },
+  {
+    text: "Our budget is ₹45 LPA fixed plus a 30% target bonus, but the bonus is tied to firm-wide P&L — last year payouts ranged 40% to 130% of target. Can you live with that variability?",
+    company: "goldman", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "BFSI / IB India pattern: heavy variable share with firm-P&L tie. Negotiate the floor (push for ₹2-3L variable-floor guarantee year-1) rather than the target. Counter the bonus structure with: 'What's the 5-year median realisation?' — most banks won't share but the question signals you understand the risk.",
+  },
+  {
+    text: "We're at ₹52 LPA fixed; you wanted ₹58 LPA. We can't move the headline, but our finance team can structure 14% of basic into corporate NPS Tier 1 — same CTC for us, ~₹1L+ extra in your pocket post-tax. Does that close the gap?",
+    company: "zomato", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "intense",
+    styleNote: "2025 NPS unlock — biggest restructuring play in the Indian market. §80CCD(2) cap raised 10% → 14% of basic for all private-sector under new tax regime (Apr 2025). Tax-free routing of ~₹1.5-3L on senior CTCs. Most large employers will agree — it's a payroll setting, not a comp negotiation. Watch the ₹7.5L combined cap (PF + NPS + Super) on very-senior offers (basic > ₹40L).",
+  },
+  {
+    text: "Standard package: ₹35 LPA fixed + ₹4 LPA sign-on (clawback over 2 years) + relocation ₹3 LPA. Our consulting bands are tight — base is fixed for your level, and joining bonus is the only flex.",
+    company: "mckinsey", roleFamily: "consultant", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "standard",
+    styleNote: "MBB consulting India 2026 norm: rigid bands, joining-bonus as the only real lever. Counter on relocation generosity, post-MBA promotion timing, and study-program reimbursement (sometimes ₹5-15L for Wharton/Stanford EMBA). Don't push base — it's tied to cohort equity and signals you don't understand the firm.",
+  },
+  {
+    text: "Your current CTC is ₹14 LPA at TCS. We're offering ₹19 LPA — a 35% hike. Variable is 15% of CTC, paid quarterly. Variable realised average has been 65-80% lately. When can you join?",
+    company: "infosys", roleFamily: "salary", focus: "salary-negotiation",
+    addedQuarter: "2026-Q4", difficulty: "standard",
+    styleNote: "IT services 2026 reality: variable target ≠ variable realised. Q4 FY25 actuals: TCS 100%, Wipro 90%, Infosys 65%. Counter by asking for fixed-CTC framing instead of total-CTC ('₹14L hike on FIXED, not on inclusive-of-variable'). Senior IT services bands have higher variable share AND lower realisation — push to convert variable to fixed where possible.",
+  },
   {
     text: "Why do you want to join the IAS specifically, and not the IRS or IFS where your optional subject would give you a better edge?",
     company: "upsc", roleFamily: "civil-services", focus: "government-psu",
