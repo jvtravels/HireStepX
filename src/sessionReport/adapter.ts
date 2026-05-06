@@ -17,6 +17,7 @@ import type {
 } from "../dashboardData";
 import type { DashboardSession } from "../dashboardTypes";
 import { detectBias, countBias, BIAS_LABELS, type BiasPatternKind } from "../biasDetector";
+import { stripProsodyMarkup } from "../_prosody";
 import type {
   AnswerSpan,
   BiasFinding,
@@ -339,7 +340,10 @@ function adaptQuestion(
   const reasonText = skipReasonMatch ? (skipReasonLabel[skipReasonMatch[1]] || "skipped") : "skipped";
   return {
     index: q.idx + 1, // prod is 0-indexed; UX is 1-indexed
-    text: q.question,
+    // Strip TTS prosody directives ([pause], _emphasis_, etc.) — the LLM
+    // injects them so the spoken question sounds natural, but they leak
+    // through into the report transcript verbatim.
+    text: stripProsodyMarkup(q.question),
     score: isSkipped ? 0 : q.score,
     // band is the report's color/label — coerce "skipped" to "weak"
     // for the band tone (copper/error). The skipped state itself is
@@ -381,7 +385,7 @@ function adaptQuestion(
     frequencyPct: q.frequencyPct ?? undefined,
     frequencyNote: q.frequencyNote || undefined,
     likelyFollowUp: q.likelyFollowUp
-      ? `${q.likelyFollowUp.question} ${q.likelyFollowUp.why}`
+      ? stripProsodyMarkup(`${q.likelyFollowUp.question} ${q.likelyFollowUp.why}`)
       : undefined,
   };
 }
