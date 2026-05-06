@@ -1595,8 +1595,15 @@ export function useInterviewEngine() {
     // turn is a substantive answer, so a "Share more detail…" tip is
     // worse than nothing.
     const justAskedType = interviewScript[currentStep]?.type;
+    const nextStepType = interviewScript[currentStep + 1]?.type;
+    // Suppress when (a) the just-answered turn was an opener/closing, or
+    // (b) this is the last real answer before closing — the candidate
+    // can't act on a "Tip: share more detail" when the next screen is
+    // the wrap-up.
     const skipMicroFeedback =
-      justAskedType === "intro" || justAskedType === "closing";
+      justAskedType === "intro" ||
+      justAskedType === "closing" ||
+      nextStepType === "closing";
     setMicroFeedback(null);
     if (
       !skipMicroFeedback &&

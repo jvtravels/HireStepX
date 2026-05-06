@@ -885,11 +885,20 @@ Respond JSON only:
         while ((teMatch = targetEchoRe.exec(clamped)) !== null) {
           const echoedTarget = parseFloat(teMatch[2]);
           if (!Number.isFinite(echoedTarget) || echoedTarget <= 0) continue;
-          // Skip if the echoed value happens to match the AI's own previous
-          // offer or initial offer — the AI may legitimately reference its
-          // own numbers in a sentence that the regex captures broadly.
-          if (canonicalInitialOffer !== null && Math.abs(echoedTarget - canonicalInitialOffer) < 0.5) continue;
-          if (highestOfferMade && Math.abs(echoedTarget - highestOfferMade) < 0.5) continue;
+          // If the echoed value matches the AI's OWN offer AND the
+          // candidate stated a different number, this is a speaker-
+          // confusion bug — the AI is telling the candidate "I heard
+          // ₹18 from you" when ₹18 was the AI's offer. Patch with the
+          // candidate's real ask. (We only skip when there's no better
+          // value to substitute — i.e. candidate's target is unknown
+          // OR matches the offer too.)
+          const matchesOwnOffer =
+            (canonicalInitialOffer !== null && Math.abs(echoedTarget - canonicalInitialOffer) < 0.5) ||
+            (typeof highestOfferMade === "number" && Math.abs(echoedTarget - highestOfferMade) < 0.5);
+          const haveDifferentCandidateTarget =
+            candidateTarget !== null &&
+            Math.abs(echoedTarget - candidateTarget) > 0.5;
+          if (matchesOwnOffer && !haveDifferentCandidateTarget) continue;
           // Tolerance: 0.5 LPA — anything further off is a misattribution.
           if (Math.abs(echoedTarget - candidateTarget) > 0.5) {
             console.warn(`[follow-up] Target echo mismatch: candidate target=${candidateTarget}, AI echoed as ${echoedTarget} — patching`);
