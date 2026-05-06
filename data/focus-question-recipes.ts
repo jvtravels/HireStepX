@@ -55,14 +55,59 @@ export const RECIPES: Record<string, FocusRecipe> = {
     pacingNote: "At least TWO HR-essentials (current/expected CTC, notice period, why leaving, gap explanation, why us). At least ONE culture-fit. The trap question, if used, should target rehearsed answers (fake weakness, generic 'why us').",
   },
 
-  /* ─── Managerial / cross-functional ─── */
-  managerial: {
-    label: "Managerial",
+  /* ─── Management / Managerial / cross-functional ───
+     The UI dispatches "Management" → key "management"; we keep the
+     "managerial" alias for legacy callers. Both resolve to this
+     recipe. */
+  management: {
+    label: "Management",
     mandatory: ["managerial", "leadership", "decision-making", "experience-deepdive"],
     optional: ["communication", "ownership", "adaptability-learning"],
     trapBudget: 1,
     inviteCandidateQuestions: true,
-    pacingNote: "Focus on planning, escalation, stakeholder handling, decision rationale. At least ONE 'first 30 days' or 'business impact' question.",
+    pacingNote: "Focus on planning, escalation, stakeholder handling, decision rationale. At least ONE 'first 30 days' or 'business impact' question. At least ONE question on managing AI-augmented teams (how they decide where AI tooling helps vs. dilutes craft).",
+  },
+  /* Legacy alias — older code may still ship "managerial". */
+  managerial: {
+    label: "Management",
+    mandatory: ["managerial", "leadership", "decision-making", "experience-deepdive"],
+    optional: ["communication", "ownership", "adaptability-learning"],
+    trapBudget: 1,
+    inviteCandidateQuestions: true,
+    pacingNote: "Focus on planning, escalation, stakeholder handling, decision rationale. At least ONE 'first 30 days' or 'business impact' question. At least ONE question on managing AI-augmented teams.",
+  },
+
+  /* ─── Strategic (vision + alignment + outcomes) ─── */
+  strategic: {
+    label: "Strategic",
+    mandatory: ["decision-making", "leadership", "experience-deepdive", "communication"],
+    optional: ["customer-user", "adaptability-learning", "ownership"],
+    trapBudget: 1,
+    inviteCandidateQuestions: true,
+    pacingNote: "Q1 opening, Q2 a 3-year vision-setting moment they led, Q3 multi-stakeholder alignment under conflict, Q4 a strategic bet that failed and what changed, Q5 closing. Reward second-order thinking — push back on first-order answers.",
+  },
+
+  /* ─── Technical / Technical Leadership ─── */
+  technical: {
+    label: "Technical Leadership",
+    mandatory: ["problem-solving", "decision-making", "experience-deepdive", "leadership"],
+    optional: ["communication", "ownership", "adaptability-learning"],
+    trapBudget: 0,
+    inviteCandidateQuestions: true,
+    pacingNote: "Architecture trade-offs, debugging at scale, system rewrites, on-call and incident response. Probe AI-assisted development discipline (Cursor / Copilot / Claude Code) — 2026 candidates should articulate WHEN they trust AI output and when they verify by hand. At least ONE failure-mode + recovery question.",
+  },
+
+  /* ─── Government / PSU ───
+     Different evaluation lens entirely. Reward ethics, public-interest
+     reasoning, structured situational judgment. Skip behavioural-tech
+     framing. */
+  "government-psu": {
+    label: "Government / PSU",
+    mandatory: ["culture-fit", "decision-making", "communication", "experience-deepdive"],
+    optional: ["ownership", "pressure-resilience"],
+    trapBudget: 0,
+    inviteCandidateQuestions: false,
+    pacingNote: "At least ONE current-affairs / public-policy question relevant to the posting. At least ONE ethical dilemma (corruption pressure, due-process vs. speed, public-interest vs. directive). DAF-style biographical cross-questioning encouraged — probe hometown, hobbies, college specifics. Skip product/customer-user category.",
   },
 
   /* ─── Panel ─── */

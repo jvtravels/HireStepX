@@ -107,10 +107,10 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
   "role-execution": {
     key: "role-execution",
     label: "Role-specific execution",
-    intent: "Probes the candidate's daily craft — their default process, quality bar, and tools.",
+    intent: "Probes the candidate's daily craft — their default process, quality bar, and tools. 2026 standard: tests AI-tooling discipline (when to lean on Cursor/Copilot/Claude Code vs. when to verify by hand).",
     signals: {
-      strong: "Describes a repeatable process with specific checkpoints; names tools concretely; admits where they cut corners.",
-      weak: "Generic answers ('I plan and execute'); no checkpoints; can't name a tool they're strongest in.",
+      strong: "Describes a repeatable process with specific checkpoints; names tools concretely (including AI assistants and where they trust them vs. verify); admits where they cut corners.",
+      weak: "Generic answers ('I plan and execute'); no checkpoints; can't articulate when to use AI tooling vs. when it's a liability; can't name a tool they're strongest in.",
     },
     stems: [
       "Walk me through your usual process from a fresh assignment to delivery.",
@@ -119,6 +119,8 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "How do you review your own work before sending it for review?",
       "Which tool or skill are you currently learning, and why that one?",
       "How do you make sure your work doesn't create friction for the next person?",
+      "Where do you use AI tooling in your daily work, and where do you deliberately NOT use it?",
+      "Tell me about a time AI-generated output looked right but was wrong. How did you catch it?",
     ],
   },
 
@@ -236,10 +238,10 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
   "adaptability-learning": {
     key: "adaptability-learning",
     label: "Adaptability & learning",
-    intent: "How they keep skills current, how they handle priority shifts, and what they're learning right now.",
+    intent: "How they keep skills current, how they handle priority shifts, and what they're learning right now. 2026 standard: tests GenAI fluency for non-AI roles (does a PM/designer/marketer who's NOT an AI specialist still have working knowledge of LLMs in their domain?).",
     signals: {
-      strong: "Names a specific skill they picked up in the last 6 months and where they applied it; comfortable saying 'I don't know yet'.",
-      weak: "Generic 'I read articles'; can't name a recent skill or who they learn from.",
+      strong: "Names a specific skill they picked up in the last 6 months and where they applied it; comfortable saying 'I don't know yet'; for non-AI roles, articulates how GenAI reshaped their craft and where they've adopted it concretely.",
+      weak: "Generic 'I read articles'; can't name a recent skill or who they learn from; treats GenAI as a buzzword they haven't actually used.",
     },
     stems: [
       "Tell me about something you learned quickly because you had to.",
@@ -247,6 +249,8 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "Tell me about a time priorities flipped on you mid-quarter.",
       "Who do you learn from professionally? Be specific.",
       "What skill do you think will matter most in your role over the next 2-3 years?",
+      "How has GenAI changed how you do your job in the last 12 months — concretely, not abstractly?",
+      "Tell me about a moment you'd been doing something a certain way for years and you scrapped it for a new approach.",
     ],
   },
 
