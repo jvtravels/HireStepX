@@ -1,6 +1,6 @@
 /* Vercel Edge Function — Interview Session Evaluation (MVP Report) */
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "edge", maxDuration: 60 };
 
 import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
@@ -598,9 +598,13 @@ CRITICAL RULES:
 - Return ONLY valid JSON — no markdown wrapping, no prose.`;
 
     const tLLM0 = Date.now();
+    // maxTokens 5500 (down from 7500): real reports rarely exceed 5k; the
+    // higher cap was pushing Groq past its 6s per-provider cap and forcing
+    // a guaranteed Gemini failover. Total LLM budget 45s fits inside the
+    // function's maxDuration:60 with margin for response handling.
     const result = await callLLM(
-      { prompt, temperature: 0.25, maxTokens: 7500, jsonMode: true },
-      35000,
+      { prompt, temperature: 0.25, maxTokens: 5500, jsonMode: true },
+      45000,
       { userId: auth.userId, endpoint: "evaluate-session" },
     );
     const tLLM = Date.now() - tLLM0;
