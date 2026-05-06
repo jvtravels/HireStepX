@@ -8,7 +8,7 @@ import { track } from "@vercel/analytics";
    interview surface. Discipline rule:
    Indigo is interactive · Copper is editorial · Never mix. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
-import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "./onboardingData";
+import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
 import { profileFromRole, type InterviewFocus } from "./roleInterviewMatrix";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
@@ -19,45 +19,11 @@ import { unlockAudio, prefetchTTS } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
 
-/* ─── Suggestions ─── */
-const ROLE_SUGGESTIONS = [
-  "Software Engineer", "Senior Software Engineer", "Staff Engineer", "Principal Engineer", "Lead Software Engineer",
-  "Software Developer", "Senior Software Developer", "Application Developer", "Systems Engineer",
-  "Frontend Developer", "Senior Frontend Developer", "React Developer", "Angular Developer", "Vue.js Developer",
-  "Backend Developer", "Senior Backend Developer", "Java Developer", "Python Developer", "Node.js Developer", "Go Developer", ".NET Developer",
-  "Full Stack Developer", "Senior Full Stack Developer", "MERN Stack Developer", "MEAN Stack Developer",
-  "Mobile Developer", "iOS Developer", "Android Developer", "React Native Developer", "Flutter Developer",
-  "Embedded Software Engineer", "Firmware Engineer", "C++ Developer", "Rust Developer",
-  "DevOps Engineer", "Senior DevOps Engineer", "Site Reliability Engineer", "Cloud Engineer", "Cloud Architect",
-  "Platform Engineer", "Infrastructure Engineer", "Network Engineer", "Systems Administrator",
-  "Data Engineer", "Senior Data Engineer", "Data Architect",
-  "Data Scientist", "Senior Data Scientist", "Research Scientist",
-  "Data Analyst", "Senior Data Analyst", "Business Intelligence Analyst", "BI Developer",
-  "Machine Learning Engineer", "Senior ML Engineer", "AI Engineer", "AI/ML Lead", "NLP Engineer",
-  "QA Engineer", "Senior QA Engineer", "QA Lead", "Test Engineer", "SDET", "Automation Engineer",
-  "Security Engineer", "Cybersecurity Analyst", "Penetration Tester", "Security Architect",
-  "Tech Lead", "Engineering Manager", "Senior Engineering Manager", "Director of Engineering",
-  "VP of Engineering", "Head of Engineering", "CTO",
-  "Associate Product Manager", "Product Manager", "Senior Product Manager", "Lead Product Manager",
-  "Group Product Manager", "Director of Product", "VP of Product", "Chief Product Officer",
-  "Technical Product Manager", "Product Owner",
-  "Product Designer", "Senior Product Designer", "UX Designer", "UI Designer", "UX/UI Designer",
-  "UX Researcher", "Visual Designer", "Head of Design", "Design Manager",
-  "Business Analyst", "Senior Business Analyst", "Management Consultant", "Strategy Consultant",
-  "Project Manager", "Senior Project Manager", "Program Manager", "Technical Program Manager", "Scrum Master",
-  "Operations Manager", "Supply Chain Manager", "Logistics Manager",
-  "Marketing Manager", "Digital Marketing Manager", "Content Strategist", "Growth Manager",
-  "Sales Executive", "Account Executive", "Business Development Manager",
-  "HR Executive", "HR Manager", "Recruiter", "Technical Recruiter",
-  "Financial Analyst", "CA", "Chartered Accountant", "Investment Banking Analyst",
-  "Bank PO", "Relationship Manager", "Wealth Manager",
-  "Legal Counsel", "Corporate Lawyer", "Company Secretary",
-  "Teacher", "Lecturer", "Assistant Professor", "Professor",
-  "Civil Engineer", "Mechanical Engineer", "Electrical Engineer",
-  "CEO", "Co-founder", "Managing Director", "General Manager",
-  "Software Engineer Intern", "Associate Software Engineer", "Junior Developer",
-  "Graduate Engineer Trainee (GET)", "Management Trainee", "Fresher",
-];
+/* ─── Suggestions ───
+   ROLE_SUGGESTIONS is the canonical exhaustive list from onboardingData
+   (~600 entries: tech, design, writing, finance, healthcare, govt, etc.).
+   Single source of truth — never re-define a local subset here. The
+   AutocompleteInput handles search/filtering on the full list cheaply. */
 
 // Camera readiness signal states. "pass" = good. "warn-*" = mediocre
 // but acceptable to start. "fail-*" = explicitly bad. "checking" = not
