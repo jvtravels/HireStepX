@@ -57,6 +57,12 @@ export function cleanSalarySttArtifacts(text: string): string {
     /\b(the|at|of|my|your|his|her|our|on)\s+celery\b/gi,
     (_m, lead) => `${lead} salary`,
   );
+  // "Celery" before a comp keyword (base / CTC / package / annum)
+  // = "salary". Catches "Celery base salary is very important".
+  out = out.replace(
+    /\bcelery\b(\s+(?:base|CTC|package|annum|component|pay|structure|total|breakdown))/gi,
+    (_m, tail) => `salary${tail}`,
+  );
 
   // "CTZ" / "MCTC" / "NMCTC" → "CTC". These tokens are exclusively
   // STT artifacts in this domain — no real meaning.

@@ -1838,9 +1838,19 @@ export function useInterviewEngine() {
         const lastAns = answerText || "";
         const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
         const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do)|already (?:mentioned|said|told)|as i (?:said|mentioned|told)|told you|mentioned (?:multiple times|earlier|before)|like to have higher|highest base)\b/i;
+        // Pull the agreed total — prefer highest offer made by AI
+        // (after counters), else the script's initial offer extracted
+        // from the offer step's aiText. Used to recap actual numbers
+        // in the close instead of hand-waving "the final numbers".
+        const offerStep = interviewScript.find(s => s.type === "question" && /₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?)/.test(s.aiText || ""));
+        const offerMatch = offerStep?.aiText.match(/₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/);
+        const initialOfferNum = offerMatch ? parseFloat(offerMatch[1]) : null;
+        const finalNum = highestOfferRef.current > 0 ? highestOfferRef.current : initialOfferNum;
+        const dealRecap = finalNum ? `at ₹${finalNum} LPA total CTC` : "at the package we discussed";
+
         let closingText: string | null = null;
         if (facts.acceptedImmediately) {
-          closingText = "Great — really glad we found terms that work. I'll have HR send the formal offer letter shortly. Welcome aboard.";
+          closingText = `Great — really glad we found terms that work. To recap: we're closing ${dealRecap}, with the breakdown we discussed. I'll have HR send the formal offer letter today. Welcome aboard.`;
         } else if (facts.rejectedOutright || walkAwayPat.test(lastAns)) {
           closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
         } else if (stillNegotiatingPat.test(lastAns)) {

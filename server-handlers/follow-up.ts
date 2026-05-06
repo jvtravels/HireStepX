@@ -143,8 +143,10 @@ export default async function handler(req: Request): Promise<Response> {
       const progressRatio = idx / Math.max(1, total);
       const facts = negotiationFacts;
 
-      // Early acceptance → skip to closing
-      if (facts?.acceptedImmediately && idx >= 2) return "closing";
+      // Acceptance → skip to closing immediately. Was idx>=2; the
+      // Lemon Yellow session showed the failure: candidate accepted
+      // at idx=1, AI kept probing for 4 more turns.
+      if (facts?.acceptedImmediately) return "closing";
       // Walk-away detected → closing-pressure (retention attempt)
       const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass)\b/i;
       if (walkAwayPat.test(answer)) return "closing-pressure";
@@ -306,7 +308,7 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
       // Build structured facts context so the LLM has precise anchors
       const factsLines: string[] = [];
       if (negotiationFacts) {
-        if (negotiationFacts.acceptedImmediately) factsLines.push("- Candidate ACCEPTED the offer immediately (probe if they've considered the full package)");
+        if (negotiationFacts.acceptedImmediately) factsLines.push("- Candidate ACCEPTED the offer immediately. CRITICAL: do NOT probe further about equity, package components, or what's most important — they said yes, take the yes. Move directly to closing: confirm the agreed total CTC with all components, set timeline (formal letter, start date), and warmly close. Asking another probing question after explicit acceptance feels like you're trying to upsell them or having second thoughts about the deal.");
         if (negotiationFacts.rejectedOutright) factsLines.push("- Candidate REJECTED the offer outright (stay professional, ask what would work)");
         if (negotiationFacts.candidateCounter) factsLines.push(`- Candidate's counter/target: ${sanitizeForLLM(negotiationFacts.candidateCounter, 30)} — YOU KNOW THIS. Negotiate around it, do NOT re-ask. SPEAKER GUARD: when you write "I heard ₹X from you" / "you mentioned ₹X" / "your target of ₹X", X MUST be ${sanitizeForLLM(negotiationFacts.candidateCounter, 30)}. Never echo your own offer (${canonicalInitialOffer ? `₹${canonicalInitialOffer} LPA` : "the initial offer"}) as if the candidate said it.`);
         if (negotiationFacts.candidateAskTotal && negotiationFacts.candidateAskBase) {

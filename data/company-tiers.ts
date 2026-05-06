@@ -645,7 +645,7 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "lollypop design studio": "it-services",
   lollypop: "it-services",
   nilenso: "startup-growth",
-  obvious: "startup-growth",
+  obvious: "it-services",
   "elephant design": "it-services",
   "umbrella design": "it-services",
   codesign: "it-services",
@@ -691,6 +691,21 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   kinnect: "it-services",
   groupm: "it-services",
   "madison world": "it-services",
+  // Small Indian design / UX studios — AmbitionBox 2025 has UI/UX
+  // designers here at ₹3.6–5.5 LPA (0-6 yrs). These are agency-style
+  // shops, not product companies; map to it-services so the band
+  // reflects reality.
+  "lemon yellow": "it-services",
+  lemonyellow: "it-services",
+  lollypopdesign: "it-services",
+  "obvious.in": "it-services",
+  "design boat": "it-services",
+  "studio carrot": "it-services",
+  "uncommon design": "it-services",
+  rocketflyer: "it-services",
+  newoaks: "it-services",
+  thinking: "it-services",
+  "thinking design": "it-services",
 
   // Global digital / experience agencies (additions)
   dept: "consulting-big4",

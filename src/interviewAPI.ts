@@ -44,8 +44,11 @@ function sanitizeInitialOffer(
   if (!text || !band) return text;
 
   // Total CTC: "₹X LPA" appearing near "total" / "CTC" / "package" /
-  // "all up" / "offer of".
-  const totalRe = /(?:offer of|extend an offer of|offering|total(?:\s+ctc)?|package(?:\s+of)?|all in|all up)\s*(?:you\s*)?₹?\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?)/i;
+  // "all up" / "offer of" / "offer you" / "offer X" / "we'd like to
+  // offer". Earlier version only matched "offer of"; missed the
+  // production wording "offer you ₹22 LPA" — letting a wildly out-
+  // of-band offer through unclamped.
+  const totalRe = /(?:(?:we['']d like to |we are |we['']re )?(?:offer(?:ing)?(?:\s+(?:you|to))?|extend(?:ing)?(?:\s+an?)?\s+offer(?:\s+(?:of|to))?)|total(?:\s+ctc)?|package(?:\s+of)?|all in|all up|CTC of|comp of)\s*(?:you\s*)?₹?\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?)/i;
   const totalMatch = totalRe.exec(text);
   if (!totalMatch) return text;
   const total = parseFloat(totalMatch[1]);
