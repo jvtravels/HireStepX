@@ -146,10 +146,15 @@ export default async function handler(req: Request): Promise<Response> {
       // Walk-away detected → closing-pressure (retention attempt)
       const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass)\b/i;
       if (walkAwayPat.test(answer)) return "closing-pressure";
-      // Candidate mentioned competing offers → probe-expectations with compete angle
-      if (facts?.hasCompetingOffers && idx <= 3) return "probe-expectations";
-      // Has a counter number + past initial reaction → counter-offer phase
+      // Has a counter number + past initial reaction → counter-offer phase.
+      // This now wins over the competing-offers probe so we don't keep
+      // probing once the candidate has stated a concrete number — that
+      // was producing 4 consecutive "tell me more about your number"
+      // turns and never a real counter.
       if (facts?.candidateCounter && idx >= 2) return "counter-offer";
+      // Competing offers WITHOUT a stated number → probe expectations
+      // (we still don't know what they actually want).
+      if (facts?.hasCompetingOffers && !facts?.candidateCounter && idx <= 3) return "probe-expectations";
       // Late in conversation → closing phases
       if (progressRatio >= 0.85) return "closing";
       if (progressRatio >= 0.7) return "closing-pressure";
@@ -301,7 +306,7 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
       if (negotiationFacts) {
         if (negotiationFacts.acceptedImmediately) factsLines.push("- Candidate ACCEPTED the offer immediately (probe if they've considered the full package)");
         if (negotiationFacts.rejectedOutright) factsLines.push("- Candidate REJECTED the offer outright (stay professional, ask what would work)");
-        if (negotiationFacts.candidateCounter) factsLines.push(`- Candidate's counter/target: ${sanitizeForLLM(negotiationFacts.candidateCounter, 30)} — YOU KNOW THIS. Negotiate around it, do NOT re-ask.`);
+        if (negotiationFacts.candidateCounter) factsLines.push(`- Candidate's counter/target: ${sanitizeForLLM(negotiationFacts.candidateCounter, 30)} — YOU KNOW THIS. Negotiate around it, do NOT re-ask. SPEAKER GUARD: when you write "I heard ₹X from you" / "you mentioned ₹X" / "your target of ₹X", X MUST be ${sanitizeForLLM(negotiationFacts.candidateCounter, 30)}. Never echo your own offer (${canonicalInitialOffer ? `₹${canonicalInitialOffer} LPA` : "the initial offer"}) as if the candidate said it.`);
         if (negotiationFacts.candidateCurrentCTC) factsLines.push(`- Candidate's current CTC: ${sanitizeForLLM(negotiationFacts.candidateCurrentCTC, 30)} — YOU KNOW THIS. Do NOT ask again.`);
         if (negotiationFacts.hasCompetingOffers) factsLines.push("- Candidate mentioned COMPETING OFFERS — you MUST address this: ask what they're offering, what matters beyond the number, and where you can differentiate.");
         if (negotiationFacts.deflectedNumbers) factsLines.push("- Candidate DEFLECTED sharing their numbers — recognize this tactic. Stay warm but firm: you need their input to negotiate.");
