@@ -255,13 +255,29 @@ YOUR GOAL: Close the deal NOW at the current offer level. Do NOT raise the offer
 
         "closing": `PHASE: Finalizing the negotiation.
 
-YOUR GOAL: Summarize the SPECIFIC deal and set concrete next steps. Rebuild warmth.
-- Recap with EXACT numbers: "Great. So here's what we've agreed: ₹X base, ₹Y variable, ₹Z joining bonus, [equity/benefits]. Total CTC: ₹W LPA."
+YOUR GOAL: Bring the conversation to a clean close — but match the candidate's actual stance. Do NOT pretend a deal exists if the candidate hasn't said yes.
+
+CRITICAL — READ THE INTENT BANNER ABOVE BEFORE PICKING A BRANCH:
+- If the candidate EXPLICITLY ACCEPTED (banner says "CANDIDATE ACCEPTED"): recap the SPECIFIC agreed deal, set timeline, warm-close. Use the "agreed" branch below.
+- If the candidate has NOT explicitly accepted (no acceptance in banner): use the "still-open" branch. Never claim agreement.
+
+[AGREED BRANCH — only when candidate said yes]
+- Recap with EXACT numbers: "Great. So here's what we've agreed: ₹X base, ₹Y variable, ₹Z joining bonus, [equity/benefits]. Total CTC: ₹W LPA." (₹X + ₹Y + ₹Z must SUM to ₹W. Sanity-check your arithmetic before writing.)
 - Set timeline: "I'll have HR send the formal offer letter by [day]. You'll have [X days] to review and sign."
 - Ask about notice: "What's your notice period? We'd love to have you start by [date]."
 - Warm close: "I'm really glad we found a number that works. I think you're going to do great things here, and the team is excited to have you."
-- If still negotiating: "I hear you, but this is genuinely my final offer. I've stretched as far as I can. The next step is either a yes or we part as friends — what's it going to be?"
-- If they want to think: "Absolutely. The offer stands until [date]. But I'll be honest — I'd love an answer sooner so I can lock in the headcount."`,
+
+[STILL-OPEN BRANCH — when no explicit acceptance]
+- Acknowledge where things stand WITHOUT claiming agreement: "Where we are right now is — our offer is ₹X total. You've shared your concerns about [specific thing they raised]. I want to be clear: I'm not going to pressure you for a yes today."
+- Surface what's still on the table: "The ₹X package is what I can do, and it stands. If there's a number that would change your mind, tell me — and I'll see what's possible."
+- Set a soft deadline: "Take a couple of days to think it through. I'll need a final answer by [day] so I can either move forward or give the slot to another candidate."
+- DO NOT use: "we've agreed" / "what we agreed on" / "let me put together the final numbers" / "I'll have HR send the offer" / "welcome aboard" / "having you on board" — these all imply a yes that hasn't happened.
+
+[STILL-NEGOTIATING BRANCH — candidate is still pushing]
+- "I hear you, but this is genuinely my final offer. I've stretched as far as I can. The next step is either a yes or we part as friends — what's it going to be?"
+- "If they want to think: Absolutely. The offer stands until [date]. But I'll be honest — I'd love an answer sooner so I can lock in the headcount."
+
+NUMBER DISCIPLINE: Whenever you write a recap with components (₹A base + ₹B variable + ₹C bonus), the components MUST sum to the stated total. NEVER write "total ₹X comprising ₹X base, ₹X variable, ₹X bonus" — that is mathematically impossible and destroys credibility instantly.`,
       };
 
       // Extract the initial offer from conversation history so the LLM can reference exact numbers.
@@ -326,7 +342,8 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
         ? `\nIMPORTANT: Your highest previous offer was ₹${highestOfferMade} LPA. Your next offer MUST be >= ₹${highestOfferMade} LPA. Never go backwards.`
         : "";
       const targetCtx = candidateTarget
-        ? `\nThe candidate's stated target is ₹${candidateTarget} LPA. Use this to calibrate your offers — if their target is within your band, work toward it. If above, reality-check it.`
+        ? `\nThe candidate's stated target is ₹${candidateTarget} LPA. Use this to calibrate your offers — if their target is within your band, work toward it. If above, reality-check it.
+TARGET WORD BINDING: Whenever you refer to "your target", "the candidate's target", "you're looking for", "you're asking for", "you mentioned", or "you said", you MUST use exactly ₹${candidateTarget} LPA. NEVER substitute a different number for the candidate's target — not your counter-offer, not your stretch number, not a compromise figure. Those are YOUR numbers, not theirs. Mixing them up ("your target of ₹{differentNum}") destroys candidate trust because they remember exactly what they said.`
         : "";
 
       // Negotiation style context
@@ -460,8 +477,39 @@ Your response MUST directly address what they said above. Start by acknowledging
 You must either (a) make a CONCRETE counter with a new ₹ number above your previous offer, or (b) probe what would actually move them. Do not behave like the negotiation is over.`
         : "";
 
+      /* Bug F fix — No-agreement guard. The user reported a session
+         where the AI said "we've had a productive discussion ... let
+         me put together the final numbers based on what we've agreed
+         ... we're looking forward to having you on board" — but the
+         candidate had not actually accepted ANYTHING. They were just
+         answering a notice-period question. The closing-PHASE prompt
+         template ("Recap with EXACT numbers: 'here's what we've
+         agreed'") was firing as a TEMPLATE without checking whether
+         agreement had been reached. This guard fires symmetrically
+         to rejectionGuard: when we're in a closing-family phase but
+         the candidate has NOT explicitly accepted (current turn or
+         ever in conversation history), ban the agreement-implying
+         phrases and require a non-presumptive close. */
+      const acceptInHistoryRe = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+      const everAcceptedInHistory = conversationHistory ? acceptInHistoryRe.test(conversationHistory) : false;
+      const candidateExplicitlyAccepted = candidateAccepted || isConditionalAccept || negotiationFacts?.acceptedImmediately === true || everAcceptedInHistory;
+      const noAgreementGuard = !candidateExplicitlyAccepted && !rejectionLocksClosing
+        && (effectiveSalaryPhase === "closing" || effectiveSalaryPhase === "closing-pressure")
+        ? `\nNO-AGREEMENT GUARD — THE CANDIDATE HAS NOT ACCEPTED THIS OFFER. Do not write the close as if a deal was reached. The following phrases are BANNED:
+- "what we've agreed" / "what we agreed on" / "we've agreed" / "the agreed package"
+- "having you on board" / "welcome aboard" / "excited to have you" / "team is excited"
+- "let me put together the final numbers" (you can't finalize numbers without a yes)
+- "I'll have HR send the offer" / "formal offer letter" / "I'll send the paperwork"
+- "I'm glad we worked this out" / "great that we landed on" / "found a number that works"
+INSTEAD, use non-presumptive closing language that respects the candidate's open status:
+- "The offer of ₹X stands. Take some time to think it through, and let me know your decision by [day]."
+- "I appreciate the conversation. Whenever you're ready to give me a yes or a counter, I'm here."
+- "We've shared what we can do. The next move is yours — what do you need to make a decision?"
+You may STILL ask about notice period, joining timeline, or remaining concerns — just frame them as "if you decide to accept" hypotheticals, not as faits accomplis.`
+        : "";
+
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
-${intentBanner}${equityGuard}${rejectionGuard}${historyContext}
+${intentBanner}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
 ${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${scenarioCtx}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
@@ -803,6 +851,67 @@ Respond JSON only:
           }
         }
       }
+
+      /* Bug E fix — Target-echo binding. The user-reported session
+         showed: user said "12 lakhs", AI replied "I heard ₹12 from
+         you ... what's driving your target of ₹8.5 LPA?" — relabeling
+         the candidate's target as a different number (likely confusing
+         it with the AI's intended counter-offer). The pattern "your
+         target of ₹N" / "the candidate's target of ₹N" / "you're
+         looking for ₹N" must always cite the canonical candidateTarget
+         (the engine-tracked number, more reliable than the last-turn
+         parse since the candidate may have stated their target in an
+         earlier turn). Patch any drift. */
+      if (candidateTarget && candidateTarget > 0 && clamped) {
+        const targetEchoRe = /((?:your|the\s+candidate'?s?|their)\s+target(?:\s+of)?|you'?re\s+(?:looking\s+for|asking\s+for|targeting|aiming\s+for|hoping\s+for)|you\s+(?:want|need)|you\s+mentioned\s+(?:wanting|needing)?)\s+(?:a\s+(?:salary|target|number|figure)\s+of\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi;
+        let teMatch: RegExpExecArray | null;
+        while ((teMatch = targetEchoRe.exec(clamped)) !== null) {
+          const echoedTarget = parseFloat(teMatch[2]);
+          // Tolerance: 0.5 LPA — anything further off is a misattribution.
+          if (Math.abs(echoedTarget - candidateTarget) > 0.5) {
+            console.warn(`[follow-up] Target echo mismatch: candidate target=${candidateTarget}, AI echoed as ${echoedTarget} — patching`);
+            const fixed = teMatch[0].replace(
+              /₹?\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?)/i,
+              `₹${candidateTarget} LPA`,
+            );
+            clamped = clamped.replace(teMatch[0], fixed);
+            // Reset the regex's lastIndex so we don't skip overlapping matches
+            targetEchoRe.lastIndex = 0;
+          }
+        }
+      }
+
+      /* Bug D fix — Component-sum validator. The user-reported session
+         showed: "the offer at ₹8.5 LPA total compensation, comprising
+         ₹8.5 LPA base, ₹8.5 LPA variable pay, and a ₹8.5 LPA joining
+         bonus" — total 8.5 but components sum to 25.5. The LLM fell
+         into a token-fill loop, slotting the same number into every
+         component slot. Symptoms: (a) all three components numerically
+         identical, (b) sum >5% off from total. Either case is a
+         catastrophic dishonesty bug — patch by recomposing components
+         to a realistic 78/15/7 split that sums correctly. */
+      const breakdownRe = /(₹\s*(\d+(?:\.\d+)?)\s*LPA[^.?!]*?(?:total\s+(?:compensation|CTC|package)?|in\s+total|all\s+up)[^.?!]*?(?:comprising|including|consisting\s+of|made\s+up\s+of|broken\s+down\s+(?:as|into)|with\s+a\s+breakdown\s+of)[^.?!]*?)₹\s*(\d+(?:\.\d+)?)\s*LPA\s+base([^.?!]*?)₹\s*(\d+(?:\.\d+)?)\s*LPA\s+variable(?:\s+pay)?([^.?!]*?)₹\s*(\d+(?:\.\d+)?)\s*LPA\s+(?:joining\s+)?bonus/gi;
+      clamped = clamped.replace(breakdownRe, (full, prefix, totalStr, baseStr, midA, varStr, midB, bonusStr) => {
+        const total = parseFloat(totalStr);
+        const base = parseFloat(baseStr);
+        const variable = parseFloat(varStr);
+        const bonus = parseFloat(bonusStr);
+        if (![total, base, variable, bonus].every((n) => Number.isFinite(n) && n > 0)) return full;
+        const sum = base + variable + bonus;
+        const allEqual = base === variable && variable === bonus;
+        const sumWayOff = Math.abs(sum - total) > Math.max(0.5, total * 0.05);
+        if (allEqual || sumWayOff) {
+          // 78/15/7 split — realistic for Indian tech CTCs at the
+          // junior-to-mid level. Bonus may be 0 if total is small.
+          const newBase = Math.round(total * 0.78 * 10) / 10;
+          const newVar = Math.round(total * 0.15 * 10) / 10;
+          const newBonus = Math.round((total - newBase - newVar) * 10) / 10;
+          console.warn(`[follow-up] Component-sum bug: total=${total}, components=${base}/${variable}/${bonus} — recomposing to ${newBase}/${newVar}/${newBonus}`);
+          return `${prefix}₹${newBase} LPA base${midA}₹${newVar} LPA variable${midB}₹${newBonus} LPA joining bonus`;
+        }
+        return full;
+      });
+
       parsed.followUpText = clamped;
     }
 
