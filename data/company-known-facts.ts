@@ -214,12 +214,24 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
  */
 export function getKnownFacts(rawCompany: string | undefined): KnownFacts | null {
   if (!rawCompany) return null;
-  const cleaned = rawCompany.toLowerCase().replace(/[^a-z\s-]/g, "").trim();
+  /* Normalize: strip non-letter punctuation, collapse hyphens AND
+     spaces to a single space. So "Jane Street" and "jane-street" both
+     normalise to "jane street", and "Razorpay Inc." matches "razorpay". */
+  const cleaned = rawCompany
+    .toLowerCase()
+    .replace(/[^a-z\s-]/g, "")
+    .replace(/[\s-]+/g, " ")
+    .trim();
   if (!cleaned) return null;
-  if (COMPANY_KNOWN_FACTS[cleaned]) return COMPANY_KNOWN_FACTS[cleaned];
-  // Loose containment for "Razorpay Internet Pvt Ltd", "Google Inc", etc.
+  /* Both the input AND each candidate key get hyphen-to-space
+     normalisation before comparison. */
   for (const [key, value] of Object.entries(COMPANY_KNOWN_FACTS)) {
-    if (cleaned.includes(key) || (key.length >= 4 && key.includes(cleaned))) {
+    const normalisedKey = key.replace(/-/g, " ");
+    if (
+      cleaned === normalisedKey ||
+      cleaned.includes(normalisedKey) ||
+      (normalisedKey.length >= 4 && normalisedKey.includes(cleaned))
+    ) {
       return value;
     }
   }
