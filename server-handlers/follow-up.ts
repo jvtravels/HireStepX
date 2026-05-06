@@ -499,7 +499,14 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
     const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")
       ? `\n${lookupSalaryContext({ role, company, currentCity, jobCity })}\nUse ₹ and LPA. Follow-up offers/counters MUST stay within these ranges.
-CRITICAL: You are the HIRING MANAGER making a salary offer. Stay in character — do NOT switch to behavioral interview questions. Your follow-ups must be about compensation, benefits, joining timeline, notice buyout, or counter-offers.`
+CRITICAL: You are the HIRING MANAGER making a salary offer. Stay in character — do NOT switch to behavioral interview questions. Your follow-ups must be about compensation, benefits, joining timeline, notice buyout, or counter-offers.
+
+NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
+  1. NEVER output literal "₹X", "₹Y", "₹Z" or any letter placeholders. The hiring manager always speaks in concrete rupee figures (e.g. ₹28 LPA, ₹2 LPA, ₹1.5 LPA bonus). If you can't pick a number, pick one — but never leak the template letter.
+  2. NEVER output unfilled tokens like "joining bonus of ₹X" or "₹Z buyout". Always a specific number.
+  3. MATH MUST CHECK OUT. If the candidate said ₹50 LPA and your initial offer was ₹28-45 LPA, ₹50 is ABOVE not below. Read carefully before saying "below" or "above" — ₹50 LPA > ₹45 LPA, period. Ranges work: "below ₹45" / "above ₹45". Don't say "slightly below" of an upper-bound when the candidate's number exceeds it.
+  4. NOTICE PERIOD vocabulary: notice periods are "served", "completed", "30 days long", or "60 days remaining". They do NOT "end on a date" — that's an employment end-date, which is different. Use phrasing like "if you can serve a 30-day notice", "if your notice is shorter than 60 days", "we'd want you to start within 45 days of accepting".
+  5. RECAPS must include EVERY agreed item with a real number. If joining bonus wasn't agreed yet, don't recap one. If ESOPs weren't discussed, don't recap them. The recap is the agreed package, not a wishlist.`
       : "";
 
     const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}
@@ -511,6 +518,13 @@ Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
 
 ${depthInstructions}
+
+ROLE FENCE (mandatory): The candidate is interviewing for "${sanitizeForLLM(role, 100) || "this role"}". Your follow-up MUST stay within the discipline that role would actually be evaluated on. Specifically:
+  • An SEO Content Writer is NOT graded on user-research metrics, product roadmaps, or PM-style hypotheses. Stay on writing craft, content strategy, search intent, brand voice, editorial workflow.
+  • A Software Engineer is NOT graded on go-to-market strategy. Stay on system design, code, debugging, trade-offs.
+  • A Designer is NOT graded on quarterly OKRs. Stay on craft, user research, design systems, hand-off.
+  • If the candidate's answer drifted off-role (e.g. they talked about product strategy in a content-writer round), gently bring it back: "That's interesting — bringing it back to the writing craft itself, what was your editorial process for…"
+NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
 
 CROSS-QUESTION MEMORY: If the candidate mentioned something interesting in an earlier answer (visible in the conversation history above), you SHOULD reference it naturally roughly every 3rd question: "Earlier you mentioned X — how does that connect to what you just described?" This makes the interview feel like a real conversation, not a checklist.
 
