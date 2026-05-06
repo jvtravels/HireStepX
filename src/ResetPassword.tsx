@@ -275,12 +275,15 @@ export default function ResetPassword() {
     setLoading(true);
 
     // Have I Been Pwned check — refuse passwords seen in breaches.
+    // User-facing copy intentionally avoids the term "data breach" —
+    // testers reported that confused non-technical users (felt like
+    // we were saying THEIR account had been hacked, not just that the
+    // password is too common). New copy is plain-English: "this
+    // password is too common, attackers already know it".
     const breach = await checkPasswordBreached(password);
     if (breach.breached) {
       setError(
-        breach.count > 1000
-          ? `This password has been seen in ${breach.count.toLocaleString()} known data breaches. Choose something else for safety.`
-          : "This password has appeared in a known breach. Choose something else for safety.",
+        "This password is too common — attackers already know it. Try a different one.",
       );
       setLoading(false);
       return;

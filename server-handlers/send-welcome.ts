@@ -781,10 +781,24 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
   const ipKey = `rl:login:ip:${ip}`;
   const emailKey = normalizedEmail ? `rl:login:email:${normalizedEmail}` : "";
 
+  /* IP-based threshold is much higher than the email-based one.
+     User-reported failure: a new user's SECOND wrong-password attempt
+     locked them out. Root cause: AUTH_MAX_ATTEMPTS=5 was applied to
+     BOTH counters with the same threshold, but the IP counter
+     accumulates across all users sharing the same x-forwarded-for —
+     which on Indian mobile carriers + corporate NAT + dev/preview
+     deploys can mean dozens of legit users behind one IP. So a fresh
+     user's first or second attempt trips a lockout someone else
+     racked up.
+     Fix: keep email threshold at 5 (the real password-spray defense),
+     but raise IP threshold to 30 — still catches genuine IP-targeted
+     bursts (a single attacker hammering many emails from one IP) while
+     not punishing shared-NAT users. */
+  const IP_MAX_ATTEMPTS = 30;
   if (action === "check") {
     const ipAttempts = await getRedisValue(ipKey);
     const emailAttempts = emailKey ? await getRedisValue(emailKey) : 0;
-    if (ipAttempts >= AUTH_MAX_ATTEMPTS || emailAttempts >= AUTH_MAX_ATTEMPTS) {
+    if (ipAttempts >= IP_MAX_ATTEMPTS || emailAttempts >= AUTH_MAX_ATTEMPTS) {
       return res.status(429).json({ locked: true, message: "Too many failed login attempts. Please try again in 5 minutes.", remainingSeconds: AUTH_LOCKOUT_SECONDS });
     }
     const signupKey = `rl:signup:ip:${ip}`;
@@ -835,11 +849,17 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
   if (action === "fail") {
     const ipCount = await incrRedisKey(ipKey, AUTH_LOCKOUT_SECONDS);
     const emailCount = emailKey ? await incrRedisKey(emailKey, AUTH_LOCKOUT_SECONDS) : 0;
-    const maxCount = Math.max(ipCount, emailCount);
-    if (maxCount >= AUTH_MAX_ATTEMPTS) {
+    /* Same shared-NAT reasoning as the "check" branch above. The
+       email counter is the canonical "this user is being attacked"
+       signal — lock at 5. The IP counter only fires at 30 to handle
+       single-attacker-many-emails bursts without punishing legit
+       users on shared mobile / corporate IPs. */
+    if (emailCount >= AUTH_MAX_ATTEMPTS || ipCount >= IP_MAX_ATTEMPTS) {
       return res.status(429).json({ locked: true, message: "Too many failed login attempts. Please try again in 5 minutes.", remainingSeconds: AUTH_LOCKOUT_SECONDS });
     }
-    return res.status(200).json({ locked: false, attempts: maxCount, remaining: AUTH_MAX_ATTEMPTS - maxCount });
+    // Surface the EMAIL-keyed remaining count to the client (not max
+    // of IP and email) — that's what the user can directly affect.
+    return res.status(200).json({ locked: false, attempts: emailCount, remaining: AUTH_MAX_ATTEMPTS - emailCount });
   }
 
   if (action === "success") {

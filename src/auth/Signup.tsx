@@ -266,9 +266,7 @@ export default function Signup() {
       if (!isMounted.current) return;
       if (breach.breached) {
         setError(
-          breach.count > 1000
-            ? `This password has been seen in ${breach.count.toLocaleString()} known data breaches. Choose something else for safety.`
-            : "This password has appeared in a known breach. Choose something else for safety.",
+          "This password is too common — attackers already know it. Try a different one.",
         );
         setLoading(false);
         return;
