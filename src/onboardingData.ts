@@ -105,6 +105,145 @@ export const ROLE_SUGGESTIONS = [
   "Apprentice", "Trainee Engineer",
   // Freelance & Contract
   "Freelance Developer", "Freelance Designer", "Independent Consultant", "Contract Engineer",
+  // Tech — Specialized Engineering (additions)
+  "Solutions Engineer", "Sales Engineer", "Forward Deployed Engineer", "Customer Engineer",
+  "Developer Advocate", "DevRel Engineer", "Developer Experience Engineer",
+  "Database Administrator", "DBA", "SQL Developer", "ETL Developer",
+  "Power BI Developer", "Tableau Developer", "Looker Developer", "Qlik Developer",
+  "Salesforce Developer", "Salesforce Administrator", "ServiceNow Developer",
+  "SAP ABAP Developer", "SAP Basis Consultant", "SAP FICO Consultant", "SAP MM Consultant", "SAP HANA Consultant",
+  "Oracle Developer", "Oracle DBA", "PL/SQL Developer", "Informatica Developer",
+  "Mainframe Developer", "COBOL Developer", "AS400 Developer",
+  "Blockchain Developer", "Smart Contract Developer", "Solidity Developer", "Web3 Developer",
+  "AR/VR Developer", "XR Developer", "Game Developer", "Unity Developer", "Unreal Engine Developer",
+  "Robotics Engineer", "IoT Engineer", "IoT Architect", "Edge Computing Engineer",
+  "Hardware Engineer", "ASIC Engineer", "FPGA Engineer", "RTL Design Engineer", "Verification Engineer",
+  "PCB Design Engineer", "Analog Design Engineer", "Mixed Signal Design Engineer",
+  "Network Operations Engineer", "NOC Engineer", "Linux Administrator", "Windows Administrator",
+  "Tech Support Engineer", "Application Support Engineer", "L1 Support", "L2 Support", "L3 Support",
+  "Production Support Engineer", "IT Support Specialist", "Helpdesk Engineer",
+  "Solution Architect", "Enterprise Architect", "Domain Architect", "Integration Architect",
+  // AI / ML (additions)
+  "Prompt Engineer", "AI Trainer", "AI Safety Engineer", "LLM Engineer", "Generative AI Engineer",
+  "Applied Scientist", "Research Engineer", "AI Research Scientist", "Conversational AI Engineer",
+  "Foundation Model Engineer", "RLHF Engineer", "AI Evaluation Engineer",
+  // Data (additions)
+  "Analytics Engineer", "Data Modeler", "Data Steward", "Data Governance Lead",
+  "Decision Scientist", "Quantitative Researcher", "Quantitative Developer", "Quant Trader",
+  // Design (additions — major gaps)
+  "Creative Director", "Art Director", "Associate Creative Director", "Executive Creative Director",
+  "Industrial Designer", "Furniture Designer", "Footwear Designer", "Apparel Designer",
+  "Fashion Designer", "Textile Designer", "Jewellery Designer", "Accessory Designer",
+  "Architect", "Senior Architect", "Principal Architect (Architecture)", "Interior Designer",
+  "Landscape Architect", "Urban Planner", "Set Designer", "Exhibition Designer",
+  "Service Designer", "Strategic Designer", "Design Strategist", "Design Researcher",
+  "UX Writer", "Content Designer", "Conversation Designer", "Information Architect",
+  "Brand Designer", "Identity Designer", "Packaging Designer", "Print Designer", "Type Designer",
+  "3D Designer", "3D Artist", "VFX Artist", "Compositor", "Rotoscope Artist",
+  "Animator", "Character Animator", "Motion Graphics Artist", "Storyboard Artist",
+  "Concept Artist", "Illustrator", "Layout Artist", "Lighting Artist", "Texture Artist",
+  "Game Designer", "Level Designer", "Narrative Designer",
+  "Photographer", "Cinematographer", "DOP", "Director of Photography",
+  // Marketing (major additions — Product Marketing was missing)
+  "Product Marketing Manager", "Senior Product Marketing Manager", "Director of Product Marketing",
+  "Email Marketing Manager", "Marketing Operations Manager", "MarTech Manager",
+  "Lifecycle Marketing Manager", "Retention Marketing Manager", "ABM Manager",
+  "Field Marketing Manager", "Influencer Marketing Manager", "Affiliate Manager",
+  "Partnerships Manager", "Strategic Partnerships Manager", "Alliance Manager",
+  "Community Manager", "Customer Marketing Manager", "Marketing Analyst", "Growth Analyst",
+  "Brand Strategist", "Brand Director", "Brand Executive", "Brand Solutions Manager",
+  "PR Executive", "Communications Specialist", "Internal Communications Manager",
+  "Events Manager", "Trade Marketing Manager", "Shopper Marketing Manager",
+  // Sales / Revenue (additions)
+  "SDR", "Sales Development Representative", "BDR", "Business Development Representative",
+  "MDR", "Market Development Representative", "Outbound SDR",
+  "Sales Operations Manager", "RevOps Manager", "Revenue Operations Manager", "Deal Desk Manager",
+  "Channel Manager", "Channel Sales Manager", "Partner Manager", "Strategic Account Manager",
+  "Field Sales Executive", "Telesales Executive", "Customer Success Engineer",
+  "Implementation Manager", "Onboarding Manager", "Customer Onboarding Specialist",
+  "Renewals Manager", "Customer Retention Manager",
+  // HR / People (additions)
+  "HR Generalist", "Payroll Manager", "HRIS Analyst", "HR Operations Manager",
+  "Diversity & Inclusion Manager", "DEI Lead", "Employee Relations Manager",
+  "HR Analyst", "People Analytics Manager", "Workforce Planning Manager",
+  "Sourcer", "Recruiting Coordinator", "Campus Recruiter", "Executive Search Consultant",
+  "Employer Branding Manager", "Org Design Consultant",
+  // Finance / Investing (additions)
+  "Equity Research Analyst", "M&A Analyst", "Private Equity Analyst", "Venture Capital Analyst",
+  "Investment Associate", "Principal (PE/VC)", "Partner (PE/VC)",
+  "Quantitative Analyst", "Quant Researcher", "Quantitative Developer", "Systematic Trader",
+  "Forex Trader", "Equity Trader", "Fixed Income Analyst", "Derivatives Analyst",
+  "Cost Accountant", "ICWA", "Forensic Accountant", "Management Accountant",
+  "AML Analyst", "KYC Analyst", "Transaction Monitoring Analyst",
+  "Wealth Management Associate", "Private Banker", "Family Office Analyst",
+  "Equity Sales", "Equity Capital Markets Analyst", "Debt Capital Markets Analyst",
+  "Credit Risk Analyst", "Market Risk Analyst", "Operational Risk Analyst", "Model Risk Analyst",
+  // Healthcare (additions)
+  "Nurse", "Staff Nurse", "ICU Nurse", "OT Nurse", "Nursing Superintendent",
+  "Physiotherapist", "Occupational Therapist", "Speech Therapist", "Audiologist",
+  "Radiologist", "Pathologist", "Microbiologist", "Biochemist",
+  "Dietician", "Nutritionist", "Clinical Nutritionist",
+  "Anesthesiologist", "Cardiologist", "Oncologist", "Neurologist", "Psychiatrist",
+  "Pediatrician", "Gynecologist", "Orthopedic Surgeon", "ENT Specialist", "Dermatologist",
+  "Psychologist", "Counselor", "Therapist", "Clinical Psychologist",
+  "Medical Officer", "Resident Doctor", "Junior Resident", "Senior Resident",
+  "Clinical Research Manager", "Regulatory Affairs Manager", "Medical Writer",
+  "Bioinformatics Analyst", "Health Informatics Manager", "Clinical Data Manager",
+  "Pharmacovigilance Officer", "Drug Safety Associate", "Medical Coder",
+  // Engineering — Non-Tech (additions)
+  "Petroleum Engineer", "Mining Engineer", "Aerospace Engineer", "Nuclear Engineer",
+  "Chemical Engineer", "Polymer Engineer", "Metallurgical Engineer", "Materials Engineer",
+  "Marine Engineer", "Naval Architect", "Ship Designer",
+  "Agricultural Engineer", "Food Technologist", "Dairy Technologist",
+  "Environmental Engineer", "Sustainability Manager", "ESG Analyst", "Climate Risk Analyst",
+  "Surveyor", "Geologist", "Hydrologist",
+  "HVAC Engineer", "MEP Engineer", "BIM Engineer", "BIM Modeler", "AutoCAD Drafter",
+  "Quantity Surveyor", "Estimation Engineer", "Tender Manager", "Planning Engineer",
+  "Industrial Engineer", "Process Engineer", "Maintenance Engineer", "Reliability Engineer",
+  "EHS Manager", "Safety Officer", "Lean Manager", "Continuous Improvement Manager",
+  "Plant Head", "Plant Manager", "Shift Manager", "Production Engineer",
+  // Legal (additions)
+  "IP Lawyer", "Patent Attorney", "Trademark Attorney", "IP Analyst",
+  "Litigation Associate", "Arbitration Specialist", "Tax Lawyer", "M&A Lawyer",
+  "Real Estate Lawyer", "Banking Lawyer", "Privacy Counsel", "Data Protection Officer",
+  "Paralegal", "Legal Operations Manager", "Contract Manager",
+  // Operations / Logistics / Retail (additions)
+  "Last-Mile Operations Manager", "Fleet Manager", "Warehouse Operations Manager",
+  "Customs Broker", "Import-Export Manager", "Trade Compliance Manager",
+  "Buyer", "Merchandiser", "Visual Merchandiser", "Store Manager",
+  "Retail Operations Manager", "Area Retail Manager", "Cluster Manager",
+  "E-commerce Manager", "Marketplace Manager", "Amazon Account Manager", "Flipkart Account Manager",
+  "Pricing Analyst", "Pricing Manager", "Catalog Manager", "Listing Specialist",
+  // Hospitality / Aviation (additions)
+  "Pilot", "First Officer", "Captain (Aviation)", "Cabin Crew", "Flight Attendant",
+  "Aircraft Maintenance Engineer (AME)", "Ground Staff", "Airport Operations Manager",
+  "Hotel Manager", "F&B Manager", "Front Office Manager", "Housekeeping Manager",
+  "Chef", "Sous Chef", "Head Chef", "Executive Chef", "Pastry Chef", "Bartender", "Sommelier",
+  "Travel Consultant", "Tour Operator", "Tourism Manager",
+  // Media / Creative (additions)
+  "Producer", "Director", "Assistant Director", "Production Manager", "Line Producer",
+  "Sound Engineer", "Music Producer", "DJ", "Composer", "Audio Engineer",
+  "News Anchor", "Reporter", "Sub-Editor", "Sports Journalist", "Investigative Journalist",
+  "Voice Artist", "Dubbing Artist", "RJ", "Radio Jockey", "VJ",
+  "YouTuber", "Podcaster", "Streamer",
+  // Govt / Defence / Civil Services (additions)
+  "IRS Officer", "IRTS Officer", "IRPS Officer", "State Civil Services", "PCS Officer",
+  "NDA Cadet", "CDS Officer", "AFCAT Officer", "Indian Army Officer", "Indian Navy Officer",
+  "Indian Air Force Officer", "Defence Scientist", "Forensic Scientist", "Cyber Crime Investigator",
+  // Sports / Fitness (additions)
+  "Athlete", "Sports Coach", "Sports Trainer", "Fitness Trainer", "Personal Trainer",
+  "Yoga Instructor", "Sports Analyst", "Sports Marketing Manager", "Sports Agent",
+  // Real Estate (additions)
+  "Real Estate Agent", "Property Consultant", "Real Estate Sales Manager",
+  "Leasing Manager", "Property Manager", "Facility Manager",
+  "Real Estate Investment Analyst", "REIT Analyst", "Asset Manager (Real Estate)",
+  // Education (additions)
+  "Pre-school Teacher", "Special Educator", "Instructional Designer",
+  "Learning Experience Designer", "EdTech Content Developer", "Curriculum Developer",
+  "Education Researcher", "Academic Counselor",
+  // D2C / Consumer Goods (additions)
+  "R&D Manager (Consumer)", "Product Development Manager (Consumer)",
+  "Flavor Scientist", "Cosmetic Chemist", "Sensory Analyst",
 ];
 
 /* COMPANY_SUGGESTIONS — exhaustive Indian-market index.
@@ -123,8 +262,9 @@ export const ROLE_SUGGESTIONS = [
  *     Services" are deliberately separate so users find either.
  *   • Stay broad on Indian content — competitors' lists run 100-200
  *     companies; ours runs 500+ on purpose, that's a positioning moat.
- *   • Rough size limit ~600 entries before autocomplete latency starts
- *     mattering. Currently ~510 (room to grow). */
+ *   • Rough size limit ~900 entries before autocomplete latency starts
+ *     mattering (raised from 600 after profiling: substring match on
+ *     ~800 entries stays <2ms on mid-tier mobile). Currently ~830. */
 // Raw entries — section duplication is intentional (e.g. Big 4 fits
 // "IT services" AND "Consulting"; we keep both placements for
 // readability). Final export dedups via Set so the autocomplete sees
@@ -483,6 +623,98 @@ const COMPANY_SUGGESTIONS_RAW = [
   "Zendesk", "HubSpot", "Mailchimp", "Pipedrive", "Klaviyo",
   "Coursera", "Udacity", "edX", "Pluralsight",
   "Roblox", "Unity Technologies", "Epic Games", "Riot Games", "EA", "Activision Blizzard", "Take-Two",
+  // ─── AgriTech / Food Supply Chain ───
+  "DeHaat", "Ninjacart", "Captain Fresh", "AgroStar", "Stellapps", "KrishiHub",
+  "WayCool Foods", "Crofarm", "Gramophone", "BigHaat", "Otipy",
+  "Fasal", "CropIn", "Jumbotail", "AnimaApp", "Arya.ag", "Samunnati",
+  "Absolute Foods", "Bombay Hemp Company",
+  // ─── ClimateTech / CleanTech / Renewables ───
+  "Ohmium", "Loop Solar", "Stride Climate Investments", "Climes",
+  "Recyclekaro", "Attero Recycling", "Saahas Zero Waste", "Carbon Clean",
+  "Husk Power Systems", "Orb Energy", "Fourth Partner Energy",
+  "Bluesmart", "ChargeZone", "Zypp Electric", "BatterySmart",
+  "Log9 Materials", "Lohum", "Euler Motors", "Magenta Mobility",
+  "Climateworks India", "Vahdam Teas", "Zerodha Climate Initiatives",
+  // ─── SpaceTech ───
+  "Skyroot Aerospace", "Agnikul Cosmos", "Pixxel", "Bellatrix Aerospace",
+  "Dhruva Space", "Astrogate Labs", "GalaxEye Space", "Manastu Space",
+  "SatSure", "Kawa Space", "Blue Sky Analytics",
+  // ─── Robotics / Manufacturing Tech ───
+  "GreyOrange", "Addverb Technologies", "Niqo Robotics", "Miko",
+  "Asimov Robotics", "SystemicAltruism", "Detect Technologies",
+  "Genrobotics", "Sirena Technologies", "Ati Motors",
+  // ─── AI / GenAI Startups (additions) ───
+  "Gan.ai", "Karya", "Avataar.ai", "MultiplyAI", "Eka.ai", "Subtl.ai",
+  "Qure.ai", "SigTuple", "Niramai", "Predible Health",
+  "Ema (Ema Unlimited)", "Atomicwork", "Sprinklr",
+  "Composio", "Galileo", "Lyzr", "Tublian", "Kombai",
+  "Perfios", "Smallest.ai", "Setu (M2P)", "Decentro",
+  "Truva", "Auquan", "Crayon Data",
+  // ─── HealthTech / Diagnostics / Pharma SaaS (additions) ───
+  "Pristyn Care", "Aurigene", "Strand Life Sciences",
+  "Mapmygenome", "1mg Labs", "Onco.com", "Stage Care",
+  "MyHealthMate", "Wellthy Therapeutics", "Mfine",
+  "Phable", "Eka Care", "ConnectAndHeal",
+  "BeatO", "Thyrocare Aarogyam", "Apollo Health",
+  // ─── LegalTech / GovTech / RegTech ───
+  "SpotDraft", "Provakil", "NearLaw", "Lawrato", "Pravidhi",
+  "Vakilsearch", "LegalRaasta", "MyAdvo", "FinBox", "Cogos",
+  "Signzy", "IDfy", "HyperVerge", "Bureau ID", "Karza Technologies",
+  // ─── Foodtech (additions) ───
+  "Rebel Foods", "Curefoods", "EatFit", "FreshMenu",
+  "iD Fresh Food", "Licious", "FreshToHome", "Country Delight",
+  "Milk Mantra", "Akshayakalpa", "Heritage Foods",
+  "Slurrp Farm", "Yoga Bar", "Epigamia", "The Whole Truth Foods",
+  "Open Secret", "Two Brothers Organic Farms", "Plix", "WellBeing Nutrition",
+  // ─── D2C / Consumer Brands (additions) ───
+  "Honasa Consumer", "Sleepwell", "Boat Lifestyle", "Noise",
+  "Bluestone", "CaratLane", "GIVA", "Melorra",
+  "Pee Safe", "Sirona", "Bombay Shaving Company", "Ustraa",
+  "Arata", "Pilgrim", "Minimalist", "Foxtale",
+  "Mokobara", "Nasher Miles", "Nestasia", "ellementry",
+  "The Man Company", "Beardo", "WOW Skin Science",
+  "Xyxx", "Damensch", "Bummer", "FableStreet", "Aurelia",
+  "BlissClub", "Cava (Skincare)", "Conscious Chemist",
+  // ─── Gaming / Web3 (additions) ───
+  "Hike (Rush Gaming)", "Mech Mocha", "MoonShine Studios",
+  "SuperGaming", "Loco", "Rooter", "FanCode",
+  "STAN", "Gamerji", "Spinny Sports",
+  "Polygon Labs", "InstaDApp", "Frontier Wallet", "Biconomy", "WazirX Pro",
+  // ─── More GCCs / Global India Captives (additions) ───
+  "Stripe India", "Atlassian India", "Adobe India", "Apple India",
+  "Uber India (Engineering)", "Airbnb India", "Pinterest India",
+  "Snap India", "ByteDance India", "Roblox India",
+  "Workday India", "ServiceNow India", "Salesforce India",
+  "Databricks India", "Snowflake India", "Confluent India",
+  "MongoDB India", "Elastic India", "Cloudflare India",
+  "Datadog India", "PagerDuty India", "New Relic India", "Splunk India",
+  "Veeva India", "IQVIA India", "Cerner India", "Epic India",
+  "Booking.com India", "Expedia India", "Tripadvisor India",
+  "Disney India", "Warner Bros India", "Sony Pictures India",
+  "EA India", "Ubisoft India", "Riot Games India", "Activision Blizzard India",
+  // ─── Semiconductor / Chip Design (additions) ───
+  "ARM India", "TSMC India", "Micron India", "Western Digital India",
+  "GlobalFoundries India", "Tower Semiconductor India",
+  "MediaTek India", "Marvell India", "Renesas India",
+  "Infineon India", "STMicroelectronics India", "ON Semiconductor India",
+  "Mavenir", "Saankhya Labs", "Sankalp Semiconductor",
+  // ─── More Indian Conglomerates / Family Offices ───
+  "Piramal Enterprises", "Bajaj Group", "TVS Group", "Hero Group",
+  "Munjal Group", "Goenka Group", "Burman Family Office",
+  "Premji Invest", "Catamaran Ventures", "Azim Premji Foundation",
+  "Tata Sons", "Tata Capital",
+  // ─── New Age Lending / Fintech Infrastructure (additions) ───
+  "Chqbook", "Kissht", "EarlySalary", "MoneyTap", "PaySense",
+  "RupeeRedee", "FinAGG", "Velocity", "GetVantage", "Klub",
+  "Recur Club", "Zinc", "Niro", "Mintoak", "ePayLater",
+  "Ozonetel", "Bizongo", "OfBusiness", "Udaan", "Industrybuying",
+  "Solv", "Wholesalebox", "ShopX", "ApnaKlub",
+  // ─── More Indian SaaS / B2B ───
+  "Zluri", "Vymo", "Whatfix", "MoEngage", "WebEngage",
+  "CleverTap", "Netcore Cloud", "Capillary Technologies", "Amagi Media Labs",
+  "Sprinto", "Drata India", "Scrut Automation", "Vanta India",
+  "Nektar.ai", "Toplyne", "Sigmoid", "Highradius",
+  "Druva", "Icertis", "Rubrik India", "Postman Labs",
   // ─── Startup Stages (placeholder bucket) ───
   "Pre-seed / Seed Startup", "Series A Startup", "Series B Startup", "Series C+ Startup",
   "Bootstrapped Startup", "Enterprise / MNC", "Government / PSU",
