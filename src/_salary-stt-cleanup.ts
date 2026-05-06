@@ -115,5 +115,19 @@ export function cleanSalarySttArtifacts(text: string): string {
   );
   void salaryUnit;
 
+  // Hindi / Hinglish salary phrases. Indian users frequently switch
+  // mid-sentence ("salary kitni hai?", "12 lakh ka package hai").
+  // Normalize the most common patterns so downstream extraction sees
+  // recognizable English-flavored salary text.
+  out = out.replace(/\bkitni\s+hai\b/gi, "is the salary");
+  out = out.replace(/\bkitna\s+package\b/gi, "the package");
+  out = out.replace(/\b(\d+(?:\.\d+)?)\s*lakh\s+(?:ka|ki|ke)\s+package\b/gi, "$1 LPA package");
+  out = out.replace(/\b(\d+(?:\.\d+)?)\s*lakh\s+(?:ka|ki|ke)\s+offer\b/gi, "$1 LPA offer");
+  // "lakh me" / "lakh mein" → "lakhs"
+  out = out.replace(/\b(\d+(?:\.\d+)?)\s*lakh\s+me(?:in)?\b/gi, "$1 lakhs");
+  // Generic hinglish closers: "chahiye", "expected" usage
+  out = out.replace(/\b(\d+(?:\.\d+)?)\s*lakh\s+chahiye\b/gi, "I want $1 lakhs");
+  out = out.replace(/\b(\d+(?:\.\d+)?)\s*lakh\s+expected\b/gi, "expecting $1 lakhs");
+
   return out;
 }

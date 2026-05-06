@@ -10,6 +10,7 @@ import { formatRecipe } from "../data/focus-question-recipes";
 import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
 import { matchCompanyKey } from "../data/company-guidance";
+import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import {
   retrieveReferenceQuestions,
@@ -131,6 +132,13 @@ export default async function handler(req: Request): Promise<Response> {
     const companyName = sanitizeForLLM(company, 100);
     const companySpecificGuidance = await getCompanyGuidance(companyName);
     const companyTone = getCompanyTone(companyName);
+    /* KNOWN_FACTS is the verified-fact whitelist (~20 top companies).
+       When present, the LLM is told to use ONLY these facts and refuse
+       to invent others. This is the strongest grounding lever — it
+       both gives the LLM real ground truth AND tells it where the
+       boundary of that ground truth is. */
+    const knownFacts = companyName ? getKnownFacts(companyName) : null;
+    const knownFactsBlock = knownFacts ? formatKnownFactsForPrompt(knownFacts, companyName) : "";
     const companyContext = companyName ? `The candidate is interviewing at ${companyName}. ${companySpecificGuidance}${companyTone ? `\nINTERVIEWER PERSONALITY for ${companyName}: ${companyTone}` : ""}` : "";
     const industryContext = industry ? `The industry is ${sanitizeForLLM(industry, 100)}.` : "";
     // Industry-specific question flavor — fintech reasons differently from
@@ -495,7 +503,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const referenceBlock = formatReferencesForPrompt(retrievalResult);
 
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
@@ -512,7 +520,13 @@ ${questionCount >= 4 ? `
 - Q${questionCount} (stretch): probes failure, ambiguity, or judgment under constraints.`}
 Do NOT make every question equally hard — that's a screening test, not an interview. The escalation itself is part of what reveals signal.
 
-Each step: {"type":"intro|question|closing","aiText":"2-3 sentences spoken naturally by the interviewer","scoreNote":"specific evaluation criteria for this question"${interviewType === "panel" ? ',"persona":"Hiring Manager|Technical Lead|HR Partner"' : ""}}${panelNote}
+Each step: {"type":"intro|question|closing","aiText":"2-3 sentences spoken naturally by the interviewer","scoreNote":"specific evaluation criteria for this question"${interviewType === "panel" ? ',"persona":"Hiring Manager|Technical Lead|HR Partner"' : ""}${companyName ? ',"groundingCheck":"verified|generic|hypothetical"' : ""}}${panelNote}${companyName ? `
+
+GROUNDING-CHECK SELF-ATTESTATION (mandatory when company is provided): Each step's "groundingCheck" field is a 1-word self-assessment of how the question relates to the target company:
+  - "verified": the question references a fact present in the VERIFIED COMPANY FACTS block (or no company-specific fact is referenced).
+  - "generic": the question references the company only via a category descriptor ("a fintech", "a major Indian unicorn") — no company-specific claim made.
+  - "hypothetical": the question frames a number/scenario as the LLM's design constraint ("design for 1B txn/day"), not as a claim about ${companyName}'s actual numbers.
+NEVER set this to "verified" if the question contains a fact about ${companyName} that isn't in the VERIFIED COMPANY FACTS block. Setting it incorrectly is a serious correctness failure. If you're unsure, choose "generic" or rewrite the question to avoid the unverified claim.` : ""}
 
 ACCENT MARKUP: Inside aiText, wrap exactly ONE emphasis word in *asterisks* — the single most evocative word the candidate would lock onto when reading the question. Pick a noun or verb (never a, the, is, you, your, etc.). One word only, never a phrase. Skip the markup entirely if no single word stands out. The asterisks render as italic-copper accent in the UI (typographic flair, not for spoken cadence). The TTS reads the word normally — asterisks are stripped before speech.
 
