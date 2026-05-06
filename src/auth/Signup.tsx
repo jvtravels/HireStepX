@@ -468,37 +468,48 @@ export default function Signup() {
                   );
                 })()}
 
-                {/* Resend verification email — 60s cooldown matches
-                    server rate limit. Surfaces 429 / network errors. */}
+                {/* Resend verification email — styled to match the white
+                    "Resend link" button on /forgot-password (sent state)
+                    so the two transactional-email flows feel consistent.
+                    60s cooldown matches the server rate limit. */}
                 <button
                   type="button"
                   onClick={handleResendVerification}
                   disabled={resendCooldown > 0 || resending}
+                  aria-busy={resending || undefined}
                   style={{
+                    width: "100%",
                     fontFamily: f.sans,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: 500,
-                    color: resendCooldown > 0 ? t.inkFaint : t.indigo,
-                    background: "transparent",
-                    border: "none",
-                    textDecoration: "none",
+                    color: t.coal,
+                    background: t.white,
+                    border: `1px solid ${t.line}`,
+                    borderRadius: 10,
+                    padding: "14px 18px",
                     cursor:
                       resendCooldown > 0 || resending
                         ? "not-allowed"
                         : "pointer",
-                    padding: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    boxShadow: shadows.card,
+                    opacity: resendCooldown > 0 || resending ? 0.6 : 1,
                   }}
                 >
                   {resending ? (
-                    <span aria-live="polite">Sending…</span>
+                    <>
+                      <Spinner />
+                      Resending…
+                    </>
                   ) : resendCooldown > 0 ? (
                     <span aria-live="polite">
-                      Didn't get it? Resend in {resendCooldown}s
+                      Resend in {resendCooldown}s
                     </span>
                   ) : (
-                    <span className="hsx-link-indigo">
-                      Didn't get it? Resend verification email
-                    </span>
+                    <span aria-live="polite">Resend verification email</span>
                   )}
                 </button>
                 {resendError && (
