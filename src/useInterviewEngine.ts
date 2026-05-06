@@ -897,10 +897,14 @@ export function useInterviewEngine() {
       const highest = highestOfferRef.current;
       const announcedBelowHighest = announcedNum !== null && highest > 0 && announcedNum < highest;
       const hasAnyNumber = announcedNum !== null;
+      // ALSO catch the LLM literally writing "₹X" / "₹Y" / "₹TBD" /
+      // "[amount]" placeholders into the closing line — user reported
+      // a closing step reading "joining bonus of ₹X" verbatim.
+      const hasPlaceholder = /₹\s*[XYZ\u2026]\b|\bTBD\b|\[amount\]|\[number\]/i.test(step.aiText);
       // Sanitize whenever closing announces a number that's below the highest
       // offer made — that's the catastrophic case. Also sanitize if it announces
       // ANY number we can't verify (highest === 0 means we never tracked an offer).
-      if (announcedBelowHighest || (hasAnyNumber && highest === 0)) {
+      if (announcedBelowHighest || (hasAnyNumber && highest === 0) || hasPlaceholder) {
         const safeClosing = highest > 0
           ? `Great — I think we've had a really productive conversation. Based on everything we've discussed, including offers up to ₹${highest} LPA, let me finalise the numbers internally and have HR send you the formal offer letter with the complete breakdown. What's your notice period situation?`
           : "Great — I think we've had a really productive conversation. Let me put together the final numbers based on everything we've discussed and have HR send you the formal offer letter with the complete breakdown. What's your notice period situation?";

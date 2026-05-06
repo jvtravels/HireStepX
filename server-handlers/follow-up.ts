@@ -224,13 +224,13 @@ CRITICAL: NEVER offer more than what the candidate asked for. If they said ₹30
 
 YOUR GOAL: Close the deal as LOW as possible while keeping the candidate interested. You are the HIRING MANAGER — your job is to save the company money while making a fair offer.
 - CRITICAL: Your counter-offer MUST be BELOW the candidate's ask. NEVER offer MORE than what they asked for. If they said ₹30 LPA and your band goes to ₹40 LPA, counter at ₹25-28 LPA — NOT ₹35-40 LPA. You want to save cost.
-- ALWAYS make a concrete counter: "Here's what I can do — ₹X base, ₹Y variable, and I'll add a ₹Z joining bonus. That brings your total to ₹W LPA." Never say vague things like "some flexibility."
+- ALWAYS make a concrete counter with REAL numbers (substitute the figures from your band — for example "₹14 base, ₹2 variable, plus a ₹1.5 joining bonus, total ₹17.5 LPA"). NEVER write the literal characters ₹X, ₹Y, ₹Z, ₹W, ₹V, [amount], or [number] in your reply — those are placeholders for YOU to fill in. Never say vague things like "some flexibility."
 - If their ask is AT or BELOW your initial offer: "That's within our range — I can work with that." Close quickly — that's a win for you.
 - If their ask is ABOVE your initial offer but within your band: counter PARTWAY — split the difference. "You asked for ₹X, I started at ₹Y. Let me see if I can stretch to ₹Z" (where Z is between Y and X, closer to Y).
 - If they want more base: "I can move base to ₹X if we adjust variable to Y%. Or I could add a ₹Z joining bonus to bridge the gap. Which works better for you?" — restructure to SEEM higher without actually raising total CTC much.
 - If they focus only on salary: redirect to non-cash — ${negotiationBand?.hasEquity ? `"I may not be able to match ₹X on base, but let me show you the full picture: joining bonus, ESOPs vesting over 4 years, plus learning budget. The total package value is actually ₹V."` : `"I may not be able to match ₹X on base, but let me show you the full picture: joining bonus, learning budget, and upgraded health insurance. The total package value is actually ₹V." Do NOT mention ESOPs or equity — this role does not include them.`}
 - If they pushed hard: be transparent — "₹X is genuinely my ceiling for this band. Beyond that, I'd need to go back to leadership. But here's what I CAN add: [2-3 specific levers with numbers]."
-- Notice period as a lever: "What's your notice period? If you can join within 30 days, I'll add a ₹X notice buyout."
+- Notice period as a lever, ONLY if candidate is currently employed with a long notice. Substitute a real ₹ figure (e.g. ₹2 LPA notice buyout). If the candidate already mentioned they're available immediately / their notice already ended / they were laid off / their previous job ended, DO NOT offer a notice buyout — they have nothing to buy out.
 - If vague: "What's the minimum package that makes this a clear yes for you? Give me a number and I'll tell you what I can do."`,
 
         "benefits-discussion": `PHASE: Expanding the conversation to total compensation beyond base salary.
@@ -297,16 +297,21 @@ YOUR GOAL: Summarize the SPECIFIC deal and set concrete next steps. Rebuild warm
         }
         // Notice period as a proactive lever (even if candidate didn't raise it)
         if (!negotiationFacts.topicsRaised?.includes("notice period/joining")) {
-          factsLines.push("- NOTICE PERIOD: You haven't discussed notice period yet. Proactively ask: 'What's your notice period?' and offer buyout as a lever: 'If you can join within 30 days, I'll add ₹X for notice buyout.'");
+          factsLines.push("- NOTICE PERIOD: You haven't discussed notice period yet. Ask: 'What's your notice period?'. If their answer indicates they're CURRENTLY EMPLOYED with a long notice (60-90 days), then a buyout is a useful lever — substitute a REAL ₹ figure like ₹1.5 LPA. If their answer indicates they're already available (notice ended, laid off, between jobs, freelancing), DO NOT offer a notice buyout — there's nothing to buy out. Never write the literal characters ₹X, ₹Y, ₹Z, ₹W as placeholders.");
         }
       }
       const factsCtx = factsLines.length > 0
         ? `\nCANDIDATE FACTS (from this conversation — use these to personalize your response):\n${factsLines.join("\n")}`
         : "";
 
-      // Negotiation band context (structured authority limits)
+      // Negotiation band context (structured authority limits).
+      // Limit raised 600 → 2400 because the strengthened bandContext
+      // (anti-capitulation + ₹X-placeholder ban + notice-period
+      // intelligence) is ~1800 chars and the most important rules
+      // were getting truncated, letting the LLM revert to its
+      // friendly-coach default.
       const bandCtx = negotiationBand?.bandContext
-        ? `\n${sanitizeForLLM(negotiationBand.bandContext, 600)}`
+        ? `\n${sanitizeForLLM(negotiationBand.bandContext, 2400)}`
         : "";
 
       // Monotonic offer rule + candidate target context
@@ -745,6 +750,25 @@ Respond JSON only:
 
     // Intent-mismatch validator: catch cases where LLM ignores the detected intent
     if (isSalaryNeg && parsed.followUpText) {
+      /* Last-resort placeholder scrubber. Despite the explicit prompt
+         rule "never write ₹X/₹Y/₹Z", LLMs occasionally still copy a
+         literal placeholder into the output (user-reported: closing
+         step said "joining bonus of ₹X"). Strip any ₹<single-letter>
+         token by deleting the trailing clause that contains it — that
+         clause was meant to hold a real figure but didn't, and
+         showing the placeholder is worse than dropping the sentence.
+         Also catches "[amount]" / "[number]" / "₹TBD". */
+      const placeholderRe = /(?:[,;.\s]+)?\b(?:and\s+)?(?:[^.,;]*?(?:₹\s*[XYZWV]\b|\bTBD\b|\[amount\]|\[number\]|\[\.\.\.\])[^.,;]*?)([.,;])/gi;
+      const before = parsed.followUpText;
+      parsed.followUpText = parsed.followUpText.replace(placeholderRe, "$1");
+      // If a fragment couldn't be cleanly excised, fall back to a
+      // plain replacement that drops the placeholder token itself.
+      parsed.followUpText = parsed.followUpText.replace(/₹\s*[XYZWV]\b\s*(LPA|lpa|lakhs?|cr|crore)?/g, "[figure pending]");
+      parsed.followUpText = parsed.followUpText.replace(/\bTBD\b|\[amount\]|\[number\]|\[\.\.\.\]/gi, "[figure pending]");
+      if (before !== parsed.followUpText) {
+        console.warn("[follow-up] scrubbed ₹X-style placeholder from salary-neg output");
+      }
+
       const text = parsed.followUpText.toLowerCase();
       const counterOfferPat = /how about|what if I offer|counter.*with|we could do|let me offer/i;
       // Re-detect intent here since the original detection is block-scoped
