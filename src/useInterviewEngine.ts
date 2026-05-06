@@ -1385,7 +1385,19 @@ export function useInterviewEngine() {
                surface on the next step naturally. */
             if (step.type === "question" || step.type === "follow-up") {
               step.aiText = followUpStep.aiText;
-              if (typeof followUpStep.aiTextDisplay === "string") step.aiTextDisplay = followUpStep.aiTextDisplay;
+              /* aiTextDisplay MUST track aiText. The user-reported
+                 "audio TTS is different from written question" bug
+                 came from this slot when followUpStep.aiTextDisplay
+                 was undefined — we'd update aiText (TTS source)
+                 without touching aiTextDisplay (UI source), so the
+                 captions would show the OLD question while the new
+                 audio played. Always derive a display string when
+                 the explicit one is missing. */
+              if (typeof followUpStep.aiTextDisplay === "string") {
+                step.aiTextDisplay = followUpStep.aiTextDisplay;
+              } else {
+                step.aiTextDisplay = stripProsodyMarkup(followUpStep.aiText);
+              }
               step.speakingDuration = followUpStep.speakingDuration;
               if (followUpStep.scoreNote) step.scoreNote = followUpStep.scoreNote;
               const fuAccent = (followUpStep as { accentSplit?: { before: string; accent: string; after: string } }).accentSplit;

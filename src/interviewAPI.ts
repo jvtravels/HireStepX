@@ -359,6 +359,33 @@ export async function fetchLLMQuestions(params: {
       .filter((q: InterviewStep) => q.aiText.length >= 10)
       .map((q: InterviewStep) => q.type === "closing" ? { ...q, waitForUser: true } : q);
 
+    /* Closing-turn safety net (Bug K fix). The user-reported "interview
+       suddenly ended on its own" bug traced to this pipeline: when the
+       LLM emitted a closing step with text <10 chars (or no closing
+       step at all), the .filter() above silently dropped it. The
+       resulting script was [intro, ...questions] with no closing — so
+       after the user answered the last question, useInterviewEngine
+       hit isLastStep=true and went straight to setPhase("done"),
+       skipping any wrap-up turn. Now: if no closing survived the
+       filter, append a generic one. waitForUser:true so the user has
+       time to read it before the report renders. */
+    {
+      const hasClosing = questions.some((q: InterviewStep) => q.type === "closing");
+      if (!hasClosing) {
+        const fallbackClose = "Thanks for taking the time to talk through this. We'll review the conversation and follow up on next steps shortly. Best of luck.";
+        const fallbackMs = Math.max(4500, Math.round((fallbackClose.split(/\s+/).length / 150) * 60 * 1000) + 1500);
+        questions.push({
+          type: "closing",
+          aiText: fallbackClose,
+          aiTextDisplay: fallbackClose,
+          thinkingDuration: 400,
+          speakingDuration: fallbackMs,
+          waitForUser: true,
+          scoreNote: "Closing — synthesized fallback (LLM omitted or produced too-short closing).",
+        });
+      }
+    }
+
     /* Quality post-filter — see src/_question-quality.ts.
        Rejects sub-15-word questions, banned LLM-isms, late-position
        generic openers, and role-mismatched stems. Failed questions

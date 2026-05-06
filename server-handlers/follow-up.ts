@@ -523,7 +523,17 @@ RULES:
 - OFFERS GO UP ONLY: Every offer >= your initial offer. But never offer MORE than the candidate asked for.
 - Near maxStretch: "That's at the top of my authority. Let me check with leadership on ₹X."
 - Tone: Real Indian hiring manager — professional, warm, direct. 2-4 sentences. Use ₹ and LPA.
-- Stay in character. Never give coaching tips.`;
+- Stay in character. Never give coaching tips.
+
+SCOPE FENCE — THIS IS A SALARY NEGOTIATION, NOT A BEHAVIORAL OR TECHNICAL INTERVIEW.
+The candidate has ALREADY been offered the role. The interview's only job now is to close the package. Therefore:
+- DO NOT ask about past projects, work history, or "tell me about a time you…" stories
+- DO NOT ask "walk me through what you've done in the last 6-12 months" — that's a behavioral probe, not a negotiation move
+- DO NOT ask about technical depth, design process, system design, or domain expertise
+- DO NOT ask "what would you bring to the role" / "build your X muscle" / "show me your impact" / "demonstrate your skills" — none of that is on the table at this stage
+- DO NOT pivot to "how would you approach problem Y" or "what's your experience with Z"
+
+ALLOWED topics ONLY: salary numbers (base / variable / ESOPs / joining bonus), expectations and reasoning behind them, current CTC, competing offers, market data, equity terms (vesting / cliff / strike), benefits (health / learning / flex / WFH), notice period and joining timeline, leadership-approval check-ins, deal close. If you find yourself drafting a question about something OTHER than these topics, rewrite — you are off-script.`;
     } else if (safeDepth === 0) {
       depthInstructions = `Analysis of candidate's answer:
 - Word count: ${wordCount} ${isShort ? "(SHORT — likely needs follow-up)" : "(adequate length)"}
@@ -863,15 +873,27 @@ Respond JSON only:
          parse since the candidate may have stated their target in an
          earlier turn). Patch any drift. */
       if (candidateTarget && candidateTarget > 0 && clamped) {
-        const targetEchoRe = /((?:your|the\s+candidate'?s?|their)\s+target(?:\s+of)?|you'?re\s+(?:looking\s+for|asking\s+for|targeting|aiming\s+for|hoping\s+for)|you\s+(?:want|need)|you\s+mentioned\s+(?:wanting|needing)?)\s+(?:a\s+(?:salary|target|number|figure)\s+of\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi;
+        /* Round-3 expansion: the previous regex caught "your target of
+           ₹N" / "you're looking for ₹N" but missed the most common
+           drift pattern — "I heard ₹N from you" / "you mentioned ₹N" /
+           "your expectation of ₹N" / "you said ₹N". User reported a
+           session where they said 48 LPA and the AI replied "I heard
+           ₹38 LPA from you" — the new patterns below catch this. */
+        const targetEchoRe = /((?:your|the\s+candidate'?s?|their)\s+(?:target|expectation|ask|number|figure|ballpark)(?:\s+of)?|(?:i\s+)?heard\s+(?:you\s+say\s+)?(?:₹?\s*)?(?=\d)|you\s+mentioned|you\s+said|you\s+stated|you\s+shared|you\s+told\s+me|you\s+gave\s+me|you'?re\s+(?:looking\s+for|asking\s+for|targeting|aiming\s+for|hoping\s+for|expecting)|you\s+(?:want|need|expect))\s+(?:a\s+(?:salary|target|number|figure|package)\s+of\s+)?(?:around\s+|about\s+|roughly\s+|approximately\s+|from\s+you\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
         let teMatch: RegExpExecArray | null;
         while ((teMatch = targetEchoRe.exec(clamped)) !== null) {
           const echoedTarget = parseFloat(teMatch[2]);
+          if (!Number.isFinite(echoedTarget) || echoedTarget <= 0) continue;
+          // Skip if the echoed value happens to match the AI's own previous
+          // offer or initial offer — the AI may legitimately reference its
+          // own numbers in a sentence that the regex captures broadly.
+          if (canonicalInitialOffer !== null && Math.abs(echoedTarget - canonicalInitialOffer) < 0.5) continue;
+          if (highestOfferMade && Math.abs(echoedTarget - highestOfferMade) < 0.5) continue;
           // Tolerance: 0.5 LPA — anything further off is a misattribution.
           if (Math.abs(echoedTarget - candidateTarget) > 0.5) {
             console.warn(`[follow-up] Target echo mismatch: candidate target=${candidateTarget}, AI echoed as ${echoedTarget} — patching`);
             const fixed = teMatch[0].replace(
-              /₹?\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?)/i,
+              /₹?\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore)/i,
               `₹${candidateTarget} LPA`,
             );
             clamped = clamped.replace(teMatch[0], fixed);
