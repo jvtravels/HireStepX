@@ -181,9 +181,15 @@ describe("retrieveReferenceQuestions", () => {
 
 /* ─── Prompt formatting ──────────────────────────────────────────── */
 describe("formatReferencesForPrompt", () => {
-  it("returns empty string when no matches", () => {
+  it("emits a tier-4 grounding warning when no matches (was empty pre-2026-Q2)", () => {
+    /* Tier-4 used to return "" — silent. The LLM still got the
+       (company, role, focus) but no reference block, and would happily
+       fabricate company-specific detail. Now we explicitly tell the LLM
+       it's flying blind so it stays generic. */
     const out = formatReferencesForPrompt({ entries: [], tier: 4, hasMatches: false });
-    expect(out).toBe("");
+    expect(out).toMatch(/tier 4/);
+    expect(out).toMatch(/no verified reference questions/i);
+    expect(out).toMatch(/DO NOT invent/);
   });
 
   it("includes the 'do not copy verbatim' instruction inline", () => {
@@ -206,6 +212,32 @@ describe("formatReferencesForPrompt", () => {
       company: "TCS", roleFamily: "writer", focus: "system-design",
     }));
     expect(t3).toMatch(/tier 3/);
+  });
+
+  it("includes tier-aware grounding warnings on tier 2 and tier 3 results", () => {
+    /* The grounding warnings are the load-bearing anti-hallucination
+       guard — they explicitly tell the LLM these references belong to
+       a peer company / different role and that it must NOT carry over
+       company-specific facts. */
+    const t2 = formatReferencesForPrompt(retrieveReferenceQuestions({
+      company: "TCS", roleFamily: "pm", focus: "case-study",
+    }));
+    expect(t2).toMatch(/GROUNDING NOTE/);
+    expect(t2).toMatch(/peer companies/i);
+    expect(t2).toMatch(/DO NOT carry over/i);
+
+    const t3 = formatReferencesForPrompt(retrieveReferenceQuestions({
+      company: "TCS", roleFamily: "writer", focus: "system-design",
+    }));
+    expect(t3).toMatch(/GROUNDING NOTE/);
+    expect(t3).toMatch(/different role family/i);
+
+    /* Tier 1 (exact match) should NOT emit a grounding warning —
+       the references genuinely apply, no need to caveat. */
+    const t1 = formatReferencesForPrompt(retrieveReferenceQuestions({
+      company: "Flipkart", roleFamily: "pm", focus: "case-study",
+    }));
+    expect(t1).not.toMatch(/GROUNDING NOTE/);
   });
 
   it("includes the question text and any style note", () => {

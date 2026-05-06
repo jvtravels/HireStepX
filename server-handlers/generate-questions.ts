@@ -428,6 +428,31 @@ When the resume's apparent role MATCHES ${targetRole} (no pivot), skip directive
       ? `\nRESUME GROUNDING (mandatory): at least ONE question (Q2 or Q3) MUST reference a specific detail from the candidate's resume — a past role, a project, a company name, or a specific skill they listed. Phrasing like "I see you led X at Y — tell me about..." or "You list <skill> on your resume — walk me through where you applied it." This makes the AI feel like an interviewer who actually read the resume, not a generic question generator. CRITICAL: only reference details that are explicitly present in the resume text/skills/intelligence above. Never invent a company, title, project, or metric that isn't there.${rolePivotGuard}`
       : rolePivotGuard;
 
+    /* GLOBAL GROUNDING RULES (always-on hallucination guard).
+       These are universal — they apply to every interview type and
+       every focus. Resume / role-pivot / tier directives layer on top.
+       Order matters: this block goes BEFORE focus-specific guidance so
+       focus instructions can refer to it ("when describing the company,
+       follow GROUNDING RULES above"). */
+    const groundingRulesDirective = `
+GROUNDING RULES (mandatory — applies to EVERY question and interjection):
+
+1. COMPANY FACTS: If a fact about ${companyName || "the target company"} is not explicitly present in the company-guidance text or the reference questions provided in this prompt, DO NOT invent it. This includes: transaction volumes, user counts, revenue numbers, founder names, recent news, internal team sizes, specific product names not in your context, internal codenames, recent layoffs, board composition. When you would normally cite a number you don't have, use a generic descriptor instead ("a major Indian unicorn", "a high-scale payments product", "millions of users") OR ask the candidate ("you've worked there — what's the rough scale?").
+
+2. NUMBERS: All scale numbers (txn/day, ARR, headcount, latency targets) must come from the provided context or be presented as the candidate's hypothetical to design against. Phrasing like "design a system handling 10B txn/day" is fine when YOU set the constraint as a hypothetical. Phrasing like "${companyName || "this company"} handles 10B txn/day" is FORBIDDEN unless that number is in the context.
+
+3. PEOPLE: Never name specific real employees, founders, executives, or board members of ${companyName || "the company"}. Generic interviewer roles ("the hiring manager", "your director", "a senior PM on the team") are fine.
+
+4. RECENT EVENTS: No references to specific recent news, funding rounds, IPOs, controversies, leadership changes, layoffs, or product launches unless explicitly listed in the context. The candidate may know these are wrong; one fabricated "fact" destroys trust for the rest of the session.
+
+5. UNCERTAINTY ACKNOWLEDGEMENT: If the candidate asks for a company-specific detail you weren't given, do NOT invent it. Acceptable responses: "I'd want to ground this in their actual numbers — what does the candidate know?" / "Let's design against a hypothetical, then you can calibrate to your reality." / "I don't have that specific number — let's stay at the architecture level."
+
+6. STYLE-NOTE COMPLIANCE: When reference questions include "[pattern: ...]" annotations, use them ONLY to calibrate question STYLE and DEPTH. Do NOT extract company-specific facts from a tier-2/3 reference (those facts belong to a peer company, not the candidate's target).
+
+7. SALARY NUMBERS: For salary-negotiation interviews, every band/offer/counter must come from the structured salary-research-notes block. Do not invent comp numbers outside the provided ranges.
+
+Violations of these rules cause more candidate drop-off than any other failure mode. When in doubt, stay generic and ask, rather than inventing.`;
+
     const panelNote = interviewType === "panel"
       ? `\nThis is a PANEL interview with three panelists. Include a "persona" field in EVERY question object.
 Panelist roles, topics, AND distinct personalities (tone matters — they should sound like different people):
@@ -470,7 +495,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const referenceBlock = formatReferencesForPrompt(retrievalResult);
 
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
