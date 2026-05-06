@@ -572,13 +572,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           client.auth.getSession().catch(() => { /* fire-and-forget */ });
         }
         if (session) {
-          // Block unverified email users — sign them out immediately
-          // Google OAuth users are always verified; email/password users must pass our custom verification
-          // Exception: allow sessions on /reset-password so users can complete password reset
+          // Block unverified email users — sign them out immediately.
+          // Google OAuth users are always verified; email/password users
+          // must pass either our custom verification flow OR Supabase's
+          // native email_confirmed_at (set when they click the
+          // confirmation link Supabase auto-sends on signUp).
+          // See login() for the longer rationale.
+          // Exception: allow sessions on /reset-password so users can complete password reset.
           const isGoogleUser = session.user.app_metadata?.provider === "google" || session.user.app_metadata?.providers?.includes("google");
           const customVerified = session.user.user_metadata?.custom_email_verified === true;
+          const supabaseConfirmedRestore = !!session.user.email_confirmed_at;
           const isOnResetPage = window.location.pathname === "/reset-password";
-          if (!isGoogleUser && !customVerified && !isOnResetPage) {
+          if (!isGoogleUser && !customVerified && !supabaseConfirmedRestore && !isOnResetPage) {
             console.warn("[auth] unverified email session found — signing out");
             setUser(null);
             await client.auth.signOut().catch(() => {});
@@ -715,10 +720,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // On the reset-password page, allow unverified users to maintain their session
         const isOnResetPage = window.location.pathname === "/reset-password";
         if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-          // Block unverified email users from establishing a session (except on reset-password page)
+          // Block unverified email users from establishing a session
+          // (except on reset-password page). Accept either our custom
+          // flag or Supabase's native email_confirmed_at — see login()
+          // for rationale.
           const isGoogleProvider = session.user.app_metadata?.provider === "google" || session.user.app_metadata?.providers?.includes("google");
           const customVerifiedEvent = session.user.user_metadata?.custom_email_verified === true;
-          if (!isGoogleProvider && !customVerifiedEvent && !isOnResetPage) {
+          const supabaseConfirmedEvent = !!session.user.email_confirmed_at;
+          if (!isGoogleProvider && !customVerifiedEvent && !supabaseConfirmedEvent && !isOnResetPage) {
             console.warn("[auth] onAuthStateChange: unverified email — signing out");
             setUser(null);
             await client.auth.signOut().catch(() => {});
@@ -1088,14 +1097,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: error.message };
     }
 
-    // Block login if email is not verified via our custom verification flow
+    /* Email-verification gate.
+       User reported: signed up → received verification email → clicked
+       link → tried to log in → "Your email isn't verified yet."
+       Root cause: the gate only accepted user_metadata.custom_email_verified
+       (set by /api/verify-email when our HMAC-token email is clicked).
+       But Supabase's own auth flow ALSO sends a confirmation email
+       when "Confirm email" is enabled in the project settings — and
+       when a user clicks THAT link, only Supabase's native
+       email_confirmed_at gets set; our custom_email_verified flag is
+       never touched. The gate then blocked a legitimately-verified
+       user.
+       Fix: accept either signal as proof of verification. If only
+       email_confirmed_at is present (user clicked Supabase's link),
+       opportunistically backfill custom_email_verified=true so future
+       logins are fast and any code reading the custom flag still
+       works. */
     const isGoogle = data?.user?.app_metadata?.provider === "google" || data?.user?.app_metadata?.providers?.includes("google");
     const customVerifiedLogin = data?.user?.user_metadata?.custom_email_verified === true;
-    if (data?.user && !isGoogle && !customVerifiedLogin) {
+    const supabaseConfirmed = !!data?.user?.email_confirmed_at;
+    const isVerified = isGoogle || customVerifiedLogin || supabaseConfirmed;
+    if (data?.user && !isVerified) {
       // Sign out immediately — user should not have a session
       await client.auth.signOut();
       setUser(null);
       return { success: false, error: "Email not confirmed" };
+    }
+    // Opportunistic backfill: if Supabase's native flow verified the
+    // email but our custom flag is missing, write it now. Fire-and-
+    // forget — failure is non-fatal; the gate above already accepted
+    // them on the email_confirmed_at signal.
+    if (data?.user && supabaseConfirmed && !customVerifiedLogin && !isGoogle) {
+      client.auth.updateUser({ data: { custom_email_verified: true } })
+        .catch((err) => console.warn("[auth] backfill custom_email_verified failed:", err?.message));
     }
 
     // Successful login — clear lockout counter (client + server)
