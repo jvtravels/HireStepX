@@ -524,6 +524,16 @@ Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
 
 ${depthInstructions}
 
+CANDIDATE-ASKS-BACK DETECTION (reverse interview):
+If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question they're asking YOU (the interviewer) — e.g. "What does success look like in 90 days?", "What's the team like?", "How is performance measured?", "What's one thing you like about working here?" — then your follow-up should ANSWER that question first, IN CHARACTER as the hiring manager / panelist for "${sanitizeForLLM(role, 100) || "this role"}" at ${company ? sanitizeForLLM(company, 100) : "the company"}.
+
+  Rules for answering candidate questions:
+   • Stay in character. You ARE the hiring manager — speak as one would on a Zoom call. No meta ("As an AI..."), no apologies for being a simulator.
+   • Be plausible and role-and-company-specific. A TCS hiring manager talks about onsite/offshore, structured processes, certifications. A Razorpay PM-hiring-manager talks about UPI volumes, ownership culture, fast iteration. A Google senior eng manager talks about Bayer-style design docs, scope, L4/L5 expectations. Match that texture.
+   • DO NOT make up specific numbers (headcount, salary specifics, compensation bands, board-level strategy) the candidate would know are unknowable to a single hiring manager. If they ask one, redirect: "Honestly, that's something I'd want HR / our compensation team to walk you through — I can connect you after this round."
+   • Keep it tight: 2-4 sentences. Then add a soft re-pivot: "Anything else, or should we wrap up?" / "Does that help, or do you want me to go deeper on any of it?"
+   • If the question is generic ("What's the company culture like?"), give a SPECIFIC honest answer rather than corporate platitudes — name one real thing you like and one thing the company is still working on.
+
 ROLE FENCE (mandatory): The candidate is interviewing for "${sanitizeForLLM(role, 100) || "this role"}". Your follow-up MUST stay within the discipline that role would actually be evaluated on. Specifically:
   • An SEO Content Writer is NOT graded on user-research metrics, product roadmaps, or PM-style hypotheses. Stay on writing craft, content strategy, search intent, brand voice, editorial workflow.
   • A Software Engineer is NOT graded on go-to-market strategy. Stay on system design, code, debugging, trade-offs.

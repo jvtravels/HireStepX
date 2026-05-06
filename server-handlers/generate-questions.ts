@@ -6,6 +6,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sa
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
+import { formatRecipe } from "../data/focus-question-recipes";
 import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
 import { matchCompanyKey } from "../data/company-guidance";
@@ -365,7 +366,16 @@ If unclear, default to IAS-style interview tone.`,
 - SKEPTICAL POSTURE: don't accept confidently wrong answers. If a candidate says something dubious (e.g. "Kafka is stateless" or "Postgres can't scale beyond 1TB"), gently challenge: "Hmm — say more about what you mean by that. I want to make sure I follow."
 - STACK CALIBRATION: read the candidate's resume + role to infer their stack. A backend Java engineer should get JVM/Spring/microservices questions, not React. A frontend engineer should get rendering performance, state management, browser internals — not Kubernetes. A data engineer should get pipelines, schema design, query optimization. Tailor questions to the actual stack signaled by the resume; don't generate generic "system design at scale" if the candidate has only frontend experience.`,
     };
-    const typeGuidance = TYPE_GUIDANCE[interviewType] || "";
+    /* Focus-specific recipe — composed from the question-taxonomy.
+       This lives ALONGSIDE the focus's TYPE_GUIDANCE rather than
+       replacing it. TYPE_GUIDANCE handles arc/persona-level rules
+       (e.g. case-study's FRAME→QUANTIFY→SYNTHESIZE shape, panel
+       persona distribution); the recipe handles category mix +
+       per-category intent + signals + paraphrase-able stems.
+       Source: data/question-taxonomy.ts (18 + 4 categories) and
+       data/focus-question-recipes.ts (per-focus mix). */
+    const recipeFragment = formatRecipe(interviewType);
+    const typeGuidance = (TYPE_GUIDANCE[interviewType] || "") + recipeFragment;
 
     // Cross-cutting: when a resume is available, at least one question MUST cite
     // a specific detail from it. Generic questions feel canned even when they're
