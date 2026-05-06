@@ -680,10 +680,15 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "grey group": "it-services",
   tbwa: "it-services",
   "saatchi & saatchi": "it-services",
-  schbang: "startup-growth",
-  watconsult: "startup-growth",
-  foxymoron: "startup-growth",
-  kinnect: "startup-growth",
+  // Indian digital / creative agencies — pay closer to IT-services
+  // than to product startups. AmbitionBox 2025 has Product Designers
+  // here at ₹3.9–5.4 LPA (1–5 yrs), Design Leads at ₹7.5–9.8 LPA.
+  // Mis-tiering as "startup-growth" was producing ₹18 LPA initial
+  // offers — well above market and above even the upper band.
+  schbang: "it-services",
+  watconsult: "it-services",
+  foxymoron: "it-services",
+  kinnect: "it-services",
   groupm: "it-services",
   "madison world": "it-services",
 

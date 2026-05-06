@@ -1578,10 +1578,18 @@ export function useInterviewEngine() {
     const isLastStep = currentStep >= interviewScript.length - 1;
 
     // Generate micro-feedback with dynamic difficulty awareness.
-    // Skipped answers ("[SKIPPED — reason: …]") and stub recordings should not
-    // produce coaching tips — they're not real attempts.
+    // Skipped answers ("[SKIPPED — reason: …]") and stub recordings should
+    // not produce coaching tips — they're not real attempts. We also
+    // suppress feedback when the *just-asked* step was an intro (opener
+    // exchange like "Yes, let's get started") or a closing — neither
+    // turn is a substantive answer, so a "Share more detail…" tip is
+    // worse than nothing.
+    const justAskedType = interviewScript[currentStep]?.type;
+    const skipMicroFeedback =
+      justAskedType === "intro" || justAskedType === "closing";
     setMicroFeedback(null);
     if (
+      !skipMicroFeedback &&
       answerText.length > 10 &&
       !answerText.startsWith("[Answer recorded") &&
       !answerText.startsWith("[SKIPPED")

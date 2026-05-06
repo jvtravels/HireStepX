@@ -14,7 +14,7 @@ import {
   CanvasMuteToggle, CanvasCameraToggle, CanvasAvatar,
   CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
   CanvasEditorialHeading,
-  CanvasQuestionText, CanvasHintBubble, CanvasTextLink,
+  CanvasHintBubble, CanvasTextLink,
   CanvasMetaRow, CanvasEndButton, CanvasSelfViewTile,
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
@@ -1171,11 +1171,11 @@ function InterviewInner() {
                 <CanvasPlainHeading>{displayText}</CanvasPlainHeading>
               );
             })()}
-            {step?.scoreNote && phase !== "thinking" && (
-              <div style={{ marginTop: 12 }}>
-                <CanvasQuestionText>{step.scoreNote}</CanvasQuestionText>
-              </div>
-            )}
+            {/* scoreNote is internal evaluator metadata — kept on the step
+                for downstream eval/report but never rendered in the live
+                interview. (Was leaking lines like "Salary negotiation
+                response — evaluate negotiation strategy" and "Closing —
+                synthesized fallback (LLM omitted…)" to candidates.) */}
           </div>
           );
         })()}

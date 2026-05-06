@@ -248,7 +248,7 @@ YOUR GOAL: PROACTIVELY suggest creative trade-offs, don't just describe benefits
 YOUR GOAL: Close the deal NOW at the current offer level. Do NOT raise the offer further unless absolutely necessary.
 - If they seem close: "I genuinely want to close this today. I have one other strong candidate at final stage, and the headcount approval expires end of month. What do I need to do to get a yes?"
 - If still pushing: present FINAL offer — but keep it at or slightly above your last offer, NOT at maxStretch. "Here's my absolute best: ₹X base, ₹Y variable, ₹Z joining bonus. Total: ₹W LPA. This is genuinely the top of what I can do."
-- If they mention notice period: "What's your notice? If it's 60+ days, I'll add a ₹X buyout bonus for joining within 30. Can you negotiate with your current employer?"
+- If they mention notice period: "What's your notice? If it's 60+ days, I'll add a ₹X buyout bonus for joining within 30. Can you negotiate with your current employer?" (HARD RULE: ₹X here is a NOTICE BUYOUT — formula is roughly (notice_days ÷ 30) × monthly_base × 1.5. Realistic range ₹1–3 LPA. NEVER use the full annual CTC. Never reuse the offer total. If unsure, write ₹1.5 LPA.)
 - If they want time to think: don't panic — "Of course. I respect that. Can we touch base by [specific day]? I'll hold the offer till then, but I should be transparent — I can't guarantee the same terms after [date] because budget cycles."
 - If they're asking questions (good sign): answer warmly, then close — "Great questions. So now that you have the full picture — are we ready to move forward?"
 - Explicit confirmation: ALWAYS end with a clear ask — "So just to confirm — are we agreed on ₹X total, with [key terms]? I want to make sure we're aligned before I send this to HR."`,
@@ -935,6 +935,38 @@ Respond JSON only:
       });
 
       parsed.followUpText = clamped;
+
+      /* Notice-buyout sanity cap. Real-world bug: LLM produced
+         "I'll add a ₹18 LPA buyout bonus for joining within 30" —
+         using the full annual CTC as a notice buyout. A notice
+         buyout is (notice_days ÷ 30) × monthly_base × ~1.5x, almost
+         always ₹1–3 LPA. Anything ≥ ₹5 LPA in a buyout phrase is
+         the model misreading "X" as the offer total. Cap to ₹1.5. */
+      const buyoutCapRe = /(buyout(?:\s+bonus)?|joining\s+within\s+30)/i;
+      parsed.followUpText = parsed.followUpText.replace(
+        /₹\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?)\s*(buyout(?:\s+bonus)?)/gi,
+        (full: string, amtStr: string, unit: string, label: string) => {
+          const amt = parseFloat(amtStr);
+          if (Number.isFinite(amt) && amt >= 5) {
+            console.warn(`[follow-up] Buyout cap: ${amt} ${unit} → 1.5 LPA (label="${label}")`);
+            return `₹1.5 ${unit} ${label}`;
+          }
+          return full;
+        },
+      );
+      // Also catch the inverted phrasing: "buyout … of ₹X LPA"
+      parsed.followUpText = parsed.followUpText.replace(
+        /(buyout(?:\s+bonus)?\s+(?:of|for|at)?\s*)₹\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?)/gi,
+        (full: string, lead: string, amtStr: string, unit: string) => {
+          const amt = parseFloat(amtStr);
+          if (Number.isFinite(amt) && amt >= 5) {
+            console.warn(`[follow-up] Buyout cap (inverted): ${amt} ${unit} → 1.5 LPA`);
+            return `${lead}₹1.5 ${unit}`;
+          }
+          return full;
+        },
+      );
+      void buyoutCapRe;
     }
 
     // Intent-mismatch validator: catch cases where LLM ignores the detected intent
