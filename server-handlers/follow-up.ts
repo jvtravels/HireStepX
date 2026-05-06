@@ -375,6 +375,23 @@ TARGET WORD BINDING: Whenever you refer to "your target", "the candidate's targe
         ? `\n${INDUSTRY_PACKAGE_CONTEXT[industry.toLowerCase()]}`
         : "";
 
+      // Role-family-specific compensation levers. Salary-neg felt
+      // role-agnostic in production sessions — the AI offered the
+      // same generic "ESOPs, joining bonus, learning budget" to a
+      // product designer that it would to a backend engineer. Real
+      // hiring managers reach for craft-specific levers.
+      const roleLower = (role || "").toLowerCase();
+      let roleFamilyLevers = "";
+      if (/(?:product designer|ui designer|ux designer|visual designer|interaction designer|design lead|design manager|product design)/i.test(roleLower)) {
+        roleFamilyLevers = "\nROLE-SPECIFIC LEVERS (design): when negotiating beyond base, prioritize design-craft levers: (a) annual conference budget (Config / Awwwards / FigJam world / IxDA — ₹50K–1.5L); (b) design-tool stipend (Figma seat, Adobe CC, Mobbin, Maze — ₹30K–80K); (c) portfolio / IP rights (the candidate retains rights to publish work after embargo); (d) design-system or research ownership (a named scope, not just IC work); (e) headphones / monitor / hardware refresh budget. Avoid offering generic 'learning budget' when one of these would land harder.";
+      } else if (/(?:engineer|developer|sde|swe|backend|frontend|full ?stack|sre|devops|platform)/i.test(roleLower)) {
+        roleFamilyLevers = "\nROLE-SPECIFIC LEVERS (engineering): prioritize (a) on-call / pager comp (if applicable); (b) hardware budget (laptop spec, monitors, ergonomic chair — ₹1–2L); (c) cloud / API credits for side projects; (d) conference budget (KubeCon / re:Invent / GopherCon — ₹1–2L); (e) protected learning time (1 day / week or 10% time); (f) tech-lead vs IC-only path clarity. Avoid generic 'flexibility' when a real lever fits.";
+      } else if (/(?:product manager|pm\b|product lead|associate product)/i.test(roleLower)) {
+        roleFamilyLevers = "\nROLE-SPECIFIC LEVERS (product management): prioritize (a) named ownership scope (a real product surface, not 'a feature'); (b) data / analytics tool stipend (Amplitude / Mixpanel / Heap personal seats); (c) customer-research budget (user-interview compensation pool); (d) executive-sponsor / cross-functional access; (e) external speaking allowance. PMs care about scope and access more than perks.";
+      } else if (/(?:data scientist|data engineer|ml engineer|machine learning|analyst)/i.test(roleLower)) {
+        roleFamilyLevers = "\nROLE-SPECIFIC LEVERS (data / ML): prioritize (a) GPU / compute credits for personal experimentation; (b) Kaggle / NeurIPS / ICML conference budget; (c) protected research time; (d) publication / patent rights; (e) named dataset ownership. Generic 'flexibility' lands flat for this audience.";
+      }
+
       // Intent detection + salary-number extraction extracted into
       // ./_follow-up-helpers.ts so the regex rules can be unit-tested.
       const intent = detectCandidateIntent(answer);
@@ -520,7 +537,7 @@ You may STILL ask about notice period, joining timeline, or remaining concerns �
 
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
 ${intentBanner}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
-${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${scenarioCtx}
+${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
 ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}

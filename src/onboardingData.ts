@@ -659,7 +659,7 @@ const COMPANY_SUGGESTIONS_RAW = [
   "Lextant", "Peer Insight", "Stone Mantel", "Reach Advisors",
   // ─── Design Agencies — India (product, UX, brand, service design) ───
   "Lollypop Design Studio", "ItsDart (Dart Design)", "Tutams", "Studio Nudge",
-  "Nilenso", "Obvious", "ChaiOne India", "ThinkDesign India",
+  "Nilenso", "Obvious", "ChaiOne India",
   "Lemon Yellow", "Codewave", "Maddy's Mind", "DesignStringer",
   "Umbrella Design", "Elephant Design", "Codesign", "Tessella",
   "Ticket Design", "Beardesign", "Onio Design", "Ideogram Design",
@@ -675,13 +675,42 @@ const COMPANY_SUGGESTIONS_RAW = [
   "Mindtree Design Studio (NxT)", "ThoughtWorks Design",
   // India design studios (additions)
   "Idiom Design", "Almond Branch", "DesignSutra", "Furrow", "Mobikasa",
-  "HUEMN", "Robosoft Design", "Plinth", "DesignBoat", "Studio Tilt",
+  "HUEMN", "Plinth", "DesignBoat", "Studio Tilt",
   "Mind The Gap", "Spring Marketing Capital", "Niveus Solutions",
   "Sideways Consulting", "Rangframework", "Almond Solutions",
   "Borderless Access", "Lattice India", "DesignQandA", "Whitelight Studio",
   "Studio Bigfat", "Threadsol", "Saralee Designs", "Prophets Inc India",
   "Browser Stack Design", "InVideo Design", "Postman Design",
   "Razorpay Design", "Zomato Design", "Swiggy Design",
+  // India design studios (Nov 2025 additions — UX/product design boutiques)
+  // Bangalore — primary
+  "Lollypop Design Studio", "F1Studioz", "NetBramha Studios", "Pepper Square",
+  "GeekyAnts", "HumanX", "Thence", "Red Baton", "GoodWorkLabs", "GoProtoz",
+  "Origin UX Studio", "Studio Graphene", "Atoll Solutions", "Rillusion",
+  "Futuristic Labs Design", "SimplePlan", "Parallel Labs", "ZEUX Innovation",
+  "Robosoft Technologies",
+  // Mumbai
+  "ProCreator", "Yellow Slice", "Fractal Ink", "Ungrammary", "Yellowchalk",
+  "TECHVED Consulting", "Userfacet", "Silverscoop", "ScreenRoot",
+  "Interactive Avenues", "Lights Out Studio", "Think Design",
+  // Pune
+  "YUJ Designs", "Monsoonfish", "Koru UX Design", "Extentia",
+  // Hyderabad
+  "Divami Design Labs", "PurpleTalk", "Inovies", "Fission Labs Design",
+  "Tvisha Technologies", "Digital Shout",
+  // Ahmedabad
+  "Octet Design Studio", "Codal India", "Communication Crafts",
+  "Aubergine Solutions", "TatvaSoft Design", "Shaligram Infotech Design",
+  "Pixlogix",
+  // NCR (Delhi / Gurgaon / Noida)
+  "Sparklin", "Quovantis", "Neuronimbus", "Kreativ Street Design",
+  "Onething Design",
+  // Chennai
+  "Ionixx Technologies", "LatentView Design Team", "Hakuna Matata Solutions",
+  // Kerala (Trivandrum / Kochi)
+  "Aufait UX", "WowMakers",
+  // Other
+  "Capital Numbers", "Konstant Infosolutions", "Upclues", "Netclues",
   // ─── Advertising / Creative Agencies — India ───
   "Ogilvy India", "Leo Burnett India", "JWT India (Wunderman Thompson)",
   "McCann Worldgroup India", "DDB Mudra Group", "BBDO India",

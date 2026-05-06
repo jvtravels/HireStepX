@@ -208,6 +208,13 @@ ${isSalaryNeg ? `${negotiationContext ? `NEGOTIATION CONTEXT (use these numbers 
 - Highest offer made during negotiation: ₹${negotiationContext.highestOfferMade || "unknown"} LPA
 - Negotiation style faced: ${negotiationContext.negotiationStyle || "cooperative"}
 NOTE: The candidate faced an AI hiring manager. Evaluate their STRATEGY and TECHNIQUE, not the outcome (which depends on the AI). A candidate who negotiated well but didn't get the max number should still score high if their approach was sound.
+${
+  typeof negotiationContext.initialOffer === "number" &&
+  typeof negotiationContext.highestOfferMade === "number" &&
+  Math.abs(negotiationContext.initialOffer - negotiationContext.highestOfferMade) < 0.5
+    ? "AI-NO-COUNTER FLAG: The hiring manager never raised the offer above the initial number during this session. Do NOT penalize the candidate's concessionStrategy or closingTechnique scores for this — the AI never gave them a counter to react to. Score those competencies based on what the candidate ATTEMPTED (asked for a counter, traded levers, set deadline) rather than the absent AI response. Note this gap honestly in feedback so the candidate understands the score isn't on them."
+    : ""
+}
 ` : ""}Negotiation Skill Analysis: For each answer, evaluate these FIVE core negotiation competencies:
 1. ANCHORING: Did they state a number with market justification (levels.fyi, Glassdoor, AmbitionBox)? Or just throw out a number? Or reveal current salary without leverage? Did they anchor high enough relative to the role?
 2. PACKAGE THINKING: Did they negotiate beyond base (equity, bonus, relocation, flexibility, learning budget)? Did they think in total comp? Did they explore depth on topics (not just mention them)?

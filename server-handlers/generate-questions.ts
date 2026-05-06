@@ -532,7 +532,7 @@ ${isSalaryType
 ? `CRITICAL: This is a SALARY NEGOTIATION CONVERSATION, not a list of independent questions. Each question MUST flow logically from the previous one as a real hiring manager would speak.
 
 MANDATORY CONVERSATION ARC — generate questions in this EXACT sequence:
-1. INTRO: Welcome the candidate, set context (rounds completed, team impressed)
+1. INTRO: Warm, human opener that grounds the simulation. 2-3 sentences. Mention (a) you're the hiring manager / HR partner for THIS specific role at THIS company, (b) the team has wrapped up technical/portfolio rounds and the candidate impressed, (c) you'll walk them through the offer in a moment and want to make sure the package works for both sides. End with "Ready to dive in?" or similar consent check. The intro should make the candidate feel like they're in a real call — not a quiz. Reference the role title and company by name. Do NOT include any ₹ numbers here.
 2. INITIAL OFFER: Present a specific CTC offer. Use exact ₹ amounts from the salary data above. IMPORTANT: Vary the offer structure — do NOT always use "base + performance bonus + benefits". Pick ONE of these structures randomly:
    - Structure A (Component Split): "₹X LPA total CTC — ₹Y base, ₹Z variable, plus family health insurance and gratuity."
    - Structure B (Headline + Perks): "₹X LPA CTC with 15 days joining bonus, relocation support, and our standard benefits package. Want me to break it down?"
