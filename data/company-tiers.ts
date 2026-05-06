@@ -608,6 +608,104 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   inmobi: "saas-product",
   aerospike: "saas-product",
 
+  // Design agencies — global tier (top brand/product/UX firms).
+  // Compensation profile is closer to consulting-big4 than tech: senior
+  // ICs land ₹35-70L, juniors ₹8-18L. Equity is rare; bill rates drive
+  // negotiation leverage.
+  ideo: "consulting-big4",
+  "frog design": "consulting-big4",
+  frog: "consulting-big4",
+  pentagram: "consulting-big4",
+  landor: "consulting-big4",
+  "wolff olins": "consulting-big4",
+  interbrand: "consulting-big4",
+  futurebrand: "consulting-big4",
+  "siegel+gale": "consulting-big4",
+  "r/ga": "consulting-big4",
+  rga: "consulting-big4",
+  akqa: "consulting-big4",
+  "huge inc": "consulting-big4",
+  huge: "consulting-big4",
+  "work & co": "consulting-big4",
+  metalab: "consulting-big4",
+  ustwo: "consulting-big4",
+  ueno: "consulting-big4",
+  designit: "consulting-big4",
+  fjord: "consulting-big4",
+  "accenture song": "consulting-big4",
+  "deloitte digital": "consulting-big4",
+  "mckinsey design": "consulting-mbb",
+  "bcg brighthouse": "consulting-mbb",
+  "ey-seren": "consulting-big4",
+  "code and theory": "consulting-big4",
+  instrument: "consulting-big4",
+  "big spaceship": "consulting-big4",
+
+  // Design agencies — India (services economics, mid-tier pay).
+  "lollypop design studio": "it-services",
+  lollypop: "it-services",
+  nilenso: "startup-growth",
+  obvious: "startup-growth",
+  "elephant design": "it-services",
+  "umbrella design": "it-services",
+  codesign: "it-services",
+  "onio design": "it-services",
+  "indi design": "it-services",
+  "studio lotus": "it-services",
+  "foley designs": "it-services",
+  "dy works": "it-services",
+  "quicksand design studio": "it-services",
+  quicksand: "it-services",
+  "studio carbon": "it-services",
+  "tata elxsi design": "it-services",
+  "infosys wongdoody": "it-services",
+  wongdoody: "it-services",
+
+  // Advertising / creative agencies — India
+  "ogilvy india": "it-services",
+  ogilvy: "it-services",
+  "leo burnett": "it-services",
+  "wunderman thompson": "it-services",
+  "mccann worldgroup": "it-services",
+  "ddb mudra": "it-services",
+  bbdo: "it-services",
+  "dentsu webchutney": "it-services",
+  "dentsu creative": "it-services",
+  webchutney: "it-services",
+  "lowe lintas": "it-services",
+  fcb: "it-services",
+  "fcb ulka": "it-services",
+  havas: "it-services",
+  publicis: "it-services",
+  "grey group": "it-services",
+  tbwa: "it-services",
+  "saatchi & saatchi": "it-services",
+  schbang: "startup-growth",
+  watconsult: "startup-growth",
+  foxymoron: "startup-growth",
+  kinnect: "startup-growth",
+  groupm: "it-services",
+  "madison world": "it-services",
+
+  // Animation / motion / VFX studios
+  buck: "consulting-big4",
+  manvsmachine: "consulting-big4",
+  "giant ant": "saas-product",
+  oddfellows: "saas-product",
+  "golden wolf": "saas-product",
+  animade: "saas-product",
+  "aardman animations": "saas-product",
+  "green gold animation": "it-services",
+  "toonz media": "it-services",
+  "reliance animation": "it-services",
+  "prana studios": "it-services",
+  "dq entertainment": "it-services",
+  "maya digital studios": "it-services",
+  "technicolor india": "it-services",
+  "mpc india": "it-services",
+  "double negative": "it-services",
+  dneg: "it-services",
+
   // Startup keywords
   "pre-seed": "startup-early",
   seed: "startup-early",
@@ -659,6 +757,7 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
   if (key.includes("consult")) return "consulting-big4";
   if (key.includes("edtech") || key.includes("education") || key.includes("learning")) return "edtech";
   if (key.includes("saas") || key.includes("software") || key.includes("tech")) return "saas-product";
+  if (key.includes("design studio") || key.includes("design agency") || key.includes("creative agency") || key.includes("brand consultancy") || key.includes("ux studio")) return "it-services";
   if (key.includes("services") || key.includes("solutions") || key.includes("infotech") || key.includes("technologies")) return "it-services";
   if (key.includes("fmcg") || key.includes("consumer") || key.includes("retail")) return "fmcg-mnc";
   if (key.includes("pharma") || key.includes("hospital") || key.includes("manufacturing")) return "fmcg-mnc";
