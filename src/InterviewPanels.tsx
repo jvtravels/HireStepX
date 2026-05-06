@@ -257,7 +257,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
         onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-          Skip · Enter
+          Continue · Enter
         </button>
       )}
     </div>
@@ -406,7 +406,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
         onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-          Skip · Enter
+          Continue · Enter
         </button>
       )}
     </div>

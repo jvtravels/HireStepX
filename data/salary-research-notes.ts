@@ -60,27 +60,40 @@ export const COMP_STRATEGY_NOTES = `MARKET INTELLIGENCE FOR THIS NEGOTIATION:
    opens at ₹22-35 LPA; at Google ₹40-50 LPA + RSUs. Quoting the
    wrong band breaks immersion immediately.
 
-2. ROLE FAMILY PREMIA (2025).
+2. ROLE FAMILY PREMIA (2026 update).
    Within the same company tier, role family changes the band:
 
-     • AI / ML / GenAI specialists — niche skill premium. ML
-       Engineer (3-5 YOE) opens at ₹20-50 LPA at unicorn tier;
-       generalist Backend Dev (3-5 YOE) opens at ₹14-35 LPA. India's
-       general tech market has cooled while specialised AI roles
-       remain in demand — pay accordingly.
+     • AI / ML / GenAI specialists — premium remains real but is
+       NORMALISING as supply grows. 2025-26 reality:
+         - GenAI / LLM / RAG / agentic-systems engineers: still
+           1.3-1.6x backend pay at same YOE. Senior GenAI specialists
+           ₹25-50 LPA at unicorn tier; outliers at top product cos
+           cross ₹1Cr+ TC including RSUs.
+         - Generic "ML Engineer" (classical models, BI-adjacent) —
+           premium is closing; now closer to 1.1-1.3x backend.
+         - Differentiator at senior level is now eval/MLOps/safety
+           skills, not "I have used PyTorch".
+       Open at 60-70th percentile for genuine GenAI/LLM specialists;
+       median for generic ML.
      • Senior Design (Senior Product Designer, Design Systems Lead,
        Design Manager) — pay depends on portfolio depth, business
        impact, design-systems ownership, stakeholder management. NOT
        on Figma skill. Senior PD at unicorn: ₹45-95 LPA, not ₹30 LPA.
      • Senior Eng (Staff Engineer, Principal Engineer) — at Big Tech
-       India, total comp 75th percentile is ₹79L+, 90th percentile
+       India 2026, 10-yr Staff at top product co targets ₹90-160 LPA
+       TC (base + bonus + RSU). 75th percentile ₹79L+, 90th percentile
        ₹1Cr+. RSUs are 30-50% of total. Don't ignore equity.
      • Sales — comp is FIXED + VARIABLE + COMMISSION, not a single
        CTC. A "₹20L role" is often ₹12L fixed + ₹8L variable. When
        discussing sales offers, separate the components explicitly.
-     • Senior PM (Group PM, Director, VP) — vary heavily by company.
-       PM at funded fintech / product company can be 2x-4x a PM at a
-       small services co.
+     • Senior PM (Group PM, Director, VP) at FAANG India — 5-8 YOE
+       PM ₹40-70 LPA cash + heavy RSU = ₹60L-1.5Cr TC. Director/VP
+       up to ₹3Cr. Tier-1 unicorns (Flipkart, PhonePe, Meesho, Zepto)
+       5-8 YOE PM: ₹28-50L cash + ESOP = ₹40-80L TC.
+     • Design agencies / ad agencies / VFX studios — services-firm
+       economics: senior IC ₹35-70L globally (IDEO/R/GA/AKQA tier),
+       India agency senior ₹15-35L. Equity rare; bill rates drive
+       leverage. Don't anchor to product-company bands here.
 
 3. EXPERIENCE-BUCKET CONVENTIONS.
    YOE buckets used across the market:
@@ -92,26 +105,55 @@ export const COMP_STRATEGY_NOTES = `MARKET INTELLIGENCE FOR THIS NEGOTIATION:
    entry bands to a 7-YOE candidate, regardless of how they answered
    "current CTC".
 
-4. EQUITY EXPECTATIONS BY TIER.
+4. EQUITY EXPECTATIONS BY TIER (2026 update).
    • IT Services / consulting / domestic BFSI — no equity for ICs.
      Don't mention RSUs/ESOPs.
-   • GCCs — RSUs in parent stock (Walmart, JPMC, Goldman). Vesting
-     usually 4-year with 1-year cliff.
+   • GCCs — RSUs in parent stock (Walmart, JPMC, Goldman, Apple,
+     Google, Microsoft, Adobe). Vesting usually 4-year with 1-year
+     cliff. GCCs delivered ~11.5% increments in 2026 vs 9.1% India
+     Inc avg; pay 15-22% premium over IT services for like-for-like
+     roles. The "salary race" is over — differentiation is now skill
+     mix (cloud/AI/security depth).
    • Big Tech — RSUs are a major component (20-40% of total comp).
      Refresher grants annually.
-   • Indian unicorns / SaaS — ESOPs at senior+ levels. Liquidity
-     uncertain, so candidates discount them mentally.
+   • Indian unicorns / SaaS — ESOPs at senior+ levels. 2025 was the
+     breakout liquidity year for Indian startup ESOPs:
+         - 18 startup IPOs in 2025 raised ₹41,248 Cr (Lenskart, Groww,
+           Meesho, PhysicsWallah listed).
+         - Razorpay filed DRHP via SEBI confidential route Apr 2026;
+           IPO bankers Axis/Kotak/JPM/Citi onboarded Feb 2026.
+         - PhonePe DRHP filed via confidential route. Zepto, OYO,
+           Flipkart, InMobi, Zetwerk in 2026 pipeline (~₹47,000 Cr
+           potential raise).
+         - Flipkart did $50M ESOP buyback in 2025; smaller buybacks
+           at Darwinbox, Dhan, Dezerv, InsuranceDekho.
+     Liquidity is no longer purely theoretical — candidates can
+     reasonably assign 40-60% expected-value weight to ESOPs at
+     pre-IPO unicorns vs. 20-30% in 2023-24. Adjust your offer
+     framing: ESOPs at top-tier unicorns now carry near-equity
+     credibility, not just "monopoly money".
    • Early startups — ESOPs are a real lever (0.05-0.5% IC,
      0.1-2% leadership) but candidates know they may be illiquid.
 
-5. NOTICE-PERIOD INTUITION.
+5. NOTICE-PERIOD INTUITION (2026).
    • IT Services / consulting / domestic BFSI — 60-90 day notice.
      Notice buyout is a real lever (₹1-3 LPA).
-   • Startups / unicorns / SaaS — 30 day notice typical.
+   • Hypergrowth startups — 15-30 day notice now common (down from
+     30-45 in 2023). Some Series A/B startups offer 0-day onboarding
+     for senior hires.
+   • Established unicorns / SaaS — 30 day notice typical.
    • GCCs — 60-90 day notice.
    • Big Tech — 30-60 day notice.
    • If candidate says "I'm available immediately / my last role
-     ended on <date>", do NOT offer notice buyout.`;
+     ended on <date>", do NOT offer notice buyout.
+
+6. CALIBRATION DATE.
+   These notes reflect Indian market conditions as of May 2026.
+   Sources: Levels.fyi, AmbitionBox, Glassdoor India, Inc42 IPO
+   tracker, Zinnov GCC report 2026, public DRHP filings. Refresh
+   recommended every 6 months — startup ESOP liquidity, GCC pay
+   differential, and AI/ML premium are the three fastest-moving
+   data points.`;
 
 /** Returns true if the role family commands an AI/ML skill premium.
  *  Used to add a sentence to the prompt biasing the AI's open
@@ -153,7 +195,10 @@ export function isSalesRoleFamily(roleKey: string): boolean {
  *  ONLY when the candidate's role matches the family. */
 export function buildFamilyCompFraming(roleKey: string): string {
   if (isAiMlRoleFamily(roleKey)) {
-    return `\nROLE-FAMILY NOTE: This is an AI/ML/Data role. In 2025 these command a SKILL PREMIUM over generalist tech — ML Engineers, AI Engineers, GenAI Engineers and Data Scientists are pulling 1.3-1.6x what backend engineers at the same company earn. When stating your initial offer, sit at the UPPER half of the band (≥ 60th percentile), not the median. Candidates know this premium exists; opening at the median signals you don't value the specialty.`;
+    return `\nROLE-FAMILY NOTE: This is an AI/ML/Data role. In 2026 the premium is REAL but BIFURCATED:
+  • Genuine GenAI / LLM / RAG / agentic / MLOps / eval specialists still command 1.3-1.6x backend pay at same YOE — open at 60-70th percentile.
+  • Generic "ML Engineer" / classical-DS roles — premium has compressed to 1.1-1.3x; open at median.
+Read the candidate's actual depth (do they ship LLMs in production? own evals? deal with agent orchestration? or are they doing notebook-driven feature engineering?). Opening at the upper band for a generic ML candidate signals you don't know the market; opening at median for a GenAI specialist signals you don't value the specialty.`;
   }
   if (isSalesRoleFamily(roleKey)) {
     return `\nROLE-FAMILY NOTE: This is a SALES role. Compensation is FIXED + VARIABLE + COMMISSION, not a single CTC number. Always present the offer in three parts:

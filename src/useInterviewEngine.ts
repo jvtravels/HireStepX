@@ -1819,6 +1819,41 @@ export function useInterviewEngine() {
          re-types" flash. React 18 batches both setStates here so the
          next render has both new step AND phase=thinking — the typewriter
          then takes over cleanly when the speak() effect fires. */
+      // Outcome-aware closing override. If we're about to advance INTO
+      // a closing step in a salary-neg session AND no runtime follow-up
+      // has replaced it (i.e. it's still the upfront LLM-generated /
+      // synthesized fallback closing), apply the same branching the
+      // follow-up resolution path uses. Without this, the upfront
+      // closing fires with no awareness of how the conversation went.
+      const nextIdx = currentStep + 1;
+      if (
+        nextStep?.type === "closing" &&
+        interviewType === "salary-negotiation" &&
+        !nextStep.scoreNote?.includes("Dynamic follow-up")
+      ) {
+        const facts = extractNegotiationFacts([
+          ...transcript,
+          { speaker: "user" as const, text: answerText, time: "" },
+        ]);
+        const lastAns = answerText || "";
+        const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
+        const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do)|already (?:mentioned|said|told)|as i (?:said|mentioned|told)|told you|mentioned (?:multiple times|earlier|before)|like to have higher|highest base)\b/i;
+        let closingText: string | null = null;
+        if (facts.acceptedImmediately) {
+          closingText = "Great — really glad we found terms that work. I'll have HR send the formal offer letter shortly. Welcome aboard.";
+        } else if (facts.rejectedOutright || walkAwayPat.test(lastAns)) {
+          closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
+        } else if (stillNegotiatingPat.test(lastAns)) {
+          closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
+        }
+        if (closingText && closingText !== nextStep.aiText) {
+          setInterviewScript(prev => {
+            const updated = [...prev];
+            updated[nextIdx] = { ...updated[nextIdx], aiText: closingText! };
+            return updated;
+          });
+        }
+      }
       setPhase("thinking");
       setCurrentStep(currentStep + 1);
     } else {

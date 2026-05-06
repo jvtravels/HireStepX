@@ -29,6 +29,77 @@ function sanitizeQuestionPunctuation(text: string): string {
     .trim();
 }
 
+/** Validate the salary-neg INITIAL offer at script ingest. The LLM
+ *  occasionally produces an offer whose component breakdown doesn't
+ *  add up ("₹18 LPA — ₹14.5 base, 10% bonus, ₹1.5 ESOP" sums to
+ *  ~17.45) or whose total falls outside the band we passed it. We
+ *  detect both, then either: (a) recompose the components to a
+ *  realistic 78/15/7 split that sums correctly, or (b) clamp the
+ *  total back to the band's initialOffer if it's wildly outside.
+ *  Returns the corrected text. */
+function sanitizeInitialOffer(
+  text: string,
+  band?: { initialOffer: number; minOffer: number; maxStretch: number },
+): string {
+  if (!text || !band) return text;
+
+  // Total CTC: "₹X LPA" appearing near "total" / "CTC" / "package" /
+  // "all up" / "offer of".
+  const totalRe = /(?:offer of|extend an offer of|offering|total(?:\s+ctc)?|package(?:\s+of)?|all in|all up)\s*(?:you\s*)?₹?\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?)/i;
+  const totalMatch = totalRe.exec(text);
+  if (!totalMatch) return text;
+  const total = parseFloat(totalMatch[1]);
+  if (!Number.isFinite(total) || total <= 0) return text;
+
+  // 1. Out-of-band guard. If the LLM offered way above maxStretch
+  //    or way below minOffer, replace the number with band.initialOffer.
+  const outsideBand = total > band.maxStretch * 1.15 || total < band.minOffer * 0.7;
+  if (outsideBand) {
+    const fixed = Math.round(band.initialOffer * 10) / 10;
+    console.warn(`[questions] Initial offer out of band: ${total} LPA, band [${band.minOffer}, ${band.maxStretch}] — clamping to ${fixed}`);
+    return text.replace(/₹?\s*\d+(?:\.\d+)?\s*(LPA|lpa|lakhs?)/, `₹${fixed} $1`);
+  }
+
+  // 2. Component-sum guard. Look for "base ... ₹A LPA", "variable ...
+  //    ₹B LPA", "bonus ... ₹C LPA"-style components. If their sum is
+  //    > 5% off from the total, recompose to 78/15/7.
+  const compRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)\s*(?:base|variable|bonus|esop|equity|joining)/gi;
+  const components: number[] = [];
+  let cm: RegExpExecArray | null;
+  while ((cm = compRe.exec(text)) !== null) {
+    const v = parseFloat(cm[1]);
+    if (Number.isFinite(v) && v > 0) components.push(v);
+  }
+  if (components.length >= 2) {
+    const sum = components.reduce((a, b) => a + b, 0);
+    const off = Math.abs(sum - total);
+    if (off > Math.max(0.5, total * 0.05)) {
+      console.warn(`[questions] Initial-offer components don't sum (total=${total}, components=${components.join("+")}=${sum}) — recomposing to 78/15/7`);
+      const newBase = Math.round(total * 0.78 * 10) / 10;
+      const newVar = Math.round(total * 0.15 * 10) / 10;
+      const newBonus = Math.round((total - newBase - newVar) * 10) / 10;
+      // Best-effort substitution: replace the first three component
+      // figures in order. Leaves the surrounding sentence intact.
+      let i = 0;
+      const newVals = [newBase, newVar, newBonus];
+      return text.replace(
+        /₹\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?)/g,
+        (full: string, _amt: string, unit: string) => {
+          // Skip the headline total — only replace component figures.
+          if (i === 0 && _amt === totalMatch[1]) {
+            i++;
+            return full;
+          }
+          const v = newVals[i - 1];
+          i++;
+          return v !== undefined ? `₹${v} ${unit}` : full;
+        },
+      );
+    }
+  }
+  return text;
+}
+
 /** Retry a function with exponential backoff. Returns null after all retries fail. */
 async function withRetry<T>(
   fn: () => Promise<T>,
@@ -313,9 +384,17 @@ export async function fetchLLMQuestions(params: {
       return null;
     }
     const isSalaryNeg = params.type === "salary-negotiation";
+    const negBandForGuard = (data as { negotiationBand?: NegotiationBandData }).negotiationBand;
     const questions = data.questions
       .map((q: { type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }, idx: number) => {
-        const rawText = sanitizeQuestionPunctuation(q.aiText || q.text || "");
+        let rawText = sanitizeQuestionPunctuation(q.aiText || q.text || "");
+        // For salary-neg's initial offer, validate the offer's total
+        // against the band and recompose components if they don't
+        // sum to the total. The follow-up handler already does this
+        // for downstream turns; this catches the script-time hallucinations.
+        if (isSalaryNeg && idx === 1 && (q.type === "question" || q.type === "intro")) {
+          rawText = sanitizeInitialOffer(rawText, negBandForGuard);
+        }
         // Extract LLM-marked italic-copper accent: *word* → accentSplit.
         // Falls through to plain text if LLM didn't comply.
         const { cleaned, accentSplit } = extractAccentMarkup(rawText);
