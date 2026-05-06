@@ -1908,6 +1908,17 @@ export function useInterviewEngine() {
     recognitionRef.current = null;
     setAiVoiceEnabled(false);
     setIsMuted(true);
+    /* Clear any stale saveWarning from the question-generation phase
+       before flipping into eval. User-reported failure: a "Question
+       generation failed: server error 500. Tap retry for personalized
+       questions." banner from the start of the session was leaking
+       into the report-loading screen, telling the user something is
+       wrong with their REPORT when in reality it was the OLD
+       question-gen error from before they even started answering.
+       The evaluation flow itself sets saveWarning fresh if the eval
+       run produces one (network error, fallback, etc.), so clearing
+       here can't lose any meaningful state. */
+    setSaveWarning("");
     setEvaluating(true);
 
     const sessionId = liveSessionIdRef.current;

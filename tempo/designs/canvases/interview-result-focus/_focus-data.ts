@@ -22,6 +22,7 @@
  */
 
 import type { InterviewResultData, Question, AnswerSpan } from "../interview-result/InterviewResult";
+import { DEFAULT_RESULT } from "../interview-result/InterviewResult";
 
 const TONE_ERROR = "#B91C1C";
 const TONE_SUCCESS = "#15803D";
@@ -48,23 +49,14 @@ function build(
     ? { name: weakest.name, tip: `Strengthen your ${weakest.name.toLowerCase()} — it's the lowest-scoring axis this session.` }
     : { name: "—", tip: "" };
 
+  /* Spread DEFAULT_RESULT first so every optional-but-runtime-accessed
+     field (calibration, recentScores, readiness, scoreConfidence, etc.)
+     is populated. The override + weakestSkill then customize per focus.
+     This mirrors the pattern in the working sibling canvas
+     (interview-result/index.canvas.tsx) and is what made those
+     storyboards render while these were crashing. */
   return {
-    overallScore: 0,
-    verdict: "leanHire",
-    scoreDelta: 0,
-    company: "Razorpay",
-    role: "Senior Engineer",
-    level: "Senior",
-    difficulty: "Standard",
-    aiVerdict: "",
-    strengths: [],
-    improvements: [],
-    metrics: [
-      { label: "Filler words / min", value: 4.2, targetLabel: "Target 0–3", band: "needsWork" },
-      { label: "Silence ratio", value: 18, unit: "%", targetLabel: "Target 0–20%", band: "good" },
-      { label: "Pace (WPM)", value: 152, targetLabel: "Target 140–180", band: "good" },
-      { label: "Energy", value: 72, unit: "/100", targetLabel: "Target 60–100", band: "good" },
-    ],
+    ...DEFAULT_RESULT,
     weakestSkill,
     ...override,
   };

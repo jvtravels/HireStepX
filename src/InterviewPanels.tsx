@@ -1373,11 +1373,13 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
           <div style={{ width: 200, height: 3, borderRadius: 2, background: e.line, marginTop: 16, overflow: "hidden" }}>
             <div style={{ height: "100%", borderRadius: 2, background: e.copper, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />
           </div>
-          {/* After 20s, give the user an escape hatch — the AI eval may
-              still be working, but they shouldn't have to wonder if it
-              hung. Clicking flips to the "AI evaluation unavailable"
-              panel below, which has the View Results CTA. */}
-          {evalElapsed >= 20 && (
+          {/* Escape hatch surfaced at 10s (was 20s) so users with a
+              flaky LLM provider don't sit staring at an indeterminate
+              spinner. The AI eval has its own 18s abort timer, but
+              giving the user manual control earlier is the kinder
+              floor — clicking flips to the "AI evaluation unavailable"
+              panel which lands them on results immediately. */}
+          {evalElapsed >= 10 && (
             <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
               <button
                 type="button"
