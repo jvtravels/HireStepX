@@ -45,8 +45,18 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
   const mentionsResearch = /market|glassdoor|research|benchmark|industry|average|range|data/i.test(text);
   const acceptsImmediately = /(?:sounds good|i accept|that works|deal|perfect|okay sure|fine with me|yes.*accept)/i.test(text) && wordCount < 25;
   const rejectsOutright = /(?:way too low|not interested|can'?t accept|wouldn'?t consider|absolutely not|that'?s insulting|no way)/i.test(text);
+  // Candidate signalling "you already asked / I already answered". Generic
+  // tips like "share more detail" feel mocking on top of this — replace
+  // with an empathic coaching note.
+  const showsFrustration = /\b(already (?:mentioned|said|told)|as i (?:said|mentioned|told)|told you|mentioned (?:multiple times|earlier|before)|for the (?:second|third|fourth|nth) time)\b/i.test(text);
 
   let feedback: string | null = null;
+  if (showsFrustration) {
+    return {
+      feedback: "You're being heard — repetition is a fair signal. If the AI keeps probing, push for a number: 'What's your counter?'",
+      score: 60,
+    };
+  }
 
   // Universal checks first (override phase-specific)
   if (rejectsOutright && wordCount < 30) {
@@ -101,9 +111,9 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
     }
   } else if (phase === "closing-pressure") {
     if (mentionsCompeting) {
-      feedback = "Using leverage well under pressure. Stay firm but professional.";
+      feedback = "Using leverage well. Stay firm but professional.";
     } else {
-      feedback = "Tip: Don't fold under deadline pressure — use BATNA or competing offers to hold your ground.";
+      feedback = "Closing phase — anchor on your BATNA / market data; don't drop your number without getting something in return.";
     }
   } else if (phase === "closing") {
     if (mentionsBenefits && mentionsNumber) {

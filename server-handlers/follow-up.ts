@@ -1000,6 +1000,53 @@ Respond JSON only:
          user-visible failure mode this fixes: 5-turn sessions where
          the AI never counters with numbers despite the candidate
          having stated their target + market data. */
+      /* Repetition guard. If the next AI question is too similar to a
+         recent AI turn, the candidate experiences "you keep asking
+         the same thing" — exactly the failure mode in the Lollypop
+         session ("Mentioned multiple times"). Compute Jaccard
+         similarity over content words against the last 2 AI turns.
+         If above threshold, pivot deterministically: acknowledge,
+         then make a concrete move (counter or close) instead of
+         re-asking. */
+      if (parsed.followUpText && previousFollowUps && previousFollowUps.length > 0) {
+        const tokens = (s: string): Set<string> => {
+          const stop = new Set(["the","a","an","is","are","be","you","your","i","we","our","that","this","of","to","for","and","or","but","with","what","how","do","does","can","could","would","should","let","me","just","me","in","on","at","by","as","so","if","like","than","then","its","it"]);
+          return new Set(
+            s.toLowerCase().replace(/[^\w\s]/g, " ").split(/\s+/)
+              .filter(w => w.length > 3 && !stop.has(w)),
+          );
+        };
+        const cur = tokens(parsed.followUpText);
+        const recent = previousFollowUps.slice(-2);
+        let maxSim = 0;
+        for (const prev of recent) {
+          const prevT = tokens(prev);
+          if (cur.size === 0 || prevT.size === 0) continue;
+          let inter = 0;
+          for (const w of cur) if (prevT.has(w)) inter++;
+          const union = cur.size + prevT.size - inter;
+          const sim = union > 0 ? inter / union : 0;
+          if (sim > maxSim) maxSim = sim;
+        }
+        if (maxSim >= 0.55) {
+          console.warn(`[follow-up] Repetition guard fired: similarity=${maxSim.toFixed(2)} — replacing with progress move`);
+          const candidateNum =
+            (typeof candidateTarget === "number" && candidateTarget > 0)
+              ? candidateTarget
+              : (negotiationFacts?.candidateCounter
+                ? parseFloat(negotiationFacts.candidateCounter.replace(/[^\d.]/g, "")) || null
+                : null);
+          if (negotiationBand && typeof candidateNum === "number") {
+            const initial = canonicalInitialOffer ?? negotiationBand.initialOffer;
+            const hi = Math.min(negotiationBand.maxStretch, initial + Math.max(1, (candidateNum - initial) * 0.5));
+            const counter = Math.round(hi * 10) / 10;
+            parsed.followUpText = `You're right, you've already shared that — apologies for re-asking. Let me make a concrete move: I can stretch to ₹${counter} LPA total CTC. That bumps base, keeps the variable structure, and includes our standard benefits. Does that get us closer to a yes, or is there a specific lever you want me to pull instead?`;
+          } else {
+            parsed.followUpText = `You're right, I've been circling — apologies. Let me be straight: I've shared where I can land today. If the package doesn't work, I'd rather know now than keep asking the same question. What would actually move you to yes?`;
+          }
+        }
+      }
+
       if (salaryPhase === "counter-offer" && parsed.followUpText) {
         const hasRupee = /₹\s*\d/.test(parsed.followUpText);
         if (!hasRupee && negotiationBand) {
