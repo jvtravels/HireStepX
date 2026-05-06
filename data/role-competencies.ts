@@ -151,15 +151,49 @@ CURRENT TRENDS (2026): India's BRSR (Business Responsibility & Sustainability Re
 
 /**
  * Match a free-text role description to the best ROLE_COMPETENCIES key.
+ *
  * Pure function — tested in src/__tests__/roleContentMatch.test.ts.
+ *
+ * Scoring (highest wins; ties broken by key length, then by definition
+ * order):
+ *   • +100  exact whole-key substring match ("ux-writer" → "ux writer"
+ *     normalises to a substring match against "ux writer" / "uxwriter")
+ *   • +10   per matched dash-part of the key, but ONLY when ALL parts
+ *     of a multi-part key match. (Single-part key → +10 if the part
+ *     is present.)
+ *
+ * This replaces a previous first-match-wins loop that silently routed
+ * "UX Writer" → "technical-writer" (because "writer" is a part of
+ * "technical-writer" and that key happens to come earlier in the
+ * map). The bug corrupted prompts for ~5 roles added in 2026-Q2.
  */
 export function matchRoleKey(role: string): { key: string; fallback: string } {
   if (!role) return { key: "", fallback: "" };
   const lower = role.toLowerCase();
+  // Normalise dashes/spaces so "ux-writer" and "ux writer" both work
+  // as needles when checked against haystack "lower".
+  const normalisedHaystack = lower.replace(/[\s-]+/g, " ").trim();
+
+  let best: { key: string; value: string; score: number } | null = null;
   for (const [key, value] of Object.entries(ROLE_COMPETENCIES)) {
-    if (lower.includes(key) || key.split("-").some((part) => lower.includes(part))) {
-      return { key, fallback: value };
+    const keyAsPhrase = key.replace(/-/g, " ");
+    const parts = key.split("-").filter(Boolean);
+    let score = 0;
+    if (normalisedHaystack.includes(keyAsPhrase)) score += 100;
+    // Multi-part key: every part must appear (otherwise we'd recreate
+    // the original false-positive bug). Single-part: just the part.
+    const allPartsPresent = parts.every((p) => normalisedHaystack.includes(p));
+    if (allPartsPresent) score += 10 * parts.length;
+    if (score === 0) continue;
+    // Prefer higher score, then longer key (more specific), then
+    // earlier-defined (stable order).
+    if (
+      !best ||
+      score > best.score ||
+      (score === best.score && key.length > best.key.length)
+    ) {
+      best = { key, value, score };
     }
   }
-  return { key: "", fallback: "" };
+  return best ? { key: best.key, fallback: best.value } : { key: "", fallback: "" };
 }

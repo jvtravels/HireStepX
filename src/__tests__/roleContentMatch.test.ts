@@ -33,16 +33,51 @@ describe("matchRoleKey", () => {
     expect(matchRoleKey("DESIGNER").key).toBe("designer");
   });
 
-  it("prefers the first matching key when multiple parts match", () => {
-    // Object iteration order is insertion order — "product-manager" is
-    // declared before "engineering-manager". A role description that
-    // could match either must be deterministic.
-    const { key } = matchRoleKey("product engineering");
-    expect(key).toBe("product-manager");
+  it("returns empty for ambiguous multi-part inputs that don't fully match any key", () => {
+    // "product engineering" partially matches both "product-manager"
+    // (product, no manager) and "engineering-manager" (engineering, no
+    // manager). Under longest-match-with-all-parts-present rules, neither
+    // wins and we return empty rather than silently routing to a wrong
+    // competency. Previously the buggy matcher returned "product-manager"
+    // by first-match-wins, injecting wrong PM competencies into the
+    // prompt.
+    expect(matchRoleKey("product engineering").key).toBe("");
   });
 
   it("returns empty when nothing matches", () => {
     expect(matchRoleKey("astronaut")).toEqual({ key: "", fallback: "" });
+  });
+
+  // ─── Regression: writer-role substring collision ───
+  // Pre-fix bug: "UX Writer" → "technical-writer" because "writer"
+  // was a part of both keys and the matcher returned the first hit.
+  // After fix: longest matching multi-part key wins, all parts must
+  // be present.
+  it("disambiguates writer roles correctly (was buggy pre-2026-Q2)", () => {
+    expect(matchRoleKey("UX Writer").key).toBe("ux-writer");
+    expect(matchRoleKey("Senior UX Writer").key).toBe("ux-writer");
+    expect(matchRoleKey("Technical Writer").key).toBe("technical-writer");
+    expect(matchRoleKey("Lead Technical Writer").key).toBe("technical-writer");
+    expect(matchRoleKey("Copywriter").key).toBe("copywriter");
+    expect(matchRoleKey("Senior Copywriter").key).toBe("copywriter");
+    expect(matchRoleKey("Screenwriter").key).toBe("screenwriter");
+  });
+
+  it("disambiguates director roles correctly (was buggy pre-2026-Q2)", () => {
+    // "Art Director" used to fall to "creative-director" because
+    // "director" was a part of both keys.
+    expect(matchRoleKey("Art Director").key).toBe("art-director");
+    expect(matchRoleKey("Creative Director").key).toBe("creative-director");
+    expect(matchRoleKey("Executive Creative Director").key).toBe("creative-director");
+  });
+
+  it("matches new 2026-Q2 role keys", () => {
+    expect(matchRoleKey("UX Researcher").key).toBe("ux-researcher");
+    expect(matchRoleKey("Industrial Designer").key).toBe("industrial-designer");
+    expect(matchRoleKey("ESG Analyst").key).toBe("esg-analyst");
+    expect(matchRoleKey("IAS Officer").key).toBe("ias");
+    expect(matchRoleKey("Recruiter").key).toBe("recruiter");
+    expect(matchRoleKey("Junior Doctor").key).toBe("doctor");
   });
 
   it("never returns a role key not present in ROLE_COMPETENCIES", () => {
