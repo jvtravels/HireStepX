@@ -455,21 +455,12 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           </span>
         </div>
       )}
-      {step?.scoreNote && phase !== "done" && phase !== "thinking" && (
-        /* scoreNote was rgba(180,83,9,0.50) at 11px — under WCAG AA on cream
-           (contrast ~3.2:1, fails the 4.5:1 floor for text under 14px).
-           Bumped to 0.78 + size 12 to clear the threshold while keeping the
-           hint visually subordinate to the question. The icon stroke also
-           moves to 0.65 alpha so it stays pinned to the text rather than
-           ghosting in. */
-        <p style={{
-          fontFamily: ef.sans, fontSize: 12, color: "rgba(180,83,9,0.78)",
-          margin: "0 0 10px", display: "flex", alignItems: "center", gap: 5,
-        }}>
-          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(180,83,9,0.65)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
-          {step.scoreNote}
-        </p>
-      )}
+      {/* scoreNote is internal evaluator metadata — "Tests X competency" /
+          "Dynamic follow-up based on candidate's answer". It's used by
+          the evaluator and the post-session report; it must not surface
+          during the live interview because it telegraphs what's being
+          assessed and exposes plumbing. Kept on the step object for
+          downstream use; just not rendered here. */}
       {/* Question text rendering:
             speaking → typewriter typed in sync with TTS audio
             thinking → "Preparing next question…"
@@ -924,6 +915,21 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
 }) {
   const lastUserMsg = [...transcript].reverse().find(t => t.speaker === "user");
   if (!lastUserMsg) return null;
+  // Dedupe immediate STT echo: collapse repeated word and short-phrase
+  // stutters ("where where", "to it is very difficult to it is very
+  // difficult to") that come from speech-recognition partials being
+  // re-committed. Scoring/eval keeps the raw transcript; this is a
+  // display-only clean-up so the candidate isn't stared at by their
+  // own dictation noise. Case-insensitive single-word collapse + a
+  // 2–4 word phrase pass.
+  const displayText = (() => {
+    let t = lastUserMsg.text;
+    // word-level: "the the" → "the"
+    t = t.replace(/\b(\w+)(\s+\1\b)+/gi, "$1");
+    // 2–4 word phrase: "to it is very difficult to it is very difficult to"
+    t = t.replace(/\b((?:\w+\s+){1,3}\w+)\s+\1\b/gi, "$1");
+    return t.replace(/\s{2,}/g, " ");
+  })();
   const isStrong = microFeedback?.includes("Strong") ?? false;
   return (
     <div style={{
@@ -945,7 +951,7 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
         overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2,
         WebkitBoxOrient: "vertical" as const,
       }}>
-        &ldquo;{lastUserMsg.text}&rdquo;
+        &ldquo;{displayText}&rdquo;
       </p>
       {microFeedback && (
         <div style={{

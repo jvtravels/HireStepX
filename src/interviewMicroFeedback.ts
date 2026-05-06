@@ -310,26 +310,60 @@ function standardFeedback(text: string, wordCount: number, runningScores: number
   const runningAvg = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 50;
   const isExcelling = runningAvg >= 80 && allScores.length >= 2;
   const isStruggling = runningAvg < 50 && allScores.length >= 2;
+  // Rotate among variants so consecutive answers don't get identical coaching.
+  const turn = runningScores.length;
+  const pick = <T,>(opts: readonly T[]): T => opts[turn % opts.length];
 
   let feedback: string | null;
   if (wordCount < 30) {
     feedback = isStruggling
-      ? "Try to say more — even 2-3 sentences about the situation helps."
-      : "Try to elaborate more — aim for 60+ seconds per answer.";
+      ? pick([
+          "Try to say more — even 2-3 sentences about the situation helps.",
+          "Add a bit more — set the scene, what you did, what happened.",
+        ])
+      : pick([
+          "Try to elaborate more — aim for 60+ seconds per answer.",
+          "Stretch this further — give us the context and the outcome.",
+        ]);
   } else if (!hasMetrics && !hasStructure) {
     feedback = isExcelling
-      ? "Good content — push further with specific metrics and counterfactual reasoning."
-      : "Good start! Try adding specific metrics and structuring with STAR.";
+      ? pick([
+          "Good content — push further with specific metrics and counterfactual reasoning.",
+          "Strong substance — quantify the impact and contrast against the alternative.",
+        ])
+      : pick([
+          "Good start! Try adding specific metrics and structuring with STAR.",
+          "Solid answer — anchor it with numbers and a clear Situation→Action→Result.",
+          "Nice content. Add 'who, how many, by how much' to make it land harder.",
+        ]);
   } else if (!hasMetrics) {
     feedback = isExcelling
-      ? "Nice structure! Add quantified impact — '$X revenue', '30% faster', etc."
-      : "Nice structure! Strengthen with specific numbers or metrics.";
+      ? pick([
+          "Nice structure! Add quantified impact — '$X revenue', '30% faster', etc.",
+          "Clean structure. Drop in a metric to anchor the impact.",
+        ])
+      : pick([
+          "Nice structure! Strengthen with specific numbers or metrics.",
+          "Good flow — pin it down with a number ('reduced by 40%', '2 weeks faster').",
+          "Well-organized. A single metric would lift this from good to memorable.",
+        ]);
   } else if (!hasStructure) {
-    feedback = "Great data! Try structuring as Situation → Action → Result.";
+    feedback = pick([
+      "Great data! Try structuring as Situation → Action → Result.",
+      "Numbers are strong — frame them with what you did and what changed.",
+    ]);
   } else if (isExcelling && !hasCounterfactual) {
     feedback = "Strong answer! Next level: add counterfactual reasoning — 'Without this, X would have happened.'";
   } else {
-    feedback = isExcelling ? "Excellent — specific, structured, and impactful." : "Strong answer — specific and well-structured.";
+    feedback = isExcelling
+      ? pick([
+          "Excellent — specific, structured, and impactful.",
+          "Top-band answer — concrete, well-paced, real outcome.",
+        ])
+      : pick([
+          "Strong answer — specific and well-structured.",
+          "Well done — clear arc and concrete details.",
+        ]);
   }
   return { feedback, score: clamp(score) };
 }

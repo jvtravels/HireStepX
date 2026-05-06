@@ -17,6 +17,18 @@ const IDB_STORE = "drafts";
    compat with existing imports. */
 export { extractAccentMarkup };
 
+/** Tidy LLM-generated question punctuation. Models occasionally emit
+ *  artifacts like "incomplete data., How did you..." — joining a
+ *  period-terminated stem with a comma-leading suffix. Collapse the
+ *  obvious cases to a single canonical separator. */
+function sanitizeQuestionPunctuation(text: string): string {
+  return text
+    .replace(/([.!?])\s*,\s*/g, "$1 ")  // ".," / "?," / "!," → "."
+    .replace(/,\s*([.!?])/g, "$1")       // ",." / ",?" → "."
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /** Retry a function with exponential backoff. Returns null after all retries fail. */
 async function withRetry<T>(
   fn: () => Promise<T>,
@@ -303,7 +315,7 @@ export async function fetchLLMQuestions(params: {
     const isSalaryNeg = params.type === "salary-negotiation";
     const questions = data.questions
       .map((q: { type?: string; aiText?: string; text?: string; scoreNote?: string; persona?: string }, idx: number) => {
-        const rawText = q.aiText || q.text || "";
+        const rawText = sanitizeQuestionPunctuation(q.aiText || q.text || "");
         // Extract LLM-marked italic-copper accent: *word* → accentSplit.
         // Falls through to plain text if LLM didn't comply.
         const { cleaned, accentSplit } = extractAccentMarkup(rawText);

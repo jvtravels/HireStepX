@@ -1577,9 +1577,15 @@ export function useInterviewEngine() {
     const currentStepObj = interviewScript[currentStep];
     const isLastStep = currentStep >= interviewScript.length - 1;
 
-    // Generate micro-feedback with dynamic difficulty awareness
+    // Generate micro-feedback with dynamic difficulty awareness.
+    // Skipped answers ("[SKIPPED — reason: …]") and stub recordings should not
+    // produce coaching tips — they're not real attempts.
     setMicroFeedback(null);
-    if (answerText.length > 10 && !answerText.startsWith("[Answer recorded")) {
+    if (
+      answerText.length > 10 &&
+      !answerText.startsWith("[Answer recorded") &&
+      !answerText.startsWith("[SKIPPED")
+    ) {
       // Compute current negotiation phase for phase-aware feedback (no-op for non-negotiation types)
       const negPhase = computeNegotiationPhase({
         interviewType, currentStep,
