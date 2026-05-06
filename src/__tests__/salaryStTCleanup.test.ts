@@ -48,6 +48,34 @@ describe("cleanSalarySttArtifacts", () => {
     expect(cleanSalarySttArtifacts(clean)).toBe(clean);
   });
 
+  it("rewrites 'N lags' → 'N lakhs' (newer mishear)", () => {
+    expect(cleanSalarySttArtifacts("expecting 12 lags per annum"))
+      .toBe("expecting 12 lakhs per annum");
+  });
+
+  it("rewrites 'Wide' before a number/comp word → 'I'd'", () => {
+    expect(cleanSalarySttArtifacts("Wide five lakhs joining bonus"))
+      .toBe("I'd five lakhs joining bonus");
+    expect(cleanSalarySttArtifacts("Wide like to go for 25 LPA"))
+      .toBe("I'd like to go for 25 LPA");
+  });
+
+  it("rewrites 'X eggs Y' → 'X as Y' in salary contexts", () => {
+    expect(cleanSalarySttArtifacts("5 lakhs eggs joining bonus"))
+      .toContain("as joining");
+    expect(cleanSalarySttArtifacts("11 LPA eggs base"))
+      .toContain("as ");
+  });
+
+  it("end-to-end on the gibberish answer 'Wide five legs eggs joining bonus'", () => {
+    const out = cleanSalarySttArtifacts("Wide five legs eggs joining bonus.");
+    expect(out).toContain("I'd");
+    expect(out).toContain("lakhs");
+    expect(out).toContain("as joining");
+    expect(out).not.toMatch(/\beggs\b/i);
+    expect(out).not.toMatch(/\blegs\b/i);
+  });
+
   it("handles the production transcript end-to-end", () => {
     const input = "I would like to go for 20 legs at the celery. 18 legs as a base salary of it, and 28. Legs. Whatever you want to do, you can do it.";
     const out = cleanSalarySttArtifacts(input);

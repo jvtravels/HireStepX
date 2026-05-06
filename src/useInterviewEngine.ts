@@ -1366,11 +1366,20 @@ export function useInterviewEngine() {
                     ]);
                     const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
                     const isWalking = walkAwayPat.test(lastAnswerTextRef.current || "");
+                    // "Still actively negotiating" — candidate is asking for
+                    // more / countering / pushing on a lever. Closing the
+                    // session with "we'll follow up shortly" feels dismissive
+                    // and unrealistic. Acknowledge the open state and pin a
+                    // concrete next step.
+                    const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do))\b/i;
+                    const stillNegotiating = stillNegotiatingPat.test(lastAnswerTextRef.current || "");
                     let closingText = "Thanks for working through this with me. We'll review the conversation and follow up with next steps shortly.";
                     if (facts.acceptedImmediately) {
                       closingText = "Great — really glad we found terms that work. I'll have HR send the formal offer letter shortly. Welcome aboard.";
                     } else if (facts.rejectedOutright || isWalking) {
                       closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
+                    } else if (stillNegotiating) {
+                      closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
                     }
                     updated[i] = { ...s, aiText: closingText };
                   }
