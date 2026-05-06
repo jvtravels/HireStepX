@@ -135,7 +135,53 @@ export function sessionReportToInterviewResult(
       ? `~${report.readiness.estimatedHours} hours over ~${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band — ${report.readiness.confidence} confidence. ${report.readiness.rationale}`
       : undefined,
     biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
+    negotiationOutcome: isNegotiation ? buildNegotiationOutcome(report) : undefined,
   };
+}
+
+/** Derive the offer trajectory + deal outcome from the per-question
+ *  transcript. Heuristic but deterministic: scan AI text for ₹X LPA
+ *  totals (only the "total / offer" mentions, not component breakdowns),
+ *  scan candidate text for explicit acceptance / walk-away / target
+ *  numbers. Drives the salary-neg report section. */
+function buildNegotiationOutcome(report: SessionReport): InterviewResultData["negotiationOutcome"] {
+  const offers: Array<{ turn: number; total: number; question: string }> = [];
+  const totalRe = /(?:offer(?:ing)?(?:\s+(?:you|to))?|extend(?:ing)?(?:\s+an?)?\s+offer|total(?:\s+ctc)?|stretch\s+to|move\s+to|land\s+at|come\s+up\s+to|i\s+can\s+do)\s*(?:you\s*)?₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/i;
+  report.perQuestion.forEach((q, idx) => {
+    if (!q.question) return;
+    const m = totalRe.exec(q.question);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (Number.isFinite(v) && v > 0) {
+        offers.push({ turn: idx + 1, total: v, question: q.question });
+      }
+    }
+  });
+
+  // Outcome derivation
+  const allAnswers = report.perQuestion.map((q) => q.answerText || "").join(" ");
+  const acceptedRe = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead|happy to accept)\b/i;
+  const walkRe = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline the offer|i decline|pull out|not worth|won.?t work|move on|have to pass)\b/i;
+  let outcome: "accepted" | "walked_away" | "no_agreement" = "no_agreement";
+  if (acceptedRe.test(allAnswers)) outcome = "accepted";
+  else if (walkRe.test(allAnswers)) outcome = "walked_away";
+
+  // Candidate's highest stated target (their ask)
+  let candidateAsk: number | null = null;
+  const askRe = /\b(?:expecting|target|want|asking|hoping|looking for|would like|i.?d like)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi;
+  let am: RegExpExecArray | null;
+  while ((am = askRe.exec(allAnswers)) !== null) {
+    const v = parseFloat(am[1]);
+    if (Number.isFinite(v) && v >= 3 && v <= 500) {
+      candidateAsk = candidateAsk === null ? v : Math.max(candidateAsk, v);
+    }
+  }
+
+  const finalTotal = outcome === "accepted" && offers.length > 0
+    ? offers[offers.length - 1].total
+    : null;
+
+  return { offers, finalTotal, outcome, candidateAsk };
 }
 
 /** Aggregate bias-pattern hits across all answers, attach a

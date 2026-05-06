@@ -167,4 +167,19 @@ export interface InterviewResultData {
   /** Perception-optimizer findings — bias-pattern aggregates across the
    *  whole session. Empty / undefined = panel doesn't render. */
   biasFindings?: BiasFinding[];
+  /** Set only for salary-negotiation sessions. Contains the offer
+   *  trajectory across turns + the deal outcome. Drives the
+   *  NegotiationOutcomeSection in the report (offer-progression
+   *  timeline + accepted-deal email template). Other interview
+   *  types leave this undefined. */
+  negotiationOutcome?: {
+    /** Each AI offer made during the session, in order. Most-recent last. */
+    offers: Array<{ turn: number; total: number; question: string }>;
+    /** Final agreed total CTC if the candidate accepted. Null otherwise. */
+    finalTotal: number | null;
+    /** Outcome state derived from candidate's answers. */
+    outcome: "accepted" | "walked_away" | "no_agreement";
+    /** Highest number the candidate stated as their target. */
+    candidateAsk: number | null;
+  };
 }

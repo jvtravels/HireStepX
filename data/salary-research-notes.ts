@@ -212,14 +212,78 @@ export const COMP_STRATEGY_NOTES = `MARKET INTELLIGENCE FOR THIS NEGOTIATION:
     who max contributions (typically 10-15% of salary capped at
     $25K/yr in parent currency).
 
-11. CALIBRATION DATE.
+11. NPS 14% RESTRUCTURING PLAY (BIGGEST 2025 UNLOCK).
+    From Apr 2025 the §80CCD(2) employer-NPS limit was raised from
+    10% → 14% of basic for ALL salaried under the new tax regime
+    (was government-only at 14% earlier). Practical effect:
+      • At ₹50L CTC with ~₹25L basic, candidate can route ~₹3.5L
+        of CTC into corporate NPS Tier 1 instead of special allowance,
+        same CTC, but the ₹3.5L is now tax-free → ~₹1L+ extra net
+        wealth/year at top slab.
+      • The 14% match is a payroll setting at most large employers,
+        NOT a comp negotiation — they almost always say yes.
+    When candidate is on a senior offer (CTC ≥ ₹25L) and asks how to
+    get more in-hand, surface this lever explicitly: "We can route
+    14% of basic into corporate NPS Tier 1 — same CTC for the
+    company, lower tax for you under §80CCD(2)."
+
+12. NEW vs OLD TAX REGIME — NEW WINS BY DEFAULT (FY 2025-26).
+    Section 87A rebate raised to ₹60K → effective tax-free up to
+    ₹12.75L gross (₹12L taxable + ₹75K standard deduction). Old
+    regime now only wins if candidate has combined deductions
+    (HRA + 80C + 80D + home-loan §24 + 80CCD(1B)) ≥ ~₹4.75L. Most
+    tech employees don't hit this. New regime allows §80CCD(2)
+    employer NPS up to 14% of basic — the only major deduction worth
+    fighting for. Default the conversation to new regime; only
+    discuss HRA / LTA / 80C exemptions if candidate explicitly says
+    they're on old regime.
+
+13. SECTION 87A — TAX-FREE BELOW ₹12.75L GROSS.
+    Junior offers (entry IT services, design freshers, campus hires)
+    now land tax-free under the new regime if total taxable income
+    ≤ ₹12L (gross ≤ ~₹12.75L). Marginal relief above ₹12L prevents
+    cliff. When framing entry-level offers (₹6-12L band), the
+    "you'll keep nearly all of this" pitch is genuine and a real
+    differentiator vs. older calculators that assume slab rates apply
+    from ₹3L onwards.
+
+14. ₹7.5L COMBINED-CAP PERQUISITE TRAP.
+    Combined employer contribution to (PF + NPS Tier 1 +
+    Superannuation) > ₹7.5L/year is taxable as perquisite. Bites at
+    ~₹40L+ basic (~₹70L+ CTC). When restructuring senior offers
+    toward NPS, watch this ceiling — going from 10%→14% NPS at very
+    high basic can push past ₹7.5L and the excess becomes taxable.
+    Sweet spot: 14% NPS as long as basic stays below ~₹40-45L.
+
+15. METRO HRA EXPANSION (AY 2026-27 ONWARDS).
+    Hyderabad / Pune / Ahmedabad / Bangalore are now treated as
+    metro (50% basic HRA exemption, up from 40%). FY 2025-26 ITR
+    (filed Jul 2026) STILL uses old 4-city rule (only Mumbai /
+    Delhi / Chennai / Kolkata at 50%); next fiscal year onward the
+    expanded list applies. Only relevant for old-regime candidates;
+    new regime makes HRA fully taxable regardless.
+
+16. RSU DISCLOSURE — SCHEDULE FA / BLACK MONEY ACT.
+    Foreign-listed RSUs (FAANG parent stock at Google / Microsoft /
+    Amazon / Meta / Apple / Adobe) require Schedule FA disclosure in
+    ITR-2 even before sale. Vested-but-unsold counts. Penalty up to
+    ₹10L for non-disclosure under the Black Money Act. Most
+    candidates miss this and only realise during tax audit. When
+    discussing FAANG/GCC offers with RSU components, mention the
+    Schedule FA filing burden as part of the "real cost" of the
+    grant — it's not just the upside of the stock.
+
+17. CALIBRATION DATE.
    These notes reflect Indian market conditions as of May 2026.
    Sources: Levels.fyi, AmbitionBox, Glassdoor India, Inc42 IPO
    tracker, Zinnov GCC report 2026, public DRHP filings, peoplematters
-   variable-pay coverage Q4 FY25, Inc42/Entrackr ESOP buyback trackers.
+   variable-pay coverage Q4 FY25, Inc42/Entrackr ESOP buyback trackers,
+   ClearTax/Bajaj Finserv tax-slab updates FY 2025-26, NSDL NPS
+   employer-contribution circulars Apr 2025.
    Refresh recommended every 6 months — startup ESOP liquidity, GCC
-   pay differential, AI/ML premium, and IT-services variable-pay
-   realisation are the four fastest-moving data points.`;
+   pay differential, AI/ML premium, IT-services variable-pay
+   realisation, and tax-regime breakeven thresholds are the five
+   fastest-moving data points.`;
 
 /** Returns true if the role family commands an AI/ML skill premium.
  *  Used to add a sentence to the prompt biasing the AI's open
