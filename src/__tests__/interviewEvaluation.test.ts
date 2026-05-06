@@ -269,6 +269,21 @@ describe("extractNegotiationFacts", () => {
     expect(facts.candidateCounter).toBe("₹35 LPA");
   });
 
+  it("differentiates candidateAskTotal from candidateAskBase when phrased explicitly", () => {
+    const transcript = makeTranscript(["Was expecting 12 lakhs per annum total CTC with 11 lakhs as base salary."]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateAskTotal).toBe("₹12 LPA");
+    expect(facts.candidateAskBase).toBe("₹11 LPA");
+  });
+
+  it("leaves base/total null when not labelled", () => {
+    const transcript = makeTranscript(["I'd like 25 LPA."]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateAskBase).toBeNull();
+    // candidateAskTotal stays null too unless 'total/CTC/package' is explicit
+    expect(facts.candidateAskTotal).toBeNull();
+  });
+
   it("extracts current CTC", () => {
     const transcript = makeTranscript(["I'm currently earning ₹28 LPA at my current job."]);
     const facts = extractNegotiationFacts(transcript);

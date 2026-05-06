@@ -197,8 +197,17 @@ export interface NegotiationFacts {
   acceptedImmediately: boolean;
   /** Whether the candidate rejected the offer outright */
   rejectedOutright: boolean;
-  /** CTC/salary number the candidate mentioned (e.g., "25 LPA") */
+  /** CTC/salary number the candidate mentioned (e.g., "25 LPA"). This
+   *  is the canonical "candidate's ask" — total CTC if differentiated,
+   *  otherwise the highest salary figure. */
   candidateCounter: string | null;
+  /** Candidate's stated TOTAL/CTC ask, when phrased explicitly as
+   *  "total" / "CTC" / "package". Null if not differentiated. */
+  candidateAskTotal: string | null;
+  /** Candidate's stated BASE-only ask. Null if not differentiated.
+   *  Useful for catching anchor drift — the AI must not echo the base
+   *  number when the candidate's *total* is what's being negotiated. */
+  candidateAskBase: string | null;
   /** Current CTC the candidate disclosed */
   candidateCurrentCTC: string | null;
   /** Whether the candidate mentioned competing offers */
@@ -280,6 +289,27 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
     ? `₹${counterNumbers.reduce((max, n) => parseFloat(n) > parseFloat(max) ? n : max)} LPA`
     : (allSalaryMatches.length > 0 ? `₹${allSalaryMatches[allSalaryMatches.length - 1]} LPA` : null);
 
+  // Differentiate base vs total. "11 lakhs as base salary" / "12 LPA
+  // total CTC" — the AI used to collapse total → base ("you mentioned
+  // ₹11 LPA" when the candidate said "12 total, 11 base"). Pick out
+  // the explicitly-labelled values.
+  const totalRe = /(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|cr|crore)\s*(?:total|ctc|package|all up|all in|in total|per annum)\b/gi;
+  const baseRe = /(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?)?\s*(?:as\s+(?:my|the)?\s*)?base(?:\s+(?:salary|pay))?\b/gi;
+  const totalMatches: number[] = [];
+  let totalM: RegExpExecArray | null;
+  while ((totalM = totalRe.exec(allText)) !== null) {
+    const v = parseFloat(totalM[1]);
+    if (Number.isFinite(v) && v >= 3 && v <= 500) totalMatches.push(v);
+  }
+  const baseMatches: number[] = [];
+  let baseM: RegExpExecArray | null;
+  while ((baseM = baseRe.exec(allText)) !== null) {
+    const v = parseFloat(baseM[1]);
+    if (Number.isFinite(v) && v >= 3 && v <= 500) baseMatches.push(v);
+  }
+  const candidateAskTotal = totalMatches.length > 0 ? `₹${Math.max(...totalMatches)} LPA` : null;
+  const candidateAskBase = baseMatches.length > 0 ? `₹${Math.max(...baseMatches)} LPA` : null;
+
   const hasCompetingOffers = /(?:other offer|competing|another company|counter.?offer|multiple offers|also talking|got an offer)/i.test(allText);
 
   // Detect specific topics the candidate raised
@@ -323,6 +353,8 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
     acceptedImmediately,
     rejectedOutright,
     candidateCounter,
+    candidateAskTotal,
+    candidateAskBase,
     candidateCurrentCTC,
     hasCompetingOffers,
     topicsRaised,
