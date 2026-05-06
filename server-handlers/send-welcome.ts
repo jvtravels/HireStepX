@@ -325,6 +325,75 @@ async function handleVerifyReminder(req: VercelRequest, res: VercelResponse, nor
   return res.status(200).json({ ok: true });
 }
 
+/* ─── No-Account-Found courtesy email ─────────────────────────────────────
+   Sent when /forgot-password is invoked with an email that has no
+   matching HireStepX account. Lets the legit user (typo, wrong
+   address, deleted account) understand why no reset email arrived,
+   without leaking enumeration via the client UI. Fire-and-forget;
+   never throws to the caller. Rate-limited by the same per-IP and
+   per-email guards that gate the real reset path. */
+async function sendNoAccountFoundEmail(email: string): Promise<void> {
+  if (!RESEND_API_KEY) return; // best-effort
+  try {
+    const safeEmail = escapeHtml(email);
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 10_000);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      signal: ac.signal,
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [email],
+        subject: "We couldn't find your HireStepX account",
+        html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#FAF7F0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF7F0;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border-radius:16px;border:1px solid #EBE5D2;overflow:hidden;">
+        <tr><td style="padding:32px 40px 16px;">
+          <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#0E0C08;">No account found</h1>
+          <p style="margin:0 0 16px;font-size:14px;color:#6E6759;line-height:1.6;">
+            Someone just asked us to reset the password for <strong>${safeEmail}</strong>, but we don't have a HireStepX account at this address.
+          </p>
+          <p style="margin:0 0 24px;font-size:14px;color:#6E6759;line-height:1.6;">
+            If you meant to sign up, you can create an account in under a minute. If you have an account under a different email, try the reset there instead.
+          </p>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding-right:8px;">
+                <a href="${APP_URL}/signup" style="display:inline-block;padding:12px 22px;background:#312E81;color:#FAF7F0;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;">Create an account</a>
+              </td>
+              <td>
+                <a href="${APP_URL}/forgot-password" style="display:inline-block;padding:12px 22px;background:#FAF7F0;color:#312E81;font-size:13px;font-weight:600;text-decoration:none;border-radius:8px;border:1px solid #312E81;">Try a different email</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:24px 0 0;font-size:12px;color:#A39C8B;line-height:1.5;">
+            If it wasn't you, you can safely ignore this email — nothing has changed and no password was reset.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      }),
+    });
+    clearTimeout(t);
+  } catch (err) {
+    console.warn(
+      "[reset] no-account email send failed:",
+      err instanceof Error ? err.message : "Unknown",
+    );
+  }
+}
+
 // ─── Password Reset Email Handler ───────────────────────────────────────────
 async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEmail: string) {
   // Email-format validation. The user reported password-reset emails
@@ -387,14 +456,20 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       const users = userListData.users || userListData || [];
       const found = Array.isArray(users) && users.some((u: { email?: string }) => u.email?.toLowerCase() === normalizedEmail);
       if (!found) {
-        // Email enumeration defense: don't reveal whether the email
-        // exists. Probing /forgot-password to enumerate accounts is a
-        // standard reconnaissance step before credential-stuffing
-        // attacks; returning 200 + generic copy here makes that probe
-        // useless. The client UI shows "Check your email" identically
-        // regardless of whether a real account got an email or not.
-        // Loud server-side log so we can still tell during ops review.
-        console.log(`[reset] no-op for unknown email (enumeration defense): ${normalizedEmail}`);
+        /* Email enumeration defense — the client UI must look identical
+           whether the email exists or not, so attackers probing
+           /forgot-password can't tell which addresses are registered.
+           BUT a silent no-op leaves a legit user (typo'd email, wrong
+           account) sitting forever on "Check your email" with no
+           explanation.
+           Option C from the audit: silent in UI, but send a "we
+           couldn't find an account" email to the typed address. The
+           legit user immediately understands what happened; the
+           attacker only learns about emails sent to their own probe
+           address (no information leak). Same per-IP + per-email
+           rate limits (3/h IP, 5/24h email) bound abuse cost. */
+        console.log(`[reset] unknown email — sending "no account found" courtesy email: ${normalizedEmail}`);
+        await sendNoAccountFoundEmail(normalizedEmail);
         return res.status(200).json({ ok: true });
       }
     }
