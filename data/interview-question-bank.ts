@@ -906,6 +906,50 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Soft-signal-reading EM probe. Wants: behavioral-data signals (Slack quietness, code-review-tone shift, meeting-camera-off rate), structured intervention (skip-levels, anonymous pulse, public acknowledgement of the change).",
   },
 
+  /* ── Technical Leadership (senior-IC × EM hybrid) ────────────── */
+  {
+    text: "Walk me through an architecture migration you led across 30+ engineers. What was the rollback plan and when did you nearly need it?",
+    company: "razorpay", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Tech-leadership probe (not pure IC). Wants migration scope + organisational coordination + actual rollback trigger criteria. 'We didn't need the rollback' fails — interviewer wants the *moment you almost pulled the trigger*.",
+  },
+  {
+    text: "You inherit a system over-engineered with microservices for what's effectively a CRUD app serving 200 RPS. How do you handle — leave it, fix it, or escalate?",
+    company: "stripe", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Senior-tech-leadership scope-judgment. Tests over-engineering pattern recognition + political awareness (the original architect may still be on the team). Wants a phased plan, not a religious answer.",
+  },
+  {
+    text: "Your team has 6 weeks of tech debt and a feature that needs to ship in 4. The PM wants both. Walk me through how you negotiate.",
+    company: "atlassian", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Tech-leadership negotiation under constraint. Wants: data ('debt is causing X bugs/week'), counter-proposal ('we ship feature minus Y, debt half-fixed'), readiness to escalate to VP if PM holds firm.",
+  },
+  {
+    text: "You're the Staff Engineer rolling out Cursor/Copilot to a team of 25 with mixed seniority. What's your 90-day plan and how do you measure success?",
+    company: "google", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "2026-defining tech-leadership question. Wants: phased rollout (junior-pair → senior-pair → solo), guardrails (security review boundaries, never-trust patterns), measurement (PR-review-time, defect-escape rate, NOT lines-of-code).",
+  },
+  {
+    text: "On-call has gotten miserable — engineers paged 3-4 times/night, half false alarms. Walk me through the redesign you'd lead.",
+    company: "phonepe", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Tech-leadership operational craft. Wants: alert-tier discipline (paging vs warning), runbook hygiene, blameless postmortem culture, on-call-load metric tracked weekly. 'We'd just fix the alerts' fails — wants the system change.",
+  },
+  {
+    text: "Two of your senior engineers want very different architectures for the same problem. Both are technically defensible. How do you decide and how do you communicate the decision?",
+    company: "meta", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Senior-tech-leadership disambiguation moment. Tests: framework for tie-breaking (reversibility, cost-of-being-wrong, who's on the hook for ops), genuine ownership (not 'I let them debate'), and post-decision retention thinking for the engineer whose call you didn't take.",
+  },
+  {
+    text: "How do you set the bar for promoting an SE3 to Staff? Walk me through the last time you said 'not yet' — what was missing?",
+    company: "amazon", roleFamily: "em", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Tech-leadership calibration probe. Wants concrete missing-bar dimension (scope-of-influence, ambiguity handling, cross-team mentoring) AND specific evidence the candidate gathered. 'Not enough technical depth' is too vague.",
+  },
+
   /* ── HR Round (additions) ─────────────────────────────────────── */
   {
     text: "Tell me about yourself — keep it to 90 seconds, focused on what's relevant for this role.",

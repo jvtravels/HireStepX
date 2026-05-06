@@ -71,6 +71,11 @@ const HIGH_TRAFFIC_COMBOS: ReadonlyArray<readonly [CompanyKey, RoleFamily, Focus
   ["atlassian", "behavioral", "panel"],
   ["google", "em", "panel"],
   ["amazon", "em", "panel"],
+  // Technical Leadership (senior-IC × EM hybrid — distinct from pure SWE technical)
+  ["razorpay", "em", "technical"],
+  ["stripe", "em", "technical"],
+  ["google", "em", "technical"],
+  ["amazon", "em", "technical"],
 ];
 
 function hasTier1(combo: readonly [CompanyKey, RoleFamily, FocusArea]): boolean {
