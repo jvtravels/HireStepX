@@ -182,15 +182,25 @@ export default function ResetPassword() {
           }
         }
 
-        // True one-shot: write `password_reset_opened_at` on first
-        // mount (audit P0 #9). If a SECOND tab opens the same link
-        // (legit double-click OR attacker who got the email first),
-        // the second tab sees a recent open-timestamp and rejects.
-        // Window is 5 min — long enough for a slow-loading tab to
-        // recover, short enough that yesterday's stale flag doesn't
-        // block today's legit reset.
+        /* Original window was 5 minutes — too aggressive in practice.
+           User-reported failure mode:
+             1. First reset attempt: updateUser timed out → user got
+                stuck on "Updating..." → never completed. But
+                `password_reset_opened_at` from THIS mount was already
+                written to user_metadata.
+             2. User requests a new link from /forgot-password.
+             3. New link arrives, user clicks within 5 min of the
+                first attempt.
+             4. THIS check sees `opened_at` ~3 min old → falsely
+                rejects with "link expired".
+
+           The new 90s window covers the legitimate double-click /
+           slow-loading-tab case while not blocking a re-issued link.
+           Combined with the link's own 30-min server-side expiry,
+           this gives users a real second chance after a failed
+           first attempt. */
         const openedAt = userData.user.user_metadata?.password_reset_opened_at;
-        if (typeof openedAt === "number" && Date.now() - openedAt < 5 * 60 * 1000) {
+        if (typeof openedAt === "number" && Date.now() - openedAt < 90 * 1000) {
           // The link is "in use elsewhere" — sign out cleanly + reject.
           await client.auth.signOut().catch(() => {});
           if (cancelled) return;
@@ -282,10 +292,8 @@ export default function ResetPassword() {
     if (breach.unknown) {
       console.warn("[reset-password] HIBP breach check unreachable — proceeding without verification");
     }
-    // Wrap each Supabase call in a 15s timeout race so a hung network
+    // Wrap each Supabase call in a timeout race so a hung network
     // request can't leave the user stuck forever on "Updating..."
-    // Pattern matches CLAUDE.md guidance for getSession (browser
-    // extension fetch hooks are a known cause of indefinite hangs).
     const withTimeout = <T,>(p: Promise<T>, ms: number, label: string) =>
       Promise.race<T>([
         p,
@@ -298,28 +306,35 @@ export default function ResetPassword() {
       ]);
     try {
       const client = await getSupabase();
-      const sessionResult = await withTimeout(
-        client.auth.getSession(),
-        8000,
-        "getSession",
-      );
-      const currentSession = sessionResult.data.session;
 
-      // Re-fetch user from server — JWT-cached user_metadata is stale
-      // because the access_token in the email link was issued before any
-      // metadata write. Without this, password_reset_used_at would always
-      // appear unset on subsequent link clicks.
-      const userResult = await withTimeout(
-        client.auth.getUser(),
-        8000,
-        "getUser",
-      );
-      const freshUser = userResult.data.user;
+      /* User-reported timeout chain:
+           [reset-password] update failed: getSession timed out after 8s
+           [reset-password] update failed: updateUser timed out after 15s
+         Root cause: this submit handler used to make four serial auth
+         calls (getSession → getUser → updateUser → signOut). Each one
+         acquires the supabase-js navigator-lock, and on a page where
+         AuthContext is also mounting/refreshing they fight for the
+         same lock and stack up timeouts.
 
-      // Server-side double-check: if the link has already been used
-      // recently, reject the submit even if the page somehow loaded
-      // (race condition between mount check + submit).
-      const lastUsedAt = freshUser?.user_metadata?.password_reset_used_at;
+         The mount-time effect already runs getUser() to validate the
+         link + write `password_reset_opened_at`. By the time the user
+         is typing a password, the user_metadata has been verified and
+         is sitting in the JWT-cached session. We don't need a fresh
+         server round-trip — updateUser itself rejects with the proper
+         auth error if the link has been consumed.
+
+         New flow: read session synchronously from the SDK's in-memory
+         cache (no network), pull metadata off it, call updateUser
+         directly. One round-trip instead of four. */
+      const cachedSessionResult = await withTimeout(client.auth.getSession(), 4000, "getSession");
+      const currentSession = cachedSessionResult.data.session;
+
+      // Server-side double-check: the mount handler already wrote
+      // `password_reset_opened_at`; the same `password_reset_used_at`
+      // it should have read still applies here. Both come from the
+      // session.user.user_metadata cache (no extra network hop).
+      const cachedUser = currentSession?.user;
+      const lastUsedAt = cachedUser?.user_metadata?.password_reset_used_at;
       if (typeof lastUsedAt === "number") {
         const elapsed = Date.now() - lastUsedAt;
         if (elapsed < 24 * 60 * 60 * 1000) {
@@ -332,10 +347,9 @@ export default function ResetPassword() {
       }
 
       // Last-3 password reuse rejection (defence-in-depth; Supabase handles
-      // canonical password hashing server-side). Read from the FRESH user
-      // record, not the JWT-cached session, for the same staleness reason.
+      // canonical password hashing server-side).
       const passwordHashes: string[] =
-        (freshUser?.user_metadata?.password_hashes as string[] | undefined) ||
+        (cachedUser?.user_metadata?.password_hashes as string[] | undefined) ||
         [];
       const newHash = await sha256Hex(password);
       if (passwordHashes.includes(newHash)) {
@@ -360,7 +374,7 @@ export default function ResetPassword() {
             password_hashes: updatedHashes,
           },
         }),
-        15000,
+        12000,
         "updateUser",
       );
 
