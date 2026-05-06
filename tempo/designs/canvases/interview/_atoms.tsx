@@ -1160,7 +1160,7 @@ export function TranscriptPanel({ text, interim = "" }: TranscriptPanelProps) {
         border: `1px solid ${t.line}`,
         borderRadius: 14,
         padding: "14px 16px",
-        fontFamily: f.serif,
+        fontFamily: f.sans,
         fontSize: 15,
         lineHeight: 1.55,
         color: t.coal,

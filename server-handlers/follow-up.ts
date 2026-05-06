@@ -266,8 +266,15 @@ YOUR GOAL: Summarize the SPECIFIC deal and set concrete next steps. Rebuild warm
 
       // Extract the initial offer from conversation history so the LLM can reference exact numbers.
       // Pin the headline anchor explicitly so the LLM cannot round or drift.
+      // The "WORD BINDING" clause closes the loophole that produced Bug A
+      // (image 2 in the user-reported salary-neg report): the LLM said
+      // "initial offer of 22 LPA base" several turns after presenting
+      // 20 LPA as initial — semantically rebinding "initial" to a new
+      // number. Counter-offers must use "revised / updated / best-and-
+      // final" — the word "initial" is permanently bound to the anchor.
       const anchorLine = canonicalInitialOffer !== null
-        ? `\nPINNED INITIAL OFFER: ₹${canonicalInitialOffer} LPA. This is your starting anchor. NEVER write a different number for "initial offer" — not ₹${(canonicalInitialOffer - 0.4).toFixed(1)}, not ₹${(canonicalInitialOffer + 0.4).toFixed(1)}, not anything close. Echo ₹${canonicalInitialOffer} exactly.`
+        ? `\nPINNED INITIAL OFFER: ₹${canonicalInitialOffer} LPA. This is your starting anchor. NEVER write a different number for "initial offer" — not ₹${(canonicalInitialOffer - 0.4).toFixed(1)}, not ₹${(canonicalInitialOffer + 0.4).toFixed(1)}, not anything close. Echo ₹${canonicalInitialOffer} exactly.
+WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalInitialOffer} LPA for the rest of this conversation. When you make a counter-offer, NEVER call it "our initial offer" — call it "the revised offer", "the updated offer", "my best-and-final", or simply "the offer". Saying "initial offer of ₹${canonicalInitialOffer + 2} LPA base" or "revisit our initial offer of ₹${canonicalInitialOffer + 2}" rebinds the word "initial" to a new number — that is a contract-breaking error that destroys candidate trust.`
         : "";
       const offerCtx = initialOfferText
         ? `\nINITIAL OFFER YOU PRESENTED: "${sanitizeForLLM(initialOfferText, 500)}"\nYou MUST use these exact numbers when referencing the offer. Do NOT invent different figures.${anchorLine}`
@@ -427,12 +434,38 @@ Your response MUST directly address what they said above. Start by acknowledging
         ? "\nEQUITY GUARD: This role does NOT include ESOPs, RSUs, or stock options. Do NOT mention equity in any offer, counter-offer, or benefits discussion. Focus on base, joining bonus, variable pay (if applicable), learning budget, health insurance, and flexibility."
         : "";
 
+      /* Rejection-locks-out-closing guard (Bug B fix). When the
+         candidate just rejected ("stick with 26 lakhs"), the LLM
+         used to glide into wrap-up language ("we've had a productive
+         discussion, let me put together the final numbers") because
+         the phase index had advanced past 0.85. That sequence implies
+         a deal that does NOT exist — catastrophically dishonest from
+         a coaching standpoint. We now (a) force the effective phase
+         off "closing" / "closing-pressure" back to "counter-offer"
+         when intent.rejected is true, and (b) inject a hard ban-list
+         of agreement phrases into the prompt. The LLM may still close
+         later — but only after the candidate has actually agreed. */
+      const rejectionLocksClosing = candidateRejected || candidateWalkAway;
+      const effectiveSalaryPhase = rejectionLocksClosing && (salaryPhase === "closing" || salaryPhase === "closing-pressure")
+        ? "counter-offer"
+        : salaryPhase;
+      const rejectionGuard = rejectionLocksClosing
+        ? `\nREJECTION LOCK — NO DEAL HAS BEEN REACHED. The candidate just pushed back. The following phrases are BANNED in your reply (using any of them fabricates an agreement that doesn't exist):
+- "productive discussion" / "great conversation" / "we've had a great chat"
+- "what we've agreed" / "what we agreed on" / "the agreed package"
+- "final numbers" / "finalize" / "lock this in"
+- "have HR send" / "formal offer letter" / "I'll send the offer"
+- "welcome aboard" / "excited to have you" / "team is excited"
+- "what's your notice period" (do NOT pivot to logistics — the deal isn't closed)
+You must either (a) make a CONCRETE counter with a new ₹ number above your previous offer, or (b) probe what would actually move them. Do not behave like the negotiation is over.`
+        : "";
+
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
-${intentBanner}${equityGuard}${historyContext}
+${intentBanner}${equityGuard}${rejectionGuard}${historyContext}
 ${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${scenarioCtx}
 
-CURRENT PHASE: ${salaryPhase.toUpperCase()}
-${phaseInstructions[salaryPhase] || phaseInstructions["offer-reaction"]}
+CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
+${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}
 
 RULES:
 - MATCH INTENT: Re-read the candidate's answer above. Accepted → acknowledge and close. Rejected → acknowledge and counter. Question → answer it. NEVER ignore what they said.
@@ -704,8 +737,23 @@ Respond JSON only:
       // this arithmetic wrong (the user-reported "29.6 above offer of 29.6"
       // bug). Recompute B from A and the canonical anchor.
       if (canonicalInitialOffer !== null) {
+        /* Bug A fix — broader sweep. The previous regex caught "initial
+           offer of ₹N LPA" but missed "revisit our initial offer of
+           ₹N LPA base", "the initial offer was ₹N", and "our initial
+           offer of ₹N (base|total)". The new regex matches any
+           initial/original/starting/opening offer prefix followed by
+           a number and an LPA-family suffix, optionally with "base /
+           total / CTC" trailing words — and rewrites the number to
+           the canonical anchor. */
         clamped = clamped.replace(
-          /(initial offer(?:\s+of)?\s+|our\s+offer\s+of\s+|original\s+offer\s+of\s+|starting\s+offer\s+of\s+)₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakh|lakhs)/gi,
+          /((?:revisit\s+(?:our|the)\s+|come\s+back\s+to\s+(?:our|the)\s+|our\s+|the\s+|my\s+)?(?:initial|original|starting|opening)\s+offer\s+(?:of|was|is|stood\s+at)\s+)₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore)(\s+(?:base|total|CTC|fixed))?/gi,
+          (_full, prefix, trailer) => `${prefix}₹${canonicalInitialOffer} LPA${trailer || ""}`,
+        );
+        /* Also catch the bare "our offer of ₹N" / "starting offer of
+           ₹N" prefix without the "initial" anchor word — these are
+           still references to the opening anchor. */
+        clamped = clamped.replace(
+          /(our\s+offer\s+of\s+|original\s+offer\s+of\s+|starting\s+offer\s+of\s+)₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakh|lakhs)/gi,
           (_full, prefix) => `${prefix}₹${canonicalInitialOffer} LPA`,
         );
         // Recompute the "₹A — that's ₹B above our initial offer of ₹C" delta.

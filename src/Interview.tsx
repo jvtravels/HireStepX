@@ -464,7 +464,7 @@ function CanvasListeningActionZone({
   timeRemaining, timePercent,
   skipsUsed, skipBudget, canSkip,
   awaitingSpeechStart,
-  isLastStep, onViewResult,
+  isLastStep, isClosingStep, onViewResult,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -498,6 +498,11 @@ function CanvasListeningActionZone({
   canSkip: boolean;
   awaitingSpeechStart: boolean;
   isLastStep: boolean;
+  /** True when the current step is a "closing" wrap-up (no answer
+   *  expected). Distinct from isLastStep — the final scripted turn
+   *  in a salary-negotiation may still be a real question (e.g.
+   *  notice period), in which case the mic must remain visible. */
+  isClosingStep: boolean;
   onViewResult: () => void;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
@@ -560,7 +565,7 @@ function CanvasListeningActionZone({
         <div role="log" aria-relevant="additions" aria-label="Live transcript of your answer" style={{
           width: "100%", background: e.white, border: `1px solid ${e.line}`,
           borderRadius: 14, padding: "14px 16px",
-          fontFamily: ef.serif, fontSize: 15, lineHeight: 1.55, color: e.coal,
+          fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
           minHeight: 72, maxHeight: 160, overflowY: "auto", textAlign: "left",
           boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
         }}>
@@ -648,10 +653,16 @@ function CanvasListeningActionZone({
             • typing mode + empty → disabled placeholder
             • typing mode + filled → "Press Enter to send" submits */}
       {!showTyping && !canSend ? (
-        isLastStep ? (
-          /* Last question reached — there's nothing left to answer.
-             Replace the "Start speaking" CTA with "View result" so the
-             user can trigger the report directly. */
+        isClosingStep ? (
+          /* Closing wrap-up reached — no answer expected from the
+             candidate. Show "View result" instead of the mic so the
+             user can trigger the report directly.
+             NOTE: this used to gate on isLastStep alone, which broke
+             the final question of salary-negotiation interviews
+             (e.g. "What's your notice period?") — that's the last
+             scripted turn but still a real question. Gating on
+             isClosingStep means the mic stays visible until the
+             engine has actually scheduled a closing/wrap-up turn. */
           <button
             ref={nextBtnRef}
             type="button"
@@ -856,7 +867,7 @@ function InterviewInner() {
     setEvalTimedOut, setUsedFallbackScore, setEvaluating,
 
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
-    restartListening, awaitingSpeechStart, isLastStep,
+    restartListening, awaitingSpeechStart, isLastStep, isClosingStep,
     skipsUsed, skipBudget, canSkip,
     micQuiet, reconnecting, reconnectAttempt,
 
@@ -948,6 +959,24 @@ function InterviewInner() {
         @keyframes recordPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        /* Compact desktop / 13-14" laptops (≤1280px). The default
+           stage padding (40px 64px) and gap (28) are tuned for ≥1440px;
+           on 1280-wide screens — and especially when the viewport is
+           also vertically constrained — that whitespace pushes the
+           controls below the fold. Tightens paddings, gap, and
+           typographic rhythm without touching the mobile rules below. */
+        @media (max-width: 1280px) {
+          .iv-canvas-topbar { padding: 14px 24px !important; }
+          .iv-canvas-stage  { padding: 24px 32px !important; gap: 20px !important; max-width: 960px !important; }
+          .iv-info-bar      { padding: 10px 18px !important; }
+          .iv-info-bar-row  { padding: 10px 18px !important; }
+        }
+        /* Short viewports (e.g. 1280×800 laptops) — also pull the stage
+           top padding down so the question heading isn't pushed off
+           screen by the topbar + info-bar. */
+        @media (max-height: 820px) {
+          .iv-canvas-stage { padding-top: 18px !important; padding-bottom: 18px !important; gap: 16px !important; }
+        }
         @media (max-width: 600px) {
           .iv-info-bar { flex-wrap: wrap; gap: 8px !important; padding: 10px 16px !important; }
           .iv-info-bar-row { padding: 10px 16px !important; gap: 8px !important; flex-wrap: wrap !important; }
@@ -1204,6 +1233,7 @@ function InterviewInner() {
             canSkip={canSkip}
             awaitingSpeechStart={awaitingSpeechStart}
             isLastStep={isLastStep}
+            isClosingStep={isClosingStep}
             onViewResult={handleEnd}
           />
         )}

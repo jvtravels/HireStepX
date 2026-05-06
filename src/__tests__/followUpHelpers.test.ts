@@ -79,6 +79,32 @@ describe("detectCandidateIntent", () => {
       expect(r.accepted).toBe(true);
       expect(r.rejected).toBe(false);
     });
+
+    /* The user-reported bug — "No, I would like to stick with 26 lakhs
+       per annum" was being classified as not-rejected, which let the
+       AI glide into closing language. Lock this regression in. */
+    it("'stick with N lakhs' is a rejection (Bug B fix)", () => {
+      const r = detectCandidateIntent("No, I would like to stick with 26 lakhs per annum");
+      expect(r.rejected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+
+    it("'holding at N LPA' is a rejection", () => {
+      expect(detectCandidateIntent("I'm holding firm at 30 LPA").rejected).toBe(true);
+    });
+
+    it("'won't go below N' is a rejection", () => {
+      expect(detectCandidateIntent("I won't go below 28 lakhs").rejected).toBe(true);
+    });
+
+    it("'staying at N LPA' is a rejection", () => {
+      expect(detectCandidateIntent("I'd be staying at 32 LPA — that's my floor").rejected).toBe(true);
+    });
+
+    it("benign 'stick with the team' is NOT a rejection (no number near lock verb)", () => {
+      const r = detectCandidateIntent("I'd love to stick with the team I have today");
+      expect(r.rejected).toBe(false);
+    });
   });
 
   describe("walkAway", () => {

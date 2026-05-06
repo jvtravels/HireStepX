@@ -1344,7 +1344,17 @@ export function useInterviewEngine() {
                   if (s.type === "question" && !s.scoreNote?.includes("Dynamic follow-up")) {
                     updated[i] = { ...s, aiText: "Based on our discussion so far, let me think about what makes sense here. What are your thoughts on the overall package — is there a specific area you'd like to focus on?" };
                   } else if (s.type === "closing" && !s.scoreNote?.includes("Dynamic follow-up")) {
-                    updated[i] = { ...s, aiText: "I think we've had a really productive conversation. Let me put together the final numbers based on everything we've discussed and have HR send you the formal offer letter. What's your notice period situation?" };
+                    /* Closing must NOT contain a question (Bug C fix).
+                       The trailing "What's your notice period situation?"
+                       turned the wrap-up into an open question while the
+                       UI was already showing the "View result" button —
+                       leaving the user with a question on screen and no
+                       way to answer it. The replacement is a neutral
+                       wrap-up that closes cleanly; if a deal was actually
+                       reached, the LLM-generated closing earlier in the
+                       script (or the closing-PHASE follow-up) handles
+                       the recap. */
+                    updated[i] = { ...s, aiText: "Thanks for working through this with me. We'll review the conversation and follow up with next steps shortly." };
                   }
                 }
                 return updated;
@@ -2425,6 +2435,13 @@ export function useInterviewEngine() {
      *  answer; the CTA flips from "Start speaking" to "View result"
      *  which calls handleEnd to trigger the report. */
     isLastStep: currentStep >= interviewScript.length - 1 && interviewScript.length > 0,
+    /** True when the current step is a closing/wrap-up turn (no answer
+     *  expected). Used to suppress mic UI + show the View Result CTA
+     *  only on genuine outro turns, instead of any "last index" turn —
+     *  fixes Bug C where the mic disappeared on the final question
+     *  ("What's your notice period?") because isLastStep alone gated
+     *  the View Result branch. */
+    isClosingStep: interviewScript[currentStep]?.type === "closing",
 
     // Skip budget — used by Interview.tsx to enable/disable the skip CTA
     skipsUsed,

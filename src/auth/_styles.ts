@@ -202,6 +202,22 @@ export const AUTH_STYLES = `
     }
   }
 
+  /* Compact desktop / 13–14" laptops (≤1280px) — tighten vertical
+     rhythm so the hero + form fit comfortably in one screen without
+     scrolling. The hero font and paddings drop a notch; the form
+     stays readable. */
+  @media (max-width: 1280px) {
+    .hsx-login-topbar { padding: 22px 36px !important; }
+    .hsx-login-main   { padding: clamp(16px, 3vh, 36px) 24px !important; }
+    .hsx-login-hero h1 { font-size: clamp(2rem, 5vw, 3.25rem) !important; }
+    .hsx-login-hero   { margin-bottom: 24px !important; }
+    .hsx-login-subtitle { margin-top: 12px !important; font-size: 15px !important; }
+    .hsx-login-google,
+    .hsx-login-cta    { padding: 12px 16px !important; }
+    .hsx-login-divider { margin: 14px 0 !important; }
+    .hsx-login-form-fields { gap: 14px !important; }
+  }
+
   /* Tablet (≤960px) — modest tightening */
   @media (max-width: 960px) {
     .hsx-login-topbar { padding: 24px 32px !important; }

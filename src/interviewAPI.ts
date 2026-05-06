@@ -7,6 +7,7 @@ import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
 import { extractAccentMarkup } from "./_accent-parser";
 import { stripProsodyMarkup } from "./_prosody";
+import { checkQuestionQuality } from "./_question-quality";
 
 const RESULTS_KEY = "hirestepx_sessions";
 const IDB_STORE = "drafts";
@@ -357,7 +358,36 @@ export async function fetchLLMQuestions(params: {
       })
       .filter((q: InterviewStep) => q.aiText.length >= 10)
       .map((q: InterviewStep) => q.type === "closing" ? { ...q, waitForUser: true } : q);
-    return { questions, negotiationBand: data.negotiationBand || undefined };
+
+    /* Quality post-filter — see src/_question-quality.ts.
+       Rejects sub-15-word questions, banned LLM-isms, late-position
+       generic openers, and role-mismatched stems. Failed questions
+       are downgraded to a focus-aware fallback (NOT removed — we
+       still want a full session). Salary-neg is exempt because its
+       "questions" are actually offer/counter steps with their own
+       arc rules. */
+    const focus = (params.focus || params.type || "behavioral").toLowerCase();
+    const role = params.role || "";
+    let downgradedCount = 0;
+    const filteredQuestions = isSalaryNeg ? questions : questions.map((q: InterviewStep, idx: number) => {
+      const result = checkQuestionQuality(
+        { type: q.type, aiText: q.aiText, idx, total: questions.length },
+        focus,
+        role,
+      );
+      if (result.ok) return q;
+      console.warn(`[questions] step ${idx} (${q.type}) failed quality check:`, result.issues.map((i) => `${i.rule}(${i.detail})`).join(", "), "→ falling back");
+      downgradedCount++;
+      return {
+        ...q,
+        aiText: result.fallback,
+        aiTextDisplay: stripProsodyMarkup(result.fallback),
+      };
+    });
+    if (downgradedCount > 0) {
+      console.info(`[questions] quality-filter downgraded ${downgradedCount}/${questions.length} steps to safe fallbacks`);
+    }
+    return { questions: filteredQuestions, negotiationBand: data.negotiationBand || undefined };
   };
   for (let i = 0; i < 3; i++) {
     try {

@@ -6,6 +6,7 @@ import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
+import { formatScoringRubric } from "../data/focus-question-recipes";
 import {
   ROLE_SKILLS,
   DEFAULT_BANDS,
@@ -420,7 +421,15 @@ export default async function handler(req: Request): Promise<Response> {
       "government-psu": "Weight HEAVILY: balanced positioning, policy/scheme/article references, ethical reasoning rigor, current-affairs awareness, public-service genuineness.",
     };
     const rubricWeight = meta?.type ? typeRubricWeight[meta.type] : "";
-    const prompt = `You are a senior I/O-psychology-trained interview scorer. Produce a JSON report for this mock interview, calibrated to structured-interview rubrics (SHL UCF, STAR+L). Be honest and specific.${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}\n\n${groundingDirective}\n\n${fairnessDirective}\n\n${lengthTargetsDirective}\n\n${selfCheckDirective}
+    /* Per-focus structured scoring rubric — see
+       data/focus-question-recipes.ts. Each focus declares 4-5 weighted
+       dimensions (e.g. case-study scores MECE 30% / quantification 25%
+       / adaptability 20% / recommendation 15% / communication 10%).
+       The eval LLM uses these as the scoring spine, so a strong
+       case-study answer can no longer get a high overall score on
+       behavioural-style "STAR completeness" alone. */
+    const focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
+    const prompt = `You are a senior I/O-psychology-trained interview scorer. Produce a JSON report for this mock interview, calibrated to structured-interview rubrics (SHL UCF, STAR+L). Be honest and specific.${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}\n\n${groundingDirective}\n\n${fairnessDirective}\n\n${lengthTargetsDirective}\n\n${selfCheckDirective}
 
 CONTEXT:
 Role: ${sanitizeForLLM(meta?.role || "general", 80)}
