@@ -642,8 +642,12 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "big spaceship": "consulting-big4",
 
   // Design agencies — India (services economics, mid-tier pay).
-  "lollypop design studio": "it-services",
-  lollypop: "it-services",
+  // Premium boutiques (Lollypop, ProCreator, Onething, YUJ, ZEUX) reclassified
+  // to startup-growth based on verified salary data (Glassdoor, levels.fyi):
+  // YUJ Lead UX ₹26.5L, Lollypop 2-5yr ₹10-12L, Mumbai senior PD avg ₹14.5L.
+  // it-services bands (senior ₹8-11L) under-priced these by 40-60%.
+  "lollypop design studio": "startup-growth",
+  lollypop: "startup-growth",
   nilenso: "startup-growth",
   obvious: "it-services",
   "elephant design": "it-services",
@@ -779,11 +783,13 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "futuristic labs": "it-services",
   simpleplan: "it-services",
   "parallel labs": "it-services",
-  "zeux innovation": "it-services",
-  zeux: "it-services",
+  // ZEUX, ProCreator, Onething, YUJ — premium UX boutiques, salary in
+  // startup-growth band (senior ₹18-30L) per verified market data.
+  "zeux innovation": "startup-growth",
+  zeux: "startup-growth",
   "robosoft technologies": "it-services",
   robosoft: "it-services",
-  procreator: "it-services",
+  procreator: "startup-growth",
   "yellow slice": "it-services",
   "fractal ink": "it-services",
   ungrammary: "it-services",
@@ -796,8 +802,8 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "interactive avenues": "it-services",
   "lights out studio": "it-services",
   "think design": "it-services",
-  "yuj designs": "it-services",
-  yuj: "it-services",
+  "yuj designs": "startup-growth",
+  yuj: "startup-growth",
   monsoonfish: "it-services",
   "koru ux design": "it-services",
   "koru ux": "it-services",
@@ -828,8 +834,8 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   neuronimbus: "it-services",
   "kreativ street design": "it-services",
   "kreativ street": "it-services",
-  "onething design": "it-services",
-  onething: "it-services",
+  "onething design": "startup-growth",
+  onething: "startup-growth",
   "ionixx technologies": "it-services",
   ionixx: "it-services",
   "latentview design team": "it-services",

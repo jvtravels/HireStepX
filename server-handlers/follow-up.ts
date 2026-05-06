@@ -36,7 +36,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -80,6 +80,7 @@ export default async function handler(req: Request): Promise<Response> {
         lengthTrend?: "shortening" | "stable" | "growing";
       };
       previousMentions?: string[];
+      personaTrait?: string;
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -539,7 +540,7 @@ You may STILL ask about notice period, joining timeline, or remaining concerns â
 
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
 ${intentBanner}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
-${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}
+${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA â€” ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
 ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}

@@ -632,6 +632,7 @@ export async function fetchFollowUp(params: {
       uses these as explicit hooks for cross-question references
       ("Earlier you mentioned X — how does that connect to..."). */
   previousMentions?: string[];
+  personaTrait?: string;
 }): Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> {
   // Client-side rate limit: max 10 follow-ups per 60s
   if (!checkRateLimit("follow-up", 10, 60_000)) return null;

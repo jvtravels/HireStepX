@@ -33,7 +33,7 @@ import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
 import type { SarvamSTTHandle } from "./sarvamSTT";
-import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime } from "./InterviewComponents";
+import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, getPersonaTrait } from "./InterviewComponents";
 import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
@@ -1805,6 +1805,10 @@ export function useInterviewEngine() {
               return Number.isFinite(n) && n > 0 ? n : undefined;
             })(),
           negotiationScenario: negotiationScenario !== "standard" ? negotiationScenario : undefined,
+          // Persona trait flavor — gives the LLM a one-line cue so
+          // back-to-back sessions feel like meeting a different
+          // hiring manager. Deterministic by interviewer name.
+          personaTrait: isSalaryNegType ? getPersonaTrait(interviewerName) : undefined,
           candidateState,
           previousMentions,
         });

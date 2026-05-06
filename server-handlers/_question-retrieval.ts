@@ -210,7 +210,17 @@ export function retrieveReferenceQuestions(query: RetrievalQuery): RetrievalResu
    verbatim" — is part of the rendered block so it can never be
    accidentally omitted by callers. */
 export function formatReferencesForPrompt(result: RetrievalResult): string {
-  if (!result.hasMatches) return "";
+  if (!result.hasMatches) {
+    /* Tier 4: zero references. Tell the LLM explicitly so it knows
+       it's flying blind on this combo and shouldn't fabricate
+       company/role specifics. */
+    return [
+      "",
+      "REAL-WORLD REFERENCE QUESTIONS (tier 4 — no direct match in our verified bank):",
+      "GROUNDING NOTE: We have no verified reference questions for this exact (company × role × focus) combination. Stay with universally applicable questions for the focus area. DO NOT invent company-specific facts, scale numbers, product names, founders, or recent news. Use anonymous framings (\"a major Indian unicorn\", \"a high-scale payments product\") if you must reference the company at all.",
+      "",
+    ].join("\n");
+  }
   const tierDescription =
     result.tier === 1 ? "exact match for this company, role, and focus"
     : result.tier === 2 ? "same role + focus at peer companies"
@@ -220,6 +230,14 @@ export function formatReferencesForPrompt(result: RetrievalResult): string {
   lines.push("");
   lines.push(`REAL-WORLD REFERENCE QUESTIONS (tier ${result.tier} — ${tierDescription}):`);
   lines.push("These are HAND-CURATED, VERIFIED questions from real recent interviews. Use them as STYLE and DEPTH anchors. DO NOT copy them verbatim — generate fresh questions that match the format, specificity, and tone but use different wording, scenarios, or angles. The candidate must not see these literal strings.");
+  /* Tier-aware grounding warning. The further from exact match, the
+     less the LLM can rely on these references for company-specific
+     fact grounding. Make the limit explicit so it doesn't improvise. */
+  if (result.tier === 2) {
+    lines.push("GROUNDING NOTE: These references are tier-2 (same role + focus, but at PEER companies, not the candidate's actual target). Use them for FORMAT and DEPTH calibration only. DO NOT carry over company-specific details (scale numbers, product names, internal processes) from these references — those belong to the peer company, not the candidate's target.");
+  } else if (result.tier === 3) {
+    lines.push("GROUNDING NOTE: These references are tier-3 (same focus area, different role family). Use them ONLY to calibrate the focus-area question style. DO NOT carry over the role-specific or company-specific specifics — they belong to a different interview context. Ground every company/role mention in the candidate's stated target, in generic terms if no verified facts are available.");
+  }
   lines.push("");
   for (const e of result.entries) {
     lines.push(`  - ${e.text}`);

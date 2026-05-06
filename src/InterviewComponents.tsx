@@ -83,6 +83,32 @@ export function getInterviewerGender(name: string): "male" | "female" {
   return FEMALE_FIRST_NAMES.has(firstName) ? "female" : "male";
 }
 
+/** Persona traits for salary-neg conversations. Each name maps to a
+ *  small, distinct trait set so back-to-back sessions feel like
+ *  meeting different hiring managers. Fed into the follow-up prompt
+ *  as a one-line flavor cue. Deterministic by name. */
+const PERSONA_TRAITS: Record<string, string> = {
+  "Arjun Mehta":       "Pragmatic, numbers-first. Likes to settle quickly. Slightly impatient with vague answers.",
+  "Priya Sharma":      "Warm, listener. Asks 'how are you feeling about this?' before pushing on numbers.",
+  "Rohan Kapoor":      "Direct, no-nonsense. Gives you the headline and waits. Doesn't sugarcoat constraints.",
+  "Ananya Patel":      "Collaborative, frames trade-offs as joint problem-solving. 'Let's figure this out together.'",
+  "Vikram Desai":      "Old-school IT services manager. Long pauses, careful with budget, references 'the band'.",
+  "Kavya Nair":        "Senior, calm, inscrutable. Doesn't reveal where she can stretch until she has to.",
+  "Siddharth Joshi":   "Startup founder energy. Fast, candid, willing to bend on equity but tight on cash.",
+  "Neha Gupta":        "HR partner — process-heavy. References policy, vesting schedules, joining-bonus formulas.",
+  "Aditya Rao":        "Engineering manager. Talks shop fluently, will get distracted into role-tech if you let him.",
+  "Deepika Iyer":      "MNC GCC veteran. Polished, slightly bureaucratic. 'Let me check with comp committee.'",
+  "Karthik Nair":      "Mid-tier services manager. Friendly, slightly underconfident on stretch authority.",
+  "Aisha Rahman":      "Product company recruiter. Sharp on market data, brings up Levels.fyi unprompted.",
+  "Rajesh Iyer":       "Veteran agency owner. Personal, persuasive, sells the work over the package.",
+  "Meera Reddy":       "Design-studio principal. Warm, relational, frames pay against creative growth.",
+  "Tanvi Kulkarni":    "First-time hiring manager. Earnest, slightly nervous, occasionally over-explains.",
+};
+
+export function getPersonaTrait(name: string): string {
+  return PERSONA_TRAITS[name] || "Professional, neutral. Direct without being abrupt.";
+}
+
 /* ─── Panel Interview Members ─── */
 export interface PanelMember {
   name: string;

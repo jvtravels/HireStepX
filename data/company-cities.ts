@@ -42,10 +42,10 @@ const COMPANY_CITY_MAP: Record<string, CompanyCity> = {
   "futuristic labs": "Bangalore",
   simpleplan: "Bangalore",
   "parallel labs": "Bangalore",
-  "zeux innovation": "Bangalore",
-  zeux: "Bangalore",
-  "robosoft technologies": "Bangalore", // Udupi HQ; Bangalore is largest office
-  robosoft: "Bangalore",
+  // Robosoft is HQ'd in Udupi per Dun & Bradstreet / Tracxn / ZaubaCorp.
+  // Bangalore is a delivery office but the registered HQ is Udupi.
+  "robosoft technologies": "Udupi",
+  robosoft: "Udupi",
 
   // ─── India design studios — Mumbai ───
   procreator: "Mumbai",
@@ -62,6 +62,9 @@ const COMPANY_CITY_MAP: Record<string, CompanyCity> = {
   "lights out studio": "Mumbai",
   "think design": "Mumbai", // also Pune
   "bc web wise": "Mumbai",
+  // ZEUX Innovation HQ: Hiranandani Gardens, Mumbai 400076 (LinkedIn, ZoomInfo).
+  "zeux innovation": "Mumbai",
+  zeux: "Mumbai",
 
   // ─── India design studios — Pune ───
   "yuj designs": "Pune",
@@ -114,8 +117,10 @@ const COMPANY_CITY_MAP: Record<string, CompanyCity> = {
   "hakuna matata": "Chennai",
 
   // ─── India design studios — Kerala ───
-  "aufait ux": "Trivandrum",
-  aufait: "Trivandrum",
+  // Aufait UX active hiring location is Calicut per Indeed listings + their
+  // careers page. (Earlier mapping to Trivandrum was incorrect.)
+  "aufait ux": "Calicut",
+  aufait: "Calicut",
   wowmakers: "Kochi",
 
   // ─── India design studios — Other ───
