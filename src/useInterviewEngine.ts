@@ -1350,12 +1350,29 @@ export function useInterviewEngine() {
                        turned the wrap-up into an open question while the
                        UI was already showing the "View result" button —
                        leaving the user with a question on screen and no
-                       way to answer it. The replacement is a neutral
-                       wrap-up that closes cleanly; if a deal was actually
-                       reached, the LLM-generated closing earlier in the
-                       script (or the closing-PHASE follow-up) handles
-                       the recap. */
-                    updated[i] = { ...s, aiText: "Thanks for working through this with me. We'll review the conversation and follow up with next steps shortly." };
+                       way to answer it.
+                       Branch the wrap-up on the candidate's actual stance
+                       so a "we'll follow up" message doesn't fire after
+                       a clear walk-away or after a concrete acceptance.
+                       The negotiationFacts above already classify
+                       acceptance / rejection from the live transcript. */
+                    // Read the current transcript to classify the
+                    // candidate's last stance. extractNegotiationFacts is
+                    // pure, so safe to call here from the script-mutation
+                    // closure.
+                    const facts = extractNegotiationFacts([
+                      ...transcript,
+                      { speaker: "user" as const, text: lastAnswerTextRef.current || "", time: "" },
+                    ]);
+                    const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
+                    const isWalking = walkAwayPat.test(lastAnswerTextRef.current || "");
+                    let closingText = "Thanks for working through this with me. We'll review the conversation and follow up with next steps shortly.";
+                    if (facts.acceptedImmediately) {
+                      closingText = "Great — really glad we found terms that work. I'll have HR send the formal offer letter shortly. Welcome aboard.";
+                    } else if (facts.rejectedOutright || isWalking) {
+                      closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
+                    }
+                    updated[i] = { ...s, aiText: closingText };
                   }
                 }
                 return updated;
@@ -1747,7 +1764,24 @@ export function useInterviewEngine() {
           negotiationBand: negotiationBandRef.current || undefined,
           industry: user?.industry || undefined,
           highestOfferMade: highestOfferRef.current > 0 ? highestOfferRef.current : undefined,
-          candidateTarget: targetSalary || undefined,
+          /* Anchor priority for the candidate's stated ask:
+             1. user's explicit pre-set target (onboarding setSalary)
+             2. extracted highest counter from the live transcript
+                (extractNegotiationFacts → candidateCounter, e.g. "₹21 LPA")
+             Without (2) the LLM was free to echo whatever number it
+             pulled from the latest answer, producing flips like
+             "I heard ₹20 from you" then "I heard ₹21 from you" on
+             consecutive turns. Locking to a canonical extracted
+             value also lets the speaker-confusion validator in
+             follow-up.ts patch mistakes. */
+          candidateTarget:
+            targetSalary ||
+            (() => {
+              const c = negotiationFacts?.candidateCounter;
+              if (!c) return undefined;
+              const n = parseFloat(c.replace(/[^\d.]/g, ""));
+              return Number.isFinite(n) && n > 0 ? n : undefined;
+            })(),
           negotiationScenario: negotiationScenario !== "standard" ? negotiationScenario : undefined,
           candidateState,
           previousMentions,
