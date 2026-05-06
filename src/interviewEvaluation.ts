@@ -261,6 +261,15 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
   while ((salaryMatch = salaryRe.exec(allText)) !== null) {
     const rawNum = salaryMatch[1] || salaryMatch[2];
     if (!rawNum) continue;
+    // Reject benefit-coded amounts: "₹1 lakh as health insurance" /
+    // "₹2 lakhs in joining bonus" / "₹0.5 LPA learning budget" — these
+    // are component values the candidate is *itemizing*, not their
+    // salary ask. Including them would inflate or deflate the
+    // candidateCounter wrongly.
+    const ctxStart = Math.max(0, salaryMatch.index - 20);
+    const ctxEnd = Math.min(allText.length, salaryMatch.index + salaryMatch[0].length + 40);
+    const ctx = allText.slice(ctxStart, ctxEnd);
+    if (/\b(?:health|insurance|medical|joining\s+bonus|sign[- ]?on|learning\s+budget|relocation|wfh\s+allowance|conference|tools?\s+stipend|training)\b/i.test(ctx)) continue;
     const isCrore = /cr|crore/i.test(salaryMatch[0]);
     const normalizedNum = isCrore ? String(parseFloat(rawNum) * 100) : rawNum;
     allSalaryMatches.push(normalizedNum);

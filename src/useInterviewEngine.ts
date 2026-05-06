@@ -1625,14 +1625,24 @@ export function useInterviewEngine() {
     // worse than nothing.
     const justAskedType = interviewScript[currentStep]?.type;
     const nextStepType = interviewScript[currentStep + 1]?.type;
-    // Suppress when (a) the just-answered turn was an opener/closing, or
-    // (b) this is the last real answer before closing — the candidate
-    // can't act on a "Tip: share more detail" when the next screen is
-    // the wrap-up.
+    // Once the candidate has accepted in salary-neg, stop emitting
+    // coaching tips. The conversation is closing; "Tip: share more
+    // detail" reads as an attempt to backseat-drive a deal that's
+    // already done.
+    const acceptedAlready = interviewType === "salary-negotiation"
+      ? extractNegotiationFacts([
+          ...transcript,
+          { speaker: "user" as const, text: answerText, time: "" },
+        ]).acceptedImmediately
+      : false;
+    // Suppress when (a) the just-answered turn was an opener/closing,
+    // (b) this is the last real answer before closing, or (c) the
+    // candidate has already accepted.
     const skipMicroFeedback =
       justAskedType === "intro" ||
       justAskedType === "closing" ||
-      nextStepType === "closing";
+      nextStepType === "closing" ||
+      acceptedAlready;
     setMicroFeedback(null);
     if (
       !skipMicroFeedback &&

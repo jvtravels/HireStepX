@@ -64,12 +64,24 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
 
   const entry = findSalaryEntry(roleKey, companyTier, exp);
 
-  // Fallback band if no salary data
+  // Fallback band if no salary data. Calibrate by experience level so
+  // an unknown junior role doesn't default to a senior-IC band.
+  // Previous default (₹12 / ₹16 / ₹20) was producing wildly inflated
+  // offers for unknown junior roles (e.g. ₹22 LPA for a junior UI/UX
+  // role at a small Mumbai design studio).
   if (!entry) {
+    const fallbackByExp: Record<string, { initial: number; min: number; max: number; walk: number }> = {
+      entry:     { initial: 5,  min: 3,   max: 8,   walk: 12 },
+      mid:       { initial: 10, min: 7,   max: 15,  walk: 20 },
+      senior:    { initial: 18, min: 14,  max: 28,  walk: 35 },
+      lead:      { initial: 28, min: 22,  max: 45,  walk: 55 },
+      executive: { initial: 50, min: 40,  max: 90,  walk: 120 },
+    };
+    const f = fallbackByExp[exp] ?? fallbackByExp.mid;
     return {
-      initialOffer: 12, minOffer: 10, maxStretch: 16, walkAway: 20,
-      joiningBonusRange: [0, 1.5], hasEquity: false, equityRange: [0, 0],
-      bandContext: "No specific salary data. Use general market rates. Initial offer: ₹12 LPA, max stretch: ₹16 LPA.",
+      initialOffer: f.initial, minOffer: f.min, maxStretch: f.max, walkAway: f.walk,
+      joiningBonusRange: [0, Math.max(0.5, f.initial * 0.1)], hasEquity: false, equityRange: [0, 0],
+      bandContext: `No specific salary data for this role/company. Conservative fallback for ${exp} level: ₹${f.initial} LPA initial offer, ₹${f.max} LPA max stretch.`,
     };
   }
 
