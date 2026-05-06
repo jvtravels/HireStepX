@@ -966,23 +966,35 @@ function InterviewInner() {
            controls below the fold. Tightens paddings, gap, and
            typographic rhythm without touching the mobile rules below. */
         @media (max-width: 1280px) {
-          .iv-canvas-topbar { padding: 14px 24px !important; }
-          /* Stage was previously clamped to 960px to tighten the
-             vertical rhythm — but that left the question heading
-             wrapping into 5-6 short lines on a 1280-wide laptop.
-             Lift the stage cap to ~1180px and let the question
-             wrapper itself widen below; the visualizer + controls
-             still center within the wider stage. */
-          .iv-canvas-stage  { padding: 24px 40px !important; gap: 20px !important; max-width: 1180px !important; }
+          .iv-canvas-topbar { padding: 12px 24px !important; }
+          /* Tight vertical rhythm for 13-14" laptops — every element
+             gets a notch smaller so question + visualizer + controls
+             fit above the fold without scroll, AND the visualizer
+             doesn't shift downward when the question grows from one
+             to four lines. Stage padding shrinks; question heading
+             max-width lifts to ~880 (was 620 inside the H1) so 4-5
+             line wraps become 2-3 line wraps; visualizer disc shrinks
+             from 220→160. Persona caption gets a tighter margin so
+             the action zone is closer to the visualizer. */
+          .iv-canvas-stage  { padding: 16px 40px !important; gap: 14px !important; max-width: 1180px !important; }
           .iv-question-wrap { max-width: 1080px !important; }
-          .iv-info-bar      { padding: 10px 18px !important; }
-          .iv-info-bar-row  { padding: 10px 18px !important; }
+          .iv-question-h1   { max-width: 880px !important; font-size: clamp(1.25rem, 1.9vw, 1.625rem) !important; line-height: 1.22 !important; }
+          /* Disc ≥ visualizer (150px from CanvasVoiceVisualizer prop) so
+             the dot-grid doesn't clip; we can't change the prop from
+             CSS. Halo + rings are sized off the disc width. */
+          .iv-viz-disc      { width: 170px !important; height: 170px !important; }
+          .iv-info-bar      { padding: 8px 18px !important; }
+          .iv-info-bar-row  { padding: 8px 18px !important; }
         }
-        /* Short viewports (e.g. 1280×800 laptops) — also pull the stage
-           top padding down so the question heading isn't pushed off
-           screen by the topbar + info-bar. */
-        @media (max-height: 820px) {
-          .iv-canvas-stage { padding-top: 18px !important; padding-bottom: 18px !important; gap: 16px !important; }
+        /* Short viewports (≤900px tall, e.g. 1280×800 / 1366×768
+           laptops, or 1280×1080 with browser chrome eating ~80px).
+           Pull padding + visualizer down further so the action zone
+           sits comfortably above the fold and the user doesn't have
+           to scroll while the AI speaks. */
+        @media (max-height: 900px) {
+          .iv-canvas-stage { padding-top: 12px !important; padding-bottom: 12px !important; gap: 12px !important; }
+          .iv-viz-disc     { width: 160px !important; height: 160px !important; }
+          .iv-question-h1  { font-size: clamp(1.15rem, 1.75vw, 1.5rem) !important; }
         }
         @media (max-width: 600px) {
           .iv-info-bar { flex-wrap: wrap; gap: 8px !important; padding: 10px 16px !important; }
@@ -1172,7 +1184,7 @@ function InterviewInner() {
             Hidden in panel mode — the PanelAvatarStage above already shows
             the active persona's dot-grid visualizer in the active avatar. */}
         {phase !== "done" && !isPanelInterview && (
-          <div style={{
+          <div className="iv-viz-disc" style={{
             position: "relative",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 220, height: 220, borderRadius: 999,

@@ -261,11 +261,14 @@ export function CanvasEditorialHeading({ before = "", accent, after = "", traili
   return (
     /* line-height locked to the same value as CanvasPlainHeading so the
        phase swap (speaking → listening) doesn't shift the heading height. */
-    <h1 style={{
+    <h1 className="iv-question-h1" style={{
       /* maxWidth keeps the editorial heading at a comfortable reading
          measure (~50-60ch). Without this, the text stretches the full
          width of the viewport on desktop and the line lengths read like
-         a billboard, not an interview question. */
+         a billboard, not an interview question.
+         The .iv-question-h1 class lets the compact-desktop media query
+         in Interview.tsx widen this on ≤1280px laptops where the 620px
+         cap was forcing 5-6 short lines. */
       fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
       lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: "0 auto", textWrap: "balance",
@@ -282,11 +285,12 @@ export function CanvasEditorialHeading({ before = "", accent, after = "", traili
 /* ─── PlainHeading — fallback when we don't have an accent split ─── */
 export function CanvasPlainHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h1 style={{
+    <h1 className="iv-question-h1" style={{
       /* maxWidth keeps the editorial heading at a comfortable reading
          measure (~50-60ch). Without this, the text stretches the full
          width of the viewport on desktop and the line lengths read like
-         a billboard, not an interview question. */
+         a billboard, not an interview question. See .iv-question-h1
+         media-query overrides in Interview.tsx for compact laptops. */
       fontFamily: ef.serif, fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
       lineHeight: 1.25, fontWeight: 400, letterSpacing: "-0.015em",
       color: e.coal, textAlign: "center", margin: "0 auto", textWrap: "balance",
