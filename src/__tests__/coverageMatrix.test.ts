@@ -47,6 +47,18 @@ const HIGH_TRAFFIC_COMBOS: ReadonlyArray<readonly [CompanyKey, RoleFamily, Focus
   ["jane-street", "quant", "technical"],
   // PM ladder
   ["atlassian", "pm", "case-study"],
+  // Management focus (was missing pre-2026-Q2 — silently fell to behavioral)
+  ["amazon", "em", "management"],
+  ["razorpay", "em", "management"],
+  // Campus placement (high Indian-market commercial value)
+  ["tcs", "campus", "campus-placement"],
+  ["infosys", "campus", "campus-placement"],
+  ["amazon", "campus", "campus-placement"],
+  // Government / PSU (was 0-coverage pre-2026-Q2)
+  ["upsc", "civil-services", "government-psu"],
+  ["ssb", "defence", "government-psu"],
+  ["isro", "scientist", "government-psu"],
+  ["rbi", "civil-services", "government-psu"],
 ];
 
 function hasTier1(combo: readonly [CompanyKey, RoleFamily, FocusArea]): boolean {

@@ -75,6 +75,22 @@ describe("inferRoleFamily", () => {
     expect(inferRoleFamily("Account Manager")).toBe("behavioral");
   });
 
+  it("infers government / PSU / campus families correctly", () => {
+    expect(inferRoleFamily("IAS Officer")).toBe("civil-services");
+    expect(inferRoleFamily("IPS Officer")).toBe("civil-services");
+    expect(inferRoleFamily("RBI Grade B")).toBe("civil-services");
+    expect(inferRoleFamily("Indian Army Officer")).toBe("defence");
+    expect(inferRoleFamily("AFCAT Officer")).toBe("defence");
+    expect(inferRoleFamily("ISRO Scientist")).toBe("scientist");
+    expect(inferRoleFamily("DRDO Scientist")).toBe("scientist");
+    expect(inferRoleFamily("Bank PO")).toBe("psu-engineer");
+    expect(inferRoleFamily("Fresher")).toBe("campus");
+    expect(inferRoleFamily("Graduate Engineer Trainee (GET)")).toBe("campus");
+    expect(inferRoleFamily("Management Trainee")).toBe("campus");
+    // ISRO Scientist must NOT trip "engineer" → swe (it goes scientist first)
+    expect(inferRoleFamily("ISRO Scientist")).not.toBe("swe");
+  });
+
   it("falls back to behavioral for unrecognised generic roles", () => {
     expect(inferRoleFamily("HR Partner")).toBe("behavioral");
     expect(inferRoleFamily("Account Manager")).toBe("behavioral");
@@ -96,6 +112,14 @@ describe("normaliseFocus", () => {
 
   it("aliases strategic → case-study", () => {
     expect(normaliseFocus("strategic")).toBe("case-study");
+  });
+
+  it("preserves new management and government-psu focuses without aliasing", () => {
+    expect(normaliseFocus("management")).toBe("management");
+    expect(normaliseFocus("government-psu")).toBe("government-psu");
+    expect(normaliseFocus("psu")).toBe("government-psu");
+    expect(normaliseFocus("government")).toBe("government-psu");
+    expect(normaliseFocus("civil-services")).toBe("government-psu");
   });
 
   it("returns null for unknown values", () => {

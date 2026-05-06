@@ -26,20 +26,42 @@ export type CompanyKey =
   | "flipkart" | "razorpay" | "swiggy" | "zomato" | "phonepe" | "paytm"
   | "cred" | "zerodha" | "meesho" | "oyo" | "freshworks" | "zoho"
   | "tcs" | "infosys" | "wipro" | "cognizant" | "accenture"
+  | "ltimindtree" | "hcl" | "capgemini" | "ibm"
   | "uber" | "atlassian" | "stripe" | "linkedin" | "adobe"
   | "mckinsey" | "bcg" | "bain" | "deloitte"
   | "goldman" | "jpmc" | "morgan-stanley"
   | "jane-street" | "de-shaw" | "citadel"
-  | "openai" | "anthropic" | "sarvam";
+  | "openai" | "anthropic" | "sarvam"
+  /* Government / PSU bodies — distinct from corporate companies in
+     hiring format. UPSC = civil services; SSC = staff selection
+     (Group B/C); IBPS = banking PO; RBI = central-bank Grade B; ISRO
+     /DRDO = scientist viva; SSB = defence forces. */
+  | "upsc" | "ssc" | "ibps" | "rbi" | "sebi" | "isro" | "drdo" | "ssb";
 
 export type RoleFamily =
   | "swe" | "pm" | "em" | "data" | "design" | "behavioral"
   | "consultant" | "quant" | "ml" | "writer" | "ds-research"
-  | "designer-senior" | "salary";
+  | "designer-senior" | "salary"
+  /* Govt/PSU role families — civil-services and defence-services
+     have radically different formats from private-sector behavioral
+     so they get their own retrieval families. */
+  | "civil-services" | "defence" | "psu-engineer" | "scientist"
+  /* Campus placement is a distinct lifecycle stage, not a role.
+     Used for fresher pipelines (TCS NQT, Infosys InfyTQ, etc.). */
+  | "campus";
 export type FocusArea =
   | "behavioral" | "technical" | "system-design" | "case-study"
   | "campus-placement" | "hr" | "panel" | "salary-negotiation"
-  | "leadership" | "general";
+  | "leadership" | "general"
+  /* Management is now a distinct focus (was silently falling back
+     to behavioral). EM/director rounds have unique probes around
+     hiring/firing, scaling, performance management, cross-functional
+     alignment — different signal from generic behavioral. */
+  | "management"
+  /* Government / PSU is a distinct focus (was missing entirely).
+     UPSC personality-test format, SSB defence rounds, RBI Grade B
+     descriptive-paper rounds, ISRO/DRDO scientist viva. */
+  | "government-psu";
 
 export interface BankEntry {
   /** Question text — anchored, never shown verbatim to the user. */
@@ -630,5 +652,251 @@ export const QUESTION_BANK: BankEntry[] = [
     company: "atlassian", roleFamily: "salary", focus: "salary-negotiation",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Sophisticated closing move. Sounds friendly but is asking you to drop your last leverage. Counter: 'Let me think about it overnight' — never reveal your floor at the table.",
+  },
+
+  /* ── UPSC Civil Services Personality Test (PT) ────────────────── */
+  {
+    text: "Why do you want to join the IAS specifically, and not the IRS or IFS where your optional subject would give you a better edge?",
+    company: "upsc", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "UPSC PT classic: tests service-cadre awareness + self-knowledge. Generic 'I want to serve the nation' fails. Ground in district-level admin specifics + why your optional + DAF profile point here.",
+  },
+  {
+    text: "You're posted as DM in a district where there's communal tension over a religious procession. The SP recommends imposing Section 144. What do you do?",
+    company: "upsc", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "PT ethics + administration scenario. Look for: hearing both communities, situation-specific (not template) decision, awareness of CrPC 144 consequences, communication strategy with media + public.",
+  },
+  {
+    text: "You're from <home state>. Tell me about a current administrative issue in your home state and what you'd do as collector.",
+    company: "upsc", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "DAF-grounded current-affairs probe. Must show specific district / scheme-level knowledge of home state, not generic national-level talking points.",
+  },
+  {
+    text: "Critics say AI will eliminate clerical jobs in panchayats and tahsil offices over the next 5 years. As a civil servant, what's your stance?",
+    company: "upsc", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "2026-relevant tech-policy ethics. Probe: balanced view (productivity vs. transition cost), awareness of digital India / Bhashini, concrete policy levers (reskilling budget, phased rollout). Hard pro/anti stance fails.",
+  },
+  {
+    text: "Your honest opinion: should India have a uniform civil code? Defend your position.",
+    company: "upsc", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Politically sensitive PT question. Look for: constitutional grounding (Art 44), nuance acknowledging different stakeholder views, ability to defend a position calmly under pushback. Fence-sitting OR rigid ideology both fail.",
+  },
+
+  /* ── SSB Defence Services (Indian Army / Navy / Air Force) ──── */
+  {
+    text: "Group Discussion topic: 'Should women be inducted into combat roles in the Indian Army?' You have 5 minutes; you're one of 8 candidates.",
+    company: "ssb", roleFamily: "defence", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "SSB Stage 2 GD format. Tests: speaking up early without dominating, building on others' points, balancing operational vs. social-justice angles, body language during pauses. Aggression / silence both fail.",
+  },
+  {
+    text: "GTO Task: Your team has 6 minutes to cross a 12-foot ditch using one wooden plank, one rope, and three drums. The plank is 8 feet. As Indicator, brief the GTO on your plan in 30 seconds.",
+    company: "ssb", roleFamily: "defence", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Group Task Officer (GTO) ground-task. Tests practical problem-solving + leadership + communication under pressure. Plan must be physically feasible AND clearly communicable. Fancy-but-impractical solutions get cut.",
+  },
+  {
+    text: "Personal Interview: You have 3 friends, your last grade was 68%, you didn't take any sports leadership in college. Why should we recommend you for the Indian Army?",
+    company: "ssb", roleFamily: "defence", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "SSB Personal Interview rapid-fire profile probe. The IO is testing handling pressure + self-awareness + concrete (not theoretical) leadership/grit examples. Defensive answers fail; concrete instances of pulling something off despite gaps win.",
+  },
+
+  /* ── RBI Grade B Phase II (descriptive paper / interview) ──── */
+  {
+    text: "RBI cut the repo rate by 25 bps last quarter, but credit growth in MSMEs hasn't picked up. As a Grade B officer in DEPR, what's your diagnosis?",
+    company: "rbi", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "RBI Grade B Phase III interview. Tests monetary-policy transmission understanding + sectoral lens. Probes expected: bank balance sheets, MSME risk premia, NBFC role, structural vs. cyclical demand factors.",
+  },
+  {
+    text: "Phase II ESI descriptive paper, 30 min: 'Discuss the trade-offs between financial inclusion and macroprudential stability in the context of India's UPI-led payments boom.' Outline your answer.",
+    company: "rbi", roleFamily: "civil-services", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "RBI Phase II descriptive. Look for: structured answer (intro / body with 3+ points / conclusion), data anchors (UPI volumes, financial-inclusion indices), citing specific RBI publications (Financial Stability Report).",
+  },
+
+  /* ── SSC CGL / Banking IBPS PO ─────────────────────────────────── */
+  {
+    text: "GD topic for IBPS PO: 'Should small-finance banks be allowed to convert into universal banks?' 8-min discussion, you're 1 of 10.",
+    company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "IBPS PO group discussion. Banking-specific topic; tests sectoral awareness + GD etiquette (entering, not interrupting, summarising). Generic CSR / women-empowerment templates fail here — banking literacy required.",
+  },
+  {
+    text: "PI: Why banking, why this bank, why now? You have a B.Tech IT degree — why aren't you sitting for IT placements?",
+    company: "ibps", roleFamily: "psu-engineer", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Standard IBPS-PO panel interview. Engineering-degree background is the most-probed angle. Concrete answers (job-security, family considerations, public-service interest) outscore aspirational framing.",
+  },
+
+  /* ── ISRO / DRDO scientist viva ───────────────────────────────── */
+  {
+    text: "Walk me through your M.Tech thesis. What was the novelty? What didn't work, and why?",
+    company: "isro", roleFamily: "scientist", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "ISRO/DRDO scientist viva opening. Tests technical depth + intellectual honesty (the 'didn't work' probe is mandatory). Glossing over failures = instant fail.",
+  },
+  {
+    text: "Suppose you're designing a guidance algorithm for a ground-launched intercept missile. What sensors would you fuse, and why?",
+    company: "drdo", roleFamily: "scientist", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "DRDO domain viva. Lab-specific (RCI, ADA, LRDE) probe. Probes: sensor-fusion theory + practical constraints (latency, jamming, weight). Must defend trade-offs articulately.",
+  },
+  {
+    text: "What's the difference between geostationary and geosynchronous orbits, and why does GSAT-29 sit where it does?",
+    company: "isro", roleFamily: "scientist", focus: "government-psu",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "ISRO entry-level fundamentals viva. Specific-mission grounding ('why GSAT-29') tests beyond textbook knowledge.",
+  },
+
+  /* ── Campus Placements — TCS NQT ────────────────────────────── */
+  {
+    text: "Walk me through a project from your final year. Why did you choose this stack? Where did it break?",
+    company: "tcs", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup",
+    styleNote: "TCS NQT Tech round opener. Tests genuine project ownership vs. group-project free-riders. 'My contribution was X' specificity expected.",
+  },
+  {
+    text: "Why TCS specifically? You've also applied to Infosys and Wipro — what's different about TCS for you?",
+    company: "tcs", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "TCS HR round. Generic 'big brand, good training' fails. Concrete: TCS-specific hiring patterns (NQT consistency), training (TCS Ignite), client portfolio research.",
+  },
+  {
+    text: "Are you willing to relocate to Trivandrum or Bhubaneswar within 2 weeks of joining? And work in night shifts for client time-zones if needed?",
+    company: "tcs", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "TCS HR signature question. Tests realistic acceptance vs. impressive-sounding 'yes' that the recruiter knows is brittle. Honest 'I'd prefer X but I'm flexible' beats blanket assent.",
+  },
+
+  /* ── Campus Placements — Infosys InfyTQ ─────────────────────── */
+  {
+    text: "Code: Given a string, find the first non-repeating character in O(n) using a single pass. Walk me through your approach before writing.",
+    company: "infosys", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "InfyTQ technical round. Tests articulating approach BEFORE coding (vs. silent-coding). LinkedHashMap or two-pass with hash map both acceptable.",
+  },
+  {
+    text: "If you're given a 6-month-old project written in legacy Java by someone who's left, walk me through how you'd onboard yourself in week 1.",
+    company: "infosys", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Infosys InfyTQ scenario round. Tests SDLC awareness + structured onboarding thinking. Wants: read docs, run end-to-end, find a small fixable bug, talk to PM/client. 'I'd ask my manager' alone fails.",
+  },
+
+  /* ── Campus Placements — Wipro NLTH ─────────────────────────── */
+  {
+    text: "What's the difference between OOP and procedural programming? Give me a real-world example where one is clearly better than the other.",
+    company: "wipro", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup",
+    styleNote: "Wipro NLTH technical-fundamentals round. Textbook definition fails — wants concrete examples (e.g. banking system → OOP for accounts; data ETL → procedural fine).",
+  },
+  {
+    text: "Tell me about a time you handled ambiguity. Specific story, please.",
+    company: "wipro", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Wipro 'Spirit of Wipro' (integrity, customer-centricity) cultural fit. STAR format expected even from freshers.",
+  },
+
+  /* ── Campus Placements — Cognizant GenC / GenC Next ─────────── */
+  {
+    text: "GenC Next aptitude follow-up: Explain how a hash table handles collisions. Now tell me which Indian app you've used that you suspect uses one heavily.",
+    company: "cognizant", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Cognizant GenC Next technical round. Two-part: textbook + applied speculation. Tests connecting CS concepts to real systems (Ola/Swiggy lookup, IRCTC seat-booking).",
+  },
+
+  /* ── Campus Placements — Accenture ──────────────────────────── */
+  {
+    text: "Accenture cares about 'innovation, inclusion, stewardship'. Pick one and tell me a college instance where you embodied it.",
+    company: "accenture", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Accenture campus values-anchor question. The values are explicit on their careers page; not knowing them = unprepared. Concrete college example (club, project, fest) > abstract reflection.",
+  },
+
+  /* ── Campus Placements — Amazon SDE-1 / Flipkart GET ────────── */
+  {
+    text: "Reverse a linked list, then find the middle node in a single pass. Walk me through both, then explain the time/space complexity.",
+    company: "amazon", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Amazon SDE-1 campus round. DSA bar is real but warmup-tier. Articulating complexity = the actual signal; finding the answer is table stakes.",
+  },
+  {
+    text: "Tell me about a time in college you took ownership of something nobody asked you to. (LP: Ownership)",
+    company: "amazon", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Amazon LP for campus. STAR format expected even at fresher level. 'Volunteered for X' weak — wants self-initiated + measurable outcome.",
+  },
+  {
+    text: "Design a basic library-management system. Tell me your data model and 2-3 endpoints.",
+    company: "flipkart", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Flipkart GET / SDE-1 campus design round. Calibrated for fresher — wants entities + relationships + key endpoints, NOT distributed-systems framing. Over-engineering = lack of judgement.",
+  },
+
+  /* ── Management / Engineering Manager focus ─────────────────── */
+  {
+    text: "Walk me through a 1:1 you ran with a low performer. What did you say in the first five minutes?",
+    company: "atlassian", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Probes managerial directness + empathy. Bad answer: 'I told them about the performance gap' (vague). Good: opening line, what data you brought, how you set up safety to talk honestly.",
+  },
+  {
+    text: "How did you scale your engineering team from ~8 to ~30 in 18 months without breaking velocity?",
+    company: "razorpay", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "EM scaling probe. Wants: hiring rubric + onboarding system + sub-team formation calc + DORA-metric tracking. Vague 'we hired carefully' fails.",
+  },
+  {
+    text: "Tell me about an underperformer you had to let go. How long did you wait, and how did you know it was time?",
+    company: "google", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Hardest EM question. Tests: clarity on PIP timeline, willingness to defend the call, awareness of legal/HR/process boundaries (especially India-specific labour). 'I never had to' is suspicious.",
+  },
+  {
+    text: "Your VP wants Q3 features shipped 4 weeks early. Your tech lead says it's impossible without skipping testing. How do you handle?",
+    company: "amazon", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Cross-functional escalation. Tests: pushing back on VP with data + offering reduced-scope counter, vs. rolling over OR rolling tech lead over. Either extreme fails.",
+  },
+  {
+    text: "How do you measure your team's health beyond velocity? Walk me through 3 signals you actually look at weekly.",
+    company: "stripe", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "EM signal-craft probe. Generic 'eNPS' weak — wants specifics (review-cycle latency, on-call distribution, 1:1 cancellation rate, code-review p90). Stripe-style writing-clarity expected.",
+  },
+  {
+    text: "How do you decide when to promote a senior engineer to staff? What's the moment they crossed the line?",
+    company: "microsoft", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Promotion calibration. Wants: scope-of-influence + ambiguity-handling + mentorship-of-others, NOT 'they shipped a hard project'. Good answer cites a specific moment of demonstrated staff-level judgement.",
+  },
+  {
+    text: "Two of your senior engineers want the same architecture lead role. Both are good. Walk me through how you handled the conversation.",
+    company: "flipkart", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Zero-sum people decision. Tests transparency, retention thinking, and willingness to have hard conversations. Avoid 'I let HR decide' — interviewer wants YOUR play.",
+  },
+  {
+    text: "Describe a time you killed a project that the team had spent 6+ months on. How did you announce it?",
+    company: "swiggy", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Hardest delivery-pivot moment. Wants: sunk-cost discipline + team morale repair + leadership communication craft. Sample line of the actual announcement is gold.",
+  },
+  {
+    text: "How do you onboard a senior hire — say a Staff Engineer with 10 YOE — versus a junior new-grad? What's different about the first 30 days?",
+    company: "atlassian", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Onboarding craft. Tests calibration: senior hire = autonomy + context-load + early-win identification; junior = scaffolding + safety + ramp-up. Same playbook for both = fail.",
+  },
+  {
+    text: "Your team's morale has dropped after a re-org but no one will say it directly in 1:1s. How do you read the signal and intervene?",
+    company: "phonepe", roleFamily: "em", focus: "management",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Soft-signal-reading EM probe. Wants: behavioral-data signals (Slack quietness, code-review-tone shift, meeting-camera-off rate), structured intervention (skip-levels, anonymous pulse, public acknowledgement of the change).",
   },
 ];

@@ -100,6 +100,20 @@ const COMPANY_ALIASES: Record<string, CompanyKey> = {
   openai: "openai",
   anthropic: "anthropic",
   sarvam: "sarvam", "sarvam ai": "sarvam",
+  // IT services (campus pipelines)
+  ltimindtree: "ltimindtree", "lti mindtree": "ltimindtree",
+  hcl: "hcl", "hcl technologies": "hcl",
+  capgemini: "capgemini",
+  ibm: "ibm",
+  // Government / PSU bodies — distinct hiring formats
+  upsc: "upsc", "civil services": "upsc", "ias exam": "upsc",
+  ssc: "ssc", "staff selection": "ssc", "ssc cgl": "ssc",
+  ibps: "ibps", "ibps po": "ibps", "ibps clerk": "ibps",
+  rbi: "rbi", "reserve bank of india": "rbi", "rbi grade b": "rbi",
+  sebi: "sebi",
+  isro: "isro", "indian space research": "isro",
+  drdo: "drdo", "defence research": "drdo",
+  ssb: "ssb", "services selection board": "ssb",
 };
 
 export function normaliseCompany(raw: string | undefined): CompanyKey | null {
@@ -122,6 +136,15 @@ export function inferRoleFamily(rawRole: string | undefined): RoleFamily | null 
   const r = rawRole.toLowerCase();
   // Order matters — more specific patterns must precede generic ones.
   // (e.g. "ML Engineer" must hit "ml" before "engineer" hits "swe".)
+  /* Govt/PSU role families. Civil-services covers IAS/IPS/IFS/IRS,
+     RBI Grade B; defence covers SSB/Army/Navy/Air Force; scientist
+     covers ISRO/DRDO/BARC; campus is fresher/GET/management trainee.
+     These must precede the generic "engineer" / "scientist" patterns. */
+  if (/\b(ias|ips|ifs|irs|civil services|upsc aspirant|rbi grade)\b/i.test(r)) return "civil-services";
+  if (/\b(army officer|navy officer|air force|nda cadet|cds officer|afcat|defence)\b/i.test(r)) return "defence";
+  if (/\b(isro scientist|drdo scientist|government scientist|barc|tifr|defence scientist)\b/i.test(r)) return "scientist";
+  if (/\b(bank po|ibps po|ibps clerk|psu engineer|gate qualified engineer)\b/i.test(r)) return "psu-engineer";
+  if (/\b(fresher|campus hire|graduate engineer trainee|management trainee|trainee engineer|apprentice)\b/i.test(r)) return "campus";
   if (/\b(ml engineer|ai engineer|llm engineer|genai|machine learning engineer|applied scientist|research engineer)\b/.test(r)) return "ml";
   if (/\b(quant|quantitative researcher|quantitative trader|quantitative developer|trader|systematic)\b/.test(r)) return "quant";
   // Consulting-specific titles only — exclude generic "partner" / "manager"
@@ -146,6 +169,15 @@ const FOCUS_MAP: Record<string, FocusArea> = {
   "case-study": "case-study", "campus-placement": "campus-placement",
   hr: "hr", panel: "panel", "salary-negotiation": "salary-negotiation",
   leadership: "leadership", strategic: "case-study",
+  /* Management gets its own focus bucket (was silently falling back
+     to behavioral). EM-level probes — scaling, hiring/firing, perf
+     mgmt, x-functional alignment — surface in tier-1 retrieval. */
+  management: "management", "engineering management": "management",
+  /* Government / PSU is a distinct retrieval bucket — UPSC PT,
+     SSB, RBI Grade B, ISRO/DRDO viva have nothing in common with
+     private-sector behavioral so they need their own pool. */
+  "government-psu": "government-psu", government: "government-psu",
+  psu: "government-psu", "civil-services": "government-psu",
 };
 export function normaliseFocus(raw: string | undefined): FocusArea | null {
   if (!raw) return null;
