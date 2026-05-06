@@ -244,6 +244,105 @@ export const ROLE_SUGGESTIONS = [
   // D2C / Consumer Goods (additions)
   "R&D Manager (Consumer)", "Product Development Manager (Consumer)",
   "Flavor Scientist", "Cosmetic Chemist", "Sensory Analyst",
+  // ─── Writing — Content / Editorial ───
+  "Senior Content Writer", "Lead Content Writer", "Head of Content",
+  "Content Marketing Manager", "Content Operations Manager", "Content Director",
+  "SEO Content Writer", "SEO Content Strategist", "SEO Editor",
+  "Long-form Content Writer", "Short-form Content Writer",
+  "B2B Content Writer", "B2C Content Writer", "SaaS Content Writer",
+  "Blog Writer", "Article Writer", "Feature Writer",
+  "Newsletter Writer", "Email Copywriter", "Lifecycle Email Writer",
+  "Editorial Director", "Editor-in-Chief", "Managing Editor", "Executive Editor",
+  "Senior Editor", "Associate Editor", "Assistant Editor",
+  "Copy Editor", "Line Editor", "Substantive Editor", "Developmental Editor",
+  "Proofreader", "Fact-Checker", "Content Reviewer", "Content Moderator",
+  "Editorial Assistant", "Commissioning Editor", "Acquisitions Editor",
+  "Content Producer", "Content Curator", "Content Specialist",
+  // ─── Writing — Copywriting (Advertising / Marketing) ───
+  "Senior Copywriter", "Lead Copywriter", "Junior Copywriter",
+  "Creative Copywriter", "Brand Copywriter", "Performance Copywriter",
+  "Conversion Copywriter", "Direct Response Copywriter",
+  "Digital Copywriter", "Ad Copywriter", "Print Copywriter",
+  "Group Head - Copy", "Creative Group Head", "Copy Supervisor",
+  "Landing Page Copywriter", "Sales Page Copywriter", "ASO Writer",
+  "Performance Marketing Copywriter", "DTC Copywriter",
+  // ─── Writing — Technical / Documentation ───
+  "Senior Technical Writer", "Lead Technical Writer", "Principal Technical Writer",
+  "Staff Technical Writer", "Technical Documentation Manager",
+  "Documentation Engineer", "Documentation Specialist", "Documentation Lead",
+  "API Documentation Writer", "Developer Documentation Writer", "DevDocs Engineer",
+  "Knowledge Base Writer", "Knowledge Manager", "Help Center Writer",
+  "User Manual Writer", "Information Developer", "Information Architect (Docs)",
+  "Technical Editor", "Release Notes Writer", "SDK Documentation Writer",
+  // ─── Writing — UX / Product ───
+  "Senior UX Writer", "Staff UX Writer", "Lead UX Writer", "Principal UX Writer",
+  "Product Writer", "Microcopy Writer", "Voice & Tone Specialist",
+  "Localization Writer", "Localization Specialist", "Localization Manager",
+  "Conversational AI Writer", "Voice UI Writer", "Chatbot Writer",
+  // ─── Writing — Script / Entertainment ───
+  "Screenwriter", "Senior Screenwriter", "Scriptwriter", "Senior Scriptwriter",
+  "Script Editor", "Story Editor", "Showrunner", "Head Writer",
+  "Dialogue Writer", "TV Writer", "Film Writer", "Web Series Writer",
+  "Staff Writer (TV)", "Story Writer", "Writer-Director",
+  "Lyricist", "Songwriter", "Voiceover Script Writer",
+  "YouTube Scriptwriter", "Video Script Writer", "Reels Scriptwriter",
+  "Podcast Writer", "Audio Drama Writer", "Comic Book Writer",
+  "Graphic Novel Writer", "OTT Content Writer",
+  // ─── Writing — Game / Narrative ───
+  "Game Writer", "Narrative Writer", "Quest Writer", "Lore Writer",
+  "Worldbuilder", "Story Designer (Games)", "Branching Narrative Writer",
+  // ─── Writing — Journalism (additions) ───
+  "Senior Journalist", "Staff Reporter", "Correspondent",
+  "Foreign Correspondent", "War Correspondent", "Crime Reporter",
+  "Business Journalist", "Tech Journalist", "Political Journalist",
+  "Entertainment Journalist", "Lifestyle Writer", "Travel Writer",
+  "Food Writer", "Fashion Writer", "Columnist", "Op-Ed Writer",
+  "Beat Reporter", "Stringer", "Photojournalist", "Multimedia Journalist",
+  "Data Journalist", "Wire Reporter", "Bureau Chief", "Sports Editor",
+  "Cricket Writer", "Match Reporter", "Court Reporter",
+  // ─── Writing — Communications / PR / Speech ───
+  "PR Writer", "Communications Writer", "Speechwriter", "Senior Speechwriter",
+  "Internal Communications Writer", "Executive Communications Writer",
+  "Press Release Writer", "Crisis Communications Writer",
+  "Annual Report Writer", "Investor Communications Writer",
+  // ─── Writing — Academic / Research / Grants ───
+  "Research Writer", "Academic Writer", "Academic Editor",
+  "Thesis Writer", "Dissertation Editor", "Grant Writer",
+  "Grant Proposal Writer", "White Paper Writer", "Case Study Writer",
+  "Report Writer", "Policy Writer", "RFP Writer", "Bid Writer", "Tender Writer",
+  "Literature Review Writer",
+  // ─── Writing — Publishing / Books ───
+  "Book Editor", "Manuscript Editor", "Ghostwriter", "Senior Ghostwriter",
+  "Author", "Novelist", "Non-fiction Author", "Children's Book Writer",
+  "Poet", "Poetry Editor", "Translator", "Literary Translator",
+  "Self-publishing Author", "Substack Writer", "Newsletter Author",
+  "Audiobook Narrator", "Indie Author",
+  // ─── Writing — Legal / Corporate ───
+  "Legal Writer", "Legal Editor", "Contract Drafter", "Compliance Writer",
+  "Regulatory Writer", "Privacy Policy Writer",
+  // ─── Writing — Healthcare / Scientific ───
+  "Senior Medical Writer", "Principal Medical Writer", "Regulatory Medical Writer",
+  "Scientific Writer", "Health Communications Specialist", "Clinical Writer",
+  "Pharma Content Writer", "CME Writer",
+  // ─── Writing — Financial ───
+  "Financial Writer", "Investment Research Writer", "Equity Research Writer",
+  "Fintech Content Writer", "Crypto Writer",
+  // ─── Writing — Sales Enablement / B2B SaaS ───
+  "Customer Story Writer", "Sales Enablement Writer", "Product Marketing Writer",
+  "Solution Writer", "Demo Script Writer",
+  // ─── Writing — Localization / Translation ───
+  "Senior Translator", "Interpreter", "Conference Interpreter",
+  "Subtitler", "Closed Captioning Writer", "Transcriptionist",
+  "Hindi Translator", "Tamil Translator", "Telugu Translator",
+  "Marathi Translator", "Bengali Translator", "Multilingual Content Writer",
+  // ─── Writing — Social / Digital ───
+  "Social Media Writer", "Social Media Copywriter", "Brand Voice Writer",
+  "Twitter Copywriter", "LinkedIn Ghostwriter", "Instagram Copywriter",
+  "Influencer Content Writer", "Reel Caption Writer", "Thread Writer",
+  // ─── Writing — Misc / AI-era ───
+  "Resume Writer", "LinkedIn Profile Writer", "Bio Writer",
+  "AI Content Editor", "AI Prompt Writer", "AI Training Writer",
+  "Synthetic Data Writer", "Conversation Designer (AI)",
 ];
 
 /* COMPANY_SUGGESTIONS — exhaustive Indian-market index.
