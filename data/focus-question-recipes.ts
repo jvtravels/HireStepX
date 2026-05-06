@@ -46,17 +46,22 @@ export const RECIPES: Record<string, FocusRecipe> = {
   /* ─── Behavioral (general) ─── */
   behavioral: {
     label: "Behavioral",
+    // 2026 expansion: failure-learning + self-awareness elevated to optional pool so the
+    // 10-category framework (Ownership, Failure, Conflict, Pressure, Communication,
+    // Teamwork, Adaptability, Decision-Making, Leadership, Self-Awareness) is
+    // queryable end-to-end. mandatory stays at 5 to preserve session pacing.
     mandatory: ["opening-resume", "experience-deepdive", "ownership", "collaboration", "problem-solving"],
-    optional: ["communication", "leadership", "decision-making", "pressure-resilience", "adaptability-learning"],
+    optional: ["communication", "leadership", "decision-making", "pressure-resilience", "adaptability-learning", "failure-learning", "self-awareness"],
     trapBudget: 1,
     inviteCandidateQuestions: true,
-    pacingNote: "Q1 is opening (low-stakes), Q2 is the deep-dive on a real project, Q3-4 mix collaboration/problem-solving with one optional, Q5 is the signature stretch — failure, judgement, or trade-off.",
+    pacingNote: "Q1 is opening (low-stakes), Q2 is the deep-dive on a real project, Q3-4 mix collaboration/problem-solving with one optional. Q5 is the signature stretch — failure, judgement, or trade-off. For senior candidates, prefer self-awareness or failure-learning as the signature; for junior, prefer pressure-resilience or decision-making.",
     scoringRubric: [
-      { dimension: "STAR completeness", description: "Did the candidate name a Situation, the Task they owned, the Action they took, and the Result/metric? Penalise when they describe a 'team result' without their specific contribution.", weight: 0.25 },
-      { dimension: "Specific evidence", description: "Did the answer include a real metric, a named decision, a stakeholder name (or proxy), or a date? Generic 'we improved performance' without numbers = weak.", weight: 0.20 },
-      { dimension: "Ownership signal", description: "Does the candidate own outcomes — including failures — or distribute blame? 'I' vs. 'we' ratio and willingness to name a real mistake.", weight: 0.20 },
-      { dimension: "Reflection / learning", description: "Did they articulate what they'd do differently, in concrete terms? 'Better communication' = weak; 'I'd run a 30-min pre-mortem in week 1' = strong.", weight: 0.15 },
-      { dimension: "Communication clarity", description: "Was the answer structured, on-time (60-180s), and free of filler/jargon? Long meandering answers without a takeaway = weak.", weight: 0.20 },
+      { dimension: "STAR completeness", description: "Did the candidate name a Situation, the Task they owned, the Action they took, and the Result/metric? Penalise when they describe a 'team result' without their specific contribution.", weight: 0.22 },
+      { dimension: "Specific evidence", description: "Did the answer include a real metric, a named decision, a stakeholder name (or proxy), or a date? Generic 'we improved performance' without numbers = weak.", weight: 0.18 },
+      { dimension: "Ownership signal", description: "Does the candidate own outcomes — including failures — or distribute blame? 'I' vs. 'we' ratio and willingness to name a real mistake.", weight: 0.18 },
+      { dimension: "Reflection / learning", description: "Did they articulate what they'd do differently, in concrete terms? 'Better communication' = weak; 'I'd run a 30-min pre-mortem in week 1' = strong.", weight: 0.14 },
+      { dimension: "Self-awareness", description: "When asked about strengths/weaknesses or feedback, did the answer feel honest and calibrated? Real weakness with real plan = strong; humble-brag ('I care too much') or generic motivator = weak.", weight: 0.10 },
+      { dimension: "Communication clarity", description: "Was the answer structured, on-time (60-180s), and free of filler/jargon? Long meandering answers without a takeaway = weak.", weight: 0.18 },
     ],
   },
 

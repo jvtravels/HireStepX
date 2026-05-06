@@ -29,10 +29,12 @@ export type CategoryKey =
   | "problem-solving"
   | "ownership"
   | "pressure-resilience"
+  | "failure-learning"
   | "collaboration"
   | "communication"
   | "leadership"
   | "adaptability-learning"
+  | "self-awareness"
   | "decision-making"
   | "customer-user"
   | "culture-fit"
@@ -159,6 +161,9 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "Tell me about a time you flagged a risk early.",
       "What does ownership mean to you in your day-to-day?",
       "Tell me about a time you protected quality even when there was pressure to ship.",
+      "Tell me about a time you had to manage something end-to-end.",
+      "Tell me about a time you had to deliver without enough support.",
+      "Tell me about a time you fixed a problem that was not directly assigned to you.",
     ],
   },
 
@@ -174,9 +179,42 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
     stems: [
       "Tell me about a real failure at work — not a near miss.",
       "Tell me about your most stressful work week — what got you through it?",
+      "Tell me about your most stressful work situation.",
       "Tell me about feedback that stung. How did you use it?",
       "What do you do when you're overwhelmed and can't see a path forward?",
       "What's the biggest professional setback you've faced, and how did it change how you work?",
+      "Tell me about a time you had a very tight deadline.",
+      "How do you stay calm when things are uncertain?",
+      "Tell me about a time something went wrong at the last minute.",
+      "Tell me about a time you had to deliver quality work quickly.",
+    ],
+  },
+
+  /* ─── 6b. Failure & learning — dedicated maturity-arc category.
+        Failure stories used to be split across pressure-resilience +
+        ownership + adaptability-learning. Pulling them into a first-
+        class category lets the report score "did the candidate own
+        the failure → reflect → change behaviour" as a discrete
+        signal, separate from raw resilience or one-off ownership. */
+  "failure-learning": {
+    key: "failure-learning",
+    label: "Failure & learning",
+    intent: "Tests maturity through the failure → reflection → behaviour-change arc. A strong candidate names a real failure, identifies their specific role in it, articulates what they learned in concrete terms, and shows what's now different in how they work.",
+    signals: {
+      strong: "Picks a real failure with their fingerprints on it; explains specifically what went wrong and why; names a concrete behavioural change that's now habit; doesn't blame team/client/manager for the whole thing.",
+      weak: "Picks a 'failure' that's actually a humble-brag; externalises blame; learning is generic ('I learned to communicate better') with no specific change; same mistake pattern recurs.",
+    },
+    stems: [
+      "Tell me about a time you failed.",
+      "What is your biggest professional mistake?",
+      "Tell me about a time your work did not get the expected result.",
+      "Tell me about a time your idea was rejected.",
+      "Tell me about a time you received tough feedback.",
+      "Tell me about a time you had to redo your work.",
+      "Tell me about a time you made a wrong decision.",
+      "What did you learn from your biggest failure?",
+      "How has failure changed the way you work?",
+      "What would you do differently if you faced the same situation again?",
     ],
   },
 
@@ -192,9 +230,15 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
     stems: [
       "Tell me about a time you disagreed with a teammate. How did it end?",
       "Tell me about a time you disagreed with your manager — and how you raised it.",
+      "Tell me about a time you had conflict with a stakeholder.",
       "Tell me about a time you changed your mind after hearing someone else out.",
       "How do you handle a teammate who's slow to respond or unreliable?",
       "Tell me about a time you helped a junior teammate get unstuck.",
+      "How do you handle difficult colleagues?",
+      "Tell me about a time you had to convince someone.",
+      "Tell me about a time you had to depend on another team.",
+      "How do you build trust with new teammates?",
+      "Tell me about a time you supported someone who was struggling.",
     ],
   },
 
@@ -210,9 +254,14 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
     stems: [
       "How would you explain your most technical project to someone non-technical?",
       "Tell me about a time poor communication caused a real issue.",
+      "Tell me about a time your communication solved a problem.",
       "How do you communicate bad news — a delay, a regression, a hard 'no'?",
+      "How do you communicate delays to stakeholders?",
       "How do you handle a stakeholder who keeps changing requirements?",
       "How do you adapt your communication for different people in the room?",
+      "Tell me about a time you had to align multiple people.",
+      "Tell me about a time you had to simplify a complex topic.",
+      "How do you make sure everyone understands next steps?",
     ],
   },
 
@@ -231,6 +280,11 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "How do you build alignment when stakeholders disagree?",
       "Tell me about a time you helped a team stay focused under pressure.",
       "How do you handle underperformance on a team you don't manage?",
+      "Tell me about a time you mentored someone.",
+      "Tell me about a time you helped create clarity for the team.",
+      "How do you motivate others when morale is low?",
+      "What kind of leader are you? Give me an example that backs that up.",
+      "Tell me about a time you improved team performance.",
     ],
   },
 
@@ -251,6 +305,38 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "What skill do you think will matter most in your role over the next 2-3 years?",
       "How has GenAI changed how you do your job in the last 12 months — concretely, not abstractly?",
       "Tell me about a moment you'd been doing something a certain way for years and you scrapped it for a new approach.",
+      "How do you handle unclear requirements?",
+      "Tell me about a time your role changed.",
+      "Tell me about a time you worked in an unfamiliar area.",
+      "How do you respond to last-minute changes?",
+    ],
+  },
+
+  /* ─── 10b. Self-awareness & growth — dedicated coachability category.
+        Strengths/weaknesses/motivation/manager-fit questions used to
+        live only in hr-essentials, so behavioral focus never surfaced
+        them. Pulling them out lets the report score self-awareness
+        as a discrete signal — critical for senior+ candidates where
+        coachability outweighs raw output. */
+  "self-awareness": {
+    key: "self-awareness",
+    label: "Self-awareness & growth",
+    intent: "Probes coachability and self-knowledge. A strong candidate has a calibrated read on their strengths and weaknesses, can name specific feedback they've received, and is actively working on something concrete — not because the interviewer asked, but because they want to.",
+    signals: {
+      strong: "Names a real weakness with a real plan; quotes specific feedback from a manager or peer; describes a habit they actually changed and how they noticed it; speaks honestly about what kind of work drains them and what energises them.",
+      weak: "Fake weakness ('I work too hard', 'I'm too detail-oriented'); generic strengths; can't name recent feedback; growth statements without specifics; rehearsed-sounding answers.",
+    },
+    stems: [
+      "What is your biggest strength?",
+      "What is one weakness you are actively improving?",
+      "What feedback do you often receive?",
+      "How do you respond to feedback?",
+      "What skill are you currently improving and why?",
+      "What is one habit you changed recently?",
+      "What kind of work drains you?",
+      "What motivates you?",
+      "What kind of manager helps you grow?",
+      "What have you learned about yourself in your career?",
     ],
   },
 
@@ -269,6 +355,11 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "Tell me about a decision you regret — what would you do differently?",
       "How do you decide when to escalate vs. decide yourself?",
       "How do you get buy-in for a decision that's unpopular?",
+      "How do you decide between two good options?",
+      "Tell me about a time you had to defend your decision.",
+      "Tell me about a time you trusted your judgment.",
+      "Tell me about a time data changed your decision.",
+      "What is your decision-making process?",
     ],
   },
 
