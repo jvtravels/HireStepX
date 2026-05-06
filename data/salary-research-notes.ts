@@ -147,13 +147,79 @@ export const COMP_STRATEGY_NOTES = `MARKET INTELLIGENCE FOR THIS NEGOTIATION:
    • If candidate says "I'm available immediately / my last role
      ended on <date>", do NOT offer notice buyout.
 
-6. CALIBRATION DATE.
+6. VARIABLE PAY — TARGET vs REALISED (IT SERVICES).
+   IT services quote variable pay as a target % of CTC, but Q4 FY25
+   actuals (Apr 2025 disbursement) show the gap:
+     • TCS — 100% to 70%+ of workforce; senior staff and weak-BU
+       employees got 20-40% only.
+     • Wipro — 90% average. Internal formula: revenue 40% +
+       gross margin 30% + TCV 30%.
+     • Infosys — 65% average (lowest in 3 quarters). Range 0%
+       (Needs Improvement) to 83% (Outstanding). Band 6 and below
+       only.
+   When a candidate says "my CTC is ₹15L including variable",
+   deduct realised variable: real cash is closer to ₹13-14L. Counter-
+   offers should specify "fixed CTC", not just "CTC". For senior IT-
+   services candidates (more variable, lower realisation %), prefer
+   bumping fixed base over preserving the variable target.
+
+7. JOINING BONUS BENCHMARKS (negotiable, often forgotten).
+   Joining bonus is the single biggest one-shot lever for net-new
+   hires — easier to move than base salary because it doesn't reset
+   the band:
+     • FAANG / Big Tech India — common, 10-25% of annual base, often
+       split year-1 / year-2 with clawback (12-24 months).
+     • Indian unicorn — SDE2 / mid: ₹3-8L common. Senior PD / PM:
+       ₹5-15L. Clawback typically 12 months.
+     • SaaS / GCC — sometimes offered, smaller bands (₹2-5L).
+     • IT Services — rare. Substitute is notice-period buyout
+       (₹1-3L for 30-day buyout).
+     • Early startup — rare; sometimes substituted with extra ESOP.
+   If the candidate has a competing offer, joining bonus is where
+   you match — not on base.
+
+8. ESOP EXERCISE WINDOW — UNDER-DISCUSSED LEVER.
+   Window between separation and forfeit of vested options:
+     • 30-90 days — STANDARD across most Indian startups. Punitive
+       for long-tenure employees who can't fund the exercise.
+     • 1-3 years — employee-friendly, increasingly common.
+     • 7-10 years (full term) — progressive (Razorpay, Zerodha, CRED,
+       Postman). Transformative for ESOP NPV.
+   A 90-day vs 7-year window changes effective ESOP value by 30-60%.
+   When discussing equity-heavy offers, ALWAYS surface the exercise
+   window. Candidates who don't ask are leaving real money on the
+   table. Negotiable at offer stage; rarely re-opened post-signing.
+
+9. STATUTORY FLOOR — 2025 LABOUR CODE.
+   The four labour codes became effective 21 November 2025:
+     • Basic salary must be >= 50% of CTC. This raises PF + gratuity
+       contributions by 30-50% in many plans (employer cost).
+     • Gratuity eligibility for fixed-term contracts dropped from
+       5 years to 1 year.
+     • Maternity remains 26 weeks paid (first two children).
+   When a candidate's current employer hasn't restructured to the
+   50% basic floor yet, their "in-hand" calculation may overstate
+   true take-home. New offers from compliant employers will look
+   lower in-hand even at the same CTC because PF deduction is higher.
+
+10. ESPP AT GCC / BIG TECH — OFTEN UNDISCUSSED.
+    Employee Stock Purchase Plan: parent stock at 15% discount with
+    6-month look-back is standard at large GCCs (Walmart, JPMC,
+    Goldman, Wells Fargo, Microsoft, Adobe) and most Big Tech.
+    Effective discount can hit 25-35% if stock appreciates during
+    the offer period. Often not mentioned in the offer letter — ask
+    HR specifically. Worth ~5-10% of base on top of RSUs for those
+    who max contributions (typically 10-15% of salary capped at
+    $25K/yr in parent currency).
+
+11. CALIBRATION DATE.
    These notes reflect Indian market conditions as of May 2026.
    Sources: Levels.fyi, AmbitionBox, Glassdoor India, Inc42 IPO
-   tracker, Zinnov GCC report 2026, public DRHP filings. Refresh
-   recommended every 6 months — startup ESOP liquidity, GCC pay
-   differential, and AI/ML premium are the three fastest-moving
-   data points.`;
+   tracker, Zinnov GCC report 2026, public DRHP filings, peoplematters
+   variable-pay coverage Q4 FY25, Inc42/Entrackr ESOP buyback trackers.
+   Refresh recommended every 6 months — startup ESOP liquidity, GCC
+   pay differential, AI/ML premium, and IT-services variable-pay
+   realisation are the four fastest-moving data points.`;
 
 /** Returns true if the role family commands an AI/ML skill premium.
  *  Used to add a sentence to the prompt biasing the AI's open

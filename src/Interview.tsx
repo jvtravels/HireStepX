@@ -465,6 +465,7 @@ function CanvasListeningActionZone({
   skipsUsed, skipBudget, canSkip,
   awaitingSpeechStart,
   isLastStep, isClosingStep, onViewResult,
+  currentQuestionText,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -504,6 +505,9 @@ function CanvasListeningActionZone({
    *  notice period), in which case the mic must remain visible. */
   isClosingStep: boolean;
   onViewResult: () => void;
+  /** The full text of the AI's current question — used to detect
+   *  CTC-probes and surface a deflection coaching tip. */
+  currentQuestionText: string;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -826,6 +830,17 @@ function CanvasListeningActionZone({
       {/* Hint */}
       {isCurrentFollowUp && (
         <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
+      )}
+      {/* Salary-neg coaching: AI is probing the candidate's current
+          CTC. Revealing it too early loses leverage — surface a
+          quick coaching tip so the candidate can deflect. Match
+          common phrasings: "what's your current CTC", "current
+          package", "how much are you making", etc. */}
+      {interviewType === "salary-negotiation" &&
+        /\b(?:current\s+(?:ctc|salary|package|comp(?:ensation)?)|what\s+(?:are|do)\s+you\s+(?:making|earning|getting)|your\s+(?:present|existing)\s+(?:ctc|salary)|how\s+much\s+(?:are|do)\s+you\s+(?:make|earn|get))\b/i.test(currentQuestionText) && (
+        <CanvasHintBubble>
+          Tip: deflect — focus on what you'll bring, not what you currently earn. "I'm focused on the value of this role; I'd love to hear what range you have in mind."
+        </CanvasHintBubble>
       )}
 
       {/* Subtle keyboard-shortcuts discoverability hint */}
@@ -1245,6 +1260,7 @@ function InterviewInner() {
             hasQuestion={!!step?.aiText}
             liveMetrics={liveMetrics}
             interviewType={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("type") : null}
+            currentQuestionText={step?.aiText || ""}
             timeRemaining={timeRemaining}
             timePercent={timePercent}
             skipsUsed={skipsUsed}

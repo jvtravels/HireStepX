@@ -412,19 +412,21 @@ TARGET WORD BINDING: Whenever you refer to "your target", "the candidate's targe
       if (candidateAccepted && !isConditionalAccept) {
         intentBanner = `
 ⚠️⚠️⚠️ THE CANDIDATE ACCEPTED THE OFFER. THEY SAID: "${sanitizeForLLM(answer, 350)}" ⚠️⚠️⚠️
-YOU MUST acknowledge their acceptance warmly FIRST. Then either:
-- If they accepted too quickly (within first 2 questions): gently probe — "That's great! But before we lock this in, have you considered [equity/flexibility/growth path]? I want you to feel confident."
-- If later in the negotiation: move to closing — recap the EXACT agreed package with ₹ numbers, mention offer letter timeline, ask about notice period. Rebuild warmth: "I'm really glad we worked this out."
+TAKE THE YES. Acknowledge their acceptance warmly, then move directly to closing — recap the EXACT agreed package with ₹ numbers (base, variable, bonus, total CTC), mention offer letter timeline, ask about notice period.
+DO NOT probe further about equity / flexibility / "have you considered". Asking another question after a clear yes feels like you're trying to upsell or regretting the deal. Take it.
 DO NOT counter-offer or act as if they rejected. They said YES.
 `;
       } else if (isConditionalAccept) {
         intentBanner = `
 THE CANDIDATE CONDITIONALLY ACCEPTED. THEY SAID: "${sanitizeForLLM(answer, 350)}"
-They accepted the core offer but have a condition or want to discuss something else (equity, benefits, flexibility, etc.).
+They accepted the core offer but have ONE specific condition (move base to ₹X, add joining bonus, equity vesting question, etc.).
 YOU MUST:
 1. Acknowledge the acceptance warmly FIRST: "Great, I'm glad the base works for you!"
-2. Then address their specific condition/question directly with concrete answers and ₹ numbers.
-3. Do NOT re-negotiate the base salary — they already accepted that. Focus on what they asked about.
+2. Address the condition directly with a CONCRETE answer:
+   - If their condition is INSIDE your band (within minOffer–maxStretch): GRANT it. "Yes, I can move base to ₹X. Done." Then close.
+   - If OUTSIDE band but close: trade — "I can't move base, but I can add ₹Y joining bonus / ₹Z performance bonus to bridge that." Concrete numbers only.
+   - If WAY outside band: politely decline with reason, offer alternative — "I can't get to ₹X on base — that's above what's approved for this level. Best I can do is ₹Y. Does that work?"
+3. Do NOT re-open the base discussion if they didn't ask to. Do NOT ask another open-ended question — make a concrete move.
 `;
       } else if (candidateWalkAway) {
         intentBanner = `
@@ -549,6 +551,7 @@ RULES:
 - REPAIR FIRST: If the candidate's answer is a confusion / clarification signal — e.g. "what?", "what are you offering me?", "I don't understand", "can you repeat", "wait what", "huh?", "say that again", "I'm confused", "didn't catch that", a question back to you about the offer itself, or under 8 words asking for clarification — DO NOT push forward with a new probe. Recap your most recent offer plainly with the exact ₹ numbers (base / variable / bonus / total CTC) and ask if that's clear. One short paragraph. Don't add new asks until the candidate signals they're tracking. This rule overrides the rest of the phase script.
 - HEAR THEM: If the candidate's answer signals frustration that you're repeating yourself — "already mentioned", "as I said", "I told you", "multiple times", "already said", "told you before", "again" used reproachfully, "for the third/Nth time", or any short answer that references having previously answered — you MUST: (1) explicitly acknowledge ("you're right, you already mentioned that — apologies"), (2) make a CONCRETE move on the same turn (a real ₹ counter, a specific trade, or an explicit concession). Asking another open-ended question after this signal is the failure mode of this whole interview type. Do NOT do it.
 - NO COUNTER-DODGE: If the candidate has ALREADY stated a number (CANDIDATE FACTS shows candidateCounter) AND they directly ask for your counter ("what's your counter?", "what can you offer?", "what's your best?", "give me a number"), you MUST respond with a SPECIFIC ₹ figure — not another probe. Do NOT say "to make progress I need to understand your expectations first" — they've given you their expectations. Counter with a real number from your band, ideally between your initial offer and their ask. Saying "tell me more about your reasoning" after they've already shared market data + asked for a counter feels evasive and unrealistic.
+- WALK-AWAY HONESTY: If the candidate's stated ask is ABOVE the band's walkAway figure (negotiationBand.walkAway), do NOT pretend it's reachable. Be honest: "That's above what's approved for this level — we can't get there." Then offer your real best (your maxStretch), and let them decide. Faking flexibility you don't have is worse than a clean "no, but here's what I can do."
 - TOPICAL COHERENCE: Stay on the topic the candidate just raised. If they were sharing market data, your next move is to acknowledge or counter that data — NOT to suddenly ask "what about joining bonus?". If they just talked about base salary, follow up on base or total CTC, not equity. Topic switches are allowed only when (a) you've genuinely closed the previous thread, or (b) you're using a non-cash lever as a deliberate trade ("I can't move on base, but I can add ₹X joining bonus"). Random topic jumps make the conversation feel like a script, not a negotiation.
 - NO WORD SALAD: Re-read your draft before finishing. Reject phrasings that don't parse — "absolute top of what I can approve earlier", "let me revisit the breakdown of our offer to see if we can meet you somewhere in the middle" without specifying NEW numbers, etc. If a sentence doesn't say a concrete thing (a number, a trade, a clear next step, an acknowledgement), cut it.
 - MATCH INTENT: Re-read the candidate's answer above. Accepted → acknowledge and close. Rejected → acknowledge and counter. Question → answer it. NEVER ignore what they said.

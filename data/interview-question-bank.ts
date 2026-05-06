@@ -54,6 +54,15 @@ export interface BankEntry {
   /** Optional: short notes on what makes this question characteristic
    *  of the company's style — used by the LLM to extract patterns. */
   styleNote?: string;
+  /** Confidence in this entry's accuracy.
+   *   - "verified" (default): cross-checked against 2+ independent
+   *     sources (Glassdoor + AmbitionBox + candidate post-mortem).
+   *   - "inferred": pattern extrapolated from public job descriptions
+   *     or single-source candidate posts. The LLM is told these are
+   *     directional, so it doesn't anchor too hard on the specifics.
+   *
+   *  Treat absent as "verified" to keep existing entries accurate. */
+  confidence?: "verified" | "inferred";
 }
 
 /* ─── Bank ────────────────────────────────────────────────────────── */
@@ -574,18 +583,21 @@ export const QUESTION_BANK: BankEntry[] = [
     company: "openai", roleFamily: "ml", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "2026-era AI eng rounds care about evals as first-class engineering: golden datasets, LLM-as-judge with rubrics, drift detection, A/B at the response level.",
+    confidence: "inferred",
   },
   {
     text: "Design an agent that can book a flight. Handle: tool failure mid-conversation, partial state, prompt-injection from a malicious airline page.",
     company: "anthropic", roleFamily: "ml", focus: "system-design",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Agentic-system design is now table stakes. Probes: state machine, MCP/tool-use, sandboxing, prompt-injection defenses (input filtering, structured outputs, never-trust-tool-results).",
+    confidence: "inferred",
   },
   {
     text: "Why does Sarvam's Indic LLM outperform GPT on some Hindi tasks despite being smaller? How would you measure it without bias?",
     company: "sarvam", roleFamily: "ml", focus: "technical",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Indic-AI hiring expects domain insight: tokenization, training-mix, eval-set bias, IndicGenBench. 'It's smaller and faster' fails.",
+    confidence: "inferred",
   },
 
   /* ── Salary negotiation — multi-tier patterns (2026) ────────── */

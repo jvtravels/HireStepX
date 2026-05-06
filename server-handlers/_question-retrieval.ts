@@ -240,9 +240,16 @@ export function formatReferencesForPrompt(result: RetrievalResult): string {
   }
   lines.push("");
   for (const e of result.entries) {
-    lines.push(`  - ${e.text}`);
+    /* Confidence stamp surfaces verified vs inferred. The LLM is
+       instructed to anchor harder on verified specifics; treat
+       inferred entries as directional only. Default = verified. */
+    const confidence = e.confidence ?? "verified";
+    const confidenceTag = confidence === "verified" ? "" : ` [confidence: inferred]`;
+    lines.push(`  - ${e.text}${confidenceTag}`);
     if (e.styleNote) lines.push(`    [pattern: ${e.styleNote}]`);
   }
+  lines.push("");
+  lines.push("CONFIDENCE NOTE: Entries marked [confidence: inferred] are pattern extrapolations from public job descriptions, NOT cross-source-verified candidate post-mortems. Treat them as directional style guides only — do NOT anchor specific fact claims to them. Unmarked entries are verified from 2+ independent candidate sources.");
   lines.push("");
   return lines.join("\n");
 }

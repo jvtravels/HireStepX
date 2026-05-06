@@ -54,8 +54,10 @@ describe("cleanSalarySttArtifacts", () => {
   });
 
   it("rewrites 'Wide' before a number/comp word → 'I'd'", () => {
+    // "five" also gets normalized to "5" by the word-number rule
+    // because it's near "lakhs".
     expect(cleanSalarySttArtifacts("Wide five lakhs joining bonus"))
-      .toBe("I'd five lakhs joining bonus");
+      .toBe("I'd 5 lakhs joining bonus");
     expect(cleanSalarySttArtifacts("Wide like to go for 25 LPA"))
       .toBe("I'd like to go for 25 LPA");
   });
@@ -74,6 +76,18 @@ describe("cleanSalarySttArtifacts", () => {
     expect(out).toContain("as joining");
     expect(out).not.toMatch(/\beggs\b/i);
     expect(out).not.toMatch(/\blegs\b/i);
+  });
+
+  it("converts word-numbers to digits when near a salary unit", () => {
+    expect(cleanSalarySttArtifacts("expecting twelve lakhs per annum"))
+      .toBe("expecting 12 lakhs per annum");
+    expect(cleanSalarySttArtifacts("I'd take twenty LPA"))
+      .toBe("I'd take 20 LPA");
+  });
+
+  it("leaves word-numbers alone outside salary context", () => {
+    expect(cleanSalarySttArtifacts("there are five team members"))
+      .toBe("there are five team members");
   });
 
   it("handles the production transcript end-to-end", () => {

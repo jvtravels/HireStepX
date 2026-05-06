@@ -78,5 +78,42 @@ export function cleanSalarySttArtifacts(text: string): string {
   // earlier digit-anchored rule doesn't have to match across a period).
   out = out.replace(/(\d+(?:\.\d+)?)\.\s*\b(?:Legs|Leg)\b/g, "$1 lakhs");
 
+  // Word-number → digit when followed by "lakhs"/"LPA"/"crore". Lets
+  // the fact extractor see "twelve lakhs" the same way as "12 lakhs".
+  // Only applies in the salary-domain context (this whole helper
+  // already runs only for salary-negotiation type), so collisions
+  // with prose like "ten thousand pages" aren't a concern.
+  const WORD_NUMS: Array<[RegExp, string]> = [
+    [/\bone\b/gi, "1"],
+    [/\btwo\b/gi, "2"],
+    [/\bthree\b/gi, "3"],
+    [/\bfour\b/gi, "4"],
+    [/\bfive\b/gi, "5"],
+    [/\bsix\b/gi, "6"],
+    [/\bseven\b/gi, "7"],
+    [/\beight\b/gi, "8"],
+    [/\bnine\b/gi, "9"],
+    [/\bten\b/gi, "10"],
+    [/\beleven\b/gi, "11"],
+    [/\btwelve\b/gi, "12"],
+    [/\bfifteen\b/gi, "15"],
+    [/\btwenty\b/gi, "20"],
+    [/\bthirty\b/gi, "30"],
+    [/\bforty\b/gi, "40"],
+    [/\bfifty\b/gi, "50"],
+  ];
+  // Only swap word-numbers that are within 3 tokens of a salary unit.
+  const salaryUnit = /\b(?:lakhs?|LPA|lpa|cr|crore|CTC|per\s+annum|annually)\b/i;
+  out = out.replace(
+    /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty)\b(?=[^.?!]{0,40}?\b(?:lakhs?|LPA|lpa|cr|crore|CTC|per\s+annum|annually)\b)/gi,
+    (m) => {
+      for (const [re, digit] of WORD_NUMS) {
+        if (re.test(m)) return digit;
+      }
+      return m;
+    },
+  );
+  void salaryUnit;
+
   return out;
 }
