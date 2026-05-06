@@ -38,6 +38,16 @@ function build(
     questions: Question[];
   },
 ): InterviewResultData {
+  /* Pick the lowest-scoring skill from the override as the weakestSkill —
+     since each focus has its own axis names, hardcoding "Trade-off
+     Reasoning" (the DEFAULT_RESULT pick) wouldn't make sense across
+     focuses. weakestSkill is REQUIRED on InterviewResultData; without
+     it the component throws at render time. */
+  const weakest = [...override.skills].sort((a, b) => a.score - b.score)[0];
+  const weakestSkill = weakest
+    ? { name: weakest.name, tip: `Strengthen your ${weakest.name.toLowerCase()} — it's the lowest-scoring axis this session.` }
+    : { name: "—", tip: "" };
+
   return {
     overallScore: 0,
     verdict: "leanHire",
@@ -55,6 +65,7 @@ function build(
       { label: "Pace (WPM)", value: 152, targetLabel: "Target 140–180", band: "good" },
       { label: "Energy", value: 72, unit: "/100", targetLabel: "Target 60–100", band: "good" },
     ],
+    weakestSkill,
     ...override,
   };
 }
