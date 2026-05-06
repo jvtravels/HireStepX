@@ -967,7 +967,14 @@ function InterviewInner() {
            typographic rhythm without touching the mobile rules below. */
         @media (max-width: 1280px) {
           .iv-canvas-topbar { padding: 14px 24px !important; }
-          .iv-canvas-stage  { padding: 24px 32px !important; gap: 20px !important; max-width: 960px !important; }
+          /* Stage was previously clamped to 960px to tighten the
+             vertical rhythm — but that left the question heading
+             wrapping into 5-6 short lines on a 1280-wide laptop.
+             Lift the stage cap to ~1180px and let the question
+             wrapper itself widen below; the visualizer + controls
+             still center within the wider stage. */
+          .iv-canvas-stage  { padding: 24px 40px !important; gap: 20px !important; max-width: 1180px !important; }
+          .iv-question-wrap { max-width: 1080px !important; }
           .iv-info-bar      { padding: 10px 18px !important; }
           .iv-info-bar-row  { padding: 10px 18px !important; }
         }
@@ -1096,7 +1103,7 @@ function InterviewInner() {
           // fallback to step.aiText leaked [pause] tokens into the heading.
           const displayText = stripProsodyMarkup(step.aiTextDisplay ?? step.aiText);
           return (
-          <div style={{ maxWidth: 920, width: "100%" }}>
+          <div className="iv-question-wrap" style={{ maxWidth: 920, width: "100%" }}>
             {/* Speaking: typewriter typed in sync with TTS audio.
                 Listening: static accent-split or plain heading.
                 The flicker that used to appear at phase transitions
