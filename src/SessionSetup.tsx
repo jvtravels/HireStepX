@@ -1349,12 +1349,12 @@ export default function SessionSetup() {
       `}</style>
 
       {/* ─── Top Bar — same 3-col grid + tokens used by auth + onboarding. ─── */}
-      <div className="hsx-setup-topbar" style={{ borderBottom: `1px solid ${T.line}`, background: T.cream }}>
-        {/* Inner wrapper constrains the logo + identity chip to the SAME
-            max-width as the form content below — so the wordmark aligns
-            with the left edge of the form and the chip aligns with the
-            right edge, instead of sitting at the raw viewport gutters. */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 16, width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", margin: "0 auto" }}>
+      {/* Full-width topbar — wordmark sits at the left viewport gutter,
+          identity chip at the right, matching the canvas storyboard
+          (tempo/designs/canvases/interview/SessionSetup.tsx). The earlier
+          1080px-capped inner wrapper was making the logo + name look
+          bunched toward the centre on wide displays. */}
+      <div className="hsx-setup-topbar" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.line}`, background: T.cream }}>
         <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ justifySelf: "start", cursor: "pointer" }} title="Back to dashboard">
           <Wordmark />
         </div>
@@ -1389,7 +1389,6 @@ export default function SessionSetup() {
               </div>
             );
           })()}
-        </div>
         </div>
       </div>
 
