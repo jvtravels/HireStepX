@@ -9,6 +9,7 @@
 import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
 import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
+import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
 
 export interface SalaryLookupParams {
   role: string;
@@ -442,9 +443,16 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
     }
   }
 
+  /* Family-specific framing for AI/ML (skill premium), sales
+     (fixed+variable+commission), senior design (business impact > Figma).
+     Returns "" for roles without a special framing rule. */
+  const familyFraming = buildFamilyCompFraming(roleKey);
+
   return `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
 - Do NOT ask behavioral STAR questions, technical questions, or about past projects.
-- Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company. In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions).${ctcStructureNote}
+- Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company. In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions).${ctcStructureNote}${familyFraming}
+
+${COMP_STRATEGY_NOTES}
 
 VOICE: Sound like a real Indian hiring manager — warm but businesslike. Use phrases like "We've been impressed with your profile", "Let me walk you through the offer", "I'll be transparent about our bands", "Let me see what I can do". Avoid robotic or overly formal language.
 

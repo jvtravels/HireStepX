@@ -19,7 +19,12 @@ export type CompanyTier =
   | "government-psu"
   | "fmcg-mnc"
   | "edtech"
-  | "saas-product";
+  | "saas-product"
+  /* Global Capability Centers — Indian arms of US/EU enterprises that
+     run their own engineering / product / data orgs locally (NOT
+     services delivery to a parent). Pay above IT-services, below
+     Big Tech. Strong benefits + senior roles available. */
+  | "gcc";
 
 /** Lowercase company name → tier */
 const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
@@ -217,6 +222,42 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   netmeds: "indian-unicorn",
   hike: "indian-unicorn",
   koo: "indian-unicorn",
+
+  /* GCCs — Global Capability Centers in India (engineering /
+     product / data orgs, NOT delivery-partner setups). Pay above
+     IT-services, below Big Tech. RSUs in parent stock common.
+     Note: companies that ALSO have a strong investment-banking arm
+     (Goldman, JPMorgan, Morgan Stanley, HSBC, etc.) stay in
+     bfsi-global below — their salary bands are dominated by IB
+     comp, which is closer to GCC pay anyway. */
+  "walmart global tech": "gcc",
+  "walmart labs": "gcc",
+  "walmart tech": "gcc",
+  "target tech": "gcc",
+  "target india": "gcc",
+  lowes: "gcc",
+  "lowe's": "gcc",
+  "lowes india": "gcc",
+  "american express": "gcc",
+  amex: "gcc",
+  vanguard: "gcc",
+  "lloyds banking group": "gcc",
+  "nat west": "gcc",
+  natwest: "gcc",
+  shell: "gcc",
+  bp: "gcc",
+  ge: "gcc",
+  "ge healthcare": "gcc",
+  caterpillar: "gcc",
+  "rolls royce": "gcc",
+  "rolls-royce": "gcc",
+  airbus: "gcc",
+  boeing: "gcc",
+  "qualcomm india": "gcc",
+  "philips india": "gcc",
+  philips: "gcc",
+  unilever: "gcc",
+  "procter and gamble": "gcc",
 
   // IT Services
   tcs: "it-services",
@@ -591,6 +632,7 @@ export const TIER_LABELS: Record<CompanyTier, string> = {
   "fmcg-mnc": "FMCG/MNC",
   edtech: "EdTech",
   "saas-product": "SaaS/Product",
+  gcc: "GCC (Global Capability Center)",
 };
 
 /**
@@ -636,6 +678,12 @@ export function getSalaryTierFallback(tier: CompanyTier): CompanyTier {
     case "edtech": return "startup-growth";
     case "fmcg-mnc": return "indian-unicorn";
     case "big-tech": return "faang"; // close enough for salary ranges
+    /* GCCs sit between IT-services and Big Tech. Most published bands
+       lump them with "indian-unicorn" because the engineering-org
+       posture (real product ownership, equity-equivalent benefits,
+       senior IC ladder) more closely resembles a unicorn than a
+       services firm. */
+    case "gcc": return "indian-unicorn";
     default: return tier;
   }
 }
