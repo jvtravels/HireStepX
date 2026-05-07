@@ -995,7 +995,43 @@ export const ROLE_ALIASES: Partial<Record<RoleKey, RoleKey>> = {
  */
 export function matchRoleKey(role: string): RoleKey {
   if (!role) return "software-engineer";
+  /* Normalize for substring matching: lowercase, strip parens /
+     ampersands / extra punctuation, collapse whitespace. So
+     "R&D Manager (Consumer)" → "rd manager consumer", "Partner
+     (PE/VC)" → "partner pevc", "Group Head - Copy" → "group head copy".
+     The original `lower` is also kept for patterns that still need
+     punctuation (rare). */
   const lower = role.toLowerCase();
+  const normalized = lower
+    .replace(/&/g, "")
+    .replace(/[()/\-]/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  /* Standalone-acronym short-circuit: 2-3-letter inputs like "CA",
+     "CS", "MD", "PM", "EM", "HR" can't safely substring-match (would
+     trigger inside any longer word). Match by exact equality. */
+  const acronymMap: Record<string, RoleKey> = {
+    ca: "chartered-accountant",
+    cs: "legal",
+    md: "doctor",
+    pm: "product-manager",
+    em: "engineering-manager",
+    hr: "hr",
+    ux: "ux-designer",
+    ui: "ux-designer",
+    qa: "qa-engineer",
+    ba: "business-analyst",
+    cto: "engineering-manager",
+    cpo: "product-manager",
+    cfo: "finance",
+    coo: "engineering-manager",
+    ceo: "engineering-manager",
+    chro: "hr",
+    cmo: "marketing",
+    cro: "sales",
+  };
+  if (acronymMap[normalized]) return acronymMap[normalized];
 
   // Ordered from most specific to least specific to avoid false matches
   const patterns: [string[], RoleKey][] = [
@@ -1062,6 +1098,62 @@ export function matchRoleKey(role: string): RoleKey {
     [["embedded software engineer", "firmware engineer", "rtos", "iot engineer", "iot architect", "edge computing engineer", "hardware engineer"], "embedded-engineer"],
     /* Solutions architect. */
     [["solutions architect", "solution architect", "enterprise architect", "domain architect", "integration architect", "salesforce solutions architect"], "solutions-architect"],
+    /* Design / creative — was defaulting to SWE for ~50 roles. */
+    [["motion designer", "graphic designer", "industrial designer", "furniture designer", "footwear designer", "apparel designer", "fashion designer", "textile designer", "jewellery designer", "jewelry designer", "accessory designer", "interior designer", "landscape architect", "urban planner", "set designer", "exhibition designer", "service designer", "strategic designer", "design strategist", "design researcher", "brand designer", "identity designer", "packaging designer", "print designer", "type designer", "typography designer", "3d designer", "3d artist", "vfx artist", "compositor", "rotoscope artist", "animator", "character animator", "motion graphics artist", "storyboard artist", "concept artist", "illustrator", "layout artist", "lighting artist", "texture artist", "game designer", "level designer", "narrative designer", "photographer", "cinematographer", "dop", "director of photography", "creative director", "art director", "associate creative director", "executive creative director", "ux researcher", "voice & tone specialist", "information architect"], "ux-designer"],
+    /* Marketing / advertising sub-roles missed earlier. */
+    [["seo specialist", "sem specialist", "social media manager", "social media specialist", "social media executive", "public relations manager", "pr manager", "corporate communications manager", "communications manager", "internal communications manager", "content creator", "social media influencer", "influencer", "youtuber", "podcaster", "streamer", "voice artist", "dubbing artist", "rj", "radio jockey", "vj"], "marketing"],
+    /* Sales / Customer-facing leadership subtypes. */
+    [["bd lead", "vp of sales", "head of sales", "chief revenue officer", "cro\\b", "client partner", "vp of sales", "head of sales"], "sales"],
+    /* PM ladder subtypes. */
+    [["head of product", "product analyst", "product owner", "growth product manager", "ai product manager"], "product-manager"],
+    /* Engineering manager / leadership exec sub-titles. */
+    [["chief of staff", "coo", "cto", "cfo", "general manager", "managing director", "co-founder", "ceo", "founder"], "engineering-manager"],
+    /* Operations / process / six sigma. */
+    [["procurement manager", "planning manager", "six sigma black belt", "mis executive", "ops analyst", "operations analyst"], "operations"],
+    /* Finance / banking subtypes (not already caught). */
+    [["ca\\b", "cfo", "bank clerk", "credit manager", "insurance agent", "loan officer", "branch manager"], "finance"],
+    /* Company Secretary (CS) — legal-adjacent. */
+    [["company secretary", "cs\\b"], "legal"],
+    /* MD (medical Degree) — distinguish from MD (Managing Director).
+       Single token "md" alone is too ambiguous; use "md doctor" / "md medical". */
+    [["mbbs", "physician", "surgeon", "specialist doctor", "junior doctor", "senior doctor"], "doctor"],
+    /* Civil services / govt — route to "consultant" since closest
+       comp profile (advisory, fixed pay, prestige-driven). */
+    [["ias officer", "ips officer", "ifs officer", "irs officer", "irts officer", "irps officer", "indian foreign service", "indian police service", "indian revenue service", "indian forest service", "upsc aspirant", "state public service commission", "pcs officer", "ssc cgl", "ssc chsl", "ibps po", "sbi po", "rbi grade b", "sebi grade a", "nabard grade a", "sidbi grade a", "isro scientist", "drdo scientist", "barc scientist", "government scientist", "defence scientist", "forensic scientist", "cyber crime investigator", "psu engineer", "gate qualified engineer", "indian army officer", "indian navy officer", "indian air force officer", "nda cadet", "cds officer", "afcat officer"], "consultant"],
+    /* Sports / fitness — operations bucket (closest match in salary
+       data). */
+    [["athlete", "sports coach", "sports trainer", "fitness trainer", "personal trainer", "yoga instructor", "sports analyst", "sports marketing manager", "sports agent"], "operations"],
+    /* Real estate sub-roles (not already in sales). */
+    [["real estate agent", "property consultant", "real estate sales manager", "leasing manager", "property manager", "facility manager", "real estate investment analyst", "reit analyst", "asset manager"], "sales"],
+    /* AI / data subtypes missed earlier. */
+    [["applied scientist", "ai research scientist", "research scientist", "research engineer", "ai trainer", "ai safety engineer", "llm engineer", "generative ai engineer", "conversational ai engineer", "foundation model engineer", "rlhf engineer", "ai evaluation engineer", "prompt engineer", "decision scientist", "data modeler", "data steward", "data governance lead", "analytics engineer", "quantitative researcher", "quant researcher", "quantitative developer", "quant developer"], "ml-engineer"],
+    /* Internships / fresher / generic. */
+    [["software engineer intern", "data science intern", "product intern", "design intern", "marketing intern", "intern", "fresher", "campus hire", "apprentice", "trainee engineer", "graduate engineer trainee", "management trainee", "associate software engineer", "junior developer"], "software-engineer"],
+    /* Freelance variants. */
+    [["freelance developer", "freelance designer", "independent consultant", "contract engineer", "freelance writer", "freelance marketer"], "consultant"],
+    /* Acronyms — must come AFTER longer-pattern matches to avoid
+       false positives. CA / CS / MD as standalone tokens. */
+    [["^ca$", "^cs$", "^md$"], "chartered-accountant"],
+    /* Specific intern variants. */
+    [["data science intern", "product intern", "design intern", "marketing intern"], "software-engineer"],
+    /* Generic fresher / campus stage entries. */
+    [["fresher", "campus hire", "apprentice"], "software-engineer"],
+    /* Sales / RevOps subtypes. */
+    [["market development representative", "mdr"], "sales"],
+    /* PE/VC partner. */
+    [["partner pevc", "partner pe", "partner vc", "partner private equity", "partner venture capital", "principal pevc"], "finance"],
+    /* Trading. */
+    [["forex trader", "trader", "systematic trader"], "finance"],
+    /* Retail / e-commerce / cluster mgmt. */
+    [["customs broker", "cluster manager", "e-commerce manager", "ecommerce manager", "marketplace manager"], "operations"],
+    /* Aviation crew (pilot tier — not in operations). */
+    [["pilot", "first officer", "captain aviation", "aircraft maintenance engineer", "ame", "tourism manager"], "operations"],
+    /* Media production. */
+    [["producer", "line producer", "director", "assistant director", "production manager", "news anchor"], "marketing"],
+    /* R&D / consumer goods science. */
+    [["r&d manager consumer", "rd manager consumer", "product development manager consumer", "flavor scientist", "cosmetic chemist", "sensory analyst"], "marketing"],
+    /* Content roles missed earlier. */
+    [["head of content", "content director", "content marketing manager", "content operations manager", "content reviewer", "content moderator", "content producer", "content curator", "content specialist", "group head copy", "creative group head", "copy supervisor", "technical documentation manager", "documentation lead", "knowledge manager", "user manual writer", "product writer", "localization manager", "conversational ai writer", "voice ui writer", "chatbot writer", "staff writer tv", "staff writer", "story writer", "game writer"], "content-writer"],
     [["engineering manager", "director of engineering", "head of engineering", "vp of engineering"], "engineering-manager"],
     [["product manager", "apm", "associate product manager", "group product manager", "product owner", "chief product officer", "technical product manager", "director of product", "vp of product"], "product-manager"],
     // Design Engineer — engineering-coded designers (Vercel/Linear-style hybrid role).
@@ -1113,7 +1205,7 @@ export function matchRoleKey(role: string): RoleKey {
   ];
 
   for (const [keywords, key] of patterns) {
-    if (keywords.some(kw => lower.includes(kw))) return key;
+    if (keywords.some(kw => lower.includes(kw) || normalized.includes(kw))) return key;
   }
 
   return "software-engineer"; // default fallback

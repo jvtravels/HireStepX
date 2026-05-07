@@ -50,10 +50,13 @@ function resolveRole(role: string): RoleResolution {
     midOffer: band.initialOffer,
     /* "Defaulted to SWE" = role contains text suggesting it's NOT
        a software engineer but matchRoleKey returned software-engineer
-       (the catch-all default). */
+       (the catch-all default). Excludes intern / fresher / campus
+       hire / apprentice — those are intentionally mapped to SWE
+       entry as the closest-matching baseline band. */
     defaultedToSWE:
       salaryKey === "software-engineer" &&
-      !/\b(software|engineer|developer|programmer|sde|swe|backend|frontend|fullstack|full stack|architect|devops|sre|cloud|systems|embedded|firmware|trainee engineer|graduate engineer|design engineer|data engineer|platform|infrastructure|qa|test|automation|tech support|application support|noc|ml engineer|ai engineer)\b/i.test(role),
+      !/\b(software|engineer|developer|programmer|sde|swe|backend|frontend|fullstack|full stack|architect|devops|sre|cloud|systems|embedded|firmware|trainee engineer|graduate engineer|design engineer|data engineer|platform|infrastructure|qa|test|automation|tech support|application support|noc|ml engineer|ai engineer)\b/i.test(role) &&
+      !/\b(intern|fresher|campus hire|apprentice|trainee)\b/i.test(role),
     competencyMatched: !!competencyMatch.key,
   };
 }
