@@ -111,3 +111,52 @@ export function computeStepCount(opts: { mini: boolean; isSalaryType: boolean })
   const questionCount = opts.mini ? (opts.isSalaryType ? 5 : 3) : 5;
   return questionCount + 2;
 }
+
+/* ─── Static fallback (used when both LLM providers fail) ──────────────
+ *
+ * When Groq + Gemini both return errors (provider outage, TPM exhaustion,
+ * 503), we'd rather show curated questions from the seed bank than a 500
+ * page. Quality is lower than a tailored LLM response but materially
+ * better than "Try again later" for the user mid-interview.
+ *
+ * Selection priority: exact (focus) match → roleFamily fallback →
+ * generic warmup mix. Always returns at least 5 questions; never throws. */
+
+import { QUESTION_BANK, type FocusArea, type RoleFamily } from "../data/interview-question-bank";
+
+export interface FallbackQuestion {
+  type: string;
+  aiText: string;
+  scoreNote?: string;
+}
+
+/** Pick N curated questions matching the requested signature. Best-effort. */
+export function buildStaticFallback(opts: {
+  type: string;
+  focus?: string;
+  difficulty?: string;
+  roleFamily?: string;
+  count: number;
+}): FallbackQuestion[] {
+  const wantFocus = (opts.focus || "").toLowerCase() as FocusArea;
+  const wantRole = (opts.roleFamily || "general").toLowerCase() as RoleFamily;
+  // Priority pass: exact role + focus match.
+  const tier1 = QUESTION_BANK.filter(q => q.roleFamily === wantRole && q.focus === wantFocus);
+  // Fallback pass: same role, any focus (covers when focus="general").
+  const tier2 = QUESTION_BANK.filter(q => q.roleFamily === wantRole);
+  // Last resort: just behavioral entries (smallest-blast-radius default).
+  const tier3 = QUESTION_BANK.filter(q => q.focus === "behavioral");
+  const pool = tier1.length >= opts.count ? tier1 : tier2.length >= opts.count ? tier2 : tier3;
+  // Shuffle deterministically by index for variety without randomness side effects.
+  const picked = pool.slice(0, opts.count);
+  const questions: FallbackQuestion[] = [
+    { type: "intro", aiText: "Hi — let's get started. To warm up, tell me a bit about yourself and what brings you to this role." },
+    ...picked.map((q, i): FallbackQuestion => ({
+      type: i === 0 ? "warmup" : "main",
+      aiText: q.text,
+      scoreNote: q.styleNote,
+    })),
+    { type: "closing", aiText: "That's all I had — what questions do you have for me?" },
+  ];
+  return questions;
+}

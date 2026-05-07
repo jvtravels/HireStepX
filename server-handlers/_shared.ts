@@ -345,6 +345,44 @@ async function redisRateLimit(ip: string, bucket: string, limit: number, windowS
   }
 }
 
+/* ─── Generic Redis kv (Upstash REST) ───────────────────────────────
+ * Best-effort cache helpers for response memoization. Returns null on any
+ * failure (Redis down, network blip, malformed JSON) so callers can fall
+ * through to the live path without try/catch noise. */
+
+export async function redisGet(key: string): Promise<string | null> {
+  if (!useRedis) return null;
+  try {
+    const res = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data?.result === "string" ? data.result : null;
+  } catch { return null; }
+}
+
+export async function redisSetEx(key: string, ttlSec: number, value: string): Promise<void> {
+  if (!useRedis) return;
+  try {
+    await fetch(`${UPSTASH_URL}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify([["SET", key, value, "EX", ttlSec]]),
+    });
+  } catch { /* swallow — caching is best-effort */ }
+}
+
+/** SHA-256 hex digest. Edge-runtime safe (Web Crypto). For cache keys, not security. */
+export async function hashStable(input: string): Promise<string> {
+  const buf = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  const bytes = new Uint8Array(digest);
+  let hex = "";
+  for (const b of bytes) hex += b.toString(16).padStart(2, "0");
+  return hex.slice(0, 24);
+}
+
 /** Check if an IP has exceeded its rate limit for a given bucket. Uses Redis with in-memory fallback. */
 export async function isRateLimited(
   ip: string,

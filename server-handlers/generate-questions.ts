@@ -2,7 +2,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sanitizeForLLM } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sanitizeForLLM, redisGet, redisSetEx, hashStable } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
@@ -24,6 +24,7 @@ import {
   normalizePanelPersonas,
   isSalaryNegotiationLengthOk,
   computeStepCount,
+  buildStaticFallback,
   type RawQuestion,
 } from "./_generate-questions-helpers";
 import { fetchRecentQuestions } from "./_question-dedup";
@@ -121,8 +122,24 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, candidateName, negotiationStyle } = await req.json();
+    const rawBody = await req.json();
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, candidateName, negotiationStyle } = rawBody;
     const isMini = mini === true;
+
+    /* Response cache — keyed on the stable hash of the full request body.
+     * Same input within the TTL window returns the cached questions without
+     * a fresh LLM call. Catches the dominant waste: rapid double-clicks,
+     * client-side retries on transient failures, and identical session
+     * starts within minutes. Deliberate regens after 5 min get a fresh set. */
+    const CACHE_TTL_SEC = 300;
+    const cacheKey = `gq:${await hashStable(JSON.stringify(rawBody))}`;
+    const cached = await redisGet(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        return new Response(JSON.stringify({ ...parsed, _cached: true }), { status: 200, headers });
+      } catch { /* malformed cache entry — fall through to live path */ }
+    }
 
     const interviewType = sanitizeForLLM(type, 50) || "behavioral";
     const interviewFocus = sanitizeForLLM(focus, 50) || "general";
@@ -726,11 +743,41 @@ Requirements:
       retrieval_tier: retrievalResult.tier,
     }, req);
 
+    // Best-effort: cache the successful response for ~5 min so retries /
+    // double-clicks on the same body don't spend tokens.
+    void redisSetEx(cacheKey, CACHE_TTL_SEC, JSON.stringify(responseBody));
+
     return new Response(JSON.stringify(responseBody), { status: 200, headers });
   } catch (err) {
     const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error("[generate-questions] Error:", errMsg.slice(0, 300));
+
+    /* Static fallback — when both LLM providers fail (Groq + Gemini cascade,
+     * provider 5xx, TPM exhaustion), return curated questions from the seed
+     * bank instead of a 500. The user can still run a usable session;
+     * quality is lower than tailored output but materially better than a
+     * dead-end error. Telemetry can monitor `_fallback="static"` rates. */
+    try {
+      const stepCount = computeStepCount({ mini: false, isSalaryType: false });
+      const fallbackQuestions = buildStaticFallback({
+        type: "behavioral",
+        focus: "general",
+        difficulty: "standard",
+        roleFamily: "general",
+        count: Math.max(3, stepCount - 2),
+      });
+      if (fallbackQuestions.length > 0 && validateQuestionShape(fallbackQuestions)) {
+        console.warn(`[generate-questions] returning static fallback after LLM failure: ${errMsg.slice(0, 100)}`);
+        return new Response(
+          JSON.stringify({ questions: fallbackQuestions, _fallback: "static" }),
+          { status: 200, headers },
+        );
+      }
+    } catch (fallbackErr) {
+      console.error("[generate-questions] static fallback also failed:", fallbackErr instanceof Error ? fallbackErr.message : fallbackErr);
+    }
+
     return new Response(
       JSON.stringify({ error: isTimeout ? "Request timed out — please try again" : "Internal error", detail: errMsg.slice(0, 200) }),
       { status: isTimeout ? 504 : 500, headers },
