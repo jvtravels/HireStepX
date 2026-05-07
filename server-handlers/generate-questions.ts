@@ -137,6 +137,14 @@ export default async function handler(req: Request): Promise<Response> {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
+        // Fire telemetry so you can measure cache effectiveness in PostHog —
+        // a healthy hit rate means the cache is doing its job. Best-effort:
+        // don't await, don't let telemetry block the response.
+        void captureServerEvent("gq_cache_hit", distinctIdFrom(req, auth.userId), {
+          type: typeof type === "string" ? type : "",
+          focus: typeof focus === "string" ? focus : "",
+          company: typeof company === "string" ? company.slice(0, 60) : "",
+        }, req);
         return new Response(JSON.stringify({ ...parsed, _cached: true }), { status: 200, headers });
       } catch { /* malformed cache entry — fall through to live path */ }
     }
@@ -769,6 +777,15 @@ Requirements:
       });
       if (fallbackQuestions.length > 0 && validateQuestionShape(fallbackQuestions)) {
         console.warn(`[generate-questions] returning static fallback after LLM failure: ${errMsg.slice(0, 100)}`);
+        // Telemetry: track each static-fallback firing so the team can monitor
+        // LLM-cascade failure rate independently of overall error counters.
+        // A spike here = both providers degraded, page the on-call. Note:
+        // request body fields (type/focus) aren't in scope here because the
+        // catch block lives outside the try where they were destructured.
+        void captureServerEvent("gq_static_fallback", distinctIdFrom(req, auth.userId), {
+          error: errMsg.slice(0, 200),
+          is_timeout: isTimeout,
+        }, req);
         return new Response(
           JSON.stringify({ questions: fallbackQuestions, _fallback: "static" }),
           { status: 200, headers },

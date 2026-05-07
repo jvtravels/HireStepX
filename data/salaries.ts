@@ -2800,7 +2800,7 @@ export function matchRoleKey(role: string): RoleKey {
   const lower = role.toLowerCase();
   const normalized = lower
     .replace(/&/g, "")
-    .replace(/[()/\-]/g, " ")
+    .replace(/[()/-]/g, " ")
     .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
