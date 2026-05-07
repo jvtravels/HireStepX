@@ -50,7 +50,11 @@ export default function Dashboard({
     return <OverlayedDashboard variant={variant} userName={userName} greetingHour={greetingHour} />;
   }
 
-  const data = buildVariantData(variant, userName);
+  // Defensive: buildVariantData should always return a populated shape for
+  // non-overlay variants, but in case of a stale Vite HMR module we merge
+  // against the returning-user defaults so a missing field never crashes
+  // the render. Cheap insurance against canvas-time hot-reload glitches.
+  const data = withDefaults(buildVariantData(variant, userName));
   const greet =
     greetingHour < 12 ? "Good morning" :
     greetingHour < 17 ? "Good afternoon" :
@@ -559,7 +563,44 @@ const ALL_CATEGORIES = [
   "Self-awareness",
 ];
 
-function buildVariantData(variant: DashboardVariant, _userName: string) {
+/* Defaults fallback — ensures every render has the full shape even if a
+   variant branch returns a partially-undefined object (e.g., during a
+   Vite HMR transition where _atoms.tsx and Dashboard.tsx are temporarily
+   out of sync). Cheap to compute (small literal object) and only the
+   missing fields get populated. */
+type VData = ReturnType<typeof buildVariantDataInner>;
+function withDefaults(d: Partial<VData>): VData {
+  const fallbackKpis = { overall: 0, overallDelta: 0, clarity: 0, speaking: 0,
+                          overallPercentile: undefined, clarityPercentile: undefined, speakingPercentile: undefined };
+  const fallbackSpark = { overall: [0,0,0,0,0,0,0], clarity: [0,0,0,0,0,0,0], speaking: [0,0,0,0,0,0,0] };
+  return {
+    heroAccent: "ready",
+    heroSub: "",
+    streak: 0, unreadCount: 0, percentile: 0,
+    streakNextMilestone: 7, coverage: 0,
+    coverageCells: ALL_CATEGORIES.map(label => ({ label, touched: false, score: 0 })),
+    kpis: fallbackKpis, spark: fallbackSpark,
+    insightHeading: "", insightBody: "",
+    focusPct: 0, focusTitle: "", focusBody: "", focusChips: [] as string[],
+    coachHeadline: "", coachBody: "", coachCta: "",
+    insights: [] as CoachInsight[], currentInsight: 0,
+    recentSessions: [] as SessionRow[],
+    dailyTip: "",
+    countdown: undefined, dailyGoal: undefined,
+    contribDays: [] as ContribDay[],
+    achievements: [] as AchievementSpec[],
+    ...d,
+    // Re-merge nested objects in case the variant only specified part of them.
+    kpis: { ...fallbackKpis, ...(d.kpis ?? {}) },
+    spark: { ...fallbackSpark, ...(d.spark ?? {}) },
+  } as VData;
+}
+
+function buildVariantData(variant: DashboardVariant, userName: string) {
+  return buildVariantDataInner(variant, userName);
+}
+
+function buildVariantDataInner(variant: DashboardVariant, _userName: string) {
   if (variant === "empty") {
     return {
       heroAccent: "ready",
@@ -873,7 +914,7 @@ function JourneyArt() {
 function OverlayedDashboard({
   variant, userName, greetingHour,
 }: { variant: "command-palette" | "notifications"; userName: string; greetingHour: number }) {
-  const data = buildVariantData("returning", userName);
+  const data = withDefaults(buildVariantData("returning", userName));
 
   const paletteSections: PaletteSection[] = [
     { label: "Quick actions",
@@ -928,7 +969,7 @@ function OverlayedDashboard({
        data, single-column, larger CTAs, swipeable cards. Replaces
        the desktop sidebar with a top app bar + a bottom tab bar. */
 function MobileDashboard({ userName, greetingHour }: { userName: string; greetingHour: number }) {
-  const data = buildVariantData("returning", userName);
+  const data = withDefaults(buildVariantData("returning", userName));
   const greet = greetingHour < 12 ? "Good morning" : greetingHour < 17 ? "Good afternoon" : "Good evening";
 
   return (
