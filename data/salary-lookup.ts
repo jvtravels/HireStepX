@@ -7,6 +7,7 @@
  */
 
 import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
+import { getCompanyBandOverride } from "./company-salary-overrides";
 import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { getCompanyCity } from "./company-cities";
@@ -66,6 +67,42 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
   // to Bangalore even if user didn't specify, matching real recruiter behaviour.
   const inferredJobCity = params.jobCity || getCompanyCity(params.company) || params.currentCity;
   const jobCityTier = getCityTier(inferredJobCity);
+
+  /* Layer 1: per-company verified override (data/company-salary-overrides.ts).
+     When a high-traffic company has a verified band from
+     Levels.fyi / AmbitionBox / Glassdoor / DRHP filings, use it
+     instead of the generic tier band. Specific > generic. */
+  const override = getCompanyBandOverride(params.company, roleKey, exp);
+  if (override) {
+    const adjOv = (v: number) => jobCityTier === "tier1" ? v : adjustForCity(v, jobCityTier);
+    const totalMin = adjOv(override.totalMin);
+    const totalMax = adjOv(override.totalMax);
+    const initialOffer = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
+    const minOffer = Math.round(totalMin * 0.95 * 10) / 10;
+    const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
+    const walkAway = Math.round(totalMax * 1.1 * 10) / 10;
+    const hasEquity = (override.equityType ?? "none") !== "none";
+    const equityRange: [number, number] = hasEquity
+      ? [adjOv(override.equityMin ?? 0), adjOv(override.equityMax ?? 0)]
+      : [0, 0];
+    const joiningBonusRange: [number, number] = [0, Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10)];
+    const bandContext = `NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
+- Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
+- Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
+- Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
+- Walk-away ceiling: ${fmtLPA(walkAway)}
+- Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
+${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : "- No equity at this level"}
+${override.notes ? `- Note: ${override.notes}` : ""}
+SOURCE: ${override.source}.
+
+These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from a different tier (e.g. unicorn bands for a small design studio) breaks the simulation. Stay anchored.`;
+    return {
+      initialOffer, minOffer, maxStretch, walkAway,
+      joiningBonusRange, hasEquity, equityRange,
+      bandContext,
+    };
+  }
 
   const entry = findSalaryEntry(roleKey, companyTier, exp);
 
