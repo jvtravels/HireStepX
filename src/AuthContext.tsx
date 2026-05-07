@@ -7,6 +7,7 @@ import {
   isSessionExpiredByPreference,
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
+import { isSlowConnection } from "./_browser-api-guards";
 
 import type { Session } from "@supabase/supabase-js";
 import type { StoredResume } from "./resumeParser";
@@ -508,10 +509,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Safety timeout: ensure loading never hangs
     // Use longer timeout on slow connections (common on Indian mobile networks)
-    const isSlow = typeof navigator !== "undefined" && "connection" in navigator &&
-      ((navigator as unknown as { connection: { effectiveType?: string } }).connection?.effectiveType === "2g" ||
-       (navigator as unknown as { connection: { effectiveType?: string } }).connection?.effectiveType === "slow-2g");
-    const safetyMs = isSlow ? 15000 : 10000;
+    const safetyMs = isSlowConnection() ? 15000 : 10000;
     const safetyTimer = setTimeout(() => {
       console.warn("[auth] safety timeout: forcing loading=false after", safetyMs, "ms");
       // Defensive: if we never resolved a user, ensure state is clean so the

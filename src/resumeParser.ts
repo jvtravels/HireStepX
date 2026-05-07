@@ -1,6 +1,8 @@
 /* ─── Resume Text Extraction ─── */
 /* Extracts plain text from PDF, DOCX, and TXT files client-side */
 
+import { yieldToMainThread } from "./_browser-api-guards";
+
 /** Read a .txt file directly */
 function readTxt(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -518,12 +520,11 @@ export function parseResumeData(rawText: string): ParsedResume {
   };
 }
 
-/** Yield back to the main thread between parse stages so the UI stays responsive on large resumes. */
+/** Yield back to the main thread between parse stages so the UI stays
+ * responsive on large resumes. Thin wrapper over the shared helper so
+ * existing callsites within this module don't need to change. */
 function yieldToMain(): Promise<void> {
-  // Modern: scheduler.yield() (Chrome 129+). Fallback: setTimeout 0.
-  const sched = (globalThis as unknown as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
-  if (sched?.yield) return sched.yield();
-  return new Promise(resolve => setTimeout(resolve, 0));
+  return yieldToMainThread();
 }
 
 /**

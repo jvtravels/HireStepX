@@ -14,6 +14,7 @@ import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
+import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
 import { unlockAudio, prefetchTTS } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
@@ -775,7 +776,8 @@ export default function SessionSetup() {
 
   const startLevelMeter = (stream: MediaStream) => {
     try {
-      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+      const Ctx = getAudioContextCtor();
+      if (!Ctx) return;
       const ctx = new Ctx();
       audioCtxRef.current = ctx;
       const analyser = ctx.createAnalyser();
