@@ -73,6 +73,20 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
   level: "Senior",
   difficulty: "Standard",
   percentile: 78,
+  daysUntilInterview: 6,
+  /* Cross-focus signal — surfaces story reuse across Behavioral / System Design /
+     Strategic sessions. Single most under-used field in the report; this is the
+     platform's actual cross-context wedge over single-session rivals. */
+  storyReuseFindings: [
+    {
+      storyLabel: "Q3 2024 design-system migration",
+      body: "Used in 3 of last 4 sessions (2× Behavioral, 1× Strategic). Pair with one more strong narrative — anchor candidates often default to one go-to story under pressure.",
+    },
+    {
+      storyLabel: "Onboarding redesign",
+      body: "Mentioned in last Strategic round but not surfaced here when 'unpopular decision' was probed — re-tag this story for behavioral reuse.",
+    },
+  ],
   aiVerdict:
     "Specific, owned, outcome-anchored. The Q3 2024 design-system migration story landed because you named what you specifically did and closed with a metric. Tighten the Q2 'we' usage and you're ready for the bar-raiser.",
   strengths: [
@@ -137,6 +151,9 @@ export const BEHAVIORAL_STRONG: InterviewResultData = build({
           quote: "we built the slides, we presented...",
         },
       ],
+      restructured: plain(
+        "There was a push from leadership to ship a new dashboard within Q4. I owned the conversation with our VP because I'd worked closest to the data team. I prepared a one-pager with three trade-off scenarios — ship-now-with-debt, ship-half-scope, or push by 6 weeks — and walked the VP through it. I made the case for the 6-week push with a specific ask: protect 2 engineers from interrupts. The VP agreed because I'd anticipated the cost question and named the trade-off explicitly. We shipped on the new date with zero P0 bugs.",
+      ),
       likelyFollowUp: "What was the specific moment that turned the conversation?",
     },
   ],
@@ -190,22 +207,18 @@ export const TECHNICAL_PARTIAL: InterviewResultData = build({
       ],
       whyScored:
         "Reached the optimal iterative solution and your communication was strong throughout. Two gaps: skipped the recursive O(n) space approach as a brute force first, and didn't articulate time/space complexity for the final answer.",
-      redFlags: [
-        {
-          type: "scope_drift",
-          severity: "medium",
-          title: "Jumped to optimal",
-          explanation: "Went straight to the iterative two-pointer approach. Some interviewers read this as rehearsed answers — name a brute force first, even briefly.",
-          quote: "",
-        },
-        {
-          type: "missing_result",
-          severity: "high",
-          title: "Didn't state complexity",
-          explanation: "Strong candidates always state O(...) for their final solution.",
-          quote: "",
-        },
+      topPerformerAnswer: plain(
+        "Let me name two approaches first. The brute force is recursive — O(n) time, O(n) stack space. The optimal is iterative with three pointers — prev, curr, next — walking once, O(n) time, O(1) space. I'll go with the iterative since the prompt asks for O(1). Edge cases: empty list returns null; single node returns itself; I'd also test a 2-node list since the prev=null assignment is where bugs hide. In production, I'd use this for stack reversal in undo systems where you can't afford the extra heap allocation, or in embedded paths where memory is tight.",
+      ),
+      whatMakesItStrong: [
+        "Named two approaches before coding — brute force then optimal — so the interviewer sees the full trade-off space",
+        "Stated complexity explicitly for both: O(n) time / O(n) space vs O(n) / O(1)",
+        "Surfaced 3 edge cases proactively (empty, single node, 2-node — the last is where prev=null bugs hide)",
+        "Closed with a real production use-case, signalling you understand when to reach for this — not just that you can write it",
       ],
+      restructured: plain(
+        "Approach: I'll consider two — recursive (O(n) space) and iterative (O(1) space). I'll go with iterative since the prompt asks for O(1). Walk through: maintain three pointers (prev=null, curr=head, next), step through reversing curr.next to prev, advance all three. Complexity: O(n) time, O(1) space. Edge cases: empty list, single node, 2-node list. Production use: stack-reversal for undo systems where extra heap allocation is prohibited.",
+      ),
       likelyFollowUp: "What's the time and space complexity of your final solution?",
     },
     {
@@ -301,7 +314,43 @@ export const CASE_STUDY_STRONG: InterviewResultData = build({
           quote: "",
         },
       ],
+      topPerformerAnswer: plain(
+        "Let me use a Diagnose framework — segment, isolate, hypothesise, validate. First, segmentation: I'd cut the 14-point drop by city tier, restaurant size, cuisine, and order-time window. My hypothesis going in: the drop is concentrated in tier-2 cities and small kitchens, because they're most exposed to delivery-partner availability, and the 92→78 timing matches the post-monsoon rider attrition we saw last September. To validate: I'd want order-acceptance heatmaps overlaid on rider density. If validated, three interventions in priority: (1) dynamic surge for affected pincodes, (2) restaurant-side acceptance bonus capped at ₹2/order, (3) longer-term, a kirana-partner pilot. Primary success metric: acceptance rate back to 88% within 3 weeks; guardrail: contribution margin per order does not drop more than ₹4.",
+      ),
+      whatMakesItStrong: [
+        "Named the framework explicitly (Diagnose) and held its structure throughout — boards weight framework discipline over framework knowledge",
+        "Started with a hypothesis tied to a real-world pattern (post-monsoon attrition), not a guess",
+        "Defined a primary success metric AND a guardrail metric — distinguishes a PM answer from an analyst answer",
+        "Prioritised three interventions by ROI + time-to-impact, not just listed them",
+      ],
       likelyFollowUp: "If you had only one metric to define success of this intervention, which one?",
+    },
+    {
+      index: 2,
+      text: "Should Swiggy enter the tier-3 grocery delivery market in 2026? Walk me through your recommendation.",
+      score: 74,
+      band: "complete",
+      answer: plain("My recommendation is yes, but phased — start with 5 tier-3 cities adjacent to existing tier-2 ops. Customer: aspirational households, ₹40-60K/month income..."),
+      star: { situation: false, task: false, action: false, result: false, learning: false },
+      metrics: { wordCount: 312, responseSec: 295, firstPersonRatioPct: 52, quantificationCount: 5 },
+      focusMetrics: [
+        { label: "Framework", value: "Yes", tone: TONE_SUCCESS },
+        { label: "Solutions", value: "3", tone: TONE_DEFAULT },
+        { label: "Recommendation", value: "Yes", tone: TONE_SUCCESS },
+        { label: "Metrics named", value: "2", tone: TONE_SUCCESS },
+      ],
+      whyScored:
+        "Strong recommendation arc — phased entry, named adjacent-city heuristic for ops feasibility. Customer specificity was good (income band, household type). Two metrics named (CAC payback, basket size). Could have weighed the BlinkIt counter-move more explicitly.",
+      redFlags: [
+        {
+          type: "vague",
+          severity: "low",
+          title: "Counter-move not addressed",
+          explanation: "Strong strategic answers acknowledge how the dominant rival would respond — BlinkIt entering the same cities would change the unit economics.",
+          quote: "",
+        },
+      ],
+      likelyFollowUp: "How would your answer change if BlinkIt entered the same 5 cities the same quarter?",
     },
   ],
 });
@@ -317,8 +366,9 @@ export const SALARY_NEG_WEAK: InterviewResultData = build({
   level: "Senior EM",
   difficulty: "Standard",
   percentile: 18,
+  daysUntilInterview: 4,
   aiVerdict:
-    "Accepted the first offer with 'sounds fair, let me think about it' and never advanced past the offer-reaction phase. No counter-anchor, no BATNA, no package decomposition. The textbook 'left value on the table' session.",
+    "Accepted ₹38L on first offer. Comparable Senior EMs at fintechs land ₹46–55L this quarter — you walked away ~₹14L below the top of band, ~₹56L over a 4-year tenure. Zero counter, zero levers explored, one CTC disclosure (which capped their anchor). Textbook 'left value on the table' session.",
   strengths: [
     "Stayed composed and professional throughout",
     "Asked clarifying questions about start date and scope",
@@ -329,14 +379,18 @@ export const SALARY_NEG_WEAK: InterviewResultData = build({
     "Decompose the package — base, equity, signing, leave, scope",
     "Push past offer-reaction phase to counter and benefits",
   ],
-  /* Salary-neg specific axes */
+  /* Salary-neg axes — all measurable, no vibes metrics. Composure +
+     Pushback-resilience were dropped because they were grader-feel
+     stand-ins. Concession discipline (% pushes held) and Silence tolerance
+     (seconds held) replace them with signals you can extract from the
+     transcript + audio without an opinionated rater. */
   skills: [
     { name: "Anchoring", score: 25, roleAvg: 55 },
     { name: "Package depth", score: 20, roleAvg: 60 },
     { name: "BATNA leverage", score: 0, roleAvg: 50 },
     { name: "Phase progression", score: 35, roleAvg: 65 },
-    { name: "Pushback resilience", score: 50, roleAvg: 55 },
-    { name: "Composure", score: 70, roleAvg: 60 },
+    { name: "Concession discipline", score: 30, roleAvg: 55 },
+    { name: "Silence tolerance", score: 40, roleAvg: 60 },
   ],
   questions: [
     {
@@ -348,13 +402,22 @@ export const SALARY_NEG_WEAK: InterviewResultData = build({
       star: { situation: false, task: false, action: false, result: false, learning: false },
       metrics: { wordCount: 84, responseSec: 95, firstPersonRatioPct: 55, quantificationCount: 0 },
       focusMetrics: [
-        { label: "Counter named", value: "—", tone: TONE_ERROR },
-        { label: "Package items", value: "0", tone: TONE_ERROR },
-        { label: "BATNA", value: "No", tone: TONE_ERROR },
-        { label: "Phases reached", value: "1 / 6", tone: TONE_ERROR },
+        { label: "Anchor delta", value: "0%", tone: TONE_ERROR },
+        { label: "Concessions", value: "1 / 1", tone: TONE_ERROR },
+        { label: "Silence held", value: "0.8s", tone: TONE_ERROR },
+        { label: "Disclosure leaks", value: "1", tone: TONE_ERROR },
       ],
       whyScored:
         "Said 'that sounds fair, let me think about it' and ended the call. Textbook 'left value on the table' move — even neutral candidates counter-anchor with a specific number. Stayed in offer-reaction phase the whole call.",
+      topPerformerAnswer: plain(
+        "Thank you for the offer — I appreciate you laying it out so clearly. Before I react to the number, can I ask how the package decomposes? I'm thinking about base, ESOP grant range for this level, signing, and variable. Based on my market research and where I am in conversations elsewhere, I was anchoring closer to ₹52L base. Help me understand how PhonePe thinks about that for an external Senior EM hire — and what levers we have if base is fixed.",
+      ),
+      whatMakesItStrong: [
+        "Counter-anchored with a specific number (₹52L) and rationale (market data + active alternatives)",
+        "Decomposed the package into 4 levers before reacting — opens 4 negotiation surfaces, not 1",
+        "Stayed collaborative — 'help me understand how PhonePe thinks about that' invites them to defend, not dismiss",
+        "Implicit BATNA reference ('conversations elsewhere') without naming a specific competing offer prematurely",
+      ],
       redFlags: [
         {
           type: "scope_drift",
@@ -401,8 +464,25 @@ export const SALARY_NEG_STRONG: InterviewResultData = build({
   level: "Senior EM",
   difficulty: "Standard",
   percentile: 88,
+  daysUntilInterview: 4,
+  /* Cross-session signal — proves the platform learns across the user's
+     prep arc, not just within one session. The "from 38 to 84 in 3 sessions"
+     before/after framing is the highest-converting artifact for a returning
+     user looking at their report. Never-used field; this populates the
+     "Cross-session insights" panel that's currently invisible across all demos. */
+  crossSessionInsights: [
+    {
+      title: "Anchoring discipline jumped 65 points across 3 sessions",
+      body: "Session 1: scored 25 (accepted first offer). Session 3: scored 90 (countered with ₹52L + market data). The single skill axis with the largest improvement in any focus you've practised.",
+    },
+    {
+      title: "BATNA framing still your relative weakness",
+      body: "Across negotiation sessions, BATNA leverage is your lowest-scoring axis on average (62/100). Two more drills with explicit competing-offer scenarios and you'll cross the role bar.",
+    },
+  ],
+  priorSessionCount: 2,
   aiVerdict:
-    "Counter-anchored at ₹52L base immediately, cited market data, named a competing Razorpay offer for leverage, and probed five package levers (ESOPs, signing, notice, scope, WFH). Textbook negotiation arc — advanced through offer-reaction → counter → benefits in one call.",
+    "Counter-anchored at ₹52L (+37% over their ₹38L), held silence 4.2s after the counter landed, conceded zero ground across 3 pushbacks, and surfaced five levers (ESOPs, signing, notice, scope, WFH). Estimated landing zone: ₹48–52L base + 40K ESOPs over 4 years = ~₹62L lifetime expected value. Top-quartile outcome for Senior EM at fintechs this cycle.",
   strengths: [
     "Counter-anchored first with a specific number (₹52L) and rationale",
     "Named a competing Razorpay offer for leverage",
@@ -417,8 +497,8 @@ export const SALARY_NEG_STRONG: InterviewResultData = build({
     { name: "Package depth", score: 85, roleAvg: 60 },
     { name: "BATNA leverage", score: 80, roleAvg: 50 },
     { name: "Phase progression", score: 88, roleAvg: 65 },
-    { name: "Pushback resilience", score: 75, roleAvg: 55 },
-    { name: "Composure", score: 80, roleAvg: 60 },
+    { name: "Concession discipline", score: 82, roleAvg: 55 },
+    { name: "Silence tolerance", score: 78, roleAvg: 60 },
   ],
   questions: [
     {
@@ -430,14 +510,32 @@ export const SALARY_NEG_STRONG: InterviewResultData = build({
       star: { situation: false, task: false, action: false, result: false, learning: false },
       metrics: { wordCount: 295, responseSec: 165, firstPersonRatioPct: 52, quantificationCount: 6 },
       focusMetrics: [
-        { label: "Counter named", value: "₹52L", tone: TONE_SUCCESS },
-        { label: "Package items", value: "5", tone: TONE_SUCCESS },
-        { label: "BATNA", value: "Yes", tone: TONE_SUCCESS },
-        { label: "Phases reached", value: "4 / 6", tone: TONE_SUCCESS },
+        { label: "Anchor delta", value: "+37%", tone: TONE_SUCCESS },
+        { label: "Concessions", value: "0 / 3 pushes", tone: TONE_SUCCESS },
+        { label: "Silence held", value: "4.2s", tone: TONE_SUCCESS },
+        { label: "Disclosure leaks", value: "0", tone: TONE_SUCCESS },
       ],
       whyScored:
         "Textbook anchor: countered immediately with ₹52L base + 15% variable, citing market data. Named a competing Razorpay offer — real leverage. Opened the package conversation with 5 levers in two minutes (ESOPs, signing, notice, scope, WFH).",
       likelyFollowUp: "If we landed at ₹48L base, what would close the gap on the rest?",
+    },
+    {
+      index: 2,
+      text: "We can't go above ₹45L base. That's our ceiling for this level. Where do we go from here?",
+      score: 82,
+      band: "strong",
+      answer: plain("I appreciate the directness. If base is fixed at ₹45L, let's open up the other levers — what's the ESOP grant range for this level, what's the typical signing for an external hire, and is the variable component a percentage cap or a target with upside?..."),
+      star: { situation: false, task: false, action: false, result: false, learning: false },
+      metrics: { wordCount: 245, responseSec: 188, firstPersonRatioPct: 48, quantificationCount: 4 },
+      focusMetrics: [
+        { label: "Levers opened", value: "4", tone: TONE_SUCCESS },
+        { label: "Concessions", value: "0 / 1 push", tone: TONE_SUCCESS },
+        { label: "Silence held", value: "3.4s", tone: TONE_SUCCESS },
+        { label: "Phases", value: "5 / 6 reached", tone: TONE_SUCCESS },
+      ],
+      whyScored:
+        "Held composure when the budget got pushed back — instead of conceding, you opened up the levers conversation (ESOPs, signing, variable upside, vesting cliff). Stayed collaborative. Advanced into the benefits + closing phase in one move. This is exactly how senior negotiators handle ceiling pushback.",
+      likelyFollowUp: "ESOP grant for this level is 40,000 units over 4 years. How do you think about that?",
     },
   ],
 });
@@ -505,6 +603,15 @@ export const SYSTEM_DESIGN_PARTIAL: InterviewResultData = build({
           quote: "",
         },
       ],
+      topPerformerAnswer: plain(
+        "Before I draw anything, let me clarify scale. 100M daily transactions = ~1,150 TPS average, but UPI traffic peaks 5-7x at festival evenings, so I'm designing for ~8K TPS sustained, ~15K TPS spike. p99 < 200ms means I can't synchronously hit primary Postgres for every write. Read/write split: maybe 70/30 since most flows are status-checks. Now the architecture: API gateway → stateless app servers → Redis for idempotency-token + recent transaction lookups → Kafka for async ledger writes → Postgres sharded by user_id for transaction history. For p99: Redis-first reads with 60s TTL, Kafka decouples writes from response. Failure modes: Kafka lag triggers a circuit-breaker that flips writes to a synchronous-degraded-mode flag; Postgres replica lag triggers stale-read warnings. Capacity: 10 app servers at 1.5K TPS each gives 50% headroom for festival spikes.",
+      ),
+      whatMakesItStrong: [
+        "Spent the first 90 seconds on requirements + capacity math (8K TPS sustained, 15K spike) — turns abstract 'design' into engineered choices",
+        "Tied every component to a specific p99 constraint — Redis isn't decorative, it's there because Postgres can't hit 200ms",
+        "Volunteered failure modes unprompted (Kafka lag → circuit-breaker, replica lag → stale-read warnings) before the interviewer asked",
+        "Closed with capacity math + headroom percentage — shows you can defend your numbers, not just draw boxes",
+      ],
       likelyFollowUp: "What if 99.99% availability is required during festival peaks?",
     },
   ],
@@ -556,7 +663,34 @@ export const STRATEGIC_STRONG: InterviewResultData = build({
       ],
       whyScored:
         "Excellent stakeholder mapping — named 4 constituencies (engineering, product, sales, board) and held the trade-off. Vision was concrete. The bet you named — 'these were process problems, not talent problems' — was specific and falsifiable. Light on influence reasoning.",
+      topPerformerAnswer: plain(
+        "First 30 days: listening tour — engineering leads, 10 ICs across 3 teams, the product partners, and one board observer. The bet I'm testing: is this a process problem or a talent problem? My priors say process, given 3 quarters with the same team composition. Days 30-60: ship one quick-win to rebuild trust — a single ruthlessly-prioritised release shipped on a 2-week cycle. Days 60-90: institute a quarterly planning ritual that ties IC commitments to leadership trade-offs, so missed quarters become visible 4 weeks earlier. Time horizons: 90 days for trust, 6 months for velocity, 3 years for the picture I'd commit to — weekly shipping with 40 fewer engineers via tooling investment. The bet I own: if the process change doesn't move the velocity needle in 90 days, the diagnosis was wrong and I'll restructure leadership instead.",
+      ),
+      whatMakesItStrong: [
+        "Framed the listening tour as a hypothesis test (process vs talent) — not a generic '30/60/90'",
+        "Named four stakeholder constituencies (engineering, product, board, ICs) — VPs grade on stakeholder mapping breadth",
+        "Three time horizons (90 days / 6 months / 3 years) with concrete deliverables at each — signals strategic + tactical thinking",
+        "Owned the bet AND the contingency — 'if I'm wrong by day 90, I restructure leadership' is conviction without rigidity",
+      ],
       likelyFollowUp: "How would you build alignment with the CEO if they thought it was a talent problem?",
+    },
+    {
+      index: 2,
+      text: "How do you decide between hiring 10 mid-level engineers vs 3 staff engineers when budget is fixed?",
+      score: 78,
+      band: "strong",
+      answer: plain("It depends on what's broken — if velocity is the bottleneck, mid-levels compound; if architectural decisions are the bottleneck, staff engineers compound. Given the 3 missed quarters, I'd bet on staff first — 3 staff hires, then 4 mid-levels with the remaining budget..."),
+      star: { situation: false, task: false, action: false, result: false, learning: false },
+      metrics: { wordCount: 285, responseSec: 240, firstPersonRatioPct: 55, quantificationCount: 4 },
+      focusMetrics: [
+        { label: "Stakeholders", value: "2", tone: TONE_DEFAULT },
+        { label: "Time horizons", value: "2", tone: TONE_DEFAULT },
+        { label: "Decision criteria", value: "4", tone: TONE_SUCCESS },
+        { label: "Risk owned", value: "Yes", tone: TONE_SUCCESS },
+      ],
+      whyScored:
+        "Strong heuristic — named the bet (velocity vs architectural bottleneck) and tied it to the 3-missed-quarter context. Owned the asymmetric risk: 'staff first compounds; mid-levels first amplifies the existing process'. Could push further on what specific signals would flip your bet mid-quarter.",
+      likelyFollowUp: "What signal in the first 60 days would make you regret betting on staff hires?",
     },
   ],
 });
@@ -572,6 +706,7 @@ export const CAMPUS_PLACEMENT_PARTIAL: InterviewResultData = build({
   level: "Fresher",
   difficulty: "Standard",
   percentile: 42,
+  daysUntilInterview: 9,
   aiVerdict:
     "Communication was clean and enthusiasm came through — but the project section drifted to 'we' for most of the architecture description, and tech-stack reasoning stayed surface-level. Fundamentals were solid when probed. Honest mention of a debug session you led was the strongest moment.",
   strengths: [
@@ -624,6 +759,15 @@ export const CAMPUS_PLACEMENT_PARTIAL: InterviewResultData = build({
           quote: "MongoDB / Express / React",
         },
       ],
+      topPerformerAnswer: plain(
+        "Our final-year project was a food-delivery app on the MERN stack — three-person team. My specific contribution was the auth and payments layer. I built JWT-based session handling with refresh-token rotation; my teammate handled the React frontend, our third member built the kitchen-side order dashboard. The hardest decision I owned was choosing MongoDB over Postgres — we picked it because user preferences (dietary tags, saved addresses) were deeply nested and we wouldn't be doing joins across them. The single hardest bug I debugged was a race condition during simultaneous payment + order-status updates — I found it by adding correlation IDs to logs and tracing one failed transaction across 4 services.",
+      ),
+      whatMakesItStrong: [
+        "Names the team size and your specific scope ('I built auth and payments, teammate built frontend') — interviewers know exactly what to credit you for",
+        "Justifies a tech-stack choice with a real reason (nested data + no joins), not 'we used MongoDB because it's popular'",
+        "Volunteers the hardest bug + how you found it (correlation IDs across services) — shows debug method, not just outcome",
+        "Owns the trade-off — Postgres was the alternative and you considered it, signaling you knew the option space",
+      ],
       likelyFollowUp: "What was the hardest bug you debugged in this project, and how did you find it?",
     },
   ],
@@ -640,6 +784,7 @@ export const HR_WEAK: InterviewResultData = build({
   level: "Senior",
   difficulty: "Standard",
   percentile: 22,
+  daysUntilInterview: 3,
   aiVerdict:
     "Negative tone toward your current manager — HR reads this as 'this person will badmouth us next.' Motivation was generic ('great company, great opportunity'). No specific Flipkart research showed: no mention of recent product launches, engineering blog, or any cultural attribute.",
   strengths: [
@@ -676,6 +821,18 @@ export const HR_WEAK: InterviewResultData = build({
       ],
       whyScored:
         "Leaned negative — 'my current manager doesn't appreciate me' — HR reads this as 'this person will badmouth us next.' Motivation was generic. No Flipkart-specific research surfaced.",
+      restructured: plain(
+        "I'm looking for the next stage of growth — specifically, owning a 0-to-1 product lane in payments, which my current role can't offer because we're scaling an existing product. Flipkart's recent move into UPI-Lite for tier-3 markets is exactly the problem space I want to be in — your engineering blog post on payment idempotency at festival peaks resonated because that's where I'd want to learn next.",
+      ),
+      topPerformerAnswer: plain(
+        "I've grown a lot in my current role — shipped 3 major releases as PM and learned the playbook for scaling a maturing product. The next stage I'm looking for is owning a 0-to-1 lane in payments — which my current company can't offer because we're past that phase. Flipkart's UPI-Lite expansion into tier-3 is the exact problem space I want to be in. I noticed the engineering blog post on idempotency at festival peaks last month — that's the kind of problem I want to be debugging.",
+      ),
+      whatMakesItStrong: [
+        "Reframes 'leaving' as 'looking for' — same underlying truth, but HR hears growth orientation instead of grievance",
+        "Gives a structurally specific reason (0-to-1 vs scaling stage) that any HR partner immediately understands",
+        "Cites a specific Flipkart artifact (UPI-Lite tier-3, blog post on idempotency) — proves you researched, distinguishes you from candidates who say 'great company'",
+        "Implicitly closes the 'why now' question — 'past that phase' explains the timing without sounding desperate",
+      ],
       redFlags: [
         {
           type: "blame",
@@ -693,6 +850,33 @@ export const HR_WEAK: InterviewResultData = build({
         },
       ],
       likelyFollowUp: "What specifically about Flipkart's product strategy resonates with your background?",
+    },
+    {
+      index: 2,
+      text: "Where do you see yourself in five years?",
+      score: 46,
+      band: "weak",
+      answer: plain("Hopefully in a leadership role, growing in my career, taking on bigger responsibilities..."),
+      star: { situation: false, task: false, action: false, result: false, learning: false },
+      metrics: { wordCount: 65, responseSec: 75, firstPersonRatioPct: 72, quantificationCount: 0 },
+      focusMetrics: [
+        { label: "Specific reasons", value: "0", tone: TONE_ERROR },
+        { label: "Trajectory links", value: "0", tone: TONE_ERROR },
+        { label: "Salary anchored", value: "—", tone: TONE_DEFAULT },
+        { label: "Negative words", value: "0", tone: TONE_SUCCESS },
+      ],
+      whyScored:
+        "Textbook generic answer — 'leadership role, bigger responsibilities' could come from any candidate at any company. HR is testing whether you've thought about your own trajectory concretely. Strong answers name a specific function ('I want to lead a 0-to-1 product team in fintech') — vague answers signal you'll churn out within 18 months.",
+      redFlags: [
+        {
+          type: "vague",
+          severity: "high",
+          title: "Generic trajectory",
+          explanation: "No specific function, no specific scope, no link to the role you're interviewing for. HR reads this as 'hasn't thought about it.'",
+          quote: "leadership role, bigger responsibilities",
+        },
+      ],
+      likelyFollowUp: "If we hired you for a role you didn't grow into within two years, what would have gone wrong?",
     },
   ],
 });
@@ -798,13 +982,16 @@ export const GOVERNMENT_PARTIAL: InterviewResultData = build({
     "Cite specific schemes / rulings (e.g. Vineeta Sharma judgment on procedural rights)",
     "Use service-language: 'serve / public / citizen' more than 'efficient / optimise'",
   ],
+  /* UPSC/PSU axes — replaces STAR/first-person heuristics that don't fit
+     government rounds. Boards grade on schemes cited, rulings invoked,
+     hierarchy framing, and service-language ratio — those are the axes here. */
   skills: [
-    { name: "Ethics framing", score: 70, roleAvg: 55 },
-    { name: "Service orientation", score: 55, roleAvg: 60 },
-    { name: "Current affairs", score: 40, roleAvg: 65 },
-    { name: "Hierarchy respect", score: 80, roleAvg: 60 },
-    { name: "Regulatory comfort", score: 65, roleAvg: 60 },
-    { name: "Specific examples", score: 50, roleAvg: 60 },
+    { name: "Schemes cited", score: 35, roleAvg: 65 },
+    { name: "Rulings invoked", score: 30, roleAvg: 60 },
+    { name: "Hierarchy framing", score: 80, roleAvg: 60 },
+    { name: "Procedural rigor", score: 70, roleAvg: 60 },
+    { name: "Service language", score: 65, roleAvg: 60 },
+    { name: "Constitutional anchoring", score: 50, roleAvg: 60 },
   ],
   questions: [
     {
@@ -831,6 +1018,15 @@ export const GOVERNMENT_PARTIAL: InterviewResultData = build({
           explanation: "Answered abstractly. Government rounds expect awareness of specific schemes and recent court rulings.",
           quote: "no specific Act or ruling cited",
         },
+      ],
+      topPerformerAnswer: plain(
+        "With respect, sir, my first duty is to the public interest, which Article 14 of the Constitution anchors as equal procedural treatment. I would respectfully request the senior to put the directive in writing — not as defiance but as procedural record-keeping that protects both of us. If the file violates due process under the General Financial Rules, expediting it would expose the department to RTI scrutiny later — and the recent Vineeta Sharma judgment reinforced that procedural rights cannot be set aside even by hierarchy. My approach: I would propose an expedited review through the proper channel — convening the relevant committee within 48 hours rather than skipping it. If the senior insists, I would discreetly seek the under-secretary's guidance, since it is the senior officer's prerogative to authorise procedural exceptions in writing — not mine to grant verbally.",
+      ),
+      whatMakesItStrong: [
+        "Anchored to a specific constitutional provision (Article 14) and a named ruling (Vineeta Sharma) — boards weight specificity over abstraction",
+        "Cited the General Financial Rules as the procedural frame — shows familiarity with the actual document, not just principles",
+        "Proposed an alternative path (committee in 48 hours) rather than refusing — government rounds reward problem-solving inside hierarchy, not opposing it",
+        "Invoked hierarchy correctly (under-secretary, written authorisation) — distinguishes between deference to person vs deference to procedure",
       ],
       likelyFollowUp: "What's a recent Supreme Court ruling on administrative discretion that informed your view?",
     },

@@ -78,6 +78,105 @@ export const SESSION_REPORT_STYLES = `
   .ir-thumb-btn:hover { border-color: #B45309; color: #B45309; }
   .ir-thumb-btn.active { background: #F4E5D8; border-color: #B45309; color: #B45309; }
 
+  /* ─── Salary Negotiation full-report panels ───
+     The salary-negotiation interview focus has its own dedicated
+     surface: a multi-panel deep-dive that turns each negotiation
+     skill into a measurable signal. Lives in NegotiationFullReport.tsx
+     and renders only for sessions whose interviewType === salary-neg. */
+  .nfr-section-band {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 24px; border-radius: 12px;
+    margin: 24px 0 18px; border: 1px solid #EBE5D2;
+  }
+  .nfr-grid-2up {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  }
+  .nfr-grid-3up {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  }
+  .nfr-panel {
+    background: #FFFFFF; border: 1px solid #EBE5D2;
+    border-radius: 14px; padding: 22px;
+    box-shadow: 0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04);
+  }
+  .nfr-tldr-card {
+    background: linear-gradient(135deg, #0E0C08 0%, #312E81 100%);
+    color: #FFFFFF; border-radius: 16px;
+    padding: 26px 30px; margin-bottom: 24px;
+  }
+  .nfr-tldr-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+    padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.15);
+  }
+  .nfr-time-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; background: #E5E2F2; color: #312E81;
+    border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    border: 1px solid #E5E2F2; transition: all 160ms ease;
+  }
+  .nfr-time-pill:hover { background: #312E81; color: #FFFFFF; }
+  .nfr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .nfr-table th {
+    padding: 11px 14px; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: #6E6759; text-align: left; background: #F4EFE3;
+  }
+  .nfr-table td { padding: 11px 14px; font-size: 13px; color: #0E0C08; }
+  .nfr-table tr { border-top: 1px solid #EBE5D2; }
+  .nfr-table tr:first-child { border-top: none; }
+  .nfr-mono { font-family: 'JetBrains Mono', monospace; }
+  .nfr-pill {
+    display: inline-block; padding: 3px 10px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+    border-radius: 6px; text-transform: uppercase;
+  }
+  .nfr-pill-good { background: #DCFCE7; color: #15803D; }
+  .nfr-pill-bad  { background: #FEE2E2; color: #B91C1C; }
+  .nfr-pill-warn { background: rgba(180,83,9,0.12); color: #B45309; }
+  .nfr-pill-neutral { background: #F4EFE3; color: #0E0C08; }
+  .nfr-letter-actions {
+    display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;
+  }
+  .nfr-btn-primary {
+    padding: 10px 18px; background: #312E81; color: #FFFFFF;
+    border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .nfr-btn-primary:hover { background: #1E1B4B; }
+  .nfr-btn-secondary {
+    padding: 10px 18px; background: transparent; color: #0E0C08;
+    border: 1px solid #D6CDB5; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .nfr-btn-secondary:hover { border-color: #312E81; color: #312E81; }
+  .nfr-start-here {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; margin-bottom: 16px;
+    background: rgba(180,83,9,0.08); border: 1px solid rgba(180,83,9,0.20);
+    border-radius: 10px; font-size: 13px; color: #0E0C08;
+  }
+
+  /* Mobile reflow for the negotiation panels — single column at <=768px,
+     tighter padding at <=420px. Mirrors the production pattern used
+     elsewhere in this file. */
+  @media (max-width: 768px) {
+    .nfr-grid-2up { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .nfr-grid-3up { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .nfr-panel { padding: 18px !important; border-radius: 12px !important; }
+    .nfr-tldr-card { padding: 20px 22px !important; }
+    .nfr-tldr-stats { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+    .nfr-section-band { padding: 14px 16px !important; gap: 12px !important; }
+    .nfr-table th, .nfr-table td { padding: 8px 10px !important; font-size: 12px !important; }
+    .nfr-table th { font-size: 9px !important; }
+    .nfr-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  }
+  @media (max-width: 420px) {
+    .nfr-tldr-stats { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .nfr-letter-actions { flex-direction: column !important; }
+    .nfr-btn-primary, .nfr-btn-secondary { width: 100% !important; }
+  }
+
   /* ─── Mobile breakpoints ─── */
   /* The report is desktop-first; below 768px we collapse multi-column
      grids (hero, skills, per-question detail, next-steps) so dense

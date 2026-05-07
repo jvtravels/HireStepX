@@ -185,5 +185,68 @@ export interface InterviewResultData {
      *  Useful for "your offer is the 32nd percentile of the role/tier
      *  band" framing. Null if no offers were extracted. */
     percentileWithinBand?: number | null;
+    /** Cohort context — how many offers backed the percentile + when fresh.
+     *  Drives the "n=12 · last 90d" attribution chip. Optional. */
+    cohortN?: number;
+    cohortFreshness?: string; // e.g. "as of last week"
+    cohortLabel?: string; // e.g. "Senior EM at Indian fintechs · last 90 days"
+    /** Structured pushbacks the AI made during the call. Each entry pairs
+     *  an AI line with how the candidate responded (held / deflected /
+     *  conceded). Drives the "When they pushed back, did you fold?" panel.
+     *  Optional — backend wires this from transcript classification. */
+    pushbacks?: Array<{
+      pushback: string;
+      outcome: "held" | "deflected" | "conceded";
+      detail: string;
+    }>;
+    /** How the candidate framed their counter-anchor. Drives the bracket
+     *  ladder panel. Optional — derivable from candidateAsk + transcript. */
+    anchorBracket?: {
+      type: "single" | "range" | "range_with_justification" | "none";
+      quote: string;
+      verdict: string;
+    };
+    /** Top costly verbal phrases (filler / hedge / pre-acceptance) with
+     *  per-phrase counts + timestamps. Optional — needs transcript phrase
+     *  classifier on the backend. */
+    verbalHabits?: Array<{
+      phrase: string;
+      count: number;
+      cost: string;
+      timestamps?: string[]; // mm:ss list
+    }>;
+    /** Disclosure leaks (current CTC / current ESOP / etc. mentioned).
+     *  Each costs the candidate anchor leverage. Optional. */
+    disclosureLeaks?: Array<{ at: string; leak: string; cost: string }>;
+    /** Silence moments — when the candidate held silence after a
+     *  recruiter line, with healthy/filled-too-fast verdict. Needs
+     *  audio analysis. Optional. */
+    silenceMoments?: Array<{
+      at: string;
+      duration: string; // "4.2s"
+      context: string;
+      healthy: boolean;
+    }>;
+    /** Levers the candidate didn't ask about that strong negotiators
+     *  always probe — each tagged with what it's worth. Optional —
+     *  backend derives from transcript-question-classifier. */
+    unaskedLevers?: Array<{ question: string; whyItMatters: string }>;
+    /** Counterparty intel for this specific company — flexibility points,
+     *  band ranges, recent move patterns. Optional — needs company DB. */
+    counterpartyFacts?: Array<{ fact: string; tone: "good" | "bad" | "neutral" }>;
+    counterpartySource?: string;
+    /** Cross-session archetype + the move that breaks the pattern.
+     *  Optional — needs >=2 prior sessions to be meaningful. */
+    archetype?: {
+      title: string; // e.g. "The Pre-Acceptor"
+      body: string;
+      fix: string;
+      /* Per-session arc on the headline metric, oldest → newest. */
+      arc?: Array<{ label: string; score: number; highlight?: string }>;
+      arcMetric?: string; // e.g. "Anchoring discipline"
+    };
+    /** Recommended drills sequenced for the next 5 days. Each links to
+     *  a runnable drill via slug or external URL. Optional. */
+    drills?: Array<{ slug?: string; title: string; goal: string; effort: string }>;
   };
 }

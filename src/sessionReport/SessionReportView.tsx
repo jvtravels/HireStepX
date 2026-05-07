@@ -26,6 +26,7 @@
 import { useState } from "react";
 import { t, f, shadows } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
+import { NegotiationFullReport } from "./NegotiationFullReport";
 import type {
   AnswerSpan,
   BiasFinding,
@@ -689,172 +690,12 @@ function HeroSection({ data }: { data: InterviewResultData }) {
   );
 }
 
-/* Salary-negotiation-only section: offer trajectory + (if accepted) a
- * ready-to-send acceptance email template. Mounts only when
- * data.negotiationOutcome is present (set by adapter for salary-neg
- * sessions). */
-function NegotiationOutcomeSection({
-  outcome,
-  role,
-  company,
-  questions,
-}: {
-  outcome: NonNullable<InterviewResultData["negotiationOutcome"]>;
-  role: string;
-  company: string;
-  questions: Question[];
-}) {
-  const { offers, finalTotal, outcome: state, candidateAsk } = outcome;
-  const initial = offers[0]?.total ?? null;
-  const finalRaised = finalTotal !== null && initial !== null && finalTotal > initial
-    ? Math.round((finalTotal - initial) * 10) / 10
-    : null;
-
-  return (
-    <section
-      aria-labelledby="ir-section-negotiation"
-      style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 16,
-        padding: 28,
-        boxShadow: shadows.card,
-        scrollMarginTop: 72,
-      }}
-    >
-      <SectionEyebrow num="02" label="Negotiation outcome" />
-      <h2 id="ir-section-negotiation" style={{ fontFamily: f.serif, fontSize: 22, margin: "8px 0 14px", color: t.coal }}>
-        How the deal moved
-      </h2>
-
-      {/* Outcome banner */}
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: 8,
-        padding: "6px 12px", borderRadius: 999,
-        background:
-          state === "accepted" ? "rgba(21,128,61,0.10)"
-            : state === "walked_away" ? "rgba(180,83,9,0.10)"
-              : "rgba(20,17,10,0.05)",
-        border: `1px solid ${state === "accepted" ? "rgba(21,128,61,0.20)" : state === "walked_away" ? "rgba(180,83,9,0.20)" : t.line}`,
-        fontFamily: f.mono, fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase",
-        color: state === "accepted" ? "#15803d" : state === "walked_away" ? "#B45309" : t.inkSoft,
-      }}>
-        {state === "accepted" ? "Deal closed" : state === "walked_away" ? "Walked away" : "No agreement"}
-        {state === "accepted" && finalTotal !== null && ` · ₹${finalTotal} LPA`}
-      </div>
-
-      {/* Offer trajectory */}
-      {offers.length > 0 && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-            Offer progression
-          </div>
-          <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-            {offers.map((o, i) => (
-              <li key={i} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: f.serif, fontSize: 16, fontWeight: 600, color: t.coal,
-                  padding: "6px 12px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 999,
-                }}>
-                  ₹{o.total} LPA
-                </span>
-                {i < offers.length - 1 && <span aria-hidden style={{ color: t.inkFaint, fontSize: 14 }}>→</span>}
-              </li>
-            ))}
-            {candidateAsk !== null && (
-              <>
-                <span aria-hidden style={{ color: t.inkFaint, fontSize: 14, marginLeft: 4 }}>•</span>
-                <li style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, textTransform: "uppercase", letterSpacing: 0.6 }}>
-                    your ask
-                  </span>
-                  <span style={{
-                    display: "inline-flex", alignItems: "center",
-                    fontFamily: f.serif, fontSize: 16, fontWeight: 600, color: "#B45309",
-                    padding: "6px 12px", background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.20)", borderRadius: 999,
-                  }}>
-                    ₹{candidateAsk} LPA
-                  </span>
-                </li>
-              </>
-            )}
-          </ol>
-          {finalRaised !== null && (
-            <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "10px 0 0" }}>
-              You moved the offer up by <strong style={{ color: t.coal }}>₹{finalRaised} LPA</strong> from the opening number.
-              {typeof outcome.percentileWithinBand === "number" && (
-                <> {" "} You closed <strong style={{ color: t.coal }}>{outcome.percentileWithinBand}%</strong> of the gap to your stated ask.</>
-              )}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Email template — accepted deals only */}
-      {state === "accepted" && finalTotal !== null && (
-        <details style={{ marginTop: 22 }}>
-          <summary style={{ cursor: "pointer", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
-            Acceptance email — copy &amp; send to your recruiter
-          </summary>
-          <pre style={{
-            marginTop: 12, padding: 16, borderRadius: 10,
-            background: t.cream, border: `1px solid ${t.line}`,
-            fontFamily: f.mono, fontSize: 12, lineHeight: 1.6,
-            whiteSpace: "pre-wrap", wordBreak: "break-word",
-            color: t.coal, overflow: "auto", maxWidth: "100%",
-          }}>{`Hi [Recruiter name],
-
-Thank you for the offer for the ${role} role at ${company}. After our conversation, I'm pleased to formally accept the package at ₹${finalTotal} LPA total CTC.
-
-Could you please send across the formal offer letter at your convenience? Happy to confirm my notice period and start date once that's in hand.
-
-Looking forward to joining the team.
-
-Best,
-[Your name]`}</pre>
-        </details>
-      )}
-
-      {/* Transcript export — every salary-neg session, regardless of
-          outcome. Reads from data.questions (per-Q view-model carries
-          AI question + candidate answer text). Plain-text, copy-able. */}
-      <details style={{ marginTop: 14 }}>
-        <summary style={{ cursor: "pointer", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
-          Conversation transcript — copy for your records
-        </summary>
-        <pre style={{
-          marginTop: 10, padding: 14, borderRadius: 10,
-          background: t.cream, border: `1px solid ${t.line}`,
-          fontFamily: f.mono, fontSize: 11, lineHeight: 1.55,
-          whiteSpace: "pre-wrap", wordBreak: "break-word",
-          color: t.coal, overflow: "auto", maxWidth: "100%", maxHeight: 360,
-        }}>{(() => {
-          const lines: string[] = [
-            `Salary negotiation — ${role} at ${company}`,
-            `Outcome: ${state === "accepted" ? `Accepted at ₹${finalTotal} LPA` : state === "walked_away" ? "Walked away" : "No agreement"}`,
-            "",
-          ];
-          questions.forEach((q, i) => {
-            lines.push(`— Turn ${i + 1} —`);
-            if (q.text) lines.push(`AI: ${q.text}`);
-            const answerText = (q.answer || []).map(s => s.text).join(" ").trim();
-            if (answerText) lines.push(`You: ${answerText}`);
-            lines.push("");
-          });
-          return lines.join("\n");
-        })()}</pre>
-      </details>
-
-      {/* Constructive note when no agreement */}
-      {state === "no_agreement" && offers.length > 0 && (
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 16 }}>
-          You explored {offers.length} offer point{offers.length !== 1 ? "s" : ""} but didn't close. Try a session where you make an explicit ask + concrete trade ("I can sign at ₹X if you can add Y").
-        </p>
-      )}
-    </section>
-  );
-}
+/* The legacy salary-negotiation section (offer trajectory + accepted-deal
+   email + transcript export) was replaced by NegotiationFullReport in
+   ./NegotiationFullReport.tsx — a 12-panel deep-dive that includes
+   TL;DR, phase ladder, concession analysis, anchor bracket, cohort
+   placement, NPV math, archetype + drills. The offer trajectory and
+   transcript export are preserved inside the new component. */
 
 function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
   return (
@@ -2242,11 +2083,13 @@ export default function SessionReportView({
           <JumpNav />
           <HeroSection data={data} />
           {data.negotiationOutcome && (
-            <NegotiationOutcomeSection
+            <NegotiationFullReport
               outcome={data.negotiationOutcome}
               role={data.role}
               company={data.company}
               questions={data.questions}
+              daysUntilInterview={data.daysUntilInterview}
+              priorSessionCount={data.priorSessionCount}
             />
           )}
           {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && data.crossSessionInsights && (
