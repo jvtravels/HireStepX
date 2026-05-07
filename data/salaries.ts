@@ -148,6 +148,34 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([8, 14], [0.5, 1], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
       senior: s([14, 25], [1, 2], NO_EQ, [15, 28], { negotiation_leverage: "low" }),
     },
+    /* Big Tech (Adobe / Salesforce / Atlassian / Cisco / Oracle / IBM
+       / Workday / ServiceNow). Below FAANG, above unicorn. RSUs are
+       material but not as aggressive as FAANG. */
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(3, 8), [22, 40], { notice_period_days: 60, negotiation_leverage: "medium", notes: "Adobe P10 / Atlassian P30 entry: ₹22-40L. Levels.fyi 2026 verified." }),
+      mid: s([35, 55], [4, 8], RSU(10, 25), [45, 80], { notice_period_days: 60, negotiation_leverage: "medium" }),
+      senior: s([55, 80], [8, 18], RSU(25, 55), [75, 130], { notice_period_days: 60, negotiation_leverage: "high", notes: "Senior IC at Adobe / Salesforce / Atlassian: ₹85L median." }),
+      lead: s([80, 110], [12, 25], RSU(50, 110), [120, 200], { notice_period_days: 60, negotiation_leverage: "high" }),
+      executive: s([110, 150], [20, 40], RSU(100, 200), [200, 350], { notice_period_days: 90, negotiation_leverage: "high" }),
+    },
+    /* GCC (Walmart Global Tech / Target India / Tesco Bengaluru /
+       Wells Fargo India / JPMC GCC / Goldman Sachs India tech).
+       Pay 15-22% above IT-services; 11.5% increment 2026 per Zinnov.
+       RSU in parent stock. */
+    gcc: {
+      entry: s([16, 24], [1, 3], RSU(2, 5), [20, 32], { notice_period_days: 60, negotiation_leverage: "medium", notes: "Walmart Global Tech P2 entry ₹21.7-32L per Glassdoor 3,982 salaries Apr 2026." }),
+      mid: s([26, 42], [3, 6], RSU(5, 14), [32, 55], { notice_period_days: 60, negotiation_leverage: "medium" }),
+      senior: s([45, 70], [6, 14], RSU(15, 35), [55, 100], { notice_period_days: 60, negotiation_leverage: "high" }),
+      lead: s([70, 100], [10, 22], RSU(30, 75), [95, 200], { notice_period_days: 60, negotiation_leverage: "high", notes: "Walmart Global Tech P5 staff: ₹90L median; max ₹201L." }),
+    },
+    /* Consulting MBB digital practice — McKinsey QuantumBlack, BCG
+       X / GAMMA, Bain Vector. Hire SWE/Data alongside generalist
+       consultants; below FAANG cash but premium-on-prestige. */
+    "consulting-mbb": {
+      entry: s([20, 30], [3, 6], NO_EQ, [25, 40], { notice_period_days: 60, negotiation_leverage: "medium", notes: "McKinsey QuantumBlack / BCG X SE: ₹25-40L." }),
+      mid: s([35, 55], [6, 12], NO_EQ, [42, 70], { negotiation_leverage: "medium" }),
+      senior: s([55, 80], [10, 20], NO_EQ, [65, 100], { notice_period_days: 60, negotiation_leverage: "medium" }),
+    },
   },
 
   // ─── PRODUCT MANAGER ──────────────────────────────────────────
@@ -188,6 +216,20 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([5, 8], [0, 0.5], NO_EQ, [5, 9], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "7th CPC pay bands. Negotiate grade/level, not base salary. Perks: housing, DA, HRA, pension." }),
       mid: s([8, 14], [0.5, 1], NO_EQ, [9, 15], { negotiation_leverage: "low", notes: "PSU manager grade. Fixed pay bands with DA increments." }),
       senior: s([14, 25], [1, 2], NO_EQ, [15, 28], { negotiation_leverage: "low", notes: "Senior manager/DGM level. Negotiate posting location and deputation allowance." }),
+    },
+    /* Big Tech PM (Adobe / Salesforce / Atlassian / ServiceNow) */
+    "big-tech": {
+      entry: s([22, 32], [3, 6], RSU(4, 10), [28, 45], { notice_period_days: 60, negotiation_leverage: "medium" }),
+      mid: s([40, 60], [5, 12], RSU(12, 28), [50, 90], { negotiation_leverage: "medium" }),
+      senior: s([60, 90], [10, 20], RSU(28, 60), [85, 150], { notice_period_days: 60, negotiation_leverage: "high" }),
+      lead: s([90, 130], [15, 30], RSU(50, 120), [130, 220], { negotiation_leverage: "high" }),
+    },
+    /* GCC PM (Walmart Global Tech / Wells Fargo / JPMC GCC). */
+    gcc: {
+      entry: s([18, 26], [2, 4], RSU(3, 7), [22, 35], { notice_period_days: 60, negotiation_leverage: "medium" }),
+      mid: s([30, 48], [4, 8], RSU(8, 18), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([50, 75], [8, 15], RSU(18, 40), [60, 110], { notice_period_days: 60, negotiation_leverage: "high" }),
+      lead: s([80, 115], [12, 25], RSU(35, 80), [110, 200], { negotiation_leverage: "high" }),
     },
   },
 
@@ -243,6 +285,24 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([8, 12], [0.5, 1], ESOP(1, 2), [10, 15], { hot_skills: ["Product Analytics", "A/B Testing", "ML Ops"] }),
       mid: s([14, 22], [1, 3], ESOP(2, 5), [16, 28], {}),
       senior: s([22, 35], [3, 6], ESOP(4, 8), [28, 45], { negotiation_leverage: "high" }),
+    },
+    /* Big Tech Data Scientist (Adobe / Salesforce / Microsoft). */
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(5, 10), [22, 38], { negotiation_leverage: "medium" }),
+      mid: s([28, 42], [3, 7], RSU(10, 22), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([42, 60], [6, 14], RSU(20, 42), [60, 110], { negotiation_leverage: "high" }),
+    },
+    /* GCC Data Scientist (Walmart Global Tech / JPMC / Wells Fargo). */
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(3, 7), [18, 30], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [3, 6], RSU(7, 15), [28, 48], { negotiation_leverage: "medium" }),
+      senior: s([35, 50], [5, 11], RSU(15, 32), [45, 80], { negotiation_leverage: "high" }),
+    },
+    /* Consulting MBB Data Scientist (QuantumBlack / BCG GAMMA). */
+    "consulting-mbb": {
+      entry: s([20, 30], [3, 6], NO_EQ, [25, 40], { negotiation_leverage: "medium", notes: "QuantumBlack / BCG GAMMA" }),
+      mid: s([35, 55], [6, 12], NO_EQ, [42, 70], { negotiation_leverage: "medium" }),
+      senior: s([55, 80], [10, 20], NO_EQ, [65, 100], { negotiation_leverage: "high" }),
     },
   },
 
@@ -386,6 +446,19 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([18, 30], [2.5, 5], ESOP(3, 8), [24, 43], { negotiation_leverage: "high", notes: "Senior at Series B/C — push for cash + cash-out clauses on ESOPs (90-day exercise window, full acceleration on liquidity)." }),
       lead: s([25, 42], [4, 8], ESOP(6, 15), [35, 65], { negotiation_leverage: "high" }),
     },
+    /* Big Tech UX Designer (Adobe / Salesforce / Atlassian / Microsoft) */
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(3, 8), [22, 38], { notice_period_days: 60, negotiation_leverage: "medium" }),
+      mid: s([35, 55], [4, 8], RSU(10, 22), [42, 75], { negotiation_leverage: "medium" }),
+      senior: s([55, 85], [8, 18], RSU(22, 50), [70, 130], { notice_period_days: 60, negotiation_leverage: "high" }),
+      lead: s([85, 120], [15, 28], RSU(45, 100), [120, 200], { negotiation_leverage: "high" }),
+    },
+    /* GCC UX Designer */
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(2, 5), [18, 28], { notice_period_days: 60, negotiation_leverage: "medium" }),
+      mid: s([24, 38], [3, 6], RSU(6, 14), [30, 52], { negotiation_leverage: "medium" }),
+      senior: s([38, 60], [5, 12], RSU(12, 30), [48, 85], { notice_period_days: 60, negotiation_leverage: "high" }),
+    },
   },
 
   // ─── QA ENGINEER / SDET ───────────────────────────────────────
@@ -409,6 +482,17 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([4, 7], [0.3, 0.5], ESOP(0.5, 1.5), [5, 9], {}),
       mid: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], {}),
       senior: s([14, 22], [1.5, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+    },
+    /* Big Tech / GCC QA — leaner than SE bands. */
+    "big-tech": {
+      entry: s([14, 22], [1, 3], RSU(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+      mid: s([24, 38], [3, 6], RSU(7, 16), [32, 55], { negotiation_leverage: "medium" }),
+      senior: s([38, 55], [5, 10], RSU(15, 35), [50, 85], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([12, 18], [1, 2], RSU(1, 3), [14, 22], { negotiation_leverage: "low" }),
+      mid: s([20, 30], [2, 4], RSU(4, 10), [25, 40], { negotiation_leverage: "medium" }),
+      senior: s([30, 48], [3, 7], RSU(10, 22), [40, 70], { negotiation_leverage: "high" }),
     },
   },
 
@@ -435,6 +519,19 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([3, 5], [0.2, 0.4], ESOP(0.3, 0.8), [3.5, 6.5], {}),
       mid: s([6, 10], [0.5, 1], ESOP(0.5, 2), [7, 13], {}),
       senior: s([10, 18], [1, 2], ESOP(2, 4), [12, 22], {}),
+    },
+    /* Big Tech HR (Adobe / Atlassian / Microsoft / Salesforce). */
+    "big-tech": {
+      entry: s([8, 14], [1, 2], RSU(2, 4), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 24], [2, 4], RSU(4, 10), [18, 32], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [4, 8], RSU(8, 18), [32, 55], { negotiation_leverage: "high" }),
+      executive: s([45, 70], [10, 18], RSU(15, 35), [65, 110], { in_hand_ratio: 0.55, negotiation_leverage: "high" }),
+    },
+    /* GCC HR. */
+    gcc: {
+      entry: s([6, 11], [0.5, 1.5], RSU(1, 3), [8, 14], { negotiation_leverage: "medium" }),
+      mid: s([12, 20], [1.5, 3], RSU(3, 8), [15, 28], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [3, 6], RSU(6, 14), [25, 45], { negotiation_leverage: "high" }),
     },
   },
 
@@ -465,6 +562,18 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([5, 8], [0.3, 0.8], ESOP(0.5, 1.5), [6, 10], { hot_skills: ["PLG/Growth", "Content Marketing", "SEO/SEM", "Developer Evangelism"] }),
       mid: s([10, 18], [1, 3], ESOP(1, 3), [12, 22], {}),
       senior: s([18, 30], [2, 5], ESOP(3, 6), [22, 38], { negotiation_leverage: "high" }),
+    },
+    /* Big Tech Marketing. */
+    "big-tech": {
+      entry: s([12, 20], [2, 4], RSU(3, 7), [15, 28], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [3, 7], RSU(7, 16), [28, 52], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 12], RSU(15, 35), [48, 90], { negotiation_leverage: "high" }),
+    },
+    /* GCC Marketing. */
+    gcc: {
+      entry: s([8, 14], [1, 3], RSU(2, 5), [10, 20], { negotiation_leverage: "medium" }),
+      mid: s([16, 26], [2, 5], RSU(5, 12), [22, 38], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [4, 9], RSU(10, 22), [38, 70], { negotiation_leverage: "high" }),
     },
   },
 
