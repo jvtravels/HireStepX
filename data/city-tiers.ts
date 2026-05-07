@@ -17,7 +17,7 @@
 
 export type CityTier = "tier1" | "tier2" | "tier3";
 
-const CITY_TIER_MAP: Record<string, CityTier> = {
+export const CITY_TIER_MAP: Record<string, CityTier> = {
   // ─────────────────────────────────────────────
   // TIER 1 — major tech hubs
   // ─────────────────────────────────────────────
@@ -1135,6 +1135,61 @@ export const CITY_SUGGESTIONS = [
   "Roorkee",
   "Rudrapur",
 
+  // ─── 2026 expansion: bring autocomplete in line with CITY_TIER_MAP ───
+  // Tier 1 sub-zones (popular for resume / job-location queries)
+  "Whitefield, Bangalore", "Electronic City, Bangalore",
+  "Koramangala, Bangalore", "HSR Layout, Bangalore",
+  "Bellandur, Bangalore", "Marathahalli, Bangalore",
+  "Sarjapur Road, Bangalore", "Outer Ring Road, Bangalore",
+  "Hebbal, Bangalore", "Yelahanka, Bangalore",
+  "Cyber City, Gurgaon", "Cyber Hub, Gurgaon", "Dwarka Expressway",
+  "HITEC City, Hyderabad", "Gachibowli, Hyderabad",
+  "Madhapur, Hyderabad", "Financial District, Hyderabad",
+  "Greater Noida", "Noida Extension",
+  "Powai, Mumbai", "BKC, Mumbai", "Andheri, Mumbai", "Lower Parel, Mumbai",
+  // Tier 2 — additional South India
+  "Tiruchirappalli (Trichy)", "Tirunelveli", "Salem", "Erode", "Vellore", "Hosur",
+  "Calicut (Kozhikode)", "Kannur", "Kollam", "Thrissur", "Palakkad", "Alappuzha",
+  "Hubli-Dharwad", "Davangere", "Tumkur", "Belgaum (Belagavi)",
+  "Guntur", "Nellore", "Kakinada", "Rajahmundry", "Anantapur", "Kurnool",
+  "Warangal", "Karimnagar", "Khammam", "Nizamabad",
+  // Tier 2 — additional West India
+  "Aurangabad", "Solapur", "Nashik", "Kolhapur", "Sangli", "Latur",
+  "Amravati", "Akola", "Nanded", "Jalgaon", "Dhule", "Ahmednagar",
+  "Rajkot", "Bhavnagar", "Jamnagar", "Gandhinagar", "Anand", "Bharuch", "Mehsana",
+  // Tier 2 — additional North India
+  "Faridabad", "Ghaziabad", "Meerut", "Agra", "Aligarh", "Moradabad",
+  "Bareilly", "Saharanpur", "Allahabad (Prayagraj)", "Varanasi (Banaras)",
+  "Mathura", "Mirzapur",
+  "Amritsar", "Ludhiana", "Jalandhar", "Patiala", "Bathinda", "Mohali",
+  "Karnal", "Panipat", "Hisar", "Rohtak", "Sonipat", "Ambala",
+  // Tier 2 — additional East India
+  "Howrah", "Burdwan (Bardhaman)", "Asansol", "Durgapur", "Siliguri",
+  "Cuttack", "Rourkela", "Sambalpur", "Berhampur",
+  "Gaya", "Muzaffarpur", "Bhagalpur", "Darbhanga",
+  "Ranchi", "Jamshedpur", "Dhanbad", "Bokaro Steel City",
+  "Guwahati", "Dibrugarh", "Silchar", "Tezpur",
+  "Imphal", "Aizawl", "Kohima", "Itanagar", "Shillong", "Agartala", "Gangtok",
+  // Tier 3 — Central India
+  "Gwalior", "Ujjain", "Sagar", "Rewa", "Bilaspur", "Korba", "Raipur",
+  "Bhilai", "Durg",
+  // Tier 3 — Rajasthan
+  "Bikaner", "Kota", "Ajmer", "Udaipur", "Jodhpur", "Alwar",
+  "Sikar", "Pali",
+  // Tier 3 — North-East / Hill states
+  "Jammu", "Srinagar", "Leh-Ladakh",
+  "Dehradun", "Haridwar", "Roorkee", "Rudrapur", "Nainital", "Haldwani",
+  "Shimla", "Solan", "Mandi", "Kullu", "Manali", "Dharamshala",
+  // Misc
+  "Pondicherry (Puducherry)", "Daman", "Diu", "Silvassa",
+  "Port Blair", "Kavaratti",
   // Remote
   "Remote / Pan-India",
 ];
+
+/* ─── 2026 expansion: derive an "any-city" set from CITY_TIER_MAP for
+ * coverage validation. CITY_SUGGESTIONS (above) is the curated, deduped
+ * autocomplete list; CITY_TIER_MAP keys cover sub-zones + variants
+ * (e.g. "bengaluru", "bangalore urban", "whitefield") for matching
+ * resume / job-location free-text. */
+export const CITY_TIER_MAP_KEYS = Object.keys(CITY_TIER_MAP);
