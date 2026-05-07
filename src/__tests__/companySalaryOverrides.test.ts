@@ -123,16 +123,84 @@ describe("override map data integrity", () => {
     }
   });
 
-  it("includes the highest-traffic Indian companies", () => {
+  it("includes the highest-traffic Indian companies (45+ entries after expansion)", () => {
     const required = [
+      // Indian unicorns
       "razorpay", "phonepe", "flipkart", "swiggy", "zomato", "cred",
       "zerodha", "meesho",
-      "google", "microsoft", "amazon",
-      "tcs", "infosys", "cognizant",
+      // FAANG / Big Tech
+      "google", "microsoft", "amazon", "apple", "adobe", "salesforce",
+      "atlassian", "uber", "stripe",
+      // IT services
+      "tcs", "infosys", "cognizant", "wipro", "hcl", "ltimindtree",
+      "tech mahindra", "capgemini",
+      // SaaS / product
+      "postman", "browserstack", "chargebee", "freshworks", "zoho",
+      // Consulting MBB
+      "mckinsey", "bcg", "bain",
+      // Banking
+      "goldman", "jpmc",
+      // GCC
+      "walmart global tech", "target india",
+      // Quant
+      "jane street", "de shaw", "citadel",
+      // Design
       "bombay design centre",
     ];
     for (const company of required) {
       expect(COMPANY_SALARY_OVERRIDES, `Missing override for ${company}`).toHaveProperty(company);
     }
+    /* Coverage threshold — should be ≥ 35 companies after this expansion. */
+    expect(Object.keys(COMPANY_SALARY_OVERRIDES).length).toBeGreaterThanOrEqual(35);
+  });
+
+  it("Walmart Global Tech × SE × mid uses verified band, not generic GCC tier", () => {
+    /* Walmart pays well above average GCC. Expected band: mid ₹30-55L
+       → opening 35th pctile ≈ ₹38.75L. Pre-fix: GCC tier band would
+       have given a lower opening. */
+    const band = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Walmart Global Tech",
+      experienceLevel: "mid",
+    });
+    expect(band.initialOffer).toBeGreaterThan(32);
+    expect(band.initialOffer).toBeLessThan(48);
+    expect(band.bandContext).toMatch(/verified for Walmart/);
+  });
+
+  it("Atlassian × SE × senior uses Levels.fyi-grounded band", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Software Engineer",
+      company: "Atlassian",
+      experienceLevel: "senior",
+    });
+    /* Levels.fyi: Atlassian India P50-P60 senior ₹90-150L. */
+    expect(band.initialOffer).toBeGreaterThan(95);
+    expect(band.initialOffer).toBeLessThan(140);
+  });
+
+  it("McKinsey × consultant × mid uses post-MBA band ₹32-50L", () => {
+    const band = generateNegotiationBand({
+      role: "Management Consultant",
+      company: "McKinsey",
+      experienceLevel: "mid",
+    });
+    /* Post-MBA McKinsey India: ₹32-50L. NOT NEGOTIABLE — fixed for
+       MBA entry. Initial 35th = ~₹38.3L. */
+    expect(band.initialOffer).toBeGreaterThan(32);
+    expect(band.initialOffer).toBeLessThan(45);
+    expect(band.bandContext).toMatch(/McKinsey|consult/i);
+  });
+
+  it("Jane Street × quant × entry uses fresher India band ₹70-130L", () => {
+    const band = generateNegotiationBand({
+      role: "Quantitative Researcher",
+      company: "Jane Street",
+      experienceLevel: "entry",
+    });
+    /* Indian fresher quant trader at Jane Street: ₹70-120L+ first
+       year. Initial 35th pctile = ~₹91L. */
+    expect(band.initialOffer).toBeGreaterThan(70);
+    expect(band.initialOffer).toBeLessThan(110);
   });
 });

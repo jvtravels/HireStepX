@@ -1004,6 +1004,15 @@ export function matchRoleKey(role: string): RoleKey {
     [["data scientist", "research scientist"], "data-scientist"],
     [["data analyst", "business intelligence", "bi analyst", "bi developer"], "data-analyst"],
     [["data engineer", "data architect"], "data-engineer"],
+    /* Consulting (was missing — "Management Consultant" was falling
+       through to software-engineer fallback). Match BEFORE engineering-
+       manager since "Engagement Manager" contains "manager". */
+    [["management consultant", "strategy consultant", "associate consultant", "engagement manager", "principal consultant", "consulting analyst"], "consultant"],
+    /* Quant — there's no RoleKey "quant", so route to data-scientist
+       (closest tier-comp profile in our taxonomy). The override map
+       layers the actual quant numbers on top per firm (Jane Street,
+       DE Shaw, Citadel). */
+    [["quantitative researcher", "quantitative trader", "quantitative developer", "quant trader", "quant researcher", "quant developer", "systematic trader"], "data-scientist"],
     [["engineering manager", "director of engineering", "head of engineering", "vp of engineering"], "engineering-manager"],
     [["product manager", "apm", "associate product manager", "group product manager", "product owner", "chief product officer", "technical product manager", "director of product", "vp of product"], "product-manager"],
     // Design Engineer — engineering-coded designers (Vercel/Linear-style hybrid role).
