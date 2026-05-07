@@ -96,7 +96,10 @@ CRITICAL:
   let result;
   try {
     result = await callLLM(
-      { prompt, temperature: 0.3, maxTokens: 300, jsonMode: true },
+      // Single-bullet rewrites are short and don't need the 70b model's
+      // reasoning depth — 8b handles the diction rules cleanly. Dropped
+      // maxTokens from 300 to 150 because real rewrites land under 80 tokens.
+      { prompt, temperature: 0.3, maxTokens: 150, jsonMode: true, fast: true },
       8000,
       { userId: auth.userId, endpoint: "resume-rewrite-bullet" },
     );

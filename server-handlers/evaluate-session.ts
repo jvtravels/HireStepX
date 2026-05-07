@@ -442,7 +442,56 @@ export default async function handler(req: Request): Promise<Response> {
        case-study answer can no longer get a high overall score on
        behavioural-style "STAR completeness" alone. */
     const focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
-    const prompt = `You are a senior I/O-psychology-trained interview scorer. Produce a JSON report for this mock interview, calibrated to structured-interview rubrics (SHL UCF, STAR+L). Be honest and specific.${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}\n\n${groundingDirective}\n\n${fairnessDirective}\n\n${lengthTargetsDirective}\n\n${selfCheckDirective}
+    // Prompt order is intentional: every static block (opener, directives,
+    // CRITICAL RULES) is emitted before any per-call variable content. This
+    // lets Groq's automatic prompt caching (which keys on the longest shared
+    // prefix) reuse the bulk of the prompt across calls — same prompt body
+    // billed at ~10% on subsequent hits. Per-call dynamic content (tier,
+    // rubric, transcript, prior reports) lands after the cacheable prefix.
+    const prompt = `You are a senior I/O-psychology-trained interview scorer. Produce a JSON report for this mock interview, calibrated to structured-interview rubrics (SHL UCF, STAR+L). Be honest and specific.
+
+${groundingDirective}
+
+${fairnessDirective}
+
+${lengthTargetsDirective}
+
+${selfCheckDirective}
+
+CRITICAL RULES:
+- VOICE & DICTION (applies to ALL prose fields, especially topPerformerAnswer.text and restructured.text): write the way a real candidate SPEAKS in an interview, not the way an LLM writes. Default to ordinary words, contractions, and short clauses.
+  Banned LLM-isms (use the plain alternative):
+    leverage → use; utilize → use; facilitate → help; demonstrate → show; ensure → make sure;
+    deep-dive / dive deep → look at, walk through; navigate → handle, deal with;
+    drive impact / drive results / drive value — replace with a concrete verb (ship, hit, raise, cut);
+    stakeholder alignment / cross-functional alignment → working with X and Y; getting X and Y on the same page;
+    seamless / robust / scalable / world-class / best-in-class — drop them unless the candidate actually used the word;
+    ideate / ideation → think up, brainstorm; circle back → follow up;
+    additionally / furthermore / moreover → and, also, plus.
+  Also banned: "Importantly," / "Notably," / "It's worth noting" sentence-openers; bureaucratic hedges like "in terms of" / "with respect to" / "as it relates to".
+  Aim for: contractions ("I'd", "we're", "didn't"), specific verbs, the kind of phrasing a real senior would say to a hiring manager. A top-performer answer should sound like a sharp engineer/PM telling a story, NOT like a press release. If a sentence reads like it was generated, rewrite it.
+- Pair each interviewer question with the candidate answer that follows it. Skip pairs where the candidate didn't answer (use verdict="skipped", restructured=null, topPerformerAnswer=null).
+- HARD RULE: if the candidate answer starts with the literal token "[SKIPPED" (case-sensitive), the candidate explicitly skipped that question. Force verdict="skipped", score=0, restructured=null. STILL emit a topPerformerAnswer (this is a coaching opportunity — show what a strong candidate would have said). Set explanation to a one-line note acknowledging the skip without judgment.
+- TOO-SHORT-TO-EVALUATE RULE: if the candidate's answer is under 25 words, do NOT invent reasons it scored low ("not in English", "incomprehensible", "off-topic"). The answer is just short. Use verdict="weak", score in the 30-45 range, and explanation="Answer was too brief to evaluate fully — most weak-band scoring drivers (vagueness, no Action, no Result) can't be judged in 12 words. The top-performer example shows the structure to aim for next time." Be honest about the limits of evaluation; don't fabricate coherent-sounding critique from a fragment.
+- LANGUAGE RULE: ONLY mark the answer as language-mismatched if it is GENUINELY in a non-English language (Hindi, regional, etc.). Twelve English words is NOT "not in English"; that's just a short English answer. Misclassifying short English answers as non-English destroys candidate trust in the report.
+- Every skill score must be justified by transcript evidence.
+- Restructured answer MUST NOT invent numbers, company names, or outcomes not present in the candidate's words. If quantification is missing, frame it as a gap ("you could add the exact % here") rather than making one up.
+- TopPerformerAnswer IS allowed to invent realistic details — that's its purpose. The structure depends on the QUESTION TYPE: STAR for behavioral, trade-offs for technical, framework + reasoning for case-study, and FORMAT-MATCHED for salary-negotiation / HR / logistics (number + reasons for salary expectations, concrete duration for notice period, etc. — NOT STAR). Across all types: quantified where the question warrants it, first-person ownership, role-appropriate scope. Aim for what a strong L5/Senior would say at the target company.
+- TOPIC LOCK: Re-read the question before composing the exemplar. The exemplar must answer THIS question — not a different topic that came up earlier in the session. If question 5 asks about notice period, the exemplar discusses notice period (e.g. "I'm on a 60-day notice. I can probably negotiate down to 30 if there's a buyout, otherwise I'd plan for end of [month]"). It does NOT discuss salary expectations, strengths, or why-this-company. Wrong-topic exemplars destroy candidate trust in the report.
+- Difficulty classification (for the target role/level, not absolute):
+    * warmup  = common opener with expected structure (e.g. "Tell me about yourself", "Why this company?")
+    * standard = core loop question probing a single competency (most behavioral + mid-complexity system design)
+    * hard    = bar-raiser / scope-stretch / senior-level probe (multi-part system design, unusual ethical dilemmas, scope >$10M impact expected)
+- frequencyPct is your best estimate of how common this question (or a near variant) is across the target company's loops for this role. "Tell me about yourself" ≈ 95. "Design a distributed rate limiter" ≈ 40 for SWE. Set null if uncertain.
+- frequencyNote is one short phrase contextualizing the question — help the candidate understand whether to deeply prep this pattern or treat it as a one-off.
+- Citations must reference real character offsets inside answerText.
+- Keep verdict scores honest. Average mock interview scores 45-65.
+- For crossSessionInsights: if no PRIOR SESSIONS block is provided, return an empty array — do NOT fabricate history. If prior data IS provided, prefer persistent/regression callouts over improvements (users need correction more than praise).
+- likelyFollowUp must be specific to the candidate's actual answer, not generic. If they made a vague claim ("we improved performance"), the follow-up should probe scope ("by how much? on what metric?").
+- lengthVerdict.wordCount must be the actual word count of answerText. Target range depends on question type: behavioral 120-240, system design 180-360, opener 60-120, deep-dive probe 150-300.
+- storyReuseFindings only fires when the SAME underlying project/situation is used for DIFFERENT competencies (e.g. once for leadership, again for trade-offs). Two behavioral answers from different projects is fine; same project across two is a flag.
+- scoreConfidence should reflect transcript quality and answer clarity. Short interviews (<3 turns), garbled transcripts, or highly ambiguous answers warrant <0.7.
+- Return ONLY valid JSON — no markdown wrapping, no prose.${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}
 
 CONTEXT:
 Role: ${sanitizeForLLM(meta?.role || "general", 80)}
@@ -575,40 +624,7 @@ Return a JSON object with EXACTLY this shape:
   ]
 }
 
-CRITICAL RULES:
-- VOICE & DICTION (applies to ALL prose fields, especially topPerformerAnswer.text and restructured.text): write the way a real candidate SPEAKS in an interview, not the way an LLM writes. Default to ordinary words, contractions, and short clauses.
-  Banned LLM-isms (use the plain alternative):
-    leverage → use; utilize → use; facilitate → help; demonstrate → show; ensure → make sure;
-    deep-dive / dive deep → look at, walk through; navigate → handle, deal with;
-    drive impact / drive results / drive value — replace with a concrete verb (ship, hit, raise, cut);
-    stakeholder alignment / cross-functional alignment → working with X and Y; getting X and Y on the same page;
-    seamless / robust / scalable / world-class / best-in-class — drop them unless the candidate actually used the word;
-    ideate / ideation → think up, brainstorm; circle back → follow up;
-    additionally / furthermore / moreover → and, also, plus.
-  Also banned: "Importantly," / "Notably," / "It's worth noting" sentence-openers; bureaucratic hedges like "in terms of" / "with respect to" / "as it relates to".
-  Aim for: contractions ("I'd", "we're", "didn't"), specific verbs, the kind of phrasing a real senior would say to a hiring manager. A top-performer answer should sound like a sharp engineer/PM telling a story, NOT like a press release. If a sentence reads like it was generated, rewrite it.
-- Pair each interviewer question with the candidate answer that follows it. Skip pairs where the candidate didn't answer (use verdict="skipped", restructured=null, topPerformerAnswer=null).
-- HARD RULE: if the candidate answer starts with the literal token "[SKIPPED" (case-sensitive), the candidate explicitly skipped that question. Force verdict="skipped", score=0, restructured=null. STILL emit a topPerformerAnswer (this is a coaching opportunity — show what a strong candidate would have said). Set explanation to a one-line note acknowledging the skip without judgment.
-- TOO-SHORT-TO-EVALUATE RULE: if the candidate's answer is under 25 words, do NOT invent reasons it scored low ("not in English", "incomprehensible", "off-topic"). The answer is just short. Use verdict="weak", score in the 30-45 range, and explanation="Answer was too brief to evaluate fully — most weak-band scoring drivers (vagueness, no Action, no Result) can't be judged in 12 words. The top-performer example shows the structure to aim for next time." Be honest about the limits of evaluation; don't fabricate coherent-sounding critique from a fragment.
-- LANGUAGE RULE: ONLY mark the answer as language-mismatched if it is GENUINELY in a non-English language (Hindi, regional, etc.). Twelve English words is NOT "not in English"; that's just a short English answer. Misclassifying short English answers as non-English destroys candidate trust in the report.
-- Every skill score must be justified by transcript evidence.
-- Restructured answer MUST NOT invent numbers, company names, or outcomes not present in the candidate's words. If quantification is missing, frame it as a gap ("you could add the exact % here") rather than making one up.
-- TopPerformerAnswer IS allowed to invent realistic details — that's its purpose. The structure depends on the QUESTION TYPE: STAR for behavioral, trade-offs for technical, framework + reasoning for case-study, and FORMAT-MATCHED for salary-negotiation / HR / logistics (number + reasons for salary expectations, concrete duration for notice period, etc. — NOT STAR). Across all types: quantified where the question warrants it, first-person ownership, role-appropriate scope. Aim for what a strong L5/Senior would say at the target company.
-- TOPIC LOCK: Re-read the question before composing the exemplar. The exemplar must answer THIS question — not a different topic that came up earlier in the session. If question 5 asks about notice period, the exemplar discusses notice period (e.g. "I'm on a 60-day notice. I can probably negotiate down to 30 if there's a buyout, otherwise I'd plan for end of [month]"). It does NOT discuss salary expectations, strengths, or why-this-company. Wrong-topic exemplars destroy candidate trust in the report.
-- Difficulty classification (for the target role/level, not absolute):
-    * warmup  = common opener with expected structure (e.g. "Tell me about yourself", "Why this company?")
-    * standard = core loop question probing a single competency (most behavioral + mid-complexity system design)
-    * hard    = bar-raiser / scope-stretch / senior-level probe (multi-part system design, unusual ethical dilemmas, scope >$10M impact expected)
-- frequencyPct is your best estimate of how common this question (or a near variant) is across the target company's loops for this role. "Tell me about yourself" ≈ 95. "Design a distributed rate limiter" ≈ 40 for SWE. Set null if uncertain.
-- frequencyNote is one short phrase contextualizing the question — help the candidate understand whether to deeply prep this pattern or treat it as a one-off.
-- Citations must reference real character offsets inside answerText.
-- Keep verdict scores honest. Average mock interview scores 45-65.
-- For crossSessionInsights: if no PRIOR SESSIONS block is provided, return an empty array — do NOT fabricate history. If prior data IS provided, prefer persistent/regression callouts over improvements (users need correction more than praise).
-- likelyFollowUp must be specific to the candidate's actual answer, not generic. If they made a vague claim ("we improved performance"), the follow-up should probe scope ("by how much? on what metric?").
-- lengthVerdict.wordCount must be the actual word count of answerText. Target range depends on question type: behavioral 120-240, system design 180-360, opener 60-120, deep-dive probe 150-300.
-- storyReuseFindings only fires when the SAME underlying project/situation is used for DIFFERENT competencies (e.g. once for leadership, again for trade-offs). Two behavioral answers from different projects is fine; same project across two is a flag.
-- scoreConfidence should reflect transcript quality and answer clarity. Short interviews (<3 turns), garbled transcripts, or highly ambiguous answers warrant <0.7.
-- Return ONLY valid JSON — no markdown wrapping, no prose.`;
+Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no markdown wrapping, no prose.`;
 
     const tLLM0 = Date.now();
     // maxTokens 5500 (down from 7500): real reports rarely exceed 5k; the
