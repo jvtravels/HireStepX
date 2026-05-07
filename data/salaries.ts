@@ -1260,6 +1260,21 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([18, 28], [2.5, 5], NO_EQ, [20, 32], { negotiation_leverage: "medium" }),
       senior: s([28, 45], [4, 9], NO_EQ, [32, 52], { negotiation_leverage: "medium" }),
     },
+    edtech: {
+      entry: s([5, 8], [0.3, 0.7], ESOP(0.5, 1.5), [5.5, 9], { negotiation_leverage: "low" }),
+      mid: s([9, 15], [0.5, 1.5], ESOP(1, 3), [10, 17], { negotiation_leverage: "low" }),
+      senior: s([15, 25], [1.5, 3], ESOP(1.5, 4), [17, 28], { negotiation_leverage: "medium" }),
+    },
+    "startup-early": {
+      entry: s([5, 9], [0.3, 0.7], ESOP(0.5, 2), [6, 11], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([10, 17], [0.5, 1.5], ESOP(1.5, 4), [11, 20], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([18, 30], [1.5, 3], ESOP(3, 8), [20, 36], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      entry: s([6, 10], [0.5, 1], ESOP(0.5, 2), [7, 12], { negotiation_leverage: "medium" }),
+      mid: s([12, 20], [1, 2.5], ESOP(2, 5), [14, 24], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [2, 5], ESOP(4, 10), [26, 45], { negotiation_leverage: "high" }),
+    },
   },
 
   // ─── BUSINESS ANALYST ─────────────────────────────────────────
@@ -1477,6 +1492,21 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([15, 24], [2, 4], NO_EQ, [17, 28], { negotiation_leverage: "medium" }),
       senior: s([24, 40], [3, 6], NO_EQ, [27, 46], { negotiation_leverage: "medium" }),
     },
+    "consulting-mbb": {
+      entry: s([18, 26], [3, 6], NO_EQ, [22, 35], { notes: "MBB cyber-strategy / risk practice." }),
+      mid: s([32, 50], [6, 12], NO_EQ, [40, 65], { negotiation_leverage: "medium" }),
+      senior: s([55, 85], [12, 22], NO_EQ, [68, 110], { negotiation_leverage: "high" }),
+    },
+    edtech: {
+      entry: s([6, 10], [0.5, 1], ESOP(0.5, 2), [7, 12], { negotiation_leverage: "low" }),
+      mid: s([10, 16], [1, 2], ESOP(1, 3), [12, 18], { negotiation_leverage: "low" }),
+      senior: s([16, 26], [2, 4], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+    },
+    "startup-early": {
+      entry: s([6, 10], [0.3, 0.8], ESOP(1, 3), [7, 13], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([10, 18], [1, 2.5], ESOP(2, 6), [12, 22], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 5], ESOP(4, 10), [22, 40], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
   },
 
   // ─── BLOCKCHAIN / WEB3 ────────────────────────────────────────
@@ -1557,6 +1587,26 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
       mid: s([10, 18], [0.5, 1], NO_EQ, [11, 19], { negotiation_leverage: "low" }),
       senior: s([18, 30], [1, 2], NO_EQ, [19, 32], { negotiation_leverage: "low", notes: "Joint Secretary Legal / DRT / RBI legal." }),
+    },
+    edtech: {
+      entry: s([5, 9], [0.3, 0.8], ESOP(0.5, 1.5), [5.5, 10], { negotiation_leverage: "low" }),
+      mid: s([9, 15], [0.5, 1.5], ESOP(1, 3), [10, 17], { negotiation_leverage: "low" }),
+      senior: s([15, 24], [1, 3], ESOP(2, 5), [17, 28], { negotiation_leverage: "medium" }),
+    },
+    "startup-early": {
+      entry: s([5, 9], [0.3, 0.7], ESOP(1, 3), [6, 11], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([9, 15], [0.5, 1.5], ESOP(2, 5), [10, 18], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([16, 26], [1.5, 3], ESOP(4, 10), [19, 35], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      entry: s([6, 10], [0.5, 1], ESOP(1, 3), [7, 12], { negotiation_leverage: "medium" }),
+      mid: s([10, 17], [1, 2.5], ESOP(2, 5), [12, 20], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 5], ESOP(4, 10), [22, 38], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { notice_period_days: 90, negotiation_leverage: "low" }),
+      mid: s([7, 13], [0.5, 1.5], NO_EQ, [8, 15], { notice_period_days: 90 }),
+      senior: s([13, 22], [1, 3], NO_EQ, [15, 26], { notice_period_days: 90 }),
     },
   },
 
