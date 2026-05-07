@@ -186,10 +186,10 @@ describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
        it means the densifier failed for some cell — a real bug. */
     expect(explicitRatio).toBe(1.0);
     expect(resolvedRatio).toBe(1.0);
-    /* Curated floor: pin at 0.38 (current 0.40+). Guards against silent
+    /* Curated floor: pin at 0.40 (current 0.416). Guards against silent
        regression where someone deletes a curated band — it'd still be
        addressable via densification, but the curated count would drop. */
-    expect(curatedRatio).toBeGreaterThan(0.38);
+    expect(curatedRatio).toBeGreaterThan(0.40);
   });
 
   it("reports per-role explicit coverage (which roles have widest tier coverage)", () => {

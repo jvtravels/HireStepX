@@ -97,18 +97,18 @@ describe("role-coverage audit (full ROLE_SUGGESTIONS sweep)", () => {
       process.stderr.write(`    ${k.padEnd(28, " ")} ${c} roles\n`);
     }
 
-    /* Assertions: <33% silent-defaults (down from 53.5% pre-fix),
-       zero absurd offers. The post-2026-expansion role list (3,137
-       entries) includes a long tail of genuinely-niche roles (Quantum
-       Computing Researcher, BCI Engineer, Drone Pilot, Forest Officer,
-       etc.) that don't have a dedicated salary RoleKey and route to
-       software-engineer as a sensible default — those still get
-       tier-classified bands via the company side, so the offer is
-       sensible. The threshold was tightened from 53.5% → 20% during
-       the initial role-coverage push, then loosened to 33% after
-       expanding from 1,011 → 3,137 roles. The 100% non-broken-offer
-       guarantee (absurdOffer === 0) is the actual safety net. */
-    expect(defaultedSwe / ROLE_SUGGESTIONS.length).toBeLessThan(0.40);
+    /* Assertions: <25% silent-defaults, zero absurd offers.
+       Threshold history:
+         - 53.5% (pre-fix initial state)
+         - 20% (after first matchRoleKey expansion; 1,011 roles)
+         - 33% (after 1,011 → 3,137 role expansion — wave 1/2)
+         - 40% (after 3,137 → 3,971 role expansion — wave 3)
+         - 25% (current — re-tightened after adding 4 new RoleKeys
+                + 80 niche-routing patterns; rate dropped to 21.6%)
+       The 100% non-broken-offer guarantee (absurdOffer === 0) is
+       the actual safety net. SE-default cells still produce
+       tier-classified bands via the company side. */
+    expect(defaultedSwe / ROLE_SUGGESTIONS.length).toBeLessThan(0.25);
     expect(absurdOffer).toBe(0);
   });
 

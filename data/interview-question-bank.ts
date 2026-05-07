@@ -57,7 +57,13 @@ export type RoleFamily =
      Each gets dedicated bank entries for role-specific probes. */
   | "sales" | "marketing" | "finance" | "legal" | "healthcare" | "ops"
   /* Banking subfamily (RM / branch / BFSI sales). */
-  | "bfsi-sales";
+  | "bfsi-sales"
+  /* HR / People / Talent family — distinct interview format from
+     generic behavioral. HRBP / TA / Comp / L&D / Workday-Specialist
+     all route here. Unlike `behavioral` (STAR-style probes for any
+     role), `hr` rounds focus on org-design, conflict resolution,
+     comp benchmarking, hire/fire scenarios, IR/labour-law context. */
+  | "hr";
 export type FocusArea =
   | "behavioral" | "technical" | "system-design" | "case-study"
   | "campus-placement" | "hr" | "panel" | "salary-negotiation"
