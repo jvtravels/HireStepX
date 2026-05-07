@@ -1189,6 +1189,36 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       lead: s([35, 55], [6, 12], NO_EQ, [42, 65], { notes: "Principal/Director" }),
       executive: s([55, 80], [12, 20], NO_EQ, [70, 100], { notes: "Partner" }),
     },
+    "indian-unicorn": {
+      entry: s([8, 14], [1, 2], ESOP(0.5, 2), [9, 16], { notes: "Internal strategy / corp dev at unicorns." }),
+      mid: s([16, 26], [2, 5], ESOP(2, 5), [19, 32], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [4, 9], ESOP(5, 12), [33, 58], { negotiation_leverage: "high" }),
+    },
+    faang: {
+      entry: s([18, 26], [3, 6], RSU(4, 10), [22, 38], { negotiation_leverage: "medium" }),
+      mid: s([30, 45], [5, 10], RSU(10, 22), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([45, 65], [8, 16], RSU(20, 40), [60, 110], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([10, 16], [1, 2.5], ESOP(1, 3), [12, 20], { notes: "Solutions consultant / pre-sales at SaaS." }),
+      mid: s([18, 28], [2, 5], ESOP(2, 5), [22, 36], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [4, 9], ESOP(4, 10), [34, 58], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([12, 20], [1.5, 3], RSU(2, 5), [14, 26], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [3, 7], RSU(6, 14), [28, 50], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 11], RSU(12, 28), [45, 85], { negotiation_leverage: "high" }),
+    },
+    "fmcg-mnc": {
+      entry: s([8, 13], [1, 2], NO_EQ, [9, 15], { notes: "Internal strategy / business analyst track." }),
+      mid: s([14, 24], [2, 5], NO_EQ, [17, 30], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [4, 9], NO_EQ, [30, 50], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([5, 9], [0.5, 1], NO_EQ, [5.5, 10], { notice_period_days: 90, negotiation_leverage: "low" }),
+      mid: s([10, 17], [1, 2], NO_EQ, [11, 19], { notice_period_days: 90 }),
+      senior: s([18, 30], [2, 5], NO_EQ, [20, 35], { notice_period_days: 90 }),
+    },
   },
 
   // ─── FINANCE / CA / IB ────────────────────────────────────────
@@ -1317,6 +1347,36 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([5, 8], [0.3, 0.5], NO_EQ, [5, 9], { notice_period_days: 90 }),
       mid: s([10, 16], [0.5, 1.5], NO_EQ, [10, 18], {}),
       senior: s([16, 28], [1, 3], NO_EQ, [18, 32], {}),
+    },
+    "big-tech": {
+      entry: s([14, 20], [1.5, 3], RSU(3, 7), [16, 28], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [3, 6], RSU(8, 18), [28, 50], { negotiation_leverage: "medium" }),
+      senior: s([38, 55], [5, 11], RSU(15, 32), [50, 85], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([12, 18], [1, 3], RSU(2, 5), [14, 24], { negotiation_leverage: "medium" }),
+      mid: s([20, 32], [2, 5], RSU(6, 14), [25, 45], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 9], RSU(12, 25), [42, 75], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 22], [1, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [2.5, 6], ESOP(4, 10), [26, 48], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([12, 18], [1, 3], RSU(2, 6), [14, 25], { negotiation_leverage: "medium" }),
+      mid: s([20, 32], [2, 5], RSU(6, 12), [24, 42], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 9], RSU(10, 22), [40, 70], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([7, 11], [0.5, 1.2], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [2, 5], NO_EQ, [24, 40], { negotiation_leverage: "medium" }),
+    },
+    "startup-growth": {
+      entry: s([6, 11], [0.5, 1], ESOP(1, 3), [7, 13], { negotiation_leverage: "medium" }),
+      mid: s([12, 20], [1, 2.5], ESOP(2, 5), [14, 24], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], ESOP(4, 10), [24, 42], { negotiation_leverage: "high" }),
     },
   },
   /* Project manager (delivery PM, distinct from technical Program PM).
@@ -1526,6 +1586,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([8, 16], [1, 2], ESOP(3, 8), [12, 25], {}),
       senior: s([16, 30], [2, 5], ESOP(5, 15), [22, 45], { negotiation_leverage: "high" }),
     },
+    "startup-early": {
+      entry: s([5, 10], [0.3, 1], ESOP(2, 6), [6, 14], { notice_period_days: 15, negotiation_leverage: "medium", notes: "Web3 / DeFi / NFT studios. Token grants common." }),
+      mid: s([10, 18], [0.8, 2], ESOP(4, 12), [12, 28], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([20, 38], [2, 6], ESOP(8, 22), [25, 55], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([16, 24], [1.5, 3], RSU(4, 8), [20, 32], { negotiation_leverage: "medium" }),
+      mid: s([26, 38], [3, 6], RSU(8, 18), [34, 55], { negotiation_leverage: "medium" }),
+      senior: s([38, 55], [5, 11], RSU(15, 32), [50, 85], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([7, 12], [0.5, 1.5], ESOP(1, 3), [8, 15], { negotiation_leverage: "medium" }),
+      mid: s([14, 22], [1, 3], ESOP(3, 7), [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [2, 5], ESOP(5, 12), [26, 45], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([15, 22], [1.5, 3], RSU(3, 7), [18, 30], { notes: "GS / JPMC / Citi blockchain / digital-assets desk." }),
+      mid: s([24, 38], [3, 7], RSU(8, 18), [30, 52], { negotiation_leverage: "medium" }),
+      senior: s([38, 60], [6, 13], RSU(16, 35), [50, 95], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([4, 7], [0.2, 0.5], NO_EQ, [4, 8], { notice_period_days: 90, negotiation_leverage: "low", notes: "TCS Quartz / Infosys Finacle blockchain practice." }),
+      mid: s([7, 13], [0.4, 1], NO_EQ, [8, 14], { notice_period_days: 90 }),
+      senior: s([13, 22], [1, 2.5], NO_EQ, [14, 25], { notice_period_days: 90 }),
+    },
   },
 
   // ─── LEGAL / COMPLIANCE ───────────────────────────────────────
@@ -1651,6 +1736,36 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([5, 8], [0.3, 0.8], ESOP(0.5, 1.5), [6, 10], {}),
       mid: s([10, 15], [1, 2], ESOP(1, 3), [12, 20], {}),
       senior: s([15, 25], [2, 3], ESOP(3, 5), [20, 32], {}),
+    },
+    "big-tech": {
+      entry: s([10, 16], [1, 2.5], RSU(2, 5), [12, 22], { negotiation_leverage: "medium" }),
+      mid: s([18, 28], [2, 5], RSU(5, 12), [22, 40], { negotiation_leverage: "medium" }),
+      senior: s([28, 42], [4, 9], RSU(10, 22), [35, 60], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([8, 13], [0.5, 1.5], RSU(1, 3), [9, 16], { negotiation_leverage: "medium" }),
+      mid: s([14, 22], [1.5, 3], RSU(3, 7), [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [3, 6], RSU(6, 14), [26, 45], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([3, 5], [0.2, 0.4], NO_EQ, [3, 5.5], { negotiation_leverage: "low" }),
+      mid: s([5, 9], [0.3, 0.8], NO_EQ, [5, 10], { negotiation_leverage: "low" }),
+      senior: s([10, 18], [0.8, 1.5], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+    },
+    "startup-growth": {
+      entry: s([4, 7], [0.3, 0.5], ESOP(0.5, 1.5), [4.5, 9], { negotiation_leverage: "medium" }),
+      mid: s([8, 14], [0.5, 1.5], ESOP(1, 3), [9, 16], { negotiation_leverage: "medium" }),
+      senior: s([14, 24], [1.5, 3], ESOP(3, 6), [16, 28], { negotiation_leverage: "high" }),
+    },
+    "startup-early": {
+      entry: s([3.5, 6], [0.2, 0.5], ESOP(0.5, 2), [4, 8], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([6, 11], [0.4, 1], ESOP(1, 3), [7, 14], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([12, 20], [1, 2.5], ESOP(2, 6), [14, 26], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    edtech: {
+      entry: s([3, 5], [0.2, 0.4], ESOP(0.3, 1), [3.5, 6], { negotiation_leverage: "low" }),
+      mid: s([5, 9], [0.3, 0.8], ESOP(0.5, 2), [6, 11], { negotiation_leverage: "low" }),
+      senior: s([10, 18], [1, 2], ESOP(1, 3), [11, 20], { negotiation_leverage: "medium" }),
     },
   },
 
@@ -1813,6 +1928,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([8, 14], [0.5, 1], NO_EQ, [8, 15], { notice_period_days: 90 }),
       senior: s([14, 22], [1, 2], NO_EQ, [15, 25], { notice_period_days: 90 }),
     },
+    "big-tech": {
+      entry: s([10, 16], [1, 2], RSU(2, 4), [12, 20], { negotiation_leverage: "medium" }),
+      mid: s([16, 24], [2, 4], RSU(4, 9), [20, 32], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 7], RSU(8, 18), [30, 52], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([8, 13], [0.5, 1.5], RSU(1, 3), [9, 16], { negotiation_leverage: "medium" }),
+      mid: s([14, 22], [1.5, 3], RSU(3, 7), [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [3, 6], RSU(6, 14), [26, 45], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([6, 10], [0.5, 1], ESOP(0.5, 1.5), [7, 12], { negotiation_leverage: "medium" }),
+      mid: s([10, 18], [1, 2], ESOP(1, 3), [12, 20], { negotiation_leverage: "medium" }),
+      senior: s([18, 28], [2, 4], ESOP(2, 6), [20, 32], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([10, 16], [1, 2.5], RSU(2, 5), [12, 20], { negotiation_leverage: "medium" }),
+      mid: s([16, 25], [2, 5], RSU(4, 10), [20, 32], { negotiation_leverage: "medium" }),
+      senior: s([26, 40], [4, 9], RSU(8, 18), [32, 55], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([6, 10], [0.5, 1.2], NO_EQ, [7, 12], { negotiation_leverage: "low" }),
+      mid: s([10, 17], [1, 2.5], NO_EQ, [11, 19], { negotiation_leverage: "medium" }),
+      senior: s([18, 28], [2, 5], NO_EQ, [20, 32], { negotiation_leverage: "medium" }),
+    },
   },
 
   // ─── SOLUTIONS ARCHITECT ──────────────────────────────────────
@@ -1836,6 +1976,35 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([16, 24], [2, 4], NO_EQ, [18, 28], {}),
       senior: s([24, 38], [4, 8], NO_EQ, [28, 46], {}),
     },
+    "big-tech": {
+      mid: s([35, 50], [4, 8], RSU(15, 30), [50, 80], { negotiation_leverage: "high" }),
+      senior: s([50, 70], [7, 14], RSU(25, 55), [78, 130], { negotiation_leverage: "high" }),
+      lead: s([65, 85], [10, 20], RSU(40, 85), [115, 180], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      mid: s([28, 42], [3, 7], RSU(10, 22), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([42, 62], [6, 12], RSU(20, 42), [60, 105], { negotiation_leverage: "high" }),
+      lead: s([60, 85], [10, 20], RSU(30, 70), [90, 165], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      mid: s([18, 30], [2, 4], ESOP(3, 7), [22, 38], { negotiation_leverage: "medium" }),
+      senior: s([30, 48], [4, 8], ESOP(6, 14), [38, 60], { negotiation_leverage: "high" }),
+      lead: s([45, 65], [6, 12], ESOP(10, 22), [55, 90], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      mid: s([25, 38], [3, 7], RSU(8, 16), [32, 55], { notes: "Goldman / JPMC India tech architecture." }),
+      senior: s([38, 58], [6, 12], RSU(15, 32), [50, 90], { negotiation_leverage: "high" }),
+      lead: s([55, 80], [10, 20], RSU(30, 60), [85, 145], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      mid: s([14, 22], [1.5, 3], NO_EQ, [16, 26], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [2.5, 5], NO_EQ, [25, 40], { negotiation_leverage: "medium" }),
+      lead: s([32, 50], [4, 9], NO_EQ, [36, 58], { negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      mid: s([15, 25], [1.5, 3], ESOP(2, 5), [18, 32], { negotiation_leverage: "medium" }),
+      senior: s([25, 38], [3, 6], ESOP(5, 12), [30, 50], { negotiation_leverage: "high" }),
+    },
   },
 
   // ─── TECH LEAD ────────────────────────────────────────────────
@@ -1858,6 +2027,33 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     "startup-growth": {
       mid: s([14, 22], [1, 3], ESOP(2, 5), [16, 28], {}),
       senior: s([22, 38], [3, 5], ESOP(5, 10), [28, 50], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      mid: s([35, 50], [4, 8], RSU(15, 32), [50, 82], { negotiation_leverage: "high" }),
+      senior: s([50, 70], [7, 14], RSU(25, 55), [78, 130], { negotiation_leverage: "high" }),
+      lead: s([65, 85], [10, 20], RSU(40, 85), [115, 180], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      mid: s([26, 40], [3, 7], RSU(10, 22), [36, 60], { negotiation_leverage: "medium" }),
+      senior: s([40, 60], [6, 12], RSU(20, 42), [55, 100], { negotiation_leverage: "high" }),
+      lead: s([60, 85], [10, 20], RSU(30, 70), [90, 165], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      mid: s([18, 28], [2, 4], ESOP(3, 7), [22, 36], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [4, 8], ESOP(5, 12), [35, 60], { negotiation_leverage: "high" }),
+      lead: s([42, 60], [6, 12], ESOP(8, 20), [50, 85], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      mid: s([24, 38], [3, 7], RSU(8, 16), [32, 55], { negotiation_leverage: "medium" }),
+      senior: s([38, 58], [6, 12], RSU(15, 32), [50, 90], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      mid: s([14, 22], [1.5, 3], NO_EQ, [15, 26], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [3, 6], NO_EQ, [25, 40], { negotiation_leverage: "medium" }),
+    },
+    "startup-early": {
+      mid: s([12, 20], [1, 3], ESOP(3, 8), [14, 28], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([20, 35], [2, 5], ESOP(6, 15), [25, 48], { notice_period_days: 30, negotiation_leverage: "high" }),
     },
   },
 
@@ -1883,6 +2079,26 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([8, 14], [0.5, 1], NO_EQ, [9, 15], {}),
       senior: s([14, 22], [1, 2], NO_EQ, [15, 24], { notes: "Scientist E/F grade" }),
     },
+    "big-tech": {
+      entry: s([14, 22], [1, 3], RSU(2, 6), [16, 30], { hot_skills: ["RTOS", "Linux drivers", "ARM"], negotiation_leverage: "medium" }),
+      mid: s([22, 35], [2, 5], RSU(6, 14), [28, 50], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 11], RSU(15, 32), [45, 85], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([12, 20], [1, 3], RSU(2, 5), [14, 26], { notes: "Qualcomm / NVIDIA / Apple India embedded teams.", negotiation_leverage: "medium" }),
+      mid: s([20, 32], [2, 5], RSU(7, 16), [25, 45], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [5, 10], RSU(15, 32), [42, 80], { negotiation_leverage: "high" }),
+    },
+    "fmcg-mnc": {
+      entry: s([6, 10], [0.5, 1.5], NO_EQ, [7, 12], { notes: "Bosch / Tata Elxsi / Continental embedded engineering." }),
+      mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+    "startup-growth": {
+      entry: s([6, 10], [0.5, 1], ESOP(1, 3), [7, 13], { notes: "IoT / robotics / EV startups (Ather / Ola Electric / Yulu)." }),
+      mid: s([12, 20], [1, 2.5], ESOP(2, 5), [14, 25], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], ESOP(4, 10), [24, 42], { negotiation_leverage: "high" }),
+    },
   },
 
   // ─── DATABASE ADMINISTRATOR ───────────────────────────────────
@@ -1901,6 +2117,36 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([3, 5], [0.1, 0.3], NO_EQ, [3, 5.5], { notice_period_days: 90, negotiation_leverage: "low", notes: "Oracle DBA: +20-30% premium" }),
       mid: s([6, 10], [0.3, 0.8], NO_EQ, [6, 11], {}),
       senior: s([10, 18], [0.8, 1.5], NO_EQ, [11, 20], {}),
+    },
+    "big-tech": {
+      entry: s([14, 22], [1, 3], RSU(3, 6), [16, 28], { negotiation_leverage: "medium" }),
+      mid: s([22, 32], [2, 5], RSU(6, 12), [26, 45], { negotiation_leverage: "medium" }),
+      senior: s([32, 48], [4, 9], RSU(10, 22), [40, 72], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([10, 16], [1, 2], RSU(2, 4), [12, 20], { negotiation_leverage: "medium" }),
+      mid: s([16, 24], [1.5, 3], RSU(4, 9), [19, 32], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 6], RSU(8, 18), [30, 55], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([7, 11], [0.5, 1], ESOP(0.5, 1.5), [8, 13], { negotiation_leverage: "medium" }),
+      mid: s([12, 18], [1, 2], ESOP(1, 3), [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([18, 28], [2, 4], ESOP(2, 6), [20, 34], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([10, 16], [1, 3], RSU(2, 5), [12, 22], { notes: "Critical at GS / JPMC India trading systems." }),
+      mid: s([18, 28], [2, 5], RSU(5, 12), [22, 42], { negotiation_leverage: "medium" }),
+      senior: s([28, 42], [4, 9], RSU(10, 22), [34, 60], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4.5, 8], { negotiation_leverage: "low" }),
+      mid: s([7, 13], [0.5, 1.5], NO_EQ, [8, 15], { negotiation_leverage: "medium" }),
+      senior: s([13, 22], [1, 3], NO_EQ, [15, 26], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { in_hand_ratio: 0.78, notes: "NIC / RBI / SEBI / CERT-In DBA." }),
+      mid: s([7, 12], [0.3, 0.8], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [0.8, 1.5], NO_EQ, [13, 22], { negotiation_leverage: "low" }),
     },
   },
 
@@ -1925,6 +2171,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low" }),
       mid: s([7, 12], [0.3, 0.5], NO_EQ, [7, 13], {}),
       senior: s([12, 20], [0.5, 1], NO_EQ, [13, 21], {}),
+    },
+    "big-tech": {
+      entry: s([12, 18], [1, 2], RSU(2, 5), [14, 24], { negotiation_leverage: "medium" }),
+      mid: s([20, 30], [2, 4], RSU(5, 11), [25, 40], { negotiation_leverage: "medium" }),
+      senior: s([30, 45], [4, 8], RSU(10, 22), [38, 65], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([10, 15], [0.5, 1.5], RSU(1, 3), [11, 18], { negotiation_leverage: "medium" }),
+      mid: s([15, 24], [1, 3], RSU(3, 7), [18, 30], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [2, 5], RSU(7, 16), [28, 50], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([6, 10], [0.5, 1], ESOP(0.5, 1.5), [7, 12], { negotiation_leverage: "medium" }),
+      mid: s([10, 16], [0.8, 1.5], ESOP(1, 3), [11, 19], { negotiation_leverage: "medium" }),
+      senior: s([16, 26], [1.5, 3], ESOP(2, 5), [18, 30], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([8, 13], [0.8, 2], RSU(1.5, 4), [9, 17], { negotiation_leverage: "medium" }),
+      mid: s([14, 22], [1.5, 3.5], RSU(3, 8), [16, 30], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [3, 6], RSU(7, 16), [26, 45], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.5], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.4, 1], NO_EQ, [7, 13], { negotiation_leverage: "low" }),
+      senior: s([11, 18], [0.8, 2], NO_EQ, [12, 20], { negotiation_leverage: "medium" }),
     },
   },
 
