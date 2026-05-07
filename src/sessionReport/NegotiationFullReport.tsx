@@ -38,6 +38,7 @@
  * the canonical "outcome record" inside Part 1, alongside the new
  * concession analysis and anchor-bracket panels. Nothing is lost. */
 
+import { useState } from "react";
 import type { Question } from "./types";
 import type { InterviewResultData } from "./types";
 import { t, f, shadows } from "./tokens";
@@ -150,22 +151,25 @@ function SectionBand({
 
 /* ─── Derivations from the existing negotiationOutcome shape ─── */
 
+/* 5 stages of a strong negotiation — the previous "you reacted to
+   the offer" trivial-presence stage was dropped because reaching it
+   was free for any user (read: visual participation trophy that made
+   1/6 look like progress when it wasn't). Now every reached-stage
+   reflects an action the candidate took. */
 function derivePhases(outcome: NegotiationOutcome) {
   const offers = outcome.offers ?? [];
-  const reachedReaction = offers.length >= 1;
   const reachedCounter = outcome.candidateAsk !== null;
-  const reachedJustification = reachedCounter; // can't separate without transcript classify
-  const reachedPushback = offers.length >= 2; // multiple offer rounds = pushbacks
+  const reachedJustification = reachedCounter; // approximate — needs transcript classify
+  const reachedPushback = offers.length >= 2;
   const reachedLevers = offers.length >= 3;
   const reachedClose =
     outcome.outcome === "accepted" || outcome.outcome === "walked_away";
   return [
-    { num: 1, name: "You reacted to the offer", reached: reachedReaction, note: reachedReaction ? "First offer received" : undefined },
-    { num: 2, name: "You named your counter number", reached: reachedCounter, note: outcome.candidateAsk ? `Asked for ₹${outcome.candidateAsk} LPA` : "No counter named" },
-    { num: 3, name: "You justified your number", reached: reachedJustification },
-    { num: 4, name: "You handled their pushback", reached: reachedPushback, note: offers.length >= 2 ? `${offers.length - 1} round(s) of back-and-forth` : undefined },
-    { num: 5, name: "You explored package levers", reached: reachedLevers },
-    { num: 6, name: "You closed the deal", reached: reachedClose, note: outcome.outcome === "accepted" ? "Accepted" : outcome.outcome === "walked_away" ? "Walked away" : undefined },
+    { num: 1, name: "You named a counter number", reached: reachedCounter, note: outcome.candidateAsk ? `Asked for ₹${outcome.candidateAsk} LPA` : "No counter named yet" },
+    { num: 2, name: "You justified your number", reached: reachedJustification, note: reachedJustification ? "Counter implied a position" : undefined },
+    { num: 3, name: "You handled their pushback", reached: reachedPushback, note: offers.length >= 2 ? `${offers.length - 1} round(s) of back-and-forth` : undefined },
+    { num: 4, name: "You explored package levers", reached: reachedLevers, note: reachedLevers ? "Conversation went past base salary" : undefined },
+    { num: 5, name: "You closed the deal", reached: reachedClose, note: outcome.outcome === "accepted" ? "Accepted" : outcome.outcome === "walked_away" ? "Walked away" : undefined },
   ];
 }
 
@@ -197,22 +201,24 @@ function deriveConcessionsFromOffers(outcome: NegotiationOutcome): { pushback: s
   return events;
 }
 
+/* When the backend hasn't classified the candidate's actual counter line,
+   we MUST NOT fabricate a quote — users may read it as their own words.
+   Empty `quote` signals "skip the quote block in the panel". */
 function deriveAnchorBracket(outcome: NegotiationOutcome): NonNullable<NegotiationOutcome["anchorBracket"]> | null {
   if (outcome.anchorBracket) return outcome.anchorBracket;
   if (outcome.candidateAsk === null) {
     return {
       type: "none",
-      quote: "(no counter-anchor named)",
+      quote: "",
       verdict:
         "You didn't name a counter-number. Without a number, the recruiter's first offer becomes the ceiling. Even a vague range ('I was thinking mid-40s') would have shifted the negotiation surface.",
     };
   }
-  // We have a number but no transcript classification — call it "single" by default.
   return {
     type: "single",
-    quote: `I'd be looking at around ₹${outcome.candidateAsk} LPA.`,
+    quote: "", // intentionally empty — no transcript classifier yet
     verdict:
-      "You named a single number — better than nothing. Strong negotiators name a defended range ('I was anchoring at ₹X based on the cohort and where I am in conversations elsewhere') instead, so the recruiter can't pull the anchor down without producing a counter-justification.",
+      `You named ₹${outcome.candidateAsk} LPA — a single number. Strong negotiators name a defended range instead ("I was anchoring at ₹X–Y based on what I'm seeing in the market and where I am in other conversations"), so the recruiter can't pull the anchor down without producing a counter-justification.`,
   };
 }
 
@@ -239,18 +245,24 @@ function computeNpvRows(outcome: NegotiationOutcome) {
 
 /* ─── Panels ─────────────────────────────────────────────────── */
 
+/* Render the start-here hint only for state-specific guidance — when
+   we actually have something useful to say (real round imminent, or
+   the outcome was accepted/walked-away). For the default case, the
+   TL;DR hero IS the start-here cue, so an additional arrow is just
+   redundant chrome. */
 function StartHereHint({ outcome, daysUntilInterview }: { outcome: NegotiationOutcome; daysUntilInterview?: number }) {
-  let msg = "Read the headline below for the 30-second answer. Scroll for the full breakdown.";
+  let msg: string | null = null;
   if (typeof daysUntilInterview === "number" && daysUntilInterview <= 7) {
-    msg = `Real round in ${daysUntilInterview} day${daysUntilInterview === 1 ? "" : "s"}. Skip to Part 2 for the email draft + checklist.`;
+    msg = `Real round in ${daysUntilInterview} day${daysUntilInterview === 1 ? "" : "s"}. Skip to Part 2 for the email draft you can send.`;
   } else if (outcome.outcome === "accepted") {
     msg = "You accepted. The most useful section here is Part 4 — what to take into your next negotiation.";
   } else if (outcome.outcome === "walked_away") {
-    msg = "You walked away. Part 3 (what it's worth in rupees) and Part 4 (your pattern) are the most useful.";
+    msg = "You walked away. Parts 3 and 4 (rupees + pattern) are the most useful for your next round.";
   }
+  if (msg === null) return null;
   return (
     <div className="nfr-start-here">
-      <span style={{ fontSize: 18 }}>👇</span>
+      <span style={{ fontSize: 18 }}>→</span>
       <span><strong>Start here:</strong> {msg}</span>
     </div>
   );
@@ -268,6 +280,7 @@ function TLDRHero({
     : null;
 
   const phaseCount = derivePhases(outcome).filter(p => p.reached).length;
+  const TOTAL_PHASES = 5;
 
   let verdict: string;
   if (outcome.outcome === "accepted" && delta !== null && delta > 0) {
@@ -283,31 +296,58 @@ function TLDRHero({
   type StatTone = "good" | "bad" | "warn" | "neutral";
   const stats: Array<{ label: string; value: string; hint?: string; tone: StatTone }> = [];
   if (delta !== null) {
-    stats.push({
-      label: delta >= 0 ? "What you won" : "What it cost you",
-      value: `${delta >= 0 ? "+" : "−"}₹${Math.abs(delta * 4)}L`,
-      hint: "extra rupees over 4 years, before tax",
-      tone: delta > 0 ? "good" : delta < 0 ? "bad" : "neutral",
-    });
+    /* Honest semantics for delta = 0: the candidate accepted the first
+       offer and "left money on the table" relative to a typical 15–35%
+       counter. Don't label this as "What you won" — it isn't. */
+    if (delta > 0) {
+      stats.push({
+        label: "What you won",
+        value: `+₹${delta * 4}L`,
+        hint: "extra rupees over 4 years, before tax",
+        tone: "good",
+      });
+    } else if (delta < 0) {
+      stats.push({
+        label: "What it cost you",
+        value: `−₹${Math.abs(delta * 4)}L`,
+        hint: "rupees lost over 4 years, before tax",
+        tone: "bad",
+      });
+    } else {
+      stats.push({
+        label: "Money you left on the table",
+        value: "—",
+        hint: "you accepted at the first number; no counter named",
+        tone: "bad",
+      });
+    }
   }
   if (typeof outcome.percentileWithinBand === "number") {
     const p = outcome.percentileWithinBand;
+    /* Avoid the awkward "Middle 50% of candidates" phrasing — for the
+       p40–p60 band, frame as "Around the middle" instead of a percentile
+       (every candidate is in some "middle" by definition). */
+    let phrase: string;
+    if (p < 30) phrase = `Bottom ${p}%`;
+    else if (p > 70) phrase = `Top ${100 - p}%`;
+    else phrase = "Around the middle";
     stats.push({
       label: "How you ranked",
-      value: p < 30 ? `Bottom ${p}%` : p > 70 ? `Top ${100 - p}%` : `Middle ${p}%`,
-      hint: "vs others who got the same offer",
+      value: phrase,
+      hint: "vs others who got offers in this band",
       tone: p < 30 ? "bad" : p > 70 ? "good" : "warn",
     });
   }
   stats.push({
     label: "How far you got",
-    value: `${phaseCount} of 6 stages`,
+    value: `${phaseCount} of ${TOTAL_PHASES} stages`,
     hint:
-      phaseCount === 6 ? "you closed the deal" :
-      phaseCount >= 5 ? "one short of the close" :
-      phaseCount >= 3 ? "made it past the counter" :
-      "stalled at the very first reaction",
-    tone: phaseCount >= 5 ? "good" : phaseCount >= 3 ? "warn" : "bad",
+      phaseCount === TOTAL_PHASES ? "you closed the deal" :
+      phaseCount >= 4 ? "one short of the close" :
+      phaseCount >= 2 ? "made it past the counter" :
+      phaseCount === 1 ? "you named a counter — Part 2 below shows the next move" :
+      "you didn't push past the first offer — Part 2 has the email draft",
+    tone: phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {
     const askedFor = outcome.candidateAsk;
@@ -386,25 +426,26 @@ function TLDRHero({
 function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
   const phases = derivePhases(outcome);
   const reached = phases.filter(p => p.reached).length;
-  const reachedColor = reached >= 5 ? t.success : reached >= 3 ? t.copper : t.error;
+  const total = phases.length;
+  const reachedColor = reached >= 4 ? t.success : reached >= 2 ? t.copper : t.error;
   return (
     <div className="nfr-panel">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
         <SectionHeader
           index="01"
           title="How far you got in the negotiation"
-          subtitle="A strong negotiation moves through 6 stages — from reacting to the offer all the way to closing."
+          subtitle={`A strong negotiation moves through ${total} stages — from naming a counter all the way to closing.`}
         />
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color: reachedColor, lineHeight: 1 }}>
-            {reached}<span style={{ color: t.inkFaint, fontWeight: 500 }}> / 6</span>
+            {reached}<span style={{ color: t.inkFaint, fontWeight: 500 }}> / {total}</span>
           </div>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: t.inkSoft, textTransform: "uppercase", marginTop: 4 }}>
             Stages
           </div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 4, marginBottom: 16, marginTop: 4 }}>
+      <div className="nfr-phase-rail" style={{ display: "flex", gap: 4, marginBottom: 16, marginTop: 4 }}>
         {phases.map((p) => (
           <div key={p.num} style={{ flex: 1, height: 8, borderRadius: 4, background: p.reached ? t.success : t.line }} />
         ))}
@@ -513,15 +554,17 @@ function AnchorBracketPanel({ outcome }: { outcome: NegotiationOutcome }) {
       <div style={{ marginBottom: 12 }}>
         <span className={`nfr-pill nfr-pill-${m.tone}`}>{m.label}</span>
       </div>
-      <div
-        style={{
-          padding: 12, background: t.creamSoft, borderRadius: 8,
-          marginBottom: 12, fontSize: 13, color: t.coal, fontStyle: "italic",
-          borderLeft: `3px solid ${t.lineStrong}`,
-        }}
-      >
-        "{bracket.quote}"
-      </div>
+      {bracket.quote && (
+        <div
+          style={{
+            padding: 12, background: t.creamSoft, borderRadius: 8,
+            marginBottom: 12, fontSize: 13, color: t.coal, fontStyle: "italic",
+            borderLeft: `3px solid ${t.lineStrong}`,
+          }}
+        >
+          "{bracket.quote}"
+        </div>
+      )}
       <div style={{ fontSize: 13, color: t.inkSoft, lineHeight: 1.55 }}>{bracket.verdict}</div>
       <div style={{ marginTop: 16, display: "flex", gap: 6 }}>
         {[0, 1, 2, 3].map((i) => (
@@ -671,10 +714,18 @@ function CounterOfferLetterPanel({
   outcome, role, company,
 }: { outcome: NegotiationOutcome; role: string; company: string }) {
   const closing = outcome.finalTotal ?? (outcome.offers[outcome.offers.length - 1]?.total ?? null);
+  const [copied, setCopied] = useState(false);
+
   if (closing === null) return null;
-  // Differentiate the letter by outcome state.
+
+  /* Three letter shapes — none of them invent a counter number. The
+     fallback case (no candidateAsk yet) emits a "you didn't name a
+     counter — here's how to open" template that asks the user to fill
+     in the bracket, rather than fabricating a +15% number that may be
+     way off-band for some roles. */
   let letter: string;
   let commentary: string[];
+
   if (outcome.outcome === "accepted") {
     letter = `Hi <Recruiter>,
 
@@ -689,48 +740,60 @@ Best,
       "Asks for the formal letter without making it adversarial",
       "Closes with notice period — surfaces the next concrete step",
     ];
-  } else if (outcome.outcome === "no_agreement" && outcome.candidateAsk !== null) {
+  } else if (outcome.candidateAsk !== null) {
+    /* Re-anchor with the user's actual stated number — never fabricated. */
     letter = `Hi <Recruiter>,
 
-Thanks for the productive call yesterday. I want to keep the conversation alive — I'm genuinely interested in the ${role} role at ${company}.
+Thanks for the productive call. I want to keep the conversation alive — I'm genuinely interested in the ${role} role at ${company}.
 
 Where I think we are: you're at ₹${closing} LPA, I'm anchored at ₹${outcome.candidateAsk} LPA. A few questions that might help us close the gap:
 
   · Is the variable pay a target with upside, or a hard cap?
-  · What's the standard ESOP grant for this level — front-loaded or evenly vested?
-  · Is signing a lever you have at this band?
+  · What's the standard stock-option grant at this level — front-loaded or evenly vested?
+  · Is a signing component a lever you have at this band?
 
 Happy to jump on a call. Looking forward to closing this together.
 
 Best,
 <Your name>`;
     commentary = [
-      "Re-anchors with a specific number (₹" + outcome.candidateAsk + " LPA) so the recruiter doesn't reset the conversation",
+      `Re-anchors with the specific number you named (₹${outcome.candidateAsk} LPA) — the recruiter can't reset the conversation`,
       "Asks 3 specific lever questions — opens 3 negotiation surfaces at once",
       "Stays collaborative — 'looking forward to closing this together' invites a counter, not a refusal",
     ];
   } else {
+    /* No counter named yet — emit a template with placeholders for the
+       user to fill in, not a fabricated number. The bracket below is
+       a SHAPE, not a recommendation: we explicitly tell the user to
+       research before naming a number. */
     letter = `Hi <Recruiter>,
 
-Thanks for the offer for the ${role} role at ${company}. I've thought it through against where I am in conversations elsewhere and against the current market for this band.
+Thanks for the offer for the ${role} role at ${company}. I'd like to take a moment to think it through against the market for this band before responding fully.
 
-I'd like to go back with a counter at a number closer to ₹${Math.round(closing * 1.15)} LPA, plus a few questions on the package shape:
+A few questions that would help me put together a thoughtful response:
 
-  · Is the variable a target with upside or a hard cap?
-  · What's the ESOP grant for this level, and the refresh policy at year 2?
-  · Is signing a lever you have for an external hire at this band?
+  · Is the variable pay a target with upside, or a hard cap?
+  · What's the standard stock-option grant at this level, and the refresh policy at year 2?
+  · Is a signing component a lever you have at this band?
+  · What flexibility is there on work-from-home days?
 
-I want to make this work — happy to jump on a call.
+Once I have a clearer picture, I'd like to come back with a specific number. Could we set up a follow-up call this week?
 
 Best,
-<Your name>`;
+<Your name>
+
+— — —
+Before you send: name a specific counter number in your follow-up call. Look up the band on Levels.fyi or
+Glassdoor for "${role}" at companies similar to ${company} this quarter. A defended range
+("I was anchoring at ₹X–Y based on what I'm seeing") is stronger than a single number.`;
     commentary = [
-      "Suggests a +15% counter against the existing offer — strong but defensible anchor",
-      "Decomposes the package into 3 levers — opens 3 negotiation surfaces, not 1",
-      "Implicit BATNA reference ('conversations elsewhere') without committing to a specific competing offer",
-      "Stays collaborative — 'I want to make this work' invites them to defend, not dismiss",
+      "Buys time without committing to a number you haven't researched yet",
+      "Asks 4 specific lever questions — keeps the conversation alive on multiple fronts",
+      "Sets up a follow-up where you can name a specific counter — once you've done the research",
+      "The footer reminds you to research the market band before naming a number — strong anchors are defended ranges, not single numbers",
     ];
   }
+
   return (
     <div className="nfr-panel">
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
@@ -739,19 +802,22 @@ Best,
       <SectionHeader
         index="07"
         title="Your counter-offer email — ready to send"
-        subtitle="We wrote this from your call. Read through, edit a line or two, and send it."
+        subtitle="We wrote this from your call. Read through, replace the < placeholders >, and send it."
       />
-      <pre
+      {/* Switched from <pre> to <div> with white-space: pre-line so long
+          lines soft-wrap cleanly on phones. <pre> kept lines rigid and
+          forced horizontal scroll on narrow screens. */}
+      <div
         style={{
           margin: "0 0 16px",
           padding: 22, background: t.cream, border: `1px solid ${t.lineStrong}`,
           borderRadius: 10, fontFamily: f.sans, fontSize: 14,
-          color: t.coal, lineHeight: 1.65, whiteSpace: "pre-wrap",
+          color: t.coal, lineHeight: 1.65, whiteSpace: "pre-line",
           wordBreak: "break-word", overflow: "auto",
         }}
       >
         {letter}
-      </pre>
+      </div>
       <div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: t.inkSoft, marginBottom: 8 }}>
           WHY THIS DRAFT
@@ -768,14 +834,20 @@ Best,
           className="nfr-btn-primary"
           onClick={() => {
             if (typeof navigator !== "undefined" && navigator.clipboard) {
-              navigator.clipboard.writeText(letter);
+              navigator.clipboard.writeText(letter).then(() => {
+                setCopied(true);
+                window.setTimeout(() => setCopied(false), 2000);
+              });
             }
           }}
+          aria-live="polite"
         >
-          Copy as email
+          {copied ? "✓ Copied" : "Copy as email"}
         </button>
-        <button className="nfr-btn-secondary">Edit in your voice</button>
-        <button className="nfr-btn-secondary">Show alternatives</button>
+        {/* Other action buttons (Edit-in-voice, Show alternatives,
+            Translate to Hindi) intentionally NOT rendered — they're
+            spec hooks for unbuilt features. Showing non-functional
+            buttons erodes trust. Add them back when wired. */}
       </div>
     </div>
   );
@@ -785,7 +857,15 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
   if (typeof outcome.percentileWithinBand !== "number") return null;
   const p = outcome.percentileWithinBand;
   const tone = p < 30 ? t.error : p > 70 ? t.success : t.copper;
-  const phrase = p < 30 ? `Bottom ${p}% of candidates` : p > 70 ? `Top ${100 - p}% of candidates` : `Middle ${p}% of candidates`;
+  /* Avoid the awkward "Middle 50%" phrasing — every candidate is in
+     some "middle" by definition. For p30–p70 say "around the middle"
+     instead, which reads as honest rather than uselessly precise. */
+  const phrase = p < 30 ? `Bottom ${p}% of candidates` : p > 70 ? `Top ${100 - p}% of candidates` : "Around the middle of the band";
+  /* Trust threshold — show the percentile only when the backend has
+     actually wired the cohort attribution. Without n + freshness,
+     the percentile reads as "trust me" math; with them, users can
+     calibrate how much to weigh it. */
+  const hasAttribution = typeof outcome.cohortN === "number" && !!outcome.cohortFreshness;
   return (
     <div className="nfr-panel">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
@@ -794,12 +874,19 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
           title="Where your offer sits vs others like you"
           subtitle={outcome.cohortLabel ?? "Compared to candidates with the same role + level + company tier."}
         />
-        {(outcome.cohortN || outcome.cohortFreshness) && (
+        {hasAttribution ? (
           <FreshnessChip
             source="Cohort data"
             n={outcome.cohortN}
-            asOf={outcome.cohortFreshness ?? "last 90d"}
+            asOf={outcome.cohortFreshness}
           />
+        ) : (
+          <span
+            className="nfr-pill nfr-pill-warn"
+            title="Cohort attribution not yet available — treat the percentile as an early estimate."
+          >
+            Early estimate
+          </span>
         )}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
@@ -870,6 +957,12 @@ function NPVMathPanel({ outcome }: { outcome: NegotiationOutcome }) {
           })}
         </tbody>
       </table>
+      {/* Honest footnote — the "true cost" panel is a model, not a quote.
+          Users in different tax slabs or with different inflation
+          expectations should know the assumptions. */}
+      <div style={{ fontSize: 11, color: t.inkFaint, fontStyle: "italic", marginTop: 12, lineHeight: 1.5 }}>
+        Assumes the 30% Indian income-tax slab + 6% annual inflation. If your slab or inflation expectations differ, the take-home and today's-rupees rows will shift accordingly.
+      </div>
     </div>
   );
 }
@@ -1126,44 +1219,70 @@ export function NegotiationFullReport({
         <CounterOfferLetterPanel outcome={outcome} role={role} company={company} />
       </div>
 
-      {/* PART 3 — COHORT & MATH · warning gold (money / market value framing) */}
-      {(typeof outcome.percentileWithinBand === "number" ||
-        finalTotal !== null ||
-        (outcome.counterpartyFacts && outcome.counterpartyFacts.length > 0)) && (
-        <>
-          <SectionBand
-            label="Part 3 of 4"
-            title="What this offer is worth in rupees"
-            subtitle="Where your offer sits vs others — and what accepting really costs after tax."
-            accent={t.warning}
-            bg={t.warning100}
-          />
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <CohortPlacementPanel outcome={outcome} />
-            <div className="nfr-grid-2up">
-              <NPVMathPanel outcome={outcome} />
-              <CounterpartyPanel outcome={outcome} />
+      {/* PART 3 — COHORT & MATH · warning gold (money / market value framing).
+          Render the band ONLY when at least one child panel will actually
+          render — the previous gate let the band appear with nothing
+          under it for sessions with finalTotal but delta=0 + no
+          percentile + no counterparty facts. */}
+      {(() => {
+        const willRenderCohort = typeof outcome.percentileWithinBand === "number";
+        const willRenderNpv = computeNpvRows(outcome).length > 0;
+        const willRenderCounterparty = !!(outcome.counterpartyFacts && outcome.counterpartyFacts.length > 0);
+        const showPart3 = willRenderCohort || willRenderNpv || willRenderCounterparty;
+        if (!showPart3) return null;
+        return (
+          <>
+            <SectionBand
+              label="Part 3 of 4"
+              title="What this offer is worth in rupees"
+              subtitle="Where your offer sits vs others — and what accepting really costs after tax."
+              accent={t.warning}
+              bg={t.warning100}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {willRenderCohort && <CohortPlacementPanel outcome={outcome} />}
+              {(willRenderNpv || willRenderCounterparty) && (
+                <div className="nfr-grid-2up">
+                  {willRenderNpv && <NPVMathPanel outcome={outcome} />}
+                  {willRenderCounterparty && <CounterpartyPanel outcome={outcome} />}
+                </div>
+              )}
             </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
 
-      {/* PART 4 — SKILL ARC · indigoDeep (introspective; distinct from Part 1 indigo) */}
-      {(outcome.archetype || (priorSessionCount !== undefined && priorSessionCount < 2) || (outcome.drills && outcome.drills.length > 0)) && (
-        <>
-          <SectionBand
-            label="Part 4 of 4"
-            title="Your pattern across sessions"
-            subtitle="What you keep doing right (and wrong), and the drills to break the pattern."
-            accent={t.indigoDeep}
-            bg={t.indigo100}
-          />
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />
-            <DrillPlanPanel outcome={outcome} />
-          </div>
-        </>
-      )}
+      {/* PART 4 — SKILL ARC · indigoDeep (introspective; distinct from
+          Part 1 indigo). Empty state only renders for users with
+          ≥1 prior session — first-session users get the band hidden
+          entirely, since "run another session to see your pattern" is
+          not a useful add for someone who hasn't even completed their
+          first one yet. */}
+      {(() => {
+        const willRenderArchetype = !!outcome.archetype || ((priorSessionCount ?? 0) >= 1 && (priorSessionCount ?? 0) < 2);
+        const willRenderDrills = !!(outcome.drills && outcome.drills.length > 0);
+        const showPart4 = willRenderArchetype || willRenderDrills;
+        if (!showPart4) return null;
+        return (
+          <>
+            <SectionBand
+              label="Part 4 of 4"
+              title="Your pattern across sessions"
+              subtitle="What you keep doing right (and wrong), and the drills to break the pattern."
+              accent={t.indigoDeep}
+              bg={t.indigo100}
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {willRenderArchetype && <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />}
+              {willRenderDrills && <DrillPlanPanel outcome={outcome} />}
+            </div>
+          </>
+        );
+      })()}
+
+      {/* Bottom CTA — closes the report with a clear next move so users
+          don't end on the transcript collapsible. View-mode aware. */}
+      <NextRoundCTA outcome={outcome} role={role} company={company} />
 
       {/* Transcript export — preserved from legacy section */}
       <details style={{ marginTop: 28 }}>
@@ -1204,6 +1323,71 @@ export function NegotiationFullReport({
   );
 }
 
+/* ─── Bottom CTA — closes the report with a clear next move ────
+   The previous version of the report ended on the transcript
+   collapsible. Users finished scrolling and had nowhere to go. This
+   panel turns the end of the page into the start of the next move. */
+function NextRoundCTA({
+  outcome, role, company,
+}: { outcome: NegotiationOutcome; role: string; company: string }) {
+  let title: string;
+  let body: string;
+  let primaryLabel: string;
+  if (outcome.outcome === "accepted") {
+    title = "Take this into your next negotiation";
+    body = `You closed the deal on ${role} at ${company}. Run a session for the next role you're targeting — practise the moves you missed before they cost you on the real one.`;
+    primaryLabel = "Practise next round →";
+  } else if (outcome.outcome === "walked_away") {
+    title = "Run the next round";
+    body = "You walked away — the right call needs a clear walk-away point. Practise a session for the same band with a stronger anchor + BATNA prepared.";
+    primaryLabel = "Run a stronger session →";
+  } else if (outcome.candidateAsk === null) {
+    title = "Practise naming a counter";
+    body = "You didn't name a counter-anchor in this session. Run the same scenario again — this time, walk in with a specific number + bracket prepared.";
+    primaryLabel = "Practise the counter →";
+  } else {
+    title = "Push past where you stalled";
+    body = `You named ₹${outcome.candidateAsk} LPA but didn't close. Run another round — practise the lever-exploration phase where this session ended.`;
+    primaryLabel = "Practise the next phase →";
+  }
+  return (
+    <div
+      style={{
+        marginTop: 24, padding: "24px 26px",
+        background: t.indigo, color: "#FFFFFF",
+        borderRadius: 14, display: "flex",
+        alignItems: "center", justifyContent: "space-between",
+        gap: 20, flexWrap: "wrap",
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 240 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 6, fontFamily: f.serif, letterSpacing: -0.2 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.78)", lineHeight: 1.5 }}>
+          {body}
+        </div>
+      </div>
+      <button
+        style={{
+          padding: "12px 22px",
+          background: "#FFFFFF",
+          color: t.indigo,
+          border: "none",
+          borderRadius: 8,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: "pointer",
+          fontFamily: f.sans,
+          flexShrink: 0,
+        }}
+      >
+        {primaryLabel}
+      </button>
+    </div>
+  );
+}
+
 /* ─── Legacy offer trajectory pill row ─────────────────────────
    Preserved from the original NegotiationOutcomeSection — still
    the single most legible visualisation of the call's actual
@@ -1216,6 +1400,26 @@ function OfferTrajectory({ outcome }: { outcome: NegotiationOutcome }) {
   const final = outcome.finalTotal !== null && outcome.finalTotal > initial
     ? Math.round((outcome.finalTotal - initial) * 10) / 10
     : null;
+  /* Single-offer state — explanatory copy instead of a lonely pill that
+     looks like an unfinished design. Prevents users from wondering
+     whether the report is broken. */
+  if (offers.length === 1 && outcome.candidateAsk === null) {
+    return (
+      <div
+        style={{
+          background: t.white, border: `1px solid ${t.line}`,
+          borderRadius: 14, padding: 22, marginBottom: 18,
+        }}
+      >
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: t.inkSoft, textTransform: "uppercase", marginBottom: 10 }}>
+          What happened
+        </div>
+        <div style={{ fontSize: 14, color: t.coal, lineHeight: 1.6 }}>
+          They opened at <strong style={{ fontFamily: f.serif }}>₹{initial} LPA</strong>. You didn't name a counter, so this became the final number. The conversation never moved past the offer-reaction stage.
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       style={{

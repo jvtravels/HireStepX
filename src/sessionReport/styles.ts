@@ -166,6 +166,7 @@ export const SESSION_REPORT_STYLES = `
     .nfr-panel { padding: 18px !important; border-radius: 12px !important; }
     .nfr-tldr-card { padding: 20px 22px !important; }
     .nfr-tldr-stats { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+    .nfr-tldr-stats > div > div:last-child { font-size: 12px !important; }  /* hint copy bumped on mobile so 26px → 11px ratio is less harsh */
     .nfr-section-band { padding: 14px 16px !important; gap: 12px !important; }
     .nfr-table th, .nfr-table td { padding: 8px 10px !important; font-size: 12px !important; }
     .nfr-table th { font-size: 9px !important; }
@@ -175,6 +176,8 @@ export const SESSION_REPORT_STYLES = `
     .nfr-tldr-stats { grid-template-columns: 1fr !important; gap: 12px !important; }
     .nfr-letter-actions { flex-direction: column !important; }
     .nfr-btn-primary, .nfr-btn-secondary { width: 100% !important; }
+    /* Phase rail is decorative at narrow widths — pill list below carries the same info more legibly */
+    .nfr-phase-rail { display: none !important; }
   }
 
   /* ─── Mobile breakpoints ─── */
