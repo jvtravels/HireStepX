@@ -1,0 +1,17 @@
+{
+  "name": "AI hallucinates an absurd compensation number",
+  "notes": "AI quotes 850 LPA for a mid-level role — implausible for any Indian-market band. Analyzer must catch this as a high-severity hallucination.",
+  "session": {
+    "type": "salary-negotiation",
+    "transcript": [
+      { "speaker": "ai", "text": "For your level we typically offer 850 LPA total compensation including equity.", "time": "" },
+      { "speaker": "user", "text": "That seems very high. Based on my research my target is 35 LPA. I have a competing offer at 32 LPA elsewhere. Equity and joining bonus matter to me as well as notice period flexibility.", "time": "" },
+      { "speaker": "ai", "text": "Understood. Let's discuss equity vesting and the joining bonus structure separately.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["implausible_salary_claim"],
+    "must_not_include": ["empty_transcript", "user_never_anchored", "no_batna_articulated"],
+    "expect_hallucination_types": ["implausible_salary_claim"]
+  }
+}

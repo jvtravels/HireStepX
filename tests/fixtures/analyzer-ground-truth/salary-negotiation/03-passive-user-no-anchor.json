@@ -1,0 +1,19 @@
+{
+  "name": "Passive user: no anchor, no BATNA, AI does all the talking",
+  "notes": "User defers to the AI on every question, never anchors with a target, never references an alternative offer. Analyzer should flag user_never_anchored and no_batna_articulated.",
+  "session": {
+    "type": "salary-negotiation",
+    "transcript": [
+      { "speaker": "ai", "text": "What are your salary expectations?", "time": "" },
+      { "speaker": "user", "text": "I'm flexible, what does the role typically pay these days for someone at my level?", "time": "" },
+      { "speaker": "ai", "text": "We can offer 24 LPA base with standard equity.", "time": "" },
+      { "speaker": "user", "text": "Hmm, can you do better than that please? It seems a bit low for what I was hoping for.", "time": "" },
+      { "speaker": "ai", "text": "We can stretch to 26 LPA. That's our ceiling for this band.", "time": "" },
+      { "speaker": "user", "text": "Okay that sounds workable I guess, I can probably make that work.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["user_never_anchored", "no_batna_articulated"],
+    "must_not_include": ["empty_transcript", "implausible_salary_claim"]
+  }
+}

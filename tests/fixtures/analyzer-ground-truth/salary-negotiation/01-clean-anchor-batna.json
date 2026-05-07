@@ -1,0 +1,18 @@
+{
+  "name": "Strong negotiation: anchor + BATNA + equity + joining bonus",
+  "notes": "User opens with researched target, references competing offer, discusses equity vesting and joining bonus. AI quotes plausible numbers. Analyzer should produce no critical flags.",
+  "session": {
+    "type": "salary-negotiation",
+    "transcript": [
+      { "speaker": "ai", "text": "What are your salary expectations for this senior SDE role?", "time": "" },
+      { "speaker": "user", "text": "Based on my research at levels.fyi and market data for Bangalore, my target is 38 LPA total compensation. I have an alternative offer at 36 LPA from another company that I'm considering seriously.", "time": "" },
+      { "speaker": "ai", "text": "That's reasonable for our band. We can do 28 to 32 LPA base with equity vesting over 4 years quarterly. Joining bonus and notice period buyout are negotiable depending on your situation.", "time": "" },
+      { "speaker": "user", "text": "Can you stretch on the joining bonus to offset the equity cliff in year one? I'd be looking at the upper end on base too if possible.", "time": "" },
+      { "speaker": "ai", "text": "Let me come back with a structured offer.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "implausible_salary_claim", "user_never_anchored", "no_batna_articulated", "equity_never_discussed", "joining_bonus_never_discussed", "ai_accepted_without_pushback"]
+  }
+}

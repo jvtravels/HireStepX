@@ -1,0 +1,17 @@
+{
+  "name": "Clean STAR with quantified result",
+  "notes": "User answers with all four STAR components and a numeric outcome. Analyzer should not flag structure or quantification issues.",
+  "session": {
+    "type": "behavioral",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a time you improved a system under pressure.", "time": "" },
+      { "speaker": "user", "text": "The situation was that our checkout API was timing out during a Diwali sale. My task was to find the cause and stabilize it within the day. I led the on-call response, profiled the slow path, identified a missing index on the orders table, and shipped a hotfix. The result was p99 latency dropped from 4.2s to 380ms within 6 hours, and we recovered roughly 18 lakhs in pending checkouts.", "time": "" },
+      { "speaker": "ai", "text": "Good. Tell me about a time you influenced without authority.", "time": "" },
+      { "speaker": "user", "text": "Context: our partner team owned the payments service and wouldn't prioritize a retry change. My responsibility was to unblock 12 dependent services. I built a prototype showing 30% fewer false declines, walked it through a design review with their tech lead, and proposed splitting ownership of the retry policy. The outcome was the change shipped in 3 weeks and false declines dropped 28% across all merchants.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["weak_star_structure", "frequent_missing_result", "unquantified_answers", "ai_accepts_missing_result", "empty_transcript"]
+  }
+}

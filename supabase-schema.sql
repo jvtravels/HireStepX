@@ -629,3 +629,60 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ═══════════════════════════════════════════════════════
+-- Session Quality Control — analyzer pipeline
+-- ═══════════════════════════════════════════════════════
+-- A nightly cron (analyze-sessions) re-reads each completed session
+-- and writes structured findings here. Per-focus analyzers produce a
+-- uniform AnalyzerResult so the dashboard and aggregation queries
+-- don't care which analyzer ran.
+
+-- Backfill columns the save-session handler writes but earlier schemas
+-- didn't declare. The handler's column-stripping retry loop silently
+-- dropped these on fresh DBs.
+alter table sessions add column if not exists job_description text;
+alter table sessions add column if not exists jd_analysis jsonb;
+
+create table if not exists session_insights (
+  session_id text primary key references sessions(id) on delete cascade,
+  user_id uuid references profiles(id) on delete cascade not null,
+  focus text not null,
+  analyzer_version text not null,
+  analyzed_at timestamptz default now(),
+  rescore integer,
+  score_drift integer,
+  hallucinations jsonb default '[]'::jsonb,
+  rubric_gaps jsonb default '[]'::jsonb,
+  bad_questions jsonb default '[]'::jsonb,
+  flags text[] default '{}',
+  coaching_notes text default '',
+  error text default null,
+  duration_ms integer default 0
+);
+
+create index if not exists idx_session_insights_user on session_insights(user_id);
+create index if not exists idx_session_insights_focus on session_insights(focus);
+create index if not exists idx_session_insights_analyzed_at on session_insights(analyzed_at);
+create index if not exists idx_session_insights_flags on session_insights using gin(flags);
+
+alter table session_insights enable row level security;
+drop policy if exists "session_insights_select_own" on session_insights;
+create policy "session_insights_select_own" on session_insights
+  for select using (auth.uid() = user_id);
+
+create table if not exists daily_quality_report (
+  day date not null,
+  focus text not null,
+  sessions_analyzed integer not null default 0,
+  avg_score_drift numeric default 0,
+  hallucination_rate numeric default 0,
+  flagged_question_count integer default 0,
+  top_flags jsonb default '[]'::jsonb,
+  top_weak_signals jsonb default '[]'::jsonb,
+  generated_at timestamptz default now(),
+  primary key (day, focus)
+);
+
+create index if not exists idx_daily_quality_report_day on daily_quality_report(day);
+alter table daily_quality_report enable row level security;

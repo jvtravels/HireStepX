@@ -1,0 +1,18 @@
+{
+  "name": "AI repeats the same question",
+  "notes": "AI asks the same substantive question twice in a row, just rephrased identically. Analyzer should flag duplicate_question.",
+  "session": {
+    "type": "behavioral",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a time you had to influence without authority across the organization.", "time": "" },
+      { "speaker": "user", "text": "I once convinced a partner team to adopt our shared library. The result was they migrated in 3 sprints and we deprecated 4 forks. Saved roughly 200 engineering hours per quarter.", "time": "" },
+      { "speaker": "ai", "text": "Got it.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a time you had to influence without authority across the organization.", "time": "" },
+      { "speaker": "user", "text": "Another example: I drove cross-team alignment on logging format. Outcome: unified format shipped to 40 services and incident triage time dropped 30%.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["duplicate_question"],
+    "must_not_include": ["empty_transcript", "weak_star_structure"]
+  }
+}

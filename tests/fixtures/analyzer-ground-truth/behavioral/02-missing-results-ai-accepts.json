@@ -1,0 +1,19 @@
+{
+  "name": "User answers without Result, AI moves on without probing",
+  "notes": "Multiple user answers omit the R in STAR. AI never asks 'what was the outcome?'. Analyzer should flag both frequent_missing_result and ai_accepts_missing_result.",
+  "session": {
+    "type": "behavioral",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a difficult stakeholder.", "time": "" },
+      { "speaker": "user", "text": "The situation was a hard partnership with the marketing team. My task was to align on the quarterly roadmap. I scheduled weekly syncs and rebuilt trust by sharing demos. We collaborated more after that as a team it felt good.", "time": "" },
+      { "speaker": "ai", "text": "Great. Tell me about learning something new.", "time": "" },
+      { "speaker": "user", "text": "The context was joining a Rust team mid-project. My task was to ship a service in 6 weeks. I paired with senior engineers and read the book end to end. It was a productive learning experience for me overall I really enjoyed it.", "time": "" },
+      { "speaker": "ai", "text": "Nice. Describe a conflict you handled.", "time": "" },
+      { "speaker": "user", "text": "The situation was two engineers disagreeing on architecture. My responsibility was to mediate fairly. I set up a design doc review and facilitated discussion in good faith. Things calmed down eventually after that as people got along.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["frequent_missing_result", "ai_accepts_missing_result"],
+    "must_not_include": ["empty_transcript"]
+  }
+}
