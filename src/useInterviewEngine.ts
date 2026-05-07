@@ -494,6 +494,17 @@ export function useInterviewEngine() {
   const saveWarningRef = useRef("");
   useEffect(() => { saveWarningRef.current = saveWarning; }, [saveWarning]);
   const [micError, setMicError] = useState("");
+  /* ttsError — surfaces "audio temporarily unavailable" when TTS fails.
+   * Auto-clears 6s after the last failure so a transient blip doesn't leave
+   * a sticky notice. The visual question is always on screen so the user can
+   * keep going; the toast just explains *why* there's no voice. */
+  const [ttsError, setTtsError] = useState("");
+  const ttsErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flagTtsError = useCallback((message: string) => {
+    setTtsError(message);
+    if (ttsErrorTimerRef.current) clearTimeout(ttsErrorTimerRef.current);
+    ttsErrorTimerRef.current = setTimeout(() => setTtsError(""), 6000);
+  }, []);
   const [usedFallbackScore, setUsedFallbackScore] = useState(false);
   const [evalTimedOut, setEvalTimedOut] = useState(false);
   const [lastSessionId, setLastSessionId] = useState<string | null>(null);
@@ -792,14 +803,16 @@ export function useInterviewEngine() {
         handle.cancel();
       }
     }).catch((err) => {
-      // TTS failed — log so the failure isn't invisible to ops/PostHog.
-      // The visual question is still on screen so the candidate can read it,
-      // but a sustained pattern of "tts_failed" events should page the team.
+      // TTS failed — log so the failure isn't invisible to ops/PostHog,
+      // and surface a brief notice so the candidate isn't left wondering
+      // why the interviewer is silent. The visual question is still on
+      // screen so the session can continue.
       const msg = err instanceof Error ? err.message : String(err);
       console.warn("[interview] TTS handle.start failed:", msg.slice(0, 120));
       track("tts_failed", { phase: "preview", error: msg.slice(0, 200) });
+      flagTtsError("Audio temporarily unavailable — read the question above.");
     });
-  }, [aiVoiceEnabled, interviewerGender]);
+  }, [aiVoiceEnabled, interviewerGender, flagTtsError]);
 
   /* Listening-phase interjections (silence nudge, hard-cap stall,
      rambling cut-off, soft tracking) — see ./_listening-interjections.ts.
@@ -1068,13 +1081,12 @@ export function useInterviewEngine() {
           }
         }).catch((e) => {
           // TTS rejection during the active question. The phase advances via
-          // onSpeechEnd so the interview keeps moving, but log it loudly:
-          // the candidate just heard silence where there should have been a
-          // question. A spike in tts_failed events with phase=question is
-          // the canonical "audio infrastructure broken" signal.
+          // onSpeechEnd so the interview keeps moving; we surface a brief
+          // notice so the candidate knows audio is broken (not them).
           const msg = e instanceof Error ? e.message : String(e);
           console.warn("[interview] TTS speak() rejected:", msg.slice(0, 120));
           track("tts_failed", { phase: "question", error: msg.slice(0, 200) });
+          flagTtsError("Audio temporarily unavailable — read the question above.");
           onSpeechEnd();
         });
       } else {
@@ -2555,6 +2567,7 @@ export function useInterviewEngine() {
     isOffline,
     saveWarning,
     micError,
+    ttsError,
     micQuiet,
     reconnecting,
     reconnectAttempt: reconnectAttemptRef.current,

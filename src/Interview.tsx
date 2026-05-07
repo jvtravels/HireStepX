@@ -880,7 +880,7 @@ function InterviewInner() {
   const {
     phase, step, currentStep, llmLoading, elapsed,
     speechUnavailable, isMuted, showTranscript, transcript,
-    showEndModal, tabConflict, isOffline, micError,
+    showEndModal, tabConflict, isOffline, micError, ttsError,
     usedFallbackScore, evalTimedOut, lastSessionId,
     evaluating, evalElapsed, aiVoiceEnabled,
     currentTranscript, microFeedback,
@@ -1058,7 +1058,7 @@ function InterviewInner() {
       {/* First-time onboarding — three quick callouts, then never again */}
       <InterviewCoachmarks />
 
-      <StatusToasts tabConflict={tabConflict} isOffline={isOffline} micError={micError} />
+      <StatusToasts tabConflict={tabConflict} isOffline={isOffline} micError={micError} ttsError={ttsError} />
 
       {/* ═════════════════════════════════════════════════════════════
           TOPBAR — canvas composition

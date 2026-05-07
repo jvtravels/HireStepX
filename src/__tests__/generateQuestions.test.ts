@@ -5,6 +5,7 @@ import {
   normalizePanelPersonas,
   isSalaryNegotiationLengthOk,
   computeStepCount,
+  buildStaticFallback,
   VALID_PERSONAS,
   type RawQuestion,
 } from "../../server-handlers/_generate-questions-helpers";
@@ -166,5 +167,50 @@ describe("computeStepCount", () => {
 
   it("mini salary-negotiation still gets full 5-question arc = 7 steps", () => {
     expect(computeStepCount({ mini: true, isSalaryType: true })).toBe(7);
+  });
+});
+
+/* buildStaticFallback is what users get when both LLM providers fail. The
+ * shape contract is the same as the LLM path (validateQuestionShape passes)
+ * and the count is at least intro + main questions + closing. */
+describe("buildStaticFallback", () => {
+  it("returns a shape-valid set with intro + closing", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "behavioral",
+      difficulty: "standard",
+      roleFamily: "pm",
+      count: 5,
+    });
+    expect(qs.length).toBeGreaterThanOrEqual(7);
+    expect(qs[0].type).toBe("intro");
+    expect(qs[qs.length - 1].type).toBe("closing");
+    expect(validateQuestionShape(qs as unknown[])).toBe(true);
+  });
+
+  it("falls through to behavioral when role+focus has no entries", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "case-study",
+      difficulty: "standard",
+      // Intentionally bogus role family to force tier-3 fallback.
+      roleFamily: "nonexistent-role" as unknown as string,
+      count: 5,
+    });
+    expect(qs.length).toBeGreaterThanOrEqual(7);
+    expect(validateQuestionShape(qs as unknown[])).toBe(true);
+  });
+
+  it("never returns blank aiText", () => {
+    const qs = buildStaticFallback({
+      type: "behavioral",
+      focus: "general",
+      difficulty: "standard",
+      roleFamily: "general",
+      count: 5,
+    });
+    for (const q of qs) {
+      expect(q.aiText.length).toBeGreaterThan(0);
+    }
   });
 });
