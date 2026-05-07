@@ -8,6 +8,13 @@ import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric } from "../data/focus-question-recipes";
 import {
+  GROUNDING_DIRECTIVE,
+  FAIRNESS_DIRECTIVE,
+  LENGTH_TARGETS_DIRECTIVE,
+  SELF_CHECK_DIRECTIVE,
+  getRubricWeight,
+} from "./_evaluate-session-prompts";
+import {
   ROLE_SKILLS,
   DEFAULT_BANDS,
   applyBands,
@@ -408,32 +415,13 @@ export default async function handler(req: Request): Promise<Response> {
       : "";
 
     const tierSuffix = tierPromptSuffix(classifyCompanyTier(meta?.targetCompany));
-    // Anti-vague-feedback directive: every wins/fixes/red-flag finding must
-    // quote a specific phrase or moment from the transcript. Generic feedback
-    // ("be more specific", "structure your answer") is the #1 complaint about
-    // AI eval — force grounding.
-    const groundingDirective = "GROUNDING REQUIREMENT: Every wins/fixes/red-flag finding in the report MUST quote a SPECIFIC phrase from the transcript (≤15 words). Do NOT produce generic feedback like 'be more specific' or 'use STAR' — point to the exact moment: 'When you said \"we improved performance\", you didn't quantify it — what was the actual %?'. If you can't ground a finding in a transcript quote, omit it.";
-    const fairnessDirective = "FAIRNESS: Do NOT penalize for accent, non-elite college background, or gender-linked communication style. Score on substance — what they said, the structure, the evidence — not how it sounded. If a candidate uses 'we' frequently as a collectivist framing, probe for the 'I' but don't auto-deduct.";
-    const lengthTargetsDirective = "ANSWER-LENGTH TARGETS (per type, calibrate lengthVerdict.targetRange): behavioral STAR 120-240 words, technical/system-design 180-360 words, case-study 200-400 words, HR/intro questions 80-180 words, salary-negotiation 60-180 words (concise + numeric), campus-placement 90-200 words. Penalize too-brief; don't punish slightly-long if substance is high.";
-    const selfCheckDirective = "SELF-CHECK: Before finalizing, internally verify each fix has a concrete transcript quote and each skill score has at least one supporting moment. If a score and its evidence don't match, recalibrate the score to match the evidence — never fabricate evidence to match a preset score.";
-    // Per-type rubric weights — different interview formats prize different
-    // dimensions. A perfect case-study answer is structurally rigorous; a
-    // perfect behavioral answer follows STAR; a perfect technical answer
-    // articulates trade-offs. Surface this to the scorer so the same generic
-    // 75/100 doesn't appear across very different formats.
-    const typeRubricWeight: Record<string, string> = {
-      "behavioral": "Weight HEAVILY: STAR completeness (Situation/Task/Action/Result fully present), specificity (names, numbers, dates), 'I' vs 'we' clarity, learning/reflection. De-weight: technical depth, framework breadth.",
-      "case-study": "Weight HEAVILY: structural rigor (explicit framework, MECE, hypothesis-driven), quantitative reasoning (back-of-envelope numbers, sanity checks), clarifying-question quality. De-weight: STAR structure, soft skills.",
-      "technical": "Weight HEAVILY: trade-off articulation (every choice has a stated cost), depth-tree handling (going 2-3 levels deep on a topic), correctness on technical claims, system-design completeness. De-weight: STAR structure, soft skills.",
-      "strategic": "Weight HEAVILY: framework recognition (RICE, OKR, etc.), real-experience anchoring (not aspirational), prioritization reasoning, business-acumen tells. De-weight: technical depth, STAR.",
-      "management": "Weight HEAVILY: actual people-management evidence (hire/fire/comp decisions owned), team-size calibration, difficult-conversation handling, system-thinking on team design. De-weight: technical depth.",
-      "hr-round": "Weight HEAVILY: motivation authenticity, self-awareness on weaknesses, company-research depth, communication clarity. De-weight: technical depth, framework breadth.",
-      "campus-placement": "Weight HEAVILY: fundamentals clarity, project ownership, learning agility, communication. De-weight: leadership, P&L. Calibrate expectations to fresher level.",
-      "salary-negotiation": "Weight HEAVILY: anchoring discipline, multi-lever negotiation (not just base), leverage usage (BATNA, competing offers), professional handling of pressure, NEGOTIATION STYLE (collaborative > adversarial — penalize zero-sum framing), and equity literacy (understanding ESOP cliff/vesting, RSU value, joining-bonus claw-back). De-weight: STAR, technical depth.",
-      "panel": "Weight HEAVILY: multi-audience awareness (different framing for HM vs TL vs HR), STAR for behavioral asks, depth for technical asks, cultural-fit signals for HR asks. Look for whether candidate adapted their tone across panelists.",
-      "government-psu": "Weight HEAVILY: balanced positioning, policy/scheme/article references, ethical reasoning rigor, current-affairs awareness, public-service genuineness.",
-    };
-    const rubricWeight = meta?.type ? typeRubricWeight[meta.type] : "";
+    // Static prompt fragments live in _evaluate-session-prompts.ts so they
+    // can be unit-tested for coverage and stay in the cacheable prefix.
+    const groundingDirective = GROUNDING_DIRECTIVE;
+    const fairnessDirective = FAIRNESS_DIRECTIVE;
+    const lengthTargetsDirective = LENGTH_TARGETS_DIRECTIVE;
+    const selfCheckDirective = SELF_CHECK_DIRECTIVE;
+    const rubricWeight = getRubricWeight(meta?.type);
     /* Per-focus structured scoring rubric — see
        data/focus-question-recipes.ts. Each focus declares 4-5 weighted
        dimensions (e.g. case-study scores MECE 30% / quantification 25%
