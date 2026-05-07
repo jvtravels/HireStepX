@@ -44,6 +44,19 @@ import { t, f, shadows } from "./tokens";
 
 type NegotiationOutcome = NonNullable<InterviewResultData["negotiationOutcome"]>;
 
+/* Brand-derived "on-dark" colors for the TL;DR hero card. The stat
+   values sit on a coal→indigo gradient so the cream-background tokens
+   (success #15803D, error #B91C1C) lack contrast. These are brand
+   hues lightened to ~70% lightness for AA contrast against the
+   gradient. They are NOT generic Tailwind 300-series colors — each
+   maps directly to a design-system hue. */
+const ON_DARK = {
+  good: "#7BD9A3",     // brand success (#15803D), lightened
+  bad: "#F2A0A0",      // brand error (#B91C1C), lightened
+  warn: "#E8B97D",     // brand copper (#B45309), lightened
+  neutral: "#FFFFFF",
+} as const;
+
 interface Props {
   outcome: NegotiationOutcome;
   role: string;
@@ -316,9 +329,7 @@ function TLDRHero({
     }
   }
 
-  const toneColor: Record<StatTone, string> = {
-    good: "#86EFAC", bad: "#FCA5A5", warn: "#FDBA74", neutral: "#FFFFFF",
-  };
+  const toneColor: Record<StatTone, string> = ON_DARK;
 
   return (
     <div className="nfr-tldr-card">
@@ -1076,13 +1087,13 @@ export function NegotiationFullReport({
       {/* TL;DR — single-glance summary */}
       <TLDRHero outcome={outcome} role={role} company={company} />
 
-      {/* PART 1 — DIAGNOSIS */}
+      {/* PART 1 — DIAGNOSIS · indigo (analytical / cool tone) */}
       <SectionBand
         label="Part 1 of 4"
         title="What happened in this call"
         subtitle="Every moment that mattered — what you said, what you missed, what it cost."
-        accent="#7C3AED"
-        bg="#EDE9FE"
+        accent={t.indigo}
+        bg={t.indigo100}
       />
 
       {/* Offer trajectory pill row — preserved from legacy section */}
@@ -1115,7 +1126,7 @@ export function NegotiationFullReport({
         <CounterOfferLetterPanel outcome={outcome} role={role} company={company} />
       </div>
 
-      {/* PART 3 — COHORT & MATH */}
+      {/* PART 3 — COHORT & MATH · warning gold (money / market value framing) */}
       {(typeof outcome.percentileWithinBand === "number" ||
         finalTotal !== null ||
         (outcome.counterpartyFacts && outcome.counterpartyFacts.length > 0)) && (
@@ -1124,8 +1135,8 @@ export function NegotiationFullReport({
             label="Part 3 of 4"
             title="What this offer is worth in rupees"
             subtitle="Where your offer sits vs others — and what accepting really costs after tax."
-            accent="#0F766E"
-            bg="#CCFBF1"
+            accent={t.warning}
+            bg={t.warning100}
           />
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             <CohortPlacementPanel outcome={outcome} />
@@ -1137,14 +1148,14 @@ export function NegotiationFullReport({
         </>
       )}
 
-      {/* PART 4 — SKILL ARC */}
+      {/* PART 4 — SKILL ARC · indigoDeep (introspective; distinct from Part 1 indigo) */}
       {(outcome.archetype || (priorSessionCount !== undefined && priorSessionCount < 2) || (outcome.drills && outcome.drills.length > 0)) && (
         <>
           <SectionBand
             label="Part 4 of 4"
             title="Your pattern across sessions"
             subtitle="What you keep doing right (and wrong), and the drills to break the pattern."
-            accent={t.indigo}
+            accent={t.indigoDeep}
             bg={t.indigo100}
           />
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
