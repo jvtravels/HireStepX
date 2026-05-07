@@ -17,6 +17,9 @@ export interface FriendlyFlag {
 const DICT: Record<string, FriendlyFlag> = {
   // Hallucinations / made-up info
   implausible_salary_claim: { label: "AI gave unrealistic salary number", description: "The AI quoted compensation outside any plausible market range.", category: "ai_made_up_info" },
+  above_role_band: { label: "AI offered above the realistic band for this role", description: "The number is plausible globally but well above what this company actually pays for this role.", category: "ai_made_up_info" },
+  offer_components_inconsistent: { label: "AI's offer math doesn't add up", description: "AI stated a total CTC but the components (base + variable + bonus) don't sum to that total. Structural hallucination.", category: "ai_made_up_info" },
+  ai_silent_capitulation: { label: "AI matched user's ask without negotiating", description: "AI eventually offered ≥ user's number without ever saying the ask was above market — silent capitulation, not real negotiation.", category: "ai_didnt_push_back" },
   stale_market_calibration: { label: "Salary data is out of date", description: "The reference data used to check AI claims hasn't been refreshed in over a year.", category: "ai_made_up_info" },
   unverifiable_companies: { label: "User mentioned company not in resume", description: "User referenced an employer the resume doesn't list — could be hallucination on either side.", category: "ai_made_up_info" },
 

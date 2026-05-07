@@ -20,7 +20,7 @@ import type { SessionRowForAnalysis, TranscriptTurn } from "../../../server-hand
 interface Fixture {
   name: string;
   notes?: string;
-  session: { type: string; transcript: TranscriptTurn[] };
+  session: { type: string; transcript: TranscriptTurn[]; target_role?: string; target_company?: string; difficulty?: string };
   expected: {
     must_include?: string[];
     must_not_include?: string[];
@@ -72,7 +72,9 @@ function buildSession(fx: Fixture): SessionRowForAnalysis {
     user_id: "fixture_user",
     type: fx.session.type,
     focus: fx.session.type,
-    difficulty: "mid",
+    difficulty: fx.session.difficulty || "mid",
+    target_role: fx.session.target_role || null,
+    target_company: fx.session.target_company || null,
     score: 70,
     questions: fx.session.transcript.filter((t) => (t.speaker || "").toLowerCase().startsWith("a")).length,
     duration: 1800,

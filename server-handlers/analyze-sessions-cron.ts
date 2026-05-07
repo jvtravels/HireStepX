@@ -67,6 +67,7 @@ async function fetchUnanalyzedSessions(): Promise<SessionRowForAnalysis[]> {
     "score", "questions", "duration", "transcript",
     "ai_feedback", "skill_scores", "job_description",
     "jd_analysis", "resume_version_id", "created_at",
+    "target_role", "target_company",
     "session_insights(session_id)",
   ].join(",");
   const path = `sessions?select=${encodeURIComponent(cols)}` +

@@ -41,6 +41,8 @@ export interface SessionRowForAnalysis {
   jd_analysis: Record<string, unknown> | null;
   resume_version_id: string | null;
   created_at: string;
+  target_role?: string | null;
+  target_company?: string | null;
 }
 
 export interface Hallucination {

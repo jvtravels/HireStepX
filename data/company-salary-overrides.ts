@@ -1134,6 +1134,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 14, totalMax: 24, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Top-tier Indian design studio; pays above sector average." },
     },
   },
+  "thence": {
+    "ux-designer": {
+      entry: { totalMin: 5.8, totalMax: 7.7, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Entry UX/Product designer 1-3 yrs." },
+      mid: { totalMin: 6, totalMax: 8.7, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "UX designer 3-6 yrs." },
+      senior: { totalMin: 9, totalMax: 10.8, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior UX designer at Thence — design agency, pays below product unicorns." },
+    },
+  },
 };
 
 /**

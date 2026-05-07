@@ -20,7 +20,10 @@ import {
   TranscriptTurn,
   emptyResult,
 } from "./_types";
-import { SALARY_DATA, CALIBRATION_DATE, type SalaryEntry } from "../../data/salaries";
+import { SALARY_DATA, CALIBRATION_DATE, type SalaryEntry, type ExperienceLevel } from "../../data/salaries";
+import { generateNegotiationBand } from "../../data/salary-lookup";
+import { getCompanyBandOverride } from "../../data/company-salary-overrides";
+import { matchRoleKey } from "../../data/salaries";
 
 /** Plausibility bounds across the entire Indian market (LPA).
  *  Anything outside these is almost certainly hallucinated for any
@@ -92,6 +95,37 @@ function dataDrivenCeiling(): number {
 function isAiTurn(t: TranscriptTurn): boolean {
   return t.speaker.toLowerCase().startsWith("a");
 }
+
+/** Detect AI offers where the stated total doesn't match the sum of components.
+ *  Returns evidence string when inconsistent, null otherwise. */
+function detectInconsistentOffer(text: string): string | null {
+  // Look for: "total CTC of X LPA" + "base of A LPA" + "variable... B LPA" + optional "bonus C LPA"
+  const totalMatch = /\btotal (?:ctc|compensation)?\s*(?:of)?\s*(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:LPA|lakhs?|cr|crores?)/i.exec(text);
+  const baseMatch = /\bbase (?:salary|of)?\s*(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:LPA|lakhs?|cr|crores?)/i.exec(text);
+  const varMatch = /\bvariable (?:component|pay)?\s*(?:of)?\s*(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:LPA|lakhs?|cr|crores?)/i.exec(text);
+  const bonusMatch = /\b(?:joining|sign[- ]?on|signing) bonus (?:of)?\s*(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:LPA|lakhs?|cr|crores?)/i.exec(text);
+
+  if (!totalMatch) return null;
+  const total = parseFloat(totalMatch[1]);
+  const base = baseMatch ? parseFloat(baseMatch[1]) : null;
+  const variable = varMatch ? parseFloat(varMatch[1]) : null;
+  const bonus = bonusMatch ? parseFloat(bonusMatch[1]) : null;
+
+  // Need at least base + one other component to do the math.
+  if (base === null) return null;
+  const components: number[] = [base];
+  if (variable !== null) components.push(variable);
+  if (bonus !== null) components.push(bonus);
+  if (components.length < 2) return null;
+
+  const sum = components.reduce((a, b) => a + b, 0);
+  // Tolerance: 15% — covers rounding, gratuity, benefits not itemized.
+  const tolerance = total * 0.15;
+  if (Math.abs(sum - total) > tolerance) {
+    return `AI stated total ${total} LPA but components (base ${base}${variable !== null ? ` + variable ${variable}` : ""}${bonus !== null ? ` + bonus ${bonus}` : ""}) sum to ${sum.toFixed(1)} LPA`;
+  }
+  return null;
+}
 function isUserTurn(t: TranscriptTurn): boolean {
   return t.speaker.toLowerCase().startsWith("u");
 }
@@ -140,9 +174,48 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     }
 
     // --- 2. Implausible AI compensation claims ---
+    // Two layers of plausibility:
+    // (a) Global ceiling — catches absurd numbers (1000 LPA, etc).
+    // (b) Role+company-aware ceiling — catches role-specific inflation
+    //     (e.g. ₹18 LPA for Senior UX at Thence whose actual band is ~10 LPA).
     const dataCeiling = dataDrivenCeiling();
     const ceiling = Math.max(GLOBAL_LPA_MAX, dataCeiling);
     const claims = extractCompClaims(transcript);
+
+    // Compute role/company band when target_role is known. Tolerance: 25%
+    // above the band's walkAway (max stretch) before we flag. AI offers
+    // a bit above market are realistic; egregious overages aren't.
+    let roleAwareCeiling: number | null = null;
+    let bandContextLabel = "";
+    if (session.target_role) {
+      // Prefer the per-company override (authoritative) over the
+      // tier-default band, which over-estimates for non-unicorn employers.
+      try {
+        const expLevel = (session.difficulty || "mid") as ExperienceLevel;
+        const roleKey = matchRoleKey(session.target_role);
+        const override = getCompanyBandOverride(session.target_company || undefined, roleKey, expLevel);
+        if (override) {
+          // 25% tolerance above the company-specific totalMax — captures
+          // bonus / equity scenarios without flagging clearly inflated offers.
+          roleAwareCeiling = override.totalMax * 1.25;
+          bandContextLabel = `${session.target_role} at ${session.target_company} — verified band caps at ${override.totalMax.toFixed(1)} LPA (${override.source})`;
+        } else {
+          const band = generateNegotiationBand({
+            role: session.target_role,
+            company: session.target_company || undefined,
+            experienceLevel: session.difficulty || undefined,
+          });
+          // Without a verified override, use maxStretch (the manager's true
+          // upper bound) instead of walkAway (which is what they'd let the
+          // candidate walk before — much higher and far too lenient).
+          roleAwareCeiling = band.maxStretch * 1.15;
+          bandContextLabel = `${session.target_role}${session.target_company ? ` at ${session.target_company}` : ""} — tier-default max at ${band.maxStretch.toFixed(1)} LPA`;
+        }
+      } catch {
+        /* lookup failure — fall back to global ceiling only */
+      }
+    }
+
     for (const c of claims) {
       if (!isAiTurn(transcript[c.turn_idx])) continue;
       if (c.lpa < GLOBAL_LPA_MIN || c.lpa > ceiling) {
@@ -153,6 +226,34 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           severity: "high",
         });
         flags.add("implausible_salary_claim");
+      } else if (roleAwareCeiling !== null && c.lpa > roleAwareCeiling) {
+        hallucinations.push({
+          turn_idx: c.turn_idx,
+          type: "above_role_band",
+          evidence: `AI quoted ${c.raw} (${c.lpa.toFixed(1)} LPA) — above realistic band for ${bandContextLabel}`,
+          severity: "high",
+        });
+        flags.add("above_role_band");
+      }
+    }
+
+    // --- 2b. Internal consistency: when AI says "total CTC of X" and
+    // breaks into components (base + variable + bonus) that don't sum
+    // to X, that's a structural hallucination. Caught the Thence case
+    // where AI said "total ₹18 LPA = base ₹18 + variable ₹18 + bonus ₹18".
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isAiTurn(t)) continue;
+      const text = t.text || "";
+      const inconsistency = detectInconsistentOffer(text);
+      if (inconsistency) {
+        hallucinations.push({
+          turn_idx: i,
+          type: "offer_components_inconsistent",
+          evidence: inconsistency.slice(0, 280),
+          severity: "high",
+        });
+        flags.add("offer_components_inconsistent");
       }
     }
 
@@ -192,7 +293,12 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     }
 
     // --- 4. AI accepted first ask without pushing back ---
+    // Pattern A: AI used acceptance language right after user's first number
+    // Pattern B: AI later offered ≥ user's ask without ever mentioning the
+    //   ask is above market — silent capitulation. This was the Thence case:
+    //   user asked 18, AI said "I can't quite meet 18" and then offered 18.
     const userClaims = claims.filter((c) => isUserTurn(transcript[c.turn_idx]));
+    const aiClaims = claims.filter((c) => isAiTurn(transcript[c.turn_idx]));
     if (userClaims.length > 0) {
       const first = userClaims[0];
       const aiAfter = transcript
@@ -208,6 +314,24 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
             dimension: "negotiation_realism",
             expected: "AI hiring manager probes/counter-offers before accepting",
             observed: "AI accepted first user number without any pushback",
+            severity: "high",
+          });
+        }
+      }
+
+      // Pattern B: AI eventually offered >= user's first ask. If AI never
+      // said the ask was above market, that's silent capitulation.
+      const userAsk = first.lpa;
+      const aiMatched = aiClaims.find((c) => c.turn_idx > first.turn_idx && c.lpa >= userAsk * 0.95);
+      if (aiMatched) {
+        const allAiText = transcript.filter(isAiTurn).map((t) => t.text || "").join(" ");
+        const mentionedAboveMarket = /\b(above (?:our|the) (?:band|range|budget|market)|outside (?:our|the) range|exceed(?:s)? (?:our|the) band|stretch beyond|cannot match|can'?t justify|out of band)\b/i.test(allAiText);
+        if (!mentionedAboveMarket) {
+          flags.add("ai_silent_capitulation");
+          gaps.push({
+            dimension: "negotiation_realism",
+            expected: "AI should explicitly say if user's ask is above market before matching it",
+            observed: `AI matched user's ${userAsk.toFixed(1)} LPA ask without ever pushing back on whether it was realistic`,
             severity: "high",
           });
         }

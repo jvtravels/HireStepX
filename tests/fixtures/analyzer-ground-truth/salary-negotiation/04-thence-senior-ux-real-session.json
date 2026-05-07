@@ -1,0 +1,27 @@
+{
+  "name": "Real session: Senior UX at Thence — AI inflated offer, broke the math, capitulated",
+  "notes": "Imported from a real session run on 2026-05-07. Senior UX at Thence has a market band of ~₹9-10.8 LPA per Glassdoor/Levels.fyi. AI offered ₹14 LPA initially (above band), user asked ₹18 LPA (well above band — analyzer should flag this), and AI revised to a structurally impossible offer: 'total ₹18 LPA = base ₹18 + variable ₹18 + joining bonus ₹18'. AI never pushed back on whether ₹18 LPA is realistic for this role at this company.",
+  "session": {
+    "type": "salary-negotiation",
+    "target_role": "Senior UX Designer",
+    "target_company": "Thence",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Great. So, for the Senior UX Designer position, we'd like to extend an offer with a total CTC of ₹14 LPA. This includes a base salary of ₹11 LPA, a variable component of ₹1.5 LPA targeted at performance, and ₹1.5 LPA for benefits like health insurance and gratuity. How does this initial offer align with your expectations?", "time": "" },
+      { "speaker": "user", "text": "I'm excited. Let's get started.", "time": "" },
+      { "speaker": "ai", "text": "I heard you say you're looking for ₹18 LPA based on your market research. Our initial offer was ₹14 LPA CTC. Can you tell me a bit more about what's driving your expectation of ₹18 LPA?", "time": "" },
+      { "speaker": "user", "text": "I have an experience of around six years now. I've also done some market research around UX designer position that is, senior UX position designer. At some agencies. And I think they are getting around 18 lakhs per annum. So I would like to ask for 18 lakhs per", "time": "" },
+      { "speaker": "ai", "text": "I understand your expectation of ₹18 LPA is based on your market research for senior UX designer roles. To help me understand better, could you share what specific aspects of the market research led you to that figure, or perhaps what your current compensation is?", "time": "" },
+      { "speaker": "user", "text": "Mentioned is based on a market research around the senior UX designer position and around the design", "time": "" },
+      { "speaker": "ai", "text": "I hear you that ₹18 LPA CTC isn't a growth opportunity for you, and you're looking for ₹18 LPA to make a switch. Given that our initial offer was ₹14 LPA, I can't quite meet ₹18 LPA directly. However, I can offer a revised total CTC of ₹18 LPA, which includes a base of ₹18 LPA and a variable component of ₹18 LPA, plus a ₹18 LPA joining bonus. How does this updated offer look?", "time": "" },
+      { "speaker": "user", "text": "Composition is around 14 lakhs per annum So if you are offering me 14 lakhs per annum LPA, CTC, so which is not a growth for me. Right? I'm I'm currently at 14 lakhs, and you are also giving me 14 lakhs. Which is not making sense. If you can make it 18 lakhs, which is really growth for me, it is worth switching my company.", "time": "" },
+      { "speaker": "ai", "text": "I'm glad to hear you're excited about the offer! To finalize things, could you confirm your current notice period? This will help us plan your potential onboarding.", "time": "" },
+      { "speaker": "user", "text": "Agree with your offer. It looks good to me. I would like to join your company.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["above_role_band", "offer_components_inconsistent", "ai_silent_capitulation"],
+    "must_not_include": ["empty_transcript"],
+    "expect_hallucination_types": ["above_role_band", "offer_components_inconsistent"]
+  }
+}
