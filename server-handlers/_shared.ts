@@ -44,8 +44,9 @@ export function corsHeaders(req: Request): Record<string, string> {
   };
 }
 
-/** Handle OPTIONS preflight and reject non-POST methods. Returns Response if handled, null if should continue. */
-export function handleCorsPreflightOrMethod(req: Request): Response | null {
+/** Handle OPTIONS preflight and reject disallowed methods. Returns Response if handled, null if should continue. */
+export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: boolean }): Response | null {
+  const methodList = opts?.allowGet ? "GET, POST, OPTIONS" : "POST, OPTIONS";
   if (req.method === "OPTIONS") {
     const origin = getAllowedOrigin(req);
     return new Response(null, {
@@ -53,14 +54,15 @@ export function handleCorsPreflightOrMethod(req: Request): Response | null {
       headers: origin
         ? {
             "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Methods": methodList,
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Vary": "Origin",
           }
         : {},
     });
   }
-  if (req.method !== "POST") {
+  const allowed = req.method === "POST" || (opts?.allowGet === true && req.method === "GET");
+  if (!allowed) {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
       headers: { "Content-Type": "application/json" },
@@ -570,13 +572,14 @@ export async function withAuthAndRateLimit(
     checkQuota?: boolean;
     maxBytes?: number;
     skipOriginCheck?: boolean;
+    allowGet?: boolean;
   },
 ): Promise<Response | {
   headers: Record<string, string>;
   auth: { authenticated: boolean; userId?: string };
   quota?: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean };
 }> {
-  const early = handleCorsPreflightOrMethod(req);
+  const early = handleCorsPreflightOrMethod(req, { allowGet: opts.allowGet });
   if (early) return early;
   const headers = withRequestId(corsHeaders(req));
 

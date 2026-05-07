@@ -66,6 +66,7 @@ export default async function handler(req: Request): Promise<Response> {
     userLimit: 20,
     checkQuota: false,
     maxBytes: 4_000,
+    allowGet: true,
   });
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;
