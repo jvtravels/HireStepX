@@ -5,9 +5,19 @@
  * All figures in LPA (Lakhs Per Annum). City adjustments applied at lookup time.
  * Sources: Levels.fyi, AmbitionBox, Glassdoor India, CaseBasix, HelloPM
  * Full source list: docs/india-salary-research-2025-26.md
+ *
+ * Refresh cadence: every 6 months. CI test in `dataRecency.test.ts` warns
+ * when CALIBRATION_DATE is older than 6 months and fails at 12 months.
  */
 
 import type { CompanyTier } from "./company-tiers";
+
+/** ISO YYYY-MM. Bump on each market-data refresh sprint.
+ *  Last refreshed May 2026 from levels.fyi / Glassdoor / AmbitionBox
+ *  (Razorpay, Flipkart, Google, Microsoft, Apple, TCS, Infosys,
+ *  Indian-unicorn PM/PD/DS/SRE/CySec senior bands).
+ */
+export const CALIBRATION_DATE = "2026-05";
 
 export type ExperienceLevel = "entry" | "mid" | "senior" | "lead" | "executive";
 
@@ -83,17 +93,22 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   // ─── SOFTWARE ENGINEER ────────────────────────────────────────
   "software-engineer": {
     faang: {
-      entry: s([20, 28], [1, 3], RSU(3, 8, "quarterly after 1-year cliff"), [25, 40], { joining_bonus_min: 0, joining_bonus_max: 5, notice_period_days: 30, negotiation_leverage: "low", hot_skills: ["System Design", "DSA", "GenAI/LLM"], notes: "L3/E3 level. RSUs are modest at entry — bulk of comp is base." }),
-      mid: s([40, 50], [3, 5], RSU(15, 30), [60, 80], { joining_bonus_min: 5, joining_bonus_max: 15, negotiation_leverage: "medium", hot_skills: ["System Design", "Distributed Systems", "GenAI"] }),
-      senior: s([55, 70], [5, 10], RSU(35, 70), [90, 150], { joining_bonus_min: 5, joining_bonus_max: 15, notice_period_days: 60, negotiation_leverage: "high", hot_skills: ["ML Systems", "Platform Engineering", "Staff-level scope"] }),
-      lead: s([70, 90], [10, 25], RSU(70, 150), [150, 250], { joining_bonus_min: 10, joining_bonus_max: 25, notice_period_days: 60, negotiation_leverage: "high" }),
-      executive: s([80, 100], [15, 30], RSU(150, 300), [280, 400], { in_hand_ratio: 0.55, joining_bonus_min: 15, joining_bonus_max: 30, notice_period_days: 90, negotiation_leverage: "high" }),
+      // 2026-05 refresh: levels.fyi Razorpay+Flipkart cross-check shows L3/L4 entry
+      // at top FAANG India clears ₹40L+ TC; raised entry total upper to 45.
+      entry: s([22, 32], [1, 3], RSU(4, 10, "quarterly after 1-year cliff"), [28, 45], { joining_bonus_min: 0, joining_bonus_max: 5, notice_period_days: 30, negotiation_leverage: "low", hot_skills: ["System Design", "DSA", "GenAI/LLM"], notes: "L3/E3 level. RSUs are modest at entry — bulk of comp is base. 2026 verified: Razorpay/top-tier opens at ₹24L+ for new grads with strong GenAI exposure." }),
+      mid: s([40, 55], [3, 6], RSU(15, 35), [60, 90], { joining_bonus_min: 5, joining_bonus_max: 15, negotiation_leverage: "medium", hot_skills: ["System Design", "Distributed Systems", "GenAI"] }),
+      // 2026-05 refresh: levels.fyi Flipkart SDE-4 senior P75 ₹85L, P90 ₹112L total comp; FAANG India aligns. Total upper 150 → 160.
+      senior: s([55, 75], [5, 12], RSU(35, 75), [85, 160], { joining_bonus_min: 5, joining_bonus_max: 15, notice_period_days: 60, negotiation_leverage: "high", hot_skills: ["ML Systems", "Platform Engineering", "Staff-level scope"] }),
+      lead: s([70, 95], [10, 25], RSU(70, 160), [150, 270], { joining_bonus_min: 10, joining_bonus_max: 25, notice_period_days: 60, negotiation_leverage: "high", notes: "Staff/Principal at FAANG India 2026: 75th percentile ₹85L+, 90th percentile crosses ₹1Cr." }),
+      executive: s([85, 110], [15, 35], RSU(160, 320), [300, 450], { in_hand_ratio: 0.55, joining_bonus_min: 15, joining_bonus_max: 30, notice_period_days: 90, negotiation_leverage: "high" }),
     },
     "indian-unicorn": {
-      entry: s([12, 20], [1, 2], ESOP(2, 5), [16, 26], { notice_period_days: 30, negotiation_leverage: "medium", hot_skills: ["React", "Node.js", "Go", "System Design"] }),
-      mid: s([22, 35], [2, 4], ESOP(3, 8), [28, 45], { joining_bonus_min: 1, joining_bonus_max: 5, negotiation_leverage: "medium" }),
-      senior: s([35, 50], [4, 8], ESOP(8, 15), [45, 70], { joining_bonus_min: 2, joining_bonus_max: 8, notice_period_days: 60, negotiation_leverage: "high" }),
-      lead: s([50, 65], [6, 12], ESOP(10, 25), [65, 95], { notice_period_days: 60, negotiation_leverage: "high" }),
+      entry: s([12, 22], [1, 2], ESOP(2, 5), [16, 28], { notice_period_days: 30, negotiation_leverage: "medium", hot_skills: ["React", "Node.js", "Go", "System Design"] }),
+      mid: s([22, 38], [2, 5], ESOP(3, 8), [28, 50], { joining_bonus_min: 1, joining_bonus_max: 5, negotiation_leverage: "medium", notes: "Tier-1 unicorn (Razorpay/CRED/Zerodha/Zepto) lands ₹35-50L; standard unicorn (Flipkart/Swiggy/Meesho) ₹28-40L." }),
+      // 2026-05 refresh: tier-1 unicorn senior 5-8 yrs lands ₹50-80L per
+      // levels.fyi + Glassdoor; raised total upper 70 → 80.
+      senior: s([38, 55], [4, 10], ESOP(8, 18), [50, 80], { joining_bonus_min: 2, joining_bonus_max: 8, notice_period_days: 60, negotiation_leverage: "high", notes: "Tier-1 unicorns hit ₹65-80L at senior (8+ yrs); standard ₹50-65L. ESOPs add 30-40% upside but discount face value 30-50% for liquidity risk." }),
+      lead: s([55, 75], [6, 14], ESOP(12, 28), [70, 110], { notice_period_days: 60, negotiation_leverage: "high" }),
     },
     "it-services": {
       entry: s([3.5, 7], [0.2, 0.5], NO_EQ, [3.5, 9], { in_hand_ratio: 0.74, notice_period_days: 90, negotiation_leverage: "low", notes: "TCS Digital/Infosys SP: ₹7-11 LPA" }),
@@ -139,15 +154,18 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     faang: {
       entry: s([25, 35], [3, 5], RSU(3, 8, "quarterly after 1-year cliff"), [32, 45], { joining_bonus_min: 2, joining_bonus_max: 8, notice_period_days: 30, negotiation_leverage: "low", hot_skills: ["AI/ML PM", "Growth", "Platform"], notes: "APM/L3 level. RSUs modest at entry." }),
       mid: s([40, 55], [5, 8], RSU(15, 25), [60, 80], { joining_bonus_min: 5, joining_bonus_max: 15, negotiation_leverage: "high" }),
-      senior: s([55, 75], [8, 15], RSU(25, 50), [90, 130], { notice_period_days: 60, negotiation_leverage: "high" }),
-      lead: s([70, 100], [12, 20], RSU(40, 80), [120, 180], { negotiation_leverage: "high" }),
-      executive: s([90, 120], [15, 30], RSU(60, 150), [180, 300], { in_hand_ratio: 0.55, negotiation_leverage: "high" }),
+      // 2026-05 refresh: FAANG India senior PM 5-8 YOE ₹40-70L cash + heavy RSU = ₹60-150L TC per
+      // multiple sources (resumegyani, productleadership, levels.fyi). Raised total upper 130 → 150.
+      senior: s([55, 75], [8, 15], RSU(25, 55), [90, 150], { notice_period_days: 60, negotiation_leverage: "high", notes: "FAANG India senior PM (5-8 YOE) total comp: ₹60-150L. Cash ₹40-70L, RSU 30-50% of TC. High performers cross ₹1Cr." }),
+      lead: s([75, 105], [12, 22], RSU(45, 90), [130, 220], { negotiation_leverage: "high", notes: "Group PM / Director India 2026: median ₹150-180L; principal/VP up to ₹3Cr." }),
+      executive: s([95, 130], [15, 35], RSU(70, 180), [200, 350], { in_hand_ratio: 0.55, negotiation_leverage: "high" }),
     },
     "indian-unicorn": {
       entry: s([10, 16], [1, 2], ESOP(1, 3), [12, 20], { negotiation_leverage: "medium", hot_skills: ["Data-driven PM", "Growth PM", "AI PM"] }),
       mid: s([20, 32], [2, 5], ESOP(3, 8), [25, 45], { negotiation_leverage: "medium" }),
-      senior: s([35, 55], [5, 10], ESOP(8, 18), [48, 80], { notice_period_days: 60, negotiation_leverage: "high" }),
-      lead: s([55, 80], [8, 15], ESOP(12, 25), [75, 120], { negotiation_leverage: "high" }),
+      // 2026-05 refresh: tier-1 unicorn 5-8 YOE PM ₹28-50L cash + ESOP = ₹40-80L TC.
+      senior: s([35, 55], [5, 10], ESOP(8, 20), [48, 85], { notice_period_days: 60, negotiation_leverage: "high", notes: "Tier-1 unicorns (Flipkart/PhonePe/Meesho/Zepto) 5-8 YOE PM: ₹28-50L cash + ESOP = ₹40-80L TC. Standard tier ₹35-55L TC." }),
+      lead: s([55, 85], [8, 16], ESOP(15, 30), [80, 130], { negotiation_leverage: "high" }),
     },
     "it-services": {
       entry: s([5, 8], [0.5, 1], NO_EQ, [5, 9], { notice_period_days: 90, negotiation_leverage: "low" }),
