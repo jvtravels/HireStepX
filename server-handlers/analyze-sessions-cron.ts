@@ -21,6 +21,9 @@ export const config = { runtime: "edge" };
 
 import { pickAnalyzer, registeredFocuses } from "./analyzers/_dispatch";
 import type { SessionRowForAnalysis } from "./analyzers/_types";
+import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
+import { buildDigestPrompt, parseDigest, computeSeverity, type DigestInput } from "./_digest-helpers";
+import { callLLM } from "./_llm";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -95,9 +98,12 @@ interface InsightRow {
   bad_questions: unknown;
   flags: string[];
   coaching_notes: string;
+  severity: "high" | "medium" | "low";
   error: string | null;
   duration_ms: number;
 }
+
+const MAX_RESCORES_PER_RUN = 60;
 
 async function writeInsights(rows: InsightRow[]): Promise<{ ok: number; failed: number }> {
   if (rows.length === 0) return { ok: 0, failed: 0 };
@@ -171,6 +177,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const insights: InsightRow[] = [];
   const aggregates = new Map<string, FocusAggregate>();
+  let rescoreBudget = isRescoreEnabled() ? MAX_RESCORES_PER_RUN : 0;
 
   for (const session of sessions) {
     const analyzer = pickAnalyzer(session.type);
@@ -178,18 +185,43 @@ export default async function handler(req: Request): Promise<Response> {
     let row: InsightRow;
     try {
       const result = await analyzer.analyze({ session });
+
+      // Optional LLM rescore — only if budget remains and the focus is supported.
+      let rescore: number | null = result.rescore;
+      let scoreDrift: number | null = result.scoreDrift;
+      if (rescore === null && rescoreBudget > 0) {
+        const rs = await llmRescore(session, session.type);
+        if (rs) {
+          rescore = rs.rescore;
+          scoreDrift = rs.rescore - (session.score || 0);
+          rescoreBudget -= 1;
+          if (rs.evaluator_concerns.length > 0) {
+            // Concerns surface in coaching_notes for visibility without bloating schema.
+            result.coachingNotes = [result.coachingNotes, `Rescore concerns: ${rs.evaluator_concerns.join("; ")}`].filter(Boolean).join(" — ");
+          }
+        }
+      }
+
+      const hallucinationCount = Array.isArray(result.hallucinations) ? result.hallucinations.length : 0;
+      const severity = computeSeverity({
+        hallucinationCount,
+        scoreDrift,
+        flagCount: result.flags.length,
+      });
+
       row = {
         session_id: session.id,
         user_id: session.user_id,
         focus: session.type,
         analyzer_version: analyzer.version,
-        rescore: result.rescore,
-        score_drift: result.scoreDrift,
+        rescore,
+        score_drift: scoreDrift,
         hallucinations: result.hallucinations,
         rubric_gaps: result.rubricGaps,
         bad_questions: result.badQuestions,
         flags: result.flags,
         coaching_notes: result.coachingNotes,
+        severity,
         error: null,
         duration_ms: Date.now() - turnT0,
       };
@@ -206,6 +238,7 @@ export default async function handler(req: Request): Promise<Response> {
         bad_questions: [],
         flags: ["analyzer_error"],
         coaching_notes: "",
+        severity: "high",
         error: String((e as Error)?.message || e).slice(0, 500),
         duration_ms: Date.now() - turnT0,
       };
@@ -245,12 +278,117 @@ export default async function handler(req: Request): Promise<Response> {
   const writeRes = await writeInsights(insights);
   await writeDailyReport(Array.from(aggregates.values()));
 
+  // ── Daily AI digest ───────────────────────────────────────────
+  // Synthesizes today's data into 4 short paragraphs. Best-effort —
+  // a digest failure must not fail the cron.
+  let digestStatus: "written" | "skipped" | "failed" = "skipped";
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const digestInput = await buildDigestInput(today);
+    if (digestInput.totalAnalyzed > 0) {
+      const prompt = buildDigestPrompt(digestInput);
+      const llmRes = await callLLM({ prompt, temperature: 0.3, maxTokens: 800, jsonMode: true }, 18000, {
+        endpoint: "quality-digest",
+      });
+      const parsed = parseDigest(llmRes.text);
+      const digestRow = {
+        day: today,
+        generated_at: new Date().toISOString(),
+        model: llmRes.model,
+        fixes_summary: parsed.fixes_summary,
+        improvements_summary: parsed.improvements_summary,
+        patterns_summary: parsed.patterns_summary,
+        recommendations: parsed.recommendations,
+        raw_input: digestInput,
+        error: null,
+      };
+      const dRes = await supa(`daily_digests?on_conflict=day`, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([digestRow]),
+      });
+      digestStatus = dRes.ok ? "written" : "failed";
+    }
+  } catch (e) {
+    console.error(`[analyze-sessions] digest failed: ${(e as Error).message}`);
+    digestStatus = "failed";
+  }
+
   return jsonResponse({
     ok: true,
     scanned: sessions.length,
     written: writeRes.ok,
     failed: writeRes.failed,
+    rescore_enabled: isRescoreEnabled(),
+    rescore_budget_remaining: rescoreBudget,
+    digest: digestStatus,
     duration_ms: Date.now() - t0,
     registered_focuses: registeredFocuses(),
   });
+}
+
+/** Pulls the day's data needed by the digest prompt. */
+async function buildDigestInput(today: string): Promise<DigestInput> {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
+
+  // Today's per-focus rollup
+  const dailyRes = await supa(`daily_quality_report?day=eq.${today}&select=focus,sessions_analyzed,avg_score_drift,hallucination_rate,top_flags`);
+  const dailyArr = dailyRes.ok ? ((await dailyRes.json()) as Array<{ focus: string; sessions_analyzed: number; avg_score_drift: number; hallucination_rate: number; top_flags: { flag: string; count: number }[] | null }>) : [];
+
+  // Resolutions logged today
+  const resStartOfDay = `${today}T00:00:00Z`;
+  const resRes = await supa(`session_insights?resolved_at=gte.${resStartOfDay}&select=focus,resolution_status&limit=500`);
+  const resArr = resRes.ok ? ((await resRes.json()) as Array<{ focus: string; resolution_status: string }>) : [];
+  const resGroup = new Map<string, number>();
+  for (const r of resArr) {
+    const key = `${r.focus}::${r.resolution_status}`;
+    resGroup.set(key, (resGroup.get(key) || 0) + 1);
+  }
+
+  // Open issue count
+  const openCountRes = await supa(`session_insights?resolution_status=eq.open&select=session_id&limit=1`, { headers: { Prefer: "count=exact" } });
+  const openRange = openCountRes.headers.get("content-range") || "";
+  const openMatch = openRange.match(/\/(\d+)/);
+  const totalOpenIssues = openMatch ? parseInt(openMatch[1], 10) : 0;
+
+  // 7d trend per (focus, flag) — pull aggregate data, compute delta vs week avg.
+  const weekRes = await supa(`daily_quality_report?day=gte.${sevenDaysAgo}&select=day,focus,top_flags`);
+  const weekArr = weekRes.ok ? ((await weekRes.json()) as Array<{ day: string; focus: string; top_flags: { flag: string; count: number }[] | null }>) : [];
+  const flagSeries = new Map<string, { today: number; sum: number; days: number }>();
+  for (const w of weekArr) {
+    for (const f of w.top_flags || []) {
+      const key = `${w.focus}::${f.flag}`;
+      const s = flagSeries.get(key) || { today: 0, sum: 0, days: 0 };
+      if (w.day === today) s.today = f.count;
+      else { s.sum += f.count; s.days += 1; }
+      flagSeries.set(key, s);
+    }
+  }
+  const weekTrend = Array.from(flagSeries.entries())
+    .map(([key, s]) => {
+      const [focus, flag] = key.split("::");
+      const week_avg = s.days > 0 ? s.sum / s.days : 0;
+      return { focus, flag, today_count: s.today, week_avg };
+    })
+    .filter((t) => t.today_count >= 2 && Math.abs(t.today_count - t.week_avg) >= 1)
+    .sort((a, b) => Math.abs(b.today_count - b.week_avg) - Math.abs(a.today_count - a.week_avg));
+
+  return {
+    day: today,
+    byFocus: dailyArr.map((d) => ({
+      focus: d.focus,
+      sessions: d.sessions_analyzed,
+      avg_drift: d.avg_score_drift,
+      hallucination_rate: d.hallucination_rate,
+      top_flags: d.top_flags || [],
+    })),
+    resolutionsToday: Array.from(resGroup.entries()).map(([key, count]) => {
+      const [focus, status] = key.split("::");
+      return { focus, status, count };
+    }),
+    recentCommits: [], // populated via git log requires a separate node handler; v1 skips this
+    weekTrend,
+    totalAnalyzed: dailyArr.reduce((s, d) => s + d.sessions_analyzed, 0),
+    totalOpenIssues,
+  };
 }

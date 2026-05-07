@@ -71,8 +71,25 @@ interface InsightRow {
   score_drift: number | null;
   flags: string[] | null;
   hallucinations: unknown;
+  rubric_gaps: unknown;
+  bad_questions: unknown;
   coaching_notes: string;
+  severity: string;
+  resolution_status: string;
+  resolution_notes: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
   error: string | null;
+}
+
+interface DigestRow {
+  day: string;
+  generated_at: string;
+  model: string;
+  fixes_summary: string;
+  improvements_summary: string;
+  patterns_summary: string;
+  recommendations: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -105,11 +122,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     `daily_quality_report?day=gte.${sinceDay}&order=day.desc,focus.asc&limit=500`,
   );
 
-  // Last 50 insight rows with non-empty flags or hallucinations,
-  // newest first — the "what just broke" panel.
+  // Latest 200 insight rows with full detail for the Sessions sub-tab.
   const recent = await supa<InsightRow>(
-    `session_insights?order=analyzed_at.desc&limit=50&select=session_id,user_id,focus,analyzer_version,analyzed_at,rescore,score_drift,flags,hallucinations,coaching_notes,error`,
+    `session_insights?order=analyzed_at.desc&limit=200&select=session_id,user_id,focus,analyzer_version,analyzed_at,rescore,score_drift,flags,hallucinations,rubric_gaps,bad_questions,coaching_notes,severity,resolution_status,resolution_notes,resolved_at,resolved_by,error`,
   );
+
+  // Today's digest (or the most recent one).
+  const digestArr = await supa<DigestRow>(`daily_digests?order=day.desc&limit=1&select=day,generated_at,model,fixes_summary,improvements_summary,patterns_summary,recommendations`);
+  const digest = digestArr[0] || null;
+
+  // Issue aggregation: every flag across the last 200 insights, grouped, with status mix.
+  const flagAgg = new Map<string, { flag: string; count: number; open: number; resolved: number; sessions: string[]; severity_high: number }>();
+  for (const r of recent) {
+    const flags = r.flags || [];
+    for (const f of flags) {
+      const a = flagAgg.get(f) || { flag: f, count: 0, open: 0, resolved: 0, sessions: [], severity_high: 0 };
+      a.count += 1;
+      if (r.resolution_status === "open") a.open += 1;
+      if (r.resolution_status === "resolved") a.resolved += 1;
+      if (r.severity === "high") a.severity_high += 1;
+      if (a.sessions.length < 8) a.sessions.push(r.session_id);
+      flagAgg.set(f, a);
+    }
+  }
+  const issues = Array.from(flagAgg.values()).sort((a, b) => b.count - a.count);
 
   // Per-focus rollup over the last 7 days for the headline cards.
   const sevenDayCutoff = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
@@ -143,6 +179,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     headlines,
     daily,
     recent,
+    digest,
+    issues,
     generated_at: new Date().toISOString(),
   });
 }

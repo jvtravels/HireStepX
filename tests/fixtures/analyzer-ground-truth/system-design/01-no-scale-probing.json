@@ -1,0 +1,17 @@
+{
+  "name": "AI never probed scale, user hand-waved through design",
+  "session": {
+    "type": "system-design",
+    "transcript": [
+      { "speaker": "ai", "text": "Design a URL shortener.", "time": "" },
+      { "speaker": "user", "text": "Sure. I'd have an API endpoint that generates a short URL and stores it in a database. When someone visits, it just works and redirects.", "time": "" },
+      { "speaker": "ai", "text": "Great.", "time": "" },
+      { "speaker": "user", "text": "I'd add some kind of cache for popular URLs. And we can use whatever standard database setup makes sense.", "time": "" },
+      { "speaker": "ai", "text": "Sounds reasonable.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["insufficient_scale_probing", "incomplete_design_coverage", "user_hand_waving", "ai_accepts_hand_waving"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

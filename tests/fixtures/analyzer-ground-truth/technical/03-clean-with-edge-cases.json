@@ -1,0 +1,16 @@
+{
+  "name": "Clean technical session: code + complexity + edge cases discussed",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Implement two-sum: given an array and a target, return indices of two numbers that add to target.", "time": "" },
+      { "speaker": "user", "text": "I'll use a hash map for O(n) time, O(n) space:\n```\nfunction twoSum(arr, target) {\n  const map = new Map();\n  for (let i = 0; i < arr.length; i++) {\n    const need = target - arr[i];\n    if (map.has(need)) return [map.get(need), i];\n    map.set(arr[i], i);\n  }\n  return [];\n}\n```\nTime complexity O(n), space O(n).", "time": "" },
+      { "speaker": "ai", "text": "Good. What about edge cases — empty input, no valid pair, duplicates?", "time": "" },
+      { "speaker": "user", "text": "Empty array: returns []. No pair: returns []. Duplicates work because we check the map before inserting, so [3,3] target 6 returns [0,1] correctly.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "wrong_complexity_claim", "no_code_provided", "no_edge_case_probing", "no_complexity_discussion", "ai_accepted_without_verification"]
+  }
+}

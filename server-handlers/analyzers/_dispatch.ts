@@ -15,6 +15,9 @@
 import { FocusAnalyzer, AnalyzerInput, AnalyzerResult, emptyResult } from "./_types";
 import { behavioralAnalyzer } from "./behavioral";
 import { salaryNegotiationAnalyzer } from "./salary-negotiation";
+import { technicalAnalyzer } from "./technical";
+import { systemDesignAnalyzer } from "./system-design";
+import { hrRoundAnalyzer } from "./hr-round";
 
 const noopAnalyzer: FocusAnalyzer = {
   focus: "unknown",
@@ -29,8 +32,9 @@ const noopAnalyzer: FocusAnalyzer = {
 const REGISTRY: Record<string, FocusAnalyzer> = {
   behavioral: behavioralAnalyzer,
   "salary-negotiation": salaryNegotiationAnalyzer,
-  // technical: technicalAnalyzer,
-  // "system-design": systemDesignAnalyzer,
+  technical: technicalAnalyzer,
+  "system-design": systemDesignAnalyzer,
+  "hr-round": hrRoundAnalyzer,
 };
 
 export function pickAnalyzer(sessionType: string): FocusAnalyzer {

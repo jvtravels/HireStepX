@@ -1,0 +1,16 @@
+{
+  "name": "User volunteers salary number unprompted, badmouths previous employer",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a senior engineer with 8 years of experience. By the way, my expected salary is 35 LPA. My previous company was toxic and the manager was incompetent so I'm looking for a fresh start.", "time": "" },
+      { "speaker": "ai", "text": "Okay. What are you looking for in your next role?", "time": "" },
+      { "speaker": "user", "text": "A team that respects engineers, not the awful environment I came from at my last place.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["user_anchor_leaked_salary", "user_badmouthing_employer"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

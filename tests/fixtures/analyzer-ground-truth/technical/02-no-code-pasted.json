@@ -1,0 +1,16 @@
+{
+  "name": "AI asked for an implementation, user only described it verbally",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Could you implement a function that reverses a linked list?", "time": "" },
+      { "speaker": "user", "text": "I would walk through the list and reverse the pointers as I go. I'd keep track of previous, current, and next nodes. Time complexity is O(n) and space is O(1).", "time": "" },
+      { "speaker": "ai", "text": "Great, what about edge cases like empty list or single node?", "time": "" },
+      { "speaker": "user", "text": "Empty: return null. Single node: return as is. Both handled by the loop terminating immediately.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["no_code_provided"],
+    "must_not_include": ["empty_transcript", "no_edge_case_probing", "no_complexity_discussion"]
+  }
+}

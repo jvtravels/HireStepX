@@ -37,9 +37,14 @@ interface Threshold {
 }
 
 // Conservative v1 thresholds. Raise once each focus has ≥15 fixtures.
+// New focuses bootstrap with minFixtures: 1 so the gate exists from day one;
+// raise as the fixture set grows.
 const THRESHOLDS: Record<string, Threshold> = {
   behavioral: { precision: 0.7, recall: 0.7, minFixtures: 3 },
   "salary-negotiation": { precision: 0.7, recall: 0.7, minFixtures: 3 },
+  technical: { precision: 0.7, recall: 0.7, minFixtures: 2 },
+  "system-design": { precision: 0.7, recall: 0.7, minFixtures: 2 },
+  "hr-round": { precision: 0.7, recall: 0.7, minFixtures: 2 },
 };
 
 function loadFixtures(focus: string): { file: string; fx: Fixture }[] {

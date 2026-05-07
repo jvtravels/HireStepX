@@ -1,0 +1,16 @@
+{
+  "name": "Generic self-intro with no specifics",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I am a passionate engineer who loves solving problems. I am a team player who works well with others. I have good communication skills and enjoy collaborating across teams to achieve goals.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period and when can you start?", "time": "" },
+      { "speaker": "user", "text": "Two months notice, I can join from August.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["generic_self_intro"],
+    "must_not_include": ["empty_transcript", "user_anchor_leaked_salary", "notice_period_never_discussed"]
+  }
+}

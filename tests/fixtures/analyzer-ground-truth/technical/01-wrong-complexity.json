@@ -1,0 +1,15 @@
+{
+  "name": "User claims O(n) but code has nested loops",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Implement a function to find duplicate pairs in an array.", "time": "" },
+      { "speaker": "user", "text": "Sure. Here's my code:\n```\nfunction findDuplicates(arr) {\n  const result = [];\n  for (let i = 0; i < arr.length; i++) {\n    for (let j = i + 1; j < arr.length; j++) {\n      if (arr[i] === arr[j]) result.push([i, j]);\n    }\n  }\n  return result;\n}\n```\nThis runs in O(n) time complexity.", "time": "" },
+      { "speaker": "ai", "text": "Looks good, that works. Let's move on.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["wrong_complexity_claim", "ai_accepted_without_verification"],
+    "must_not_include": ["empty_transcript", "no_code_provided"]
+  }
+}

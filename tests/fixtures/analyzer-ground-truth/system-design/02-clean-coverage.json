@@ -1,0 +1,18 @@
+{
+  "name": "Clean system-design: scale probed, all dimensions covered",
+  "session": {
+    "type": "system-design",
+    "transcript": [
+      { "speaker": "ai", "text": "Design Twitter timeline. What's the QPS, data volume, and latency budget we should target?", "time": "" },
+      { "speaker": "user", "text": "Assume 300M DAU, 5K reads per second per user — so 1.5M QPS read at peak, 50K QPS write. Latency budget 200ms p99. Read-heavy ratio about 100:1. Multi-region, US/EU/APAC.", "time": "" },
+      { "speaker": "ai", "text": "Good. Walk me through the API and data model.", "time": "" },
+      { "speaker": "user", "text": "REST endpoints: GET /timeline, POST /tweet. Schema: tweets table (id, user_id, text, created_at) with index on user_id+created_at; followers table (follower_id, followee_id) with primary key on both. Fanout-on-write for celebrities, fanout-on-read for normal users.", "time": "" },
+      { "speaker": "ai", "text": "How do you scale this and handle failures?", "time": "" },
+      { "speaker": "user", "text": "Shard tweets by user_id. Redis cache for hot timelines. CDN for media. Failure modes: replicate timeline cache, retry policy on tweet write, circuit breaker on fanout. Monitoring: per-shard QPS, p99 latency, fanout queue depth metrics with alerts.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "insufficient_scale_probing", "incomplete_design_coverage", "user_hand_waving", "ai_accepts_hand_waving"]
+  }
+}

@@ -8,6 +8,7 @@
 export type SessionFocus =
   | "behavioral"
   | "technical"
+  | "system-design"
   | "strategic"
   | "case-study"
   | "salary-negotiation"
