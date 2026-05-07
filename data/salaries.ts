@@ -711,6 +711,54 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([20, 30], [2, 4], RSU(4, 10), [25, 40], { negotiation_leverage: "medium" }),
       senior: s([30, 48], [3, 7], RSU(10, 22), [40, 70], { negotiation_leverage: "high" }),
     },
+    /* SaaS-product QA. */
+    "saas-product": {
+      entry: s([5, 8], [0.3, 0.8], ESOP(0.5, 1.5), [6, 10], { negotiation_leverage: "low" }),
+      mid: s([10, 16], [1, 2], ESOP(1, 3), [12, 20], { negotiation_leverage: "medium" }),
+      senior: s([16, 28], [2, 4], ESOP(3, 6), [20, 35], { negotiation_leverage: "medium" }),
+    },
+    /* BFSI global QA (Goldman / JPMC engineering QA). */
+    "bfsi-global": {
+      entry: s([12, 18], [1, 3], RSU(2, 5), [14, 25], { negotiation_leverage: "medium" }),
+      mid: s([20, 32], [2, 5], RSU(5, 12), [25, 45], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 9], RSU(10, 22), [42, 75], { negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic QA (HDFC / ICICI / Axis tech QA). */
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.5], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([7, 13], [0.5, 1.5], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
+      senior: s([13, 22], [1, 3], NO_EQ, [14, 25], { negotiation_leverage: "medium" }),
+    },
+    /* EdTech QA. */
+    edtech: {
+      entry: s([3.5, 6], [0.2, 0.4], ESOP(0.3, 1), [4, 7], { negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.4, 1], ESOP(0.5, 2), [7, 13], { negotiation_leverage: "low" }),
+      senior: s([11, 18], [1, 2], ESOP(1, 3), [12, 22], { negotiation_leverage: "medium" }),
+    },
+    /* FMCG MNC QA (HUL / ITC digital QA). */
+    "fmcg-mnc": {
+      entry: s([5, 9], [0.5, 1], NO_EQ, [6, 10], { negotiation_leverage: "low" }),
+      mid: s([9, 15], [1, 2], NO_EQ, [10, 17], { negotiation_leverage: "medium" }),
+      senior: s([15, 25], [2, 4], NO_EQ, [17, 30], { negotiation_leverage: "medium" }),
+    },
+    /* Consulting Big-4 QA (Deloitte USI / EY / KPMG / PwC tech). */
+    "consulting-big4": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([8, 14], [0.5, 1.5], NO_EQ, [9, 16], { negotiation_leverage: "medium" }),
+      senior: s([14, 24], [1.5, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+    },
+    /* Government / PSU QA. */
+    "government-psu": {
+      entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([7, 12], [0.3, 0.8], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [0.8, 1.5], NO_EQ, [13, 22], { negotiation_leverage: "low" }),
+    },
+    /* Startup early QA. */
+    "startup-early": {
+      entry: s([3, 6], [0.2, 0.5], ESOP(0.3, 1.5), [3.5, 7], { notice_period_days: 15, negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.5, 1], ESOP(1, 3), [7, 13], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([11, 18], [1, 2], ESOP(2, 6), [13, 22], { notice_period_days: 30, negotiation_leverage: "medium" }),
+    },
   },
 
   // ─── HR ───────────────────────────────────────────────────────
@@ -749,6 +797,61 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([6, 11], [0.5, 1.5], RSU(1, 3), [8, 14], { negotiation_leverage: "medium" }),
       mid: s([12, 20], [1.5, 3], RSU(3, 8), [15, 28], { negotiation_leverage: "medium" }),
       senior: s([20, 32], [3, 6], RSU(6, 14), [25, 45], { negotiation_leverage: "high" }),
+    },
+    /* SaaS-product HR. */
+    "saas-product": {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.3, 1), [4.5, 8], { negotiation_leverage: "low" }),
+      mid: s([8, 14], [0.5, 1.5], ESOP(1, 2.5), [9, 16], { negotiation_leverage: "medium" }),
+      senior: s([14, 24], [1.5, 3], ESOP(2, 5), [16, 30], { negotiation_leverage: "medium" }),
+    },
+    /* FMCG MNC HR (HUL / ITC / Marico HRBP / TA). */
+    "fmcg-mnc": {
+      entry: s([6, 10], [0.5, 1.5], NO_EQ, [7, 12], { notes: "HUL / ITC HR MT track. Premium ₹15-22L for top schools (XLRI/TISS/MDI)." }),
+      mid: s([10, 18], [1.5, 3], NO_EQ, [12, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 35], [3, 6], NO_EQ, [22, 40], { negotiation_leverage: "high" }),
+      executive: s([45, 75], [8, 18], NO_EQ, [55, 100], { in_hand_ratio: 0.55, notes: "CHRO at top FMCG ₹1Cr+." }),
+    },
+    /* EdTech HR. */
+    edtech: {
+      entry: s([3, 5], [0.2, 0.4], ESOP(0.3, 1), [3.5, 6], { negotiation_leverage: "low" }),
+      mid: s([5, 10], [0.4, 1], ESOP(0.5, 2), [6, 12], { negotiation_leverage: "low" }),
+      senior: s([10, 18], [1, 2], ESOP(1, 4), [12, 22], { negotiation_leverage: "medium" }),
+    },
+    /* BFSI global HR (Goldman / JPMC India HR). */
+    "bfsi-global": {
+      entry: s([10, 16], [1, 3], RSU(2, 5), [12, 22], { negotiation_leverage: "medium" }),
+      mid: s([18, 30], [2, 5], RSU(5, 12), [22, 42], { negotiation_leverage: "medium" }),
+      senior: s([30, 50], [5, 10], RSU(10, 22), [40, 75], { negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic HR. */
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4.5, 8], { negotiation_leverage: "low" }),
+      mid: s([7, 13], [0.5, 1.5], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
+      senior: s([13, 22], [1, 3], NO_EQ, [15, 26], { negotiation_leverage: "medium" }),
+    },
+    /* Consulting MBB HR (talent / people ops). */
+    "consulting-mbb": {
+      entry: s([12, 18], [2, 4], NO_EQ, [14, 22], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [4, 8], NO_EQ, [26, 45], { negotiation_leverage: "medium" }),
+      senior: s([38, 60], [7, 14], NO_EQ, [45, 78], { negotiation_leverage: "high" }),
+    },
+    /* Consulting Big-4 HR. */
+    "consulting-big4": {
+      entry: s([5, 9], [0.5, 1.2], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
+      mid: s([10, 17], [1, 3], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 5], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+    },
+    /* Government / PSU HR. */
+    "government-psu": {
+      entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { in_hand_ratio: 0.78, notes: "7th CPC pay band; pension + DA + HRA add 30-40% on top." }),
+      mid: s([7, 12], [0.3, 0.8], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [0.8, 1.5], NO_EQ, [13, 22], { negotiation_leverage: "low" }),
+    },
+    /* Startup early HR. */
+    "startup-early": {
+      entry: s([3, 5], [0.2, 0.5], ESOP(0.3, 1.5), [3.5, 6], { notice_period_days: 15, negotiation_leverage: "low" }),
+      mid: s([5, 10], [0.4, 1], ESOP(1, 3), [6, 12], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([10, 18], [1, 2], ESOP(2, 6), [12, 22], { notice_period_days: 30, negotiation_leverage: "medium" }),
     },
   },
 
@@ -791,6 +894,48 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([8, 14], [1, 3], RSU(2, 5), [10, 20], { negotiation_leverage: "medium" }),
       mid: s([16, 26], [2, 5], RSU(5, 12), [22, 38], { negotiation_leverage: "medium" }),
       senior: s([28, 45], [4, 9], RSU(10, 22), [38, 70], { negotiation_leverage: "high" }),
+    },
+    /* EdTech Marketing. */
+    edtech: {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.3, 1), [4.5, 8], { negotiation_leverage: "low" }),
+      mid: s([8, 14], [0.5, 1.5], ESOP(0.5, 2), [9, 16], { negotiation_leverage: "low" }),
+      senior: s([14, 24], [1.5, 3], ESOP(1, 4), [16, 28], { negotiation_leverage: "medium" }),
+    },
+    /* BFSI global Marketing (Goldman / JPMC brand / India product mktg). */
+    "bfsi-global": {
+      entry: s([10, 16], [1, 3], RSU(2, 5), [12, 22], { negotiation_leverage: "medium" }),
+      mid: s([18, 30], [2, 5], RSU(5, 12), [22, 42], { negotiation_leverage: "medium" }),
+      senior: s([30, 50], [5, 10], RSU(10, 22), [40, 78], { negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic Marketing (HDFC / ICICI / Axis brand teams). */
+    "bfsi-domestic": {
+      entry: s([5, 9], [0.5, 1], NO_EQ, [6, 10], { negotiation_leverage: "low" }),
+      mid: s([10, 18], [1, 2.5], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+      senior: s([18, 32], [2, 5], NO_EQ, [20, 36], { negotiation_leverage: "medium" }),
+    },
+    /* Consulting MBB Marketing (rare — internal brand / GTM). */
+    "consulting-mbb": {
+      entry: s([12, 18], [2, 4], NO_EQ, [14, 22], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [4, 8], NO_EQ, [26, 45], { negotiation_leverage: "medium" }),
+      senior: s([38, 60], [7, 14], NO_EQ, [45, 78], { negotiation_leverage: "high" }),
+    },
+    /* Consulting Big-4 Marketing. */
+    "consulting-big4": {
+      entry: s([5, 9], [0.5, 1.2], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
+      mid: s([10, 17], [1, 3], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 5], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+    },
+    /* Government / PSU Marketing (DAVP / PIB / NPCI). */
+    "government-psu": {
+      entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { in_hand_ratio: 0.78, negotiation_leverage: "low" }),
+      mid: s([7, 12], [0.3, 0.8], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [0.8, 1.5], NO_EQ, [13, 22], { negotiation_leverage: "low" }),
+    },
+    /* Startup early Marketing. */
+    "startup-early": {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.5, 2), [4.5, 9], { notice_period_days: 15, negotiation_leverage: "low" }),
+      mid: s([7, 13], [0.5, 1.5], ESOP(1.5, 4), [9, 16], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([14, 25], [1.5, 3], ESOP(3, 8), [17, 32], { notice_period_days: 30, negotiation_leverage: "high" }),
     },
   },
 
