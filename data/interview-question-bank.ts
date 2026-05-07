@@ -32,6 +32,9 @@ export type CompanyKey =
   | "goldman" | "jpmc" | "morgan-stanley"
   | "jane-street" | "de-shaw" | "citadel"
   | "openai" | "anthropic" | "sarvam"
+  | "salesforce" | "cisco" | "oracle" | "nvidia"
+  | "hdfc" | "icici"
+  | "hul" | "p&g" | "itc"
   /* Government / PSU bodies — distinct from corporate companies in
      hiring format. UPSC = civil services; SSC = staff selection
      (Group B/C); IBPS = banking PO; RBI = central-bank Grade B; ISRO

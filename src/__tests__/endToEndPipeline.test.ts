@@ -24,7 +24,6 @@ import {
   normaliseFocus,
   normaliseCompany,
 } from "../../server-handlers/_question-retrieval";
-import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../../data/company-known-facts";
 
 interface Scenario {
@@ -71,7 +70,7 @@ describe("end-to-end pipeline smoke tests", () => {
       /* Stage 2 — role inference. */
       const roleKey = matchRoleKey(scenario.role);
       const roleFamily = inferRoleFamily(scenario.role);
-      const competencyKey = matchCompetencyKey(scenario.role).key;
+      void matchCompetencyKey(scenario.role).key;
       /* Role-key must resolve to one of the salaries.ts RoleKey union. */
       expect(roleKey).toBeTruthy();
       expect(roleFamily).toBeTruthy();
