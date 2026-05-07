@@ -37,6 +37,34 @@ async function checkSupabase(): Promise<"ok" | "error" | "missing"> {
   }
 }
 
+async function checkLlm(): Promise<"ok" | "error" | "missing"> {
+  // Live reachability ping to Groq (primary). Hits /v1/models which doesn't
+  // burn LLM quota; a 200 means API is reachable and key is accepted.
+  // Falls through to Gemini if Groq is unreachable, matching the runtime
+  // failover chain.
+  const groqKey = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!groqKey && !geminiKey) return "missing";
+  if (groqKey) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/models", {
+        headers: { Authorization: `Bearer ${groqKey}` },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) return "ok";
+    } catch { /* fall through */ }
+  }
+  if (geminiKey) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) return "ok";
+    } catch { /* nothing left */ }
+  }
+  return "error";
+}
+
 async function checkUpstash(): Promise<"ok" | "error" | "missing"> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -62,16 +90,18 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
-  // Run live checks in parallel
-  const [supabase, upstash] = await Promise.all([
+  // Run live checks in parallel — TTS/STT/payments/email still env-only
+  // for now since their reachability checks would need real API quotas.
+  const [supabase, upstash, llm] = await Promise.all([
     checkSupabase(),
     checkUpstash(),
+    checkLlm(),
   ]);
 
   const checks: Record<string, string> = {
     supabase,
     upstash,
-    llm: (process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY) ? "ok" : "missing",
+    llm,
     tts: process.env.GCP_TTS_API_KEY ? "ok" : "missing",
     stt: process.env.DEEPGRAM_API_KEY ? "ok" : "missing",
     payments: process.env.RAZORPAY_KEY_ID ? "ok" : "missing",

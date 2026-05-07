@@ -791,7 +791,14 @@ export function useInterviewEngine() {
         // its audio doesn't leak in.
         handle.cancel();
       }
-    }).catch(() => { /* TTS provider error — silent; the visual question is still on screen */ });
+    }).catch((err) => {
+      // TTS failed — log so the failure isn't invisible to ops/PostHog.
+      // The visual question is still on screen so the candidate can read it,
+      // but a sustained pattern of "tts_failed" events should page the team.
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[interview] TTS handle.start failed:", msg.slice(0, 120));
+      track("tts_failed", { phase: "preview", error: msg.slice(0, 200) });
+    });
   }, [aiVoiceEnabled, interviewerGender]);
 
   /* Listening-phase interjections (silence nudge, hard-cap stall,
@@ -1059,7 +1066,17 @@ export function useInterviewEngine() {
           } else {
             handle.cancel();
           }
-        }).catch((e) => { console.warn("[interview] TTS speak() rejected:", e); onSpeechEnd(); });
+        }).catch((e) => {
+          // TTS rejection during the active question. The phase advances via
+          // onSpeechEnd so the interview keeps moving, but log it loudly:
+          // the candidate just heard silence where there should have been a
+          // question. A spike in tts_failed events with phase=question is
+          // the canonical "audio infrastructure broken" signal.
+          const msg = e instanceof Error ? e.message : String(e);
+          console.warn("[interview] TTS speak() rejected:", msg.slice(0, 120));
+          track("tts_failed", { phase: "question", error: msg.slice(0, 200) });
+          onSpeechEnd();
+        });
       } else {
         const speakTimer = setTimeout(onSpeechEnd, step.speakingDuration);
         ttsCancelRef.current = () => clearTimeout(speakTimer);

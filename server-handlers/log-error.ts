@@ -1,8 +1,12 @@
 /* Vercel Edge Function — Client Error Logger */
 /* Receives error reports from the browser and logs them to Vercel's function logs */
 /* These are visible in Vercel Dashboard → Logs, searchable and filterable */
+/* Also forwards to PostHog so frontend errors live alongside server events
+ * and can be correlated with session replays + funnel drop-offs. */
 
 export const config = { runtime: "edge" };
+
+import { captureServerEvent, distinctIdFrom } from "./_posthog";
 
 const _rateLimit = new Map<string, number[]>();
 function checkRate(ip: string, max: number, windowMs: number): boolean {
@@ -54,6 +58,15 @@ export default async function handler(req: Request): Promise<Response> {
       timestamp: body.timestamp,
       userAgent: body.userAgent?.slice(0, 300),
     }));
+
+    // Also send to PostHog so the error shows up next to server events and
+    // session replays for triage. Best-effort — don't block the response.
+    void captureServerEvent("client_error", distinctIdFrom(req, body.userId), {
+      message: typeof body.message === "string" ? body.message.slice(0, 500) : "",
+      url: typeof body.url === "string" ? body.url.slice(0, 500) : "",
+      stack_first_frame: typeof body.stack === "string" ? body.stack.split("\n").slice(0, 3).join("\n").slice(0, 400) : "",
+      user_agent: typeof body.userAgent === "string" ? body.userAgent.slice(0, 200) : "",
+    }, req);
 
     return new Response("ok", { status: 200 });
   } catch {
