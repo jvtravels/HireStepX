@@ -66,7 +66,8 @@ export type RoleKey =
   | "embedded-engineer" | "database-administrator" | "network-engineer"
   | "mechanical-engineer" | "electrical-engineer" | "civil-engineer"
   | "chartered-accountant" | "doctor" | "pharmacist"
-  | "design-engineer" | "product-marketing-manager";
+  | "design-engineer" | "product-marketing-manager"
+  | "civil-services" | "performing-arts" | "nursing" | "hardware-engineer";
 
 /** Helper to create a salary entry with defaults */
 function s(
@@ -2627,6 +2628,141 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([9, 16], [0.8, 1.5], NO_EQ, [10, 18], { negotiation_leverage: "medium" }),
     },
   },
+
+  // ─── CIVIL SERVICES (IAS / IPS / state cadres) ────────────────
+  /* 7th CPC pay matrix anchors. Junior officer level = Level 10
+     entry (₹56,100 basic). Pension + housing + DA + HRA +
+     deputation often add 30-50% to gross. Negotiation is on
+     posting/cadre, not base. */
+  "civil-services": {
+    "government-psu": {
+      entry: s([7, 10], [0, 0.5], NO_EQ, [7, 12], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "IAS/IPS/IFS probationer, Level 10 pay matrix. After LBSNAA training, posted as Asst Collector / SP / Forest Officer." }),
+      mid: s([12, 20], [0.5, 1], NO_EQ, [13, 22], { negotiation_leverage: "low", notes: "DM / SP / DCF level. Level 12-13 pay matrix. Add NPA / SCA depending on cadre." }),
+      senior: s([22, 35], [1, 2], NO_EQ, [24, 38], { negotiation_leverage: "low", notes: "Joint Secretary / DIG / CCF level. Level 14-15 pay matrix." }),
+      lead: s([35, 55], [2, 4], NO_EQ, [38, 60], { negotiation_leverage: "low", notes: "Additional Secretary / IGP / PCCF. Level 16 pay matrix." }),
+      executive: s([55, 80], [3, 6], NO_EQ, [60, 90], { in_hand_ratio: 0.78, notes: "Secretary to Govt of India / DGP / CS. Level 17-18 (cabinet secretary equivalent)." }),
+    },
+    "it-services": {
+      entry: s([5, 9], [0.3, 0.6], NO_EQ, [5, 10], { negotiation_leverage: "low", notes: "State PCS officers (MPSC/KPSC/TNPSC etc.) — junior cadre." }),
+      mid: s([10, 16], [0.5, 1], NO_EQ, [11, 18], { negotiation_leverage: "low" }),
+      senior: s([18, 30], [1, 2], NO_EQ, [20, 32], { negotiation_leverage: "low" }),
+    },
+    "bfsi-domestic": {
+      entry: s([8, 13], [0.5, 1.5], NO_EQ, [9, 15], { notes: "RBI Grade B / NABARD Grade A / SEBI Grade A officer." }),
+      mid: s([14, 22], [1, 2], NO_EQ, [15, 24], { negotiation_leverage: "low" }),
+      senior: s([22, 35], [2, 4], NO_EQ, [24, 38], { negotiation_leverage: "low" }),
+    },
+  },
+
+  // ─── PERFORMING ARTS (classical / instrumental / contemporary) ─
+  /* Indian classical artists earn primarily via concert circuits +
+     guru-shishya teaching + festival fees + grants. Steep
+     experience curve — top-bracket artists (Sangeet Natak Akademi
+     awardees) earn ₹20-50L+ via concert circuits while mid-level
+     artists earn modestly. */
+  "performing-arts": {
+    "indian-unicorn": {
+      entry: s([2, 4], [0.2, 0.5], NO_EQ, [2, 5], { negotiation_leverage: "low", notes: "Junior artist / accompanist track. Concert + teaching combo; income lumpy." }),
+      mid: s([5, 10], [0.5, 1.5], NO_EQ, [5, 12], { negotiation_leverage: "medium", notes: "Mid-career artist with regular concert circuit. Spotify/JioSaavn royalties added." }),
+      senior: s([12, 25], [1, 4], NO_EQ, [14, 30], { negotiation_leverage: "high", notes: "Established artist with concert tours + teaching academy + recording contracts." }),
+      lead: s([25, 60], [3, 10], NO_EQ, [30, 75], { negotiation_leverage: "high", notes: "Top-tier (Padma / Sangeet Natak Akademi / Filmfare) — international tours + Bollywood playback." }),
+    },
+    edtech: {
+      entry: s([3, 6], [0.2, 0.5], ESOP(0.3, 1), [3.5, 7], { notes: "Music-edtech (Splice/Indian Tutor) instructor track." }),
+      mid: s([6, 12], [0.5, 1.5], ESOP(0.5, 2), [7, 14], { negotiation_leverage: "medium" }),
+      senior: s([12, 22], [1, 3], ESOP(1, 4), [14, 26], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { in_hand_ratio: 0.78, notes: "AIR / Doordarshan / Sangeet Natak Akademi staff artist (regular grade)." }),
+      mid: s([7, 12], [0.3, 0.6], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [0.5, 1], NO_EQ, [13, 22], { negotiation_leverage: "low" }),
+    },
+    "fmcg-mnc": {
+      entry: s([4, 8], [0.5, 1.5], NO_EQ, [4.5, 10], { notes: "Brand / advertising playback singer + jingle artist + TV music director." }),
+      mid: s([10, 20], [1.5, 4], NO_EQ, [12, 25], { negotiation_leverage: "medium" }),
+      senior: s([20, 40], [4, 8], NO_EQ, [24, 48], { negotiation_leverage: "high" }),
+    },
+  },
+
+  // ─── NURSING (separate ladder from doctor) ────────────────────
+  /* Nurses earn substantially below doctors but with much steadier
+     career growth. Government nurses (AIIMS / state hospitals) get
+     7th CPC pay; private (Apollo / Fortis / Manipal) bands are
+     20-30% higher at senior levels. */
+  "nursing": {
+    "government-psu": {
+      entry: s([3.5, 6], [0, 0.3], NO_EQ, [3.5, 7], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "Staff Nurse Grade II — 7th CPC Level 7 (₹44,900 basic). DA + HRA = ₹6.5-8L total." }),
+      mid: s([6, 10], [0.3, 0.6], NO_EQ, [6.5, 11], { notes: "Staff Nurse Grade I / Senior Sister — Level 8-9 pay matrix." }),
+      senior: s([10, 18], [0.5, 1], NO_EQ, [11, 20], { notes: "Asst Nursing Superintendent / Nursing Officer — Level 11-12." }),
+      lead: s([18, 28], [1, 2], NO_EQ, [19, 30], { notes: "Director Nursing / Nursing Superintendent — Level 13." }),
+    },
+    "indian-unicorn": {
+      entry: s([3, 5], [0.2, 0.5], NO_EQ, [3, 5.5], { notes: "Apollo / Fortis / Max staff nurse, ICU/OT specialty." }),
+      mid: s([5, 9], [0.4, 1], NO_EQ, [5.5, 10], { negotiation_leverage: "low" }),
+      senior: s([9, 16], [0.8, 2], NO_EQ, [10, 18], { negotiation_leverage: "medium" }),
+      lead: s([16, 26], [1.5, 3], NO_EQ, [18, 30], { notes: "Director Nursing at large private chain." }),
+    },
+    "fmcg-mnc": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { notes: "Pharma medical advisor / corporate occupational health nurse." }),
+      mid: s([7, 12], [0.5, 1.5], NO_EQ, [8, 14], { negotiation_leverage: "medium" }),
+      senior: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+    },
+    "saas-product": {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.5, 1.5), [4.5, 8], { notes: "Healthtech (Practo/1mg/Apollo 24/7) telehealth nurse + clinical reviewer." }),
+      mid: s([8, 14], [0.5, 1.5], ESOP(1, 3), [9, 16], { negotiation_leverage: "medium" }),
+      senior: s([14, 24], [1.5, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+    },
+    "bfsi-global": {
+      entry: s([6, 10], [0.5, 1.5], NO_EQ, [7, 12], { notes: "Insurance medical underwriter (clinical-trained) at MetLife/AIG/Bajaj Allianz." }),
+      mid: s([10, 16], [1, 2.5], NO_EQ, [11, 18], { negotiation_leverage: "medium" }),
+      senior: s([16, 28], [2, 4], NO_EQ, [18, 32], { negotiation_leverage: "medium" }),
+    },
+  },
+
+  // ─── HARDWARE ENGINEER (VLSI / RTL / Verification / Analog) ───
+  /* Distinct from electrical-engineer (broader). Chip design at
+     NVIDIA / Qualcomm / Intel / AMD India GCC commands 1.5-2x
+     mechanical-engineer pay. RTL / Verification / Physical Design
+     specialists have very steep curves. */
+  "hardware-engineer": {
+    faang: {
+      entry: s([22, 32], [2, 5], RSU(6, 12), [28, 45], { hot_skills: ["VLSI", "RTL", "Verification", "Physical Design", "ASIC", "FPGA"], notes: "NVIDIA / AMD / Qualcomm India entry-level chip design engineer." }),
+      mid: s([35, 50], [4, 9], RSU(15, 32), [48, 80], { negotiation_leverage: "high" }),
+      senior: s([50, 75], [8, 16], RSU(28, 60), [75, 130], { negotiation_leverage: "high" }),
+      lead: s([75, 100], [12, 25], RSU(50, 110), [115, 200], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(5, 11), [22, 40], { negotiation_leverage: "medium" }),
+      mid: s([30, 45], [3, 7], RSU(12, 25), [40, 68], { negotiation_leverage: "medium" }),
+      senior: s([45, 65], [6, 13], RSU(22, 45), [62, 110], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(3, 8), [16, 30], { hot_skills: ["VLSI", "ASIC", "FPGA", "DV", "PD"], notes: "Intel / AMD / Qualcomm / Marvell / Synopsys / Cadence India GCC chip teams." }),
+      mid: s([22, 35], [2, 5], RSU(8, 18), [28, 52], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 10], RSU(15, 32), [48, 90], { negotiation_leverage: "high" }),
+      lead: s([55, 80], [9, 18], RSU(28, 60), [78, 140], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [9, 17], { notes: "Mindgrove / InCore / Saankhya Labs / Tessolve fabless chip startup." }),
+      mid: s([15, 24], [1, 3], ESOP(2, 5), [17, 30], { negotiation_leverage: "medium" }),
+      senior: s([24, 40], [2, 5], ESOP(4, 10), [28, 50], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([4, 7], [0.2, 0.5], NO_EQ, [4, 8], { notes: "L&T Tech / KPIT / Sasken / Tata Elxsi semiconductor practice." }),
+      mid: s([8, 14], [0.5, 1], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
+      senior: s([14, 24], [1, 2.5], NO_EQ, [15, 28], { negotiation_leverage: "medium" }),
+    },
+    "fmcg-mnc": {
+      entry: s([6, 10], [0.5, 1], NO_EQ, [7, 11], { notes: "Bosch / Continental / GE Healthcare embedded SoC team." }),
+      mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { in_hand_ratio: 0.78, notes: "ISRO / DRDO / BEL / SCL Mohali chip-design scientist." }),
+      mid: s([10, 16], [0.5, 1], NO_EQ, [11, 17], { negotiation_leverage: "low" }),
+      senior: s([16, 28], [1, 2], NO_EQ, [17, 30], { negotiation_leverage: "low" }),
+    },
+  },
 };
 
 /** Role key aliases — when a role key has no data, fall back to this key */
@@ -2831,6 +2967,397 @@ export function matchRoleKey(role: string): RoleKey {
 
   // Ordered from most specific to least specific to avoid false matches
   const patterns: [string[], RoleKey][] = [
+    /* ─── 2026 niche-routing patterns (must come BEFORE generic
+       patterns — these handle the long tail of specialised titles
+       that previously routed to software-engineer default). ─── */
+    /* Civil Services — IAS / IPS / state cadre / SDM / collector etc. */
+    [["ias officer", "ips officer", "ifs officer", "irs officer", "iaas officer", "iis officer",
+      "indian administrative service", "indian police service", "indian foreign service",
+      "indian revenue service", "indian forest service", "indian audit", "indian information service",
+      "civil service", "civil services", "state civil service", "pcs officer", "mpsc officer",
+      "kpsc officer", "tnpsc officer", "wbpsc officer", "bpsc officer", "rpsc officer", "uppsc officer",
+      "ras officer", "kas officer", "hcs officer", "gpsc officer", "deputy collector", "collector",
+      "district magistrate", "sub-divisional magistrate", "sdm", "tehsildar", "naib tehsildar",
+      "tahsildar", "patwari", "lekhpal", "kanungo", "block development officer", "bdo",
+      "joint secretary", "additional secretary", "secretary to govt", "cabinet secretary",
+      "principal secretary", "joint commissioner", "deputy commissioner", "additional commissioner",
+      "section officer", "under secretary", "joint magistrate", "additional district magistrate",
+      "city magistrate", "revenue officer", "land records officer", "conservator of forest",
+      "chief conservator of forest", "forest range officer", "range officer", "deputy range officer",
+      "ifoss officer", "ifs officer (forest)"], "civil-services"],
+    /* Police hierarchy explicit — DSP / SP / DGP etc. (separate from
+       civil-services because some users target police specifically). */
+    [["sub-inspector", "sub inspector", "inspector (police)", "police inspector", "dsp",
+      "additional sp", "sp (police)", "senior sp", "dig (police)", "ig (police)", "additional dgp",
+      "dgp", "special dgp", "police constable", "head constable", "asi", "assistant sub-inspector",
+      "deputy commissioner of police", "dcp", "acp", "assistant commissioner of police",
+      "commissioner of police"], "civil-services"],
+    /* Defence ranks — route to civil-services tier (govt-psu band).
+       More specific than the generic "officer" pattern below. */
+    [["sepoy", "lance naik", "havildar", "subedar major", "junior commissioned officer",
+      "honorary lieutenant", "honorary captain", "lieutenant colonel", "field marshal",
+      "lieutenant general", "major general", "wing commander", "group captain", "air commodore",
+      "air vice marshal", "air marshal", "air chief marshal", "commodore", "rear admiral",
+      "vice admiral", "admiral of the fleet", "ndrf", "itbp officer", "bsf officer",
+      "crpf officer", "cisf officer", "ssb officer", "assam rifles officer", "nsg officer",
+      "spg officer", "raf officer", "indian army", "indian navy", "indian air force",
+      "indian coast guard", "ndc officer"], "civil-services"],
+    /* Performing Arts — classical dance / vocals / instruments / Bollywood. */
+    [["bharatanatyam", "kathak", "kathakali", "kuchipudi", "mohiniyattam", "odissi", "manipuri",
+      "sattriya", "hindustani vocalist", "carnatic vocalist", "playback singer", "music director",
+      "sitar player", "sitar guru", "tabla player", "tabla guru", "sarod player", "veena player",
+      "flute player", "sarangi player", "mridangam player", "harmonium player", "shehnai player",
+      "santoor player", "pakhawaj player", "classical dancer", "folk dancer", "bharatanatyam guru",
+      "kathak guru", "kathakali guru", "kuchipudi guru", "odissi guru", "music guru",
+      "vocal guru", "dance guru", "concert artist", "playback artist", "music composer",
+      "lyricist (bollywood)", "songwriter", "theatre actor", "stand-up comedian", "stand up comedian",
+      "improv performer", "mime artist", "magician", "illusionist", "puppeteer", "storyteller",
+      "sutradhar", "performing artist", "cultural artist", "akademi awardee", "padma awardee"], "performing-arts"],
+    /* Religious / spiritual roles — route to performing-arts band
+       (closest analog: lumpy income, teaching + festival circuit). */
+    [["pandit", "purohit", "brahmin priest", "vedic scholar", "acharya", "mahant", "swami",
+      "shankaracharya", "imam", "mufti", "maulana", "maulvi", "qari", "hafiz", "granthi",
+      "giani", "ragi", "pathi", "pastor", "reverend", "bishop", "archbishop", "cardinal",
+      "catholic priest", "protestant minister", "deacon", "catechist", "buddhist monk", "lama",
+      "rinpoche", "bhikkhu", "bhikkhuni", "jain monk", "sadhu", "sadhvi", "astrologer",
+      "vedic astrologer", "numerologist", "palmist", "vastu consultant", "feng shui consultant",
+      "tarot reader", "religious scholar", "theology professor"], "performing-arts"],
+    /* Nursing — split from doctor. ICU / OT / ward / ANM etc. */
+    [["staff nurse", "registered nurse", "nurse practitioner", "nursing officer", "icu nurse",
+      "operation theatre nurse", "ot nurse", "er nurse", "pediatric nurse", "oncology nurse",
+      "ward sister", "charge nurse", "nursing sister", "nursing superintendent",
+      "asst nursing superintendent", "deputy nursing superintendent", "director nursing",
+      "director of nursing", "school nurse", "public health nurse", "anm", "auxiliary nurse midwife",
+      "asha worker", "anganwadi worker", "multi-purpose health worker",
+      "nursing trainee", "nursing intern", "nursing", "nurse"], "nursing"],
+    /* Hardware Engineer — VLSI / RTL / Verification / Physical Design / ASIC / FPGA / Analog. */
+    [["vlsi", "rtl design", "rtl engineer", "physical design engineer", "pd engineer",
+      "verification engineer", "dv engineer", "uvm verification", "formal verification",
+      "asic design", "asic engineer", "fpga engineer", "fpga design", "dsp engineer",
+      "signal processing engineer", "image processing engineer", "analog design engineer",
+      "mixed signal", "rf design engineer", "layout engineer", "silicon validation",
+      "post-silicon validation", "pre-silicon validation", "chip design", "soc design",
+      "soc engineer", "hardware design engineer", "ic design", "semiconductor design",
+      "wafer process engineer", "photonics engineer"], "hardware-engineer"],
+    /* Hospital granular staff — route to nursing (closest band match
+       for OT/ward/lab-tech roles). */
+    [["ot assistant", "ot technologist", "ot technician", "ward boy", "ward helper",
+      "health inspector", "sanitary inspector", "physiotherapy assistant",
+      "dental hygienist", "dental assistant", "medical records officer", "medical coding",
+      "health information manager", "patient relations manager", "patient experience officer",
+      "x-ray technician", "mri technician", "ct scan technician", "sonographer",
+      "cath lab technician", "dialysis technician", "anesthesia technician", "ecg technician",
+      "lab technician", "medical technologist"], "nursing"],
+    /* Niche legal specializations explicit — Senior Counsel / Disputes etc. */
+    [["senior counsel", "principal associate (law)", "general counsel", "deputy general counsel",
+      "in-house counsel", "company secretary", "head of legal", "managing partner (law)",
+      "litigation lawyer", "litigation counsel", "disputes lawyer", "arbitration specialist",
+      "dispute resolution specialist", "contract drafting specialist", "patent attorney",
+      "patent agent", "trademark attorney", "ip counsel", "privacy counsel", "data protection officer",
+      "regulatory counsel", "tax lawyer", "tax advisor", "real estate lawyer", "employment lawyer",
+      "labour law specialist", "fintech lawyer", "crypto lawyer", "cybersecurity lawyer",
+      "ai/tech lawyer", "anti-bribery officer", "fcpa specialist", "sanctions officer",
+      "trade compliance specialist", "legal operations manager", "legal ops lead",
+      "legal tech manager", "paralegal"], "legal"],
+    /* Quant niche — route to data-scientist (override for "Risk Quant"
+       and similar that previously went to SE). */
+    [["risk quant", "quant risk", "quant risk manager", "quant strategist",
+      "quant developer", "systematic strategist"], "data-scientist"],
+    /* Marketing analytics niche — route to data-analyst. */
+    [["attribution analyst", "mix modeling analyst", "mmm analyst", "marketing data analyst",
+      "marketing analyst", "digital analytics manager", "adobe analytics specialist",
+      "ga4 specialist", "web analyst"], "data-analyst"],
+    /* Compensation / payroll / HRIS niche — route to hr. */
+    [["compensation analyst", "comp analyst", "compensation & benefits", "c&b manager",
+      "total rewards manager", "benefits manager", "payroll manager", "payroll specialist",
+      "hris manager", "workday specialist", "successfactors specialist", "peoplesoft specialist",
+      "oracle hcm specialist", "people analytics manager", "people analytics lead"], "hr"],
+    /* Procurement niche — route to operations. */
+    [["procurement executive", "procurement manager", "procurement director", "vp procurement",
+      "chief procurement officer", "strategic sourcing manager", "senior sourcing manager",
+      "category manager (procurement)", "indirect buyer", "direct buyer", "vendor manager",
+      "vendor development manager", "demand planner", "supply planner", "s&op manager"], "operations"],
+    /* Accounts ladder explicit — route to finance. */
+    [["accounts payable", "ap manager", "ap lead", "p2p analyst", "accounts receivable",
+      "ar manager", "ar lead", "o2c analyst", "gl accountant", "gl manager", "r2r analyst",
+      "forensic accountant", "forensic auditor", "fraud examiner", "internal auditor",
+      "external auditor", "statutory auditor", "audit manager", "audit director",
+      "controller", "financial controller", "cost accountant", "management accountant",
+      "tax analyst", "tax manager", "tax director", "direct tax specialist", "indirect tax specialist",
+      "gst manager", "transfer pricing specialist", "international tax specialist",
+      "treasury analyst", "treasury manager", "group treasurer", "investor relations manager",
+      "corporate finance analyst", "fp&a analyst", "fp&a manager", "fp&a director",
+      "business finance partner", "commercial finance manager", "pricing analyst",
+      "pricing manager", "pricing director"], "finance"],
+    /* Insurance underwriter / actuary niche — route to finance. */
+    [["insurance underwriter", "underwriter", "insurance sales officer", "insurance advisor",
+      "insurance surveyor", "loss adjuster", "actuary", "pricing actuary", "reserving actuary",
+      "reinsurance analyst", "claims manager", "claims adjuster"], "finance"],
+    /* Fintech / payments / cards niche — route to product-manager. */
+    [["payments engineer", "payments architect", "payments operations", "merchant acquiring manager",
+      "card issuing manager", "upi engineer", "card network engineer", "reconciliation engineer",
+      "settlement engineer", "chargeback specialist", "fintech product manager", "lending product manager",
+      "cards product manager", "payments product manager", "insurance product manager",
+      "wealth tech pm", "wealthtech product manager"], "product-manager"],
+    /* AI niche specialist titles — route to ai-engineer. */
+    [["llm engineer", "rag engineer", "ai agents engineer", "agentic systems", "prompt engineer",
+      "prompt ops engineer", "ai solutions architect", "ai platform engineer", "ai infrastructure engineer",
+      "ai research scientist", "ai research engineer", "ai product manager", "head of ai",
+      "conversational ai engineer", "speech ai engineer", "speech recognition engineer", "voice ai engineer",
+      "tts engineer", "reinforcement learning engineer", "rl researcher", "ai quality engineer",
+      "ai evals engineer", "ai safety researcher", "responsible ai", "ai ethics", "ai governance",
+      "ai risk analyst", "ai compliance officer", "ai trainer", "ai annotator", "data labeling",
+      "ai solutions consultant", "ai sales engineer", "ai customer success", "ai implementation",
+      "ai integration", "foundation model", "vector database engineer", "embeddings engineer",
+      "retrieval engineer", "agent framework engineer", "ai orchestration", "mcp engineer",
+      "tool-use engineer", "multimodal ai", "generative vision engineer", "diffusion models engineer",
+      "ai red teamer", "ai penetration tester", "ai audit specialist", "ai bias auditor",
+      "ai model governance", "ai risk & compliance", "synthetic media detection", "deepfake forensics"], "ai-engineer"],
+    /* Cybersecurity niche — incident response, AppSec, IAM, etc. */
+    [["soc analyst", "soc l1", "soc l2", "soc l3", "threat hunter", "threat intelligence analyst",
+      "incident response engineer", "incident response specialist", "incident responder",
+      "appsec engineer", "appsec architect", "cloud security engineer", "cloud security architect",
+      "network security engineer", "network security architect", "endpoint security engineer",
+      "endpoint detection engineer", "edr specialist", "iam engineer", "iam architect",
+      "privileged access management", "pam engineer", "red team engineer", "blue team engineer",
+      "purple team engineer", "bug bounty hunter", "vulnerability management", "vulnerability analyst",
+      "security architect", "deputy ciso", "field ciso", "forensics investigator", "digital forensics",
+      "devsecops architect", "grc analyst", "grc manager", "security awareness trainer",
+      "security researcher", "malware analyst", "reverse engineer", "cryptography engineer",
+      "pki engineer", "zero trust architect", "post-quantum crypto", "smart contract auditor",
+      "blockchain auditor"], "cybersecurity"],
+    /* DevOps / SRE niche specialist titles. */
+    [["build engineer", "release engineer", "ci/cd engineer", "configuration manager",
+      "configuration engineer", "tooling engineer", "container platform engineer", "kubernetes specialist",
+      "docker specialist", "openshift engineer", "terraform engineer", "ansible engineer",
+      "pulumi engineer", "chef engineer", "puppet engineer", "finops engineer", "finops analyst",
+      "cloud cost optimization engineer", "observability engineer", "monitoring engineer",
+      "reliability engineer (production)", "production engineer", "edge engineer", "cdn engineer",
+      "network reliability engineer", "rpa developer", "uipath developer", "blue prism developer",
+      "automation anywhere developer", "pega developer"], "devops-sre"],
+    /* Customer Success niche. */
+    [["customer success engineer", "customer success architect", "implementation manager",
+      "onboarding specialist", "onboarding manager", "voice of customer analyst", "voc specialist",
+      "customer insights manager"], "customer-success"],
+    /* Sales niche specialist titles. */
+    [["account executive", "enterprise account executive", "smb account executive", "inside sales representative",
+      "outside sales representative", "field sales executive", "field sales manager", "territory sales manager",
+      "key account manager", "kam", "strategic account manager", "global account manager",
+      "enterprise sales director", "saas sales lead", "b2b sales lead", "b2c sales lead",
+      "sales development representative", "sdr", "bdr", "sales operations analyst", "sales ops",
+      "revenue operations", "revops", "sales enablement manager", "pre-sales engineer", "presales engineer",
+      "solutions engineer", "technical account manager", "tam", "customer solutions engineer",
+      "channel sales manager", "channel partner manager", "distribution manager", "partnerships manager",
+      "strategic partnerships lead", "alliances manager", "channel alliances manager", "reseller manager",
+      "oem sales manager"], "sales"],
+    /* Marketing niche specialist titles. */
+    [["product marketing manager", "pmm", "demand generation manager", "demand gen", "demand gen lead",
+      "lead generation manager", "pipeline marketing manager", "lifecycle marketing manager",
+      "growth marketing manager", "performance marketing manager", "seo specialist", "seo manager",
+      "sem specialist", "ppc specialist", "google ads specialist", "meta ads specialist",
+      "paid social specialist", "paid search specialist", "programmatic specialist", "dv360 specialist",
+      "dsp specialist", "programmatic trader", "email marketing manager", "crm marketing manager",
+      "lifecycle email manager", "marketing automation specialist", "hubspot specialist",
+      "marketo specialist", "salesforce marketing cloud specialist", "pardot specialist", "klaviyo specialist",
+      "content marketing manager", "head of content", "editorial manager", "social media manager",
+      "social media strategist", "head of social", "community manager", "influencer marketing manager",
+      "influencer strategist", "affiliate marketing manager", "pr manager", "public relations director",
+      "communications manager", "internal communications manager", "external affairs manager",
+      "crisis communications", "investor communications", "executive communications", "field marketing manager",
+      "abm manager", "account-based marketing", "marketing operations manager", "mops lead",
+      "mops"], "marketing"],
+    /* Real estate / property niche. */
+    [["real estate agent", "real estate broker", "property consultant", "channel sales manager (re)",
+      "property sales manager", "real estate investment analyst", "reit analyst", "reit manager",
+      "property manager", "facility manager", "soft services manager", "hard services manager",
+      "mall manager", "retail property manager"], "operations"],
+    /* Architecture & urban design — route to design-engineer (closest
+       structurally — both are senior-IC creative ladders). */
+    [["architect", "design architect", "project architect", "lead architect", "architectural designer",
+      "interior architect", "interior designer", "interior decorator", "interior stylist",
+      "set designer", "urban designer", "urban planner", "town planner", "master planner",
+      "transport planner", "landscape architect", "landscape designer", "bim manager",
+      "bim coordinator", "bim modeler", "revit specialist"], "design-engineer"],
+    /* PSU engineer ladder — route to mechanical (broad PSU comp). */
+    [["junior engineer (psu)", "assistant engineer (psu)", "executive engineer (psu)",
+      "superintending engineer", "chief engineer (psu)", "agm (psu)", "dgm (psu)", "gm (psu)",
+      "ed (psu)", "director (psu)", "isro scientist", "drdo scientist", "barc scientist",
+      "bhel engineer", "ntpc engineer", "ongc engineer", "gail engineer", "iocl engineer",
+      "bpcl engineer", "hpcl engineer", "coal india engineer", "nmdc engineer", "sail engineer",
+      "rvnl engineer", "dmrc engineer"], "mechanical-engineer"],
+    /* Fashion / apparel / jewelry — route to design-engineer. */
+    [["fashion designer", "pattern maker", "textile designer", "apparel merchandiser",
+      "apparel quality inspector", "jewelry designer", "diamond grader", "gemologist",
+      "cad jewelry designer", "fashion stylist"], "design-engineer"],
+    /* Cleantech / EV / battery — route to electrical-engineer. */
+    [["sustainability engineer", "carbon accounting specialist", "esg reporting specialist",
+      "climate tech engineer", "cleantech product manager", "hydrogen engineer", "carbon capture engineer",
+      "electrolyzer engineer", "battery engineer", "battery pack designer", "cell engineer",
+      "ev powertrain engineer", "motor controller engineer", "power electronics engineer",
+      "bms engineer", "renewable energy engineer", "solar energy engineer", "wind energy engineer"], "electrical-engineer"],
+    /* Aerospace specialist titles — route to mechanical-engineer. */
+    [["aerospace engineer", "aircraft maintenance engineer", "ame", "aircraft design engineer",
+      "avionics engineer", "flight test engineer", "aerodynamics engineer", "propulsion engineer",
+      "stress engineer", "aircraft structural engineer", "composite engineer (aero)",
+      "spacecraft engineer", "satellite systems engineer", "mission operations engineer",
+      "launch vehicle engineer", "payload engineer", "ground systems engineer", "defense systems engineer",
+      "naval architect", "marine engineer", "submarine engineer", "weapon systems engineer",
+      "radar engineer", "sonar engineer", "ew engineer"], "mechanical-engineer"],
+    /* Civil engineering niche specialist titles. */
+    [["site engineer", "structural engineer", "geotechnical engineer", "highway engineer",
+      "bridge engineer", "tunnel engineer", "dam engineer", "construction engineer", "construction manager",
+      "quantity surveyor", "qs engineer", "estimation engineer", "tender engineer", "contracts engineer",
+      "contracts manager", "planning engineer", "primavera engineer", "msp planning engineer",
+      "hvac engineer", "plumbing engineer", "mep engineer", "mep designer", "mep project manager"], "civil-engineer"],
+    /* Manufacturing / production niche. */
+    [["mechanical design engineer", "cad engineer", "cad designer", "autocad engineer",
+      "solidworks engineer", "catia engineer", "ptc creo engineer", "production engineer",
+      "manufacturing engineer", "industrial engineer", "process engineer", "quality engineer (mfg)",
+      "six sigma black belt", "lean manufacturing engineer", "maintenance engineer",
+      "reliability engineer (mfg)", "plant engineer", "plant manager", "project engineer (mech)",
+      "tooling engineer", "jigs & fixtures engineer", "stamping engineer"], "mechanical-engineer"],
+    /* Chemical / petroleum / mining / metallurgy. */
+    [["chemical engineer", "process engineer (chemical)", "petroleum engineer", "reservoir engineer",
+      "drilling engineer", "production engineer (oil & gas)", "petrochemical engineer", "refinery engineer",
+      "pipeline engineer", "subsea engineer", "mining engineer", "geologist", "exploration geologist",
+      "metallurgical engineer", "metallurgist", "foundry engineer", "heat treatment engineer",
+      "materials engineer", "materials scientist", "polymer engineer", "composite materials engineer",
+      "coating engineer", "corrosion engineer", "environmental engineer", "ehs engineer",
+      "ehs manager", "industrial safety engineer"], "mechanical-engineer"],
+    /* Auto OEM / ancillary engineer ladder. */
+    [["adas engineer", "automotive software engineer", "automotive electronics engineer",
+      "autosar engineer"], "embedded-engineer"],
+    /* Robotics. */
+    [["robotics software engineer", "robotics hardware engineer", "robot perception engineer",
+      "robot motion planning engineer", "cobot engineer", "robotic process automation developer",
+      "robotics researcher"], "embedded-engineer"],
+    /* Aviation pilots / cabin crew / ATC — route to operations
+       (closest comp-curve match). */
+    [["trainee pilot", "cadet pilot", "co-pilot", "first officer", "type-rated first officer",
+      "type-rated captain", "line check captain", "designated examiner", "chief pilot",
+      "director of flight operations", "vp flight operations", "cabin crew", "lead cabin crew",
+      "cabin manager", "inflight service manager", "purser", "aircraft mechanic", "avionics mechanic",
+      "engine mechanic", "ame (airframe)", "ame (engine)", "ame (avionics)", "ame (electrical)",
+      "ame (instrumentation)", "quality inspector (aviation)", "dgca inspector",
+      "air traffic controller", "atco", "watch supervisor (atc)", "atc manager",
+      "ground staff", "ground operations manager", "airport operations manager", "airport manager",
+      "station manager", "ramp agent", "airline customer service agent", "airline reservations agent"], "operations"],
+    /* Hospitality F&B / kitchen ladder — route to operations. */
+    [["hotel general manager", "hotel manager", "resident manager", "front office manager",
+      "reception manager", "reservations manager", "concierge", "f&b manager", "f and b manager",
+      "banquet manager", "restaurant manager", "bar manager", "mixologist", "bartender", "sommelier",
+      "executive chef", "sous chef", "chef de partie", "demi chef de partie", "commis chef",
+      "pastry chef", "bakery chef", "banquet chef", "continental chef", "indian chef",
+      "tandoor chef", "chinese chef", "asian chef", "housekeeping manager", "executive housekeeper",
+      "floor supervisor", "spa manager", "spa director", "spa therapist", "massage therapist",
+      "wellness consultant", "revenue manager (hotel)", "director of revenue (hotel)",
+      "wedding coordinator", "wedding planner", "event coordinator (hotel)", "florist",
+      "floral designer", "event decorator", "set stylist"], "operations"],
+    /* Retail / store ops. */
+    [["store manager", "assistant store manager", "department manager (retail)", "retail manager",
+      "retail operations manager", "retail director", "visual merchandiser", "vm lead",
+      "window display designer", "merchandiser", "buyer (retail)", "planner (retail)",
+      "allocation analyst", "inventory planner", "demand planner (retail)", "marketplace manager",
+      "e-commerce manager", "catalog manager", "listing specialist", "pricing manager (retail)",
+      "discount strategy manager", "cashier", "floor associate", "sales associate",
+      "customer service associate (retail)", "loss prevention officer"], "operations"],
+    /* Trades / skilled labour — route to operations (PSU/services). */
+    [["electrician", "plumber", "carpenter", "welder", "tig welder", "mig welder", "pipe welder",
+      "structural welder", "mason", "construction worker", "tile layer", "painter (construction)",
+      "auto mechanic", "diesel mechanic", "heavy equipment mechanic", "two-wheeler mechanic",
+      "air conditioner mechanic", "refrigeration mechanic", "tailor", "master tailor",
+      "sewing machine operator", "goldsmith", "jeweler", "beautician", "hair stylist",
+      "salon manager", "makeup artist", "bridal makeup artist", "celebrity makeup artist",
+      "nail technician", "eyebrow specialist", "boiler operator", "crane operator",
+      "heavy vehicle driver", "jcb operator", "earthmover operator", "lineman", "cable joiner",
+      "tower lineman", "survey engineer", "total station operator", "gis surveyor", "dgps surveyor",
+      "gis analyst", "geographic information system analyst"], "operations"],
+    /* Government clerical / Group C/D ladder — route to operations
+       (closest comp curve via it-services tier). */
+    [["multi-tasking staff", "mts", "group d employee", "group c employee", "lower division clerk",
+      "ldc", "upper division clerk", "udc", "stenographer", "section officer (govt)",
+      "office superintendent", "head clerk", "office assistant (govt)", "data entry operator (govt)",
+      "junior translator", "senior translator", "junior hindi translator", "senior hindi translator"], "operations"],
+    /* Agriculture / horticulture / fisheries / forestry. */
+    [["agriculture officer", "agricultural engineer", "agronomist", "crop scientist", "soil scientist",
+      "plant pathologist", "entomologist", "horticulturist", "floriculturist", "tea planter",
+      "coffee planter", "dairy manager", "animal husbandry officer", "veterinarian", "vet surgeon",
+      "livestock manager", "poultry manager", "aquaculture manager", "fisheries officer", "marine biologist",
+      "forest officer", "dfo", "forester", "wildlife warden", "wildlife biologist", "conservationist",
+      "naturalist", "park ranger", "agritech field manager", "agritech sales officer",
+      "crop advisory officer", "farm advisor", "mandi operations manager", "fpo coordinator"], "operations"],
+    /* Social impact / development sector. */
+    [["program manager (ngo)", "program director (ngo)", "country director (ngo)",
+      "project coordinator (ngo)", "project officer (ngo)", "field officer (ngo)", "community mobilizer",
+      "monitoring & evaluation specialist", "m&e manager", "m&e specialist", "m&e director",
+      "fundraising manager", "director fundraising", "donor relations manager", "grant writer",
+      "grants manager", "csr manager", "director csr", "csr lead", "sustainability manager",
+      "esg analyst", "esg manager", "director esg", "vp sustainability", "climate risk analyst",
+      "carbon markets analyst", "carbon markets specialist", "voluntary carbon trader",
+      "policy analyst", "public policy manager", "government affairs manager", "public affairs director",
+      "lobbyist", "government relations lead", "researcher (think tank)", "fellow", "senior fellow",
+      "resident scholar"], "consultant"],
+    /* Lab / research roles. */
+    [["research scholar", "phd scholar", "postdoctoral researcher", "research fellow", "jrf",
+      "srf", "research associate", "principal investigator", "lab manager", "lab director",
+      "bench chemist", "synthesis chemist", "polymer chemist", "biochemist", "cell biologist",
+      "molecular biologist", "geneticist", "virologist", "immunologist", "bacteriologist",
+      "bioinformatics analyst", "computational biologist", "genomics scientist", "proteomics scientist",
+      "metabolomics scientist", "material scientist", "nanomaterials researcher", "energy researcher",
+      "battery researcher", "solar cell researcher", "climate scientist", "atmospheric scientist",
+      "oceanographer", "hydrologist", "geophysicist", "seismologist"], "data-scientist"],
+    /* Pharma sales / brand / regulatory ladder. */
+    [["pharmaceutical sales representative", "medical representative", "area business manager",
+      "regional business manager", "zonal business manager", "brand manager (pharma)",
+      "product manager (pharma)", "group product manager (pharma)", "marketing manager (pharma)",
+      "field marketing manager (pharma)", "therapy area lead", "brand director (pharma)",
+      "medical science liaison", "msl", "medical affairs director", "vp medical affairs",
+      "qa officer (pharma)", "qa manager (pharma)", "qc officer (pharma)", "qc chemist",
+      "validation officer", "validation manager", "gmp auditor", "glp auditor",
+      "production officer (pharma)", "production manager (pharma)", "plant manager (pharma)",
+      "formulation scientist", "analytical chemist", "r&d scientist", "principal scientist",
+      "research director", "api production chemist", "process chemist", "synthetic chemist",
+      "medicinal chemist", "regulatory affairs specialist", "regulatory affairs manager",
+      "drug regulatory affairs", "clinical research associate", "cra", "clinical research coordinator",
+      "clinical trial manager", "clinical project manager", "biostatistician", "pharmacologist",
+      "toxicologist", "microbiologist", "biotechnologist", "bioinformatician", "genomic data scientist",
+      "pharmacovigilance specialist", "drug safety officer", "medical affairs manager",
+      "medical writer"], "pharmacist"],
+    /* Travel / tourism. */
+    [["travel consultant", "travel agent", "travel manager", "tour operator", "tour manager",
+      "tour designer", "trip planner", "visa specialist", "visa counselor", "immigration consultant",
+      "tourism manager", "destination manager", "mice manager", "corporate travel manager"], "operations"],
+    /* Photography / content creation. */
+    [["wedding photographer", "fashion photographer", "product photographer", "food photographer",
+      "wildlife photographer", "photojournalist", "studio photographer", "travel photographer",
+      "lifestyle photographer", "photo editor", "picture editor", "videographer", "wedding videographer",
+      "corporate videographer", "content creator", "reels creator", "youtube creator",
+      "instagram influencer", "tiktok creator", "twitch streamer", "live streamer"], "content-writer"],
+    /* Sports coaching / fitness / esports. */
+    [["sports coach", "cricket coach", "football coach", "tennis coach", "badminton coach",
+      "athletic coach", "strength & conditioning coach", "fitness trainer", "personal trainer",
+      "group fitness instructor", "yoga instructor", "yoga trainer", "pilates instructor",
+      "zumba instructor", "crossfit coach", "calisthenics coach", "sports physiotherapist",
+      "sports nutritionist", "sports psychologist", "sports manager", "sports marketing manager",
+      "sports sponsorship manager", "athlete manager", "talent manager (sports)", "sports agent",
+      "sports journalist", "cricket writer", "football writer", "sports broadcaster",
+      "match commentator", "sports anchor", "esports player", "pro gamer", "esports coach",
+      "esports manager", "esports caster", "esports analyst", "esports production manager"], "marketing"],
+    /* Niche emerging that should map cleanly. */
+    [["drone pilot", "drone operator", "uav engineer", "drone designer"], "embedded-engineer"],
+    [["quantum computing researcher", "quantum software engineer", "quantum hardware engineer",
+      "quantum algorithm engineer", "post-quantum crypto engineer", "quantum cryptography researcher"], "data-scientist"],
+    [["ar/vr engineer", "xr developer", "spatial computing engineer", "metaverse engineer",
+      "metaverse designer", "virtual world designer"], "frontend-developer"],
+    [["bci engineer", "brain-computer interface researcher", "neurotechnology engineer",
+      "bioprinting engineer", "tissue engineer", "synthetic biology engineer", "synthetic biology designer",
+      "longevity researcher", "biohacker", "cell therapy scientist", "gene therapy researcher",
+      "mrna therapeutics researcher", "crispr engineer", "genomic editing researcher"], "data-scientist"],
+    /* Web3 / DAO / crypto operations. */
+    [["dao steward", "dao treasury manager", "crypto tax analyst", "crypto compliance officer",
+      "tokenomics designer", "liquidity pool manager", "defi engineer", "web3 product manager",
+      "dao operations lead"], "blockchain"],
+    /* ─── End of 2026 niche-routing patterns ─── */
     [["machine learning", "ml engineer", "ml lead"], "ml-engineer"],
     [["ai engineer", "ai/ml", "artificial intelligence"], "ai-engineer"],
     [["data scientist", "research scientist"], "data-scientist"],
