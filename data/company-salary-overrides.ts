@@ -95,6 +95,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   swiggy: {
     "software-engineer": {
+      entry: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Naukri (Swiggy SDE-1 fresher 2026)", lastVerified: "2026-05-07", notes: "Swiggy SDE-1 campus / 0-2 yr; listed Nov 2024 — ESOPs converted to RSU." },
       mid: { totalMin: 25, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07", notes: "Listed on NSE/BSE 2024 — ESOP liquidity is real now." },
       senior: { totalMin: 42, totalMax: 70, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -106,6 +107,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   zomato: {
     "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + AmbitionBox (Zomato SDE-1 fresher)", lastVerified: "2026-05-07" },
       mid: { totalMin: 24, totalMax: 40, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Levels.fyi (Eternal/Zomato listed)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -113,6 +115,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   cred: {
     "software-engineer": {
+      entry: { totalMin: 22, totalMax: 32, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CRED SDE-1 campus / fresher)", lastVerified: "2026-05-07", notes: "CRED hires extremely selectively at campus level; bar is high." },
       mid: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor", lastVerified: "2026-05-07", notes: "CRED engineering bar high; mid-bar but design bar stricter." },
       senior: { totalMin: 50, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -124,6 +127,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   zerodha: {
     "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityType: "none", source: "Zerodha public hiring disclosures + Glassdoor", lastVerified: "2026-05-07", notes: "Zerodha SDE-1 fresher. Bootstrapped — no ESOP, but profit-share bonus can equal base." },
       mid: { totalMin: 28, totalMax: 45, equityType: "none", source: "Glassdoor + Zerodha public bonus disclosures", lastVerified: "2026-05-07", notes: "Bootstrapped; no ESOP. Profitable — annual bonus 100% of base in good years." },
       senior: { totalMin: 45, totalMax: 75, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -131,6 +135,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   meesho: {
     "software-engineer": {
+      entry: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Naukri (Meesho SDE-1 post-IPO)", lastVerified: "2026-05-07", notes: "Listed Dec 2025; SDE-1 RSU is now liquid." },
       mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox (Meesho listed Dec 2025)", lastVerified: "2026-05-07", notes: "Listed Dec 2025 — ESOPs converted to RSUs." },
       senior: { totalMin: 42, totalMax: 68, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
@@ -142,6 +147,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── FAANG India ─────────────────────────────────────────────── */
   google: {
     "software-engineer": {
+      entry: { totalMin: 30, totalMax: 45, equityMin: 8, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India L3 / new-grad campus)", lastVerified: "2026-05-07", notes: "Google L3 India campus offer; sign-on ₹3-8L common." },
       mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India SWE)", lastVerified: "2026-05-07", notes: "Google L4 India median ₹62L total comp; high performers cross ₹78L." },
       senior: { totalMin: 80, totalMax: 130, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (L5)", lastVerified: "2026-05-07" },
       lead: { totalMin: 120, totalMax: 200, equityMin: 50, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (L6+)", lastVerified: "2026-05-07" },
@@ -154,6 +160,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   microsoft: {
     "software-engineer": {
+      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "5yr (staggered)", source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-07", notes: "Microsoft India L59-L60 SDE campus offer; refresh grants annual." },
       mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr (20-20-20-20-20)", source: "Levels.fyi (Microsoft India SDE)", lastVerified: "2026-05-07" },
       senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", source: "Levels.fyi (L62-L63)", lastVerified: "2026-05-07" },
     },
@@ -169,6 +176,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   amazon: {
     "software-engineer": {
+      entry: { totalMin: 22, totalMax: 32, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", source: "Levels.fyi (Amazon India SDE-1 / L4 campus)", lastVerified: "2026-05-07", notes: "Amazon SDE-1 India campus; sign-on ₹3-6L offsets back-loaded RSU vest." },
       mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 5-15-40-40 (back-loaded)", source: "Levels.fyi (Amazon India SDE-2)", lastVerified: "2026-05-07", notes: "Amazon India RSU vest is back-loaded — first 2 years cash-heavy with sign-on offsetting." },
       senior: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / back-loaded", source: "Levels.fyi (SDE-3 / L6)", lastVerified: "2026-05-07" },
     },
@@ -239,12 +247,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   apple: {
     "software-engineer": {
+      entry: { totalMin: 30, totalMax: 44, equityMin: 7, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Apple India ICT2 / new-grad)", lastVerified: "2026-05-07" },
       mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Apple India ICT3-ICT4)", lastVerified: "2026-05-07" },
       senior: { totalMin: 85, totalMax: 140, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (ICT5)", lastVerified: "2026-05-07" },
     },
   },
   stripe: {
     "software-engineer": {
+      entry: { totalMin: 32, totalMax: 48, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Stripe India campus / new-grad (Glassdoor + Stripe disclosures)", lastVerified: "2026-05-07", notes: "Stripe SE-I India; bar-raising writing screen even at campus." },
       mid: { totalMin: 50, totalMax: 85, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Stripe India product-engineering team (Bengaluru)", lastVerified: "2026-05-07", notes: "Stripe's writing-clarity bar is unusually high; expect culture-fit weight in offer." },
       senior: { totalMin: 85, totalMax: 140, equityMin: 28, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Stripe India internal disclosures + Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -290,6 +300,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── SaaS / Product (Indian-built) ────────────────────────── */
   postman: {
     "software-engineer": {
+      entry: { totalMin: 25, totalMax: 35, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Postman IC1 India ₹2.9M; campus ₹25-35L)", lastVerified: "2026-05-07" },
       mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Postman IC2 India median ₹53.1L)", lastVerified: "2026-05-07" },
       senior: { totalMin: 65, totalMax: 120, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (IC3-IC4 ₹11.96M)", lastVerified: "2026-05-07" },
     },
@@ -303,12 +314,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   chargebee: {
     "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + Glassdoor (Chargebee SE entry India)", lastVerified: "2026-05-07" },
       mid: { totalMin: 18, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Chargebee India median ₹27.6L)", lastVerified: "2026-05-07" },
       senior: { totalMin: 32, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Principal ₹4.9M)", lastVerified: "2026-05-07" },
     },
   },
   freshworks: {
     "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (Freshworks SE entry India)", lastVerified: "2026-05-07", notes: "Freshworks (FRSH NASDAQ) campus; RSU is public-stock, liquid." },
       mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (Freshworks Nasdaq-listed)", lastVerified: "2026-05-07", notes: "RSUs in Freshworks (FRSH NASDAQ) — public, liquid." },
       senior: { totalMin: 40, totalMax: 70, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -453,6 +466,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   mediatek: {
     "software-engineer": {
+      entry: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor (MediaTek India fresher / campus)", lastVerified: "2026-05-07" },
       mid: { totalMin: 24.6, totalMax: 39.8, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (MediaTek India HW Eng ₹2.46M-₹3.98M, total comp ₹43.6L max)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi", lastVerified: "2026-05-07" },
     },
@@ -467,12 +481,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   workday: {
     "software-engineer": {
+      entry: { totalMin: 22, totalMax: 33, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Workday India P1 entry)", lastVerified: "2026-05-07" },
       mid: { totalMin: 33, totalMax: 50, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Workday India P2 ₹3.3M-P3 median ₹48.2L)", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 67, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P4 ₹6.68M)", lastVerified: "2026-05-07" },
     },
   },
   linkedin: {
     "software-engineer": {
+      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (LinkedIn India SE-1 / new-grad)", lastVerified: "2026-05-07", notes: "LinkedIn India = Microsoft-tier (MSFT-owned), MSFT RSU." },
       mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 32, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (LinkedIn India SSE)", lastVerified: "2026-05-07", notes: "LinkedIn India treated as Microsoft-tier (Microsoft-owned)." },
       senior: { totalMin: 80, totalMax: 130, equityMin: 28, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -548,12 +564,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── More Indian Unicorns ─────────────────────────────────── */
   lenskart: {
     "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Lenskart Solutions 1,527 salaries)", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + Glassdoor (Lenskart median $37.5K = ₹31L; range ₹2.4L-₹77L)", lastVerified: "2026-05-07", notes: "Lenskart listed Nov 2025 — ESOPs converted to RSUs." },
       senior: { totalMin: 38, totalMax: 60, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
   nykaa: {
     "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Nykaa 1,202 salaries; SE entry India)", lastVerified: "2026-05-07" },
       mid: { totalMin: 27.3, totalMax: 38.6, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Nykaa SE India median ₹35.5L; range ₹2.73M-₹3.86M)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
@@ -563,18 +581,21 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   cars24: {
     "software-engineer": {
+      entry: { totalMin: 10, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CARS24 2,087 salaries; entry SE)", lastVerified: "2026-05-07" },
       mid: { totalMin: 18, totalMax: 32, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Cars24 ₹10L-₹54.9L range)", lastVerified: "2026-05-07" },
       senior: { totalMin: 32, totalMax: 55, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Cars24 SEM)", lastVerified: "2026-05-07" },
     },
   },
   groww: {
     "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi (Groww SE-1 fresher post-IPO)", lastVerified: "2026-05-07", notes: "Groww listed in 2025 IPO wave; fresher RSU is now liquid." },
       mid: { totalMin: 28, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Groww post-listing)", lastVerified: "2026-05-07", notes: "Groww listed in 2025 IPO wave." },
       senior: { totalMin: 50, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Groww SEM ₹12.4M)", lastVerified: "2026-05-07" },
     },
   },
   ola: {
     "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox (Ola SE-1 fresher post-restructure)", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox (Ola post-restructure)", lastVerified: "2026-05-07" },
       senior: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },

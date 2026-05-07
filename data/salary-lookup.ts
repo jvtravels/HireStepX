@@ -227,7 +227,20 @@ You are a cautious hiring manager who avoids confrontation but protects the budg
 function normalizeExp(exp: string | undefined): ExperienceLevel {
   if (!exp) return "mid";
   const lower = exp.toLowerCase().trim();
-  if (lower === "fresher" || lower === "entry" || lower === "junior" || lower === "intern") return "entry";
+  /* Fresher synonyms — Indian campus / new-grad pipelines have many
+     names. Cover the most common before YOE / title parsing so a
+     candidate typing "campus hire" / "GET" / "management trainee" /
+     "graduate" gets the entry band, not the mid default. */
+  if (
+    lower === "fresher" || lower === "entry" || lower === "junior" || lower === "intern" ||
+    lower === "graduate" || lower === "new grad" || lower === "newgrad" ||
+    lower === "campus" || lower === "campus hire" || lower === "campus placement" ||
+    lower === "get" || lower === "graduate engineer trainee" ||
+    lower === "management trainee" || lower === "mt" || lower === "trainee" ||
+    lower === "associate engineer" || lower === "associate software engineer" ||
+    lower === "no experience" || lower === "0 yoe" || lower === "0 years" ||
+    /\b(get|management trainee|graduate engineer trainee|campus hire|campus placement|new grad|fresher|0\s*(?:yoe|year))\b/.test(lower)
+  ) return "entry";
   if (lower === "mid" || lower === "middle" || lower === "intermediate") return "mid";
   if (lower === "senior" || lower === "sr") return "senior";
   if (lower === "lead" || lower === "staff" || lower === "principal") return "lead";

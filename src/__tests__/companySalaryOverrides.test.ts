@@ -322,6 +322,91 @@ describe("override map data integrity", () => {
     expect(yesBankCxo.initialOffer).toBeGreaterThan(40);
   });
 
+  /* ─── Fresher coverage (2026-Q2 fix) ─── */
+  it("Fresher synonyms all route to entry level", () => {
+    /* Indian campus pipelines use many names. All should map to
+       entry, not the mid default. */
+    const fresherInputs = [
+      "fresher",
+      "campus hire",
+      "campus placement",
+      "graduate",
+      "new grad",
+      "GET",
+      "graduate engineer trainee",
+      "management trainee",
+      "MT",
+      "trainee",
+      "associate engineer",
+      "no experience",
+      "0 years",
+      "0 yoe",
+    ];
+    for (const exp of fresherInputs) {
+      const band = generateNegotiationBand({
+        role: "Software Engineer",
+        company: "TCS",
+        experienceLevel: exp,
+      });
+      /* TCS SE entry: ₹3.4-4.5L. Initial 35th ≈ ₹3.7L. NOT mid (₹6.7L). */
+      expect(band.initialOffer).toBeLessThan(6);
+      expect(band.initialOffer).toBeGreaterThan(3);
+    }
+  });
+
+  it("Top-tier company freshers see verified campus bands (not generic tier)", () => {
+    const googleEntry = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Google",
+      experienceLevel: "fresher",
+    });
+    /* Google L3 India campus: ₹30-45L. Initial 35th ≈ ₹35.25L. */
+    expect(googleEntry.initialOffer).toBeGreaterThan(28);
+    expect(googleEntry.initialOffer).toBeLessThan(42);
+
+    const flipkartEntry = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Flipkart",
+      experienceLevel: "campus hire",
+    });
+    /* Flipkart SDE-1 fresher: ₹22-28L (₹25.95L avg). Initial 35th ≈ ₹24.1L. */
+    expect(flipkartEntry.initialOffer).toBeGreaterThan(21);
+    expect(flipkartEntry.initialOffer).toBeLessThan(28);
+  });
+
+  it("CRED fresher hits selective-bar band (was missing pre-fix)", () => {
+    const credEntry = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "CRED",
+      experienceLevel: "fresher",
+    });
+    /* CRED entry: ₹22-32L (selective campus). NOT generic unicorn ₹15L. */
+    expect(credEntry.initialOffer).toBeGreaterThan(22);
+    expect(credEntry.initialOffer).toBeLessThan(30);
+  });
+
+  it("Long-tail unicorn fresher hits sector entry band", () => {
+    /* Slice / Jupiter / etc. — fintech unicorn entry sector ₹15-24L. */
+    const sliceEntry = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Slice",
+      experienceLevel: "campus placement",
+    });
+    expect(sliceEntry.initialOffer).toBeGreaterThan(14);
+    expect(sliceEntry.initialOffer).toBeLessThan(22);
+  });
+
+  it("FMCG management trainee maps to brand entry band (HUL UFLP territory)", () => {
+    const hulMt = generateNegotiationBand({
+      role: "Brand Manager",
+      company: "HUL",
+      experienceLevel: "management trainee",
+    });
+    /* HUL UFLP entry: ₹18-27L. Initial 35th ≈ ₹21.15L. */
+    expect(hulMt.initialOffer).toBeGreaterThan(15);
+    expect(hulMt.initialOffer).toBeLessThan(25);
+  });
+
   it("YOE parser handles ranges, plus-signs, abbreviations (all parse to senior+ band)", () => {
     /* All these should parse to senior or executive — not mid. */
     const inputs = [
