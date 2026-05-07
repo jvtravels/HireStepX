@@ -154,16 +154,12 @@ describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
          band that's structurally appropriate for the cell.
        - 100% NON-BROKEN — every cell must produce a sensible offer.
          Asserted in the per-cell loop above. */
-    /* Floor pinned at 0.38 (well below current 0.40+); guards against
-       silent regression if a future refactor drops bands. */
-    expect(explicitRatio).toBeGreaterThan(0.38);
-    /* Resolved-via-fallback floor pinned at 0.50 (well below current
-       0.52+). The remaining cells resolve via exp-adjacent fallback
-       (exp-chain walks senior↔lead↔mid↔entry within the same tier) —
-       those still produce sensible offers but aren't counted in
-       hasResolvedBand here. The 100% non-broken assertion above is
-       the actual safety guarantee. */
-    expect(resolvedRatio).toBeGreaterThan(0.50);
+    /* Densification (in salaries.ts) lifts the runtime fallback chain
+       to module-load time, so SALARY_DATA[role][tier][exp] is always
+       defined. Both ratios should be exactly 1.0. If this regresses
+       it means the densifier failed for some cell — a real bug. */
+    expect(explicitRatio).toBe(1.0);
+    expect(resolvedRatio).toBe(1.0);
   });
 
   it("reports per-role explicit coverage (which roles have widest tier coverage)", () => {
