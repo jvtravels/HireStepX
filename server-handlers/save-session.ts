@@ -49,6 +49,8 @@ interface SessionBody {
   // server if not provided. Either way, immutable once written —
   // re-uploading a resume after the session never re-binds the row.
   resume_version_id?: unknown;
+  target_role?: unknown;
+  target_company?: unknown;
 }
 
 function asString(v: unknown, max = 500): string {
@@ -118,6 +120,8 @@ export default async function handler(req: Request): Promise<Response> {
     job_description: asString(body.job_description, 20000) || null,
     jd_analysis: (body.jd_analysis && typeof body.jd_analysis === "object") ? body.jd_analysis : null,
     resume_version_id: resolvedVersionId,
+    target_role: asString(body.target_role, 200) || null,
+    target_company: asString(body.target_company, 200) || null,
   };
 
   if (!sessionRow.id) {

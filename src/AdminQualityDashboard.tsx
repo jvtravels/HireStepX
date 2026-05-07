@@ -779,15 +779,18 @@ function SessionDetail({ row, onClose, onResolve }: {
   const [notes, setNotes] = useState(row.resolution_notes || "");
   const [by, setBy] = useState(row.resolved_by || "");
   const [transcript, setTranscript] = useState<TranscriptTurn[]>([]);
+  const [sessionMeta, setSessionMeta] = useState<{ target_role: string | null; target_company: string | null; difficulty: string; has_job_description: boolean } | null>(null);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   useEffect(() => { setNotes(row.resolution_notes || ""); setBy(row.resolved_by || ""); }, [row.session_id, row.resolution_notes, row.resolved_by]);
 
-  // Fetch the session transcript so we can render Q→A→next-Q context per finding.
+  // Fetch the session transcript + metadata so we can render Q→A→next-Q context
+  // and show what the candidate was practicing for (role / company).
   useEffect(() => {
     let cancelled = false;
     const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
     if (!token) return;
     setTranscript([]);
+    setSessionMeta(null);
     setTranscriptLoading(true);
     fetch("/api/admin-quality-session", {
       method: "POST",
@@ -795,11 +798,19 @@ function SessionDetail({ row, onClose, onResolve }: {
       body: JSON.stringify({ session_id: row.session_id }),
     })
       .then((r) => r.ok ? r.json() : null)
-      .then((j: { session?: { transcript: TranscriptTurn[] } } | null) => {
+      .then((j: { session?: { transcript: TranscriptTurn[]; target_role: string | null; target_company: string | null; difficulty: string; has_job_description: boolean } } | null) => {
         if (cancelled) return;
         setTranscript(j?.session?.transcript || []);
+        if (j?.session) {
+          setSessionMeta({
+            target_role: j.session.target_role,
+            target_company: j.session.target_company,
+            difficulty: j.session.difficulty || "",
+            has_job_description: j.session.has_job_description,
+          });
+        }
       })
-      .catch(() => { if (!cancelled) setTranscript([]); })
+      .catch(() => { if (!cancelled) { setTranscript([]); setSessionMeta(null); } })
       .finally(() => { if (!cancelled) setTranscriptLoading(false); });
     return () => { cancelled = true; };
   }, [row.session_id]);
@@ -810,7 +821,32 @@ function SessionDetail({ row, onClose, onResolve }: {
         <code style={{ color: c.gilt, fontSize: 11, fontFamily: font.mono }}>{row.session_id}</code>
         <button onClick={onClose} style={{ background: "transparent", color: c.stone, border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
       </div>
-      <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.lg }}>{friendlyFocus(row.focus)} · {new Date(row.analyzed_at).toLocaleString()}</div>
+      <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.sm }}>{friendlyFocus(row.focus)} · {new Date(row.analyzed_at).toLocaleString()}</div>
+
+      {/* Target role / company / difficulty — what was the candidate practicing for? */}
+      <div style={{ background: c.onyx, padding: sp.md, borderRadius: radius.sm, marginBottom: sp.lg, display: "grid", gridTemplateColumns: "auto 1fr", gap: `${sp.xs}px ${sp.md}px`, fontSize: 11 }}>
+        <div style={{ color: c.stone }}>Interview type</div>
+        <div style={{ color: c.ivory, fontWeight: 500 }}>{friendlyFocus(row.focus)}</div>
+
+        <div style={{ color: c.stone }}>Target role</div>
+        <div style={{ color: sessionMeta?.target_role ? c.ivory : c.stone }}>{sessionMeta?.target_role || (transcriptLoading ? "Loading…" : "Not recorded")}</div>
+
+        <div style={{ color: c.stone }}>Target company</div>
+        <div style={{ color: sessionMeta?.target_company ? c.ivory : c.stone }}>{sessionMeta?.target_company || (transcriptLoading ? "Loading…" : "Not recorded")}</div>
+
+        {sessionMeta?.difficulty && (
+          <>
+            <div style={{ color: c.stone }}>Difficulty</div>
+            <div style={{ color: c.chalk }}>{sessionMeta.difficulty}</div>
+          </>
+        )}
+        {sessionMeta?.has_job_description && (
+          <>
+            <div style={{ color: c.stone }}>Job description</div>
+            <div style={{ color: c.sage }}>Provided</div>
+          </>
+        )}
+      </div>
 
       <div style={{ display: "flex", gap: sp.md, marginBottom: sp.lg, fontSize: 11, flexWrap: "wrap" }}>
         <div><div style={{ color: c.stone, fontSize: 10 }}>Priority</div><div style={{ color: severityColor(row.severity), fontWeight: 600 }}>{friendlySeverity(row.severity)}</div></div>

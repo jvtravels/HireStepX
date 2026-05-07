@@ -160,6 +160,9 @@ export interface SessionResult {
     interviewTips: string[];
     suggestedFocus: string;
   } | null;
+  /** Captured at session start so the admin can see what the candidate was practicing for. */
+  targetRole?: string;
+  targetCompany?: string;
 }
 
 export interface EvaluationResult {
@@ -243,6 +246,8 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
         skill_scores: result.skill_scores || null,
         job_description: result.jobDescription || null,
         jd_analysis: result.jdAnalysis || null,
+        target_role: result.targetRole || null,
+        target_company: result.targetCompany || null,
         // Pin the resume version captured at session start. Server
         // falls back to resolveActiveResumeVersionId if absent, but
         // sending the client-captured value closes the edge case where

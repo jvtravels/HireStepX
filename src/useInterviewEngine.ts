@@ -2229,6 +2229,8 @@ export function useInterviewEngine() {
       resumeVersionId: resumeVersionIdRef.current,
       jobDescription: jobDescription || undefined,
       jdAnalysis: jdAnalysisData || null,
+      targetRole: targetRole || user?.targetRole || undefined,
+      targetCompany: targetCompany || user?.targetCompany || undefined,
     };
     try {
       // Race the entire save against a 10s ceiling — Supabase PATCH on slow

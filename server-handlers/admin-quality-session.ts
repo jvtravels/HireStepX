@@ -54,6 +54,9 @@ interface SessionRow {
   transcript: { speaker: string; text: string; time: string }[] | null;
   ai_feedback: string;
   created_at: string;
+  target_role: string | null;
+  target_company: string | null;
+  job_description: string | null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -77,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   const rows = await supa<SessionRow>(
-    `sessions?id=eq.${encodeURIComponent(sessionId)}&select=id,user_id,type,focus,difficulty,score,questions,duration,transcript,ai_feedback,created_at&limit=1`,
+    `sessions?id=eq.${encodeURIComponent(sessionId)}&select=id,user_id,type,focus,difficulty,score,questions,duration,transcript,ai_feedback,created_at,target_role,target_company,job_description&limit=1`,
   );
   const session = rows[0];
   if (!session) {
@@ -99,6 +102,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       transcript: Array.isArray(session.transcript) ? session.transcript : [],
       ai_feedback: session.ai_feedback || "",
       created_at: session.created_at,
+      target_role: session.target_role || null,
+      target_company: session.target_company || null,
+      has_job_description: !!session.job_description,
     },
   });
 }

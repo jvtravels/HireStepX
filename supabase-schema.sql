@@ -644,6 +644,15 @@ create trigger on_auth_user_created
 alter table sessions add column if not exists job_description text;
 alter table sessions add column if not exists jd_analysis jsonb;
 
+-- Target role + company captured at session start. Drives question
+-- generation and salary-neg realism but was previously only in URL
+-- params — never persisted, so the admin Quality dashboard couldn't
+-- show what the candidate was practicing for.
+alter table sessions add column if not exists target_role text;
+alter table sessions add column if not exists target_company text;
+create index if not exists idx_sessions_target_role on sessions(target_role);
+create index if not exists idx_sessions_target_company on sessions(target_company);
+
 create table if not exists session_insights (
   session_id text primary key references sessions(id) on delete cascade,
   user_id uuid references profiles(id) on delete cascade not null,
