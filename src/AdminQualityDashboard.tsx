@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { c, font, radius, sp } from "./tokens";
+import { friendlyFlag, friendlyFocus, friendlySeverity, friendlyStatus, CATEGORY_LABEL, type FriendlyFlag } from "./qualityFlagDictionary";
 
 const TOKEN_KEY = "hirestepx_admin_token";
 
@@ -97,14 +98,30 @@ function statusColor(s: string): string {
   return c.ember;
 }
 
-/* Categorize a flag into a coarse type bucket. Drives the Issues sub-tab grouping. */
-function flagCategory(flag: string): string {
-  if (flag.startsWith("implausible_") || flag.includes("hallucinat") || flag.includes("fake_") || flag.includes("invented")) return "hallucination";
-  if (flag === "duplicate_question" || flag === "leaked_answer") return "bad_question";
-  if (flag === "analyzer_error" || flag === "empty_transcript") return "system";
-  if (flag.startsWith("ai_accept") || flag.startsWith("ai_invent")) return "evaluator_drift";
-  return "rubric_gap";
+/* Categorize a flag using the friendly dictionary. Drives Issues sub-tab grouping. */
+function flagCategory(flag: string): FriendlyFlag["category"] {
+  return friendlyFlag(flag).category;
 }
+
+/** Bucket a row by the day it was analyzed (YYYY-MM-DD, local time). */
+function dayKey(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+/** Date-range filter for a list of rows by analyzed_at. */
+function withinRange(iso: string, range: "today" | "7d" | "30d" | "all"): boolean {
+  if (range === "all") return true;
+  const ts = new Date(iso).getTime();
+  if (!Number.isFinite(ts)) return true;
+  const now = Date.now();
+  const day = 86400_000;
+  if (range === "today") return ts >= now - day;
+  if (range === "7d") return ts >= now - 7 * day;
+  if (range === "30d") return ts >= now - 30 * day;
+  return true;
+}
+
+type DateRange = "today" | "7d" | "30d" | "all";
 
 export function QualityContent({ showBackLink = false }: { showBackLink?: boolean }) {
   const [data, setData] = useState<QualityData | null>(null);
@@ -292,7 +309,7 @@ function DigestView({ digest, headlines, totals }: {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: sp.sm }}>
         {headlines.map((h) => (
           <div key={h.focus} style={{ padding: sp.md, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.md }}>
-            <div style={{ color: c.gilt, fontSize: 12, fontWeight: 600, marginBottom: 4, fontFamily: font.mono }}>{h.focus}</div>
+            <div style={{ color: c.gilt, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{friendlyFocus(h.focus)}</div>
             <div style={{ fontSize: 22, fontFamily: font.display, color: c.ivory }}>{h.sessions_7d}</div>
             <div style={{ display: "flex", gap: sp.md, marginTop: sp.xs, fontSize: 11, fontFamily: font.mono }}>
               <span style={{ color: driftColor(h.avg_drift_7d) }}>drift {fmtDrift(h.avg_drift_7d)}</span>
@@ -332,7 +349,7 @@ function HeadlinesView({ headlines, dailyByFocus }: { headlines: Headline[]; dai
           <div style={{ color: c.stone, padding: sp.lg }}>No analyzed sessions in the last 7 days.</div>
         ) : headlines.map((h) => (
           <div key={h.focus} style={{ padding: sp.lg, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.md }}>
-            <div style={{ color: c.gilt, fontSize: 13, fontWeight: 600, marginBottom: sp.sm, fontFamily: font.mono }}>{h.focus}</div>
+            <div style={{ color: c.gilt, fontSize: 13, fontWeight: 600, marginBottom: sp.sm }}>{friendlyFocus(h.focus)}</div>
             <div style={{ color: c.stone, fontSize: 11, marginBottom: 2 }}>Sessions analyzed</div>
             <div style={{ fontSize: 24, fontFamily: font.display, color: c.ivory, marginBottom: sp.sm }}>{h.sessions_7d}</div>
             <div style={{ display: "flex", gap: sp.lg }}>
@@ -346,7 +363,7 @@ function HeadlinesView({ headlines, dailyByFocus }: { headlines: Headline[]; dai
       <h3 style={{ fontSize: 14, color: c.chalk, marginBottom: sp.lg }}>Daily breakdown (30 days)</h3>
       {Array.from(dailyByFocus.entries()).map(([focus, rows]) => (
         <div key={focus} style={{ marginBottom: sp.xl }}>
-          <div style={{ color: c.gilt, fontSize: 13, fontFamily: font.mono, marginBottom: sp.sm }}>{focus}</div>
+          <div style={{ color: c.gilt, fontSize: 13, fontWeight: 600, marginBottom: sp.sm }}>{friendlyFocus(focus)}</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ borderCollapse: "collapse", fontSize: 12, fontFamily: font.mono, minWidth: 720 }}>
               <thead>
@@ -449,8 +466,8 @@ function IssuesView({ issuesByCategory, recent, onSelectSession, onRefresh }: {
     }
   }, [allOpen, onRefresh]);
 
-  if (issuesByCategory.size === 0) return <div style={{ color: c.stone, padding: sp.lg }}>No flagged issues yet.</div>;
-  const order = ["hallucination", "evaluator_drift", "rubric_gap", "bad_question", "system"];
+  if (issuesByCategory.size === 0) return <div style={{ color: c.stone, padding: sp.lg }}>No issues found yet.</div>;
+  const order: FriendlyFlag["category"][] = ["ai_made_up_info", "ai_didnt_push_back", "user_skipped_step", "question_quality", "system"];
   const ordered = order.filter((k) => issuesByCategory.has(k));
 
   return (
@@ -501,30 +518,39 @@ function IssuesView({ issuesByCategory, recent, onSelectSession, onRefresh }: {
       {ordered.map((cat) => (
         <div key={cat} style={{ marginBottom: sp.xl }}>
           <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: sp.sm }}>
-            <h3 style={{ fontSize: 14, color: c.chalk, margin: 0, textTransform: "capitalize" }}>{cat.replace(/_/g, " ")}</h3>
-            <span style={{ color: c.stone, fontSize: 11 }}>{(issuesByCategory.get(cat) || []).length} flag types</span>
+            <h3 style={{ fontSize: 15, color: c.chalk, margin: 0 }}>{CATEGORY_LABEL[cat]}</h3>
+            <span style={{ color: c.stone, fontSize: 11 }}>{(issuesByCategory.get(cat) || []).length} types of issue</span>
           </div>
           <div style={{ display: "grid", gap: sp.xs }}>
-            {(issuesByCategory.get(cat) || []).map((issue) => (
-              <div key={issue.flag} style={{ padding: sp.md, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm, display: "flex", alignItems: "center", gap: sp.lg, flexWrap: "wrap" }}>
-                <span style={{ color: c.gilt, fontFamily: font.mono, fontSize: 12, flexShrink: 0 }}>{issue.flag}</span>
-                <span style={{ fontSize: 12, color: c.chalk }}>×{issue.count}</span>
-                {issue.severity_high > 0 && <span style={{ background: "rgba(209,126,104,0.15)", color: c.ember, padding: `2px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 11, fontFamily: font.mono }}>{issue.severity_high} high</span>}
-                <span style={{ color: c.stone, fontSize: 11 }}>open {issue.open} · resolved {issue.resolved}</span>
-                <div style={{ marginLeft: "auto", display: "flex", gap: sp.xs, flexWrap: "wrap", alignItems: "center" }}>
-                  {issue.open > 0 && (
-                    <button onClick={() => bulkAcknowledge(issue.flag)} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, borderRadius: radius.sm, padding: `2px ${sp.sm}px`, fontSize: 10, fontFamily: font.ui, cursor: "pointer" }}>
-                      Ack {issue.open} open
-                    </button>
-                  )}
-                  {issue.sessions.slice(0, 5).map((sid) => (
-                    <button key={sid} onClick={() => onSelectSession(sid)} style={{ background: c.onyx, color: c.gilt, border: "none", borderRadius: radius.sm, padding: `2px ${sp.sm}px`, fontFamily: font.mono, fontSize: 10, cursor: "pointer" }}>
-                      {sid.slice(0, 10)}…
-                    </button>
-                  ))}
+            {(issuesByCategory.get(cat) || []).map((issue) => {
+              const f = friendlyFlag(issue.flag);
+              return (
+                <div key={issue.flag} style={{ padding: sp.md, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: sp.lg, flexWrap: "wrap", marginBottom: f.description ? sp.xs : 0 }}>
+                    <div style={{ flexShrink: 0 }}>
+                      <div style={{ color: c.ivory, fontSize: 13, fontWeight: 500 }}>{f.label}</div>
+                      <code style={{ color: c.stone, fontFamily: font.mono, fontSize: 10 }}>{issue.flag}</code>
+                    </div>
+                    <span style={{ fontSize: 12, color: c.chalk }}>{issue.count} occurrence{issue.count === 1 ? "" : "s"}</span>
+                    {issue.severity_high > 0 && <span style={{ background: "rgba(209,126,104,0.15)", color: c.ember, padding: `2px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 11 }}>{issue.severity_high} high priority</span>}
+                    <span style={{ color: c.stone, fontSize: 11 }}>{issue.open} need review · {issue.resolved} fixed</span>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: sp.xs, flexWrap: "wrap", alignItems: "center" }}>
+                      {issue.open > 0 && (
+                        <button onClick={() => bulkAcknowledge(issue.flag)} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, borderRadius: radius.sm, padding: `2px ${sp.sm}px`, fontSize: 11, fontFamily: font.ui, cursor: "pointer" }}>
+                          Mark {issue.open} as reviewed
+                        </button>
+                      )}
+                      {issue.sessions.slice(0, 5).map((sid) => (
+                        <button key={sid} onClick={() => onSelectSession(sid)} style={{ background: c.onyx, color: c.gilt, border: "none", borderRadius: radius.sm, padding: `2px ${sp.sm}px`, fontFamily: font.mono, fontSize: 10, cursor: "pointer" }}>
+                          {sid.slice(0, 10)}…
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {f.description && <div style={{ color: c.stone, fontSize: 12, lineHeight: 1.4 }}>{f.description}</div>}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
@@ -563,56 +589,127 @@ function SessionsView({ rows, selected, setSelected, onResolve }: {
   onResolve: (sessionId: string, status: string, notes: string, by: string) => void;
 }) {
   const [filter, setFilter] = useState("");
+  const [range, setRange] = useState<DateRange>("7d");
+
   const filtered = useMemo(() => {
-    if (!filter) return rows;
-    const q = filter.toLowerCase();
-    return rows.filter((r) =>
-      r.session_id.toLowerCase().includes(q) ||
-      r.focus.toLowerCase().includes(q) ||
-      (r.flags || []).some((f) => f.toLowerCase().includes(q)),
-    );
-  }, [rows, filter]);
+    let out = rows.filter((r) => withinRange(r.analyzed_at, range));
+    if (filter) {
+      const q = filter.toLowerCase();
+      out = out.filter((r) =>
+        r.session_id.toLowerCase().includes(q) ||
+        r.focus.toLowerCase().includes(q) ||
+        friendlyFocus(r.focus).toLowerCase().includes(q) ||
+        (r.flags || []).some((f) => f.toLowerCase().includes(q) || friendlyFlag(f).label.toLowerCase().includes(q)),
+      );
+    }
+    return out;
+  }, [rows, filter, range]);
+
+  // Group by day for the table — date headers separate the report by day so
+  // 300+ sessions stay scannable.
+  const grouped = useMemo(() => {
+    const m = new Map<string, InsightRow[]>();
+    for (const r of filtered) {
+      const day = dayKey(r.analyzed_at);
+      const list = m.get(day) || [];
+      list.push(r);
+      m.set(day, list);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [filtered]);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 380px" : "1fr", gap: sp.lg }}>
       <div>
-        <input
-          type="text"
-          placeholder="Filter by session ID, focus, or flag…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          style={{ width: "100%", padding: sp.sm, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm, color: c.ivory, fontFamily: font.ui, fontSize: 13, marginBottom: sp.md }}
-        />
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ borderCollapse: "collapse", fontSize: 12, fontFamily: font.mono, width: "100%" }}>
-            <thead>
-              <tr style={{ color: c.stone, textAlign: "left" }}>
-                <th style={{ padding: sp.sm, fontWeight: 400 }}>Session</th>
-                <th style={{ padding: sp.sm, fontWeight: 400 }}>Focus</th>
-                <th style={{ padding: sp.sm, fontWeight: 400 }}>Sev</th>
-                <th style={{ padding: sp.sm, fontWeight: 400 }}>Drift</th>
-                <th style={{ padding: sp.sm, fontWeight: 400 }}>Flags</th>
-                <th style={{ padding: sp.sm, fontWeight: 400 }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.session_id} onClick={() => setSelected(r)} style={{ borderTop: `1px solid ${c.border}`, color: c.chalk, cursor: "pointer", background: selected?.session_id === r.session_id ? c.onyx : "transparent" }}>
-                  <td style={{ padding: sp.sm }}><code style={{ color: c.gilt }}>{r.session_id.slice(0, 14)}…</code></td>
-                  <td style={{ padding: sp.sm, color: c.chalk }}>{r.focus}</td>
-                  <td style={{ padding: sp.sm, color: severityColor(r.severity), textTransform: "uppercase", fontWeight: 600, fontSize: 10 }}>{r.severity}</td>
-                  <td style={{ padding: sp.sm, color: driftColor(r.score_drift) }}>{fmtDrift(r.score_drift)}</td>
-                  <td style={{ padding: sp.sm, color: c.stone }}>{(r.flags || []).length}</td>
-                  <td style={{ padding: sp.sm, color: statusColor(r.resolution_status), textTransform: "uppercase", fontSize: 10 }}>{r.resolution_status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", gap: sp.sm, marginBottom: sp.md, flexWrap: "wrap" }}>
+          <input
+            type="text"
+            placeholder="Search by ID, interview type, or issue…"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            style={{ flex: 1, minWidth: 240, padding: sp.sm, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm, color: c.ivory, fontFamily: font.ui, fontSize: 13 }}
+          />
+          <DateRangeSelector value={range} onChange={setRange} />
         </div>
+
+        <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.sm }}>
+          Showing {filtered.length} of {rows.length} sessions
+        </div>
+
+        {grouped.length === 0 && <div style={{ color: c.stone, padding: sp.lg }}>No sessions in this date range.</div>}
+
+        {grouped.map(([day, dayRows]) => (
+          <div key={day} style={{ marginBottom: sp.lg }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: sp.xs, padding: `${sp.xs}px ${sp.sm}px`, background: c.onyx, borderRadius: radius.sm }}>
+              <div style={{ color: c.gilt, fontFamily: font.ui, fontSize: 13, fontWeight: 600 }}>{formatDay(day)}</div>
+              <div style={{ color: c.stone, fontSize: 11 }}>{dayRows.length} session{dayRows.length === 1 ? "" : "s"}</div>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ borderCollapse: "collapse", fontSize: 12, fontFamily: font.ui, width: "100%" }}>
+                <thead>
+                  <tr style={{ color: c.stone, textAlign: "left" }}>
+                    <th style={{ padding: sp.sm, fontWeight: 400 }}>Session</th>
+                    <th style={{ padding: sp.sm, fontWeight: 400 }}>Interview type</th>
+                    <th style={{ padding: sp.sm, fontWeight: 400 }}>Priority</th>
+                    <th style={{ padding: sp.sm, fontWeight: 400 }}>Score gap</th>
+                    <th style={{ padding: sp.sm, fontWeight: 400 }}>Issues</th>
+                    <th style={{ padding: sp.sm, fontWeight: 400 }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dayRows.map((r) => (
+                    <tr key={r.session_id} onClick={() => setSelected(r)} style={{ borderTop: `1px solid ${c.border}`, color: c.chalk, cursor: "pointer", background: selected?.session_id === r.session_id ? c.onyx : "transparent" }}>
+                      <td style={{ padding: sp.sm }}><code style={{ color: c.gilt, fontFamily: font.mono, fontSize: 11 }}>{r.session_id.slice(0, 14)}…</code></td>
+                      <td style={{ padding: sp.sm }}>{friendlyFocus(r.focus)}</td>
+                      <td style={{ padding: sp.sm, color: severityColor(r.severity) }}>{friendlySeverity(r.severity)}</td>
+                      <td style={{ padding: sp.sm, color: driftColor(r.score_drift), fontFamily: font.mono }}>{fmtDrift(r.score_drift)}</td>
+                      <td style={{ padding: sp.sm }}>{(r.flags || []).length}</td>
+                      <td style={{ padding: sp.sm, color: statusColor(r.resolution_status) }}>{friendlyStatus(r.resolution_status)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </div>
       {selected && <SessionDetail row={selected} onClose={() => setSelected(null)} onResolve={onResolve} />}
     </div>
   );
+}
+
+function DateRangeSelector({ value, onChange }: { value: DateRange; onChange: (v: DateRange) => void }) {
+  const opts: { key: DateRange; label: string }[] = [
+    { key: "today", label: "Today" },
+    { key: "7d", label: "Last 7 days" },
+    { key: "30d", label: "Last 30 days" },
+    { key: "all", label: "All" },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 0, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm, overflow: "hidden" }}>
+      {opts.map((o) => (
+        <button key={o.key} onClick={() => onChange(o.key)} style={{
+          background: value === o.key ? c.gilt : "transparent",
+          color: value === o.key ? c.obsidian : c.stone,
+          border: "none",
+          padding: `${sp.sm}px ${sp.md}px`,
+          fontSize: 12,
+          fontFamily: font.ui,
+          fontWeight: value === o.key ? 600 : 400,
+          cursor: "pointer",
+        }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function formatDay(yyyymmdd: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400_000).toISOString().slice(0, 10);
+  if (yyyymmdd === today) return `Today · ${yyyymmdd}`;
+  if (yyyymmdd === yesterday) return `Yesterday · ${yyyymmdd}`;
+  const d = new Date(yyyymmdd + "T00:00:00Z");
+  return `${d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })} · ${yyyymmdd}`;
 }
 
 interface TranscriptTurn { speaker: string; text: string; time: string }
@@ -713,24 +810,33 @@ function SessionDetail({ row, onClose, onResolve }: {
         <code style={{ color: c.gilt, fontSize: 11, fontFamily: font.mono }}>{row.session_id}</code>
         <button onClick={onClose} style={{ background: "transparent", color: c.stone, border: "none", cursor: "pointer", fontSize: 16 }}>×</button>
       </div>
-      <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.lg }}>{row.focus} · {new Date(row.analyzed_at).toLocaleString()}</div>
+      <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.lg }}>{friendlyFocus(row.focus)} · {new Date(row.analyzed_at).toLocaleString()}</div>
 
-      <div style={{ display: "flex", gap: sp.md, marginBottom: sp.lg, fontSize: 11, fontFamily: font.mono }}>
-        <div><span style={{ color: c.stone }}>severity</span> <span style={{ color: severityColor(row.severity) }}>{row.severity.toUpperCase()}</span></div>
-        <div><span style={{ color: c.stone }}>drift</span> <span style={{ color: driftColor(row.score_drift) }}>{fmtDrift(row.score_drift)}</span></div>
-        <div><span style={{ color: c.stone }}>rescore</span> {row.rescore ?? "—"}</div>
+      <div style={{ display: "flex", gap: sp.md, marginBottom: sp.lg, fontSize: 11, flexWrap: "wrap" }}>
+        <div><div style={{ color: c.stone, fontSize: 10 }}>Priority</div><div style={{ color: severityColor(row.severity), fontWeight: 600 }}>{friendlySeverity(row.severity)}</div></div>
+        <div><div style={{ color: c.stone, fontSize: 10 }}>Score gap</div><div style={{ color: driftColor(row.score_drift), fontFamily: font.mono }}>{fmtDrift(row.score_drift)}</div></div>
+        <div><div style={{ color: c.stone, fontSize: 10 }}>Stricter score</div><div style={{ color: c.chalk, fontFamily: font.mono }}>{row.rescore ?? "—"}</div></div>
       </div>
 
       {row.flags && row.flags.length > 0 && (
-        <Section title="Flags">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: sp.xs }}>
-            {row.flags.map((f) => <span key={f} style={{ background: c.onyx, color: c.gilt, padding: `2px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 10, fontFamily: font.mono }}>{f}</span>)}
+        <Section title="Issues found">
+          <div style={{ display: "grid", gap: sp.xs }}>
+            {row.flags.map((f) => {
+              const ff = friendlyFlag(f);
+              return (
+                <div key={f} style={{ background: c.onyx, padding: `${sp.xs}px ${sp.sm}px`, borderRadius: radius.sm, borderLeft: `2px solid ${c.gilt}` }}>
+                  <div style={{ color: c.ivory, fontSize: 12 }}>{ff.label}</div>
+                  {ff.description && <div style={{ color: c.stone, fontSize: 10, marginTop: 1 }}>{ff.description}</div>}
+                  <code style={{ color: c.stone, fontSize: 9, fontFamily: font.mono }}>{f}</code>
+                </div>
+              );
+            })}
           </div>
         </Section>
       )}
 
       {row.hallucinations && row.hallucinations.length > 0 && (
-        <Section title="Hallucinations">
+        <Section title="AI made-up information">
           {row.hallucinations.map((h, i) => (
             <div key={i} style={{ padding: sp.sm, background: "rgba(209,126,104,0.08)", borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.ember, fontFamily: font.mono, marginBottom: 2 }}>{h.type}</div>
@@ -742,7 +848,7 @@ function SessionDetail({ row, onClose, onResolve }: {
       )}
 
       {row.rubric_gaps && row.rubric_gaps.length > 0 && (
-        <Section title="Rubric gaps">
+        <Section title="Where coaching is needed">
           {row.rubric_gaps.map((g, i) => (
             <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.gilt, fontFamily: font.mono }}>{g.dimension}</div>
@@ -754,7 +860,7 @@ function SessionDetail({ row, onClose, onResolve }: {
       )}
 
       {row.bad_questions && row.bad_questions.length > 0 && (
-        <Section title="Bad questions">
+        <Section title="Question quality problems">
           {row.bad_questions.map((q, i) => (
             <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.gilt, fontFamily: font.mono }}>{q.reason}</div>
@@ -791,11 +897,11 @@ function SessionDetail({ row, onClose, onResolve }: {
         </Section>
       )}
 
-      <Section title="Resolution">
+      <Section title="What did you do?">
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (what's the fix? linked commit?)"
+          placeholder="What's the fix? (e.g. 'Updated AI prompt to push back harder on missing R')"
           rows={3}
           style={{ width: "100%", background: c.obsidian, border: `1px solid ${c.border}`, color: c.ivory, padding: sp.sm, borderRadius: radius.sm, fontFamily: font.ui, fontSize: 12, resize: "vertical" }}
         />
@@ -806,12 +912,12 @@ function SessionDetail({ row, onClose, onResolve }: {
           style={{ width: "100%", background: c.obsidian, border: `1px solid ${c.border}`, color: c.ivory, padding: sp.sm, borderRadius: radius.sm, fontFamily: font.ui, fontSize: 12, marginTop: sp.xs }}
         />
         <div style={{ display: "flex", gap: sp.xs, marginTop: sp.sm, flexWrap: "wrap" }}>
-          <ResolveButton label="Acknowledge" color={c.gilt} onClick={() => onResolve(row.session_id, "acknowledged", notes, by)} />
-          <ResolveButton label="Resolve" color={c.sage} onClick={() => onResolve(row.session_id, "resolved", notes, by)} />
+          <ResolveButton label="Mark as reviewed" color={c.gilt} onClick={() => onResolve(row.session_id, "acknowledged", notes, by)} />
+          <ResolveButton label="Mark as fixed" color={c.sage} onClick={() => onResolve(row.session_id, "resolved", notes, by)} />
           <ResolveButton label="Won't fix" color={c.stone} onClick={() => onResolve(row.session_id, "wont_fix", notes, by)} />
           <ResolveButton label="Reopen" color={c.ember} onClick={() => onResolve(row.session_id, "open", notes, by)} />
         </div>
-        {row.resolved_at && <div style={{ color: c.stone, fontSize: 10, marginTop: sp.xs }}>Last action: {row.resolution_status} by {row.resolved_by || "—"} at {new Date(row.resolved_at).toLocaleString()}</div>}
+        {row.resolved_at && <div style={{ color: c.stone, fontSize: 10, marginTop: sp.xs }}>Last action: {friendlyStatus(row.resolution_status)} by {row.resolved_by || "—"} on {new Date(row.resolved_at).toLocaleString()}</div>}
       </Section>
     </aside>
   );
@@ -833,17 +939,46 @@ function ResolveButton({ label, color, onClick }: { label: string; color: string
 }
 
 function ResolvedView({ rows }: { rows: InsightRow[] }) {
-  if (rows.length === 0) return <div style={{ color: c.stone, padding: sp.lg }}>No sessions resolved yet.</div>;
+  const [range, setRange] = useState<DateRange>("30d");
+  const filtered = useMemo(() => rows.filter((r) => r.resolved_at && withinRange(r.resolved_at, range)), [rows, range]);
+  const grouped = useMemo(() => {
+    const m = new Map<string, InsightRow[]>();
+    for (const r of filtered) {
+      if (!r.resolved_at) continue;
+      const day = dayKey(r.resolved_at);
+      const list = m.get(day) || [];
+      list.push(r);
+      m.set(day, list);
+    }
+    return Array.from(m.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [filtered]);
+
+  if (rows.length === 0) return <div style={{ color: c.stone, padding: sp.lg }}>No sessions reviewed yet. Use the "Mark as reviewed" / "Mark as fixed" buttons in the Sessions tab.</div>;
   return (
-    <div style={{ display: "grid", gap: sp.sm }}>
-      {rows.map((r) => (
-        <div key={r.session_id} style={{ padding: sp.md, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm, fontSize: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: sp.xs }}>
-            <code style={{ color: c.gilt, fontFamily: font.mono, fontSize: 11 }}>{r.session_id.slice(0, 18)}…</code>
-            <span style={{ color: statusColor(r.resolution_status), fontFamily: font.mono, fontSize: 10, textTransform: "uppercase" }}>{r.resolution_status}</span>
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: sp.md, flexWrap: "wrap", gap: sp.sm }}>
+        <div style={{ color: c.stone, fontSize: 12 }}>{filtered.length} reviewed in this range</div>
+        <DateRangeSelector value={range} onChange={setRange} />
+      </div>
+      {grouped.length === 0 && <div style={{ color: c.stone, padding: sp.lg }}>Nothing reviewed in this date range.</div>}
+      {grouped.map(([day, dayRows]) => (
+        <div key={day} style={{ marginBottom: sp.lg }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: sp.xs, padding: `${sp.xs}px ${sp.sm}px`, background: c.onyx, borderRadius: radius.sm }}>
+            <div style={{ color: c.gilt, fontSize: 13, fontWeight: 600 }}>{formatDay(day)}</div>
+            <div style={{ color: c.stone, fontSize: 11 }}>{dayRows.length} reviewed</div>
           </div>
-          <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.xs }}>{r.focus} · {r.resolved_by || "unknown"} · {r.resolved_at ? new Date(r.resolved_at).toLocaleString() : "—"}</div>
-          {r.resolution_notes && <div style={{ color: c.chalk, fontSize: 12 }}>{r.resolution_notes}</div>}
+          <div style={{ display: "grid", gap: sp.xs }}>
+            {dayRows.map((r) => (
+              <div key={r.session_id} style={{ padding: sp.md, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm, fontSize: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: sp.xs }}>
+                  <code style={{ color: c.gilt, fontFamily: font.mono, fontSize: 11 }}>{r.session_id.slice(0, 18)}…</code>
+                  <span style={{ color: statusColor(r.resolution_status), fontSize: 11, fontWeight: 600 }}>{friendlyStatus(r.resolution_status)}</span>
+                </div>
+                <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.xs }}>{friendlyFocus(r.focus)} · by {r.resolved_by || "unknown"} · {r.resolved_at ? new Date(r.resolved_at).toLocaleTimeString() : "—"}</div>
+                {r.resolution_notes && <div style={{ color: c.chalk, fontSize: 12 }}>{r.resolution_notes}</div>}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>
