@@ -150,8 +150,45 @@ describe("override map data integrity", () => {
     for (const company of required) {
       expect(COMPANY_SALARY_OVERRIDES, `Missing override for ${company}`).toHaveProperty(company);
     }
-    /* Coverage threshold — should be ≥ 35 companies after this expansion. */
-    expect(Object.keys(COMPANY_SALARY_OVERRIDES).length).toBeGreaterThanOrEqual(35);
+    /* Coverage threshold — ≥ 60 companies after the third expansion
+       round (Cisco/Oracle/IBM/NVIDIA/Qualcomm/MediaTek/ServiceNow/
+       Workday/LinkedIn + Big4 consulting + Indian banks + FMCG +
+       more unicorns). */
+    expect(Object.keys(COMPANY_SALARY_OVERRIDES).length).toBeGreaterThanOrEqual(60);
+  });
+
+  it("FMCG MBA management trainee bands are calibrated to brand-track tier", () => {
+    /* HUL UFLP / P&G MT MBA bands ₹18-27L+ — distinct from the generic
+       "marketing" tier band. */
+    const hulBand = generateNegotiationBand({
+      role: "Brand Manager",
+      company: "HUL",
+      experienceLevel: "entry",
+    });
+    expect(hulBand.initialOffer).toBeGreaterThan(15);
+    expect(hulBand.initialOffer).toBeLessThan(30);
+  });
+
+  it("NVIDIA × SE × senior uses ₹95-160L band (top semiconductor pay)", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Software Engineer",
+      company: "NVIDIA",
+      experienceLevel: "senior",
+    });
+    /* NVIDIA IC4-IC5 senior India ₹95-160L. Initial 35th = ~₹118L. */
+    expect(band.initialOffer).toBeGreaterThan(100);
+    expect(band.initialOffer).toBeLessThan(140);
+  });
+
+  it("Deloitte senior consultant lands at ₹23.9-32L (3-13yr exp band)", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Management Consultant",
+      company: "Deloitte",
+      experienceLevel: "senior",
+    });
+    /* Deloitte Senior Consultant India ₹23.9-32L. Initial 35th ≈ ₹26.7L. */
+    expect(band.initialOffer).toBeGreaterThan(23);
+    expect(band.initialOffer).toBeLessThan(30);
   });
 
   it("Walmart Global Tech × SE × mid uses verified band, not generic GCC tier", () => {

@@ -404,6 +404,207 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
+  /* ─── More Big Tech / Semiconductor (Levels.fyi 2026) ─────── */
+  cisco: {
+    "software-engineer": {
+      entry: { totalMin: 17.2, totalMax: 25, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Cisco India Grade 4 ₹1.72M)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 27.4, totalMax: 46.4, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (SE-III ₹2.74M-₹4.64M, India median ₹30.9L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50.2, totalMax: 89.5, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Tech Leader 1 ₹5.02M-₹8.95M)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 80, totalMax: 137, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Bangalore ₹13.73M+)", lastVerified: "2026-05-07" },
+    },
+    "engineering-manager": {
+      mid: { totalMin: 68.8, totalMax: 84.1, equityMin: 20, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Cisco India SE Manager ₹6.88M-₹8.41M)", lastVerified: "2026-05-07" },
+    },
+  },
+  oracle: {
+    "software-engineer": {
+      entry: { totalMin: 23.4, totalMax: 33, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Oracle India IC-1 ₹2.34M)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 35, totalMax: 55, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC-2/IC-3, median ₹38.5L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 55, totalMax: 90, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC-4)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 145, equityMin: 30, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC-5 ₹7.08M+)", lastVerified: "2026-05-07" },
+    },
+  },
+  ibm: {
+    "software-engineer": {
+      entry: { totalMin: 17.7, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IBM India Band 6 ₹1.77M)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 24, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Band 7-8, median ₹27.3L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Band 9-10 ₹5.72M)", lastVerified: "2026-05-07" },
+    },
+  },
+  nvidia: {
+    "software-engineer": {
+      entry: { totalMin: 25.8, totalMax: 41, equityMin: 4, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (NVIDIA India IC1 ₹2.58M; campus ₹23-40.9L)", lastVerified: "2026-05-07", notes: "NVIDIA highest-paying campus recruiter in semiconductor / AI hardware. NSU upside boosts total comp." },
+      mid: { totalMin: 50, totalMax: 90, equityMin: 18, equityMax: 40, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC2-IC3, India median ₹67L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 95, totalMax: 160, equityMin: 35, equityMax: 80, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC4-IC5)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 150, totalMax: 250, equityMin: 60, equityMax: 130, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC6 ₹19.31M+)", lastVerified: "2026-05-07" },
+    },
+  },
+  qualcomm: {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 25, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + UpGrad (Qualcomm India entry ₹16-25L)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 25, totalMax: 38, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 31.3, totalMax: 56.5, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "UpGrad (Senior SE ₹31.3-34.6L; Staff ₹51.1-56.5L)", lastVerified: "2026-05-07" },
+    },
+  },
+  mediatek: {
+    "software-engineer": {
+      mid: { totalMin: 24.6, totalMax: 39.8, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (MediaTek India HW Eng ₹2.46M-₹3.98M, total comp ₹43.6L max)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  servicenow: {
+    "software-engineer": {
+      entry: { totalMin: 26.4, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (ServiceNow India IC1 ₹2.64M)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 38, totalMax: 60, equityMin: 10, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC2 ₹2.82M-₹4.57M, median ₹46.7L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 60, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC4-IC5)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 110, totalMax: 155, equityMin: 35, equityMax: 70, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (IC6 ₹15.46M)", lastVerified: "2026-05-07" },
+    },
+  },
+  workday: {
+    "software-engineer": {
+      mid: { totalMin: 33, totalMax: 50, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Workday India P2 ₹3.3M-P3 median ₹48.2L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50, totalMax: 67, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P4 ₹6.68M)", lastVerified: "2026-05-07" },
+    },
+  },
+  linkedin: {
+    "software-engineer": {
+      mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 32, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor + Levels.fyi (LinkedIn India SSE)", lastVerified: "2026-05-07", notes: "LinkedIn India treated as Microsoft-tier (Microsoft-owned)." },
+      senior: { totalMin: 80, totalMax: 130, equityMin: 28, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* ─── Big 4 Consulting (India bands) ───────────────────────── */
+  deloitte: {
+    consultant: {
+      entry: { totalMin: 6, totalMax: 11, equityType: "none", source: "Glassdoor + Indeed (Deloitte India Analyst)", lastVerified: "2026-05-07", notes: "Deloitte India Analyst pre-MBA. Big 4 baseline." },
+      mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "Glassdoor (Deloitte India Consultant)", lastVerified: "2026-05-07", notes: "Deloitte India avg ₹21L; consultant 1-3 yr exp." },
+      senior: { totalMin: 23.9, totalMax: 32, equityType: "none", source: "UpGrad (Deloitte Senior Consultant ₹23.9-26.4L for 3-13 yr exp)", lastVerified: "2026-05-07", notes: "Deloitte holds edge over EY (₹18.5-20.5L) and KPMG (₹17.4-19.2L) at Senior Consultant level." },
+      lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor (Deloitte Manager / Senior Manager)", lastVerified: "2026-05-07" },
+    },
+  },
+  ey: {
+    consultant: {
+      entry: { totalMin: 4.9, totalMax: 11.2, equityType: "none", source: "Glassdoor (EY India Analyst 25th-75th pctile)", lastVerified: "2026-05-07", notes: "EY fresher avg ₹9.28L." },
+      mid: { totalMin: 10, totalMax: 18, equityType: "none", source: "UpGrad (EY Consultant ₹10-15L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 16, totalMax: 22, equityType: "none", source: "UpGrad (EY Senior Consultant ₹16-20+L)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 50, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  kpmg: {
+    consultant: {
+      entry: { totalMin: 5, totalMax: 10, equityType: "none", source: "Glassdoor (KPMG India Analyst)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 10, totalMax: 17, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 17.4, totalMax: 22, equityType: "none", source: "thefinancestory (KPMG Senior Consultant ₹17.4-19.2L)", lastVerified: "2026-05-07" },
+    },
+  },
+  pwc: {
+    consultant: {
+      entry: { totalMin: 5.5, totalMax: 10.5, equityType: "none", source: "Glassdoor (PwC India Analyst)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 11, totalMax: 18, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 24, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* ─── Indian Private Banks ─────────────────────────────────── */
+  icici: {
+    sales: {
+      entry: { totalMin: 4.3, totalMax: 7, equityType: "none", source: "Indeed (ICICI Bank India Relationship Manager early career)", lastVerified: "2026-05-07", notes: "ICICI RM pre-2 yr." },
+      mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "6figr (ICICI India RM avg ₹16L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 16, totalMax: 30, equityType: "none", source: "PayScale (ICICI Bank India 90th pctile ₹55.5L)", lastVerified: "2026-05-07", notes: "Senior RM at ICICI tops out around ₹35-55L for top performers." },
+    },
+    "software-engineer": {
+      entry: { totalMin: 5, totalMax: 9, equityType: "none", source: "AmbitionBox (ICICI Bank IT Analyst)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 40, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
+    },
+  },
+  hdfc: {
+    sales: {
+      entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Glassdoor (HDFC RM)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 15, totalMax: 28, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  axis: {
+    sales: {
+      entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Glassdoor (Axis Bank RM)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 15, totalMax: 26, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  kotak: {
+    sales: {
+      entry: { totalMin: 4.5, totalMax: 7, equityType: "none", source: "Glassdoor (Kotak Mahindra RM)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 8, totalMax: 15, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 16, totalMax: 30, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* ─── More Indian Unicorns ─────────────────────────────────── */
+  lenskart: {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + Glassdoor (Lenskart median $37.5K = ₹31L; range ₹2.4L-₹77L)", lastVerified: "2026-05-07", notes: "Lenskart listed Nov 2025 — ESOPs converted to RSUs." },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  nykaa: {
+    "software-engineer": {
+      mid: { totalMin: 27.3, totalMax: 38.6, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Nykaa SE India median ₹35.5L; range ₹2.73M-₹3.86M)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+    "engineering-manager": {
+      mid: { totalMin: 47.9, totalMax: 65.5, equityMin: 12, equityMax: 25, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Nykaa SEM ₹4.79M-₹6.55M)", lastVerified: "2026-05-07" },
+    },
+  },
+  cars24: {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 32, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Cars24 ₹10L-₹54.9L range)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 55, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Cars24 SEM)", lastVerified: "2026-05-07" },
+    },
+  },
+  groww: {
+    "software-engineer": {
+      mid: { totalMin: 28, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Groww post-listing)", lastVerified: "2026-05-07", notes: "Groww listed in 2025 IPO wave." },
+      senior: { totalMin: 50, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Groww SEM ₹12.4M)", lastVerified: "2026-05-07" },
+    },
+  },
+  ola: {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox (Ola post-restructure)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* ─── FMCG (India MBA brand-management track) ─────────────── */
+  itc: {
+    marketing: {
+      entry: { totalMin: 16, totalMax: 22, equityType: "none", source: "InsideIIM + iQuanta (MNC consumer MBA MT ₹19-27L)", lastVerified: "2026-05-07", notes: "ITC Management Trainee post-MBA from top B-schools." },
+      mid: { totalMin: 26, totalMax: 40, equityType: "none", source: "Glassdoor (ITC Brand Manager)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 65, equityType: "none", source: "InsideIIM (HUL/ITC/Unilever Brand Manager ₹30L+ avg)", lastVerified: "2026-05-07" },
+    },
+  },
+  hul: {
+    marketing: {
+      entry: { totalMin: 18, totalMax: 27, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM (HUL UFLP ₹18-27L for IIM grads)", lastVerified: "2026-05-07", notes: "HUL UFLP — premium MT program. Glassdoor avg includes non-MBA roles which are lower (₹7.88L avg)." },
+      mid: { totalMin: 30, totalMax: 50, equityMin: 2, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50, totalMax: 90, equityMin: 5, equityMax: 18, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM", lastVerified: "2026-05-07" },
+    },
+  },
+  "p&g": {
+    marketing: {
+      entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-05-07", notes: "P&G premium MNC MT — top of FMCG MBA market." },
+      mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 60, totalMax: 110, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  nestle: {
+    marketing: {
+      entry: { totalMin: 14, totalMax: 22, equityType: "none", source: "Glassdoor (Nestle MT avg ₹17L)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 35, equityType: "none", source: "Glassdoor (Nestle India avg ₹21L)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+
   /* ─── Design Agencies / Studios ───────────────────────────────── */
   "bombay design centre": {
     "ux-designer": {
