@@ -615,6 +615,65 @@ function SessionsView({ rows, selected, setSelected, onResolve }: {
   );
 }
 
+interface TranscriptTurn { speaker: string; text: string; time: string }
+
+function turnContextFor(transcript: TranscriptTurn[], turnIdx: number | undefined): { question: TranscriptTurn | null; answer: TranscriptTurn | null; nextQuestion: TranscriptTurn | null } {
+  if (typeof turnIdx !== "number" || !transcript.length) return { question: null, answer: null, nextQuestion: null };
+  const isAi = (t: TranscriptTurn) => (t.speaker || "").toLowerCase().startsWith("a");
+  const isUser = (t: TranscriptTurn) => (t.speaker || "").toLowerCase().startsWith("u");
+  const at = transcript[turnIdx];
+  if (!at) return { question: null, answer: null, nextQuestion: null };
+  // If the finding's turn is the user's answer, walk back to the prior AI turn
+  // for the question, and forward to the next AI turn for the follow-up.
+  // If the finding's turn is an AI turn (e.g. duplicate_question), treat that as
+  // the question and find the user's reply right after.
+  let questionIdx = -1;
+  let answerIdx = -1;
+  let nextQuestionIdx = -1;
+  if (isUser(at)) {
+    answerIdx = turnIdx;
+    for (let i = turnIdx - 1; i >= 0; i--) { if (isAi(transcript[i])) { questionIdx = i; break; } }
+    for (let i = turnIdx + 1; i < transcript.length; i++) { if (isAi(transcript[i])) { nextQuestionIdx = i; break; } }
+  } else if (isAi(at)) {
+    questionIdx = turnIdx;
+    for (let i = turnIdx + 1; i < transcript.length; i++) { if (isUser(transcript[i])) { answerIdx = i; break; } }
+    for (let i = (answerIdx >= 0 ? answerIdx : turnIdx) + 1; i < transcript.length; i++) { if (isAi(transcript[i])) { nextQuestionIdx = i; break; } }
+  }
+  return {
+    question: questionIdx >= 0 ? transcript[questionIdx] : null,
+    answer: answerIdx >= 0 ? transcript[answerIdx] : null,
+    nextQuestion: nextQuestionIdx >= 0 ? transcript[nextQuestionIdx] : null,
+  };
+}
+
+function ContextTriplet({ transcript, turnIdx }: { transcript: TranscriptTurn[]; turnIdx: number | undefined }) {
+  const ctx = turnContextFor(transcript, turnIdx);
+  if (!ctx.question && !ctx.answer && !ctx.nextQuestion) return null;
+  const cellStyle = { padding: sp.sm, borderRadius: radius.sm, fontSize: 11, lineHeight: 1.45 } as const;
+  return (
+    <div style={{ marginTop: sp.xs, display: "grid", gap: sp.xs }}>
+      {ctx.question && (
+        <div style={{ ...cellStyle, background: c.obsidian, borderLeft: `2px solid ${c.gilt}` }}>
+          <div style={{ color: c.gilt, fontSize: 10, marginBottom: 2, fontFamily: font.mono }}>Q · turn {turnIdx !== undefined && ctx.answer === transcript[turnIdx] ? "prior" : turnIdx}</div>
+          <div style={{ color: c.chalk }}>{(ctx.question.text || "").slice(0, 600)}</div>
+        </div>
+      )}
+      {ctx.answer && (
+        <div style={{ ...cellStyle, background: c.obsidian, borderLeft: `2px solid ${c.sage}` }}>
+          <div style={{ color: c.sageLight, fontSize: 10, marginBottom: 2, fontFamily: font.mono }}>A · user</div>
+          <div style={{ color: c.chalk }}>{(ctx.answer.text || "").slice(0, 600)}</div>
+        </div>
+      )}
+      {ctx.nextQuestion && (
+        <div style={{ ...cellStyle, background: c.obsidian, borderLeft: `2px solid ${c.slate}` }}>
+          <div style={{ color: c.slateLight, fontSize: 10, marginBottom: 2, fontFamily: font.mono }}>Next Q · AI</div>
+          <div style={{ color: c.chalk }}>{(ctx.nextQuestion.text || "").slice(0, 600)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SessionDetail({ row, onClose, onResolve }: {
   row: InsightRow;
   onClose: () => void;
@@ -622,7 +681,31 @@ function SessionDetail({ row, onClose, onResolve }: {
 }) {
   const [notes, setNotes] = useState(row.resolution_notes || "");
   const [by, setBy] = useState(row.resolved_by || "");
+  const [transcript, setTranscript] = useState<TranscriptTurn[]>([]);
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
   useEffect(() => { setNotes(row.resolution_notes || ""); setBy(row.resolved_by || ""); }, [row.session_id, row.resolution_notes, row.resolved_by]);
+
+  // Fetch the session transcript so we can render Q→A→next-Q context per finding.
+  useEffect(() => {
+    let cancelled = false;
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) return;
+    setTranscript([]);
+    setTranscriptLoading(true);
+    fetch("/api/admin-quality-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ session_id: row.session_id }),
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((j: { session?: { transcript: TranscriptTurn[] } } | null) => {
+        if (cancelled) return;
+        setTranscript(j?.session?.transcript || []);
+      })
+      .catch(() => { if (!cancelled) setTranscript([]); })
+      .finally(() => { if (!cancelled) setTranscriptLoading(false); });
+    return () => { cancelled = true; };
+  }, [row.session_id]);
 
   return (
     <aside style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: sp.lg, alignSelf: "start", position: "sticky", top: 16 }}>
@@ -649,9 +732,10 @@ function SessionDetail({ row, onClose, onResolve }: {
       {row.hallucinations && row.hallucinations.length > 0 && (
         <Section title="Hallucinations">
           {row.hallucinations.map((h, i) => (
-            <div key={i} style={{ padding: sp.sm, background: "rgba(209,126,104,0.08)", borderRadius: radius.sm, marginBottom: sp.xs, fontSize: 11 }}>
+            <div key={i} style={{ padding: sp.sm, background: "rgba(209,126,104,0.08)", borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.ember, fontFamily: font.mono, marginBottom: 2 }}>{h.type}</div>
               <div style={{ color: c.chalk }}>{h.evidence}</div>
+              {transcript.length > 0 && <ContextTriplet transcript={transcript} turnIdx={h.turn_idx} />}
             </div>
           ))}
         </Section>
@@ -660,7 +744,7 @@ function SessionDetail({ row, onClose, onResolve }: {
       {row.rubric_gaps && row.rubric_gaps.length > 0 && (
         <Section title="Rubric gaps">
           {row.rubric_gaps.map((g, i) => (
-            <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.xs, fontSize: 11 }}>
+            <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.gilt, fontFamily: font.mono }}>{g.dimension}</div>
               <div style={{ color: c.stone, fontSize: 10 }}>expected: {g.expected}</div>
               <div style={{ color: c.chalk }}>observed: {g.observed}</div>
@@ -672,13 +756,34 @@ function SessionDetail({ row, onClose, onResolve }: {
       {row.bad_questions && row.bad_questions.length > 0 && (
         <Section title="Bad questions">
           {row.bad_questions.map((q, i) => (
-            <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.xs, fontSize: 11 }}>
+            <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.gilt, fontFamily: font.mono }}>{q.reason}</div>
               <div style={{ color: c.chalk }}>{(q.evidence || "").slice(0, 200)}</div>
+              {transcript.length > 0 && <ContextTriplet transcript={transcript} turnIdx={q.turn_idx} />}
             </div>
           ))}
         </Section>
       )}
+
+      {transcript.length > 0 && (
+        <Section title={`Full transcript (${transcript.length} turns)`}>
+          <details>
+            <summary style={{ color: c.gilt, fontSize: 11, cursor: "pointer", marginBottom: sp.xs }}>Show all turns</summary>
+            <div style={{ display: "grid", gap: sp.xs, marginTop: sp.xs }}>
+              {transcript.map((t, i) => {
+                const isAi = (t.speaker || "").toLowerCase().startsWith("a");
+                return (
+                  <div key={i} style={{ padding: sp.sm, background: c.obsidian, borderLeft: `2px solid ${isAi ? c.gilt : c.sage}`, borderRadius: radius.sm, fontSize: 11 }}>
+                    <div style={{ color: isAi ? c.gilt : c.sageLight, fontSize: 9, fontFamily: font.mono, marginBottom: 2 }}>#{i} · {isAi ? "AI" : "USER"}</div>
+                    <div style={{ color: c.chalk, lineHeight: 1.45 }}>{(t.text || "").slice(0, 600)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        </Section>
+      )}
+      {transcriptLoading && <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.sm }}>Loading transcript…</div>}
 
       {row.coaching_notes && (
         <Section title="Coaching notes">
