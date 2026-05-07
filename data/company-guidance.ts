@@ -239,20 +239,34 @@ export function classifyCompanyType(company: string): { key: string; guidance: s
   if (!company) return null;
   const normalized = company.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
   if (!normalized) return null;
+  /* Two-stage matching:
+     1. Regex test against the full bucket pattern (handles character
+        classes like `iit[a-z]*` that don't survive token splitting).
+     2. Token substring fallback for partial-name inputs (e.g.
+        "Tata Consultancy Services" → "tatconsultancyservices" should
+        match the "tatconsultancy" token in the IT-services bucket).
+     Pre-fix bug: only stage 2 ran, so "IIT Indore" → "iitindore"
+     never matched the regex `iit[a-z]*` because the splitter treated
+     `iit[a-z]*` as a literal substring needle. */
   for (const bucket of COMPANY_TYPE_BUCKETS) {
-    // Strip anchors and outer parens, then split on the pipe regardless
-    // of whether the source had parens.
+    if (bucket.pattern.test(normalized)) {
+      return { key: bucket.key, guidance: bucket.guidance };
+    }
+  }
+  for (const bucket of COMPANY_TYPE_BUCKETS) {
     let src = bucket.pattern.source.replace(/^\^/, "").replace(/\$$/, "");
     if (src.startsWith("(") && src.endsWith(")")) src = src.slice(1, -1);
     const tokens = src.split("|").map((t) => t.trim()).filter(Boolean);
     for (const tok of tokens) {
+      /* Skip tokens that contain regex metacharacters — those need
+         test() in stage 1. Substring matching only on plain literal
+         tokens. */
+      if (/[[\](){}.*+?^$\\|]/.test(tok)) continue;
       if (tok.length <= 3) {
-        // Short tokens MUST equal the whole input — substring is unsafe.
         if (normalized === tok) {
           return { key: bucket.key, guidance: bucket.guidance };
         }
       } else {
-        // Long tokens can substring-match.
         if (normalized.includes(tok)) {
           return { key: bucket.key, guidance: bucket.guidance };
         }
