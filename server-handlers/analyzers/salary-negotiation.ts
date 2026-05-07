@@ -147,10 +147,12 @@ function monthsSince(yyyymm: string): number {
 
 export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   focus: "salary-negotiation",
-  // v3 (2026-05-07 evening): Spinny fixes — tighter phrase repetition (2x for
-  // long phrases), consecutive-duplicate-question detection,
-  // didn't-answer-direct-question detection, no-counter-offered detection.
-  version: "salary-negotiation-v3",
+  // v4 (2026-05-07 night): Accenture fixes — broader DIRECT_ASK regex,
+  // ai_no_counter_offered also fires when AI never quoted any number,
+  // ai_ignored_user_complaint fires on no-acknowledge as well as
+  // premature-close. Plus code-level guards in follow-up.ts (LLM dedup
+  // retry) and generate-questions.ts (initial-offer fallback inject).
+  version: "salary-negotiation-v4",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -372,7 +374,7 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // Heuristic: user turn ends with "?", contains words like
     // "what/how/can/could you...offer/show/explain", and AI's next turn
     // doesn't share the question's key noun.
-    const DIRECT_ASK = /\b(what (?:are|is) you (?:offer|paying)|what (?:exactly )?(?:is|are) you offering|can you (?:help me understand|explain|clarify|tell me)|what'?s (?:your|the) (?:counter|number|offer)|give me (?:a number|your best))\b/i;
+    const DIRECT_ASK = /\b(what (?:are|is) you (?:offer|paying)|what (?:exactly )?(?:is|are) you offering|can you (?:help me understand|explain|clarify|tell me)|what'?s (?:your|the) (?:counter|number|offer)|give me (?:a number|your best|the (?:initial )?offer|the number)|share (?:the|your) (?:offer|number)|tell me (?:the|your) (?:offer|number)|i(?:'d| would) like to (?:know|hear|see|discuss) (?:the|your|more about) (?:offer|number|salary)|once you give me)\b/i;
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (!isUserTurn(t)) continue;
@@ -405,7 +407,20 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       const userClaimsLocal = claims.filter((c) => isUserTurn(transcript[c.turn_idx]));
       const aiClaimsLocal = claims.filter((c) => isAiTurn(transcript[c.turn_idx]));
       const aiTurnCount = transcript.filter(isAiTurn).length;
-      if (aiTurnCount >= 4 && userClaimsLocal.length > 0 && aiClaimsLocal.length > 0) {
+
+      // Worst case first: AI never quoted any number across a 4+-turn session.
+      // Accenture case — opener was vague ("we put together an offer") with no
+      // ₹ amount, and follow-ups never produced numbers either. The whole
+      // session is a salary-neg with zero numeric content.
+      if (aiTurnCount >= 4 && aiClaimsLocal.length === 0) {
+        flags.add("ai_no_counter_offered");
+        gaps.push({
+          dimension: "negotiation_progression",
+          expected: "Salary-neg session must contain at least one specific ₹ figure from the AI",
+          observed: `${aiTurnCount} AI turns, zero ₹ amounts mentioned anywhere — opener didn't present an offer either`,
+          severity: "high",
+        });
+      } else if (aiTurnCount >= 4 && userClaimsLocal.length > 0 && aiClaimsLocal.length > 0) {
         const userFirstAskIdx = userClaimsLocal[0].turn_idx;
         const initialOfferLpa = aiClaimsLocal[0].lpa;
         // Counter language must commit to an offer, not just discuss limits.
@@ -465,17 +480,38 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // and AI's next turn is celebration / closing language without addressing.
     const USER_CONFUSION_RE = /\b(i'?m confused|i don'?t (?:understand|know what)|why don'?t you understand|what (?:are you saying|do you mean)|why are you (?:confusing|asking (?:again|the same|me the same))|this (?:doesn'?t make|isn'?t making) sense|you'?re confusing me|can you clarify|wait what|already (?:mentioned|told you|said)|i (?:told|mentioned) you (?:already|multiple times|before))\b/i;
     const PREMATURE_CLOSE_RE = /\b(thanks?\s+\w*[,.!]?\s*(?:i'?ll connect|i'?ll send|formal offer|expect the (?:formal|final) offer|hr will|rest of your day|joining the team|welcome (?:aboard|to))|excited about (?:the possibility of you|having you))\b/i;
+    const HEARD_ACK_RE = /\b(you'?re right|i hear you|i apologi[sz]e|apologies|let me clarify|let me recap|to be clear|here'?s what i can|to summari[sz]e|let me try again)\b/i;
+    const HAS_RUPEE = /(?:₹|inr\s*)?\d{1,3}(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crores?)/i;
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (!isUserTurn(t)) continue;
       if (!USER_CONFUSION_RE.test(t.text || "")) continue;
       const nextAi = transcript.slice(i + 1, i + 3).find(isAiTurn);
-      if (nextAi && PREMATURE_CLOSE_RE.test(nextAi.text || "")) {
+      if (!nextAi) continue;
+      const nextText = nextAi.text || "";
+      // Two ways AI can fail a complaint:
+      // (a) Premature close (Yellow Slice / Spinny case)
+      // (b) Continue without addressing — no acknowledgement, no recap, no
+      //     numbers. This is the Accenture case where AI just asked the
+      //     same question again.
+      const isClose = PREMATURE_CLOSE_RE.test(nextText);
+      const acknowledged = HEARD_ACK_RE.test(nextText);
+      const recappedNumbers = HAS_RUPEE.test(nextText);
+      if (isClose) {
         flags.add("ai_ignored_user_complaint");
         gaps.push({
           dimension: "conversation_repair",
           expected: "When user expresses confusion, AI must stop and clarify the offer with explicit numbers — not close the deal",
           observed: "User said they were confused; AI moved straight to closing language",
+          severity: "high",
+        });
+        break;
+      } else if (!acknowledged && !recappedNumbers) {
+        flags.add("ai_ignored_user_complaint");
+        gaps.push({
+          dimension: "conversation_repair",
+          expected: "When user expresses confusion, AI must acknowledge ('I hear you'), recap with numbers, or apologize — not continue as if nothing happened",
+          observed: "User expressed confusion; AI's next turn neither acknowledged nor clarified — likely repeated the same question",
           severity: "high",
         });
         break;

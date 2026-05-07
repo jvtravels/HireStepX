@@ -1155,6 +1155,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 27.9, totalMax: 30.8, equityType: "esop", equityMin: 3, equityMax: 6, equityVesting: "4-year vest, 1-year cliff", source: "AmbitionBox + Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Senior Product Designer (5-6 yrs) at Spinny. ~₹35 LPA total comp incl. ESOPs." },
     },
   },
+  // Accenture — IT services / consulting hybrid; UX bands lower than
+  // product unicorns. Per AmbitionBox + Glassdoor 2026.
+  "accenture": {
+    "ux-designer": {
+      entry: { totalMin: 6, totalMax: 9, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Associate Designer / Designer Analyst at Accenture." },
+      mid: { totalMin: 12, totalMax: 18, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Designer / Senior Designer / Consultant at Accenture (3-7 yrs)." },
+      senior: { totalMin: 22, totalMax: 32, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior Designer / Manager (8+ yrs) at Accenture." },
+    },
+  },
 };
 
 /**

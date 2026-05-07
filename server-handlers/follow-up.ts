@@ -756,14 +756,65 @@ Respond JSON only:
     // suggests the model was sampling itself into a repetition trap; tighter
     // temperature reduces the chance of that.
     const llmTemp = isSalaryNeg ? 0.15 : 0.3;
+
+    // Extract the most recent AI turn from conversationHistory so we can
+    // detect and prevent verbatim repetition. The Accenture session showed
+    // the AI asking the SAME question 4 times — prompt-only "don't repeat"
+    // rules weren't enough; this is a programmatic guard.
+    const previousAiTurnText = (() => {
+      if (!conversationHistory) return "";
+      // History format includes "Interviewer:" or "AI:" prefixes; grab last one.
+      const matches = Array.from(conversationHistory.matchAll(/(?:Interviewer|AI|Hiring Manager):\s*([^\n]+(?:\n(?!Interviewer|AI|Hiring Manager|Candidate|User)[^\n]+)*)/g));
+      return matches.length > 0 ? (matches[matches.length - 1][1] || "").trim() : "";
+    })();
+
+    function jaccardSimilarity(a: string, b: string): number {
+      if (!a || !b) return 0;
+      const tokens = (s: string) => new Set(s.toLowerCase().split(/\s+/).filter((w) => w.length >= 3));
+      const aSet = tokens(a);
+      const bSet = tokens(b);
+      const inter = Array.from(aSet).filter((w) => bSet.has(w)).length;
+      const union = new Set([...aSet, ...bSet]).size;
+      return union > 0 ? inter / union : 0;
+    }
+
     let result: { text: string };
+    let retriedDueToDuplicate = false;
     try {
       result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up" });
+
+      // Dedup retry: if the LLM's output is too similar to the previous
+      // AI turn, retry once with explicit anti-repeat instruction. Hard
+      // guarantee, not a prompt request.
+      if (previousAiTurnText && previousAiTurnText.length > 40) {
+        const tentative = extractJSON<{ followUpText?: string }>(result.text);
+        const candidateText = (tentative?.followUpText || "").trim();
+        const sim = candidateText ? jaccardSimilarity(candidateText, previousAiTurnText) : 0;
+        if (candidateText && sim >= 0.65) {
+          retriedDueToDuplicate = true;
+          console.warn(`[follow-up] LLM produced text ${(sim * 100).toFixed(0)}% similar to previous AI turn — retrying with anti-repeat instruction`);
+          const antiRepeatPrompt = `${prompt}
+
+CRITICAL ANTI-REPEAT INSTRUCTION:
+Your last turn to the candidate was:
+<previous_turn>
+${previousAiTurnText.slice(0, 500)}
+</previous_turn>
+
+The candidate has now answered. Generate a COMPLETELY DIFFERENT response that:
+- Does NOT repeat the previous turn's wording (no shared 5+ word phrases)
+- ADVANCES the conversation (a new question, a concrete number, or an explicit recap of what's been said)
+- ${isSalaryNeg ? "If the candidate just shared their target, your reply MUST contain a specific ₹ counter number — not another question." : "Do not ask the same probe twice."}
+Repeat-text in followUpText is FORBIDDEN.`;
+          result = await callLLM({ prompt: antiRepeatPrompt, temperature: Math.max(llmTemp + 0.15, 0.35), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-dedup-retry" });
+        }
+      }
     } catch (llmErr) {
       console.error("Follow-up LLM call failed:", llmErr);
       if (isSalaryNeg) return salaryNegFallback();
       return new Response(JSON.stringify({ needsFollowUp: false, error: "LLM call failed" }), { status: 502, headers });
     }
+    void retriedDueToDuplicate; // surfaced via console.warn above; reserved for future telemetry
     const parsed = extractJSON<{ needsFollowUp?: boolean; followUpText?: string; followUpType?: string }>(result.text);
     if (!parsed || typeof parsed !== "object") {
       if (isSalaryNeg) return salaryNegFallback();

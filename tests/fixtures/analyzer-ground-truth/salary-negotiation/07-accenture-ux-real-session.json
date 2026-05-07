@@ -1,0 +1,25 @@
+{
+  "name": "Real session: UX Designer at Accenture — vague opener (no ₹), AI repeated same question 4 times",
+  "notes": "Imported 2026-05-07 evening. AI opener said 'we've put together an offer' but never named a number. User explicitly asked 'give me the initial offer' and was ignored. AI then asked the same 'What's most important to you in this package' question word-for-word 4 times in a row, even after user said 'Why are you asking the same question again and again?'. Demonstrates that prompt-only rules aren't enough — programmatic dedup + opener-validation guards needed.",
+  "session": {
+    "type": "salary-negotiation",
+    "target_role": "UX Designer",
+    "target_company": "Accenture",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "We've put together an offer for the UX Designer position. I'd like to walk you through the number and the overall structure — but before I get into the details, how are you feeling about the opportunity so far.", "time": "" },
+      { "speaker": "user", "text": "I'm excited. I would like to discuss more about salary once you give me the initial offer.", "time": "" },
+      { "speaker": "ai", "text": "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits that would move the needle for you?", "time": "" },
+      { "speaker": "user", "text": "For me, the overall CTC matters most. And base salary also in that CTC.", "time": "" },
+      { "speaker": "ai", "text": "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits that would move the needle for you?", "time": "" },
+      { "speaker": "user", "text": "Dimension. It is oral CT scan and base salary for me. Why are you asking the same question again and again?", "time": "" },
+      { "speaker": "ai", "text": "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits that would move the needle for you?", "time": "" },
+      { "speaker": "user", "text": "Salary is very important for me", "time": "" },
+      { "speaker": "ai", "text": "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits that would move the needle for you?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["ai_consecutive_duplicate_question", "ai_didnt_answer_direct_question", "ai_no_counter_offered", "ai_ignored_user_complaint"],
+    "must_not_include": ["empty_transcript", "above_role_band"]
+  }
+}

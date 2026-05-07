@@ -647,6 +647,32 @@ Requirements:
       return new Response(JSON.stringify({ error: "Salary negotiation requires at least 4 turns" }), { status: 502, headers });
     }
 
+    // SALARY-NEG INITIAL-OFFER GUARD: the LLM is supposed to put a specific
+    // ₹ amount in step 2 (initial offer). The Accenture session showed this
+    // fails when the LLM produces a vague step-1-style intro for both step 1
+    // and step 2. If neither question 1 nor question 2 contains a ₹ amount,
+    // inject a fallback offer using the negotiation band so the candidate
+    // actually sees a number to negotiate against.
+    if (isSalaryType && negotiationBandData) {
+      const hasRupee = (text: string): boolean => /(?:₹|inr\s*)?\d{1,3}(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crores?)/i.test(text);
+      const q1Text = (questions[1] as { question?: string; text?: string })?.question || (questions[1] as { question?: string; text?: string })?.text || "";
+      const q0Text = (questions[0] as { question?: string; text?: string })?.question || (questions[0] as { question?: string; text?: string })?.text || "";
+      if (!hasRupee(q1Text) && !hasRupee(q0Text)) {
+        const initial = Math.round(negotiationBandData.initialOffer);
+        const base = Math.round(initial * 0.78);
+        const variable = Math.round(initial * 0.12);
+        const benefits = Math.max(1, initial - base - variable);
+        const fallbackOffer = `So, for the ${role || "role"} position, we'd like to extend an offer with a total CTC of ₹${initial} LPA. This includes a base salary of ₹${base} LPA, a variable component of ₹${variable} LPA targeted at performance, and ₹${benefits} LPA for benefits like health insurance and gratuity. How does this initial offer align with your expectations?`;
+        // Replace question 1 (initial offer) with the fallback. If the array
+        // is shorter, push it.
+        if (questions.length >= 2) {
+          (questions[1] as { question?: string; text?: string }).question = fallbackOffer;
+          (questions[1] as { question?: string; text?: string }).text = fallbackOffer;
+        }
+        console.warn(`[generate-questions] salary-neg initial offer was vague — injected fallback ₹${initial} LPA opener for ${company || "company"}`);
+      }
+    }
+
     // Validate each question has required fields
     if (!validateQuestionShape(questions)) {
       return new Response(JSON.stringify({ error: "LLM returned malformed question objects" }), { status: 502, headers });
