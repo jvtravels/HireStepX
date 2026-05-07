@@ -147,7 +147,11 @@ function monthsSince(yyyymm: string): number {
 
 export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   focus: "salary-negotiation",
-  version: "salary-negotiation-v1",
+  // v2 (2026-05-07): Thence + Yellow Slice fixes — role-aware band check,
+  // offer-math consistency, silent-capitulation detection, phrase-repetition
+  // detection, reversed-range detection, ignored-complaint detection,
+  // self-contradiction detection, conditional-as-acceptance detection.
+  version: "salary-negotiation-v2",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();

@@ -67,7 +67,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  const cronUrl = resolveCronUrl(req);
+  // Optional body params: { force_reanalyze: bool, lookback_hours: number }.
+  // force_reanalyze=true bypasses the "already has insight" filter and the
+  // analyzer-version staleness check — re-runs every session in the window
+  // through the current analyzer. Use after deploying analyzer changes
+  // when you want yesterday's sessions to surface today's flags.
+  const body = (req.body || {}) as { force_reanalyze?: boolean; lookback_hours?: number };
+  const params = new URLSearchParams();
+  if (body.force_reanalyze) params.set("force_reanalyze", "1");
+  if (body.lookback_hours && Number.isFinite(body.lookback_hours)) {
+    params.set("lookback_hours", String(Math.min(Math.max(body.lookback_hours, 1), 720)));
+  }
+  const cronUrl = resolveCronUrl(req) + (params.toString() ? `?${params.toString()}` : "");
   const t0 = Date.now();
   try {
     const upstream = await fetch(cronUrl, {

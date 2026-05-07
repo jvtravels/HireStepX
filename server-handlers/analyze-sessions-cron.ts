@@ -57,18 +57,33 @@ async function supa(path: string, init?: RequestInit): Promise<Response> {
   });
 }
 
-/* Fetch sessions completed in the lookback window that don't yet
- * have an insight row. PostgREST left-join via embedded resource +
- * is.null filter avoids a separate SQL function. */
-async function fetchUnanalyzedSessions(): Promise<SessionRowForAnalysis[]> {
-  const since = new Date(Date.now() - LOOKBACK_HOURS * 3600_000).toISOString();
+/* Fetch sessions in the lookback window that need (re-)analysis.
+ *
+ * Re-analyzes when EITHER:
+ *   (a) no insight row exists (first-time pass), OR
+ *   (b) the existing insight's analyzer_version is older than the
+ *       analyzer's current version for that focus — i.e. analyzer
+ *       code was updated and findings need refreshing.
+ *
+ * Without (b), shipping new flag detections did NOT cause already-
+ * analyzed sessions to get re-checked. That was the bug behind
+ * "quality check says all-good after admin found problems".
+ *
+ * Override window: when overrideHours is provided, look back further
+ * than the default — used by /api/admin-quality-run-now via the
+ * 'force_reanalyze' parameter to clear out stale insights after a
+ * deploy.
+ */
+async function fetchUnanalyzedSessions(overrideHours?: number, forceReanalyze = false): Promise<SessionRowForAnalysis[]> {
+  const lookback = overrideHours || LOOKBACK_HOURS;
+  const since = new Date(Date.now() - lookback * 3600_000).toISOString();
   const cols = [
     "id", "user_id", "type", "focus", "difficulty",
     "score", "questions", "duration", "transcript",
     "ai_feedback", "skill_scores", "job_description",
     "jd_analysis", "resume_version_id", "created_at",
     "target_role", "target_company",
-    "session_insights(session_id)",
+    "session_insights(session_id,analyzer_version)",
   ].join(",");
   const path = `sessions?select=${encodeURIComponent(cols)}` +
     `&created_at=gte.${encodeURIComponent(since)}` +
@@ -79,9 +94,22 @@ async function fetchUnanalyzedSessions(): Promise<SessionRowForAnalysis[]> {
     console.error(`[analyze-sessions] fetch failed ${res.status}: ${(await res.text()).slice(0, 300)}`);
     return [];
   }
-  const rows = (await res.json()) as Array<SessionRowForAnalysis & { session_insights?: unknown[] | null }>;
+  const rows = (await res.json()) as Array<SessionRowForAnalysis & { session_insights?: { session_id: string; analyzer_version: string }[] | null }>;
   return rows
-    .filter((r) => !r.session_insights || (Array.isArray(r.session_insights) && r.session_insights.length === 0))
+    .filter((r) => {
+      const insights = Array.isArray(r.session_insights) ? r.session_insights : [];
+      // No insight yet — first pass.
+      if (insights.length === 0) return true;
+      // Force-reanalyze flag bypasses staleness checks entirely.
+      if (forceReanalyze) return true;
+      // Re-analyze if the existing insight was written by a stale
+      // analyzer version. pickAnalyzer().version is the current code-level
+      // version — if the row's stored version differs, code has shipped
+      // since and the row's findings are stale.
+      const currentVersion = pickAnalyzer(r.type).version;
+      const storedVersion = insights[0]?.analyzer_version || "";
+      return storedVersion !== currentVersion;
+    })
     .map((r) => {
       // strip the join-only field before passing into the analyzer
       const { session_insights: _omit, ...clean } = r;
@@ -177,7 +205,16 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const t0 = Date.now();
-  const sessions = await fetchUnanalyzedSessions();
+
+  // Optional admin overrides: ?force_reanalyze=1 bypasses the staleness
+  // filter entirely; ?lookback_hours=168 extends the window (default 25h).
+  // Used by the admin "Force re-analyze" button after deploys.
+  const url = new URL(req.url);
+  const forceReanalyze = url.searchParams.get("force_reanalyze") === "1";
+  const overrideHoursParam = url.searchParams.get("lookback_hours");
+  const overrideHours = overrideHoursParam ? Math.min(Math.max(parseInt(overrideHoursParam, 10) || 0, 1), 720) : undefined;
+
+  const sessions = await fetchUnanalyzedSessions(overrideHours, forceReanalyze);
 
   const insights: InsightRow[] = [];
   const aggregates = new Map<string, FocusAggregate>();

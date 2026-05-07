@@ -215,7 +215,7 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const runQualityCheckNow = useCallback(async () => {
+  const runQualityCheckNow = useCallback(async (opts?: { forceReanalyze?: boolean; lookbackHours?: number }) => {
     setRunNowState("running");
     setRunNowResult(null);
     const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
@@ -224,6 +224,10 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
       const res = await fetch("/api/admin-quality-run-now", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-token": token },
+        body: JSON.stringify({
+          force_reanalyze: opts?.forceReanalyze || false,
+          lookback_hours: opts?.lookbackHours,
+        }),
       });
       const j = await res.json() as { ok?: boolean; cron_response?: { scanned?: number; written?: number; digest?: string; duration_ms?: number }; error?: string; details?: string };
       if (!res.ok || !j.ok) {
@@ -321,12 +325,24 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
         </div>
         <div style={{ display: "flex", gap: sp.sm, alignItems: "center", flexWrap: "wrap" }}>
           <button
-            onClick={runQualityCheckNow}
+            onClick={() => runQualityCheckNow()}
             disabled={runNowState === "running"}
             title="Re-runs the analyzer over today's sessions and regenerates the AI digest. Same code path as the nightly cron — usually 5-15 seconds."
             style={{ background: c.gilt, color: c.obsidian, border: "none", padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.md, fontFamily: font.ui, cursor: runNowState === "running" ? "wait" : "pointer", fontSize: 13, fontWeight: 600 }}
           >
             {runNowState === "running" ? "Running…" : "Run quality check now"}
+          </button>
+          <button
+            onClick={() => {
+              if (confirm("Force re-analyze ALL sessions from the last 7 days through the current analyzer? Use this after deploying analyzer changes when previously-analyzed sessions are showing stale findings.")) {
+                runQualityCheckNow({ forceReanalyze: true, lookbackHours: 168 });
+              }
+            }}
+            disabled={runNowState === "running"}
+            title="Bypasses the 'already analyzed' filter and re-runs every session in the last 7 days through the current analyzer code. Use after pushing fixes to surface flags on past sessions."
+            style={{ background: "transparent", color: c.ember, border: `1px solid ${c.ember}`, padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.md, fontFamily: font.ui, cursor: runNowState === "running" ? "wait" : "pointer", fontSize: 13 }}
+          >
+            Force re-analyze last 7 days
           </button>
           <button onClick={fetchData} disabled={loading} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.md, fontFamily: font.ui, cursor: loading ? "wait" : "pointer", fontSize: 13 }}>
             {loading ? "Loading…" : "Refresh"}
