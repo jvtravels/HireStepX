@@ -2188,6 +2188,20 @@ export default function AdminDashboard() {
               {t.label}
             </button>
           ))}
+          <a
+            href="/admin/quality"
+            style={{
+              display: "flex", alignItems: "center", gap: 10, width: "100%",
+              padding: "10px 14px", marginBottom: 4, marginTop: 8, borderRadius: radius.md,
+              background: "transparent", color: c.gilt,
+              fontSize: 13, fontFamily: font.ui, fontWeight: 500,
+              textDecoration: "none", textAlign: "left",
+              borderTop: `1px solid ${c.border}`, paddingTop: 14,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>🧪</span>
+            Quality
+          </a>
         </div>
 
         {/* Main Content */}
