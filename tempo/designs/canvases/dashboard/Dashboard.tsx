@@ -13,12 +13,22 @@ import {
   Wordmark, NavRow, Icons, Eyebrow, Pill, Card, Ring,
   KpiTile, InsightStrip, SessionRowEl, PrimaryCta, OutlineCta,
   DailyGoalRibbon, CountdownPill, ContributionGraph, SkillRadar,
-  AchievementBadge, Skeleton,
+  AchievementBadge, Skeleton, InsightFeed, CommandPalette,
+  NotificationPanel, QuickAction,
   type NavItem, type SessionRow, type ContribDay, type RadarPoint,
-  type AchievementSpec,
+  type AchievementSpec, type CoachInsight,
+  type PaletteSection, type NotificationItem,
 } from "./_atoms";
 
-export type DashboardVariant = "returning" | "empty" | "power-user" | "loading" | "interview-imminent";
+export type DashboardVariant =
+  | "returning"
+  | "empty"
+  | "power-user"
+  | "loading"
+  | "interview-imminent"
+  | "mobile"
+  | "command-palette"
+  | "notifications";
 
 export interface DashboardProps {
   variant?: DashboardVariant;
@@ -33,6 +43,12 @@ export default function Dashboard({
 }: DashboardProps) {
   // Loading state has its own composition — skeletal grid, no real data.
   if (variant === "loading") return <DashboardSkeleton userName={userName} />;
+  // Mobile variant — single-column phone composition.
+  if (variant === "mobile") return <MobileDashboard userName={userName} greetingHour={greetingHour} />;
+  // Overlay variants — render the returning-user dashboard underneath, then layer the overlay on top.
+  if (variant === "command-palette" || variant === "notifications") {
+    return <OverlayedDashboard variant={variant} userName={userName} greetingHour={greetingHour} />;
+  }
 
   const data = buildVariantData(variant, userName);
   const greet =
@@ -437,25 +453,9 @@ export default function Dashboard({
         <aside className="hsx-db-rail" style={{
           padding: "28px 28px 28px 0", display: "flex", flexDirection: "column", gap: 16,
         }}>
-          {variant !== "empty" && (
+          {variant !== "empty" && data.insights.length > 0 && (
             <Card pad={20} interactive>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: t.indigo }}>{Icons.sparkle}</span>
-                  <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>AI coach insight</span>
-                </div>
-                <Pill tone="success">High priority</Pill>
-              </div>
-              <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", lineHeight: 1.2, margin: "0 0 8px" }}>
-                {data.coachHeadline}
-              </h3>
-              <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 16px" }}>
-                {data.coachBody}
-              </p>
-              <PrimaryCta size="sm" fullWidth>{data.coachCta}</PrimaryCta>
-              <a href="#all-insights" className="hsx-db-link" style={{ display: "block", marginTop: 12, fontFamily: f.sans, fontSize: 12.5, fontWeight: 500, color: t.indigo, textDecoration: "none" }}>
-                View all insights →
-              </a>
+              <InsightFeed insights={data.insights} current={data.currentInsight} />
             </Card>
           )}
 
@@ -573,6 +573,8 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       insightHeading: "", insightBody: "",
       focusPct: 0, focusTitle: "", focusBody: "", focusChips: [] as string[],
       coachHeadline: "", coachBody: "", coachCta: "",
+      insights: [] as CoachInsight[],
+      currentInsight: 0,
       recentSessions: [] as SessionRow[],
       dailyTip: "Strong answers follow a structure. Lead with the outcome, then walk back through how you got there.",
       countdown: undefined as undefined | { days: number; role: string; company: string },
@@ -603,6 +605,25 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       coachHeadline: "Your first-order answers are crisp. Now invest in second-order.",
       coachBody: "Strong PMs articulate consequences-of-consequences — what your decision means for adjacent teams 6 months out.",
       coachCta: "Run a strategic-loop drill",
+      insights: [
+        { headline: "Your first-order answers are crisp. Now invest in second-order.",
+          body: "Strong PMs articulate consequences-of-consequences — what your decision means for adjacent teams 6 months out.",
+          ctaLabel: "Run a strategic-loop drill", priority: "high",
+          evidence: "12 sessions sampled · senior-PM rubric" },
+        { headline: "Your bar-raiser pushback yields too quickly.",
+          body: "In 4 of your last 6 design rounds, you conceded within 2 turns of the interviewer challenging you. Bar raisers read this as low conviction.",
+          ctaLabel: "Practice resisting pushback", priority: "high",
+          evidence: "May 5–11 · 6 system-design sessions" },
+        { headline: "Capacity estimation is your hidden strength.",
+          body: "Across 9 system design sessions, your numbers came within 20% of the calibrated answer 7 times. Use this as a confidence anchor.",
+          ctaLabel: "See the breakdown", priority: "medium",
+          evidence: "9 sessions · system-design rubric" },
+        { headline: "Salary-neg score is climbing — push toward closing.",
+          body: "You're now consistently getting better than initial offer. The next jump is in walk-away discipline — knowing when to stop.",
+          ctaLabel: "Drill walk-away scenarios", priority: "medium",
+          evidence: "5 negotiation sessions · last 3 weeks" },
+      ] as CoachInsight[],
+      currentInsight: 0,
       recentSessions: [
         { title: "Google FAANG · Bar raiser",       date: "May 11, 2026", score: 91 },
         { title: "Google FAANG · System design",    date: "May 10, 2026", score: 88 },
@@ -649,6 +670,21 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
       coachHeadline: "Three days. Use them on Decision-making.",
       coachBody: "Two 30-min focused sessions today and tomorrow targeting the exact dimension Razorpay weights heaviest. Skip everything else.",
       coachCta: "Start Razorpay drill",
+      insights: [
+        { headline: "Three days. Use them on Decision-making.",
+          body: "Two 30-min focused sessions today and tomorrow targeting the exact dimension Razorpay weights heaviest. Skip everything else.",
+          ctaLabel: "Start Razorpay drill", priority: "high",
+          evidence: "Razorpay senior-PM rubric · 5 candidate post-mortems" },
+        { headline: "Don't fold on the first counter — they're testing conviction.",
+          body: "Razorpay's hiring manager opens with a 'why not the simpler approach' challenge. Practiced response: name what would change your mind, then defend.",
+          ctaLabel: "Practice the conviction drill", priority: "high",
+          evidence: "Glassdoor · 8 verified Razorpay PM rounds 2025-26" },
+        { headline: "Your Salary-Neg score is enough — drop the prep weight.",
+          body: "84/100 against the Razorpay band is offer-ready. Don't burn cycles here in the next 72 hours.",
+          ctaLabel: "Reallocate practice time", priority: "low",
+          evidence: "5 negotiation sessions May 5–11" },
+      ] as CoachInsight[],
+      currentInsight: 0,
       recentSessions: [
         { title: "Razorpay · Hiring manager (sim)", date: "May 11, 2026", score: 79 },
         { title: "Razorpay · System design (sim)",   date: "May 10, 2026", score: 84 },
@@ -695,6 +731,21 @@ function buildVariantData(variant: DashboardVariant, _userName: string) {
     coachHeadline: "You tend to add extra detail before getting to the point.",
     coachBody: "Try the Result-First pattern: answer the question in one sentence, then layer in the journey. Hiring managers decide in the first 20 seconds.",
     coachCta: "Practice structured answers",
+    insights: [
+      { headline: "You tend to add extra detail before getting to the point.",
+        body: "Try the Result-First pattern: answer the question in one sentence, then layer in the journey. Hiring managers decide in the first 20 seconds.",
+        ctaLabel: "Practice structured answers", priority: "high",
+        evidence: "5 sessions May 5–11 · Behavioural focus" },
+      { headline: "You're underselling your impact.",
+        body: "Three of your last five answers had a real outcome but you described it as 'we shipped it'. Lead with the metric.",
+        ctaLabel: "Reframe outcome stories", priority: "medium",
+        evidence: "5 sessions Behavioural" },
+      { headline: "Your speaking pace dropped 12% under pressure.",
+        body: "When the AI pushed back, you slowed down — interpretable as composure or as hesitation. Practice rapid-fire follow-ups.",
+        ctaLabel: "Pressure-handling drill", priority: "medium",
+        evidence: "3 follow-up moments" },
+    ] as CoachInsight[],
+    currentInsight: 0,
     recentSessions: [
       { title: "Data Analyst · Behavioural",    date: "May 11, 2026", score: 88 },
       { title: "Product Manager · Case study",  date: "May 9, 2026",  score: 82 },
@@ -813,5 +864,204 @@ function JourneyArt() {
       </g>
       <path d="M50 100 Q120 60 175 50" stroke={t.copper} strokeWidth="2" strokeDasharray="3 4" fill="none" />
     </svg>
+  );
+}
+
+/* ─── OverlayedDashboard — renders the returning-user dashboard
+       underneath, then layers a CommandPalette or NotificationPanel
+       overlay. Demonstrates the overlays in their natural context. */
+function OverlayedDashboard({
+  variant, userName, greetingHour,
+}: { variant: "command-palette" | "notifications"; userName: string; greetingHour: number }) {
+  const data = buildVariantData("returning", userName);
+
+  const paletteSections: PaletteSection[] = [
+    { label: "Quick actions",
+      items: [
+        { key: "start-practice", label: "Start practice session", sub: "Pick a focus and go", icon: Icons.practice, shortcut: "P" },
+        { key: "resume-last",     label: "Resume last session",   sub: "Behavioural · Mock loop", icon: Icons.clock, shortcut: "R" },
+        { key: "upload-resume",   label: "Upload new resume",     icon: Icons.resume, shortcut: "U" },
+        { key: "start-journey",   label: "Start an interview journey", sub: "Multi-round simulation · NEW", icon: Icons.layers, shortcut: "J" },
+      ],
+    },
+    { label: "Jump to",
+      items: [
+        { key: "progress",  label: "Progress & history",  icon: Icons.progress },
+        { key: "insights",  label: "AI feedback",         sub: "12 unread insights", icon: Icons.insight },
+        { key: "bookmarks", label: "Bookmarks",           icon: Icons.bookmark },
+        { key: "settings",  label: "Settings",            icon: Icons.settings },
+      ],
+    },
+    { label: "Recent sessions",
+      items: data.recentSessions.slice(0, 3).map((s, i) => ({
+        key: `session-${i}`, label: s.title, sub: `${s.date} · scored ${s.score}`, icon: Icons.clock,
+      })),
+    },
+  ];
+
+  const notifications: NotificationItem[] = [
+    { id: "1", kind: "evaluation", title: "Your last session is ready", body: "Behavioural mock — scored 88. Top win: clear STAR structure on the ownership prompt.", ago: "2m ago", unread: true },
+    { id: "2", kind: "coach",      title: "New high-priority insight", body: "Your bar-raiser pushback yields too quickly — 4 of last 6 sessions.", ago: "12m ago", unread: true },
+    { id: "3", kind: "milestone",  title: "7-day streak unlocked!",   body: "You've earned the Consistency badge. ₹0.5 LPA bonus credits added.", ago: "1h ago", unread: false },
+    { id: "4", kind: "journey",    title: "Round 2 of your Razorpay journey is ready", body: "The hiring manager round unlocks in 4 hours. Briefing available now.", ago: "3h ago", unread: false },
+    { id: "5", kind: "system",     title: "Your salary band was refreshed", body: "Senior PM at Razorpay 2026 bands updated based on May market data.", ago: "yesterday", unread: false },
+  ];
+
+  return (
+    <div style={{ position: "relative" }}>
+      <Dashboard variant="returning" userName={userName} greetingHour={greetingHour} />
+      {variant === "command-palette" && (
+        <CommandPalette
+          query="razor"
+          focusKey="start-journey"
+          sections={paletteSections}
+        />
+      )}
+      {variant === "notifications" && (
+        <NotificationPanel items={notifications} />
+      )}
+    </div>
+  );
+}
+
+/* ─── MobileDashboard — phone-portrait composition (390×844). Same
+       data, single-column, larger CTAs, swipeable cards. Replaces
+       the desktop sidebar with a top app bar + a bottom tab bar. */
+function MobileDashboard({ userName, greetingHour }: { userName: string; greetingHour: number }) {
+  const data = buildVariantData("returning", userName);
+  const greet = greetingHour < 12 ? "Good morning" : greetingHour < 17 ? "Good afternoon" : "Good evening";
+
+  return (
+    <div style={{ background: t.cream, minHeight: 844, fontFamily: f.sans, color: t.coal, paddingBottom: 84 }}>
+      <style>{DASHBOARD_STYLES}</style>
+
+      {/* Top app bar */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 18px", borderBottom: `1px solid ${t.line}`, background: t.cream,
+        position: "sticky", top: 0, zIndex: 10,
+      }}>
+        <Wordmark size={18} />
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button aria-label="Notifications" style={{
+            width: 36, height: 36, borderRadius: 10, border: `1px solid ${t.line}`, background: t.white,
+            color: t.inkSoft, position: "relative",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {Icons.bell}
+            <span style={{
+              position: "absolute", top: 7, right: 8, width: 7, height: 7, borderRadius: 999, background: t.copper,
+            }} />
+          </button>
+          <span aria-hidden style={{
+            width: 30, height: 30, borderRadius: 999, background: t.indigo100, color: t.indigo,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontFamily: f.serif, fontSize: 13, fontWeight: 400,
+          }}>{userName[0]?.toUpperCase()}</span>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div style={{ padding: "20px 18px 0" }}>
+        <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>Tuesday, 12 May</div>
+        <h1 style={{
+          fontFamily: f.serif, fontSize: 30, fontWeight: 400, color: t.coal,
+          letterSpacing: "-0.02em", lineHeight: 1.1, margin: "4px 0 6px",
+        }}>
+          {greet}, {userName}.{" "}
+          <em style={{ fontStyle: "italic", color: t.copper }}>{data.heroAccent}</em>
+        </h1>
+        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, lineHeight: 1.5 }}>
+          {data.heroSub}
+        </p>
+      </div>
+
+      {/* Stage */}
+      <div className="hsx-db-stage" style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* Streak strip — compact */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "10px 14px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+        }}>
+          <span className="hsx-db-flame" style={{ color: t.copper }}>{Icons.flame}</span>
+          <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.coal, flex: 1 }}>
+            {data.streak}-day streak — top {data.percentile}%
+          </span>
+          <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, letterSpacing: 0.4 }}>
+            {data.streakNextMilestone - data.streak}d to milestone
+          </span>
+        </div>
+
+        {/* Next step card — compact */}
+        <Card pad={20} style={{ background: `linear-gradient(135deg, ${t.copper100} 0%, #FAF7F0 70%)` }}>
+          <Eyebrow>Your next step</Eyebrow>
+          <h2 style={{
+            fontFamily: f.serif, fontSize: 24, fontWeight: 400, color: t.coal,
+            letterSpacing: "-0.01em", lineHeight: 1.15, margin: "6px 0 12px",
+          }}>
+            Product Manager <em style={{ fontStyle: "italic", color: t.copper }}>mock</em>
+          </h2>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14, fontFamily: f.sans, fontSize: 12, color: t.inkSoft, flexWrap: "wrap" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>{Icons.cal} Today, 5:00 PM</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>{Icons.clock} 60 min</span>
+          </div>
+          <PrimaryCta fullWidth>Start practice</PrimaryCta>
+        </Card>
+
+        {/* KPI row — stacked */}
+        <Card pad={18}>
+          <h3 style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: "0 0 12px" }}>
+            Improvement snapshot
+          </h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <KpiTile label="Overall score" value={String(data.kpis.overall)} suffix="/100"
+              sub={`↑ ${data.kpis.overallDelta} pts this week`}
+              accent="indigo" icon={<>{Icons.target}</>}
+              spark={data.spark.overall} percentile={data.kpis.overallPercentile} />
+            <KpiTile label="Clarity" value={`+${data.kpis.clarity}%`}
+              sub="Steady gains" accent="success" icon={<>{Icons.trend}</>}
+              spark={data.spark.clarity} percentile={data.kpis.clarityPercentile} />
+          </div>
+        </Card>
+
+        {/* Daily tip */}
+        <div style={{
+          display: "flex", alignItems: "flex-start", gap: 10,
+          padding: "12px 16px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 12,
+        }}>
+          <span style={{ color: t.copper, marginTop: 2 }}>{Icons.sparkle}</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, flex: 1, lineHeight: 1.5 }}>
+            <strong style={{ color: t.coal, fontWeight: 600 }}>Daily tip:</strong> {data.dailyTip}
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom tab bar — fixed */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
+        background: t.white, borderTop: `1px solid ${t.line}`,
+        padding: "8px 0 calc(8px + env(safe-area-inset-bottom, 0px))",
+        zIndex: 10,
+      }}>
+        {([
+          { key: "home",      label: "Home",     icon: Icons.home, active: true },
+          { key: "practice",  label: "Practice", icon: Icons.practice },
+          { key: "journeys",  label: "Journeys", icon: Icons.layers },
+          { key: "progress",  label: "Progress", icon: Icons.progress },
+          { key: "profile",   label: "Profile",  icon: Icons.settings },
+        ] as const).map(tab => (
+          <button key={tab.key} style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+            padding: "6px 4px", border: "none", background: "transparent", cursor: "pointer",
+            color: tab.active ? t.copper : t.inkSoft,
+            fontFamily: f.sans, fontSize: 10, fontWeight: 500,
+          }}>
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

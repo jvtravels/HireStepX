@@ -88,3 +88,45 @@ export const LoadingSkeleton: TempoStoryboard = {
   name: "5. Loading skeleton",
   layout: { x: 0, y: 3222, width: 1440, height: 1024 },
 };
+
+/* Mobile portrait — 390×844 phone composition. Top app bar, single-
+   column stage, fixed bottom tab bar. Hero compresses to 24pt serif,
+   KPI tiles stack instead of row, daily-goal ribbon hidden in favour
+   of a compact streak strip. */
+export const MobilePortrait: TempoStoryboard = {
+  render: () => (
+    <CanvasProviders>
+      <Dashboard variant="mobile" userName="Arjun" greetingHour={9} />
+    </CanvasProviders>
+  ),
+  name: "6. Mobile portrait",
+  layout: { x: 0, y: 4296, width: 390, height: 844 },
+};
+
+/* Command palette overlay — Linear-style ⌘K dialog over the dimmed
+   dashboard. Three sections (Quick actions, Jump to, Recent
+   sessions), keyboard shortcuts on each row, search input pre-filled
+   "razor", focused row "Start an interview journey". */
+export const CommandPaletteOverlay: TempoStoryboard = {
+  render: () => (
+    <CanvasProviders>
+      <Dashboard variant="command-palette" userName="Arjun" greetingHour={9} />
+    </CanvasProviders>
+  ),
+  name: "7. Command palette (⌘K)",
+  layout: { x: 0, y: 5190, width: 1440, height: 1024 },
+};
+
+/* Notifications panel — slide-in drawer from the bell icon. 5 items
+   grouped by type (evaluation, milestone, coach, journey, system),
+   2 unread at top with copper indicator dot, "Mark all read" + close
+   actions, ago-time pills. */
+export const NotificationsOpen: TempoStoryboard = {
+  render: () => (
+    <CanvasProviders>
+      <Dashboard variant="notifications" userName="Arjun" greetingHour={9} />
+    </CanvasProviders>
+  ),
+  name: "8. Notifications panel",
+  layout: { x: 0, y: 6264, width: 1440, height: 1024 },
+};

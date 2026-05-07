@@ -351,6 +351,307 @@ function SessionAction({ title, children }: { title: string; children: React.Rea
   );
 }
 
+/* ─── InsightFeed — rotating AI coach insights with prev/next pager.
+       Replaces the single static card pattern. Storyboard shows
+       insight 3 of 12 with navigation affordances; production wires
+       state to a useReducer + the /api/insights queue. */
+export interface CoachInsight {
+  headline: string;
+  body: string;
+  ctaLabel: string;
+  priority: "high" | "medium" | "low";
+  evidence?: string;
+}
+export function InsightFeed({
+  insights, current = 0,
+}: { insights: CoachInsight[]; current?: number }) {
+  if (insights.length === 0) return null;
+  const insight = insights[Math.min(current, insights.length - 1)];
+  const priorityTone =
+    insight.priority === "high"   ? { pill: "copper" as const, label: "High priority" } :
+    insight.priority === "medium" ? { pill: "indigo" as const, label: "Medium priority" } :
+                                    { pill: "neutral" as const, label: "Low priority" };
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: t.indigo }}>{Icons.sparkle}</span>
+          <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>AI coach insight</span>
+        </div>
+        <Pill tone={priorityTone.pill}>{priorityTone.label}</Pill>
+      </div>
+      <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", lineHeight: 1.2, margin: "0 0 8px" }}>
+        {insight.headline}
+      </h3>
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.55, margin: "0 0 12px" }}>
+        {insight.body}
+      </p>
+      {insight.evidence && (
+        <div style={{
+          fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.4,
+          padding: "8px 10px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 6,
+          marginBottom: 14,
+        }}>
+          BASED ON: {insight.evidence}
+        </div>
+      )}
+      <PrimaryCta size="sm" fullWidth>{insight.ctaLabel}</PrimaryCta>
+
+      {/* Pager — prev/next + index pips. Only rendered when there's >1 insight. */}
+      {insights.length > 1 && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginTop: 14, paddingTop: 14, borderTop: `1px solid ${t.line}`,
+        }}>
+          <button aria-label="Previous insight" disabled={current === 0} style={{
+            width: 28, height: 28, borderRadius: 999,
+            background: t.cream, border: `1px solid ${t.line}`, cursor: current === 0 ? "default" : "pointer",
+            color: current === 0 ? t.inkFaint : t.coal,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+          }}>‹</button>
+          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+            {insights.map((_, i) => (
+              <span key={i} style={{
+                width: i === current ? 18 : 6, height: 6, borderRadius: 999,
+                background: i === current ? t.copper : t.line,
+                transition: "all 200ms ease",
+              }} />
+            ))}
+          </div>
+          <button aria-label="Next insight" disabled={current === insights.length - 1} style={{
+            width: 28, height: 28, borderRadius: 999,
+            background: t.cream, border: `1px solid ${t.line}`,
+            cursor: current === insights.length - 1 ? "default" : "pointer",
+            color: current === insights.length - 1 ? t.inkFaint : t.coal,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+          }}>›</button>
+        </div>
+      )}
+      <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.4 }}>
+          {current + 1} / {insights.length}
+        </span>
+        <a href="#all-insights" className="hsx-db-link" style={{
+          fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.indigo, textDecoration: "none",
+        }}>
+          View all →
+        </a>
+      </div>
+    </>
+  );
+}
+
+/* ─── CommandPalette — Linear-style ⌘K overlay. Renders as a centered
+       modal over a dimmed backdrop. Production: keyboard-driven; on
+       canvas, just static + a chevron pip showing the focused row. */
+export interface PaletteSection {
+  label: string;
+  items: Array<{ key: string; label: string; sub?: string; icon: React.ReactNode; shortcut?: string }>;
+}
+export function CommandPalette({
+  query = "", sections, focusKey,
+}: { query?: string; sections: PaletteSection[]; focusKey?: string }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(20,17,10,0.36)",
+      backdropFilter: "blur(2px)", display: "flex", alignItems: "flex-start",
+      justifyContent: "center", paddingTop: 120, zIndex: 9999,
+    }}>
+      <div style={{
+        width: 620, maxWidth: "calc(100vw - 32px)",
+        background: t.white, borderRadius: 16, border: `1px solid ${t.line}`,
+        boxShadow: "0 8px 32px rgba(20,17,10,.18), 0 32px 64px rgba(20,17,10,.16)",
+        overflow: "hidden",
+      }}>
+        {/* Search input */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: `1px solid ${t.line}` }}>
+          <span style={{ color: t.inkSoft }}>{Icons.sparkle}</span>
+          <input
+            placeholder="Search anything — sessions, companies, focuses…"
+            defaultValue={query}
+            style={{
+              flex: 1, border: "none", outline: "none", background: "transparent",
+              fontFamily: f.sans, fontSize: 15, color: t.coal,
+            }}
+          />
+          <span style={{
+            fontFamily: f.mono, fontSize: 10, color: t.inkFaint,
+            padding: "3px 7px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 5,
+          }}>ESC</span>
+        </div>
+        {/* Sections */}
+        <div style={{ maxHeight: 420, overflowY: "auto", padding: "8px 0" }}>
+          {sections.map(section => (
+            <div key={section.label} style={{ padding: "8px 12px" }}>
+              <div style={{
+                padding: "4px 12px", fontFamily: f.mono, fontSize: 10, fontWeight: 500,
+                color: t.inkFaint, letterSpacing: 0.6, textTransform: "uppercase",
+              }}>{section.label}</div>
+              {section.items.map(item => (
+                <div key={item.key} style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "10px 12px", borderRadius: 8,
+                  background: item.key === focusKey ? t.copperSoft : "transparent",
+                  cursor: "pointer", transition: "background 120ms ease",
+                }}>
+                  <span style={{
+                    width: 28, height: 28, borderRadius: 8,
+                    background: item.key === focusKey ? t.copper : t.creamSoft,
+                    color: item.key === focusKey ? "#fff" : t.inkSoft,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  }}>{item.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal }}>{item.label}</div>
+                    {item.sub && <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>{item.sub}</div>}
+                  </div>
+                  {item.shortcut && (
+                    <span style={{
+                      fontFamily: f.mono, fontSize: 10, color: t.inkSoft,
+                      padding: "3px 7px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 5,
+                    }}>{item.shortcut}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        {/* Footer */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "10px 20px", borderTop: `1px solid ${t.line}`, background: t.cream,
+          fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.4,
+        }}>
+          <span>↑↓ Navigate · ↵ Open · ESC Close</span>
+          <span>HireStepX command palette</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── NotificationPanel — slide-in drawer revealed by clicking the
+       bell icon. Shows recent activity grouped by day with read /
+       unread state, action affordances per row. */
+export interface NotificationItem {
+  id: string;
+  kind: "evaluation" | "milestone" | "coach" | "journey" | "system";
+  title: string;
+  body: string;
+  ago: string; // "2m ago" / "1h ago" / "yesterday"
+  unread: boolean;
+}
+export function NotificationPanel({ items }: { items: NotificationItem[] }) {
+  const unreadCount = items.filter(i => i.unread).length;
+  const kindIcon: Record<NotificationItem["kind"], React.ReactNode> = {
+    evaluation: Icons.target,
+    milestone:  Icons.trophy,
+    coach:      Icons.sparkle,
+    journey:    Icons.layers,
+    system:     Icons.bell,
+  };
+  return (
+    <div style={{
+      position: "fixed", top: 0, right: 0, bottom: 0, width: 400, maxWidth: "100vw",
+      background: t.white, borderLeft: `1px solid ${t.line}`,
+      boxShadow: "-16px 0 48px rgba(20,17,10,.10)",
+      display: "flex", flexDirection: "column", zIndex: 9998,
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: "20px 24px", borderBottom: `1px solid ${t.line}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <div>
+          <h3 style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0 }}>
+            Notifications
+          </h3>
+          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "4px 0 0" }}>
+            {unreadCount} unread · {items.length} total
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button aria-label="Mark all read" title="Mark all read" style={{
+            padding: "6px 10px", fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.inkSoft,
+            background: "transparent", border: `1px solid ${t.line}`, borderRadius: 6, cursor: "pointer",
+          }}>Mark all read</button>
+          <button aria-label="Close" title="Close" style={{
+            width: 30, height: 30, borderRadius: 6, color: t.inkSoft,
+            background: "transparent", border: `1px solid ${t.line}`, cursor: "pointer",
+          }}>×</button>
+        </div>
+      </div>
+      {/* List */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {items.map(n => (
+          <div key={n.id} style={{
+            display: "flex", gap: 12, padding: "16px 24px",
+            borderBottom: `1px solid ${t.line}`,
+            background: n.unread ? "rgba(180,83,9,0.04)" : "transparent",
+            position: "relative",
+          }}>
+            {n.unread && (
+              <span aria-hidden style={{
+                position: "absolute", left: 8, top: 22,
+                width: 6, height: 6, borderRadius: 999, background: t.copper,
+              }} />
+            )}
+            <span style={{
+              width: 32, height: 32, borderRadius: 8, background: t.creamSoft, color: t.indigo,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>{kindIcon[n.kind]}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+                <span style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>
+                  {n.title}
+                </span>
+                <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkFaint, letterSpacing: 0.3, flexShrink: 0 }}>
+                  {n.ago}
+                </span>
+              </div>
+              <p style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, margin: "4px 0 0", lineHeight: 1.5 }}>
+                {n.body}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── QuickAction — single tile in a quick-actions row under the greeting.
+       Supports keyboard-shortcut hint pill on the right. */
+export function QuickAction({
+  icon, label, shortcut, accent = "neutral",
+}: { icon: React.ReactNode; label: string; shortcut?: string; accent?: "neutral" | "copper" | "indigo" }) {
+  const tint =
+    accent === "copper" ? { fg: t.copper, bg: t.copperSoft } :
+    accent === "indigo" ? { fg: t.indigo, bg: t.indigo100 } :
+                          { fg: t.inkSoft, bg: t.creamSoft };
+  return (
+    <button style={{
+      display: "inline-flex", alignItems: "center", gap: 10,
+      padding: "10px 14px", borderRadius: 12,
+      background: t.white, border: `1px solid ${t.line}`,
+      fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.coal,
+      cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease",
+    }} className="hsx-db-cta-outline">
+      <span style={{
+        width: 24, height: 24, borderRadius: 6, background: tint.bg, color: tint.fg,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+      }}>{icon}</span>
+      <span>{label}</span>
+      {shortcut && (
+        <span style={{
+          fontFamily: f.mono, fontSize: 10, color: t.inkFaint,
+          padding: "2px 6px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 5,
+          letterSpacing: 0.3,
+        }}>{shortcut}</span>
+      )}
+    </button>
+  );
+}
+
 export function PrimaryCta({
   children, onClick, icon, fullWidth, size = "md",
 }: { children: React.ReactNode; onClick?: () => void; icon?: React.ReactNode; fullWidth?: boolean; size?: "sm" | "md" }) {
