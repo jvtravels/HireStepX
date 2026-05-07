@@ -376,9 +376,22 @@ export default async function handler(req: Request): Promise<Response> {
     // improvements, regressions, and persistent issues.
     const priorReports = auth.userId ? await loadPriorReports(sessionId, auth.userId) : [];
 
-    // Build transcript block — truncate individual turns but keep structure intact.
+    // Build transcript block — keep all turn indices intact (perQuestion[].idx
+    // references them) but vary the per-turn char cap by position. The arc is
+    // dominated by the opening turns (rapport / framing) and the closing turns
+    // (final answers / wrap-up); long-winded middle turns can be safely
+    // compressed without losing scoring signal. For a 20-turn interview every
+    // turn is "edge" and gets the full cap; only longer sessions benefit.
+    const TRANSCRIPT_EDGE_CAP = 1500;
+    const TRANSCRIPT_MIDDLE_CAP = 400;
+    const KEEP_FIRST = 6;
+    const KEEP_LAST = 10;
     const transcriptBlock = transcript
-      .map((t, i) => `[${i}] ${t.role === "interviewer" ? "INTERVIEWER" : "CANDIDATE"}: ${sanitizeForLLM(t.text, 1500)}`)
+      .map((t, i) => {
+        const isEdge = i < KEEP_FIRST || i >= transcript.length - KEEP_LAST;
+        const cap = isEdge ? TRANSCRIPT_EDGE_CAP : TRANSCRIPT_MIDDLE_CAP;
+        return `[${i}] ${t.role === "interviewer" ? "INTERVIEWER" : "CANDIDATE"}: ${sanitizeForLLM(t.text, cap)}`;
+      })
       .join("\n");
 
     // Compact prior-sessions block for the prompt. Omitted entirely if no history.
