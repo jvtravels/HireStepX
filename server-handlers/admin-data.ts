@@ -565,8 +565,8 @@ async function buildServiceDetails(
         errorsToday: groqToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: groqAvgLatency,
       },
-      limits: { requestsPerDay: 14400, tokensPerDay: 1_000_000 },
-      notes: "Free tier: 30 RPM, ~1M TPD. Upgrade at console.groq.com if hitting limits.",
+      limits: { requestsPerDay: 1000, requestsPerMinute: 30, tokensPerMinute: 12000 },
+      notes: "Free tier: 30 RPM, 1,000 RPD, 12,000 TPM (verified via x-ratelimit headers). Per-minute token cap is the bottleneck during interviews — upgrade at console.groq.com to lift TPM.",
     },
     {
       name: "Google Gemini",
@@ -583,8 +583,8 @@ async function buildServiceDetails(
         errorsToday: geminiToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: geminiAvgLatency,
       },
-      limits: { requestsPerDay: 100_000, tokensPerDay: 10_000_000 },
-      notes: "Free tier: 1500 RPM, 10M TPD. Only used when Groq fails. Upgrade at aistudio.google.com.",
+      limits: { requestsPerDay: 1500, requestsPerMinute: 15, tokensPerMinute: 1_000_000 },
+      notes: "Free tier (gemini-2.0-flash): 15 RPM, 1,500 RPD, 1M TPM. NOTE: Google has been zeroing out free-tier access for gemini-2.0-flash — if every fallback returns 429 RESOURCE_EXHAUSTED, the model is no longer free for this project. Switch to gemini-2.5-flash or upgrade at aistudio.google.com.",
     },
     {
       name: "Azure TTS",
