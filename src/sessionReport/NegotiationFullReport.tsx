@@ -38,7 +38,7 @@
  * the canonical "outcome record" inside Part 1, alongside the new
  * concession analysis and anchor-bracket panels. Nothing is lost. */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import type { Question } from "./types";
 import type { InterviewResultData } from "./types";
 import { t, f, shadows } from "./tokens";
@@ -65,6 +65,10 @@ interface Props {
   questions: Question[];
   daysUntilInterview?: number;
   priorSessionCount?: number;
+  /* Optional handler — if wired by the parent, the drill plan cards
+     show "Start drill →" buttons that call this with the drill slug.
+     If omitted, the buttons are hidden entirely (no placeholder UI). */
+  onLaunchDrill?: (slug: string) => void;
 }
 
 /* ─── Inline primitives ─────────────────────────────────────── */
@@ -125,10 +129,10 @@ function SectionHeader({ index, title, subtitle, accent = t.indigo }: {
 }
 
 function SectionBand({
-  label, title, subtitle, accent, bg,
-}: { label: string; title: string; subtitle: string; accent: string; bg: string }) {
+  label, title, subtitle, accent, bg, anchorId,
+}: { label: string; title: string; subtitle: string; accent: string; bg: string; anchorId?: string }) {
   return (
-    <div className="nfr-section-band" style={{ background: bg, borderTopColor: accent, borderTopWidth: 2, borderTopStyle: "solid" }}>
+    <div id={anchorId} className="nfr-section-band" style={{ background: bg, borderTopColor: accent, borderTopWidth: 2, borderTopStyle: "solid", scrollMarginTop: 80 }}>
       <div
         style={{
           padding: "5px 11px", background: accent, color: "#FFFFFF",
@@ -250,23 +254,53 @@ function computeNpvRows(outcome: NegotiationOutcome) {
    the outcome was accepted/walked-away). For the default case, the
    TL;DR hero IS the start-here cue, so an additional arrow is just
    redundant chrome. */
+/* Anchor IDs for in-page jumps from the start-here hint. */
+const ANCHOR_PART_2 = "nfr-part-2";
+const ANCHOR_PART_3 = "nfr-part-3";
+const ANCHOR_PART_4 = "nfr-part-4";
+
 function StartHereHint({ outcome, daysUntilInterview }: { outcome: NegotiationOutcome; daysUntilInterview?: number }) {
-  let msg: string | null = null;
+  let body: React.ReactNode = null;
   if (typeof daysUntilInterview === "number" && daysUntilInterview <= 7) {
-    msg = `Real round in ${daysUntilInterview} day${daysUntilInterview === 1 ? "" : "s"}. Skip to Part 2 for the email draft you can send.`;
+    body = (
+      <>
+        Real round in {daysUntilInterview} day{daysUntilInterview === 1 ? "" : "s"}. Skip to{" "}
+        <a href={`#${ANCHOR_PART_2}`} style={anchorStyle}>Part 2</a> for the email draft you can send.
+      </>
+    );
   } else if (outcome.outcome === "accepted") {
-    msg = "You accepted. The most useful section here is Part 4 — what to take into your next negotiation.";
+    body = (
+      <>
+        You accepted. The most useful section here is{" "}
+        <a href={`#${ANCHOR_PART_4}`} style={anchorStyle}>Part 4</a> — what to take into your next negotiation.
+      </>
+    );
   } else if (outcome.outcome === "walked_away") {
-    msg = "You walked away. Parts 3 and 4 (rupees + pattern) are the most useful for your next round.";
+    body = (
+      <>
+        You walked away.{" "}
+        <a href={`#${ANCHOR_PART_3}`} style={anchorStyle}>Parts 3</a> and{" "}
+        <a href={`#${ANCHOR_PART_4}`} style={anchorStyle}>4</a> (rupees + pattern) are the most useful for your next round.
+      </>
+    );
   }
-  if (msg === null) return null;
+  if (body === null) return null;
   return (
     <div className="nfr-start-here">
-      <span style={{ fontSize: 18 }}>→</span>
-      <span><strong>Start here:</strong> {msg}</span>
+      {/* SVG arrow — Unicode → renders inconsistently across browsers and font stacks */}
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden style={{ flexShrink: 0 }}>
+        <path d="M2 7h9M7 3l4 4-4 4" stroke={t.copper} strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span><strong>Start here:</strong> {body}</span>
     </div>
   );
 }
+const anchorStyle: React.CSSProperties = {
+  color: t.copper,
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+  fontWeight: 600,
+};
 
 function TLDRHero({
   outcome, role, company,
@@ -295,7 +329,26 @@ function TLDRHero({
 
   type StatTone = "good" | "bad" | "warn" | "neutral";
   const stats: Array<{ label: string; value: string; hint?: string; tone: StatTone }> = [];
-  if (delta !== null) {
+
+  /* Detect the "sparse no-counter" pattern — phaseCount=1, no counter,
+     no delta. Without this branch, three of four TL;DR stats would
+     render in the bad-tone (red on dark), reading as uniform failure
+     to a first-time negotiator. Replace one red stat with a neutral
+     "first session — here's where you are" framing tile. */
+  const isSparseFirstSession =
+    delta === 0 &&
+    outcome.candidateAsk === null &&
+    phaseCount <= 1 &&
+    typeof outcome.percentileWithinBand !== "number";
+
+  if (isSparseFirstSession) {
+    stats.push({
+      label: "Where you are now",
+      value: "Session 1",
+      hint: "first negotiation — Part 2 below has the email draft to start from",
+      tone: "neutral",
+    });
+  } else if (delta !== null) {
     /* Honest semantics for delta = 0: the candidate accepted the first
        offer and "left money on the table" relative to a typical 15–35%
        counter. Don't label this as "What you won" — it isn't. */
@@ -450,42 +503,57 @@ function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
           <div key={p.num} style={{ flex: 1, height: 8, borderRadius: 4, background: p.reached ? t.success : t.line }} />
         ))}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {phases.map((p) => (
-          <div
-            key={p.num}
-            style={{
-              display: "flex", alignItems: "center", gap: 14,
-              padding: "12px 14px",
-              background: p.reached ? t.success100 : t.creamSoft,
-              border: `1px solid ${p.reached ? t.success : t.line}`,
-              borderRadius: 10,
-              opacity: p.reached ? 1 : 0.6,
-            }}
-          >
-            <div
-              style={{
-                width: 28, height: 28, borderRadius: "50%",
-                background: p.reached ? t.success : "#FFFFFF",
-                color: p.reached ? "#FFFFFF" : t.inkFaint,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 700, fontSize: 13, fontFamily: f.mono,
-                border: p.reached ? "none" : `1px solid ${t.lineStrong}`,
-                flexShrink: 0,
-              }}
-            >
-              {p.reached ? "✓" : p.num}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: t.coal }}>{p.name}</div>
-              {p.note && <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2 }}>{p.note}</div>}
-            </div>
-            <span className={`nfr-pill ${p.reached ? "nfr-pill-good" : "nfr-pill-neutral"}`}>
-              {p.reached ? "Reached" : "Not reached"}
-            </span>
+      {/* Find the index of the first unreached stage — that's the
+          "next move" we highlight with a copper "← Try this next"
+          pill instead of the same neutral "Not reached" pill the
+          other unreached stages get. Turns one of the failures into
+          a forward arrow rather than five greyed-out rows. */}
+      {(() => {
+        const nextIdx = phases.findIndex(p => !p.reached);
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {phases.map((p, i) => {
+              const isNext = i === nextIdx;
+              const bg = p.reached ? t.success100 : isNext ? "rgba(180,83,9,0.06)" : t.creamSoft;
+              const border = p.reached ? t.success : isNext ? t.copper : t.line;
+              return (
+                <div
+                  key={p.num}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    padding: "12px 14px",
+                    background: bg,
+                    border: `1px solid ${border}`,
+                    borderRadius: 10,
+                    opacity: p.reached || isNext ? 1 : 0.6,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28, height: 28, borderRadius: "50%",
+                      background: p.reached ? t.success : isNext ? t.copper : "#FFFFFF",
+                      color: p.reached || isNext ? "#FFFFFF" : t.inkFaint,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontWeight: 700, fontSize: 13, fontFamily: f.mono,
+                      border: p.reached || isNext ? "none" : `1px solid ${t.lineStrong}`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {p.reached ? "✓" : p.num}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: t.coal }}>{p.name}</div>
+                    {p.note && <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2 }}>{p.note}</div>}
+                  </div>
+                  <span className={`nfr-pill ${p.reached ? "nfr-pill-good" : isNext ? "nfr-pill-warn" : "nfr-pill-neutral"}`}>
+                    {p.reached ? "Reached" : isNext ? "Try this next" : "Not reached"}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        );
+      })()}
     </div>
   );
 }
@@ -710,6 +778,86 @@ function UnaskedLeversPanel({ outcome }: { outcome: NegotiationOutcome }) {
   );
 }
 
+/* Inline glossary — terms in the counter-offer letter that first-time
+   negotiators (especially first-job-in-family) won't know. The browser's
+   native title attribute is used for the tooltip so it works on
+   touch devices via long-press without a JS dependency. */
+const GLOSSARY: Record<string, string> = {
+  "variable pay":
+    "The portion of your salary tied to performance — bonus, profit-share, or commission. 'Target with upside' means it can exceed the target; 'hard cap' means the target is the maximum.",
+  "stock-option grant":
+    "Shares of the company you can buy at a fixed price after a waiting period. The grant is the total number of shares promised; vesting is how they unlock over time.",
+  "front-loaded":
+    "An ESOP grant that vests faster in the early years (e.g. 40% in year 1) — better for you than even vesting because you get value faster.",
+  "refresh policy":
+    "Whether the company gives you additional stock-option grants each year (typically year 2 onwards) to keep your total package competitive.",
+  "signing component":
+    "An upfront one-time bonus paid when you sign — usually used to offset unvested ESOPs you're leaving behind at your current employer.",
+};
+
+/* Splits a letter body on `<Anything>` placeholder tokens AND on
+   glossary terms. Placeholders become yellow pills (must-replace);
+   glossary terms become dotted-underlined hover-tooltipped phrases. */
+function renderLetterWithPlaceholders(letter: string): React.ReactNode {
+  // First split on placeholders.
+  const parts = letter.split(/(<[^>]+>)/g);
+  return parts.map((part, i) => {
+    if (/^<[^>]+>$/.test(part)) {
+      return (
+        <span
+          key={i}
+          style={{
+            display: "inline-block",
+            padding: "1px 6px",
+            background: "#FEF3C7",
+            border: `1px dashed ${t.warning}`,
+            color: t.coal,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12,
+            fontWeight: 600,
+            borderRadius: 4,
+            margin: "0 1px",
+          }}
+        >
+          {part}
+        </span>
+      );
+    }
+    // For non-placeholder runs, decorate glossary terms.
+    return <React.Fragment key={i}>{decorateGlossary(part)}</React.Fragment>;
+  });
+}
+
+function decorateGlossary(text: string): React.ReactNode {
+  const terms = Object.keys(GLOSSARY);
+  if (terms.length === 0) return text;
+  // Build a regex that matches any glossary term, case-insensitive.
+  const pattern = new RegExp(`(${terms.map(escapeRegExp).join("|")})`, "gi");
+  const segments = text.split(pattern);
+  return segments.map((seg, j) => {
+    const def = GLOSSARY[seg.toLowerCase()];
+    if (def) {
+      return (
+        <span
+          key={j}
+          title={def}
+          style={{
+            borderBottom: `1px dotted ${t.inkFaint}`,
+            cursor: "help",
+          }}
+        >
+          {seg}
+        </span>
+      );
+    }
+    return seg;
+  });
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function CounterOfferLetterPanel({
   outcome, role, company,
 }: { outcome: NegotiationOutcome; role: string; company: string }) {
@@ -802,11 +950,28 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
       <SectionHeader
         index="07"
         title="Your counter-offer email — ready to send"
-        subtitle="We wrote this from your call. Read through, replace the < placeholders >, and send it."
+        subtitle="We wrote this from your call. Replace the highlighted placeholders, then copy and send."
       />
+      {/* Reminder banner above the letter — placeholders are highlighted
+          inline below but a top-of-frame reminder catches users who
+          scan-and-copy before reading. */}
+      <div
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "8px 14px", marginBottom: 10,
+          background: "#FEF3C7", border: `1px solid ${t.warning}`,
+          borderRadius: 8, fontSize: 12, color: t.coal,
+        }}
+      >
+        <span style={{ fontWeight: 600, color: t.warning }}>Heads up</span>
+        <span>— replace the yellow placeholders before you press send.</span>
+      </div>
       {/* Switched from <pre> to <div> with white-space: pre-line so long
           lines soft-wrap cleanly on phones. <pre> kept lines rigid and
-          forced horizontal scroll on narrow screens. */}
+          forced horizontal scroll on narrow screens. The body is
+          rendered via renderLetterWithPlaceholders so `<Recruiter>` and
+          `<Your name>` (etc.) appear as highlighted yellow pills, not
+          plain text easy to overlook. */}
       <div
         style={{
           margin: "0 0 16px",
@@ -816,7 +981,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
           wordBreak: "break-word", overflow: "auto",
         }}
       >
-        {letter}
+        {renderLetterWithPlaceholders(letter)}
       </div>
       <div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: t.inkSoft, marginBottom: 8 }}>
@@ -882,38 +1047,58 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
           />
         ) : (
           <span
-            className="nfr-pill nfr-pill-warn"
-            title="Cohort attribution not yet available — treat the percentile as an early estimate."
+            className="nfr-pill nfr-pill-neutral"
+            title="Cohort attribution not yet available — treat the placement as an early estimate."
           >
             Early estimate
           </span>
         )}
       </div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
-        <div
-          style={{
-            fontSize: 56, fontWeight: 700, fontFamily: f.mono,
-            color: tone, letterSpacing: -2, lineHeight: 1,
-          }}
-        >
-          p{p}
+      {/* When attribution is wired (n + freshness), show the big
+          authoritative percentile + bar. When it isn't, the percentile
+          is an internal estimate — we render a verbal phrase only,
+          so the soft "Early estimate" pill isn't competing against a
+          56px number for the user's eye. */}
+      {hasAttribution ? (
+        <>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
+            <div
+              style={{
+                fontSize: 56, fontWeight: 700, fontFamily: f.mono,
+                color: tone, letterSpacing: -2, lineHeight: 1,
+              }}
+            >
+              p{p}
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 600, color: tone, lineHeight: 1.2 }}>{phrase}</div>
+          </div>
+          <div
+            style={{
+              height: 12, background: t.line, borderRadius: 6,
+              position: "relative", marginBottom: 8, marginTop: 16,
+            }}
+          >
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "25%", background: t.error100, borderRadius: "6px 0 0 6px" }} />
+            <div style={{ position: "absolute", left: "25%", top: 0, bottom: 0, width: "50%", background: "rgba(180,83,9,0.18)" }} />
+            <div style={{ position: "absolute", left: "75%", top: 0, bottom: 0, right: 0, background: t.success100, borderRadius: "0 6px 6px 0" }} />
+            <div style={{ position: "absolute", left: `${p}%`, top: -4, bottom: -4, width: 4, background: t.coal, borderRadius: 2, transform: "translateX(-2px)" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
+            <span>p25</span><span>p50</span><span>p75</span>
+          </div>
+        </>
+      ) : (
+        <div style={{ fontSize: 15, color: t.coal, lineHeight: 1.55, marginTop: 4 }}>
+          {p < 30
+            ? "Your offer looks below the typical band for this role and level."
+            : p > 70
+            ? "Your offer looks above the typical band for this role and level."
+            : "Your offer looks around the typical band for this role and level."}{" "}
+          <span style={{ color: t.inkSoft }}>
+            We'll show exactly where it sits once we have enough cohort data to compare.
+          </span>
         </div>
-        <div style={{ fontSize: 17, fontWeight: 600, color: tone, lineHeight: 1.2 }}>{phrase}</div>
-      </div>
-      <div
-        style={{
-          height: 12, background: t.line, borderRadius: 6,
-          position: "relative", marginBottom: 8, marginTop: 16,
-        }}
-      >
-        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "25%", background: t.error100, borderRadius: "6px 0 0 6px" }} />
-        <div style={{ position: "absolute", left: "25%", top: 0, bottom: 0, width: "50%", background: "rgba(180,83,9,0.18)" }} />
-        <div style={{ position: "absolute", left: "75%", top: 0, bottom: 0, right: 0, background: t.success100, borderRadius: "0 6px 6px 0" }} />
-        <div style={{ position: "absolute", left: `${p}%`, top: -4, bottom: -4, width: 4, background: t.coal, borderRadius: 2, transform: "translateX(-2px)" }} />
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
-        <span>p25</span><span>p50</span><span>p75</span>
-      </div>
+      )}
     </div>
   );
 }
@@ -1096,7 +1281,7 @@ function ArchetypePanel({ outcome, priorSessionCount }: { outcome: NegotiationOu
   );
 }
 
-function DrillPlanPanel({ outcome }: { outcome: NegotiationOutcome }) {
+function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcome; onLaunchDrill?: (slug: string) => void }) {
   if (!outcome.drills || outcome.drills.length === 0) return null;
   return (
     <div className="nfr-panel">
@@ -1127,9 +1312,17 @@ function DrillPlanPanel({ outcome }: { outcome: NegotiationOutcome }) {
               {d.title}
             </div>
             <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, flex: 1 }}>{d.goal}</div>
-            <button className="nfr-btn-primary" style={{ marginTop: 4, width: "100%" }}>
-              Start drill →
-            </button>
+            {/* Button hidden unless the parent wired onLaunchDrill +
+                the drill itself has a slug. Avoids non-functional CTAs. */}
+            {onLaunchDrill && d.slug && (
+              <button
+                className="nfr-btn-primary"
+                style={{ marginTop: 4, width: "100%" }}
+                onClick={() => onLaunchDrill(d.slug!)}
+              >
+                Start drill →
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -1140,7 +1333,7 @@ function DrillPlanPanel({ outcome }: { outcome: NegotiationOutcome }) {
 /* ─── Top-level component ────────────────────────────────────── */
 
 export function NegotiationFullReport({
-  outcome, role, company, questions, daysUntilInterview, priorSessionCount,
+  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill,
 }: Props) {
   const offers = outcome.offers ?? [];
   const finalTotal = outcome.finalTotal ?? offers[offers.length - 1]?.total ?? null;
@@ -1208,6 +1401,7 @@ export function NegotiationFullReport({
 
       {/* PART 2 — ACTION */}
       <SectionBand
+        anchorId={ANCHOR_PART_2}
         label="Part 2 of 4"
         title="What to do before your real round"
         subtitle="A draft email you can send, the questions to ask next time, and the things to prepare."
@@ -1233,6 +1427,7 @@ export function NegotiationFullReport({
         return (
           <>
             <SectionBand
+              anchorId={ANCHOR_PART_3}
               label="Part 3 of 4"
               title="What this offer is worth in rupees"
               subtitle="Where your offer sits vs others — and what accepting really costs after tax."
@@ -1266,6 +1461,7 @@ export function NegotiationFullReport({
         return (
           <>
             <SectionBand
+              anchorId={ANCHOR_PART_4}
               label="Part 4 of 4"
               title="Your pattern across sessions"
               subtitle="What you keep doing right (and wrong), and the drills to break the pattern."
@@ -1274,15 +1470,11 @@ export function NegotiationFullReport({
             />
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {willRenderArchetype && <ArchetypePanel outcome={outcome} priorSessionCount={priorSessionCount} />}
-              {willRenderDrills && <DrillPlanPanel outcome={outcome} />}
+              {willRenderDrills && <DrillPlanPanel outcome={outcome} onLaunchDrill={onLaunchDrill} />}
             </div>
           </>
         );
       })()}
-
-      {/* Bottom CTA — closes the report with a clear next move so users
-          don't end on the transcript collapsible. View-mode aware. */}
-      <NextRoundCTA outcome={outcome} role={role} company={company} />
 
       {/* Transcript export — preserved from legacy section */}
       <details style={{ marginTop: 28 }}>
@@ -1319,6 +1511,11 @@ export function NegotiationFullReport({
           })()}
         </pre>
       </details>
+
+      {/* Bottom CTA — moved BELOW the transcript so it's the literal
+          last element on the page. Previously sat above the transcript
+          which made the transcript the actual end-of-report. */}
+      <NextRoundCTA outcome={outcome} role={role} company={company} />
     </section>
   );
 }
