@@ -1,0 +1,27 @@
+{
+  "name": "Real session: Product Designer at Spinny — phrase repeat (2x), consecutive duplicate question, dodged direct ask, no counter, premature close",
+  "notes": "Imported 2026-05-07 evening. Spinny Product Designer mid-level band per AmbitionBox / Levels.fyi: ₹19.6-25.4 LPA. AI opened reasonably at ₹17 LPA, then over the next 4 AI turns: (1) repeated 'absolute top of what I can approve' twice, (2) distorted user's ₹22 LPA base into ₹20.2 LPA, (3) asked the EXACT same 'What's most important to you?' question word-for-word in two consecutive turns, (4) dodged user's direct 'what are you offering?' with another question, (5) NEVER produced a numeric counter, and (6) closed when user said 'why don't you understand?'. The numbers were realistic but the AI failed at conversation-level negotiation.",
+  "session": {
+    "type": "salary-negotiation",
+    "target_role": "Product Designer",
+    "target_company": "Spinny",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "We'd like to offer you ₹17 LPA total CTC for the Product Designer role. This breaks down as ₹14 LPA base salary, a variable component of up to ₹2 LPA tied to performance, and ₹1 LPA in our standard benefits package, which includes comprehensive health insurance. How does this number and structure land with you?", "time": "" },
+      { "speaker": "user", "text": "Let's get started.", "time": "" },
+      { "speaker": "user", "text": "I was thinking around 25 lakhs per annum It is, you know, with 22 lakh as a base salary. And other as some benefits and other.", "time": "" },
+      { "speaker": "ai", "text": "I heard you say you're targeting around ₹25 LPA — that's the absolute top of what I can approve — that's the absolute top of what I can approve, with a base of ₹20.2 LPA. That's a bit above our initial offer of ₹17 LPA total CTC. Can you help me understand what's driving that figure?", "time": "" },
+      { "speaker": "ai", "text": "I hear you. Let me see what flexibility I might have in the package structure. Given that we've discussed the base and variable components, what elements of a compensation package are most important to you right now - perhaps a joining bonus, learning budget, or something else.", "time": "" },
+      { "speaker": "user", "text": "For me, base salary is very important. Of the CTC. So can you help me understand what exactly you're offering?", "time": "" },
+      { "speaker": "ai", "text": "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits that would move the needle for you?", "time": "" },
+      { "speaker": "user", "text": "I've already mentioned multiple times base salary is very important for So why are you asking again and again?", "time": "" },
+      { "speaker": "ai", "text": "I appreciate you sharing that. What's most important to you in this package — is it the base number, the overall CTC, or are there specific benefits that would move the needle for you?", "time": "" },
+      { "speaker": "user", "text": "Base salary. Why don't you understand?", "time": "" },
+      { "speaker": "ai", "text": "Great, thanks Jay. I'll get that offer letter drafted and sent to you by end of day tomorrow. We're excited about the possibility of you joining Spinny. Please don't hesitate to reach out if any other questions come up.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["ai_phrase_repetition", "ai_consecutive_duplicate_question", "ai_didnt_answer_direct_question", "ai_no_counter_offered", "ai_ignored_user_complaint"],
+    "must_not_include": ["empty_transcript", "above_role_band"]
+  }
+}

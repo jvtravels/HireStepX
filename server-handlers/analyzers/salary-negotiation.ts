@@ -147,11 +147,10 @@ function monthsSince(yyyymm: string): number {
 
 export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   focus: "salary-negotiation",
-  // v2 (2026-05-07): Thence + Yellow Slice fixes — role-aware band check,
-  // offer-math consistency, silent-capitulation detection, phrase-repetition
-  // detection, reversed-range detection, ignored-complaint detection,
-  // self-contradiction detection, conditional-as-acceptance detection.
-  version: "salary-negotiation-v2",
+  // v3 (2026-05-07 evening): Spinny fixes — tighter phrase repetition (2x for
+  // long phrases), consecutive-duplicate-question detection,
+  // didn't-answer-direct-question detection, no-counter-offered detection.
+  version: "salary-negotiation-v3",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -297,31 +296,142 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     }
 
     // --- 3a. Phrase repetition stutter ---
-    // The Yellow Slice case: "that's the absolute top of what I can approve"
-    // repeated 4 times in a single AI turn. LLM generation loop. Catastrophic.
+    // Yellow Slice: 'that's the absolute top of what I can approve' x4.
+    // Spinny:       same phrase x2 (less severe but still wrong — long
+    // 8+-word phrases shouldn't repeat at all in a hiring-manager turn).
+    // Detection thresholds:
+    //   8+ word phrases → flag at 2+ repetitions
+    //   5-7 word phrases → flag at 3+ repetitions (existing behavior)
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (!isAiTurn(t)) continue;
       const text = t.text || "";
-      // Find any 5-word window that repeats ≥3 times in the same turn.
       const words = text.split(/\s+/).filter(Boolean);
       if (words.length < 15) continue;
-      const seen = new Map<string, number>();
-      const WINDOW = 5;
-      for (let j = 0; j + WINDOW <= words.length; j++) {
-        const phrase = words.slice(j, j + WINDOW).join(" ").toLowerCase();
-        if (phrase.length < 18) continue;
-        seen.set(phrase, (seen.get(phrase) || 0) + 1);
-      }
-      const repeated = Array.from(seen.entries()).find(([_, count]) => count >= 3);
-      if (repeated) {
+      const checkWindow = (window: number, minRepeats: number): { phrase: string; count: number } | null => {
+        const seen = new Map<string, number>();
+        for (let j = 0; j + window <= words.length; j++) {
+          const phrase = words.slice(j, j + window).join(" ").toLowerCase();
+          if (phrase.length < 24) continue;
+          seen.set(phrase, (seen.get(phrase) || 0) + 1);
+        }
+        for (const [phrase, count] of seen.entries()) {
+          if (count >= minRepeats) return { phrase, count };
+        }
+        return null;
+      };
+      const longRepeat = checkWindow(8, 2);  // 8-word phrase × 2+
+      const midRepeat = checkWindow(5, 3);   // 5-word phrase × 3+
+      const found = longRepeat || midRepeat;
+      if (found) {
         hallucinations.push({
           turn_idx: i,
           type: "ai_phrase_repetition",
-          evidence: `AI repeated phrase "${repeated[0]}" ${repeated[1]} times in one turn — generation loop`,
+          evidence: `AI repeated phrase "${found.phrase}" ${found.count} times in one turn — generation loop`,
           severity: "high",
         });
         flags.add("ai_phrase_repetition");
+      }
+    }
+
+    // --- 3a-iv. Consecutive duplicate question ---
+    // Spinny case: AI asked the EXACT same "What's most important to you?"
+    // question word-for-word in two consecutive AI turns, after the user
+    // had already answered it. Different from `duplicate_question` which
+    // looks across the whole session — this catches adjacent loops.
+    const aiTurnsList: { idx: number; text: string }[] = transcript
+      .map((t, idx) => ({ idx, t }))
+      .filter(({ t }) => isAiTurn(t))
+      .map(({ idx, t }) => ({ idx, text: (t.text || "").trim() }));
+    for (let i = 1; i < aiTurnsList.length; i++) {
+      const prev = aiTurnsList[i - 1].text.toLowerCase();
+      const curr = aiTurnsList[i].text.toLowerCase();
+      if (prev.length < 60 || curr.length < 60) continue;
+      // Use rough Jaccard-by-word for similarity.
+      const prevWords = new Set(prev.split(/\s+/));
+      const currWords = new Set(curr.split(/\s+/));
+      const intersection = Array.from(prevWords).filter((w) => currWords.has(w)).length;
+      const union = new Set([...prevWords, ...currWords]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+      if (similarity >= 0.85) {
+        flags.add("ai_consecutive_duplicate_question");
+        gaps.push({
+          dimension: "conversation_progression",
+          expected: "Each AI turn should advance the conversation, not repeat the previous one verbatim",
+          observed: `AI turns ${aiTurnsList[i - 1].idx} and ${aiTurnsList[i].idx} are ${(similarity * 100).toFixed(0)}% identical`,
+          severity: "high",
+        });
+        break;
+      }
+    }
+
+    // --- 3a-v. AI didn't address a direct user question ---
+    // Spinny case: user asked "Can you help me understand what exactly
+    // you're offering?" — AI replied with "What's most important to
+    // you?" instead of giving an answer.
+    // Heuristic: user turn ends with "?", contains words like
+    // "what/how/can/could you...offer/show/explain", and AI's next turn
+    // doesn't share the question's key noun.
+    const DIRECT_ASK = /\b(what (?:are|is) you (?:offer|paying)|what (?:exactly )?(?:is|are) you offering|can you (?:help me understand|explain|clarify|tell me)|what'?s (?:your|the) (?:counter|number|offer)|give me (?:a number|your best))\b/i;
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isUserTurn(t)) continue;
+      const text = t.text || "";
+      if (!DIRECT_ASK.test(text)) continue;
+      const nextAi = transcript.slice(i + 1, i + 3).find(isAiTurn);
+      if (!nextAi) continue;
+      const aiText = (nextAi.text || "").toLowerCase();
+      // Has the AI given a number or specific offer detail?
+      const aiGaveNumber = /(?:₹|inr\s*)?\d{1,3}(?:\.\d+)?\s*(?:LPA|lakhs?|cr|crores?)/i.test(nextAi.text || "");
+      const aiAcknowledgedAnswering = /\b(here'?s what|the offer is|i can offer|let me clarify|to be clear|specifically)\b/i.test(aiText);
+      if (!aiGaveNumber && !aiAcknowledgedAnswering) {
+        flags.add("ai_didnt_answer_direct_question");
+        gaps.push({
+          dimension: "conversation_repair",
+          expected: "When user explicitly asks 'what are you offering?', AI must answer with a number, not pivot to another question",
+          observed: "AI dodged a direct ask with another question",
+          severity: "high",
+        });
+        break;
+      }
+    }
+
+    // --- 3a-vi. No numeric counter throughout the session ---
+    // Spinny case: user asked ₹25 LPA. AI never made a single numeric
+    // counter — just mirrored back user's number and recapped its own
+    // initial offer. To detect this we look for COUNTER LANGUAGE +
+    // a number > initial offer in the same AI turn, AFTER user's ask.
+    {
+      const userClaimsLocal = claims.filter((c) => isUserTurn(transcript[c.turn_idx]));
+      const aiClaimsLocal = claims.filter((c) => isAiTurn(transcript[c.turn_idx]));
+      const aiTurnCount = transcript.filter(isAiTurn).length;
+      if (aiTurnCount >= 4 && userClaimsLocal.length > 0 && aiClaimsLocal.length > 0) {
+        const userFirstAskIdx = userClaimsLocal[0].turn_idx;
+        const initialOfferLpa = aiClaimsLocal[0].lpa;
+        // Counter language must commit to an offer, not just discuss limits.
+        // "absolute top of what I can approve" mentions 'approve' but is the
+        // ceiling phrasing, not a counter — excluded by requiring verbs that
+        // commit to action (offer / stretch / land / meet) and dropping
+        // 'approve' which appears in ceiling-language.
+        const COUNTER_LANG = /\b(i can (?:offer|stretch|do|come up to|go up to|land at|meet you at)|let me offer|i'?ll offer|we can (?:do|offer|go up to|stretch to)|revised (?:offer|total|ctc)|updated (?:offer|total|ctc)|new offer|my best (?:is|offer)|stretch to ₹|come up to ₹|happy to (?:do|offer))\b/i;
+        // A real counter = AI turn that (a) comes after user's first ask,
+        // (b) contains counter-offer language, AND (c) names a number
+        // strictly higher than the initial offer.
+        const counterTurn = aiClaimsLocal.find((c) => {
+          if (c.turn_idx <= userFirstAskIdx) return false;
+          if (c.lpa <= initialOfferLpa * 1.01) return false; // not a stretch
+          const turnText = transcript[c.turn_idx]?.text || "";
+          return COUNTER_LANG.test(turnText);
+        });
+        if (!counterTurn) {
+          flags.add("ai_no_counter_offered");
+          gaps.push({
+            dimension: "negotiation_progression",
+            expected: "After user states a target, AI must produce a numeric counter (e.g. 'I can stretch to ₹X')",
+            observed: `Across ${aiTurnCount} AI turns, no counter language + number above initial offer (₹${initialOfferLpa.toFixed(1)} LPA) was found`,
+            severity: "high",
+          });
+        }
       }
     }
 
@@ -353,7 +463,7 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // --- 3a-iii. AI ignored user complaint ---
     // User says "I'm confused" / "what are you saying" / "you're confusing me"
     // and AI's next turn is celebration / closing language without addressing.
-    const USER_CONFUSION_RE = /\b(i'?m confused|i don'?t (?:understand|know what)|what (?:are you saying|do you mean)|why are you confusing|this (?:doesn'?t make|isn'?t making) sense|you'?re confusing me|can you clarify|wait what)\b/i;
+    const USER_CONFUSION_RE = /\b(i'?m confused|i don'?t (?:understand|know what)|why don'?t you understand|what (?:are you saying|do you mean)|why are you (?:confusing|asking (?:again|the same|me the same))|this (?:doesn'?t make|isn'?t making) sense|you'?re confusing me|can you clarify|wait what|already (?:mentioned|told you|said)|i (?:told|mentioned) you (?:already|multiple times|before))\b/i;
     const PREMATURE_CLOSE_RE = /\b(thanks?\s+\w*[,.!]?\s*(?:i'?ll connect|i'?ll send|formal offer|expect the (?:formal|final) offer|hr will|rest of your day|joining the team|welcome (?:aboard|to))|excited about (?:the possibility of you|having you))\b/i;
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];

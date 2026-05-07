@@ -1148,6 +1148,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 6.5, totalMax: 8.7, equityType: "none", source: "AmbitionBox + Indeed 2026", lastVerified: "2026-05-07", notes: "Senior UI designer 5+ yrs at Yellow Slice." },
     },
   },
+  "spinny": {
+    "ux-designer": {
+      entry: { totalMin: 10, totalMax: 14, equityType: "esop", equityMin: 1, equityMax: 2, equityVesting: "4-year vest, 1-year cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Entry / Product Designer 1 at Spinny." },
+      mid: { totalMin: 19.6, totalMax: 25.4, equityType: "esop", equityMin: 2, equityMax: 4, equityVesting: "4-year vest, 1-year cliff", source: "AmbitionBox + Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Product Designer 2 / mid-level (6-9 yrs) at Spinny." },
+      senior: { totalMin: 27.9, totalMax: 30.8, equityType: "esop", equityMin: 3, equityMax: 6, equityVesting: "4-year vest, 1-year cliff", source: "AmbitionBox + Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Senior Product Designer (5-6 yrs) at Spinny. ~₹35 LPA total comp incl. ESOPs." },
+    },
+  },
 };
 
 /**
