@@ -292,6 +292,82 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       }
     }
 
+    // --- 3a. Phrase repetition stutter ---
+    // The Yellow Slice case: "that's the absolute top of what I can approve"
+    // repeated 4 times in a single AI turn. LLM generation loop. Catastrophic.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isAiTurn(t)) continue;
+      const text = t.text || "";
+      // Find any 5-word window that repeats ≥3 times in the same turn.
+      const words = text.split(/\s+/).filter(Boolean);
+      if (words.length < 15) continue;
+      const seen = new Map<string, number>();
+      const WINDOW = 5;
+      for (let j = 0; j + WINDOW <= words.length; j++) {
+        const phrase = words.slice(j, j + WINDOW).join(" ").toLowerCase();
+        if (phrase.length < 18) continue;
+        seen.set(phrase, (seen.get(phrase) || 0) + 1);
+      }
+      const repeated = Array.from(seen.entries()).find(([_, count]) => count >= 3);
+      if (repeated) {
+        hallucinations.push({
+          turn_idx: i,
+          type: "ai_phrase_repetition",
+          evidence: `AI repeated phrase "${repeated[0]}" ${repeated[1]} times in one turn — generation loop`,
+          severity: "high",
+        });
+        flags.add("ai_phrase_repetition");
+      }
+    }
+
+    // --- 3a-ii. Reversed range "X to Y" where X > Y ---
+    // Yellow Slice case: "₹12 to ₹8.5 LPA". Ranges should always be low-to-high.
+    const REVERSED_RANGE = /(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:LPA|lakhs?|cr|crores?)?\s*(?:to|–|-)\s*(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(LPA|lakhs?|cr|crores?)/gi;
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isAiTurn(t)) continue;
+      const text = t.text || "";
+      REVERSED_RANGE.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = REVERSED_RANGE.exec(text)) !== null) {
+        const lo = parseFloat(m[1]);
+        const hi = parseFloat(m[2]);
+        if (Number.isFinite(lo) && Number.isFinite(hi) && lo > hi) {
+          hallucinations.push({
+            turn_idx: i,
+            type: "ai_reversed_range",
+            evidence: `AI quoted reversed range "${m[0]}" — ${lo} > ${hi}`,
+            severity: "medium",
+          });
+          flags.add("ai_reversed_range");
+          break;
+        }
+      }
+    }
+
+    // --- 3a-iii. AI ignored user complaint ---
+    // User says "I'm confused" / "what are you saying" / "you're confusing me"
+    // and AI's next turn is celebration / closing language without addressing.
+    const USER_CONFUSION_RE = /\b(i'?m confused|i don'?t (?:understand|know what)|what (?:are you saying|do you mean)|why are you confusing|this (?:doesn'?t make|isn'?t making) sense|you'?re confusing me|can you clarify|wait what)\b/i;
+    const PREMATURE_CLOSE_RE = /\b(thanks?\s+\w*[,.!]?\s*(?:i'?ll connect|i'?ll send|formal offer|expect the (?:formal|final) offer|hr will|rest of your day|joining the team|welcome (?:aboard|to))|excited about (?:the possibility of you|having you))\b/i;
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isUserTurn(t)) continue;
+      if (!USER_CONFUSION_RE.test(t.text || "")) continue;
+      const nextAi = transcript.slice(i + 1, i + 3).find(isAiTurn);
+      if (nextAi && PREMATURE_CLOSE_RE.test(nextAi.text || "")) {
+        flags.add("ai_ignored_user_complaint");
+        gaps.push({
+          dimension: "conversation_repair",
+          expected: "When user expresses confusion, AI must stop and clarify the offer with explicit numbers — not close the deal",
+          observed: "User said they were confused; AI moved straight to closing language",
+          severity: "high",
+        });
+        break;
+      }
+    }
+
     // --- 3b. AI self-contradiction in a single turn ---
     // Pattern: AI says "I can't [meet|reach|offer|match] ₹X" and then in
     // the same message offers ₹X. The Thence case: "I can't quite meet

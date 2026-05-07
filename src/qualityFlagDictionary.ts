@@ -22,6 +22,9 @@ const DICT: Record<string, FriendlyFlag> = {
   ai_silent_capitulation: { label: "AI matched user's ask without negotiating", description: "AI eventually offered ≥ user's number without ever saying the ask was above market — silent capitulation, not real negotiation.", category: "ai_didnt_push_back" },
   ai_self_contradiction: { label: "AI contradicted itself in the same message", description: "AI said 'I can't meet ₹X' and then offered ₹X in the same turn. Re-reading the draft would have caught it.", category: "ai_made_up_info" },
   ai_misread_conditional_as_acceptance: { label: "AI treated a conditional as acceptance", description: "User said 'if you can do X, I'd accept' (conditional). AI responded with celebration / closing language as if the deal was done.", category: "ai_didnt_push_back" },
+  ai_phrase_repetition: { label: "AI repeated the same phrase multiple times", description: "Generation loop — the same 5+ word phrase appeared 3+ times in a single AI turn. Catastrophic; users notice immediately.", category: "ai_made_up_info" },
+  ai_reversed_range: { label: "AI quoted a range high-to-low", description: "Like '₹12 to ₹8.5 LPA' — ranges should always go low to high. Indicates broken number tracking.", category: "ai_made_up_info" },
+  ai_ignored_user_complaint: { label: "AI closed the deal on a confused user", description: "User said 'I'm confused' or 'why are you confusing me?'; AI responded with closing language ('thanks, HR will reach out') instead of clarifying the offer.", category: "ai_didnt_push_back" },
   stale_market_calibration: { label: "Salary data is out of date", description: "The reference data used to check AI claims hasn't been refreshed in over a year.", category: "ai_made_up_info" },
   unverifiable_companies: { label: "User mentioned company not in resume", description: "User referenced an employer the resume doesn't list — could be hallucination on either side.", category: "ai_made_up_info" },
 

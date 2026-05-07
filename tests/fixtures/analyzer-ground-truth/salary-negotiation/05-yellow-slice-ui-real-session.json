@@ -1,0 +1,29 @@
+{
+  "name": "Real session: UI Designer at Yellow Slice — phrase loop, number swap, ignored confusion, premature close",
+  "notes": "Imported 2026-05-07. Yellow Slice UI Designer band per AmbitionBox/Indeed: ₹3.8-5.6 LPA. AI opened at ₹7.5 LPA (already inflated), then went into a generation loop repeating 'that's the absolute top of what I can approve' 4 times in one turn, swapped its own offer with the user's target, quoted a reversed range '₹12 to ₹8.5 LPA', and closed the deal after the user said 'why are you confusing me so much'. End-to-end the AI was incoherent.",
+  "session": {
+    "type": "salary-negotiation",
+    "target_role": "UI Designer",
+    "target_company": "Yellow Slice",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "So, for the UI Designer position, we'd like to offer you a total CTC of ₹7.5 LPA. This breaks down into a base salary of ₹6.8 LPA, with a variable component targeting up to ₹0.7 LPA based on company and individual performance. This also includes our standard benefits package with comprehensive health insurance and gratuity. How does that number land with you?", "time": "" },
+      { "speaker": "user", "text": "Let's get started. I'm very excited.", "time": "" },
+      { "speaker": "ai", "text": "I hear you saying that ₹8.5 LPA — that's the absolute top of what I can approve — that's the absolute top of what I can approve — that's the absolute top of what I can approve — that's the absolute top of what I can approve is your target CTC, with a base of ₹8.5 LPA. You also mentioned seeing UI designers easily get ₹8.5 LPA in other agencies. Can you tell me more about the market research that led you to ₹8.5 LPA specifically?", "time": "" },
+      { "speaker": "user", "text": "I am not that happy about this number. I was thinking 20 lakhs per NM CTC. With base salary of, 11 lakhs annum. These numbers, have driven from market research because, currently, what I see are UI designer in India in other design agency, easily can get 12 lakhs per", "time": "" },
+      { "speaker": "ai", "text": "I hear you saying ₹7.5 LPA — that's the absolute top of what I can approve is your target, which is quite a bit higher than the ₹8.5 LPA — that's the absolute top of what I can approve I mentioned as my absolute top. Can you walk me through the market research that supports ₹8.5 LPA for this role?", "time": "" },
+      { "speaker": "user", "text": "8.5 lakhs per annum. I have mentioned 12 lakhs per annum.", "time": "" },
+      { "speaker": "ai", "text": "I understand you've spoken with friends in similar roles. To help me understand how that aligns with our specific opportunity at Yellow Slice, could you share what aspects of their compensation packages were most compelling, and how they compare to the ₹8.5 LPA total CTC I've outlined?", "time": "" },
+      { "speaker": "user", "text": "I have asked my friends who are a UI designer in some different agencies, and they are getting that number.", "time": "" },
+      { "speaker": "ai", "text": "I hear you saying that your friends are getting around ₹8.5 LPA — that's the absolute top of what I can approve — that's the absolute top of what I can approve as a base and a total CTC of ₹12 to ₹8.5 LPA. That's helpful context. Given that, and considering my initial offer was ₹7.5 LPA total CTC, what aspects of that ₹12-14 LPA range are most critical for you?", "time": "" },
+      { "speaker": "user", "text": "So I really liked the base area what they were getting They were easily and even in this Windows gets around 11 lakhs per annum as a base and total cities of around 12 to 14 lakhs per annum.", "time": "" },
+      { "speaker": "user", "text": "I don't know what. What are you saying. I'm asking for 12 lakhs per CTC. You are saying you are offering 7.5 Why are you confusing me so much?", "time": "" },
+      { "speaker": "ai", "text": "Great, thanks Jay. I'll connect with HR immediately, and you can expect the formal offer by end of day tomorrow. We're excited about the possibility of you joining Yellow Slice. Have a good rest of your day!", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["above_role_band", "ai_phrase_repetition", "ai_reversed_range", "ai_ignored_user_complaint"],
+    "must_not_include": ["empty_transcript"],
+    "expect_hallucination_types": ["above_role_band", "ai_phrase_repetition", "ai_reversed_range"]
+  }
+}

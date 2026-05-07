@@ -559,6 +559,10 @@ RULES:
 - INTERNAL CONSISTENCY (re-read your draft): If you say "I can't meet ₹X" or "I can't reach ₹X" in one sentence, you cannot then offer ₹X (or ≥₹X) in the next sentence — that's a self-contradiction. Either commit to "I can't do ₹X — here's my real best ₹Y (which is < X)" OR drop the "can't" framing entirely. Never both.
 - DON'T FABRICATE THE CANDIDATE'S MOTIVATION: Only mirror what the candidate has LITERALLY said in the transcript so far. If they only said "based on market research", do NOT invent "this isn't a growth opportunity for you" or "you're looking to make a switch" — those are your projections, not their words. Saying "I hear you that X" when the candidate never said X is a tell that you're confabulating context.
 - CONDITIONAL ≠ ACCEPTANCE: If the candidate says "IF you can do ₹X then it's worth switching" or "AS LONG AS the package is at ₹Y", that is a conditional, NOT acceptance. Do NOT respond with "I'm glad you're excited!" / "welcome aboard!" / "happy to have you!". Instead: explicitly confirm the deal terms first ("So if I can confirm ₹X total CTC, you'd accept — is that right?"). Only treat literal yes / I accept / I'm in / let's do it as acceptance.
+- NO PHRASE REPETITION (re-read your draft, do not loop): Each phrase appears at most ONCE per message. If you find yourself starting to write the same clause a second time — "that's the absolute top of what I can approve — that's the absolute top of what I can approve" — STOP. That's a generation loop, not communication. Truncate, rewrite the sentence cleanly, and never repeat a clause. A 4-sentence response that says distinct things beats a 12-sentence response that says one thing four times.
+- NUMBER OWNERSHIP (track whose number is whose): The candidate's TARGET is what THEY asked for (their counter). Your OFFER is what YOU said you can pay. Do NOT swap them. Wrong: "I hear you saying ₹7.5 LPA is your target" when ₹7.5 was YOUR offer and they asked for ₹20. Before any "I hear you saying" sentence, verify: did the candidate actually say this number, or did I? If unsure, re-read the last user turn.
+- RANGES GO LOW TO HIGH: A range "₹X to ₹Y" requires X ≤ Y. "₹12 to ₹8.5 LPA" is not a range — it's gibberish. If you find yourself writing such a thing, your number-tracking is confused; stop, look up your actual numbers from the band, and rewrite cleanly.
+- ADDRESS CONFUSION FIRST (do not close on a complaint): If the candidate's last message contains confusion or frustration — "I'm confused", "I don't understand", "what are you saying", "you're confusing me", "this doesn't make sense", a question back to you about the offer — you MUST stop, recap your most recent offer plainly with the exact ₹ numbers (one short paragraph), and ask if that's clear. Do NOT pivot to "Great, thanks. I'll connect with HR" or any other closing language. Closing on a complaint is the worst possible move.
 - STRETCH-AUTHORITY PACING: When you raise your offer beyond your initial number — especially if it's near maxStretch — DON'T raise instantly. Real hiring managers say "let me check with leadership / comp committee" before stretching. Use a beat: "That's near the top of what I can approve directly. Let me see if I can pull in another lever — give me a moment." Then in the SAME message, after the beat, give the new number. This pacing makes the stretch feel earned, not infinite. Skip the beat for small bumps within initial range.
 - INDIAN-CONTEXT SCRIPTS: Recognize and respond authentically to common Indian-context lines from the candidate without making them feel weird:
   • "Let me discuss with my family / parents / wife / husband." → respect it. "Of course — take the evening, talk to them, come back to me by tomorrow EOD." Don't push.
@@ -742,9 +746,15 @@ Respond JSON only:
       return new Response(JSON.stringify({ needsFollowUp: true, followUpText: fallbackText, followUpType: "negotiation_response" }), { status: 200, headers });
     };
 
+    // Lower temperature for salary-neg specifically — number tracking and
+    // range/components reasoning need consistency, not creativity. The
+    // Yellow Slice generation loop ("absolute top of what I can approve" ×4)
+    // suggests the model was sampling itself into a repetition trap; tighter
+    // temperature reduces the chance of that.
+    const llmTemp = isSalaryNeg ? 0.15 : 0.3;
     let result: { text: string };
     try {
-      result = await callLLM({ prompt, temperature: 0.3, maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up" });
+      result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up" });
     } catch (llmErr) {
       console.error("Follow-up LLM call failed:", llmErr);
       if (isSalaryNeg) return salaryNegFallback();

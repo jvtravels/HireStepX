@@ -1141,6 +1141,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 9, totalMax: 10.8, equityType: "none", source: "Glassdoor + AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior UX designer at Thence — design agency, pays below product unicorns." },
     },
   },
+  "yellow slice": {
+    "ux-designer": {
+      entry: { totalMin: 3.2, totalMax: 4.3, equityType: "none", source: "AmbitionBox + Indeed 2026", lastVerified: "2026-05-07", notes: "Junior UI designer at Yellow Slice." },
+      mid: { totalMin: 3.8, totalMax: 5.6, equityType: "none", source: "AmbitionBox + Indeed 2026", lastVerified: "2026-05-07", notes: "UI designer 2-4 yrs." },
+      senior: { totalMin: 6.5, totalMax: 8.7, equityType: "none", source: "AmbitionBox + Indeed 2026", lastVerified: "2026-05-07", notes: "Senior UI designer 5+ yrs at Yellow Slice." },
+    },
+  },
 };
 
 /**
