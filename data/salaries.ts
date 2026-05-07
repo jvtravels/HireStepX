@@ -516,6 +516,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([42, 65], [7, 14], NO_EQ, [50, 80], { negotiation_leverage: "medium" }),
       senior: s([65, 95], [12, 22], NO_EQ, [78, 120], { negotiation_leverage: "high" }),
     },
+    "it-services": {
+      entry: s([6, 11], [0.4, 0.8], NO_EQ, [7, 13], { negotiation_leverage: "low", notes: "TCS / Infosys / Wipro AI/GenAI practice; certs (AWS GenAI / Azure AI) +20-30%." }),
+      mid: s([11, 20], [0.6, 1.5], NO_EQ, [12, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 35], [1.5, 4], NO_EQ, [22, 40], { negotiation_leverage: "medium" }),
+    },
+    "fmcg-mnc": {
+      entry: s([10, 16], [1, 2], NO_EQ, [11, 19], { notes: "HUL / ITC / Marico AI/GenAI use-case team." }),
+      mid: s([18, 30], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+      senior: s([30, 50], [4, 9], NO_EQ, [35, 60], { negotiation_leverage: "high" }),
+    },
+    edtech: {
+      entry: s([10, 18], [1, 2], ESOP(1, 3), [12, 22], { notes: "PhysicsWallah / Unacademy AI tutor team. Post-2024 reset." }),
+      mid: s([18, 30], [1.5, 3], ESOP(2, 6), [22, 38], { negotiation_leverage: "medium" }),
+      senior: s([30, 48], [3, 6], ESOP(4, 10), [36, 60], { negotiation_leverage: "medium" }),
+    },
+    "bfsi-global": {
+      entry: s([22, 35], [3, 6], RSU(5, 12), [28, 50], { notes: "Goldman / JPMC quant + risk AI specialists." }),
+      mid: s([38, 60], [5, 12], RSU(12, 28), [50, 95], { negotiation_leverage: "high" }),
+      senior: s([60, 95], [10, 22], RSU(28, 60), [85, 165], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([8, 14], [1, 2], NO_EQ, [9, 16], { notes: "HDFC / ICICI / Axis AI/ML team." }),
+      mid: s([16, 28], [2, 4], NO_EQ, [18, 32], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [4, 8], NO_EQ, [32, 52], { negotiation_leverage: "medium" }),
+    },
   },
 
   // ─── DATA ENGINEER ────────────────────────────────────────────
@@ -1384,6 +1409,22 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([3.5, 6], [0.2, 0.5], NO_EQ, [3.5, 7], {}),
       mid: s([8, 15], [0.5, 1.5], ESOP(0.5, 2), [9, 18], {}),
       senior: s([15, 28], [1, 3], ESOP(1, 4), [16, 32], {}),
+      lead: s([22, 38], [1.5, 4], ESOP(1.5, 5), [24, 42], { notes: "Subject head / curriculum lead at Byju's / Unacademy / PW." }),
+    },
+    "indian-unicorn": {
+      entry: s([4, 7], [0.3, 0.5], ESOP(0.3, 1), [4, 8], { notes: "Vedantu / PhysicsWallah / Unacademy live-class educator." }),
+      mid: s([8, 16], [0.5, 1.5], ESOP(0.5, 2), [9, 18], { negotiation_leverage: "medium" }),
+      senior: s([18, 35], [1, 3], ESOP(1, 4), [20, 40], { notes: "Top educators (₹1Cr+ revenue-share) post-2024 reset." }),
+    },
+    "it-services": {
+      entry: s([3, 5], [0.1, 0.3], NO_EQ, [3, 5.5], { negotiation_leverage: "low", notes: "Corporate L&D trainer track." }),
+      mid: s([5, 10], [0.3, 0.8], NO_EQ, [5, 11], { negotiation_leverage: "low" }),
+      senior: s([10, 18], [0.8, 1.5], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+    },
+    "fmcg-mnc": {
+      entry: s([4, 7], [0.3, 0.5], NO_EQ, [4, 8], { notes: "Internal corporate trainer / L&D specialist." }),
+      mid: s([7, 13], [0.5, 1.5], NO_EQ, [8, 15], { negotiation_leverage: "medium" }),
+      senior: s([13, 22], [1, 3], NO_EQ, [14, 25], { negotiation_leverage: "medium" }),
     },
   },
 
@@ -1743,6 +1784,32 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([12, 20], [1, 2], ESOP(1, 3), [14, 24], {}),
       senior: s([20, 35], [2, 5], ESOP(3, 6), [24, 44], {}),
     },
+    "consulting-mbb": {
+      entry: s([14, 22], [3, 6], NO_EQ, [17, 30], { notes: "McKinsey / BCG / Bain financial-due-diligence + audit advisory CA-MBA tracks." }),
+      mid: s([28, 42], [5, 10], NO_EQ, [33, 55], { negotiation_leverage: "medium" }),
+      senior: s([48, 75], [10, 20], NO_EQ, [60, 100], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([8, 13], [0.5, 1.5], ESOP(1, 3), [9, 16], { notes: "FinOps controllers / revenue-ops at Postman / BrowserStack / Chargebee." }),
+      mid: s([14, 22], [1, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([24, 40], [3, 6], ESOP(4, 10), [28, 52], { negotiation_leverage: "high" }),
+    },
+    "fmcg-mnc": {
+      entry: s([8, 13], [1, 2], NO_EQ, [9, 15], { notes: "HUL / ITC / Marico finance MT track. CA-CFA combo: top of band." }),
+      mid: s([14, 24], [2, 4], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([24, 42], [4, 9], NO_EQ, [28, 50], { negotiation_leverage: "high" }),
+      executive: s([55, 90], [12, 25], NO_EQ, [70, 130], { in_hand_ratio: 0.55, notes: "CFO at top FMCG ₹1.5-3Cr." }),
+    },
+    "government-psu": {
+      entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { in_hand_ratio: 0.78, notes: "RBI / SEBI / SBI / LIC officer-grade. CA + CAIIB combo. 7th CPC." }),
+      mid: s([10, 18], [0.5, 1], NO_EQ, [11, 19], { negotiation_leverage: "low" }),
+      senior: s([18, 32], [1, 2], NO_EQ, [19, 35], { negotiation_leverage: "low" }),
+    },
+    "it-services": {
+      entry: s([5, 8], [0.3, 0.6], NO_EQ, [5, 9], { notice_period_days: 90, negotiation_leverage: "low" }),
+      mid: s([8, 14], [0.5, 1.5], NO_EQ, [9, 16], { notice_period_days: 90 }),
+      senior: s([14, 24], [1.5, 3], NO_EQ, [16, 28], { notice_period_days: 90 }),
+    },
   },
 
   // ─── DOCTOR ───────────────────────────────────────────────────
@@ -1757,6 +1824,28 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([8, 14], [0.5, 1], NO_EQ, [9, 15], { notes: "Private hospital / healthtech" }),
       mid: s([15, 28], [1, 3], ESOP(0.5, 2), [16, 32], {}),
       senior: s([28, 50], [3, 6], ESOP(2, 5), [32, 58], {}),
+      lead: s([45, 80], [5, 10], ESOP(5, 12), [55, 100], { notes: "CMO / Chief Medical Officer at health-tech." }),
+    },
+    "fmcg-mnc": {
+      entry: s([10, 18], [1, 3], NO_EQ, [11, 22], { notes: "Apollo / Fortis / Manipal / Max consultant entry; Pharma medical advisor." }),
+      mid: s([20, 35], [2, 5], NO_EQ, [22, 42], { negotiation_leverage: "medium" }),
+      senior: s([38, 70], [4, 10], NO_EQ, [42, 85], { notes: "Senior consultant / department head at Apollo / Fortis." }),
+      executive: s([80, 150], [10, 25], NO_EQ, [95, 200], { in_hand_ratio: 0.55, notes: "Star surgeon / specialist (cardiac / oncology)." }),
+    },
+    "saas-product": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(0.5, 2), [9, 17], { notes: "Healthtech (Practo / 1mg / PharmEasy) medical advisor." }),
+      mid: s([15, 26], [1, 3], ESOP(1, 4), [17, 32], { negotiation_leverage: "medium" }),
+      senior: s([28, 50], [3, 6], ESOP(3, 8), [32, 60], { negotiation_leverage: "high" }),
+    },
+    "consulting-mbb": {
+      entry: s([15, 25], [3, 6], NO_EQ, [18, 32], { notes: "McKinsey Health Institute / BCG Health Practice MD-track." }),
+      mid: s([28, 45], [5, 10], NO_EQ, [33, 58], { negotiation_leverage: "medium" }),
+      senior: s([50, 80], [10, 20], NO_EQ, [60, 105], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([14, 22], [2, 4], RSU(2, 5), [16, 30], { notes: "Insurance medical underwriter at MetLife / AIG / Bajaj Allianz." }),
+      mid: s([22, 38], [3, 7], RSU(5, 12), [27, 50], { negotiation_leverage: "medium" }),
+      senior: s([38, 65], [6, 13], RSU(12, 25), [48, 90], { negotiation_leverage: "high" }),
     },
   },
 
@@ -1842,6 +1931,26 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([4, 7], [0, 0.3], NO_EQ, [4, 8], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "Hospital pharmacist / drug inspector" }),
       mid: s([7, 12], [0.3, 0.5], NO_EQ, [7, 13], {}),
       senior: s([12, 20], [0.5, 1], NO_EQ, [13, 21], {}),
+    },
+    "indian-unicorn": {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.3, 1), [5, 8], { notes: "1mg / PharmEasy / Truemeds / Netmeds pharmacist." }),
+      mid: s([8, 14], [0.5, 1.5], ESOP(0.5, 2), [9, 16], { negotiation_leverage: "medium" }),
+      senior: s([14, 24], [1.5, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+    },
+    "consulting-big4": {
+      entry: s([5, 8], [0.5, 1], NO_EQ, [5.5, 9], { notes: "EY / Deloitte life-sciences advisory / regulatory consulting." }),
+      mid: s([9, 16], [1, 2.5], NO_EQ, [10, 18], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 5], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+    },
+    "bfsi-global": {
+      entry: s([10, 16], [1, 3], RSU(2, 5), [12, 22], { notes: "Insurance pharma underwriter / health-insurance product team." }),
+      mid: s([18, 28], [2, 5], RSU(4, 10), [22, 40], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [5, 10], RSU(8, 20), [38, 70], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([3, 5], [0.2, 0.4], NO_EQ, [3, 5], { negotiation_leverage: "low", notes: "Pharma IT (Cognizant Pharma / TCS Lifesciences) regulatory documentation." }),
+      mid: s([5, 9], [0.3, 0.8], NO_EQ, [5, 10], { negotiation_leverage: "low" }),
+      senior: s([9, 16], [0.8, 1.5], NO_EQ, [10, 18], { negotiation_leverage: "medium" }),
     },
   },
 };

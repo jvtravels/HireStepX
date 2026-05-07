@@ -154,14 +154,16 @@ describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
          band that's structurally appropriate for the cell.
        - 100% NON-BROKEN — every cell must produce a sensible offer.
          Asserted in the per-cell loop above. */
-    expect(explicitRatio).toBeGreaterThan(0.10);
-    /* 35% resolved via alias + tier-fallback is the current floor.
-       The remaining 65% resolve via exp-adjacent fallback (exp-chain
-       walks senior↔lead↔mid↔entry within the same tier) — those
-       still produce sensible offers but aren't counted in
+    /* Floor pinned at 0.25 (well below current 0.28+); guards against
+       silent regression if a future refactor drops bands. */
+    expect(explicitRatio).toBeGreaterThan(0.25);
+    /* Resolved-via-fallback floor pinned at 0.40 (well below current
+       0.43+). The remaining cells resolve via exp-adjacent fallback
+       (exp-chain walks senior↔lead↔mid↔entry within the same tier) —
+       those still produce sensible offers but aren't counted in
        hasResolvedBand here. The 100% non-broken assertion above is
        the actual safety guarantee. */
-    expect(resolvedRatio).toBeGreaterThan(0.30);
+    expect(resolvedRatio).toBeGreaterThan(0.40);
   });
 
   it("reports per-role explicit coverage (which roles have widest tier coverage)", () => {
