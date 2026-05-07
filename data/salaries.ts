@@ -444,6 +444,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], {}),
       senior: s([14, 22], [1.5, 3], ESOP(2, 5), [16, 28], {}),
     },
+    "startup-early": {
+      entry: s([3.5, 6], [0.2, 0.4], ESOP(0.3, 1), [4, 7], { notice_period_days: 15, negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.4, 1], ESOP(1, 3), [7, 13], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([12, 20], [1, 2.5], ESOP(2, 5), [13, 24], { notice_period_days: 30, negotiation_leverage: "medium" }),
+    },
+    edtech: {
+      entry: s([4, 6], [0.2, 0.4], ESOP(0.3, 1), [4, 7], { negotiation_leverage: "low" }),
+      mid: s([7, 12], [0.4, 1], ESOP(0.5, 2), [8, 14], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [1, 2], ESOP(1, 3), [13, 22], { negotiation_leverage: "medium" }),
+    },
+    gcc: {
+      entry: s([10, 16], [1, 2], RSU(2, 5), [12, 22], { negotiation_leverage: "medium" }),
+      mid: s([16, 26], [2, 4], RSU(5, 12), [20, 36], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 7], RSU(10, 22), [32, 60], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([6, 11], [0.5, 1], ESOP(1, 2), [7, 13], { negotiation_leverage: "medium" }),
+      mid: s([12, 20], [1, 2.5], ESOP(2, 4), [14, 24], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2.5, 5], ESOP(3, 7), [24, 40], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([7, 13], [0.5, 1.5], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
+      senior: s([14, 24], [1.5, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+    },
   },
 
   // ─── ML ENGINEER / AI ENGINEER ────────────────────────────────
@@ -467,6 +492,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { hot_skills: ["GenAI", "LangChain", "Vector DBs"] }),
       mid: s([16, 25], [1.5, 3], ESOP(3, 6), [20, 32], { negotiation_leverage: "medium" }),
       senior: s([25, 40], [3, 6], ESOP(5, 12), [32, 55], { negotiation_leverage: "high" }),
+    },
+    "startup-early": {
+      entry: s([6, 12], [0.5, 1.5], ESOP(1, 4), [8, 16], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([12, 22], [1, 3], ESOP(3, 8), [14, 28], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([20, 35], [2, 5], ESOP(6, 16), [26, 50], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    edtech: {
+      entry: s([7, 12], [0.5, 1.5], ESOP(0.5, 2), [8, 14], { negotiation_leverage: "low" }),
+      mid: s([12, 22], [1, 3], ESOP(1, 4), [14, 26], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [3, 6], ESOP(3, 8), [26, 45], { negotiation_leverage: "medium" }),
+    },
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(5, 11), [22, 40], { negotiation_leverage: "medium" }),
+      mid: s([30, 45], [3, 7], RSU(11, 22), [40, 68], { negotiation_leverage: "medium" }),
+      senior: s([45, 65], [6, 13], RSU(20, 42), [62, 110], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(3, 7), [17, 30], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [2, 5], RSU(7, 16), [28, 50], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 11], RSU(15, 32), [45, 85], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 24], [1, 3], ESOP(2, 5), [17, 30], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [2.5, 6], ESOP(4, 10), [30, 52], { negotiation_leverage: "high" }),
     },
   },
   /* AI engineer — distinct from ml-engineer in 2026. GenAI / LLM /
@@ -547,7 +597,7 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   "data-engineer": {
     faang: {
       entry: s([22, 32], [2, 4], RSU(6, 12), [28, 45], { hot_skills: ["Spark", "Kafka", "Airflow", "dbt"] }),
-      mid: s([38, 52], [4, 8], RSU(12, 25), [50, 80], {}),
+      mid: s([38, 52], [4, 8], RSU(12, 25), [50, 80], { negotiation_leverage: "high" }),
       senior: s([52, 70], [8, 15], RSU(25, 45), [80, 125], { negotiation_leverage: "high" }),
     },
     "indian-unicorn": {
@@ -564,6 +614,26 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([6, 10], [0.5, 1], ESOP(1, 2), [7, 13], { hot_skills: ["Spark", "Kafka", "dbt", "Airflow"] }),
       mid: s([12, 20], [1, 3], ESOP(2, 5), [14, 26], {}),
       senior: s([20, 35], [3, 5], ESOP(5, 10), [26, 48], { negotiation_leverage: "high" }),
+    },
+    "startup-early": {
+      entry: s([5, 9], [0.3, 0.7], ESOP(0.5, 2), [6, 11], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([10, 16], [0.5, 1.5], ESOP(2, 5), [12, 20], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([16, 26], [1.5, 3], ESOP(4, 10), [19, 36], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    edtech: {
+      entry: s([5, 9], [0.3, 0.7], ESOP(0.3, 1.5), [6, 11], { negotiation_leverage: "low" }),
+      mid: s([10, 16], [0.5, 1.5], ESOP(1, 3), [11, 19], { negotiation_leverage: "low" }),
+      senior: s([16, 26], [1.5, 3], ESOP(2, 6), [19, 32], { negotiation_leverage: "medium" }),
+    },
+    gcc: {
+      entry: s([12, 20], [1, 2], RSU(2, 5), [14, 26], { negotiation_leverage: "medium" }),
+      mid: s([20, 32], [2, 4], RSU(6, 14), [26, 48], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 9], RSU(12, 28), [42, 75], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 24], [1, 3], ESOP(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 6], ESOP(4, 10), [28, 50], { negotiation_leverage: "high" }),
     },
   },
 
@@ -589,6 +659,31 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([5, 8], [0, 0.5], NO_EQ, [5, 9], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "ISRO/DRDO/Railways infra. 7th CPC Level 7-8" }),
       mid: s([8, 14], [0.5, 1], NO_EQ, [9, 15], { negotiation_leverage: "low" }),
       senior: s([14, 22], [1, 2], NO_EQ, [15, 24], {}),
+    },
+    "startup-early": {
+      entry: s([4, 8], [0.2, 0.5], ESOP(0.5, 2), [5, 10], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([10, 16], [0.5, 1.5], ESOP(2, 5), [12, 20], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([16, 28], [1.5, 3], ESOP(4, 10), [20, 38], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    edtech: {
+      entry: s([4, 7], [0.2, 0.5], ESOP(0.3, 1.5), [5, 9], { negotiation_leverage: "low" }),
+      mid: s([8, 14], [0.4, 1.2], ESOP(0.5, 2), [9, 16], { negotiation_leverage: "low" }),
+      senior: s([14, 24], [1, 2.5], ESOP(1.5, 5), [16, 28], { negotiation_leverage: "medium" }),
+    },
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(3, 7), [16, 28], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [2, 5], RSU(7, 16), [28, 50], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 11], RSU(15, 32), [45, 85], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([10, 16], [0.5, 1.5], ESOP(1, 3), [12, 20], { negotiation_leverage: "medium" }),
+      mid: s([16, 26], [1, 3], ESOP(2, 5), [19, 32], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 6], ESOP(4, 10), [32, 56], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([16, 26], [2, 4], RSU(4, 9), [20, 35], { negotiation_leverage: "medium" }),
+      mid: s([28, 42], [3, 7], RSU(10, 22), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([42, 60], [6, 12], RSU(20, 42), [60, 105], { negotiation_leverage: "high" }),
     },
   },
   /* Cloud engineer — closely tracks devops-sre but with AWS/Azure/GCP
