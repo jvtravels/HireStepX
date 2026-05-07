@@ -1013,6 +1013,13 @@ export function matchRoleKey(role: string): RoleKey {
        layers the actual quant numbers on top per firm (Jane Street,
        DE Shaw, Citadel). */
     [["quantitative researcher", "quantitative trader", "quantitative developer", "quant trader", "quant researcher", "quant developer", "systematic trader"], "data-scientist"],
+    /* Sales / Banking RM / Realty / Pharma MR — was falling to
+       software-engineer default. */
+    [["relationship manager", "bank po", "ibps po", "sbi po", "sales executive", "sales manager", "account executive", "key account manager", "business development manager", "channel manager", "territory manager", "area sales manager", "regional sales manager", "branch manager", "wealth manager", "loan officer", "financial advisor", "medical representative", "real estate agent", "property consultant"], "sales"],
+    /* Marketing / Brand — needed for FMCG MT track. */
+    [["brand manager", "marketing manager", "digital marketing", "growth manager", "performance marketing", "product marketing manager", "marketing executive", "management trainee", "category manager", "shopper marketing"], "marketing"],
+    /* Operations — aviation / hotels / hospital / general ops. */
+    [["operations manager", "operations executive", "ops manager", "supply chain", "logistics manager", "warehouse manager", "fleet manager", "front office", "f&b manager", "f and b manager", "housekeeping manager", "ground staff", "cabin crew", "flight attendant"], "operations"],
     [["engineering manager", "director of engineering", "head of engineering", "vp of engineering"], "engineering-manager"],
     [["product manager", "apm", "associate product manager", "group product manager", "product owner", "chief product officer", "technical product manager", "director of product", "vp of product"], "product-manager"],
     // Design Engineer — engineering-coded designers (Vercel/Linear-style hybrid role).

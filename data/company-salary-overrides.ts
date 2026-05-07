@@ -21,6 +21,7 @@
  */
 
 import type { ExperienceLevel } from "./salaries";
+import { classifyCompanyType } from "./company-guidance";
 
 /** Subset of SalaryEntry — the fields a company-band override needs. */
 export interface CompanyBandOverride {
@@ -605,6 +606,189 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
+  /* ─── Sector clusters — picks up the long tail of ~800 companies
+        in the autocomplete that don't have bespoke entries. Indexed
+        by classifyCompanyType() bucket key (see company-guidance.ts).
+        Every company in the autocomplete classifies into one bucket;
+        this gives us 100% coverage with sensible 2026-calibrated
+        bands, not the generic indian-unicorn fallback that produced
+        ₹22L offers for tiny design studios.
+
+        Lookup order: direct company match → sector match (this) →
+        tier band → fallback by experience level. */
+  __sector_consulting_strategy: {
+    consultant: {
+      entry: { totalMin: 16, totalMax: 25, equityType: "none", source: "MBB India pre-MBA Associate band (Glassdoor + Casebasix)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 30, totalMax: 50, equityType: "none", source: "MBB / Tier-2 strategy India post-MBA", lastVerified: "2026-05-07" },
+      senior: { totalMin: 55, totalMax: 90, equityType: "none", source: "Engagement Manager / Project Lead", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_consulting_big4: {
+    consultant: {
+      entry: { totalMin: 5, totalMax: 11, equityType: "none", source: "Big 4 India Analyst (Deloitte/EY/KPMG/PwC) pre-MBA", lastVerified: "2026-05-07" },
+      mid: { totalMin: 11, totalMax: 22, equityType: "none", source: "Big 4 India Consultant 1-3 yr", lastVerified: "2026-05-07" },
+      senior: { totalMin: 17, totalMax: 32, equityType: "none", source: "Big 4 India Senior Consultant (3-13 yr)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "Big 4 Manager / Senior Manager", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_ibank_bulgebracket: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Bulge-bracket IB India (HSBC, Barclays, BarCap, Deutsche, Citi) Analyst SE", lastVerified: "2026-05-07" },
+      mid: { totalMin: 30, totalMax: 55, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "IB India SE Associate", lastVerified: "2026-05-07" },
+      senior: { totalMin: 55, totalMax: 95, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "IB India SE VP", lastVerified: "2026-05-07" },
+    },
+    consultant: {
+      entry: { totalMin: 35, totalMax: 65, equityType: "none", source: "IB India IB Analyst (Glassdoor)", lastVerified: "2026-05-07", notes: "Bonus 80-120% of base in good years; total comp dominates base." },
+      senior: { totalMin: 65, totalMax: 90, equityType: "none", source: "IB India IB Associate / VP", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_quant_hft: {
+    "data-scientist": {
+      entry: { totalMin: 50, totalMax: 100, equityType: "none", source: "Quant / HFT India entry (IIT-targeted: Tower / Optiver / IMC / Hudson River / Two Sigma / Millennium)", lastVerified: "2026-05-07", notes: "Indian fresher quant: ₹50-110L+ first-year. Performance-tied bonus." },
+      mid: { totalMin: 120, totalMax: 280, equityType: "none", source: "Quant India 3-5 yr (eFinancialCareers / Wall Street Oasis archive)", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_psu_bank: {
+    sales: {
+      entry: { totalMin: 5, totalMax: 8, equityType: "none", source: "IBPS PO / SBI PO 2026 disclosure", lastVerified: "2026-05-07", notes: "Public-sector bank PO entry. Pension + DA on top of CTC; total realised value higher." },
+      mid: { totalMin: 10, totalMax: 18, equityType: "none", source: "PSU bank Manager / Senior Manager (10-15 yr exp)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 30, equityType: "none", source: "PSU bank AGM / DGM", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_private_bank: {
+    sales: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Private bank India RM entry (Yes / IndusInd / Federal / RBL etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Private bank India RM mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 14, totalMax: 26, equityType: "none", source: "Private bank India RM senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_small_finance_bank: {
+    sales: {
+      entry: { totalMin: 3.5, totalMax: 6, equityType: "none", source: "Small Finance Bank India entry (AU / Equitas / Ujjivan / ESAF etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 6, totalMax: 12, equityType: "none", source: "SFB India mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 12, totalMax: 22, equityType: "none", source: "SFB India senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_unicorn_fintech: {
+    "software-engineer": {
+      entry: { totalMin: 15, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn average (Slice / Jupiter / Cashfree / BharatPe / Niyo / etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 25, totalMax: 42, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 42, totalMax: 70, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_unicorn_consumer: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn (Mamaearth / Sugar / boAt / Noise / Purplle etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 65, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_unicorn_edtech: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 16, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech (post-2023 reset: Byju's / Unacademy / upGrad / Vedantu / Physics Wallah)", lastVerified: "2026-05-07", notes: "EdTech bands compressed 30-40% post 2023 reset; ESOP value uncertain at most names." },
+      mid: { totalMin: 16, totalMax: 30, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 30, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_unicorn_logistics: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn (Delhivery / Ecom / XpressBees / Shadowfax / Porter / BlackBuck)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_gcc_global_capability_centre: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India entry (Wells Fargo / JPMC GCC / GE / Lowe's / Tesco / Sainsbury's etc.) — 11.5% increment 2026", lastVerified: "2026-05-07", notes: "GCCs 15-22% premium over IT services. RSU in parent stock." },
+      mid: { totalMin: 22, totalMax: 40, equityMin: 3, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India mid (Zinnov GCC report 2026)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 75, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 70, totalMax: 130, equityMin: 20, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India lead/staff", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_it_services: {
+    "software-engineer": {
+      entry: { totalMin: 3.5, totalMax: 6, equityType: "none", source: "IT services India entry (mid-tier: Mphasis / Coforge / Persistent / Hexaware / Mindtree / etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 6, totalMax: 14, equityType: "none", source: "IT services mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 14, totalMax: 28, equityType: "none", source: "IT services senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 50, equityType: "none", source: "IT services lead/architect", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_pharma: {
+    "software-engineer": {
+      entry: { totalMin: 4.5, totalMax: 8, equityType: "none", source: "Indian pharma IT (Sun / Cipla / Lupin / Dr Reddy's / Aurobindo / Biocon)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "Pharma IT mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 16, totalMax: 30, equityType: "none", source: "Pharma IT senior", lastVerified: "2026-05-07" },
+    },
+    sales: {
+      entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Pharma MR (Medical Rep) entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Pharma Area Manager", lastVerified: "2026-05-07" },
+      senior: { totalMin: 15, totalMax: 30, equityType: "none", source: "Pharma RSM / ZSM", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_fmcg: {
+    marketing: {
+      entry: { totalMin: 14, totalMax: 24, equityType: "none", source: "Indian FMCG MT MBA (Dabur / Marico / Godrej / Britannia / Emami / Patanjali / etc.)", lastVerified: "2026-05-07", notes: "Top-tier (HUL/ITC/P&G/Nestle) ₹18-27L; mid-tier this band." },
+      mid: { totalMin: 24, totalMax: 40, equityType: "none", source: "Indian FMCG Brand Manager", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 70, equityType: "none", source: "Indian FMCG Senior Brand Manager / Category Head", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_psu_central: {
+    "software-engineer": {
+      entry: { totalMin: 6, totalMax: 9, equityType: "none", source: "PSU Central (BHEL / NTPC / ONGC / Indian Oil / GAIL / SAIL etc.) — 7th CPC band", lastVerified: "2026-05-07", notes: "PSU pay = 7th CPC fixed bands. Pension = defined benefit, actuarially worth ₹50-150L. Job security key value." },
+      mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "PSU Central Manager / Senior Manager", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 40, equityType: "none", source: "PSU Central GM / DGM", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_academia_iit_iim: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indian academia (IIT/IIM/IISc) Assistant Professor — UGC pay scale", lastVerified: "2026-05-07", notes: "UGC pay scale fixed; consulting + grant earnings vary." },
+      mid: { totalMin: 14, totalMax: 24, equityType: "none", source: "Associate Professor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 40, equityType: "none", source: "Professor / Department Chair", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_aviation: {
+    operations: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indian aviation entry (IndiGo / Air India / SpiceJet / Akasa / Vistara) — ground / cabin crew", lastVerified: "2026-05-07" },
+      mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "Aviation mid (cabin lead / station ops)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "Aviation senior ops / commercial", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_hotels: {
+    operations: {
+      entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Indian hotels entry (Taj / ITC / Oberoi / Marriott / Hyatt / Lemon Tree / Leela / etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Hotels mid (F&B Manager / Front Office / Housekeeping)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 14, totalMax: 28, equityType: "none", source: "Hotels senior (GM / Regional Director)", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_real_estate: {
+    sales: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indian real-estate entry (Lodha / Prestige / Godrej / Sobha / DLF / Brigade etc.)", lastVerified: "2026-05-07", notes: "Real-estate sales = base + heavy variable on commission." },
+      mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "Real-estate mid (Project Lead / Area Sales Manager)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 20, totalMax: 45, equityType: "none", source: "Real-estate senior (VP / Regional Head)", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_auto_oem: {
+    "software-engineer": {
+      entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "Indian auto OEM (Tata Motors / M&M / Maruti / Hyundai / Bajaj / TVS / Royal Enfield / etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 10, totalMax: 20, equityType: "none", source: "Auto OEM mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 20, totalMax: 38, equityType: "none", source: "Auto OEM senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_telecom: {
+    "software-engineer": {
+      entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "Indian telecom (Jio / Airtel / Vi / BSNL)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "Telecom mid (Jio Platforms premium)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 25, totalMax: 50, equityType: "none", source: "Telecom senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_civil_services: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "Civil services / RBI Grade B / SEBI Grade A / NABARD entry — 7th CPC fixed band", lastVerified: "2026-05-07", notes: "Fixed pay scale + DA + HRA. Pension + perks add 30-50% non-cash value." },
+      mid: { totalMin: 15, totalMax: 25, equityType: "none", source: "Civil services mid (Under Secretary / Joint Director)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 25, totalMax: 45, equityType: "none", source: "Civil services senior (Joint Secretary / Secretary)", lastVerified: "2026-05-07" },
+    },
+  },
+
   /* ─── Design Agencies / Studios ───────────────────────────────── */
   "bombay design centre": {
     "ux-designer": {
@@ -644,11 +828,23 @@ export function getCompanyBandOverride(
 
   // Loose containment fallback (e.g. "Razorpay Internet Pvt Ltd" → razorpay).
   for (const [companyKey, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
+    if (companyKey.startsWith("__sector_")) continue; // Sector entries handled below
     if (companyKey.length < 4) continue;
     if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
       const hit = roleMap[roleKey]?.[experienceLevel];
       if (hit) return hit;
     }
+  }
+  /* Sector-level fallback (covers the long tail of ~800 companies in
+     the autocomplete that don't have bespoke entries). classifyCompanyType
+     maps the company name to one of ~25 sector buckets (psu_bank,
+     consulting_big4, gcc_global_capability_centre, indian_pharma,
+     etc.); we look up __sector_<bucket> in this map. */
+  const classification = classifyCompanyType(rawCompany);
+  if (classification) {
+    const sectorKey = `__sector_${classification.key}`;
+    const sectorHit = COMPANY_SALARY_OVERRIDES[sectorKey]?.[roleKey]?.[experienceLevel];
+    if (sectorHit) return sectorHit;
   }
   return null;
 }

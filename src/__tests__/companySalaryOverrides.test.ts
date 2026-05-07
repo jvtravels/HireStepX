@@ -191,6 +191,80 @@ describe("override map data integrity", () => {
     expect(band.initialOffer).toBeLessThan(30);
   });
 
+  /* ─── Sector-level long-tail coverage (2026-Q2 fix) ─── */
+  it("Long-tail companies fall through to sector bands instead of generic tier", () => {
+    /* These companies have NO bespoke override but should classify
+       into sector buckets (PSU bank, private bank, mid-tier IT
+       services, pharma, edtech, etc.) and pick up sector-band data. */
+
+    /* PSU bank — should NOT default to indian-unicorn ₹14-22L */
+    const sbiBand = generateNegotiationBand({
+      role: "Bank PO",
+      company: "Punjab National Bank",
+      experienceLevel: "entry",
+    });
+    expect(sbiBand.initialOffer).toBeLessThan(10); // PSU bank entry ₹5-8L
+
+    /* Private bank RM */
+    const yesBankBand = generateNegotiationBand({
+      role: "Relationship Manager",
+      company: "Yes Bank",
+      experienceLevel: "mid",
+    });
+    expect(yesBankBand.initialOffer).toBeLessThan(15); // private bank RM mid ₹7-14L
+
+    /* Indian fintech unicorn — Slice / Jupiter / Cashfree */
+    const sliceBand = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Slice",
+      experienceLevel: "mid",
+    });
+    expect(sliceBand.initialOffer).toBeGreaterThan(20);
+    expect(sliceBand.initialOffer).toBeLessThan(35); // fintech unicorn mid ₹25-42L
+
+    /* Indian pharma — Sun Pharma / Cipla */
+    const sunPharmaBand = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Sun Pharma",
+      experienceLevel: "mid",
+    });
+    expect(sunPharmaBand.initialOffer).toBeGreaterThan(7);
+    expect(sunPharmaBand.initialOffer).toBeLessThan(15);
+
+    /* Mid-tier IT services — Mphasis / Coforge / Persistent */
+    const mphasisBand = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Mphasis",
+      experienceLevel: "entry",
+    });
+    expect(mphasisBand.initialOffer).toBeLessThan(7); // IT services entry ₹3.5-6L
+
+    /* GCC long-tail — Tesco Bengaluru / Sainsbury's India / Wells Fargo India */
+    const tescoBand = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Tesco Bengaluru",
+      experienceLevel: "mid",
+    });
+    expect(tescoBand.initialOffer).toBeGreaterThan(20); // GCC mid ₹22-40L
+    expect(tescoBand.initialOffer).toBeLessThan(35);
+
+    /* Aviation — IndiGo */
+    const indigoBand = generateNegotiationBand({
+      role: "Operations Manager",
+      company: "IndiGo",
+      experienceLevel: "mid",
+    });
+    expect(indigoBand.initialOffer).toBeGreaterThan(6); // aviation mid ₹8-16L
+    expect(indigoBand.initialOffer).toBeLessThan(15);
+  });
+
+  it("Sector entries are not exposed as direct-match candidates", () => {
+    /* The "__sector_*" keys are internal — should not match a literal
+       free-text company input. */
+    expect(getCompanyBandOverride("__sector_psu_bank", "sales", "mid")).toBeNull();
+    expect(getCompanyBandOverride("psu_bank", "sales", "mid")).toBeNull();
+  });
+
   it("Walmart Global Tech × SE × mid uses verified band, not generic GCC tier", () => {
     /* Walmart pays well above average GCC. Expected band: mid ₹30-55L
        → opening 35th pctile ≈ ₹38.75L. Pre-fix: GCC tier band would
