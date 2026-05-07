@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { c, font, radius } from "./tokens";
+import { QualityContent } from "./AdminQualityDashboard";
 
 /* ─── Token-based auth ─── */
 const TOKEN_KEY = "hirestepx_admin_token";
@@ -147,12 +148,13 @@ export interface SessionDetailData {
   llmCalls: Array<{ endpoint: string; model: string; total_tokens: number; latency_ms: number; status: string; created_at: string }>;
 }
 
-type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "referrals" | "promo-codes" | "calendar" | "story-notebook" | "outcomes";
+type Tab = "overview" | "users" | "sessions" | "financials" | "llm" | "feedback" | "referrals" | "promo-codes" | "calendar" | "story-notebook" | "outcomes" | "quality";
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "overview", label: "Overview", icon: "📊" },
   { key: "users", label: "Users", icon: "👤" },
   { key: "sessions", label: "Sessions", icon: "🎯" },
+  { key: "quality", label: "Quality", icon: "🧪" },
   { key: "financials", label: "Financials", icon: "💰" },
   { key: "llm", label: "AI / Services", icon: "🤖" },
   { key: "feedback", label: "Feedback", icon: "💬" },
@@ -1721,6 +1723,7 @@ export default function AdminDashboard() {
       case "calendar": return renderCalendar();
       case "story-notebook": return renderStoryNotebook();
       case "outcomes": return renderOutcomes();
+      case "quality": return <QualityContent />;
     }
   };
 
@@ -2188,20 +2191,6 @@ export default function AdminDashboard() {
               {t.label}
             </button>
           ))}
-          <a
-            href="/admin/quality"
-            style={{
-              display: "flex", alignItems: "center", gap: 10, width: "100%",
-              padding: "10px 14px", marginBottom: 4, marginTop: 8, borderRadius: radius.md,
-              background: "transparent", color: c.gilt,
-              fontSize: 13, fontFamily: font.ui, fontWeight: 500,
-              textDecoration: "none", textAlign: "left",
-              borderTop: `1px solid ${c.border}`, paddingTop: 14,
-            }}
-          >
-            <span style={{ fontSize: 16 }}>🧪</span>
-            Quality
-          </a>
         </div>
 
         {/* Main Content */}

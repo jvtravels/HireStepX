@@ -59,7 +59,8 @@ function driftColor(drift: number): string {
   return c.ember;
 }
 
-export default function AdminQualityDashboard() {
+/** Embeddable body — no outer page wrapper, used as a tab inside AdminDashboard. */
+export function QualityContent({ showBackLink = false }: { showBackLink?: boolean }) {
   const [data, setData] = useState<QualityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,11 +111,13 @@ export default function AdminQualityDashboard() {
   }, [data]);
 
   return (
-    <div style={{ minHeight: "100vh", background: c.obsidian, color: c.ivory, padding: sp["3xl"], fontFamily: font.ui }}>
+    <div style={{ color: c.ivory, fontFamily: font.ui }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: sp["3xl"] }}>
         <div>
-          <a href="/admin" style={{ color: c.stone, fontSize: 12, textDecoration: "none", fontFamily: font.ui }}>← Back to admin</a>
-          <h1 style={{ fontFamily: font.display, fontSize: 36, margin: 0, marginTop: sp.xs, color: c.gilt }}>Session Quality</h1>
+          {showBackLink && (
+            <a href="/admin" style={{ color: c.stone, fontSize: 12, textDecoration: "none", fontFamily: font.ui }}>← Back to admin</a>
+          )}
+          <h1 style={{ fontFamily: font.display, fontSize: 36, margin: 0, marginTop: showBackLink ? sp.xs : 0, color: c.gilt }}>Session Quality</h1>
           <p style={{ color: c.stone, margin: 0, marginTop: sp.xs }}>
             Per-focus drift + hallucinations from the nightly analyzer cron.
           </p>
@@ -248,6 +251,15 @@ export default function AdminQualityDashboard() {
           </p>
         </>
       )}
+    </div>
+  );
+}
+
+/** Standalone /admin/quality page — adds the obsidian background + page padding. */
+export default function AdminQualityDashboard() {
+  return (
+    <div style={{ minHeight: "100vh", background: c.obsidian, padding: sp["3xl"] }}>
+      <QualityContent showBackLink />
     </div>
   );
 }
