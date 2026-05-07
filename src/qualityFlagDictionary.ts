@@ -54,6 +54,7 @@ const DICT: Record<string, FriendlyFlag> = {
   empty_transcript: { label: "Session has no transcript", description: "Could not analyze — no conversation data was recorded.", category: "system" },
   analyzer_error: { label: "Analyzer crashed on this session", description: "The audit code failed to run. Investigate the analyzer logs.", category: "system" },
   no_analyzer_for_focus: { label: "No analyzer built for this interview type yet", description: "This focus has no audit logic — coverage gap.", category: "system" },
+  analyzer_blind_spot: { label: "Analyzer blind spot — user disagreed", description: "User rated this session as inaccurate / too harsh / too generous, but the analyzer found no issues. Review what the rubric is missing.", category: "system" },
 };
 
 export const CATEGORY_LABEL: Record<FriendlyFlag["category"], string> = {

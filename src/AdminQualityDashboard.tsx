@@ -43,7 +43,17 @@ interface InsightRow {
   resolution_notes: string;
   resolved_at: string | null;
   resolved_by: string | null;
+  fix_outcome: FixOutcome | null;
   error: string | null;
+}
+
+interface FixOutcome {
+  verdict?: "verified" | "partial" | "no_change" | "regressed" | "insufficient_data";
+  before_rate?: number;
+  after_rate?: number;
+  delta?: number;
+  primary_flag?: string;
+  computed_at?: string;
 }
 
 interface IssueRow {
@@ -96,6 +106,22 @@ function statusColor(s: string): string {
   if (s === "wont_fix") return c.stone;
   if (s === "acknowledged") return c.gilt;
   return c.ember;
+}
+
+function outcomeBadge(o: FixOutcome | null | undefined): { label: string; color: string; tooltip: string } | null {
+  if (!o || !o.verdict) return null;
+  const before = (o.before_rate || 0) * 100;
+  const after = (o.after_rate || 0) * 100;
+  const arrow = (o.delta || 0) > 0 ? "↘" : (o.delta || 0) < 0 ? "↗" : "→";
+  const trend = `${before.toFixed(1)}% ${arrow} ${after.toFixed(1)}%`;
+  switch (o.verdict) {
+    case "verified": return { label: `Fix verified · ${trend}`, color: c.sage, tooltip: `Flag rate dropped meaningfully after this fix.` };
+    case "partial":  return { label: `Partial fix · ${trend}`, color: c.gilt, tooltip: `Flag rate dropped but didn't fall below half of pre-fix.` };
+    case "no_change": return { label: `No change · ${trend}`, color: c.stone, tooltip: `Flag rate did not move after the fix.` };
+    case "regressed": return { label: `Regressed · ${trend}`, color: c.ember, tooltip: `Flag rate INCREASED after this 'fix' — investigate.` };
+    case "insufficient_data": return { label: `Awaiting data`, color: c.stone, tooltip: `Not enough sessions yet to measure outcome.` };
+  }
+  return null;
 }
 
 /* Categorize a flag using the friendly dictionary. Drives Issues sub-tab grouping. */
@@ -1009,6 +1035,17 @@ function SessionDetail({ row, onClose, onResolve }: {
           <ResolveButton label="Reopen" color={c.ember} onClick={() => onResolve(row.session_id, "open", notes, by)} />
         </div>
         {row.resolved_at && <div style={{ color: c.stone, fontSize: 10, marginTop: sp.xs }}>Last action: {friendlyStatus(row.resolution_status)} by {row.resolved_by || "—"} on {new Date(row.resolved_at).toLocaleString()}</div>}
+        {(() => {
+          const b = outcomeBadge(row.fix_outcome);
+          if (!b) return null;
+          return (
+            <div style={{ marginTop: sp.sm, padding: sp.sm, background: c.obsidian, borderRadius: radius.sm, borderLeft: `2px solid ${b.color}` }}>
+              <div style={{ color: b.color, fontSize: 11, fontFamily: font.mono, marginBottom: 2 }}>{b.label}</div>
+              <div style={{ color: c.stone, fontSize: 10 }}>{b.tooltip}</div>
+              {row.fix_outcome?.primary_flag && <div style={{ color: c.stone, fontSize: 9, marginTop: 2 }}>Tracked flag: <code>{row.fix_outcome.primary_flag}</code></div>}
+            </div>
+          );
+        })()}
       </Section>
     </aside>
   );
@@ -1066,6 +1103,11 @@ function ResolvedView({ rows }: { rows: InsightRow[] }) {
                   <span style={{ color: statusColor(r.resolution_status), fontSize: 11, fontWeight: 600 }}>{friendlyStatus(r.resolution_status)}</span>
                 </div>
                 <div style={{ color: c.stone, fontSize: 11, marginBottom: sp.xs }}>{friendlyFocus(r.focus)} · by {r.resolved_by || "unknown"} · {r.resolved_at ? new Date(r.resolved_at).toLocaleTimeString() : "—"}</div>
+                {(() => {
+                  const b = outcomeBadge(r.fix_outcome);
+                  if (!b) return null;
+                  return <div title={b.tooltip} style={{ display: "inline-block", marginBottom: sp.xs, padding: `2px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 11, color: b.color, border: `1px solid ${b.color}`, fontFamily: font.mono }}>{b.label}</div>;
+                })()}
                 {r.resolution_notes && <div style={{ color: c.chalk, fontSize: 12 }}>{r.resolution_notes}</div>}
               </div>
             ))}

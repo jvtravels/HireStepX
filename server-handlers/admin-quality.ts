@@ -79,6 +79,7 @@ interface InsightRow {
   resolution_notes: string;
   resolved_at: string | null;
   resolved_by: string | null;
+  fix_outcome: { verdict?: string; before_rate?: number; after_rate?: number; delta?: number; primary_flag?: string; computed_at?: string } | null;
   error: string | null;
 }
 
@@ -124,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Latest 200 insight rows with full detail for the Sessions sub-tab.
   const recent = await supa<InsightRow>(
-    `session_insights?order=analyzed_at.desc&limit=200&select=session_id,user_id,focus,analyzer_version,analyzed_at,rescore,score_drift,flags,hallucinations,rubric_gaps,bad_questions,coaching_notes,severity,resolution_status,resolution_notes,resolved_at,resolved_by,error`,
+    `session_insights?order=analyzed_at.desc&limit=200&select=session_id,user_id,focus,analyzer_version,analyzed_at,rescore,score_drift,flags,hallucinations,rubric_gaps,bad_questions,coaching_notes,severity,resolution_status,resolution_notes,resolved_at,resolved_by,fix_outcome,error`,
   );
 
   // Today's digest (or the most recent one).

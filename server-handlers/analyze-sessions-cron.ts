@@ -24,6 +24,7 @@ import type { SessionRowForAnalysis } from "./analyzers/_types";
 import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
 import { buildDigestPrompt, parseDigest, computeSeverity, type DigestInput } from "./_digest-helpers";
 import { callLLM } from "./_llm";
+import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -179,6 +180,11 @@ export default async function handler(req: Request): Promise<Response> {
   const aggregates = new Map<string, FocusAggregate>();
   let rescoreBudget = isRescoreEnabled() ? MAX_RESCORES_PER_RUN : 0;
 
+  // Batch-fetch user feedback for all the sessions we're about to analyze.
+  // Drives the blind-spot detector: any non-'helpful' rating on a session
+  // the analyzer would otherwise mark clean is a hole worth investigating.
+  const feedbackBySession = await fetchFeedbackBySession(sessions.map((s) => s.id));
+
   for (const session of sessions) {
     const analyzer = pickAnalyzer(session.type);
     const turnT0 = Date.now();
@@ -200,6 +206,17 @@ export default async function handler(req: Request): Promise<Response> {
             result.coachingNotes = [result.coachingNotes, `Rescore concerns: ${rs.evaluator_concerns.join("; ")}`].filter(Boolean).join(" — ");
           }
         }
+      }
+
+      // Blind-spot detection: user said something was off but the analyzer
+      // found nothing. The analyzer is missing this pattern — flag it for
+      // human review. 'helpful' ratings don't trigger; only inaccurate /
+      // too_harsh / too_generous do.
+      const userRating = feedbackBySession.get(session.id);
+      if (userRating && userRating !== "helpful" && result.flags.length === 0) {
+        result.flags.push("analyzer_blind_spot");
+        const note = `User rated this session "${userRating}" but the analyzer found no issues — likely missing pattern in the rubric.`;
+        result.coachingNotes = [result.coachingNotes, note].filter(Boolean).join(" — ");
       }
 
       const hallucinationCount = Array.isArray(result.hallucinations) ? result.hallucinations.length : 0;
@@ -314,6 +331,17 @@ export default async function handler(req: Request): Promise<Response> {
     digestStatus = "failed";
   }
 
+  // ── Fix-outcome verification ──────────────────────────────────
+  // For resolved sessions whose 7-day post-resolution window has now
+  // elapsed but where outcome hasn't been computed yet, measure the
+  // before/after flag-rate delta. Best-effort.
+  let outcomesComputed = 0;
+  try {
+    outcomesComputed = await computeFixOutcomes();
+  } catch (e) {
+    console.error(`[analyze-sessions] fix-outcome pass failed: ${(e as Error).message}`);
+  }
+
   return jsonResponse({
     ok: true,
     scanned: sessions.length,
@@ -322,9 +350,80 @@ export default async function handler(req: Request): Promise<Response> {
     rescore_enabled: isRescoreEnabled(),
     rescore_budget_remaining: rescoreBudget,
     digest: digestStatus,
+    fix_outcomes_computed: outcomesComputed,
     duration_ms: Date.now() - t0,
     registered_focuses: registeredFocuses(),
   });
+}
+
+/** Pull user feedback rating for a batch of session ids. Returns a map
+ *  session_id → rating ('helpful' | 'too_harsh' | 'too_generous' | 'inaccurate'). */
+async function fetchFeedbackBySession(sessionIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (sessionIds.length === 0) return out;
+  const idsParam = `(${sessionIds.map((id) => `"${id.replace(/"/g, "")}"`).join(",")})`;
+  const res = await supa(`feedback?session_id=in.${encodeURIComponent(idsParam)}&select=session_id,rating&order=created_at.desc`);
+  if (!res.ok) return out;
+  const arr = (await res.json()) as Array<{ session_id: string; rating: string }>;
+  for (const row of arr) {
+    if (!out.has(row.session_id)) out.set(row.session_id, row.rating);
+  }
+  return out;
+}
+
+/** Walk resolved insights whose post-resolution window has elapsed and
+ *  compute before/after flag-rate delta. Writes verdict to fix_outcome.
+ *  Returns the number of outcomes computed this run. */
+async function computeFixOutcomes(): Promise<number> {
+  // Candidates: resolved >= 7 days ago, <= 30 days ago (stop computing eventually),
+  // AND fix_outcome IS NULL.
+  const upperBoundIso = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const lowerBoundIso = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const candRes = await supa(`session_insights?resolution_status=eq.resolved&resolved_at=gte.${lowerBoundIso}&resolved_at=lte.${upperBoundIso}&fix_outcome=is.null&select=session_id,focus,flags,resolved_at&limit=50`);
+  if (!candRes.ok) return 0;
+  const candidates = (await candRes.json()) as Array<{ session_id: string; focus: string; flags: string[] | null; resolved_at: string }>;
+  if (candidates.length === 0) return 0;
+
+  // Group candidates by focus so we make one window query per focus.
+  const focuses = Array.from(new Set(candidates.map((c) => c.focus)));
+  const insightsByFocus = new Map<string, Array<{ flags: string[] | null; analyzed_at: string }>>();
+  for (const focus of focuses) {
+    // Pull a generous window around the candidates so before/after windows fit.
+    const windowStartIso = new Date(Date.now() - 60 * 86400_000).toISOString();
+    const wRes = await supa(`session_insights?focus=eq.${encodeURIComponent(focus)}&analyzed_at=gte.${windowStartIso}&select=flags,analyzed_at&limit=2000`);
+    if (wRes.ok) {
+      insightsByFocus.set(focus, (await wRes.json()) as Array<{ flags: string[] | null; analyzed_at: string }>);
+    } else {
+      insightsByFocus.set(focus, []);
+    }
+  }
+
+  let computed = 0;
+  for (const cand of candidates) {
+    const flag = primaryFlagFor(cand.flags || []);
+    if (!flag) continue;
+    const focusInsights = insightsByFocus.get(cand.focus) || [];
+    const resolvedTs = new Date(cand.resolved_at).getTime();
+    const beforeStart = new Date(resolvedTs - 7 * 86400_000).toISOString();
+    const beforeEnd = new Date(resolvedTs).toISOString();
+    const afterStart = beforeEnd;
+    const afterEnd = new Date(resolvedTs + 7 * 86400_000).toISOString();
+
+    const before = countFlagInWindow(focusInsights, flag, beforeStart, beforeEnd);
+    const after = countFlagInWindow(focusInsights, flag, afterStart, afterEnd);
+    const daysSince = (Date.now() - resolvedTs) / 86400_000;
+    const verdict = computeOutcome({ before, after, daysSinceResolution: daysSince });
+
+    const outcome = { ...verdict, primary_flag: flag };
+    const url = `${SUPABASE_URL}/rest/v1/session_insights?session_id=eq.${encodeURIComponent(cand.session_id)}`;
+    const upd = await fetch(url, {
+      method: "PATCH",
+      headers: { ...authHeaders(), Prefer: "return=minimal" },
+      body: JSON.stringify({ fix_outcome: outcome }),
+    });
+    if (upd.ok) computed += 1;
+  }
+  return computed;
 }
 
 /** Pulls the day's data needed by the digest prompt. */
