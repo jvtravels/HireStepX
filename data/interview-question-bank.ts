@@ -48,7 +48,13 @@ export type RoleFamily =
   | "civil-services" | "defence" | "psu-engineer" | "scientist"
   /* Campus placement is a distinct lifecycle stage, not a role.
      Used for fresher pipelines (TCS NQT, Infosys InfyTQ, etc.). */
-  | "campus";
+  | "campus"
+  /* Non-tech specialised families (added 2026-Q2 to address audit
+     finding that 496 roles were routing to generic behavioral).
+     Each gets dedicated bank entries for role-specific probes. */
+  | "sales" | "marketing" | "finance" | "legal" | "healthcare" | "ops"
+  /* Banking subfamily (RM / branch / BFSI sales). */
+  | "bfsi-sales";
 export type FocusArea =
   | "behavioral" | "technical" | "system-design" | "case-study"
   | "campus-placement" | "hr" | "panel" | "salary-negotiation"
@@ -962,6 +968,164 @@ export const QUESTION_BANK: BankEntry[] = [
     company: "phonepe", roleFamily: "em", focus: "management",
     addedQuarter: "2026-Q2", difficulty: "intense",
     styleNote: "Soft-signal-reading EM probe. Wants: behavioral-data signals (Slack quietness, code-review-tone shift, meeting-camera-off rate), structured intervention (skip-levels, anonymous pulse, public acknowledgement of the change).",
+  },
+
+  /* ── Sales — Account Executive / Business Development ───────── */
+  {
+    text: "Walk me through your biggest closed-won deal — what was the ACV, sales cycle length, and the moment the prospect tipped from undecided to signing?",
+    company: "freshworks", roleFamily: "sales", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "AE / BD interview classic. Wants ACV + cycle length + the SPECIFIC inflection point. 'They saw the value' fails — wants the demo / artifact / referral that flipped them.",
+  },
+  {
+    text: "How do you qualify a lead in the first 10 minutes? Walk me through your discovery framework.",
+    company: "salesforce", roleFamily: "sales", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "MEDDIC / BANT / SPIN — wants framework name + how they actually use it, not textbook recitation.",
+  },
+  {
+    text: "Your prospect ghosted after 3 calls. They were our top opportunity. What's your re-engagement play?",
+    company: "atlassian", roleFamily: "sales", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Tests creativity + persistence vs. desperation. Look for: champion-other-stakeholders, value-message variation, time-bounded re-engagement.",
+  },
+  {
+    text: "Tell me about a deal you LOST in late stage. What did the deal-review post-mortem reveal?",
+    company: "stripe", roleFamily: "sales", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Honesty + reflection probe. Common failure: blaming pricing or competitor. Strong: identifying the discovery miss / champion gap.",
+  },
+
+  /* ── Marketing — Brand / Performance / Growth ───────────────── */
+  {
+    text: "Walk me through a brand campaign you led — brief, insight, output, and the metric you moved.",
+    company: "hul", roleFamily: "marketing", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Brand-side classic. Insight is the non-obvious part — wants a customer-truth that the campaign expressed. Generic 'we ran ads on Meta' fails.",
+  },
+  {
+    text: "Your CAC has been climbing 30% YoY. What's your diagnosis and where do you cut?",
+    company: "swiggy", roleFamily: "marketing", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Performance-marketing diagnostic. Wants: channel-level breakdown, contribution-margin lens, willingness to kill a poorly-performing channel even if VP loves it.",
+  },
+  {
+    text: "Defend an ad creative you're proud of that initially flopped in testing but you pushed through to launch.",
+    company: "p&g", roleFamily: "marketing", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "P&G classic — tests conviction + pattern-recognition over data. Want: testing methodology critique + what the candidate saw that the test missed.",
+  },
+  {
+    text: "Take a brand of your choice. Tell me what their next 3-year strategy should be and why.",
+    company: "itc", roleFamily: "marketing", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "FMCG strategic-brand probe. Reveals candidate's ability to think category dynamics + competitive moves. Generic answers (premiumize, go digital) fail.",
+  },
+
+  /* ── Finance — Audit / IB / Equity Research ─────────────────── */
+  {
+    text: "Walk me through a 3-statement model. Start with revenue and tell me what hits the cash flow statement vs the income statement.",
+    company: "goldman", roleFamily: "finance", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "IB Analyst classic. Wants accounting fluency + ability to walk through circular references (interest expense ← debt → cash → debt). Stumbling here = soft reject.",
+  },
+  {
+    text: "Pitch me a stock. Long or short. You have 3 minutes.",
+    company: "goldman", roleFamily: "finance", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Equity research / sales-trading entry probe. Wants: thesis (1 sentence), 3 key drivers, the contrarian element vs consensus, time-frame, downside risk. Generic 'undervalued' fails.",
+  },
+  {
+    text: "Your audit team finds a material misstatement during year-end at a key client. Walk me through what happens next.",
+    company: "deloitte", roleFamily: "finance", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Big 4 audit ethics + process probe. Tests escalation chain, partner-involvement timing, materiality threshold judgment, fee-pressure resistance.",
+  },
+  {
+    text: "An MSME client wants to take a ₹50Cr loan. Walk me through your credit assessment — what 5 things matter most?",
+    company: "icici", roleFamily: "finance", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Credit risk / commercial banking probe. Wants: cash-flow coverage, collateral, promoter-track-record, sector dynamics, RBI compliance. Order of weighting reveals seniority.",
+  },
+
+  /* ── Legal — Litigation / Corporate / IP ─────────────────────── */
+  {
+    text: "We have a Section 138 cheque-bounce matter. Opposing counsel is offering a settlement at 60% of face value. The client is liquid. Walk me through your advice.",
+    company: "mckinsey", roleFamily: "legal", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "NI Act litigation tactics. Wants: probability of conviction analysis, time-cost of trial, reputational considerations, willingness to walk away. Wrong: just 'take 60%' or just 'go to trial'.",
+  },
+  {
+    text: "Draft language for an indemnity clause that protects our client from third-party IP claims arising from the deliverable. Talk me through your reasoning.",
+    company: "atlassian", roleFamily: "legal", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Corporate / tech-transactions probe. Wants: scope (full / capped / mutual), survival period, exclusions (gross negligence carve-outs), defense-and-control language.",
+  },
+  {
+    text: "Your client is a pharma company facing a patent challenge in Delhi HC. The challenger has a strong prior-art argument. What's your strategy?",
+    company: "deloitte", roleFamily: "legal", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "IP litigation strategic probe. Wants: divisional patents, pre-grant opposition timing, chances on appeal, settle-vs-fight calculus, business-impact framing.",
+  },
+
+  /* ── Healthcare — Clinical / Hospital Admin ─────────────────── */
+  {
+    text: "A patient's family disagrees with your treatment recommendation and demands a different protocol they read online. Walk me through your conversation.",
+    company: "mckinsey", roleFamily: "healthcare", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Clinical-judgment + family-communication probe. Wants: validation of family concern, evidence-based explanation in lay terms, escalation if continued disagreement, autonomy respect.",
+  },
+  {
+    text: "You're the COO of a 200-bed hospital. ER wait times have crept from 30 min to 90 min over 6 months. Walk me through your diagnosis.",
+    company: "deloitte", roleFamily: "healthcare", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Hospital ops case. Wants: bottleneck analysis (triage / lab / imaging / bed availability), staffing shifts, throughput metrics, capex-vs-process trade-off.",
+  },
+  {
+    text: "A patient with sepsis and BP 70/40 arrives. Walk me through your first 5 minutes.",
+    company: "atlassian", roleFamily: "healthcare", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Critical-care clinical viva (entry resident). Wants: airway-breathing-circulation, fluid resuscitation, broad-spectrum antibiotics, source identification, vasopressor threshold.",
+  },
+
+  /* ── Operations — Hospitality / Aviation / Manufacturing ─── */
+  {
+    text: "It's 2pm on Saturday at a 200-cover restaurant. F&B kitchen is 40 min behind. Walk me through your next 30 minutes.",
+    company: "atlassian", roleFamily: "ops", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "F&B operations crisis probe. Wants: front-of-house communication strategy, kitchen prioritization, comp / discount authority, staff redeployment, root-cause for next week.",
+  },
+  {
+    text: "An aircraft has a maintenance issue 30 min before scheduled departure with 180 pax. AOG. Walk me through your decision tree.",
+    company: "atlassian", roleFamily: "ops", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Aviation ops crisis. Wants: ETA estimate, swap-aircraft availability, downstream-delay propagation, passenger compensation calc, comms timing.",
+  },
+  {
+    text: "Your warehouse operates 24/7 with 60% throughput on night shift. Day-shift is at 95%. Diagnose and propose three interventions.",
+    company: "swiggy", roleFamily: "ops", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Logistics ops case. Wants: shift-management fundamentals, supervision-density, supply-chain dependencies (truck arrivals), motivation/incentive design.",
+  },
+
+  /* ── BFSI Sales — Banking RM / Wealth Manager ─────────────── */
+  {
+    text: "Pitch our wealth-management offering to a 55-year-old senior executive with ₹15Cr corpus and 10 years to retirement. You have 5 minutes.",
+    company: "icici", roleFamily: "bfsi-sales", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Wealth-management RM probe. Wants: discovery first (risk tolerance, retirement goal, dependents), allocation logic, fee structure transparency. Pitching products before discovery fails.",
+  },
+  {
+    text: "Your highest-AUM client is threatening to move to a competing bank over a service issue. Walk me through your retention play.",
+    company: "hdfc", roleFamily: "bfsi-sales", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "RM retention crisis. Wants: senior-leader involvement timing, compensation-recovery, root-cause communication, service-recovery playbook. Pure financial concession alone fails.",
+  },
+  {
+    text: "A small-business owner wants a working-capital limit. Their CIBIL is 720, but they have 18 months in business. What do you offer?",
+    company: "icici", roleFamily: "bfsi-sales", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Commercial banking credit / sales hybrid. Wants: cash-credit vs OD vs term loan trade-off, collateral options (FD / property), interest-rate band, board approval threshold.",
   },
 
   /* ── Technical Leadership (senior-IC × EM hybrid) ────────────── */
