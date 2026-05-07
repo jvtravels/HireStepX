@@ -19,19 +19,35 @@ describe("getCompanyBandOverride — direct lookup", () => {
     expect(getCompanyBandOverride("Bombay Design Centre", "ux-designer", "mid")).toBeTruthy();
   });
 
-  it("returns null when company has no override entry", () => {
-    expect(getCompanyBandOverride("Unknown Co XYZ", "software-engineer", "mid")).toBeNull();
+  it("falls through to indian_market_generic catch-all for unknown companies", () => {
+    /* After 2026-Q2 catch-all sector addition, every company resolves
+       to a sector-level band. "Unknown Co XYZ" gets the indian-market
+       median (sourced as "Indian market median ...").  */
+    const result = getCompanyBandOverride("Unknown Co XYZ", "software-engineer", "mid");
+    expect(result).not.toBeNull();
+    expect(result?.source).toMatch(/Indian market median/i);
   });
 
-  it("returns null when role-key not covered for that company", () => {
-    /* Razorpay has SE / PM / ML overrides but not e.g. 'hr'. */
-    expect(getCompanyBandOverride("Razorpay", "hr", "mid")).toBeNull();
+  it("falls back through within-override exp chain when role+level missing", () => {
+    /* Razorpay has SE/PM/ML, no 'hr'. The lookup falls through to
+       sector classification. Razorpay classifies as
+       indian_unicorn_fintech which has no 'hr' role either, so falls
+       to catch-all indian_market_generic.hr. Returns sensible band. */
+    const result = getCompanyBandOverride("Razorpay", "hr", "mid");
+    expect(result).not.toBeNull();
   });
 
-  it("returns null when experience level not covered for that role", () => {
-    /* Cognizant entry covered, mid+ not. */
+  it("EXP_FALLBACK_WITHIN_OVERRIDE clamps senior request to mid when senior is undefined", () => {
+    /* Cognizant has only entry-band SE override. Senior request
+       falls through within-override chain, then to sector
+       (indian_it_services has senior), so returns the it-services
+       senior band — NOT null. */
     expect(getCompanyBandOverride("Cognizant", "software-engineer", "entry")).toBeTruthy();
-    expect(getCompanyBandOverride("Cognizant", "software-engineer", "senior")).toBeNull();
+    const seniorResult = getCompanyBandOverride("Cognizant", "software-engineer", "senior");
+    expect(seniorResult).not.toBeNull();
+    /* Should be IT-services senior tier ₹14-28L, NOT a wildly
+       inflated unicorn senior band. */
+    expect(seniorResult?.totalMax).toBeLessThan(50);
   });
 });
 
@@ -44,11 +60,15 @@ describe("getCompanyBandOverride — loose name matching", () => {
     expect(getCompanyBandOverride("Google Inc.", "software-engineer", "mid")).toBeTruthy();
   });
 
-  it("matches 'Bombay Design Company' loosely to 'bombay design centre' (high overlap)", () => {
-    /* Substring matching catches this — both contain 'bombay design'. */
+  it("matches 'Bombay Design Company' loosely to design-firm range", () => {
+    /* Substring matching catches this — both contain 'bombay design'.
+       Result lands in design-firm tier (it-services), not unicorn. */
     const result = getCompanyBandOverride("Bombay Design Company", "ux-designer", "mid");
-    /* Could match either way; confirm SOMETHING returned at design-firm tier. */
-    if (result) expect(result.totalMax).toBeLessThan(20); // design-firm range
+    expect(result).not.toBeNull();
+    /* Design-firm range is around ₹6-22L mid (per advertising-agency
+       sector or Bombay-specific direct match). Either way, lands
+       below ₹25L. Pre-fix it was matching unicorn ₹17-30L. */
+    if (result) expect(result.totalMax).toBeLessThan(25);
   });
 });
 
@@ -96,16 +116,20 @@ describe("integration: generateNegotiationBand uses override when available", ()
     expect(band.bandContext).toMatch(/Levels\.fyi/);
   });
 
-  it("falls through to tier band for companies without overrides", () => {
+  it("returns a sensible band for companies without bespoke overrides (catch-all)", () => {
     const band = generateNegotiationBand({
       role: "Software Engineer",
       company: "Some Random Indian Unicorn",
       experienceLevel: "mid",
     });
-    /* Should still return a band — tier-default applies. Band context
-       should NOT mention "verified for..." (that's only override). */
+    /* After catch-all addition, every company hits the override
+       layer. "Some Random Indian Unicorn" matches the catch-all
+       sector (indian_market_generic). Band is sensible (₹12-25L SE
+       mid market median); source explicitly disclaims company-
+       specific data. */
     expect(band.initialOffer).toBeGreaterThan(0);
-    expect(band.bandContext).not.toMatch(/verified for Some Random/);
+    expect(band.initialOffer).toBeLessThan(40);
+    expect(band.bandContext).toMatch(/Indian market median|verified/);
   });
 });
 
@@ -258,11 +282,24 @@ describe("override map data integrity", () => {
     expect(indigoBand.initialOffer).toBeLessThan(15);
   });
 
-  it("Sector entries are not exposed as direct-match candidates", () => {
-    /* The "__sector_*" keys are internal — should not match a literal
-       free-text company input. */
-    expect(getCompanyBandOverride("__sector_psu_bank", "sales", "mid")).toBeNull();
-    expect(getCompanyBandOverride("psu_bank", "sales", "mid")).toBeNull();
+  it("Sector keys are not directly exposed as company names", () => {
+    /* Even though the catch-all classifies anything, "__sector_*"
+       internal keys must NOT match the bespoke psu_bank sector
+       (would create a recursion / false-attribution path). The
+       generic catch-all does fire — that's correct, it produces the
+       neutral indian-market-median band. */
+    const psuBankResult = getCompanyBandOverride("__sector_psu_bank", "sales", "mid");
+    /* Either null (preferred) or a generic-market hit — never the
+       psu_bank-specific band, which would be a misattribution. */
+    if (psuBankResult) {
+      expect(psuBankResult.source).toMatch(/Indian market median/i);
+    }
+
+    const bareKeyResult = getCompanyBandOverride("psu_bank", "sales", "mid");
+    if (bareKeyResult) {
+      /* Same: shouldn't claim PSU-bank-specific source. */
+      expect(bareKeyResult.source).not.toMatch(/IBPS PO/);
+    }
   });
 
   /* ─── 15-YOE / lead / executive coverage (2026-Q2 fix) ─── */

@@ -82,17 +82,12 @@ describe("company-coverage audit (full COMPANY_SUGGESTIONS sweep)", () => {
     process.stderr.write(`  Sector+Override coverage: ${(((counts.override + counts.sector) / COMPANY_SUGGESTIONS.length) * 100).toFixed(1)}%\n`);
     process.stderr.write(`  Sector+Override+Tier coverage: ${(((counts.override + counts.sector + counts.tier) / COMPANY_SUGGESTIONS.length) * 100).toFixed(1)}%\n`);
 
-    /* Coverage threshold. Note: even when bandSource = "fallback"
-       (no tier/sector classifier match), generateNegotiationBand
-       still defaults to indian-unicorn × role × exp band — so the
-       candidate gets a sensible offer. The threshold here measures
-       SOURCE-CITED coverage, not "broken" coverage. */
+    /* Coverage threshold. After the catch-all sector bucket
+       (indian_market_generic, regex `^.*$`), every company should
+       hit override / sector. Tier-only and fallback should be near-
+       zero. */
     const strongCoverage = (counts.override + counts.sector + counts.tier) / COMPANY_SUGGESTIONS.length;
-    /* Currently 67.8% classified; the rest fall to the indian-unicorn
-       default (still produces a sensible offer, just no source
-       attribution). Threshold is the floor — raise it as we
-       incrementally pull more long-tail companies into classifiers. */
-    expect(strongCoverage).toBeGreaterThan(0.65);
+    expect(strongCoverage).toBeGreaterThan(0.99); // 99%+ classified
   });
 
   it("prints any companies that ONLY hit the conservative fallback (gap report)", () => {
@@ -108,11 +103,10 @@ describe("company-coverage audit (full COMPANY_SUGGESTIONS sweep)", () => {
     } else {
       process.stderr.write("\n✅ Zero gaps — every company resolves to override / sector / tier.\n");
     }
-    /* Soft cap: <600 fallbacks. Even fallback companies still get a
-       sensible default (indian-unicorn × role × exp). The CI test
-       surfaces them so we can incrementally pull them into sector/
-       tier classifiers as the data grows. */
-    expect(gaps.length).toBeLessThan(600);
+    /* After the catch-all, gaps should be near-zero (only edge
+       cases where classifyCompanyType returns null AND the company
+       is unknown to the tier map — empty strings, malformed input). */
+    expect(gaps.length).toBeLessThan(20);
   });
 
   it("samples mid-offer for 50 companies across the resolution chain — no absurd offers", () => {

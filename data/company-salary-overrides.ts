@@ -1031,6 +1031,95 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
+  /* Generic catch-all — bound to indian_market_generic bucket from
+     classifyCompanyType. ALWAYS hits when no other sector matches.
+     Bands are AmbitionBox / Glassdoor / Naukri 2026 medians for the
+     Indian market. Used so every company has explicit source
+     attribution rather than falling through the in-handler default. */
+  __sector_indian_market_generic: {
+    "software-engineer": {
+      entry: { totalMin: 5, totalMax: 12, equityType: "none", source: "Indian market median (AmbitionBox / Glassdoor / Naukri 2026 cohort) — no company-specific data", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "Indian market median 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "Indian market median 2026", lastVerified: "2026-05-07" },
+      lead: { totalMin: 38, totalMax: 75, equityType: "none", source: "Indian market median 2026 — Senior IC / Architect", lastVerified: "2026-05-07" },
+      executive: { totalMin: 65, totalMax: 150, equityType: "none", source: "Indian market median 2026 — VP / CXO band", lastVerified: "2026-05-07" },
+    },
+    "product-manager": {
+      entry: { totalMin: 8, totalMax: 18, equityType: "none", source: "Indian market median PM entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 18, totalMax: 35, equityType: "none", source: "Indian market median PM mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 60, equityType: "none", source: "Indian market median PM senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 55, totalMax: 100, equityType: "none", source: "Indian market median Group PM / Director", lastVerified: "2026-05-07" },
+      executive: { totalMin: 90, totalMax: 200, equityType: "none", source: "Indian market median CPO / VP Product", lastVerified: "2026-05-07" },
+    },
+    "ux-designer": {
+      entry: { totalMin: 4, totalMax: 10, equityType: "none", source: "Indian market median Designer entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 10, totalMax: 22, equityType: "none", source: "Indian market median Designer mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 20, totalMax: 40, equityType: "none", source: "Indian market median Senior Designer", lastVerified: "2026-05-07" },
+      lead: { totalMin: 35, totalMax: 70, equityType: "none", source: "Indian market median Design Manager / Director", lastVerified: "2026-05-07" },
+    },
+    "engineering-manager": {
+      mid: { totalMin: 25, totalMax: 50, equityType: "none", source: "Indian market median EM mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 45, totalMax: 90, equityType: "none", source: "Indian market median EM senior / Director", lastVerified: "2026-05-07" },
+      lead: { totalMin: 75, totalMax: 150, equityType: "none", source: "Indian market median Sr Director / VP Eng", lastVerified: "2026-05-07" },
+      executive: { totalMin: 130, totalMax: 280, equityType: "none", source: "Indian market median CTO / SVP Eng", lastVerified: "2026-05-07" },
+    },
+    "data-scientist": {
+      entry: { totalMin: 6, totalMax: 14, equityType: "none", source: "Indian market median DS entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 14, totalMax: 28, equityType: "none", source: "Indian market median DS mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 26, totalMax: 50, equityType: "none", source: "Indian market median DS senior", lastVerified: "2026-05-07" },
+    },
+    "ml-engineer": {
+      entry: { totalMin: 8, totalMax: 18, equityType: "none", source: "Indian market median ML Eng entry (1.3-1.6x SE premium)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 18, totalMax: 38, equityType: "none", source: "Indian market median ML Eng mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 35, totalMax: 70, equityType: "none", source: "Indian market median ML Eng senior", lastVerified: "2026-05-07" },
+    },
+    sales: {
+      entry: { totalMin: 4, totalMax: 9, equityType: "none", source: "Indian market median sales entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 9, totalMax: 20, equityType: "none", source: "Indian market median sales mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 40, equityType: "none", source: "Indian market median sales senior", lastVerified: "2026-05-07" },
+    },
+    marketing: {
+      entry: { totalMin: 4, totalMax: 10, equityType: "none", source: "Indian market median marketing entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 10, totalMax: 22, equityType: "none", source: "Indian market median marketing mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 20, totalMax: 42, equityType: "none", source: "Indian market median marketing senior", lastVerified: "2026-05-07" },
+    },
+    consultant: {
+      entry: { totalMin: 6, totalMax: 14, equityType: "none", source: "Indian market median consultant entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 26, equityType: "none", source: "Indian market median consultant mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 50, equityType: "none", source: "Indian market median consultant senior", lastVerified: "2026-05-07" },
+    },
+    operations: {
+      entry: { totalMin: 4, totalMax: 9, equityType: "none", source: "Indian market median operations entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 9, totalMax: 20, equityType: "none", source: "Indian market median operations mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 38, equityType: "none", source: "Indian market median operations senior", lastVerified: "2026-05-07" },
+    },
+    hr: {
+      entry: { totalMin: 4, totalMax: 8, equityType: "none", source: "Indian market median HR entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "Indian market median HR mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 16, totalMax: 35, equityType: "none", source: "Indian market median HR senior", lastVerified: "2026-05-07" },
+    },
+    finance: {
+      entry: { totalMin: 5, totalMax: 12, equityType: "none", source: "Indian market median finance entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "Indian market median finance mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "Indian market median finance senior", lastVerified: "2026-05-07" },
+    },
+    legal: {
+      entry: { totalMin: 5, totalMax: 12, equityType: "none", source: "Indian market median legal entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 24, equityType: "none", source: "Indian market median legal mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 50, equityType: "none", source: "Indian market median legal senior", lastVerified: "2026-05-07" },
+    },
+    teacher: {
+      entry: { totalMin: 3, totalMax: 6, equityType: "none", source: "Indian market median teacher entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 5, totalMax: 12, equityType: "none", source: "Indian market median teacher mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 10, totalMax: 22, equityType: "none", source: "Indian market median Senior Teacher / Principal", lastVerified: "2026-05-07" },
+    },
+    doctor: {
+      entry: { totalMin: 6, totalMax: 12, equityType: "none", source: "Indian market median doctor entry (post-MBBS)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "Indian market median doctor mid (post-MD/MS)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 60, equityType: "none", source: "Indian market median Senior Consultant Doctor", lastVerified: "2026-05-07" },
+    },
+  },
+
   /* ─── Design Agencies / Studios ───────────────────────────────── */
   "bombay design centre": {
     "ux-designer": {

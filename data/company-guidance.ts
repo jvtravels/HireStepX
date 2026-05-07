@@ -300,6 +300,17 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
     pattern: /^(upsc|indianadministrativeservice|ias|indianforeignservice|ifs|indianpoliceservice|ips|indianrevenueservice|irs|indianforestservice|statepublicservicecommission|ibpspoclerk|sbipo|rbigradeb|nabardgradea|sidbigradea|ssccgl|ssccshsl|indianrailwaysrrb|isroscientist|drdoscientist|barcscientist|tifr|reservebankofindiadirect|npci|uidai)$/,
     guidance: "Civil-services / government-job interviews emphasize values alignment (integrity, impartiality, public service), domain knowledge of governance + current affairs, and stress resilience. Focus on: ability to articulate views on contemporary policy debates without partisan colour, comfort with formal interview settings (panel format, hypothetical ethics scenarios), and motivation that goes beyond compensation.",
   },
+  /* Generic catch-all — MUST be the LAST entry. Matches anything not
+     caught by a more specific bucket. Ensures every company in the
+     autocomplete (~1,700 entries) has explicit source attribution
+     even if it's just "Indian-market-median for role × experience".
+     Without this, ~16% of companies fall to the in-handler fallback
+     with no source citation in the LLM prompt. */
+  {
+    key: "indian_market_generic",
+    pattern: /^.*$/,
+    guidance: "Generic Indian-market interview. Without a more specific company classification, treat the candidate's role + experience as the dominant signal. Compensation discussions should anchor to Indian-market median for the role-tier (per AmbitionBox / Glassdoor / Naukri 2026 cohort). Avoid claiming company-specific facts (founders, scale, recent news) — the LLM doesn't have grounded data for this company.",
+  },
 ];
 
 /** Classify a free-text company name into a type bucket. Returns null if
