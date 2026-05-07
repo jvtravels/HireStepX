@@ -108,6 +108,19 @@ export function pickNegotiationCoachingHint(input: {
   const { phase, facts, alreadyShown } = input;
   if (!phase || !facts) return null;
   if (alreadyShown.has(phase)) return null;
+  /* POST-ACCEPTANCE GUARD (added 2026-Q2): once the candidate has
+     accepted the offer, all active-negotiation tips become tone-deaf.
+     The user is now in logistics/benefits-clarification mode, not
+     negotiation mode. Suppress active-negotiation tips entirely; the
+     "accepting too quickly" probe-expectations hint still fires
+     because that's specifically about the acceptance moment and is
+     useful learning post-session. */
+  if (
+    facts.acceptedImmediately &&
+    phase !== "probe-expectations"
+  ) {
+    return null;
+  }
   if (phase === "counter-offer" && !facts.candidateCounter && !facts.deflectedNumbers) {
     return "💡 Tip: Name a specific number — candidates who anchor first tend to get better outcomes.";
   }
@@ -125,20 +138,74 @@ export function pickNegotiationCoachingHint(input: {
 
 /* ─── Recent follow-ups extractor ───────────────────────────────────
    The follow-up LLM also gets a small window of "what we just probed
-   on" so it doesn't repeat itself. Takes the last few follow-up
-   questions in the script + the current answer. */
+   on" so it doesn't repeat itself.
+
+   Two-tier output (refined 2026-Q2):
+     • Verbatim window: last N follow-ups in full (high-fidelity, for
+       phrasing variation).
+     • Transcript-wide opener fingerprints: ALL prior follow-ups (and
+       script questions) compressed to their first 6 normalised words.
+       Catches the "same probe re-emerges 6 turns later" failure mode
+       where the verbatim window had already rotated past the original.
+
+   The fingerprint set is appended as an explicit "DO-NOT-REASK
+   OPENERS" block so the LLM can't accidentally rephrase its way back
+   to the same probe. */
 export function extractRecentFollowUps(input: {
   script: { type: string; aiText: string }[];
   currentStep: number;
   currentAnswerText: string;
   windowBack?: number;
 }): string[] {
-  const { script, currentStep, currentAnswerText, windowBack = 4 } = input;
+  const { script, currentStep, currentAnswerText, windowBack = 6 } = input;
   const out: string[] = [];
+  /* Transcript-wide opener fingerprints come FIRST so consumers that
+     append the candidate's answer can still rely on it being the
+     last element of the array. */
+  const seen = new Set<string>();
+  const fingerprints: string[] = [];
+  for (let i = 0; i <= currentStep; i++) {
+    const s = script[i];
+    if (!s) continue;
+    if (s.type !== "follow-up" && s.type !== "question") continue;
+    const fp = fingerprintOpener(s.aiText);
+    if (!fp || seen.has(fp)) continue;
+    seen.add(fp);
+    fingerprints.push(fp);
+  }
+  if (fingerprints.length > 0) {
+    out.push(
+      `DO-NOT-REASK OPENERS (you have already asked these — do NOT rephrase your way back to them, even if the candidate's answer was thin):\n  - ${fingerprints.join("\n  - ")}`,
+    );
+  }
   for (let i = Math.max(0, currentStep - windowBack); i <= currentStep; i++) {
     const s = script[i];
     if (s?.type === "follow-up") out.push(`Q: ${s.aiText}`);
   }
   if (currentAnswerText) out.push(`A: ${currentAnswerText}`);
   return out;
+}
+
+/* Normalise a question opener to its essential probe shape. Strips
+   filler words, punctuation, casing, and keeps the first ~6 content
+   words. This is the dedup key for transcript-wide repetition checks. */
+function fingerprintOpener(text: string): string {
+  if (!text) return "";
+  const filler = new Set([
+    "i", "you", "your", "the", "a", "an", "to", "of", "in", "for", "on",
+    "and", "or", "but", "so", "is", "are", "was", "were", "be", "do",
+    "does", "did", "have", "has", "had", "would", "could", "should",
+    "may", "might", "shall", "will", "can", "this", "that", "it",
+    "us", "we", "me", "my", "their", "his", "her", "its", "our",
+    "let", "lets", "tell", "share", "what", "how", "why", "when",
+    "where", "which", "well", "now", "ok", "great", "thanks", "first",
+  ]);
+  const normalised = text
+    .toLowerCase()
+    .replace(/\[(?:pause|pause:long|emphasis)[^\]]*\]/g, " ")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = normalised.split(" ").filter(w => w && !filler.has(w));
+  return words.slice(0, 6).join(" ");
 }

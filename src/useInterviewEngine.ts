@@ -1376,11 +1376,35 @@ export function useInterviewEngine() {
                     // down. Closing on these would feel dismissive.
                     const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do)|already (?:mentioned|said|told)|as i (?:said|mentioned|told)|i (?:said|mentioned|told you) (?:that|this|earlier|before)|mentioned (?:multiple times|earlier|before)|told you|for the (?:second|third|fourth|nth) time|like to have higher|highest base)\b/i;
                     const stillNegotiating = stillNegotiatingPat.test(lastAnswerTextRef.current || "");
+                    /* Frustration detector (added 2026-Q2): rhetorical
+                       questions, "what's the point", repeat complaints.
+                       When fired alongside acceptance, the closing
+                       should acknowledge the friction explicitly
+                       instead of cheerfully wrapping up — that reads
+                       as gaslighting. The `stillNegotiating` "already
+                       mentioned" branch was previously catching this
+                       case and routing it to negotiation copy, which
+                       is also wrong post-acceptance. */
+                    const frustrationPat = /\b(does it (?:even )?matter|what.?s the point|why (?:does it|are you) (?:matter|asking|repeating)|stop (?:asking|repeating)|don.?t repeat|just (?:close|wrap|accept)|move on|enough (?:already|of)|how many times)\b/i;
+                    const isFrustrated = frustrationPat.test(lastAnswerTextRef.current || "");
                     let closingText = "Thanks for working through this with me. We'll review the conversation and follow up with next steps shortly.";
-                    if (facts.acceptedImmediately) {
+                    if (facts.acceptedImmediately && isFrustrated) {
+                      /* User accepted AND is exasperated — apologise
+                         for the friction first, then close cleanly.
+                         Higher priority than the cheery acceptance
+                         branch below. */
+                      closingText = "You're right — apologies for the back-and-forth. You've accepted, that's what matters. I'll have HR send the formal offer letter and we'll cover the logistics (start date, notice, benefits paperwork) over email. Welcome aboard.";
+                    } else if (facts.acceptedImmediately) {
                       closingText = "Great — really glad we found terms that work. I'll have HR send the formal offer letter shortly. Welcome aboard.";
                     } else if (facts.rejectedOutright || isWalking) {
                       closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
+                    } else if (isFrustrated) {
+                      /* Frustrated but no clear acceptance — likely
+                         the LLM has been asking the same probe
+                         repeatedly. Acknowledge + offer to take it
+                         offline rather than pretend we can keep
+                         negotiating cleanly. */
+                      closingText = "I hear you — sorry for the loop. Let me bring the offer details to you in writing over email so we can move forward without going in circles here.";
                     } else if (stillNegotiating) {
                       closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
                     }

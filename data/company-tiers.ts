@@ -1100,8 +1100,22 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
   // Direct match
   if (COMPANY_TIER_MAP[key]) return COMPANY_TIER_MAP[key];
 
-  // Substring match (both directions)
+  /* Design-firm regex runs BEFORE the substring loop so generic agency
+     suffixes classify by the agency convention rather than a stray
+     short-key collision (e.g. "ge" matching inside "agency" would
+     otherwise route to GCC tier). */
+  if (
+    /\bdesign (?:centre|center|company|lab|labs|works|partners|consultancy|house|collective|firm|associates)\b/.test(key) ||
+    /\b(?:advertising|creative|brand) (?:agency|house|firm|consultancy|collective|partners)\b/.test(key)
+  ) return "it-services";
+
+  /* Substring match (both directions). Minimum-length guard prevents
+     1- and 2-letter keys ("x" → big-tech, "ge" → gcc, "bp" → gcc,
+     "hp" → big-tech) from false-matching company names that just
+     happen to contain those characters. 3+ char keys are kept — those
+     genuinely identify a company even as a substring. */
   for (const [k, tier] of Object.entries(COMPANY_TIER_MAP)) {
+    if (k.length < 3) continue;
     if (key.includes(k) || k.includes(key)) return tier;
   }
 

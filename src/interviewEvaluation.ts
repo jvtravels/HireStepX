@@ -230,12 +230,35 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
   const userAnswers = transcript.filter(t => t.speaker === "user").map(t => t.text);
   const allText = userAnswers.join(" ");
 
-  // Detect unconditional acceptance — must NOT contain conditionals like "only if", "unless", "but"
+  /* Detect unconditional acceptance.
+     Two-tier conditional detection (refined 2026-Q2):
+       1. Hard conditionals — "if", "unless", "provided", "contingent",
+          "only if" — always block acceptance (real negotiation lever).
+       2. Soft conditionals — "but", "however" — only block when
+          followed by NEGOTIATION verbs (more, higher, increase, raise,
+          reduce, change). When followed by INFO-SEEKING verbs (want
+          to know, can you tell, what about, could you explain) the
+          user is accepting + asking, not negotiating.
+     Also dropped the < 15 word limit — "I would like to accept this
+     offer. But I would like to know more about benefits" is 16 words
+     and was failing the cap. Acceptance length isn't a signal. */
   const acceptedImmediately = userAnswers.some(a => {
-    const hasAcceptPattern = /(?:i accept|sounds good|that works|it.?s a deal|i.?m happy|fine with me|yes.*accept|i agree|let.?s go ahead)/i.test(a);
-    const hasConditional = /\b(if|unless|only|but|however|provided|on condition|contingent)\b/i.test(a);
-    const hasNegation = /\b(no|not|don.?t|can.?t|won.?t|never)\b/i.test(a);
-    return hasAcceptPattern && !hasConditional && !hasNegation && a.trim().split(/\s+/).length < 15;
+    const hasAcceptPattern = /(?:i (?:would like to |want to |'?d like to )?accept(?:\s+(?:this|the|your))?\s*(?:offer)?|sounds good|that works|it.?s a deal|i.?m happy|fine with me|yes.*accept|i agree|let.?s go ahead|happy to accept|would like to accept)/i.test(a);
+    /* Two-stage conditional check (refined 2026-Q2):
+       1. PRESENCE — any conditional keyword appears in the answer.
+       2. EXCEPTION — if the conditional is followed by a polite
+          info-seeking pattern ("if you could share / let me know /
+          tell me / it's possible to know"), it's NOT a negotiation
+          conditional. The user is asking for information, not
+          imposing terms.
+       Conditionals NOT followed by an info-seeking pattern are
+       treated as negotiation levers and block acceptance. */
+    const hasAnyConditional = /\b(?:if|unless|provided|on condition|contingent|only\s+if)\b/i.test(a);
+    const hasInfoSeekingConditional = /\b(?:if|unless|provided)\s+(?:you|it.?s|i)\s*(?:could|can|may|might|would|don.?t mind)?\s*(?:share|tell|let me know|elaborate|explain|clarify|confirm|provide|walk me through|give me|outline|show)\b/i.test(a);
+    const hasHardConditional = hasAnyConditional && !hasInfoSeekingConditional;
+    const hasNegotiatingBut = /\b(?:but|however)\s+(?:i\s+)?(?:want|need|would like|would appreciate|expect|require|will need)?\s*(?:more|higher|better|increase|raise|reduce|lower|stretch|change|modify|different|bump|up|further|additional)/i.test(a);
+    const hasNegation = /\b(no|not|don.?t|can.?t|won.?t|never)\s+(?:accept|interested|want|going|happy|comfortable|sure)\b/i.test(a);
+    return hasAcceptPattern && !hasHardConditional && !hasNegotiatingBut && !hasNegation;
   });
 
   const rejectedOutright = userAnswers.some(a =>

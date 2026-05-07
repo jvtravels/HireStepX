@@ -320,4 +320,47 @@ describe("extractNegotiationFacts", () => {
     expect(facts.candidateCounter).toBeNull();
     expect(facts.topicsRaised).toEqual([]);
   });
+
+  /* ─── Acceptance regex refinement (2026-Q2) ───
+     Pre-fix bug: any "but" in the user's reply blocked acceptance
+     detection. "I would like to accept this offer. But I would like
+     to know more about the benefits" was being read as conditional
+     acceptance and ignored, so the AI kept negotiating after the
+     candidate had clearly accepted. */
+  it("detects acceptance with info-seeking 'but' (regression)", () => {
+    const transcript = makeTranscript([
+      "I would like to accept this offer. But I would like to know more about the benefits.",
+    ]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.acceptedImmediately).toBe(true);
+  });
+
+  it("detects acceptance phrased as 'happy to accept' / 'would like to accept'", () => {
+    const transcript = makeTranscript(["Happy to accept this. Could you tell me when I'd start?"]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.acceptedImmediately).toBe(true);
+  });
+
+  it("still BLOCKS acceptance when 'but' is followed by a negotiation lever", () => {
+    const transcript = makeTranscript(["I'd accept it, but I want a higher base — at least ₹30L."]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.acceptedImmediately).toBe(false);
+  });
+
+  it("still BLOCKS acceptance with hard conditionals", () => {
+    const transcript1 = makeTranscript(["I'll accept if you raise base to ₹30L."]);
+    expect(extractNegotiationFacts(transcript1).acceptedImmediately).toBe(false);
+
+    const transcript2 = makeTranscript(["I accept, provided ESOPs vest in 3 years not 4."]);
+    expect(extractNegotiationFacts(transcript2).acceptedImmediately).toBe(false);
+  });
+
+  it("does not require a < 15 word cap (long acceptance with curiosity passes)", () => {
+    /* Pre-fix: a strict word-count cap prevented long-but-genuine
+       acceptances from registering. */
+    const transcript = makeTranscript([
+      "Yes, I would like to accept this offer formally — thank you for the conversation. But I'd appreciate it if you could share what the benefits package looks like before I sign.",
+    ]);
+    expect(extractNegotiationFacts(transcript).acceptedImmediately).toBe(true);
+  });
 });

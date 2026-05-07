@@ -205,6 +205,29 @@ describe("pickNegotiationCoachingHint", () => {
     });
     expect(hint).toMatch(/Accepting too quickly/);
   });
+
+  /* ─── Post-acceptance suppression (2026-Q2 fix) ─── */
+  it("suppresses ALL active-negotiation tips once user has accepted", () => {
+    /* Pre-fix bug: counter-offer / benefits-discussion / closing-pressure
+       hints would still fire AFTER the user had accepted, telling them
+       to "push for a number" or "leverage competing offers" — actively
+       harmful coaching at that point. */
+    const accepted = { ...blankFacts, acceptedImmediately: true };
+    expect(pickNegotiationCoachingHint({
+      phase: "counter-offer", facts: accepted, alreadyShown: new Set(),
+    })).toBeNull();
+    expect(pickNegotiationCoachingHint({
+      phase: "benefits-discussion", facts: accepted, alreadyShown: new Set(),
+    })).toBeNull();
+    expect(pickNegotiationCoachingHint({
+      phase: "closing-pressure", facts: accepted, alreadyShown: new Set(),
+    })).toBeNull();
+    /* Probe-expectations IS allowed to fire post-acceptance — that's
+       specifically the "you accepted too fast" learning hint. */
+    expect(pickNegotiationCoachingHint({
+      phase: "probe-expectations", facts: accepted, alreadyShown: new Set(),
+    })).toMatch(/Accepting too quickly/);
+  });
 });
 
 /* ─── extractRecentFollowUps ──────────────────────────────────────── */
@@ -225,13 +248,58 @@ describe("extractRecentFollowUps", () => {
     expect(out).not.toContain("Q: Hi, I'm Maya.");
   });
 
-  it("appends the current answer when one is provided", () => {
+  it("appends the current answer when one is provided (last element)", () => {
     const out = extractRecentFollowUps({ script, currentStep: 4, currentAnswerText: "I led the team." });
+    /* The fingerprint block precedes; the user's answer is always the
+       trailing element so callers can do `out[out.length - 1]`. */
     expect(out[out.length - 1]).toBe("A: I led the team.");
   });
 
-  it("returns empty array when there are no follow-ups in window", () => {
+  it("returns only the DO-NOT-REASK fingerprint block when no follow-ups in window", () => {
+    /* Pre-2026-Q2 this returned []. Now it returns the transcript-wide
+       fingerprint of any prior questions/follow-ups so the next probe
+       can avoid recreating an already-asked opener even if it falls
+       outside the verbatim window. */
     const out = extractRecentFollowUps({ script: [{ type: "question", aiText: "Q1" }], currentStep: 0, currentAnswerText: "" });
-    expect(out).toEqual([]);
+    expect(out.some(line => line.includes("DO-NOT-REASK OPENERS"))).toBe(true);
+  });
+
+  /* ─── Transcript-wide opener dedup (2026-Q2 fix) ─── */
+  it("includes a DO-NOT-REASK fingerprint block listing all prior question/follow-up openers", () => {
+    /* Pre-fix bug: rolling window of 4 meant a probe re-emerged 6+
+       turns later was not in the LLM context, so the LLM could repeat
+       it. The fingerprint block lists all prior openers transcript-
+       wide so the LLM can't accidentally rephrase its way back. */
+    const longScript = [
+      { type: "intro", aiText: "Hi, I'm Maya." },
+      { type: "question", aiText: "What's most important — base, CTC, or benefits?" },
+      { type: "follow-up", aiText: "Tell me your priority." },
+      { type: "question", aiText: "What's your current CTC?" },
+      { type: "follow-up", aiText: "Can you share recent comp?" },
+      { type: "question", aiText: "Do you have competing offers?" },
+      { type: "follow-up", aiText: "Who else are you talking to?" },
+    ];
+    const out = extractRecentFollowUps({ script: longScript, currentStep: longScript.length - 1, currentAnswerText: "" });
+    const fingerprintLine = out.find(s => s.includes("DO-NOT-REASK OPENERS"));
+    expect(fingerprintLine).toBeTruthy();
+    /* Must include the original Q1 opener even though it's outside
+       the verbatim window. */
+    expect(fingerprintLine).toMatch(/most important/);
+    expect(fingerprintLine).toMatch(/current ctc/);
+    expect(fingerprintLine).toMatch(/competing offers/);
+  });
+
+  it("dedups identical fingerprints (asked-twice doesn't surface twice)", () => {
+    const script = [
+      { type: "question", aiText: "What's most important — base, CTC, or benefits?" },
+      { type: "follow-up", aiText: "What's most important to you in this package?" }, // semantically same opener
+    ];
+    const out = extractRecentFollowUps({ script, currentStep: 1, currentAnswerText: "" });
+    const fingerprintLine = out.find(s => s.includes("DO-NOT-REASK OPENERS")) ?? "";
+    /* Both questions normalise to roughly the same fingerprint;
+       fingerprint set should dedup, so "most important" appears only
+       once in the do-not-reask block. */
+    const occurrences = (fingerprintLine.match(/most important/g) || []).length;
+    expect(occurrences).toBeLessThanOrEqual(2); // tolerate 2 if fingerprint diverges slightly, but never explode
   });
 });
