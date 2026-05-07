@@ -339,19 +339,28 @@ export function classifyCompanyType(company: string): { key: string; guidance: s
      Pre-fix bug: only stage 2 ran, so "IIT Indore" → "iitindore"
      never matched the regex `iit[a-z]*` because the splitter treated
      `iit[a-z]*` as a literal substring needle. */
+  /* The generic catch-all bucket (key = "indian_market_generic")
+     is intentionally LAST and only fires when no specific bucket
+     matches in either stage. Detect it by key so we can skip it in
+     the regex/substring loops and apply it only as a final fallback. */
+  const isCatchAll = (b: CompanyTypeBucket) => b.key === "indian_market_generic";
+
+  /* Stage 1: full-pattern regex test (handles character classes
+     like `iit[a-z]*` that don't survive token splitting). Skip the
+     catch-all — it would pre-empt specific buckets. */
   for (const bucket of COMPANY_TYPE_BUCKETS) {
+    if (isCatchAll(bucket)) continue;
     if (bucket.pattern.test(normalized)) {
       return { key: bucket.key, guidance: bucket.guidance };
     }
   }
+  /* Stage 2: token substring fallback for partial-name inputs. */
   for (const bucket of COMPANY_TYPE_BUCKETS) {
+    if (isCatchAll(bucket)) continue;
     let src = bucket.pattern.source.replace(/^\^/, "").replace(/\$$/, "");
     if (src.startsWith("(") && src.endsWith(")")) src = src.slice(1, -1);
     const tokens = src.split("|").map((t) => t.trim()).filter(Boolean);
     for (const tok of tokens) {
-      /* Skip tokens that contain regex metacharacters — those need
-         test() in stage 1. Substring matching only on plain literal
-         tokens. */
       if (/[[\](){}.*+?^$\\|]/.test(tok)) continue;
       if (tok.length <= 3) {
         if (normalized === tok) {
@@ -363,6 +372,15 @@ export function classifyCompanyType(company: string): { key: string; guidance: s
         }
       }
     }
+  }
+  /* Stage 3 (final): generic catch-all if defined. Returns the
+     "indian_market_generic" bucket so the salary lookup gets a
+     source-cited band rather than null. Callers expecting strict
+     null behaviour (e.g. the unit tests below) need to opt out
+     by checking key === "indian_market_generic". */
+  const catchAll = COMPANY_TYPE_BUCKETS.find(isCatchAll);
+  if (catchAll) {
+    return { key: catchAll.key, guidance: catchAll.guidance };
   }
   return null;
 }

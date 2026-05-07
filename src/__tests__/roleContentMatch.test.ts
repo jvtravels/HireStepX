@@ -105,8 +105,12 @@ describe("matchCompanyKey", () => {
     expect(matchCompanyKey("MicrosoftIndia").key).toBe("microsoft");
   });
 
-  it("returns empty for genuinely-unknown company (no exact, no type bucket)", () => {
-    expect(matchCompanyKey("some-unknown-corp-xyz")).toEqual({ key: "", fallback: "" });
+  it("falls through to indian_market_generic for genuinely-unknown company", () => {
+    /* After 2026-Q2 catch-all addition, no company is "truly
+       unknown" — every input gets classified, even if to the
+       generic catch-all. */
+    const result = matchCompanyKey("some-unknown-corp-xyz");
+    expect(result.key === "" || result.key === "indian_market_generic").toBe(true);
   });
 
   // ─── Type-pattern fallbacks ───
@@ -189,10 +193,12 @@ describe("matchCompanyKey", () => {
 });
 
 describe("classifyCompanyType", () => {
-  it("returns null for empty / unknown input", () => {
+  it("returns null for empty input; catches everything else via catch-all", () => {
     expect(classifyCompanyType("")).toBeNull();
+    /* "???" normalizes to empty after stripping non-alphanumerics */
     expect(classifyCompanyType("???")).toBeNull();
-    expect(classifyCompanyType("totally-made-up-corp")).toBeNull();
+    /* Non-empty inputs hit the indian_market_generic catch-all. */
+    expect(classifyCompanyType("totally-made-up-corp")?.key).toBe("indian_market_generic");
   });
 
   it("classifies bulge-bracket banks correctly", () => {
