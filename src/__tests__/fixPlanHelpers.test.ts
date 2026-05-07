@@ -1,5 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { buildFixPlanPrompt, parseFixPlan } from "../../server-handlers/_fix-plan-helpers";
+import { buildFixPlanPrompt, parseFixPlan, isFileGrounded } from "../../server-handlers/_fix-plan-helpers";
+
+describe("isFileGrounded", () => {
+  it("accepts exact known paths", () => {
+    expect(isFileGrounded("data/salaries.ts")).toBe(true);
+    expect(isFileGrounded("server-handlers/analyzers/behavioral.ts")).toBe(true);
+  });
+  it("accepts new-but-plausible analyzer/data paths via prefix", () => {
+    expect(isFileGrounded("server-handlers/analyzers/future-focus.ts")).toBe(true);
+    expect(isFileGrounded("data/new-bank.ts")).toBe(true);
+  });
+  it("rejects clearly hallucinated paths", () => {
+    expect(isFileGrounded("src/imaginary.ts")).toBe(false);
+    expect(isFileGrounded("")).toBe(false);
+    expect(isFileGrounded("not-a-path")).toBe(false);
+  });
+});
 
 describe("buildFixPlanPrompt", () => {
   it("includes the focus filter when set", () => {
@@ -74,6 +90,21 @@ describe("parseFixPlan", () => {
     expect(out.summary).toBe("");
     expect(out.items).toEqual([]);
     expect(out.cautions).toEqual([]);
+  });
+
+  it("marks items with file_grounded based on KNOWN_FIX_TARGETS", () => {
+    const out = parseFixPlan(JSON.stringify({
+      summary: "x",
+      items: [
+        { priority: "high", title: "Real", target_file: "data/salaries.ts", change: "x", rationale: "x", affected_flags: [] },
+        { priority: "high", title: "Hallucinated", target_file: "src/imaginary.ts", change: "x", rationale: "x", affected_flags: [] },
+        { priority: "medium", title: "New analyzer", target_file: "server-handlers/analyzers/new-thing.ts", change: "x", rationale: "x", affected_flags: [] },
+      ],
+      cautions: [],
+    }));
+    expect(out.items[0].file_grounded).toBe(true);
+    expect(out.items[1].file_grounded).toBe(false);
+    expect(out.items[2].file_grounded).toBe(true); // matches known prefix
   });
 
   it("caps items at 10 to bound the UI", () => {

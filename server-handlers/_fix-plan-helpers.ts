@@ -20,12 +20,76 @@ export interface FixPlanItem {
   change: string;                 // 1-2 sentence proposed change
   rationale: string;              // why
   affected_flags: string[];       // which flags this addresses
+  /** True if target_file matches a known repo path. False = LLM hallucinated. */
+  file_grounded?: boolean;
 }
 
 export interface FixPlanOutput {
   summary: string;                // 2-3 sentence overview
   items: FixPlanItem[];
   cautions: string[];             // things to watch when applying
+}
+
+/* Known-paths whitelist — the LLM is told these paths exist; if it returns
+ * a target_file outside this set, we mark the item with a warning so the
+ * admin doesn't waste time editing a file that doesn't exist anymore.
+ *
+ * Hand-maintained: when you add a new analyzer / data file / handler that
+ * the fix-plan should be allowed to recommend changes to, add it here.
+ */
+export const KNOWN_FIX_TARGETS: readonly string[] = [
+  // Analyzers
+  "server-handlers/analyzers/behavioral.ts",
+  "server-handlers/analyzers/salary-negotiation.ts",
+  "server-handlers/analyzers/technical.ts",
+  "server-handlers/analyzers/system-design.ts",
+  "server-handlers/analyzers/hr-round.ts",
+  "server-handlers/analyzers/strategic.ts",
+  "server-handlers/analyzers/panel.ts",
+  "server-handlers/analyzers/_dispatch.ts",
+  "server-handlers/analyzers/_types.ts",
+  "server-handlers/analyzers/_llm-rescore.ts",
+  // Live AI surfaces
+  "src/Interview.tsx",
+  "src/useInterviewEngine.ts",
+  "src/InterviewPanels.tsx",
+  "src/InterviewNegotiationPanels.tsx",
+  "src/SessionSetup.tsx",
+  // Live evaluator
+  "src/interviewEvaluation.ts",
+  "server-handlers/evaluate-session.ts",
+  "server-handlers/_evaluate-session-helpers.ts",
+  // Question generation
+  "server-handlers/generate-questions.ts",
+  "server-handlers/_generate-questions-helpers.ts",
+  "server-handlers/_question-retrieval.ts",
+  "server-handlers/_question-dedup.ts",
+  // Reference data
+  "data/salaries.ts",
+  "data/salary-lookup.ts",
+  "data/company-salary-overrides.ts",
+  "data/company-tiers.ts",
+  // Quality pipeline
+  "server-handlers/_digest-helpers.ts",
+  "server-handlers/_fix-outcome-helpers.ts",
+  "server-handlers/_fix-plan-helpers.ts",
+  "server-handlers/analyze-sessions-cron.ts",
+  // Dictionary
+  "src/qualityFlagDictionary.ts",
+];
+
+const KNOWN_SET = new Set<string>(KNOWN_FIX_TARGETS);
+const KNOWN_PREFIXES: readonly string[] = ["server-handlers/analyzers/", "data/"];
+
+/** Returns true if the LLM's target_file matches a known path or lives
+ *  under a known prefix (so new analyzers added later still validate). */
+export function isFileGrounded(target: string): boolean {
+  if (!target) return false;
+  if (KNOWN_SET.has(target)) return true;
+  for (const prefix of KNOWN_PREFIXES) {
+    if (target.startsWith(prefix) && /\.(ts|tsx|sql|json)$/.test(target)) return true;
+  }
+  return false;
 }
 
 export function buildFixPlanPrompt(input: FixPlanInput): string {
@@ -48,6 +112,9 @@ export function buildFixPlanPrompt(input: FixPlanInput): string {
 Your job: turn the data below into a SHORT, ACTIONABLE FIX PLAN — concrete code changes the team can implement today.
 
 ${filterNote}
+
+VALID TARGET FILES (use these exact paths — anything else will be flagged as ungrounded):
+${KNOWN_FIX_TARGETS.map((p) => `  - ${p}`).join("\n")}
 
 CODE LAYOUT (so you can target files accurately):
 - Live AI prompts for the interview (the AI that talks to users): src/Interview.tsx + src/useInterviewEngine.ts (look for system prompt / persona blocks)
@@ -106,14 +173,18 @@ export function parseFixPlan(jsonText: string): FixPlanOutput {
         out.items = parsed.items
           .filter((x): x is FixPlanItem => Boolean(x && typeof x === "object"))
           .slice(0, 10)
-          .map((it) => ({
-            priority: (["high", "medium", "low"] as const).includes(it.priority as "high" | "medium" | "low") ? it.priority : "medium",
-            title: String(it.title || "").slice(0, 200),
-            target_file: String(it.target_file || "").slice(0, 200),
-            change: String(it.change || "").slice(0, 1000),
-            rationale: String(it.rationale || "").slice(0, 600),
-            affected_flags: Array.isArray(it.affected_flags) ? it.affected_flags.slice(0, 8).map((f) => String(f).slice(0, 80)) : [],
-          }));
+          .map((it) => {
+            const target_file = String(it.target_file || "").slice(0, 200);
+            return {
+              priority: (["high", "medium", "low"] as const).includes(it.priority as "high" | "medium" | "low") ? it.priority : "medium",
+              title: String(it.title || "").slice(0, 200),
+              target_file,
+              change: String(it.change || "").slice(0, 1000),
+              rationale: String(it.rationale || "").slice(0, 600),
+              affected_flags: Array.isArray(it.affected_flags) ? it.affected_flags.slice(0, 8).map((f) => String(f).slice(0, 80)) : [],
+              file_grounded: isFileGrounded(target_file),
+            };
+          });
       }
       if (Array.isArray(parsed.cautions)) {
         out.cautions = parsed.cautions.slice(0, 6).map((c) => String(c).slice(0, 300));

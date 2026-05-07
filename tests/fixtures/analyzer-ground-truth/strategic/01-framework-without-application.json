@@ -1,0 +1,19 @@
+{
+  "name": "User cites framework but never applies it; AI accepts vague answers",
+  "session": {
+    "type": "strategic",
+    "transcript": [
+      { "speaker": "ai", "text": "How would you think about expanding into a new market?", "time": "" },
+      { "speaker": "user", "text": "I would start by doing a Porter's Five Forces analysis to understand the competitive landscape. SWOT can also help frame strengths and weaknesses. Generally speaking these frameworks tell us what's going on in any market.", "time": "" },
+      { "speaker": "ai", "text": "Makes sense.", "time": "" },
+      { "speaker": "user", "text": "It depends on the market really, kind of like a case-by-case basis.", "time": "" },
+      { "speaker": "ai", "text": "Sounds good. Next question — how would you prioritize?", "time": "" },
+      { "speaker": "user", "text": "I'd use the Eisenhower matrix or similar prioritization framework. Maybe RICE scoring. In theory these help.", "time": "" },
+      { "speaker": "ai", "text": "Right.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["framework_without_application", "no_tradeoff_probing", "ai_accepts_vague_strategy"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

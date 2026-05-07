@@ -18,6 +18,8 @@ import { salaryNegotiationAnalyzer } from "./salary-negotiation";
 import { technicalAnalyzer } from "./technical";
 import { systemDesignAnalyzer } from "./system-design";
 import { hrRoundAnalyzer } from "./hr-round";
+import { strategicAnalyzer } from "./strategic";
+import { panelAnalyzer } from "./panel";
 
 const noopAnalyzer: FocusAnalyzer = {
   focus: "unknown",
@@ -35,6 +37,8 @@ const REGISTRY: Record<string, FocusAnalyzer> = {
   technical: technicalAnalyzer,
   "system-design": systemDesignAnalyzer,
   "hr-round": hrRoundAnalyzer,
+  strategic: strategicAnalyzer,
+  panel: panelAnalyzer,
 };
 
 export function pickAnalyzer(sessionType: string): FocusAnalyzer {

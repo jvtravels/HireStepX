@@ -482,6 +482,7 @@ interface FixPlanItem {
   change: string;
   rationale: string;
   affected_flags: string[];
+  file_grounded?: boolean;
 }
 interface FixPlan {
   summary: string;
@@ -648,8 +649,16 @@ function FixPlanCard({ item }: { item: FixPlanItem }) {
         <span style={{ color: priorityColor, fontSize: 10, fontFamily: font.mono, textTransform: "uppercase", letterSpacing: 0.5 }}>{item.priority}</span>
       </div>
       {item.target_file && (
-        <div style={{ marginBottom: sp.xs }}>
+        <div style={{ marginBottom: sp.xs, display: "flex", gap: sp.xs, alignItems: "center", flexWrap: "wrap" }}>
           <code style={{ background: c.obsidian, color: c.gilt, padding: `2px 6px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.mono }}>{item.target_file}</code>
+          {item.file_grounded === false && (
+            <span title="The LLM referenced a file that doesn't exist in the repo. Verify before acting on this recommendation." style={{ background: "rgba(209,126,104,0.15)", color: c.ember, padding: `1px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 10, fontFamily: font.ui }}>
+              ⚠ unverified path
+            </span>
+          )}
+          {item.file_grounded === true && (
+            <span title="Path verified against repo manifest." style={{ color: c.sage, fontSize: 10 }}>✓</span>
+          )}
         </div>
       )}
       <div style={{ color: c.chalk, fontSize: 12, lineHeight: 1.5, marginBottom: sp.xs }}>{item.change}</div>

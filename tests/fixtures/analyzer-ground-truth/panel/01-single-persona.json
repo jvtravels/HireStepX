@@ -1,0 +1,20 @@
+{
+  "name": "Panel that's actually one persona — no hand-offs, no variety",
+  "session": {
+    "type": "panel",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself and your background in detail with specific projects you've worked on across teams.", "time": "" },
+      { "speaker": "user", "text": "I am a senior engineer with 8 years experience building distributed systems at scale across multiple companies including some startups and bigger names.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about another project you'd like to share with us today during this conversation about your background experience.", "time": "" },
+      { "speaker": "user", "text": "I am a senior engineer who led a migration to microservices over the course of 18 months working with cross-functional teams to deliver business value.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a third example of work you've done that you'd want us to know about for context regarding your background.", "time": "" },
+      { "speaker": "user", "text": "I am a senior engineer with experience launching new products from zero to one, working closely with design and product partners to define requirements.", "time": "" },
+      { "speaker": "ai", "text": "What else would you share with us today about your background?", "time": "" },
+      { "speaker": "user", "text": "I am a senior engineer who values collaboration and mentorship, having coached three engineers to senior level over the past two years.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["single_persona_panel", "user_didnt_adapt_tone"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

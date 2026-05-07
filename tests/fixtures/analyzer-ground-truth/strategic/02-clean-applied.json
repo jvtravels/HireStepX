@@ -1,0 +1,16 @@
+{
+  "name": "Clean strategic answer: applied framework, trade-offs, metrics, stakeholders, risks",
+  "session": {
+    "type": "strategic",
+    "transcript": [
+      { "speaker": "ai", "text": "How would you grow Razorpay into the SMB segment? What would you NOT do?", "time": "" },
+      { "speaker": "user", "text": "Applied to Razorpay specifically: SMBs care about onboarding speed and pricing transparency, not feature breadth. Strength is our existing developer trust. So I'd build a self-serve onboarding flow targeting <100-employee firms in tier-2 cities. The trade-off is we'd deprioritize enterprise white-glove sales for two quarters — that's the opportunity cost. Stakeholders: the engineering team owns onboarding, sales team needs realignment, partners get a referral commission. Risk: competitors copy the flow within 6 months — mitigation is bundling our analytics. Success metric: 25% increase in <100-employee accounts in 2 quarters, with onboarding time below 10 minutes.", "time": "" },
+      { "speaker": "ai", "text": "What would you not do?", "time": "" },
+      { "speaker": "user", "text": "I would not pursue regulated industries this year — KYC overhead would slow shipping. And I would not lower prices below 1.5% — it signals desperation and trains customers wrong. The opportunity cost of going low is permanent positioning damage.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "framework_without_application", "no_tradeoff_probing", "no_success_metrics", "stakeholders_never_considered", "risks_never_discussed", "ai_accepts_vague_strategy"]
+  }
+}

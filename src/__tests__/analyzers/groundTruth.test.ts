@@ -45,6 +45,8 @@ const THRESHOLDS: Record<string, Threshold> = {
   technical: { precision: 0.7, recall: 0.7, minFixtures: 2 },
   "system-design": { precision: 0.7, recall: 0.7, minFixtures: 2 },
   "hr-round": { precision: 0.7, recall: 0.7, minFixtures: 2 },
+  strategic: { precision: 0.7, recall: 0.7, minFixtures: 2 },
+  panel: { precision: 0.7, recall: 0.7, minFixtures: 2 },
 };
 
 function loadFixtures(focus: string): { file: string; fx: Fixture }[] {

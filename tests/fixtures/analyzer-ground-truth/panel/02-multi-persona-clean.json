@@ -1,0 +1,18 @@
+{
+  "name": "Healthy panel: 3 distinct personas with explicit hand-offs",
+  "session": {
+    "type": "panel",
+    "transcript": [
+      { "speaker": "ai", "text": "Hi, I'm playing the HR partner today. Tell me about yourself and what brought you to apply for this role at our company.", "time": "" },
+      { "speaker": "user", "text": "I'm a senior backend engineer with 8 years building payments infrastructure. I applied because I want to work on systems that touch millions of merchants daily — your scale matches what I'm looking for.", "time": "" },
+      { "speaker": "ai", "text": "Switching gears — I'm now the technical lead. Walk me through how you'd design a rate limiter that handles 100K QPS across 10 regions with sub-10ms latency. Discuss the architecture and complexity trade-offs.", "time": "" },
+      { "speaker": "user", "text": "I'd use a sliding-window log stored in Redis with regional clusters and an eventually-consistent counter sync. Time complexity is O(1) per request via hash. Trade-off is memory cost — about 2GB per region for the log retention. We'd shard by tenant and use a probabilistic data structure (HyperLogLog) for the cross-region aggregation.", "time": "" },
+      { "speaker": "ai", "text": "Now passing to the hiring manager — I'm leading the platform org. What would your first 90 days look like, and what business impact would you target? How would you prioritize stakeholder relationships?", "time": "" },
+      { "speaker": "user", "text": "Day 1-30: shadow on-call, meet every team lead, audit incident reports. Day 31-60: pick the top reliability gap and ship a fix. Day 61-90: launch a quarterly reliability metric dashboard for leadership. Business impact target: cut p99 latency by 20% and improve customer-facing uptime SLO. Stakeholders: I'd build trust with the SRE lead first since they own incident response.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "single_persona_panel", "missing_technical_persona", "missing_behavioral_persona", "user_didnt_adapt_tone"]
+  }
+}
