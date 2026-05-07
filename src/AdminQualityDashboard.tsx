@@ -92,7 +92,27 @@ interface QualityData {
   digest: DigestRow | null;
   issues: IssueRow[];
   revisions: Revision[];
+  recommendations: Recommendation[];
   generated_at: string;
+}
+
+interface Recommendation {
+  id: string;
+  priority: "high" | "medium" | "low" | string;
+  title: string;
+  target_file: string;
+  change_description: string;
+  rationale: string;
+  affected_flags: string[] | null;
+  affected_focus: string;
+  file_grounded: boolean;
+  status: "pending" | "in_progress" | "done" | "dismissed" | string;
+  status_notes: string;
+  status_updated_at: string | null;
+  status_updated_by: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  seen_count: number;
 }
 
 function fmtPct(n: number): string { return `${(n * 100).toFixed(1)}%`; }
@@ -349,7 +369,7 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
             ))}
           </div>
 
-          {view === "digest" && <DigestView digest={data.digest} headlines={data.headlines} totals={{ analyzed: data.recent.length, open: data.recent.filter((r) => r.resolution_status === "open").length, resolved: data.recent.filter((r) => r.resolution_status === "resolved").length }} />}
+          {view === "digest" && <DigestView digest={data.digest} headlines={data.headlines} totals={{ analyzed: data.recent.length, open: data.recent.filter((r) => r.resolution_status === "open").length, resolved: data.recent.filter((r) => r.resolution_status === "resolved").length }} recommendations={data.recommendations || []} onRefresh={fetchData} />}
 
           {view === "headlines" && <HeadlinesView headlines={data.headlines} dailyByFocus={dailyByFocus} />}
 
@@ -370,11 +390,14 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
 
 /* ─── Sub-views ─── */
 
-function DigestView({ digest, headlines, totals }: {
+function DigestView({ digest, headlines, totals, recommendations, onRefresh }: {
   digest: DigestRow | null;
   headlines: Headline[];
   totals: { analyzed: number; open: number; resolved: number };
+  recommendations: Recommendation[];
+  onRefresh: () => void;
 }) {
+  const pendingRecs = recommendations.filter((r) => r.status === "pending" || r.status === "in_progress");
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: sp.md, marginBottom: sp.xl }}>
@@ -382,6 +405,9 @@ function DigestView({ digest, headlines, totals }: {
         <SummaryCard label="Open issues" value={String(totals.open)} color={totals.open > 0 ? c.ember : c.sage} />
         <SummaryCard label="Resolved" value={String(totals.resolved)} color={c.sage} />
       </div>
+
+      <RecommendationsPanel pending={pendingRecs} onRefresh={onRefresh} />
+
 
       {!digest ? (
         <div style={{ padding: sp.xl, background: c.graphite, borderRadius: radius.md, color: c.stone }}>
@@ -412,6 +438,86 @@ function DigestView({ digest, headlines, totals }: {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function RecommendationsPanel({ pending, onRefresh }: { pending: Recommendation[]; onRefresh: () => void }) {
+  const updateStatus = useCallback(async (id: string, status: string, notes = "") => {
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) return;
+    const res = await fetch("/api/admin-quality-recommendation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ id, status, notes, by: "admin" }),
+    });
+    if (res.ok) onRefresh();
+    else alert(`Update failed: HTTP ${res.status}`);
+  }, [onRefresh]);
+
+  if (pending.length === 0) {
+    return (
+      <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: sp.lg, marginBottom: sp.xl }}>
+        <div style={{ color: c.chalk, fontSize: 13, fontWeight: 600 }}>What to fix</div>
+        <div style={{ color: c.stone, fontSize: 12, marginTop: sp.xs }}>
+          No open recommendations. The cron generates fresh ones nightly when there are open issues to address.
+        </div>
+      </div>
+    );
+  }
+
+  const ordered = [...pending].sort((a, b) => {
+    const order = { high: 0, medium: 1, low: 2 } as Record<string, number>;
+    const pa = order[a.priority] ?? 1;
+    const pb = order[b.priority] ?? 1;
+    if (pa !== pb) return pa - pb;
+    return b.last_seen_at.localeCompare(a.last_seen_at);
+  });
+
+  return (
+    <div style={{ background: c.graphite, border: `1px solid ${c.gilt}`, borderRadius: radius.md, padding: sp.lg, marginBottom: sp.xl }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: sp.sm }}>
+        <div>
+          <div style={{ color: c.gilt, fontSize: 14, fontWeight: 600 }}>What to fix · {ordered.length} pending</div>
+          <div style={{ color: c.stone, fontSize: 11, marginTop: 2 }}>Auto-generated nightly. Review, mark in-progress when you start, or dismiss if not relevant.</div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: sp.sm, marginTop: sp.md }}>
+        {ordered.slice(0, 8).map((r) => {
+          const priorityColor = r.priority === "high" ? c.ember : r.priority === "medium" ? c.gilt : c.sage;
+          return (
+            <div key={r.id} style={{ padding: sp.md, background: c.onyx, borderLeft: `3px solid ${priorityColor}`, borderRadius: radius.sm }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: sp.sm, marginBottom: sp.xs }}>
+                <div style={{ color: c.ivory, fontSize: 13, fontWeight: 600 }}>{r.title}</div>
+                <div style={{ display: "flex", gap: sp.sm, alignItems: "center" }}>
+                  {r.status === "in_progress" && <span style={{ color: c.gilt, fontSize: 10, fontFamily: font.mono, textTransform: "uppercase" }}>In progress</span>}
+                  <span style={{ color: priorityColor, fontSize: 10, fontFamily: font.mono, textTransform: "uppercase", letterSpacing: 0.5 }}>{r.priority}</span>
+                  {r.seen_count > 1 && <span style={{ color: c.stone, fontSize: 10 }} title={`Recommended ${r.seen_count} times`}>×{r.seen_count}</span>}
+                </div>
+              </div>
+              {r.target_file && (
+                <div style={{ marginBottom: sp.xs, display: "flex", gap: sp.xs, alignItems: "center", flexWrap: "wrap" }}>
+                  <code style={{ background: c.obsidian, color: c.gilt, padding: `1px 6px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.mono }}>{r.target_file}</code>
+                  {!r.file_grounded && <span style={{ background: "rgba(209,126,104,0.15)", color: c.ember, padding: `1px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 10 }}>⚠ unverified path</span>}
+                </div>
+              )}
+              <div style={{ color: c.chalk, fontSize: 12, lineHeight: 1.5, marginBottom: sp.xs }}>{r.change_description}</div>
+              {r.rationale && <div style={{ color: c.stone, fontSize: 11, fontStyle: "italic", marginBottom: sp.xs }}>Why: {r.rationale}</div>}
+              {(r.affected_flags || []).length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: sp.xs }}>
+                  {(r.affected_flags || []).slice(0, 5).map((f) => <span key={f} style={{ background: c.graphite, color: c.gilt, padding: `1px 6px`, borderRadius: radius.pill, fontSize: 10, fontFamily: font.mono }}>{f}</span>)}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: sp.xs, marginTop: sp.sm, flexWrap: "wrap" }}>
+                {r.status !== "in_progress" && <button onClick={() => updateStatus(r.id, "in_progress")} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, padding: `2px ${sp.sm}px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.ui, cursor: "pointer" }}>Mark in progress</button>}
+                <button onClick={() => updateStatus(r.id, "done")} style={{ background: "transparent", color: c.sage, border: `1px solid ${c.sage}`, padding: `2px ${sp.sm}px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.ui, cursor: "pointer" }}>Mark done</button>
+                <button onClick={() => updateStatus(r.id, "dismissed")} style={{ background: "transparent", color: c.stone, border: `1px solid ${c.stone}`, padding: `2px ${sp.sm}px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.ui, cursor: "pointer" }}>Dismiss</button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

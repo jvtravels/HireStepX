@@ -26,6 +26,7 @@ import { buildDigestPrompt, parseDigest, computeSeverity, type DigestInput } fro
 import { callLLM } from "./_llm";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 import { captureServerEvent } from "./_posthog";
+import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -358,6 +359,17 @@ export default async function handler(req: Request): Promise<Response> {
     console.error(`[analyze-sessions] fix-outcome pass failed: ${(e as Error).message}`);
   }
 
+  // ── Auto-generate fix recommendations ─────────────────────────
+  // Same prompt as "Generate fix plan" but runs nightly so admin
+  // sees actionable suggestions without clicking. Dedup by
+  // (target_file, title) — re-runs increment seen_count.
+  let recommendationsWritten = 0;
+  try {
+    recommendationsWritten = await generateRecommendations();
+  } catch (e) {
+    console.error(`[analyze-sessions] recommendations pass failed: ${(e as Error).message}`);
+  }
+
   // ── Prompt-revision A/B outcomes ──────────────────────────────
   // For each prompt revision deployed >7d ago without an outcome,
   // measure the focus-wide flag-rate before vs after the deployed_at
@@ -378,6 +390,7 @@ export default async function handler(req: Request): Promise<Response> {
     rescore_budget_remaining: rescoreBudget,
     digest: digestStatus,
     fix_outcomes_computed: outcomesComputed,
+    recommendations_written: recommendationsWritten,
     revisions_measured: revisionsMeasured,
     duration_ms: Date.now() - t0,
     registered_focuses: registeredFocuses(),
@@ -518,6 +531,113 @@ async function buildDigestInput(today: string): Promise<DigestInput> {
     totalAnalyzed: dailyArr.reduce((s, d) => s + d.sessions_analyzed, 0),
     totalOpenIssues,
   };
+}
+
+/** Generate fix recommendations from current open issues + flagged sessions.
+ *  Idempotent — dedupes by (target_file::title) and increments seen_count
+ *  rather than creating duplicates on each cron run. */
+async function generateRecommendations(): Promise<number> {
+  // Pull open insights to feed the same prompt the dashboard uses.
+  const insightsRes = await supa(`session_insights?resolution_status=eq.open&order=analyzed_at.desc&limit=120&select=session_id,focus,flags,hallucinations,severity`);
+  if (!insightsRes.ok) return 0;
+  const insights = (await insightsRes.json()) as Array<{ session_id: string; focus: string; flags: string[] | null; hallucinations: { type?: string; evidence?: string }[] | null; severity: string }>;
+  if (insights.length === 0) return 0;
+
+  // Aggregate flags into FixPlanInput.openIssues
+  const flagAgg = new Map<string, { flag: string; count: number; severity_high: number; example_evidence: string[] }>();
+  for (const r of insights) {
+    for (const f of r.flags || []) {
+      const a = flagAgg.get(f) || { flag: f, count: 0, severity_high: 0, example_evidence: [] };
+      a.count += 1;
+      if (r.severity === "high") a.severity_high += 1;
+      if (a.example_evidence.length < 3 && Array.isArray(r.hallucinations)) {
+        for (const h of r.hallucinations) {
+          if (h.evidence) a.example_evidence.push(h.evidence);
+          if (a.example_evidence.length >= 3) break;
+        }
+      }
+      flagAgg.set(f, a);
+    }
+  }
+  if (flagAgg.size === 0) return 0;
+
+  const input: FixPlanInput = {
+    openIssues: Array.from(flagAgg.values()).sort((a, b) => b.count - a.count).slice(0, 12),
+    flaggedSessions: insights.filter((r) => (r.flags || []).length > 0).slice(0, 8).map((r) => ({
+      session_id: r.session_id,
+      focus: r.focus,
+      flags: r.flags || [],
+      hallucinations_summary: (r.hallucinations || []).map((h) => `${h.type}: ${(h.evidence || "").slice(0, 100)}`).slice(0, 2),
+    })),
+    registeredFocuses: registeredFocuses(),
+  };
+
+  let llmText = "";
+  try {
+    const llmRes = await callLLM({ prompt: buildFixPlanPrompt(input), temperature: 0.2, maxTokens: 1200, jsonMode: true }, 25000, {
+      endpoint: "auto-recommendations",
+    });
+    llmText = llmRes.text;
+  } catch (e) {
+    console.error(`[recommendations] LLM call failed: ${(e as Error).message}`);
+    return 0;
+  }
+  const plan = parseFixPlan(llmText);
+  if (plan.items.length === 0) return 0;
+
+  // Map each item to a focus best-guess based on affected_flags
+  const focusForFlag = new Map<string, string>();
+  for (const r of insights) {
+    for (const f of r.flags || []) {
+      if (!focusForFlag.has(f)) focusForFlag.set(f, r.focus);
+    }
+  }
+
+  let written = 0;
+  const nowIso = new Date().toISOString();
+  for (const item of plan.items.slice(0, 8)) {
+    const dedup = `${item.target_file || "_"}::${item.title}`.slice(0, 400).toLowerCase();
+    const focusGuess = (item.affected_flags || []).map((f) => focusForFlag.get(f)).find(Boolean) || "";
+
+    const row = {
+      dedup_key: dedup,
+      priority: item.priority,
+      title: item.title,
+      target_file: item.target_file || "",
+      change_description: item.change,
+      rationale: item.rationale,
+      affected_flags: item.affected_flags,
+      affected_focus: focusGuess,
+      file_grounded: item.file_grounded ?? true,
+      last_seen_at: nowIso,
+    };
+
+    // Upsert by dedup_key. Use Prefer: resolution=merge-duplicates with
+    // the unique constraint we declared on dedup_key. PostgREST won't
+    // increment seen_count on conflict, so do it manually after.
+    const upsertRes = await supa(`quality_recommendations?on_conflict=dedup_key`, {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([row]),
+    });
+    if (!upsertRes.ok) continue;
+
+    // Increment seen_count via PATCH (read-modify-write — race-safe enough
+    // since this cron runs once daily).
+    const idLookup = await supa(`quality_recommendations?dedup_key=eq.${encodeURIComponent(dedup)}&select=id,seen_count`);
+    if (idLookup.ok) {
+      const arr = (await idLookup.json()) as Array<{ id: string; seen_count: number }>;
+      if (arr[0]) {
+        await fetch(`${SUPABASE_URL}/rest/v1/quality_recommendations?id=eq.${arr[0].id}`, {
+          method: "PATCH",
+          headers: { ...authHeaders(), Prefer: "return=minimal" },
+          body: JSON.stringify({ seen_count: (arr[0].seen_count || 1) + 1, last_seen_at: nowIso }),
+        });
+      }
+    }
+    written += 1;
+  }
+  return written;
 }
 
 /** Measure focus-wide flag-rate for each unmeasured prompt revision >=7d old. */

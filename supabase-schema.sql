@@ -765,3 +765,40 @@ create index if not exists idx_prompt_revisions_deployed_at on prompt_revisions(
 
 alter table prompt_revisions enable row level security;
 -- Internal admin only — accessed via service role.
+
+-- ═══════════════════════════════════════════════════════
+-- Quality recommendations — proactive fix suggestions
+-- ═══════════════════════════════════════════════════════
+-- The cron auto-generates fix recommendations after each run by
+-- calling the same LLM as 'Generate fix plan' (so the dashboard isn't
+-- the only way to see them). Persisted with status so admin can
+-- triage: pending → in_progress → done / dismissed.
+-- Dedup key: (target_file, title) — re-runs upsert rather than
+-- creating duplicates each night.
+create table if not exists quality_recommendations (
+  id uuid primary key default gen_random_uuid(),
+  dedup_key text not null unique,    -- normalized "<target_file>::<title>"
+  priority text default 'medium',     -- high | medium | low
+  title text not null,
+  target_file text default '',
+  change_description text default '',
+  rationale text default '',
+  affected_flags text[] default '{}',
+  affected_focus text default '',     -- best-guess focus this targets
+  file_grounded boolean default true,
+
+  status text default 'pending',      -- pending | in_progress | done | dismissed
+  status_notes text default '',
+  status_updated_at timestamptz,
+  status_updated_by text default '',
+
+  first_seen_at timestamptz default now(),
+  last_seen_at timestamptz default now(),
+  seen_count integer default 1
+);
+
+create index if not exists idx_quality_recs_status on quality_recommendations(status);
+create index if not exists idx_quality_recs_priority on quality_recommendations(priority);
+create index if not exists idx_quality_recs_last_seen on quality_recommendations(last_seen_at);
+
+alter table quality_recommendations enable row level security;

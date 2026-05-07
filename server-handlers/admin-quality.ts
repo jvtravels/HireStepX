@@ -137,6 +137,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     `prompt_revisions?order=deployed_at.desc&limit=30&select=id,focus,description,commit_sha,deployed_at,deployed_by,outcome`,
   );
 
+  // Auto-generated quality recommendations the cron has produced. Default
+  // sort: pending first, then by priority desc, then last_seen_at.
+  const recommendations = await supa<{
+    id: string; priority: string; title: string; target_file: string;
+    change_description: string; rationale: string; affected_flags: string[] | null;
+    affected_focus: string; file_grounded: boolean;
+    status: string; status_notes: string; status_updated_at: string | null; status_updated_by: string;
+    first_seen_at: string; last_seen_at: string; seen_count: number;
+  }>(`quality_recommendations?order=status.asc,priority.asc,last_seen_at.desc&limit=40&select=id,priority,title,target_file,change_description,rationale,affected_flags,affected_focus,file_grounded,status,status_notes,status_updated_at,status_updated_by,first_seen_at,last_seen_at,seen_count`);
+
   // Issue aggregation: every flag across the last 200 insights, grouped, with status mix.
   const flagAgg = new Map<string, { flag: string; count: number; open: number; resolved: number; sessions: string[]; severity_high: number }>();
   for (const r of recent) {
@@ -188,6 +198,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     digest,
     issues,
     revisions,
+    recommendations,
     generated_at: new Date().toISOString(),
   });
 }
