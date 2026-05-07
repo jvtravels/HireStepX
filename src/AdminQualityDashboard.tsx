@@ -129,6 +129,8 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<SubView>("digest");
   const [selectedSession, setSelectedSession] = useState<InsightRow | null>(null);
+  const [runNowState, setRunNowState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [runNowResult, setRunNowResult] = useState<{ scanned?: number; written?: number; digest?: string; duration_ms?: number; error?: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -155,6 +157,37 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const runQualityCheckNow = useCallback(async () => {
+    setRunNowState("running");
+    setRunNowResult(null);
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) { setRunNowState("error"); setRunNowResult({ error: "Not signed in" }); return; }
+    try {
+      const res = await fetch("/api/admin-quality-run-now", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-token": token },
+      });
+      const j = await res.json() as { ok?: boolean; cron_response?: { scanned?: number; written?: number; digest?: string; duration_ms?: number }; error?: string; details?: string };
+      if (!res.ok || !j.ok) {
+        setRunNowState("error");
+        setRunNowResult({ error: j.error || j.details || `HTTP ${res.status}` });
+        return;
+      }
+      setRunNowResult({
+        scanned: j.cron_response?.scanned,
+        written: j.cron_response?.written,
+        digest: j.cron_response?.digest,
+        duration_ms: j.cron_response?.duration_ms,
+      });
+      setRunNowState("done");
+      // Refresh dashboard data after a successful run.
+      fetchData();
+    } catch (e) {
+      setRunNowState("error");
+      setRunNowResult({ error: (e as Error).message });
+    }
+  }, [fetchData]);
 
   const dailyByFocus = useMemo(() => {
     if (!data) return new Map<string, DailyRow[]>();
@@ -228,10 +261,32 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
           <h1 style={{ fontFamily: font.display, fontSize: 32, margin: 0, marginTop: showBackLink ? sp.xs : 0, color: c.gilt }}>Session Quality</h1>
           <p style={{ color: c.stone, margin: 0, marginTop: sp.xs, fontSize: 13 }}>Categorized issues, resolutions, and the nightly AI digest.</p>
         </div>
-        <button onClick={fetchData} disabled={loading} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.md, fontFamily: font.ui, cursor: loading ? "wait" : "pointer", fontSize: 13 }}>
-          {loading ? "Loading…" : "Refresh"}
-        </button>
+        <div style={{ display: "flex", gap: sp.sm, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={runQualityCheckNow}
+            disabled={runNowState === "running"}
+            title="Re-runs the analyzer over today's sessions and regenerates the AI digest. Same code path as the nightly cron — usually 5-15 seconds."
+            style={{ background: c.gilt, color: c.obsidian, border: "none", padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.md, fontFamily: font.ui, cursor: runNowState === "running" ? "wait" : "pointer", fontSize: 13, fontWeight: 600 }}
+          >
+            {runNowState === "running" ? "Running…" : "Run quality check now"}
+          </button>
+          <button onClick={fetchData} disabled={loading} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.md, fontFamily: font.ui, cursor: loading ? "wait" : "pointer", fontSize: 13 }}>
+            {loading ? "Loading…" : "Refresh"}
+          </button>
+        </div>
       </header>
+
+      {runNowState !== "idle" && runNowResult && (
+        <div style={{ marginBottom: sp.lg, padding: sp.md, borderRadius: radius.md, background: runNowState === "error" ? "rgba(209,126,104,0.1)" : "rgba(122,158,126,0.1)", border: `1px solid ${runNowState === "error" ? c.ember : c.sage}`, fontSize: 13 }}>
+          {runNowState === "running" && <span style={{ color: c.gilt }}>Running quality check… this re-analyzes today's sessions and regenerates the digest.</span>}
+          {runNowState === "done" && (
+            <span style={{ color: c.sage }}>
+              ✓ Done in {((runNowResult.duration_ms || 0) / 1000).toFixed(1)}s · scanned {runNowResult.scanned ?? 0} · wrote {runNowResult.written ?? 0} insights · digest {runNowResult.digest || "skipped"}
+            </span>
+          )}
+          {runNowState === "error" && <span style={{ color: c.ember }}>✗ Failed: {runNowResult.error}</span>}
+        </div>
+      )}
 
       {error && <div style={{ padding: sp.lg, background: "rgba(209,126,104,0.1)", border: `1px solid ${c.ember}`, borderRadius: radius.md, color: c.emberLight, marginBottom: sp.lg }}>{error}</div>}
       {!data && !error && loading && <div style={{ color: c.stone }}>Loading quality data…</div>}
