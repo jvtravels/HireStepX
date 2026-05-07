@@ -3,6 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
+import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
 
 /* ─── Config ─── */
 
@@ -456,16 +457,10 @@ async function getLLMUsage() {
   // Categorize each error so the dashboard surfaces *why* calls fail. Token
   // quota is one of many failure modes; per-minute rate limits, context-length
   // overflow, and provider 5xxs are far more common in practice.
-  const errorBreakdown = { rateLimit: 0, contextLength: 0, timeout: 0, serverError: 0, auth: 0, safety: 0, other: 0 };
+  // Pure regex logic lives in _admin-llm-categorizer.ts so it can be unit-tested.
+  const errorBreakdown = emptyBreakdown();
   for (const u of errored) {
-    const msg = (u.error_message || "").toLowerCase();
-    if (u.status === "timeout" || /timeout|timed out|aborted|etimedout/.test(msg)) errorBreakdown.timeout++;
-    else if (/\b429\b|rate.?limit|too many requests|tpm|rpm|tokens per minute|requests per minute|quota/.test(msg)) errorBreakdown.rateLimit++;
-    else if (/context.?length|too long|max(imum)?.{0,10}token|exceed.{0,10}context|prompt is too|tokens? in (the|your) (request|messages)/.test(msg)) errorBreakdown.contextLength++;
-    else if (/\b50[0234]\b|server error|service unavailable|gateway|overload|temporarily/.test(msg)) errorBreakdown.serverError++;
-    else if (/\b40[13]\b|unauthor|invalid api key|forbidden|permission/.test(msg)) errorBreakdown.auth++;
-    else if (/safety|blocked|harm|content policy|recitation/.test(msg)) errorBreakdown.safety++;
-    else errorBreakdown.other++;
+    errorBreakdown[categorizeLlmError(u.status, u.error_message)]++;
   }
 
   return {
