@@ -741,3 +741,27 @@ create table if not exists daily_digests (
 
 alter table daily_digests enable row level security;
 -- No user-facing select — internal admin only via service role.
+
+-- ═══════════════════════════════════════════════════════
+-- Prompt revisions — A/B harness for live prompt changes
+-- ═══════════════════════════════════════════════════════
+-- Admin logs a marker each time they deploy a prompt change for a
+-- focus. The cron measures the focus-wide flag-rate 7 days before vs
+-- after the deployed_at timestamp and stores the outcome — same
+-- mechanism as session-level fix_outcome but scoped to a whole focus.
+create table if not exists prompt_revisions (
+  id uuid primary key default gen_random_uuid(),
+  focus text not null,
+  description text not null,
+  commit_sha text default '',
+  deployed_at timestamptz not null default now(),
+  deployed_by text default '',
+  outcome jsonb,                  -- same shape as session_insights.fix_outcome
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_prompt_revisions_focus on prompt_revisions(focus);
+create index if not exists idx_prompt_revisions_deployed_at on prompt_revisions(deployed_at);
+
+alter table prompt_revisions enable row level security;
+-- Internal admin only — accessed via service role.

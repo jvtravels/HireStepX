@@ -6,7 +6,17 @@ import { friendlyFlag, friendlyFocus, friendlySeverity, friendlyStatus, CATEGORY
 
 const TOKEN_KEY = "hirestepx_admin_token";
 
-type SubView = "digest" | "headlines" | "issues" | "sessions" | "resolved";
+type SubView = "digest" | "headlines" | "issues" | "sessions" | "resolved" | "revisions";
+
+interface Revision {
+  id: string;
+  focus: string;
+  description: string;
+  commit_sha: string;
+  deployed_at: string;
+  deployed_by: string;
+  outcome: FixOutcome | null;
+}
 
 interface Headline {
   focus: string;
@@ -81,6 +91,7 @@ interface QualityData {
   recent: InsightRow[];
   digest: DigestRow | null;
   issues: IssueRow[];
+  revisions: Revision[];
   generated_at: string;
 }
 
@@ -277,6 +288,7 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
     { key: "issues", label: "Issues", icon: "⚠️" },
     { key: "sessions", label: "Sessions", icon: "🗂️" },
     { key: "resolved", label: "Resolved log", icon: "✅" },
+    { key: "revisions", label: "Prompt revisions", icon: "🔬" },
   ];
 
   return (
@@ -346,6 +358,8 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
           {view === "sessions" && <SessionsView rows={data.recent} selected={selectedSession} setSelected={setSelectedSession} onResolve={resolveSession} />}
 
           {view === "resolved" && <ResolvedView rows={resolvedSessions} />}
+
+          {view === "revisions" && <RevisionsView revisions={data.revisions || []} onRefresh={fetchData} />}
 
           <p style={{ marginTop: sp["3xl"], color: c.stone, fontSize: 11 }}>Generated at {new Date(data.generated_at).toLocaleString()}.</p>
         </>
@@ -804,6 +818,42 @@ function formatDay(yyyymmdd: string): string {
 
 interface TranscriptTurn { speaker: string; text: string; time: string }
 
+/* Download the current session + analyzer findings as a ground-truth
+ * fixture skeleton. The admin reviews / edits the must_include /
+ * must_not_include arrays and commits the file under
+ * tests/fixtures/analyzer-ground-truth/<focus>/. This closes the
+ * loop from "Claude found X" → "calibrated CI gate locked in." */
+function downloadAsFixture(row: InsightRow, transcript: TranscriptTurn[]): void {
+  const fixture = {
+    name: `Real session ${row.session_id.slice(0, 12)} — review and rename`,
+    notes: `Auto-exported from admin Quality dashboard on ${new Date().toISOString().slice(0, 10)}. Edit the expected.must_include / must_not_include arrays to match your judgement, then commit under tests/fixtures/analyzer-ground-truth/${row.focus}/.`,
+    session: {
+      type: row.focus,
+      transcript: transcript.map((t) => ({ speaker: t.speaker, text: t.text || "", time: t.time || "" })),
+    },
+    expected: {
+      must_include: row.flags || [],
+      must_not_include: ["empty_transcript"],
+    },
+    analyzer_snapshot_at_export: {
+      analyzer_version: row.analyzer_version,
+      severity: row.severity,
+      score_drift: row.score_drift,
+      flags: row.flags,
+      hallucinations: row.hallucinations,
+    },
+  };
+  const blob = new Blob([JSON.stringify(fixture, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${row.focus}-${row.session_id.slice(0, 12)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function turnContextFor(transcript: TranscriptTurn[], turnIdx: number | undefined): { question: TranscriptTurn | null; answer: TranscriptTurn | null; nextQuestion: TranscriptTurn | null } {
   if (typeof turnIdx !== "number" || !transcript.length) return { question: null, answer: null, nextQuestion: null };
   const isAi = (t: TranscriptTurn) => (t.speaker || "").toLowerCase().startsWith("a");
@@ -1023,6 +1073,20 @@ function SessionDetail({ row, onClose, onResolve }: {
         </Section>
       )}
 
+      {transcript.length > 0 && (
+        <Section title="Calibrate the analyzer">
+          <div style={{ color: c.stone, fontSize: 11, lineHeight: 1.4, marginBottom: sp.xs }}>
+            Disagree with this report? Save it as a ground-truth fixture so the CI gate locks in the right answer for next time.
+          </div>
+          <button
+            onClick={() => downloadAsFixture(row, transcript)}
+            style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, padding: `${sp.xs}px ${sp.sm}px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.ui, cursor: "pointer" }}
+          >
+            Download as fixture (.json)
+          </button>
+        </Section>
+      )}
+
       <Section title="What did you do?">
         <textarea
           value={notes}
@@ -1123,6 +1187,84 @@ function ResolvedView({ rows }: { rows: InsightRow[] }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function RevisionsView({ revisions, onRefresh }: { revisions: Revision[]; onRefresh: () => void }) {
+  const [focus, setFocus] = useState("");
+  const [description, setDescription] = useState("");
+  const [commit, setCommit] = useState("");
+  const [by, setBy] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async () => {
+    if (!focus || !description) { alert("Focus and description are required."); return; }
+    setSubmitting(true);
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) { setSubmitting(false); return; }
+    const res = await fetch("/api/admin-quality-revision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ action: "create", focus, description, commit_sha: commit, by }),
+    });
+    setSubmitting(false);
+    if (res.ok) {
+      setDescription("");
+      setCommit("");
+      onRefresh();
+    } else {
+      alert(`Log revision failed: HTTP ${res.status}`);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: sp.lg, marginBottom: sp.xl }}>
+        <div style={{ fontSize: 14, color: c.chalk, fontWeight: 600, marginBottom: sp.xs }}>Log a prompt deployment</div>
+        <div style={{ fontSize: 11, color: c.stone, marginBottom: sp.md }}>Mark when you ship a prompt change. The cron measures the focus-wide flag-rate 7 days before vs after, and reports a verdict.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 160px 160px auto", gap: sp.sm, alignItems: "center" }}>
+          <select value={focus} onChange={(e) => setFocus(e.target.value)} style={{ padding: sp.sm, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: radius.sm, color: c.ivory, fontFamily: font.ui, fontSize: 12 }}>
+            <option value="">Choose focus…</option>
+            {["behavioral", "salary-negotiation", "technical", "system-design", "hr-round", "strategic", "panel", "case-study", "campus-placement", "management", "government-psu"].map((f) => (
+              <option key={f} value={f}>{friendlyFocus(f)}</option>
+            ))}
+          </select>
+          <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What changed? (e.g. 'Tightened STAR probe in behavioral system prompt')" style={{ padding: sp.sm, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: radius.sm, color: c.ivory, fontFamily: font.ui, fontSize: 12 }} />
+          <input value={commit} onChange={(e) => setCommit(e.target.value)} placeholder="Commit SHA (optional)" style={{ padding: sp.sm, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: radius.sm, color: c.ivory, fontFamily: font.mono, fontSize: 11 }} />
+          <input value={by} onChange={(e) => setBy(e.target.value)} placeholder="Your name" style={{ padding: sp.sm, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: radius.sm, color: c.ivory, fontFamily: font.ui, fontSize: 12 }} />
+          <button onClick={submit} disabled={submitting} style={{ background: c.gilt, color: c.obsidian, border: "none", padding: `${sp.sm}px ${sp.lg}px`, borderRadius: radius.sm, fontFamily: font.ui, fontSize: 12, fontWeight: 600, cursor: submitting ? "wait" : "pointer" }}>
+            {submitting ? "Logging…" : "Log"}
+          </button>
+        </div>
+      </div>
+
+      <h3 style={{ fontSize: 14, color: c.chalk, marginBottom: sp.sm }}>Recent revisions</h3>
+      {revisions.length === 0 ? (
+        <div style={{ color: c.stone, padding: sp.lg }}>No prompt revisions logged yet.</div>
+      ) : (
+        <div style={{ display: "grid", gap: sp.sm }}>
+          {revisions.map((r) => {
+            const b = outcomeBadge(r.outcome);
+            return (
+              <div key={r.id} style={{ padding: sp.md, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.sm }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: sp.sm, marginBottom: sp.xs }}>
+                  <div>
+                    <span style={{ color: c.gilt, fontSize: 13, fontWeight: 600 }}>{friendlyFocus(r.focus)}</span>
+                    <span style={{ color: c.stone, fontSize: 11, marginLeft: sp.sm }}>{new Date(r.deployed_at).toLocaleString()}</span>
+                  </div>
+                  {b && <div title={b.tooltip} style={{ padding: `2px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 11, color: b.color, border: `1px solid ${b.color}`, fontFamily: font.mono }}>{b.label}</div>}
+                </div>
+                <div style={{ color: c.ivory, fontSize: 12, marginBottom: 2 }}>{r.description}</div>
+                <div style={{ color: c.stone, fontSize: 10, fontFamily: font.mono }}>
+                  {r.deployed_by && <span>by {r.deployed_by}</span>}
+                  {r.commit_sha && <span style={{ marginLeft: sp.sm }}>· {r.commit_sha.slice(0, 8)}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
 import { buildDigestPrompt, parseDigest, computeSeverity, type DigestInput } from "./_digest-helpers";
 import { callLLM } from "./_llm";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
+import { captureServerEvent } from "./_posthog";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -262,6 +263,21 @@ export default async function handler(req: Request): Promise<Response> {
     }
     insights.push(row);
 
+    // Fire a PostHog event per analyzed session for cross-funnel correlation.
+    // Best-effort, never throws — telemetry isn't critical-path.
+    if (row.flags.length > 0 || (row.hallucinations as unknown[]).length > 0) {
+      void captureServerEvent("session_quality_analyzed", session.user_id, {
+        session_id: session.id,
+        focus: session.type,
+        severity: row.severity,
+        flag_count: row.flags.length,
+        flags_csv: row.flags.join(","),
+        hallucination_count: (row.hallucinations as unknown[]).length,
+        score_drift: row.score_drift,
+        analyzer_version: row.analyzer_version,
+      });
+    }
+
     // Aggregate by (day, focus) for daily_quality_report.
     const day = (session.created_at || new Date().toISOString()).slice(0, 10);
     const key = `${day}::${session.type}`;
@@ -342,6 +358,17 @@ export default async function handler(req: Request): Promise<Response> {
     console.error(`[analyze-sessions] fix-outcome pass failed: ${(e as Error).message}`);
   }
 
+  // ── Prompt-revision A/B outcomes ──────────────────────────────
+  // For each prompt revision deployed >7d ago without an outcome,
+  // measure the focus-wide flag-rate before vs after the deployed_at
+  // timestamp. Same mechanism as fix_outcome but scoped to the focus.
+  let revisionsMeasured = 0;
+  try {
+    revisionsMeasured = await computeRevisionOutcomes();
+  } catch (e) {
+    console.error(`[analyze-sessions] revision-outcome pass failed: ${(e as Error).message}`);
+  }
+
   return jsonResponse({
     ok: true,
     scanned: sessions.length,
@@ -351,6 +378,7 @@ export default async function handler(req: Request): Promise<Response> {
     rescore_budget_remaining: rescoreBudget,
     digest: digestStatus,
     fix_outcomes_computed: outcomesComputed,
+    revisions_measured: revisionsMeasured,
     duration_ms: Date.now() - t0,
     registered_focuses: registeredFocuses(),
   });
@@ -490,4 +518,56 @@ async function buildDigestInput(today: string): Promise<DigestInput> {
     totalAnalyzed: dailyArr.reduce((s, d) => s + d.sessions_analyzed, 0),
     totalOpenIssues,
   };
+}
+
+/** Measure focus-wide flag-rate for each unmeasured prompt revision >=7d old. */
+async function computeRevisionOutcomes(): Promise<number> {
+  const upperBoundIso = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const lowerBoundIso = new Date(Date.now() - 60 * 86400_000).toISOString();
+  const candRes = await supa(`prompt_revisions?deployed_at=gte.${lowerBoundIso}&deployed_at=lte.${upperBoundIso}&outcome=is.null&select=id,focus,deployed_at&limit=20`);
+  if (!candRes.ok) return 0;
+  const candidates = (await candRes.json()) as Array<{ id: string; focus: string; deployed_at: string }>;
+  if (candidates.length === 0) return 0;
+
+  let computed = 0;
+  for (const cand of candidates) {
+    const deployedTs = new Date(cand.deployed_at).getTime();
+    const beforeStart = new Date(deployedTs - 7 * 86400_000).toISOString();
+    const afterEnd = new Date(deployedTs + 7 * 86400_000).toISOString();
+
+    // Pull insights for the focus across both windows
+    const wRes = await supa(`session_insights?focus=eq.${encodeURIComponent(cand.focus)}&analyzed_at=gte.${beforeStart}&analyzed_at=lte.${afterEnd}&select=flags,analyzed_at&limit=2000`);
+    if (!wRes.ok) continue;
+    const insights = (await wRes.json()) as Array<{ flags: string[] | null; analyzed_at: string }>;
+
+    // Aggregate flag rate (any-flag) across the focus
+    const beforeRows = insights.filter((r) => {
+      const ts = new Date(r.analyzed_at).getTime();
+      return ts >= deployedTs - 7 * 86400_000 && ts < deployedTs;
+    });
+    const afterRows = insights.filter((r) => {
+      const ts = new Date(r.analyzed_at).getTime();
+      return ts >= deployedTs && ts < deployedTs + 7 * 86400_000;
+    });
+    const beforeTotal = beforeRows.length;
+    const beforeFlagged = beforeRows.filter((r) => (r.flags || []).length > 0).length;
+    const afterTotal = afterRows.length;
+    const afterFlagged = afterRows.filter((r) => (r.flags || []).length > 0).length;
+
+    const daysSince = (Date.now() - deployedTs) / 86400_000;
+    const verdict = computeOutcome({
+      before: { totalSessions: beforeTotal, flaggedSessions: beforeFlagged },
+      after: { totalSessions: afterTotal, flaggedSessions: afterFlagged },
+      daysSinceResolution: daysSince,
+    });
+
+    const url = `${SUPABASE_URL}/rest/v1/prompt_revisions?id=eq.${encodeURIComponent(cand.id)}`;
+    const upd = await fetch(url, {
+      method: "PATCH",
+      headers: { ...authHeaders(), Prefer: "return=minimal" },
+      body: JSON.stringify({ outcome: verdict }),
+    });
+    if (upd.ok) computed += 1;
+  }
+  return computed;
 }

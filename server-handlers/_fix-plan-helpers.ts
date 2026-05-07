@@ -78,6 +78,12 @@ export const KNOWN_FIX_TARGETS: readonly string[] = [
   "server-handlers/_fix-outcome-helpers.ts",
   "server-handlers/_fix-plan-helpers.ts",
   "server-handlers/analyze-sessions-cron.ts",
+  "server-handlers/admin-quality-revision.ts",
+  "server-handlers/admin-quality-resolve.ts",
+  "server-handlers/admin-quality-fix-plan.ts",
+  "server-handlers/admin-quality-session.ts",
+  "server-handlers/admin-quality-run-now.ts",
+  "server-handlers/admin-quality.ts",
   // Dictionary
   "src/qualityFlagDictionary.ts",
 ];

@@ -132,6 +132,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const digestArr = await supa<DigestRow>(`daily_digests?order=day.desc&limit=1&select=day,generated_at,model,fixes_summary,improvements_summary,patterns_summary,recommendations`);
   const digest = digestArr[0] || null;
 
+  // Recent prompt revisions with their measured outcomes.
+  const revisions = await supa<{ id: string; focus: string; description: string; commit_sha: string; deployed_at: string; deployed_by: string; outcome: unknown }>(
+    `prompt_revisions?order=deployed_at.desc&limit=30&select=id,focus,description,commit_sha,deployed_at,deployed_by,outcome`,
+  );
+
   // Issue aggregation: every flag across the last 200 insights, grouped, with status mix.
   const flagAgg = new Map<string, { flag: string; count: number; open: number; resolved: number; sessions: string[]; severity_high: number }>();
   for (const r of recent) {
@@ -182,6 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     recent,
     digest,
     issues,
+    revisions,
     generated_at: new Date().toISOString(),
   });
 }
