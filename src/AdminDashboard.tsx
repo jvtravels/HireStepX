@@ -43,10 +43,11 @@ interface ServiceInfo {
 
 interface LLMData {
   totalCalls: number; totalTokens: number; todayTokens: number; fallbackRate: number; errorRate: number;
+  errorBreakdown?: { rateLimit: number; contextLength: number; timeout: number; serverError: number; auth: number; safety: number; other: number };
   byEndpoint: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number }>;
   byModel: Record<string, { calls: number; tokens: number }>;
   tokensPerDay: Record<string, number>;
-  recentErrors: Array<{ endpoint: string; model: string; error: string | null; date: string }>;
+  recentErrors: Array<{ endpoint: string; model: string; error: string | null; status?: string; date: string }>;
   services?: ServiceInfo[];
 }
 
@@ -1478,6 +1479,32 @@ export default function AdminDashboard() {
           <MiniBarChart data={llm.tokensPerDay} color={c.slate} height={100} />
         </div>
 
+        {/* Error breakdown — explains *why* calls fail beyond just "errored" */}
+        {llm.errorBreakdown && Object.values(llm.errorBreakdown).some(n => n > 0) && (
+          <div style={{ ...card, marginBottom: 24 }}>
+            <p style={{ ...labelStyle, color: c.ember, marginBottom: 12 }}>Error Breakdown</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+              {([
+                ["Rate limit (RPM/TPM)", llm.errorBreakdown.rateLimit],
+                ["Context length", llm.errorBreakdown.contextLength],
+                ["Timeout", llm.errorBreakdown.timeout],
+                ["Provider 5xx", llm.errorBreakdown.serverError],
+                ["Auth/key", llm.errorBreakdown.auth],
+                ["Safety block", llm.errorBreakdown.safety],
+                ["Other", llm.errorBreakdown.other],
+              ] as const).map(([label, n]) => (
+                <div key={label} style={{ padding: "10px 12px", background: c.onyx, borderRadius: 6, border: `1px solid ${c.borderSubtle}` }}>
+                  <p style={{ margin: 0, fontSize: 10, color: c.stone, textTransform: "uppercase", letterSpacing: 0.6 }}>{label}</p>
+                  <p style={{ margin: "4px 0 0", fontFamily: font.mono, fontSize: 18, fontWeight: 600, color: n > 0 ? c.ember : c.stone }}>{n}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: "12px 0 0", fontSize: 11, color: c.stone, lineHeight: 1.5 }}>
+              Counts come from the most recent {formatNum(llm.totalCalls)} llm_usage rows. If "Rate limit" or "Context length" dominate, daily token quota isn't the bottleneck — per-minute caps or oversized prompts are.
+            </p>
+          </div>
+        )}
+
         {/* Recent errors */}
         {llm.recentErrors.length > 0 && (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
@@ -1489,6 +1516,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th style={thStyle}>Endpoint</th>
                   <th style={thStyle}>Model</th>
+                  <th style={thStyle}>Status</th>
                   <th style={thStyle}>Error</th>
                   <th style={thStyle}>Time</th>
                 </tr>
@@ -1496,10 +1524,11 @@ export default function AdminDashboard() {
               <tbody>
                 {llm.recentErrors.map((e, i) => (
                   <tr key={i}>
-                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12 }}>{e.endpoint}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{e.model}</td>
-                    <td style={{ ...tdStyle, fontSize: 11, color: c.ember, maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{e.error || "—"}</td>
-                    <td style={{ ...tdStyle, fontSize: 12 }}>{formatDateTime(e.date)}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 12, verticalAlign: "top" as const }}>{e.endpoint}</td>
+                    <td style={{ ...tdStyle, fontSize: 12, verticalAlign: "top" as const }}>{e.model}</td>
+                    <td style={{ ...tdStyle, fontFamily: font.mono, fontSize: 11, color: c.ember, verticalAlign: "top" as const }}>{e.status || "error"}</td>
+                    <td style={{ ...tdStyle, fontSize: 11, color: c.ember, fontFamily: font.mono, whiteSpace: "pre-wrap" as const, wordBreak: "break-word" as const, maxWidth: 520, lineHeight: 1.5 }}>{e.error || "—"}</td>
+                    <td style={{ ...tdStyle, fontSize: 12, verticalAlign: "top" as const, whiteSpace: "nowrap" as const }}>{formatDateTime(e.date)}</td>
                   </tr>
                 ))}
               </tbody>

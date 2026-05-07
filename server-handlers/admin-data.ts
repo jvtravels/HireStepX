@@ -441,19 +441,35 @@ async function getLLMUsage() {
   const totalTokens = usage.reduce((s, u) => s + (u.total_tokens || 0), 0);
   const todayTokens = usage.filter(u => u.created_at?.startsWith(today)).reduce((s, u) => s + (u.total_tokens || 0), 0);
   const fallbackCount = usage.filter(u => u.is_fallback).length;
-  const errorCount = usage.filter(u => u.status === "error" || u.status === "timeout").length;
+  const errored = usage.filter(u => u.status === "error" || u.status === "timeout");
+
+  // Categorize each error so the dashboard surfaces *why* calls fail. Token
+  // quota is one of many failure modes; per-minute rate limits, context-length
+  // overflow, and provider 5xxs are far more common in practice.
+  const errorBreakdown = { rateLimit: 0, contextLength: 0, timeout: 0, serverError: 0, auth: 0, safety: 0, other: 0 };
+  for (const u of errored) {
+    const msg = (u.error_message || "").toLowerCase();
+    if (u.status === "timeout" || /timeout|timed out|aborted|etimedout/.test(msg)) errorBreakdown.timeout++;
+    else if (/\b429\b|rate.?limit|too many requests|tpm|rpm|tokens per minute|requests per minute|quota/.test(msg)) errorBreakdown.rateLimit++;
+    else if (/context.?length|too long|max(imum)?.{0,10}token|exceed.{0,10}context|prompt is too|tokens? in (the|your) (request|messages)/.test(msg)) errorBreakdown.contextLength++;
+    else if (/\b50[0234]\b|server error|service unavailable|gateway|overload|temporarily/.test(msg)) errorBreakdown.serverError++;
+    else if (/\b40[13]\b|unauthor|invalid api key|forbidden|permission/.test(msg)) errorBreakdown.auth++;
+    else if (/safety|blocked|harm|content policy|recitation/.test(msg)) errorBreakdown.safety++;
+    else errorBreakdown.other++;
+  }
 
   return {
     totalCalls: usage.length,
     totalTokens,
     todayTokens,
     fallbackRate: usage.length > 0 ? Math.round((fallbackCount / usage.length) * 100) : 0,
-    errorRate: usage.length > 0 ? Math.round((errorCount / usage.length) * 100) : 0,
+    errorRate: usage.length > 0 ? Math.round((errored.length / usage.length) * 100) : 0,
+    errorBreakdown,
     byEndpoint: cleanEndpoints,
     byModel,
     tokensPerDay,
-    recentErrors: usage.filter(u => u.status === "error" || u.status === "timeout").slice(0, 20).map(u => ({
-      endpoint: u.endpoint, model: u.model, error: u.error_message, date: u.created_at,
+    recentErrors: errored.slice(0, 20).map(u => ({
+      endpoint: u.endpoint, model: u.model, error: u.error_message, status: u.status, date: u.created_at,
     })),
     // Service details for the enhanced Services view
     services: await buildServiceDetails(usage),
