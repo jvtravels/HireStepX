@@ -216,6 +216,86 @@ const COMPANY_TYPE_BUCKETS: CompanyTypeBucket[] = [
     guidance: "Telecom interviews emphasize scale + reliability under non-stop traffic. Focus on: technical depth (network engineering, OSS/BSS, 5G stack, IoT for newer roles), comfort with 24/7 incident response, and behavioral scenarios about handling regulatory shifts (TRAI, spectrum auctions). India-scale is the dominant theme — billions of subscribers, sub-second SLAs.",
   },
   {
+    key: "ai_genai_startup",
+    pattern: /^(mistralai|mistral|huggingface|cohere|perplexityai|perplexity|scaleai|stabilityai|stability|elevenlabs|anthropic|openai|deepmind|sarvamai|sarvam|krutrim|niki|niki ai|madstreetden|madstreetdenmadstreetden|wadhwaniai|nfinitenanotech|skitai|skit|neysanetworks|ganai|karya|avataarai|multiplyai|ekaai|subtlai|qureai|sigtuple|niramai|prediblehealth|emaunlimited|atomicwork|sprinklr|composio|galileo|lyzr|tublian|kombai|truva|auquan|smallestai)$/,
+    guidance: "AI / GenAI startup interviews emphasize hands-on shipping (production LLMs, agent loops, evaluations) over academic credentials. Focus on: deep familiarity with at least one open-source model family + closed-API integration, eval harness design (golden sets, LLM-as-judge with rubrics, drift detection), prompt-injection defenses, cost discipline (token budgets), and willingness to operate without strict guard-rails. Compensation often skews higher than peer SaaS due to talent scarcity.",
+  },
+  {
+    key: "global_gaming",
+    pattern: /^(activisionblizzard|activision|electronicarts|ea|riotgames|riot|ubisoft|epicgames|epic|roblox|unitytechnologies|unity|taketwo|taketwointeractive|naughtydog|bungie|microsoftgaming|playstation|nintendo|tencentgames|miHoYo|hoyoverse)$/,
+    guidance: "Global gaming-studio interviews emphasize craft + ship-it discipline. Focus on: depth in the candidate's specialty (engine programming, gameplay, tools, multiplayer, anti-cheat, monetization, server-meta), comfort with crunch + post-launch live-ops, and behavioral scenarios about handling community backlash or balancing pivots. Indian offices often serve as pipeline / live-ops / QA arms — the bar is meaningful but tighter than HQ.",
+  },
+  {
+    key: "indian_gaming_realmoney",
+    pattern: /^(dream11|mobilepremierleague|mpl|games24x7|jetsynthesys|nazaratechnologies|nazara|gameskraft|jungleegames|nodwingaming|nodwin|octro|hikemessenger|rushgaming|rooter|fancode|sports24x7|stupasportsanalytics)$/,
+    guidance: "Indian real-money / fantasy-sports gaming companies operate under heavy regulatory uncertainty (state-by-state ban risk, GST implications). Interviews emphasize: ability to work under fast-moving regulation, fraud / collusion detection thinking, payment-rail expertise (Razorpay-equivalent), and behavioral scenarios about handling sudden state-level shutdowns. Compensation is product-tech competitive but employees should price in regulatory risk.",
+  },
+  {
+    key: "indian_media_entertainment",
+    pattern: /^(starindia|disneyhotstar|sonyindia|zeeentertainment|zee|viacom18|jiocinema|timesgroup|bccl|htmedia|ndtv|network18|abpgroup|indiatodaygroup|tseries|yashrajfilms|dharmaproductions|excelentertainment|redchilliesentertainment|erosinternational|pvrinox|saregama|tipsindustries|tips|republictv|news18|cnbctv18|bloombergquint|audibleindia|spotifyindia|kukufm|pocketfm|stage|roposo|sharechat|josh|dailyhunt)$/,
+    guidance: "Media / entertainment / OTT interviews emphasize content-craft + audience-data fluency. Focus on: vertical depth (writing, programming, talent management, distribution, analytics), comfort with both creative and quantitative inputs, and behavioral scenarios about negotiating with talent / IP owners. India OTT post-2024 consolidation is the dominant context (JioStar, Sony-Zee dynamics, ad-supported pivot).",
+  },
+  {
+    key: "indian_industrials_metals",
+    pattern: /^(tatasteel|jswsteel|jspl|jindalsteel|hindalco|jindalstainless|ultratechcement|ultratech|acc|ambujacements|shreecement|dalmiabharat|dalmia|ramcocements|asianpaints|bergerpaints|kansainerolac|akzonobelindia|jswpaints|indigopaints|birlaopus|larsentoubro|lt|punjlloyd|gmrinfrastructure|gvkpowerinfrastructure|irbinfrastructure|cromptongreaves|havellsindia|polycab|finolex|voltas|bluestar|cumminsindia|thermax|aiaengineering|ionexchange)$/,
+    guidance: "Heavy industrials interviews emphasize plant-floor execution + capex-cycle understanding. Focus on: domain depth (metallurgy, civil eng, electrical, process, BIM for construction roles), comfort with shift work / site postings, and behavioral scenarios about handling labour / safety / environmental incidents. Pay is base-heavy with limited variable; PSU / quasi-PSU work culture.",
+  },
+  {
+    key: "indian_crypto_web3",
+    pattern: /^(coindcx|coinswitchkuber|coinswitch|wazirx|zebpay|vauld|mudrex|bitbns|polygonindianorigin|polygon|polygonlabs|dharmalabs|biconomy|frontierwallet|instadapp)$/,
+    guidance: "Indian crypto / Web3 interviews emphasize protocol-level depth + regulatory navigation. Focus on: smart-contract security (re-entrancy, MEV, Solidity audits), wallet architecture, RBI / TDS / GST compliance for VDA businesses, and behavioral scenarios about handling user-fund risk events. Compensation typically token-component-heavy; valuation cycles drive variance more than other sectors.",
+  },
+  {
+    key: "indian_travel_aggregator",
+    pattern: /^(makemytrip|goibibo|oyorooms|oyo|yatra|cleartrip|easemytrip|ixigo|redbus|treebo|fabhotels|tripadvisorindia|tripadvisor|bookingcomindia|booking|expediaindia|expedia)$/,
+    guidance: "Travel / hospitality-aggregator interviews emphasize marketplace dynamics + multi-stakeholder ops. Focus on: search-relevance / personalization for travel, supply (hotel / airline / cab) + demand (consumer) economics, comfort with seasonality + booking-cycle anomalies, and behavioral scenarios about cancellation / refund / fraud handling. Margins are thin — discipline around CAC + repeat-rate is the dominant theme.",
+  },
+  {
+    key: "indian_healthcare_chain",
+    pattern: /^(apollohospitals|fortishealthcare|fortis|maxhealthcare|max|manipalhospitals|narayanahealth|asterdmhealthcare|aster|medanta|kokilabenhospital|aiims|tatamemorialhospital|pgimer|jipmer|cmcvellore|hcghealthcareglobal|hcg|rainbowchildrenshospitals|mgmhealthcare|drlalpathlabs|drlal|metropolishealthcare|metropolis|thyrocare)$/,
+    guidance: "Healthcare-chain interviews emphasize patient-outcome + regulatory rigour. Focus on: clinical / operational depth (depending on role — clinician, admin, tech), familiarity with NABH / JCI / CGHS empanelment dynamics, and behavioral scenarios about handling adverse events + family communication. Compensation skews on long-term equity (especially at chains nearing IPO post-2025 wave).",
+  },
+  {
+    key: "indian_insurance_amc",
+    pattern: /^(licofindia|lic|hdfclife|iciciprudential|icicilife|sbilife|maxlife|tataaia|bajajallianzlife|kotakmahindralife|adityabirlasunlife|pnbmetlife|reliancenipponlife|canarahsbclife|gicre|newindiaassurance|unitedindiainsurance|orientalinsurance|nationalinsurance|bajajallianzgeneral|icicilombard|tataaiggeneral|hdfcergo|reliancegeneralinsurance|cholamandalammsgeneral|futuregeneraliindia|nivabupa|starhealthinsurance|carehealthinsurance|hdfcamc|iciciprudentialamc|sbimutualfund|nipponindiaamc|kotakamc|adityabirlasunlifeamc|axisamc|dspmutualfund|utiamc|miraeasset|tatamutualfund|franklintempletonindia|ltmutualfund|ppfasmutualfund|quantmutualfund)$/,
+    guidance: "Insurance / AMC interviews emphasize regulatory compliance + actuarial / portfolio-management depth. Focus on: domain knowledge (life / general / health insurance economics OR mutual-fund / PMS process), familiarity with IRDAI / SEBI / AMFI norms, and behavioral scenarios about handling claim disputes / product mis-selling. Pay structure: lower base, heavier variable on AUM / new-business growth.",
+  },
+  {
+    key: "indian_market_infra",
+    pattern: /^(nse|bse|mcx|ncdex|sebi|rbi|irdai|pfrda|nabard|sidbi|eximbank|nsdl|cdsl|crisil|icra|careratings|brickworkratings)$/,
+    guidance: "Market-infrastructure / regulator interviews emphasize policy + risk + technology overlap. Focus on: deep familiarity with the institution's mandate, comfort with both quant rigor and stakeholder communication, and behavioral scenarios about handling crisis episodes (market halts, regulatory letters, coordinated action). Pay scale is fixed (govt-style) but prestige + post-retirement networking is the long-term value.",
+  },
+  {
+    key: "indian_power_renewables",
+    pattern: /^(tatapower|adanipower|adanigreen|adanitransmission|renewpower|renew|suzlonenergy|suzlon|inoxwind|greenkogroup|azurepower|jswenergy|torrentpower|reliancepower|cesc|tatarenewableenergy|avaadaenergy|herofutureenergies|olaelectric|tatapassengerelectricmobility)$/,
+    guidance: "Power / renewables interviews emphasize project-execution + grid-economics depth. Focus on: domain knowledge (solar / wind / hybrid / storage for renewables; transmission / distribution / generation for legacy), familiarity with PPA / discom dynamics + state-level regulatory variance, and behavioral scenarios about handling project delays / land-acquisition issues. Compensation increasingly competitive post-2024 PLI push.",
+  },
+  {
+    key: "indian_d2c_consumer",
+    pattern: /^(mamaearth|honasaconsumer|honasa|boatlifestyle|boat|noiseindia|noise|fireboltt|sugarcosmetics|sugar|wowskinscience|wow|plumgoodness|plum|myglamm|sleepyowl|ustraa|bodywise|mensabrands|mensa|globalbees|gokwik|toplyne|snitch|freakins|pepperfry|urbanladder|fabindia|chumbak|wakefit|peesafe|sirona|bombayshavingcompany|arata|pilgrim|minimalist|foxtale|mokobara|nashermiles|nestasia|ellementry|themancompany|beardo|xyxx|damensch|bummer|fablestreet|aurelia|blissclub|cava|consciouschemist|theslouledstore|bombaysweetshop|licious|freshtohome|countrydelight|otipy|epigamia|paperboat|yoga bar|yogabar|slurrpfarm|opensecret|twobrothersorganic|plix|wellbeingnutrition|thewholethfoods|sleepwell|raypressery|haldirams|amul|gcmmf)$/,
+    guidance: "Indian D2C / consumer-brand interviews emphasize speed of execution + customer-cohort understanding. Focus on: depth in performance marketing (Meta / Google / influencer), comfort with thin-margin economics, and behavioral scenarios about handling stockouts / returns / CAC inflation. Pay structure: cash-heavy with ESOPs that depend on funding rounds; post-Mamaearth listing model is the comp benchmark.",
+  },
+  {
+    key: "indian_retail_chains",
+    pattern: /^(reliance retail|reliance|tatacliq|trent|trentwestside|westside|dmart|avenuesupermarts|reliancetrends|shoppersstop|lifestyle|pantaloons|decathlonindia|ikeaindia|hmindia|zaraindia|marksspencerindia|croma|vijaysales|poorvika|reliancedigital|futureretail|spencersretail|moreretail|vmart|v2retail|libertyshoes|bataindia|khadims|relaxofootwears|titan|tanishq|kalyanjewellers|sencogold|joyalukkas|pcjeweller|olxindia|olx|snapdeal|ajio|amazonindia)$/,
+    guidance: "Indian retail-chain interviews emphasize store + supply-chain operations rigour. Focus on: domain depth (merchandising, store ops, category management, e-commerce ops depending on role), comfort with festive crunch + inventory-cycle dynamics, and behavioral scenarios about handling shrinkage / returns / vendor disputes. Margins are thin; Reliance Retail / Tata Group umbrella roles offer better long-term comp.",
+  },
+  {
+    key: "indian_audit_legal_midtier",
+    pattern: /^(walkerchandiok|srbatlioibo|srbatlioi|lodhaco|khimjikunverji|mgbco|mgb|anejaassociates|aneja|rsmastute|nangiaandersen|nangia|grantthorntonindia|grantthornton|bdoindia|bdo|rsmindia|rsm|cyrilamarchandmangaldas|cyril|azbpartners|azb|khaitanco|khaitan|jsagarassociates|jsa|trilegal|shardulamarchandmangaldas|shardul|luthraluthra|sandrassociates|nishithdesaiassociates|dsklegal|anblegal|arguspartners)$/,
+    guidance: "Indian mid-tier audit / legal-firm interviews emphasize technical depth + client-hour discipline. Focus on: domain knowledge (CA-specific for audit firms, area-of-law for legal — corporate / M&A / banking / IP / litigation), comfort with billable-hour culture and partner-track timelines, and behavioral scenarios about handling client / regulator escalations. Pay scales much lower than MBB / Big 4 tax-advisory but partner-level economics are competitive.",
+  },
+  {
+    key: "indian_saas_broad",
+    pattern: /^(freshworks|zoho|postman|browserstack|chargebee|druva|icertis|clevertap|webengage|moengage|haptik|yellowai|gupshup|leadsquared|whatfix|mindtickle|darwinbox|greytip|kekahr|peoplestrong|uniphore|observeai|hasura|appsmith|tooljet|zluri|acceldata|spotdraft|leegality|signzy|veris|plivo|exotel|atlan|vymo|browserstacknew|locussh|locus|marianatek|highradius|sprinto|drataindia|drata|scrutautomation|scrut|vantaindia|vanta|nektarai|nektar|sigmoid|jiffy|amagi|slang|udaan|moglix|ofbusiness|infoedge|naukri|justdial|indiamart|tradeindia|netcorecloud|netcore|capillary|capillarytechnologies)$/,
+    guidance: "Indian SaaS / B2B-tech interviews emphasize global-product engineering rigour. Focus on: API design + multi-tenancy, comfort with international-customer support (US / EU time zones), and behavioral scenarios about handling production incidents at customer-impacting scale. Pay structure: cash + ESOP, RSU at the few public ones (Freshworks NASDAQ-listed); compensation closer to US SaaS than Indian unicorn at the engineering bar.",
+  },
+  {
+    key: "indian_advertising_agency",
+    pattern: /^(ogilvyindia|ogilvy|leoburnett|jwt|wundermanthompson|mccannworldgroup|mccann|ddbmudra|bbdo|dentsuwebchutney|webchutney|dentsucreative|famousinnovations|lowelintas|fcb|havasindia|havas|publicisindia|publicis|greygroup|tbwa|saatchi|scarecrowmcsaatchi|bcwebwise|iprospect|mirumindia|schbang|watconsult|tonicworldwide|isobarindia|isobar|foxymoron|logicservedigital|kinnect|performicsindia|performics|groupmindia|groupm|madisonworld|madison|mullenlintas|mullen|rediffusion|cheilindia|cheil|cheilworldwide|contractadvertising|batesicandpartners|crayonscommunications|vmlyrindia|vmlyr|22feettribalworldwide|digitaslbiindia|digitaslbi|mediacomindia|mediacom|wavemakerindia|wavemaker|zenithindia|zenith|caratindia|carat|omdindia|omd|mindshareindia|mindshare|initiativeindia|starcomindia|starcom|sparkfoundry|tritoncommunications|quotientventures|talented|thewomb|dentsuimpact|dentsuaegisnetwork|enormousbrands|springmarketing|spring marketing|lksaatchisaatchi|lksaatchi|lemoncommunications|bombaydesigncentre|lollypopdesignstudio|lollypop|nilenso|obvious|elephantdesign|umbrelladesign|codesign|onio|indidesign|studiolotus|foleydesigns|dyworks|landorfitchindia|ogilvydesignindia|wiedenkennedydelhi|wiedenkennedyindia|wiedenkennedy|animal|futurefactory|plus91foundry|briefcase|karyaux|fourplusstudio|algorythm|ennobleip|psidesign|geometryencompass|quicksanddesignstudio|quicksand|finalmileconsulting|designaware|studiocarbon|redesign|kpmgindia|tataelxsidesign|infosyswongdoody|wongdoody|mindtreedesign|thoughtworks|thoughtworksdesign)$/,
+    guidance: "Indian advertising / creative-agency interviews emphasize portfolio + idea-quality + craft. Focus on: campaign-effectiveness measurement (creative + media outcomes), comfort with client-pitch grind + revision cycles, and behavioral scenarios about handling creative differences / client pushback. Pay structure: services-firm economics — limited equity, billable-hour compression. Top creative directors at Ogilvy / DDB Mudra / Lowe Lintas hit ₹50-150L+; the median is much tighter.",
+  },
+  {
     key: "indian_civil_services",
     pattern: /^(upsc|indianadministrativeservice|ias|indianforeignservice|ifs|indianpoliceservice|ips|indianrevenueservice|irs|indianforestservice|statepublicservicecommission|ibpspoclerk|sbipo|rbigradeb|nabardgradea|sidbigradea|ssccgl|ssccshsl|indianrailwaysrrb|isroscientist|drdoscientist|barcscientist|tifr|reservebankofindiadirect|npci|uidai)$/,
     guidance: "Civil-services / government-job interviews emphasize values alignment (integrity, impartiality, public service), domain knowledge of governance + current affairs, and stress resilience. Focus on: ability to articulate views on contemporary policy debates without partisan colour, comfort with formal interview settings (panel format, hypothetical ethics scenarios), and motivation that goes beyond compensation.",

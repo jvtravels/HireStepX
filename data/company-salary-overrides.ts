@@ -868,6 +868,169 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
+  /* ─── New sector buckets (added in coverage-audit response) ─── */
+  __sector_ai_genai_startup: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 30, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI startup India entry — talent scarcity premium", lastVerified: "2026-05-07" },
+      mid: { totalMin: 30, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India mid (Sarvam / Krutrim / Gan / Avataar / etc.)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 55, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 160, equityMin: 25, equityMax: 60, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India staff", lastVerified: "2026-05-07" },
+      executive: { totalMin: 130, totalMax: 280, equityMin: 50, equityMax: 130, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI India founding-engineer / VP", lastVerified: "2026-05-07" },
+    },
+    "ml-engineer": {
+      entry: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE entry — 1.3-1.6x SE premium", lastVerified: "2026-05-07" },
+      mid: { totalMin: 38, totalMax: 70, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 70, totalMax: 130, equityMin: 18, equityMax: 50, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AI/GenAI MLE senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_global_gaming: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Global gaming India entry (EA / Ubisoft / Riot / Activision)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 28, totalMax: 50, equityMin: 5, equityMax: 15, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Global gaming India mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50, totalMax: 90, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Global gaming India senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 150, equityMin: 25, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Global gaming India lead", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_gaming_realmoney: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian real-money gaming entry (Dream11 / MPL / Games24x7)", lastVerified: "2026-05-07", notes: "Regulatory uncertainty (state bans, GST changes) caps long-term ESOP value." },
+      mid: { totalMin: 22, totalMax: 40, equityMin: 3, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian gaming mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 70, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian gaming senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_media_entertainment: {
+    marketing: {
+      entry: { totalMin: 4, totalMax: 8, equityType: "none", source: "Indian media entry (T-Series / Saregama / YRF / production houses)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "Media mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 40, equityType: "none", source: "Media senior (programming / talent / distribution head)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 35, totalMax: 80, equityType: "none", source: "Media VP / Studio Head", lastVerified: "2026-05-07" },
+      executive: { totalMin: 70, totalMax: 200, equityType: "none", source: "Media CEO / Network Head (Star/Sony/Zee/Viacom18)", lastVerified: "2026-05-07" },
+    },
+    "software-engineer": {
+      entry: { totalMin: 6, totalMax: 11, equityType: "none", source: "Indian media tech entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 11, totalMax: 22, equityType: "none", source: "Media tech mid (OTT engineering)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "Media tech senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_industrials_metals: {
+    "software-engineer": {
+      entry: { totalMin: 5, totalMax: 9, equityType: "none", source: "Indian industrials entry (Tata Steel / JSW / UltraTech / L&T / Asian Paints)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 9, totalMax: 18, equityType: "none", source: "Industrials mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "Industrials senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 35, totalMax: 65, equityType: "none", source: "Industrials Plant Head / VP Engineering", lastVerified: "2026-05-07" },
+      executive: { totalMin: 60, totalMax: 200, equityType: "none", source: "Industrials MD / CEO (Tata Steel / JSW / L&T)", lastVerified: "2026-05-07", notes: "Top of industrials ladder. Tata Steel / JSW / L&T MDs cross ₹3-15Cr." },
+    },
+  },
+  __sector_indian_crypto_web3: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian crypto entry (CoinDCX / WazirX / CoinSwitch / Polygon)", lastVerified: "2026-05-07", notes: "Token-grant component common; valuation tied to crypto cycle." },
+      mid: { totalMin: 24, totalMax: 45, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian crypto mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian crypto senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_travel_aggregator: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 20, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian travel aggregator entry (MMT / Yatra / Cleartrip / Ixigo / EaseMyTrip)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 20, totalMax: 38, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Travel aggregator mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 65, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Travel aggregator senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_healthcare_chain: {
+    "software-engineer": {
+      entry: { totalMin: 5, totalMax: 9, equityType: "none", source: "Indian healthcare-chain entry (Apollo / Fortis / Max / Manipal / Narayana)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 9, totalMax: 18, equityType: "none", source: "Healthcare-chain mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "Healthcare-chain senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "Healthcare-chain Hospital Director / VP", lastVerified: "2026-05-07" },
+      executive: { totalMin: 55, totalMax: 200, equityType: "none", source: "Healthcare-chain CEO / MD (Apollo / Fortis post-IHH-merger)", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_insurance_amc: {
+    sales: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Insurance / AMC sales entry (LIC / HDFC Life / ICICI Pru / SBI Life etc.)", lastVerified: "2026-05-07", notes: "Sales-coded role; heavy variable on premium / AUM growth." },
+      mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "Insurance / AMC sales mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 38, equityType: "none", source: "Insurance / AMC sales senior", lastVerified: "2026-05-07" },
+    },
+    "software-engineer": {
+      entry: { totalMin: 5, totalMax: 10, equityType: "none", source: "Insurance / AMC IT entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 10, totalMax: 22, equityType: "none", source: "Insurance / AMC IT mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "Insurance / AMC IT senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_market_infra: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "Market infra entry (NSE / BSE / NSDL / CDSL / CRISIL / RBI / SEBI)", lastVerified: "2026-05-07", notes: "Govt-style fixed pay. Pension + perks add 30-50% non-cash value." },
+      mid: { totalMin: 15, totalMax: 28, equityType: "none", source: "Market infra mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 50, equityType: "none", source: "Market infra senior (NSE/BSE Director / RBI Manager)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 45, totalMax: 75, equityType: "none", source: "Market infra lead (CGM / DGM)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 70, totalMax: 130, equityType: "none", source: "Market infra apex (NSE MD / SEBI Chairman)", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_power_renewables: {
+    "software-engineer": {
+      entry: { totalMin: 6, totalMax: 11, equityType: "none", source: "Indian power / renewables entry (Tata Power / Adani Green / ReNew / Suzlon)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 11, totalMax: 22, equityType: "none", source: "Power / renewables mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 40, equityType: "none", source: "Power / renewables senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 38, totalMax: 75, equityType: "none", source: "Power / renewables Director", lastVerified: "2026-05-07" },
+      executive: { totalMin: 70, totalMax: 200, equityType: "none", source: "Power / renewables MD / CEO (Tata Power / Adani Green / ReNew)", lastVerified: "2026-05-07" },
+    },
+  },
+
+  __sector_indian_d2c_consumer: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian D2C tech entry (Mamaearth / Boat / Sleepwell etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 14, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian D2C tech mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 26, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian D2C tech senior", lastVerified: "2026-05-07" },
+    },
+    marketing: {
+      entry: { totalMin: 6, totalMax: 12, equityType: "none", source: "D2C performance marketing entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "D2C marketing mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 25, totalMax: 50, equityType: "none", source: "D2C Brand / Growth Director", lastVerified: "2026-05-07" },
+    },
+    sales: {
+      mid: { totalMin: 10, totalMax: 22, equityType: "none", source: "D2C sales / partnerships mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "D2C VP Sales", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_retail_chains: {
+    "software-engineer": {
+      entry: { totalMin: 5, totalMax: 9, equityType: "none", source: "Indian retail chains tech entry (Reliance / Tata / Trent / DMart)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 9, totalMax: 20, equityType: "none", source: "Retail tech mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 20, totalMax: 40, equityType: "none", source: "Retail tech senior", lastVerified: "2026-05-07" },
+    },
+    operations: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Retail store-ops entry", lastVerified: "2026-05-07" },
+      mid: { totalMin: 7, totalMax: 15, equityType: "none", source: "Retail Store Manager / Cluster", lastVerified: "2026-05-07" },
+      senior: { totalMin: 15, totalMax: 30, equityType: "none", source: "Retail Regional Head", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 60, equityType: "none", source: "Retail VP Operations", lastVerified: "2026-05-07" },
+      executive: { totalMin: 55, totalMax: 200, equityType: "none", source: "Retail CEO (DMart / Trent / Reliance Retail)", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_audit_legal_midtier: {
+    consultant: {
+      entry: { totalMin: 6, totalMax: 12, equityType: "none", source: "Indian mid-tier audit / legal entry (Walker Chandiok / S.R. Batliboi / Lodha & Co / AZB / Trilegal etc.)", lastVerified: "2026-05-07", notes: "Bonus 30-60% of base; partner-track economics dominate at 8-12 yr." },
+      mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "Mid-tier audit / legal Associate", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 45, equityType: "none", source: "Mid-tier audit / legal Senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 40, totalMax: 90, equityType: "none", source: "Mid-tier audit / legal Manager / Senior Manager", lastVerified: "2026-05-07" },
+      executive: { totalMin: 80, totalMax: 250, equityType: "none", source: "Mid-tier audit / legal Partner (AZB / Trilegal / Khaitan top-tier)", lastVerified: "2026-05-07", notes: "AZB / Trilegal / Khaitan / Cyril Amarchand Partner: ₹2-15Cr depending on book." },
+    },
+  },
+  __sector_indian_saas_broad: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 22, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad entry (Freshworks / Zoho / Postman / BrowserStack / Chargebee / etc. — NB bespoke entries override this)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 40, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 70, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian SaaS broad senior", lastVerified: "2026-05-07" },
+    },
+  },
+  __sector_indian_advertising_agency: {
+    marketing: {
+      entry: { totalMin: 5, totalMax: 10, equityType: "none", source: "Indian advertising agency entry (Ogilvy / Leo Burnett / DDB Mudra / Wieden+Kennedy / etc.)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 10, totalMax: 22, equityType: "none", source: "Agency Account Mgmt / Strategy / Creative mid", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 50, equityType: "none", source: "Agency Senior Strategist / Group Head", lastVerified: "2026-05-07" },
+      lead: { totalMin: 45, totalMax: 100, equityType: "none", source: "Agency Creative Director / Business Head", lastVerified: "2026-05-07" },
+      executive: { totalMin: 80, totalMax: 250, equityType: "none", source: "Agency CCO / CEO India (Ogilvy / WPP / Publicis Groupe)", lastVerified: "2026-05-07" },
+    },
+  },
+
   /* ─── Design Agencies / Studios ───────────────────────────────── */
   "bombay design centre": {
     "ux-designer": {
