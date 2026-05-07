@@ -21,7 +21,7 @@ import {
 import { LiveCaptions } from "./InterviewComponents";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
-import { isAutoplayBlocked, retryUnlockAudio } from "./tts";
+import { isAutoplayBlocked, retryUnlockAudio, clearAutoplayBlock } from "./tts";
 import { stripProsodyMarkup } from "./_prosody";
 import { detectNegotiationTactic } from "./_negotiation-tactics";
 import { useAuth } from "./AuthContext";
@@ -109,7 +109,16 @@ function useMobileAudioResilience() {
       }
     };
 
-    const onVisibility = () => { if (document.visibilityState === "visible") resumeSuspended(); };
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      resumeSuspended();
+      // The browser may have rejected an in-flight audio.play() while the
+      // tab was hidden, latching _autoplayBlocked. Clear it so the next TTS
+      // attempt tries fresh — if it still fails, the flag re-arms and the
+      // recovery overlay shows. This avoids the "stuck overlay" case where
+      // playback would now succeed but we never even try.
+      clearAutoplayBlock();
+    };
     const onOrientation = () => { setTimeout(resumeSuspended, 200); };
 
     document.addEventListener("visibilitychange", onVisibility);

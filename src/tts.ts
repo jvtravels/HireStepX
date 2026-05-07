@@ -40,6 +40,13 @@ export function retryUnlockAudio() {
   unlockAudio();
 }
 
+/** Reset the autoplay-blocked flag without recreating the AudioContext.
+ *  Used when the tab returns to foreground — gives the next TTS attempt a
+ *  fresh shot before we declare playback dead and show the recovery overlay. */
+export function clearAutoplayBlock() {
+  _autoplayBlocked = false;
+}
+
 /** Check if a play() error is an autoplay policy block */
 function isAutoplayError(err: unknown): boolean {
   if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "AbortError")) return true;
