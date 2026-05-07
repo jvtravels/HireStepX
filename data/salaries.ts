@@ -176,6 +176,27 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([35, 55], [6, 12], NO_EQ, [42, 70], { negotiation_leverage: "medium" }),
       senior: s([55, 80], [10, 20], NO_EQ, [65, 100], { notice_period_days: 60, negotiation_leverage: "medium" }),
     },
+    /* EdTech (Byju's / Unacademy / upGrad / Vedantu / Physics Wallah
+       — post-2023 reset bands, compressed 30-40% from peak). */
+    edtech: {
+      entry: s([6, 12], [0.5, 1.5], ESOP(0.5, 2), [8, 16], { notice_period_days: 30, negotiation_leverage: "low", notes: "Post-2023 reset; ESOP value uncertain at most names." }),
+      mid: s([12, 22], [1, 3], ESOP(1, 4), [14, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 38], [3, 6], ESOP(3, 9), [28, 50], { negotiation_leverage: "medium" }),
+    },
+    /* BFSI domestic (HDFC tech / ICICI tech / Axis tech / Kotak
+       tech). Pay below GCC, ESOP rare. */
+    "bfsi-domestic": {
+      entry: s([5, 10], [0.5, 1.5], NO_EQ, [6, 12], { notice_period_days: 60, negotiation_leverage: "low" }),
+      mid: s([12, 22], [1.5, 3], NO_EQ, [14, 26], { negotiation_leverage: "medium" }),
+      senior: s([22, 40], [3, 6], NO_EQ, [25, 48], { notice_period_days: 90, negotiation_leverage: "medium" }),
+    },
+    /* FMCG MNC (HUL / ITC / Nestle / P&G — for SE / IT roles
+       within FMCG, not brand-track). */
+    "fmcg-mnc": {
+      entry: s([6, 11], [0.5, 1.5], NO_EQ, [7, 13], { negotiation_leverage: "low" }),
+      mid: s([12, 22], [1.5, 3], NO_EQ, [14, 26], { negotiation_leverage: "medium" }),
+      senior: s([22, 38], [3, 6], NO_EQ, [25, 45], { negotiation_leverage: "medium" }),
+    },
   },
 
   // ─── PRODUCT MANAGER ──────────────────────────────────────────
@@ -230,6 +251,49 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([30, 48], [4, 8], RSU(8, 18), [38, 65], { negotiation_leverage: "medium" }),
       senior: s([50, 75], [8, 15], RSU(18, 40), [60, 110], { notice_period_days: 60, negotiation_leverage: "high" }),
       lead: s([80, 115], [12, 25], RSU(35, 80), [110, 200], { negotiation_leverage: "high" }),
+    },
+    /* EdTech PM. */
+    edtech: {
+      entry: s([8, 15], [1, 2], ESOP(0.5, 2), [10, 18], { negotiation_leverage: "low" }),
+      mid: s([15, 28], [2, 5], ESOP(2, 5), [18, 35], { negotiation_leverage: "medium" }),
+      senior: s([28, 48], [4, 8], ESOP(4, 10), [32, 60], { negotiation_leverage: "medium" }),
+    },
+    /* Startup early PM. */
+    "startup-early": {
+      entry: s([6, 12], [0.5, 1.5], ESOP(1, 4), [8, 16], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([14, 25], [1, 3], ESOP(3, 10), [16, 32], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([25, 42], [3, 6], ESOP(8, 22), [30, 60], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic PM (HDFC / ICICI / Axis / Kotak digital PM). */
+    "bfsi-domestic": {
+      entry: s([8, 14], [1, 2], NO_EQ, [9, 16], { negotiation_leverage: "low" }),
+      mid: s([15, 26], [2, 4], NO_EQ, [17, 30], { negotiation_leverage: "medium" }),
+      senior: s([26, 45], [4, 8], NO_EQ, [30, 52], { negotiation_leverage: "medium" }),
+    },
+    /* SaaS-product PM (Postman / BrowserStack / Chargebee tier). */
+    "saas-product": {
+      entry: s([10, 18], [1, 2], ESOP(1, 3), [12, 22], { negotiation_leverage: "medium" }),
+      mid: s([20, 35], [2, 5], ESOP(3, 8), [24, 42], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 10], ESOP(6, 14), [42, 70], { negotiation_leverage: "high" }),
+    },
+    /* IT Services PM (Tata-style enterprise PM, BFS PMs). */
+    "it-services": {
+      entry: s([6, 11], [0.5, 1], NO_EQ, [7, 12], { negotiation_leverage: "low" }),
+      mid: s([12, 20], [1, 2], NO_EQ, [13, 22], { negotiation_leverage: "low" }),
+      senior: s([20, 32], [2, 4], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+    /* FMCG MNC PM (HUL Digital / ITC / Marico digital teams). */
+    "fmcg-mnc": {
+      entry: s([10, 18], [1, 3], NO_EQ, [11, 22], { negotiation_leverage: "medium" }),
+      mid: s([18, 30], [2, 5], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+      senior: s([30, 50], [4, 9], NO_EQ, [35, 60], { negotiation_leverage: "high" }),
+    },
+    /* Government / PSU PM — rare but exists at digital-India / UPI
+       implementations / NPCI / UIDAI. */
+    "government-psu": {
+      entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
+      mid: s([10, 18], [0.5, 1], NO_EQ, [10, 19], { negotiation_leverage: "low" }),
+      senior: s([18, 30], [1, 2], NO_EQ, [19, 32], { negotiation_leverage: "low" }),
     },
   },
 
@@ -303,6 +367,42 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([20, 30], [3, 6], NO_EQ, [25, 40], { negotiation_leverage: "medium", notes: "QuantumBlack / BCG GAMMA" }),
       mid: s([35, 55], [6, 12], NO_EQ, [42, 70], { negotiation_leverage: "medium" }),
       senior: s([55, 80], [10, 20], NO_EQ, [65, 100], { negotiation_leverage: "high" }),
+    },
+    /* BFSI global Data Scientist (Goldman / JPMC quant + risk). */
+    "bfsi-global": {
+      entry: s([20, 30], [2, 5], RSU(4, 9), [24, 42], { negotiation_leverage: "medium" }),
+      mid: s([32, 50], [5, 10], RSU(10, 22), [42, 75], { negotiation_leverage: "medium" }),
+      senior: s([50, 75], [10, 20], RSU(22, 50), [70, 130], { negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic Data Scientist (HDFC / ICICI risk + analytics). */
+    "bfsi-domestic": {
+      entry: s([6, 12], [0.5, 1.5], NO_EQ, [7, 14], { negotiation_leverage: "low" }),
+      mid: s([14, 24], [1.5, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([24, 40], [3, 7], NO_EQ, [28, 48], { negotiation_leverage: "medium" }),
+    },
+    /* EdTech Data Scientist (post-reset). */
+    edtech: {
+      entry: s([6, 12], [0.5, 1.5], ESOP(0.5, 2), [8, 16], { negotiation_leverage: "low" }),
+      mid: s([12, 22], [1, 3], ESOP(1, 4), [14, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 38], [3, 6], ESOP(3, 9), [28, 50], { negotiation_leverage: "medium" }),
+    },
+    /* Startup early Data Scientist. */
+    "startup-early": {
+      entry: s([6, 12], [0.5, 1.5], ESOP(1, 4), [8, 16], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([14, 25], [1, 3], ESOP(3, 10), [16, 32], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([25, 42], [3, 6], ESOP(8, 22), [30, 60], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    /* IT Services Data Scientist. */
+    "it-services": {
+      entry: s([4, 8], [0.3, 0.6], NO_EQ, [5, 9], { negotiation_leverage: "low" }),
+      mid: s([8, 15], [0.5, 1.5], NO_EQ, [9, 16], { negotiation_leverage: "low" }),
+      senior: s([15, 25], [1.5, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+    },
+    /* Government / PSU Data Scientist (RBI quant / SEBI / NABARD). */
+    "government-psu": {
+      entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
+      mid: s([10, 18], [0.5, 1], NO_EQ, [10, 19], { negotiation_leverage: "low" }),
+      senior: s([18, 30], [1, 2], NO_EQ, [19, 32], { negotiation_leverage: "low" }),
     },
   },
 
@@ -458,6 +558,60 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([14, 22], [1, 3], RSU(2, 5), [18, 28], { notice_period_days: 60, negotiation_leverage: "medium" }),
       mid: s([24, 38], [3, 6], RSU(6, 14), [30, 52], { negotiation_leverage: "medium" }),
       senior: s([38, 60], [5, 12], RSU(12, 30), [48, 85], { notice_period_days: 60, negotiation_leverage: "high" }),
+    },
+    /* SaaS-product UX (Postman / BrowserStack / Chargebee tier). */
+    "saas-product": {
+      entry: s([7, 14], [0.5, 1.5], ESOP(1, 3), [8, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 26], [1, 3], ESOP(2, 5), [16, 32], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 6], ESOP(4, 10), [30, 52], { negotiation_leverage: "high" }),
+    },
+    /* BFSI global UX (Goldman / JPMC / Morgan Stanley tech). */
+    "bfsi-global": {
+      entry: s([16, 24], [2, 4], RSU(3, 7), [20, 32], { negotiation_leverage: "medium" }),
+      mid: s([26, 42], [4, 8], RSU(8, 18), [34, 58], { negotiation_leverage: "medium" }),
+      senior: s([42, 65], [7, 14], RSU(15, 35), [55, 100], { negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic UX (HDFC / ICICI / Axis / Kotak digital banking). */
+    "bfsi-domestic": {
+      entry: s([5, 9], [0.5, 1], NO_EQ, [6, 10], { negotiation_leverage: "low" }),
+      mid: s([10, 18], [1, 2], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 4], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+    },
+    /* Consulting (MBB design ops / digital design — McKinsey LUNAR,
+       BCG Digital Design). */
+    "consulting-mbb": {
+      entry: s([18, 28], [3, 6], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+      mid: s([32, 50], [5, 10], NO_EQ, [38, 60], { negotiation_leverage: "medium" }),
+      senior: s([50, 75], [8, 18], NO_EQ, [58, 95], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([8, 14], [1, 2], NO_EQ, [9, 16], { negotiation_leverage: "low" }),
+      mid: s([14, 24], [2, 4], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 6], NO_EQ, [27, 44], { negotiation_leverage: "medium" }),
+    },
+    /* EdTech UX. */
+    edtech: {
+      entry: s([5, 10], [0.5, 1], ESOP(0.5, 2), [6, 12], { negotiation_leverage: "low" }),
+      mid: s([10, 18], [1, 2], ESOP(1, 3), [11, 21], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 4], ESOP(2, 6), [20, 36], { negotiation_leverage: "medium" }),
+    },
+    /* Startup early UX. */
+    "startup-early": {
+      entry: s([4, 9], [0, 1], ESOP(1, 3), [5, 12], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([10, 18], [0.5, 2], ESOP(2, 6), [12, 24], { negotiation_leverage: "high" }),
+      senior: s([18, 32], [2, 4], ESOP(5, 14), [22, 45], { negotiation_leverage: "high" }),
+    },
+    /* FMCG (HUL / ITC consumer-experience design). */
+    "fmcg-mnc": {
+      entry: s([7, 12], [0.5, 1.5], NO_EQ, [8, 14], { negotiation_leverage: "low" }),
+      mid: s([14, 24], [1.5, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 6], NO_EQ, [27, 44], { negotiation_leverage: "medium" }),
+    },
+    /* Government / PSU UX (digital-India / NIC / UIDAI / GeM). */
+    "government-psu": {
+      entry: s([4, 7], [0, 0.5], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([7, 12], [0.5, 1], NO_EQ, [8, 13], { negotiation_leverage: "low" }),
+      senior: s([12, 22], [1, 2], NO_EQ, [13, 24], { negotiation_leverage: "low" }),
     },
   },
 
