@@ -468,19 +468,30 @@ async function buildServiceDetails(
   const monthAgo = daysAgo(30).slice(0, 10);
   const todayUsage = llmUsage.filter(u => u.created_at?.startsWith(today));
 
-  // Groq usage (primary LLM)
-  const groqCalls = llmUsage.filter(u => !u.is_fallback && (u.model?.includes("llama") || u.model?.includes("groq")));
-  const groqToday = todayUsage.filter(u => !u.is_fallback && (u.model?.includes("llama") || u.model?.includes("groq")));
+  // Classify by `is_fallback` only — that column is the canonical signal for which
+  // provider served the call. Sniffing the model string double-counts rows when
+  // both predicates match and drops rows whose model field doesn't contain a
+  // known substring.
+  const groqCalls = llmUsage.filter(u => !u.is_fallback);
+  const groqToday = todayUsage.filter(u => !u.is_fallback);
   const groqTokensToday = groqToday.reduce((s, u) => s + (u.total_tokens || 0), 0);
-  const groqErrors = groqCalls.filter(u => u.status === "error" || u.status === "timeout").length;
+  const groqWindowErrors = groqCalls.filter(u => u.status === "error" || u.status === "timeout").length;
   const groqAvgLatency = groqCalls.length > 0 ? Math.round(groqCalls.reduce((s, u) => s + (u.latency_ms || 0), 0) / groqCalls.length) : 0;
 
-  // Gemini usage (fallback LLM)
-  const geminiCalls = llmUsage.filter(u => u.is_fallback || u.model?.includes("gemini"));
-  const geminiToday = todayUsage.filter(u => u.is_fallback || u.model?.includes("gemini"));
+  const geminiCalls = llmUsage.filter(u => u.is_fallback);
+  const geminiToday = todayUsage.filter(u => u.is_fallback);
   const geminiTokensToday = geminiToday.reduce((s, u) => s + (u.total_tokens || 0), 0);
-  const geminiErrors = geminiCalls.filter(u => u.status === "error" || u.status === "timeout").length;
+  const geminiWindowErrors = geminiCalls.filter(u => u.status === "error" || u.status === "timeout").length;
   const geminiAvgLatency = geminiCalls.length > 0 ? Math.round(geminiCalls.reduce((s, u) => s + (u.latency_ms || 0), 0) / geminiCalls.length) : 0;
+
+  // True all-time totals — `llmUsage` is capped at LIMIT_LLM rows so summing it
+  // would silently undercount once the table grows past that window.
+  const [groqCallsTotal, groqErrorsTotal, geminiCallsTotal, geminiErrorsTotal] = await Promise.all([
+    fetchCount("llm_usage", "&is_fallback=eq.false"),
+    fetchCount("llm_usage", "&is_fallback=eq.false&status=in.(error,timeout)"),
+    fetchCount("llm_usage", "&is_fallback=eq.true"),
+    fetchCount("llm_usage", "&is_fallback=eq.true&status=in.(error,timeout)"),
+  ]);
 
   // Fetch service_usage for all non-LLM services
   const serviceRows = await fetchJSON<{
@@ -528,13 +539,13 @@ async function buildServiceDetails(
       type: "LLM",
       role: "Primary",
       model: "llama-3.3-70b-versatile",
-      status: groqErrors > groqCalls.length * 0.1 ? "degraded" : "healthy",
+      status: groqWindowErrors > groqCalls.length * 0.1 ? "degraded" : "healthy",
       usage: {
-        callsTotal: groqCalls.length,
+        callsTotal: groqCallsTotal,
         callsToday: groqToday.length,
         tokensToday: groqTokensToday,
         tokensTotal: groqCalls.reduce((s, u) => s + (u.total_tokens || 0), 0),
-        errorsTotal: groqErrors,
+        errorsTotal: groqErrorsTotal,
         errorsToday: groqToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: groqAvgLatency,
       },
@@ -546,14 +557,14 @@ async function buildServiceDetails(
       type: "LLM",
       role: "Fallback",
       model: "gemini-2.0-flash",
-      status: geminiErrors > geminiCalls.length * 0.2 ? "degraded" : "healthy",
+      status: geminiWindowErrors > geminiCalls.length * 0.2 ? "degraded" : "healthy",
       usage: {
-        callsTotal: geminiCalls.length,
+        callsTotal: geminiCallsTotal,
         callsToday: geminiToday.length,
         tokensToday: geminiTokensToday,
         tokensTotal: geminiCalls.reduce((s, u) => s + (u.total_tokens || 0), 0),
-        errorsTotal: geminiErrors,
-        errorsToday: geminiToday.filter(u => u.is_fallback && (u.status === "error" || u.status === "timeout")).length,
+        errorsTotal: geminiErrorsTotal,
+        errorsToday: geminiToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: geminiAvgLatency,
       },
       limits: { requestsPerDay: 100_000, tokensPerDay: 10_000_000 },
