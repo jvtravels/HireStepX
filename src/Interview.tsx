@@ -103,7 +103,7 @@ function useMobileAudioResilience() {
       // available. If that pattern isn't in place yet, this is a no-op —
       // cheap and safe. The real fix is in tts.ts itself but this covers
       // the rotation-kills-voice case without refactoring the audio path.
-      const globalCtx = (window as unknown as { __hirestepxAudioCtx?: AudioContext }).__hirestepxAudioCtx;
+      const globalCtx = window.__hirestepxAudioCtx;
       if (globalCtx && globalCtx.state === "suspended") {
         globalCtx.resume().catch(() => { /* expected: resume may fail if user gesture required */ });
       }

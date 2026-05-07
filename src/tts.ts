@@ -5,6 +5,16 @@
 
 import { safeUUID } from "./utils";
 
+/* Module-level Window augmentation — exposes the Cartesia AudioContext so
+ * useMobileAudioResilience in Interview.tsx can resume it after iOS Safari
+ * suspends the page. Was previously read/written via `as unknown as` casts;
+ * a typed global removes the cast and gets IDE autocomplete + safety. */
+declare global {
+  interface Window {
+    __hirestepxAudioCtx?: AudioContext;
+  }
+}
+
 /* Unlock audio playback — call this on a user gesture (button click)
    before navigating to pages that auto-play audio. This creates a
    silent AudioContext that satisfies the browser's autoplay policy. */
@@ -392,7 +402,7 @@ async function _speakWithWebSocketInner(
     // Expose on window so Interview.tsx's useMobileAudioResilience hook can
     // resume it after backgrounding / rotation on iOS Safari, which otherwise
     // suspends it silently and breaks mid-interview TTS.
-    try { (window as unknown as { __hirestepxAudioCtx?: AudioContext }).__hirestepxAudioCtx = audioCtx; } catch { /* SSR / restricted */ }
+    try { window.__hirestepxAudioCtx = audioCtx; } catch { /* SSR / restricted */ }
     const capturedCtx = audioCtx;
     const contextId = safeUUID();
 
@@ -873,8 +883,7 @@ export function hardMuteTTS() {
 
   // 2. Suspend the Cartesia AudioContext immediately (silences in-flight PCM)
   try {
-    const w = window as unknown as { __hirestepxAudioCtx?: AudioContext };
-    const ctx = w.__hirestepxAudioCtx;
+    const ctx = window.__hirestepxAudioCtx;
     if (ctx && ctx.state !== "closed") {
       ctx.suspend().catch(() => { /* best effort */ });
     }

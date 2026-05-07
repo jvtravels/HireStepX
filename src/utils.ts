@@ -4,7 +4,11 @@
 
 let _currencyFormatter: Intl.NumberFormat | null = null;
 let _numberFormatter: Intl.NumberFormat | null = null;
+// Pair the cached DateTimeFormat with the cache key it was built for so we
+// can invalidate without bolting an _cacheKey property onto the formatter
+// (which previously required `as unknown as` casts).
 let _dateTimeFormatter: Intl.DateTimeFormat | null = null;
+let _dateTimeFormatterKey: string | null = null;
 
 /** Format a number as INR currency. Defaults to "en-IN" for proper lakh/crore grouping. */
 export function formatINR(amount: number, opts: { minimumFractionDigits?: number; locale?: string } = {}): string {
@@ -32,13 +36,13 @@ export function formatDateTime(value: Date | string | number, opts: Intl.DateTim
   const locale = opts.locale || "en-IN";
   const date = value instanceof Date ? value : new Date(value);
   const key = JSON.stringify(opts) + locale;
-  if (!_dateTimeFormatter || (_dateTimeFormatter as unknown as { _cacheKey?: string })._cacheKey !== key) {
+  if (!_dateTimeFormatter || _dateTimeFormatterKey !== key) {
     _dateTimeFormatter = new Intl.DateTimeFormat(locale, {
       dateStyle: opts.dateStyle || "medium",
       timeStyle: opts.timeStyle,
       timeZone: opts.timeZone,
     });
-    (_dateTimeFormatter as unknown as { _cacheKey?: string })._cacheKey = key;
+    _dateTimeFormatterKey = key;
   }
   return _dateTimeFormatter.format(date);
 }
