@@ -607,6 +607,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 16, totalMax: 22, equityType: "none", source: "InsideIIM + iQuanta (MNC consumer MBA MT ₹19-27L)", lastVerified: "2026-05-07", notes: "ITC Management Trainee post-MBA from top B-schools." },
       mid: { totalMin: 26, totalMax: 40, equityType: "none", source: "Glassdoor (ITC Brand Manager)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 65, equityType: "none", source: "InsideIIM (HUL/ITC/Unilever Brand Manager ₹30L+ avg)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 65, totalMax: 110, equityType: "none", source: "Glassdoor (ITC Senior Brand Director / GM)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 110, totalMax: 280, equityType: "none", source: "Glassdoor (ITC ED / Divisional Chief Executive)", lastVerified: "2026-05-07", notes: "ITC ED-track CXO India — heavy variable + perks." },
     },
   },
   hul: {
@@ -614,6 +616,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 18, totalMax: 27, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM (HUL UFLP ₹18-27L for IIM grads)", lastVerified: "2026-05-07", notes: "HUL UFLP — premium MT program. Glassdoor avg includes non-MBA roles which are lower (₹7.88L avg)." },
       mid: { totalMin: 30, totalMax: 50, equityMin: 2, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 90, equityMin: 5, equityMax: 18, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM", lastVerified: "2026-05-07" },
+      lead: { totalMin: 65, totalMax: 120, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "3yr", source: "InsideIIM (HUL Marketing Director / GM)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 110, totalMax: 300, equityMin: 25, equityMax: 80, equityType: "rsu", equityVesting: "3yr", source: "Glassdoor (HUL VP Marketing / President / CMO)", lastVerified: "2026-05-07", notes: "HUL CEO India ₹3-15Cr+. Apex of FMCG comp." },
     },
   },
   "p&g": {
@@ -621,6 +625,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 22, totalMax: 32, equityType: "none", source: "InsideIIM + Glassdoor (P&G MBA MT)", lastVerified: "2026-05-07", notes: "P&G premium MNC MT — top of FMCG MBA market." },
       mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
       senior: { totalMin: 60, totalMax: 110, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 160, equityType: "none", source: "Glassdoor (P&G Marketing Director India)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 150, totalMax: 350, equityType: "none", source: "Glassdoor (P&G VP / CMO / President India)", lastVerified: "2026-05-07" },
     },
   },
   nestle: {
@@ -628,6 +634,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 14, totalMax: 22, equityType: "none", source: "Glassdoor (Nestle MT avg ₹17L)", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 35, equityType: "none", source: "Glassdoor (Nestle India avg ₹21L)", lastVerified: "2026-05-07" },
       senior: { totalMin: 38, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      lead: { totalMin: 60, totalMax: 100, equityType: "none", source: "Glassdoor (Nestle India Senior Director)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 100, totalMax: 250, equityType: "none", source: "Glassdoor (Nestle India VP / MD)", lastVerified: "2026-05-07" },
     },
   },
 
@@ -880,6 +888,38 @@ export const COMPANY_SALARY_OVERRIDES: Record<
  * Look up a verified company-specific band override.
  * Returns null when no override exists; caller falls back to tier band.
  */
+/* Within-override experience-level fallback. When the requested exp
+   doesn't have a band in this company/sector entry, walk these
+   alternatives in order (clamping toward the closest covered level)
+   so we don't fall through to a generic tier band that's lower.
+   E.g. Razorpay has lead but no executive → executive request
+   returns the lead band, not a tier fallback. */
+const EXP_FALLBACK_WITHIN_OVERRIDE: Record<ExperienceLevel, ExperienceLevel[]> = {
+  entry: ["entry", "mid"],
+  mid: ["mid", "senior", "entry"],
+  senior: ["senior", "lead", "mid", "executive"],
+  /* Lead/executive: if neither defined, walk DOWN to senior, then
+     mid. Better to plateau at the highest-defined band than fall
+     through to a lower tier-band. The trade-off: a 15-yr candidate
+     at a company with only entry/mid bands (e.g. early Jane Street
+     override) plateaus at mid until a senior band is added. The
+     alternative — falling through to tier — silently downgrades. */
+  lead: ["lead", "executive", "senior", "mid"],
+  executive: ["executive", "lead", "senior", "mid"],
+};
+
+function pickLevelInRoleMap(
+  roleEntry: Partial<Record<ExperienceLevel, CompanyBandOverride>> | undefined,
+  experienceLevel: ExperienceLevel,
+): CompanyBandOverride | null {
+  if (!roleEntry) return null;
+  for (const candidate of EXP_FALLBACK_WITHIN_OVERRIDE[experienceLevel] ?? [experienceLevel]) {
+    const hit = roleEntry[candidate];
+    if (hit) return hit;
+  }
+  return null;
+}
+
 export function getCompanyBandOverride(
   rawCompany: string | undefined,
   roleKey: string | undefined,
@@ -894,27 +934,29 @@ export function getCompanyBandOverride(
   if (!cleaned) return null;
 
   // Direct match first (most specific).
-  const direct = COMPANY_SALARY_OVERRIDES[cleaned]?.[roleKey]?.[experienceLevel];
-  if (direct) return direct;
+  const directEntry = COMPANY_SALARY_OVERRIDES[cleaned]?.[roleKey];
+  const directHit = pickLevelInRoleMap(directEntry, experienceLevel);
+  if (directHit) return directHit;
 
   // Loose containment fallback (e.g. "Razorpay Internet Pvt Ltd" → razorpay).
   for (const [companyKey, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
     if (companyKey.startsWith("__sector_")) continue; // Sector entries handled below
     if (companyKey.length < 4) continue;
     if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
-      const hit = roleMap[roleKey]?.[experienceLevel];
+      const hit = pickLevelInRoleMap(roleMap[roleKey], experienceLevel);
       if (hit) return hit;
     }
   }
   /* Sector-level fallback (covers the long tail of ~800 companies in
      the autocomplete that don't have bespoke entries). classifyCompanyType
-     maps the company name to one of ~25 sector buckets (psu_bank,
-     consulting_big4, gcc_global_capability_centre, indian_pharma,
-     etc.); we look up __sector_<bucket> in this map. */
+     maps the company name to one of ~25 sector buckets. */
   const classification = classifyCompanyType(rawCompany);
   if (classification) {
     const sectorKey = `__sector_${classification.key}`;
-    const sectorHit = COMPANY_SALARY_OVERRIDES[sectorKey]?.[roleKey]?.[experienceLevel];
+    const sectorHit = pickLevelInRoleMap(
+      COMPANY_SALARY_OVERRIDES[sectorKey]?.[roleKey],
+      experienceLevel,
+    );
     if (sectorHit) return sectorHit;
   }
   return null;
