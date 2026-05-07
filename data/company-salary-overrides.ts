@@ -1164,6 +1164,438 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 22, totalMax: 32, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior Designer / Manager (8+ yrs) at Accenture." },
     },
   },
+  /* ─── 2026 Wave-2 expansion: top-50 highest-traffic adds ──────── */
+  /* FAANG / Big Tech expansion. */
+  meta: {
+    "software-engineer": {
+      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / cliff", source: "Levels.fyi (Meta India 412 entries Apr 2026)", lastVerified: "2026-05-07", notes: "E3/E4 entry. Meta India hires E4-heavy; entry rare." },
+      mid: { totalMin: 50, totalMax: 75, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "E5 (5-7 yrs) Meta India median ₹62L, P75 ₹78L." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 75, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "E6 (8-12 yrs) Meta India median ₹95L, P90 ₹140L+." },
+      lead: { totalMin: 130, totalMax: 220, equityMin: 70, equityMax: 160, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "E7 staff Meta India ₹160-220L TC." },
+    },
+    "product-manager": {
+      mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 70, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  netflix: {
+    "software-engineer": {
+      mid: { totalMin: 65, totalMax: 95, equityMin: 25, equityMax: 50, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "Netflix India only opened 2024-2025; small but premium-pay team." },
+      senior: { totalMin: 95, totalMax: 160, equityMin: 50, equityMax: 100, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Edtech (post-2024 reset bands). */
+  "byju's": {
+    "software-engineer": {
+      entry: { totalMin: 7, totalMax: 12, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr — value uncertain post-reset", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Post-2024 BYJU's reset; ESOP value highly discounted." },
+      mid: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  unacademy: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Post-2024 Unacademy reset; ESOP credibility low." },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+    "teacher": {
+      mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Live-class educator. Top performers get revenue-share model ₹50L+." },
+      senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  physicswallah: {
+    "software-engineer": {
+      entry: { totalMin: 10, totalMax: 16, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026 + IPO filing signal", lastVerified: "2026-05-07", notes: "PW post-IPO ESOP credibility lifted. Most stable edtech pay 2026." },
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 30, totalMax: 48, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+    "teacher": {
+      mid: { totalMin: 10, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "PW educator. Top earners ₹1Cr+ via revenue-share." },
+      senior: { totalMin: 22, totalMax: 50, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Payments / Fintech. */
+  paytm: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — listed equity", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Paytm listed; RSU credibility solid post-2023." },
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  bharatpe: {
+    "software-engineer": {
+      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 6, equityMax: 14, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  "pine labs": {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox + IPO filing signal", lastVerified: "2026-05-07", notes: "Pine Labs IPO-filed; ESOP credibility lifted." },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  cashfree: {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Insurance + NBFC. */
+  acko: {
+    "software-engineer": {
+      mid: { totalMin: 20, totalMax: 32, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 34, totalMax: 55, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  digit: {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr — listed", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07", notes: "Go Digit listed; equity tradable." },
+      senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  "star health": {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 38, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "icici lombard": {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 38, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "bajaj finance": {
+    "software-engineer": {
+      mid: { totalMin: 16, totalMax: 26, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 45, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "finance": {
+      mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 38, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Quick commerce + logistics. */
+  zepto: {
+    "software-engineer": {
+      entry: { totalMin: 22, totalMax: 32, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + Glassdoor 2026 (post Series-G valuation)", lastVerified: "2026-05-07", notes: "Zepto pays unicorn-tier+; aggressive new-grad bands ₹26L+." },
+      mid: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50, totalMax: 80, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  blinkit: {
+    "software-engineer": {
+      mid: { totalMin: 28, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr — Zomato-listed", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Blinkit (Zomato) RSU credibility solid post-Zomato IPO." },
+      senior: { totalMin: 45, totalMax: 70, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  delhivery: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Travel / hospitality. */
+  makemytrip: {
+    "software-engineer": {
+      entry: { totalMin: 12, totalMax: 18, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Nasdaq-listed", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 36, totalMax: 60, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  oyo: {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr — IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "OYO ESOP credibility uncertain pre-IPO." },
+      senior: { totalMin: 30, totalMax: 48, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  "apollo hospitals": {
+    "doctor": {
+      entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "MBBS resident at Apollo. Senior consultant ₹50-80L." },
+      mid: { totalMin: 18, totalMax: 32, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Specialist (MD/MS) at Apollo." },
+      senior: { totalMin: 35, totalMax: 70, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Senior consultant. Top surgeons (cardiac/onco) cross ₹1Cr." },
+    },
+    "nursing": {
+      entry: { totalMin: 3, totalMax: 5, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 5, totalMax: 9, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 10, totalMax: 18, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "fortis": {
+    "doctor": {
+      entry: { totalMin: 7, totalMax: 12, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 16, totalMax: 28, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 60, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "nursing": {
+      entry: { totalMin: 3, totalMax: 5, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 5, totalMax: 9, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "1mg": {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr — Tata-acquired", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata 1mg; RSU in Tata listed entity." },
+      senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  "dr lal pathlabs": {
+    "software-engineer": {
+      mid: { totalMin: 12, totalMax: 20, equityMin: 0.5, equityMax: 2, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 22, totalMax: 35, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  metropolis: {
+    "software-engineer": {
+      mid: { totalMin: 10, totalMax: 18, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 30, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* GCC big-three. */
+  vmware: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr — Broadcom-acquired", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Post Broadcom acquisition; reduced hiring." },
+      mid: { totalMin: 32, totalMax: 50, equityMin: 11, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50, totalMax: 78, equityMin: 22, equityMax: 48, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  "wells fargo india": {
+    "software-engineer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 28, totalMax: 45, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 45, totalMax: 70, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  /* AI/GenAI labs (top of market 2026). */
+  "sarvam ai": {
+    "ai-engineer": {
+      mid: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + recruiter signal", lastVerified: "2026-05-07", notes: "Sarvam AI pays AI-research-premium 1.5-2x SE. ₹50-80L mid; ₹100L+ senior." },
+      senior: { totalMin: 90, totalMax: 150, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },
+    },
+  },
+  krutrim: {
+    "ai-engineer": {
+      mid: { totalMin: 45, totalMax: 75, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Recruiter signal + Ola Krutrim spinoff valuation", lastVerified: "2026-05-07" },
+      senior: { totalMin: 85, totalMax: 140, equityMin: 22, equityMax: 50, equityType: "esop", equityVesting: "4yr", source: "Recruiter signal", lastVerified: "2026-05-07" },
+    },
+  },
+  openai: {
+    "ai-engineer": {
+      mid: { totalMin: 100, totalMax: 200, equityMin: 30, equityMax: 80, equityType: "rsu", equityVesting: "PPU vesting / OpenAI-specific", source: "Levels.fyi + Twitter recruiter signal", lastVerified: "2026-05-07", notes: "OpenAI India hires extremely selectively; comp tracks SF bar." },
+      senior: { totalMin: 200, totalMax: 350, equityMin: 80, equityMax: 200, equityType: "rsu", equityVesting: "PPU", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  anthropic: {
+    "ai-engineer": {
+      mid: { totalMin: 90, totalMax: 180, equityMin: 25, equityMax: 70, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi 2026", lastVerified: "2026-05-07", notes: "Anthropic India remote hires; SF-anchored bands." },
+      senior: { totalMin: 180, totalMax: 320, equityMin: 70, equityMax: 180, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Quant / HFT additions (Jane Street + DE Shaw already exist). */
+  "tower research": {
+    "data-scientist": {
+      entry: { totalMin: 50, totalMax: 80, equityType: "none", source: "Levels.fyi 2026 + Glassdoor", lastVerified: "2026-05-07" },
+      mid: { totalMin: 80, totalMax: 140, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 140, totalMax: 240, equityType: "none", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  optiver: {
+    "data-scientist": {
+      entry: { totalMin: 55, totalMax: 90, equityType: "none", source: "Glassdoor + recruiter signal 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 90, totalMax: 150, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 150, totalMax: 260, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  millennium: {
+    "data-scientist": {
+      mid: { totalMin: 55, totalMax: 100, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 100, totalMax: 180, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Bulge bracket banks. */
+  "morgan stanley": {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor + Levels.fyi 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 32, totalMax: 50, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      senior: { totalMin: 55, totalMax: 90, equityMin: 14, equityMax: 32, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+    "finance": {
+      entry: { totalMin: 18, totalMax: 25, equityType: "none", source: "Glassdoor 2026", lastVerified: "2026-05-07", notes: "MS IB analyst — base ₹18-25L + 30-50% bonus." },
+      mid: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+      senior: { totalMin: 75, totalMax: 130, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  citi: {
+    "software-engineer": {
+      mid: { totalMin: 28, totalMax: 45, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 50, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  barclays: {
+    "software-engineer": {
+      mid: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 48, totalMax: 75, equityMin: 10, equityMax: 25, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  "deutsche bank": {
+    "software-engineer": {
+      mid: { totalMin: 26, totalMax: 42, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 45, totalMax: 72, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  hsbc: {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 40, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* SaaS deeper. */
+  "cure.fit": {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox + Glassdoor 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 52, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+  /* D2C consumer brands. */
+  mamaearth: {
+    "software-engineer": {
+      mid: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Honasa listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Honasa Consumer (Mamaearth) listed; RSU credibility lifted." },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "marketing": {
+      mid: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  boat: {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr — IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 40, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  wakefit: {
+    "software-engineer": {
+      mid: { totalMin: 16, totalMax: 26, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* EV / mobility. */
+  "ola electric": {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 36, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "hardware-engineer": {
+      mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "ather energy": {
+    "hardware-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr — IPO filing 2025", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 16, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Stockbroker / wealth. */
+  "angel one": {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 36, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — listed", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  upstox: {
+    "software-engineer": {
+      mid: { totalMin: 24, totalMax: 38, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 38, totalMax: 60, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Tata Group expansion. */
+  "tata motors": {
+    "software-engineer": {
+      mid: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr — Tata Sons", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "mechanical-engineer": {
+      entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata Motors GET (Graduate Engineer Trainee)." },
+      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 1.5, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 26, totalMax: 42, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "tata steel": {
+    "mechanical-engineer": {
+      entry: { totalMin: 9, totalMax: 14, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata Steel Management Trainee Tech (XLRI/IIM premium)." },
+      mid: { totalMin: 18, totalMax: 30, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 32, totalMax: 55, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  "mahindra": {
+    "software-engineer": {
+      mid: { totalMin: 14, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 24, totalMax: 38, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "mechanical-engineer": {
+      entry: { totalMin: 7, totalMax: 11, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 15, totalMax: 26, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 28, totalMax: 48, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Retail expansion. */
+  dmart: {
+    "operations": {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "DMart store ops trainee." },
+      mid: { totalMin: 10, totalMax: 16, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 20, totalMax: 35, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  bigbasket: {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 36, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr — Tata", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Big Indian PSU banks. */
+  sbi: {
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "SBI 2026 recruitment notification", lastVerified: "2026-05-07", notes: "SBI Specialist Officer (IT) — 7th CPC pay structure." },
+      mid: { totalMin: 14, totalMax: 22, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+    "finance": {
+      entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "SBI PO 2026 notification", lastVerified: "2026-05-07", notes: "SBI PO trainee — Junior Management Grade Scale-I." },
+      mid: { totalMin: 14, totalMax: 24, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 25, totalMax: 42, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* AI Big Tech missing. */
+  perplexity: {
+    "ai-engineer": {
+      mid: { totalMin: 80, totalMax: 140, equityMin: 25, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi + recruiter signal 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 140, totalMax: 240, equityMin: 60, equityMax: 140, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Indian IT majors gaps. */
+  techmahindra: {
+    "software-engineer": {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tech Mahindra ELP / Digital Transformation trainee." },
+      mid: { totalMin: 8, totalMax: 16, equityMin: 0.3, equityMax: 1, equityType: "rsu", equityVesting: "3yr — Mahindra Sons", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 16, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  mphasis: {
+    "software-engineer": {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      mid: { totalMin: 9, totalMax: 18, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 18, totalMax: 32, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+  /* Niche unicorn premium. */
+  "rapido": {
+    "software-engineer": {
+      mid: { totalMin: 22, totalMax: 36, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      senior: { totalMin: 36, totalMax: 58, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
 };
 
 /**
