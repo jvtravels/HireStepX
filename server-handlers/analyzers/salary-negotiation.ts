@@ -292,6 +292,65 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       }
     }
 
+    // --- 3b. AI self-contradiction in a single turn ---
+    // Pattern: AI says "I can't [meet|reach|offer|match] ₹X" and then in
+    // the same message offers ₹X. The Thence case: "I can't quite meet
+    // ₹18 LPA directly. However, I can offer a revised total CTC of ₹18 LPA".
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isAiTurn(t)) continue;
+      const text = t.text || "";
+      const cannotMatch = /\bcan(?:'t|not)\s+(?:quite\s+)?(?:meet|reach|offer|match|do|make|approve|justify)\s+(?:₹|inr\s*)?(\d{1,3}(?:\.\d+)?)\s*(?:LPA|lakhs?|cr|crores?)/i.exec(text);
+      if (!cannotMatch) continue;
+      const declinedAmount = parseFloat(cannotMatch[1]);
+      // Look for an offer of an equivalent or higher amount in the same turn.
+      COMP_RE.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      let offered: number | null = null;
+      while ((m = COMP_RE.exec(text)) !== null) {
+        const lo = parseFloat(m[1]);
+        const hi = m[2] ? parseFloat(m[2]) : lo;
+        const lpa = toLpa(hi, m[3]);
+        // Only count amounts AFTER the "can't meet" position
+        if ((m.index || 0) > (cannotMatch.index || 0) && lpa >= declinedAmount * 0.95) {
+          offered = lpa;
+          break;
+        }
+      }
+      if (offered !== null) {
+        hallucinations.push({
+          turn_idx: i,
+          type: "ai_self_contradiction",
+          evidence: `AI said it cannot meet ₹${declinedAmount} LPA, then in the same turn offered ₹${offered.toFixed(1)} LPA`,
+          severity: "high",
+        });
+        flags.add("ai_self_contradiction");
+      }
+    }
+
+    // --- 3c. AI misread a conditional as acceptance ---
+    // User says "if you can [do X], [I'd accept]" — that's conditional, not
+    // acceptance. AI replying with celebration language ("glad you're excited",
+    // "happy to have you on board") is misreading the conversation.
+    const CONDITIONAL_RE = /\b(if you can|if you (?:could|would)|provided that|as long as|on condition|only if|will (?:take|accept) it if)\b/i;
+    const CELEBRATION_RE = /\b(glad to hear you'?re excited|happy to (?:have|hear)|excited to have you|welcome (?:aboard|to the team)|so glad you'?re on board)\b/i;
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!isUserTurn(t)) continue;
+      if (!CONDITIONAL_RE.test(t.text || "")) continue;
+      const nextAi = transcript.slice(i + 1, i + 3).find(isAiTurn);
+      if (nextAi && CELEBRATION_RE.test(nextAi.text || "")) {
+        flags.add("ai_misread_conditional_as_acceptance");
+        gaps.push({
+          dimension: "conversation_comprehension",
+          expected: "Conditional acceptance ('if you can do X, I'd take it') is not the same as acceptance",
+          observed: `User said something conditional; AI treated it as a definite yes`,
+          severity: "high",
+        });
+        break;
+      }
+    }
+
     // --- 4. AI accepted first ask without pushing back ---
     // Pattern A: AI used acceptance language right after user's first number
     // Pattern B: AI later offered ≥ user's ask without ever mentioning the

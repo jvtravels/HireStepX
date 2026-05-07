@@ -20,6 +20,8 @@ const DICT: Record<string, FriendlyFlag> = {
   above_role_band: { label: "AI offered above the realistic band for this role", description: "The number is plausible globally but well above what this company actually pays for this role.", category: "ai_made_up_info" },
   offer_components_inconsistent: { label: "AI's offer math doesn't add up", description: "AI stated a total CTC but the components (base + variable + bonus) don't sum to that total. Structural hallucination.", category: "ai_made_up_info" },
   ai_silent_capitulation: { label: "AI matched user's ask without negotiating", description: "AI eventually offered ≥ user's number without ever saying the ask was above market — silent capitulation, not real negotiation.", category: "ai_didnt_push_back" },
+  ai_self_contradiction: { label: "AI contradicted itself in the same message", description: "AI said 'I can't meet ₹X' and then offered ₹X in the same turn. Re-reading the draft would have caught it.", category: "ai_made_up_info" },
+  ai_misread_conditional_as_acceptance: { label: "AI treated a conditional as acceptance", description: "User said 'if you can do X, I'd accept' (conditional). AI responded with celebration / closing language as if the deal was done.", category: "ai_didnt_push_back" },
   stale_market_calibration: { label: "Salary data is out of date", description: "The reference data used to check AI claims hasn't been refreshed in over a year.", category: "ai_made_up_info" },
   unverifiable_companies: { label: "User mentioned company not in resume", description: "User referenced an employer the resume doesn't list — could be hallucination on either side.", category: "ai_made_up_info" },
 
