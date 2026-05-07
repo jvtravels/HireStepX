@@ -572,7 +572,7 @@ async function buildServiceDetails(
       name: "Google Gemini",
       type: "LLM",
       role: "Fallback",
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       status: geminiWindowErrors > geminiCalls.length * 0.2 ? "degraded" : "healthy",
       usage: {
         callsTotal: geminiCallsTotal,
@@ -583,8 +583,8 @@ async function buildServiceDetails(
         errorsToday: geminiToday.filter(u => u.status === "error" || u.status === "timeout").length,
         avgLatencyMs: geminiAvgLatency,
       },
-      limits: { requestsPerDay: 1500, requestsPerMinute: 15, tokensPerMinute: 1_000_000 },
-      notes: "Free tier (gemini-2.0-flash): 15 RPM, 1,500 RPD, 1M TPM. NOTE: Google has been zeroing out free-tier access for gemini-2.0-flash — if every fallback returns 429 RESOURCE_EXHAUSTED, the model is no longer free for this project. Switch to gemini-2.5-flash or upgrade at aistudio.google.com.",
+      limits: { requestsPerDay: 250, requestsPerMinute: 10, tokensPerMinute: 250_000 },
+      notes: "Free tier (gemini-2.5-flash): 10 RPM, 250 RPD, 250K TPM. Lower RPM than the -lite variant but ~10× higher TPM, which is what large eval prompts need on the fallback path. Upgrade at aistudio.google.com to lift RPD.",
     },
     {
       name: "Azure TTS",

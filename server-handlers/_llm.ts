@@ -108,7 +108,12 @@ async function callGroq(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResu
 
 async function callGemini(opts: LLMOptions, signal?: AbortSignal): Promise<LLMResult> {
   if (!GEMINI_API_KEY) throw new Error("Gemini not configured");
-  const model = "gemini-2.5-flash-lite";
+  // Switched from gemini-2.5-flash-lite (free tier 20 RPM) to gemini-2.5-flash
+  // because the -lite model was returning 429 RESOURCE_EXHAUSTED during
+  // fallover bursts. 2.5-flash has lower RPM (10) but ~10× higher TPM, which
+  // matters more for our prompts — eval prompts are large but the call rate
+  // on the fallback path is naturally low.
+  const model = "gemini-2.5-flash";
   const start = Date.now();
   console.log(`[LLM] Gemini ${model} — starting request`);
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
