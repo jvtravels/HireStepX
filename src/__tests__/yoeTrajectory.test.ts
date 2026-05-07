@@ -166,6 +166,76 @@ describe("YOE 0→40 career-trajectory sweep", () => {
     printTrajectory("📊 PNB × Bank PO (PSU Bank, 7th CPC)", t);
   });
 
+  /* ─── Long-tail monotonicity sweep ─── */
+  it("monotonic non-decreasing across 30+ representative (role × company) paths", () => {
+    /* Catches edge cases where the within-override fallback chain
+       might dip when transitioning levels at companies/sectors with
+       partial level coverage. */
+    const paths: ReadonlyArray<readonly [string, string]> = [
+      ["Software Engineer", "Razorpay"],
+      ["Software Engineer", "Google"],
+      ["Software Engineer", "TCS"],
+      ["Software Engineer", "Walmart Global Tech"],
+      ["Software Engineer", "Atlassian"],
+      ["Software Engineer", "Adobe"],
+      ["Software Engineer", "Stripe"],
+      ["Software Engineer", "Zerodha"],
+      ["Software Engineer", "PhonePe"],
+      ["Software Engineer", "Flipkart"],
+      ["Product Manager", "Razorpay"],
+      ["Product Manager", "Microsoft"],
+      ["Product Manager", "Atlassian"],
+      ["Product Manager", "Flipkart"],
+      ["UX Designer", "Microsoft"],
+      ["UX Designer", "CRED"],
+      ["UX Designer", "Bombay Design Centre"],
+      ["Management Consultant", "McKinsey"],
+      ["Management Consultant", "BCG"],
+      ["Management Consultant", "Bain"],
+      ["Management Consultant", "Deloitte"],
+      ["Quantitative Researcher", "Jane Street"],
+      ["Quantitative Researcher", "DE Shaw"],
+      ["Brand Manager", "HUL"],
+      ["Brand Manager", "ITC"],
+      ["Brand Manager", "P&G"],
+      ["Bank PO", "Punjab National Bank"],
+      ["Relationship Manager", "ICICI Bank"],
+      ["Relationship Manager", "HDFC Bank"],
+      ["Investment Banking Analyst", "Goldman Sachs"],
+      ["ML Engineer", "Razorpay"],
+      ["ML Engineer", "Sarvam AI"],
+      ["Operations Manager", "IndiGo"],
+      ["Pharmacist", "Sun Pharma"],
+      /* Catch-all path. */
+      ["Software Engineer", "Some Random Indian Co"],
+    ];
+
+    const violations: { path: string; yoeFrom: number; yoeTo: number; from: number; to: number }[] = [];
+    for (const [role, company] of paths) {
+      const samples: number[] = [];
+      for (let yoe = 0; yoe <= 40; yoe++) {
+        const band = generateNegotiationBand({ role, company, experienceLevel: `${yoe} years` });
+        samples.push(band.initialOffer);
+      }
+      for (let i = 1; i < samples.length; i++) {
+        if (samples[i] < samples[i - 1] - 0.5) {
+          violations.push({
+            path: `${role} × ${company}`,
+            yoeFrom: i - 1, yoeTo: i,
+            from: samples[i - 1], to: samples[i],
+          });
+        }
+      }
+    }
+    if (violations.length > 0) {
+      const detail = violations.slice(0, 10).map(v =>
+        `  ${v.path}: YOE ${v.yoeFrom}→${v.yoeTo} dropped from ₹${v.from}L to ₹${v.to}L`,
+      ).join("\n");
+      throw new Error(`${violations.length} monotonicity violations across ${paths.length} paths:\n${detail}`);
+    }
+    expect(violations.length).toBe(0);
+  });
+
   it("Trajectory ratios — top-tier companies should differentiate from baseline", () => {
     /* A 10-yr senior at Google should make 5-10x what a 10-yr senior
        at TCS makes. The system must preserve this gap, not collapse

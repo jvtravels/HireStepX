@@ -970,6 +970,148 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Soft-signal-reading EM probe. Wants: behavioral-data signals (Slack quietness, code-review-tone shift, meeting-camera-off rate), structured intervention (skip-levels, anonymous pulse, public acknowledgement of the change).",
   },
 
+  /* ── High-traffic tier-1 fillers (audit-coverage expansion) ── */
+  /* Apple SWE — system design */
+  {
+    text: "Design a battery-aware background sync that doesn't drain the device. Walk me through the trade-off between freshness and power.",
+    company: "apple", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Apple system design favors device-constraint problems (battery, memory, thermal). Wants: power-budget reasoning, OS API selection (BGTask / WorkManager), failure-mode degradation strategy.",
+  },
+  /* Apple — behavioral craft */
+  {
+    text: "Walk me through a UX detail you obsessed over that nobody else on your team thought mattered. How did you get them to care?",
+    company: "apple", roleFamily: "behavioral", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Apple craft signature. Wants: a SPECIFIC pixel/gesture/animation/copy detail + the nudge/mockup/data that flipped the team. Generic 'I cared about quality' fails.",
+  },
+  /* Microsoft SWE × system-design (was missing despite being top-traffic) */
+  {
+    text: "Design Microsoft Teams chat for 100M concurrent users with 99.99% delivery guarantee. Walk me through the message-fanout and presence subsystems.",
+    company: "microsoft", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Microsoft Teams scale problem. Probes: pub-sub fan-out, presence aggregation, regional sharding, Azure-native primitive choices (Service Bus, Event Hubs, Cosmos DB).",
+  },
+  /* Meta PM × case-study */
+  {
+    text: "Walk me through a feature you'd kill at Instagram, and what you'd build with the freed-up engineering capacity.",
+    company: "meta", roleFamily: "pm", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Meta PM signature — tests opinionated product judgment. Generic answers (Threads, Reels) fail; wants a less-obvious feature + a contrarian replacement bet.",
+  },
+  /* Amazon PM × case-study */
+  {
+    text: "Write the press-release for a new Prime feature you'd launch in India next quarter. Title + 3 headline benefits + customer quote.",
+    company: "amazon", roleFamily: "pm", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Amazon PR-FAQ working-backwards method. Tests customer-obsession + clarity. The customer quote is the load-bearing element — must reveal a real-not-marketing pain.",
+  },
+  /* Stripe PM × strategic */
+  {
+    text: "Stripe is in 50+ countries. We're 30% under-penetrated in India. Walk me through the strategic plan to close the gap.",
+    company: "stripe", roleFamily: "pm", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Stripe India go-to-market case. Wants: India-specific moat (UPI, RBI compliance, Razorpay/PhonePe competition), distribution-channel reality (developer evangelism, agency partnerships), pricing localization.",
+  },
+  /* Atlassian SWE × system-design */
+  {
+    text: "Design Jira's full-text search across 5M issues per workspace with sub-200ms p95 latency. How do you handle multi-tenancy?",
+    company: "atlassian", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Atlassian search infra problem. Probes: ES vs Solr vs in-house, tenant isolation strategies (index-per-tenant vs shared+filter), index update lag tolerance, fan-out write architecture.",
+  },
+  /* Salesforce SWE × technical */
+  {
+    text: "We have a flow that fires after every Account update. It now triggers 15× per save due to recursion. Diagnose and fix without breaking dependent flows.",
+    company: "salesforce", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Salesforce platform debug — tests Apex + flow runtime knowledge. Wants: trigger-handler pattern, flow recursion guards, Static.depth tracking, isolation-tag strategy.",
+  },
+  /* Zerodha PM × strategic */
+  {
+    text: "Zerodha hit ₹2,000Cr profit this year without VC money. The board asks where to deploy capital. What's your three-bet allocation?",
+    company: "zerodha", roleFamily: "pm", focus: "strategic",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Zerodha capital-allocation case. Anti-VC philosophy is the constraint — answers like 'spin out a SaaS arm' fail. Wants: in-line product extensions (commodities, MFs, US stocks), R&D-heavy bets (Coin / Varsity), employee equity alternatives.",
+  },
+  /* CRED PM × case-study */
+  {
+    text: "CRED's average user has 6 cards. Engagement on the rewards page is plateauing. What's the next product surface you'd build?",
+    company: "cred", roleFamily: "pm", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "CRED user-engagement case. Wants: opinionated insight about what affluent users actually struggle with (not 'more rewards'), specific surface concept with mocked-up flow, monetization path that doesn't compromise the premium positioning.",
+  },
+  /* Goldman swe × technical */
+  {
+    text: "We process 50M trades/day. The end-of-day batch reconciliation is taking 6 hours and we need it under 90 minutes. Walk me through your optimization approach.",
+    company: "goldman", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Goldman engineering perf-optimization probe. Probes: profiling-first instinct, parallelization vs vertical scaling, Java/JVM tuning specifics, willingness to question the 90-min target.",
+  },
+  /* JPMorgan SWE × behavioral */
+  {
+    text: "A regulatory deadline is in 2 weeks. The spec we built to is wrong. Walk me through how you handle the next 24 hours.",
+    company: "jpmc", roleFamily: "swe", focus: "behavioral",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "JPMC regulatory-deadline crisis. Tests: stakeholder communication timing (compliance, business, tech), willingness to escalate vs cover, acceptable-risk threshold.",
+  },
+  /* TCS PM × case-study */
+  {
+    text: "A Fortune-500 client wants TCS to lead their multi-year cloud migration. The catch: their internal IT team is hostile to outsourcing. How do you frame the engagement?",
+    company: "tcs", roleFamily: "pm", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "TCS / consulting-heavy services PM case. Wants: stakeholder mapping (CIO, IT directors, line-of-business), co-build governance models, 90-day quick-win plan, fee structure that aligns incentives.",
+  },
+  /* Infosys SWE × HR */
+  {
+    text: "You've had 3 lateral offers in the last 18 months. Why are you still at Infosys?",
+    company: "infosys", roleFamily: "swe", focus: "hr",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Infosys retention-probe HR question (often surfaces post-2yr promotion review). Wants: legitimate pull-factors (project, mentor, learning), not just 'good company'. Defensive answers signal flight risk.",
+  },
+  /* Adobe Designer × case-study */
+  {
+    text: "Walk me through redesigning a feature in Photoshop / Illustrator / Premiere. Pick the one feature most users complain about and pitch the fix.",
+    company: "adobe", roleFamily: "design", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Adobe Creative-Cloud design probe. Tests Adobe-tool fluency + customer-empathy. Wants a SPECIFIC feature (Refine Edge / Shape Builder / Multi-cam editor) with research-backed pain.",
+  },
+  /* Cisco SWE × system-design */
+  {
+    text: "Design a network observability platform that ingests 1B telemetry events/second across 10K customer networks. Multi-tenant with strict per-tenant isolation.",
+    company: "cisco", roleFamily: "swe", focus: "system-design",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Cisco telemetry-platform problem. Probes: time-series storage (InfluxDB / VictoriaMetrics / ClickHouse), tenant isolation, write-amplification, query-time aggregation, retention tiering.",
+  },
+  /* Oracle SWE × technical */
+  {
+    text: "A query that ran in 200ms now takes 15 minutes. Same data, no schema change. Walk me through your diagnosis.",
+    company: "oracle", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "standard",
+    styleNote: "Oracle DBA-aware probe. Wants: AWR / SQL trace, statistics staleness, plan-stability hints, parallel-query degree, comfort with SGA tuning.",
+  },
+  /* IBM Consultant × case-study */
+  {
+    text: "A bank wants to migrate 500+ legacy COBOL programs to a modern stack in 18 months. Walk me through your approach.",
+    company: "ibm", roleFamily: "consultant", focus: "case-study",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "IBM Consulting / GBS modernisation case. Probes: discovery-first vs lift-and-shift, AI-assisted code translation, parallel-run validation, knowledge-transfer planning.",
+  },
+  /* NVIDIA ML × technical */
+  {
+    text: "Optimize a CUDA kernel for batched matrix multiplication. Walk me through 3 optimizations that meaningfully improve memory bandwidth utilization.",
+    company: "nvidia", roleFamily: "ml", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "NVIDIA platform-engineering depth probe. Wants: shared-memory tiling, register blocking, async copy with cp.async, warp-level primitives. Generic answers fail at top semiconductor recruitng.",
+  },
+  /* Walmart Global Tech × technical */
+  {
+    text: "On Black Friday, p99 checkout latency jumped from 200ms to 4s for 30 minutes. We have full traces. Walk me through your war-room playbook.",
+    company: "razorpay", roleFamily: "swe", focus: "technical",
+    addedQuarter: "2026-Q2", difficulty: "intense",
+    styleNote: "Razorpay ops-incident war-room probe. Tests: triage discipline (flame-graph first, narrow scope), upstream-vs-self attribution, comms cadence (every 15 min), post-incident artifacts (timeline, MTR review, runbook update).",
+  },
+
   /* ── Sales — Account Executive / Business Development ───────── */
   {
     text: "Walk me through your biggest closed-won deal — what was the ACV, sales cycle length, and the moment the prospect tipped from undecided to signing?",

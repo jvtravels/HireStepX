@@ -669,8 +669,30 @@ Requirements:
         bandContext: negotiationBandData.bandContext,
       };
     }
+    /* Aggregate the LLM's groundingCheck self-attestation across all
+       questions so we can monitor hallucination drift via telemetry.
+       Each question carries verified|generic|hypothetical; we want
+       the rate of "verified" claims (which means LLM is anchoring
+       on KNOWN_FACTS) vs "generic" / "hypothetical". A drop in the
+       verified ratio is an early hallucination-risk signal. */
+    let groundingVerified = 0, groundingGeneric = 0, groundingHypothetical = 0, groundingMissing = 0;
+    if (Array.isArray(questions)) {
+      for (const q of questions as Array<Record<string, unknown>>) {
+        const tag = typeof q?.groundingCheck === "string" ? q.groundingCheck.toLowerCase() : null;
+        if (tag === "verified") groundingVerified++;
+        else if (tag === "generic") groundingGeneric++;
+        else if (tag === "hypothetical") groundingHypothetical++;
+        else groundingMissing++;
+      }
+    }
     await captureServerEvent("interview_started", distinctIdFrom(req, auth.userId), {
       question_count: Array.isArray(responseBody?.questions) ? responseBody.questions.length : undefined,
+      grounding_verified: groundingVerified,
+      grounding_generic: groundingGeneric,
+      grounding_hypothetical: groundingHypothetical,
+      grounding_missing: groundingMissing,
+      has_company_facts: !!(companyName && knownFacts),
+      retrieval_tier: retrievalResult.tier,
     }, req);
 
     return new Response(JSON.stringify(responseBody), { status: 200, headers });

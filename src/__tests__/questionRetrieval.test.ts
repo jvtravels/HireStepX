@@ -152,19 +152,21 @@ describe("retrieveReferenceQuestions", () => {
   });
 
   it("falls back to tier 2 (role + focus, any company) when no exact match", () => {
-    /* TCS doesn't have any PM case-study entries; bank has Flipkart,
-       BCG, Atlassian etc. → expect tier-2 (role+focus, any company). */
+    /* Pick a combo that genuinely has no tier-1 hit. As bank
+       grows, this list shrinks; using ml × hr (no entries exist
+       for ML engineer × HR round). Bank does have ml × technical /
+       system-design entries for OpenAI/Anthropic/Sarvam/Razorpay,
+       so tier-2 (role+focus, any company) is what we expect. */
     const result = retrieveReferenceQuestions({
       company: "TCS",
-      roleFamily: "pm",
-      focus: "case-study",
+      roleFamily: "ml",
+      focus: "technical",
     });
     expect(result.tier).toBe(2);
     expect(result.hasMatches).toBe(true);
-    /* All returned should be PM case-study from any company. */
     for (const e of result.entries) {
-      expect(e.roleFamily).toBe("pm");
-      expect(e.focus).toBe("case-study");
+      expect(e.roleFamily).toBe("ml");
+      expect(e.focus).toBe("technical");
     }
   });
 
@@ -248,7 +250,7 @@ describe("formatReferencesForPrompt", () => {
        a peer company / different role and that it must NOT carry over
        company-specific facts. */
     const t2 = formatReferencesForPrompt(retrieveReferenceQuestions({
-      company: "TCS", roleFamily: "pm", focus: "case-study",
+      company: "TCS", roleFamily: "ml", focus: "technical",
     }));
     expect(t2).toMatch(/GROUNDING NOTE/);
     expect(t2).toMatch(/peer companies/i);
