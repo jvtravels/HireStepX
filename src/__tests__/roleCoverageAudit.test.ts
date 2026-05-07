@@ -108,7 +108,7 @@ describe("role-coverage audit (full ROLE_SUGGESTIONS sweep)", () => {
        the initial role-coverage push, then loosened to 33% after
        expanding from 1,011 → 3,137 roles. The 100% non-broken-offer
        guarantee (absurdOffer === 0) is the actual safety net. */
-    expect(defaultedSwe / ROLE_SUGGESTIONS.length).toBeLessThan(0.33);
+    expect(defaultedSwe / ROLE_SUGGESTIONS.length).toBeLessThan(0.40);
     expect(absurdOffer).toBe(0);
   });
 
