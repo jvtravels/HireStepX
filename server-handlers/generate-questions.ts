@@ -121,9 +121,16 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
+  // Hoisted so the catch block can read what the user asked for. We parse
+  // optimistically with safe defaults — even a malformed body shouldn't crash
+  // the catch path.
+  let requestType = "behavioral";
+  let requestFocus = "general";
   try {
     const rawBody = await req.json();
     const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, candidateName, negotiationStyle } = rawBody;
+    if (typeof type === "string") requestType = type;
+    if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
 
     /* Response cache — keyed on the stable hash of the full request body.
@@ -766,25 +773,33 @@ Requirements:
      * bank instead of a 500. The user can still run a usable session;
      * quality is lower than tailored output but materially better than a
      * dead-end error. Telemetry can monitor `_fallback="static"` rates. */
-    try {
+    // Salary-negotiation has a strict 6-phase arc (offer/counter/probe/etc.)
+    // with a specific ₹ amount in step 2 — the bank's behavioral questions
+    // would fail the engine's negotiation state machine. Better to return a
+    // clear error than a structurally-wrong session.
+    if (requestType === "salary-negotiation") {
+      console.warn(`[generate-questions] LLM failed on salary-negotiation; refusing static fallback (arc-mismatch risk)`);
+      void captureServerEvent("gq_static_fallback_skipped", distinctIdFrom(req, auth.userId), {
+        reason: "salary_negotiation_arc",
+        error: errMsg.slice(0, 200),
+      }, req);
+      // Fall through to the regular error response below.
+    } else try {
       const stepCount = computeStepCount({ mini: false, isSalaryType: false });
       const fallbackQuestions = buildStaticFallback({
-        type: "behavioral",
-        focus: "general",
+        type: requestType,
+        focus: requestFocus,
         difficulty: "standard",
         roleFamily: "general",
         count: Math.max(3, stepCount - 2),
       });
       if (fallbackQuestions.length > 0 && validateQuestionShape(fallbackQuestions)) {
         console.warn(`[generate-questions] returning static fallback after LLM failure: ${errMsg.slice(0, 100)}`);
-        // Telemetry: track each static-fallback firing so the team can monitor
-        // LLM-cascade failure rate independently of overall error counters.
-        // A spike here = both providers degraded, page the on-call. Note:
-        // request body fields (type/focus) aren't in scope here because the
-        // catch block lives outside the try where they were destructured.
         void captureServerEvent("gq_static_fallback", distinctIdFrom(req, auth.userId), {
           error: errMsg.slice(0, 200),
           is_timeout: isTimeout,
+          type: requestType,
+          focus: requestFocus,
         }, req);
         return new Response(
           JSON.stringify({ questions: fallbackQuestions, _fallback: "static" }),
