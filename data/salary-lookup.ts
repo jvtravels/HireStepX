@@ -42,6 +42,12 @@ export interface NegotiationBand {
   equityRange: [number, number];
   /** Formatted string for LLM context */
   bandContext: string;
+  /** True when the underlying SalaryEntry was filled by the densifier
+   * from a sibling cell rather than independently researched. Consumers
+   * (admin dashboard, telemetry, UI badges) can flag derived bands. */
+  isSynthetic?: boolean;
+  /** Provenance string for synthesized bands. Undefined for curated. */
+  syntheticSource?: string;
 }
 
 /** Negotiation style: modifies how the hiring manager behaves */
@@ -153,7 +159,15 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
     entry.joining_bonus_max > 0 ? entry.joining_bonus_max : Math.round(initialOffer * 0.08 * 10) / 10,
   ];
 
-  const bandContext = `NEGOTIATION BAND (your authority as hiring manager):
+  /* Synthetic-cell provenance: when this band came from densification
+     (sibling-derived, not researched), tell the LLM so it can speak
+     with appropriate hedging. Curated cells produce no caveat. */
+  const isSynthetic = entry._synthetic === true;
+  const syntheticCaveat = isSynthetic
+    ? `\nDATA-PROVENANCE CAVEAT: This band is DERIVED from a sibling cell (${entry._synthetic_source ?? "tier-fallback"}), not independently researched for this exact role/tier combination. The figures are structurally consistent with neighboring cells but should be treated as estimates, not verified market data. If the candidate cites a specific source contradicting these numbers, defer rather than insist.\n`
+    : "";
+
+  const bandContext = `${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
@@ -183,7 +197,11 @@ JOINING-BONUS / NOTICE-PERIOD INTELLIGENCE:
 - Same for "join in 30 days" framing — if the candidate is already available, don't ask them to join in 30 days; ask their preferred start date instead.
 - A joining bonus is a recruiting tool, not a default — only offer one if (a) the candidate is sacrificing a real bonus from their current employer, OR (b) you're using it to bridge a CTC gap you can't close on base.`;
 
-  return { initialOffer, minOffer, maxStretch, walkAway, joiningBonusRange, hasEquity, equityRange, bandContext };
+  return {
+    initialOffer, minOffer, maxStretch, walkAway,
+    joiningBonusRange, hasEquity, equityRange, bandContext,
+    isSynthetic, syntheticSource: entry._synthetic_source,
+  };
 }
 
 /** Get negotiation style instructions for the LLM */

@@ -66,6 +66,19 @@ function hasExplicitBand(role: RoleKey, tier: string, exp: ExperienceLevel): boo
   return !!tierData[exp];
 }
 
+/* Curated = the cell was researched and hand-written, not filled by
+   the densifier. Distinguishes the verified-data subset from the
+   sibling-derived subset. */
+function isCuratedBand(role: RoleKey, tier: string, exp: ExperienceLevel): boolean {
+  const roleData = SALARY_DATA[role];
+  if (!roleData) return false;
+  const tierData = (roleData as Record<string, Record<string, { _synthetic?: boolean } | undefined>>)[tier];
+  if (!tierData) return false;
+  const cell = tierData[exp];
+  if (!cell) return false;
+  return cell._synthetic !== true;
+}
+
 /* "Resolved" coverage: explicit OR via ROLE_ALIASES OR via tier-fallback.
    This is the architectural-coverage metric — it counts cells that
    reach a band through any documented path, not just direct hits. */
@@ -131,11 +144,24 @@ describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
     }
     const resolvedRatio = resolvedCount / total;
 
+    /* Curated sub-metric: the verified-data subset (vs densifier-filled). */
+    let curatedCount = 0;
+    for (const role of roleKeys) {
+      for (const tier of COMPANY_TIERS) {
+        for (const exp of EXP_LEVELS) {
+          if (isCuratedBand(role, tier, exp)) curatedCount++;
+        }
+      }
+    }
+    const curatedRatio = curatedCount / total;
+    const syntheticCount = total - curatedCount;
+
     process.stderr.write("\n📊 SALARY-BAND COVERAGE AUDIT\n");
     process.stderr.write(`  Total cells (Role × Tier × Exp): ${total}\n`);
-    process.stderr.write(`  Cells with EXPLICIT band data: ${explicitCount} (${(explicitRatio * 100).toFixed(1)}%)\n`);
+    process.stderr.write(`  Cells ADDRESSABLE (post-densification): ${explicitCount} (${(explicitRatio * 100).toFixed(1)}%)\n`);
+    process.stderr.write(`  Cells CURATED (researched market data): ${curatedCount} (${(curatedRatio * 100).toFixed(1)}%)\n`);
+    process.stderr.write(`  Cells SYNTHETIC (densifier-filled): ${syntheticCount} (${((syntheticCount / total) * 100).toFixed(1)}%)\n`);
     process.stderr.write(`  Cells RESOLVED via alias + tier fallback: ${resolvedCount} (${(resolvedRatio * 100).toFixed(1)}%)\n`);
-    process.stderr.write(`  Cells using exp-fallback only (deepest path): ${total - resolvedCount}\n`);
 
     /* All cells must produce a sensible offer via fallback even if
        explicit data is missing. */
@@ -160,6 +186,10 @@ describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
        it means the densifier failed for some cell — a real bug. */
     expect(explicitRatio).toBe(1.0);
     expect(resolvedRatio).toBe(1.0);
+    /* Curated floor: pin at 0.38 (current 0.40+). Guards against silent
+       regression where someone deletes a curated band — it'd still be
+       addressable via densification, but the curated count would drop. */
+    expect(curatedRatio).toBeGreaterThan(0.38);
   });
 
   it("reports per-role explicit coverage (which roles have widest tier coverage)", () => {

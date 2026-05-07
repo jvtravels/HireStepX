@@ -86,6 +86,56 @@ describe("data freshness — lastVerified dates", () => {
     expect(true).toBe(true);
   });
 
+  /* Median-age gate: catches staleness creep BEFORE any single entry
+     hits the 365d cliff. If the median entry is >180d, the whole
+     calibration is rotting — surface that as a hard failure even when
+     no individual entry has yet crossed the per-entry threshold. */
+  it("FAILS CI when median entry age exceeds 270 days (calibration-rot signal)", () => {
+    const ages: number[] = [];
+    for (const [, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
+      for (const [, levels] of Object.entries(roleMap ?? {})) {
+        for (const [, band] of Object.entries(levels ?? {})) {
+          if (!band?.lastVerified) continue;
+          ages.push(ageInDays(band.lastVerified));
+        }
+      }
+    }
+    if (ages.length === 0) {
+      throw new Error("No verifiable salary-override entries — fixture broken.");
+    }
+    ages.sort((a, b) => a - b);
+    const median = ages[Math.floor(ages.length / 2)];
+    const p75 = ages[Math.floor(ages.length * 0.75)];
+    const p90 = ages[Math.floor(ages.length * 0.90)];
+    process.stderr.write(`\n📊 SALARY-OVERRIDE STALENESS DISTRIBUTION (n=${ages.length}):\n`);
+    process.stderr.write(`  median age: ${median}d\n`);
+    process.stderr.write(`  p75 age:    ${p75}d\n`);
+    process.stderr.write(`  p90 age:    ${p90}d\n`);
+    /* Threshold: median ≤ 270d (~9 months). Catches systemic rot
+       without forcing weekly refresh cadence on long-stable bands. */
+    expect(median, `Median entry age ${median}d > 270d — bands are systemically stale. Refresh top-traffic entries against current Levels.fyi / AmbitionBox.`).toBeLessThanOrEqual(270);
+  });
+
+  /* Coverage gate: ensure a meaningful fraction of overrides are
+     recent enough to anchor calibration. If <30% of entries are <180d
+     old, we're operating on faded memory of the market. */
+  it("FAILS CI when fewer than 30% of entries are <180 days old", () => {
+    let recent = 0;
+    let total = 0;
+    for (const [, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
+      for (const [, levels] of Object.entries(roleMap ?? {})) {
+        for (const [, band] of Object.entries(levels ?? {})) {
+          if (!band?.lastVerified) continue;
+          total++;
+          if (ageInDays(band.lastVerified) < WARN_DAYS) recent++;
+        }
+      }
+    }
+    const ratio = recent / total;
+    process.stderr.write(`\n📊 SALARY-OVERRIDE FRESHNESS RATIO: ${recent}/${total} = ${(ratio * 100).toFixed(1)}% are <${WARN_DAYS}d old\n`);
+    expect(ratio, `Only ${(ratio * 100).toFixed(1)}% of override entries are <${WARN_DAYS}d old. Refresh top-traffic entries.`).toBeGreaterThanOrEqual(0.30);
+  });
+
   it("FAILS CI when entries are older than 12 months (hard signal)", () => {
     const ancient: StaleEntry[] = [];
     for (const [company, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {

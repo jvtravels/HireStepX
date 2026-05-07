@@ -39,6 +39,16 @@ export interface SalaryEntry {
   negotiation_leverage: "low" | "medium" | "high";
   hot_skills: string[];
   notes?: string;
+  /* True when this cell was filled by the densifier from a sibling cell
+     rather than independently researched. Curated cells leave this
+     undefined. The salary-lookup layer surfaces this in the band-context
+     so the LLM (and admin dashboard) can flag derived bands as
+     "estimated, not verified". */
+  _synthetic?: boolean;
+  /* Provenance hint for synthesized cells: which sibling cell was used.
+     E.g. "ux-designer × startup-growth × senior" or "alias:program-manager".
+     Curated cells leave this undefined. */
+  _synthetic_source?: string;
 }
 
 export type RoleKey =
@@ -2682,11 +2692,17 @@ const _TIER_FALLBACK: Partial<Record<CompanyTier, CompanyTier>> = {
   "government-psu": "it-services",
 };
 
+interface _SiblingHit {
+  band: SalaryEntry;
+  /* Provenance string — which (role, tier, exp) the band came from. */
+  source: string;
+}
+
 function _findSiblingBand(
   role: RoleKey,
   tier: CompanyTier,
   exp: ExperienceLevel,
-): SalaryEntry | undefined {
+): _SiblingHit | undefined {
   const roleData = SALARY_DATA[role];
   if (!roleData) return undefined;
   /* 1. Same role + same tier + adjacent exp. */
@@ -2694,7 +2710,7 @@ function _findSiblingBand(
   if (sameTier) {
     for (const e of _EXP_NEIGHBORS[exp]) {
       const cell = sameTier[e];
-      if (cell) return cell;
+      if (cell) return { band: cell, source: `${role} × ${tier} × ${e}` };
     }
   }
   /* 2. Same role + fallback tier + adjacent exp. */
@@ -2704,7 +2720,7 @@ function _findSiblingBand(
     if (fbTierData) {
       for (const e of _EXP_NEIGHBORS[exp]) {
         const cell = fbTierData[e];
-        if (cell) return cell;
+        if (cell) return { band: cell, source: `${role} × ${fbTier} × ${e} (tier-fallback)` };
       }
     }
   }
@@ -2725,28 +2741,43 @@ function _densifySalaryData(): void {
       for (const exp of _ALL_EXP_FOR_DENSIFY) {
         if (tierData[exp]) continue;
         /* 1+2: walk same-role exp + tier fallback. */
-        let band = _findSiblingBand(role, tier, exp);
+        let hit = _findSiblingBand(role, tier, exp);
         /* 3: aliased role. */
-        if (!band) {
+        if (!hit) {
           const aliased = ROLE_ALIASES[role];
-          if (aliased) band = _findSiblingBand(aliased, tier, exp);
+          if (aliased) {
+            const aHit = _findSiblingBand(aliased, tier, exp);
+            if (aHit) hit = { band: aHit.band, source: `alias:${aHit.source}` };
+          }
         }
         /* 4: SE last resort (faang preferred, faang.entry guaranteed). */
-        if (!band) {
+        if (!hit) {
           const seData = SALARY_DATA["software-engineer"];
           if (seData) {
             for (const t of [tier, "faang" as CompanyTier]) {
               const tData = seData[t];
               if (tData) {
                 for (const e of _EXP_NEIGHBORS[exp]) {
-                  if (tData[e]) { band = tData[e]; break; }
+                  if (tData[e]) {
+                    hit = { band: tData[e]!, source: `last-resort:software-engineer × ${t} × ${e}` };
+                    break;
+                  }
                 }
-                if (band) break;
+                if (hit) break;
               }
             }
           }
         }
-        if (band) tierData[exp] = band;
+        if (hit) {
+          /* Clone so curated cells stay clean (we're tagging the COPY,
+             not the source). Object spread is sufficient; SalaryEntry
+             has no nested mutables that matter post-load. */
+          tierData[exp] = {
+            ...hit.band,
+            _synthetic: true,
+            _synthetic_source: hit.source,
+          };
+        }
       }
     }
   }
