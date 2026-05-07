@@ -265,6 +265,86 @@ describe("override map data integrity", () => {
     expect(getCompanyBandOverride("psu_bank", "sales", "mid")).toBeNull();
   });
 
+  /* ─── 15-YOE / lead / executive coverage (2026-Q2 fix) ─── */
+  it("15+ YOE inputs route to lead/executive levels via free-text parsing", () => {
+    /* normalizeExp() now parses YOE strings. 15+ years → executive. */
+    const band15yr = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "15 years experience",
+    });
+    /* Razorpay SE lead band: ₹60-95L. Initial 35th ≈ ₹72L. */
+    expect(band15yr.initialOffer).toBeGreaterThan(60);
+  });
+
+  it("12 YOE input routes to lead level (Walmart Global Tech staff range)", () => {
+    const band12yr = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Walmart Global Tech",
+      experienceLevel: "12 yrs",
+    });
+    /* Walmart SE lead: ₹90-200L. Initial 35th ≈ ₹128L. */
+    expect(band12yr.initialOffer).toBeGreaterThan(90);
+    expect(band12yr.initialOffer).toBeLessThan(170);
+  });
+
+  it("18 years at MBB Partner level routes to executive band", () => {
+    /* Use "Management Consultant" so matchRoleKey returns consultant. */
+    const partnerBand = generateNegotiationBand({
+      role: "Management Consultant",
+      company: "BCG",
+      experienceLevel: "18 years experience",
+    });
+    /* BCG consultant executive: ₹180-400L. Test is permissive — must
+       reach executive territory, exact pctile is implementation detail. */
+    expect(partnerBand.initialOffer).toBeGreaterThan(180);
+  });
+
+  it("Sector executive bands cover long-tail 15+ YOE candidates", () => {
+    /* Confirm the executive sector bands exist and produce sensible
+       offers for very-senior candidates. We don't pin exact numbers
+       since multiple role/sector intersections are possible. */
+    const psuCmd = generateNegotiationBand({
+      role: "Software Engineer", // BHEL classifier; SE role → psu_central executive
+      company: "BHEL",
+      experienceLevel: "20 years",
+    });
+    /* Either psu_central SE executive (₹50-90L) OR via fallback —
+       must NOT come back at mid level for a 20-yr exec. */
+    expect(psuCmd.initialOffer).toBeGreaterThan(35);
+
+    const yesBankCxo = generateNegotiationBand({
+      role: "Relationship Manager",
+      company: "Yes Bank",
+      experienceLevel: "20 years",
+    });
+    /* private_bank sales executive ₹50-200L → 35th ≈ ₹102L. */
+    expect(yesBankCxo.initialOffer).toBeGreaterThan(40);
+  });
+
+  it("YOE parser handles ranges, plus-signs, abbreviations (all parse to senior+ band)", () => {
+    /* All these should parse to senior or executive — not mid. */
+    const inputs = [
+      "15 years",
+      "15+ years experience",
+      "15-20 yrs",
+      "approximately 18 years",
+      "18 yoe",
+    ];
+    /* Use a known company so the band isn't ambiguous. */
+    for (const exp of inputs) {
+      const band = generateNegotiationBand({
+        role: "Software Engineer",
+        company: "Razorpay",
+        experienceLevel: exp,
+      });
+      /* Razorpay senior/lead bands: senior ₹42-65L, lead ₹60-95L.
+         15-20 YOE should hit lead → initial 35th ≈ ₹72L. NOT
+         the mid band (initial would be ~₹31L). */
+      expect(band.initialOffer).toBeGreaterThan(50);
+    }
+  });
+
   it("Walmart Global Tech × SE × mid uses verified band, not generic GCC tier", () => {
     /* Walmart pays well above average GCC. Expected band: mid ₹30-55L
        → opening 35th pctile ≈ ₹38.75L. Pre-fix: GCC tier band would

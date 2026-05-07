@@ -218,7 +218,12 @@ You are a cautious hiring manager who avoids confrontation but protects the budg
   }
 }
 
-/** Normalize experience level string to our enum */
+/** Normalize experience level string to our enum.
+ *  Accepts: canonical levels ("entry"/"mid"/"senior"/"lead"/"executive"),
+ *  role-title hints ("staff", "principal", "vp", "director", "cxo"),
+ *  and free-text YOE inputs ("15 years", "12+ yrs", "8-10 years", "0-2 yrs").
+ *  Pre-fix bug: "15 years experience" returned "mid", so 15-YOE candidates
+ *  got mid-level bands. */
 function normalizeExp(exp: string | undefined): ExperienceLevel {
   if (!exp) return "mid";
   const lower = exp.toLowerCase().trim();
@@ -227,6 +232,28 @@ function normalizeExp(exp: string | undefined): ExperienceLevel {
   if (lower === "senior" || lower === "sr") return "senior";
   if (lower === "lead" || lower === "staff" || lower === "principal") return "lead";
   if (lower === "executive" || lower === "vp" || lower === "director" || lower === "c-suite" || lower === "cxo") return "executive";
+
+  /* YOE parsing — extract first integer in the string and map to level.
+     Handles: "15 years", "15+ years", "10-12 yrs", "0-2 years",
+     "approximately 8 years", "8 years experience", "18 yoe", etc.
+     The character class [-+to] is split so each char is independently
+     optional (otherwise "15+ years" fails because + isn't followed by
+     a digit). */
+  const yoeMatch = lower.match(/(\d+)\s*[-+]?\s*\d*\s*(?:year|yr|yoe)/);
+  if (yoeMatch) {
+    const yoe = parseInt(yoeMatch[1], 10);
+    if (yoe <= 2) return "entry";
+    if (yoe <= 5) return "mid";
+    if (yoe <= 9) return "senior";
+    if (yoe <= 14) return "lead";
+    return "executive"; // 15+ years
+  }
+
+  /* Title-based fallbacks (when an exp-string is actually a role title). */
+  if (/\b(staff|principal|architect|tech lead)\b/.test(lower)) return "lead";
+  if (/\b(vp|svp|evp|chief|cto|cpo|cfo|coo|ceo|chro|head of|director)\b/.test(lower)) return "executive";
+  if (/\b(senior|sr\.|sde[-\s]?(iii|3))\b/.test(lower)) return "senior";
+
   return "mid";
 }
 

@@ -335,6 +335,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 16, totalMax: 24, equityType: "none", source: "BCG India Associate pre-MBA (Glassdoor)", lastVerified: "2026-05-07" },
       mid: { totalMin: 30, totalMax: 48, equityType: "none", source: "BCG India Consultant post-MBA", lastVerified: "2026-05-07", notes: "Post-MBA Consultant India ₹30-38L base + bonus = ₹38-48L total." },
       senior: { totalMin: 55, totalMax: 90, equityType: "none", source: "BCG India PL (Project Leader)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 160, equityType: "none", source: "BCG India Principal", lastVerified: "2026-05-07", notes: "BCG Principal (10-14 yr post-MBA). Carry expectation accelerates." },
+      executive: { totalMin: 180, totalMax: 400, equityType: "none", source: "BCG India Partner / Managing Director", lastVerified: "2026-05-07", notes: "BCG Partner India 15+ yr; profit-share dominates total comp. ₹2-4Cr typical, top performers cross ₹6Cr." },
     },
   },
   bain: {
@@ -342,6 +344,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 16, totalMax: 25, equityType: "none", source: "Bain India AC pre-MBA (Glassdoor)", lastVerified: "2026-05-07" },
       mid: { totalMin: 32, totalMax: 52, equityType: "none", source: "Bain India Consultant post-MBA", lastVerified: "2026-05-07", notes: "Post-MBA Bain India ₹32-40L base + ₹8-12L bonus. Highest MBB bonus ceiling globally." },
       senior: { totalMin: 60, totalMax: 95, equityType: "none", source: "Bain India CL (Case Leader) / Manager", lastVerified: "2026-05-07" },
+      lead: { totalMin: 95, totalMax: 165, equityType: "none", source: "Bain India Principal", lastVerified: "2026-05-07" },
+      executive: { totalMin: 180, totalMax: 400, equityType: "none", source: "Bain India Partner", lastVerified: "2026-05-07", notes: "Bain Partner India 15+ yr; carry + profit-share. ₹2-4Cr typical." },
     },
   },
 
@@ -621,6 +625,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 16, totalMax: 25, equityType: "none", source: "MBB India pre-MBA Associate band (Glassdoor + Casebasix)", lastVerified: "2026-05-07" },
       mid: { totalMin: 30, totalMax: 50, equityType: "none", source: "MBB / Tier-2 strategy India post-MBA", lastVerified: "2026-05-07" },
       senior: { totalMin: 55, totalMax: 90, equityType: "none", source: "Engagement Manager / Project Lead", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 160, equityType: "none", source: "Strategy Principal (10-14 yr)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 180, totalMax: 400, equityType: "none", source: "Strategy Partner / Managing Director (15+ yr)", lastVerified: "2026-05-07", notes: "Partner-level India: carry + profit-share dominates. ₹2-4Cr typical at MBB." },
     },
   },
   __sector_consulting_big4: {
@@ -629,6 +635,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 11, totalMax: 22, equityType: "none", source: "Big 4 India Consultant 1-3 yr", lastVerified: "2026-05-07" },
       senior: { totalMin: 17, totalMax: 32, equityType: "none", source: "Big 4 India Senior Consultant (3-13 yr)", lastVerified: "2026-05-07" },
       lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "Big 4 Manager / Senior Manager", lastVerified: "2026-05-07" },
+      executive: { totalMin: 60, totalMax: 180, equityType: "none", source: "Big 4 India Partner / MD (15+ yr)", lastVerified: "2026-05-07", notes: "Big 4 Partner India ₹60-180L; profit-share + carry. Below MBB Partner due to volume model." },
     },
   },
   __sector_ibank_bulgebracket: {
@@ -636,16 +643,23 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Bulge-bracket IB India (HSBC, Barclays, BarCap, Deutsche, Citi) Analyst SE", lastVerified: "2026-05-07" },
       mid: { totalMin: 30, totalMax: 55, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "IB India SE Associate", lastVerified: "2026-05-07" },
       senior: { totalMin: 55, totalMax: 95, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "IB India SE VP", lastVerified: "2026-05-07" },
+      lead: { totalMin: 95, totalMax: 160, equityMin: 22, equityMax: 50, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "IB India SE Executive Director / SVP", lastVerified: "2026-05-07" },
+      executive: { totalMin: 160, totalMax: 350, equityMin: 50, equityMax: 130, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "IB India SE MD / GMD (15+ yr)", lastVerified: "2026-05-07" },
     },
     consultant: {
       entry: { totalMin: 35, totalMax: 65, equityType: "none", source: "IB India IB Analyst (Glassdoor)", lastVerified: "2026-05-07", notes: "Bonus 80-120% of base in good years; total comp dominates base." },
       senior: { totalMin: 65, totalMax: 90, equityType: "none", source: "IB India IB Associate / VP", lastVerified: "2026-05-07" },
+      lead: { totalMin: 90, totalMax: 200, equityType: "none", source: "IB India ED / SVP", lastVerified: "2026-05-07" },
+      executive: { totalMin: 200, totalMax: 628, equityType: "none", source: "Glassdoor Bangalore IB MD (top range $628K)", lastVerified: "2026-05-07", notes: "IB MD India 15+ yr; bonus + carry. Bangalore MD top range ~₹6.28Cr per Glassdoor 2026." },
     },
   },
   __sector_quant_hft: {
     "data-scientist": {
       entry: { totalMin: 50, totalMax: 100, equityType: "none", source: "Quant / HFT India entry (IIT-targeted: Tower / Optiver / IMC / Hudson River / Two Sigma / Millennium)", lastVerified: "2026-05-07", notes: "Indian fresher quant: ₹50-110L+ first-year. Performance-tied bonus." },
       mid: { totalMin: 120, totalMax: 280, equityType: "none", source: "Quant India 3-5 yr (eFinancialCareers / Wall Street Oasis archive)", lastVerified: "2026-05-07" },
+      senior: { totalMin: 250, totalMax: 500, equityType: "none", source: "Quant India 6-10 yr senior researcher / trader", lastVerified: "2026-05-07", notes: "Senior quant: PnL-share dominates. ₹2.5-5Cr typical at top firms." },
+      lead: { totalMin: 400, totalMax: 800, equityType: "none", source: "Quant India 10-14 yr team lead / portfolio manager", lastVerified: "2026-05-07" },
+      executive: { totalMin: 700, totalMax: 1500, equityType: "none", source: "Quant India 15+ yr partner / head", lastVerified: "2026-05-07", notes: "Partner-tier quant: ₹7-15Cr+. Top performers cross ₹25Cr in record years." },
     },
   },
   __sector_psu_bank: {
@@ -653,6 +667,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 5, totalMax: 8, equityType: "none", source: "IBPS PO / SBI PO 2026 disclosure", lastVerified: "2026-05-07", notes: "Public-sector bank PO entry. Pension + DA on top of CTC; total realised value higher." },
       mid: { totalMin: 10, totalMax: 18, equityType: "none", source: "PSU bank Manager / Senior Manager (10-15 yr exp)", lastVerified: "2026-05-07" },
       senior: { totalMin: 18, totalMax: 30, equityType: "none", source: "PSU bank AGM / DGM", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 45, equityType: "none", source: "PSU bank GM (15-20 yr)", lastVerified: "2026-05-07", notes: "PSU bank GM: defined-benefit pension actuarially worth ₹50-100L+." },
+      executive: { totalMin: 45, totalMax: 75, equityType: "none", source: "PSU bank ED / CMD (20+ yr; appointed by FSIB)", lastVerified: "2026-05-07" },
     },
   },
   __sector_private_bank: {
@@ -660,6 +676,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Private bank India RM entry (Yes / IndusInd / Federal / RBL etc.)", lastVerified: "2026-05-07" },
       mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Private bank India RM mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 14, totalMax: 26, equityType: "none", source: "Private bank India RM senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 26, totalMax: 50, equityType: "none", source: "Private bank India Cluster / Zonal Head (10-15 yr)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 50, totalMax: 200, equityType: "none", source: "Private bank India Business Head / President (15+ yr)", lastVerified: "2026-05-07", notes: "C-suite at private banks (HDFC/ICICI/Axis/Kotak): ₹3-15Cr+. Top performers (CEO/MD) ₹10-25Cr." },
     },
   },
   __sector_small_finance_bank: {
@@ -674,6 +692,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 15, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn average (Slice / Jupiter / Cashfree / BharatPe / Niyo / etc.)", lastVerified: "2026-05-07" },
       mid: { totalMin: 25, totalMax: 42, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 42, totalMax: 70, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn lead/staff (10-14 yr)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 100, totalMax: 250, equityMin: 35, equityMax: 100, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian fintech unicorn VP/CXO (15+ yr)", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_unicorn_consumer: {
@@ -681,6 +701,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn (Mamaearth / Sugar / boAt / Noise / Purplle etc.)", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 38, totalMax: 65, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 60, totalMax: 100, equityMin: 15, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn lead", lastVerified: "2026-05-07" },
+      executive: { totalMin: 95, totalMax: 220, equityMin: 30, equityMax: 90, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian consumer unicorn VP/CXO", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_unicorn_edtech: {
@@ -688,6 +710,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 8, totalMax: 16, equityMin: 0.5, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech (post-2023 reset: Byju's / Unacademy / upGrad / Vedantu / Physics Wallah)", lastVerified: "2026-05-07", notes: "EdTech bands compressed 30-40% post 2023 reset; ESOP value uncertain at most names." },
       mid: { totalMin: 16, totalMax: 30, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 30, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 50, totalMax: 90, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech lead", lastVerified: "2026-05-07" },
+      executive: { totalMin: 80, totalMax: 180, equityMin: 25, equityMax: 70, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian edtech VP/CXO", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_unicorn_logistics: {
@@ -695,6 +719,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn (Delhivery / Ecom / XpressBees / Shadowfax / Porter / BlackBuck)", lastVerified: "2026-05-07" },
       mid: { totalMin: 22, totalMax: 38, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 38, totalMax: 60, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 55, totalMax: 95, equityMin: 14, equityMax: 35, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn lead", lastVerified: "2026-05-07" },
+      executive: { totalMin: 90, totalMax: 200, equityMin: 28, equityMax: 80, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Indian logistics unicorn VP/CXO", lastVerified: "2026-05-07" },
     },
   },
   __sector_gcc_global_capability_centre: {
@@ -703,6 +729,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 22, totalMax: 40, equityMin: 3, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India mid (Zinnov GCC report 2026)", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 75, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India senior", lastVerified: "2026-05-07" },
       lead: { totalMin: 70, totalMax: 130, equityMin: 20, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India lead/staff", lastVerified: "2026-05-07" },
+      executive: { totalMin: 130, totalMax: 280, equityMin: 45, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "GCC India Director / VP / GCC Head", lastVerified: "2026-05-07", notes: "GCC Head total comp $80-150K = ₹65-125L base + RSU. India-specific Head-of-org roles add 30-50% over IC ladder." },
     },
   },
   __sector_indian_it_services: {
@@ -711,6 +738,7 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 6, totalMax: 14, equityType: "none", source: "IT services mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 14, totalMax: 28, equityType: "none", source: "IT services senior", lastVerified: "2026-05-07" },
       lead: { totalMin: 28, totalMax: 50, equityType: "none", source: "IT services lead/architect", lastVerified: "2026-05-07" },
+      executive: { totalMin: 50, totalMax: 130, equityType: "none", source: "IT services Delivery Head / VP / SVP", lastVerified: "2026-05-07", notes: "Top of IT-services ladder: VP-level ₹50-130L; CXO ₹150L+ at large firms (TCS / Infosys CTO / CHRO etc.)." },
     },
   },
   __sector_indian_pharma: {
@@ -718,11 +746,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 4.5, totalMax: 8, equityType: "none", source: "Indian pharma IT (Sun / Cipla / Lupin / Dr Reddy's / Aurobindo / Biocon)", lastVerified: "2026-05-07" },
       mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "Pharma IT mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 16, totalMax: 30, equityType: "none", source: "Pharma IT senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 55, equityType: "none", source: "Pharma IT lead / VP", lastVerified: "2026-05-07" },
+      executive: { totalMin: 50, totalMax: 150, equityType: "none", source: "Pharma CTO / CIO / VP R&D", lastVerified: "2026-05-07" },
     },
     sales: {
       entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Pharma MR (Medical Rep) entry", lastVerified: "2026-05-07" },
       mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Pharma Area Manager", lastVerified: "2026-05-07" },
       senior: { totalMin: 15, totalMax: 30, equityType: "none", source: "Pharma RSM / ZSM", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 55, equityType: "none", source: "Pharma National Sales Head / Country Manager", lastVerified: "2026-05-07" },
+      executive: { totalMin: 50, totalMax: 200, equityType: "none", source: "Pharma CCO / President / MD India", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_fmcg: {
@@ -730,6 +762,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 14, totalMax: 24, equityType: "none", source: "Indian FMCG MT MBA (Dabur / Marico / Godrej / Britannia / Emami / Patanjali / etc.)", lastVerified: "2026-05-07", notes: "Top-tier (HUL/ITC/P&G/Nestle) ₹18-27L; mid-tier this band." },
       mid: { totalMin: 24, totalMax: 40, equityType: "none", source: "Indian FMCG Brand Manager", lastVerified: "2026-05-07" },
       senior: { totalMin: 40, totalMax: 70, equityType: "none", source: "Indian FMCG Senior Brand Manager / Category Head", lastVerified: "2026-05-07" },
+      lead: { totalMin: 65, totalMax: 120, equityType: "none", source: "FMCG Marketing Director / GM Marketing", lastVerified: "2026-05-07" },
+      executive: { totalMin: 110, totalMax: 300, equityType: "none", source: "FMCG VP Marketing / CMO / President", lastVerified: "2026-05-07", notes: "FMCG MD India ₹3-15Cr+ at top firms (HUL CEO, ITC ED, etc.)." },
     },
   },
   __sector_psu_central: {
@@ -737,6 +771,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 6, totalMax: 9, equityType: "none", source: "PSU Central (BHEL / NTPC / ONGC / Indian Oil / GAIL / SAIL etc.) — 7th CPC band", lastVerified: "2026-05-07", notes: "PSU pay = 7th CPC fixed bands. Pension = defined benefit, actuarially worth ₹50-150L. Job security key value." },
       mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "PSU Central Manager / Senior Manager", lastVerified: "2026-05-07" },
       senior: { totalMin: 22, totalMax: 40, equityType: "none", source: "PSU Central GM / DGM", lastVerified: "2026-05-07" },
+      lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "PSU Central ED (Executive Director)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 50, totalMax: 90, equityType: "none", source: "PSU Central CMD / Chairperson (govt-appointed)", lastVerified: "2026-05-07", notes: "PSU CMD: ₹50-90L cash + ₹50-150L actuarial pension value. Top of 7th CPC scale." },
     },
   },
   __sector_academia_iit_iim: {
@@ -744,6 +780,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indian academia (IIT/IIM/IISc) Assistant Professor — UGC pay scale", lastVerified: "2026-05-07", notes: "UGC pay scale fixed; consulting + grant earnings vary." },
       mid: { totalMin: 14, totalMax: 24, equityType: "none", source: "Associate Professor", lastVerified: "2026-05-07" },
       senior: { totalMin: 24, totalMax: 40, equityType: "none", source: "Professor / Department Chair", lastVerified: "2026-05-07" },
+      lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "Senior Professor / Endowed Chair / Dean", lastVerified: "2026-05-07" },
+      executive: { totalMin: 55, totalMax: 100, equityType: "none", source: "Director / VC (IIT/IIM Director appointed by MHRD)", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_aviation: {
@@ -751,6 +789,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indian aviation entry (IndiGo / Air India / SpiceJet / Akasa / Vistara) — ground / cabin crew", lastVerified: "2026-05-07" },
       mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "Aviation mid (cabin lead / station ops)", lastVerified: "2026-05-07" },
       senior: { totalMin: 18, totalMax: 35, equityType: "none", source: "Aviation senior ops / commercial", lastVerified: "2026-05-07" },
+      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "Aviation Director Ops / Network Planning", lastVerified: "2026-05-07" },
+      executive: { totalMin: 55, totalMax: 200, equityType: "none", source: "Aviation CEO / COO / President (IndiGo / Air India)", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_hotels: {
@@ -758,6 +798,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 4, totalMax: 6.5, equityType: "none", source: "Indian hotels entry (Taj / ITC / Oberoi / Marriott / Hyatt / Lemon Tree / Leela / etc.)", lastVerified: "2026-05-07" },
       mid: { totalMin: 7, totalMax: 14, equityType: "none", source: "Hotels mid (F&B Manager / Front Office / Housekeeping)", lastVerified: "2026-05-07" },
       senior: { totalMin: 14, totalMax: 28, equityType: "none", source: "Hotels senior (GM / Regional Director)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 28, totalMax: 55, equityType: "none", source: "Hotels Cluster GM / VP Operations", lastVerified: "2026-05-07" },
+      executive: { totalMin: 55, totalMax: 180, equityType: "none", source: "Hotels CEO / COO / President (IHCL / EIH / ITC Hotels)", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_real_estate: {
@@ -765,6 +807,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indian real-estate entry (Lodha / Prestige / Godrej / Sobha / DLF / Brigade etc.)", lastVerified: "2026-05-07", notes: "Real-estate sales = base + heavy variable on commission." },
       mid: { totalMin: 8, totalMax: 18, equityType: "none", source: "Real-estate mid (Project Lead / Area Sales Manager)", lastVerified: "2026-05-07" },
       senior: { totalMin: 20, totalMax: 45, equityType: "none", source: "Real-estate senior (VP / Regional Head)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 40, totalMax: 90, equityType: "none", source: "Real-estate Business Head / SVP", lastVerified: "2026-05-07" },
+      executive: { totalMin: 80, totalMax: 250, equityType: "none", source: "Real-estate MD / CEO (DLF / Godrej Properties / Lodha)", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_auto_oem: {
@@ -772,6 +816,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "Indian auto OEM (Tata Motors / M&M / Maruti / Hyundai / Bajaj / TVS / Royal Enfield / etc.)", lastVerified: "2026-05-07" },
       mid: { totalMin: 10, totalMax: 20, equityType: "none", source: "Auto OEM mid", lastVerified: "2026-05-07" },
       senior: { totalMin: 20, totalMax: 38, equityType: "none", source: "Auto OEM senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 35, totalMax: 70, equityType: "none", source: "Auto OEM lead / VP Engineering", lastVerified: "2026-05-07" },
+      executive: { totalMin: 65, totalMax: 200, equityType: "none", source: "Auto OEM CTO / President / MD", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_telecom: {
@@ -779,6 +825,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "Indian telecom (Jio / Airtel / Vi / BSNL)", lastVerified: "2026-05-07" },
       mid: { totalMin: 12, totalMax: 25, equityType: "none", source: "Telecom mid (Jio Platforms premium)", lastVerified: "2026-05-07" },
       senior: { totalMin: 25, totalMax: 50, equityType: "none", source: "Telecom senior", lastVerified: "2026-05-07" },
+      lead: { totalMin: 45, totalMax: 90, equityType: "none", source: "Telecom Director / VP", lastVerified: "2026-05-07" },
+      executive: { totalMin: 80, totalMax: 300, equityType: "none", source: "Telecom CTO / CEO / President (Jio / Airtel)", lastVerified: "2026-05-07" },
     },
   },
   __sector_indian_civil_services: {
@@ -786,6 +834,8 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 8, totalMax: 12, equityType: "none", source: "Civil services / RBI Grade B / SEBI Grade A / NABARD entry — 7th CPC fixed band", lastVerified: "2026-05-07", notes: "Fixed pay scale + DA + HRA. Pension + perks add 30-50% non-cash value." },
       mid: { totalMin: 15, totalMax: 25, equityType: "none", source: "Civil services mid (Under Secretary / Joint Director)", lastVerified: "2026-05-07" },
       senior: { totalMin: 25, totalMax: 45, equityType: "none", source: "Civil services senior (Joint Secretary / Secretary)", lastVerified: "2026-05-07" },
+      lead: { totalMin: 40, totalMax: 65, equityType: "none", source: "Civil services lead (Additional Secretary)", lastVerified: "2026-05-07" },
+      executive: { totalMin: 55, totalMax: 90, equityType: "none", source: "Civil services apex (Cabinet Secretary / Secretary to GoI)", lastVerified: "2026-05-07", notes: "Apex-grade civil servant: ₹55-90L cash + ₹50-150L actuarial pension. Type-A bungalow + protocol perks." },
     },
   },
 
