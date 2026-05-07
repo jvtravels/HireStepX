@@ -1,0 +1,18 @@
+{
+  "name": "Corporate jargon overuse, no public-service motivation, badmouths private",
+  "session": {
+    "type": "government-psu",
+    "transcript": [
+      { "speaker": "ai", "text": "Why do you want to join the civil services?", "time": "" },
+      { "speaker": "user", "text": "I have a startup mindset and I want to apply my OKR-driven approach to government. I think we need more agile sprint-based execution and better stakeholder management with KPI tracking.", "time": "" },
+      { "speaker": "ai", "text": "What experience qualifies you?", "time": "" },
+      { "speaker": "user", "text": "I worked in B2B SaaS for 5 years on customer acquisition funnels. Honestly, corporate was awful — toxic culture, just for the money. I'm tired of corporate now and want to do something else.", "time": "" },
+      { "speaker": "ai", "text": "What are your strengths?", "time": "" },
+      { "speaker": "user", "text": "I'm good at running standups, writing OKRs, and KPI tracking. I bring a startup hustle that government departments need.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["corporate_jargon_overuse", "no_public_service_motivation", "user_badmouthing_private_sector"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

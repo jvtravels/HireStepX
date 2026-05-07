@@ -1,0 +1,18 @@
+{
+  "name": "Clean civil services answer: public service motivation, current affairs aware, service preference",
+  "session": {
+    "type": "government-psu",
+    "transcript": [
+      { "speaker": "ai", "text": "Why do you want to join the civil services?", "time": "" },
+      { "speaker": "user", "text": "I want to serve the country at the grassroots level — public welfare and nation building are what motivate me. After working in the private sector for five years, I realized I want to be part of administrative responsibility that touches citizens directly. The constitution and civic duty matter to me; I want to be part of implementing public policy at scale.", "time": "" },
+      { "speaker": "ai", "text": "Recent government schemes you find significant — what's your view on the latest policy developments?", "time": "" },
+      { "speaker": "user", "text": "The PM Gati Shakti initiative for infrastructure and the recent budget announcement on green hydrogen are two I follow closely. Niti Aayog's recent report on aspirational districts is also important context for any field posting.", "time": "" },
+      { "speaker": "ai", "text": "Service preference?", "time": "" },
+      { "speaker": "user", "text": "My first preference is IAS, second IPS, third IRS. I'm willing to be transferable across all-India postings; I have no state preference and am open to any cadre allotment. Joining formalities and medical fitness are in order.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "corporate_jargon_overuse", "no_public_service_motivation", "user_badmouthing_private_sector", "no_current_affairs_probe", "service_preference_never_discussed"]
+  }
+}

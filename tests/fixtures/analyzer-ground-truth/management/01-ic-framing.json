@@ -1,0 +1,18 @@
+{
+  "name": "User answers as IC, not as manager — no team metrics, no philosophy",
+  "session": {
+    "type": "management",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a difficult situation you handled.", "time": "" },
+      { "speaker": "user", "text": "I was on a critical migration project. I worked late nights for 3 weeks, debugged the legacy code, and shipped the migration on time. I delivered the whole thing myself.", "time": "" },
+      { "speaker": "ai", "text": "How do you handle prioritization?", "time": "" },
+      { "speaker": "user", "text": "I prioritize the highest-impact tasks. I make a list every morning and tackle the hardest one first. I focus deeply and don't let myself get distracted.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you're proud of.", "time": "" },
+      { "speaker": "user", "text": "I built a real-time dashboard for the leadership team. I designed the data model, wrote all the queries, and shipped it in two weeks working solo. It's used daily now.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["answered_as_ic_not_manager", "no_team_metrics", "no_hard_conversation_probe", "no_leadership_philosophy"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

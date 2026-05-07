@@ -20,6 +20,10 @@ import { systemDesignAnalyzer } from "./system-design";
 import { hrRoundAnalyzer } from "./hr-round";
 import { strategicAnalyzer } from "./strategic";
 import { panelAnalyzer } from "./panel";
+import { caseStudyAnalyzer } from "./case-study";
+import { campusPlacementAnalyzer } from "./campus-placement";
+import { managementAnalyzer } from "./management";
+import { governmentPsuAnalyzer } from "./government-psu";
 
 const noopAnalyzer: FocusAnalyzer = {
   focus: "unknown",
@@ -39,6 +43,10 @@ const REGISTRY: Record<string, FocusAnalyzer> = {
   "hr-round": hrRoundAnalyzer,
   strategic: strategicAnalyzer,
   panel: panelAnalyzer,
+  "case-study": caseStudyAnalyzer,
+  "campus-placement": campusPlacementAnalyzer,
+  management: managementAnalyzer,
+  "government-psu": governmentPsuAnalyzer,
 };
 
 export function pickAnalyzer(sessionType: string): FocusAnalyzer {

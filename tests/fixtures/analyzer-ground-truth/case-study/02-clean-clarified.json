@@ -1,0 +1,18 @@
+{
+  "name": "Clean case: clarified, sized, applied framework, concluded",
+  "session": {
+    "type": "case-study",
+    "transcript": [
+      { "speaker": "ai", "text": "Our coffee chain wants to grow revenue. How would you approach this?", "time": "" },
+      { "speaker": "user", "text": "Before solving, I'd like to clarify a few things. What is the time horizon — one quarter or three years? What's the geography — only India or pan-Asia? And is the goal revenue growth or profit growth?", "time": "" },
+      { "speaker": "ai", "text": "Three-year horizon, India only, revenue growth.", "time": "" },
+      { "speaker": "user", "text": "Roughly speaking, India coffee market is around 10000 crore — that's an order of magnitude check. So we're sizing levers against that. Applied to this business: I'd look at existing-store same-store sales lift first because it's lowest risk. Specifically the answer is to analyze daypart mix. If breakfast traffic is below 30% of revenue (industry benchmark is 40%), we have a lever. Sanity check: 10% lift in same-store sales from a daypart program would yield about 50 lakh per store per year, that seems reasonable.", "time": "" },
+      { "speaker": "ai", "text": "What's your final recommendation?", "time": "" },
+      { "speaker": "user", "text": "My recommendation is to launch a breakfast SKU program in the top 200 stores within 6 months, target 25% revenue uplift on those stores, and only after that consider new-store expansion. The bottom line is: optimize first, expand second.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "jumped_to_solution", "no_sanity_check", "framework_without_application", "ai_accepted_vague_research", "missing_conclusion"]
+  }
+}

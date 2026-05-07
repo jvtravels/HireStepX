@@ -50,6 +50,47 @@ const DICT: Record<string, FriendlyFlag> = {
   duplicate_question: { label: "AI repeated the same question", description: "AI asked the same question twice in the same session.", category: "question_quality" },
   leaked_answer: { label: "Question gave away the answer", description: "The AI's question contained part of the answer it was looking for.", category: "question_quality" },
 
+  // Strategic
+  framework_without_application: { label: "Framework named but not applied", description: "User cited Porter / SWOT / etc. without applying it to a concrete recommendation.", category: "user_skipped_step" },
+  no_tradeoff_probing: { label: "AI didn't probe trade-offs", description: "Strategic answers need 'what would you NOT do?' — AI never raised opportunity cost.", category: "ai_didnt_push_back" },
+  no_success_metrics: { label: "No measurable success criteria", description: "Recommendations weren't tied to numbers + timelines.", category: "user_skipped_step" },
+  stakeholders_never_considered: { label: "Stakeholders never named", description: "Strategy without people is theory — affected groups weren't named.", category: "user_skipped_step" },
+  risks_never_discussed: { label: "Risks never discussed", description: "No mention of failure modes or mitigations.", category: "user_skipped_step" },
+  ai_accepts_vague_strategy: { label: "AI accepted vague 'it depends' answers", description: "User stayed at hedge level; AI moved on without forcing specificity.", category: "ai_didnt_push_back" },
+
+  // Panel
+  single_persona_panel: { label: "Panel sounds like a single voice", description: "Only one persona detected — should feel like multiple distinct interviewers.", category: "question_quality" },
+  missing_technical_persona: { label: "No technical persona in the panel", description: "Panel skipped a technical screen — coverage gap.", category: "question_quality" },
+  missing_behavioral_persona: { label: "No HR / hiring-manager persona", description: "Panel skipped a behavioral screen.", category: "question_quality" },
+  user_didnt_adapt_tone: { label: "User used same tone for every persona", description: "Identical answer openings — didn't adapt depth/register across personas.", category: "user_skipped_step" },
+  technical_persona_too_shallow: { label: "Technical persona stayed shallow", description: "Technical questions were too short to test real depth.", category: "question_quality" },
+
+  // Case study
+  jumped_to_solution: { label: "Jumped to solution without clarifying", description: "First substantive answer skipped scope / time-horizon clarification.", category: "user_skipped_step" },
+  no_sanity_check: { label: "Numbers without sanity check", description: "Numerical claims had no order-of-magnitude validation language.", category: "user_skipped_step" },
+  ai_accepted_vague_research: { label: "AI accepted 'I'd do market research'", description: "Vague research-language wasn't forced into specifics.", category: "ai_didnt_push_back" },
+  missing_conclusion: { label: "Final answer didn't conclude", description: "No explicit recommendation tying back to the original question.", category: "user_skipped_step" },
+
+  // Campus placement
+  no_academic_project_discussed: { label: "Capstone / academic project never came up", description: "Fresher interviews should surface coursework + capstone — they didn't.", category: "user_skipped_step" },
+  generic_passion_no_substance: { label: "Generic 'I'm passionate' answer", description: "Used passion language without describing a built project.", category: "user_skipped_step" },
+  availability_never_discussed: { label: "Availability / joining date never came up", description: "For freshers, joining timeline matters — wasn't discussed.", category: "user_skipped_step" },
+  user_badmouthing_college: { label: "User badmouthed their college", description: "Negative language about college / professors — costs interview points.", category: "user_skipped_step" },
+
+  // Management
+  answered_as_ic_not_manager: { label: "Answered as IC, not as manager", description: "Stories used 'I built / I shipped' — should be 'my team / my report'.", category: "user_skipped_step" },
+  no_team_metrics: { label: "No team-level metrics", description: "No retention / hiring / promotions / velocity numbers.", category: "user_skipped_step" },
+  no_hard_conversation_probe: { label: "AI didn't probe difficult conversations", description: "Manager interviews must cover underperformers / firing — AI didn't.", category: "ai_didnt_push_back" },
+  no_stakeholder_management: { label: "Stakeholder management never discussed", description: "No cross-functional / partner-team language.", category: "user_skipped_step" },
+  no_leadership_philosophy: { label: "Leadership philosophy not articulated", description: "Manager candidates should be ready with a 2-sentence philosophy.", category: "user_skipped_step" },
+
+  // Government / PSU
+  corporate_jargon_overuse: { label: "Corporate jargon used heavily", description: "Government interviews expect formal vocabulary — KPI / sprint / OKR are out of place.", category: "user_skipped_step" },
+  no_public_service_motivation: { label: "No public-service motivation articulated", description: "Civil services interviews test sincerity — public-welfare framing was missing.", category: "user_skipped_step" },
+  user_badmouthing_private_sector: { label: "User badmouthed private sector", description: "Frame the move positively, not as escape from a 'bad' employer.", category: "user_skipped_step" },
+  no_current_affairs_probe: { label: "Current affairs never came up", description: "AI didn't test policy / news awareness — usually expected.", category: "question_quality" },
+  service_preference_never_discussed: { label: "Service / posting preference never came up", description: "UPSC / PSU panels expect to discuss cadre, posting, transferability.", category: "question_quality" },
+
   // System
   empty_transcript: { label: "Session has no transcript", description: "Could not analyze — no conversation data was recorded.", category: "system" },
   analyzer_error: { label: "Analyzer crashed on this session", description: "The audit code failed to run. Investigate the analyzer logs.", category: "system" },

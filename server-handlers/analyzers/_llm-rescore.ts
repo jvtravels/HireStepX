@@ -60,6 +60,38 @@ Score 0-100. Strict rubric:
 - Professionalism: zero badmouthing past employers.
 - Anchor protection: user did NOT volunteer a salary number unprompted.
 - Logistics: notice period, availability, location preferences discussed.`,
+  strategic: `
+Score 0-100. Strict rubric:
+- Applied frameworks (not just named) to the specific situation. Naming without applying caps at 55.
+- Trade-offs articulated — what would NOT be done. Missing caps at 65.
+- Measurable success metrics + timelines stated.
+- Stakeholders + risks named explicitly.
+- AI pushed back on vague 'it depends' answers.`,
+  panel: `
+Score 0-100. Strict rubric:
+- AI sounded like multiple distinct personas (technical / HR / hiring manager). Single persona caps at 55.
+- User adapted tone for different personas (not identical openings).
+- Coverage of technical AND behavioral angles.
+- Difficulty consistent across personas — no shallow segments.`,
+  "case-study": `
+Score 0-100. Strict rubric:
+- User clarified scope / time horizon / segment before solving. Jumping to solution caps at 60.
+- Numbers had sanity checks (order-of-magnitude language).
+- Frameworks were applied to numbers, not just named.
+- Final recommendation answers the original question explicitly.`,
+  management: `
+Score 0-100. Strict rubric:
+- Stories framed as a manager (team, report, hiring) — IC framing caps at 50.
+- Team-level metrics: retention, promotions, hires, performance.
+- AI probed difficult conversations / underperformer / firing.
+- Leadership philosophy articulated; stakeholder management discussed.`,
+  "government-psu": `
+Score 0-100. Strict rubric:
+- Public-service / nation-building motivation explicit. Missing caps at 60.
+- Vocabulary appropriate (not corporate jargon — KPI / sprint / OKR).
+- No badmouthing of private sector.
+- Current affairs / policy awareness probed.
+- Service / posting preferences discussed.`,
 };
 
 export interface RescoreResult {

@@ -1,0 +1,18 @@
+{
+  "name": "Fresher with generic passion language, no academic project, badmouths college",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me why you want to join us.", "time": "" },
+      { "speaker": "user", "text": "I'm a fresher passionate about technology. I've always loved coding since childhood and I love to learn new things. I want to work somewhere where I can grow.", "time": "" },
+      { "speaker": "ai", "text": "What attracted you to engineering?", "time": "" },
+      { "speaker": "user", "text": "I'm passionate about engineering and have always wanted to be an engineer since I was small. My college was bad and the professors are useless honestly, but I figured it out.", "time": "" },
+      { "speaker": "ai", "text": "Anything else?", "time": "" },
+      { "speaker": "user", "text": "I'm a final-year student passionate about coding and I love technology and want to learn from your team because nothing was taught in college.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["generic_passion_no_substance", "no_academic_project_discussed", "user_badmouthing_college"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

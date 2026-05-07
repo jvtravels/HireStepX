@@ -1,0 +1,18 @@
+{
+  "name": "Clean fresher answer with capstone, projects, availability",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself and your strongest academic project.", "time": "" },
+      { "speaker": "user", "text": "I'm a final-year BTech student with CGPA 8.6. My capstone project was a real-time traffic-signal optimizer using reinforcement learning. I built the simulation environment, implemented the Q-learning agent in Python, and deployed it on a Raspberry Pi for the demo. We reduced average wait time by 18% in the simulation.", "time": "" },
+      { "speaker": "ai", "text": "What other projects have you worked on?", "time": "" },
+      { "speaker": "user", "text": "I built a college bus-tracking app — implemented the backend in Node.js and integrated Google Maps. It's used by 400 students in my college daily. Also published a paper on the capstone project at a regional IEEE conference.", "time": "" },
+      { "speaker": "ai", "text": "When can you join us?", "time": "" },
+      { "speaker": "user", "text": "My final exams end in May. I'm available to join from June 15 — that gives me time to wrap up my graduation formalities. I'm flexible on joining date if needed.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "no_academic_project_discussed", "generic_passion_no_substance", "availability_never_discussed", "user_badmouthing_college"]
+  }
+}

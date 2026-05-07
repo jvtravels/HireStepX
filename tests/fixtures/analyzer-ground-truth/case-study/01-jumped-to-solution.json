@@ -1,0 +1,18 @@
+{
+  "name": "User jumped to solution, used framework without applying, AI accepted vague research",
+  "session": {
+    "type": "case-study",
+    "transcript": [
+      { "speaker": "ai", "text": "Our coffee chain client wants to grow revenue. How would you approach this?", "time": "" },
+      { "speaker": "user", "text": "I'd recommend opening 100 new stores in tier-2 cities and launching a loyalty program. We could use the profitability framework to think about it. We'd also do some market research to understand customer needs better.", "time": "" },
+      { "speaker": "ai", "text": "Sounds good. What else would you do?", "time": "" },
+      { "speaker": "user", "text": "I'd analyze the market and look at competitors. Maybe also study the segment more carefully and review the data we have.", "time": "" },
+      { "speaker": "ai", "text": "Got it.", "time": "" },
+      { "speaker": "user", "text": "Yeah I think those are the main ideas, that should help them grow.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["jumped_to_solution", "framework_without_application", "ai_accepted_vague_research", "missing_conclusion"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

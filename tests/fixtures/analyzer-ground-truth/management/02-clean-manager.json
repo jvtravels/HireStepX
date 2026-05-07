@@ -1,0 +1,18 @@
+{
+  "name": "Clean manager answers: team framing, metrics, hard conversations, philosophy",
+  "session": {
+    "type": "management",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a difficult situation with your team.", "time": "" },
+      { "speaker": "user", "text": "Last quarter my team of 8 engineers had two underperformers blocking velocity. I had a difficult conversation with one — a senior engineer who'd plateaued. Set a 60-day performance review plan with clear weekly milestones, paired them with a strong mentor on the team. After 90 days they exceeded the plan and got promoted; the other report I had to let go after the formal process. Team retention stayed at 100% over the year, hiring closed 3 new senior roles, and team velocity went up 35%.", "time": "" },
+      { "speaker": "ai", "text": "How do you prioritize?", "time": "" },
+      { "speaker": "user", "text": "I work with my product partner and my skip-level director monthly to align on the team's top three bets. Cross-functional with design and data weekly. My approach to management is servant leadership — I believe my team's growth is my growth. I lead by removing obstacles, because the best engineers don't need to be told what to do.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about hiring decisions.", "time": "" },
+      { "speaker": "user", "text": "I hired 3 engineers this year — focused on growth potential over current skill. I've coached two reports to senior level via 1-on-1s and structured growth plans. Current team morale is 4.6/5 in the engagement survey, up from 3.8 a year ago.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "answered_as_ic_not_manager", "no_team_metrics", "no_hard_conversation_probe", "no_stakeholder_management", "no_leadership_philosophy"]
+  }
+}
