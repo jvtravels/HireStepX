@@ -453,7 +453,54 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([25, 40], [3, 6], ESOP(5, 12), [32, 55], { negotiation_leverage: "high" }),
     },
   },
-  "ai-engineer": { /* alias — lookup falls back to ml-engineer */ },
+  /* AI engineer — distinct from ml-engineer in 2026. GenAI / LLM /
+     RAG / agentic specialists command 1.3-1.6x ML-engineer pay at
+     same YOE. The override map (Razorpay / OpenAI / Anthropic /
+     Sarvam) refines per-company; these tier bands are the fallback. */
+  "ai-engineer": {
+    faang: {
+      entry: s([28, 42], [3, 6], RSU(8, 16), [38, 60], { hot_skills: ["LLM", "RAG", "Agents", "Evals", "MCP"], negotiation_leverage: "medium", notes: "GenAI premium ≈ 1.3-1.6x SE entry at FAANG India 2026." }),
+      mid: s([45, 70], [6, 12], RSU(18, 38), [60, 110], { negotiation_leverage: "high" }),
+      senior: s([70, 100], [12, 22], RSU(40, 85), [110, 180], { notice_period_days: 60, negotiation_leverage: "high" }),
+      lead: s([95, 130], [18, 35], RSU(80, 180), [175, 280], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([16, 28], [1.5, 3], ESOP(3, 7), [22, 38], { hot_skills: ["GenAI", "LLM ops", "Eval harness", "Vector DBs"], negotiation_leverage: "medium" }),
+      mid: s([28, 48], [3, 7], ESOP(5, 12), [35, 65], { negotiation_leverage: "high", notes: "Tier-1 unicorn (Razorpay / Sarvam / Krutrim) hits ₹50-70L; standard ₹35-50L." }),
+      senior: s([48, 75], [7, 14], ESOP(12, 28), [60, 110], { negotiation_leverage: "high" }),
+      lead: s([70, 105], [12, 25], ESOP(22, 50), [95, 165], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([22, 36], [3, 6], RSU(5, 12), [28, 48], { negotiation_leverage: "medium" }),
+      mid: s([42, 65], [5, 11], RSU(15, 32), [55, 100], { negotiation_leverage: "medium" }),
+      senior: s([65, 95], [10, 20], RSU(30, 65), [90, 160], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([20, 32], [2, 5], RSU(4, 9), [26, 42], { negotiation_leverage: "medium" }),
+      mid: s([32, 55], [4, 9], RSU(10, 22), [42, 75], { negotiation_leverage: "medium" }),
+      senior: s([55, 85], [8, 16], RSU(20, 45), [70, 130], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([14, 24], [1.5, 3], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+      mid: s([24, 42], [2.5, 5], ESOP(4, 10), [30, 55], { negotiation_leverage: "medium" }),
+      senior: s([42, 65], [5, 11], ESOP(8, 18), [50, 85], { negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      entry: s([10, 18], [1, 2], ESOP(2, 5), [13, 25], { negotiation_leverage: "medium" }),
+      mid: s([18, 32], [2, 4], ESOP(4, 10), [22, 42], { negotiation_leverage: "high" }),
+      senior: s([30, 50], [4, 8], ESOP(8, 18), [38, 70], { negotiation_leverage: "high" }),
+    },
+    "startup-early": {
+      entry: s([8, 16], [0.5, 2], ESOP(2, 6), [10, 22], { notice_period_days: 15, negotiation_leverage: "medium" }),
+      mid: s([16, 28], [1, 3], ESOP(5, 14), [20, 40], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([26, 45], [3, 6], ESOP(10, 25), [32, 65], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    "consulting-mbb": {
+      entry: s([24, 36], [4, 8], NO_EQ, [30, 48], { negotiation_leverage: "medium", notes: "QuantumBlack / BCG GAMMA AI specialists." }),
+      mid: s([42, 65], [7, 14], NO_EQ, [50, 80], { negotiation_leverage: "medium" }),
+      senior: s([65, 95], [12, 22], NO_EQ, [78, 120], { negotiation_leverage: "high" }),
+    },
+  },
 
   // ─── DATA ENGINEER ────────────────────────────────────────────
   "data-engineer": {
@@ -1214,11 +1261,73 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
 
   // ─── DESIGN ENGINEER (alias — premium 10-15% over ux-designer at top
   //     product cos; for now resolves via ROLE_ALIASES → ux-designer) ──
-  "design-engineer": { /* alias — falls back to ux-designer */ },
+  /* Design Engineer — engineering-coded designers (Vercel/Linear-
+     style hybrid role). 10-15% premium over generic UX at top
+     product cos. */
+  "design-engineer": {
+    faang: {
+      entry: s([22, 32], [2, 4], RSU(7, 14), [28, 48], { hot_skills: ["React", "Motion", "Design Systems", "TypeScript"], negotiation_leverage: "medium" }),
+      mid: s([35, 55], [4, 8], RSU(15, 32), [48, 88], { negotiation_leverage: "high" }),
+      senior: s([55, 80], [8, 16], RSU(32, 68), [78, 145], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([12, 22], [1, 2], ESOP(2, 5), [14, 26], { hot_skills: ["React", "Framer Motion", "Storybook"], negotiation_leverage: "medium" }),
+      mid: s([22, 38], [2, 5], ESOP(4, 9), [26, 45], { negotiation_leverage: "high" }),
+      senior: s([38, 60], [5, 10], ESOP(8, 18), [45, 75], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(4, 9), [22, 38], { negotiation_leverage: "medium" }),
+      mid: s([32, 50], [4, 8], RSU(11, 24), [42, 75], { negotiation_leverage: "medium" }),
+      senior: s([50, 75], [7, 16], RSU(24, 52), [65, 120], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([10, 18], [1, 2], ESOP(1.5, 4), [12, 22], { negotiation_leverage: "medium" }),
+      mid: s([18, 32], [2, 4], ESOP(3, 7), [22, 38], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 8], ESOP(6, 14), [38, 60], { negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      entry: s([8, 14], [0.5, 2], ESOP(1, 4), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 24], [1, 3], ESOP(2, 6), [16, 30], { negotiation_leverage: "high" }),
+      senior: s([24, 40], [3, 6], ESOP(5, 12), [28, 50], { negotiation_leverage: "high" }),
+    },
+  },
 
   // ─── PRODUCT MARKETING MANAGER (alias — 20-30% above generic marketing
   //     at SaaS / unicorns; for now resolves via ROLE_ALIASES → marketing) ──
-  "product-marketing-manager": { /* alias — falls back to marketing */ },
+  /* Product Marketing Manager — distinct ladder. PMM at SaaS / B2B
+     companies commands 20-30% premium over generic marketing key. */
+  "product-marketing-manager": {
+    faang: {
+      entry: s([18, 28], [3, 5], RSU(5, 11), [24, 40], { hot_skills: ["Positioning", "GTM", "Pricing", "Sales enablement"], negotiation_leverage: "medium" }),
+      mid: s([30, 48], [5, 10], RSU(12, 28), [40, 75], { negotiation_leverage: "medium" }),
+      senior: s([48, 72], [8, 18], RSU(28, 60), [70, 125], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([10, 16], [1, 2], ESOP(1, 3), [12, 20], { negotiation_leverage: "medium" }),
+      mid: s([18, 30], [2, 5], ESOP(3, 7), [22, 38], { negotiation_leverage: "medium" }),
+      senior: s([30, 50], [4, 8], ESOP(6, 14), [36, 62], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([16, 24], [2, 4], RSU(4, 9), [20, 34], { negotiation_leverage: "medium" }),
+      mid: s([26, 42], [4, 8], RSU(10, 22), [34, 60], { negotiation_leverage: "medium" }),
+      senior: s([42, 65], [7, 14], RSU(20, 45), [55, 100], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([12, 20], [1, 3], RSU(3, 7), [14, 26], { negotiation_leverage: "medium" }),
+      mid: s([20, 32], [2, 5], RSU(6, 14), [25, 44], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 9], RSU(12, 28), [42, 75], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([10, 18], [1, 3], ESOP(2, 4), [12, 22], { hot_skills: ["Developer Marketing", "Content", "Pricing"], negotiation_leverage: "medium" }),
+      mid: s([18, 30], [2, 5], ESOP(3, 7), [22, 38], { negotiation_leverage: "medium" }),
+      senior: s([30, 48], [4, 8], ESOP(5, 12), [36, 62], { negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [9, 18], { negotiation_leverage: "medium" }),
+      mid: s([14, 24], [1, 3], ESOP(2, 5), [16, 30], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 6], ESOP(5, 12), [28, 50], { negotiation_leverage: "high" }),
+    },
+  },
 
   // ─── PHARMACIST ───────────────────────────────────────────────
   "pharmacist": {
