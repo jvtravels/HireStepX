@@ -566,7 +566,41 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([14, 22], [1, 2], NO_EQ, [15, 24], {}),
     },
   },
-  "cloud-engineer": { /* alias — falls back to devops-sre */ },
+  /* Cloud engineer — closely tracks devops-sre but with AWS/Azure/GCP
+     cert premium (CKA / AWS-SA / GCP-PCA add 15-25%). Multi-cloud +
+     FinOps specialists command top-band at GCC and SaaS-product. */
+  "cloud-engineer": {
+    faang: {
+      entry: s([20, 32], [2, 4], RSU(5, 10), [25, 42], { hot_skills: ["AWS", "Kubernetes", "Terraform", "FinOps"] }),
+      mid: s([34, 48], [4, 8], RSU(10, 22), [44, 72], { negotiation_leverage: "high" }),
+      senior: s([48, 68], [7, 14], RSU(20, 38), [70, 115], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([16, 24], [2, 4], RSU(3, 7), [20, 32], { negotiation_leverage: "medium" }),
+      mid: s([26, 40], [3, 7], RSU(8, 18), [34, 60], { negotiation_leverage: "medium" }),
+      senior: s([40, 58], [6, 12], RSU(16, 32), [55, 95], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([8, 13], [0.5, 1.5], ESOP(1, 3), [10, 17], { hot_skills: ["AWS/Azure/GCP", "Terraform", "Kubernetes"] }),
+      mid: s([15, 24], [1, 3], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [3, 6], ESOP(5, 12), [30, 52], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(2, 5), [16, 28], { negotiation_leverage: "medium" }),
+      mid: s([22, 35], [2, 5], RSU(6, 14), [28, 50], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [4, 9], RSU(12, 28), [45, 85], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([10, 16], [0.5, 1.5], ESOP(1, 3), [12, 20], { negotiation_leverage: "medium" }),
+      mid: s([16, 26], [1, 3], ESOP(2, 5), [20, 32], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 6], ESOP(4, 10), [32, 56], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([3.5, 6], [0.2, 0.5], NO_EQ, [4, 7], { notice_period_days: 90, notes: "AWS Solutions Architect / CKA: +20-30%." }),
+      mid: s([7, 14], [0.5, 1.5], NO_EQ, [8, 16], { notice_period_days: 90 }),
+      senior: s([14, 24], [1, 3], NO_EQ, [16, 28], { notice_period_days: 90 }),
+    },
+  },
 
   // ─── UX / PRODUCT DESIGNER ────────────────────────────────────
   // Bands refreshed FY2024-25 from levels.fyi (India), AmbitionBox, and
@@ -1093,7 +1127,36 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([16, 28], [1, 3], NO_EQ, [18, 32], {}),
     },
   },
-  "project-manager": { /* alias — falls back to program-manager */ },
+  /* Project manager (delivery PM, distinct from technical Program PM).
+     Heavier weighting on IT-services / consulting / BFSI; less premium
+     than program-manager at FAANG. */
+  "project-manager": {
+    faang: {
+      entry: s([12, 18], [1, 2], RSU(3, 6), [15, 26], {}),
+      mid: s([20, 30], [2, 4], RSU(6, 12), [26, 45], {}),
+      senior: s([32, 48], [4, 9], RSU(12, 24), [45, 80], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([7, 11], [0.5, 1], ESOP(0.5, 1.5), [8, 13], { negotiation_leverage: "low" }),
+      mid: s([12, 20], [1, 2.5], ESOP(1.5, 4), [14, 24], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 4], ESOP(3, 7), [24, 42], { negotiation_leverage: "medium" }),
+    },
+    "it-services": {
+      entry: s([5, 8], [0.3, 0.6], NO_EQ, [5, 9], { notice_period_days: 90, notes: "PMP / Prince2: +15-20%." }),
+      mid: s([9, 16], [0.5, 1.5], NO_EQ, [10, 18], { notice_period_days: 90 }),
+      senior: s([16, 28], [1, 3], NO_EQ, [18, 32], { notice_period_days: 90 }),
+    },
+    "consulting-big4": {
+      entry: s([6, 10], [0.5, 1.2], NO_EQ, [7, 12], { negotiation_leverage: "low" }),
+      mid: s([11, 18], [1, 3], NO_EQ, [12, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [3, 6], NO_EQ, [22, 38], { negotiation_leverage: "medium" }),
+    },
+    "bfsi-domestic": {
+      entry: s([6, 10], [0.5, 1], NO_EQ, [7, 12], { negotiation_leverage: "low" }),
+      mid: s([11, 18], [1, 2.5], NO_EQ, [12, 22], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 4], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+    },
+  },
 
   // ─── CONTENT WRITER / TECHNICAL WRITER ────────────────────────
   "content-writer": {
@@ -1324,14 +1387,116 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
   },
 
+  /* Frontend developer — tracks SE bands closely; React/Next/Vue
+     specialists at top product cos earn 5-10% premium for design-system
+     + perf work. Senior FE at unicorns often shifts to design-engineer. */
   // ─── FRONTEND DEVELOPER ───────────────────────────────────────
-  "frontend-developer": { /* alias — falls back to software-engineer */ },
+  "frontend-developer": {
+    faang: {
+      entry: s([22, 32], [2, 4], RSU(6, 12), [28, 45], { hot_skills: ["React", "Next.js", "TypeScript", "Performance"] }),
+      mid: s([36, 50], [4, 8], RSU(12, 25), [48, 78], { negotiation_leverage: "high" }),
+      senior: s([50, 70], [8, 15], RSU(24, 48), [78, 130], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([18, 26], [2, 4], RSU(4, 9), [22, 38], { negotiation_leverage: "medium" }),
+      mid: s([28, 42], [3, 7], RSU(10, 22), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([42, 60], [6, 12], RSU(18, 38), [60, 105], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { hot_skills: ["React", "Next.js", "Design Systems"] }),
+      mid: s([16, 26], [1.5, 3], ESOP(2, 5), [19, 32], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 6], ESOP(5, 12), [32, 58], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([15, 24], [1, 3], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+      senior: s([26, 40], [3, 6], ESOP(4, 10), [32, 55], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([3.5, 6], [0.2, 0.5], NO_EQ, [4, 7], { notice_period_days: 90, negotiation_leverage: "low" }),
+      mid: s([6, 12], [0.4, 1], NO_EQ, [7, 14], { notice_period_days: 90 }),
+      senior: s([12, 22], [1, 2.5], NO_EQ, [14, 26], { notice_period_days: 90 }),
+    },
+    "startup-growth": {
+      entry: s([7, 12], [0.5, 1], ESOP(1, 3), [8, 15], { negotiation_leverage: "medium" }),
+      mid: s([13, 22], [1, 2.5], ESOP(2, 5), [15, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 36], [2.5, 5], ESOP(4, 10), [28, 50], { negotiation_leverage: "high" }),
+    },
+  },
 
+  /* Backend developer — same shape as SE but distributed-systems /
+     performance / DB-internals specialists at top tier earn 10-15%
+     premium. Backend at IT services often the bulk of tech hires. */
   // ─── BACKEND DEVELOPER ────────────────────────────────────────
-  "backend-developer": { /* alias — falls back to software-engineer */ },
+  "backend-developer": {
+    faang: {
+      entry: s([24, 35], [2, 4], RSU(7, 13), [30, 48], { hot_skills: ["Java/Go", "Distributed Systems", "Postgres", "Kafka"] }),
+      mid: s([38, 55], [4, 8], RSU(14, 28), [52, 85], { negotiation_leverage: "high" }),
+      senior: s([55, 75], [8, 16], RSU(28, 55), [85, 145], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([20, 30], [2, 4], RSU(5, 10), [25, 42], { negotiation_leverage: "medium" }),
+      mid: s([32, 48], [3, 8], RSU(12, 25), [42, 72], { negotiation_leverage: "medium" }),
+      senior: s([48, 68], [7, 14], RSU(22, 45), [68, 120], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([10, 16], [1, 2], ESOP(1, 3), [12, 20], { hot_skills: ["Java/Go", "Microservices", "Kafka", "Postgres"] }),
+      mid: s([18, 28], [1.5, 3.5], ESOP(2.5, 6), [21, 36], { negotiation_leverage: "medium" }),
+      senior: s([28, 45], [3, 7], ESOP(6, 14), [35, 65], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([9, 15], [0.5, 1.5], ESOP(1, 3), [11, 19], { negotiation_leverage: "medium" }),
+      mid: s([16, 25], [1, 3], ESOP(2, 5), [19, 32], { negotiation_leverage: "medium" }),
+      senior: s([28, 42], [3, 6], ESOP(4, 10), [34, 58], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([3.5, 6], [0.2, 0.5], NO_EQ, [4, 7], { notice_period_days: 90, negotiation_leverage: "low" }),
+      mid: s([6, 13], [0.4, 1], NO_EQ, [7, 15], { notice_period_days: 90 }),
+      senior: s([13, 24], [1, 3], NO_EQ, [15, 28], { notice_period_days: 90 }),
+    },
+    "startup-growth": {
+      entry: s([8, 13], [0.5, 1.5], ESOP(1.5, 3), [9, 16], { negotiation_leverage: "medium" }),
+      mid: s([14, 24], [1, 3], ESOP(2, 6), [16, 30], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [2.5, 5], ESOP(5, 12), [30, 55], { negotiation_leverage: "high" }),
+    },
+  },
 
+  /* Mobile developer — iOS specialists at FAANG earn 10-20% premium
+     over Android/web; React Native / Flutter cross-platform tracks
+     closer to SE base. Strong demand at fintech / consumer unicorns. */
   // ─── MOBILE DEVELOPER ─────────────────────────────────────────
-  "mobile-developer": { /* alias — falls back to software-engineer with mobile premium note */ },
+  "mobile-developer": {
+    faang: {
+      entry: s([24, 36], [2, 4], RSU(7, 14), [30, 50], { hot_skills: ["iOS/Swift", "Android/Kotlin", "Compose", "SwiftUI"], notes: "iOS specialists premium ≈ 10-20% above Android at FAANG." }),
+      mid: s([38, 55], [4, 8], RSU(14, 30), [52, 90], { negotiation_leverage: "high" }),
+      senior: s([55, 75], [8, 16], RSU(28, 55), [85, 145], { negotiation_leverage: "high" }),
+    },
+    "big-tech": {
+      entry: s([18, 28], [2, 4], RSU(4, 9), [22, 40], { negotiation_leverage: "medium" }),
+      mid: s([30, 45], [3, 7], RSU(10, 22), [38, 68], { negotiation_leverage: "medium" }),
+      senior: s([45, 65], [6, 13], RSU(20, 42), [62, 110], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([9, 15], [0.5, 1.5], ESOP(1, 3), [11, 19], { hot_skills: ["Swift", "Kotlin", "React Native", "Flutter"] }),
+      mid: s([17, 27], [1.5, 3], ESOP(2.5, 6), [20, 35], { negotiation_leverage: "medium" }),
+      senior: s([27, 42], [3, 6], ESOP(5, 12), [33, 58], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(1, 3), [10, 18], { negotiation_leverage: "medium" }),
+      mid: s([15, 24], [1, 3], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+      senior: s([25, 40], [3, 6], ESOP(4, 10), [30, 55], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([4, 7], [0.2, 0.5], NO_EQ, [4.5, 8], { notice_period_days: 90, negotiation_leverage: "low" }),
+      mid: s([7, 14], [0.5, 1.5], NO_EQ, [8, 16], { notice_period_days: 90 }),
+      senior: s([14, 24], [1, 3], NO_EQ, [15, 28], { notice_period_days: 90 }),
+    },
+    "startup-growth": {
+      entry: s([7, 12], [0.5, 1], ESOP(1, 3), [8, 15], { negotiation_leverage: "medium" }),
+      mid: s([13, 22], [1, 2.5], ESOP(2, 5), [15, 28], { negotiation_leverage: "medium" }),
+      senior: s([22, 36], [2.5, 5], ESOP(4, 10), [28, 50], { negotiation_leverage: "high" }),
+    },
+  },
 
   // ─── SCRUM MASTER / AGILE COACH ───────────────────────────────
   "scrum-master": {
@@ -1491,10 +1656,68 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
   },
 
   // ─── ELECTRICAL ENGINEER (alias to mechanical-engineer) ───────
-  "electrical-engineer": { /* alias — falls back to mechanical-engineer */ },
+  /* Electrical engineer — VLSI / chip design (NVIDIA / Qualcomm / Intel /
+     AMD India) commands 1.5-2x mechanical-engineer pay; power systems
+     and instrumentation track closer to mechanical at L&T / BHEL / NTPC. */
+  "electrical-engineer": {
+    faang: {
+      entry: s([18, 28], [2, 4], RSU(5, 10), [22, 38], { hot_skills: ["VLSI", "RTL Design", "Verification", "Physical Design"], notes: "NVIDIA / Qualcomm / Intel / AMD GCC chip teams. Premium 30-50% over mechanical-engineer." }),
+      mid: s([28, 45], [3, 7], RSU(12, 25), [38, 70], { negotiation_leverage: "high" }),
+      senior: s([45, 70], [6, 14], RSU(22, 50), [65, 125], { negotiation_leverage: "high" }),
+    },
+    gcc: {
+      entry: s([14, 22], [1, 3], RSU(3, 7), [16, 30], { hot_skills: ["VLSI", "ASIC", "FPGA"], negotiation_leverage: "medium" }),
+      mid: s([22, 35], [2, 5], RSU(8, 18), [28, 52], { negotiation_leverage: "medium" }),
+      senior: s([35, 55], [5, 10], RSU(15, 35), [48, 90], { negotiation_leverage: "high" }),
+    },
+    "indian-unicorn": {
+      entry: s([6, 10], [0.3, 0.8], ESOP(0.5, 2), [7, 12], { negotiation_leverage: "low" }),
+      mid: s([12, 18], [0.8, 2], ESOP(1, 3), [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 4], ESOP(3, 6), [22, 36], { negotiation_leverage: "medium" }),
+    },
+    "it-services": {
+      entry: s([3.5, 6], [0.2, 0.4], NO_EQ, [4, 7], { negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.4, 1], NO_EQ, [7, 13], { negotiation_leverage: "low" }),
+      senior: s([11, 18], [1, 2], NO_EQ, [12, 20], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { in_hand_ratio: 0.78, notes: "BHEL / NTPC / Power Grid GET. 7th CPC pay band." }),
+      mid: s([10, 16], [0.5, 1], NO_EQ, [11, 17], { negotiation_leverage: "low" }),
+      senior: s([16, 28], [1, 2], NO_EQ, [17, 30], { negotiation_leverage: "low" }),
+    },
+  },
 
   // ─── CIVIL ENGINEER (alias to mechanical-engineer) ────────────
-  "civil-engineer": { /* alias — falls back to mechanical-engineer */ },
+  /* Civil engineer — distinct market (L&T / Tata Projects / GMR / Adani
+     Infra / Shapoorji); construction / infra heavy. PSU pay-bands at
+     CPWD / NHAI / DMRC / IRCON. Tier-1 IIT graduates: ₹12-18L at L&T. */
+  "civil-engineer": {
+    "indian-unicorn": {
+      entry: s([5, 8], [0.3, 0.6], NO_EQ, [5, 9], { notes: "Real-estate-tech (Square Yards / NoBroker) civil tech." }),
+      mid: s([10, 16], [0.5, 1.5], NO_EQ, [11, 17], { negotiation_leverage: "medium" }),
+      senior: s([16, 26], [1.5, 3], NO_EQ, [18, 30], { negotiation_leverage: "medium" }),
+    },
+    "fmcg-mnc": {
+      entry: s([6, 10], [0.5, 1], NO_EQ, [7, 11], { notes: "L&T / Tata Projects / Shapoorji GET. IIT premium ₹12-18L." }),
+      mid: s([12, 18], [1, 2.5], NO_EQ, [13, 20], { negotiation_leverage: "medium" }),
+      senior: s([20, 35], [2, 5], NO_EQ, [22, 40], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([3.5, 6], [0.2, 0.4], NO_EQ, [4, 7], { negotiation_leverage: "low" }),
+      mid: s([6, 11], [0.4, 1], NO_EQ, [7, 13], { negotiation_leverage: "low" }),
+      senior: s([11, 18], [1, 2], NO_EQ, [12, 20], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([7, 10], [0, 0.5], NO_EQ, [7, 11], { in_hand_ratio: 0.78, notes: "CPWD / NHAI / DMRC / IRCON / NBCC. JE/AE 7th CPC pay band." }),
+      mid: s([10, 18], [0.5, 1], NO_EQ, [11, 19], { negotiation_leverage: "low" }),
+      senior: s([18, 32], [1, 2], NO_EQ, [19, 34], { negotiation_leverage: "low" }),
+    },
+    "consulting-big4": {
+      entry: s([6, 10], [0.5, 1], NO_EQ, [7, 11], { negotiation_leverage: "low", notes: "Deloitte / EY infra advisory." }),
+      mid: s([11, 18], [1, 2.5], NO_EQ, [12, 20], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+  },
 
   // ─── CHARTERED ACCOUNTANT ─────────────────────────────────────
   "chartered-accountant": {
