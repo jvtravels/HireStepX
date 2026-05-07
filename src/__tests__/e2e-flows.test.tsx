@@ -439,25 +439,29 @@ describe("Flow 7: Resume Page", () => {
         ,
       );
     });
-    expect(screen.getByText(/Resume Intelligence/i)).toBeInTheDocument();
-    expect(screen.getByText(/Drop your resume here/i)).toBeInTheDocument();
+    // Cream redesign — "Resume Intelligence" + "Drop your resume here"
+    // were replaced by an editorial serif "Add your resume" hero with a
+    // "Drag a file here, or browse" drop zone label.
+    expect(screen.getByRole("heading", { name: /add your resume/i })).toBeInTheDocument();
+    expect(screen.getByText(/drag a file here/i)).toBeInTheDocument();
   });
 
-  it("shows file type badges (PDF, DOCX, TXT)", async () => {
+  it("shows accepted file type label in the upload help text", async () => {
     const { DashboardProvider } = await import("../DashboardContext");
     const DashboardResume = (await import("../DashboardResume")).default;
     await act(async () => {
       render(
-        
+
           <DashboardProvider>
             <DashboardResume />
           </DashboardProvider>
         ,
       );
     });
-    expect(screen.getByText("PDF")).toBeInTheDocument();
-    expect(screen.getByText("DOCX")).toBeInTheDocument();
-    expect(screen.getByText("TXT")).toBeInTheDocument();
+    // Cream redesign — separate per-type chips were collapsed into a
+    // single help line ("PDF, DOC, DOCX, or TXT · up to 10 MB") so users
+    // see all formats at once instead of three identical-styled badges.
+    expect(screen.getByText(/PDF, DOC, DOCX, or TXT/i)).toBeInTheDocument();
   });
 
   it("shows profile when resume data exists", async () => {

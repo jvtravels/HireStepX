@@ -83,6 +83,71 @@ function normalizeResumeProfile(profile: Record<string, unknown>): Record<string
       profile[key] = asPlainString(profile[key]);
     }
   }
+
+  // ─── Structured experiences[] ──────────────────────────────────────
+  // Coerce per-entry fields: strings via asPlainString, partners/topProjects
+  // as string arrays, teamSize as number-or-null. Drop any entry whose
+  // company OR title is unusable — those rows would render as empty
+  // timeline cards otherwise.
+  if (Array.isArray(profile.experiences)) {
+    profile.experiences = (profile.experiences as unknown[])
+      .map((rawEntry): Record<string, unknown> | null => {
+        if (!rawEntry || typeof rawEntry !== "object") return null;
+        const e = rawEntry as Record<string, unknown>;
+        const company = asPlainString(e.company);
+        const title = asPlainString(e.title);
+        if (!company || !title) return null;
+        const partnersRaw = Array.isArray(e.partners) ? e.partners : [];
+        const projectsRaw = Array.isArray(e.topProjects) ? e.topProjects : [];
+        const teamSizeRaw = typeof e.teamSize === "number" && Number.isFinite(e.teamSize) && e.teamSize > 0
+          ? Math.min(50, Math.round(e.teamSize))
+          : null;
+        return {
+          company,
+          title,
+          start: asPlainString(e.start),
+          end: asPlainString(e.end) || "Present",
+          scope: asPlainString(e.scope),
+          teamSize: teamSizeRaw,
+          partners: partnersRaw.map(asPlainString).filter(Boolean).slice(0, 6),
+          topProjects: projectsRaw.map(asPlainString).filter(Boolean).slice(0, 4),
+        };
+      })
+      .filter((e): e is Record<string, unknown> => e !== null);
+  } else {
+    delete profile.experiences;
+  }
+
+  // ─── skillsDetailed[] — depth + recency ────────────────────────────
+  // Validates depth against the allowed enum and ignores any entry whose
+  // skill name is empty. yearsUsed is clamped 0-30 to defend against
+  // hallucinated decades. Falls back to inferring depth = "secondary"
+  // when the LLM picks a string outside the allowed values.
+  const ALLOWED_DEPTHS = new Set(["primary", "secondary", "exposure"]);
+  if (Array.isArray(profile.skillsDetailed)) {
+    profile.skillsDetailed = (profile.skillsDetailed as unknown[])
+      .map((rawEntry): Record<string, unknown> | null => {
+        if (!rawEntry || typeof rawEntry !== "object") return null;
+        const s = rawEntry as Record<string, unknown>;
+        const name = asPlainString(s.name);
+        if (!name) return null;
+        const depthRaw = typeof s.depth === "string" ? s.depth.toLowerCase() : "";
+        const depth = ALLOWED_DEPTHS.has(depthRaw) ? depthRaw : "secondary";
+        const yearsUsed = typeof s.yearsUsed === "number" && Number.isFinite(s.yearsUsed) && s.yearsUsed > 0
+          ? Math.min(30, Math.round(s.yearsUsed))
+          : undefined;
+        return {
+          name,
+          depth,
+          ...(yearsUsed !== undefined ? { yearsUsed } : {}),
+          ...(typeof s.recent === "boolean" ? { recent: s.recent } : {}),
+        };
+      })
+      .filter((s): s is Record<string, unknown> => s !== null);
+  } else {
+    delete profile.skillsDetailed;
+  }
+
   return profile;
 }
 
@@ -189,13 +254,44 @@ Return a JSON object with ALL of these fields filled in thoroughly:
     "summaryClarity": <integer 0-15. Quality of the summary/objective at the top. 0 = missing; 8 = generic; 15 = sharp, role-aligned, differentiated.>
   },
   "topSkills": ["List 6-8 of their strongest skills — include both technical skills and soft skills. Order by evidence strength in the resume."],
+  "skillsDetailed": [
+    {
+      "name": "<skill name, must match one of the topSkills entries>",
+      "depth": "<primary | secondary | exposure>",
+      "yearsUsed": <integer 1-15 or null>,
+      "recent": <true if evidence of use in the last 12 months, else false>
+    }
+  ],
   "keyAchievements": ["3-5 specific accomplishments. Use exact numbers, percentages, and metrics from the resume. If no numbers exist, describe the impact qualitatively."],
   "industries": ["1-3 industries they have worked in"],
   "interviewStrengths": ["2-3 areas where they'll naturally excel in interviews, based on concrete resume evidence"],
   "interviewGaps": ["2-3 areas they should prepare for, framed as constructive coaching advice"],
   "careerTrajectory": "One sentence on their career direction and momentum",
+  "experiences": [
+    {
+      "company": "<company name as written on the resume>",
+      "title": "<job title held at that company>",
+      "start": "<month + year, e.g. 'Mar 2023'; year-only is fine if month is missing>",
+      "end": "<month + year OR the literal string 'Present' for current role>",
+      "scope": "<one sentence on what they owned + who they reported to / partnered with>",
+      "teamSize": <integer 1-50 or null if the resume does not say>,
+      "partners": ["1-4 cross-functional groups they collaborated with — Engineering, Product, Marketing, Risk, Compliance, Data, Sales, Leadership"],
+      "topProjects": ["1-3 project names or 1-line descriptions of the most-impactful things they shipped in this role"]
+    }
+  ],
   "improvements": ["2-4 actionable resume improvement suggestions, written as PLAIN STRINGS (not objects). Each string should describe WHAT to change AND WHY it matters in one sentence — e.g. 'Add quantified outcomes to your bullet points (numbers and percentages) — recruiters scan for measurable impact in 6 seconds.' DO NOT return objects with separate fields like {change, why}; return plain strings."]
 }
+
+DEPTH RULES (skillsDetailed):
+- "primary"   → demonstrated across multiple roles AND used in their most recent role
+- "secondary" → recurring across the resume but not core to current role
+- "exposure"  → mentioned but no concrete evidence of depth (e.g. listed in a tools section but not in any bullet)
+
+EXPERIENCES RULES:
+- One entry per distinct (company, title) pair. If a person was promoted within a company, emit one entry per title with appropriate dates.
+- Order entries newest-first (current role first).
+- "scope" must be derived from resume text — do not invent team sizes, partners, or project names.
+- If the resume lists no work experience, return an empty array [].
 
 CRITICAL RULES:
 - Only reference information explicitly present in the resume
@@ -218,7 +314,12 @@ CRITICAL RULES:
     // narrative fields (summary, headline) lose a sliver of variety at
     // t=0, but determinism on the score is worth far more — users were
     // losing trust in the number when it changed without input changing.
-    const result = await callLLM({ prompt, temperature: 0, maxTokens: 2500, jsonMode: true }, 10000, { userId: auth.userId, endpoint: "analyze-resume" });
+    // Bumped maxTokens 2500 → 3500 because the prompt now asks for
+    // structured experiences[] (1 entry per role × ~120 tokens) and
+    // skillsDetailed[] (8 entries × ~30 tokens). Without the bump,
+    // resumes with 4+ roles truncate the JSON mid-experience and the
+    // parser fails. 3500 keeps a comfortable margin.
+    const result = await callLLM({ prompt, temperature: 0, maxTokens: 3500, jsonMode: true }, 10000, { userId: auth.userId, endpoint: "analyze-resume" });
     const tLLM = Date.now() - tLLM0;
 
     const rawProfile = extractJSON<Record<string, unknown>>(result.text);

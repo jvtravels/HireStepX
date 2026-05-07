@@ -802,6 +802,51 @@ Share this report with your coach or mentor.`;
 }
 
 /* ─── AI Resume Profile ─── */
+/**
+ * Per-role record extracted from the resume. Drives the Experience
+ * timeline section in the Resume tab and lets the LLM ask company- and
+ * project-specific behavioural questions instead of generic prompts.
+ *
+ * All fields are best-effort — the LLM may fail to infer team size or
+ * partners from the resume text, in which case the UI surfaces an
+ * inline "+ Add team size" affordance so the user can correct it.
+ *
+ * `end` carries the literal string "Present" for the user's current
+ * role (no Date-typing because the resume can carry "2021 — present"
+ * with whatever capitalisation the user typed).
+ */
+export interface ResumeExperience {
+  company: string;
+  title: string;
+  start: string;
+  end: string;
+  scope: string;
+  teamSize: number | null;
+  partners: string[];
+  topProjects: string[];
+}
+
+/**
+ * Skill record with depth + recency markers. Replaces the flat
+ * `topSkills: string[]` for callers that need calibration data
+ * (interview difficulty calibration, coverage scoring). The flat
+ * `topSkills` field is preserved on the profile for back-compat.
+ *
+ * `depth` values:
+ *   - "primary"   → core skill, used now, multi-role evidence
+ *   - "secondary" → recurring but not core
+ *   - "exposure"  → mentioned but not deeply demonstrated
+ *
+ * `recent` flags whether the skill was touched in the last 12 months
+ * (inferred from achievement-bullet recency by the LLM).
+ */
+export interface ResumeSkill {
+  name: string;
+  depth: "primary" | "secondary" | "exposure";
+  yearsUsed?: number;
+  recent?: boolean;
+}
+
 export interface ResumeProfile {
   headline: string;
   summary: string;
@@ -815,6 +860,19 @@ export interface ResumeProfile {
   careerTrajectory: string;
   resumeScore?: number;
   improvements?: string[];
+  /**
+   * Structured per-role timeline. Optional because old cached profiles
+   * (rows in resume_versions.parsed_data persisted before this field
+   * shipped) won't have it — UI must render gracefully when undefined
+   * or empty.
+   */
+  experiences?: ResumeExperience[];
+  /**
+   * Skill records with depth + years + recency. Optional for the same
+   * back-compat reason. When absent, the UI falls back to the flat
+   * `topSkills` chip list with no depth markers.
+   */
+  skillsDetailed?: ResumeSkill[];
 }
 
 /**

@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { c, font } from "./tokens";
+// dark-theme tokens (c, font) imported here previously — the redesigned
+// view component now ships its own cream palette, so this import is gone.
+// The Multi-resume catalogue strip's skeleton uses inline literal colors
+// for the same reason.
 import { useAuth } from "./AuthContext";
 import { useDocTitle } from "./useDocTitle";
 import { useDashboardCore, useDashboardUI } from "./DashboardContext";
@@ -8,7 +11,12 @@ import { extractResumeText, parseResumeData, isAiResume, isFallbackResume, type 
 import { type ResumeProfile, analyzeResumeWithAI, ACTIVE_RESUME_VERSION_KEY } from "./dashboardData";
 import { computeAllFitness } from "./resumeFitness";
 import CatalogueGrid from "./resume/CatalogueGrid";
-import CoveragePanel from "./resume/CoveragePanel";
+// CoveragePanel was the old dark-mode coverage card. Replaced by the
+// inline Coverage section in ResumeTabView. Re-import if/when we
+// resurrect the multi-resume catalogue (CatalogueGrid still renders it).
+// import CoveragePanel from "./resume/CoveragePanel";
+import ResumeTabView from "./resume/ResumeTabView";
+import type { FitnessBand, InterviewType } from "./resumeFitness";
 import { trackResumeEvent } from "./resume/track";
 
 /** Project a regex-fallback resume into the ResumeProfile shape the UI
@@ -30,6 +38,21 @@ function fallbackToProfile(r: FallbackStoredResume): ResumeProfile {
   };
 }
 import { DataLoadingSkeleton } from "./dashboardComponents";
+
+/* ─── Feature flags ──────────────────────────────────────────────────────
+ * Multi-resume catalogue UI (catalogue grid, Make Active / Rename /
+ * Archive, "+ Add another resume" bar). Hidden for the v1 redesign so
+ * the page focuses on the single active resume + readiness analysis.
+ *
+ * Important: only the *UI* is gated. The DB rows in `resumes` /
+ * `resume_versions` are untouched, the `/api/resume/set-active`
+ * endpoint still works, and the Supabase fetch is skipped while the
+ * flag is off (no needless network for a hidden surface). Flipping
+ * this back to `true` re-shows the catalogue with no data migration.
+ */
+const MULTI_RESUME_UI_ENABLED = false;
+
+/* (PHASE_1_FEATURES flag is added in Step 4 once it has consumers in JSX.) */
 
 /**
  * Push the original file bytes up to /api/resume/upload-file. Best-effort:
@@ -102,29 +125,11 @@ function saveResumeVersion(fileName: string, resumeScore?: number, resumeText?: 
     localStorage.setItem(RESUME_HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
   } catch { /* expected: localStorage may be unavailable */ }
 }
-function getResumeHistory(): ResumeVersion[] {
-  try {
-    const raw = localStorage.getItem(RESUME_HISTORY_KEY);
-    const history: ResumeVersion[] = raw ? JSON.parse(raw) : [];
-    // Retroactive dedup: earlier versions of saveResumeVersion could produce
-    // near-identical rows (same filename, same text content) because the
-    // auto-reanalyze useEffect ran on every user-object refresh. Collapse
-    // them keeping the newest occurrence of each (fileName, contentHash)
-    // pair and re-persist so the UI stabilises.
-    const seen = new Set<string>();
-    const deduped: ResumeVersion[] = [];
-    for (const v of history) {
-      const key = `${v.fileName}::${v.contentHash ?? "nohash"}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(v);
-    }
-    if (deduped.length !== history.length) {
-      try { localStorage.setItem(RESUME_HISTORY_KEY, JSON.stringify(deduped)); } catch { /* quota */ }
-    }
-    return deduped;
-  } catch { return []; }
-}
+// getResumeHistory() removed — the localStorage-backed version-history block
+// was rendered in the old dark JSX (Restore button per row). The cream
+// redesign relies on the multi-resume catalogue (gated for v1) for that
+// concept. saveResumeVersion still runs on each upload so the data is
+// preserved if/when we resurface the history list.
 
 /* ─── ATS Compliance Check (client-side keyword matching) ─── */
 interface ATSResult {
@@ -269,7 +274,9 @@ export default function DashboardResume() {
   const [reanalyzing, setReanalyzing] = useState(false);
   const [analysisSource, setAnalysisSource] = useState<"ai" | "fallback" | null>(null);
   const [truncated, setTruncated] = useState(false);
-  const [tooltipVisible, setTooltipVisible] = useState(false);
+  // tooltipVisible was the hover state for the old "Why these?" focus-areas
+  // tooltip — replaced in the cream redesign by a static dotted-underline
+  // label inside ResumeTabView. Removed.
   // Resume v2 — domain tag selected at upload. Defaults to "general"
   // for back-compat with single-resume users. Persists in component
   // state only; on upload we pass it to /api/analyze-resume which
@@ -362,6 +369,14 @@ export default function DashboardResume() {
   // and the single-active-resume UI renders as before.
   useEffect(() => {
     if (!user?.id) return;
+    // Skip the Supabase fetch entirely while the multi-resume UI is
+    // hidden — no point hitting the network for a render that isn't
+    // happening. setLoadingResumes(false) so the skeleton placeholder
+    // doesn't sit forever on first render.
+    if (!MULTI_RESUME_UI_ENABLED) {
+      setLoadingResumes(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -735,41 +750,36 @@ export default function DashboardResume() {
     return out;
   }, [allResumes]);
 
-  // Multi-resume catalogue grid. Used to live only in the idle phase
-  // which meant nobody saw it once they had a profile. Now extracted
-  // and rendered in BOTH idle and done phases. Threshold relaxed from
-  // ">1" to ">=1" so a single-resume user still sees their fitness
-  // chips; the "Make active" button just doesn't render on the active
-  // card (no-op when there's nothing to switch from anyway).
-  const cataloguePanel = (loadingResumes || allResumes.length >= 1) ? (
-    <div style={{ marginBottom: 24 }}>
-      <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Your resumes</p>
-      {loadingResumes && allResumes.length === 0 ? (
-        // Skeleton count = whatever count we saw last time (cached in
-        // localStorage), capped to [1, 4]. Avoids the awkward "always
-        // shows 2 cards" placeholder when the user actually has 1 or 4.
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }} aria-label="Loading resumes" aria-live="polite">
-          {Array.from({ length: skeletonCount }).map((_, i) => (
-            <div key={i} style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 12, padding: "14px 16px", height: 130, display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ height: 14, background: c.obsidian, borderRadius: 4, width: "30%", opacity: 0.5 }} />
-              <div style={{ height: 12, background: c.obsidian, borderRadius: 4, width: "70%", opacity: 0.4 }} />
-              <div style={{ height: 10, background: c.obsidian, borderRadius: 4, width: "40%", opacity: 0.3 }} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <CatalogueGrid
-          resumes={allResumes}
-          fitsByResumeId={fitsByResumeId}
-          activatingId={activatingId}
-          archivingId={archivingId}
-          onMakeActive={handleMakeActive}
-          onArchive={handleArchiveResume}
-          onRename={handleRenameResume}
-        />
-      )}
-    </div>
-  ) : null;
+  // The multi-resume catalogue panel was rendered here. Re-introduce when
+  // MULTI_RESUME_UI_ENABLED flips back on — wrap CatalogueGrid + the
+  // skeleton in a conditional and render inside ResumeTabView (or above
+  // it). The fetch effect, fitness memo, and action handlers all remain
+  // in this controller for that flip.
+
+  /* ─── Coverage rows for the Practise band ────────────────────────
+     Maps the four interview-type FitnessScores into the row shape the
+     view expects. Computed on the active profile only — old cached
+     profiles without `experiences[]` still produce coverage because
+     resumeFitness reads off topSkills + interviewStrengths/Gaps.
+     IMPORTANT: this hook must run unconditionally on every render —
+     placing it after `if (dataLoading) return ...` would violate the
+     hook ordering rule. */
+  const COVERAGE_LABELS: Record<InterviewType, string> = useMemo(() => ({
+    behavioral: "Behavioural rounds",
+    technical: "Technical depth",
+    system_design: "System design",
+    case: "Case-study problem-solving",
+  }), []);
+  const coverage = useMemo<Array<{ label: string; band: FitnessBand; score: number; type: InterviewType }>>(() => {
+    if (!profile) return [];
+    const fits = computeAllFitness(profile);
+    return (Object.keys(COVERAGE_LABELS) as InterviewType[]).map((type) => ({
+      type,
+      label: COVERAGE_LABELS[type],
+      band: fits[type].band,
+      score: fits[type].score,
+    }));
+  }, [profile, COVERAGE_LABELS]);
 
   if (dataLoading) return <DataLoadingSkeleton />;
 
@@ -968,652 +978,118 @@ export default function DashboardResume() {
     input.click();
   };
 
-  if (phase === "extracting" || phase === "analyzing") {
-    return (
-      <div style={{ margin: "0 auto", padding: "20px 0" }}>
-        <div style={{ background: c.graphite, borderRadius: 16, border: `1px solid ${c.border}`, padding: "60px 40px", textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 24px", background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 24, height: 24, border: "2.5px solid rgba(212,179,127,0.2)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-          </div>
-          <h2 style={{ fontFamily: font.display, fontSize: 24, color: c.ivory, marginBottom: 8, letterSpacing: "-0.02em" }}>
-            {phase === "extracting" ? "Reading your resume" : "Building your profile"}
-          </h2>
-          <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 380, margin: "0 auto" }}>
-            {phase === "extracting" ? `Extracting text from ${fileName || "your document"}...` : "AI is analyzing your experience, skills, and achievements to create a personalized candidate profile..."}
-          </p>
-          {phase === "analyzing" && (
-            <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 12 }}>This usually takes 10–20 seconds.</p>
-          )}
-          {fileName && (
-            <div style={{ marginTop: 20, display: "inline-flex", alignItems: "center", gap: 8, background: c.obsidian, borderRadius: 8, padding: "8px 16px", border: `1px solid ${c.border}` }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>{fileName}</span>
-            </div>
-          )}
-          <button
-            onClick={() => { abortControllerRef.current?.abort(); setPhase("idle"); setFileName(""); setResumeText(""); setProfile(null); }}
-            style={{ display: "block", margin: "20px auto 0", fontFamily: font.ui, fontSize: 13, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "6px 16px", borderRadius: 8, transition: "color 0.2s" }}
-            onMouseEnter={e => (e.currentTarget.style.color = c.ivory)}
-            onMouseLeave={e => (e.currentTarget.style.color = c.stone)}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
+  /* Last-analysed label derived from reanalyzeDone is a plain ternary,
+     defined right where it's used in the return below. */
+  const lastAnalysedLabel = reanalyzeDone ? "just now" : null;
 
-  if (phase === "idle") {
-    return (
-      <div style={{ margin: "0 auto", padding: "20px 0" }}>
-        <h2 style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>Resume Intelligence</h2>
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, marginBottom: 28, lineHeight: 1.6 }}>
-          Upload your resume and our AI will build a candidate profile — identifying your strengths, key achievements, and areas to prepare for interviews.
-        </p>
-        {cataloguePanel}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <label htmlFor="resume-domain" style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, textTransform: "uppercase", letterSpacing: "0.08em" }}>Domain</label>
-          <select
-            id="resume-domain"
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8, padding: "6px 10px", cursor: "pointer" }}
-          >
-            <option value="general">General</option>
-            <option value="sde">Software Engineering</option>
-            <option value="pm">Product Management</option>
-            <option value="design">Design</option>
-            <option value="sales">Sales</option>
-            <option value="marketing">Marketing</option>
-            <option value="ops">Operations</option>
-            <option value="hr">HR / People</option>
-            <option value="data">Data / Analytics</option>
-            <option value="custom">Custom…</option>
-          </select>
-          {domain === "custom" && (
-            <input
-              type="text"
-              value={customDomain}
-              onChange={(e) => setCustomDomain(e.target.value.slice(0, 32))}
-              placeholder="e.g. Solutions Engineering"
-              aria-label="Custom domain name"
-              style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8, padding: "6px 10px", maxWidth: 200 }}
-            />
-          )}
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Tag your resume by role so we can group versions and surface the right interview prep.</span>
-        </div>
-        <div role="button" tabIndex={0} onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFile(e.dataTransfer.files[0]); }}
-          onClick={triggerUpload}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); triggerUpload(); } }}
-          style={{ border: `2px dashed ${isDragging ? c.gilt : "rgba(212,179,127,0.2)"}`, borderRadius: 16, padding: "64px 32px", textAlign: "center", background: isDragging ? "rgba(212,179,127,0.04)" : "transparent", transition: "all 0.2s ease", cursor: "pointer" }}>
-          <div style={{ width: 64, height: 64, borderRadius: 16, margin: "0 auto 20px", background: "rgba(212,179,127,0.06)", border: "1px solid rgba(212,179,127,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </div>
-          <p style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 500, color: c.ivory, marginBottom: 6 }}>Drop your resume here</p>
-          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginBottom: 20 }}>or click to browse</p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-            {["PDF", "DOCX", "TXT"].map((type) => (
-              <span key={type} style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.stone, background: c.graphite, padding: "4px 12px", borderRadius: 4, border: `1px solid ${c.border}` }}>{type}</span>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 20, padding: "12px 16px", borderRadius: 8, background: "rgba(212,179,127,0.03)", border: `1px solid ${c.border}` }}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Your resume is analyzed securely and never shared. Delete anytime.</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (phase === "error") {
-    return (
-      <div style={{ margin: "0 auto", padding: "20px 0" }}>
-        <h2 style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>Resume Intelligence</h2>
-        <div role="alert" style={{ background: c.graphite, borderRadius: 14, border: "1px solid rgba(196,112,90,0.15)", padding: "32px", textAlign: "center", marginTop: 20 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, margin: "0 auto 16px", background: "rgba(196,112,90,0.08)", border: "1px solid rgba(196,112,90,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-          </div>
-          <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory, marginBottom: 4 }}>Couldn't process this file</p>
-          <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginBottom: 20 }}>{errorMsg}</p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button onClick={triggerUpload} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian, background: c.gilt, border: "none", borderRadius: 8, padding: "10px 24px", cursor: "pointer", transition: "filter 0.15s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}>Try another file</button>
-            <button onClick={() => { setPhase("idle"); setErrorMsg(""); }} style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 8, padding: "10px 24px", cursor: "pointer", transition: "background 0.15s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.06)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>Dismiss</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Profile view (done state)
+  /* During the active extracting / analyzing phases the loading screen
+     is shown without the rest of the chrome. Funnel everything through
+     <ResumeTabView /> — its top-level dispatcher renders the right
+     phase variant. */
   return (
-    <div style={{ margin: "0 auto", padding: "20px 0" }}>
-      {cataloguePanel}
-      {/* Upload-another affordance for done phase. Lets users add a
-        * second resume with a different domain without first having to
-        * delete or archive the current one. */}
-      {!loadingResumes && allResumes.length >= 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, padding: "10px 14px", background: c.graphite, border: `1px dashed ${c.border}`, borderRadius: 10 }}>
-          <select
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            aria-label="Domain for next upload"
-            style={{ fontFamily: font.ui, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 6, padding: "5px 8px", cursor: "pointer", minHeight: 28 }}
+    <>
+    {/* Multi-resume catalogue strip — gated off in v1. The expression
+        below statically references the catalogue's handlers + state so
+        flipping MULTI_RESUME_UI_ENABLED back to true is a one-liner; no
+        re-imports, no re-wiring. While the flag is false the JSX never
+        evaluates at runtime. */}
+    {MULTI_RESUME_UI_ENABLED && (loadingResumes || allResumes.length >= 1) && (
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "16px 24px 0" }}>
+        {loadingResumes && allResumes.length === 0 ? (
+          <div
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}
+            aria-label="Loading resumes"
+            aria-live="polite"
           >
-            <option value="general">General</option>
-            <option value="sde">Software Engineering</option>
-            <option value="pm">Product Management</option>
-            <option value="design">Design</option>
-            <option value="sales">Sales</option>
-            <option value="marketing">Marketing</option>
-            <option value="ops">Operations</option>
-            <option value="hr">HR / People</option>
-            <option value="data">Data / Analytics</option>
-            <option value="custom">Custom…</option>
-          </select>
-          {domain === "custom" && (
-            <input
-              type="text"
-              value={customDomain}
-              onChange={(e) => setCustomDomain(e.target.value.slice(0, 32))}
-              placeholder="e.g. Solutions Engineering"
-              aria-label="Custom domain name"
-              style={{ fontFamily: font.ui, fontSize: 12, color: c.ivory, background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: 6, padding: "5px 8px", minHeight: 28, maxWidth: 180 }}
-            />
-          )}
-          <button
-            onClick={triggerUpload}
-            style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.gilt, background: "transparent", border: `1px solid ${c.gilt}`, borderRadius: 6, padding: "5px 14px", cursor: "pointer", minHeight: 28 }}
-          >
-            + Add another resume
-          </button>
-          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Pick a domain, then upload a resume tailored for it.</span>
-        </div>
-      )}
-      <div style={{ background: `linear-gradient(135deg, ${c.graphite} 0%, rgba(212,179,127,0.04) 100%)`, borderRadius: 16, border: `1px solid ${c.border}`, padding: "28px 28px 24px", marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ flex: 1 }}>
-            {(() => {
-              // AI returns sentence-style headlines like "Senior Product Designer
-              // with 5+ years of experience designing scalable digital products".
-              // For the title slot we want just the role part — the rest of the
-              // sentence is already represented by the badge row (seniority,
-              // years, industries) and the summary paragraph below.
-              const fullHeadline = profile?.headline || "";
-              const roleOnly = fullHeadline
-                .split(/\s+(?:with|,|—|–|\||·)\s+/i)[0]
-                .replace(/^(?:a|an|the)\s+/i, "")
-                .trim();
-              const display = roleOnly || fullHeadline || "Resume uploaded";
-              return (
-                <h2 style={{ fontFamily: font.display, fontSize: 24, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
-                  {display}
-                </h2>
-              );
-            })()}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              {profile?.seniorityLevel ? <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.15)", borderRadius: 5, padding: "3px 10px" }}>{profile.seniorityLevel}</span> : null}
-              {profile?.yearsExperience != null && profile.yearsExperience > 0 && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>{profile.yearsExperience}+ years experience</span>}
-              {profile?.industries && profile.industries.length > 0 && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>{profile.industries.join(", ")}</span>}
-              {analysisSource && (
-                <span style={{ fontFamily: font.ui, fontSize: 10, color: analysisSource === "ai" ? c.sage : c.stone, background: analysisSource === "ai" ? "rgba(122,158,126,0.08)" : "rgba(245,242,237,0.04)", border: `1px solid ${analysisSource === "ai" ? "rgba(122,158,126,0.15)" : c.border}`, borderRadius: 5, padding: "2px 8px" }}>
-                  {analysisSource === "ai" ? "AI Profile" : "Basic Extract"}
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 6, flexShrink: 0, marginLeft: 16, alignItems: "center" }}>
-            {reanalyzeDone && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.sage, marginRight: 4 }}>Updated ✓</span>}
-            {reanalyzing && <span style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, marginRight: 4 }}>Analyzing...</span>}
-            <button onClick={handleReanalyze} disabled={reanalyzing} aria-label="Re-analyze resume" title="Re-analyze" style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(245,242,237,0.04)", border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: reanalyzing ? "default" : "pointer", opacity: reanalyzing ? 0.5 : 1, transition: "opacity 0.15s" }}
-              onMouseEnter={(e) => { if (!reanalyzing) e.currentTarget.style.background = "rgba(245,242,237,0.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.04)"; }}>
-              {reanalyzing
-                ? <div style={{ width: 14, height: 14, border: "2px solid rgba(212,179,127,0.2)", borderTopColor: c.gilt, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                : <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              }
-            </button>
-            {confirmDelete ? (
-              // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- container for confirmation buttons needs Escape key handling
-              <div style={{ display: "flex", gap: 4, alignItems: "center" }} onKeyDown={(e) => { if (e.key === "Escape") setConfirmDelete(false); }}>
-                <span style={{ fontFamily: font.ui, fontSize: 11, color: c.ember }}>Delete?</span>
-                {/* eslint-disable-next-line jsx-a11y/no-autofocus -- focus management: auto-focus confirm button for destructive action */}
-                <button autoFocus onClick={() => { handleRemove(); setConfirmDelete(false); }} aria-label="Confirm delete resume" style={{ padding: "4px 10px", borderRadius: 10, border: "none", background: c.ember, color: "#fff", fontFamily: font.ui, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Yes</button>
-                <button onClick={() => setConfirmDelete(false)} aria-label="Cancel delete" style={{ padding: "4px 10px", borderRadius: 10, border: `1px solid ${c.border}`, background: "transparent", color: c.stone, fontFamily: font.ui, fontSize: 11, cursor: "pointer" }}>No</button>
-              </div>
-            ) : (
-              <button onClick={() => setConfirmDelete(true)} aria-label="Delete resume" title="Remove resume" style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(196,112,90,0.04)", border: "1px solid rgba(196,112,90,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(196,112,90,0.1)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(196,112,90,0.04)"; }}>
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            )}
-          </div>
-        </div>
-        {profile?.summary && <p style={{ fontFamily: font.ui, fontSize: 13.5, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{profile.summary}</p>}
-        {truncated && (
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Your resume was truncated to fit the analysis window. For best results, keep your resume to 2 pages.
-          </p>
-        )}
-        {errorMsg && (
-          <div role="alert" style={{
-            marginTop: 12, padding: "10px 14px", borderRadius: 8,
-            background: "rgba(196,112,90,0.06)", border: "1px solid rgba(196,112,90,0.2)",
-            display: "flex", alignItems: "center", gap: 8,
-          }}>
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, flex: 1, lineHeight: 1.5 }}>{errorMsg}</span>
-            <button
-              onClick={() => setErrorMsg("")}
-              aria-label="Dismiss error"
-              style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4, display: "flex" }}
-            >
-              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-        )}
-        {analysisSource === "fallback" && (
-          <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 8, background: "rgba(212,179,127,0.04)", border: "1px solid rgba(212,179,127,0.1)", display: "flex", alignItems: "center", gap: 8 }}>
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, flex: 1 }}>
-              {resumeText
-                ? "Showing basic extraction. Run AI analysis for a full profile with score and insights."
-                : "Resume text not available. Re-upload your resume to get a full AI profile with score and insights."}
-            </span>
-            {resumeText ? (
-              <button
-                onClick={handleReanalyze}
-                disabled={reanalyzing}
+            {Array.from({ length: skeletonCount }).map((_, i) => (
+              <div
+                key={i}
                 style={{
-                  fontFamily: font.ui, fontSize: 11, fontWeight: 600,
-                  color: reanalyzing ? "rgba(17,17,19,0.5)" : c.obsidian,
-                  background: reanalyzing ? "rgba(212,179,127,0.25)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-                  border: "none", borderRadius: 6, padding: "5px 14px",
-                  cursor: reanalyzing ? "default" : "pointer", whiteSpace: "nowrap",
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  transition: "filter 0.15s",
+                  background: "#FFFFFF",
+                  border: "1px solid #EBE5D2",
+                  borderRadius: 12,
+                  height: 130,
                 }}
-              >
-                {reanalyzing ? (
-                  <>
-                    <div style={{ width: 10, height: 10, border: "1.5px solid rgba(17,17,19,0.3)", borderTopColor: c.obsidian, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    Analyzing…
-                  </>
-                ) : "Re-analyze with AI"}
-              </button>
-            ) : (
-              <button onClick={triggerUpload} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "none", border: `1px solid rgba(212,179,127,0.2)`, borderRadius: 6, padding: "4px 12px", cursor: "pointer", whiteSpace: "nowrap" }}>
-                Re-upload
-              </button>
-            )}
-          </div>
-        )}
-        {needsReupload && !profile && (
-          <div style={{ marginTop: 14, padding: "16px 20px", borderRadius: 10, background: "rgba(212,179,127,0.06)", border: `1px solid rgba(212,179,127,0.12)` }}>
-            <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.6, margin: "0 0 12px" }}>
-              Your resume was uploaded but the AI summary wasn't generated. Re-upload it to get a detailed profile analysis with strengths, skills, and interview preparation insights.
-            </p>
-            <button onClick={triggerUpload} style={{
-              padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer",
-              background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian,
-              fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "filter 0.15s",
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; }}>
-              Re-upload for AI Analysis
-            </button>
-          </div>
-        )}
-        {profile?.careerTrajectory && (
-          <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, background: "rgba(122,158,126,0.04)", border: "1px solid rgba(122,158,126,0.1)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.sage, textTransform: "uppercase", letterSpacing: "0.05em" }}>Career Trajectory</span>
-            </div>
-            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk, lineHeight: 1.5 }}>{profile.careerTrajectory}</span>
-          </div>
-        )}
-        {fileName && (
-          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
-            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{fileName}</span>
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, opacity: 0.5 }}>·</span>
-            <button onClick={triggerUpload} style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline", textUnderlineOffset: 2, transition: "opacity 0.15s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.7"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}>Replace</button>
-          </div>
-        )}
-      </div>
-
-      {/* Resume version history */}
-      {(() => {
-        const history = getResumeHistory();
-        if (history.length < 2) return null;
-        return (
-          <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "16px 24px", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.stone} strokeWidth="1.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              <h3 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Version History</h3>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {history.slice(0, 5).map((v, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: i < Math.min(history.length, 5) - 1 ? `1px solid ${c.border}` : "none" }}>
-                  <span style={{ fontFamily: font.ui, fontSize: 11, color: i === 0 ? c.chalk : c.stone, flex: 1 }}>
-                    {v.fileName}
-                    {i === 0 && <span style={{ fontFamily: font.ui, fontSize: 10, color: c.sage, marginLeft: 6, fontWeight: 600 }}>CURRENT</span>}
-                  </span>
-                  {i !== 0 && v.resumeText && (
-                    <button
-                      onClick={() => {
-                        setFileName(v.fileName);
-                        setResumeText(v.resumeText!);
-                        setProfile(null);
-                        setPhase("analyzing");
-                        updateUser({ resumeFileName: v.fileName, resumeText: v.resumeText! });
-                        updatePersisted({ resumeFileName: v.fileName });
-                        abortControllerRef.current?.abort();
-                        abortControllerRef.current = new AbortController();
-                        analyzeResumeWithAI(v.resumeText!, user?.targetRole, abortControllerRef.current.signal)
-                          .then(result => {
-                            if (result?.profile) {
-                              setProfile(result.profile);
-                              setAnalysisSource("ai");
-                              updateUser({ resumeData: { _type: "ai", ...result.profile } });
-                              saveResumeVersion(v.fileName, result.profile.resumeScore, v.resumeText!);
-                            }
-                            setPhase("done");
-                          })
-                          .catch(() => setPhase("done"));
-                      }}
-                      style={{ fontFamily: font.ui, fontSize: 10, color: c.gilt, background: "none", border: `1px solid rgba(212,179,127,0.2)`, borderRadius: 6, padding: "2px 8px", cursor: "pointer", transition: "all 0.2s" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(212,179,127,0.08)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
-                    >
-                      Restore
-                    </button>
-                  )}
-                  {v.resumeScore != null && (
-                    <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: v.resumeScore >= 65 ? c.sage : v.resumeScore >= 40 ? c.gilt : c.ember }}>{v.resumeScore}/100</span>
-                  )}
-                  <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone }}>{new Date(v.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
-
-      {profile?.topSkills && profile.topSkills.length > 0 && (
-        <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>Top Skills</h3>
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {profile.topSkills.map((skill, i) => (
-              <span key={i} style={{ fontFamily: font.ui, fontSize: 12.5, color: i < 3 ? c.ivory : c.chalk, background: i < 3 ? "rgba(212,179,127,0.1)" : "rgba(245,242,237,0.04)", border: `1px solid ${i < 3 ? "rgba(212,179,127,0.18)" : c.border}`, borderRadius: 8, padding: "6px 14px", fontWeight: i < 3 ? 500 : 400 }}>{skill}</span>
+              />
             ))}
           </div>
-        </div>
-      )}
-
-      {profile?.keyAchievements && profile.keyAchievements.length > 0 && (
-        <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-            <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>Key Achievements</h3>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {profile.keyAchievements.map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "12px 16px", borderRadius: 10, background: c.obsidian, border: `1px solid ${c.border}` }}>
-                <div style={{ width: 24, height: 24, borderRadius: 10, background: "rgba(212,179,127,0.08)", border: "1px solid rgba(212,179,127,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, lineHeight: 1.5, margin: 0 }}>{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {((profile?.interviewStrengths && profile.interviewStrengths.length > 0) || (profile?.interviewGaps && profile.interviewGaps.length > 0)) && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 14 }}>
-          {profile?.interviewStrengths && profile.interviewStrengths.length > 0 && (
-            <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <h3 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Interview Strengths</h3>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {profile.interviewStrengths.map((s, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.sage, flexShrink: 0, marginTop: 6 }} />
-                    <span style={{ fontFamily: font.ui, fontSize: 12.5, color: c.chalk, lineHeight: 1.5 }}>{s}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {profile?.interviewGaps && profile.interviewGaps.length > 0 && (
-            <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                <h3 style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Focus Areas</h3>
-                <span style={{ position: "relative", display: "inline-block" }}
-                  onMouseEnter={() => setTooltipVisible(true)} onMouseLeave={() => setTooltipVisible(false)}>
-                  <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, cursor: "help", borderBottom: `1px dotted ${c.stone}` }}>Why these?</span>
-                  {tooltipVisible && (
-                    <span style={{ position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", whiteSpace: "normal", width: 240, padding: "10px 12px", borderRadius: 8, background: c.obsidian, border: `1px solid ${c.border}`, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", fontFamily: font.ui, fontSize: 11, color: c.chalk, lineHeight: 1.5, zIndex: 10, pointerEvents: "none" }}>
-                      Topics the AI suggests you practice — not weaknesses, just areas where extra prep will boost your confidence.
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {profile.interviewGaps.map((g, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.gilt, flexShrink: 0, marginTop: 6 }} />
-                    <span style={{ fontFamily: font.ui, fontSize: 12.5, color: c.chalk, lineHeight: 1.5 }}>{g}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── ATS Compliance Check ─── */}
-      {atsResult && (
-        <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
-            <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, margin: 0 }}>ATS Compliance Check</h3>
-          </div>
-
-          {/* Score circle + label */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 18 }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-              border: `3px solid ${atsResult.score >= 85 ? c.sage : atsResult.score >= 70 ? c.sage : atsResult.score >= 50 ? c.gilt : c.ember}`,
-            }}>
-              <span style={{ fontFamily: font.mono, fontSize: 20, fontWeight: 700, color: atsResult.score >= 70 ? c.sage : atsResult.score >= 50 ? c.gilt : c.ember }}>
-                {atsResult.score}
-              </span>
-            </div>
-            <div>
-              <div style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory }}>{atsResult.label}</div>
-              <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>ATS Compatibility Score</div>
-            </div>
-          </div>
-
-          {/* Found items */}
-          {atsResult.found.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, textTransform: "uppercase", letterSpacing: "0.05em" }}>Found</span>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                {atsResult.found.map((item, i) => (
-                  <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "3px 10px", borderRadius: 20, background: `${c.sage}22`, color: c.sage, border: `1px solid ${c.sage}44` }}>{item}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Missing items */}
-          {atsResult.missing.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, textTransform: "uppercase", letterSpacing: "0.05em" }}>Missing</span>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                {atsResult.missing.map((item, i) => (
-                  <span key={i} style={{ fontFamily: font.ui, fontSize: 11, padding: "3px 10px", borderRadius: 20, background: `${c.ember}22`, color: c.ember, border: `1px solid ${c.ember}44` }}>{item}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Suggestions */}
-          {atsResult.suggestions.length > 0 && (
-            <div>
-              <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, textTransform: "uppercase", letterSpacing: "0.05em" }}>Suggestions</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-                {atsResult.suggestions.map((tip, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: c.obsidian, border: `1px solid ${c.border}` }}>
-                    <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 700, color: c.gilt, background: "rgba(212,179,127,0.08)", borderRadius: 4, padding: "2px 6px", flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
-                    <span style={{ fontFamily: font.ui, fontSize: 12.5, color: c.chalk, lineHeight: 1.5 }}>{tip}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {profile?.resumeScore != null && (
-        <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "20px 24px", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={profile.resumeScore >= 65 ? c.sage : c.gilt} strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory }}>Resume Quality</h3>
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontFamily: font.mono, fontSize: 24, fontWeight: 700, color: profile.resumeScore >= 65 ? c.sage : profile.resumeScore >= 40 ? c.gilt : c.ember }}>{profile.resumeScore}</span>
-              <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>/100</span>
-            </div>
-          </div>
-          <div style={{ height: 6, background: c.obsidian, borderRadius: 3, overflow: "hidden", marginBottom: profile.improvements && profile.improvements.length > 0 ? 16 : 0 }}>
-            <div style={{ height: "100%", width: `${profile.resumeScore}%`, background: profile.resumeScore >= 65 ? c.sage : profile.resumeScore >= 40 ? c.gilt : c.ember, borderRadius: 3, transition: "width 0.4s ease" }} />
-          </div>
-          {profile.improvements && profile.improvements.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, textTransform: "uppercase", letterSpacing: "0.05em" }}>How to improve</span>
-              {profile.improvements.map((tip, i) => {
-                // Defensive coerce: server normalizer should send strings,
-                // but if a stale cache or third-party LLM returns
-                // {change, why} objects we don't want React error #31 to
-                // crash the page. Stringify keys → "key1 — key2" join.
-                const text = typeof tip === "string"
-                  ? tip
-                  : tip && typeof tip === "object"
-                    ? Object.values(tip as Record<string, unknown>).filter(v => typeof v === "string").join(" — ")
-                    : String(tip ?? "");
-                const polishState = polished[i];
-                return (
-                  <div key={i} style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 14px", borderRadius: 8, background: c.obsidian, border: `1px solid ${c.border}` }}>
-                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                      <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 700, color: c.gilt, background: "rgba(212,179,127,0.08)", borderRadius: 4, padding: "2px 6px", flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
-                      <span style={{ fontFamily: font.ui, fontSize: 12.5, color: c.chalk, lineHeight: 1.5, flex: 1 }}>{text}</span>
-                      <button
-                        onClick={() => handlePolishBullet(i, text)}
-                        disabled={polishState?.state === "loading"}
-                        title="Rewrite this bullet with stronger verbs and metrics"
-                        style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.gilt, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 4, padding: "2px 8px", cursor: polishState?.state === "loading" ? "wait" : "pointer", flexShrink: 0, opacity: polishState?.state === "loading" ? 0.6 : 1 }}
-                      >
-                        {polishState?.state === "loading" ? "…" : polishState?.state === "done" ? "✓" : "Polish"}
-                      </button>
-                    </div>
-                    {polishState?.state === "done" && polishState.rewrite && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "8px 10px", borderRadius: 6, background: "rgba(140,182,144,0.05)", border: `1px solid rgba(140,182,144,0.2)` }}>
-                        <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.sage, textTransform: "uppercase", letterSpacing: "0.06em" }}>Suggested rewrite</span>
-                        <span style={{ fontFamily: font.ui, fontSize: 12.5, color: c.chalk, lineHeight: 1.5 }}>{polishState.rewrite}</span>
-                        {polishState.rationale && (
-                          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, fontStyle: "italic" }}>{polishState.rationale}</span>
-                        )}
-                        <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
-                          <button
-                            onClick={() => handleApplyPolish(i, polishState.rewrite!)}
-                            style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.obsidian, background: c.sage, border: "none", borderRadius: 4, padding: "3px 10px", cursor: "pointer" }}
-                          >
-                            Use this
-                          </button>
-                          <button
-                            onClick={() => navigator.clipboard?.writeText(polishState.rewrite!)}
-                            style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.stone, background: "transparent", border: `1px solid ${c.border}`, borderRadius: 4, padding: "3px 10px", cursor: "pointer" }}
-                          >
-                            Copy
-                          </button>
-                          <button
-                            onClick={() => setPolished(p => { const copy = { ...p }; delete copy[i]; return copy; })}
-                            style={{ fontFamily: font.ui, fontSize: 10, color: c.stone, background: "transparent", border: "none", cursor: "pointer", padding: "3px 6px" }}
-                          >
-                            Dismiss
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {polishState?.state === "error" && (
-                      <span style={{ fontFamily: font.ui, fontSize: 11, color: c.ember }}>{polishState.error}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {profile && (
-        <CoveragePanel profile={profile} targetRole={user?.targetRole} />
-      )}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 8, background: "rgba(212,179,127,0.03)", border: `1px solid ${c.border}` }}>
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Your resume is analyzed securely and never shared. Delete anytime.</span>
+        ) : (
+          <CatalogueGrid
+            resumes={allResumes}
+            fitsByResumeId={fitsByResumeId}
+            activatingId={activatingId}
+            archivingId={archivingId}
+            onMakeActive={handleMakeActive}
+            onArchive={handleArchiveResume}
+            onRename={handleRenameResume}
+          />
+        )}
       </div>
-
-      {/* Floating toast — fixed position so it stays visible regardless
-        * of scroll. Single slot; auto-dismisses after 3.2s. */}
-      {notice && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            zIndex: 1000,
-            maxWidth: 360,
-            padding: "10px 14px",
-            borderRadius: 8,
-            background: notice.kind === "ok" ? "rgba(140,182,144,0.96)" : "rgba(196,112,90,0.96)",
-            color: c.obsidian,
-            fontFamily: font.ui,
-            fontSize: 12,
-            fontWeight: 500,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-          }}
-        >
-          <span style={{ fontWeight: 700 }}>{notice.kind === "ok" ? "✓" : "!"}</span>
-          {notice.text}
-        </div>
-      )}
-    </div>
+    )}
+    <ResumeTabView
+      phase={phase}
+      profile={profile}
+      analysisSource={analysisSource}
+      targetRole={user?.targetRole ?? undefined}
+      fileName={fileName}
+      fileSizeKb={null}
+      lastAnalysedLabel={lastAnalysedLabel}
+      errorMsg={errorMsg}
+      needsReupload={needsReupload}
+      truncated={truncated}
+      reanalyzing={reanalyzing}
+      reanalyzeDone={reanalyzeDone}
+      onReanalyze={handleReanalyze}
+      confirmDelete={confirmDelete}
+      setConfirmDelete={setConfirmDelete}
+      onRemove={handleRemove}
+      isDragging={isDragging}
+      setIsDragging={setIsDragging}
+      onTriggerUpload={triggerUpload}
+      onDropFile={handleFile}
+      polished={polished}
+      onPolishBullet={handlePolishBullet}
+      onApplyPolish={handleApplyPolish}
+      onDismissPolish={(idx: number) => setPolished(p => { const copy = { ...p }; delete copy[idx]; return copy; })}
+      domain={domain}
+      setDomain={setDomain}
+      customDomain={customDomain}
+      setCustomDomain={setCustomDomain}
+      atsResult={atsResult}
+      coverage={coverage}
+      onDismissError={() => { setErrorMsg(""); if (phase === "error") setPhase("idle"); }}
+      resumeText={resumeText}
+    />
+    {/* Floating toast — surfaces feedback from showNotice() (e.g. "Polish
+        applied", "Resume archived"). Single slot, auto-dismisses. Cream
+        palette so it reads correctly on the redesigned page. */}
+    {notice && (
+      <div
+        role="status"
+        aria-live="polite"
+        style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 1000,
+          maxWidth: 360,
+          padding: "10px 14px",
+          borderRadius: 10,
+          background: notice.kind === "ok" ? "#15803D" : "#B91C1C",
+          color: "#FFFFFF",
+          fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif",
+          fontSize: 12,
+          fontWeight: 500,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+        }}
+      >
+        <span style={{ fontWeight: 700 }}>{notice.kind === "ok" ? "✓" : "!"}</span>
+        {notice.text}
+      </div>
+    )}
+    </>
   );
 }
