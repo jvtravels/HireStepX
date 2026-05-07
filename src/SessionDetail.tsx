@@ -64,6 +64,48 @@ function LoadingScreen() {
   );
 }
 
+function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetry: () => void; onBack: () => void }) {
+  return (
+    <Shell>
+      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
+        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 400 }}>
+          Couldn&apos;t load this session
+        </h1>
+        <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 8px", lineHeight: 1.55 }}>
+          Something went wrong fetching your report. This is usually temporary.
+        </p>
+        <p style={{ fontSize: 12, color: "#988E7E", margin: "0 0 24px", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}>
+          {message}
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <button
+            type="button"
+            onClick={onRetry}
+            style={{
+              background: "#312E81", color: "#FAF7F0", border: "none",
+              padding: "10px 20px", borderRadius: 10, fontWeight: 600,
+              fontSize: 13, cursor: "pointer",
+            }}
+          >
+            Try again
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              background: "transparent", color: "#312E81", border: "1px solid #312E81",
+              padding: "10px 20px", borderRadius: 10, fontWeight: 600,
+              fontSize: 13, cursor: "pointer",
+            }}
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
 function NotFoundScreen({ onBack }: { onBack: () => void }) {
   return (
     <Shell>
@@ -141,6 +183,7 @@ export default function SessionDetail() {
   const { user } = useAuth();
   const [session, setSession] = useState<LocalSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -178,7 +221,14 @@ export default function SessionDetail() {
           }
           setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch((err) => {
+          // Surface fetch failures to the user instead of leaving them on a
+          // permanent loading spinner. Distinguish from "not found" further
+          // down so the user knows whether to retry or it's actually missing.
+          console.error("[SessionDetail] failed to load session:", err);
+          setLoadError(err instanceof Error ? err.message : "Could not load session");
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
@@ -192,6 +242,7 @@ export default function SessionDetail() {
   const onBack = () => router.push("/dashboard");
 
   if (loading) return <LoadingScreen />;
+  if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;
   if (!dashboardSession) return <NotFoundScreen onBack={onBack} />;
 
   return <SessionReport session={dashboardSession} onBack={onBack} />;

@@ -568,7 +568,7 @@ function CanvasListeningActionZone({
   const canSend = currentTranscript.trim().length > 0;
   const showTyping = typing || speechUnavailable;
   return (
-    <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+    <div className="iv-stage-wrap" style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
       {/* Live transcript card — only if we have something */}
       {currentTranscript && !showTyping && (
         /* role="log" implies polite; aria-relevant="additions" so SR only
@@ -1348,7 +1348,7 @@ function InterviewInner() {
         )}
 
         {phase === "done" && (
-          <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", gap: 18 }}>
+          <div className="iv-stage-wrap" style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", gap: 18 }}>
             {isSalaryNegotiation && (
               <DealSummaryCard
                 transcript={transcript}

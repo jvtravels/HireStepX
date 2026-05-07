@@ -9,7 +9,14 @@ import { createHmac, timingSafeEqual } from "crypto";
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
-const TOKEN_SECRET = process.env.ADMIN_PASSWORD || "fallback-secret";
+/* Token signing key — derived from a dedicated env var if set, otherwise
+ * from the admin password combined with a fixed salt so a misconfigured
+ * deploy doesn't end up signing every session with the literal string
+ * "fallback-secret". If neither env is set, signing is disabled (verifyToken
+ * always rejects) so the app fails closed rather than accepting forged
+ * tokens. */
+const TOKEN_SECRET = (process.env.ADMIN_SESSION_SECRET || "").trim()
+  || (ADMIN_PASSWORD ? createHmac("sha256", "hirestepx-admin-token-v1").update(ADMIN_PASSWORD).digest("hex") : "");
 const TOKEN_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 /* Query limits — reasonable caps to prevent huge payloads */
@@ -62,6 +69,9 @@ function createToken(): string {
 }
 
 function verifyToken(token: string): boolean {
+  // Fail closed if the signing key was never configured — better to reject
+  // every token than to accept tokens signed with an empty/predictable key.
+  if (!TOKEN_SECRET) return false;
   try {
     const [dataB64, sig] = token.split(".");
     if (!dataB64 || !sig) return false;

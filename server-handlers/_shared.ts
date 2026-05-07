@@ -516,8 +516,14 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify([["INCR", key], ["EXPIRE", key, 86400]]),
+      signal: AbortSignal.timeout(5_000),
     });
-    if (!res.ok) return { allowed: true }; // fail open
+    if (!res.ok) {
+      // Fail open so a Redis blip doesn't lock everyone out, but log loudly
+      // and flag the caller so ops alerts can fire on a sustained outage.
+      console.error(`[quota] CRITICAL: Redis quota check failed (HTTP ${res.status}) — failing open for user ${userId.slice(0, 8)}`);
+      return { allowed: true, warning: true };
+    }
     const results = await res.json();
     const count = results[0]?.result ?? 1;
     if (count > dailyLimit) {
@@ -526,8 +532,10 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
     // 80% warning threshold — caller can surface to client
     const warning = count >= Math.floor(dailyLimit * 0.8);
     return { allowed: true, count, limit: dailyLimit, warning };
-  } catch {
-    return { allowed: true }; // fail open
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[quota] CRITICAL: Redis quota check threw (${msg.slice(0, 80)}) — failing open for user ${userId.slice(0, 8)}`);
+    return { allowed: true, warning: true };
   }
 }
 

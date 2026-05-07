@@ -289,31 +289,33 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
      candidates need to know upfront — that the AI may stay silent on
      purpose, and may interrupt if they ramble. Without these, users
      interpret silence as a bug and interruption as the AI being broken. */
-  const tips = [
+  // Body is JSX (not HTML strings) so we don't need dangerouslySetInnerHTML —
+  // safer by construction and identical visual output.
+  const tips: Array<{ kbd: string; title: string; body: React.ReactNode }> = [
     {
       kbd: "Space",
       title: "Voice or text — both work",
-      body: "Just start speaking. We&rsquo;re always listening. Press <strong>Space</strong> when you&rsquo;re done, or type instead.",
+      body: <>Just start speaking. We&rsquo;re always listening. Press <strong>Space</strong> when you&rsquo;re done, or type instead.</>,
     },
     {
       kbd: "R",
       title: "Repeat the question",
-      body: "Press R or tap Repeat if you missed what was asked. Real interviewers do it too.",
+      body: <>Press R or tap Repeat if you missed what was asked. Real interviewers do it too.</>,
     },
     {
       kbd: "···",
       title: "Sometimes I&rsquo;ll stay quiet",
-      body: "If your answer is good but vague, I might not jump in right away. The silence is a hint — there&rsquo;s usually one more detail worth adding.",
+      body: <>If your answer is good but vague, I might not jump in right away. The silence is a hint &mdash; there&rsquo;s usually one more detail worth adding.</>,
     },
     {
       kbd: "→",
       title: "I may interrupt",
-      body: "If you&rsquo;ve been going for a while, I&rsquo;ll cut in to keep us on time. Don&rsquo;t take it personally — same as a real interview.",
+      body: <>If you&rsquo;ve been going for a while, I&rsquo;ll cut in to keep us on time. Don&rsquo;t take it personally &mdash; same as a real interview.</>,
     },
     {
       kbd: "✓",
       title: "Saved automatically",
-      body: "Your answers save after every question. If your network blips, you won&rsquo;t lose anything.",
+      body: <>Your answers save after every question. If your network blips, you won&rsquo;t lose anything.</>,
     },
   ];
   /* Backdrop click-to-dismiss is a standard modal affordance; the keyboard
@@ -369,9 +371,9 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
                 </span>
                 <span
                   style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.5 }}
-                  // Tip body uses HTML entities for typographic apostrophes.
-                  dangerouslySetInnerHTML={{ __html: tip.body }}
-                />
+                >
+                  {tip.body}
+                </span>
               </div>
             </li>
           ))}
