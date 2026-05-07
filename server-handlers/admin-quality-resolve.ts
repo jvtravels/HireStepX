@@ -53,11 +53,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return;
   }
 
-  const body = (req.body || {}) as { session_id?: string; status?: string; notes?: string; by?: string };
-  const sessionId = typeof body.session_id === "string" ? body.session_id.slice(0, 64) : "";
+  const body = (req.body || {}) as { session_id?: string; session_ids?: string[]; status?: string; notes?: string; by?: string; flag?: string };
   const status = typeof body.status === "string" ? body.status : "";
-  if (!sessionId || !ALLOWED_STATUSES.has(status)) {
-    res.status(400).json({ error: "Invalid session_id or status" });
+  if (!ALLOWED_STATUSES.has(status)) {
+    res.status(400).json({ error: "Invalid status" });
+    return;
+  }
+
+  // Accept either single (session_id) or bulk (session_ids array). Bulk mode
+  // also accepts an optional `flag` so the UI can "acknowledge all sessions
+  // currently flagged with X" without resolving sessions that have a different mix.
+  const ids: string[] = [];
+  if (Array.isArray(body.session_ids)) {
+    for (const id of body.session_ids) {
+      if (typeof id === "string" && id.length > 0 && id.length <= 64) ids.push(id);
+    }
+  } else if (typeof body.session_id === "string" && body.session_id.length > 0) {
+    ids.push(body.session_id.slice(0, 64));
+  }
+  if (ids.length === 0) {
+    res.status(400).json({ error: "Missing session_id or session_ids" });
+    return;
+  }
+  if (ids.length > 200) {
+    res.status(400).json({ error: "Bulk update capped at 200 sessions" });
     return;
   }
 
@@ -68,7 +87,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     resolved_at: status === "open" ? null : new Date().toISOString(),
   };
 
-  const url = `${SUPABASE_URL}/rest/v1/session_insights?session_id=eq.${encodeURIComponent(sessionId)}`;
+  const idsParam = `(${ids.map((id) => `"${id.replace(/"/g, "")}"`).join(",")})`;
+  const url = `${SUPABASE_URL}/rest/v1/session_insights?session_id=in.${encodeURIComponent(idsParam)}`;
   const upd = await fetch(url, {
     method: "PATCH",
     headers: {
@@ -85,5 +105,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(502).json({ error: "Update failed", details: txt });
     return;
   }
-  res.status(200).json({ ok: true, session_id: sessionId, status });
+  res.status(200).json({ ok: true, updated: ids.length, status });
 }

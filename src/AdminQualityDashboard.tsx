@@ -243,7 +243,7 @@ export function QualityContent({ showBackLink = false }: { showBackLink?: boolea
 
           {view === "headlines" && <HeadlinesView headlines={data.headlines} dailyByFocus={dailyByFocus} />}
 
-          {view === "issues" && <IssuesView issuesByCategory={issuesByCategory} onSelectSession={(sid) => { const s = data.recent.find((r) => r.session_id === sid); if (s) { setSelectedSession(s); setView("sessions"); } }} />}
+          {view === "issues" && <IssuesView issuesByCategory={issuesByCategory} recent={data.recent} onSelectSession={(sid) => { const s = data.recent.find((r) => r.session_id === sid); if (s) { setSelectedSession(s); setView("sessions"); } }} onRefresh={fetchData} />}
 
           {view === "sessions" && <SessionsView rows={data.recent} selected={selectedSession} setSelected={setSelectedSession} onResolve={resolveSession} />}
 
@@ -377,15 +377,127 @@ function HeadlinesView({ headlines, dailyByFocus }: { headlines: Headline[]; dai
   );
 }
 
-function IssuesView({ issuesByCategory, onSelectSession }: {
+interface FixPlanItem {
+  priority: "high" | "medium" | "low";
+  title: string;
+  target_file: string;
+  change: string;
+  rationale: string;
+  affected_flags: string[];
+}
+interface FixPlan {
+  summary: string;
+  items: FixPlanItem[];
+  cautions: string[];
+}
+
+function IssuesView({ issuesByCategory, recent, onSelectSession, onRefresh }: {
   issuesByCategory: Map<string, IssueRow[]>;
+  recent: InsightRow[];
   onSelectSession: (sessionId: string) => void;
+  onRefresh: () => void;
 }) {
+  const [planLoading, setPlanLoading] = useState(false);
+  const [plan, setPlan] = useState<FixPlan | null>(null);
+  const [planMeta, setPlanMeta] = useState<{ model?: string; focus?: string | null } | null>(null);
+
+  const allOpen = useMemo(() => recent.filter((r) => r.resolution_status === "open"), [recent]);
+
+  const generateFixPlan = useCallback(async (focus?: string) => {
+    setPlanLoading(true);
+    setPlan(null);
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) { setPlanLoading(false); return; }
+    try {
+      const res = await fetch("/api/admin-quality-fix-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-token": token },
+        body: JSON.stringify(focus ? { focus } : {}),
+      });
+      if (!res.ok) {
+        alert(`Fix plan failed: HTTP ${res.status}`);
+        return;
+      }
+      const j = await res.json() as { plan: FixPlan; model?: string; input_summary?: { focus?: string | null } };
+      setPlan(j.plan);
+      setPlanMeta({ model: j.model, focus: j.input_summary?.focus });
+    } catch (e) {
+      alert(`Fix plan failed: ${(e as Error).message}`);
+    } finally {
+      setPlanLoading(false);
+    }
+  }, []);
+
+  const bulkAcknowledge = useCallback(async (flag: string) => {
+    // Find all open sessions that include this flag in their flag list.
+    const targetIds = allOpen.filter((r) => (r.flags || []).includes(flag)).map((r) => r.session_id);
+    if (targetIds.length === 0) return;
+    if (!confirm(`Acknowledge ${targetIds.length} open sessions with flag "${flag}"?`)) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!token) return;
+    const res = await fetch("/api/admin-quality-resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": token },
+      body: JSON.stringify({ session_ids: targetIds, status: "acknowledged", notes: `Bulk-acknowledged from Issues view (flag: ${flag})`, by: "admin" }),
+    });
+    if (res.ok) {
+      const j = await res.json() as { updated: number };
+      alert(`Acknowledged ${j.updated} sessions.`);
+      onRefresh();
+    } else {
+      alert(`Failed: HTTP ${res.status}`);
+    }
+  }, [allOpen, onRefresh]);
+
   if (issuesByCategory.size === 0) return <div style={{ color: c.stone, padding: sp.lg }}>No flagged issues yet.</div>;
   const order = ["hallucination", "evaluator_drift", "rubric_gap", "bad_question", "system"];
   const ordered = order.filter((k) => issuesByCategory.has(k));
+
   return (
     <div>
+      {/* Fix-plan toolbar */}
+      <div style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: radius.md, padding: sp.lg, marginBottom: sp.xl }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: sp.sm }}>
+          <div>
+            <div style={{ fontSize: 14, color: c.chalk, fontWeight: 600 }}>Fix-plan generator</div>
+            <div style={{ fontSize: 11, color: c.stone, marginTop: 2 }}>LLM proposes prioritized code changes targeting open issues. Recommendations only — you implement them.</div>
+          </div>
+          <button
+            onClick={() => generateFixPlan()}
+            disabled={planLoading}
+            style={{ background: c.gilt, color: c.obsidian, border: "none", borderRadius: radius.md, padding: `${sp.sm}px ${sp.lg}px`, fontFamily: font.ui, fontSize: 13, fontWeight: 600, cursor: planLoading ? "wait" : "pointer" }}
+          >
+            {planLoading ? "Generating…" : "Generate fix plan"}
+          </button>
+        </div>
+
+        {plan && (
+          <div style={{ marginTop: sp.lg, paddingTop: sp.lg, borderTop: `1px solid ${c.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: sp.sm }}>
+              <div style={{ fontSize: 13, color: c.gilt, fontWeight: 600 }}>Plan {planMeta?.focus ? `· ${planMeta.focus}` : "· all focuses"}</div>
+              <div style={{ fontSize: 10, color: c.stone, fontFamily: font.mono }}>{planMeta?.model || ""}</div>
+            </div>
+            {plan.summary && <p style={{ color: c.ivory, fontSize: 13, lineHeight: 1.5, marginTop: 0 }}>{plan.summary}</p>}
+            {plan.items.length > 0 && (
+              <div style={{ display: "grid", gap: sp.sm, marginTop: sp.md }}>
+                {plan.items.map((item, i) => (
+                  <FixPlanCard key={i} item={item} />
+                ))}
+              </div>
+            )}
+            {plan.cautions.length > 0 && (
+              <div style={{ marginTop: sp.lg, padding: sp.md, background: "rgba(212,179,127,0.06)", borderRadius: radius.sm, border: `1px solid ${c.border}` }}>
+                <div style={{ fontSize: 11, color: c.gilt, fontWeight: 600, marginBottom: sp.xs }}>⚠ Cautions</div>
+                <ul style={{ margin: 0, paddingLeft: sp.lg, color: c.chalk, fontSize: 12 }}>
+                  {plan.cautions.map((cau, i) => <li key={i} style={{ marginBottom: 2 }}>{cau}</li>)}
+                </ul>
+              </div>
+            )}
+            <button onClick={() => setPlan(null)} style={{ background: "transparent", color: c.stone, border: "none", padding: 0, fontSize: 11, marginTop: sp.sm, cursor: "pointer", textDecoration: "underline" }}>Dismiss</button>
+          </div>
+        )}
+      </div>
+
       {ordered.map((cat) => (
         <div key={cat} style={{ marginBottom: sp.xl }}>
           <div style={{ display: "flex", alignItems: "center", gap: sp.sm, marginBottom: sp.sm }}>
@@ -399,7 +511,12 @@ function IssuesView({ issuesByCategory, onSelectSession }: {
                 <span style={{ fontSize: 12, color: c.chalk }}>×{issue.count}</span>
                 {issue.severity_high > 0 && <span style={{ background: "rgba(209,126,104,0.15)", color: c.ember, padding: `2px ${sp.sm}px`, borderRadius: radius.pill, fontSize: 11, fontFamily: font.mono }}>{issue.severity_high} high</span>}
                 <span style={{ color: c.stone, fontSize: 11 }}>open {issue.open} · resolved {issue.resolved}</span>
-                <div style={{ marginLeft: "auto", display: "flex", gap: sp.xs, flexWrap: "wrap" }}>
+                <div style={{ marginLeft: "auto", display: "flex", gap: sp.xs, flexWrap: "wrap", alignItems: "center" }}>
+                  {issue.open > 0 && (
+                    <button onClick={() => bulkAcknowledge(issue.flag)} style={{ background: "transparent", color: c.gilt, border: `1px solid ${c.gilt}`, borderRadius: radius.sm, padding: `2px ${sp.sm}px`, fontSize: 10, fontFamily: font.ui, cursor: "pointer" }}>
+                      Ack {issue.open} open
+                    </button>
+                  )}
                   {issue.sessions.slice(0, 5).map((sid) => (
                     <button key={sid} onClick={() => onSelectSession(sid)} style={{ background: c.onyx, color: c.gilt, border: "none", borderRadius: radius.sm, padding: `2px ${sp.sm}px`, fontFamily: font.mono, fontSize: 10, cursor: "pointer" }}>
                       {sid.slice(0, 10)}…
@@ -411,6 +528,30 @@ function IssuesView({ issuesByCategory, onSelectSession }: {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function FixPlanCard({ item }: { item: FixPlanItem }) {
+  const priorityColor = item.priority === "high" ? c.ember : item.priority === "medium" ? c.gilt : c.sage;
+  return (
+    <div style={{ padding: sp.md, background: c.onyx, borderLeft: `3px solid ${priorityColor}`, borderRadius: radius.sm }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: sp.xs, gap: sp.sm, flexWrap: "wrap" }}>
+        <div style={{ color: c.ivory, fontSize: 13, fontWeight: 600 }}>{item.title}</div>
+        <span style={{ color: priorityColor, fontSize: 10, fontFamily: font.mono, textTransform: "uppercase", letterSpacing: 0.5 }}>{item.priority}</span>
+      </div>
+      {item.target_file && (
+        <div style={{ marginBottom: sp.xs }}>
+          <code style={{ background: c.obsidian, color: c.gilt, padding: `2px 6px`, borderRadius: radius.sm, fontSize: 11, fontFamily: font.mono }}>{item.target_file}</code>
+        </div>
+      )}
+      <div style={{ color: c.chalk, fontSize: 12, lineHeight: 1.5, marginBottom: sp.xs }}>{item.change}</div>
+      {item.rationale && <div style={{ color: c.stone, fontSize: 11, fontStyle: "italic" }}>Why: {item.rationale}</div>}
+      {item.affected_flags.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: sp.xs }}>
+          {item.affected_flags.map((f) => <span key={f} style={{ background: c.graphite, color: c.gilt, padding: `1px 6px`, borderRadius: radius.pill, fontSize: 10, fontFamily: font.mono }}>{f}</span>)}
+        </div>
+      )}
     </div>
   );
 }
