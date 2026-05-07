@@ -36,9 +36,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Find accounts to hard-delete
     const findRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id`,
-      { headers },
+      { headers, signal: AbortSignal.timeout(10_000) },
     );
     if (!findRes.ok) {
+      console.error(`[cron:cleanup-deleted] CRITICAL: query failed (${findRes.status})`);
       return res.status(500).json({ error: "Failed to query profiles" });
     }
     const rows = (await findRes.json()) as { id: string }[];

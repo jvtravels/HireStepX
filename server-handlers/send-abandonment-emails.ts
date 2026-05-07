@@ -29,6 +29,7 @@ async function redisScan(cursor: string, pattern: string): Promise<[string, stri
   try {
     const res = await fetch(`${UPSTASH_URL}/SCAN/${cursor}/MATCH/${encodeURIComponent(pattern)}/COUNT/100`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return null;
     const data = await res.json();

@@ -34,10 +34,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
+        // 10s timeout — without this, an unresponsive Supabase hangs the cron
+        // until Vercel's function timeout (60s+), wasting the run window.
+        signal: AbortSignal.timeout(10_000),
       },
     );
 
     if (!profilesRes.ok) {
+      console.error(`[cron:renewal-reminders] CRITICAL: profile query failed (${profilesRes.status})`);
       return res.status(500).json({ error: "Failed to query profiles" });
     }
 

@@ -295,6 +295,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Payment signature verification failed", code: "SIGNATURE_MISMATCH" });
     }
 
+    // 1b. Atomic idempotency lock — Razorpay can deliver retries for the same
+    // payment_id (slow client, network blip, double-tap). The downstream DB
+    // checks at lines 366/386 are read-then-write and race under concurrent
+    // calls. SET NX EX 86400 means: first caller claims the lock for 24h,
+    // duplicates return 200 immediately. Falls open if Redis is unavailable
+    // (rare, monitored), so the legacy DB checks still serve as a safety net.
+    if (UPSTASH_URL && UPSTASH_TOKEN) {
+      try {
+        const lockRes = await fetch(
+          `${UPSTASH_URL}/SET/${encodeURIComponent(`pay_dedup:${razorpay_payment_id}`)}/1/NX/EX/86400`,
+          { headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` } },
+        );
+        if (lockRes.ok) {
+          const lockData = await lockRes.json();
+          if (lockData.result === null) {
+            console.warn(`[verify-payment] duplicate call for payment ${razorpay_payment_id.slice(0, 12)} — already processed`);
+            return res.status(200).json({ success: true, idempotent: true });
+          }
+        }
+      } catch (lockErr) {
+        console.warn("[verify-payment] dedup lock check failed, continuing:", lockErr instanceof Error ? lockErr.message : lockErr);
+      }
+    }
+
     // 2. Verify plan matches the actual order/subscription amount with Razorpay
     const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
     const rzpAc = new AbortController();

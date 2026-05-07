@@ -32,10 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
+        signal: AbortSignal.timeout(10_000),
       },
     );
 
     if (!expiredRes.ok) {
+      console.error(`[cron:reset-expired] CRITICAL: expired-query failed (${expiredRes.status}) — paid users may not be downgraded today`);
       return res.status(500).json({ error: "Failed to query expired subscriptions" });
     }
 

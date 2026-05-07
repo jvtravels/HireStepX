@@ -76,7 +76,16 @@ export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: bo
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
 
-/** Verify the user's JWT token against Supabase Auth. Returns userId if valid. */
+/** Verify the user's JWT token against Supabase Auth. Returns userId if valid.
+ *
+ * Distinguishes between three failure classes so we don't bounce users mid-
+ * session during a Supabase incident:
+ *   - Permanent auth failure (401/403, invalid token) → authenticated:false
+ *   - Transient infrastructure failure (5xx, network, timeout) → retry once
+ *     with backoff, then surface as authenticated:false but log loudly so it
+ *     shows up in Vercel logs as `[verifyAuth] transient` for triage.
+ * Without this distinction, a single Supabase Auth blip cascades into 401s
+ * across the whole app and users lose interviews mid-flow. */
 export async function verifyAuth(req: Request): Promise<{ authenticated: boolean; userId?: string }> {
   // Fail closed in production — only skip auth in local dev
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -91,24 +100,48 @@ export async function verifyAuth(req: Request): Promise<{ authenticated: boolean
   }
 
   const token = authHeader.slice(7);
-  try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: SUPABASE_ANON_KEY,
-      },
-      signal: ac.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) return { authenticated: false };
-    const user = await res.json();
-    if (!user.id || typeof user.id !== "string") return { authenticated: false };
-    return { authenticated: true, userId: user.id };
-  } catch {
-    return { authenticated: false };
+
+  const tryOnce = async (): Promise<{ kind: "ok"; userId: string } | { kind: "auth-fail" } | { kind: "transient"; reason: string }> => {
+    try {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+        signal: ac.signal,
+      });
+      clearTimeout(timer);
+      // 401/403 = bad/expired token. 5xx = Supabase incident.
+      if (res.status === 401 || res.status === 403) return { kind: "auth-fail" };
+      if (res.status >= 500 && res.status <= 599) return { kind: "transient", reason: `HTTP ${res.status}` };
+      if (!res.ok) return { kind: "auth-fail" };
+      const user = await res.json();
+      if (!user.id || typeof user.id !== "string") return { kind: "auth-fail" };
+      return { kind: "ok", userId: user.id };
+    } catch (err) {
+      // Network errors, timeouts, DNS failures — all transient.
+      const msg = err instanceof Error ? err.message : String(err);
+      return { kind: "transient", reason: msg.slice(0, 100) };
+    }
+  };
+
+  let result = await tryOnce();
+  if (result.kind === "transient") {
+    console.warn(`[verifyAuth] transient (attempt 1): ${result.reason} — retrying after 500ms`);
+    await new Promise((r) => setTimeout(r, 500));
+    result = await tryOnce();
   }
+
+  if (result.kind === "ok") return { authenticated: true, userId: result.userId };
+  if (result.kind === "transient") {
+    // Both attempts hit transient errors. Surface as not authed (we cannot
+    // grant access without verification) but log loudly so ops see the
+    // pattern during a Supabase incident.
+    console.error(`[verifyAuth] transient after retry: ${result.reason}`);
+  }
+  return { authenticated: false };
 }
 
 /** Return a 401 Unauthorized JSON response. */
