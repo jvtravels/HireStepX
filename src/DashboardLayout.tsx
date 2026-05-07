@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { c, font } from "./tokens";
 import { useAuth } from "./AuthContext";
 import { useDashboardCore, useDashboardSessions, useDashboardSubscription, useDashboardUI } from "./DashboardContext";
 const UpgradeModal = dynamic(() => import("./dashboardComponents").then(m => ({ default: m.UpgradeModal })), { ssr: false });
@@ -9,6 +8,47 @@ import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { daysUntilEvent } from "./dashboardHelpers";
 import dynamic from "next/dynamic";
 
+
+/* ─── Cream-mode design tokens ─────────────────────────────────────────
+ * Mirrors tempo/designs/canvases/design-system/_tokens.ts. The dark
+ * `c`/`font` tokens used to come from src/tokens.ts; we now map them to
+ * the cream editorial palette so this layout matches the redesigned
+ * Resume tab. Per-tab content (DashboardHome / Sessions / etc.) still
+ * uses the dark `c`/`font` from tokens.ts and will be re-skinned in
+ * follow-up commits — expect a brief visual mismatch on those tabs
+ * until each one is migrated.
+ *
+ * Naming: kept as `c` and `font` so the rest of the file's JSX needs
+ * no per-property edits — only the values change. `c.obsidian` now
+ * resolves to cream, `c.gilt` to copper, etc.
+ */
+const c = {
+  // Surfaces
+  obsidian: "#FAF7F0",       // page bg → cream
+  graphite: "#FFFFFF",       // raised cards → white
+  border: "#EBE5D2",         // hairlines
+  // Editorial / brand
+  gilt: "#B45309",           // copper
+  giltDark: "#923F07",
+  // Text
+  ivory: "#0E0C08",          // primary ink
+  chalk: "#0E0C08",
+  stone: "#6E6759",          // secondary ink
+  // Status
+  sage: "#15803D",
+  ember: "#B91C1C",
+  slate: "#6E6759",
+  // Interactive (added — not in dark palette but needed for cream)
+  indigo: "#312E81",
+  indigo100: "#E5E2F2",
+  cream: "#FAF7F0",
+  creamSoft: "#F4EFE3",
+};
+const font = {
+  display: "'Instrument Serif', Georgia, serif",
+  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
+  mono: "'JetBrains Mono', monospace",
+};
 
 /* ─── Prefetch route chunks on nav hover ─── */
 const prefetchMap: Record<string, () => void> = {
@@ -162,7 +202,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
       <aside aria-label="Navigation sidebar" style={{
         width: 260, borderRight: `1px solid ${c.border}`, padding: "28px 18px 0",
         display: "flex", flexDirection: "column", position: "fixed", top: 0, bottom: 0,
-        background: "linear-gradient(180deg, #111113 0%, #060607 100%)",
+        background: c.cream,
         zIndex: 20, overflow: "hidden",
         transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
         transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -180,14 +220,14 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               style={{
                 display: "flex", alignItems: "center", gap: 12, padding: "11px 14px",
                 borderRadius: 10, border: "none", cursor: "pointer",
-                background: activeNav === item.id ? "rgba(212,179,127,0.08)" : "transparent",
+                background: activeNav === item.id ? c.creamSoft : "transparent",
                 color: activeNav === item.id ? c.ivory : c.stone,
                 fontFamily: font.ui, fontSize: 13, fontWeight: activeNav === item.id ? 600 : 500,
                 transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "left", outline: "none",
               }}
               onFocus={(e) => e.currentTarget.style.boxShadow = `0 0 0 2px ${c.gilt}40`}
               onBlur={(e) => e.currentTarget.style.boxShadow = "none"}
-              onMouseEnter={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "rgba(245,242,237,0.03)"; prefetchMap[item.id]?.(); }}
+              onMouseEnter={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = c.creamSoft; prefetchMap[item.id]?.(); }}
               onMouseLeave={(e) => { if (activeNav !== item.id) e.currentTarget.style.background = "transparent"; }}
             >
               {item.icon}
@@ -203,7 +243,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         </nav>
 
         {/* Plan Status */}
-        <div style={{ margin: "0 8px 12px", padding: "14px 14px", borderRadius: 10, background: isPro ? "rgba(122,158,126,0.04)" : "rgba(212,179,127,0.04)", border: `1px solid ${isPro ? "rgba(122,158,126,0.12)" : "rgba(212,179,127,0.12)"}`, flexShrink: 0 }}>
+        <div style={{ margin: "0 8px 12px", padding: "14px 14px", borderRadius: 10, background: isPro ? "#DCFCE7" : "#F4E5D8", border: `1px solid ${isPro ? "rgba(21,128,61,0.18)" : "#F4E5D8"}`, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             {isPro ? (
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
@@ -223,7 +263,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               Only shown when there's something to celebrate — suppress if 0. Hidden for
               Pro (unlimited, credits irrelevant). */}
           {!isPro && (user?.sessionCredits ?? 0) > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", marginBottom: 10, borderRadius: 8, background: "rgba(122,158,126,0.10)", border: `1px solid rgba(122,158,126,0.22)` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", marginBottom: 10, borderRadius: 8, background: "#DCFCE7", border: `1px solid rgba(122,158,126,0.22)` }}>
               <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
@@ -247,7 +287,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             </div>
           )}
           {isPro ? (
-            <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: `1px solid rgba(122,158,126,0.2)`, background: "rgba(122,158,126,0.06)", color: c.sage, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.2s" }}
+            <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: `1px solid rgba(122,158,126,0.2)`, background: "#DCFCE7", color: c.sage, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.2s" }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
               onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
             >Manage Plan</button>
@@ -262,7 +302,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {/* User info */}
         <div style={{ borderTop: `1px solid ${c.border}`, marginTop: 8, padding: "14px 12px 16px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(212,179,127,0.12)", border: `1px solid rgba(212,179,127,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#F4E5D8", border: `1px solid rgba(212,179,127,0.2)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.gilt }}>{(displayName || "?")[0].toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -292,7 +332,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Payment success/cancel banner */}
         {paymentBanner && (
-          <div role="alert" style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 10, background: paymentBanner === "success" ? "rgba(122,158,126,0.08)" : "rgba(196,112,90,0.08)", border: `1px solid ${paymentBanner === "success" ? "rgba(122,158,126,0.2)" : "rgba(196,112,90,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div role="alert" style={{ padding: "12px 16px", marginBottom: 16, borderRadius: 10, background: paymentBanner === "success" ? "#DCFCE7" : "#FEE2E2", border: `1px solid ${paymentBanner === "success" ? "rgba(21,128,61,0.22)" : "rgba(185,28,28,0.22)"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {paymentBanner === "success" ? (
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -311,7 +351,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
 
         {/* Sync error banner */}
         {syncError && (
-          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: "rgba(196,112,90,0.08)", border: "1px solid rgba(196,112,90,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: "#FEE2E2", border: "1px solid rgba(196,112,90,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{syncError}</span>
@@ -323,7 +363,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         )}
 
         {isOffline && (
-          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: "rgba(126,141,152,0.08)", border: "1px solid rgba(126,141,152,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+          <div role="alert" style={{ padding: "10px 16px", marginBottom: 16, borderRadius: 8, background: c.creamSoft, border: "1px solid rgba(126,141,152,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.slate} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.slate }}>You're offline — some features may be unavailable</span>
           </div>
@@ -385,18 +425,18 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
               {/* Getting Started */}
               <Link href="/page/help" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: "rgba(245,242,237,0.02)", cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.25)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.02)"; e.currentTarget.style.borderColor = c.border; }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F4E5D8"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>
                   <span style={{ color: c.gilt, flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
                   Getting Started
                 </div>
               </Link>
               {/* FAQs */}
               <Link href="/#faq" style={{ textDecoration: "none" }} onClick={() => setHelpOpen(false)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: "rgba(245,242,237,0.02)", cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(212,179,127,0.06)"; e.currentTarget.style.borderColor = "rgba(212,179,127,0.25)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,242,237,0.02)"; e.currentTarget.style.borderColor = c.border; }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: `1px solid ${c.border}`, background: c.creamSoft, cursor: "pointer", transition: "all 0.15s", color: c.chalk, fontFamily: font.ui, fontSize: 13, fontWeight: 500 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#F4E5D8"; e.currentTarget.style.borderColor = "rgba(180,83,9,0.22)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = c.creamSoft; e.currentTarget.style.borderColor = c.border; }}>
                   <span style={{ color: c.gilt, flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
                   FAQs
                 </div>
@@ -404,16 +444,16 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             </div>
 
             {/* Contact section */}
-            <div style={{ marginBottom: 16, padding: "12px", borderRadius: 8, background: "rgba(245,242,237,0.02)" }}>
+            <div style={{ marginBottom: 16, padding: "12px", borderRadius: 8, background: c.creamSoft }}>
               <p style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.chalk, marginBottom: 8 }}>Need help?</p>
               <a href="mailto:support@hirestepx.com" style={{
                 display: "block", textAlign: "center", padding: "8px 0", borderRadius: 8,
-                background: "rgba(212,179,127,0.08)", border: `1px solid rgba(212,179,127,0.2)`,
+                background: c.creamSoft, border: `1px solid rgba(212,179,127,0.2)`,
                 color: c.gilt, fontFamily: font.ui, fontSize: 12, fontWeight: 600, textDecoration: "none",
                 transition: "background 0.15s",
               }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(212,179,127,0.14)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "rgba(212,179,127,0.08)"}>
+                onMouseEnter={(e) => e.currentTarget.style.background = "#F4E5D8"}
+                onMouseLeave={(e) => e.currentTarget.style.background = c.creamSoft}>
                 support@hirestepx.com
               </a>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginTop: 6 }}>We typically respond within 24 hours</p>
@@ -428,11 +468,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 onChange={(e) => { setHelpFeedback(e.target.value); if (helpSent) setHelpSent(false); }}
                 style={{
                   width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: 8,
-                  background: "rgba(245,242,237,0.03)", border: `1px solid ${c.border}`,
+                  background: c.creamSoft, border: `1px solid ${c.border}`,
                   color: c.ivory, fontFamily: font.ui, fontSize: 12, resize: "vertical",
                   outline: "none", transition: "border-color 0.15s",
                 }}
-                onFocus={(e) => e.currentTarget.style.borderColor = "rgba(212,179,127,0.4)"}
+                onFocus={(e) => e.currentTarget.style.borderColor = "rgba(180,83,9,0.35)"}
                 onBlur={(e) => e.currentTarget.style.borderColor = c.border}
               />
               {helpSent ? (
@@ -459,7 +499,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                   style={{
                     marginTop: 8, width: "100%", padding: "8px 0", borderRadius: 8,
                     border: "none", cursor: helpSending || !helpFeedback.trim() ? "default" : "pointer",
-                    background: helpSending || !helpFeedback.trim() ? "rgba(245,242,237,0.04)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
+                    background: helpSending || !helpFeedback.trim() ? c.creamSoft : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
                     color: helpSending || !helpFeedback.trim() ? c.stone : c.obsidian,
                     fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.15s",
                     opacity: helpSending ? 0.7 : 1,
