@@ -183,6 +183,24 @@ when new test batches clear them.
 - **Cartesia TTS** — returns raw PCM via WebSocket; AudioContext must
   be resumed after mobile tab backgrounding (see
   `useMobileAudioResilience` in `Interview.tsx`).
+- **Browser-API access** — vendor-prefixed globals (`webkitAudioContext`,
+  `webkitSpeechRecognition`, `navigator.connection`, `scheduler.yield`)
+  go through `src/_browser-api-guards.ts` typed helpers — never raw
+  `as unknown as` casts. ESLint enforces the cast rule in production.
+- **Transient-vs-permanent auth** — `verifyAuth` in `_shared.ts` retries
+  once on 5xx / network errors before rejecting; only 401/403 rejects
+  immediately. Don't add a try/catch wrapper that re-collapses these.
+- **LLM prompt caching** — Groq automatically caches prompts ≥1024
+  tokens by their longest shared prefix. When editing
+  `evaluate-session.ts` or similar, keep static rules/schema *before*
+  per-call dynamic content (transcript, tier, role) — reordering
+  defeats the cache and triples per-call cost.
+- **`generate-questions` response cache** — same request body within
+  300s returns from Upstash Redis (`gq:<hash>` keys) marked
+  `_cached: true`. Static fallback fires from
+  `data/interview-question-bank.ts` when both LLM providers fail,
+  marked `_fallback: "static"`. PostHog events `gq_cache_hit` and
+  `gq_static_fallback` track each path.
 
 ## Deploy
 
