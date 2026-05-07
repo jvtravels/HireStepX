@@ -2652,6 +2652,37 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([14, 22], [1, 2], NO_EQ, [15, 24], { negotiation_leverage: "low" }),
       senior: s([22, 35], [2, 4], NO_EQ, [24, 38], { negotiation_leverage: "low" }),
     },
+    /* Consulting MBB lateral (rare — McKinsey/BCG public sector practice
+       ex-IAS/IPS officers who lateral out at Director level). */
+    "consulting-mbb": {
+      mid: s([28, 45], [5, 12], NO_EQ, [33, 55], { notes: "Ex-civil-services lateral (3-5 years) → MBB public sector practice." }),
+      senior: s([55, 90], [12, 25], NO_EQ, [70, 120], { negotiation_leverage: "high", notes: "Director-level MBB consultant with civil-services background." }),
+      lead: s([100, 160], [25, 50], NO_EQ, [125, 210], { in_hand_ratio: 0.50, notes: "MBB Partner with deep govt-sector network." }),
+    },
+    /* Consulting Big-4 govt advisory (Deloitte / EY / KPMG / PwC). */
+    "consulting-big4": {
+      entry: s([8, 13], [1, 2.5], NO_EQ, [9, 15], { notes: "Big-4 govt sector / public-finance advisory." }),
+      mid: s([15, 25], [2.5, 5], NO_EQ, [17, 30], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [5, 10], NO_EQ, [30, 52], { negotiation_leverage: "medium" }),
+    },
+    /* SaaS-product (govtech / civictech — Bharat Cloud / SETU / DigiYatra). */
+    "saas-product": {
+      entry: s([10, 15], [1, 2], ESOP(1, 3), [11, 17], { notes: "GovTech / public-digital-infrastructure roles." }),
+      mid: s([16, 26], [2, 4], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 7], ESOP(4, 10), [30, 50], { negotiation_leverage: "medium" }),
+    },
+    /* GCC public-affairs / govt-relations roles. */
+    gcc: {
+      entry: s([12, 18], [1, 3], RSU(2, 5), [14, 22], { notes: "Govt relations / public-affairs at multinational GCCs." }),
+      mid: s([20, 32], [2, 5], RSU(5, 12), [24, 42], { negotiation_leverage: "medium" }),
+      senior: s([32, 50], [4, 9], RSU(10, 22), [40, 70], { negotiation_leverage: "high" }),
+    },
+    /* FMCG MNC govt-relations (HUL / ITC / Marico — regulatory & public affairs). */
+    "fmcg-mnc": {
+      entry: s([10, 16], [1, 3], NO_EQ, [11, 20], { notes: "Govt relations / regulatory affairs at FMCG MNCs." }),
+      mid: s([18, 28], [2, 5], NO_EQ, [22, 35], { negotiation_leverage: "medium" }),
+      senior: s([30, 50], [4, 10], NO_EQ, [35, 60], { negotiation_leverage: "high" }),
+    },
   },
 
   // ─── PERFORMING ARTS (classical / instrumental / contemporary) ─
@@ -2681,6 +2712,47 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([4, 8], [0.5, 1.5], NO_EQ, [4.5, 10], { notes: "Brand / advertising playback singer + jingle artist + TV music director." }),
       mid: s([10, 20], [1.5, 4], NO_EQ, [12, 25], { negotiation_leverage: "medium" }),
       senior: s([20, 40], [4, 8], NO_EQ, [24, 48], { negotiation_leverage: "high" }),
+    },
+    /* IT-services L&D / corporate trainer / jingle artist contracts. */
+    "it-services": {
+      entry: s([3, 5], [0.2, 0.5], NO_EQ, [3, 6], { negotiation_leverage: "low", notes: "Corporate L&D trainer track — soft-skills/voice modulation." }),
+      mid: s([5, 9], [0.4, 1], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
+      senior: s([10, 18], [0.8, 2], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+    },
+    /* SaaS-product / creator economy (Spotify India / JioSaavn / Wynk
+       music team + Spinny content / Snapchat creators). */
+    "saas-product": {
+      entry: s([5, 9], [0.3, 0.8], ESOP(0.5, 1.5), [5.5, 10], { notes: "Creator-economy / streaming-music platform team." }),
+      mid: s([10, 18], [0.8, 2], ESOP(1, 3), [11, 21], { negotiation_leverage: "medium" }),
+      senior: s([18, 32], [2, 5], ESOP(2, 6), [22, 38], { negotiation_leverage: "high" }),
+    },
+    /* Startup early — creator-led music/dance startups, Carnatic-tech. */
+    "startup-early": {
+      entry: s([3, 5], [0.2, 0.5], ESOP(0.5, 2), [3.5, 7], { notice_period_days: 15, negotiation_leverage: "low", notes: "Creator-tech / Indian classical-music edtech startup founder team." }),
+      mid: s([5, 9], [0.3, 1], ESOP(1.5, 4), [6, 12], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([9, 16], [0.8, 2], ESOP(3, 8), [11, 22], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    "startup-growth": {
+      entry: s([4, 7], [0.3, 0.7], ESOP(1, 2.5), [4.5, 9], { notes: "Growth-stage music-tech / live-event / creator startups." }),
+      mid: s([7, 13], [0.5, 1.5], ESOP(1.5, 4), [8, 16], { negotiation_leverage: "medium" }),
+      senior: s([14, 24], [1.5, 3], ESOP(3, 8), [16, 30], { negotiation_leverage: "high" }),
+    },
+    /* Big Tech (Apple/Google/Amazon audio teams; Spotify India). */
+    "big-tech": {
+      entry: s([10, 16], [1, 2], RSU(2, 5), [12, 21], { notes: "Apple Music / Google audio / Amazon Music India editorial." }),
+      mid: s([16, 26], [2, 4], RSU(5, 12), [20, 35], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 7], RSU(10, 22), [32, 55], { negotiation_leverage: "high" }),
+    },
+    /* FAANG (very rare — entertainment partnerships / cultural advisory). */
+    faang: {
+      mid: s([22, 38], [3, 7], RSU(8, 18), [28, 55], { notes: "FAANG India entertainment partnerships / artist relations." }),
+      senior: s([38, 60], [6, 12], RSU(18, 40), [55, 100], { negotiation_leverage: "high" }),
+    },
+    /* Consulting Big-4 (CSR / cultural advisory). */
+    "consulting-big4": {
+      entry: s([5, 9], [0.5, 1.2], NO_EQ, [6, 11], { notes: "Big-4 cultural-sector / arts advisory / CSR-arts." }),
+      mid: s([10, 17], [1, 2.5], NO_EQ, [11, 19], { negotiation_leverage: "medium" }),
+      senior: s([18, 28], [2, 5], NO_EQ, [20, 32], { negotiation_leverage: "medium" }),
     },
   },
 
@@ -2716,6 +2788,54 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([6, 10], [0.5, 1.5], NO_EQ, [7, 12], { notes: "Insurance medical underwriter (clinical-trained) at MetLife/AIG/Bajaj Allianz." }),
       mid: s([10, 16], [1, 2.5], NO_EQ, [11, 18], { negotiation_leverage: "medium" }),
       senior: s([16, 28], [2, 4], NO_EQ, [18, 32], { negotiation_leverage: "medium" }),
+    },
+    /* BFSI domestic (insurance medical reviewer at HDFC/ICICI/Axis health). */
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4.5, 8], { notes: "HDFC ERGO / ICICI Lombard medical reviewer." }),
+      mid: s([7, 12], [0.5, 1.2], NO_EQ, [8, 14], { negotiation_leverage: "low" }),
+      senior: s([12, 20], [1, 2.5], NO_EQ, [14, 23], { negotiation_leverage: "medium" }),
+    },
+    /* IT-services pharma/health-IT (TCS Lifesciences, Cognizant Pharma). */
+    "it-services": {
+      entry: s([3, 5], [0.2, 0.4], NO_EQ, [3, 5.5], { notice_period_days: 90, negotiation_leverage: "low", notes: "Pharma IT / health-IT BPO clinical-coder track." }),
+      mid: s([5, 9], [0.3, 0.8], NO_EQ, [5, 10], { notice_period_days: 90 }),
+      senior: s([9, 16], [0.8, 1.5], NO_EQ, [10, 18], { notice_period_days: 90 }),
+    },
+    /* Startup growth (healthtech — Practo / 1mg / PharmEasy). */
+    "startup-growth": {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.5, 1.5), [4.5, 8], { notes: "Healthtech (Practo/1mg/PharmEasy) staff nurse / telehealth." }),
+      mid: s([7, 13], [0.5, 1.5], ESOP(1, 3), [8, 15], { negotiation_leverage: "medium" }),
+      senior: s([13, 22], [1.5, 3], ESOP(2, 5), [15, 26], { negotiation_leverage: "medium" }),
+    },
+    /* Startup early (healthtech / longevity / wellness startups). */
+    "startup-early": {
+      entry: s([3.5, 6], [0.3, 0.6], ESOP(0.5, 2), [4, 7], { notice_period_days: 15, negotiation_leverage: "low", notes: "Healthtech early-stage clinical operations." }),
+      mid: s([6, 11], [0.4, 1.2], ESOP(1.5, 4), [7, 13], { notice_period_days: 30, negotiation_leverage: "medium" }),
+      senior: s([11, 18], [1, 2.5], ESOP(3, 8), [13, 22], { notice_period_days: 30, negotiation_leverage: "medium" }),
+    },
+    /* Edtech medical (Marrow / DAMS / NEET tutoring / nursing edtech). */
+    edtech: {
+      entry: s([3.5, 6], [0.2, 0.5], ESOP(0.3, 1), [4, 7], { notes: "Medical edtech subject-matter expert (NEET/USMLE prep)." }),
+      mid: s([6, 11], [0.4, 1], ESOP(0.5, 2), [7, 13], { negotiation_leverage: "low" }),
+      senior: s([11, 18], [1, 2], ESOP(1, 3), [12, 21], { negotiation_leverage: "medium" }),
+    },
+    /* Consulting Big-4 (healthcare advisory). */
+    "consulting-big4": {
+      entry: s([5, 9], [0.5, 1.2], NO_EQ, [6, 11], { notes: "Healthcare advisory at EY / Deloitte / KPMG / PwC." }),
+      mid: s([10, 17], [1, 2.5], NO_EQ, [11, 19], { negotiation_leverage: "medium" }),
+      senior: s([18, 28], [2, 5], NO_EQ, [20, 32], { negotiation_leverage: "medium" }),
+    },
+    /* GCC (clinical research org / pharma R&D centers). */
+    gcc: {
+      entry: s([5, 8], [0.3, 0.8], RSU(0.5, 1.5), [5.5, 10], { notes: "Pharma GCC clinical operations / R&D-support." }),
+      mid: s([9, 14], [0.5, 1.5], RSU(2, 5), [10, 17], { negotiation_leverage: "medium" }),
+      senior: s([14, 22], [1.2, 3], RSU(4, 9), [16, 26], { negotiation_leverage: "medium" }),
+    },
+    /* Big Tech (Apple Health / Google Fit / Amazon Care clinical advisor). */
+    "big-tech": {
+      entry: s([10, 16], [1, 2], RSU(2, 5), [12, 22], { notes: "Apple Health / Google Fit / Amazon Care clinical advisor." }),
+      mid: s([16, 26], [2, 4], RSU(5, 12), [20, 35], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 7], RSU(10, 22), [32, 55], { negotiation_leverage: "high" }),
     },
   },
 
@@ -2761,6 +2881,54 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { in_hand_ratio: 0.78, notes: "ISRO / DRDO / BEL / SCL Mohali chip-design scientist." }),
       mid: s([10, 16], [0.5, 1], NO_EQ, [11, 17], { negotiation_leverage: "low" }),
       senior: s([16, 28], [1, 2], NO_EQ, [17, 30], { negotiation_leverage: "low" }),
+    },
+    /* SaaS-product (industrial-IoT / digital-twin / hardware-as-a-service). */
+    "saas-product": {
+      entry: s([10, 16], [0.5, 1.5], ESOP(1, 3), [11, 19], { notes: "Industrial-IoT / digital-twin SaaS hardware engineer." }),
+      mid: s([16, 26], [1, 3], ESOP(2, 5), [19, 32], { negotiation_leverage: "medium" }),
+      senior: s([26, 42], [3, 6], ESOP(4, 10), [32, 56], { negotiation_leverage: "high" }),
+    },
+    /* Startup growth (deep-tech: Skyroot / Agnikul / Pixxel / Mindgrove). */
+    "startup-growth": {
+      entry: s([8, 14], [0.5, 1.5], ESOP(2, 5), [10, 18], { hot_skills: ["VLSI", "RTL", "ASIC", "FPGA"], notes: "Deep-tech hardware startups (Mindgrove / InCore / Saankhya Labs)." }),
+      mid: s([15, 24], [1, 3], ESOP(4, 10), [18, 32], { negotiation_leverage: "medium" }),
+      senior: s([24, 38], [2.5, 5], ESOP(8, 18), [30, 50], { negotiation_leverage: "high" }),
+    },
+    /* Startup early (fabless / spacetech / EV-tech). */
+    "startup-early": {
+      entry: s([6, 12], [0.5, 1.5], ESOP(2, 6), [8, 16], { notice_period_days: 15, hot_skills: ["RTL", "ASIC", "FPGA"], notes: "Founding hardware engineer at fabless / space-tech / EV-tech startup." }),
+      mid: s([12, 22], [1, 3], ESOP(5, 14), [14, 28], { notice_period_days: 30, negotiation_leverage: "high" }),
+      senior: s([20, 35], [2, 5], ESOP(10, 25), [26, 50], { notice_period_days: 30, negotiation_leverage: "high" }),
+    },
+    /* BFSI global (trading hardware / FPGA-based low-latency). */
+    "bfsi-global": {
+      entry: s([22, 35], [3, 8], RSU(5, 12), [28, 50], { notes: "GS / JS / Citadel / Optiver India FPGA / low-latency trading hardware." }),
+      mid: s([38, 60], [6, 15], RSU(15, 32), [50, 95], { negotiation_leverage: "high" }),
+      senior: s([60, 95], [12, 25], RSU(30, 65), [90, 165], { negotiation_leverage: "high" }),
+    },
+    /* BFSI domestic (rare — banking infra hardware). */
+    "bfsi-domestic": {
+      entry: s([6, 10], [0.5, 1.2], NO_EQ, [7, 12], { notes: "HDFC / ICICI / Axis trading-floor hardware / data-center engineer." }),
+      mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+    /* Edtech (semiconductor edtech — Newton/Skill-Lync/Maven Silicon). */
+    edtech: {
+      entry: s([5, 9], [0.3, 0.8], ESOP(0.5, 1.5), [6, 10], { notes: "Maven Silicon / Skill-Lync / Newton VLSI track instructor." }),
+      mid: s([10, 16], [0.5, 1.5], ESOP(1, 3), [11, 18], { negotiation_leverage: "medium" }),
+      senior: s([16, 26], [1.5, 3], ESOP(2, 5), [18, 30], { negotiation_leverage: "medium" }),
+    },
+    /* Consulting MBB deep-tech. */
+    "consulting-mbb": {
+      entry: s([18, 28], [3, 6], NO_EQ, [22, 36], { notes: "MBB deep-tech / semiconductor advisory practice." }),
+      mid: s([32, 52], [6, 12], NO_EQ, [40, 68], { negotiation_leverage: "medium" }),
+      senior: s([55, 85], [12, 22], NO_EQ, [70, 110], { negotiation_leverage: "high" }),
+    },
+    /* Consulting Big-4 advisory. */
+    "consulting-big4": {
+      entry: s([7, 11], [0.5, 1.2], NO_EQ, [8, 13], { notes: "Big-4 semiconductor / hardware advisory." }),
+      mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
     },
   },
 };
