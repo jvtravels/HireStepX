@@ -1028,6 +1028,46 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "series a": "startup-growth",
   "series b": "startup-growth",
   "series c": "startup-growth",
+
+  // ─── Nov 2025 / May 2026 explicit-mapping additions ─────────────
+  // Closes high-traffic gaps where the fuzzy classifier was guessing.
+  // (Audit: "Salary Data Refresh — May 2026 Audit", section
+  // "Companies-vs-tiers coverage gap".)
+  // Engineering / industrial MNCs (closer to GCC than IT-services)
+  "abb india": "gcc",
+  abb: "gcc",
+  "abbott india": "gcc",
+  abbott: "gcc",
+  "aia engineering": "gcc",
+  "aig india": "gcc",
+  aig: "gcc",
+  // Healthcare / medical (govt + private)
+  aiims: "government-psu",
+  apollo: "fmcg-mnc",
+  "apollo hospitals": "fmcg-mnc",
+  "fortis healthcare": "fmcg-mnc",
+  fortis: "fmcg-mnc",
+  "max healthcare": "fmcg-mnc",
+  // Quant / hedge funds (top of bfsi-global)
+  "aqr capital": "bfsi-global",
+  aqr: "bfsi-global",
+  // Analytics / data services (treat as IT-services pay structure)
+  acceldata: "saas-product",
+  absolutdata: "it-services",
+  // Consumer / FMCG MNCs (already mostly mapped, adding gaps)
+  abinbev: "fmcg-mnc",
+  "ab inbev": "fmcg-mnc",
+  "ab inbev india": "fmcg-mnc",
+  // Recently-IPO'd / late-stage Indian unicorns added 2025-26
+  ixigo: "indian-unicorn",
+  yatra: "indian-unicorn",
+  easemytrip: "indian-unicorn",
+  "go digit": "indian-unicorn",
+  "niva bupa": "indian-unicorn",
+  zaggle: "indian-unicorn",
+  awfis: "indian-unicorn",
+  juspay: "indian-unicorn",
+  setu: "saas-product",
 };
 
 /** Tier display names for compact salary context */
@@ -1073,7 +1113,24 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
   if (key.includes("consult")) return "consulting-big4";
   if (key.includes("edtech") || key.includes("education") || key.includes("learning")) return "edtech";
   if (key.includes("saas") || key.includes("software") || key.includes("tech")) return "saas-product";
-  if (key.includes("design studio") || key.includes("design agency") || key.includes("creative agency") || key.includes("brand consultancy") || key.includes("ux studio")) return "it-services";
+  /* Design firms — multi-word phrases AND single-word "design"
+     anchored against the right neighbouring tokens. The previous
+     phrase-only check missed "Bombay Design Centre" / "Bombay Design
+     Company" / "Foo Design Lab" because those don't contain "design
+     studio" verbatim. We now also catch the standalone pattern
+     "<word> design <centre|company|lab|works|labs|partners|consultancy
+     |house|collective>" — the most common Indian design-firm naming
+     convention. CRITICAL: do NOT match "Design Manager" / "Design
+     Engineer" / "Design Director" (IC titles, not company suffixes). */
+  if (
+    key.includes("design studio") ||
+    key.includes("design agency") ||
+    key.includes("creative agency") ||
+    key.includes("brand consultancy") ||
+    key.includes("ux studio") ||
+    /\bdesign (?:centre|center|company|lab|labs|works|partners|consultancy|house|collective|firm|associates)\b/.test(key) ||
+    /\b(?:advertising|creative|brand) (?:agency|house|firm|consultancy|collective|partners)\b/.test(key)
+  ) return "it-services";
   if (key.includes("services") || key.includes("solutions") || key.includes("infotech") || key.includes("technologies")) return "it-services";
   if (key.includes("fmcg") || key.includes("consumer") || key.includes("retail")) return "fmcg-mnc";
   if (key.includes("pharma") || key.includes("hospital") || key.includes("manufacturing")) return "fmcg-mnc";

@@ -55,7 +55,8 @@ export type RoleKey =
   | "scrum-master" | "solutions-architect" | "tech-lead"
   | "embedded-engineer" | "database-administrator" | "network-engineer"
   | "mechanical-engineer" | "electrical-engineer" | "civil-engineer"
-  | "chartered-accountant" | "doctor" | "pharmacist";
+  | "chartered-accountant" | "doctor" | "pharmacist"
+  | "design-engineer" | "product-marketing-manager";
 
 /** Helper to create a salary entry with defaults */
 function s(
@@ -948,6 +949,14 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
     },
   },
 
+  // ─── DESIGN ENGINEER (alias — premium 10-15% over ux-designer at top
+  //     product cos; for now resolves via ROLE_ALIASES → ux-designer) ──
+  "design-engineer": { /* alias — falls back to ux-designer */ },
+
+  // ─── PRODUCT MARKETING MANAGER (alias — 20-30% above generic marketing
+  //     at SaaS / unicorns; for now resolves via ROLE_ALIASES → marketing) ──
+  "product-marketing-manager": { /* alias — falls back to marketing */ },
+
   // ─── PHARMACIST ───────────────────────────────────────────────
   "pharmacist": {
     "fmcg-mnc": {
@@ -974,6 +983,10 @@ export const ROLE_ALIASES: Partial<Record<RoleKey, RoleKey>> = {
   "mobile-developer": "software-engineer",
   "electrical-engineer": "mechanical-engineer",
   "civil-engineer": "mechanical-engineer",
+  // Emerging 2026 roles — alias to closest existing band; can be split out
+  // with their own bands later if market data justifies it.
+  "design-engineer": "ux-designer", // engineering-coded designers, premium ~10-15% above pure UX at top product cos
+  "product-marketing-manager": "marketing", // PMM is increasingly distinct from generic marketing; bands ~20-30% higher at SaaS
 };
 
 /**
@@ -993,6 +1006,9 @@ export function matchRoleKey(role: string): RoleKey {
     [["data engineer", "data architect"], "data-engineer"],
     [["engineering manager", "director of engineering", "head of engineering", "vp of engineering"], "engineering-manager"],
     [["product manager", "apm", "associate product manager", "group product manager", "product owner", "chief product officer", "technical product manager", "director of product", "vp of product"], "product-manager"],
+    // Design Engineer — engineering-coded designers (Vercel/Linear-style hybrid role).
+    // Match BEFORE generic ux-designer since they should resolve to the design-engineer key.
+    [["design engineer", "design technologist", "creative technologist", "ui engineer"], "design-engineer"],
     [["product designer", "ux designer", "ui designer", "ux/ui", "visual designer", "ux researcher", "head of design", "design manager"], "ux-designer"],
     [["devops", "sre", "site reliability", "platform engineer", "infrastructure"], "devops-sre"],
     [["cloud engineer", "cloud architect"], "cloud-engineer"],
@@ -1022,6 +1038,8 @@ export function matchRoleKey(role: string): RoleKey {
     [["operations manager", "supply chain", "logistics"], "operations"],
     [["legal", "corporate lawyer", "company secretary", "compliance"], "legal"],
     [["hr", "recruiter", "talent acquisition", "hrbp", "human resource"], "hr"],
+    // PMM — distinct from generic marketing; SaaS pays it 20-30% more. Match BEFORE marketing.
+    [["product marketing manager", "product marketing", "pmm", "go-to-market manager", "gtm manager"], "product-marketing-manager"],
     [["marketing", "growth manager", "digital marketing", "content strategist"], "marketing"],
     [["sales", "business development", "account executive", "bde"], "sales"],
     [["consultant", "management consultant", "strategy consultant"], "consultant"],

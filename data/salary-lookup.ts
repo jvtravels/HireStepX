@@ -9,6 +9,7 @@
 import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
 import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
+import { getCompanyCity } from "./company-cities";
 import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
 import { formatGranularBand } from "./india-salary-bands-2025";
 
@@ -60,7 +61,11 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
   const roleKey = matchRoleKey(params.role);
   const companyTier = getCompanyTier(params.company) ?? "indian-unicorn";
   const exp = normalizeExp(params.experienceLevel);
-  const jobCityTier = getCityTier(params.jobCity || params.currentCity);
+  // jobCity resolution priority: explicit param > company HQ city (when known)
+  // > candidate's current city > tier-1 default. Lets a Razorpay offer default
+  // to Bangalore even if user didn't specify, matching real recruiter behaviour.
+  const inferredJobCity = params.jobCity || getCompanyCity(params.company) || params.currentCity;
+  const jobCityTier = getCityTier(inferredJobCity);
 
   const entry = findSalaryEntry(roleKey, companyTier, exp);
 
