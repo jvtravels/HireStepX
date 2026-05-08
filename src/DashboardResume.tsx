@@ -477,6 +477,29 @@ export default function DashboardResume() {
         setProfile(stored);
         setAnalysisSource("ai");
         setPhase("done");
+        // Schema-version upgrade path: profiles persisted before
+        // 2e6703c don't have `experiences` or `skillsDetailed`.
+        // Fire a one-shot background re-analysis so the Experience
+        // timeline + skill-depth chips populate without users having
+        // to click Re-analyse manually. The schema version bump in
+        // _resume-versioning.ts ensures this hits the LLM (not the
+        // stale cache row).
+        const needsSchemaUpgrade =
+          stored.experiences === undefined && stored.skillsDetailed === undefined;
+        if (needsSchemaUpgrade && user?.resumeText && !analyzingRef.current) {
+          analyzingRef.current = true;
+          abortControllerRef.current?.abort();
+          abortControllerRef.current = new AbortController();
+          analyzeResumeWithAI(user.resumeText, user?.targetRole, abortControllerRef.current.signal)
+            .then(result => {
+              if (result?.profile) {
+                setProfile(result.profile);
+                updateUser({ resumeData: { _type: "ai", ...result.profile } });
+              }
+            })
+            .catch(() => { /* silent — old shape keeps rendering */ })
+            .finally(() => { analyzingRef.current = false; });
+        }
       } else if (isFallbackResume(stored) && user?.resumeText && !analyzingRef.current) {
         // Regex-fallback stored — opportunistically try AI re-analysis in
         // the background. Keep the fallback visible while we wait.

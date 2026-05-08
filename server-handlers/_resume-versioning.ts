@@ -85,6 +85,22 @@ export async function sha256Hex(input: string): Promise<string> {
  * entry. Empty / missing role → role-agnostic key (back-compat with
  * pre-role rows that already exist in the DB).
  */
+/**
+ * LLM output schema version — bump when analyze-resume.ts adds or
+ * meaningfully changes a field that the UI hard-depends on. Folding
+ * this into the hash means old cached rows stop matching and the next
+ * upload forces a fresh LLM run with the current schema.
+ *
+ * Version history:
+ *   1 — original ResumeProfile (headline, summary, topSkills, ...)
+ *   2 — added structured experiences[] + skillsDetailed[] (deploy
+ *       2e6703c). Without this bump, cache hits for users who
+ *       analysed before the deploy keep serving the old shape and
+ *       the production Resume tab's Experience section never
+ *       renders.
+ */
+const RESUME_PROFILE_SCHEMA_VERSION = 2;
+
 export async function computeResumeTextHash(
   rawText: string,
   targetRole?: string | null,
@@ -93,7 +109,11 @@ export async function computeResumeTextHash(
   const role = (targetRole ?? "").trim().toLowerCase();
   // Use a delimiter that can't appear in normalized text (newline pair
   // is preserved at most as \n\n, never \n\x00, so no collision risk).
-  const composite = role ? `${text}\n\x00role=${role}` : text;
+  // Schema version is appended so a profile-shape upgrade transparently
+  // invalidates the cache instead of silently serving stale shapes.
+  const rolePart = role ? `\n\x00role=${role}` : "";
+  const versionPart = `\n\x00schema=${RESUME_PROFILE_SCHEMA_VERSION}`;
+  const composite = `${text}${rolePart}${versionPart}`;
   return sha256Hex(composite);
 }
 
