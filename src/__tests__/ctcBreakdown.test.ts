@@ -59,10 +59,16 @@ describe("computeNewRegimeTaxLpa", () => {
     expect(computeNewRegimeTaxLpa(12)).toBe(0);
   });
 
-  it("crosses the 87A cliff at 12L+", () => {
-    // 12L exactly = 0; just above 12L = real tax owed (no rebate marginal relief modeled).
+  it("crosses the 87A cliff at 12L+ with marginal relief, not a step", () => {
     expect(computeNewRegimeTaxLpa(12)).toBe(0);
-    expect(computeNewRegimeTaxLpa(13)).toBeGreaterThan(0);
+    // At ₹12.5L, marginal relief caps tax at ₹0.5L (the excess above ₹12L).
+    // Without relief, raw slab tax would be ~₹65k = 0.65 LPA.
+    expect(computeNewRegimeTaxLpa(12.5)).toBeLessThanOrEqual(0.5);
+    // At ₹12.1L, can owe at most ₹0.1L (the excess), not ~₹62k.
+    expect(computeNewRegimeTaxLpa(12.1)).toBeLessThanOrEqual(0.1);
+    // Marginal relief tapers off — by ₹13L, normal tax (₹0.65L) is below
+    // the excess-from-12 threshold (₹1L), so the cap doesn't bind.
+    expect(computeNewRegimeTaxLpa(13)).toBeGreaterThan(0.5);
   });
 
   it("computes tax for 20L taxable (mid-career SE band)", () => {

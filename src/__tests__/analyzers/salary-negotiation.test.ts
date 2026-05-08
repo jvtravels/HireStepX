@@ -177,6 +177,43 @@ describe("applyTitleExpFloor (via generateNegotiationBand)", () => {
     expect(band.initialOffer).toBeGreaterThan(40);
   });
 
+  it("flags ai_usism_drift when AI quotes USD figures", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can offer you $120,000 plus a 401(k) match and standard PTO."),
+        user("That's USD — I'm in India. Can we discuss in LPA?"),
+      ]),
+    });
+    expect(out.flags).toContain("ai_usism_drift");
+    const usismGap = out.rubricGaps.find(g => g.dimension === "voice_authenticity");
+    expect(usismGap, "voice_authenticity gap should fire").toBeDefined();
+    expect(usismGap!.observed).toMatch(/USD|401|PTO/);
+  });
+
+  it("does NOT flag ai_usism_drift on clean Indian-vocab transcripts", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can offer you ₹28 LPA — that's ₹22L base plus a 10% performance bonus and EPF contribution."),
+        user("Could we discuss the joining bonus and notice-period buyout?"),
+        ai("Yes — joining bonus of ₹3L on day-1 if you can join in 30 days."),
+      ]),
+    });
+    expect(out.flags).not.toContain("ai_usism_drift");
+  });
+
+  it("flags multiple US-isms across turns and de-duplicates by label", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Sign-on package of $25,000 plus equity refresh."),
+        ai("We also offer 401K match up to 6% and three weeks PTO."),
+        user("I need this in INR / LPA terms."),
+      ]),
+    });
+    expect(out.flags).toContain("ai_usism_drift");
+    const gap = out.rubricGaps.find(g => g.dimension === "voice_authenticity");
+    expect(gap!.observed).toMatch(/USD|401|PTO/);
+  });
+
   it("Plain 'Software Engineer' (no senior prefix) stays at YOE floor", () => {
     const midBand = generateNegotiationBand({
       role: "Software Engineer",

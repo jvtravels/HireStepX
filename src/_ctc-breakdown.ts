@@ -126,11 +126,13 @@ const SLABS: Array<[number, number]> = [
 
 /** Compute tax on taxable income (in LPA) under new regime.
  *  Returns tax in LPA. Includes 87A rebate (zero-tax up to 12L taxable),
- *  4% cess, and surcharge on income >50L.
+ *  87A MARGINAL RELIEF for incomes just above 12L (so candidate doesn't
+ *  pay more tax than the income excess above 12L — real govt rule, not
+ *  a step function), 4% cess, and surcharge on income >50L.
  *  Exported for unit testability. */
 export function computeNewRegimeTaxLpa(taxableLpa: number): number {
   if (taxableLpa <= 0) return 0;
-  // 87A rebate: full rebate when taxable ≤ 12L under new regime (post Budget 2025).
+  // 87A rebate: full rebate when taxable ≤ 12L under new regime.
   if (taxableLpa <= 12) return 0;
 
   let tax = 0;
@@ -149,7 +151,17 @@ export function computeNewRegimeTaxLpa(taxableLpa: number): number {
   else if (taxableLpa > 50) surcharge = tax * 0.10;
   // 4% cess on (tax + surcharge).
   const cess = (tax + surcharge) * 0.04;
-  return tax + surcharge + cess;
+  let totalTax = tax + surcharge + cess;
+
+  // 87A marginal relief: tax payable cannot exceed the income above ₹12L.
+  // Without this, at ₹12.01L you'd suddenly owe ~₹62k on a ₹1k bump.
+  // Real govt rule caps tax at (income − 12L) in the marginal-relief band.
+  // The relief tapers off by the time normal tax catches up (~₹12.7L).
+  const incomeExcess = taxableLpa - 12;
+  if (totalTax > incomeExcess) {
+    totalTax = incomeExcess;
+  }
+  return Math.max(0, totalTax);
 }
 
 export function computeCtcBreakdown(input: CtcBreakdownInput): CtcBreakdownOutput {
