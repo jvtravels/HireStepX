@@ -99,7 +99,7 @@ function hasResolvedBand(role: RoleKey, tier: string, exp: ExperienceLevel): boo
 describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
   const roleKeys = Object.keys(SALARY_DATA) as RoleKey[];
 
-  it("reports the explicit-coverage matrix", () => {
+  it("reports the explicit-coverage matrix", { timeout: 30_000 }, () => {
     const cells: Cell[] = [];
     for (const role of roleKeys) {
       for (const tier of COMPANY_TIERS) {

@@ -22,6 +22,8 @@
  * Refresh: when scraped research backlog updates, mirror here.
  */
 
+import { getCsvDerivedNegotiationContext } from "./csv-derived-fallbacks";
+
 export type LiquidityRisk = "low" | "medium" | "medium-high" | "high";
 
 export interface CompanyNegotiationContext {
@@ -878,7 +880,12 @@ export function getCompanyNegotiationContext(
     if (key.length < 4) continue;
     if (cleaned.includes(key) || key.includes(cleaned)) return ctx;
   }
-  return null;
+  /* CSV-derived research fallback. Synthesizes a CompanyNegotiationContext
+     from the 100-company research dataset for any company we haven't
+     hand-curated yet. Covers ~82 companies that previously had no
+     negotiation context at all. The csv-derived-fallbacks module imports
+     only TYPES from this file, so no runtime cycle. */
+  return getCsvDerivedNegotiationContext(rawCompany) ?? null;
 }
 
 /** Render the negotiation context as a prompt-ready block. Empty

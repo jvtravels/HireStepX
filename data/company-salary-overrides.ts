@@ -22,6 +22,7 @@
 
 import type { ExperienceLevel } from "./salaries";
 import { classifyCompanyType } from "./company-guidance";
+import { getCsvDerivedBandOverride } from "./csv-derived-fallbacks";
 
 /** Subset of SalaryEntry — the fields a company-band override needs. */
 export interface CompanyBandOverride {
@@ -6954,6 +6955,13 @@ export function getCompanyBandOverride(
       if (hit) return hit;
     }
   }
+  /* CSV-derived research fallback (100-company aggregated dataset).
+     Runs BEFORE the sector default so the candidate gets the
+     research-verified band whenever the company is in the CSV but
+     no curator-authored entry exists yet. */
+  const csvDerived = getCsvDerivedBandOverride(rawCompany, roleKey, experienceLevel);
+  if (csvDerived) return csvDerived;
+
   /* Sector-level fallback (covers the long tail of ~800 companies in
      the autocomplete that don't have bespoke entries). classifyCompanyType
      maps the company name to one of ~25 sector buckets. */
