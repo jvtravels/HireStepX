@@ -43,6 +43,60 @@ export interface CompanyBandOverride {
   lastVerified: string;
   /** Optional negotiation hint specific to this company. */
   notes?: string;
+
+  /* ─── Optional company-specific overrides (Phase C — robustness work) ───
+   *
+   * Each field below lets a curator encode a company-specific datum that
+   * differs from the tier default. Leave undefined to fall through to the
+   * tier-aware helpers (getVariablePct, getNoticeBuyoutContext, etc.) in
+   * salary-lookup.ts. Setting a value SHORT-CIRCUITS the tier default for
+   * that field for this company. */
+
+  /** Override the tier-default variable-bonus % of CTC.
+   *  Use when a company's bonus structure differs materially from its
+   *  tier's average — e.g. CRED (no bonus, all base+ESOP), Goldman India
+   *  (40%+ at senior, vs bfsi-global 22% default). */
+  variablePctOverride?: number;
+
+  /** Override the tier-default joining-bonus authority range.
+   *  E.g. Wipro IT services: rare exceptions to the no-bonus rule for
+   *  niche skills; Razorpay: ₹2-5 LPA standard for senior+. */
+  joiningBonusOverride?: [number, number];
+
+  /** Company-specific notice-period in days. TCS=90, Google=60,
+   *  Razorpay=30. Lets the LLM quote the right number when the
+   *  candidate asks "how soon can you close this?". */
+  noticePeriodDays?: number;
+
+  /** Override the tier-default 13th-month / festive-bonus flag.
+   *  E.g. some unicorns started Diwali bonuses (CRED has done it);
+   *  some FMCG firms have removed them. */
+  hasFestiveBonus?: boolean;
+
+  /** Concrete recent-buyback note ("Razorpay 6 buybacks since 2018,
+   *  latest mid-2024 at $12B implied valuation"). Replaces the generic
+   *  tier-aware buyback context. Update with each new buyback round. */
+  recentBuybackNote?: string;
+
+  /** Whether the company has a meaningful onsite-deputation track.
+   *  Default true for it-services; explicit override for non-services
+   *  cos with onsite (Wipro digital, Cognizant onshore, some GCC). */
+  hasDeputation?: boolean;
+
+  /** Bond / service-agreement penalty in LPA. TCS=0.5, Infosys=1.0,
+   *  Cognizant=0.75, Wipro varies. Government PSUs 5-10. */
+  bondPenaltyLpa?: number;
+
+  /** Multi-source provenance. When 2+ independent sources agree this
+   *  is "verified"; when only 1 source it's "single-source". CI gate
+   *  + admin dashboard surface the difference. */
+  sourceVerifiedAt?: {
+    glassdoor?: string;
+    ambitionbox?: string;
+    levelsFyi?: string;
+    drhp?: string;
+    operatorNetwork?: string;
+  };
 }
 
 /** company key → role key → exp level → override band. Company key is

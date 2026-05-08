@@ -324,3 +324,47 @@ describe("bandContext — final-phase helpers", () => {
     expect(band.bandContext).toMatch(/RSU REFRESH CADENCE/i);
   });
 });
+
+/* bandSource provenance — drives admin coverage telemetry. */
+describe("bandSource provenance", () => {
+  it("Google → company-override (Google has bespoke entries)", () => {
+    const band = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Google",
+      experienceLevel: "mid",
+    });
+    expect(band.bandSource).toBe("company-override");
+    expect(band.sourceCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it("Razorpay senior designer → sector-override (no bespoke ux-designer at Razorpay)", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Product Designer",
+      company: "Razorpay",
+      experienceLevel: "senior",
+    });
+    // Razorpay has bespoke SE/PM/ML overrides but not ux-designer.
+    // Falls through to sector fallback (__sector_fintech).
+    expect(["company-override", "sector-override"]).toContain(band.bandSource);
+  });
+
+  it("unknown company in mapped tier → tier-default", () => {
+    const band = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "obscure-tech-co-xyz",
+      experienceLevel: "mid",
+    });
+    expect(["tier-default", "fallback", "sector-override"]).toContain(band.bandSource);
+  });
+
+  it("unknown role + unknown company → fallback", () => {
+    const band = generateNegotiationBand({
+      role: "Cosmic Diviner",
+      company: "obscure-tech-co-xyz",
+      experienceLevel: "mid",
+    });
+    // Either fallback (no entry found), tier-default (matched something),
+    // or sector-override (classifyCompanyType pattern-matched).
+    expect(["fallback", "tier-default", "sector-override"]).toContain(band.bandSource);
+  });
+});

@@ -302,6 +302,19 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
       salaryNegGuidance = buildSalaryNegotiationGuidance({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       negotiationBandData = generateNegotiationBand({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       salaryNegGuidance += `\n\n${negotiationBandData.bandContext}`;
+      // Telemetry: track which lookup-chain layer served this band so the
+      // admin dashboard can prioritize what to add overrides for next.
+      // Volume of "tier-default" / "fallback" hits = backlog for the
+      // human-in-the-loop sourcing pipeline.
+      void captureServerEvent("salary_band_resolved", distinctIdFrom(req, auth.userId), {
+        company: typeof companyName === "string" ? companyName.slice(0, 80) : "",
+        role: typeof targetRole === "string" ? targetRole.slice(0, 80) : "",
+        exp_level: typeof expLevel === "string" ? expLevel : "",
+        band_source: negotiationBandData.bandSource ?? "unknown",
+        source_count: negotiationBandData.sourceCount ?? 0,
+        is_synthetic: negotiationBandData.isSynthetic ?? false,
+        initial_offer_lpa: negotiationBandData.initialOffer,
+      }, req);
       // Negotiation style
       const safeStyle = (negotiationStyle === "cooperative" || negotiationStyle === "aggressive" || negotiationStyle === "defensive") ? negotiationStyle as NegotiationStyle : "cooperative";
       salaryNegGuidance += `\n\n${getNegotiationStyleContext(safeStyle)}`;

@@ -7,7 +7,14 @@
  */
 
 import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
-import { getCompanyBandOverride } from "./company-salary-overrides";
+import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES } from "./company-salary-overrides";
+
+/** Pre-computed set of canonical override keys, used to distinguish
+ * "true company override" from "sector fallback" in the bandSource
+ * provenance. Loaded once at module init for O(1) lookup. */
+const COMPANY_SALARY_OVERRIDES_KEYS = new Set(
+  Object.keys(COMPANY_SALARY_OVERRIDES).filter(k => !k.startsWith("__sector_")),
+);
 import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { getCompanyCity } from "./company-cities";
@@ -48,6 +55,13 @@ export interface NegotiationBand {
   isSynthetic?: boolean;
   /** Provenance string for synthesized bands. Undefined for curated. */
   syntheticSource?: string;
+  /** Where this band came from in the lookup chain. Drives admin-dashboard
+   * coverage telemetry (gq_band_resolved event). Highest accuracy is
+   * "company-override"; lowest is "fallback". */
+  bandSource?: "company-override" | "sector-override" | "tier-default" | "fallback";
+  /** Number of independent sources that agreed on the override band, if
+   * sourceVerifiedAt is populated. 2+ = verified, 1 = single-source. */
+  sourceCount?: number;
 }
 
 /** Negotiation style: modifies how the hiring manager behaves */
@@ -660,10 +674,22 @@ INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT 
 ${components.text}
 
 These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from a different tier (e.g. unicorn bands for a small design studio) breaks the simulation. Stay anchored.`;
+    // Detect whether this came from a true company-specific override or
+    // the sector-level fallback (__sector_*). The override resolver doesn't
+    // tell us — we infer by checking if a direct company key exists.
+    const bandSource: "company-override" | "sector-override" =
+      COMPANY_SALARY_OVERRIDES_KEYS.has(params.company?.toLowerCase().trim() ?? "")
+        ? "company-override"
+        : "sector-override";
+    const sourceCount = override.sourceVerifiedAt
+      ? Object.values(override.sourceVerifiedAt).filter(Boolean).length
+      : (override.source ? 1 : 0);
     return {
       initialOffer, minOffer, maxStretch, walkAway,
       joiningBonusRange, hasEquity, equityRange,
       bandContext,
+      bandSource,
+      sourceCount,
     };
   }
 
@@ -687,6 +713,8 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       initialOffer: f.initial, minOffer: f.min, maxStretch: f.max, walkAway: f.walk,
       joiningBonusRange: [0, Math.max(0.5, f.initial * 0.1)], hasEquity: false, equityRange: [0, 0],
       bandContext: `No specific salary data for this role/company. Conservative fallback for ${exp} level: ₹${f.initial} LPA initial offer, ₹${f.max} LPA max stretch.`,
+      bandSource: "fallback",
+      sourceCount: 0,
     };
   }
 
@@ -794,6 +822,8 @@ JOINING-BONUS / NOTICE-PERIOD INTELLIGENCE:
     initialOffer, minOffer, maxStretch, walkAway,
     joiningBonusRange, hasEquity, equityRange, bandContext,
     isSynthetic, syntheticSource: entry._synthetic_source,
+    bandSource: "tier-default",
+    sourceCount: isSynthetic ? 0 : 1,
   };
 }
 
