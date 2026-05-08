@@ -20,7 +20,11 @@ function getClient(): PostHog | null {
     host: process.env.POSTHOG_HOST || "https://us.i.posthog.com",
     flushAt: 1,
     flushInterval: 0,
-    enableExceptionAutocapture: true,
+    // enableExceptionAutocapture registers globalThis.process.on('uncaughtException'),
+    // which throws "globalThis.process?.on is not a function" in the Edge runtime
+    // (partial process polyfill, no event-emitter methods). We capture exceptions
+    // explicitly via captureServerException, so autocapture is unnecessary.
+    enableExceptionAutocapture: false,
   });
   return _client;
 }
