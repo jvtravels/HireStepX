@@ -25,6 +25,7 @@ import { classifyCompanyType } from "../data/company-guidance";
  * unknown sectors as "could hire anyone"). */
 const ROLES_BY_BUCKET: Record<string, readonly string[]> = {
   consulting_strategy: ["consultant", "business-analyst"],
+  consulting_big4: ["consultant", "business-analyst", "data-analyst", "hr"],
   ibank_bulgebracket: ["finance", "business-analyst"],
   quant_hft: ["software-engineer", "data-scientist", "ml-engineer"],
   psu_bank: ["software-engineer", "data-analyst", "business-analyst", "hr"],
@@ -43,6 +44,24 @@ const ROLES_BY_BUCKET: Record<string, readonly string[]> = {
   global_gaming: ["software-engineer", "product-manager", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer"],
   indian_gaming_realmoney: ["software-engineer", "product-manager", "data-analyst", "frontend-developer", "backend-developer", "qa-engineer", "marketing"],
   indian_market_generic: ["software-engineer", "product-manager", "data-analyst", "marketing", "sales", "hr"],
+  psu_central: ["software-engineer", "data-analyst", "hr"],
+  indian_aviation: ["data-analyst", "marketing", "sales", "hr"],
+  indian_hotels: ["marketing", "sales", "hr"],
+  indian_real_estate: ["sales", "marketing", "hr", "business-analyst"],
+  indian_auto_oem: ["data-analyst", "marketing", "sales", "hr", "business-analyst"],
+  indian_telecom: ["software-engineer", "data-analyst", "marketing", "sales", "hr", "business-analyst"],
+  indian_media_entertainment: ["product-manager", "marketing", "sales", "hr", "ux-designer"],
+  indian_industrials_metals: ["data-analyst", "sales", "hr", "business-analyst"],
+  indian_travel_aggregator: ["software-engineer", "product-manager", "data-analyst", "frontend-developer", "backend-developer", "marketing", "sales", "hr"],
+  indian_healthcare_chain: ["data-analyst", "marketing", "hr", "business-analyst"],
+  indian_insurance_amc: ["software-engineer", "data-analyst", "marketing", "sales", "hr", "business-analyst"],
+  indian_market_infra: ["software-engineer", "data-analyst", "business-analyst"],
+  indian_power_renewables: ["data-analyst", "sales", "hr", "business-analyst"],
+  indian_retail_chains: ["data-analyst", "marketing", "sales", "hr", "business-analyst"],
+  indian_audit_legal_midtier: ["business-analyst", "hr"],
+  indian_saas_broad: ["software-engineer", "product-manager", "engineering-manager", "data-scientist", "data-analyst", "ml-engineer", "devops-sre", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer", "marketing", "sales", "hr"],
+  indian_advertising_agency: ["marketing", "sales", "ux-designer", "hr"],
+  indian_civil_services: [],
 };
 
 const HIGH_TRAFFIC_ROLES = [
