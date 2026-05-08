@@ -1295,15 +1295,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── SaaS / Product (Indian-built) ────────────────────────── */
   postman: {
     "software-engineer": {
-      entry: { totalMin: 25, totalMax: 35, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Postman IC1 India ₹2.9M; campus ₹25-35L)", lastVerified: "2026-05-07" },
-      mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Postman IC2 India median ₹53.1L)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 65, totalMax: 120, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (IC3-IC4 ₹11.96M)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 25, totalMax: 35, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Levels.fyi (Postman IC1 India ₹2.9M; campus ₹25-35L)", lastVerified: "2026-05-07", notes: "Postman SaaS — global pay parity at IC1. Negotiation focus: Fixed + ESOP grant size + joining bonus." },
+      mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Levels.fyi (Postman IC2 India median ₹53.1L)", lastVerified: "2026-05-07", notes: "IC2 ESOP-heavy — Postman late-stage private; ESOP value is the load-bearing lever. Negotiation focus: Fixed + ESOP refresh cadence." },
+      senior: { totalMin: 65, totalMax: 120, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [5, 15], source: "Levels.fyi (IC3-IC4 ₹11.96M)", lastVerified: "2026-05-07", notes: "Senior IC — staff/principal scope. Negotiation focus: Fixed + level + ESOP grant." },
     },
-  
+
     "product-manager": {
-      entry: { totalMin: 18, totalMax: 40, equityMin: 3, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 31, totalMax: 88, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 56, totalMax: 163, equityMin: 8, equityMax: 23, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 18, totalMax: 40, equityMin: 3, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product scope + fixed." },
+      mid: { totalMin: 31, totalMax: 88, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product ownership + ESOP." },
+      senior: { totalMin: 56, totalMax: 163, equityMin: 8, equityMax: 23, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [5, 15], source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08", notes: "Negotiation focus: Strategic ownership + ESOP grant size." },
       lead: { totalMin: 88, totalMax: 225, equityMin: 12, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 119, totalMax: 313, equityMin: 17, equityMax: 44, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x product-manager)", lastVerified: "2026-05-08" },
     },
@@ -1322,18 +1322,26 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 106, totalMax: 275, equityMin: 16, equityMax: 41, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x devops-sre)", lastVerified: "2026-05-08" },
     },
     "customer-success": {
-      entry: { totalMin: 5, totalMax: 20, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 15, totalMax: 40, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 28, totalMax: 75, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 5, totalMax: 20, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + customer ownership." },
+      mid: { totalMin: 15, totalMax: 40, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08", notes: "Negotiation focus: Customer ownership + retention metrics." },
+      senior: { totalMin: 28, totalMax: 75, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 8], source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08", notes: "Negotiation focus: Retention impact + book-of-business size." },
       lead: { totalMin: 44, totalMax: 113, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
       executive: { totalMin: 63, totalMax: 163, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (postman 1.25x customer-success)", lastVerified: "2026-05-08" },
+    },
+    /* Developer Advocate / Technical Writer — Postman's developer-relations
+       team is a hiring focus. Mapped to marketing taxonomy (devrel = a hybrid
+       of growth + content; closest first-class role). */
+    "marketing": {
+      entry: { totalMin: 12, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Web research 2026-05-08 (Postman Developer Advocate / Tech Writer Junior)", lastVerified: "2026-05-08", notes: "Junior DevRel / Tech Writer — Postman invests heavily here. Negotiation focus: Fixed + content/talk portfolio." },
+      mid: { totalMin: 25, totalMax: 60, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (Postman Developer Advocate Mid)", lastVerified: "2026-05-08", notes: "Mid DevRel — own a vertical (API/testing/observability). Negotiation focus: Audience + content scope + ESOP." },
+      senior: { totalMin: 45, totalMax: 110, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Web research 2026-05-08 (Postman Senior DevRel / Lead Tech Writer)", lastVerified: "2026-05-08", notes: "Senior DevRel / Principal TW — strategic content programs. Negotiation focus: Program ownership + ESOP grant." },
     },
   },
   browserstack: {
     "software-engineer": {
-      entry: { totalMin: 17, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (BrowserStack L1 India ₹1.99M)", lastVerified: "2026-05-07" },
-      mid: { totalMin: 22, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (L3 ₹17.3-28.1L)", lastVerified: "2026-05-07", notes: "BrowserStack pays below product-co peers; quality of work is the trade-off." },
-      senior: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (L5 ₹3.77M)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 17, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Levels.fyi (BrowserStack L1 India ₹1.99M)", lastVerified: "2026-05-07", notes: "L1 SDE — bootstrapped/profitable; cash bonuses modest. Negotiation focus: Fixed + joining bonus." },
+      mid: { totalMin: 22, totalMax: 32, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Levels.fyi (L3 ₹17.3-28.1L)", lastVerified: "2026-05-07", notes: "BrowserStack pays below product-co peers; quality of work is the trade-off. Negotiation focus: Fixed + level + ESOP clarity." },
+      senior: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 8], source: "Levels.fyi (L5 ₹3.77M)", lastVerified: "2026-05-07", notes: "Senior — profitability means cash + measured ESOP, not aggressive grants. Negotiation focus: Fixed + level." },
     },
   
     "product-manager": {
@@ -1358,9 +1366,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 94, totalMax: 242, equityMin: 14, equityMax: 36, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x devops-sre)", lastVerified: "2026-05-08" },
     },
     "qa-engineer": {
-      entry: { totalMin: 4, totalMax: 15, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 10, totalMax: 29, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 18, totalMax: 50, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 8, totalMax: 18, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Web research 2026-05-08 (BrowserStack QA/Automation Junior)", lastVerified: "2026-05-08", notes: "QA/Automation is core to BrowserStack's product — internal hiring bar high. Negotiation focus: Fixed + automation portfolio." },
+      mid: { totalMin: 16, totalMax: 35, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Web research 2026-05-08 (BrowserStack QA/Automation Mid)", lastVerified: "2026-05-08", notes: "Mid QA — own a test-tooling pipeline / framework. Negotiation focus: Tooling ownership + level." },
+      senior: { totalMin: 28, totalMax: 60, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (BrowserStack Senior QA/Automation)", lastVerified: "2026-05-08", notes: "Senior QA — close to SDET / Test Architect at BrowserStack. Negotiation focus: Architecture ownership + ESOP." },
       lead: { totalMin: 28, totalMax: 77, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 39, totalMax: 105, equityMin: 2, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x qa-engineer)", lastVerified: "2026-05-08" },
     },
@@ -1371,10 +1379,13 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 39, totalMax: 99, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x customer-success)", lastVerified: "2026-05-08" },
       executive: { totalMin: 55, totalMax: 143, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x customer-success)", lastVerified: "2026-05-08" },
     },
+    /* Solutions Engineer + Account Executive — BrowserStack global SaaS GTM
+       motion. Mapped under sales taxonomy (closest first-class role for AE;
+       SE-Solutions overlaps with sales-engineering). */
     "sales": {
-      entry: { totalMin: 4, totalMax: 20, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 15, totalMax: 44, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 28, totalMax: 88, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 10, totalMax: 22, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 2], source: "Web research 2026-05-08 (BrowserStack AE/Solutions Engineer Junior)", lastVerified: "2026-05-08", notes: "Junior AE / Solutions Engineer. Negotiation focus: OTE clarity + ramp." },
+      mid: { totalMin: 22, totalMax: 55, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (BrowserStack AE Mid)", lastVerified: "2026-05-08", notes: "Mid AE owns mid-market book; SE Mid does pre-sales + POCs. Negotiation focus: Fixed vs incentive split + territory." },
+      senior: { totalMin: 45, totalMax: 110, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Web research 2026-05-08 (BrowserStack Senior AE / Lead SE)", lastVerified: "2026-05-08", notes: "Senior AE / Lead SE — strategic accounts. Negotiation focus: OTE realism + accelerators + ESOP." },
       lead: { totalMin: 50, totalMax: 154, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
       executive: { totalMin: 77, totalMax: 242, equityMin: 5, equityMax: 15, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (browserstack 1.1x sales)", lastVerified: "2026-05-08" },
     },
@@ -6807,18 +6818,18 @@ export const COMPANY_SALARY_OVERRIDES: Record<
      unicorns at SDE-2/3 (Levels.fyi median ₹53L for SDE-2 vs ~₹35L peer). */
   dream11: {
     "software-engineer": {
-      entry: { totalMin: 20, totalMax: 32, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi SDE-1 India ₹2.01M-₹3.13M (median ₹25.4L)", lastVerified: "2026-05-08", notes: "Dream11 SDE-1 campus / 0-2 yr; Dream Sports privately held — ESOP liquidity via periodic buybacks.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      mid: { totalMin: 42, totalMax: 65, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi SDE-2 India ₹4.27M-₹6.52M (median ₹53.4L)", lastVerified: "2026-05-08", notes: "Premium over peer unicorns at SDE-2 — Dream11 SDE-2 median (₹53L) ~30% above Razorpay/Swiggy.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      senior: { totalMin: 65, totalMax: 95, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi SDE-3 India (top ₹7.53M) + Glassdoor (618 samples)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
+      entry: { totalMin: 20, totalMax: 32, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Levels.fyi SDE-1 India ₹2.01M-₹3.13M (median ₹25.4L)", lastVerified: "2026-05-08", notes: "Dream11 SDE-1 campus / 0-2 yr; Dream Sports privately held — ESOP liquidity via periodic buybacks. Negotiation focus: Fixed + joining bonus.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 42, totalMax: 65, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi SDE-2 India ₹4.27M-₹6.52M (median ₹53.4L)", lastVerified: "2026-05-08", notes: "Premium over peer unicorns at SDE-2 — Dream11 SDE-2 median (₹53L) ~30% above Razorpay/Swiggy. Negotiation focus: Fixed + ESOP clarity (buyback cadence).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 65, totalMax: 95, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 10], source: "Levels.fyi SDE-3 India (top ₹7.53M) + Glassdoor (618 samples)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + level + ESOP. Senior-level liquidity history is the load-bearing question.", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
       lead: { totalMin: 70, totalMax: 110, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi Engineering Manager India ₹5.45M-₹7.48M", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "product-manager": {
-      mid: { totalMin: 35, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi PM India (PM2 ₹62.7L top, median ₹46.5L)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      senior: { totalMin: 55, totalMax: 85, equityMin: 12, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi PM3 India (₹53.7L+)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 35, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi PM India (PM2 ₹62.7L top, median ₹46.5L)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + product scope (specific game/feature owned).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 55, totalMax: 85, equityMin: 12, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 10], source: "Levels.fyi PM3 India (₹53.7L+)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product ownership + ESOP grant size.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "data-scientist": {
-      mid: { totalMin: 30, totalMax: 55, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi DS India ₹2.91M-₹16.5M (median ₹69.2L blended)", lastVerified: "2026-05-08", notes: "Dream11 ML/DS bar high — fantasy-sports modelling is core IP.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      senior: { totalMin: 55, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi DS top + Data Science Manager ₹5.12M-₹7.27M", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 30, totalMax: 55, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Levels.fyi DS India ₹2.91M-₹16.5M (median ₹69.2L blended)", lastVerified: "2026-05-08", notes: "Dream11 ML/DS bar high — fantasy-sports modelling is core IP. Negotiation focus: ML/business impact (modelling team scope).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 55, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [4, 12], source: "Levels.fyi DS top + Data Science Manager ₹5.12M-₹7.27M", lastVerified: "2026-05-08", notes: "Negotiation focus: Ownership + scope (own a vertical / line of models).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "ux-designer": {
       entry: { totalMin: 9, totalMax: 26, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (dream11 1.1x ux-designer)", lastVerified: "2026-05-08" },
@@ -6839,6 +6850,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 5, totalMax: 18, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (dream11 1.1x business-analyst)", lastVerified: "2026-05-08" },
       mid: { totalMin: 13, totalMax: 35, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08", lastVerified: "2026-05-08" },
       senior: { totalMin: 22, totalMax: 60, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08", lastVerified: "2026-05-08" },
+    },
+    /* Risk/Compliance — fantasy-sports legality + payments fraud team. Mapped
+       under data-analyst taxonomy (no first-class "risk-analyst" role key). */
+    "data-analyst": {
+      entry: { totalMin: 6, totalMax: 16, equityMin: 0, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 1], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Junior)", lastVerified: "2026-05-08", notes: "Risk/Compliance Junior at Dream11 — fixed + comp-knowledge bonus. Negotiation focus: Fixed + bonus." },
+      mid: { totalMin: 16, totalMax: 38, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 3], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Mid)", lastVerified: "2026-05-08", notes: "Risk/Compliance Mid — own a fraud surface or compliance lane. Negotiation focus: Risk scope + criticality." },
+      senior: { totalMin: 30, totalMax: 65, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [2, 6], source: "Web research 2026-05-08 (Dream11 Risk/Compliance Senior)", lastVerified: "2026-05-08", notes: "Risk/Compliance Senior — regulator-facing criticality drives premium. Negotiation focus: Criticality + ownership." },
+    },
+    /* Brand / Growth Marketing — IPL/cricket-window media buying + brand. */
+    "marketing": {
+      entry: { totalMin: 6, totalMax: 16, equityMin: 0, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [0, 1], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Junior)", lastVerified: "2026-05-08", notes: "Junior brand/growth — campaign ownership during IPL window. Negotiation focus: Campaign impact + bonus." },
+      mid: { totalMin: 18, totalMax: 42, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [1, 4], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Mid)", lastVerified: "2026-05-08", notes: "Mid brand/growth — CAC/ROI ownership on paid + influencer mix. Negotiation focus: CAC/ROI impact." },
+      senior: { totalMin: 35, totalMax: 75, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", joiningBonusOverride: [3, 8], source: "Web research 2026-05-08 (Dream11 Brand/Growth Marketing Senior)", lastVerified: "2026-05-08", notes: "Senior brand/growth — own the IPL P&L. Negotiation focus: Brand/growth ownership + ESOP." },
     },
   },
 };
