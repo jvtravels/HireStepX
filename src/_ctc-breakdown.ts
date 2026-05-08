@@ -35,6 +35,30 @@ export interface CtcBreakdownInput {
   /** Employer's EPF / gratuity / insurance loading as a fraction of base.
    *  Defaults to 0.18 (12% EPF + 4.81% gratuity + ~1% insurance). */
   benefitsLoadingPct?: number;
+  /** Per-company equity-realism override. If set, overrides the default
+   *  RSU=face, ESOP=30% heuristic. Use when a company has a documented
+   *  recentBuybackNote — e.g. Razorpay (6 buybacks) → 0.55, CRED → 0.40.
+   *  Listed cos (Swiggy/Zomato) → 1.0. */
+  equityLiquidityFactor?: number;
+}
+
+/** Map a company-override `recentBuybackNote` (or absence) to a liquidity
+ *  factor for ESOP discount. Listed RSU is always 1.0 — this is just for
+ *  pre-IPO ESOPs where buyback frequency is the only honest signal.
+ *
+ *  Heuristic: every documented buyback round in the last 3 years adds ~5pp
+ *  to the discount factor, capped at 0.55 (still a discount vs RSU since
+ *  buybacks are episodic, not on-demand). */
+export function liquidityFactorFromBuybackNote(note: string | undefined): number {
+  if (!note) return 0.30; // No documented buybacks = pre-IPO baseline.
+  // Count "buyback" mentions (case-insensitive); each round nudges the factor.
+  const buybackCount = (note.match(/buyback/gi) ?? []).length;
+  // "6 buybacks since 2018" or "5 rounds" — extract a number to handle the
+  // common wording explicitly.
+  const numMatch = note.match(/(\d+)\s*(?:buyback|round)/i);
+  const explicitCount = numMatch ? parseInt(numMatch[1]!, 10) : buybackCount;
+  const rounds = Math.max(buybackCount, explicitCount, 1);
+  return Math.min(0.55, 0.30 + rounds * 0.05);
 }
 
 export interface CtcBreakdownOutput {
@@ -116,10 +140,13 @@ export function computeCtcBreakdown(input: CtcBreakdownInput): CtcBreakdownOutpu
   const payoutFactor = Math.max(0, Math.min(1, input.variablePayoutFactor ?? 0.85));
   const benefitsLoading = Math.max(0, Math.min(0.40, input.benefitsLoadingPct ?? 0.18));
 
-  // Equity realistic: RSU on listed = face; pre-IPO ESOP discounted to 30%
-  // (historical Indian unicorn ESOP-to-cash conversion via buybacks).
-  const equityRealistic =
-    equityType === "rsu" ? equity : equityType === "esop" ? equity * 0.30 : 0;
+  // Equity realistic: RSU on listed = face; pre-IPO ESOP discounted by
+  // company-specific liquidity factor (defaults 0.30, but Razorpay-style
+  // active-buyback cos can push this to 0.55). Caller passes override
+  // via input.equityLiquidityFactor; otherwise we use the type default.
+  const liquidityFactor = input.equityLiquidityFactor
+    ?? (equityType === "rsu" ? 1.0 : equityType === "esop" ? 0.30 : 0);
+  const equityRealistic = equity * liquidityFactor;
 
   // Cash CTC = stated - equity face - employer benefits loading on cash portion.
   // Note: stated CTC commonly INCLUDES employer EPF/gratuity in the headline.

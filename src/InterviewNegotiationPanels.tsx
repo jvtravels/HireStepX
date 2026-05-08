@@ -1,6 +1,6 @@
 import React, { memo, useState } from "react";
 import { e, ef } from "./interviewTokens";
-import { computeCtcBreakdown } from "./_ctc-breakdown";
+import { computeCtcBreakdown, liquidityFactorFromBuybackNote } from "./_ctc-breakdown";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -181,11 +181,15 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
 
 /* ─── Post-Interview Deal Summary (shown after salary negotiation) ─── */
 
-export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle }: {
+export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negotiationBand, onReplay, negotiationStyle, recentBuybackNote }: {
   transcript: { speaker: string; text: string; time: string }[];
   negotiationBand?: { initialOffer: number; maxStretch: number; walkAway: number } | null;
   onReplay?: (style: string) => void;
   negotiationStyle?: string;
+  /** Optional per-company recentBuybackNote (from COMPANY_META). When
+   *  provided, lifts the ESOP discount above the 30% baseline for active
+   *  buyback companies (e.g. Razorpay → 0.55). */
+  recentBuybackNote?: string;
 }) {
   // Extract key numbers from the conversation
   const aiTexts = transcript.filter(t => t.speaker === "ai").map(t => t.text);
@@ -381,10 +385,14 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
           totalCtcLpa: finalOffer,
           // Heuristic equity split: assume 15% of CTC is equity for product cos
           // when negotiationBand isn't tagged; safe default so the card always
-          // renders. Real wire-up to company-override comes in a later pass.
+          // renders.
           equityLpa: finalOffer * 0.15,
           equityType: "esop",
           variablePct: 0.12,
+          // Per-company liquidity lift if the curator has documented buybacks.
+          equityLiquidityFactor: recentBuybackNote
+            ? liquidityFactorFromBuybackNote(recentBuybackNote)
+            : undefined,
         });
         const inrFmt = (n: number) => `₹${(n / 1000).toFixed(0)}k`;
         return (

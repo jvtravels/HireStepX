@@ -1,5 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { computeCtcBreakdown, computeNewRegimeTaxLpa } from "../_ctc-breakdown";
+import { computeCtcBreakdown, computeNewRegimeTaxLpa, liquidityFactorFromBuybackNote } from "../_ctc-breakdown";
+
+describe("liquidityFactorFromBuybackNote", () => {
+  it("returns baseline 0.30 when no note", () => {
+    expect(liquidityFactorFromBuybackNote(undefined)).toBeCloseTo(0.30, 2);
+    expect(liquidityFactorFromBuybackNote("")).toBeCloseTo(0.30, 2);
+  });
+
+  it("active buyback co (Razorpay-style 6 rounds) lifts factor to ~0.55", () => {
+    const factor = liquidityFactorFromBuybackNote("Razorpay 6 buybacks since 2018, latest mid-2024 at $12B implied valuation");
+    expect(factor).toBeCloseTo(0.55, 2); // capped
+  });
+
+  it("single-round co lifts modestly to 0.35", () => {
+    const factor = liquidityFactorFromBuybackNote("CRED ran one buyback in 2023 at $6.4B valuation");
+    expect(factor).toBeCloseTo(0.35, 2);
+  });
+
+  it("caps at 0.55 even with absurd round counts", () => {
+    expect(liquidityFactorFromBuybackNote("99 buybacks ever")).toBeCloseTo(0.55, 2);
+  });
+});
 
 describe("computeNewRegimeTaxLpa", () => {
   it("returns 0 below the 87A rebate ceiling (≤12L)", () => {
@@ -89,5 +110,17 @@ describe("computeCtcBreakdown", () => {
     const small = computeCtcBreakdown({ totalCtcLpa: 20, equityLpa: 2, equityType: "esop" });
     const large = computeCtcBreakdown({ totalCtcLpa: 80, equityLpa: 15, equityType: "esop" });
     expect(large.gapLpa).toBeGreaterThan(small.gapLpa);
+  });
+
+  it("equityLiquidityFactor override lifts ESOP value above 30% baseline", () => {
+    const baseline = computeCtcBreakdown({ totalCtcLpa: 50, equityLpa: 10, equityType: "esop" });
+    const activeBuyback = computeCtcBreakdown({
+      totalCtcLpa: 50,
+      equityLpa: 10,
+      equityType: "esop",
+      equityLiquidityFactor: 0.55,
+    });
+    expect(activeBuyback.equityRealisticLpa).toBeGreaterThan(baseline.equityRealisticLpa);
+    expect(activeBuyback.equityRealisticLpa).toBeCloseTo(5.5, 1);
   });
 });
