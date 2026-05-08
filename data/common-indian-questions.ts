@@ -292,6 +292,19 @@ export const TOP_25_INDIAN_QUESTIONS: string[] = [
  * given interview focus. A focus may pull from multiple categories;
  * order is "primary first" so the formatter can prioritise.
  *
+ * DELIBERATELY RESTRICTED — canon only applies to focuses where the
+ * format genuinely matches:
+ *   ✓ behavioral   — STAR chestnuts (pressure, failure, conflict)
+ *   ✓ hr-round     — CTC / notice-period / fit canon is non-negotiable
+ *   ✓ campus-placement — fresher canon (final-year project, service agreement)
+ *   ✓ salary-negotiation — pushback canon (hike justification, ESOP swap)
+ *   ✗ case-study   — hypothesis-driven analysis; "tell me about yourself" breaks the FRAME→QUANTIFY arc
+ *   ✗ strategic    — board-level vision questions; HR canon dilutes the register
+ *   ✗ technical    — system-design / architecture deep-dives; canon would feel off-format
+ *   ✗ panel        — already persona-distributed; mixing canon weakens persona discipline
+ *   ✗ management   — hire/fire / org-design specifics; behavioral canon waters it down
+ *   ✗ government-psu — DAF-style biographical probing has its own bank
+ *
  * Keep aligned with the FocusArea union in interview-question-bank.ts
  * and the focusToType map in SessionSetup.tsx.
  */
@@ -300,13 +313,10 @@ export const FOCUS_TO_CANON_CATEGORIES: Record<string, IndianCanonCategory[]> = 
   "hr-round": ["hr_round", "current_job_change", "company_role_fit", "opening"],
   "campus-placement": ["fresher", "opening", "communication_teamwork"],
   "salary-negotiation": ["salary_negotiation", "hr_round"],
-  "case-study": ["problem_solving", "behavioral"],
-  strategic: ["problem_solving", "behavioral", "company_role_fit"],
-  technical: ["resume_experience", "problem_solving"],
-  panel: ["opening", "resume_experience", "behavioral", "hr_round"],
-  management: ["behavioral", "communication_teamwork", "problem_solving"],
-  "government-psu": [], // PSU has its own DAF-style canon — don't pollute with corporate canon
 };
+
+/** Focuses where canon (and its role/tier expansion) is allowed to fire. */
+const CANON_ENABLED_FOCUSES = new Set(Object.keys(FOCUS_TO_CANON_CATEGORIES));
 
 /* Role-keyword → category map. When a role hints at a specialised
  * track (sales / support / finance / marketing / product / GCC),
@@ -358,16 +368,19 @@ export function formatCommonIndianCanon(opts: {
   const limit = Math.max(1, opts.limit ?? 10);
   const minFreq = opts.highFrequencyOnly ? 4 : 3;
 
-  const focusCategories = FOCUS_TO_CANON_CATEGORIES[focus] ?? [];
-  if (focusCategories.length === 0 && !role && !companyTier) return "";
+  /* Canon is only for focuses where the format actually matches —
+     opening / CTC / behavioral chestnuts would break the arc of a
+     case-study, technical, strategic, panel, or management round. */
+  if (!CANON_ENABLED_FOCUSES.has(focus)) return "";
 
+  const focusCategories = FOCUS_TO_CANON_CATEGORIES[focus] ?? [];
   const categorySet = new Set<IndianCanonCategory>(focusCategories);
 
-  // Role-keyword expansion
+  // Role-keyword expansion (only fires on canon-enabled focuses)
   for (const [re, cat] of ROLE_KEYWORD_TO_CANON_CATEGORY) {
     if (re.test(role)) categorySet.add(cat);
   }
-  // Company-tier expansion
+  // Company-tier expansion (only fires on canon-enabled focuses)
   if (companyTier && COMPANY_TIER_TO_CANON_CATEGORY[companyTier]) {
     categorySet.add(COMPANY_TIER_TO_CANON_CATEGORY[companyTier]);
   }

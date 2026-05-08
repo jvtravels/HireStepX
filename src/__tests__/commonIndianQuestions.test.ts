@@ -58,6 +58,18 @@ describe("Common Indian interview questions canon", () => {
     expect(out).toBe("");
   });
 
+  it.each([
+    ["case-study"],
+    ["strategic"],
+    ["technical"],
+    ["panel"],
+    ["management"],
+  ])("returns empty for %s (format does not match opening/CTC canon)", (focus) => {
+    expect(formatCommonIndianCanon({ focus })).toBe("");
+    // Even with role + tier expansion present, non-applicable focuses stay silent.
+    expect(formatCommonIndianCanon({ focus, role: "Sales Manager", companyTier: "indian-unicorn" })).toBe("");
+  });
+
   it("role keyword pulls in track-specific category — sales role gets sales canon", () => {
     const out = formatCommonIndianCanon({ focus: "behavioral", role: "Sales Manager" });
     expect(out).toMatch(/target|prospect|objection/i);
@@ -93,10 +105,15 @@ describe("Common Indian interview questions canon", () => {
     expect(out).not.toMatch(/improved a process/i);
   });
 
-  it("FOCUS_TO_CANON_CATEGORIES covers every canonical interview focus", () => {
-    const expectedFocuses = ["behavioral", "hr-round", "campus-placement", "salary-negotiation", "case-study", "strategic", "technical", "panel", "management"];
-    for (const f of expectedFocuses) {
-      expect(FOCUS_TO_CANON_CATEGORIES[f]).toBeDefined();
-    }
+  it("FOCUS_TO_CANON_CATEGORIES is restricted to focuses where canon makes sense", () => {
+    // Canon applies ONLY to these four — case-study / strategic / technical /
+    // panel / management / government-psu intentionally absent (canon would
+    // break their formats).
+    expect(Object.keys(FOCUS_TO_CANON_CATEGORIES).sort()).toEqual([
+      "behavioral",
+      "campus-placement",
+      "hr-round",
+      "salary-negotiation",
+    ]);
   });
 });
