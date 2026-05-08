@@ -24,7 +24,7 @@ import {
   formatCompanyNegotiationContext,
 } from "./company-negotiation-context";
 import { formatGranularBand } from "./india-salary-bands-2025";
-import { formatCsvSalaryNegContext } from "./csv-band-prompt";
+import { formatCsvSalaryNegContext, getCsvLikelyLocations } from "./csv-band-prompt";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../src/_ctc-breakdown";
 import { tierFlexibility, type CompanyTierBucket } from "../src/_negotiation-math";
 import { detectRoleCompanyFit } from "../src/_role-company-fit";
@@ -1375,6 +1375,20 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
   let relocNote = "";
   if (relocating && params.currentCity && params.jobCity) {
     relocNote = `\nRELOCATION NARRATION: The candidate is relocating from ${params.currentCity} to ${params.jobCity}. You MUST reference this in the conversation. Mention the relocation package in your offer presentation (e.g., "Since you'd be relocating from ${params.currentCity}, we're including a relocation allowance of ₹X and 2 weeks temporary accommodation"). Use relocation as a negotiation lever — candidates expect companies to sweeten the deal for relocation.`;
+    /* CSV-grounded location-fit check. If CSV ships the company's
+       likely India locations and the candidate's job city isn't in
+       that list, prompt the LLM to surface this proactively rather
+       than promising a non-existent posting. */
+    const csvLocs = getCsvLikelyLocations(params.company);
+    if (csvLocs && params.jobCity) {
+      const lc = csvLocs.toLowerCase();
+      const inList = lc.includes(params.jobCity.toLowerCase());
+      if (!inList) {
+        relocNote += `\nLOCATION-FIT WARNING: Per 2026-05 research, ${params.company} most commonly hires for this role in: ${csvLocs}. The candidate's stated job city (${params.jobCity}) isn't on that list — open the relocation conversation by clarifying: "Just so we're aligned — most of our ${params.role} hiring is in ${csvLocs}. Is ${params.jobCity} actually open for this role, or is your team flexible on location?"`;
+      } else {
+        relocNote += `\nLOCATION-FIT: Per 2026-05 research, ${csvLocs} are the standard India hubs for this role at ${params.company} — ${params.jobCity} is consistent with that. Ground any relocation talk in this list when relevant.`;
+      }
+    }
     // Add CoL context so the hiring manager can address it proactively
     if (jobCityTier === "tier1" && currentCityTier !== "tier1") {
       relocNote += `\nCOST OF LIVING: ${params.jobCity} (Tier 1) has 20-40% higher rent than ${params.currentCity}. Proactively mention this: "I know living costs are higher in ${params.jobCity}, which is why we've factored in a higher base and HRA." Use this to justify the offer level or add a relocation top-up.`;

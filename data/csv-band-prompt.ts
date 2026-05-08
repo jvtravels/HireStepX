@@ -20,10 +20,51 @@
 
 import type { ExperienceLevel } from "./salaries";
 import {
+  getCsvCompanyBand,
   getCsvRoleLevelBand,
   type CsvLevel,
   type CsvRoleBand,
 } from "./csv-company-role-bands";
+
+/** Return the CSV's `likelyIndiaLocations` for a company (e.g.
+ *  "Bangalore, Hyderabad, Pune"). Empty string when unknown.
+ *  Aggregated across roles — first non-empty value wins. */
+export function getCsvLikelyLocations(company: string | undefined | null): string {
+  if (!company) return "";
+  const co = getCsvCompanyBand(company);
+  if (!co) return "";
+  for (const role of Object.keys(co.roles)) {
+    for (const lvl of Object.keys(co.roles[role]) as CsvLevel[]) {
+      const band = co.roles[role][lvl];
+      if (band && typeof band.likelyIndiaLocations === "string" && band.likelyIndiaLocations.trim()) {
+        return band.likelyIndiaLocations.trim();
+      }
+    }
+  }
+  return "";
+}
+
+/** Return the CSV's `v6PrimaryInterviewFocus` for a (company, role).
+ *  Empty when unknown. Tells the LLM what round dominates at this
+ *  company for this role (e.g. "System Design" for SDE-Senior at FAANG). */
+export function getCsvPrimaryInterviewFocus(
+  company: string | undefined | null,
+  role: string | undefined | null,
+): string {
+  if (!company || !role) return "";
+  const co = getCsvCompanyBand(company);
+  if (!co) return "";
+  const roleEntry = co.roles[role];
+  const candidate = roleEntry || co.roles[Object.keys(co.roles).find(k => k.toLowerCase().trim() === role.toLowerCase().trim()) || ""];
+  if (!candidate) return "";
+  for (const lvl of Object.keys(candidate) as CsvLevel[]) {
+    const band = candidate[lvl];
+    if (band && typeof band.v6PrimaryInterviewFocus === "string" && band.v6PrimaryInterviewFocus.trim()) {
+      return band.v6PrimaryInterviewFocus.trim();
+    }
+  }
+  return "";
+}
 
 /** Map the app's ExperienceLevel vocabulary to the CSV-dataset CsvLevel
  *  vocabulary. Two-way inexact: the CSV has a "fresher" tier the app

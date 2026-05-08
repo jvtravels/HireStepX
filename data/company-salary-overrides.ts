@@ -22,7 +22,7 @@
 
 import type { ExperienceLevel } from "./salaries";
 import { classifyCompanyType } from "./company-guidance";
-import { getCsvDerivedBandOverride } from "./csv-derived-fallbacks";
+import { getCsvDerivedBandOverride, getCsvBandOnly } from "./csv-derived-fallbacks";
 
 /** Subset of SalaryEntry — the fields a company-band override needs. */
 export interface CompanyBandOverride {
@@ -6948,6 +6948,54 @@ function pickLevelInRoleMap(
   return null;
 }
 
+/** CSV dataset is dated 2026-05-09. Curator entries verified within 90
+ *  days of that date (i.e. on/after 2026-02-09) are considered "fresh"
+ *  and ALWAYS win — they likely reflect offer-letter intel CSV doesn't
+ *  see. Older or undated entries get reconciled against CSV: if CSV
+ *  drift > 25%, the CSV numbers replace the curator numbers (curator
+ *  source/notes/equity-type are preserved — only totalMin/Max/baseMin/
+ *  Max change). This is the "wrong-info correction" pass. */
+const CSV_DATASET_DATE_MS = Date.parse("2026-05-09");
+const CURATOR_FRESHNESS_DAYS = 90;
+const CSV_DRIFT_TRIGGER = 0.25;
+
+function reconcileWithCsv(
+  curator: CompanyBandOverride,
+  rawCompany: string,
+  roleKey: string,
+  experienceLevel: ExperienceLevel,
+): CompanyBandOverride {
+  // Fresh curator entry → keep as-is.
+  if (curator.lastVerified) {
+    const ageMs = CSV_DATASET_DATE_MS - Date.parse(curator.lastVerified);
+    if (Number.isFinite(ageMs) && ageMs < CURATOR_FRESHNESS_DAYS * 86400_000) {
+      return curator;
+    }
+  }
+  const csv = getCsvBandOnly(rawCompany, roleKey, experienceLevel);
+  if (!csv) return curator;
+  const curatorMid = (curator.totalMin + curator.totalMax) / 2;
+  if (curatorMid <= 0) return curator;
+  const drift = Math.abs(csv.totalMedian - curatorMid) / curatorMid;
+  if (drift <= CSV_DRIFT_TRIGGER) return curator;
+  // Drift exceeds threshold AND curator is stale → swap numbers.
+  // Preserve curator's equity-type / vesting / notes / overrides; only
+  // numeric bands change. Stamp the source so downstream knows.
+  return {
+    ...curator,
+    totalMin: csv.totalMin,
+    totalMax: csv.totalMax,
+    // Derive base = 75% of total when curator hasn't pinned baseMin/baseMax.
+    baseMin: curator.baseMin !== undefined ? curator.baseMin : Math.round(csv.totalMin * 0.75 * 10) / 10,
+    baseMax: curator.baseMax !== undefined ? curator.baseMax : Math.round(csv.totalMax * 0.75 * 10) / 10,
+    source: `${curator.source} → corrected via CSV research 2026-05 (${(drift * 100).toFixed(0)}% drift)`,
+    lastVerified: "2026-05-09",
+    notes: curator.notes
+      ? `${curator.notes} [Numbers refreshed from 2026-05 CSV; curator notes retained.]`
+      : `Numbers refreshed from 2026-05 CSV research dataset.`,
+  };
+}
+
 export function getCompanyBandOverride(
   rawCompany: string | undefined,
   roleKey: string | undefined,
@@ -6964,7 +7012,7 @@ export function getCompanyBandOverride(
   // Direct match first (most specific).
   const directEntry = COMPANY_SALARY_OVERRIDES[cleaned]?.[roleKey];
   const directHit = pickLevelInRoleMap(directEntry, experienceLevel);
-  if (directHit) return directHit;
+  if (directHit) return reconcileWithCsv(directHit, rawCompany, roleKey, experienceLevel);
 
   // Loose containment fallback (e.g. "Razorpay Internet Pvt Ltd" → razorpay).
   for (const [companyKey, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
@@ -6972,7 +7020,7 @@ export function getCompanyBandOverride(
     if (companyKey.length < 4) continue;
     if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
       const hit = pickLevelInRoleMap(roleMap[roleKey], experienceLevel);
-      if (hit) return hit;
+      if (hit) return reconcileWithCsv(hit, rawCompany, roleKey, experienceLevel);
     }
   }
   /* CSV-derived research fallback (100-company aggregated dataset).

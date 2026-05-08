@@ -118,6 +118,37 @@ export function getCsvDerivedBandOverride(
   return null;
 }
 
+/** Same lookup as getCsvDerivedBandOverride, but returns the raw CSV
+ *  fields without synthesizing into the override shape. Used by the
+ *  staleness-reconciliation logic in getCompanyBandOverride to compare
+ *  numeric bands cell-by-cell. */
+export function getCsvBandOnly(
+  rawCompany: string | undefined,
+  roleKey: string | undefined,
+  experienceLevel: ExperienceLevel,
+): { totalMin: number; totalMedian: number; totalMax: number; csvLevel: CsvLevel; companyName: string } | null {
+  if (!rawCompany || !roleKey) return null;
+  const co = getCsvCompanyBand(rawCompany);
+  if (!co) return null;
+  const idx = getRoleKeyIndex(co);
+  const csvRoleLabel = idx.get(roleKey);
+  if (!csvRoleLabel) return null;
+  const csvLevels = expToCsvLevels(experienceLevel);
+  for (const lvl of csvLevels) {
+    const band = co.roles[csvRoleLabel][lvl];
+    if (band) {
+      return {
+        totalMin: band.totalMinLpa,
+        totalMedian: band.totalMedianLpa,
+        totalMax: band.totalMaxLpa,
+        csvLevel: lvl,
+        companyName: co.companyName,
+      };
+    }
+  }
+  return null;
+}
+
 function bandToOverride(
   band: CsvRoleBand,
   co: CsvCompany,

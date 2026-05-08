@@ -6,7 +6,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sa
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
-import { formatCsvFocusContext } from "../data/csv-band-prompt";
+import { formatCsvFocusContext, getCsvPrimaryInterviewFocus } from "../data/csv-band-prompt";
 import { formatRecipe } from "../data/focus-question-recipes";
 import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
@@ -623,8 +623,18 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
           interviewFocus !== "general" ? interviewFocus : interviewType,
         );
 
+    /* Question-mix bias from CSV's v6PrimaryInterviewFocus. Tells the LLM
+       which round dominates at this (company, role) pair so the
+       generated question set can lean accordingly — e.g. SDE-Senior at
+       FAANG: bias toward system design; PM at consumer unicorn: bias
+       toward product sense + execution metrics. Empty when unknown. */
+    const csvPrimaryFocus = isSalaryType ? "" : getCsvPrimaryInterviewFocus(companyName, targetRole);
+    const csvPrimaryFocusBias = csvPrimaryFocus
+      ? `\nCSV-VERIFIED QUESTION-MIX BIAS: At ${companyName || "this company"}, the round that dominates for a ${targetRole} hire is "${csvPrimaryFocus}". When the requested focus aligns, lean ${Math.min(questionCount, 3)} of ${questionCount} questions toward this dimension. When the requested focus DIFFERS, still surface ONE question that touches "${csvPrimaryFocus}" — candidates who clear the requested round still meet this dimension downstream.\n`
+      : "";
+
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
