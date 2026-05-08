@@ -922,19 +922,44 @@ export function useInterviewEngine() {
       // "[amount]" placeholders into the closing line — user reported
       // a closing step reading "joining bonus of ₹X" verbatim.
       const hasPlaceholder = /₹\s*[XYZ\u2026]\b|\bTBD\b|\[amount\]|\[number\]/i.test(step.aiText);
+      // Detect whether notice period was already discussed in the candidate's
+      // turns. Without this check, the closing step asks "What's your notice
+      // period situation?" even after the candidate already said "30 days" /
+      // "two months" earlier — a clear "did you even listen?" signal that
+      // breaks immersion. Match common Indian phrasings.
+      const noticeDiscussedRe = /\b(\d{1,3}\s*(?:day|month)s?|notice period|notice is|serve.*notice|two\s*months?|three\s*months?|one\s*month|sixty\s*days?|ninety\s*days?|thirty\s*days?|immediately available|available\s+immediately|no notice|already free|notice ended|served my notice|currently between|on a break|buyout)\b/i;
+      const noticeAlreadyDiscussed = transcript.some(
+        (t) => t.speaker === "user" && noticeDiscussedRe.test(t.text),
+      );
       // Sanitize whenever closing announces a number that's below the highest
       // offer made — that's the catastrophic case. Also sanitize if it announces
       // ANY number we can't verify (highest === 0 means we never tracked an offer).
       if (announcedBelowHighest || (hasAnyNumber && highest === 0) || hasPlaceholder) {
+        // Tail varies by whether notice period was already discussed.
+        // If it was, ask about start-date instead of repeating the notice
+        // question (which is the "did you even listen?" failure mode).
+        const tail = noticeAlreadyDiscussed
+          ? "Anything else you'd like to clarify before HR follows up?"
+          : "What's your notice period situation?";
         const safeClosing = highest > 0
-          ? `Great — I think we've had a really productive conversation. Based on everything we've discussed, including offers up to ₹${highest} LPA, let me finalise the numbers internally and have HR send you the formal offer letter with the complete breakdown. What's your notice period situation?`
-          : "Great — I think we've had a really productive conversation. Let me put together the final numbers based on everything we've discussed and have HR send you the formal offer letter with the complete breakdown. What's your notice period situation?";
+          ? `Great — I think we've had a really productive conversation. Based on everything we've discussed, including offers up to ₹${highest} LPA, let me finalise the numbers internally and have HR send you the formal offer letter with the complete breakdown. ${tail}`
+          : `Great — I think we've had a really productive conversation. Let me put together the final numbers based on everything we've discussed and have HR send you the formal offer letter with the complete breakdown. ${tail}`;
         console.warn(
           `[interview] salary-neg closing step announced ₹${announcedNum} LPA `
           + `(highest offer made: ₹${highest} LPA) — replacing with safe template`,
         );
         step.aiText = safeClosing;
         if (typeof step.aiTextDisplay === "string") step.aiTextDisplay = safeClosing;
+      } else if (noticeAlreadyDiscussed && /\bnotice period\b/i.test(step.aiText)) {
+        // Closing step is already "safe" but still asks notice period when we
+        // already know the answer. Strip the redundant question.
+        step.aiText = step.aiText.replace(
+          /\.?\s*What'?s your (current )?notice period[^.?!]*[.?!]\s*$/i,
+          ". Anything else you'd like to clarify before HR follows up?",
+        );
+        if (typeof step.aiTextDisplay === "string") {
+          step.aiTextDisplay = step.aiText;
+        }
       }
     }
 

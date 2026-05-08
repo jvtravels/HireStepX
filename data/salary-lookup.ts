@@ -63,28 +63,68 @@ export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
   government: `INDUSTRY: Government/PSU. Pay fixed by 7th CPC bands. No negotiation on base. Negotiate: grade level, posting city (HRA varies 8-24%), housing, deputation allowance, training budget. Pension is the real wealth — defined benefit worth ₹50-150 LPA actuarially. Job security is the key selling point.`,
 };
 
+/** Tier-specific variable-bonus percentage of CTC. Reality:
+ *   - government / PSU: 0% (fixed pay, no performance variable)
+ *   - it-services: 25% (deputation / billing-linked; large variable component)
+ *   - bfsi-global / finance: 22% (Goldman, JPMC India — performance bonuses heavy)
+ *   - faang / big-tech: 12% (low cash variable; comp loaded into RSUs instead)
+ *   - indian-unicorn: 12% (mixed)
+ *   - startup-growth: 8% (cash-conservative; ESOP-heavy)
+ *   - default: 10% */
+function getVariablePct(companyTier: string | undefined): number {
+  switch (companyTier) {
+    case "government": return 0;
+    case "it-services": return 0.25;
+    case "bfsi-global":
+    case "finance-india": return 0.22;
+    case "faang":
+    case "big-tech": return 0.12;
+    case "indian-unicorn": return 0.12;
+    case "startup-growth":
+    case "startup-early": return 0.08;
+    default: return 0.10;
+  }
+}
+
+/** City-tier HRA percentage (of basic, per Indian Income Tax Act):
+ *   tier-1 metro: 50% of basic | tier-2: 40% | tier-3: 40% (still allowed but less practical) */
+function getHraPctOfBasic(cityTier: string | undefined): number {
+  if (cityTier === "tier1") return 0.50;
+  if (cityTier === "tier2") return 0.40;
+  return 0.40;
+}
+
 /** Indian-market component breakdown for a given total CTC.
  *
  * Real Indian salaries decompose CTC into:
- *   - Base salary (~70-78% of CTC) — what taxes + PF compute on
- *   - Variable / performance bonus (~8-15%, target-linked)
+ *   - Base salary (~65-78% of CTC) — what taxes + PF compute on
+ *   - Variable / performance bonus (0-25%, depends on company tier)
  *   - Employer PF (~5%, mandatory for companies >20 employees)
  *   - Gratuity + other allowances (~3%, mandatory after 5 yrs but accrued from day 1)
  *   - ESOP / RSU (~5-15% of CTC equivalent, ONLY if hasEquity)
  *
- * Components MUST sum exactly to totalCtc (within ₹0.1 LPA rounding) so
- * the LLM can quote them verbatim without inventing numbers.
+ * Within base salary the Indian salary slip further splits into:
+ *   - Basic (~50% of base) — what taxes + PF compute on
+ *   - HRA (40-50% of basic depending on city tier)
+ *   - Special Allowance (remainder, balancing item)
  *
- * Why this matters: previous interviews offered "base ₹22 + bonus ₹22 +
- * ESOP ₹22 = total ₹22 LPA" because the LLM was free-styling components.
- * Now the LLM gets a literal block to copy from, eliminating that class of
- * hallucination. */
-function buildComponentBreakdown(totalCtc: number, hasEquity: boolean, equityType: string): {
+ * Components MUST sum exactly to totalCtc (within ₹0.1 LPA rounding) so
+ * the LLM can quote them verbatim without inventing numbers. */
+function buildComponentBreakdown(
+  totalCtc: number,
+  hasEquity: boolean,
+  equityType: string,
+  companyTier: string | undefined,
+  cityTier: string | undefined,
+): {
   base: number;
   variable: number;
   pf: number;
   gratuity_benefits: number;
   esop_per_year: number;
+  basic: number;
+  hra: number;
+  special_allowance: number;
   text: string;
 } {
   const round1 = (x: number) => Math.round(x * 10) / 10;
@@ -94,23 +134,43 @@ function buildComponentBreakdown(totalCtc: number, hasEquity: boolean, equityTyp
   const gratuity_benefits = round1(totalCtc * 0.03);
   // ESOP only when company offers it. Annual vest value ≈ 8% CTC equivalent.
   const esop_per_year = hasEquity ? round1(totalCtc * 0.08) : 0;
-  // Variable: 10% for IC roles. Becomes 15% for senior+ but keep simple here.
-  const variable = round1(totalCtc * 0.10);
+  // Variable: tier-driven. PSUs get 0, services 25%, FAANG 12%, etc.
+  const variable = round1(totalCtc * getVariablePct(companyTier));
   // Base = whatever's left so the sum is exact.
   const remaining = totalCtc - pf - gratuity_benefits - esop_per_year - variable;
   const base = round1(remaining);
 
+  // Within-base salary-slip split (Basic / HRA / Special Allowance). This is
+  // the "monthly salary slip" view candidates ask about for income-tax planning.
+  const basic = round1(base * 0.50);
+  const hra = round1(basic * getHraPctOfBasic(cityTier));
+  const special_allowance = round1(base - basic - hra);
+
   const lines = [`- Base salary: ${fmtLPA(base)}`];
   if (variable > 0) lines.push(`- Performance-linked variable bonus: ${fmtLPA(variable)} (paid out against quarterly/annual targets)`);
+  else lines.push(`- No performance variable component (fixed-pay role)`);
   lines.push(`- Employer PF contribution: ${fmtLPA(pf)} (mandatory; 12% of basic, ~5% of CTC)`);
   lines.push(`- Gratuity + benefits (medical, LTA): ${fmtLPA(gratuity_benefits)}`);
   if (hasEquity) {
     const equityLabel = equityType === "rsu" ? "RSUs" : "ESOPs";
     lines.push(`- ${equityLabel}: ${fmtLPA(esop_per_year)} per year (4yr vest with 1yr cliff)`);
+  } else {
+    lines.push(`- No equity / ESOPs at this company-tier (typical for ${companyTier === "it-services" ? "IT services firms" : companyTier === "government" ? "PSUs / government" : "this tier"})`);
   }
   lines.push(`- TOTAL CTC: ${fmtLPA(totalCtc)} (components above SUM EXACTLY to this)`);
 
-  return { base, variable, pf, gratuity_benefits, esop_per_year, text: lines.join("\n") };
+  // Salary-slip split (only mention when candidate asks for monthly-take-home detail)
+  lines.push(``);
+  lines.push(`MONTHLY SALARY-SLIP SPLIT OF BASE (${fmtLPA(base)}, when candidate asks "how does it land on the slip"):`);
+  lines.push(`  - Basic: ${fmtLPA(basic)} (50% of base, drives PF/gratuity/HRA calculations)`);
+  lines.push(`  - HRA: ${fmtLPA(hra)} (${cityTier === "tier1" ? "50%" : "40%"} of Basic, ${cityTier === "tier1" ? "tier-1 metro" : "tier-2/3 city"} rate)`);
+  lines.push(`  - Special Allowance: ${fmtLPA(special_allowance)} (residual; fully taxable)`);
+
+  return {
+    base, variable, pf, gratuity_benefits, esop_per_year,
+    basic, hra, special_allowance,
+    text: lines.join("\n"),
+  };
 }
 
 /** Boost the experience level by the role title prefix when present.
@@ -167,11 +227,20 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     const equityRange: [number, number] = hasEquity
       ? [adjOv(override.equityMin ?? 0), adjOv(override.equityMax ?? 0)]
       : [0, 0];
-    const joiningBonusRange: [number, number] = [0, Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10)];
+    // Joining bonus is NOT culture-universal. PSUs / government and most
+    // traditional Indian-IT-services firms (TCS, Infosys, Wipro, HCL) don't
+    // offer joining bonuses at IC level. Older industrial firms (Tata, L&T,
+    // Mahindra) similarly. Cap at 0 for those tiers; otherwise allow up to
+    // 10% of initial offer as authority.
+    const noBonusTiers = new Set(["government", "it-services"]);
+    const joiningBonusMax = noBonusTiers.has(companyTier)
+      ? 0
+      : Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10);
+    const joiningBonusRange: [number, number] = [0, joiningBonusMax];
     // Pre-compute the component breakdown for the initial offer so the LLM
-    // quotes exact, additive numbers instead of free-styling (which produced
-    // "base ₹22 + bonus ₹22 + ESOP ₹22 = total ₹22" hallucinations).
-    const components = buildComponentBreakdown(initialOffer, hasEquity, override.equityType ?? "none");
+    // quotes exact, additive numbers instead of free-styling. Now tier-aware:
+    // PSUs get 0% variable, services get 25%, FAANG get 12%, etc.
+    const components = buildComponentBreakdown(initialOffer, hasEquity, override.equityType ?? "none", companyTier, jobCityTier);
     const bandContext = `NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
@@ -237,9 +306,18 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
     ? [adj(entry.equity_annual_min), adj(entry.equity_annual_max)]
     : [0, 0];
 
+  // Tier-aware joining bonus. PSUs / IT-services don't offer bonuses at IC
+  // level; respect that culture rather than letting the LLM invent one. If
+  // the salary entry has a curated max, trust it (overrides the tier rule).
+  const noBonusTiers = new Set(["government", "it-services"]);
+  const tierAllowsBonus = !noBonusTiers.has(companyTier);
   const joiningBonusRange: [number, number] = [
     entry.joining_bonus_min,
-    entry.joining_bonus_max > 0 ? entry.joining_bonus_max : Math.round(initialOffer * 0.08 * 10) / 10,
+    entry.joining_bonus_max > 0
+      ? entry.joining_bonus_max
+      : tierAllowsBonus
+        ? Math.round(initialOffer * 0.08 * 10) / 10
+        : 0,
   ];
 
   /* Synthetic-cell provenance: when this band came from densification
@@ -252,7 +330,8 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
 
   // Pre-compute Indian-market component breakdown for the initial offer.
   // The LLM quotes from this block verbatim — no more invented numbers.
-  const components = buildComponentBreakdown(initialOffer, hasEquity, entry.equity_type);
+  // Tier-aware: PSUs get 0% variable, services 25%, FAANG 12%, etc.
+  const components = buildComponentBreakdown(initialOffer, hasEquity, entry.equity_type, companyTier, jobCityTier);
   const bandContext = `${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC

@@ -36,7 +36,10 @@ const GLOBAL_LPA_MAX = 300;
  *   "32 LPA", "₹45 lakh", "1.2 crore", "INR 28L", "55-65 LPA"
  *   Returns the upper bound of any range as the canonical value.
  */
-const COMP_RE = /(?:₹|inr\s*)?(\d{1,3}(?:\.\d{1,2})?)\s*(?:[-–to]+\s*(\d{1,3}(?:\.\d{1,2})?)\s*)?(lpa|lakhs?|l\b|cr|crores?)/gi;
+// Allow up to 4-digit values so we can flag "1500 LPA" / "9999 LPA" as
+// implausible. Capping at 3 digits silently dropped absurd claims because
+// the regex didn't match them in the first place.
+const COMP_RE = /(?:₹|inr\s*)?(\d{1,4}(?:\.\d{1,2})?)\s*(?:[-–to]+\s*(\d{1,4}(?:\.\d{1,2})?)\s*)?(lpa|lakhs?|l\b|cr|crores?)/gi;
 
 function toLpa(value: number, unit: string): number {
   const u = unit.toLowerCase();

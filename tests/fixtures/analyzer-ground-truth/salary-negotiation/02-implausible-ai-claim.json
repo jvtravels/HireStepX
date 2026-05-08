@@ -1,10 +1,10 @@
 {
   "name": "AI hallucinates an absurd compensation number",
-  "notes": "AI quotes 850 LPA for a mid-level role — implausible for any Indian-market band. Analyzer must catch this as a high-severity hallucination.",
+  "notes": "AI quotes 1500 LPA for a mid-level role — implausible for any Indian-market band. Analyzer must catch this as a high-severity hallucination.",
   "session": {
     "type": "salary-negotiation",
     "transcript": [
-      { "speaker": "ai", "text": "For your level we typically offer 850 LPA total compensation including equity.", "time": "" },
+      { "speaker": "ai", "text": "For your level we typically offer 1500 LPA total compensation including equity.", "time": "" },
       { "speaker": "user", "text": "That seems very high. Based on my research my target is 35 LPA. I have a competing offer at 32 LPA elsewhere. Equity and joining bonus matter to me as well as notice period flexibility.", "time": "" },
       { "speaker": "ai", "text": "Understood. Let's discuss equity vesting and the joining bonus structure separately.", "time": "" }
     ]
