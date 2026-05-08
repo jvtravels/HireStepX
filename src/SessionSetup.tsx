@@ -10,6 +10,9 @@ import { track } from "@vercel/analytics";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
 import { profileFromRole, type InterviewFocus } from "./roleInterviewMatrix";
+import { detectRoleCompanyFit } from "./_role-company-fit";
+import { getCompanyTier } from "../data/company-tiers";
+import { matchRoleKey } from "../data/salaries";
 import { Wordmark } from "./auth/_fields";
 import { AUTH_STYLES } from "./auth/_styles";
 
@@ -1108,10 +1111,28 @@ export default function SessionSetup() {
   const isNegotiationFocus = interviewFocus[0] === "Salary Negotiation";
   const companyRequired = isNegotiationFocus;
   const companyMissing = companyRequired && !targetCompany.trim();
+
+  /* Role × company sector-fit check (salary-neg only). Hard mismatches
+     like "Pilot @ Razorpay" or "Investment Banker @ Flipkart" are
+     blocked here at setup so the candidate isn't coached against a
+     bogus band downstream. Soft mismatches and universal-role/co
+     combos pass through. */
+  const roleCompanyFit = useMemo(() => {
+    if (!isNegotiationFocus) return null;
+    const role = targetRole.trim();
+    const company = targetCompany.trim();
+    if (!role || !company) return null;
+    const tier = getCompanyTier(company);
+    const roleKey = matchRoleKey(role);
+    return detectRoleCompanyFit(roleKey, tier, company);
+  }, [isNegotiationFocus, targetRole, targetCompany]);
+  const hardRoleCompanyMismatch = roleCompanyFit?.fit === "hard_mismatch";
+
   const formComplete =
     !!targetRole.trim() &&
     interviewFocus.length > 0 &&
-    !companyMissing;
+    !companyMissing &&
+    !hardRoleCompanyMismatch;
   const canProceed = formComplete && micStatus === "granted";
 
   // Launch interview
@@ -1122,6 +1143,13 @@ export default function SessionSetup() {
     if (companyMissing) {
       setCompanyTouched(true);
       toast("Pick a company before starting a salary-negotiation interview.", "error");
+      return;
+    }
+    if (hardRoleCompanyMismatch) {
+      toast(
+        roleCompanyFit?.reason ?? "This role doesn't appear to match the selected company. Pick a different combination.",
+        "error",
+      );
       return;
     }
     if (!canProceed) return;
@@ -1449,9 +1477,17 @@ export default function SessionSetup() {
                         error={
                           companyTouched && companyMissing
                             ? "Required — we calibrate the offer band to this company"
-                            : undefined
+                            : hardRoleCompanyMismatch
+                              ? `${targetRole.trim()} doesn't typically exist at ${targetCompany.trim()} — pick a different role or company.`
+                              : undefined
                         }
                       />
+                      {/* Soft-mismatch advisory — doesn't block but warns */}
+                      {roleCompanyFit?.fit === "soft_mismatch" && !companyMissing && (
+                        <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, color: T.inkSoft, lineHeight: 1.4 }}>
+                          ⓘ {roleCompanyFit.reason}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
