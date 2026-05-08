@@ -14,12 +14,6 @@
 import type { ReactNode, CSSProperties, RefObject } from "react";
 import type { ResumeProfile } from "../dashboardData";
 import type { FitnessBand, InterviewType, FitnessScore } from "../resumeFitness";
-import {
-  DisplayH1,
-  MonoPill,
-  ScoreGauge,
-  UtilityRow,
-} from "./_resume-atoms";
 
 /* ─── Cream palette — mirrors design-system/_tokens.ts ─────────────── */
 const t = {
@@ -247,7 +241,7 @@ const PageShell = ({ children }: { children: ReactNode }) => (
       minHeight: "100%",
       color: t.coal,
       fontFamily: f.sans,
-      padding: "clamp(24px, 4vh, 56px) clamp(20px, 3vw, 32px) 80px",
+      padding: "16px 24px 64px",
     }}
   >
     <div style={{ maxWidth: 980, margin: "0 auto" }}>{children}</div>
@@ -725,9 +719,13 @@ function DoneState(props: ResumeTabViewProps) {
     : resumeScore >= 50
     ? "Needs work"
     : "Weak";
-  // qualityColor was used by the old Resume-Quality StatTile; the
-  // ScoreGauge now auto-infers its tone from the score, so the local
-  // var is no longer needed.
+  const qualityColor = resumeScore == null
+    ? t.inkSoft
+    : resumeScore >= 65
+    ? t.success
+    : resumeScore >= 50
+    ? t.warning
+    : t.error;
 
   const atsScore = atsResult?.score ?? null;
   const atsQualifier = atsScore == null
@@ -753,69 +751,69 @@ function DoneState(props: ResumeTabViewProps) {
 
   return (
     <PageShell>
-      {/* Top-bar utility row — last-analysed timestamp + Re-analyse +
-          Download. Sets the editorial frame for the page; mirrors the
-          onboarding ResumeReview topbar (account chip + utilities). */}
-      <UtilityRow
-        lastAnalysedLabel={lastAnalysedLabel}
-        reanalyzing={reanalyzing}
-        onReanalyze={onReanalyze}
-        trailing={
-          targetRole ? (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 999,
-                padding: "6px 14px",
-                boxShadow: cardShadow,
-                fontFamily: f.sans,
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Tailored for
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: t.coal }}>{targetRole}</span>
-            </div>
-          ) : null
-        }
-      />
-
-      {/* Page header — auth-scale display H1 with italic copper accent. */}
-      <header style={{ marginBottom: 36, maxWidth: 720 }}>
-        <DisplayH1 prefix="Your" accent="resume" />
-        <p
-          style={{
-            fontFamily: f.sans,
-            fontSize: 16,
-            color: t.inkSoft,
-            marginTop: 18,
-            lineHeight: 1.55,
-            maxWidth: 540,
-            textWrap: "balance",
-            marginBottom: 0,
-          }}
-        >
-          Your resume drives every interview question, fitness score, and coaching nudge.
-          Keep it current — even small edits change what we ask next.
-        </p>
-      </header>
-
-      {/* ── Hero row — 2-col split (text 2fr ↔ ScoreGauge 1fr).
-          Mirrors the onboarding ResumeReview hero composition; the
-          gauge is the focal stat instead of three equal-weight tiles. */}
-      <div
+      {/* Header */}
+      <header
         style={{
-          display: "grid",
-          gridTemplateColumns: profile && resumeScore != null ? "2fr 1fr" : "1fr",
+          marginBottom: 24,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          flexWrap: "wrap",
           gap: 16,
-          marginBottom: 16,
-          alignItems: "stretch",
         }}
       >
+        <div>
+          <h1
+            style={{
+              fontFamily: f.serif,
+              fontSize: "clamp(2.25rem, 4vw, 3rem)",
+              lineHeight: 1.05,
+              letterSpacing: "-0.02em",
+              fontWeight: 400,
+              color: t.coal,
+              margin: 0,
+            }}
+          >
+            Your <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>resume</em>
+          </h1>
+          <p
+            style={{
+              fontFamily: f.sans,
+              fontSize: 15,
+              color: t.inkSoft,
+              marginTop: 10,
+              lineHeight: 1.55,
+              maxWidth: 540,
+              textWrap: "balance",
+            }}
+          >
+            Your resume drives every interview question, fitness score, and coaching nudge.
+            Keep it current — even small edits change what we ask next.
+          </p>
+        </div>
+        {targetRole && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              background: t.white,
+              border: `1px solid ${t.line}`,
+              borderRadius: 999,
+              padding: "8px 14px",
+              boxShadow: cardShadow,
+              fontFamily: f.sans,
+            }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.inkSoft, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Tailored for
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: t.coal }}>{targetRole}</span>
+          </div>
+        )}
+      </header>
+
+      {/* Active resume hero */}
       <div
         style={{
           background: `linear-gradient(135deg, ${t.white} 0%, ${t.copper100} 160%)`,
@@ -823,9 +821,8 @@ function DoneState(props: ResumeTabViewProps) {
           border: `1px solid ${t.line}`,
           boxShadow: cardShadow,
           padding: "28px 28px 0",
+          marginBottom: 16,
           overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12, gap: 16 }}>
@@ -843,27 +840,47 @@ function DoneState(props: ResumeTabViewProps) {
             >
               {headlineDisplay}
             </h2>
-            {/* Status pill row — leads the hero with an editorial mono-
-                uppercase signal ("AI ANALYSIS COMPLETE") that matches
-                the onboarding ResumeReview pattern. Industry / years
-                follow as soft sans context. */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              {analysisSource && (
-                <MonoPill
-                  tone={analysisSource === "ai" ? "success" : "muted"}
-                  label={analysisSource === "ai" ? "AI Analysis Complete" : "Basic Extract"}
-                  icon={
-                    analysisSource === "ai" ? (
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    ) : null
-                  }
-                />
+              {profile?.seniorityLevel && (
+                <span
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: t.copper,
+                    background: t.copper100,
+                    border: `1px solid ${t.copperSoft}`,
+                    borderRadius: 6,
+                    padding: "3px 10px",
+                  }}
+                >
+                  {profile.seniorityLevel}
+                </span>
+              )}
+              {profile?.yearsExperience != null && profile.yearsExperience > 0 && (
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+                  {profile.yearsExperience}+ years experience
+                </span>
               )}
               {profile?.industries && profile.industries.length > 0 && (
                 <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-                  {profile.industries.join(" · ")}
+                  {profile.industries.join(", ")}
+                </span>
+              )}
+              {analysisSource && (
+                <span
+                  style={{
+                    fontFamily: f.sans,
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: analysisSource === "ai" ? t.success : t.inkSoft,
+                    background: analysisSource === "ai" ? t.success100 : t.creamSoft,
+                    border: `1px solid ${analysisSource === "ai" ? t.successBorder : t.line}`,
+                    borderRadius: 6,
+                    padding: "2px 8px",
+                  }}
+                >
+                  {analysisSource === "ai" ? "AI Profile" : "Basic Extract"}
                 </span>
               )}
             </div>
@@ -1259,32 +1276,10 @@ function DoneState(props: ResumeTabViewProps) {
             </div>
           </div>
         )}
-      </div>{/* /hero card */}
+      </div>
 
-        {/* Right column — ScoreGauge as the focal stat. Only renders when
-            we actually have a Resume Quality number (otherwise the grid
-            collapses to 1-col above). */}
-        {profile && resumeScore != null && (
-          <ScoreGauge
-            score={resumeScore}
-            qualifier={qualityQualifier}
-            label="Resume Quality"
-            meta={
-              <>
-                {profile.seniorityLevel && <MonoPill tone="copper" label={profile.seniorityLevel} />}
-                {profile.yearsExperience != null && profile.yearsExperience > 0 && (
-                  <MonoPill tone="muted" label={`${profile.yearsExperience}+ years`} />
-                )}
-              </>
-            }
-          />
-        )}
-      </div>{/* /hero row */}
-
-      {/* Supporting stats — ATS + Coverage as a smaller secondary row.
-          Resume Quality is now the hero in the gauge above; these two
-          sit as the lateral context. */}
-      {profile && (atsScore != null || coverage.length > 0) && (
+      {/* Readiness Index — at-a-glance answer (only when scores are real) */}
+      {profile && (resumeScore != null || atsScore != null || coverage.length > 0) && (
         <div
           style={{
             display: "grid",
@@ -1293,9 +1288,20 @@ function DoneState(props: ResumeTabViewProps) {
             marginBottom: 16,
           }}
         >
-          {/* Resume Quality is now the gauge in the hero row above —
-              no duplicate tile here. ATS + Coverage stay as the
-              supporting metrics. */}
+          {resumeScore != null && (
+            <StatTile
+              label="Resume Quality"
+              value={
+                <>
+                  {resumeScore}
+                  <span style={{ fontSize: 16, fontWeight: 400, color: t.inkFaint, marginLeft: 2 }}>/100</span>
+                </>
+              }
+              qualifier={qualityQualifier}
+              qualifierColor={qualityColor}
+              bar={{ pct: resumeScore, color: qualityColor }}
+            />
+          )}
           {atsScore != null && (
             <StatTile
               label="ATS Compatibility"
@@ -2110,80 +2116,6 @@ function DoneState(props: ResumeTabViewProps) {
           </div>
         </details>
       )}
-
-      {/* End-of-page CTA anchor — picks the weakest coverage track and
-          offers a single primary action. The reference auth/onboarding
-          surfaces always end with a clear next step; this gives the
-          resume page the same "do this next" verb. */}
-      {(() => {
-        if (!profile || coverage.length === 0) return null;
-        const weakest = [...coverage].sort((a, b) => a.score - b.score)[0];
-        if (!weakest || weakest.band === "excellent") return null;
-        return (
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${t.indigo} 0%, ${t.indigoDeep} 100%)`,
-              borderRadius: 16,
-              padding: "22px 26px",
-              marginTop: 28,
-              marginBottom: 16,
-              color: t.white,
-              display: "flex",
-              alignItems: "center",
-              gap: 18,
-              flexWrap: "wrap",
-              boxShadow: cardShadow,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 240 }}>
-              <div
-                style={{
-                  fontFamily: f.mono,
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: "rgba(255,255,255,0.7)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  marginBottom: 6,
-                }}
-              >
-                Your next move
-              </div>
-              <div
-                style={{
-                  fontFamily: f.serif,
-                  fontSize: 24,
-                  fontWeight: 400,
-                  lineHeight: 1.25,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                Practise <em style={{ fontStyle: "italic", color: "#E8D5AE" }}>{weakest.label.toLowerCase()}</em>
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: 13, color: "rgba(255,255,255,0.78)", marginTop: 4, lineHeight: 1.5 }}>
-                Currently your weakest track ({weakest.score}%). A 5-minute focused mock will move the needle fast.
-              </div>
-            </div>
-            <button
-              type="button"
-              style={{
-                fontFamily: f.sans,
-                fontSize: 13,
-                fontWeight: 600,
-                color: t.indigoDeep,
-                background: "#E8D5AE",
-                border: "none",
-                borderRadius: 8,
-                padding: "11px 20px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Start a 5-min mock →
-            </button>
-          </div>
-        );
-      })()}
 
       {/* Trust footer — quiet by design */}
       <div
