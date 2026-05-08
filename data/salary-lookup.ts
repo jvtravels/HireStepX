@@ -63,27 +63,226 @@ export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
   government: `INDUSTRY: Government/PSU. Pay fixed by 7th CPC bands. No negotiation on base. Negotiate: grade level, posting city (HRA varies 8-24%), housing, deputation allowance, training budget. Pension is the real wealth — defined benefit worth ₹50-150 LPA actuarially. Job security is the key selling point.`,
 };
 
-/** Tier-specific variable-bonus percentage of CTC. Reality:
- *   - government / PSU: 0% (fixed pay, no performance variable)
- *   - it-services: 25% (deputation / billing-linked; large variable component)
- *   - bfsi-global / finance: 22% (Goldman, JPMC India — performance bonuses heavy)
- *   - faang / big-tech: 12% (low cash variable; comp loaded into RSUs instead)
- *   - indian-unicorn: 12% (mixed)
- *   - startup-growth: 8% (cash-conservative; ESOP-heavy)
+/** Tier-specific variable-bonus percentage of CTC. Indian-market grounded:
+ *   - government-psu: 0% (7th CPC fixed pay; no performance variable)
+ *   - it-services: 25% (billing-linked + deputation premium baked in)
+ *   - bfsi-global: 22% (Goldman, JPM, Barclays India — perf bonuses heavy)
+ *   - bfsi-domestic: 15% (HDFC/ICICI — moderate variable)
+ *   - consulting-mbb / consulting-big4: 20% (utilization-linked)
+ *   - fmcg-mnc: 15% (annual perf bonus + 13th-month festive — see getFestiveBonus)
+ *   - faang / big-tech / gcc: 12% (low cash variable; comp loaded into RSUs)
+ *   - indian-unicorn / saas-product: 12% (mixed cash + ESOPs)
+ *   - startup-growth / startup-early: 8% (cash-conservative; ESOP-heavy)
+ *   - edtech: 12% (moderate variable; some target-linked)
  *   - default: 10% */
 function getVariablePct(companyTier: string | undefined): number {
   switch (companyTier) {
-    case "government": return 0;
+    case "government-psu": return 0;
     case "it-services": return 0.25;
-    case "bfsi-global":
-    case "finance-india": return 0.22;
+    case "bfsi-global": return 0.22;
+    case "bfsi-domestic": return 0.15;
+    case "consulting-mbb":
+    case "consulting-big4": return 0.20;
+    case "fmcg-mnc": return 0.15;
     case "faang":
-    case "big-tech": return 0.12;
-    case "indian-unicorn": return 0.12;
+    case "big-tech":
+    case "gcc": return 0.12;
+    case "indian-unicorn":
+    case "saas-product":
+    case "edtech": return 0.12;
     case "startup-growth":
     case "startup-early": return 0.08;
     default: return 0.10;
   }
+}
+
+/* ─── Indian-market helpers (all tier-driven, all data-grounded) ─── */
+
+/** In-hand take-home as % of CTC for both tax regimes.
+ *
+ * Approximation grounded in 2025-26 slabs for a typical IC role:
+ *   - New regime (default for FY25-26): 70-78% in-hand for ₹10-30L CTC,
+ *     dropping to 62-68% above ₹50L due to surcharge.
+ *   - Old regime: ~3-5% lower than new for ₹10-30L because slabs are
+ *     steeper, but candidates with home-loan / 80C / HRA exemption
+ *     usually beat new-regime take-home by 1-3%.
+ *
+ * Numbers are deliberate ranges — we tell the LLM "around 65-70%" not
+ * a single point so it doesn't false-precision its way into wrong math
+ * when the candidate doesn't share their exemptions. */
+function getInHandRange(totalCtc: number, cityTier: string | undefined): {
+  newRegime: [number, number];
+  oldRegime: [number, number];
+  text: string;
+} {
+  const round1 = (x: number) => Math.round(x * 10) / 10;
+  // % of CTC bands: bigger CTC → more surcharge → lower take-home %
+  let newPctLo: number, newPctHi: number, oldPctLo: number, oldPctHi: number;
+  if (totalCtc < 12) { newPctLo = 0.78; newPctHi = 0.82; oldPctLo = 0.74; oldPctHi = 0.80; }
+  else if (totalCtc < 25) { newPctLo = 0.72; newPctHi = 0.78; oldPctLo = 0.68; oldPctHi = 0.76; }
+  else if (totalCtc < 50) { newPctLo = 0.66; newPctHi = 0.72; oldPctLo = 0.62; oldPctHi = 0.70; }
+  else if (totalCtc < 100) { newPctLo = 0.60; newPctHi = 0.66; oldPctLo = 0.56; oldPctHi = 0.64; }
+  else { newPctLo = 0.54; newPctHi = 0.60; oldPctLo = 0.52; oldPctHi = 0.58; }
+
+  const newRegime: [number, number] = [round1(totalCtc * newPctLo), round1(totalCtc * newPctHi)];
+  const oldRegime: [number, number] = [round1(totalCtc * oldPctLo), round1(totalCtc * oldPctHi)];
+  const cityNote = cityTier === "tier1"
+    ? "tier-1 metro HRA exemption helps old-regime more than new"
+    : "tier-2/3 lower HRA exemption narrows the regime gap";
+
+  const text = `IN-HAND TAKE-HOME (when candidate asks "kitna in-hand?"):
+- New regime (default FY25-26): ${fmtRange(newRegime[0], newRegime[1])} per year (${Math.round(newPctLo*100)}-${Math.round(newPctHi*100)}% of CTC)
+- Old regime (with HRA + 80C + home loan): ${fmtRange(oldRegime[0], oldRegime[1])} per year (${Math.round(oldPctLo*100)}-${Math.round(oldPctHi*100)}% of CTC)
+- Note: ${cityNote}; exact in-hand depends on candidate's exemptions and rent. Don't promise a precise number — give the range.`;
+
+  return { newRegime, oldRegime, text };
+}
+
+/** Tier-specific notice-period buyout reality (NOT a generic formula).
+ *
+ * The previous (notice_days/30 × monthly_base × 1.5x) formula over-quoted
+ * by ~50% for services firms which have flat buyouts ₹1.5-2.5 LPA, and
+ * massively under-quoted for FAANG India which often waives notice with
+ * a letter (₹0 cost). */
+function getNoticeBuyoutContext(companyTier: string | undefined, totalCtc: number): string {
+  const round1 = (x: number) => Math.round(x * 10) / 10;
+  switch (companyTier) {
+    case "it-services":
+      return `NOTICE-PERIOD BUYOUT (services-firm reality): TCS / Infosys / Wipro candidates have 60-90 day notice. Actual buyout authority for the new employer: flat ₹1.5-2.5 LPA regardless of candidate's monthly base. Don't quote (notice_days × monthly_base × 1.5) — that's 2-3x over-quote and exposes you as scripted. If candidate is currently at TCS / Infosys / Wipro, offer ₹2 LPA as a notice-buyout sweetener if you've conceded base.`;
+    case "faang":
+    case "big-tech":
+    case "gcc":
+      return `NOTICE-PERIOD BUYOUT: FAANG / GCC India typically waives notice with a release letter — no cash buyout needed. If the candidate's current employer demands buyout, offer to absorb up to ₹${round1(totalCtc * 0.05)} LPA as a one-time signing bonus instead of a "buyout" line item. Cleaner accounting.`;
+    case "government-psu":
+      return `NOTICE-PERIOD BUYOUT: Government / PSU — no buyout. The candidate must serve the full notice or pay it themselves. If they're transferring from another PSU, joining is governed by their parent department's release order, not money.`;
+    case "startup-early":
+    case "startup-growth":
+      return `NOTICE-PERIOD BUYOUT: Indian startups expect candidates to negotiate notice down to 30 days with their current employer. If buyout is needed, offer ₹0.5-1 LPA as joining bonus — frame it as helping, not as buying out.`;
+    default:
+      return `NOTICE-PERIOD BUYOUT: Authority up to ₹${round1(totalCtc * 0.04)} LPA as one-time signing bonus, only if candidate is currently employed with a real notice obligation. Don't volunteer this — only offer if it bridges a gap.`;
+  }
+}
+
+/** Detect campus-hire / fresher patterns in the role string. Returns
+ * non-empty caveat string when the role is explicitly a campus offer. */
+function detectCampusHire(role: string | undefined): string {
+  if (!role) return "";
+  const r = role.toLowerCase();
+  if (/\b(get|graduate engineer trainee|management trainee|gat|sat|associate engineer trainee|campus|campus hire|campus placement|fresher|new grad|0\s*yoe|trainee program|leadership development program)\b/.test(r)) {
+    return `CAMPUS / FRESHER OFFER — NEGOTIATION-RESISTANT: This is a campus / trainee offer. Indian campus offers (TCS GET, Infosys SE, Wipro PAT, Cognizant GenC, HCL Tech Bee) are FIXED BY POLICY — there is NO negotiation room. The offer is signed during placement; reopening it after acceptance is rare. If the candidate tries to negotiate, respond honestly: "Campus offers are fixed by company policy across the cohort. I genuinely don't have authority to revise this — not for you, not for anyone. The negotiation lever is which TRACK you choose (e.g., TCS Digital vs Ninja, Infosys Power Programmer vs SE), not the number itself." Do NOT pretend you can stretch — that's the most common simulator failure mode for campus interviews.`;
+  }
+  return "";
+}
+
+/** Equity liquidity classifier — tells the LLM whether ESOPs are real
+ * money (listed) or speculative (illiquid). The naive "ESOPs are
+ * speculative until exit" framing under-prices listed-company equity. */
+function getEquityLiquidityNote(company: string | undefined, companyTier: string | undefined, hasEquity: boolean): string {
+  if (!hasEquity) return "";
+  const c = (company || "").toLowerCase();
+  // Indian listed companies (post-IPO; equity is liquid via NSE/BSE)
+  const listedIndian = /\b(zomato|paytm|nykaa|policybazaar|delhivery|mamaearth|infosys|tcs|wipro|hcl|tech mahindra|cognizant|persistent|ltts|mphasis|ola|swiggy)\b/.test(c);
+  // US-listed (RSUs liquid via Nasdaq)
+  const listedUs = /\b(google|alphabet|microsoft|meta|amazon|apple|netflix|adobe|salesforce|atlassian|nvidia|uber|airbnb|stripe|databricks|snowflake|servicenow)\b/.test(c) || companyTier === "faang" || companyTier === "big-tech";
+  // Pre-IPO with active secondary markets (real liquidity, just not public)
+  const secondary = /\b(razorpay|cred|phonepe|zerodha|groww|meesho|dream11|udaan|byjus|unacademy|acko|pine labs|browserstack|postman|zepto)\b/.test(c);
+
+  if (listedUs) return `EQUITY LIQUIDITY: RSUs at ${company || "this company"} are LISTED — liquid on US public markets (Nasdaq/NYSE). Vested RSUs convert to cash you can sell instantly minus a brokerage delay. This is real money, not speculation. Counter any "but ESOPs are uncertain" framing with: "These are listed RSUs, not ESOPs — at vest you get the public-market value."`;
+  if (listedIndian) return `EQUITY LIQUIDITY: ${company || "This company"} is publicly listed on NSE/BSE — your ESOPs/RSUs convert to cash you can sell. Treat as real value at face value; not speculation.`;
+  if (secondary) return `EQUITY LIQUIDITY: ${company || "This company"} is pre-IPO but runs regular ESOP buybacks (Razorpay/CRED/PhonePe/Zerodha pattern) at marked-up valuations. Last 2-3 buybacks have been at 1.5-2.5x earlier strike — ESOPs here are NOT illiquid speculation.`;
+  if (companyTier === "startup-early") return `EQUITY LIQUIDITY: Early-stage startup — ESOPs are illiquid until acquisition or IPO (3-7 yrs typically, often 50%+ companies fail to exit at all). Be honest with the candidate: "Treat ESOPs as a long-shot bonus; negotiate hard on cash."`;
+  return `EQUITY LIQUIDITY: Mid-stage startup — ESOPs may liquefy via buyback rounds (typical at series C+) or eventual IPO. Expect 3-5 yr timeline. Not pure speculation but not cash either.`;
+}
+
+/** Deputation/onsite premium context for IT services. The biggest
+ * negotiation lever in TCS/Infosys/Wipro hiring is whether the
+ * candidate is willing to go onsite (US/UK/Singapore). Onsite earns
+ * 1.5-3x base. Without this context the LLM ignores the lever. */
+function getDeputationContext(companyTier: string | undefined): string {
+  if (companyTier !== "it-services") return "";
+  return `DEPUTATION LEVER (services-firm specific): TCS / Infosys / Wipro / HCL roles often have an onsite-deputation track. Onsite to US / UK / Singapore / EU pays 1.5-3x the domestic base (USD/GBP/SGD allowance + housing + per diem). If the candidate is willing to relocate, offer the onsite track explicitly: "If you're open to onsite within the first 12-18 months, our typical deputation pays USD 5-8K/month plus housing on top of your domestic base. That's effectively ₹50-90 LPA equivalent for the deputation period."`;
+}
+
+/** 13th-month / festive bonus — prevalent at FMCG, conglomerates,
+ * some banks. Equals roughly 1 month of basic. */
+function getFestiveBonus(companyTier: string | undefined, basicLpa: number): { amount: number; text: string } {
+  const round1 = (x: number) => Math.round(x * 10) / 10;
+  const has13thMonth = companyTier === "fmcg-mnc" || companyTier === "bfsi-domestic" || companyTier === "government-psu";
+  if (!has13thMonth) return { amount: 0, text: "" };
+  // 13th month = 1 month of basic = basic / 12
+  const amount = round1(basicLpa / 12);
+  const tierLabel = companyTier === "fmcg-mnc" ? "FMCG / consumer-goods" : companyTier === "bfsi-domestic" ? "Indian banking" : "PSU / government";
+  return {
+    amount,
+    text: `13TH-MONTH / FESTIVE BONUS (${tierLabel} norm): ${fmtLPA(amount)} paid annually around Diwali / financial-year-end as a 13th salary. NOT part of CTC headline; this is on top of the listed total. Standard at ${tierLabel} firms; mention it if the candidate hasn't accounted for it.`,
+  };
+}
+
+/** Retention bonus / clawback authority — common for senior-and-above
+ * at unicorns / FAANG. Locks the candidate in for 12-24 months. */
+function getRetentionBonusContext(companyTier: string | undefined, exp: ExperienceLevel, totalCtc: number): string {
+  const round1 = (x: number) => Math.round(x * 10) / 10;
+  const eligibleTiers = new Set(["faang", "big-tech", "gcc", "indian-unicorn", "saas-product", "consulting-mbb", "bfsi-global"]);
+  if (!eligibleTiers.has(companyTier ?? "")) return "";
+  if (exp !== "senior" && exp !== "lead" && exp !== "executive") return "";
+  const retention1yr = round1(totalCtc * 0.10);
+  const retention2yr = round1(totalCtc * 0.15);
+  return `RETENTION BONUS AUTHORITY (senior+ at top tiers): You can structure a retention bonus for senior hires: ₹${retention1yr} LPA paid at 1-yr mark + ₹${retention2yr} LPA at 2-yr mark, both contingent on continued employment. Clawback if candidate leaves earlier. Don't volunteer this in turn 1 — use it as a closer when candidate is on the fence and you're already at maxStretch on base.`;
+}
+
+/** Bond / service-agreement warning for tiers that enforce them. */
+function getBondWarning(companyTier: string | undefined): string {
+  if (companyTier === "it-services") {
+    return `BOND CULTURE (services firms): TCS imposes a 2-yr bond (₹50K penalty for early exit), Infosys ₹1L, Cognizant ₹0.75L, Wipro varies. Real cost the candidate must factor in. If the candidate is currently bonded and joining, they OWE the previous employer if they leave before serving — don't pretend otherwise.`;
+  }
+  if (companyTier === "government-psu") {
+    return `BOND CULTURE (PSUs): 3-5 year service bond is standard; penalty ranges from refunding training cost to ₹5-10 LPA. Bond enforcement is real — PSU candidates can't job-hop without paying out.`;
+  }
+  return "";
+}
+
+/** Bluff-check rule for unverified counter-offers — distinct from the
+ * existing Indian-context guidance because it specifies what the LLM
+ * should DO when a counter is mentioned without a written letter. */
+const COUNTER_OFFER_BLUFF_CHECK = `COUNTER-OFFER BLUFF CHECK (Indian-market reality): When the candidate claims a competing offer, ASK FOR THE WRITTEN LETTER before stretching your offer. Phrases like "my current company will counter", "I have an offer at ₹X" without a letter are bluffs ~50-60% of the time. Respond professionally: "That's helpful context. Could you share the written offer (you can redact the company name) so I can see exactly what you're weighing? Once I see it I can figure out where I can land." Do NOT stretch maxStretch on a verbal claim alone. If the candidate refuses to share even a redacted letter, treat it as no-leverage and stay at your current offer.`;
+
+/** Compose all Indian-market context blocks into a single bandContext
+ * suffix. Returns separate `campusWarning` (goes at very top, before
+ * even the band) and `fullContextBlock` (goes between band breakdown
+ * and the absolute-number rules). */
+function buildIndianMarketContext(p: {
+  role?: string;
+  companyTier: string;
+  cityTier: string;
+  company?: string;
+  hasEquity: boolean;
+  exp: ExperienceLevel;
+  totalCtc: number;
+  basicLpa: number;
+}): { campusWarning: string; fullContextBlock: string } {
+  const campusWarning = detectCampusHire(p.role);
+  const inHand = getInHandRange(p.totalCtc, p.cityTier);
+  const buyout = getNoticeBuyoutContext(p.companyTier, p.totalCtc);
+  const equityLiq = getEquityLiquidityNote(p.company, p.companyTier, p.hasEquity);
+  const dep = getDeputationContext(p.companyTier);
+  const fest = getFestiveBonus(p.companyTier, p.basicLpa);
+  const retention = getRetentionBonusContext(p.companyTier, p.exp, p.totalCtc);
+  const bond = getBondWarning(p.companyTier);
+  // Compose only non-empty blocks so prompt stays focused.
+  const blocks = [
+    inHand.text,
+    buyout,
+    equityLiq,
+    dep,
+    fest.text,
+    retention,
+    bond,
+    COUNTER_OFFER_BLUFF_CHECK,
+  ].filter(Boolean);
+  return {
+    campusWarning,
+    fullContextBlock: `INDIAN-MARKET CONTEXT (use these blocks when relevant — quote numbers verbatim, don't invent):\n\n${blocks.join("\n\n")}`,
+  };
 }
 
 /** City-tier HRA percentage (of basic, per Indian Income Tax Act):
@@ -232,7 +431,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     // offer joining bonuses at IC level. Older industrial firms (Tata, L&T,
     // Mahindra) similarly. Cap at 0 for those tiers; otherwise allow up to
     // 10% of initial offer as authority.
-    const noBonusTiers = new Set(["government", "it-services"]);
+    const noBonusTiers = new Set(["government-psu", "it-services"]);
     const joiningBonusMax = noBonusTiers.has(companyTier)
       ? 0
       : Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10);
@@ -241,15 +440,31 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     // quotes exact, additive numbers instead of free-styling. Now tier-aware:
     // PSUs get 0% variable, services get 25%, FAANG get 12%, etc.
     const components = buildComponentBreakdown(initialOffer, hasEquity, override.equityType ?? "none", companyTier, jobCityTier);
-    const bandContext = `NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
+    // Indian-market context blocks (tax regime, notice buyout, equity
+    // liquidity, deputation, retention, festive bonus, bond warnings,
+    // campus rigidity). Each is non-empty only when relevant for this
+    // tier — keeps the prompt focused.
+    const indianContext = buildIndianMarketContext({
+      role: params.role,
+      companyTier,
+      cityTier: jobCityTier,
+      company: params.company,
+      hasEquity,
+      exp,
+      totalCtc: initialOffer,
+      basicLpa: components.basic,
+    });
+    const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
 - Walk-away ceiling: ${fmtLPA(walkAway)}
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
-${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : "- No equity at this level"}
+${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : "- No equity at this level (${noBonusTiers.has(companyTier) ? 'typical for this tier' : 'company-specific'})"}
 ${override.notes ? `- Note: ${override.notes}` : ""}
 SOURCE: ${override.source}.
+
+${indianContext.fullContextBlock}
 
 INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
 ${components.text}
@@ -309,7 +524,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // Tier-aware joining bonus. PSUs / IT-services don't offer bonuses at IC
   // level; respect that culture rather than letting the LLM invent one. If
   // the salary entry has a curated max, trust it (overrides the tier rule).
-  const noBonusTiers = new Set(["government", "it-services"]);
+  const noBonusTiers = new Set(["government-psu", "it-services"]);
   const tierAllowsBonus = !noBonusTiers.has(companyTier);
   const joiningBonusRange: [number, number] = [
     entry.joining_bonus_min,
@@ -332,7 +547,20 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // The LLM quotes from this block verbatim — no more invented numbers.
   // Tier-aware: PSUs get 0% variable, services 25%, FAANG 12%, etc.
   const components = buildComponentBreakdown(initialOffer, hasEquity, entry.equity_type, companyTier, jobCityTier);
-  const bandContext = `${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
+  // Indian-market context (tax, notice, equity-liquidity, deputation,
+  // retention, festive, bond, campus). Each block is non-empty only when
+  // relevant for this tier so the prompt stays focused.
+  const indianContext = buildIndianMarketContext({
+    role: params.role,
+    companyTier,
+    cityTier: jobCityTier,
+    company: params.company,
+    hasEquity,
+    exp,
+    totalCtc: initialOffer,
+    basicLpa: components.basic,
+  });
+  const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
@@ -342,6 +570,8 @@ ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${entry
 
 INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
 ${components.text}
+
+${indianContext.fullContextBlock}
 
 ABSOLUTE NUMBER RULES (violations destroy realism):
 1. ALWAYS use a SINGLE precise figure. NEVER quote a range like "₹28-45 LPA" or "between X and Y" — real hiring managers state ONE number and defend it. The band above is YOUR internal authority, not a public range to share.
