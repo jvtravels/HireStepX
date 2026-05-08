@@ -100,6 +100,9 @@ function parseCsv(text: string): RawRow[] {
     const t = line.trim();
     if (!t || t.startsWith("#")) continue;
     const cells = splitCsvLine(line);
+    // Pad trailing empties so a freelancer who omits trailing commas
+    // doesn't silently shift columns (standard CSV-import behavior).
+    while (cells.length < header.length) cells.push("");
     const row: RawRow = {};
     header.forEach((col, j) => (row[col] = (cells[j] ?? "").trim()));
     row.__lineNumber = String(i + 1);
