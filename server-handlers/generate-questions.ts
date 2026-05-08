@@ -706,7 +706,16 @@ Requirements:
       const q1Text = (questions[1] as { question?: string; text?: string })?.question || (questions[1] as { question?: string; text?: string })?.text || "";
       const q0Text = (questions[0] as { question?: string; text?: string })?.question || (questions[0] as { question?: string; text?: string })?.text || "";
       if (!hasRupee(q1Text) && !hasRupee(q0Text)) {
-        const initial = Math.round(negotiationBandData.initialOffer);
+        // Clamp the injected initial offer to the manager's authority
+        // ceiling. If a buggy generateNegotiationBand ever produced an
+        // initialOffer above walkAway, the fallback would silently
+        // present an offer the LLM later claims is impossible — kills
+        // realism. This clamp is defensive but cheap.
+        const safeInitial = Math.min(
+          Math.round(negotiationBandData.initialOffer),
+          Math.round(negotiationBandData.walkAway),
+        );
+        const initial = safeInitial;
         const base = Math.round(initial * 0.78);
         const variable = Math.round(initial * 0.12);
         const benefits = Math.max(1, initial - base - variable);

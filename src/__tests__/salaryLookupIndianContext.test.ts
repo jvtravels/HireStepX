@@ -381,3 +381,40 @@ describe("bandSource provenance", () => {
     expect(["fallback", "tier-default", "sector-override"]).toContain(band.bandSource);
   });
 });
+
+/* Band-consistency invariants — protect against the kind of bug the
+ * salary-neg fallback offer in generate-questions.ts:709 was vulnerable
+ * to before the Math.min clamp. */
+describe("NegotiationBand invariants", () => {
+  it("initialOffer never exceeds walkAway across sample role × company combos", () => {
+    const samples = [
+      { role: "Software Engineer", company: "Razorpay", experienceLevel: "mid" },
+      { role: "Senior Product Designer", company: "Google", experienceLevel: "senior" },
+      { role: "Lead Data Scientist", company: "Flipkart", experienceLevel: "lead" },
+      { role: "Software Engineer", company: "TCS", experienceLevel: "entry" },
+      { role: "Senior Software Engineer", company: "Amazon", experienceLevel: "senior" },
+      { role: "Engineering Manager", company: "Swiggy", experienceLevel: "lead" },
+    ];
+    for (const s of samples) {
+      const band = generateNegotiationBand(s);
+      expect(
+        band.initialOffer,
+        `${s.role} at ${s.company} (${s.experienceLevel}): initialOffer ${band.initialOffer} > walkAway ${band.walkAway}`,
+      ).toBeLessThanOrEqual(band.walkAway);
+    }
+  });
+
+  it("minOffer ≤ initialOffer ≤ maxStretch ≤ walkAway", () => {
+    const samples = [
+      { role: "Software Engineer", company: "Razorpay", experienceLevel: "mid" },
+      { role: "Senior Software Engineer", company: "Google", experienceLevel: "senior" },
+      { role: "Software Engineer", company: "TCS", experienceLevel: "entry" },
+    ];
+    for (const s of samples) {
+      const band = generateNegotiationBand(s);
+      expect(band.minOffer).toBeLessThanOrEqual(band.initialOffer);
+      expect(band.initialOffer).toBeLessThanOrEqual(band.maxStretch);
+      expect(band.maxStretch).toBeLessThanOrEqual(band.walkAway);
+    }
+  });
+});
