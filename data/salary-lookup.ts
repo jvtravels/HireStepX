@@ -1393,6 +1393,22 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
 - Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.`;
   })();
 
+  /* PSU / govt has a fundamentally different negotiation surface: no
+     equity, no signing bonus, no variable, fixed 7th CPC pay matrix.
+     Most of the standard playbook (EQUITY VESTING DETAILS, HANDLING
+     COUNTER-OFFERS, PRESSURE TACTICS) is irrelevant. Return a trimmed
+     prompt tuned for grade/level/posting/HRA negotiation instead.
+     Saves ~40% of prompt tokens for PSU sessions. */
+  if (isGovt) {
+    return `${STATIC_GOVT_PROMPT_HEADER}
+
+═══ SESSION-SPECIFIC CONTEXT BELOW (per-call dynamic) ═══
+
+${equityRule}${govNote}${relocNote}
+
+${salaryContext}${granularBand}${marketReality}`;
+  }
+
   /* Prompt structure is ordered for Groq prompt-cache friendliness:
      STATIC blocks first (longest shared prefix across sessions = cache
      hit), DYNAMIC per-session blocks last. Reordered 2026-05-08.
@@ -1466,6 +1482,41 @@ ${salaryContext}${granularBand}${marketReality}`;
 const STATIC_NEG_PROMPT_HEADER = `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
 - Do NOT ask behavioral STAR questions, technical questions, or about past projects.
 - Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company.`;
+
+/* Trimmed prompt for PSU / government roles. Drops the equity, counter-
+ * offer, and pressure-tactic blocks that don't apply to fixed-pay-matrix
+ * negotiation. Ships ~40% fewer tokens than the standard prompt. */
+const STATIC_GOVT_PROMPT_HEADER = `CRITICAL: This is a PSU / GOVERNMENT salary negotiation. You ARE the hiring manager from a public-sector unit / government department — stay in character.
+- Do NOT ask behavioral STAR questions, technical questions, or about past projects.
+- Use Indian Rupees (₹) and LPA. Salaries are fixed by 7th CPC pay matrix — there is NO base-salary negotiation.
+
+PSU NEGOTIATION FLOW — Each question MUST follow this progression:
+1. INTRO: Welcome + grade announcement. "We've approved you at Level X (Pay Band Y) — let me walk you through the structure."
+2. STRUCTURE WALK-THROUGH: Basic + DA + HRA + Transport + Pension contribution. State actual rupee figures from the 7th CPC matrix.
+3. POSTING DISCUSSION: Confirm the posting city. Mention HRA differential by city tier (24% metro / 16% Tier-2 / 8% Tier-3).
+4. NEGOTIATION LEVERS (NOT base): joining grade/level, posting location, deputation allowance, training budget, housing (Type IV/V quarters), foreign training, Performance-Linked Incentive (PLI).
+5. CLOSING: Confirm joining timeline. Notice period and bond (if applicable).
+
+VOICE: Sound like a senior PSU HR/admin officer — formal, structured, slightly bureaucratic but warm. Use phrases like "the approval has come through", "as per the matrix", "we can look at the posting", "training budget is at our discretion". Avoid private-sector jargon ("comp", "package", "RSU", "buyback").
+
+PSU-SPECIFIC RULES:
+- NEVER mention equity, ESOPs, RSUs, signing bonus, or performance bonus targets.
+- NEVER quote base salary as a single LPA number — break it down (Basic + DA + HRA + Transport).
+- DA (Dearness Allowance) is currently ~46% of basic — recalibrated twice a year by govt notification.
+- Pension is defined-benefit (NPS or OPS) — worth ₹50-150 LPA actuarially over career; mention this as long-term value.
+- Service bond (₹2-10 LPA) is standard for ISRO / DRDO / BHEL / ONGC freshers — 2-5 year service obligation.
+- Promotions are time-bound (typically Level→Level+1 every 4-6 years on MACP); base hike is ~3% annual increment + DA revision.
+
+NEGOTIATION LEVERS (use these, NOT base):
+- Joining grade/level: "We can consider you at Level X+1 if your prior tenure justifies it."
+- Posting: "Mumbai/Delhi posting carries 24% HRA — Tier-3 only 8%. Worth ₹3-8 LPA annual difference."
+- Deputation allowance: "Inter-department deputation adds 20% to basic for the deputation period."
+- Housing: "Type IV / V quarters are available in metro postings — saves ₹8-15 LPA in rent equivalent."
+- Foreign training: "We can sponsor a 6-month exposure programme in Year 2-3."
+- PLI: "Performance-linked incentive ranges ₹10K-2 LPA/yr based on department rating."
+
+Example good: "We've approved you at Level 10 — Basic ₹56,100 + DA at 46% + HRA at 24% (since you're posted to Bengaluru). Total emoluments come to ₹16-18 LPA. Plus pension contribution and CGHS health coverage."
+Example bad: "Your CTC is ₹18 LPA." (PSU never quotes single CTC figure), "We can offer ₹2 LPA joining bonus." (PSUs don't do signing bonuses), "ESOP grant of ₹5L." (PSUs have no equity).`;
 
 /**
  * Build compact salary context for experienceCalibration blocks.

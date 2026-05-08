@@ -123,6 +123,24 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
     expect(promptMid).toBeCloseTo(refMid, 1);
   });
 
+  it("PSU/govt sessions get a trimmed prompt (≤40% of standard size)", () => {
+    const standard = buildSalaryNegotiationGuidance({
+      role: "Software Engineer",
+      experienceLevel: "mid",
+      company: "Razorpay",
+    });
+    const psu = buildSalaryNegotiationGuidance({
+      role: "Scientist",
+      experienceLevel: "entry",
+      company: "ISRO",
+    });
+    expect(psu.length).toBeLessThan(standard.length * 0.40);
+    // Govt prompt must mention CPC matrix.
+    expect(psu).toMatch(/7th CPC|pay matrix|grade/i);
+    // Must NOT include the standard private-sector vesting block.
+    expect(psu).not.toMatch(/Amazon RSUs:|back-loaded 5\/15\/40\/40/);
+  });
+
   it("does not embed JS float artifacts like 0.36200000000000004", () => {
     const prompt = buildSalaryNegotiationGuidance({
       role: "Software Engineer",
