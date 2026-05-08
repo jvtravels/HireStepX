@@ -195,6 +195,10 @@ function bandToOverride(
     equityVesting: nonEmpty(band.vestingSchedule) ? band.vestingSchedule : undefined,
     source: `CSV research dataset 2026-05 (100-company aggregation; ${co.companyName} / ${csvRoleLabel} / ${lvl})`,
     lastVerified: "2026-05-09",
+    // CSV-derived → research-aggregated. Drives the calibration hedge in
+    // buildSalaryNegotiationGuidance + UI confidence label. See the
+    // CompanyBandOverride.dataConfidence docstring for the rationale.
+    dataConfidence: "research-aggregated",
     notes: nonEmpty(band.bestNegotiationFocus)
       ? `Negotiation focus: ${band.bestNegotiationFocus}.${
           nonEmpty(band.likelyHrPushback) ? ` HR posture: "${band.likelyHrPushback}"` : ""

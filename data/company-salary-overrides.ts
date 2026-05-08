@@ -45,6 +45,21 @@ export interface CompanyBandOverride {
   /** Optional negotiation hint specific to this company. */
   notes?: string;
 
+  /** Data-confidence tier. Drives a calibration sentence in the LLM
+   *  negotiation prompt + a UI hedging label.
+   *    - "verified": curator-authored, hand-checked against ≥1 source.
+   *      Treat numbers as authoritative.
+   *    - "research-aggregated": synthesized from the 100-company CSV
+   *      scrape. Internal calibration audit (scripts/csv-confidence-
+   *      audit.mts, 2026-05-09) shows this dataset agrees with curator
+   *      numbers within ±15% on only 48% of overlapping cells, with a
+   *      systematic upward bias of ~1.3-1.5× on premium-track service
+   *      companies (TCS Digital, Capgemini Strategic) and senior DevOps
+   *      roles. The LLM is instructed to coach candidates to anchor
+   *      first-offer expectations at the LOWER half of the band.
+   *  Defaults to "verified" when unset (curator entries omit it). */
+  dataConfidence?: "verified" | "research-aggregated";
+
   /* ─── Optional company-specific overrides (Phase C — robustness work) ───
    *
    * Each field below lets a curator encode a company-specific datum that
@@ -6993,6 +7008,9 @@ function reconcileWithCsv(
     notes: curator.notes
       ? `${curator.notes} [Numbers refreshed from 2026-05 CSV; curator notes retained.]`
       : `Numbers refreshed from 2026-05 CSV research dataset.`,
+    // Stale curator + CSV swap → numbers are now CSV-aggregated, downgrade
+    // confidence so the LLM/UI hedges accordingly.
+    dataConfidence: "research-aggregated",
   };
 }
 

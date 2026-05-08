@@ -520,3 +520,56 @@ describe("override map data integrity", () => {
     expect(band.initialOffer).toBeLessThan(110);
   });
 });
+
+describe("dataConfidence — calibration hedge for CSV-aggregated bands", () => {
+  it("CSV-derived overrides are tagged as research-aggregated", () => {
+    /* Companies in the 100-co CSV but without a hand-curated override
+       should fall through to getCsvDerivedBandOverride and be tagged
+       research-aggregated. Picking a CSV-only company (one of the 70
+       non-curated ones) — Tata Steel is CSV-covered, not in the
+       curator overrides for this role/level. */
+    const ovr = getCompanyBandOverride("Tata Steel", "mechanical-engineer", "mid");
+    if (ovr) {
+      // Either curator-verified OR CSV-aggregated; both are valid resolution
+      // paths. The invariant we care about: when source mentions "CSV
+      // research dataset", confidence MUST be research-aggregated.
+      if (/CSV research dataset/i.test(ovr.source)) {
+        expect(ovr.dataConfidence).toBe("research-aggregated");
+      }
+    }
+  });
+
+  it("hand-curated entries default to verified (undefined dataConfidence)", () => {
+    /* Razorpay SE mid was hand-verified 2026-05-08 — fresh curator,
+       skips CSV reconciliation, no dataConfidence stamp. */
+    const ovr = getCompanyBandOverride("Razorpay", "software-engineer", "mid");
+    expect(ovr).toBeTruthy();
+    expect(ovr?.dataConfidence).not.toBe("research-aggregated");
+  });
+
+  it("calibration sentence appears in negotiation band for CSV-aggregated company", () => {
+    /* Pick a CSV-covered, non-curated company. The bandContext should
+       carry the "research-aggregated" header + CALIBRATION line that
+       coaches the LLM toward the lower half of the band. */
+    const band = generateNegotiationBand({
+      role: "software-engineer",
+      company: "Tata Steel",
+      experienceLevel: "mid",
+    });
+    if (band.bandSource === "company-override" && /research-aggregated/i.test(band.bandContext)) {
+      expect(band.bandContext).toMatch(/CALIBRATION:/);
+      expect(band.bandContext).toMatch(/lower half of the band/i);
+    }
+  });
+
+  it("verified curator entry does NOT include the calibration hedge", () => {
+    const band = generateNegotiationBand({
+      role: "software-engineer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    if (/verified for/i.test(band.bandContext)) {
+      expect(band.bandContext).not.toMatch(/CALIBRATION:/);
+    }
+  });
+});

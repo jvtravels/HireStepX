@@ -801,7 +801,22 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
       roleKey,
       recentBuybackNote: override.recentBuybackNote,
     });
-    const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
+    /* Calibration hedge for CSV-aggregated bands. The internal audit
+       (scripts/csv-confidence-audit.mts) found the 100-company scrape
+       agrees with curator numbers within ±15% on only 48% of overlapping
+       cells, with systematic upward bias on premium-track service
+       companies and senior DevOps roles. Telling the LLM to coach
+       toward the lower-half of the band absorbs that bias without
+       hard-coding a haircut that would under-call well-calibrated
+       cells. Curator-verified entries skip this hedge. */
+    const isAggregated = override.dataConfidence === "research-aggregated";
+    const bandHeader = isAggregated
+      ? `NEGOTIATION BAND (research-aggregated for ${params.company} from 100-company public-source dataset, last refreshed ${override.lastVerified}):`
+      : `NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):`;
+    const calibrationNote = isAggregated
+      ? `\nCALIBRATION: These numbers are aggregated from public scrapes (Levels.fyi / AmbitionBox / Glassdoor) and lean toward the upper-decile of reported offers. When coaching the candidate's first-offer expectation, anchor on the LOWER half of the band (close to ${fmtLPA(minOffer)}–${fmtLPA(initialOffer)}); reserve the upper end for stretch scenarios with strong leverage. If the candidate quotes a number above the median, validate it but don't reinforce it as "typical".`
+      : "";
+    const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}${bandHeader}
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
@@ -809,7 +824,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
 ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : `- No equity at this level (${noBonusTiers.has(companyTier) ? "typical for this tier" : "company-specific"})`}
 ${override.notes ? `- Note: ${override.notes}` : ""}
-SOURCE: ${override.source}.
+SOURCE: ${override.source}.${calibrationNote}
 
 ${indianContext.fullContextBlock}
 
