@@ -915,6 +915,8 @@ export function useInterviewEngine() {
   const followUpInsertCountRef = useRef(0);
   // Dynamic difficulty: track answer quality mid-interview for escalation/de-escalation
   const answerQualityRef = useRef<number[]>([]);
+  // Track last few inline micro-feedback strings to avoid showing the same tip twice in a row.
+  const recentFeedbacksRef = useRef<string[]>([]);
   // Mid-session coaching: track which phases already showed a hint (avoid repeats)
   const negCoachingShownRef = useRef<Set<string>>(new Set());
   // Last answer quality for contextual reactions
@@ -1767,9 +1769,13 @@ export function useInterviewEngine() {
         interviewType, currentStep,
         scriptStepTypes: interviewScript.map(s => s.type),
       });
-      const { feedback, score: answerScore } = computeMicroFeedback(answerText, interviewType, answerQualityRef.current, negPhase);
+      const { feedback, score: answerScore } = computeMicroFeedback(answerText, interviewType, answerQualityRef.current, negPhase, recentFeedbacksRef.current);
       answerQualityRef.current.push(answerScore);
-      if (feedback) setMicroFeedback(feedback);
+      if (feedback) {
+        setMicroFeedback(feedback);
+        recentFeedbacksRef.current.push(feedback);
+        if (recentFeedbacksRef.current.length > 3) recentFeedbacksRef.current.shift();
+      }
     }
 
     // Fire follow-up check in background

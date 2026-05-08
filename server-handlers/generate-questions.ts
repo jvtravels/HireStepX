@@ -32,6 +32,7 @@ import {
   isSalaryNegotiationLengthOk,
   computeStepCount,
   buildStaticFallback,
+  flagOffRoleQuestions,
   type RawQuestion,
 } from "./_generate-questions-helpers";
 import { fetchRecentQuestions } from "./_question-dedup";
@@ -845,6 +846,33 @@ Requirements:
     // Punctuation hygiene — fix LLM artifacts like "., " stitches and
     // interrogatives that end with a period instead of a question mark.
     sanitizeQuestionText(questions as RawQuestion[]);
+
+    // Post-LLM role-fence backstop: even with the prompt-level ROLE FENCE,
+    // LLMs occasionally slip in an off-role question (SWE system-design
+    // for a designer round, Figma critique for a backend engineer). Detect
+    // and replace with a curated fallback from the question bank instead
+    // of shipping the off-role question to the candidate.
+    {
+      const inferredFam = inferRoleFamily(targetRole) ?? undefined;
+      const offIdx = flagOffRoleQuestions(questions as RawQuestion[], inferredFam);
+      if (offIdx.length > 0) {
+        const replacements = buildStaticFallback({
+          type: typeof interviewType === "string" ? interviewType : "behavioral",
+          focus: typeof interviewFocus === "string" ? interviewFocus : undefined,
+          roleFamily: inferredFam,
+          count: offIdx.length + 2,
+        });
+        // Skip intro/closing entries from the fallback — we only want body items.
+        const bodyReplacements = replacements.filter(r => r.type !== "intro" && r.type !== "closing");
+        for (let k = 0; k < offIdx.length; k++) {
+          const swap = bodyReplacements[k];
+          if (!swap) break;
+          const target = (questions as RawQuestion[])[offIdx[k]];
+          target.aiText = swap.aiText;
+          if (swap.scoreNote) target.scoreNote = swap.scoreNote;
+        }
+      }
+    }
 
     // For panel interviews: validate and fix persona assignments
     if (interviewType === "panel") {

@@ -116,7 +116,29 @@ export default async function handler(req: Request): Promise<Response> {
         /\bnot\s+(?:really\s+|100%?\s+|entirely\s+|quite\s+)?sure\b.*\b(?:about|on)\s+(?:it|this|that|the)\b/.test(nonAnswerLower)
       );
     if (isExplicitNonAnswer) {
-      const pivotText = "That's fair — let's flip it. Imagine you walk into that situation tomorrow: how would you approach it? Even a rough first move helps me see your thinking.";
+      // Map question intent → tailored hypothetical pivot. Generic "imagine
+      // that situation" works, but a probe that mirrors the original
+      // question's topic (conflict, failure, leadership, ambiguity) lands
+      // closer to what the interviewer was actually testing.
+      const qLower = (question || "").toLowerCase();
+      let pivotText: string;
+      if (/conflict|disagree|argument|tension|push\s*back/.test(qLower)) {
+        pivotText = "Fair enough — let's make it hypothetical. A teammate strongly disagrees with your approach in a meeting tomorrow. Walk me through how you'd handle that conversation in real time.";
+      } else if (/fail(?:ure|ed)|mistake|went\s+wrong|setback/.test(qLower)) {
+        pivotText = "No problem — let's flip it forward. Imagine you ship something next month and it lands flat. What's the first thing you'd do once you realise it isn't working, and how would you talk about it with your team?";
+      } else if (/leader|lead\s+a|manage|managed|mentored|mentor/.test(qLower)) {
+        pivotText = "That's fine — let's run a hypothetical. You're handed a small team tomorrow and one person is clearly disengaged. What's your first week look like?";
+      } else if (/ambig|unclear|uncertain|incomplete\s+(?:data|info)|without\s+(?:clear|enough)/.test(qLower)) {
+        pivotText = "Got it — let's make it hypothetical. You're handed a problem with very little information and a tight deadline. Walk me through how you'd structure your first 24 hours on it.";
+      } else if (/stake\s*holder|cross[\s-]?functional|alignment|buy[\s-]?in/.test(qLower)) {
+        pivotText = "That's okay — imagine this: you have a strong recommendation but a senior stakeholder is leaning the other way. How would you build the case and run that conversation?";
+      } else if (/priorit|trade[\s-]?off|deadline|under\s+pressure|time\s+constraint/.test(qLower)) {
+        pivotText = "Fair — let's hypothetical it. You wake up tomorrow with three urgent things on your plate and only time for two. Talk me through how you'd decide.";
+      } else if (/feedback|criticism|review|growth/.test(qLower)) {
+        pivotText = "Okay — imagine this. You get sharp critical feedback in a review next week that you weren't expecting. What's your first move, and how do you act on it over the next month?";
+      } else {
+        pivotText = "That's fair — let's flip it to a hypothetical. Imagine you walk into that situation tomorrow: how would you approach it? Even a rough first move helps me see your thinking.";
+      }
       return new Response(JSON.stringify({
         needsFollowUp: true,
         followUpText: pivotText,
@@ -130,6 +152,17 @@ export default async function handler(req: Request): Promise<Response> {
     const hasPassiveVoice = /(was done|were made|it was|has been|got done|we had)/i.test(answer);
     const lacksFirstPerson = !(/ I /i.test(answer) || /^I /i.test(answer));
     const isShort = wordCount < 40;
+
+    // Tense detection: when the candidate describes a project that hasn't
+    // launched / shipped / been measured yet ("we are planning", "the idea
+    // is to", "we will", "haven't launched yet"), retro-impact probes like
+    // "what was the result?" or "how did you measure impact?" misfire —
+    // there ARE no results yet. Switch to prospective probes instead.
+    const planStageRe = /\b(?:we are|i am|we'?re|i'?m)\s+(?:still\s+)?(?:planning|designing|building|prototyping|working\s+on|in\s+the\s+process)\b|\b(?:plan|going|hope|aim|expect|intend)\s+to\b|\bhaven'?t\s+(?:launched|shipped|rolled\s+out|gone\s+live|released)\b|\bnot\s+(?:yet\s+)?(?:launched|shipped|live|in\s+production)\b|\bhasn'?t\s+gone\s+live\b|\bwill\s+(?:launch|ship|measure|track|monitor)\b|\bthe\s+idea\s+is\s+to\b|\bin\s+the\s+(?:planning|design|prototype|concept)\s+(?:phase|stage)\b/i;
+    const isPlanStage = planStageRe.test(answer);
+    const tenseDirective = isPlanStage
+      ? `\nTENSE-AWARE PROBE (mandatory): The candidate's answer describes work that has NOT yet launched or been measured. Do NOT ask retro-impact questions ("what was the result", "how did you measure impact", "what changed after"). Instead, ask PROSPECTIVE probes: "what metrics would you track to know this worked?", "what's your biggest risk going in?", "what would you measure in week one?", "how will you know you got it right?". Asking for results that don't exist yet feels punitive and ignores what they actually said.`
+      : "";
 
     const jdContext = jobDescription ? `The candidate is targeting this role: ${sanitizeForLLM(jobDescription, 500)}. If relevant, probe for skills mentioned in the JD.` : "";
     const resumeSkillsContext = Array.isArray(resumeTopSkills) && resumeTopSkills.length > 0
@@ -189,9 +222,18 @@ export default async function handler(req: Request): Promise<Response> {
       // Competing offers WITHOUT a stated number → probe expectations
       // (we still don't know what they actually want).
       if (facts?.hasCompetingOffers && !facts?.candidateCounter && idx <= 3) return "probe-expectations";
-      // Late in conversation → closing phases
-      if (progressRatio >= 0.85) return "closing";
-      if (progressRatio >= 0.7) return "closing-pressure";
+      // Premature-close guard. Closing phases require either explicit
+      // acceptance (handled above) OR a stated candidate counter — the
+      // negotiation cannot end before a number has even been put on the
+      // table. Without this guard a low-engagement candidate who never
+      // counters slides into "let me put together the offer letter"
+      // wrap-up at idx>=0.85, fabricating a deal that doesn't exist.
+      const hasCounter = !!facts?.candidateCounter;
+      // Late in conversation → closing phases (only once a counter exists)
+      if (progressRatio >= 0.85 && hasCounter) return "closing";
+      if (progressRatio >= 0.7 && hasCounter) return "closing-pressure";
+      // Late but no counter → push for the number, don't wrap up.
+      if (progressRatio >= 0.7 && !hasCounter) return "probe-expectations";
       // Topics raised beyond base → benefits-discussion
       if (facts?.topicsRaised && facts.topicsRaised.length >= 2 && idx >= 3) return "benefits-discussion";
       // Index-based fallback for earlier phases
@@ -199,8 +241,8 @@ export default async function handler(req: Request): Promise<Response> {
       if (idx === 2) return "probe-expectations";
       if (idx === 3) return "counter-offer";
       if (idx === 4) return "benefits-discussion";
-      if (idx === 5) return "closing-pressure";
-      return "closing";
+      if (idx === 5) return hasCounter ? "closing-pressure" : "probe-expectations";
+      return hasCounter ? "closing" : "counter-offer";
     }
     const salaryPhase = isSalaryNeg
       ? detectSalaryPhase()
@@ -729,6 +771,8 @@ ROLE FENCE (mandatory): The candidate is interviewing for "${sanitizeForLLM(role
 NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
 
 CROSS-QUESTION MEMORY: If the candidate mentioned something interesting in an earlier answer (visible in the conversation history above), you SHOULD reference it naturally roughly every 3rd question: "Earlier you mentioned X — how does that connect to what you just described?" This makes the interview feel like a real conversation, not a checklist.
+
+${tenseDirective}
 
 PUSHBACK RULE: Real interviewers push back on weak or vague answers — they don't just nod and move on. If the answer is high-level, generic, or lacks specifics (no metrics, no concrete actions, no "I" voice), your follow-up MUST press for specifics ONCE before changing topic. Examples: "That's high-level — what specifically did *you* do?", "Give me a concrete number.", "Walk me through one moment, not the general approach." Do NOT pile on with multiple challenges; one sharp pushback per weak answer.
 

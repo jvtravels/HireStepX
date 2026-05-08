@@ -122,6 +122,53 @@ export function normalizePanelPersonas(questions: RawQuestion[]): void {
 }
 
 /**
+ * Post-LLM role-fence backstop. The prompt has a ROLE FENCE directive,
+ * but LLMs occasionally still slip in a SWE-style "design a rate
+ * limiter" question for a Product Designer round, or a "Figma
+ * critique" question for a backend engineer. This regex sweep flags
+ * any question whose text contains off-role terminology for the
+ * inferred role family, so the caller can replace it with a curated
+ * fallback. Conservative on false positives: if a designer answer
+ * mentions "metrics" that's fine — we only flag terms that are
+ * unambiguously off-discipline (sharding, JOIN keys, Figma autolayout).
+ *
+ * Returns the indices of `questions` whose `aiText` is off-role.
+ * Empty array means all questions look in-discipline.
+ */
+export function flagOffRoleQuestions(
+  questions: RawQuestion[],
+  roleFamily: string | undefined,
+): number[] {
+  if (!roleFamily) return [];
+  const fam = roleFamily.toLowerCase();
+  // Each role family lists hard-off-role term regexes. Designers don't
+  // get asked about JOIN keys; engineers don't get asked about Figma
+  // autolayout. Soft-overlap terms ("metrics", "users", "team") are NOT
+  // listed here because they're shared across all roles.
+  let offRoleRe: RegExp | null = null;
+  if (fam === "design" || fam === "designer-senior") {
+    offRoleRe = /\b(?:sharding|rate[\s-]?limit(?:er|ing)|distributed\s+system|kafka|redis\s+cluster|kubernetes|microservice\s+architecture|sql\s+join|query\s+optimi[sz]ation|big[\s-]?o\s+complexity|leetcode|algorithm\s+design|garbage\s+collect|memory\s+leak|api\s+gateway|load\s+balanc(?:er|ing)|database\s+schema|etl\s+pipeline)\b/i;
+  } else if (fam === "swe" || fam === "em" || fam === "ml") {
+    offRoleRe = /\b(?:figma\s+(?:autolayout|component|variant)|design\s+token|visual\s+hierarchy|color\s+palette|user\s+persona\s+workshop|wireframe\s+critique|brand\s+voice|copy\s+deck|editorial\s+calendar)\b/i;
+  } else if (fam === "writer") {
+    offRoleRe = /\b(?:sharding|rate[\s-]?limit|distributed\s+system|sql\s+join|leetcode|big[\s-]?o|figma\s+autolayout|design\s+token|api\s+endpoint|microservice|database\s+schema|etl\s+pipeline|sprint\s+velocity)\b/i;
+  } else if (fam === "data" || fam === "ds-research") {
+    offRoleRe = /\b(?:figma|design\s+token|visual\s+hierarchy|color\s+palette|brand\s+voice|copy\s+deck|sharding\s+strategy|kafka\s+partition|kubernetes\s+pod)\b/i;
+  } else if (fam === "pm") {
+    offRoleRe = /\b(?:figma\s+autolayout|design\s+token|leetcode|big[\s-]?o\s+complexity|garbage\s+collect|memory\s+leak|sql\s+join\s+key|sharding\s+strategy)\b/i;
+  }
+  if (!offRoleRe) return [];
+  const flagged: number[] = [];
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    if (q.type === "intro" || q.type === "closing") continue;
+    if (typeof q.aiText !== "string") continue;
+    if (offRoleRe.test(q.aiText)) flagged.push(i);
+  }
+  return flagged;
+}
+
+/**
  * Salary-negotiation interviews need at least 4 turns to play out the
  * full arc (intro → offer → probe → counter → close). Anything shorter
  * is a malformed LLM response that won't make sense in the UI.

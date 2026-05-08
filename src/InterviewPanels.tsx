@@ -922,6 +922,19 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
 }) {
   const lastUserMsg = [...transcript].reverse().find(t => t.speaker === "user");
   if (!lastUserMsg) return null;
+  // Render SKIPPED sentinels as a friendly chip instead of leaking the
+  // raw "[SKIPPED — reason: too_hard]" engineering token to the user.
+  // The reason maps to a short human label.
+  const skipMatch = lastUserMsg.text.match(/^\[SKIPPED\s*[—-]\s*reason:\s*([^\]]+)\]$/i);
+  const skipReasonLabel: string | null = skipMatch ? (() => {
+    const raw = skipMatch[1].trim().toLowerCase();
+    if (raw === "too_hard") return "Skipped — too hard";
+    if (raw === "blank_mind" || raw === "blank") return "Skipped — drew a blank";
+    if (raw === "off_topic" || raw === "off-topic") return "Skipped — off-topic";
+    if (raw === "no_experience") return "Skipped — no experience";
+    if (raw === "no_reason" || raw === "") return "Skipped";
+    return `Skipped — ${raw.replace(/_/g, " ")}`;
+  })() : null;
   // Dedupe immediate STT echo: collapse repeated word and short-phrase
   // stutters ("where where", "to it is very difficult to it is very
   // difficult to") that come from speech-recognition partials being
@@ -952,15 +965,31 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
           Your last answer
         </span>
       </div>
-      <p style={{
-        fontFamily: ef.serif, fontSize: 13, color: e.indigoGray,
-        lineHeight: 1.55, margin: 0, fontStyle: "italic",
-        overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical" as const,
-      }}>
-        &ldquo;{displayText}&rdquo;
-      </p>
-      {microFeedback && (
+      {skipReasonLabel ? (
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "4px 10px", borderRadius: 999,
+          background: "rgba(180,83,9,0.10)",
+          border: `1px solid rgba(180,83,9,0.20)`,
+          fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.copper,
+        }}>
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="5 4 15 12 5 20 5 4" />
+            <line x1="19" y1="5" x2="19" y2="19" />
+          </svg>
+          {skipReasonLabel}
+        </div>
+      ) : (
+        <p style={{
+          fontFamily: ef.serif, fontSize: 13, color: e.indigoGray,
+          lineHeight: 1.55, margin: 0, fontStyle: "italic",
+          overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical" as const,
+        }}>
+          &ldquo;{displayText}&rdquo;
+        </p>
+      )}
+      {!skipReasonLabel && microFeedback && (
         <div style={{
           marginTop: 8, padding: "5px 10px", borderRadius: 999,
           display: "inline-flex", alignItems: "center", gap: 6,

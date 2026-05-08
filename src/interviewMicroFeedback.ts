@@ -12,6 +12,7 @@ export function computeMicroFeedback(
   interviewType: string,
   runningScores: number[],
   negotiationPhase?: string,
+  recentFeedbacks?: string[],
 ): MicroFeedbackResult {
   const wordCount = answerText.trim().split(/\s+/).length;
 
@@ -33,7 +34,7 @@ export function computeMicroFeedback(
   if (interviewType === "campus-placement") {
     return campusPlacementFeedback(answerText, wordCount);
   }
-  return standardFeedback(answerText, wordCount, runningScores);
+  return standardFeedback(answerText, wordCount, runningScores, recentFeedbacks);
 }
 
 /* ─── Salary Negotiation (phase-aware) ─── */
@@ -323,7 +324,7 @@ function detectNonAnswer(text: string, wordCount: number): boolean {
 }
 
 /* ─── Standard (behavioral / technical / strategic / panel) ─── */
-function standardFeedback(text: string, wordCount: number, runningScores: number[]): MicroFeedbackResult {
+function standardFeedback(text: string, wordCount: number, runningScores: number[], recentFeedbacks?: string[]): MicroFeedbackResult {
   if (detectNonAnswer(text, wordCount)) {
     // Empathic acknowledgement, no STAR-coaching tip. Score reflects
     // a non-answer (low) but doesn't crater the running average — the
@@ -352,8 +353,21 @@ function standardFeedback(text: string, wordCount: number, runningScores: number
   const isExcelling = runningAvg >= 80 && allScores.length >= 2;
   const isStruggling = runningAvg < 50 && allScores.length >= 2;
   // Rotate among variants so consecutive answers don't get identical coaching.
+  // recentFeedbacks: the last few tips actually shown to the candidate. If
+  // the round-robin would re-pick a recent tip, advance until we land on a
+  // fresh one. Avoids "Stretch this further" appearing 3 questions running.
   const turn = runningScores.length;
-  const pick = <T,>(opts: readonly T[]): T => opts[turn % opts.length];
+  const recentSet = new Set((recentFeedbacks || []).filter((s): s is string => typeof s === "string"));
+  const pick = <T,>(opts: readonly T[]): T => {
+    if (opts.length === 0) return opts[0];
+    let idx = turn % opts.length;
+    for (let tries = 0; tries < opts.length; tries++) {
+      const candidate = opts[idx];
+      if (typeof candidate !== "string" || !recentSet.has(candidate)) return candidate;
+      idx = (idx + 1) % opts.length;
+    }
+    return opts[turn % opts.length];
+  };
 
   let feedback: string | null;
   if (wordCount < 30) {

@@ -190,6 +190,12 @@ export interface InterviewResultData {
     cohortN?: number;
     cohortFreshness?: string; // e.g. "as of last week"
     cohortLabel?: string; // e.g. "Senior EM at Indian fintechs · last 90 days"
+    /** Link to a public methodology / source page explaining where the
+     *  cohort numbers come from (sample, time window, exclusions). When
+     *  set, the attribution chip becomes clickable so users can audit
+     *  the percentile claim instead of taking it on trust. Optional —
+     *  panel falls back to plain chip when absent. */
+    cohortMethodologyUrl?: string;
     /** Structured pushbacks the AI made during the call. Each entry pairs
      *  an AI line with how the candidate responded (held / deflected /
      *  conceded). Drives the "When they pushed back, did you fold?" panel.

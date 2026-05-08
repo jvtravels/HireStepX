@@ -313,12 +313,16 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
   let tMatch: RegExpExecArray | null;
   while ((tMatch = targetContextRe.exec(allText)) !== null) targetNums.add(tMatch[1]);
   const counterNumbers = allSalaryMatches.filter(n => !ctcNumbers.has(n));
-  // Prefer target-context numbers, fall back to highest non-CTC number
+  // Use the LATEST stated target — chronological order is preserved by
+  // regex.exec on the joined transcript. Picking the max would lock in
+  // the candidate's first ask even after they revise downward
+  // ("I want 20" → "I'd settle for 18"); the engine then anchors all
+  // subsequent counters to the stale 20, which mis-scores the session.
   const targetCounters = counterNumbers.filter(n => targetNums.has(n));
   const candidateCounter = targetCounters.length > 0
-    ? `₹${targetCounters.reduce((max, n) => parseFloat(n) > parseFloat(max) ? n : max)} LPA`
+    ? `₹${targetCounters[targetCounters.length - 1]} LPA`
     : counterNumbers.length > 0
-    ? `₹${counterNumbers.reduce((max, n) => parseFloat(n) > parseFloat(max) ? n : max)} LPA`
+    ? `₹${counterNumbers[counterNumbers.length - 1]} LPA`
     : (allSalaryMatches.length > 0 ? `₹${allSalaryMatches[allSalaryMatches.length - 1]} LPA` : null);
 
   // Differentiate base vs total. "11 lakhs as base salary" / "12 LPA
@@ -339,8 +343,9 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
     const v = parseFloat(baseM[1]);
     if (Number.isFinite(v) && v >= 3 && v <= 500) baseMatches.push(v);
   }
-  const candidateAskTotal = totalMatches.length > 0 ? `₹${Math.max(...totalMatches)} LPA` : null;
-  const candidateAskBase = baseMatches.length > 0 ? `₹${Math.max(...baseMatches)} LPA` : null;
+  // Latest-stated wins (see candidateCounter rationale above).
+  const candidateAskTotal = totalMatches.length > 0 ? `₹${totalMatches[totalMatches.length - 1]} LPA` : null;
+  const candidateAskBase = baseMatches.length > 0 ? `₹${baseMatches[baseMatches.length - 1]} LPA` : null;
 
   const hasCompetingOffers = /(?:other offer|competing|another company|counter.?offer|multiple offers|also talking|got an offer)/i.test(allText);
 

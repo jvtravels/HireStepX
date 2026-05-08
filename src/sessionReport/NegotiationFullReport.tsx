@@ -73,22 +73,52 @@ interface Props {
 
 /* ─── Inline primitives ─────────────────────────────────────── */
 
-function FreshnessChip({ source, n, asOf }: { source: string; n?: number; asOf?: string }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`,
-        borderRadius: 999, fontSize: 10, fontFamily: f.mono,
-        color: t.inkSoft, letterSpacing: 0.3,
-      }}
-    >
+function FreshnessChip({ source, n, asOf, methodologyUrl }: {
+  source: string; n?: number; asOf?: string; methodologyUrl?: string;
+}) {
+  /* When a methodology URL is wired, the chip becomes a real anchor —
+     users can audit the cohort claim instead of trusting the math.
+     Without it, the chip stays inert (plain <span>) so we don't fake
+     a clickable affordance that goes nowhere. */
+  const baseStyle = {
+    display: "inline-flex", alignItems: "center", gap: 6,
+    padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`,
+    borderRadius: 999, fontSize: 10, fontFamily: f.mono,
+    color: t.inkSoft, letterSpacing: 0.3,
+    textDecoration: "none",
+  } as const;
+  const inner = (
+    <>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: t.success }} />
       <span style={{ fontWeight: 600 }}>{source}</span>
       {typeof n === "number" && <span>· n={n}</span>}
       {asOf && <span>· {asOf}</span>}
-    </span>
+      {methodologyUrl && (
+        <span
+          style={{
+            color: t.indigo, fontWeight: 700, textDecoration: "underline",
+            textUnderlineOffset: 2, marginLeft: 2,
+          }}
+        >
+          How?
+        </span>
+      )}
+    </>
   );
+  if (methodologyUrl) {
+    return (
+      <a
+        href={methodologyUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={baseStyle}
+        title="See how we computed this cohort"
+      >
+        {inner}
+      </a>
+    );
+  }
+  return <span style={baseStyle}>{inner}</span>;
 }
 
 function PlayableTime({ at }: { at: string }) {
@@ -1044,6 +1074,7 @@ function CohortPlacementPanel({ outcome }: { outcome: NegotiationOutcome }) {
             source="Cohort data"
             n={outcome.cohortN}
             asOf={outcome.cohortFreshness}
+            methodologyUrl={outcome.cohortMethodologyUrl}
           />
         ) : (
           <span
