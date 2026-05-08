@@ -363,4 +363,54 @@ describe("extractNegotiationFacts", () => {
     ]);
     expect(extractNegotiationFacts(transcript).acceptedImmediately).toBe(true);
   });
+
+  /* ─── Replay fixtures: real session bugs ───
+     Each fixture is a multi-turn transcript reconstructed from a session
+     that produced a known bug. Adding the fixture here pins the fix —
+     any future regex/extractor change that re-breaks the case fails the
+     suite. Keep one fixture per distinct bug class; cite the bug. */
+
+  it("[fixture: TCS UX downward revision] tracks LATEST stated counter, not max", () => {
+    /* Bug source: TCS UI/UX Designer session screenshots. Candidate
+       opened at "20 LPA", was told the band was tight, revised to
+       "18 lakhs base" two turns later. Old extractor reduce-maxed and
+       kept anchoring all subsequent counters to 20 — every turn
+       inflated the negotiation. Fix: take the last stated number. */
+    const transcript = makeTranscript([
+      "I'm looking at around 20 LPA total, given my experience.",
+      "I understand. I'd be willing to come down to 18 lakhs as base salary.",
+    ]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateAskBase).toBe("₹18 LPA");
+    // candidateCounter takes the latest target-context number.
+    expect(facts.candidateCounter).toBe("₹18 LPA");
+  });
+
+  it("[fixture: total-then-revised-total] picks the latest total, not max", () => {
+    const transcript = makeTranscript([
+      "I'm expecting 25 LPA total CTC.",
+      "After hearing your benefits, I can do 22 LPA total.",
+    ]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateAskTotal).toBe("₹22 LPA");
+  });
+
+  it("[fixture: ixigo crore-vs-lakh] normalizes crore to LPA correctly", () => {
+    /* Bug source: ixigo session — "1 crore" was being stored as ₹1 LPA
+       in the counter, badly understating the candidate's ask. */
+    const transcript = makeTranscript(["I'm expecting around 1 crore total CTC."]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateAskTotal).toBe("₹100 LPA");
+  });
+
+  it("[fixture: benefit-coded amounts] does not pull benefit ₹ into counter", () => {
+    /* "₹1 lakh as health insurance" / "₹2 lakhs in joining bonus" must
+       not bind candidateCounter — they're component itemizations, not
+       the candidate's ask. */
+    const transcript = makeTranscript([
+      "I'm asking 30 LPA, plus ₹1 lakh for health insurance and ₹2 lakhs joining bonus.",
+    ]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateCounter).toBe("₹30 LPA");
+  });
 });

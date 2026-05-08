@@ -329,18 +329,20 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
   // total CTC" — the AI used to collapse total → base ("you mentioned
   // ₹11 LPA" when the candidate said "12 total, 11 base"). Pick out
   // the explicitly-labelled values.
-  const totalRe = /(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|cr|crore)\s*(?:total|ctc|package|all up|all in|in total|per annum)\b/gi;
-  const baseRe = /(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?)?\s*(?:as\s+(?:my|the)?\s*)?base(?:\s+(?:salary|pay))?\b/gi;
+  const totalRe = /(\d+(?:\.\d+)?)\s*(lpa|lakhs?|cr|crore)\s*(?:total|ctc|package|all up|all in|in total|per annum)\b/gi;
+  const baseRe = /(\d+(?:\.\d+)?)\s*(lpa|lakhs?|cr|crore)?\s*(?:as\s+(?:my|the)?\s*)?base(?:\s+(?:salary|pay))?\b/gi;
   const totalMatches: number[] = [];
   let totalM: RegExpExecArray | null;
   while ((totalM = totalRe.exec(allText)) !== null) {
-    const v = parseFloat(totalM[1]);
+    const isCr = /^(cr|crore)$/i.test(totalM[2] || "");
+    const v = parseFloat(totalM[1]) * (isCr ? 100 : 1);
     if (Number.isFinite(v) && v >= 3 && v <= 500) totalMatches.push(v);
   }
   const baseMatches: number[] = [];
   let baseM: RegExpExecArray | null;
   while ((baseM = baseRe.exec(allText)) !== null) {
-    const v = parseFloat(baseM[1]);
+    const isCr = /^(cr|crore)$/i.test(baseM[2] || "");
+    const v = parseFloat(baseM[1]) * (isCr ? 100 : 1);
     if (Number.isFinite(v) && v >= 3 && v <= 500) baseMatches.push(v);
   }
   // Latest-stated wins (see candidateCounter rationale above).

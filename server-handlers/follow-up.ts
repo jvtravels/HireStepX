@@ -158,8 +158,13 @@ export default async function handler(req: Request): Promise<Response> {
     // is to", "we will", "haven't launched yet"), retro-impact probes like
     // "what was the result?" or "how did you measure impact?" misfire —
     // there ARE no results yet. Switch to prospective probes instead.
-    const planStageRe = /\b(?:we are|i am|we'?re|i'?m)\s+(?:still\s+)?(?:planning|designing|building|prototyping|working\s+on|in\s+the\s+process)\b|\b(?:plan|going|hope|aim|expect|intend)\s+to\b|\bhaven'?t\s+(?:launched|shipped|rolled\s+out|gone\s+live|released)\b|\bnot\s+(?:yet\s+)?(?:launched|shipped|live|in\s+production)\b|\bhasn'?t\s+gone\s+live\b|\bwill\s+(?:launch|ship|measure|track|monitor)\b|\bthe\s+idea\s+is\s+to\b|\bin\s+the\s+(?:planning|design|prototype|concept)\s+(?:phase|stage)\b/i;
-    const isPlanStage = planStageRe.test(answer);
+    const planStageRe = /\b(?:we are|i am|we'?re|i'?m)\s+(?:still\s+)?(?:planning|designing|building|prototyping|working\s+on|in\s+the\s+process)\b|\bhaven'?t\s+(?:launched|shipped|rolled\s+out|gone\s+live|released)\b|\bnot\s+(?:yet\s+)?(?:launched|shipped|live|in\s+production)\b|\bhasn'?t\s+(?:gone\s+live|launched|shipped)\b|\bthe\s+idea\s+is\s+to\b|\bin\s+the\s+(?:planning|design|prototype|concept)\s+(?:phase|stage)\b|\bpre[\s-]?launch\b|\bbefore\s+launch\b/i;
+    // Anti-false-positive: if the answer also contains clear past-tense
+    // shipping markers ("we launched", "we shipped", "after release"), the
+    // candidate is describing completed work that incidentally mentions
+    // future plans — don't suppress retro-impact probes in that case.
+    const hasPastShipMarkers = /\b(?:we|i|the\s+team)\s+(?:launched|shipped|rolled\s+out|released|deployed|went\s+live|delivered)\b|\bafter\s+(?:launch|release|shipping|going\s+live)\b|\bonce\s+(?:we|it)\s+(?:launched|shipped|went\s+live)\b/i.test(answer);
+    const isPlanStage = planStageRe.test(answer) && !hasPastShipMarkers;
     const tenseDirective = isPlanStage
       ? `\nTENSE-AWARE PROBE (mandatory): The candidate's answer describes work that has NOT yet launched or been measured. Do NOT ask retro-impact questions ("what was the result", "how did you measure impact", "what changed after"). Instead, ask PROSPECTIVE probes: "what metrics would you track to know this worked?", "what's your biggest risk going in?", "what would you measure in week one?", "how will you know you got it right?". Asking for results that don't exist yet feels punitive and ignores what they actually said.`
       : "";
