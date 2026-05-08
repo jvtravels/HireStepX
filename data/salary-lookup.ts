@@ -20,6 +20,62 @@ import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { getCompanyCity } from "./company-cities";
 import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
 import { formatGranularBand } from "./india-salary-bands-2025";
+import { computeCtcBreakdown, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../src/_ctc-breakdown";
+import { tierFlexibility, type CompanyTierBucket } from "../src/_negotiation-math";
+
+/** Map the legacy CompanyTier string to the new negotiation-math
+ *  CompanyTierBucket vocabulary used by tierFlexibility / variable-payout
+ *  helpers. Listed-detection nuance (Swiggy/Zomato/Meesho post-IPO are
+ *  listed unicorns) is left to the per-company override; this is the
+ *  conservative default mapping. */
+function tierBucketFromCompanyTier(t: CompanyTier | null | undefined): CompanyTierBucket | undefined {
+  switch (t) {
+    case "faang":
+    case "big-tech":
+    case "gcc":
+      return "listed_big_tech";
+    case "indian-unicorn":
+    case "saas-product":
+      return "mature_unicorn";
+    case "edtech":
+      return "growth_startup";
+    case "startup-growth":
+      return "growth_startup";
+    case "startup-early":
+      return "early_startup";
+    case "it-services":
+      return "it_services";
+    case "bfsi-global":
+    case "bfsi-domestic":
+      return "bfsi";
+    case "fmcg-mnc":
+      return "fmcg";
+    case "government-psu":
+      return "psu";
+    default:
+      return undefined;
+  }
+}
+
+/** Map tier to the variable-payout factor key used by _ctc-breakdown. */
+function payoutTierKey(t: CompanyTier | null | undefined): Parameters<typeof variablePayoutFactorForTier>[0] {
+  switch (t) {
+    case "faang":
+    case "big-tech":
+    case "gcc":           return "listed";
+    case "indian-unicorn":
+    case "saas-product":  return "mature_unicorn";
+    case "edtech":
+    case "startup-growth": return "growth_startup";
+    case "startup-early": return "early_startup";
+    case "it-services":   return "it_services";
+    case "bfsi-global":
+    case "bfsi-domestic": return "bfsi";
+    case "fmcg-mnc":      return "fmcg";
+    case "government-psu": return "psu";
+    default:              return undefined;
+  }
+}
 
 export interface SalaryLookupParams {
   role: string;
@@ -1270,6 +1326,50 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
      and we fall back to the coarse band only. */
   const granularBand = formatGranularBand(params.role, safeTier, exp);
 
+  /* Market-reality block — gives the LLM grounded numbers (take-home,
+     equity discount, recruiter flexibility) computed from the same
+     pure helpers the UI uses. Without this, the LLM coaches against
+     stated CTC and underestimates real recruiter movement. */
+  const marketReality = (() => {
+    const band = generateNegotiationBand(params);
+    const midCtc = (band.initialOffer + band.maxStretch) / 2;
+    if (midCtc <= 0) return "";
+
+    // Pull recentBuybackNote from COMPANY_META if curator documented one.
+    const companyKey = (params.company ?? "").toLowerCase().trim();
+    const recentBuybackNote = COMPANY_META[companyKey]?.recentBuybackNote;
+
+    const tierBucket = tierBucketFromCompanyTier(companyTier);
+    const flex = tierBucket ? tierFlexibility(tierBucket) : 0.30;
+    const payoutFactor = variablePayoutFactorForTier(payoutTierKey(companyTier));
+    const equityFace = hasEquity ? midCtc * 0.15 : 0;
+    const liquidityFactor = recentBuybackNote
+      ? liquidityFactorFromBuybackNote(recentBuybackNote)
+      : (entry?.equity_type === "rsu" ? 1.0 : 0.30);
+
+    const breakdown = computeCtcBreakdown({
+      totalCtcLpa: midCtc,
+      equityLpa: equityFace,
+      equityType: hasEquity ? (entry?.equity_type === "rsu" ? "rsu" : "esop") : "none",
+      variablePct: hasVariable ? 0.12 : 0,
+      variablePayoutFactor: payoutFactor,
+      equityLiquidityFactor: liquidityFactor,
+    });
+
+    const monthlyK = Math.round(breakdown.monthlyTakeHomeInr / 1000);
+    const flexPct = Math.round(flex * 100);
+    const equityNote = hasEquity
+      ? ` Equity discount: face ₹${breakdown.equityLpa} LPA → realistic ₹${breakdown.equityRealisticLpa} LPA (${Math.round(liquidityFactor * 100)}% liquidity${recentBuybackNote ? "; documented buybacks" : "; pre-IPO baseline"}).`
+      : "";
+    const variableNote = hasVariable
+      ? ` Variable target ₹${breakdown.variableTargetLpa} → realistic ₹${breakdown.variableRealisticLpa} LPA (${Math.round(payoutFactor * 100)}% historical payout for this tier).`
+      : "";
+    return `\n\nMARKET REALITY (use these grounded numbers — do NOT contradict them):
+- Mid-band stated CTC ₹${midCtc.toFixed(1)} LPA → monthly take-home ~₹${monthlyK}k after tax (new regime FY 2025-26).
+- Stated → realistic gap: ${breakdown.gapPct}% (gap ₹${breakdown.gapLpa} LPA = the "marketing markup" candidate should be aware of).${equityNote}${variableNote}
+- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.`;
+  })();
+
   return `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
 - Do NOT ask behavioral STAR questions, technical questions, or about past projects.
 - Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company. In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions).${ctcStructureNote}${familyFraming}
@@ -1285,7 +1385,7 @@ NEGOTIATION FLOW — Each question MUST follow this progression:
 4. COUNTER-OFFER: Based on their response, present an improved package. Trade levers: base vs joining bonus vs flexible work vs relocation support vs learning budget. Example: "I can stretch the base to ₹X, or keep it at ₹Y and add a ₹Z joining bonus — which works better for you?"
 5. CLOSING: Finalize with timeline. "If we can agree on this, when can you join? What's your notice period situation?"
 
-${salaryContext}${granularBand}
+${salaryContext}${granularBand}${marketReality}
 
 ${equityRule}
 EQUITY VESTING DETAILS (use when candidate asks):
