@@ -289,7 +289,7 @@ CRITICAL — READ THE INTENT BANNER ABOVE BEFORE PICKING A BRANCH:
 - "I hear you, but this is genuinely my final offer. I've stretched as far as I can. The next step is either a yes or we part as friends — what's it going to be?"
 - "If they want to think: Absolutely. The offer stands until [date]. But I'll be honest — I'd love an answer sooner so I can lock in the headcount."
 
-NUMBER DISCIPLINE: Whenever you write a recap with components (₹A base + ₹B variable + ₹C bonus), the components MUST sum to the stated total. NEVER write "total ₹X comprising ₹X base, ₹X variable, ₹X bonus" — that is mathematically impossible and destroys credibility instantly.`,
+NUMBER DISCIPLINE: Whenever you write a recap with components (₹A base + ₹B variable + ₹C ESOPs + ₹D bonus), the components MUST sum to the stated total. NEVER write "total ₹X which includes ₹X base, ₹X variable, ₹X ESOPs" — repeating the same number across every component is mathematically impossible and destroys credibility instantly. A real Indian tech CTC of ₹X LPA breaks down roughly as 65-78% base, 10-15% variable, 5-10% ESOPs/year, 2-5% PF + benefits — use those proportions when recapping. If the candidate questions a recap, do NOT apologize and re-emit the same broken breakdown — recompute with realistic component proportions.`,
       };
 
       // Extract the initial offer from conversation history so the LLM can reference exact numbers.
@@ -1068,6 +1068,53 @@ Repeat-text in followUpText is FORBIDDEN.`;
         }
         return full;
       });
+
+      /* Bug D-2 — Generalized component-collapse detector. The narrow
+         regex above requires the literal word "bonus" + "total/comprising"
+         delimiters. Real bug seen in prod: "₹43 LPA, which includes ₹43
+         LPA in base salary, ₹43 LPA variable, and ₹43 LPA in ESOPs per
+         year" — same collapse, different vocabulary (ESOPs ≠ bonus,
+         "which includes" ≠ "comprising"). Catch any sentence containing
+         a "total/which includes" preamble + 3+ LPA numbers all equal to
+         the headline. Replace the collapsed components with a 72/12/8/8
+         split (base/variable/equity/bonus) that sums correctly. */
+      const sentenceRe = /[^.!?]*(?:LPA|lpa|lakhs?)[^.!?]*[.!?]/g;
+      let sm: RegExpExecArray | null;
+      const collapseAnchorRe = /\b(?:total\s+(?:CTC|compensation|package)|which\s+(?:includes|comprises|breaks?\s+down)|breaks?\s+down\s+as|comprising|consisting\s+of|made\s+up\s+of|breakdown\s+of|package\s+of|offer\s+with)\b/i;
+      while ((sm = sentenceRe.exec(clamped)) !== null) {
+        const sentence = sm[0];
+        if (!collapseAnchorRe.test(sentence)) continue;
+        const numRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/g;
+        const nums: number[] = [];
+        let nm: RegExpExecArray | null;
+        while ((nm = numRe.exec(sentence)) !== null) {
+          const v = parseFloat(nm[1]);
+          if (Number.isFinite(v) && v > 0) nums.push(v);
+        }
+        if (nums.length < 4) continue; // need total + ≥3 components
+        const total = nums[0];
+        const components = nums.slice(1);
+        const allEqualToTotal = components.length >= 3 && components.every(n => Math.abs(n - total) < 0.05);
+        if (!allEqualToTotal) continue;
+        const newBase = Math.round(total * 0.72 * 10) / 10;
+        const newVar = Math.round(total * 0.12 * 10) / 10;
+        const newEq = Math.round(total * 0.08 * 10) / 10;
+        const newBonus = Math.round((total - newBase - newVar - newEq) * 10) / 10;
+        const replacements = [newBase, newVar, newEq, newBonus];
+        let replaced = sentence;
+        let i = 0;
+        replaced = replaced.replace(numRe, (m) => {
+          if (i === 0) { i++; return m; } // keep the headline total
+          const r = replacements[i - 1];
+          i++;
+          if (r === undefined) return m;
+          return `₹${r} LPA`;
+        });
+        if (replaced !== sentence) {
+          console.warn(`[follow-up] Generalized component-collapse: total=${total}, ${components.length} components all equal — recomposed`);
+          clamped = clamped.replace(sentence, replaced);
+        }
+      }
 
       parsed.followUpText = clamped;
 
