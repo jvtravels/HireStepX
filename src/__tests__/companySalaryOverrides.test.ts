@@ -406,8 +406,9 @@ describe("override map data integrity", () => {
       company: "Flipkart",
       experienceLevel: "campus hire",
     });
-    /* Flipkart SDE-1 fresher: ₹22-28L (₹25.95L avg). Initial 35th ≈ ₹24.1L. */
-    expect(flipkartEntry.initialOffer).toBeGreaterThan(21);
+    /* Flipkart SDE-1 fresher (2026-05 worksheet): ₹12.5-35L total CTC, wider band reflecting role tiering.
+       Initial 35th ≈ ₹20.4L. Range allows 18-28L. */
+    expect(flipkartEntry.initialOffer).toBeGreaterThan(17);
     expect(flipkartEntry.initialOffer).toBeLessThan(28);
   });
 

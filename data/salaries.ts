@@ -67,7 +67,8 @@ export type RoleKey =
   | "mechanical-engineer" | "electrical-engineer" | "civil-engineer"
   | "chartered-accountant" | "doctor" | "pharmacist"
   | "design-engineer" | "product-marketing-manager"
-  | "civil-services" | "performing-arts" | "nursing" | "hardware-engineer";
+  | "civil-services" | "performing-arts" | "nursing" | "hardware-engineer"
+  | "pilot" | "investment-banker" | "architect" | "chef";
 
 /** Helper to create a salary entry with defaults */
 function s(
@@ -1947,6 +1948,41 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       mid: s([13, 22], [1, 2.5], ESOP(2, 5), [15, 28], { negotiation_leverage: "medium" }),
       senior: s([22, 36], [2.5, 5], ESOP(4, 10), [28, 50], { negotiation_leverage: "high" }),
     },
+    "bfsi-global": {
+      entry: s([16, 26], [2, 5], RSU(3, 8), [20, 35], { negotiation_leverage: "medium" }),
+      mid: s([28, 45], [4, 9], RSU(8, 18), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([45, 70], [7, 15], RSU(15, 32), [62, 110], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([8, 14], [0.5, 1.5], NO_EQ, [9, 16], { negotiation_leverage: "low" }),
+      senior: s([14, 24], [1, 3], NO_EQ, [16, 28], { negotiation_leverage: "medium" }),
+    },
+    edtech: {
+      entry: s([6, 11], [0.5, 1.5], ESOP(0.5, 2), [7, 13], { negotiation_leverage: "low" }),
+      mid: s([12, 20], [1, 3], ESOP(1.5, 4), [14, 24], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 4], ESOP(3, 7), [22, 38], { negotiation_leverage: "medium" }),
+    },
+    "fmcg-mnc": {
+      entry: s([6, 10], [0.5, 1], NO_EQ, [7, 11], { negotiation_leverage: "low" }),
+      mid: s([12, 20], [1, 2.5], NO_EQ, [13, 22], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+    "consulting-mbb": {
+      entry: s([20, 30], [3, 6], NO_EQ, [25, 40], { negotiation_leverage: "medium" }),
+      mid: s([35, 55], [6, 12], NO_EQ, [42, 70], { negotiation_leverage: "medium" }),
+      senior: s([55, 80], [10, 20], NO_EQ, [65, 100], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([5, 8], [0.3, 0.6], NO_EQ, [5, 9], { negotiation_leverage: "low" }),
+      mid: s([10, 17], [0.5, 1.5], NO_EQ, [11, 19], { negotiation_leverage: "medium" }),
+      senior: s([18, 30], [2, 5], NO_EQ, [20, 35], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([4, 8], [0, 0.5], NO_EQ, [4, 8], { in_hand_ratio: 0.78, notes: "Govt-IT (NIC / RBI tech / SEBI tech)." }),
+      mid: s([8, 14], [0.5, 1], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
+      senior: s([14, 25], [1, 2], NO_EQ, [15, 28], { negotiation_leverage: "low" }),
+    },
   },
 
   /* Backend developer — same shape as SE but distributed-systems /
@@ -1983,6 +2019,41 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       entry: s([8, 13], [0.5, 1.5], ESOP(1.5, 3), [9, 16], { negotiation_leverage: "medium" }),
       mid: s([14, 24], [1, 3], ESOP(2, 6), [16, 30], { negotiation_leverage: "medium" }),
       senior: s([24, 38], [2.5, 5], ESOP(5, 12), [30, 55], { negotiation_leverage: "high" }),
+    },
+    "bfsi-global": {
+      entry: s([18, 28], [2, 5], RSU(4, 9), [22, 38], { notes: "Backend at GS / JPM / Citi India trading systems." }),
+      mid: s([32, 50], [4, 10], RSU(10, 22), [42, 75], { negotiation_leverage: "high" }),
+      senior: s([55, 85], [8, 18], RSU(20, 42), [75, 135], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { negotiation_leverage: "low" }),
+      mid: s([8, 15], [0.5, 1.5], NO_EQ, [9, 17], { negotiation_leverage: "low" }),
+      senior: s([15, 25], [1.5, 3], NO_EQ, [17, 29], { negotiation_leverage: "medium" }),
+    },
+    edtech: {
+      entry: s([6, 11], [0.5, 1.5], ESOP(0.5, 2), [7, 13], { negotiation_leverage: "low" }),
+      mid: s([12, 22], [1, 3], ESOP(1.5, 4), [14, 26], { negotiation_leverage: "medium" }),
+      senior: s([22, 36], [2, 5], ESOP(3, 8), [26, 42], { negotiation_leverage: "medium" }),
+    },
+    "fmcg-mnc": {
+      entry: s([7, 11], [0.5, 1], NO_EQ, [8, 12], { negotiation_leverage: "low" }),
+      mid: s([13, 22], [1, 2.5], NO_EQ, [14, 25], { negotiation_leverage: "medium" }),
+      senior: s([22, 35], [2, 5], NO_EQ, [25, 40], { negotiation_leverage: "medium" }),
+    },
+    "consulting-mbb": {
+      entry: s([22, 32], [3, 7], NO_EQ, [28, 42], { negotiation_leverage: "medium" }),
+      mid: s([38, 60], [6, 13], NO_EQ, [45, 75], { negotiation_leverage: "medium" }),
+      senior: s([60, 90], [12, 22], NO_EQ, [72, 110], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([5, 9], [0.3, 0.6], NO_EQ, [5, 10], { negotiation_leverage: "low" }),
+      mid: s([11, 18], [0.5, 1.5], NO_EQ, [12, 21], { negotiation_leverage: "medium" }),
+      senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([4, 8], [0, 0.5], NO_EQ, [4, 8], { in_hand_ratio: 0.78 }),
+      mid: s([8, 14], [0.5, 1], NO_EQ, [8, 15], { negotiation_leverage: "low" }),
+      senior: s([14, 25], [1, 2], NO_EQ, [15, 28], { negotiation_leverage: "low" }),
     },
   },
 
@@ -2931,6 +3002,157 @@ export const SALARY_DATA: Partial<Record<RoleKey, SalaryTable>> = {
       senior: s([20, 32], [2, 5], NO_EQ, [22, 36], { negotiation_leverage: "medium" }),
     },
   },
+
+  // ─── PILOT (cadet → captain ladder; regulated profession) ─────
+  /* Indian commercial pilots have a distinct comp curve: cadet/co-
+     pilot starts ~₹15-25L, type-rated captain on wide-body crosses
+     ₹2.5-3.5Cr at peak. Foreign airlines (Emirates/Qatar/Singapore)
+     pay 1.5-2x Indian airlines. Highly regulated by DGCA. */
+  "pilot": {
+    "indian-unicorn": {
+      entry: s([15, 25], [1, 3], NO_EQ, [16, 28], { notice_period_days: 90, negotiation_leverage: "low", notes: "First officer / co-pilot at IndiGo / Vistara / Akasa entry. Type-rating bond ₹15-30L common." }),
+      mid: s([35, 60], [3, 8], NO_EQ, [38, 70], { notice_period_days: 90, negotiation_leverage: "medium", notes: "Type-rated first officer / junior captain (5-8 yrs). Narrow-body capt." }),
+      senior: s([80, 140], [10, 25], NO_EQ, [90, 165], { notice_period_days: 180, negotiation_leverage: "high", notes: "Type-rated captain wide-body Air India / IndiGo. Long-haul international." }),
+      lead: s([140, 220], [20, 40], NO_EQ, [160, 260], { notice_period_days: 180, negotiation_leverage: "high", notes: "Senior wide-body captain / line check captain / designated examiner." }),
+      executive: s([200, 320], [30, 60], NO_EQ, [230, 380], { in_hand_ratio: 0.55, notes: "Chief pilot / VP flight operations." }),
+    },
+    "bfsi-global": {
+      entry: s([20, 35], [2, 5], NO_EQ, [22, 40], { notes: "Foreign carrier (Emirates/Qatar/Singapore Airlines) cadet/F.O. India base." }),
+      mid: s([55, 90], [6, 14], NO_EQ, [60, 105], { negotiation_leverage: "medium" }),
+      senior: s([140, 220], [18, 35], NO_EQ, [155, 250], { notes: "Foreign carrier wide-body captain. Tax-friendly Gulf base." }),
+      lead: s([240, 360], [35, 70], NO_EQ, [270, 420], { negotiation_leverage: "high" }),
+    },
+    "government-psu": {
+      entry: s([12, 18], [0, 0.5], NO_EQ, [12, 19], { in_hand_ratio: 0.78, notice_period_days: 90, negotiation_leverage: "low", notes: "Air India / Indian Air Force pilot officer. AI lateral pilots get DGCA pay scale." }),
+      mid: s([22, 40], [1, 3], NO_EQ, [24, 44], { negotiation_leverage: "low", notes: "IAF Squadron Leader / Wing Commander — 7th CPC pay matrix." }),
+      senior: s([40, 65], [2, 5], NO_EQ, [44, 70], { negotiation_leverage: "low", notes: "IAF Group Captain / Air Commodore." }),
+      lead: s([60, 90], [3, 7], NO_EQ, [65, 100], { notes: "Air Vice Marshal / Air Marshal." }),
+    },
+    "it-services": {
+      entry: s([8, 14], [0.5, 1.5], NO_EQ, [9, 16], { negotiation_leverage: "low", notes: "Charter/business-jet pilot, helicopter ops at private operators." }),
+      mid: s([18, 32], [1.5, 4], NO_EQ, [20, 38], { negotiation_leverage: "medium" }),
+      senior: s([35, 60], [3, 8], NO_EQ, [40, 70], { negotiation_leverage: "medium" }),
+    },
+    "startup-growth": {
+      entry: s([10, 16], [1, 2], ESOP(0.3, 1), [11, 18], { notes: "BluSmart / mobility-tech pilot training programs." }),
+      mid: s([20, 35], [1.5, 4], ESOP(0.5, 2), [22, 40], { negotiation_leverage: "medium" }),
+    },
+  },
+
+  // ─── INVESTMENT BANKER (Analyst → MD ladder; bulge bracket) ───
+  /* Distinct from generic 'finance' — IB has a unique progression
+     (Analyst → Associate → VP → Director → MD) with steep cash +
+     bonus curve. Bulge bracket at GS/MS/JPMC pays 1.5-2x boutique. */
+  "investment-banker": {
+    "bfsi-global": {
+      entry: s([18, 30], [12, 25], RSU(2, 6), [32, 60], { notice_period_days: 60, negotiation_leverage: "low", notes: "Analyst (0-2 yrs) at Goldman / MS / JPM India. Bonus 30-60% of base." }),
+      mid: s([40, 65], [25, 50], RSU(8, 18), [70, 130], { notice_period_days: 60, negotiation_leverage: "medium", notes: "Associate (3-5 yrs). Promoted from Analyst or post-MBA hire." }),
+      senior: s([75, 110], [50, 95], RSU(18, 42), [140, 240], { notice_period_days: 90, negotiation_leverage: "high", notes: "VP (6-9 yrs). Bonus often exceeds base." }),
+      lead: s([120, 180], [100, 200], RSU(40, 85), [260, 460], { notice_period_days: 90, negotiation_leverage: "high", notes: "Director (10-13 yrs)." }),
+      executive: s([180, 280], [200, 400], RSU(80, 180), [450, 850], { in_hand_ratio: 0.52, notes: "Managing Director (14+ yrs). Top-bracket MD ₹10-20Cr." }),
+    },
+    "indian-unicorn": {
+      entry: s([10, 18], [3, 8], ESOP(1, 3), [14, 28], { notes: "Boutique IB (Avendus / Centrum / JM Financial) analyst." }),
+      mid: s([22, 38], [8, 18], ESOP(3, 8), [32, 60], { negotiation_leverage: "medium" }),
+      senior: s([40, 70], [18, 38], ESOP(8, 18), [60, 120], { negotiation_leverage: "high" }),
+      lead: s([75, 120], [35, 70], ESOP(18, 40), [120, 220], { negotiation_leverage: "high" }),
+    },
+    "consulting-mbb": {
+      entry: s([18, 28], [4, 10], NO_EQ, [22, 38], { notes: "Pre-MBA M&A practice (McKinsey RTS / BCG TAS / Bain VPG)." }),
+      mid: s([35, 55], [10, 20], NO_EQ, [45, 75], { negotiation_leverage: "medium" }),
+      senior: s([65, 95], [20, 40], NO_EQ, [85, 135], { negotiation_leverage: "high" }),
+    },
+    "bfsi-domestic": {
+      entry: s([8, 14], [3, 7], NO_EQ, [11, 21], { notes: "ICICI Securities / HDFC Securities / Axis Capital IB." }),
+      mid: s([18, 32], [8, 16], NO_EQ, [26, 48], { negotiation_leverage: "medium" }),
+      senior: s([35, 60], [16, 32], NO_EQ, [50, 92], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([10, 16], [2, 5], NO_EQ, [12, 21], { notes: "Big-4 Deal Advisory / Transactions practice." }),
+      mid: s([20, 32], [5, 12], NO_EQ, [25, 44], { negotiation_leverage: "medium" }),
+      senior: s([38, 60], [12, 25], NO_EQ, [50, 85], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([15, 24], [4, 9], ESOP(2, 5), [19, 33], { notes: "VC/PE associate at SequoiaSurge / Accel / Lightspeed India." }),
+      mid: s([28, 45], [10, 20], ESOP(5, 12), [38, 65], { negotiation_leverage: "medium" }),
+      senior: s([55, 85], [20, 40], ESOP(12, 28), [75, 125], { negotiation_leverage: "high" }),
+    },
+  },
+
+  // ─── ARCHITECT (Building/urban architect, distinct from design-engineer) ─
+  /* Distinct from design-engineer (digital). Architects work at
+     studios (Hafeez Contractor / Studio Lotus) or in-house at
+     real-estate cos. Pay ladder: junior → architect → project
+     architect → principal architect → partner. */
+  "architect": {
+    "indian-unicorn": {
+      entry: s([4, 7], [0.3, 0.6], NO_EQ, [4, 8], { notes: "Junior architect at top studio (Hafeez Contractor / Studio Lotus / Morphogenesis)." }),
+      mid: s([8, 15], [0.5, 1.5], NO_EQ, [9, 17], { negotiation_leverage: "medium" }),
+      senior: s([16, 28], [1.5, 4], ESOP(2, 5), [18, 32], { negotiation_leverage: "high", notes: "Senior architect / project architect at marquee studio." }),
+      lead: s([28, 45], [3, 8], ESOP(4, 10), [32, 55], { negotiation_leverage: "high" }),
+      executive: s([50, 90], [8, 18], ESOP(10, 25), [60, 120], { in_hand_ratio: 0.55, notes: "Principal architect / studio partner." }),
+    },
+    "fmcg-mnc": {
+      entry: s([5, 9], [0.5, 1], NO_EQ, [6, 10], { notes: "DLF / Godrej / Lodha / Sobha in-house architect." }),
+      mid: s([10, 18], [1, 2.5], NO_EQ, [11, 21], { negotiation_leverage: "medium" }),
+      senior: s([18, 32], [2, 5], NO_EQ, [20, 36], { negotiation_leverage: "medium" }),
+      lead: s([32, 55], [4, 10], NO_EQ, [36, 65], { negotiation_leverage: "high" }),
+    },
+    "consulting-big4": {
+      entry: s([5, 9], [0.5, 1.2], NO_EQ, [6, 11], { notes: "Big-4 real-estate advisory architect." }),
+      mid: s([10, 17], [1, 2.5], NO_EQ, [11, 19], { negotiation_leverage: "medium" }),
+      senior: s([18, 28], [2, 5], NO_EQ, [20, 32], { negotiation_leverage: "medium" }),
+    },
+    "it-services": {
+      entry: s([3, 5], [0.2, 0.4], NO_EQ, [3.5, 6], { negotiation_leverage: "low", notes: "Tier-2 architectural firm / freelance contracted." }),
+      mid: s([5, 10], [0.4, 1], NO_EQ, [6, 11], { negotiation_leverage: "low" }),
+      senior: s([10, 18], [1, 2.5], NO_EQ, [11, 20], { negotiation_leverage: "medium" }),
+    },
+    "government-psu": {
+      entry: s([6, 10], [0, 0.5], NO_EQ, [6, 11], { in_hand_ratio: 0.78, notes: "CPWD / NHAI / CIDCO / DDA architect (Group A officer)." }),
+      mid: s([10, 16], [0.5, 1], NO_EQ, [11, 17], { negotiation_leverage: "low" }),
+      senior: s([16, 26], [1, 2], NO_EQ, [17, 28], { negotiation_leverage: "low" }),
+    },
+    "startup-growth": {
+      entry: s([4, 7], [0.3, 0.6], ESOP(0.3, 1), [4, 8], { notes: "Proptech architect (Stanza Living / WeWork India / NoBroker design)." }),
+      mid: s([7, 13], [0.5, 1.5], ESOP(0.5, 2), [8, 15], { negotiation_leverage: "medium" }),
+      senior: s([13, 22], [1, 2.5], ESOP(2, 5), [15, 25], { negotiation_leverage: "high" }),
+    },
+  },
+
+  // ─── CHEF (Executive chef → Corporate exec chef ladder) ───────
+  /* Star chefs at marquee hotels (Taj/ITC/Oberoi) earn ₹50L-2Cr at
+     senior level. Independent celebrity chefs earn via TV + brand
+     deals. Cloud-kitchen chains pay ₹30-50% less than legacy hotels. */
+  "chef": {
+    "fmcg-mnc": {
+      entry: s([3, 6], [0.2, 0.5], NO_EQ, [3.5, 7], { notes: "Commis chef / chef de partie at Taj / Oberoi / ITC." }),
+      mid: s([7, 14], [0.5, 1.5], NO_EQ, [8, 16], { negotiation_leverage: "medium", notes: "Sous chef at 5-star hotel." }),
+      senior: s([18, 35], [2, 5], NO_EQ, [22, 42], { negotiation_leverage: "high", notes: "Executive chef at Taj / Oberoi / ITC flagship." }),
+      lead: s([40, 75], [5, 15], NO_EQ, [48, 95], { negotiation_leverage: "high", notes: "Corporate exec chef across hotel chain." }),
+      executive: s([80, 150], [15, 35], NO_EQ, [100, 200], { in_hand_ratio: 0.55, notes: "Celebrity chef / restaurant brand owner. Top names cross ₹3-5Cr via TV + brand deals." }),
+    },
+    "indian-unicorn": {
+      entry: s([3, 5], [0.3, 0.6], ESOP(0.3, 1), [3.5, 6], { notes: "Cloud-kitchen chain (Rebel Foods / Curefit) chef." }),
+      mid: s([6, 11], [0.5, 1.2], ESOP(1, 3), [7, 13], { negotiation_leverage: "medium" }),
+      senior: s([12, 22], [1.5, 3.5], ESOP(2, 5), [14, 26], { negotiation_leverage: "high" }),
+    },
+    "saas-product": {
+      entry: s([4, 7], [0.3, 0.7], ESOP(0.3, 1.5), [4.5, 8], { notes: "Independent restaurant / fine-dining chef. Mumbai/Delhi/Bangalore market." }),
+      mid: s([8, 15], [0.8, 2], ESOP(1, 3), [9, 17], { negotiation_leverage: "medium" }),
+      senior: s([16, 30], [2, 5], ESOP(3, 8), [19, 35], { negotiation_leverage: "high" }),
+    },
+    "it-services": {
+      entry: s([2, 4], [0.1, 0.3], NO_EQ, [2, 4.5], { negotiation_leverage: "low", notes: "Tier-2/3 city restaurant kitchen / corporate cafeteria." }),
+      mid: s([4, 7], [0.2, 0.5], NO_EQ, [4.5, 8], { negotiation_leverage: "low" }),
+      senior: s([7, 13], [0.5, 1.2], NO_EQ, [8, 14], { negotiation_leverage: "medium" }),
+    },
+    "startup-early": {
+      entry: s([3, 5], [0.2, 0.5], ESOP(0.3, 1), [3.5, 6], { notes: "Early-stage food-tech / cloud-kitchen founding chef." }),
+      mid: s([5, 9], [0.4, 1], ESOP(1, 3), [6, 11], { negotiation_leverage: "medium" }),
+      senior: s([10, 18], [1, 2.5], ESOP(2, 6), [12, 22], { negotiation_leverage: "high" }),
+    },
+  },
 };
 
 /** Role key aliases — when a role key has no data, fall back to this key */
@@ -3399,17 +3621,41 @@ export function matchRoleKey(role: string): RoleKey {
     [["robotics software engineer", "robotics hardware engineer", "robot perception engineer",
       "robot motion planning engineer", "cobot engineer", "robotic process automation developer",
       "robotics researcher"], "embedded-engineer"],
-    /* Aviation pilots / cabin crew / ATC — route to operations
-       (closest comp-curve match). */
-    [["trainee pilot", "cadet pilot", "co-pilot", "first officer", "type-rated first officer",
+    /* Pilots — dedicated RoleKey (distinct comp curve from operations). */
+    [["pilot", "trainee pilot", "cadet pilot", "co-pilot", "first officer", "type-rated first officer",
       "type-rated captain", "line check captain", "designated examiner", "chief pilot",
-      "director of flight operations", "vp flight operations", "cabin crew", "lead cabin crew",
-      "cabin manager", "inflight service manager", "purser", "aircraft mechanic", "avionics mechanic",
-      "engine mechanic", "ame (airframe)", "ame (engine)", "ame (avionics)", "ame (electrical)",
+      "director of flight operations", "vp flight operations", "captain (pilot)", "second officer",
+      "commercial pilot", "airline pilot", "helicopter pilot", "private pilot", "charter pilot",
+      "business jet pilot"], "pilot"],
+    /* Aviation cabin crew / ATC / AME — route to operations. */
+    [["cabin crew", "lead cabin crew", "cabin manager", "inflight service manager", "purser",
+      "aircraft mechanic", "avionics mechanic", "engine mechanic",
+      "ame (airframe)", "ame (engine)", "ame (avionics)", "ame (electrical)",
       "ame (instrumentation)", "quality inspector (aviation)", "dgca inspector",
       "air traffic controller", "atco", "watch supervisor (atc)", "atc manager",
       "ground staff", "ground operations manager", "airport operations manager", "airport manager",
       "station manager", "ramp agent", "airline customer service agent", "airline reservations agent"], "operations"],
+    /* Investment Banker — dedicated RoleKey (distinct from finance). */
+    [["investment banking analyst", "ib analyst", "investment banking associate", "ib associate",
+      "ib vp", "ib director", "ib managing director", "ib senior managing director",
+      "m&a analyst", "m&a associate", "m&a vp", "ecm analyst", "dcm analyst",
+      "leveraged finance analyst", "structured finance analyst", "project finance analyst",
+      "real estate finance analyst", "investment banker", "private equity analyst", "pe associate",
+      "pe senior associate", "pe vice president", "pe director", "pe managing director",
+      "venture partner", "investment partner", "principal (vc)", "senior associate (vc)",
+      "associate (vc)", "analyst (vc)", "investment director", "managing director (vc)",
+      "investment manager", "portfolio manager (vc)"], "investment-banker"],
+    /* Architect (building / urban / interior — distinct from design-engineer). */
+    [["architect", "junior architect", "design architect", "senior design architect",
+      "lead architect", "project architect", "principal architect", "architectural designer",
+      "architect trainee", "interior architect", "landscape architect", "urban architect",
+      "architectural visualizer", "studio principal architect"], "architect"],
+    /* Chef / F&B kitchen ladder — dedicated RoleKey. */
+    [["chef", "executive chef", "senior sous chef", "sous chef", "chef de partie",
+      "demi chef de partie", "commis chef", "pastry chef", "senior pastry chef", "bakery chef",
+      "banquet chef", "continental chef", "indian chef", "tandoor chef", "chinese chef",
+      "asian chef", "celebrity chef", "consultant chef", "corporate chef",
+      "head chef", "saucier", "garde manger", "patissier"], "chef"],
     /* Hospitality F&B / kitchen ladder — route to operations. */
     [["hotel general manager", "hotel manager", "resident manager", "front office manager",
       "reception manager", "reservations manager", "concierge", "f&b manager", "f and b manager",
