@@ -67,8 +67,8 @@ Order = (estimated session volume) × (current coverage gap). Companies already 
 | \# | Company | Status | Key roles to cover | Primary source |
 | --- | --- | --- | --- | --- |
 | 1 | Razorpay | ✅ SE/PM/UX/Data/Sales/ML/DevOps | Refreshed 2026-05-08 (curated research) | AmbitionBox + Glassdoor + DRHP |
-| 2 | CRED | ✅ SE/UX | Add: PM, ML, devops | Glassdoor + Levels.fyi |
-| 3 | PhonePe | ✅ SE/PM | Add: ux-designer, ML | AmbitionBox |
+| 2 | CRED | ✅ SE/PM/UX/Data/Marketing/ML/DevOps | Refreshed 2026-05-08 (curated research) | Glassdoor + Levels.fyi |
+| 3 | PhonePe | ✅ SE/PM/UX/Data/Risk/KAM/ML | Refreshed 2026-05-08 (curated research, +Risk Analyst +KAM) | AmbitionBox + DRHP |
 | 4 | Zerodha | ✅ SE | Add: PM, designer | Glassdoor |
 | 5 | Groww | ❌ | All roles | AmbitionBox |
 | 6 | Flipkart | ✅ SE | Add: PM, UX, ML, devops | Levels.fyi + Glassdoor |

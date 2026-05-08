@@ -171,10 +171,26 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
     recentBuybackNote: "Razorpay has done multiple ESOP buybacks since 2018, BUT candidate should ASK HR explicitly: 'When was the last buyback round, what was the strike-vs-FMV ratio, and is another planned in the next 12 months?' Do NOT assume liquidity from past behavior — each round is board-discretion.",
     metaSource: "Razorpay HR policy + curated research 2026-05-08",
   },
-  cred: { noticePeriodDays: 30, hasDeputation: false, metaSource: "CRED HR policy" },
+  cred: {
+    noticePeriodDays: 60, // Level-dependent: 30-60 junior/mid, 60-90 senior+; 60 = company-wide compromise
+    hasDeputation: false,
+    // CRED has run buybacks but liquidity less predictable than Razorpay's.
+    // Curator note (2026-05-08): "Likely, but liquidity uncertain" —
+    // candidate must ask explicitly about last buyback round + FMV.
+    recentBuybackNote: "CRED has done multiple ESOP buybacks historically, BUT liquidity is uncertain — less predictable cadence than Razorpay/PhonePe. Candidate should ask HR: 'What is the last fair market valuation used for ESOP pricing? Has there been any buyback or secondary sale window in the last 12 months?'",
+    metaSource: "CRED HR policy + curated research 2026-05-08",
+  },
   zerodha: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zerodha HR policy" },
   groww: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Groww HR policy" },
-  phonepe: { noticePeriodDays: 60, hasDeputation: false, metaSource: "PhonePe HR policy" },
+  phonepe: {
+    noticePeriodDays: 60, // Level-dependent: 30-60 junior/mid, 60-90 senior+
+    hasDeputation: false,
+    // PhonePe ran a ₹1,150 Cr ESOP buyback in 2022 (one of India's largest)
+    // and another in 2024 around its India domicile shift. Confirmed
+    // pattern. Candidate should still verify next-window timing.
+    recentBuybackNote: "PhonePe ran a ₹1,150 Cr ESOP buyback in 2022 (one of India's largest) and another buyback in 2024 around its India domicile shift. Strong historical liquidity. Candidate should ask HR: 'When is the next planned buyback window? What FMV is used for ESOP pricing post the India domicile shift?'",
+    metaSource: "PhonePe HR policy + curated research 2026-05-08 (₹1,150 Cr buyback 2022, India domicile shift 2024)",
+  },
   paytm: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Paytm HR policy" },
   flipkart: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Flipkart HR policy — large unicorn longer notice" },
   swiggy: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Swiggy HR policy" },
@@ -261,40 +277,48 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
+  /* PhonePe — refreshed 2026-05-08 from human-curated research worksheet.
+   * PhonePe added Risk Analyst and KAM (Key Account Manager) coverage —
+   * fintech-specific roles peer companies typically don't hire for. */
   phonepe: {
     "software-engineer": {
-      entry: { totalMin: 18, totalMax: 26, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor", lastVerified: "2026-05-07" },
-      mid: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07", notes: "PhonePe SE-2 / SE-3; reverse-flipped to India 2022, DRHP filed via SEBI confidential route." },
-      senior: { totalMin: 45, totalMax: 70, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
+      entry: { totalMin: 11.0, totalMax: 30.8, baseMin: 8.1, baseMax: 22.8, equityMin: 1.5, equityMax: 4.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — AmbitionBox + Glassdoor aggregated", lastVerified: "2026-05-08", notes: "PhonePe Junior SE. Negotiation focus: fixed + joining bonus." },
+      mid: { totalMin: 19.8, totalMax: 55.0, baseMin: 14.7, baseMax: 40.7, equityMin: 2.8, equityMax: 7.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "PhonePe Mid SE-2/SE-3. Negotiation focus: fixed + ESOP clarity. Reverse-flipped to India 2022; DRHP filed via SEBI confidential route." },
+      senior: { totalMin: 38.5, totalMax: 104.5, baseMin: 28.5, baseMax: 77.3, equityMin: 5.4, equityMax: 14.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior SE. Negotiation focus: fixed + equity. Top of range = staff-tier hires." },
     },
     "product-manager": {
-      mid: { totalMin: 30, totalMax: 48, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
-      senior: { totalMin: 48, totalMax: 80, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
+      entry: { totalMin: 15.4, totalMax: 35.2, baseMin: 10.8, baseMax: 24.6, equityMin: 2.2, equityMax: 4.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Junior PM / APM. Negotiation focus: scope + fixed." },
+      mid: { totalMin: 27.5, totalMax: 77.0, baseMin: 19.2, baseMax: 53.9, equityMin: 3.9, equityMax: 10.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Mid PM. Negotiation focus: fixed + role scope clarity." },
+      senior: { totalMin: 49.5, totalMax: 143.0, baseMin: 34.6, baseMax: 100.1, equityMin: 6.9, equityMax: 20.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior PM. Negotiation focus: scope + ESOP. Top of range = group-PM tier." },
     },
     "ux-designer": {
-      entry: { totalMin: 13, totalMax: 19, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (PhonePe UX Designer total pay ₹13.5L-19L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      mid: { totalMin: 22, totalMax: 35, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi (PhonePe UX median ₹26.6L; range ₹618K-₹5.15M)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08", levelsFyi: "2026-05-08" } },
-      senior: { totalMin: 35, totalMax: 55, equityMin: 4, equityMax: 11, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (PhonePe UX top ₹5.15M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      entry: { totalMin: 8.8, totalMax: 26.4, baseMin: 6.9, baseMax: 20.6, equityMin: 1.1, equityMax: 3.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Junior Designer. Negotiation focus: fixed salary." },
+      mid: { totalMin: 17.6, totalMax: 49.5, baseMin: 13.7, baseMax: 38.6, equityMin: 2.1, equityMax: 5.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Mid Designer. Negotiation focus: level mapping + fixed." },
+      senior: { totalMin: 30.8, totalMax: 88.0, baseMin: 24.0, baseMax: 68.6, equityMin: 3.7, equityMax: 10.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior Designer. Negotiation focus: scope + fixed." },
+    },
+    "data-analyst": {
+      entry: { totalMin: 6.6, totalMax: 17.6, baseMin: 5.5, baseMax: 14.8, equityMin: 0.4, equityMax: 1.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Junior Data Analyst. Negotiation focus: fixed." },
+      mid: { totalMin: 11.0, totalMax: 30.8, baseMin: 9.2, baseMax: 25.9, equityMin: 0.7, equityMax: 1.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Mid Data Analyst. Negotiation focus: fixed + growth path (DS conversion)." },
+      senior: { totalMin: 19.8, totalMax: 55.0, baseMin: 16.6, baseMax: 46.2, equityMin: 1.2, equityMax: 3.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "PhonePe Senior Data Analyst. Negotiation focus: fixed + title." },
+    },
+    /* Risk Analyst — fintech-specific role unique to PhonePe coverage.
+     * Maps to data-scientist role-key (closest existing). Use sparingly. */
+    "data-scientist": {
+      entry: { totalMin: 6.6, totalMax: 19.8, baseMin: 5.3, baseMax: 15.8, equityMin: 0.1, equityMax: 0.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Junior Risk Analyst. Negotiation focus: fixed + bonus. Low equity reflects ops-track positioning." },
+      mid: { totalMin: 13.2, totalMax: 39.6, baseMin: 10.6, baseMax: 31.7, equityMin: 0.3, equityMax: 0.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Mid Risk Analyst. Negotiation focus: risk scope (fraud / credit / merchant)." },
+      senior: { totalMin: 24.2, totalMax: 71.5, baseMin: 19.4, baseMax: 57.2, equityMin: 0.5, equityMax: 1.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe Risk Analyst track", lastVerified: "2026-05-08", notes: "PhonePe Senior Risk Analyst. Negotiation focus: fixed + role criticality." },
+    },
+    /* KAM (Key Account Manager) — variable-heavy fintech sales role.
+     * Maps to sales role-key. */
+    "sales": {
+      entry: { totalMin: 6.6, totalMax: 19.8, baseMin: 4.0, baseMax: 11.9, equityMin: 0.3, equityMax: 0.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Junior KAM. Variable up to ₹7L. Negotiation focus: fixed vs incentive split." },
+      mid: { totalMin: 13.2, totalMax: 39.6, baseMin: 7.9, baseMax: 23.8, equityMin: 0.5, equityMax: 1.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Mid KAM. Negotiation focus: OTE structure (variable can be 35%+ of CTC)." },
+      senior: { totalMin: 24.2, totalMax: 77.0, baseMin: 14.5, baseMax: 46.2, equityMin: 1.0, equityMax: 3.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — PhonePe KAM track", lastVerified: "2026-05-08", notes: "PhonePe Senior KAM. Negotiation focus: variable payout terms (cap, claw-back, cadence)." },
     },
     "ml-engineer": {
       mid: { totalMin: 30, totalMax: 50, equityMin: 4, equityMax: 11, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (PhonePe avg ₹31.1L) + GenAI 1.2-1.4x SE premium", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       senior: { totalMin: 50, totalMax: 80, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (PhonePe Sr ML / Eng Manager ceiling ₹75L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       lead: { totalMin: 75, totalMax: 130, equityMin: 12, equityMax: 28, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (PhonePe Lead ML / Principal; range top ₹176L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-    },
-  
-    "data-analyst": {
-      entry: { totalMin: 4, totalMax: 18, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x data-analyst)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 11, totalMax: 31, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x data-analyst)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 20, totalMax: 55, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x data-analyst)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 31, totalMax: 83, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x data-analyst)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 44, totalMax: 110, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x data-analyst)", lastVerified: "2026-05-08" },
-    },
-    "business-analyst": {
-      entry: { totalMin: 4, totalMax: 20, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x business-analyst)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 13, totalMax: 35, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x business-analyst)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 22, totalMax: 61, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x business-analyst)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 35, totalMax: 94, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x business-analyst)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 50, totalMax: 132, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (phonepe 1.1x business-analyst)", lastVerified: "2026-05-08" },
     },
   },
 
@@ -454,44 +478,45 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     },
   },
 
+  /* CRED — refreshed 2026-05-08 from human-curated research worksheet.
+   * CRED is a premium Indian unicorn with notably higher bands than
+   * peer unicorns (esp. Designer + ML where the design/eng bar is
+   * unusually high). Liquidity is uncertain — buyback pattern less
+   * predictable than Razorpay's. */
   cred: {
     "software-engineer": {
-      entry: { totalMin: 22, totalMax: 32, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CRED SDE-1 campus / fresher)", lastVerified: "2026-05-07", notes: "CRED hires extremely selectively at campus level; bar is high." },
-      mid: { totalMin: 30, totalMax: 50, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor", lastVerified: "2026-05-07", notes: "CRED engineering bar high; mid-bar but design bar stricter." },
-      senior: { totalMin: 50, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
-    },
-    "ux-designer": {
-      mid: { totalMin: 32, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi", lastVerified: "2026-05-07", notes: "CRED design bar exceptionally high — premium over peer unicorns." },
-      senior: { totalMin: 55, totalMax: 90, equityMin: 14, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
+      entry: { totalMin: 12.0, totalMax: 33.6, baseMin: 8.9, baseMax: 24.9, equityMin: 1.7, equityMax: 4.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "CRED Junior SE. Negotiation focus: fixed + joining bonus. Bar exceptionally high at hiring." },
+      mid: { totalMin: 21.6, totalMax: 60.0, baseMin: 16.0, baseMax: 44.4, equityMin: 3.0, equityMax: 8.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "CRED Mid SE. Negotiation focus: fixed + ESOP clarity (FMV + last buyback)." },
+      senior: { totalMin: 42.0, totalMax: 114.0, baseMin: 31.1, baseMax: 84.4, equityMin: 5.9, equityMax: 16.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + Levels.fyi aggregated", lastVerified: "2026-05-08", notes: "CRED Senior SE. Negotiation focus: fixed + equity. Top of range = staff/principal-tier hires." },
+      lead: { totalMin: 95, totalMax: 145, equityMin: 18, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (CRED L6 SE top ₹11.73M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "product-manager": {
-      mid: { totalMin: 25, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CRED PM India) + ProductLeadership 2026 (₹20-35L PM Indian product cos)", lastVerified: "2026-05-08", notes: "CRED PM bar high — selective hires; mid (3-6yr) sits at top of India product PM band.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      senior: { totalMin: 45, totalMax: 75, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + ProductLeadership 2026 (₹40-70L Sr PM Indian product cos)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      lead: { totalMin: 75, totalMax: 130, equityMin: 14, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CRED Group PM / Director)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      entry: { totalMin: 16.8, totalMax: 38.4, baseMin: 11.8, baseMax: 26.9, equityMin: 2.4, equityMax: 5.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Junior PM / APM. Negotiation focus: scope + fixed (CRED hires very selective at this level)." },
+      mid: { totalMin: 30.0, totalMax: 84.0, baseMin: 21.0, baseMax: 58.8, equityMin: 4.2, equityMax: 11.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Mid PM. Negotiation focus: fixed + ESOP. Sits at top of India PM band." },
+      senior: { totalMin: 54.0, totalMax: 156.0, baseMin: 37.8, baseMax: 109.2, equityMin: 7.6, equityMax: 21.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Senior PM / Group PM. Negotiation focus: scope + equity. Top of range = director-tier." },
+    },
+    "ux-designer": {
+      entry: { totalMin: 9.6, totalMax: 28.8, baseMin: 7.5, baseMax: 22.5, equityMin: 1.2, equityMax: 3.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Junior Designer. Negotiation focus: fixed + portfolio impact (CRED design bar uniquely high)." },
+      mid: { totalMin: 19.2, totalMax: 54.0, baseMin: 15.0, baseMax: 42.1, equityMin: 2.3, equityMax: 6.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Mid Designer. Negotiation focus: fixed + level (Designer-2 vs Senior Designer mapping matters)." },
+      senior: { totalMin: 33.6, totalMax: 96.0, baseMin: 26.2, baseMax: 74.9, equityMin: 4.0, equityMax: 11.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Senior Designer. Negotiation focus: fixed + ownership scope. Premium over peer unicorns." },
+    },
+    "data-analyst": {
+      entry: { totalMin: 7.2, totalMax: 19.2, baseMin: 6.0, baseMax: 16.1, equityMin: 0.4, equityMax: 1.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Junior Data Analyst. Negotiation focus: fixed (variable small at this level)." },
+      mid: { totalMin: 12.0, totalMax: 33.6, baseMin: 10.1, baseMax: 28.2, equityMin: 0.7, equityMax: 2.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Mid Data Analyst. Negotiation focus: fixed + scope (Analyst-2 vs DS conversion)." },
+      senior: { totalMin: 21.6, totalMax: 60.0, baseMin: 18.1, baseMax: 50.4, equityMin: 1.3, equityMax: 3.6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Senior Data Analyst. Negotiation focus: fixed + title." },
+    },
+    "marketing": {
+      entry: { totalMin: 8.4, totalMax: 21.6, baseMin: 5.9, baseMax: 15.1, equityMin: 0.5, equityMax: 1.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Junior Growth Marketer. Variable cap matters — pin down realistic OTE." },
+      mid: { totalMin: 16.8, totalMax: 48.0, baseMin: 11.8, baseMax: 33.6, equityMin: 1.0, equityMax: 2.9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Mid Growth Marketer. Negotiation focus: CAC/ROI impact attribution." },
+      senior: { totalMin: 30.0, totalMax: 96.0, baseMin: 21.0, baseMax: 67.2, equityMin: 1.8, equityMax: 5.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08", lastVerified: "2026-05-08", notes: "CRED Senior Growth Marketer. Negotiation focus: growth impact attribution + fixed (variable can be 30%+)." },
     },
     "ml-engineer": {
       mid: { totalMin: 35, totalMax: 60, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi (CRED L4 SE ₹6.25M median × ML 1.15-1.4x premium)", lastVerified: "2026-05-08", notes: "CRED ML mid; tracks SE band with GenAI premium.", sourceVerifiedAt: { glassdoor: "2026-05-08", levelsFyi: "2026-05-08" } },
       senior: { totalMin: 60, totalMax: 100, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CRED Sr ML / L5)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      lead: { totalMin: 95, totalMax: 145, equityMin: 18, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (CRED L6 SE top ₹11.73M + ML premium)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "devops-sre": {
       mid: { totalMin: 28, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (CRED SRE/Infra mid)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
       senior: { totalMin: 50, totalMax: 90, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-    },
-  
-    "data-analyst": {
-      entry: { totalMin: 5, totalMax: 19, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x data-analyst)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 12, totalMax: 34, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x data-analyst)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 22, totalMax: 60, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x data-analyst)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 34, totalMax: 90, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x data-analyst)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 48, totalMax: 120, equityMin: 3, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x data-analyst)", lastVerified: "2026-05-08" },
-    },
-    "sales": {
-      entry: { totalMin: 5, totalMax: 22, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x sales)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 17, totalMax: 48, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x sales)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 30, totalMax: 96, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x sales)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 54, totalMax: 168, equityMin: 3, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x sales)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 84, totalMax: 264, equityMin: 5, equityMax: 16, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (cred 1.2x sales)", lastVerified: "2026-05-08" },
     },
   },
 

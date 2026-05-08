@@ -417,8 +417,10 @@ describe("override map data integrity", () => {
       company: "CRED",
       experienceLevel: "fresher",
     });
-    /* CRED entry: ₹22-32L (selective campus). NOT generic unicorn ₹15L. */
-    expect(credEntry.initialOffer).toBeGreaterThan(22);
+    /* CRED entry (curated 2026-05-08): ₹12-33.6L (wider than initial
+     * narrow seed ₹22-32L; reflects actual fresher-offer distribution
+     * including non-top-tier hires). 35th-pctile initial = ~₹19.6L. */
+    expect(credEntry.initialOffer).toBeGreaterThan(15);
     expect(credEntry.initialOffer).toBeLessThan(30);
   });
 
