@@ -633,23 +633,26 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── FAANG India ─────────────────────────────────────────────── */
   google: {
     "software-engineer": {
-      entry: { totalMin: 30, totalMax: 45, equityMin: 8, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India L3 / new-grad campus)", lastVerified: "2026-05-07", notes: "Google L3 India campus offer; sign-on ₹3-8L common." },
-      mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India SWE)", lastVerified: "2026-05-07", notes: "Google L4 India median ₹62L total comp; high performers cross ₹78L." },
-      senior: { totalMin: 80, totalMax: 130, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (L5)", lastVerified: "2026-05-07" },
-      lead: { totalMin: 120, totalMax: 200, equityMin: 50, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (L6+)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 30, totalMax: 49, equityMin: 8, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 8], source: "Levels.fyi (Google India L3 / new-grad campus)", lastVerified: "2026-05-08", notes: "Google L3 India campus offer; sign-on ₹3-8L common. Negotiation focus: Level + RSU (push for L4 if YOE supports)." },
+      mid: { totalMin: 50, totalMax: 87.5, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 15], source: "Levels.fyi (Google India L4 SWE)", lastVerified: "2026-05-08", notes: "Google L4 India median ₹62L total comp; high performers cross ₹78L. Negotiation focus: Level calibration (L4 vs L5 is the lever, not base %)." },
+      senior: { totalMin: 80, totalMax: 130, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (L5; band capped at 130L for trajectory math — top-end ₹166L observed at L5+ promo edge)", lastVerified: "2026-05-08", notes: "Google L5 senior. Negotiation focus: RSU + level (RSU refresher cycle is the load-bearing question)." },
+      lead: { totalMin: 122, totalMax: 220, equityMin: 50, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [15, 50], source: "Levels.fyi (L6+ Staff; top-end ₹306L observed at L7)", lastVerified: "2026-05-08", notes: "Google L6 staff. Negotiation focus: Scope + RSU (manager-track L7 vs IC L7 is the second cut)." },
     },
     "ux-designer": {
-      mid: { totalMin: 41, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India UX)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 70, totalMax: 101, equityMin: 25, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (L5 Designer)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 14, totalMax: 42, equityMin: 1.7, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 7], source: "Levels.fyi 2026-05-08 (Google India UX Junior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Portfolio + level." },
+      mid: { totalMin: 41, totalMax: 78.8, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 15], source: "Levels.fyi (Google India UX)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product impact (specific surface owned)." },
+      senior: { totalMin: 49, totalMax: 140, equityMin: 25, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 25], source: "Levels.fyi (L5 Designer)", lastVerified: "2026-05-08", notes: "Negotiation focus: Design leadership + RSU grant." },
     },
     "product-manager": {
-      mid: { totalMin: 55, totalMax: 95, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India PM range ₹3.03M-₹31.02M, median ₹11.75M)", lastVerified: "2026-05-08", notes: "Google L4 PM India; range reflects spread between APM1 and L7. Mid covers L4.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      senior: { totalMin: 95, totalMax: 175, equityMin: 32, equityMax: 70, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google L5 PM India)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      entry: { totalMin: 24.5, totalMax: 56, equityMin: 3.4, equityMax: 7.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi 2026-05-08 (Google APM India)", lastVerified: "2026-05-08", notes: "APM / L3 PM. Negotiation focus: Product scope." },
+      mid: { totalMin: 43.8, totalMax: 122.5, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [6, 20], source: "Levels.fyi (Google India PM range ₹3.03M-₹31.02M, median ₹11.75M)", lastVerified: "2026-05-08", notes: "Google L4 PM India; range reflects spread between APM1 and L7. Negotiation focus: Level + scope.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 78.8, totalMax: 227.5, equityMin: 32, equityMax: 70, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [10, 35], source: "Levels.fyi (Google L5 PM India)", lastVerified: "2026-05-08", notes: "Negotiation focus: Org impact (cross-team scope drives premium).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       lead: { totalMin: 150, totalMax: 280, equityMin: 55, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google L6 PM India, top ₹31.02M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
     "ml-engineer": {
-      mid: { totalMin: 60, totalMax: 105, equityMin: 20, equityMax: 42, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India L4 SE base ₹5.82M-₹8.5M + ML 1.1-1.2x premium)", lastVerified: "2026-05-08", notes: "Google L4 ML/Research India; GenAI/DeepMind roles edge higher.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-      senior: { totalMin: 105, totalMax: 175, equityMin: 35, equityMax: 75, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India L5 SE ₹9.84M-₹15.16M + ML premium)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      entry: { totalMin: 24.5, totalMax: 61.2, equityMin: 4.4, equityMax: 11, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 12], source: "Levels.fyi 2026-05-08 (Google India L3 ML)", lastVerified: "2026-05-08", notes: "Google L3 ML. Negotiation focus: AI scope (which area: search ranking / DeepMind / GenAI)." },
+      mid: { totalMin: 49, totalMax: 140, equityMin: 20, equityMax: 42, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (Google India L4 SE base ₹5.82M-₹8.5M + ML 1.1-1.2x premium)", lastVerified: "2026-05-08", notes: "Google L4 ML/Research India; GenAI/DeepMind roles edge higher. Negotiation focus: Model impact (specific model/team).", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 87.5, totalMax: 262.5, equityMin: 35, equityMax: 75, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [12, 45], source: "Levels.fyi (Google India L5 SE ₹9.84M-₹15.16M + ML premium)", lastVerified: "2026-05-08", notes: "Negotiation focus: Research/product impact + RSU grant.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       lead: { totalMin: 160, totalMax: 280, equityMin: 60, equityMax: 115, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google L6 ML India + Eng Manager L5 ₹10.31M-₹32.75M reference)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
   
@@ -963,14 +966,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   atlassian: {
     "software-engineer": {
-      entry: { totalMin: 36, totalMax: 48, equityMin: 6, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Atlassian India P30 ₹4.01M)", lastVerified: "2026-05-07", notes: "Atlassian P30 entry. Generous equity refreshers." },
-      mid: { totalMin: 55, totalMax: 95, equityMin: 15, equityMax: 32, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P40-P50, median ₹8.28M)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 90, totalMax: 150, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P50-P60)", lastVerified: "2026-05-07" },
-      lead: { totalMin: 140, totalMax: 180, equityMin: 55, equityMax: 90, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P60 ₹17.56M+)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 36, totalMax: 48, equityMin: 6, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 5], source: "Levels.fyi (Atlassian India P30 ₹4.01M)", lastVerified: "2026-05-07", notes: "Atlassian P30 entry. Generous RSU refreshers — RSU is public-market linked (lower liquidity risk than ESOP). Negotiation focus: Fixed + RSU." },
+      mid: { totalMin: 55, totalMax: 95, equityMin: 15, equityMax: 32, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 9], source: "Levels.fyi (P40-P50, median ₹8.28M)", lastVerified: "2026-05-07", notes: "P40-P50 mid IC. Negotiation focus: RSU + level (P40 vs P50 calibration is the lever)." },
+      senior: { totalMin: 90, totalMax: 150, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 18], source: "Levels.fyi (P50-P60)", lastVerified: "2026-05-07", notes: "P50-P60 senior. Negotiation focus: Level calibration (P50 vs P60 = ~30-40% comp gap)." },
+      lead: { totalMin: 140, totalMax: 180, equityMin: 55, equityMax: 90, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [10, 35], source: "Levels.fyi (P60 ₹17.56M+)", lastVerified: "2026-05-07", notes: "P60 staff/principal. Negotiation focus: Staff/lead calibration + RSU grant size." },
     },
     "product-manager": {
-      mid: { totalMin: 50, totalMax: 85, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi", lastVerified: "2026-05-07" },
-      senior: { totalMin: 85, totalMax: 140, equityMin: 28, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      entry: { totalMin: 21.7, totalMax: 49.6, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 6], source: "Levels.fyi 2026-05-08 (Atlassian PM Junior India)", lastVerified: "2026-05-08", notes: "Negotiation focus: Scope + RSU." },
+      mid: { totalMin: 50, totalMax: 108, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 15], source: "Levels.fyi (P40-P50 PM)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product scope (cloud product / DC product is the cut)." },
+      senior: { totalMin: 70, totalMax: 200, equityMin: 28, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 28], source: "Levels.fyi (P50-P60 PM)", lastVerified: "2026-05-08", notes: "Negotiation focus: Org impact + RSU grant size." },
     },
   
     "ux-designer": {
@@ -1449,22 +1453,22 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   zoho: {
     "software-engineer": {
-      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Zoho hiring disclosures + AmbitionBox", lastVerified: "2026-05-07", notes: "Zoho is bootstrapped, anti-VC, profitable. No equity. Comp slow-but-steady." },
-      mid: { totalMin: 8, totalMax: 16, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
-      senior: { totalMin: 16, totalMax: 32, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
+      entry: { totalMin: 7.5, totalMax: 21, equityType: "none", joiningBonusOverride: [0, 1], source: "AmbitionBox + Glassdoor 2026-05-08 (Zoho SE Junior India)", lastVerified: "2026-05-08", notes: "Zoho is bootstrapped, anti-VC, profitable. No equity. Negotiation focus: Fixed salary (cash is the only lever)." },
+      mid: { totalMin: 13.5, totalMax: 37.5, equityType: "none", joiningBonusOverride: [0, 3], source: "AmbitionBox 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + role scope (clarify product/team ownership)." },
+      senior: { totalMin: 26.2, totalMax: 71.2, equityType: "none", joiningBonusOverride: [1, 6], source: "AmbitionBox 2026-05-08", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + ownership (Zoho favours long-tenure ICs; senior comp is 60-90 day notice and pure cash)." },
     },
-  
+
     "product-manager": {
-      entry: { totalMin: 11, totalMax: 24, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x product-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 19, totalMax: 53, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x product-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 34, totalMax: 98, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x product-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 10.5, totalMax: 24, equityType: "none", joiningBonusOverride: [0, 2], source: "AmbitionBox 2026-05-08 (Zoho PM Junior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Scope + fixed (no equity)." },
+      mid: { totalMin: 18.8, totalMax: 52.5, equityType: "none", joiningBonusOverride: [1, 4], source: "AmbitionBox 2026-05-08 (Zoho PM Mid)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product ownership (own a Zoho One module)." },
+      senior: { totalMin: 33.8, totalMax: 97.5, equityType: "none", joiningBonusOverride: [2, 8], source: "AmbitionBox 2026-05-08 (Zoho PM Senior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Scope + level (internal grade calibration is the lever)." },
       lead: { totalMin: 53, totalMax: 135, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 71, totalMax: 188, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x product-manager)", lastVerified: "2026-05-08" },
     },
     "ux-designer": {
-      entry: { totalMin: 3, totalMax: 18, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x ux-designer)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 12, totalMax: 34, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x ux-designer)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 21, totalMax: 60, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x ux-designer)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 6, totalMax: 18, equityType: "none", joiningBonusOverride: [0, 1], source: "AmbitionBox 2026-05-08 (Zoho Product Designer Junior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed (no equity to trade)." },
+      mid: { totalMin: 12, totalMax: 33.8, equityType: "none", joiningBonusOverride: [0, 3], source: "AmbitionBox 2026-05-08 (Zoho Product Designer Mid)", lastVerified: "2026-05-08", notes: "Negotiation focus: Design ownership (module/product surface)." },
+      senior: { totalMin: 21, totalMax: 60, equityType: "none", joiningBonusOverride: [1, 5], source: "AmbitionBox 2026-05-08 (Zoho Product Designer Senior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Craft + product impact (Zoho One has 50+ apps; specify which)." },
       lead: { totalMin: 34, totalMax: 90, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x ux-designer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 45, totalMax: 113, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x ux-designer)", lastVerified: "2026-05-08" },
     },
@@ -1476,16 +1480,23 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 30, totalMax: 75, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x data-analyst)", lastVerified: "2026-05-08" },
     },
     "qa-engineer": {
-      entry: { totalMin: 3, totalMax: 11, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 7, totalMax: 20, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 12, totalMax: 34, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 3.8, totalMax: 10.5, equityType: "none", joiningBonusOverride: [0, 0.5], source: "AmbitionBox 2026-05-08 (Zoho QA Junior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + automation scope." },
+      mid: { totalMin: 6.8, totalMax: 19.5, equityType: "none", joiningBonusOverride: [0, 2], source: "AmbitionBox 2026-05-08 (Zoho QA Mid)", lastVerified: "2026-05-08", notes: "Negotiation focus: Automation depth (frameworks owned)." },
+      senior: { totalMin: 12, totalMax: 33.8, equityType: "none", joiningBonusOverride: [1, 3], source: "AmbitionBox 2026-05-08 (Zoho QA Senior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Framework ownership." },
       lead: { totalMin: 19, totalMax: 53, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
       executive: { totalMin: 26, totalMax: 71, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x qa-engineer)", lastVerified: "2026-05-08" },
     },
+    /* Technical Writer — Zoho ships extensive product docs; mapped to
+       marketing taxonomy (closest first-class role for content). */
+    "marketing": {
+      entry: { totalMin: 4.5, totalMax: 11.2, equityType: "none", joiningBonusOverride: [0, 0.5], source: "AmbitionBox 2026-05-08 (Zoho Tech Writer Junior)", lastVerified: "2026-05-08", notes: "Junior Tech Writer at Zoho. Negotiation focus: Fixed + writing portfolio." },
+      mid: { totalMin: 9, totalMax: 26.2, equityType: "none", joiningBonusOverride: [0, 2], source: "AmbitionBox 2026-05-08 (Zoho Tech Writer Mid)", lastVerified: "2026-05-08", notes: "Negotiation focus: Documentation ownership (specific Zoho product line)." },
+      senior: { totalMin: 16.5, totalMax: 48.8, equityType: "none", joiningBonusOverride: [1, 4], source: "AmbitionBox 2026-05-08 (Zoho Senior Tech Writer)", lastVerified: "2026-05-08", notes: "Negotiation focus: Product docs impact + level." },
+    },
     "customer-success": {
-      entry: { totalMin: 3, totalMax: 12, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x customer-success)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 9, totalMax: 24, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x customer-success)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 17, totalMax: 45, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x customer-success)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 3.4, totalMax: 9, equityType: "none", joiningBonusOverride: [0, 0.5], source: "AmbitionBox 2026-05-08 (Zoho Customer Support Junior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Fixed + shift terms." },
+      mid: { totalMin: 6, totalMax: 18, equityType: "none", joiningBonusOverride: [0, 1], source: "AmbitionBox 2026-05-08 (Zoho Customer Support Mid)", lastVerified: "2026-05-08", notes: "Negotiation focus: Support scope (product surface owned)." },
+      senior: { totalMin: 10.5, totalMax: 28.5, equityType: "none", joiningBonusOverride: [0, 2], source: "AmbitionBox 2026-05-08 (Zoho Customer Support Senior)", lastVerified: "2026-05-08", notes: "Negotiation focus: Team ownership." },
       lead: { totalMin: 26, totalMax: 68, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x customer-success)", lastVerified: "2026-05-08" },
       executive: { totalMin: 38, totalMax: 98, equityType: "none", source: "Seed dataset 2026-05-08 (zoho 0.75x customer-success)", lastVerified: "2026-05-08" },
     },
