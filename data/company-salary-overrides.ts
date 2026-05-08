@@ -873,16 +873,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── Big Tech (Levels.fyi-grounded) ───────────────────────── */
   adobe: {
     "software-engineer": {
-      entry: { totalMin: 24, totalMax: 35, equityMin: 4, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Adobe India ₹2.46M-₹23.81M, P10)", lastVerified: "2026-05-07" },
-      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Adobe India median ₹6.98M, P30-P40)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P50)", lastVerified: "2026-05-07" },
-      lead: { totalMin: 120, totalMax: 200, equityMin: 50, equityMax: 100, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P60 ₹23.81M+)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 24, totalMax: 37.8, equityMin: 4, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic)", joiningBonusOverride: [2, 6], source: "Levels.fyi (Adobe India ₹2.46M-₹23.81M, P10)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: Fixed + RSU lever — Adobe's RSU refreshers are generous (3-5% annual top-up). Push for written refresher floor." },
+      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 12], source: "Levels.fyi (Adobe India median ₹6.98M, P30-P40)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: level calibration — push for IC4 over IC3 if pre-existing GenAI/Firefly experience." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 25], source: "Levels.fyi (P50)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: Fixed + equity — Firefly/GenAI orgs pay top of band; ESPP (15% discount) is a real take-home boost." },
+      lead: { totalMin: 120, totalMax: 200, equityMin: 50, equityMax: 100, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (P60 ₹23.81M+)", lastVerified: "2026-05-08" },
     },
   
     "product-manager": {
-      entry: { totalMin: 19, totalMax: 43, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 34, totalMax: 95, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 61, totalMax: 176, equityMin: 9, equityMax: 25, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 18.9, totalMax: 43.2, equityMin: 2.6, equityMax: 6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Adobe India PM IC2)", lastVerified: "2026-05-08", notes: "Product Manager Junior: scope lever — DX (Experience Cloud) vs DMe (Creative Cloud) orgs differ in pay envelope." },
+      mid: { totalMin: 33.8, totalMax: 94.5, equityMin: 4.7, equityMax: 13.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 16], source: "Levels.fyi (Adobe India PM IC3-IC4)", lastVerified: "2026-05-08", notes: "Product Manager Mid: product impact — Firefly/GenAI PM is scarce-skill premium." },
+      senior: { totalMin: 60.8, totalMax: 175.5, equityMin: 8.5, equityMax: 24.6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 30], source: "Levels.fyi (Adobe India PM IC5)", lastVerified: "2026-05-08", notes: "Product Manager Senior: org scope — DX vs DMe org assignment is the lever; first-appraisal date in writing." },
       lead: { totalMin: 95, totalMax: 243, equityMin: 13, equityMax: 34, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 128, totalMax: 338, equityMin: 18, equityMax: 47, equityType: "rsu", equityVesting: "4yr / annual", source: "Seed dataset 2026-05-08 (adobe 1.35x product-manager)", lastVerified: "2026-05-08" },
     },
@@ -917,10 +917,10 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   salesforce: {
     "software-engineer": {
-      entry: { totalMin: 27, totalMax: 38, equityMin: 5, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Associate MTS ₹2.72M)", lastVerified: "2026-05-07" },
-      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (median ₹7.23M)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (LMTS / SMTS)", lastVerified: "2026-05-07" },
-      lead: { totalMin: 130, totalMax: 250, equityMin: 60, equityMax: 130, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Architect ₹25.8M+)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 27, totalMax: 38, equityMin: 5, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic)", joiningBonusOverride: [2, 7], source: "Levels.fyi (Associate MTS ₹2.72M)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: AMTS / MTS calibration — push for MTS over AMTS with intern-conversion signal; Fixed + RSU lever." },
+      mid: { totalMin: 45, totalMax: 80, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (median ₹7.23M)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: level calibration — SMTS vs MTS = ₹15-25L gap; product/cloud team (Sales Cloud vs Data Cloud vs MuleSoft) drives top-of-band." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 25, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (LMTS / SMTS)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: Fixed + RSU — LMTS / SMTS calibration. Salesforce RSU vest is annual cliff (uncommon vs quarterly peers); confirm vest schedule in offer." },
+      lead: { totalMin: 130, totalMax: 250, equityMin: 60, equityMax: 130, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Architect ₹25.8M+)", lastVerified: "2026-05-08" },
     },
   
     "product-manager": {
@@ -952,9 +952,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 101, totalMax: 243, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x program-manager)", lastVerified: "2026-05-08" },
     },
     "sales": {
-      entry: { totalMin: 5, totalMax: 24, equityMin: 1, equityMax: 1, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 19, totalMax: 54, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 34, totalMax: 108, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 9.4, totalMax: 24.3, equityMin: 0.5, equityMax: 1.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [1, 4], source: "Levels.fyi (Salesforce India Account Executive Jr)", lastVerified: "2026-05-08", notes: "Account Executive Junior: OTE clarity — fixed/variable split (often 60/40), quota size in writing; ramp period (Y1 quota relief) is the lever." },
+      mid: { totalMin: 18.9, totalMax: 56.7, equityMin: 0.9, equityMax: 2.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Salesforce India AE Mid)", lastVerified: "2026-05-08", notes: "Account Executive Mid: quota + accelerators — accelerator multiplier above 100% attainment is the negotiation lever (often 1.5x-2.5x)." },
+      senior: { totalMin: 35.1, totalMax: 121.5, equityMin: 1.8, equityMax: 6.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 20], source: "Levels.fyi (Salesforce India AE Sr / Enterprise)", lastVerified: "2026-05-08", notes: "Account Executive Senior: OTE realism — quota history (last 4 quarters attainment) + named-account list is the leverage." },
       lead: { totalMin: 61, totalMax: 189, equityMin: 4, equityMax: 11, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
       executive: { totalMin: 95, totalMax: 297, equityMin: 6, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (salesforce 1.35x sales)", lastVerified: "2026-05-08" },
     },
@@ -1060,38 +1060,48 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   },
   apple: {
     "software-engineer": {
-      entry: { totalMin: 30, totalMax: 44, equityMin: 7, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Apple India ICT2 / new-grad)", lastVerified: "2026-05-07" },
-      mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Apple India ICT3-ICT4)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 85, totalMax: 140, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (ICT5)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 30, totalMax: 44, equityMin: 7, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25 (periodic vesting)", joiningBonusOverride: [2, 7], source: "Levels.fyi (Apple India ICT2 / new-grad)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: ICT2 calibration — push for ICT2 over ICT1; hardware/software team scope changes RSU envelope." },
+      mid: { totalMin: 50, totalMax: 80, equityMin: 14, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (Apple India ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: ICT3-ICT4 — Fixed + RSU is the lever. Apple bonus target lower than peers (3-10%); negotiate base + RSU." },
+      senior: { totalMin: 85, totalMax: 140, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (ICT5)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: ICT5 — level calibration is the primary lever (ICT4 vs ICT5 = ~₹35-50L gap). Silicon/AI orgs pay top of band." },
     },
-  
+    "firmware-engineer": {
+      entry: { totalMin: 16, totalMax: 43.5, equityMin: 2.2, equityMax: 6.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Apple India hardware/firmware ICT2)", lastVerified: "2026-05-08", notes: "Firmware Engineer Junior: hardware/software niche — scarce-skill premium, push for ICT3 if embedded experience." },
+      mid: { totalMin: 29, totalMax: 79.8, equityMin: 4.1, equityMax: 11.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 16], source: "Levels.fyi (Apple India firmware ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Firmware Engineer Mid: scarce-skill premium — silicon/SoC vs peripherals split; AppleSilicon org pays top of band." },
+      senior: { totalMin: 55, totalMax: 145, equityMin: 7.7, equityMax: 20.3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 28], source: "Levels.fyi (Apple India firmware ICT5)", lastVerified: "2026-05-08", notes: "Firmware Engineer Senior: deep-expertise lever — ICT5 hardware lead, RSU grant size negotiable based on patent portfolio." },
+    },
+
     "product-manager": {
-      entry: { totalMin: 20, totalMax: 46, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 36, totalMax: 102, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 65, totalMax: 189, equityMin: 9, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 20, totalMax: 46.4, equityMin: 2.8, equityMax: 6.5, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 9], source: "Levels.fyi (Apple India PM ICT2)", lastVerified: "2026-05-08", notes: "Product Manager Junior: scope lever — software PM vs hardware PM differs; hardware PMs scarcer." },
+      mid: { totalMin: 36.2, totalMax: 101.5, equityMin: 5.1, equityMax: 14.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [6, 20], source: "Levels.fyi (Apple India PM ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Product Manager Mid: product scope — Services vs Hardware org changes envelope; ask for first-appraisal date in writing." },
+      senior: { totalMin: 65.2, totalMax: 188.5, equityMin: 9.1, equityMax: 26.4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [10, 35], source: "Levels.fyi (Apple India PM ICT5)", lastVerified: "2026-05-08", notes: "Product Manager Senior: strategic ownership — global mobility option (Cupertino transfer) is a real lever for top performers." },
       lead: { totalMin: 102, totalMax: 261, equityMin: 14, equityMax: 37, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 138, totalMax: 363, equityMin: 19, equityMax: 51, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x product-manager)", lastVerified: "2026-05-08" },
     },
     "ux-designer": {
-      entry: { totalMin: 6, totalMax: 35, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 23, totalMax: 65, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 41, totalMax: 116, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 65, totalMax: 174, equityMin: 8, equityMax: 21, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 87, totalMax: 218, equityMin: 10, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 6, totalMax: 35, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
+      mid: { totalMin: 23, totalMax: 65, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
+      senior: { totalMin: 41, totalMax: 116, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
+      lead: { totalMin: 65, totalMax: 174, equityMin: 8, equityMax: 21, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
+      executive: { totalMin: 87, totalMax: 218, equityMin: 10, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ux-designer)", lastVerified: "2026-05-08" },
     },
     "ml-engineer": {
-      entry: { totalMin: 20, totalMax: 51, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 41, totalMax: 116, equityMin: 7, equityMax: 21, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 73, totalMax: 218, equityMin: 13, equityMax: 39, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 116, totalMax: 319, equityMin: 21, equityMax: 57, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 145, totalMax: 406, equityMin: 26, equityMax: 73, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 20.3, totalMax: 50.8, equityMin: 3.7, equityMax: 9.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Apple India ML ICT2)", lastVerified: "2026-05-08", notes: "ML Engineer Junior: AI/ML scope — Apple Intelligence org pays top of band; ask for team mapping." },
+      mid: { totalMin: 40.6, totalMax: 116, equityMin: 7.3, equityMax: 20.9, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [7, 22], source: "Levels.fyi (Apple India ML ICT3-ICT4)", lastVerified: "2026-05-08", notes: "ML Engineer Mid: model/product impact — on-device ML (Core ML) vs cloud-AI orgs differ in pay envelope." },
+      senior: { totalMin: 72.5, totalMax: 217.5, equityMin: 13, equityMax: 39.1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [12, 40], source: "Levels.fyi (Apple India ML ICT5)", lastVerified: "2026-05-08", notes: "ML Engineer Senior: AI ownership — Apple Foundation Models / Apple Intelligence orgs negotiate top of band, RSU grant size is the lever." },
+      lead: { totalMin: 116, totalMax: 319, equityMin: 21, equityMax: 57, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
+      executive: { totalMin: 145, totalMax: 406, equityMin: 26, equityMax: 73, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x ml-engineer)", lastVerified: "2026-05-08" },
     },
     "program-manager": {
-      entry: { totalMin: 15, totalMax: 32, equityMin: 2, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 26, totalMax: 73, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 51, totalMax: 138, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 80, totalMax: 203, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 109, totalMax: 261, equityMin: 11, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 14.5, totalMax: 31.9, equityMin: 1.4, equityMax: 3.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [2, 8], source: "Levels.fyi (Apple India PgM ICT2)", lastVerified: "2026-05-08", notes: "Program Manager Junior: scope lever — hardware launch programs vs software programs differ in scarcity premium." },
+      mid: { totalMin: 26.1, totalMax: 72.5, equityMin: 2.6, equityMax: 7.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [4, 14], source: "Levels.fyi (Apple India PgM ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Program Manager Mid: cross-functional scope — hardware NPI programs are scarce-skill premium." },
+      senior: { totalMin: 50.8, totalMax: 137.8, equityMin: 5.1, equityMax: 13.8, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [8, 25], source: "Levels.fyi (Apple India PgM ICT5)", lastVerified: "2026-05-08", notes: "Program Manager Senior: launch/program ownership — global launch program scope is the lever." },
+      lead: { totalMin: 80, totalMax: 203, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
+      executive: { totalMin: 109, totalMax: 261, equityMin: 11, equityMax: 26, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Seed dataset 2026-05-08 (apple 1.45x program-manager)", lastVerified: "2026-05-08" },
+    },
+    "operations": {
+      entry: { totalMin: 11.6, totalMax: 29, equityMin: 0.2, equityMax: 0.6, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [1, 5], source: "Levels.fyi (Apple India Supply Chain ICT2)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Junior: fixed + ops scope — SCM track has lower RSU envelope vs SE/PM tracks." },
+      mid: { totalMin: 20.3, totalMax: 58, equityMin: 0.4, equityMax: 1.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [3, 10], source: "Levels.fyi (Apple India Supply Chain ICT3-ICT4)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Mid: vendor/process scope — supplier-management ownership negotiable." },
+      senior: { totalMin: 36.2, totalMax: 108.8, equityMin: 0.7, equityMax: 2.2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", joiningBonusOverride: [5, 18], source: "Levels.fyi (Apple India Supply Chain ICT5)", lastVerified: "2026-05-08", notes: "Supply Chain / Ops Senior: global ops impact — APAC manufacturing program ownership is top-of-band lever." },
     },
   },
   stripe: {
