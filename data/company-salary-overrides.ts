@@ -681,17 +681,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   microsoft: {
     "software-engineer": {
-      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "5yr (staggered)", source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-07", notes: "Microsoft India L59-L60 SDE campus offer; refresh grants annual." },
-      mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr (20-20-20-20-20)", source: "Levels.fyi (Microsoft India SDE)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", source: "Levels.fyi (L62-L63)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "5yr (staggered 25-25-25-25 cliff variant)", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India L59-L60 / new-grad campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: L59-L60 calibration — push for L60 over L59 (band overlap; same package, faster review cycle)." },
+      mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr (20-20-20-20-20)", joiningBonusOverride: [5, 15], source: "Levels.fyi (Microsoft India SDE)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: L61-L62 — annual RSU refresh is the key lever (often 30-50% of new-hire grant). Ask for refresher floor in writing." },
+      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi (L62-L63)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: L63-L64 — negotiate sign-on (often ₹15-25L) and team selection; Azure/AI orgs pay top of band." },
     },
     "ux-designer": {
-      mid: { totalMin: 35, totalMax: 70, equityMin: 10, equityMax: 25, equityType: "rsu", equityVesting: "5yr / staggered", source: "Levels.fyi (₹3.48M-₹10.16M range)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 64, totalMax: 102, equityMin: 22, equityMax: 45, equityType: "rsu", equityVesting: "5yr / staggered", source: "Levels.fyi (L65)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 22, totalMax: 38, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [2, 6], source: "Levels.fyi (Microsoft India IC2 designer)", lastVerified: "2026-05-08", notes: "UX Designer Junior: portfolio + design-critique signal beats YOE. Ask for level mapping vs IC track." },
+      mid: { totalMin: 35, totalMax: 70, equityMin: 10, equityMax: 25, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [4, 12], source: "Levels.fyi (₹3.48M-₹10.16M range)", lastVerified: "2026-05-08", notes: "UX Designer Mid: research vs craft split — lean Senior Designer if pre-IPO experience, else Designer 2." },
+      senior: { totalMin: 64, totalMax: 102, equityMin: 22, equityMax: 45, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [8, 20], source: "Levels.fyi (L65)", lastVerified: "2026-05-08", notes: "UX Designer Senior: L65 staff/principal track; design system ownership is the leverage." },
     },
     "product-manager": {
-      mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr / staggered", source: "Levels.fyi", lastVerified: "2026-05-07" },
-      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      entry: { totalMin: 24, totalMax: 50, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [3, 8], source: "Levels.fyi (Microsoft India PM1-PM2 campus)", lastVerified: "2026-05-08", notes: "Product Manager Junior: APM/PM1 campus — push for PM2 if MBA + internship signal." },
+      mid: { totalMin: 45, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [6, 15], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Mid: PM2-Senior PM. RSU refresh + bonus target (15-20% on-target) are negotiable." },
+      senior: { totalMin: 75, totalMax: 120, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "5yr / staggered", joiningBonusOverride: [10, 25], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Senior: Principal PM (L65) — scope (org-wide vs team) drives the level call more than YOE." },
     },
   
     "ml-engineer": {
@@ -726,19 +728,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
 
   amazon: {
     "software-engineer": {
-      entry: { totalMin: 22, totalMax: 32, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", source: "Levels.fyi (Amazon India SDE-1 / L4 campus)", lastVerified: "2026-05-07", notes: "Amazon SDE-1 India campus; sign-on ₹3-6L offsets back-loaded RSU vest." },
-      mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 5-15-40-40 (back-loaded)", source: "Levels.fyi (Amazon India SDE-2)", lastVerified: "2026-05-07", notes: "Amazon India RSU vest is back-loaded — first 2 years cash-heavy with sign-on offsetting." },
-      senior: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / back-loaded", source: "Levels.fyi (SDE-3 / L6)", lastVerified: "2026-05-07" },
+      entry: { totalMin: 22, totalMax: 32, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / back-loaded (5-15-40-40)", joiningBonusOverride: [3, 6], source: "Levels.fyi (Amazon India SDE-1 / L4 campus)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: SDE-1 / L4. Year-1 + Year-2 sign-on (₹3-6L each year) is non-negotiable structure — confirm Y1 vs Y2 split." },
+      mid: { totalMin: 38, totalMax: 65, equityMin: 8, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 5-15-40-40 (back-loaded)", joiningBonusOverride: [6, 15], source: "Levels.fyi (Amazon India SDE-2)", lastVerified: "2026-05-08", notes: "Software Engineer Mid: SDE-2 / L5. RSU vest is back-loaded (5-15-40-40); push for Y1+Y2 sign-on to fund the cash gap." },
+      senior: { totalMin: 65, totalMax: 110, equityMin: 18, equityMax: 45, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [12, 30], source: "Levels.fyi (SDE-3 / L6)", lastVerified: "2026-05-08", notes: "Software Engineer Senior: SDE-3 / L6 — level mapping is THE lever (L6 vs L5 = ~₹25-40L gap). Performance bonus + on-call premium negotiable." },
     },
     "ux-designer": {
-      mid: { totalMin: 29, totalMax: 50, equityMin: 6, equityMax: 16, equityType: "rsu", equityVesting: "4yr / back-loaded", source: "Levels.fyi (₹2.88M-₹6.45M range)", lastVerified: "2026-05-07" },
-      senior: { totalMin: 50, totalMax: 65, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / back-loaded", source: "Levels.fyi (L6)", lastVerified: "2026-05-07" },
+      mid: { totalMin: 29, totalMax: 50, equityMin: 6, equityMax: 16, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [4, 10], source: "Levels.fyi (₹2.88M-₹6.45M range)", lastVerified: "2026-05-08", notes: "UX Designer Mid: L5 designer — relocation support + remote flex are levers, RSU floor is hard to move." },
+      senior: { totalMin: 50, totalMax: 65, equityMin: 14, equityMax: 28, equityType: "rsu", equityVesting: "4yr / back-loaded", joiningBonusOverride: [8, 20], source: "Levels.fyi (L6)", lastVerified: "2026-05-08", notes: "UX Designer Senior: L6 — team-location and AWS vs Retail org changes pay envelope." },
     },
   
     "product-manager": {
-      entry: { totalMin: 19, totalMax: 43, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 34, totalMax: 95, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 61, totalMax: 176, equityMin: 9, equityMax: 25, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 19, totalMax: 43, equityMin: 3, equityMax: 6, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [3, 6], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Junior: PM-T / L4 — written-narrative skill (6-pager) is the rubric. Y1+Y2 sign-on standard." },
+      mid: { totalMin: 34, totalMax: 95, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [6, 15], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Mid: PMT-L5. Two-pizza-team scope vs platform PM scope changes pay; ask which org." },
+      senior: { totalMin: 61, totalMax: 176, equityMin: 9, equityMax: 25, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [12, 30], source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08", notes: "Product Manager Senior: Senior PM-T / L6 — P&L ownership signal + AWS pricing-power orgs pay top of band." },
       lead: { totalMin: 95, totalMax: 243, equityMin: 13, equityMax: 34, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 128, totalMax: 338, equityMin: 18, equityMax: 47, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x product-manager)", lastVerified: "2026-05-08" },
     },
@@ -764,9 +766,9 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 115, totalMax: 297, equityMin: 17, equityMax: 45, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x devops-sre)", lastVerified: "2026-05-08" },
     },
     "program-manager": {
-      entry: { totalMin: 14, totalMax: 30, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 24, totalMax: 68, equityMin: 2, equityMax: 7, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 47, totalMax: 128, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 14, totalMax: 30, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [2, 5], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Junior: TPM/PgM L4 — written-doc skill weighted heavily." },
+      mid: { totalMin: 24, totalMax: 68, equityMin: 2, equityMax: 7, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [4, 10], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Mid: TPM L5 — cross-team scope is the leverage; ask for first review cycle in writing." },
+      senior: { totalMin: 47, totalMax: 128, equityMin: 5, equityMax: 13, equityType: "rsu", equityVesting: "4yr back-weighted", joiningBonusOverride: [10, 25], source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08", notes: "Program Manager Senior: Senior TPM L6 — org-wide programs vs single-team is the level call." },
       lead: { totalMin: 74, totalMax: 189, equityMin: 7, equityMax: 19, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
       executive: { totalMin: 101, totalMax: 243, equityMin: 10, equityMax: 24, equityType: "rsu", equityVesting: "4yr back-weighted", source: "Seed dataset 2026-05-08 (amazon 1.35x program-manager)", lastVerified: "2026-05-08" },
     },
@@ -6043,14 +6045,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* FAANG / Big Tech expansion. */
   meta: {
     "software-engineer": {
-      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / cliff", source: "Levels.fyi (Meta India 412 entries Apr 2026)", lastVerified: "2026-05-07", notes: "E3/E4 entry. Meta India hires E4-heavy; entry rare." },
-      mid: { totalMin: 50, totalMax: 75, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "E5 (5-7 yrs) Meta India median ₹62L, P75 ₹78L." },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 75, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "E6 (8-12 yrs) Meta India median ₹95L, P90 ₹140L+." },
-      lead: { totalMin: 130, totalMax: 220, equityMin: 70, equityMax: 160, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07", notes: "E7 staff Meta India ₹160-220L TC." },
+      entry: { totalMin: 28, totalMax: 42, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / quarterly (no cliff post-2022)", joiningBonusOverride: [4, 10], source: "Levels.fyi (Meta India 412 entries Apr 2026)", lastVerified: "2026-05-08", notes: "Software Engineer Junior: E3/E4 entry — Meta India hires E4-heavy; push for E4 if FTE convert from intern." },
+      mid: { totalMin: 50, totalMax: 75, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [8, 20], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Software Engineer Mid: E5 (5-7 yrs) median ₹62L, P75 ₹78L. RSU refresher cadence (annual vs out-of-cycle) is the lever." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 75, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [15, 40], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Software Engineer Senior: E6 (8-12 yrs) median ₹95L, P90 ₹140L+. AI/Reality Labs orgs pay top of band; team selection matters." },
+      lead: { totalMin: 130, totalMax: 220, equityMin: 70, equityMax: 160, equityType: "rsu", equityVesting: "4yr / quarterly", source: "Levels.fyi", lastVerified: "2026-05-08", notes: "E7 staff Meta India ₹160-220L TC." },
     },
     "product-manager": {
-      mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
-      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 70, equityType: "rsu", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
+      entry: { totalMin: 28, totalMax: 55, equityMin: 7, equityMax: 16, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [4, 10], source: "Levels.fyi (Meta India IC4 PM)", lastVerified: "2026-05-08", notes: "Product Manager Junior: IC4 (RPM/MBA hire) — strategy interview is the rubric." },
+      mid: { totalMin: 50, totalMax: 80, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [8, 20], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Mid: IC5 — performance bonus (15-20% target) + RSU refresher are key levers." },
+      senior: { totalMin: 75, totalMax: 130, equityMin: 35, equityMax: 70, equityType: "rsu", equityVesting: "4yr / quarterly", joiningBonusOverride: [15, 40], source: "Levels.fyi", lastVerified: "2026-05-08", notes: "Product Manager Senior: IC6 — org scope (Family of Apps vs Reality Labs) drives top-of-band." },
     },
   
     "ux-designer": {
