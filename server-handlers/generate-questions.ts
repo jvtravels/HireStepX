@@ -11,6 +11,7 @@ import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
 import { matchRoleKey as matchSalaryRoleKey } from "../data/salaries";
 import { detectRoleCompanyFit } from "../src/_role-company-fit";
+import { formatCommonIndianCanon } from "../data/common-indian-questions";
 import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -472,7 +473,20 @@ If unclear, default to IAS-style interview tone.`,
        Source: data/question-taxonomy.ts (18 + 4 categories) and
        data/focus-question-recipes.ts (per-focus mix). */
     const recipeFragment = formatRecipe(interviewType);
-    const typeGuidance = (TYPE_GUIDANCE[interviewType] || "") + recipeFragment;
+    /* Indian-interviewer canon — universal recurring questions every
+       candidate hears (CTC, notice period, "tell me about yourself",
+       behavioural chestnuts, role-track-specific probes for sales /
+       support / finance / marketing / product, and tier-specific
+       probes for IT-services / startups / GCCs). The LLM is told to
+       paraphrase one per session, never copy verbatim. Source:
+       data/common-indian-questions.ts. */
+    const canonFragment = formatCommonIndianCanon({
+      focus: interviewType,
+      role: typeof targetRole === "string" ? targetRole : null,
+      companyTier: typeof companyName === "string" ? getCompanyTier(companyName) ?? null : null,
+      limit: 10,
+    });
+    const typeGuidance = (TYPE_GUIDANCE[interviewType] || "") + recipeFragment + (canonFragment ? `\n\n${canonFragment}` : "");
 
     // Cross-cutting: when a resume is available, at least one question MUST cite
     // a specific detail from it. Generic questions feel canned even when they're
