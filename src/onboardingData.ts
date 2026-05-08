@@ -5370,8 +5370,19 @@ const COMPANY_SUGGESTIONS_RAW = [
 
 // Dedup while preserving first-seen order (autocomplete relevance is
 // driven by string-prefix matching, so order matters less than hit
-// rate — but keeping deterministic order helps testing).
-export const COMPANY_SUGGESTIONS = Array.from(new Set(COMPANY_SUGGESTIONS_RAW));
+// rate — but keeping deterministic order helps testing). Case-
+// insensitive so "ixigo" + "Ixigo" + "IXIGO" don't all show up.
+export const COMPANY_SUGGESTIONS = (() => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const c of COMPANY_SUGGESTIONS_RAW) {
+    const key = c.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(c.trim());
+  }
+  return out;
+})();
 
 /* Sample diverse suggestions by picking evenly spaced items */
 export function sampleDiverse(arr: string[], count: number): string[] {

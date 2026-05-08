@@ -108,10 +108,20 @@ function AutocompleteInput({
 
   useEffect(() => { return () => { setFocused(false); }; }, []);
 
+  /* Filtering rules:
+     - empty input → diverseSample (browse mode)
+     - exact match to a suggestion (e.g. user picked "Razorpay" earlier
+       and re-focused) → also browse mode, so they can switch — without
+       this branch the only matching suggestion gets self-filtered and
+       the dropdown collapses to empty (real production bug).
+     - partial input → substring match, excluding the typed value
+       itself so the input doesn't echo back as a row. */
+  const v = value.toLowerCase();
+  const exactMatch = v.length > 0 && suggestions.some(s => s.toLowerCase() === v);
   const filtered = focused
-    ? value.length > 0
-      ? suggestions.filter(s => s.toLowerCase().includes(value.toLowerCase()) && s.toLowerCase() !== value.toLowerCase()).slice(0, 8)
-      : diverseSample
+    ? value.length === 0 || exactMatch
+      ? diverseSample
+      : suggestions.filter(s => s.toLowerCase().includes(v) && s.toLowerCase() !== v).slice(0, 8)
     : [];
 
   useEffect(() => {
@@ -702,10 +712,31 @@ export default function SessionSetup() {
     setInterviewFocus([fallback]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relevantFocusSet]);
-  // Session length is fixed at 15m — the canvas-aligned setup screen no
-  // longer asks the user to choose. The interview engine still respects
-  // the URL param so this constant keeps the contract intact.
-  const SESSION_LENGTH = "15m";
+  /* Session length is no longer a knob — but we vary it by focus so the
+     candidate sees an honest expectation. Numbers are calibrated to the
+     actual question arcs the engine generates per type:
+       - HR / behavioral: 5-6 short turns × ~2 min each
+       - Salary-negotiation: 5-6 conversational rounds, each 1.5-2 min
+       - Strategic / management: longer reflective answers
+       - Case study / technical leadership: structured deep-dives
+       - Panel: 3 interviewers, each gets a turn → longest
+     The engine still computes step-count from the script — these
+     minutes only drive the time-pill copy + the `&length=` URL param
+     (analytics + mini-mode threshold at "10m"). */
+  const FOCUS_MINUTES: Record<string, number> = {
+    "Behavioral": 15,
+    "Strategic": 20,
+    "Technical Leadership": 20,
+    "Case Study": 25,
+    "Salary Negotiation": 12,
+    "Panel Interview": 25,
+    "Campus Placement": 15,
+    "HR Round": 10,
+    "Management": 18,
+    "Government / PSU": 18,
+  };
+  const sessionMinutes = FOCUS_MINUTES[interviewFocus[0]] ?? 15;
+  const SESSION_LENGTH = `${sessionMinutes}m`;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
@@ -1467,7 +1498,7 @@ export default function SessionSetup() {
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
                     </svg>
-                    ~15 minutes
+                    ~{sessionMinutes} minutes
                   </div>
                 </div>
               </div>
