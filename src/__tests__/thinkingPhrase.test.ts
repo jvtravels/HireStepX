@@ -148,3 +148,27 @@ describe("shouldStaySilent", () => {
     }
   });
 });
+
+describe("buildThinkingPhrase — skip override", () => {
+  it("uses a soft skip-acknowledgement when the previous turn was skipped", () => {
+    const r = buildThinkingPhrase({ ...baseInput, lastAnswerQuality: "weak", lastTurnWasSkip: true });
+    expect(typeof r.phrase).toBe("string");
+    // Skip ack bank should land — none of these contain a question mark or a STAR-style probe.
+    expect(r.phrase!.length).toBeGreaterThan(0);
+    expect(r.phrase).not.toMatch(/\?$/);
+  });
+
+  it("skip override pre-empts the standard reaction even on a strong-quality slot", () => {
+    /* Quality flag is incidental on a skip — there's no answer to react to.
+       Asserting the override fires regardless of quality. */
+    const r = buildThinkingPhrase({ ...baseInput, lastAnswerQuality: "strong", lastTurnWasSkip: true });
+    expect(typeof r.phrase).toBe("string");
+    expect(r.dontKnowDelta).toBe(0);
+    expect(r.pushbackDelta).toBe(0);
+  });
+
+  it("does not fire skip override on intro / step 0", () => {
+    const r = buildThinkingPhrase({ ...baseInput, currentStep: 0, lastTurnWasSkip: true });
+    expect(r.phrase).toBeNull();
+  });
+});

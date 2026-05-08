@@ -207,6 +207,27 @@ describe("computeMicroFeedback", () => {
       expect(r.feedback).toContain("2-3 sentences");
     });
 
+    describe("STAR component detection", () => {
+      it("calls out missing Action when situation+task are present but no 'I' verb", () => {
+        // 40+ words, situation + task framing, NO first-person verb, NO metrics, NO numbered structure.
+        const text = "When I was at my last company we were under pressure and the goal was to launch the new onboarding flow before the holiday rush, the brief was clear and the team needed to align around scope and quality.";
+        const r = computeMicroFeedback(text, "behavioral", []);
+        expect(r.feedback).toMatch(/what did \*you\* do|specific actions/i);
+      });
+
+      it("calls out missing Result when situation + action are present but no outcome", () => {
+        const text = "When I was at my previous company the brief was to ship onboarding before Q4 and I led the design, I built the prototype, I coordinated reviews, I wrote the spec, I aligned the team on scope and milestones.";
+        const r = computeMicroFeedback(text, "behavioral", []);
+        expect(r.feedback).toMatch(/close with the outcome|End with the result/i);
+      });
+
+      it("calls out missing Situation/Task when answer jumps to action only", () => {
+        const text = "I built the dashboard and I shipped the migration and I coordinated the rollout and I wrote the runbook and I trained the support team and I presented the launch to the leadership group across regions.";
+        const r = computeMicroFeedback(text, "behavioral", []);
+        expect(r.feedback).toMatch(/set the scene|anchor it with the situation/i);
+      });
+    });
+
     it("score is always within [0, 100]", () => {
       const r1 = computeMicroFeedback("ok", "behavioral", []);
       expect(r1.score).toBeGreaterThanOrEqual(0);

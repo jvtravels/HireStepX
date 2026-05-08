@@ -4,6 +4,7 @@ import {
   extractCandidateSalaryNumber,
   truncateConversationHistory,
   detectSalaryPhase,
+  pickServerCounter,
 } from "../../server-handlers/_follow-up-helpers";
 
 /**
@@ -356,5 +357,108 @@ describe("detectSalaryPhase", () => {
     });
     expect(result).not.toBe("closing");
     expect(result).not.toBe("closing-pressure");
+  });
+});
+
+describe("pickServerCounter", () => {
+  const band = { initialOffer: 20, maxStretch: 30, walkAway: 18 };
+
+  it("counter-offer phase: splits floor and aspiration", () => {
+    expect(
+      pickServerCounter({
+        phase: "counter-offer",
+        ...band,
+        highestOfferMade: 20,
+        candidateTarget: 28,
+      }),
+    ).toBe(24); // 20 + (28-20)*0.5
+  });
+
+  it("closing-pressure pushes 70% toward aspiration", () => {
+    expect(
+      pickServerCounter({
+        phase: "closing-pressure",
+        ...band,
+        highestOfferMade: 20,
+        candidateTarget: 28,
+      }),
+    ).toBe(25.6); // 20 + (28-20)*0.7
+  });
+
+  it("caps aspiration at maxStretch when candidate target exceeds band", () => {
+    expect(
+      pickServerCounter({
+        phase: "counter-offer",
+        ...band,
+        highestOfferMade: 20,
+        candidateTarget: 50, // way above maxStretch 30
+      }),
+    ).toBe(25); // 20 + (30-20)*0.5
+  });
+
+  it("returns null for probe-expectations (no offer this turn)", () => {
+    expect(
+      pickServerCounter({
+        phase: "probe-expectations",
+        ...band,
+        highestOfferMade: 20,
+        candidateTarget: 28,
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null for benefits-discussion", () => {
+    expect(
+      pickServerCounter({
+        phase: "benefits-discussion",
+        ...band,
+        highestOfferMade: 20,
+        candidateTarget: 28,
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null when aspiration ≤ floor (no room to move)", () => {
+    expect(
+      pickServerCounter({
+        phase: "counter-offer",
+        ...band,
+        highestOfferMade: 28,
+        candidateTarget: 25, // candidate asks BELOW current offer
+      }),
+    ).toBeNull();
+  });
+
+  it("never goes backwards from highestOfferMade (monotonic)", () => {
+    const next = pickServerCounter({
+      phase: "counter-offer",
+      ...band,
+      highestOfferMade: 25,
+      candidateTarget: 30,
+    });
+    expect(next).not.toBeNull();
+    expect(next!).toBeGreaterThanOrEqual(25);
+  });
+
+  it("never exceeds maxStretch even at closing-pressure", () => {
+    const next = pickServerCounter({
+      phase: "closing-pressure",
+      initialOffer: 25,
+      maxStretch: 30,
+      walkAway: 22,
+      highestOfferMade: 28,
+      candidateTarget: 100,
+    });
+    expect(next!).toBeLessThanOrEqual(30);
+  });
+
+  it("offer-reaction returns the initial offer", () => {
+    expect(
+      pickServerCounter({
+        phase: "offer-reaction",
+        ...band,
+        candidateTarget: 28,
+      }),
+    ).toBe(20);
   });
 });

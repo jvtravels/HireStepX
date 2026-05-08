@@ -208,3 +208,81 @@ export function detectSalaryPhase(input: DetectSalaryPhaseInput): SalaryPhase {
   if (idx === 5) return hasCounter ? "closing-pressure" : "probe-expectations";
   return hasCounter ? "closing" : "counter-offer";
 }
+
+export interface PickCounterInput {
+  phase: SalaryPhase | string;
+  initialOffer: number;
+  maxStretch: number;
+  walkAway: number;
+  /** Highest ₹ already presented this session, if any. */
+  highestOfferMade?: number | null;
+  /** Candidate's stated target, if any. */
+  candidateTarget?: number | null;
+}
+
+/**
+ * Server-side recommended counter number for the AI's next turn.
+ *
+ * Removes the LLM's hand from picking ₹ values — it still writes prose
+ * around the number but the figure itself is computed deterministically
+ * from the band + session state. The post-LLM clamp guards stay in
+ * place as a safety net; this just stops the hallucinations at the
+ * source instead of reactively repairing them.
+ *
+ * Returns null when the phase shouldn't introduce a new number
+ * (offer-reaction reuses the initial; probe-expectations is asking,
+ * not offering; benefits / closing maintain the last counter).
+ */
+export function pickServerCounter(input: PickCounterInput): number | null {
+  const { phase, initialOffer, maxStretch, highestOfferMade, candidateTarget } = input;
+
+  const floor = Math.max(highestOfferMade ?? 0, initialOffer);
+  const ceiling = maxStretch;
+
+  // Cap aspiration at the band's ceiling. If the candidate's target is
+  // above maxStretch, the AI shouldn't reach for it — it should flag.
+  const aspiration = Math.min(candidateTarget ?? ceiling, ceiling);
+
+  // If aspiration is already at or below floor, there's nowhere to move.
+  if (aspiration <= floor) return null;
+
+  let next: number | null = null;
+
+  switch (phase) {
+    case "offer-reaction":
+      // First turn — present the initial offer. Caller usually has this
+      // already from initialOfferText; we only return it for completeness.
+      next = initialOffer;
+      break;
+
+    case "probe-expectations":
+    case "benefits-discussion":
+      // No new number this turn — these phases ask / discuss, they
+      // don't offer.
+      return null;
+
+    case "counter-offer":
+      // Split the difference between current floor and aspiration.
+      next = floor + (aspiration - floor) * 0.5;
+      break;
+
+    case "closing-pressure":
+      // Push 70% of the way toward aspiration — visible movement to
+      // close the deal.
+      next = floor + (aspiration - floor) * 0.7;
+      break;
+
+    case "closing":
+      // Maintain the highest offer made; closing is the recap, not a
+      // new bump.
+      return null;
+
+    default:
+      return null;
+  }
+
+  if (next === null || !Number.isFinite(next)) return null;
+  // Clamp to band, floor at monotonic, round to 0.1.
+  next = Math.max(floor, Math.min(ceiling, next));
+  return Math.round(next * 10) / 10;
+}

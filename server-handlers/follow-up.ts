@@ -4,7 +4,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
-import { detectSalaryPhase as detectSalaryPhaseHelper } from "./_follow-up-helpers";
+import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter } from "./_follow-up-helpers";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -194,19 +194,45 @@ export default async function handler(req: Request): Promise<Response> {
         "myself","yourself","ourselves","themselves","itself","being","doing","going","saying",
         "people","person","thing","things","stuff","really","quite","kind","sort","still","also",
       ]);
+      /* Allowlist of always-capitalized tokens that are NOT personal names and
+         are safe to echo. Without this, the PII filter below would drop
+         "Stripe", "Figma", etc. when mentioned once. Kept small and tech/biz-
+         skewed; expanding it is fine when we observe drops in practice. */
+      const NON_PII_CAPS = new Set([
+        "stripe","razorpay","paytm","phonepe","figma","github","gitlab","slack","notion","jira",
+        "zoom","azure","aws","gcp","docker","kubernetes","python","javascript","typescript",
+        "react","node","postgres","mysql","redis","mongodb","graphql","rest","api","sdk",
+        "google","microsoft","amazon","apple","meta","netflix","uber","ola","swiggy","zomato",
+        "flipkart","myntra","cred","groww","zerodha","freshworks","zoho","tcs","infosys","wipro",
+        "accenture","deloitte","mckinsey","bain","bcg","kpmg","ey","pwc","sap","oracle","ibm",
+        "android","ios","linux","windows","macos","chrome","firefox","safari","cartesia","groq",
+        "gemini","openai","anthropic","claude","supabase","vercel","upstash","deepgram","sarvam",
+      ]);
       const cleaned = answer.replace(/[^A-Za-z0-9\s'-]/g, " ");
       const words = cleaned.split(/\s+/).filter(Boolean);
-      const freq = new Map<string, { count: number; capitalized: boolean }>();
+      const freq = new Map<string, { count: number; capitalized: boolean; lowerCount: number }>();
       for (const w of words) {
         if (w.length < 4) continue;
         const lower = w.toLowerCase();
         if (stop.has(lower)) continue;
-        const cur = freq.get(lower) || { count: 0, capitalized: false };
+        const cur = freq.get(lower) || { count: 0, capitalized: false, lowerCount: 0 };
         cur.count++;
         if (/^[A-Z]/.test(w)) cur.capitalized = true;
+        else cur.lowerCount++;
         freq.set(lower, cur);
       }
+      /* PII scrub: drop tokens that look like personal first names —
+         always-capitalized, low frequency, length 3-10, never seen lowercase,
+         not in our tech/company allowlist. "Sarah", "Raj", "Priya" go;
+         "Stripe" (in allowlist) and "API" (length-filtered above) stay. */
       const ranked = Array.from(freq.entries())
+        .filter(([lower, info]) => {
+          if (!info.capitalized || info.lowerCount > 0) return true;
+          if (info.count > 2) return true;
+          if (lower.length > 10 || lower.length < 3) return true;
+          if (NON_PII_CAPS.has(lower)) return true;
+          return false;
+        })
         .sort((a, b) => (b[1].count - a[1].count) || ((b[1].capitalized ? 1 : 0) - (a[1].capitalized ? 1 : 0)))
         .slice(0, 5)
         .map(([w]) => w);
@@ -444,6 +470,24 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
       const offerTrackingCtx = highestOfferMade
         ? `\nIMPORTANT: Your highest previous offer was ₹${highestOfferMade} LPA. Your next offer MUST be >= ₹${highestOfferMade} LPA. Never go backwards.`
         : "";
+      // Server-deterministic recommended counter. Removes the LLM's
+      // hand from picking ₹ values for counter / closing-pressure phases.
+      // The LLM still writes prose; the number is computed from the band
+      // + session state. Post-LLM clamps remain as safety net.
+      const recommendedCounter = isSalaryNeg && negotiationBand
+        ? pickServerCounter({
+            phase: salaryPhase,
+            initialOffer: canonicalInitialOffer ?? negotiationBand.initialOffer,
+            maxStretch: negotiationBand.maxStretch,
+            walkAway: negotiationBand.walkAway,
+            highestOfferMade,
+            candidateTarget,
+          })
+        : null;
+      const recommendedCounterCtx = recommendedCounter !== null
+        ? `\nRECOMMENDED COUNTER FOR THIS TURN: ₹${recommendedCounter} LPA. This number is computed from the band + the candidate's stated target + your previous offers. Use this exact figure as your headline counter unless the candidate's last message gives you a specific reason to deviate (e.g. they explicitly accepted a different number, or their ask is below this figure — in which case match their ask). When you write component breakdowns (base + variable + bonus), make sure the components SUM to ₹${recommendedCounter} LPA.`
+        : "";
+
       const targetCtx = candidateTarget
         ? `\nThe candidate's stated target is ₹${candidateTarget} LPA. Use this to calibrate your offers — if their target is within your band, work toward it. If above, reality-check it.
 TARGET WORD BINDING: Whenever you refer to "your target", "the candidate's target", "you're looking for", "you're asking for", "you mentioned", or "you said", you MUST use exactly ₹${candidateTarget} LPA. NEVER substitute a different number for the candidate's target — not your counter-offer, not your stretch number, not a compromise figure. Those are YOUR numbers, not theirs. Mixing them up ("your target of ₹{differentNum}") destroys candidate trust because they remember exactly what they said.`
@@ -632,7 +676,7 @@ You may STILL ask about notice period, joining timeline, or remaining concerns �
 
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
 ${intentBanner}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
-${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
+${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${recommendedCounterCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
 ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}

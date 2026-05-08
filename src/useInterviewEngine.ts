@@ -2018,6 +2018,41 @@ export function useInterviewEngine() {
           });
         }
       }
+      /* Sentiment-aware closing for general (non-negotiation) interviews.
+         The static role closings are uniformly cheerful ("Great. That's
+         all I had…"), which reads as oblivious when the candidate just
+         struggled — short answers, skips, "I don't know" responses.
+         Swap in a warmer, lower-key closing in those cases. We only
+         swap when the closing is still the static default (no runtime
+         follow-up replacement / no LLM-personalized closing). */
+      if (
+        nextStep?.type === "closing" &&
+        interviewType !== "salary-negotiation" &&
+        !nextStep.scoreNote?.includes("Dynamic follow-up")
+      ) {
+        const recentUserTurns = [
+          ...transcript.filter(t => t.speaker === "user").slice(-1).map(t => t.text || ""),
+          answerText || "",
+        ].filter(Boolean);
+        const tenseTurns = recentUserTurns.filter(t => {
+          const trimmed = t.trim();
+          if (/^\[SKIPPED\b/i.test(trimmed)) return true;
+          const words = trimmed.split(/\s+/).filter(Boolean);
+          if (words.length < 8) return true;
+          if (/\b(i don.?t know|not sure|no idea|can.?t (?:think|recall|remember))\b/i.test(trimmed)) return true;
+          return false;
+        });
+        if (recentUserTurns.length >= 2 && tenseTurns.length >= 2) {
+          const empatheticClosing = "Thanks for sticking with it — these conversations aren't easy. Generating your detailed report now. Stay on this screen for a moment.";
+          if (empatheticClosing !== nextStep.aiText) {
+            setInterviewScript(prev => {
+              const updated = [...prev];
+              updated[nextIdx] = { ...updated[nextIdx], aiText: empatheticClosing };
+              return updated;
+            });
+          }
+        }
+      }
       setPhase("thinking");
       setCurrentStep(currentStep + 1);
     } else {
