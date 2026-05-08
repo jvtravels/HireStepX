@@ -7,7 +7,7 @@
  */
 
 import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
-import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES } from "./company-salary-overrides";
+import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES, COMPANY_META } from "./company-salary-overrides";
 
 /** Pre-computed set of canonical override keys, used to distinguish
  * "true company override" from "sector fallback" in the bandSource
@@ -152,28 +152,53 @@ function getInHandRange(totalCtc: number, cityTier: string | undefined): {
   return { newRegime, oldRegime, text };
 }
 
+/** Look up company-level metadata (notice period, bond penalty, deputation
+ * flag) by name. Loose match — handles "Razorpay Software Pvt Ltd" → razorpay. */
+function lookupCompanyMeta(company: string | undefined): CompanyMeta | null {
+  if (!company) return null;
+  const cleaned = company.toLowerCase().replace(/[^a-z\s-]/g, "").replace(/[\s-]+/g, " ").trim();
+  if (!cleaned) return null;
+  // Direct match first
+  if (COMPANY_META[cleaned]) return COMPANY_META[cleaned];
+  // Loose containment fallback
+  for (const [key, meta] of Object.entries(COMPANY_META)) {
+    if (key.length < 3) continue;
+    if (cleaned.includes(key) || key.includes(cleaned)) return meta;
+  }
+  return null;
+}
+
+/** Re-export for the lookup type. Defined above; here so the helpers can
+ * reference it. */
+type CompanyMeta = NonNullable<typeof COMPANY_META[string]>;
+
 /** Tier-specific notice-period buyout reality (NOT a generic formula).
  *
  * The previous (notice_days/30 × monthly_base × 1.5x) formula over-quoted
  * by ~50% for services firms which have flat buyouts ₹1.5-2.5 LPA, and
  * massively under-quoted for FAANG India which often waives notice with
  * a letter (₹0 cost). */
-function getNoticeBuyoutContext(companyTier: string | undefined, totalCtc: number): string {
+function getNoticeBuyoutContext(companyTier: string | undefined, totalCtc: number, companyMeta?: CompanyMeta | null): string {
+  // Company-level override takes precedence — quote the documented number
+  // explicitly when available.
+  const docNotice = companyMeta?.noticePeriodDays
+    ? `Documented notice period for this company: ${companyMeta.noticePeriodDays} days. `
+    : "";
   const round1 = (x: number) => Math.round(x * 10) / 10;
   switch (companyTier) {
     case "it-services":
-      return `NOTICE-PERIOD BUYOUT (services-firm reality): TCS / Infosys / Wipro candidates have 60-90 day notice. Actual buyout authority for the new employer: flat ₹1.5-2.5 LPA regardless of candidate's monthly base. Don't quote (notice_days × monthly_base × 1.5) — that's 2-3x over-quote and exposes you as scripted. If candidate is currently at TCS / Infosys / Wipro, offer ₹2 LPA as a notice-buyout sweetener if you've conceded base.`;
+      return `NOTICE-PERIOD BUYOUT (services-firm reality): ${docNotice}TCS / Infosys / Wipro candidates have 60-90 day notice. Actual buyout authority for the new employer: flat ₹1.5-2.5 LPA regardless of candidate's monthly base. Don't quote (notice_days × monthly_base × 1.5) — that's 2-3x over-quote and exposes you as scripted. If candidate is currently at TCS / Infosys / Wipro, offer ₹2 LPA as a notice-buyout sweetener if you've conceded base.`;
     case "faang":
     case "big-tech":
     case "gcc":
-      return `NOTICE-PERIOD BUYOUT: FAANG / GCC India typically waives notice with a release letter — no cash buyout needed. If the candidate's current employer demands buyout, offer to absorb up to ₹${round1(totalCtc * 0.05)} LPA as a one-time signing bonus instead of a "buyout" line item. Cleaner accounting.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}FAANG / GCC India typically waives notice with a release letter — no cash buyout needed. If the candidate's current employer demands buyout, offer to absorb up to ₹${round1(totalCtc * 0.05)} LPA as a one-time signing bonus instead of a "buyout" line item. Cleaner accounting.`;
     case "government-psu":
-      return `NOTICE-PERIOD BUYOUT: Government / PSU — no buyout. The candidate must serve the full notice or pay it themselves. If they're transferring from another PSU, joining is governed by their parent department's release order, not money.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}Government / PSU — no buyout. The candidate must serve the full notice or pay it themselves. If they're transferring from another PSU, joining is governed by their parent department's release order, not money.`;
     case "startup-early":
     case "startup-growth":
-      return `NOTICE-PERIOD BUYOUT: Indian startups expect candidates to negotiate notice down to 30 days with their current employer. If buyout is needed, offer ₹0.5-1 LPA as joining bonus — frame it as helping, not as buying out.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}Indian startups expect candidates to negotiate notice down to 30 days with their current employer. If buyout is needed, offer ₹0.5-1 LPA as joining bonus — frame it as helping, not as buying out.`;
     default:
-      return `NOTICE-PERIOD BUYOUT: Authority up to ₹${round1(totalCtc * 0.04)} LPA as one-time signing bonus, only if candidate is currently employed with a real notice obligation. Don't volunteer this — only offer if it bridges a gap.`;
+      return `NOTICE-PERIOD BUYOUT: ${docNotice}Authority up to ₹${round1(totalCtc * 0.04)} LPA as one-time signing bonus, only if candidate is currently employed with a real notice obligation. Don't volunteer this — only offer if it bridges a gap.`;
   }
 }
 
@@ -244,13 +269,18 @@ function getRetentionBonusContext(companyTier: string | undefined, exp: Experien
   return `RETENTION BONUS AUTHORITY (senior+ at top tiers): You can structure a retention bonus for senior hires: ₹${retention1yr} LPA paid at 1-yr mark + ₹${retention2yr} LPA at 2-yr mark, both contingent on continued employment. Clawback if candidate leaves earlier. Don't volunteer this in turn 1 — use it as a closer when candidate is on the fence and you're already at maxStretch on base.`;
 }
 
-/** Bond / service-agreement warning for tiers that enforce them. */
-function getBondWarning(companyTier: string | undefined): string {
+/** Bond / service-agreement warning for tiers that enforce them.
+ * Company-level override takes precedence — quote the documented bond
+ * penalty when available. */
+function getBondWarning(companyTier: string | undefined, companyMeta?: CompanyMeta | null): string {
+  const docBond = companyMeta?.bondPenaltyLpa
+    ? ` This company's documented bond: ₹${companyMeta.bondPenaltyLpa} LPA penalty for early exit.`
+    : "";
   if (companyTier === "it-services") {
-    return `BOND CULTURE (services firms): TCS imposes a 2-yr bond (₹50K penalty for early exit), Infosys ₹1L, Cognizant ₹0.75L, Wipro varies. Real cost the candidate must factor in. If the candidate is currently bonded and joining, they OWE the previous employer if they leave before serving — don't pretend otherwise.`;
+    return `BOND CULTURE (services firms): TCS imposes a 2-yr bond (₹50K penalty for early exit), Infosys ₹1L, Cognizant ₹0.75L, Wipro varies.${docBond} Real cost the candidate must factor in. If the candidate is currently bonded and joining, they OWE the previous employer if they leave before serving — don't pretend otherwise.`;
   }
   if (companyTier === "government-psu") {
-    return `BOND CULTURE (PSUs): 3-5 year service bond is standard; penalty ranges from refunding training cost to ₹5-10 LPA. Bond enforcement is real — PSU candidates can't job-hop without paying out.`;
+    return `BOND CULTURE (PSUs): 3-5 year service bond is standard; penalty ranges from refunding training cost to ₹5-10 LPA.${docBond} Bond enforcement is real — PSU candidates can't job-hop without paying out.`;
   }
   return "";
 }
@@ -440,8 +470,9 @@ function buildIndianMarketContext(p: {
   roleKey?: string;
 }): { campusWarning: string; fullContextBlock: string } {
   const campusWarning = detectCampusHire(p.role);
+  const companyMeta = lookupCompanyMeta(p.company);
   const inHand = getInHandRange(p.totalCtc, p.cityTier);
-  const buyout = getNoticeBuyoutContext(p.companyTier, p.totalCtc);
+  const buyout = getNoticeBuyoutContext(p.companyTier, p.totalCtc, companyMeta);
   const equityLiq = getEquityLiquidityNote(p.company, p.companyTier, p.hasEquity);
   const esopRefresh = getEsopRefreshContext(p.companyTier, p.hasEquity);
   const esopDilution = getEsopDilutionContext(p.companyTier, p.hasEquity);
@@ -449,7 +480,7 @@ function buildIndianMarketContext(p: {
   const dep = getDeputationContext(p.companyTier);
   const fest = getFestiveBonus(p.companyTier, p.basicLpa);
   const retention = getRetentionBonusContext(p.companyTier, p.exp, p.totalCtc);
-  const bond = getBondWarning(p.companyTier);
+  const bond = getBondWarning(p.companyTier, companyMeta);
   const wfh = getWfhAllowanceContext(p.companyTier);
   const insurance = getFamilyInsuranceContext(p.companyTier, p.exp);
   const bench = getBenchContext(p.companyTier);

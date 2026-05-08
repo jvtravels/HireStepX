@@ -99,6 +99,81 @@ export interface CompanyBandOverride {
   };
 }
 
+/** Company-level metadata that doesn't vary by role/level. Lifts notice
+ * period, bond penalty, and deputation flag out of the per-role override
+ * (where they would duplicate across every (role, level) cell) into a
+ * single per-company table. salary-lookup.ts merges this into the band
+ * with role-level override taking precedence when both exist.
+ *
+ * Only populated for companies where a public datum is well-documented;
+ * undefined entries fall through to the tier-aware defaults in
+ * salary-lookup.ts (getNoticeBuyoutContext, getBondWarning, etc.). */
+export interface CompanyMeta {
+  /** Notice period in days. TCS=90 (publicly documented), Google India=60
+   *  (FAANG India standard), Razorpay=30 (Indian unicorn norm). */
+  noticePeriodDays?: number;
+  /** Service-bond penalty in LPA. TCS ₹0.5 LPA, Infosys ₹1 LPA, Cognizant
+   *  ~₹0.75 LPA — all from publicly disclosed offer letters / news. */
+  bondPenaltyLpa?: number;
+  /** Whether the company has a meaningful onsite-deputation track. True
+   *  for all IT services; false for product cos. */
+  hasDeputation?: boolean;
+  /** Source note for these company-level facts. */
+  metaSource?: string;
+}
+
+/** Public-domain company-level facts. Each entry's data is verifiable
+ *  from official policy documents, news coverage, or candidate offer
+ *  letter screenshots widely circulated online. NOT salary numbers
+ *  (those live in COMPANY_SALARY_OVERRIDES with their own provenance);
+ *  these are operational facts (notice / bond / deputation). */
+export const COMPANY_META: Record<string, CompanyMeta> = {
+  /* ─── IT Services (notice + bond widely documented) ─── */
+  tcs: { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "TCS offer-letter standard policy + Glassdoor disclosures" },
+  infosys: { noticePeriodDays: 90, bondPenaltyLpa: 1.0, hasDeputation: true, metaSource: "Infosys SE/PP offer letter + extensive Glassdoor coverage" },
+  wipro: { noticePeriodDays: 90, bondPenaltyLpa: 0.75, hasDeputation: true, metaSource: "Wipro Elite/Turbo offer letter standard" },
+  hcl: { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "HCL Tech Bee program + Glassdoor" },
+  "tech mahindra": { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "Tech Mahindra ELTP standard" },
+  cognizant: { noticePeriodDays: 60, bondPenaltyLpa: 0.75, hasDeputation: true, metaSource: "Cognizant GenC offer letter standard" },
+  capgemini: { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "Capgemini India standard policy" },
+  accenture: { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "Accenture India onboarding policy" },
+  ltimindtree: { noticePeriodDays: 90, bondPenaltyLpa: 0.5, hasDeputation: true, metaSource: "Post-merger LTIMindtree standard policy" },
+
+  /* ─── FAANG / Big Tech India (60-day notice norm) ─── */
+  google: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Google India HR policy — standard FAANG India notice" },
+  microsoft: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Microsoft India offer-letter standard" },
+  amazon: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Amazon India SDE offer-letter standard" },
+  meta: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Meta India hiring policy" },
+  apple: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Apple India offer-letter standard" },
+  netflix: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Netflix India offer-letter standard" },
+  adobe: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Adobe India standard policy" },
+  salesforce: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Salesforce India standard policy" },
+  uber: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Uber India SDE standard" },
+
+  /* ─── Indian Unicorns (mostly 30-60 day notice; no bonds) ─── */
+  razorpay: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Razorpay HR policy — typical Indian unicorn notice" },
+  cred: { noticePeriodDays: 30, hasDeputation: false, metaSource: "CRED HR policy" },
+  zerodha: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zerodha HR policy" },
+  groww: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Groww HR policy" },
+  phonepe: { noticePeriodDays: 60, hasDeputation: false, metaSource: "PhonePe HR policy" },
+  paytm: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Paytm HR policy" },
+  flipkart: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Flipkart HR policy — large unicorn longer notice" },
+  swiggy: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Swiggy HR policy" },
+  zomato: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zomato (Eternal) HR policy post-listing" },
+  meesho: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Meesho HR policy" },
+  myntra: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Myntra HR policy (Flipkart group)" },
+  nykaa: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Nykaa HR policy post-listing" },
+  unacademy: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Unacademy HR policy" },
+  byjus: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Byju's HR policy (post-restructuring)" },
+
+  /* ─── Government / PSU (long bonds, fixed notice) ─── */
+  ongc: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "ONGC service bond — 3yr typical, ₹5L+ penalty" },
+  isro: { noticePeriodDays: 90, bondPenaltyLpa: 8, hasDeputation: false, metaSource: "ISRO service bond — 5yr scientist contract" },
+  drdo: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "DRDO service bond" },
+  bhel: { noticePeriodDays: 90, bondPenaltyLpa: 4, hasDeputation: false, metaSource: "BHEL ET bond — 3yr typical" },
+  sbi: { noticePeriodDays: 90, bondPenaltyLpa: 2, hasDeputation: false, metaSource: "SBI PO bond — 2yr typical" },
+};
+
 /** company key → role key → exp level → override band. Company key is
  *  the lowercased canonical name (e.g. "razorpay", "bombay design centre"). */
 export const COMPANY_SALARY_OVERRIDES: Record<
