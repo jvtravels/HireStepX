@@ -247,7 +247,7 @@ describe("bandContext — Phase-3 texture", () => {
 /* Final-phase helpers: HRA exemption math, ESOP dilution, recent
  * buyback history per company, regional role × city variation. */
 describe("bandContext — final-phase helpers", () => {
-  it("HRA exemption walkthrough appears with metro/non-metro split", () => {
+  it("HRA exemption walkthrough appears with strict IT-Act metro classification", () => {
     const band = generateNegotiationBand({
       role: "Senior Software Engineer",
       company: "Razorpay",
@@ -255,8 +255,21 @@ describe("bandContext — final-phase helpers", () => {
     });
     expect(band.bandContext).toMatch(/HRA EXEMPTION MATH/i);
     expect(band.bandContext).toMatch(/Section 10\(13A\)/);
-    // Razorpay → Bangalore → tier-1 metro → "metro (50% of basic)"
-    expect(band.bandContext).toMatch(/metro \(50% of basic\)/i);
+    // Razorpay defaults to Bangalore via getCompanyCity. Bangalore is NOT
+    // an IT-Act 50%-metro (only Mumbai / Delhi / Kolkata / Chennai are
+    // per Section 10(13A)) — so the walkthrough should flag the 40% cap.
+    expect(band.bandContext).toMatch(/40% cap applies|NOT IT-Act metro|non-metro/i);
+  });
+
+  it("HRA exemption gives 50% only for true IT-Act metros (Mumbai)", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "senior",
+      jobCity: "Mumbai",
+    });
+    expect(band.bandContext).toMatch(/HRA EXEMPTION MATH/i);
+    expect(band.bandContext).toMatch(/IT-Act metro \(50% of basic/i);
   });
 
   it("ESOP dilution context appears for early-stage startup with equity", () => {

@@ -236,24 +236,34 @@ function getEquityLiquidityNote(company: string | undefined, companyTier: string
 /** Deputation/onsite premium context for IT services. The biggest
  * negotiation lever in TCS/Infosys/Wipro hiring is whether the
  * candidate is willing to go onsite (US/UK/Singapore). Onsite earns
- * 1.5-3x base. Without this context the LLM ignores the lever. */
-function getDeputationContext(companyTier: string | undefined): string {
-  if (companyTier !== "it-services") return "";
-  return `DEPUTATION LEVER (services-firm specific): TCS / Infosys / Wipro / HCL roles often have an onsite-deputation track. Onsite to US / UK / Singapore / EU pays 1.5-3x the domestic base (USD/GBP/SGD allowance + housing + per diem). If the candidate is willing to relocate, offer the onsite track explicitly: "If you're open to onsite within the first 12-18 months, our typical deputation pays USD 5-8K/month plus housing on top of your domestic base. That's effectively ₹50-90 LPA equivalent for the deputation period."`;
+ * 1.5-3x base. Without this context the LLM ignores the lever.
+ *
+ * Company-level override (hasDeputation on COMPANY_META) takes precedence:
+ * lets non-services companies (Wipro Digital, Cognizant onshore, some
+ * GCC subsets) declare a deputation track they actually have. */
+function getDeputationContext(companyTier: string | undefined, companyMeta?: CompanyMeta | null): string {
+  const tierDefault = companyTier === "it-services";
+  const hasDep = companyMeta?.hasDeputation !== undefined ? companyMeta.hasDeputation : tierDefault;
+  if (!hasDep) return "";
+  return `DEPUTATION LEVER${companyTier === "it-services" ? " (services-firm specific)" : " (this company has an onsite track)"}: ${companyTier === "it-services" ? "TCS / Infosys / Wipro / HCL roles" : "This company"} often have${companyTier === "it-services" ? "" : "s"} an onsite-deputation track. Onsite to US / UK / Singapore / EU pays 1.5-3x the domestic base (USD/GBP/SGD allowance + housing + per diem). If the candidate is willing to relocate, offer the onsite track explicitly: "If you're open to onsite within the first 12-18 months, our typical deputation pays USD 5-8K/month plus housing on top of your domestic base. That's effectively ₹50-90 LPA equivalent for the deputation period."`;
 }
 
 /** 13th-month / festive bonus — prevalent at FMCG, conglomerates,
- * some banks. Equals roughly 1 month of basic. */
-function getFestiveBonus(companyTier: string | undefined, basicLpa: number): { amount: number; text: string } {
+ * some banks. Equals roughly 1 month of basic. Company-level override
+ * (hasFestiveBonus on COMPANY_META) takes precedence — e.g. CRED
+ * started Diwali bonus in 2023 (overrides indian-unicorn default of
+ * "no festive bonus"); HUL eliminated theirs (overrides fmcg-mnc default). */
+function getFestiveBonus(companyTier: string | undefined, basicLpa: number, companyMeta?: CompanyMeta | null): { amount: number; text: string } {
   const round1 = (x: number) => Math.round(x * 10) / 10;
-  const has13thMonth = companyTier === "fmcg-mnc" || companyTier === "bfsi-domestic" || companyTier === "government-psu";
+  // Company override wins if set (true OR false).
+  const tierDefault = companyTier === "fmcg-mnc" || companyTier === "bfsi-domestic" || companyTier === "government-psu";
+  const has13thMonth = companyMeta?.hasFestiveBonus !== undefined ? companyMeta.hasFestiveBonus : tierDefault;
   if (!has13thMonth) return { amount: 0, text: "" };
-  // 13th month = 1 month of basic = basic / 12
   const amount = round1(basicLpa / 12);
-  const tierLabel = companyTier === "fmcg-mnc" ? "FMCG / consumer-goods" : companyTier === "bfsi-domestic" ? "Indian banking" : "PSU / government";
+  const tierLabel = companyTier === "fmcg-mnc" ? "FMCG / consumer-goods" : companyTier === "bfsi-domestic" ? "Indian banking" : companyTier === "government-psu" ? "PSU / government" : "this company";
   return {
     amount,
-    text: `13TH-MONTH / FESTIVE BONUS (${tierLabel} norm): ${fmtLPA(amount)} paid annually around Diwali / financial-year-end as a 13th salary. NOT part of CTC headline; this is on top of the listed total. Standard at ${tierLabel} firms; mention it if the candidate hasn't accounted for it.`,
+    text: `13TH-MONTH / FESTIVE BONUS (${tierLabel} norm${companyMeta?.hasFestiveBonus !== undefined ? ' — verified per company HR policy' : ''}): ${fmtLPA(amount)} paid annually around Diwali / financial-year-end as a 13th salary. NOT part of CTC headline; this is on top of the listed total. Mention it if the candidate hasn't accounted for it.`,
   };
 }
 
@@ -358,20 +368,41 @@ function getDearnessAllowanceContext(companyTier: string | undefined): string {
   return `DEARNESS ALLOWANCE (PSU/govt only): DA is pegged to CPI-IW and revised every Jan + July. Currently at ~50% of basic for central PSUs. This compounds the basic over time — a 7th CPC ₹1L basic today becomes ₹1.5L+ in DA-adjusted in-hand. PSU candidates should account for DA growth when comparing against private offers.`;
 }
 
+/** Strict-IT-Act metro list per Section 10(13A) for the 50% HRA exemption.
+ * Bangalore / Hyderabad / Pune are NOT on this list legally — employers
+ * commonly pay 50% HRA there but only 40% is tax-deductible. This
+ * distinction matters for in-hand math; getting it wrong tells candidates
+ * they save more tax than they actually do. */
+const IT_ACT_50PCT_METROS = new Set(["mumbai", "delhi", "kolkata", "chennai", "new delhi", "ncr"]);
+
+function isLegal50PctMetro(jobCity: string | undefined): boolean {
+  if (!jobCity) return false;
+  const c = jobCity.toLowerCase().trim();
+  for (const m of IT_ACT_50PCT_METROS) {
+    if (c === m || c.includes(m)) return true;
+  }
+  return false;
+}
+
 /** HRA exemption math walkthrough — Income Tax Act Section 10(13A).
  * Exemption = MIN of (actual HRA received, X% of basic, rent paid - 10% of basic),
- * where X = 50% for metros (Mumbai/Delhi/Kolkata/Chennai by IT Act; Bangalore /
- * Hyderabad / Pune commonly treated as 50% by employers despite ambiguity)
- * and 40% otherwise. Only available in the OLD tax regime.
+ * where X = 50% only for the four IT-Act metros (Mumbai, Delhi, Kolkata,
+ * Chennai) and 40% for ALL other cities including Bangalore, Hyderabad,
+ * Pune (despite employers paying 50% there, the strict tax-deduction cap
+ * is 40%). Only available in the OLD tax regime.
  *
- * Most candidates don't compute this and overestimate their old-regime savings.
- * Encoding the math here lets the LLM walk through it accurately when asked. */
-function getHraExemptionWalkthrough(cityTier: string | undefined, basicLpa: number, hraLpa: number): string {
+ * Most candidates don't compute this and overestimate their old-regime
+ * savings. Encoding the math here lets the LLM walk through it accurately. */
+function getHraExemptionWalkthrough(cityTier: string | undefined, basicLpa: number, hraLpa: number, jobCity?: string): string {
   const round1 = (x: number) => Math.round(x * 10) / 10;
-  const isMetro = cityTier === "tier1";
-  const pctOfBasic = isMetro ? 0.50 : 0.40;
+  const isLegalMetro = isLegal50PctMetro(jobCity);
+  const pctOfBasic = isLegalMetro ? 0.50 : 0.40;
   const pctCap = round1(basicLpa * pctOfBasic);
-  const cityLabel = isMetro ? "metro (50% of basic)" : "non-metro (40% of basic)";
+  const cityLabel = isLegalMetro
+    ? "IT-Act metro (50% of basic — Mumbai/Delhi/Kolkata/Chennai only)"
+    : (cityTier === "tier1"
+        ? "tier-1 city but NOT IT-Act metro — 40% cap applies (Bangalore/Hyderabad/Pune are legally non-metro for HRA)"
+        : "non-metro (40% of basic)");
   // Example: assume rent = 50% of HRA (typical in metros)
   const exampleRent = round1(hraLpa * 0.6);
   const rentMinusTenPct = round1(exampleRent - basicLpa * 0.10);
@@ -406,8 +437,15 @@ function getEsopDilutionContext(companyTier: string | undefined, hasEquity: bool
 
 /** Recent ESOP buyback events for top Indian unicorns. These are public
  * and material to the candidate's equity valuation. Not exhaustive but
- * covers the most-asked-about companies. */
-function getRecentBuybackContext(company: string | undefined): string {
+ * covers the most-asked-about companies.
+ *
+ * Per-company override (recentBuybackNote on the override entry) wins
+ * over the hardcoded list — lets curators add new buyback events without
+ * editing the hardcoded buybacks dict here. */
+function getRecentBuybackContext(company: string | undefined, overrideNote?: string): string {
+  if (overrideNote && overrideNote.trim().length > 0) {
+    return `RECENT BUYBACK / LIQUIDITY EVENTS for ${company || "this company"}: ${overrideNote} If candidate raises "but ESOPs are paper" framing, counter with this concrete history.`;
+  }
   const c = (company || "").toLowerCase().trim();
   // Each entry is { match: substring, context: string }
   const buybacks: Record<string, string> = {
@@ -468,6 +506,10 @@ function buildIndianMarketContext(p: {
   hraLpa?: number;
   jobCity?: string;
   roleKey?: string;
+  /** Per-role-override field forwarded from the override entry — lets
+   * a curator override the hardcoded buyback note without editing the
+   * helpers. */
+  recentBuybackNote?: string;
 }): { campusWarning: string; fullContextBlock: string } {
   const campusWarning = detectCampusHire(p.role);
   const companyMeta = lookupCompanyMeta(p.company);
@@ -476,9 +518,9 @@ function buildIndianMarketContext(p: {
   const equityLiq = getEquityLiquidityNote(p.company, p.companyTier, p.hasEquity);
   const esopRefresh = getEsopRefreshContext(p.companyTier, p.hasEquity);
   const esopDilution = getEsopDilutionContext(p.companyTier, p.hasEquity);
-  const recentBuyback = getRecentBuybackContext(p.company);
-  const dep = getDeputationContext(p.companyTier);
-  const fest = getFestiveBonus(p.companyTier, p.basicLpa);
+  const recentBuyback = getRecentBuybackContext(p.company, p.recentBuybackNote);
+  const dep = getDeputationContext(p.companyTier, companyMeta);
+  const fest = getFestiveBonus(p.companyTier, p.basicLpa, companyMeta);
   const retention = getRetentionBonusContext(p.companyTier, p.exp, p.totalCtc);
   const bond = getBondWarning(p.companyTier, companyMeta);
   const wfh = getWfhAllowanceContext(p.companyTier);
@@ -487,7 +529,7 @@ function buildIndianMarketContext(p: {
   const taxSavings = getTaxSavingAllowances(p.companyTier);
   const da = getDearnessAllowanceContext(p.companyTier);
   const hraExemption = (p.hraLpa && p.hraLpa > 0)
-    ? getHraExemptionWalkthrough(p.cityTier, p.basicLpa, p.hraLpa)
+    ? getHraExemptionWalkthrough(p.cityTier, p.basicLpa, p.hraLpa, p.jobCity)
     : "";
   const regionalVariation = getRegionalRoleVariation(p.roleKey, p.cityTier, p.jobCity);
   // Compose only non-empty blocks so prompt stays focused per-tier.
@@ -688,6 +730,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
       hraLpa: components.hra,
       jobCity: inferredJobCity,
       roleKey,
+      recentBuybackNote: override.recentBuybackNote,
     });
     const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST

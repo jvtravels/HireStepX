@@ -118,6 +118,14 @@ export interface CompanyMeta {
   /** Whether the company has a meaningful onsite-deputation track. True
    *  for all IT services; false for product cos. */
   hasDeputation?: boolean;
+  /** Override the tier-default 13th-month / festive-bonus presence.
+   *  Use for unicorns that started Diwali bonus (CRED has done one),
+   *  or FMCG firms that removed it. */
+  hasFestiveBonus?: boolean;
+  /** Per-company recent buyback note (overrides the hardcoded list in
+   *  getRecentBuybackContext). Update when a new buyback round happens
+   *  rather than editing helper code. */
+  recentBuybackNote?: string;
   /** Source note for these company-level facts. */
   metaSource?: string;
 }
