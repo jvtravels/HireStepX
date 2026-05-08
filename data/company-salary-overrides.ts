@@ -159,7 +159,18 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
   uber: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Uber India SDE standard" },
 
   /* ─── Indian Unicorns (mostly 30-60 day notice; no bonds) ─── */
-  razorpay: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Razorpay HR policy — typical Indian unicorn notice" },
+  razorpay: {
+    // Notice varies by level: 30-60d for junior/mid, 60-90d for senior+
+    // (matches the new override entries). Default to 60d as the
+    // company-wide quote when level isn't specified.
+    noticePeriodDays: 60,
+    hasDeputation: false,
+    // Updated 2026-05-08: candidate must verify ESOP buyback before
+    // assuming liquidity. Razorpay has run buybacks historically but
+    // each round is contingent on board approval — not guaranteed.
+    recentBuybackNote: "Razorpay has done multiple ESOP buybacks since 2018, BUT candidate should ASK HR explicitly: 'When was the last buyback round, what was the strike-vs-FMV ratio, and is another planned in the next 12 months?' Do NOT assume liquidity from past behavior — each round is board-discretion.",
+    metaSource: "Razorpay HR policy + curated research 2026-05-08",
+  },
   cred: { noticePeriodDays: 30, hasDeputation: false, metaSource: "CRED HR policy" },
   zerodha: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zerodha HR policy" },
   groww: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Groww HR policy" },
@@ -199,46 +210,47 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   string,
   Partial<Record<string, Partial<Record<ExperienceLevel, CompanyBandOverride>>>>
 > = {
-  /* ─── Indian Unicorns — Fintech ─────────────────────────────── */
+  /* ─── Indian Unicorns — Fintech ───────────────────────────────
+   *
+   * Razorpay: data refreshed from human-curated research worksheet
+   * 2026-05-08. Total CTC ranges widened to reflect actual offer
+   * distribution (junior to senior outliers). Each entry now also
+   * carries the candidate's per-level negotiation focus in `notes`. */
   razorpay: {
     "software-engineer": {
-      entry: { totalMin: 16, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (2,271 salaries, Apr 2026) + AmbitionBox", lastVerified: "2026-05-07", notes: "Razorpay SE-1 / SE-2 typical opening; offers above ₹26L for top talent." },
-      mid: { totalMin: 26, totalMax: 42, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi", lastVerified: "2026-05-07" },
-      senior: { totalMin: 42, totalMax: 65, equityMin: 6, equityMax: 15, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + DRHP signal", lastVerified: "2026-05-07", notes: "Senior Engineer at Razorpay; ESOP credibility lifted post Apr-2026 DRHP filing." },
+      entry: { totalMin: 10.5, totalMax: 29.4, baseMin: 7.8, baseMax: 21.8, equityMin: 1.5, equityMax: 4.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox + offer-letter aggregation", lastVerified: "2026-05-08", notes: "Razorpay SE-1 / Junior. Negotiation focus: fixed + joining bonus. ESOP liquidity must be verified — do not assume." },
+      mid: { totalMin: 18.9, totalMax: 52.5, baseMin: 14.0, baseMax: 38.9, equityMin: 2.6, equityMax: 7.4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay SE-2 / SE-3 mid level. Negotiation focus: fixed + ESOP clarity (strike, vesting, last buyback)." },
+      senior: { totalMin: 36.8, totalMax: 99.8, baseMin: 27.2, baseMax: 73.9, equityMin: 5.2, equityMax: 14.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 (post Apr-2026 DRHP filing)", lastVerified: "2026-05-08", notes: "Razorpay Senior. Negotiation focus: fixed + ESOP + joining bonus. Top of range hit only for staff/principal-tier hires." },
       lead: { totalMin: 60, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
     "product-manager": {
-      mid: { totalMin: 28, totalMax: 45, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox + Glassdoor", lastVerified: "2026-05-07" },
-      senior: { totalMin: 45, totalMax: 75, equityMin: 8, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
+      entry: { totalMin: 14.7, totalMax: 33.6, baseMin: 10.3, baseMax: 23.5, equityMin: 2.1, equityMax: 4.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay APM / PM-1. Negotiation focus: fixed + role scope clarity." },
+      mid: { totalMin: 26.2, totalMax: 73.5, baseMin: 18.3, baseMax: 51.5, equityMin: 3.7, equityMax: 10.3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay PM mid level. Negotiation focus: fixed + ESOP value (verify last buyback round)." },
+      senior: { totalMin: 47.2, totalMax: 136.5, baseMin: 33.0, baseMax: 95.6, equityMin: 6.6, equityMax: 19.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior PM / Group PM. Negotiation focus: scope + fixed + equity. Top of range = group-PM with strong fintech track record." },
+    },
+    "ux-designer": {
+      entry: { totalMin: 8.4, totalMax: 25.2, baseMin: 6.6, baseMax: 19.7, equityMin: 1.0, equityMax: 3.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Designer. Negotiation focus: fixed salary." },
+      mid: { totalMin: 16.8, totalMax: 47.2, baseMin: 13.1, baseMax: 36.8, equityMin: 2.0, equityMax: 5.7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Designer. Negotiation focus: fixed + level mapping clarity (Designer-2 vs Senior Designer)." },
+      senior: { totalMin: 29.4, totalMax: 84.0, baseMin: 22.9, baseMax: 65.5, equityMin: 3.5, equityMax: 10.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Product Designer. Negotiation focus: fixed + title calibration (Senior vs Lead vs Principal designer)." },
+    },
+    "data-analyst": {
+      entry: { totalMin: 6.3, totalMax: 16.8, baseMin: 5.3, baseMax: 14.1, equityMin: 0.4, equityMax: 1.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Data Analyst. Negotiation focus: fixed (variable component small at this level)." },
+      mid: { totalMin: 10.5, totalMax: 29.4, baseMin: 8.8, baseMax: 24.7, equityMin: 0.6, equityMax: 1.8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Data Analyst. Negotiation focus: fixed + bonus structure (perf-linked)." },
+      senior: { totalMin: 18.9, totalMax: 52.5, baseMin: 15.9, baseMax: 44.1, equityMin: 1.1, equityMax: 3.2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Data Analyst. Negotiation focus: fixed + title (Senior vs Lead vs DS conversion path)." },
+    },
+    "sales": {
+      entry: { totalMin: 7.4, totalMax: 18.9, baseMin: 4.6, baseMax: 11.7, equityMin: 0.4, equityMax: 1.1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Junior Sales/Growth. Bonus heavy (₹2.4-6L variable). Negotiation focus: variable structure (quota + accelerators)." },
+      mid: { totalMin: 14.7, totalMax: 42.0, baseMin: 9.1, baseMax: 26.0, equityMin: 0.9, equityMax: 2.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Mid Sales/AE. Variable up to ₹13L. Negotiation focus: OTE + fixed split — pin down the realistic fixed component, not just OTE." },
+      senior: { totalMin: 26.2, totalMax: 84.0, baseMin: 16.3, baseMax: 52.1, equityMin: 1.6, equityMax: 5.0, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregated", lastVerified: "2026-05-08", notes: "Razorpay Senior Sales/Strategic Account. Negotiation focus: fixed + commission terms (cap, claw-back, payout cadence)." },
     },
     "ml-engineer": {
       mid: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + GenAI premium 1.3-1.6x", lastVerified: "2026-05-07" },
       senior: { totalMin: 55, totalMax: 90, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
-    "ux-designer": {
-      entry: { totalMin: 8, totalMax: 14, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Razorpay Designer 1yr ₹10.1L; Product Designer 1yr ₹7.2L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      mid: { totalMin: 20, totalMax: 32, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Razorpay Designer 5yr ₹26.3L; Product Designer 5yr ₹22.9L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-      senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor (Razorpay Designer 10yr ₹42.2L; Product Designer 10yr ₹47.7L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
-    },
     "devops-sre": {
       mid: { totalMin: 19, totalMax: 30, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Razorpay DevOps SE ₹1.92M, median ₹2.17M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       senior: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Razorpay Sr DevOps)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
       lead: { totalMin: 50, totalMax: 75, equityMin: 7, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (Razorpay Lead DevOps top ₹6.67M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
-    },
-  
-    "data-analyst": {
-      entry: { totalMin: 4, totalMax: 17, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x data-analyst)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 11, totalMax: 29, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x data-analyst)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 19, totalMax: 53, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x data-analyst)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 29, totalMax: 79, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x data-analyst)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 42, totalMax: 105, equityMin: 3, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x data-analyst)", lastVerified: "2026-05-08" },
-    },
-    "sales": {
-      entry: { totalMin: 4, totalMax: 19, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x sales)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 15, totalMax: 42, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x sales)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 26, totalMax: 84, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x sales)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 47, totalMax: 147, equityMin: 3, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x sales)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 74, totalMax: 231, equityMin: 4, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x sales)", lastVerified: "2026-05-08" },
     },
     "customer-success": {
       entry: { totalMin: 4, totalMax: 17, equityMin: 1, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Seed dataset 2026-05-08 (razorpay 1.05x customer-success)", lastVerified: "2026-05-08" },
