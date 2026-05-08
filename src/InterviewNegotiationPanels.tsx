@@ -1,5 +1,6 @@
 import React, { memo, useState } from "react";
 import { e, ef } from "./interviewTokens";
+import { computeCtcBreakdown } from "./_ctc-breakdown";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
 
@@ -372,6 +373,42 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
           </div>
         ))}
       </div>
+
+      {/* Take-home reality check — breaks the stated CTC down so candidates
+          see ₹X LPA ≠ ₹X LPA in their account. New regime FY 2025-26 tax. */}
+      {finalOffer > 0 && (() => {
+        const breakdown = computeCtcBreakdown({
+          totalCtcLpa: finalOffer,
+          // Heuristic equity split: assume 15% of CTC is equity for product cos
+          // when negotiationBand isn't tagged; safe default so the card always
+          // renders. Real wire-up to company-override comes in a later pass.
+          equityLpa: finalOffer * 0.15,
+          equityType: "esop",
+          variablePct: 0.12,
+        });
+        const inrFmt = (n: number) => `₹${(n / 1000).toFixed(0)}k`;
+        return (
+          <details style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(20,17,10,0.04)", border: "1px solid rgba(20,17,10,0.06)" }}>
+            <summary style={{ cursor: "pointer", fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Take-home reality · {inrFmt(breakdown.monthlyTakeHomeInr)}/mo · gap {breakdown.gapPct}%
+            </summary>
+            <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 12px", fontFamily: ef.sans, fontSize: 12, color: e.coal }}>
+              <span style={{ color: e.inkSoft }}>Stated CTC</span><span>₹{breakdown.statedCtcLpa} LPA</span>
+              <span style={{ color: e.inkSoft }}>Cash CTC (after benefits loading)</span><span>₹{breakdown.cashCtcLpa} LPA</span>
+              <span style={{ color: e.inkSoft }}>Fixed cash</span><span>₹{breakdown.fixedCashLpa} LPA</span>
+              <span style={{ color: e.inkSoft }}>Variable target → realistic</span><span>₹{breakdown.variableTargetLpa} → ₹{breakdown.variableRealisticLpa} LPA</span>
+              <span style={{ color: e.inkSoft }}>Equity face → realistic (ESOP @30%)</span><span>₹{breakdown.equityLpa} → ₹{breakdown.equityRealisticLpa} LPA</span>
+              <span style={{ color: e.inkSoft }}>Employee EPF</span><span>−₹{breakdown.employeeEpfLpa} LPA</span>
+              <span style={{ color: e.inkSoft }}>Income tax (new regime)</span><span>−₹{breakdown.annualTaxLpa} LPA</span>
+              <span style={{ color: e.copper, fontWeight: 600 }}>Annual take-home</span><span style={{ color: e.copper, fontWeight: 600 }}>₹{breakdown.annualTakeHomeLpa} LPA</span>
+              <span style={{ color: e.copper, fontWeight: 600 }}>All-in realistic (cash + equity)</span><span style={{ color: e.copper, fontWeight: 600 }}>₹{breakdown.totalRealisticLpa} LPA</span>
+            </div>
+            <p style={{ marginTop: 8, fontFamily: ef.sans, fontSize: 10, color: e.inkFaint, lineHeight: 1.4 }}>
+              Heuristics: ESOP discounted to 30% of face (Indian unicorn buyback history); variable at 85% payout factor; tax under new regime FY 2025-26 incl. ₹75k std deduction + 87A rebate up to ₹12L. HRA / 80C deductions not netted.
+            </p>
+          </details>
+        );
+      })()}
 
       {/* Improvement */}
       {improvement !== 0 && (
