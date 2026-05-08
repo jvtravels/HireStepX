@@ -23,6 +23,13 @@
 import type { ExperienceLevel } from "./salaries";
 import { classifyCompanyType } from "./company-guidance";
 import { getCsvDerivedBandOverride, getCsvBandOnly } from "./csv-derived-fallbacks";
+import { IMPORTED_SALARY_OVERRIDES } from "./_imported-salary-overrides.generated";
+
+/** Stamp every IMPORTED_SALARY_OVERRIDES hit as research-aggregated so the
+ *  negotiation prompt + UI hedge to the lower half of the band. */
+function tagImported(band: CompanyBandOverride): CompanyBandOverride {
+  return band.dataConfidence ? band : { ...band, dataConfidence: "research-aggregated" };
+}
 
 /** Subset of SalaryEntry — the fields a company-band override needs. */
 export interface CompanyBandOverride {
@@ -7139,6 +7146,22 @@ export function getCompanyBandOverride(
       if (hit) return reconcileWithCsv(hit, rawCompany, roleKey, experienceLevel);
     }
   }
+  /* AmbitionBox-scraped fallback (data/_imported-salary-overrides.generated.ts).
+     Auto-generated from data/salary-data-input.csv via scripts/import-salary-csv.mts.
+     Runs AFTER curator hits (so editorial wins) but BEFORE the older
+     CSV-derived 100-company aggregated layer (which we'll deprecate as
+     the AmbitionBox scrape grows). All scraped cells are stamped
+     dataConfidence: "research-aggregated" so the LLM/UI hedges. */
+  const importedDirect = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[cleaned]?.[roleKey], experienceLevel);
+  if (importedDirect) return tagImported(importedDirect);
+  for (const [companyKey, roleMap] of Object.entries(IMPORTED_SALARY_OVERRIDES)) {
+    if (companyKey.length < 4) continue;
+    if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
+      const hit = pickLevelInRoleMap(roleMap[roleKey], experienceLevel);
+      if (hit) return tagImported(hit);
+    }
+  }
+
   /* CSV-derived research fallback (100-company aggregated dataset).
      Runs BEFORE the sector default so the candidate gets the
      research-verified band whenever the company is in the CSV but
