@@ -214,6 +214,74 @@ describe("applyTitleExpFloor (via generateNegotiationBand)", () => {
     expect(gap!.observed).toMatch(/USD|401|PTO/);
   });
 
+  it("flags ai_offer_regression when AI walks back a number without revision language", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can offer ₹40 LPA total compensation for this role."),
+        user("That works for my expectations. What's the breakdown?"),
+        ai("So the offer is ₹32 LPA — let me know when you can join."),
+      ]),
+    });
+    expect(out.flags).toContain("ai_offer_regression");
+  });
+
+  it("does NOT flag ai_offer_regression when AI uses revision language", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can offer ₹40 LPA total compensation."),
+        user("Great."),
+        ai("Actually let me revise that — I misspoke earlier. The correct offer is ₹35 LPA."),
+      ]),
+    });
+    expect(out.flags).not.toContain("ai_offer_regression");
+  });
+
+  it("flags ai_arithmetic_error when AI claims wrong monthly take-home", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        // ₹40 LPA stated CTC, plausible take-home ~₹140-220k/month.
+        // AI claims ₹50k — way too low.
+        ai("Your offer is 40 LPA, which works out to about 50k per month take-home."),
+        user("That seems low. Can you double-check?"),
+      ]),
+    });
+    expect(out.flags).toContain("ai_arithmetic_error");
+  });
+
+  it("does NOT flag ai_arithmetic_error on plausible monthly take-home", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Your 40 LPA stated CTC works out to roughly 180k per month after tax."),
+        user("Thanks for the breakdown."),
+      ]),
+    });
+    expect(out.flags).not.toContain("ai_arithmetic_error");
+  });
+
+  it("captures word-number salary phrases ('fifteen lakhs')", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("What are your expectations?"),
+        user("My target is fifteen lakhs total compensation."),
+        ai("That's reasonable. We can work with that."),
+      ]),
+    });
+    // No specific flag, but the candidate's anchor was extracted (so
+    // user_never_anchored should NOT fire).
+    expect(out.flags).not.toContain("user_never_anchored");
+  });
+
+  it("captures compact crore notation ('1.5cr')", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("What's your range?"),
+        user("Looking at 1.5cr total comp for a Director role."),
+        ai("Noted."),
+      ]),
+    });
+    expect(out.flags).not.toContain("user_never_anchored");
+  });
+
   it("Plain 'Software Engineer' (no senior prefix) stays at YOE floor", () => {
     const midBand = generateNegotiationBand({
       role: "Software Engineer",

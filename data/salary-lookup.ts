@@ -1241,12 +1241,21 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
  *  Both the LLM prompt's MARKET REALITY block and the post-session analyzer
  *  must agree on this so coaching matches what the AI actually quoted.
  *  Order: per-company override → tier-default negotiation band. */
-export function getReferenceBand(params: SalaryLookupParams): { totalMin: number; totalMax: number; bandSource: NegotiationBand["bandSource"] } {
+export function getReferenceBand(params: SalaryLookupParams): { totalMin: number; totalMax: number; bandSource: NegotiationBand["bandSource"]; lastVerified?: string; ageDays?: number } {
   const exp = normalizeExp(params.experienceLevel);
   const roleKey = matchRoleKey(params.role);
   const override = getCompanyBandOverride(params.company || undefined, roleKey, exp);
   if (override) {
-    return { totalMin: override.totalMin, totalMax: override.totalMax, bandSource: "company-override" };
+    const ageDays = override.lastVerified
+      ? Math.floor((Date.now() - new Date(override.lastVerified).getTime()) / 86400000)
+      : undefined;
+    return {
+      totalMin: override.totalMin,
+      totalMax: override.totalMax,
+      bandSource: "company-override",
+      lastVerified: override.lastVerified,
+      ageDays,
+    };
   }
   const band = generateNegotiationBand(params);
   return { totalMin: band.initialOffer, totalMax: band.maxStretch, bandSource: band.bandSource };
@@ -1408,10 +1417,17 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
     const variableNote = hasVariable
       ? ` Variable target ₹${breakdown.variableTargetLpa} → realistic ₹${breakdown.variableRealisticLpa} LPA (${Math.round(payoutFactor * 100)}% historical payout for this tier).`
       : "";
+    // Stale-band advisory: if the band is >270 days old, warn the LLM not
+    // to quote it as authoritative. Salary bands shift quarterly; ~9 months
+    // is the practical "starting to drift" mark even before the 540-day CI gate.
+    const staleNote = ref.ageDays !== undefined && ref.ageDays > 270
+      ? `\n- ⚠ DATA FRESHNESS: This band was last verified ${ref.ageDays} days ago. Numbers may be 10-20% off current 2026 reality — say "based on slightly older data" if quoting precise figures.`
+      : "";
+
     return `\n\nMARKET REALITY (use these grounded numbers — do NOT contradict them):
 - Mid-band stated CTC ₹${midCtc.toFixed(1)} LPA → monthly take-home ~₹${monthlyK}k after tax (new regime FY 2025-26).
 - Stated → realistic gap: ${gapPctDisplay}% (gap ₹${breakdown.gapLpa} LPA = the "marketing markup" candidate should be aware of).${equityNote}${variableNote}
-- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.`;
+- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.${staleNote}`;
   })();
 
   /* PSU / govt has a fundamentally different negotiation surface: no

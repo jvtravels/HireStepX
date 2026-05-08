@@ -123,6 +123,17 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
     expect(promptMid).toBeCloseTo(refMid, 1);
   });
 
+  it("getReferenceBand returns ageDays for company-override entries", () => {
+    const ref = getReferenceBand({
+      role: "Software Engineer",
+      experienceLevel: "mid",
+      company: "Razorpay",
+    });
+    expect(ref.bandSource).toBe("company-override");
+    expect(typeof ref.ageDays).toBe("number");
+    expect(ref.ageDays).toBeGreaterThanOrEqual(0);
+  });
+
   it("PSU/govt sessions get a trimmed prompt (≤40% of standard size)", () => {
     const standard = buildSalaryNegotiationGuidance({
       role: "Software Engineer",

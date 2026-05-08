@@ -40,6 +40,11 @@ export interface CtcBreakdownInput {
    *  recentBuybackNote — e.g. Razorpay (6 buybacks) → 0.55, CRED → 0.40.
    *  Listed cos (Swiggy/Zomato) → 1.0. */
   equityLiquidityFactor?: number;
+  /** Tax regime to apply. Defaults to "new" (most common since Budget
+   *  2025). Older candidates with HRA + 80C deductions often pay less
+   *  under "old" — typically the inflection is around ₹15-20L taxable
+   *  with active rent + ELSS / 80C. */
+  taxRegime?: "new" | "old";
 }
 
 /** Variable-payout realism factor per company-tier. The default 0.85 was
@@ -124,12 +129,43 @@ const SLABS: Array<[number, number]> = [
   [Infinity, 0.30], // 24L+: 30%
 ];
 
+/** India old-regime FY 2025-26 tax slabs, in LPA.
+ *  87A rebate caps tax at 0 for taxable ≤ ₹5L (lower threshold than new). */
+const SLABS_OLD: Array<[number, number]> = [
+  [2.5, 0],
+  [5, 0.05],
+  [10, 0.20],
+  [Infinity, 0.30],
+];
+
 /** Compute tax on taxable income (in LPA) under new regime.
  *  Returns tax in LPA. Includes 87A rebate (zero-tax up to 12L taxable),
  *  87A MARGINAL RELIEF for incomes just above 12L (so candidate doesn't
  *  pay more tax than the income excess above 12L — real govt rule, not
  *  a step function), 4% cess, and surcharge on income >50L.
  *  Exported for unit testability. */
+/** Old-regime tax: 87A rebate kicks in at ₹5L not ₹12L; slabs are flatter. */
+export function computeOldRegimeTaxLpa(taxableLpa: number): number {
+  if (taxableLpa <= 0) return 0;
+  if (taxableLpa <= 5) return 0; // 87A rebate (old regime)
+
+  let tax = 0;
+  let prev = 0;
+  for (const [cap, rate] of SLABS_OLD) {
+    if (taxableLpa <= prev) break;
+    const slab = Math.min(taxableLpa, cap) - prev;
+    tax += slab * rate;
+    prev = cap;
+    if (taxableLpa <= cap) break;
+  }
+  let surcharge = 0;
+  if (taxableLpa > 200) surcharge = tax * 0.25;
+  else if (taxableLpa > 100) surcharge = tax * 0.15;
+  else if (taxableLpa > 50) surcharge = tax * 0.10;
+  const cess = (tax + surcharge) * 0.04;
+  return tax + surcharge + cess;
+}
+
 export function computeNewRegimeTaxLpa(taxableLpa: number): number {
   if (taxableLpa <= 0) return 0;
   // 87A rebate: full rebate when taxable ≤ 12L under new regime.
@@ -196,9 +232,13 @@ export function computeCtcBreakdown(input: CtcBreakdownInput): CtcBreakdownOutpu
   const employeeEpf = fixedCash * 0.50 * 0.12;
 
   // Taxable income = (fixed + realistic variable) - std deduction - employee EPF.
-  const stdDeduction = 0.75; // ₹75,000 in LPA terms
+  const regime = input.taxRegime ?? "new";
+  // Std deduction: ₹75k under new regime, ₹50k under old regime.
+  const stdDeduction = regime === "old" ? 0.50 : 0.75;
   const taxableLpa = Math.max(0, fixedCash + variableRealistic - stdDeduction - employeeEpf);
-  const taxLpa = computeNewRegimeTaxLpa(taxableLpa);
+  const taxLpa = regime === "old"
+    ? computeOldRegimeTaxLpa(taxableLpa)
+    : computeNewRegimeTaxLpa(taxableLpa);
 
   const annualTakeHome = Math.max(0, fixedCash + variableRealistic - employeeEpf - taxLpa);
   const monthlyInr = (annualTakeHome * LPA) / 12;

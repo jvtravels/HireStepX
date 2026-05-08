@@ -95,6 +95,34 @@ function findUsismDrift(transcript: TranscriptTurn[]): Array<{ turn_idx: number;
 // the regex didn't match them in the first place.
 const COMP_RE = /(?:₹|inr\s*)?(\d{1,4}(?:\.\d{1,2})?)\s*(?:[-–to]+\s*(\d{1,4}(?:\.\d{1,2})?)\s*)?(lpa|lakhs?|l\b|cr|crores?)/gi;
 
+// Compact crore: "1.5cr", "2cr+". Same shape as COMP_RE but without
+// requiring an LPA-style suffix word.
+const COMPACT_CR_RE = /(?:₹|inr\s*)?(\d{1,3}(?:\.\d{1,2})?)\s*cr\b/gi;
+
+// Word-number salary phrases: "fifteen lakhs", "twenty-five LPA",
+// "two crore". Maps the most common 1-99 word forms to numbers.
+const WORD_NUM_MAP: Record<string, number> = {
+  one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+  eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,
+  twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,
+};
+const WORD_NUM_RE = /\b((?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[\s-](?:one|two|three|four|five|six|seven|eight|nine))?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)\s+(lakhs?|crores?|lpa)\b/gi;
+function wordToNumber(word: string): number | null {
+  const norm = word.toLowerCase().trim();
+  if (WORD_NUM_MAP[norm] !== undefined) return WORD_NUM_MAP[norm]!;
+  const m = norm.match(/^(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[\s-](\w+)$/);
+  if (m && WORD_NUM_MAP[m[1]!] !== undefined && WORD_NUM_MAP[m[2]!] !== undefined) {
+    return WORD_NUM_MAP[m[1]!]! + WORD_NUM_MAP[m[2]!]!;
+  }
+  return null;
+}
+
+// USD currency switch: "$120,000", "USD 60K". The analyzer flags via the
+// USISM rubric gap, but extraction here lets us still capture the magnitude
+// for hallucination/band-comparison logic. Conservative INR conversion at
+// 1 USD = 84 INR (mid-2026 rate); rounding to LPA.
+const USD_RE = /(?:\$|usd\s*)(\d{1,3}(?:[,]\d{3})*|\d{4,7})\s*(?:k|thousand)?/gi;
+
 function toLpa(value: number, unit: string): number {
   const u = unit.toLowerCase();
   if (u.startsWith("cr")) return value * 100;
@@ -113,18 +141,48 @@ function extractCompClaims(transcript: TranscriptTurn[]): CompClaim[] {
   for (let i = 0; i < transcript.length; i++) {
     const t = transcript[i];
     const text = t.text || "";
+
+    // Standard "₹X LPA / X lakhs / X cr" pattern.
     COMP_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = COMP_RE.exec(text)) !== null) {
       const lo = parseFloat(m[1]);
       const hi = m[2] ? parseFloat(m[2]) : lo;
       if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue;
-      out.push({
-        turn_idx: i,
-        speaker: t.speaker,
-        raw: m[0],
-        lpa: toLpa(hi, m[3]),
-      });
+      out.push({ turn_idx: i, speaker: t.speaker, raw: m[0], lpa: toLpa(hi, m[3]) });
+    }
+
+    // Compact crore: "1.5cr" without surrounding LPA suffix. Skip if the
+    // standard regex already captured it (we check by raw substring).
+    COMPACT_CR_RE.lastIndex = 0;
+    while ((m = COMPACT_CR_RE.exec(text)) !== null) {
+      const v = parseFloat(m[1]);
+      if (!Number.isFinite(v)) continue;
+      const raw = m[0];
+      if (out.some(c => c.turn_idx === i && c.raw.includes(raw))) continue;
+      out.push({ turn_idx: i, speaker: t.speaker, raw, lpa: v * 100 });
+    }
+
+    // Word numbers: "fifteen lakhs", "twenty-five LPA".
+    WORD_NUM_RE.lastIndex = 0;
+    while ((m = WORD_NUM_RE.exec(text)) !== null) {
+      const num = wordToNumber(m[1]!);
+      if (num === null) continue;
+      const lpa = /crore/i.test(m[2]!) ? num * 100 : num;
+      out.push({ turn_idx: i, speaker: t.speaker, raw: m[0], lpa });
+    }
+
+    // USD figures: "$120,000". Conservative ₹84/USD conversion.
+    USD_RE.lastIndex = 0;
+    while ((m = USD_RE.exec(text)) !== null) {
+      const cleaned = m[1]!.replace(/,/g, "");
+      const usd = parseFloat(cleaned);
+      if (!Number.isFinite(usd)) continue;
+      // Detect "$60K" form
+      const isK = /k|thousand/i.test(m[0]);
+      const usdActual = isK ? usd * 1000 : usd;
+      const lpa = (usdActual * 84) / 100000;
+      out.push({ turn_idx: i, speaker: t.speaker, raw: m[0], lpa });
     }
   }
   return out;
@@ -751,6 +809,82 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
             observed: `AI matched user's ${userAsk.toFixed(1)} LPA ask without ever pushing back on whether it was realistic`,
             severity: "high",
           });
+        }
+      }
+    }
+
+    // --- 4·. Numerical-claim consistency: AI said "₹X LPA = ₹Yk/month".
+    //         Verify Y is within ±25% of our canonical CTC-breakdown
+    //         monthly take-home. LLMs do arithmetic wrong frequently. ---
+    {
+      // Pattern: number followed by LPA/lakhs/cr ... "= ₹Yk per month" or
+      // "around ₹Yk/month take-home" within ~120 chars.
+      const monthRe = /(\d{1,3}(?:\.\d{1,2})?)\s*(?:lpa|lakhs?|l\b|cr|crores?)[\s\S]{0,120}?(?:₹|inr\s*)?(\d{2,3}(?:[,]\d{3})?)\s*(?:k|thousand)?\s*(?:per\s*month|\/?\s*month|\/?\s*mo\b|monthly)/gi;
+      for (let i = 0; i < transcript.length; i++) {
+        const t = transcript[i];
+        if (!t || !isAiTurn(t)) continue;
+        const text = t.text || "";
+        let m: RegExpExecArray | null;
+        monthRe.lastIndex = 0;
+        while ((m = monthRe.exec(text)) !== null) {
+          const ctcLpa = parseFloat(m[1]!);
+          const isCr = /cr/i.test(m[0]);
+          const ctcLpaActual = isCr ? ctcLpa * 100 : ctcLpa;
+          const monthlyClaimedK = parseFloat((m[2] ?? "0").replace(/,/g, ""));
+          if (!Number.isFinite(ctcLpaActual) || !Number.isFinite(monthlyClaimedK)) continue;
+          if (ctcLpaActual <= 0 || monthlyClaimedK <= 0) continue;
+          // Naive but useful sanity floor: monthly take-home is roughly
+          // CTC × 0.55 / 12 in LPA terms = CTC × 4583 in ₹/month, i.e.
+          // 4.58k per LPA of stated CTC. Range candidate: 3.5k-5.5k.
+          const expectedKLow = ctcLpaActual * 3.5;
+          const expectedKHigh = ctcLpaActual * 5.5;
+          if (monthlyClaimedK < expectedKLow * 0.6 || monthlyClaimedK > expectedKHigh * 1.4) {
+            flags.add("ai_arithmetic_error");
+            gaps.push({
+              dimension: "numerical_correctness",
+              expected: `Monthly take-home for ₹${ctcLpaActual.toFixed(1)} LPA stated CTC ≈ ₹${Math.round(expectedKLow)}k-${Math.round(expectedKHigh)}k (after tax + EPF, new regime FY 2025-26)`,
+              observed: `AI claimed ₹${monthlyClaimedK}k/month for ₹${ctcLpaActual.toFixed(1)} LPA — outside plausible take-home range. Likely arithmetic hallucination.`,
+              severity: "high",
+            });
+            break;
+          }
+        }
+        if (flags.has("ai_arithmetic_error")) break;
+      }
+    }
+
+    // --- 4a. Offer regression: AI quoted a higher number then walked it
+    //         back without explicit "I made a mistake / let me revise"
+    //         language. Real recruiters never do this — it's an LLM bug. ---
+    {
+      const aiClaimsByTurn = claims
+        .filter(c => isAiTurn(transcript[c.turn_idx]))
+        .filter(c => c.lpa > 0);
+      for (let k = 1; k < aiClaimsByTurn.length; k++) {
+        const prev = aiClaimsByTurn[k - 1]!;
+        const curr = aiClaimsByTurn[k]!;
+        // Only flag drops >5% to avoid noise from "we offered 32 LPA total"
+        // → "32 LPA — 24 LPA base" decompositions.
+        if (curr.lpa < prev.lpa * 0.95) {
+          // Check the surrounding AI text for revision language.
+          const between = transcript
+            .slice(prev.turn_idx, curr.turn_idx + 1)
+            .filter(isAiTurn)
+            .map(t => t.text || "")
+            .join(" ");
+          const revised = /\b(let me revise|i made (?:a |an )?(?:mistake|error)|correction|misspoke|to clarify|that should (?:be|have been)|i mis(?:quoted|spoke))\b/i.test(between);
+          // Also ignore decomposition explanations ("of which X is base").
+          const decomposition = /\b(of which|that(?:'s| is) (?:base|fixed)|breaks down (?:to|into)|comprised of|breakdown is)\b/i.test(between);
+          if (!revised && !decomposition) {
+            flags.add("ai_offer_regression");
+            gaps.push({
+              dimension: "negotiation_realism",
+              expected: "AI hiring manager's later offer should be ≥ earlier offer (recruiters never silently walk back numbers)",
+              observed: `AI quoted ₹${prev.lpa.toFixed(1)} LPA at turn ${prev.turn_idx + 1}, then ₹${curr.lpa.toFixed(1)} LPA at turn ${curr.turn_idx + 1} — ${(((prev.lpa - curr.lpa) / prev.lpa) * 100).toFixed(0)}% lower without revision language.`,
+              severity: "high",
+            });
+            break; // flag once per session
+          }
         }
       }
     }

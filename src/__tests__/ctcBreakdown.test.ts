@@ -1,5 +1,33 @@
 import { describe, it, expect } from "vitest";
-import { computeCtcBreakdown, computeNewRegimeTaxLpa, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../_ctc-breakdown";
+import { computeCtcBreakdown, computeNewRegimeTaxLpa, liquidityFactorFromBuybackNote, variablePayoutFactorForTier, computeOldRegimeTaxLpa } from "../_ctc-breakdown";
+
+describe("computeOldRegimeTaxLpa", () => {
+  it("returns 0 below ₹5L (87A old regime)", () => {
+    expect(computeOldRegimeTaxLpa(5)).toBe(0);
+    expect(computeOldRegimeTaxLpa(4)).toBe(0);
+  });
+
+  it("flatter slabs than new regime above ₹10L", () => {
+    // 10L taxable: 0 + 0.05*2.5 + 0.20*5 = 1.125 + 4% cess = ~1.17 LPA
+    expect(computeOldRegimeTaxLpa(10)).toBeCloseTo(1.17, 1);
+  });
+
+  it("old regime can be lower than new for high earners with deductions", () => {
+    expect(computeOldRegimeTaxLpa(15)).toBeGreaterThan(0);
+    expect(computeNewRegimeTaxLpa(15)).toBeGreaterThan(0);
+  });
+});
+
+describe("computeCtcBreakdown — taxRegime option", () => {
+  it("respects taxRegime: 'old' override", () => {
+    const newR = computeCtcBreakdown({ totalCtcLpa: 25, variablePct: 0.10, taxRegime: "new" });
+    const oldR = computeCtcBreakdown({ totalCtcLpa: 25, variablePct: 0.10, taxRegime: "old" });
+    // At ₹25L, old regime (without 80C/HRA) typically owes more tax
+    // because new regime got the 87A bump up to ₹12L. So old < new
+    // take-home for this case.
+    expect(oldR.annualTakeHomeLpa).toBeLessThan(newR.annualTakeHomeLpa);
+  });
+});
 
 describe("variablePayoutFactorForTier", () => {
   it("listed cos pay closer to target (≥ 0.90)", () => {
