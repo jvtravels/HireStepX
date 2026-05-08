@@ -19,6 +19,10 @@ import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } 
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { getCompanyCity } from "./company-cities";
 import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
+import {
+  getCompanyNegotiationContext,
+  formatCompanyNegotiationContext,
+} from "./company-negotiation-context";
 import { formatGranularBand } from "./india-salary-bands-2025";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../src/_ctc-breakdown";
 import { tierFlexibility, type CompanyTierBucket } from "../src/_negotiation-math";
@@ -762,10 +766,17 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     // Mahindra) similarly. Cap at 0 for those tiers; otherwise allow up to
     // 10% of initial offer as authority.
     const noBonusTiers = new Set(["government-psu", "it-services"]);
-    const joiningBonusMax = noBonusTiers.has(companyTier)
-      ? 0
-      : Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10);
-    const joiningBonusRange: [number, number] = [0, joiningBonusMax];
+    // Curator-specified per-(role, level) joining-bonus authority takes
+    // precedence over the generic 10%-of-CTC formula. Sourced from the
+    // research backlog screenshots (e.g. Meesho SE Junior ₹0-2L vs Senior
+    // ₹3-9L). Falls back to formula when not set; cleared to 0 for
+    // no-bonus tiers regardless.
+    const curatedBonus = override.joiningBonusOverride;
+    const joiningBonusRange: [number, number] = noBonusTiers.has(companyTier)
+      ? [0, 0]
+      : curatedBonus
+        ? curatedBonus
+        : [0, Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10)];
     // Pre-compute the component breakdown for the initial offer so the LLM
     // quotes exact, additive numbers instead of free-styling. Now tier-aware:
     // PSUs get 0% variable, services get 25%, FAANG get 12%, etc.
@@ -1329,6 +1340,16 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
      Returns "" for roles without a special framing rule. */
   const familyFraming = buildFamilyCompFraming(roleKey);
 
+  /* Company-level negotiation context (liquidity risk, candidate-
+     should-ask checklist, likely benefits, per-(role × level)
+     negotiation focus grid). Sourced from the curated research
+     backlog. Empty string when the company isn't in the table —
+     LLM falls back to generic guidance from COMP_STRATEGY_NOTES. */
+  const companyNegContext = formatCompanyNegotiationContext(
+    getCompanyNegotiationContext(params.company),
+    params.company,
+  );
+
   /* Granular role band — the 2025 India market grid covering 80+
      specific roles (Frontend Developer, Senior Product Designer,
      GenAI Engineer, Enterprise Sales Manager, etc.) at the
@@ -1406,7 +1427,7 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
 
 ${equityRule}${govNote}${relocNote}
 
-${salaryContext}${granularBand}${marketReality}`;
+${salaryContext}${granularBand}${companyNegContext}${marketReality}`;
   }
 
   /* Prompt structure is ordered for Groq prompt-cache friendliness:
@@ -1473,7 +1494,7 @@ In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions
 
 ${equityRule}${govNote}${relocNote}
 
-${salaryContext}${granularBand}${marketReality}`;
+${salaryContext}${granularBand}${companyNegContext}${marketReality}`;
 }
 
 /* The static portion of the salary-neg system prompt. Identical across
