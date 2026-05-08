@@ -97,6 +97,33 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // Non-answer short-circuit. When the candidate says "I don't have
+    // experience with that" / "not sure" / "haven't faced anything like
+    // this", piling a follow-up that asks for more context is punitive.
+    // Hand back a soft pivot instead — a hypothetical or an adjacent
+    // situation — without asking for impossible detail. This runs BEFORE
+    // the LLM call so we save tokens too.
+    const isSalaryNegEarly = type === "salary-negotiation";
+    const nonAnswerLower = answer.toLowerCase();
+    const isExplicitNonAnswer =
+      !isSalaryNegEarly && answer.trim().split(/\s+/).length <= 60 && (
+        /\b(i\s*(?:do\s*not|don'?t|haven'?t)\s*(?:have|got)\s*(?:any\s+)?(?:experience|exposure|example))/.test(nonAnswerLower) ||
+        /\b(no|zero|never\s+had)\s+(?:real\s+)?experience\b/.test(nonAnswerLower) ||
+        /\bhaven'?t\s+faced\b/.test(nonAnswerLower) ||
+        /\bnever\s+(?:done|encountered|been\s+in)\b/.test(nonAnswerLower) ||
+        /\bcan'?t\s+(?:think|recall|remember)\s+(?:of\s+)?(?:any|a\s+specific|one)\b/.test(nonAnswerLower) ||
+        /\bnothing\s+comes\s+to\s+mind\b/.test(nonAnswerLower) ||
+        /\bnot\s+(?:really\s+)?sure\b.*\b(about|on)\s+(it|this|that)\b/.test(nonAnswerLower)
+      );
+    if (isExplicitNonAnswer) {
+      const pivotText = "That's fair — let's flip it. Imagine you walk into that situation tomorrow: how would you approach it? Even a rough first move helps me see your thinking.";
+      return new Response(JSON.stringify({
+        needsFollowUp: true,
+        followUpText: pivotText,
+        followUpType: "non_answer_pivot",
+      }), { status: 200, headers });
+    }
+
     // Detect weak answers that warrant follow-up
     const wordCount = answer.trim().split(/\s+/).length;
     const hasMetrics = /\d+%|\$\d|[0-9]+x|[0-9]+ (users|customers|engineers|people|team|million|billion)/i.test(answer);
@@ -787,6 +814,36 @@ Respond JSON only:
     try {
       result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up" });
 
+      // Seed-question dedup: the LLM sometimes paraphrases the very
+      // question the candidate just answered ("balance design and
+      // business goals, toughest trade-off" → "specific instance
+      // balancing design and business goals, outcome of trade-off").
+      // The previousAiTurnText regex misses this when conversationHistory
+      // is empty (first follow-up). Compare against the seed `question`
+      // explicitly and trigger the same anti-repeat retry.
+      let seedDupTriggered = false;
+      if (!isSalaryNeg && question && question.length > 30) {
+        const tentative = extractJSON<{ followUpText?: string }>(result.text);
+        const candidateText = (tentative?.followUpText || "").trim();
+        const seedSim = candidateText ? jaccardSimilarity(candidateText, question) : 0;
+        if (candidateText && seedSim >= 0.55) {
+          seedDupTriggered = true;
+          retriedDueToDuplicate = true;
+          console.warn(`[follow-up] LLM follow-up ${(seedSim * 100).toFixed(0)}% similar to seed question — retrying`);
+          const seedRetryPrompt = `${prompt}
+
+CRITICAL ANTI-REPEAT INSTRUCTION:
+The original question you already asked was:
+<original_question>
+${question.slice(0, 400)}
+</original_question>
+
+Do NOT paraphrase that question. Your follow-up MUST probe a different dimension — a specific metric, a counterfactual, the candidate's individual role vs the team's, an obstacle they overcame, or a trade-off they didn't yet articulate. Repeating the same probe in different words is FORBIDDEN.`;
+          result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry" });
+        }
+      }
+      void seedDupTriggered;
+
       // Dedup retry: if the LLM's output is too similar to the previous
       // AI turn, retry once with explicit anti-repeat instruction. Hard
       // guarantee, not a prompt request.
@@ -883,11 +940,25 @@ Repeat-text in followUpText is FORBIDDEN.`;
         // Otherwise, clamp all sub-highestOffer numbers unconditionally.
         const maxOfferedInResponse = allOfferNums.length > 0 ? Math.max(...allOfferNums) : 0;
         const totalCTCMaintained = maxOfferedInResponse >= highestOfferMade;
+        // Benefit-context detection: a 0.3× heuristic alone is too loose
+        // ("learning budget of ₹10 LPA" against a ₹35 highest passes through).
+        // Look ±40 chars around each match for benefit/perk vocabulary that
+        // disambiguates a non-salary line item from an actual offer regression.
+        const benefitCtxRe = /\b(?:learning|l&d|wellness|wellbeing|certification|cert|training|conveyance|relocation|allowance|stipend|fund|budget|perk|benefit|insurance|premium|gym|wfh|home\s*office|education|tuition|sabbatical|gratuity|pf\b|provident|meal|food|transport|fuel|leave|joining\s+bonus|signing\s+bonus|retention\s+bonus|notice\s+buyout|buyout)\b/i;
         while ((monoMatch = monoRe.exec(clamped)) !== null) {
           const monoNum = parseFloat(monoMatch[1]);
-          // Skip numbers that are clearly not offer amounts (e.g., "₹2 LPA learning budget")
-          const isSmallComponent = monoNum < highestOfferMade * 0.3;
-          if (monoNum < highestOfferMade && !isSmallComponent && !totalCTCMaintained) {
+          // Inspect surrounding text for benefit-context keywords. If found,
+          // this is a perk/budget line, not a salary regression — skip clamp.
+          const ctxStart = Math.max(0, monoMatch.index - 40);
+          const ctxEnd = Math.min(clamped.length, monoMatch.index + monoMatch[0].length + 40);
+          const ctx = clamped.slice(ctxStart, ctxEnd);
+          const isBenefitContext = benefitCtxRe.test(ctx);
+          // Retain the size heuristic as a secondary guard for cases where
+          // benefit vocabulary isn't present (e.g. "+ ₹2 LPA fuel card" with
+          // no surrounding word). Tightened from 0.3 → 0.2 to reduce escapes.
+          const isSmallComponent = !isBenefitContext && monoNum < highestOfferMade * 0.2;
+          const skipClamp = isBenefitContext || isSmallComponent;
+          if (monoNum < highestOfferMade && !skipClamp && !totalCTCMaintained) {
             console.warn(`[follow-up] Monotonic violation: ₹${monoNum} < previous highest ₹${highestOfferMade} — clamping`);
             clamped = clamped.replace(monoMatch[0], `₹${highestOfferMade} LPA`);
           }
@@ -1047,6 +1118,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
          identical, (b) sum >5% off from total. Either case is a
          catastrophic dishonesty bug — patch by recomposing components
          to a realistic 78/15/7 split that sums correctly. */
+      let componentRepairFired = false;
       const breakdownRe = /(₹\s*(\d+(?:\.\d+)?)\s*LPA[^.?!]*?(?:total\s+(?:compensation|CTC|package)?|in\s+total|all\s+up)[^.?!]*?(?:comprising|including|consisting\s+of|made\s+up\s+of|broken\s+down\s+(?:as|into)|with\s+a\s+breakdown\s+of)[^.?!]*?)₹\s*(\d+(?:\.\d+)?)\s*LPA\s+base([^.?!]*?)₹\s*(\d+(?:\.\d+)?)\s*LPA\s+variable(?:\s+pay)?([^.?!]*?)₹\s*(\d+(?:\.\d+)?)\s*LPA\s+(?:joining\s+)?bonus/gi;
       clamped = clamped.replace(breakdownRe, (full, prefix, totalStr, baseStr, midA, varStr, midB, bonusStr) => {
         const total = parseFloat(totalStr);
@@ -1068,6 +1140,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
           const newVar = Math.round(total * 0.15 * 10) / 10;
           const newBonus = Math.round((total - newBase - newVar) * 10) / 10;
           console.warn(`[follow-up] Component-sum bug: total=${total}, components=${base}/${variable}/${bonus} — recomposing to ${newBase}/${newVar}/${newBonus}`);
+          componentRepairFired = true;
           return `${prefix}₹${newBase} LPA base${midA}₹${newVar} LPA variable${midB}₹${newBonus} LPA joining bonus`;
         }
         return full;
@@ -1116,9 +1189,28 @@ Repeat-text in followUpText is FORBIDDEN.`;
         });
         if (replaced !== sentence) {
           console.warn(`[follow-up] Generalized component-collapse: total=${total}, ${components.length} components all equal — recomposed`);
+          componentRepairFired = true;
           clamped = clamped.replace(sentence, replaced);
         }
       }
+
+      /* Bug F fix — Anti-apology preamble strip. When the component-repair
+         logic above rewrites broken numbers, the surrounding apology
+         ("I apologize for the confusion. Let me recalculate that for you...")
+         survives intact, signalling weakness right before the rewritten
+         (now-correct) breakdown. Strip the apology preamble so the corrected
+         numbers stand clean — the candidate hears a confident recap, not a
+         flustered re-emit. Only fires when we actually fixed numbers; we
+         don't want to scrub legitimate apologies for unrelated friction. */
+      if (componentRepairFired) {
+        const apologyRe = /\b(?:I\s+apologi[sz]e(?:\s+for\s+(?:the\s+)?(?:confusion|mix-up|error|miscalculation|that))?|My\s+apologies(?:\s+for\s+(?:the\s+)?(?:confusion|mix-up|error|that))?|Sorry(?:\s+about\s+that)?|You'?re\s+right(?:[,—-]?\s+(?:I\s+(?:got|had)\s+that\s+wrong|(?:my|that)\s+math\s+was\s+off|let\s+me\s+(?:correct|fix|redo)\s+(?:that|this)))?)\.?\s*(?:Let\s+me\s+(?:recalculate|recompute|redo|correct|fix|walk\s+through)\s+(?:that|this|the\s+(?:math|breakdown|numbers))(?:\s+(?:for\s+you|again|properly))?\.?\s*)?/gi;
+        const before = clamped;
+        clamped = clamped.replace(apologyRe, "").replace(/^\s+/, "").replace(/\s{2,}/g, " ");
+        if (clamped !== before) {
+          console.warn(`[follow-up] Anti-apology strip: removed apology preamble after component repair`);
+        }
+      }
+      void componentRepairFired; // silence noUnusedLocals when the branch above is not entered
 
       parsed.followUpText = clamped;
 
@@ -1314,6 +1406,20 @@ Repeat-text in followUpText is FORBIDDEN.`;
     const needsFollowUp = isSalaryNeg
       ? (candidateAcceptedEarly ? !!parsed.needsFollowUp : true)
       : (safeDepth >= 1 ? true : !!parsed.needsFollowUp);
+
+    // Punctuation hygiene. LLMs occasionally end interrogatives with a
+    // period ("how did you measure the impact.") or stitch two clauses
+    // with "., " ("Tell me about a failure., What did you learn"). Both
+    // read as bugs in the UI. Light surgery only — don't rewrite content.
+    if (parsed.followUpText) {
+      let t = parsed.followUpText;
+      // Collapse "., " → ". " and stray ",." / ".," → "."
+      t = t.replace(/\.,\s+/g, ". ").replace(/,\.\s*/g, ". ").replace(/\.\.\s+/g, ". ");
+      // If sentence opens with "How|What|Why|When|Where|Walk me|Can you|Could you|Would you|Did you|Do you|Tell me" but ends with a period, swap to "?"
+      const interrogativeRe = /(^|[.!?]\s+)(how|what|why|when|where|walk me|can you|could you|would you|did you|do you|tell me)\b[^.?!]*\.(\s|$)/gi;
+      t = t.replace(interrogativeRe, (m) => m.replace(/\.(\s|$)$/, "?$1"));
+      parsed.followUpText = t;
+    }
 
     return new Response(JSON.stringify({
       needsFollowUp,
