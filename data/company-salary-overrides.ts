@@ -6339,6 +6339,26 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 36, totalMax: 60, equityMin: 5, equityMax: 14, equityType: "rsu", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
   },
+  /* ixigo — listed (NSE: IXIGO) since 2024. Compensation runs leaner than
+   * MMT/Yatra; CSV-derived band over-anchored Senior PD at ₹37–58L when
+   * AmbitionBox + Levels.fyi 2026 show ₹26–40L (median ~₹27.7L). Override
+   * with verified ranges so the recruiter doesn't open above public market. */
+  ixigo: {
+    "ux-designer": {
+      entry: { totalMin: 6, totalMax: 11, equityMin: 0.3, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 + Levels.fyi", lastVerified: "2026-05-09", notes: "ixigo Junior Product/UX Designer." },
+      mid: { totalMin: 12, totalMax: 22, equityMin: 0.8, equityMax: 2.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09", notes: "ixigo Mid Product Designer (Designer-2)." },
+      senior: { totalMin: 26, totalMax: 40, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026 + Glassdoor (median ₹27.7L Gurugram)", lastVerified: "2026-05-09", notes: "ixigo Senior Product Designer / Senior UX. Top of band hit only for 7-9 YoE leads. Listed entity — ESOP liquidity better than pre-IPO peers." },
+    },
+    "software-engineer": {
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 1.5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
+      mid: { totalMin: 14, totalMax: 26, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
+      senior: { totalMin: 26, totalMax: 45, equityMin: 2.5, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09", notes: "ixigo Senior SE / Tech Lead. Listed since 2024 — ESOP has real liquidity." },
+    },
+    "product-manager": {
+      mid: { totalMin: 18, totalMax: 32, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
+      senior: { totalMin: 32, totalMax: 55, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2026", lastVerified: "2026-05-09" },
+    },
+  },
   oyo: {
     "software-engineer": {
       mid: { totalMin: 18, totalMax: 30, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr — IPO pending", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "OYO ESOP credibility uncertain pre-IPO." },
