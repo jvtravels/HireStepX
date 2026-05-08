@@ -170,9 +170,17 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
   zomato: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Zomato (Eternal) HR policy post-listing" },
   meesho: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Meesho HR policy" },
   myntra: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Myntra HR policy (Flipkart group)" },
+  dream11: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Dream Sports HR policy — Indian unicorn norm" },
   nykaa: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Nykaa HR policy post-listing" },
   unacademy: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Unacademy HR policy" },
   byjus: { noticePeriodDays: 30, hasDeputation: false, metaSource: "Byju's HR policy (post-restructuring)" },
+
+  /* ─── Indian Conglomerates / FMCG / BFSI ─── */
+  godrej: { noticePeriodDays: 90, hasDeputation: false, metaSource: "Godrej group HR policy — conglomerate norm" },
+  // "tata steel" removed: missing from COMPANY_TIER_MAP — add tier
+  // mapping first, then restore this entry. CI gate enforces this.
+  "tata motors": { noticePeriodDays: 60, hasDeputation: false, metaSource: "Tata Motors GET / Lateral standard policy" },
+  "hdfc bank": { noticePeriodDays: 60, hasDeputation: false, metaSource: "HDFC Bank standard officer/manager policy" },
 
   /* ─── Government / PSU (long bonds, fixed notice) ─── */
   ongc: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "ONGC service bond — 3yr typical, ₹5L+ penalty" },
@@ -180,6 +188,9 @@ export const COMPANY_META: Record<string, CompanyMeta> = {
   drdo: { noticePeriodDays: 90, bondPenaltyLpa: 5, hasDeputation: false, metaSource: "DRDO service bond" },
   bhel: { noticePeriodDays: 90, bondPenaltyLpa: 4, hasDeputation: false, metaSource: "BHEL ET bond — 3yr typical" },
   sbi: { noticePeriodDays: 90, bondPenaltyLpa: 2, hasDeputation: false, metaSource: "SBI PO bond — 2yr typical" },
+
+  /* ─── Premium Big-Tech GCC ─── */
+  databricks: { noticePeriodDays: 60, hasDeputation: false, metaSource: "Databricks India HR policy — premium GCC standard" },
 };
 
 /** company key → role key → exp level → override band. Company key is
@@ -204,6 +215,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + GenAI premium 1.3-1.6x", lastVerified: "2026-05-07" },
       senior: { totalMin: 55, totalMax: 90, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
+    "ux-designer": {
+      entry: { totalMin: 12, totalMax: 22, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Razorpay 1.05x India unicorn UX)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived; verify against Glassdoor before quoting exact numbers." },
+      mid: { totalMin: 22, totalMax: 38, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Razorpay UX mid)", lastVerified: "2026-05-08" },
+      senior: { totalMin: 35, totalMax: 60, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "devops-sre": {
+      mid: { totalMin: 25, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Razorpay devops mid)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 42, totalMax: 75, equityMin: 5, equityMax: 15, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 65, totalMax: 110, equityMin: 8, equityMax: 21, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
   },
 
   phonepe: {
@@ -216,6 +237,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 30, totalMax: 48, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
       senior: { totalMin: 48, totalMax: 80, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
+    "ux-designer": {
+      entry: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (PhonePe 1.10x UX)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      mid: { totalMin: 24, totalMax: 42, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      senior: { totalMin: 38, totalMax: 65, equityMin: 4, equityMax: 11, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "ml-engineer": {
+      mid: { totalMin: 32, totalMax: 55, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (PhonePe 1.10x ML)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 55, totalMax: 95, equityMin: 7, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 90, totalMax: 145, equityMin: 12, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
   },
 
   flipkart: {
@@ -227,6 +258,22 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "product-manager": {
       mid: { totalMin: 32, totalMax: 50, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 85, equityMin: 12, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
+    },
+    "ux-designer": {
+      entry: { totalMin: 16, totalMax: 26, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Flipkart 1.25x UX)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      mid: { totalMin: 26, totalMax: 48, equityMin: 2, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      senior: { totalMin: 42, totalMax: 75, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 65, totalMax: 110, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "ml-engineer": {
+      mid: { totalMin: 38, totalMax: 65, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Flipkart 1.25x ML)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 65, totalMax: 110, equityMin: 8, equityMax: 23, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 100, totalMax: 165, equityMin: 12, equityMax: 33, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "devops-sre": {
+      mid: { totalMin: 28, totalMax: 55, equityMin: 3, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Flipkart 1.25x devops)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 50, totalMax: 95, equityMin: 6, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 75, totalMax: 130, equityMin: 9, equityMax: 26, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
     },
   },
 
@@ -260,6 +307,20 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 32, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor + Levels.fyi", lastVerified: "2026-05-07", notes: "CRED design bar exceptionally high — premium over peer unicorns." },
       senior: { totalMin: 55, totalMax: 90, equityMin: 14, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
+    "product-manager": {
+      mid: { totalMin: 32, totalMax: 60, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (CRED 1.20x PM mid)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. CRED PM bar high — selective hires." },
+      senior: { totalMin: 60, totalMax: 110, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 95, totalMax: 165, equityMin: 14, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "ml-engineer": {
+      mid: { totalMin: 38, totalMax: 70, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (CRED 1.20x ML)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 65, totalMax: 130, equityMin: 9, equityMax: 26, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 100, totalMax: 195, equityMin: 14, equityMax: 38, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "devops-sre": {
+      mid: { totalMin: 28, totalMax: 55, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (CRED 1.20x devops)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 52, totalMax: 100, equityMin: 7, equityMax: 18, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
   },
 
   zerodha: {
@@ -279,6 +340,14 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "product-manager": {
       mid: { totalMin: 28, totalMax: 45, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox", lastVerified: "2026-05-07" },
     },
+    "ux-designer": {
+      mid: { totalMin: 18, totalMax: 32, equityMin: 2, equityMax: 5, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Meesho 0.95x UX mid)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 30, totalMax: 55, equityMin: 4, equityMax: 9, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "ml-engineer": {
+      mid: { totalMin: 28, totalMax: 55, equityMin: 4, equityMax: 10, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Meesho 0.95x ML)", lastVerified: "2026-05-08", notes: "Backlog Tier-1 role-gap fill. Seed-derived." },
+      senior: { totalMin: 50, totalMax: 95, equityMin: 7, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
   },
 
   /* ─── FAANG India ─────────────────────────────────────────────── */
@@ -292,6 +361,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "ux-designer": {
       mid: { totalMin: 41, totalMax: 75, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (Google India UX)", lastVerified: "2026-05-07" },
       senior: { totalMin: 70, totalMax: 101, equityMin: 25, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Levels.fyi (L5 Designer)", lastVerified: "2026-05-07" },
+    },
+    "product-manager": {
+      mid: { totalMin: 50, totalMax: 90, equityMin: 18, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "HireStepX 2026 seed (Google 1.75x PM mid)", lastVerified: "2026-05-08", notes: "Backlog Tier-2 role-gap fill. Seed-derived; Google L4 PM band." },
+      senior: { totalMin: 90, totalMax: 160, equityMin: 30, equityMax: 65, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "HireStepX 2026 seed (L5 PM)", lastVerified: "2026-05-08" },
+      lead: { totalMin: 140, totalMax: 230, equityMin: 50, equityMax: 100, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "HireStepX 2026 seed (L6 PM)", lastVerified: "2026-05-08" },
+    },
+    "ml-engineer": {
+      mid: { totalMin: 55, totalMax: 100, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "HireStepX 2026 seed (Google 1.75x ML mid)", lastVerified: "2026-05-08", notes: "Backlog Tier-2 role-gap fill. GenAI premium meaningful at L4+." },
+      senior: { totalMin: 95, totalMax: 175, equityMin: 32, equityMax: 70, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "HireStepX 2026 seed (L5 ML/Research)", lastVerified: "2026-05-08" },
+      lead: { totalMin: 150, totalMax: 250, equityMin: 55, equityMax: 110, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "HireStepX 2026 seed (L6 ML)", lastVerified: "2026-05-08" },
     },
   },
 
@@ -394,6 +473,31 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       entry: { totalMin: 32, totalMax: 48, equityMin: 6, equityMax: 14, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Stripe India campus / new-grad (Glassdoor + Stripe disclosures)", lastVerified: "2026-05-07", notes: "Stripe SE-I India; bar-raising writing screen even at campus." },
       mid: { totalMin: 50, totalMax: 85, equityMin: 12, equityMax: 30, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Stripe India product-engineering team (Bengaluru)", lastVerified: "2026-05-07", notes: "Stripe's writing-clarity bar is unusually high; expect culture-fit weight in offer." },
       senior: { totalMin: 85, totalMax: 140, equityMin: 28, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Stripe India internal disclosures + Glassdoor", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* Databricks India — premium GCC; ML/data-platform pay parity-with-US for senior IC. */
+  databricks: {
+    "software-engineer": {
+      entry: { totalMin: 32, totalMax: 55, equityMin: 5, equityMax: 12, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Databricks 1.75x India)", lastVerified: "2026-05-08", notes: "Backlog Tier-2 fill (only company with no prior entry). Databricks pre-IPO RSUs — liquidity via tender offers." },
+      mid: { totalMin: 55, totalMax: 95, equityMin: 9, equityMax: 22, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      senior: { totalMin: 95, totalMax: 165, equityMin: 18, equityMax: 38, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 150, totalMax: 240, equityMin: 30, equityMax: 60, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Staff / L6)", lastVerified: "2026-05-08" },
+    },
+    "ml-engineer": {
+      mid: { totalMin: 65, totalMax: 130, equityMin: 12, equityMax: 28, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Databricks ML mid)", lastVerified: "2026-05-08", notes: "Databricks ML/research bar high — Mosaic acquisition raised the bar further." },
+      senior: { totalMin: 110, totalMax: 220, equityMin: 22, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 175, totalMax: 320, equityMin: 38, equityMax: 75, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "data-scientist": {
+      mid: { totalMin: 45, totalMax: 95, equityMin: 7, equityMax: 18, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Databricks DS mid)", lastVerified: "2026-05-08" },
+      senior: { totalMin: 80, totalMax: 165, equityMin: 14, equityMax: 35, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 130, totalMax: 240, equityMin: 22, equityMax: 50, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+    },
+    "devops-sre": {
+      mid: { totalMin: 50, totalMax: 105, equityMin: 8, equityMax: 20, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed (Databricks devops mid)", lastVerified: "2026-05-08" },
+      senior: { totalMin: 90, totalMax: 180, equityMin: 16, equityMax: 38, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
+      lead: { totalMin: 140, totalMax: 260, equityMin: 25, equityMax: 55, equityType: "rsu", equityVesting: "4yr / 1yr cliff", source: "HireStepX 2026 seed", lastVerified: "2026-05-08" },
     },
   },
 
@@ -773,6 +877,28 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 38, totalMax: 60, equityType: "none", source: "Glassdoor", lastVerified: "2026-05-07" },
       lead: { totalMin: 60, totalMax: 100, equityType: "none", source: "Glassdoor (Nestle India Senior Director)", lastVerified: "2026-05-07" },
       executive: { totalMin: 100, totalMax: 250, equityType: "none", source: "Glassdoor (Nestle India VP / MD)", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* Godrej — GLP MT rotation across consumer goods, B2B, agro. ESOPs
+     limited to listed Godrej Industries holdings; most roles are cash-only. */
+  godrej: {
+    marketing: {
+      entry: { totalMin: 16, totalMax: 24, equityType: "none", source: "InsideIIM + Glassdoor (Godrej GLP IIM grad ₹16-24L)", lastVerified: "2026-05-08", notes: "Godrej GLP MT — premium FMCG MBA program; below HUL UFLP but above Nestle.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 22, totalMax: 38, equityType: "none", source: "6figr (Godrej group avg ₹19L) + Glassdoor", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      senior: { totalMin: 38, totalMax: 65, equityType: "none", source: "Glassdoor (Godrej Sr Brand Manager / Category Lead)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      lead: { totalMin: 65, totalMax: 110, equityType: "none", source: "Glassdoor (Godrej GM / Marketing Director)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+    },
+  },
+
+  /* HDFC Bank — large officer/manager pyramid. Relationship Manager and
+     Branch Manager are the two highest-volume tracks. VP/SVP comp jumps. */
+  "hdfc bank": {
+    finance: {
+      entry: { totalMin: 4, totalMax: 7, equityType: "none", source: "Indeed + 6figr (HDFC Bank Relationship Officer ₹3.5L, RM ₹4.6-6.1L)", lastVerified: "2026-05-08", notes: "HDFC Bank entry officer / RM track. Sales-incentive component meaningful.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 8, totalMax: 14, equityType: "none", source: "Indeed Manager avg ₹10.3L + 6figr", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      senior: { totalMin: 15, totalMax: 28, equityType: "none", source: "Glassdoor (HDFC Sr Manager / AVP) + PayScale upper band ₹21.8L", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      lead: { totalMin: 30, totalMax: 60, equityType: "none", source: "6figr (HDFC Bank VP cap ₹60L Bangalore)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
     },
   },
 
@@ -1655,16 +1781,18 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 28, totalMax: 45, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
     },
     "mechanical-engineer": {
-      entry: { totalMin: 6, totalMax: 10, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata Motors GET (Graduate Engineer Trainee)." },
-      mid: { totalMin: 14, totalMax: 24, equityMin: 0.5, equityMax: 1.5, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
-      senior: { totalMin: 26, totalMax: 42, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "3yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      entry: { totalMin: 4.5, totalMax: 7.5, equityType: "none", source: "Glassdoor GET avg ₹5.5L; cluster ₹4.5-6L, premier-campus ₹7-8L", lastVerified: "2026-05-08", notes: "Tata Motors GET; passenger-vehicle / EV roles edge to ₹7-8L on premier campuses.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 9, totalMax: 18, equityMin: 0.5, equityMax: 1.5, equityType: "rsu", equityVesting: "3yr", source: "6figr (Tata Motors avg ₹17L) + Glassdoor", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      senior: { totalMin: 22, totalMax: 40, equityMin: 1.5, equityMax: 4, equityType: "rsu", equityVesting: "3yr", source: "Glassdoor (Tata Motors Sr Manager / DGM)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      lead: { totalMin: 42, totalMax: 80, equityMin: 3, equityMax: 8, equityType: "rsu", equityVesting: "3yr", source: "Glassdoor (Tata Motors GM / VP)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
     },
   },
   "tata steel": {
     "mechanical-engineer": {
-      entry: { totalMin: 9, totalMax: 14, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07", notes: "Tata Steel Management Trainee Tech (XLRI/IIM premium)." },
-      mid: { totalMin: 18, totalMax: 30, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
-      senior: { totalMin: 32, totalMax: 55, equityType: "none", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+      entry: { totalMin: 7, totalMax: 11, equityType: "none", source: "Tata Steel AEP 2026 (₹30k/mo stipend → ₹7.4L Asst Mgr IL6 post-training)", lastVerified: "2026-05-08", notes: "Tata Steel Engineer Trainee; ₹30k/mo stipend during 1yr training, IL6 ₹7.4L on confirmation. MT-Tech (XLRI/IIM) higher.", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      mid: { totalMin: 12, totalMax: 22, equityType: "none", source: "Glassdoor MT (avg ₹6.6L, 25-75th ₹5-10.4L, p90 ₹17.5L) + post-confirm hike 7-10%", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      senior: { totalMin: 24, totalMax: 48, equityType: "none", source: "Glassdoor (Tata Steel Section / Sr Manager)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+      lead: { totalMin: 48, totalMax: 90, equityType: "none", source: "Glassdoor (Tata Steel Chief / GM)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
     },
   },
   "mahindra": {
@@ -1731,6 +1859,38 @@ export const COMPANY_SALARY_OVERRIDES: Record<
     "software-engineer": {
       mid: { totalMin: 22, totalMax: 36, equityMin: 1.5, equityMax: 4, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
       senior: { totalMin: 36, totalMax: 58, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "AmbitionBox 2026", lastVerified: "2026-05-07" },
+    },
+  },
+
+  /* Myntra — Flipkart group; ESOP buybacks ride the Flipkart cycle. */
+  myntra: {
+    "software-engineer": {
+      entry: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (₹1.83M-₹2.84M SDE-1 India) + Glassdoor (290 samples)", lastVerified: "2026-05-08", notes: "Myntra SDE-1 fresher; Flipkart group ESOP — liquidity tied to Flipkart buybacks.", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
+      mid: { totalMin: 28, totalMax: 50, equityMin: 3, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (median ₹3.65M India) + Glassdoor SDE-2 (avg ₹27L, p90 ₹49.6L)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
+      senior: { totalMin: 50, totalMax: 80, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (₹2.12M-₹9.35M India range, Associate Architect top)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+    },
+    "product-manager": {
+      mid: { totalMin: 30, totalMax: 48, equityMin: 5, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi (PM India ₹4.35M-₹5.99M, median ₹5.39M)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 45, totalMax: 75, equityMin: 10, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor Sr PM (avg ₹44.5L, range ₹26-58L; total comp avg ₹53L)", lastVerified: "2026-05-08", sourceVerifiedAt: { glassdoor: "2026-05-08" } },
+    },
+  },
+
+  /* Dream11 — high-margin sports gaming; pays a premium over peer Indian
+     unicorns at SDE-2/3 (Levels.fyi median ₹53L for SDE-2 vs ~₹35L peer). */
+  dream11: {
+    "software-engineer": {
+      entry: { totalMin: 20, totalMax: 32, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi SDE-1 India ₹2.01M-₹3.13M (median ₹25.4L)", lastVerified: "2026-05-08", notes: "Dream11 SDE-1 campus / 0-2 yr; Dream Sports privately held — ESOP liquidity via periodic buybacks.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      mid: { totalMin: 42, totalMax: 65, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi SDE-2 India ₹4.27M-₹6.52M (median ₹53.4L)", lastVerified: "2026-05-08", notes: "Premium over peer unicorns at SDE-2 — Dream11 SDE-2 median (₹53L) ~30% above Razorpay/Swiggy.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 65, totalMax: 95, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi SDE-3 India (top ₹7.53M) + Glassdoor (618 samples)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08", glassdoor: "2026-05-08" } },
+      lead: { totalMin: 70, totalMax: 110, equityMin: 18, equityMax: 40, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi Engineering Manager India ₹5.45M-₹7.48M", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+    },
+    "product-manager": {
+      mid: { totalMin: 35, totalMax: 55, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi PM India (PM2 ₹62.7L top, median ₹46.5L)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 55, totalMax: 85, equityMin: 12, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi PM3 India (₹53.7L+)", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+    },
+    "data-scientist": {
+      mid: { totalMin: 30, totalMax: 55, equityMin: 4, equityMax: 12, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi DS India ₹2.91M-₹16.5M (median ₹69.2L blended)", lastVerified: "2026-05-08", notes: "Dream11 ML/DS bar high — fantasy-sports modelling is core IP.", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
+      senior: { totalMin: 55, totalMax: 95, equityMin: 12, equityMax: 30, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Levels.fyi DS top + Data Science Manager ₹5.12M-₹7.27M", lastVerified: "2026-05-08", sourceVerifiedAt: { levelsFyi: "2026-05-08" } },
     },
   },
 };

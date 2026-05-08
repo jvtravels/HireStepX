@@ -203,10 +203,16 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
         const roleKey = matchRoleKey(session.target_role);
         const override = getCompanyBandOverride(session.target_company || undefined, roleKey, expLevel);
         if (override) {
-          // 25% tolerance above the company-specific totalMax — captures
-          // bonus / equity scenarios without flagging clearly inflated offers.
-          roleAwareCeiling = override.totalMax * 1.25;
-          bandContextLabel = `${session.target_role} at ${session.target_company} — verified band caps at ${override.totalMax.toFixed(1)} LPA (${override.source})`;
+          // Tighter tolerance for verified company data — multi-source bands
+          // (sourceCount ≥ 2) cap at 20% above totalMax; single-source at 30%.
+          // This reduces false-positive hallucination flags when the band
+          // itself is low-confidence. Previously a flat 25% across both.
+          const sourceCount = override.sourceVerifiedAt
+            ? Object.values(override.sourceVerifiedAt).filter(Boolean).length
+            : 1;
+          const tolerance = sourceCount >= 2 ? 1.20 : 1.30;
+          roleAwareCeiling = override.totalMax * tolerance;
+          bandContextLabel = `${session.target_role} at ${session.target_company} — ${sourceCount >= 2 ? "verified" : "single-source"} band caps at ${override.totalMax.toFixed(1)} LPA (${override.source}, ${tolerance.toFixed(2)}x tolerance)`;
         } else {
           const band = generateNegotiationBand({
             role: session.target_role,
@@ -215,9 +221,13 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           });
           // Without a verified override, use maxStretch (the manager's true
           // upper bound) instead of walkAway (which is what they'd let the
-          // candidate walk before — much higher and far too lenient).
-          roleAwareCeiling = band.maxStretch * 1.15;
-          bandContextLabel = `${session.target_role}${session.target_company ? ` at ${session.target_company}` : ""} — tier-default max at ${band.maxStretch.toFixed(1)} LPA`;
+          // candidate walk before — much higher and far too lenient). Use
+          // softer tolerance (1.30x) when the band itself is a tier-default
+          // approximation — flagging an LLM offer 25% above an approximation
+          // produces too many false positives.
+          const tolerance = band.bandSource === "tier-default" || band.bandSource === "fallback" ? 1.30 : 1.15;
+          roleAwareCeiling = band.maxStretch * tolerance;
+          bandContextLabel = `${session.target_role}${session.target_company ? ` at ${session.target_company}` : ""} — ${band.bandSource ?? "tier-default"} max at ${band.maxStretch.toFixed(1)} LPA (${tolerance.toFixed(2)}x tolerance)`;
         }
       } catch {
         /* lookup failure — fall back to global ceiling only */

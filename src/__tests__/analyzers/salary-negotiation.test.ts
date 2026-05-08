@@ -106,4 +106,89 @@ describe("salaryNegotiationAnalyzer", () => {
     });
     expect(out.flags).not.toContain("implausible_salary_claim");
   });
+
+  /* Tolerance-by-bandSource calibration. The analyzer now uses tighter
+   * tolerance (1.20x) for verified company-overrides with sourceCount ≥ 2,
+   * looser (1.30x) for single-source overrides and tier-default bands.
+   * Without this differentiation, an LLM offer ~28% above an approximate
+   * tier-default band was getting flagged — false positive because the
+   * band itself was an approximation. */
+  it("verified company-override flags 30%+ overshoot as above_role_band", async () => {
+    // Razorpay senior SE has totalMax ~65 LPA. Tighter tolerance (1.20x)
+    // → ceiling ~78 LPA. An 85 LPA quote is 1.31x → above_role_band fires.
+    const ses = session([
+      ai("For your senior role we can offer 85 LPA total compensation."),
+      user("My target is 70 LPA. I have a competing offer at 65 LPA."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    ses.target_company = "Razorpay";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.flags).toContain("above_role_band");
+  });
+
+  it("tier-default band tolerates up to ~30% above maxStretch (no false positive)", async () => {
+    // Unknown company → falls through to tier-default. With 1.30x tolerance,
+    // an offer modestly above maxStretch should NOT trigger above_role_band.
+    const ses = session([
+      ai("For your senior role we can offer 25 LPA total compensation."),
+      user("My target is 22 LPA. I have a competing offer at 20 LPA."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    // Don't set target_company so we land on tier-default
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    // ₹25 LPA is well within tier-default tolerance for senior SE
+    expect(out.flags).not.toContain("above_role_band");
+  });
+});
+
+/* Direct behavioral tests for applyTitleExpFloor via generateNegotiationBand.
+ * Confirms title prefix overrides YOE-derived experience floor. */
+import { generateNegotiationBand } from "../../../data/salary-lookup";
+
+describe("applyTitleExpFloor (via generateNegotiationBand)", () => {
+  it("'Senior X' role with mid YOE → senior band", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    // Razorpay senior SE band: totalMax 65, initialOffer ~38-42
+    // Mid would be: totalMax 42, initialOffer ~26
+    expect(band.initialOffer).toBeGreaterThan(30);
+  });
+
+  it("'Lead X' role lifts to lead band even with mid YOE", () => {
+    const band = generateNegotiationBand({
+      role: "Lead Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    // Razorpay lead SE band: totalMin 60. Lead initial >> mid.
+    expect(band.initialOffer).toBeGreaterThan(50);
+  });
+
+  it("'VP of Engineering' role lifts to executive even with senior YOE", () => {
+    const band = generateNegotiationBand({
+      role: "VP of Engineering",
+      company: "some-unicorn",
+      experienceLevel: "senior",
+    });
+    // Executive bands are very high; ensure boost happened
+    expect(band.initialOffer).toBeGreaterThan(40);
+  });
+
+  it("Plain 'Software Engineer' (no senior prefix) stays at YOE floor", () => {
+    const midBand = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    const seniorYoeBand = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "senior",
+    });
+    // Senior YOE explicitly should land in senior band, mid YOE should not
+    expect(seniorYoeBand.initialOffer).toBeGreaterThan(midBand.initialOffer + 5);
+  });
 });
