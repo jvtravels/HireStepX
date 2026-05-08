@@ -852,8 +852,22 @@ function CanvasListeningActionZone({
         if (!tactic) return null;
         return (
           <CanvasHintBubble>
-            <strong style={{ color: e.copper, marginRight: 6 }}>{tactic.label}:</strong>
-            {tactic.coaching}
+            <div>
+              <strong style={{ color: e.copper, marginRight: 6 }}>{tactic.label}:</strong>
+              {tactic.coaching}
+            </div>
+            {tactic.counterScripts.length > 0 && (
+              <details style={{ marginTop: 6 }}>
+                <summary style={{ cursor: "pointer", fontSize: 11, color: e.inkFaint, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {tactic.counterScripts.length} counter-scripts
+                </summary>
+                <ul style={{ margin: "4px 0 0 0", paddingLeft: 18, fontSize: 12, lineHeight: 1.5 }}>
+                  {tactic.counterScripts.map((s, i) => (
+                    <li key={i} style={{ marginBottom: 4 }}>"{s}"</li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </CanvasHintBubble>
         );
       })()}

@@ -37,7 +37,50 @@ describe("detectNegotiationTactic", () => {
     expect(detectNegotiationTactic("Our band for this role is ₹14 LPA.")?.id).toBe("anchor");
   });
 
+  it("flags level-cap excuse", () => {
+    expect(detectNegotiationTactic("We have a level cap for external hires here.")?.id).toBe("level_cap");
+  });
+
+  it("flags equity dazzle", () => {
+    expect(detectNegotiationTactic("If we IPO in two years your equity will be life-changing.")?.id).toBe("equity_dazzle");
+  });
+
+  it("flags signing-bonus clawback", () => {
+    expect(detectNegotiationTactic("The joining bonus has a 2-year clawback if you leave early.")?.id).toBe("signing_clawback");
+  });
+
+  it("flags notice-period pressure", () => {
+    expect(detectNegotiationTactic("How soon can you join? Can you negotiate with your current employer?")?.id).toBe("notice_pressure");
+  });
+
+  it("flags competing-offer skepticism", () => {
+    expect(detectNegotiationTactic("It's hard to match without seeing the offer letter in writing.")?.id).toBe("competing_offer_skepticism");
+  });
+
   it("returns null on neutral text", () => {
     expect(detectNegotiationTactic("Welcome — thanks for joining the call.")).toBeNull();
+  });
+
+  it("every detected tactic includes 3+ verbatim counter-scripts", () => {
+    const samples = [
+      "what's your current ctc",
+      "by end of week",
+      "top of my band",
+      "let me check with leadership",
+      "i genuinely want this to work",
+      "let's look at the full package",
+      "you'd be walking away from",
+      "our band for this role is",
+      "level cap for external hires",
+      "if we ipo your equity",
+      "joining bonus has clawback",
+      "how soon can you join",
+      "hard to match without seeing the offer letter",
+    ];
+    for (const s of samples) {
+      const t = detectNegotiationTactic(s);
+      expect(t, `tactic for "${s}"`).not.toBeNull();
+      expect(t!.counterScripts.length).toBeGreaterThanOrEqual(3);
+    }
   });
 });
