@@ -3,6 +3,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
+import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -958,6 +959,16 @@ Repeat-text in followUpText is FORBIDDEN.`;
       let match: RegExpExecArray | null;
       let clamped = parsed.followUpText;
       const approvalRe = /\b(approval|leadership|sign.?off|check with|go back to)\b/i;
+      // Telemetry: tally clamp events so we can surface the long tail
+      // without screenshots. Fired as a single event after clamping.
+      const breaches = {
+        aboveMaxStretch: 0,
+        nearMaxStretch: 0,
+        belowWalkAway: 0,
+        monotonic: 0,
+        aboveCandidateTarget: 0,
+        worstBreachPct: 0, // (offered - maxStretch) / maxStretch, bounded ≥ 0
+      };
       while ((match = offerNumRe.exec(parsed.followUpText)) !== null) {
         const rawNum = parseFloat(match[1]);
         // Convert Crore to LPA (1 Cr = 100 LPA)
@@ -967,6 +978,9 @@ Repeat-text in followUpText is FORBIDDEN.`;
           // LLM hallucinated well above max stretch — clamp to maxStretch
           // If LLM already included approval language, just fix the number.
           // If not, the text may sound inconsistent after clamping — add approval framing.
+          breaches.aboveMaxStretch++;
+          const pct = (num - negotiationBand.maxStretch) / negotiationBand.maxStretch;
+          if (pct > breaches.worstBreachPct) breaches.worstBreachPct = pct;
           console.warn(`[follow-up] LLM offered ₹${num} LPA, above maxStretch ₹${negotiationBand.maxStretch} — clamping`);
           clamped = clamped.replace(match[0], `₹${negotiationBand.maxStretch} LPA`);
           if (!approvalRe.test(clamped)) {
@@ -978,11 +992,13 @@ Repeat-text in followUpText is FORBIDDEN.`;
           }
         } else if (num > negotiationBand.maxStretch && !approvalRe.test(clamped)) {
           // Between maxStretch and 1.05x — within tolerance but add approval framing
+          breaches.nearMaxStretch++;
           console.warn(`[follow-up] LLM offered ₹${num} LPA near maxStretch ₹${negotiationBand.maxStretch} — adding approval context`);
           clamped = clamped.replace(match[0], `${match[0]}, which I'd need leadership sign-off for,`);
         } else if (num < negotiationBand.walkAway) {
           // LLM offered below walk-away — clamp to the canonical initial offer
           // (the value actually presented in turn 1, not the band's seed).
+          breaches.belowWalkAway++;
           const clampTo = canonicalInitialOffer ?? negotiationBand.initialOffer;
           console.warn(`[follow-up] LLM offered ₹${num} LPA, below walkAway ₹${negotiationBand.walkAway} — clamping to ₹${clampTo}`);
           clamped = clamped.replace(match[0], `₹${clampTo} LPA`);
@@ -1026,6 +1042,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
           const isSmallComponent = !isBenefitContext && monoNum < highestOfferMade * 0.2;
           const skipClamp = isBenefitContext || isSmallComponent;
           if (monoNum < highestOfferMade && !skipClamp && !totalCTCMaintained) {
+            breaches.monotonic++;
             console.warn(`[follow-up] Monotonic violation: ₹${monoNum} < previous highest ₹${highestOfferMade} — clamping`);
             clamped = clamped.replace(monoMatch[0], `₹${highestOfferMade} LPA`);
           }
@@ -1041,6 +1058,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
           // If this is clearly the "main" offer number (not a small component like bonus)
           const isMainOffer = costNum > candidateTarget * 0.5;
           if (costNum > candidateTarget && isMainOffer) {
+            breaches.aboveCandidateTarget++;
             // Calculate a realistic counter: partway between initial offer and candidate's target
             const realisticCounter = Math.round(
               (negotiationBand.initialOffer + candidateTarget) / 2 * 10,
@@ -1288,6 +1306,33 @@ Repeat-text in followUpText is FORBIDDEN.`;
         }
       }
       void componentRepairFired; // silence noUnusedLocals when the branch above is not entered
+
+      /* Band-breach telemetry. One event per turn that produced any
+         clamp. Fire-and-forget — never blocks the response. Lets us
+         surface the long tail of LLM number hallucinations without
+         relying on user screenshots. Worst-breach percentage is the
+         signal to alert on; counts are for breakdown. */
+      const totalBreaches =
+        breaches.aboveMaxStretch +
+        breaches.nearMaxStretch +
+        breaches.belowWalkAway +
+        breaches.monotonic +
+        breaches.aboveCandidateTarget;
+      if (totalBreaches > 0) {
+        void captureServerEvent("negotiation_band_breach", distinctIdFrom(req, auth.userId), {
+          above_max_stretch: breaches.aboveMaxStretch,
+          near_max_stretch: breaches.nearMaxStretch,
+          below_walk_away: breaches.belowWalkAway,
+          monotonic: breaches.monotonic,
+          above_candidate_target: breaches.aboveCandidateTarget,
+          worst_breach_pct: Math.round(breaches.worstBreachPct * 100),
+          total_breaches: totalBreaches,
+          band_initial_offer: negotiationBand.initialOffer,
+          band_max_stretch: negotiationBand.maxStretch,
+          phase: salaryPhase || null,
+          turn_index: questionIndex ?? null,
+        }, req);
+      }
 
       parsed.followUpText = clamped;
 

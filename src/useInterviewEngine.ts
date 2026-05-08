@@ -1503,9 +1503,25 @@ export function useInterviewEngine() {
                 }
                 return updated;
               }
-              // No more questions to replace — check if we can insert a follow-up probe
+              // No more questions to replace — check if we can insert a follow-up probe.
+              // Two budgets: a session-global cap (avoids the interview growing
+              // unbounded) AND a per-question cap (prevents one question
+              // burning the entire budget before later questions get any probes).
               const maxInserts = isMiniMode ? 2 : 3;
-              if (followUpInsertCountRef.current < maxInserts) {
+              const maxPerQuestion = 2;
+              // Count consecutive follow-up steps already inserted between
+              // the last "question" slot and the current cursor — that's
+              // how many probes this main question has already received.
+              let perQuestionInserted = 0;
+              for (let i = currentStep; i >= 0; i--) {
+                const s = prev[i];
+                if (!s) break;
+                if (s.type === "question") break;
+                if (s.type === "follow-up") perQuestionInserted++;
+              }
+              const overGlobal = followUpInsertCountRef.current >= maxInserts;
+              const overPerQ = perQuestionInserted >= maxPerQuestion;
+              if (!overGlobal && !overPerQ) {
                 const closingIdx = prev.findIndex((s, i) => i > currentStep && s.type === "closing");
                 if (closingIdx > currentStep) {
                   followUpInsertCountRef.current++;

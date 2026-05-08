@@ -43,6 +43,7 @@ export default defineConfig({
         "data/salaries.ts",
         "data/city-tiers.ts",
         "data/company-tiers.ts",
+        "data/company-suggestions.ts",
       ],
       // Baseline thresholds — set 0.5-1 point below current values so CI
       // turns red on any regression. Bump these up each time a new test

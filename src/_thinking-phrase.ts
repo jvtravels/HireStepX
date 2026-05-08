@@ -36,7 +36,19 @@ export interface ThinkingPhraseInput {
   pushbackCount: number;
   lastQuestionSpoken: boolean;
   timePressureSpoken: boolean;
+  /** True when the candidate just SKIPPED the previous question. Overrides
+   *  the normal acknowledgement so the AI says "Noted, moving on —" rather
+   *  than reacting to a non-existent answer ("That was sharp.") which is
+   *  jarring after a skip. */
+  lastTurnWasSkip?: boolean;
 }
+
+const SKIP_ACK = [
+  "Noted — let's move on.",
+  "Got it, no worries — next one.",
+  "All good, skipping ahead.",
+  "Okay, on to the next.",
+];
 
 export interface ThinkingPhraseResult {
   /** The phrase to speak before the next question, or null to skip. */
@@ -119,6 +131,14 @@ export function buildThinkingPhrase(input: ThinkingPhraseInput): ThinkingPhraseR
   const baseEligible = currentStep > 0 && (stepType === "question" || stepType === "follow-up" || (stepType === "closing" && interviewType === "salary-negotiation"));
   if (!baseEligible) return result;
   if (shouldStaySilent(input)) return result;
+
+  /* Skip override: if the candidate just skipped, all the personality /
+     answer-quality branches below would react to nothing. Short-circuit
+     with a soft acknowledgement instead. */
+  if (input.lastTurnWasSkip) {
+    result.phrase = pickRandom(SKIP_ACK);
+    return result;
+  }
 
   const isIDontKnow = isIDontKnowAnswer(lastAnswerText);
 

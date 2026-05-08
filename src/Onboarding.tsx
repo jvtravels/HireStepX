@@ -6,7 +6,7 @@ import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
 import type { ResumeProfile } from "./dashboardData";
 import { track } from "@vercel/analytics";
-import { EmailVerificationBanner } from "./OnboardingPanels";
+import { EmailVerificationBanner } from "./onboarding/EmailVerificationBanner";
 import {
   TopBar,
   ResumeEmptyState,

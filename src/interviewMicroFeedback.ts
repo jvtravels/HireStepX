@@ -339,6 +339,21 @@ function standardFeedback(text: string, wordCount: number, runningScores: number
   const hasFirstPerson = /\bI\b/i.test(text);
   const hasCounterfactual = /without|otherwise|if.*not|had.*not|wouldn't/i.test(text);
 
+  /* Lightweight STAR-component detection. Used to tell the candidate
+     WHICH part of the story they skipped, instead of a generic
+     "structure with STAR" tip. Heuristics:
+       Situation = setting markers (when/where/at <company>/in 20XX/we were)
+       Task      = problem markers (challenge/needed to/asked to/had to/goal)
+       Action    = first-person verbs (I built/I led/I designed/I shipped)
+       Result    = outcome markers (resulted in/which led to/we saw/by N%/<metric>)
+     A long answer that only matches Situation+Task and skips Action/Result
+     is the most common failure — the inline tip should call that out. */
+  const hasSituation = /\bat\s+(?:my\s+last|my\s+previous|my\s+current)?\s*(?:company|job|role|team|firm)\b|\bwhen\s+(?:i|we)\b|\bin\s+(?:20\d\d|q[1-4])\b|\bduring\s+(?:my|the)\b|\bwe\s+were\s+\b/i.test(text);
+  const hasTask = /\b(?:the\s+(?:challenge|problem|goal|task|ask|brief)|needed\s+to|had\s+to|was\s+(?:asked|tasked)\s+to|the\s+target\s+was|our\s+goal\s+was|the\s+brief\s+was)\b/i.test(text);
+  const hasAction = /\bi\s+(?:built|designed|shipped|led|drove|created|wrote|made|fixed|launched|coordinated|negotiated|trained|coached|presented|prototyped|tested|migrated|refactored|architected|implemented|defined|aligned|escalated|prioriti[sz]ed|de[\s-]?risked|set\s+up|put\s+together|reached\s+out)\b/i.test(text);
+  const hasResult = hasMetrics || /\bresult(?:ed|ing)?\b|\bwhich\s+led\s+to\b|\bwhich\s+drove\b|\bso\s+that\b|\bwe\s+saw\b|\bafter\s+(?:that|launch)\b|\bin\s+the\s+end\b|\boutcome\b|\bimpact\b|\bby\s+\d+/i.test(text);
+  const starCount = [hasSituation, hasTask, hasAction, hasResult].filter(Boolean).length;
+
   let score = 50;
   if (wordCount >= 50) score += 10;
   if (wordCount >= 100) score += 5;
@@ -381,16 +396,36 @@ function standardFeedback(text: string, wordCount: number, runningScores: number
           "Stretch this further — give us the context and the outcome.",
         ]);
   } else if (!hasMetrics && !hasStructure) {
-    feedback = isExcelling
-      ? pick([
-          "Good content — push further with specific metrics and counterfactual reasoning.",
-          "Strong substance — quantify the impact and contrast against the alternative.",
-        ])
-      : pick([
-          "Good start! Try adding specific metrics and structuring with STAR.",
-          "Solid answer — anchor it with numbers and a clear Situation→Action→Result.",
-          "Nice content. Add 'who, how many, by how much' to make it land harder.",
-        ]);
+    /* STAR-component-aware: when ≥ 30 words and clearly missing one of
+       Action/Result, name the missing piece instead of a generic STAR
+       tip. Helps the candidate self-correct on the next answer. */
+    if (wordCount >= 40 && starCount >= 2 && !hasAction) {
+      feedback = pick([
+        "You set the scene well — what did *you* do? Lead with 'I' verbs.",
+        "Good context. Walk me through your specific actions, not the team's.",
+      ]);
+    } else if (wordCount >= 40 && starCount >= 2 && !hasResult) {
+      feedback = pick([
+        "Nice setup and action — close with the outcome. What changed?",
+        "Strong action. End with the result: what shifted, by how much?",
+      ]);
+    } else if (wordCount >= 40 && hasAction && !hasSituation && !hasTask) {
+      feedback = pick([
+        "Jumped straight to the action — set the scene first (when/where/why).",
+        "Strong on what you did — anchor it with the situation and the goal.",
+      ]);
+    } else {
+      feedback = isExcelling
+        ? pick([
+            "Good content — push further with specific metrics and counterfactual reasoning.",
+            "Strong substance — quantify the impact and contrast against the alternative.",
+          ])
+        : pick([
+            "Good start! Try adding specific metrics and structuring with STAR.",
+            "Solid answer — anchor it with numbers and a clear Situation→Action→Result.",
+            "Nice content. Add 'who, how many, by how much' to make it land harder.",
+          ]);
+    }
   } else if (!hasMetrics) {
     feedback = isExcelling
       ? pick([
