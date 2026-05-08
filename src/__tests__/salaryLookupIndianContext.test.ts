@@ -158,3 +158,88 @@ describe("bandContext — Indian-market blocks", () => {
     expect(band.bandContext.length).toBeGreaterThan(500);
   });
 });
+
+/* Phase-3 texture helpers */
+describe("bandContext — Phase-3 texture", () => {
+  it("WFH allowance appears for product-tech tiers", () => {
+    const band = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    expect(band.bandContext).toMatch(/WFH \/ WORK-FROM-HOME ALLOWANCE/i);
+  });
+
+  it("WFH allowance does NOT appear for IT services", () => {
+    const band = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "TCS",
+      experienceLevel: "mid",
+    });
+    expect(band.bandContext).not.toMatch(/WFH \/ WORK-FROM-HOME ALLOWANCE/i);
+  });
+
+  it("family insurance appears for FAANG and unicorns", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Software Engineer",
+      company: "Google",
+      experienceLevel: "senior",
+    });
+    expect(band.bandContext).toMatch(/HEALTH INSURANCE/i);
+    // Senior+ at top tiers gets ₹10L corporate cover
+    expect(band.bandContext).toMatch(/₹10L/i);
+  });
+
+  it("RSU refresh cadence appears for FAANG with equity", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Software Engineer",
+      company: "Google",
+      experienceLevel: "senior",
+    });
+    expect(band.bandContext).toMatch(/RSU REFRESH CADENCE/i);
+    expect(band.bandContext).toMatch(/30%/);
+  });
+
+  it("bench period warning appears only for IT services", () => {
+    const tcs = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "TCS",
+      experienceLevel: "mid",
+    });
+    expect(tcs.bandContext).toMatch(/BENCH PERIOD/i);
+    const faang = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Google",
+      experienceLevel: "mid",
+    });
+    expect(faang.bandContext).not.toMatch(/BENCH PERIOD/i);
+  });
+
+  it("LTA / Sodexo / NPS appear at structured-comp tiers", () => {
+    const band = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "TCS",
+      experienceLevel: "mid",
+    });
+    expect(band.bandContext).toMatch(/LTA|Leave Travel Allowance/i);
+    expect(band.bandContext).toMatch(/Sodexo|Zeta/i);
+    expect(band.bandContext).toMatch(/NPS|National Pension/i);
+  });
+
+  it("DA (Dearness Allowance) appears only for government-psu", () => {
+    const psu = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "ONGC",
+      experienceLevel: "mid",
+    });
+    if (psu.bandContext.includes("government")) {
+      expect(psu.bandContext).toMatch(/DEARNESS ALLOWANCE/i);
+    }
+    const private_ = generateNegotiationBand({
+      role: "Software Engineer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    expect(private_.bandContext).not.toMatch(/DEARNESS ALLOWANCE/i);
+  });
+});

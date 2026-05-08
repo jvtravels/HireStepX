@@ -246,6 +246,74 @@ function getBondWarning(companyTier: string | undefined): string {
  * should DO when a counter is mentioned without a written letter. */
 const COUNTER_OFFER_BLUFF_CHECK = `COUNTER-OFFER BLUFF CHECK (Indian-market reality): When the candidate claims a competing offer, ASK FOR THE WRITTEN LETTER before stretching your offer. Phrases like "my current company will counter", "I have an offer at ₹X" without a letter are bluffs ~50-60% of the time. Respond professionally: "That's helpful context. Could you share the written offer (you can redact the company name) so I can see exactly what you're weighing? Once I see it I can figure out where I can land." Do NOT stretch maxStretch on a verbal claim alone. If the candidate refuses to share even a redacted letter, treat it as no-leverage and stay at your current offer.`;
 
+/** WFH / internet / equipment allowance — post-COVID standard for
+ * product-tech and GCC tiers. Services firms generally don't offer
+ * (employees expected to work from office or client site). */
+function getWfhAllowanceContext(companyTier: string | undefined): string {
+  const offers = new Set([
+    "faang", "big-tech", "gcc", "indian-unicorn", "saas-product",
+    "startup-growth", "startup-early", "edtech", "fmcg-mnc",
+    "consulting-mbb", "consulting-big4",
+  ]);
+  if (!offers.has(companyTier ?? "")) return "";
+  return `WFH / WORK-FROM-HOME ALLOWANCE: Standard for product-tech roles post-COVID — typically ₹2-5K/month for internet + electricity, plus a ₹40-80K one-time setup allowance (laptop, monitor, chair). Mention if candidate raises remote/hybrid concerns. Negotiable lever for senior roles asking for fully-remote arrangements.`;
+}
+
+/** Family health-insurance value (self / spouse / kids / parents).
+ * The premium difference between "self only" and "self + dependents"
+ * is real money the candidate often doesn't account for. */
+function getFamilyInsuranceContext(companyTier: string | undefined, exp: ExperienceLevel): string {
+  if (companyTier === "government-psu") {
+    return `HEALTH INSURANCE (PSU norm): CGHS-style coverage for self + spouse + dependents + parents, lifelong post-retirement. This is worth ₹40-60K/yr in market premium and is part of why PSU jobs feel "safe". Mention as a benefit when candidate compares against private-sector offers.`;
+  }
+  const offers = new Set([
+    "faang", "big-tech", "gcc", "indian-unicorn", "saas-product",
+    "consulting-mbb", "consulting-big4", "bfsi-global", "bfsi-domestic",
+    "fmcg-mnc",
+  ]);
+  if (!offers.has(companyTier ?? "")) return "";
+  const corporateLimit = exp === "senior" || exp === "lead" || exp === "executive" ? "₹10L" : "₹5-7L";
+  return `HEALTH INSURANCE (corporate group): Self + spouse + 2 kids + parents covered up to ${corporateLimit} per year (no individual underwriting; pre-existing conditions covered from day 1). Equivalent retail premium would be ₹40-60K/yr for self+spouse+kids and another ₹30-50K/yr for parents (parents above 60 are otherwise hard to insure). When candidate compares CTC, point this out — it's a real ₹70K-1L value not in the headline number.`;
+}
+
+/** ESOP refresh-grant cadence — FAANG India does annual refreshes
+ * (~30% of initial grant), Indian unicorns do biennial. Candidates
+ * miss this in initial-offer math. */
+function getEsopRefreshContext(companyTier: string | undefined, hasEquity: boolean): string {
+  if (!hasEquity) return "";
+  if (companyTier === "faang" || companyTier === "big-tech" || companyTier === "gcc") {
+    return `RSU REFRESH CADENCE: Annual refresh grants at ${companyTier === "faang" ? "FAANG" : companyTier === "gcc" ? "GCC" : "big-tech"} India — typically ~30% of initial grant value granted each year, vesting on the same 4-yr/1-yr-cliff schedule. Effective Year-2 onwards comp is meaningfully higher than the initial offer suggests. If the candidate stays 3+ yrs the equity stack compounds: Y1 = initial grant, Y2 = initial + refresh1, Y3 = initial + refresh1 + refresh2, etc.`;
+  }
+  if (companyTier === "indian-unicorn" || companyTier === "saas-product") {
+    return `ESOP REFRESH CADENCE: Top Indian unicorns (CRED, Razorpay, PhonePe, Zerodha) do refresh grants every 18-24 months for retained senior talent — usually ₹20-30L of additional ESOPs at then-current FMV. Less predictable than FAANG annual refreshes; tied to performance + retention.`;
+  }
+  return "";
+}
+
+/** Bench period reality for IT services. Candidates joining TCS / Infy
+ * may sit on bench (between projects) for 0-3 months. Pay continues
+ * but this is a real career signal candidates worry about. */
+function getBenchContext(companyTier: string | undefined): string {
+  if (companyTier !== "it-services") return "";
+  return `BENCH PERIOD (services-firm reality): New joiners at TCS / Infosys / Wipro typically spend 4-12 weeks on bench before allocation to a client project. Pay continues at full base, but no client-facing work, no skill growth, no onsite eligibility. If candidate asks "when will I be allocated?", be honest: "Allocation depends on demand — typically 4-8 weeks for someone with your profile, longer for niche skills."`;
+}
+
+/** Tax-saving allowances rolled into Indian salary structures. Most
+ * are pre-2019 era but still common at structured-comp companies
+ * (services, BFSI, FMCG). Worth ₹1-2L/yr in tax savings combined. */
+function getTaxSavingAllowances(companyTier: string | undefined): string {
+  const structured = new Set(["it-services", "bfsi-global", "bfsi-domestic", "fmcg-mnc", "consulting-big4", "government-psu"]);
+  if (!structured.has(companyTier ?? "")) return "";
+  return `TAX-SAVING ALLOWANCES (structured-comp norm): Salary slip likely includes (a) LTA — Leave Travel Allowance, ₹0.6-1L/yr tax-exempt twice in 4 yrs against domestic travel bills, (b) Sodexo / Zeta meal vouchers, ₹26,400/yr tax-free, (c) Conveyance / fuel reimbursement against bills, ₹19,200-30K/yr (only old-regime), (d) NPS — National Pension System employer contribution up to 10% of basic, deductible. These are visible on the slip but not part of the cash-in-hand headline — when candidate asks for "all components", list them.`;
+}
+
+/** Indian DA (Dearness Allowance) only for PSUs / govt — pegged to
+ * the Consumer Price Index, revised twice yearly. */
+function getDearnessAllowanceContext(companyTier: string | undefined): string {
+  if (companyTier !== "government-psu") return "";
+  return `DEARNESS ALLOWANCE (PSU/govt only): DA is pegged to CPI-IW and revised every Jan + July. Currently at ~50% of basic for central PSUs. This compounds the basic over time — a 7th CPC ₹1L basic today becomes ₹1.5L+ in DA-adjusted in-hand. PSU candidates should account for DA growth when comparing against private offers.`;
+}
+
 /** Compose all Indian-market context blocks into a single bandContext
  * suffix. Returns separate `campusWarning` (goes at very top, before
  * even the band) and `fullContextBlock` (goes between band breakdown
@@ -264,18 +332,30 @@ function buildIndianMarketContext(p: {
   const inHand = getInHandRange(p.totalCtc, p.cityTier);
   const buyout = getNoticeBuyoutContext(p.companyTier, p.totalCtc);
   const equityLiq = getEquityLiquidityNote(p.company, p.companyTier, p.hasEquity);
+  const esopRefresh = getEsopRefreshContext(p.companyTier, p.hasEquity);
   const dep = getDeputationContext(p.companyTier);
   const fest = getFestiveBonus(p.companyTier, p.basicLpa);
   const retention = getRetentionBonusContext(p.companyTier, p.exp, p.totalCtc);
   const bond = getBondWarning(p.companyTier);
-  // Compose only non-empty blocks so prompt stays focused.
+  const wfh = getWfhAllowanceContext(p.companyTier);
+  const insurance = getFamilyInsuranceContext(p.companyTier, p.exp);
+  const bench = getBenchContext(p.companyTier);
+  const taxSavings = getTaxSavingAllowances(p.companyTier);
+  const da = getDearnessAllowanceContext(p.companyTier);
+  // Compose only non-empty blocks so prompt stays focused per-tier.
   const blocks = [
     inHand.text,
     buyout,
     equityLiq,
+    esopRefresh,
     dep,
+    bench,
     fest.text,
     retention,
+    wfh,
+    insurance,
+    taxSavings,
+    da,
     bond,
     COUNTER_OFFER_BLUFF_CHECK,
   ].filter(Boolean);
