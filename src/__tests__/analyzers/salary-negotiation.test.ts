@@ -282,6 +282,36 @@ describe("applyTitleExpFloor (via generateNegotiationBand)", () => {
     expect(out.flags).not.toContain("user_never_anchored");
   });
 
+  it("flags role_company_mismatch for Pilot @ Razorpay setup", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: {
+        ...session([
+          ai("Welcome — let me walk through the package."),
+          user("Thanks."),
+        ]),
+        target_role: "Pilot",
+        target_company: "Razorpay",
+      },
+    });
+    expect(out.flags).toContain("role_company_mismatch");
+    const gap = out.rubricGaps.find(g => g.dimension === "session_setup");
+    expect(gap, "session_setup gap should fire").toBeDefined();
+  });
+
+  it("does NOT flag role_company_mismatch for SE @ any company", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: {
+        ...session([
+          ai("Welcome."),
+          user("Hi."),
+        ]),
+        target_role: "Software Engineer",
+        target_company: "ISRO",
+      },
+    });
+    expect(out.flags).not.toContain("role_company_mismatch");
+  });
+
   it("Plain 'Software Engineer' (no senior prefix) stays at YOE floor", () => {
     const midBand = generateNegotiationBand({
       role: "Software Engineer",

@@ -26,6 +26,7 @@ import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { matchRoleKey } from "../../data/salaries";
 import { askPositioning, landingZone, type CompanyTierBucket } from "../../src/_negotiation-math";
 import { getCompanyTier } from "../../data/company-tiers";
+import { detectRoleCompanyFit } from "../../src/_role-company-fit";
 
 /** Local tier mapper. Mirrors the one in salary-lookup.ts. Kept here to
  *  avoid circular imports between data/ and src/ helpers. */
@@ -810,6 +811,23 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
             severity: "high",
           });
         }
+      }
+    }
+
+    // --- 4-pre. Role × company sector-fit. Flags impossible combos like
+    //     Pilot @ Razorpay before they propagate as a wrong band ---
+    if (session.target_role) {
+      const tier = getCompanyTier(session.target_company || "");
+      const roleKey = matchRoleKey(session.target_role);
+      const fit = detectRoleCompanyFit(roleKey, tier, session.target_company || undefined);
+      if (fit.fit === "hard_mismatch") {
+        flags.add("role_company_mismatch");
+        gaps.push({
+          dimension: "session_setup",
+          expected: "Selected role exists at the selected company (or at least its tier)",
+          observed: fit.reason,
+          severity: "high",
+        });
       }
     }
 
