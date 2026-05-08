@@ -300,8 +300,39 @@ function campusPlacementFeedback(text: string, wordCount: number): MicroFeedback
   return { feedback, score: clamp(score) };
 }
 
+/* Detects answers that are explicit non-attempts ("I don't have experience",
+   "not sure about it", "haven't faced anything like that"). Generic tips like
+   "Stretch this further — give us the context and the outcome" gaslight the
+   candidate when they've already said they have nothing to draw on. We
+   acknowledge it instead and skip the score penalty. */
+function detectNonAnswer(text: string, wordCount: number): boolean {
+  if (wordCount > 60) return false;
+  const t = text.toLowerCase();
+  const patterns: RegExp[] = [
+    /\b(?:i\s+)?(?:do\s+not|don'?t|have\s+not|haven'?t)\s+(?:have|got)\s+(?:any\s+)?(?:experience|exposure|example)/,
+    /\b(?:no|zero|never\s+had)\s+(?:real\s+)?experience\b/,
+    /\bnot\s+(?:really\s+|100%?\s+|entirely\s+|quite\s+)?sure\b.*\b(?:about|on)\s+(?:it|this|that|the\s+(?:answer|strateg|approach))/,
+    /\b(?:have\s+not|haven'?t|never)\s+faced\b/,
+    /\bnever\s+(?:done|encountered|been\s+in)\b/,
+    /\b(?:can'?t|cannot|could\s*not|couldn'?t)\s+(?:think|recall|remember)\s+(?:of\s+)?(?:any|a\s+specific|one)\b/,
+    /\bnothing\s+comes\s+to\s+mind\b/,
+    /\bnot\s+applicable\b|\bn\/?a\b/,
+    /\bskip\s+this\b|\bpass\s+on\s+this\b/,
+  ];
+  return patterns.some((re) => re.test(t));
+}
+
 /* ─── Standard (behavioral / technical / strategic / panel) ─── */
 function standardFeedback(text: string, wordCount: number, runningScores: number[]): MicroFeedbackResult {
+  if (detectNonAnswer(text, wordCount)) {
+    // Empathic acknowledgement, no STAR-coaching tip. Score reflects
+    // a non-answer (low) but doesn't crater the running average — the
+    // candidate was honest, not lazy.
+    return {
+      feedback: "No experience here is fine — try a hypothetical, or pivot to the closest situation you've handled.",
+      score: 35,
+    };
+  }
   const hasMetrics = /\d+%|\$\d|[0-9]+x|[0-9]+ (users|customers|engineers|people)/i.test(text);
   const hasStructure = /first|second|then|finally|result|outcome|impact/i.test(text);
   const hasFirstPerson = /\bI\b/i.test(text);

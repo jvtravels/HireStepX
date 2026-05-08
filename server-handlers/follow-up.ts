@@ -107,13 +107,13 @@ export default async function handler(req: Request): Promise<Response> {
     const nonAnswerLower = answer.toLowerCase();
     const isExplicitNonAnswer =
       !isSalaryNegEarly && answer.trim().split(/\s+/).length <= 60 && (
-        /\b(i\s*(?:do\s*not|don'?t|haven'?t)\s*(?:have|got)\s*(?:any\s+)?(?:experience|exposure|example))/.test(nonAnswerLower) ||
-        /\b(no|zero|never\s+had)\s+(?:real\s+)?experience\b/.test(nonAnswerLower) ||
-        /\bhaven'?t\s+faced\b/.test(nonAnswerLower) ||
+        /\b(?:i\s+)?(?:do\s+not|don'?t|have\s+not|haven'?t)\s+(?:have|got)\s+(?:any\s+)?(?:experience|exposure|example)/.test(nonAnswerLower) ||
+        /\b(?:no|zero|never\s+had)\s+(?:real\s+)?experience\b/.test(nonAnswerLower) ||
+        /\b(?:have\s+not|haven'?t|never)\s+faced\b/.test(nonAnswerLower) ||
         /\bnever\s+(?:done|encountered|been\s+in)\b/.test(nonAnswerLower) ||
-        /\bcan'?t\s+(?:think|recall|remember)\s+(?:of\s+)?(?:any|a\s+specific|one)\b/.test(nonAnswerLower) ||
+        /\b(?:can'?t|cannot|could\s*not|couldn'?t)\s+(?:think|recall|remember)\s+(?:of\s+)?(?:any|a\s+specific|one)\b/.test(nonAnswerLower) ||
         /\bnothing\s+comes\s+to\s+mind\b/.test(nonAnswerLower) ||
-        /\bnot\s+(?:really\s+)?sure\b.*\b(about|on)\s+(it|this|that)\b/.test(nonAnswerLower)
+        /\bnot\s+(?:really\s+|100%?\s+|entirely\s+|quite\s+)?sure\b.*\b(?:about|on)\s+(?:it|this|that|the)\b/.test(nonAnswerLower)
       );
     if (isExplicitNonAnswer) {
       const pivotText = "That's fair — let's flip it. Imagine you walk into that situation tomorrow: how would you approach it? Even a rough first move helps me see your thinking.";
@@ -842,12 +842,12 @@ Do NOT paraphrase that question. Your follow-up MUST probe a different dimension
           result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry" });
         }
       }
-      void seedDupTriggered;
-
       // Dedup retry: if the LLM's output is too similar to the previous
       // AI turn, retry once with explicit anti-repeat instruction. Hard
-      // guarantee, not a prompt request.
-      if (previousAiTurnText && previousAiTurnText.length > 40) {
+      // guarantee, not a prompt request. Skip if we already retried for
+      // seed-question dedup — `previousAiTurnText` typically IS the seed
+      // question, so retrying twice in a row wastes a third LLM call.
+      if (!seedDupTriggered && previousAiTurnText && previousAiTurnText.length > 40) {
         const tentative = extractJSON<{ followUpText?: string }>(result.text);
         const candidateText = (tentative?.followUpText || "").trim();
         const sim = candidateText ? jaccardSimilarity(candidateText, previousAiTurnText) : 0;
@@ -1029,15 +1029,18 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // patch any obvious mis-echo in the LLM's reply.
       const candTargetRe = /(\d+(?:\.\d+)?)\s*(lakhs?|lpa|l\b|crore|cr)/gi;
       let lastCandNum: number | null = null;
-      let lastCandLabel: "LPA" | "Cr" = "LPA";
       let cm: RegExpExecArray | null;
       candTargetRe.lastIndex = 0;
       while ((cm = candTargetRe.exec(answer || "")) !== null) {
         const v = parseFloat(cm[1]);
         const isCrore = /cr|crore/i.test(cm[2]);
+        // Always normalize Cr → LPA internally (1 Cr = 100 LPA). Previously
+        // we preserved the original label and emitted "₹2 Cr" on patch,
+        // silently dropping the 100× magnification when downstream regex
+        // matched the smaller pre-multiplied number. LPA is the lingua
+        // franca for negotiation throughout this codebase.
         if (Number.isFinite(v) && v > 0) {
           lastCandNum = isCrore ? v * 100 : v;
-          lastCandLabel = isCrore ? "Cr" : "LPA";
         }
       }
       if (lastCandNum !== null && clamped) {
@@ -1052,7 +1055,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
             console.warn(`[follow-up] Echo mismatch: candidate said ${lastCandNum}, LLM echoed ${echoed} — patching`);
             const replacement = em[0].replace(
               /(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i,
-              `₹${lastCandNum} ${lastCandLabel}`,
+              `₹${lastCandNum} LPA`,
             );
             clamped = clamped.replace(em[0], replacement);
           }
@@ -1069,7 +1072,15 @@ Repeat-text in followUpText is FORBIDDEN.`;
          (the engine-tracked number, more reliable than the last-turn
          parse since the candidate may have stated their target in an
          earlier turn). Patch any drift. */
-      if (candidateTarget && candidateTarget > 0 && clamped) {
+      // Bug G fix — opening-turn echo guard. Before the engine has tracked
+      // candidateTarget (i.e. on the very first turn the candidate states a
+      // number), candidateTarget is null and the entire block below was
+      // skipped. Fall back to lastCandNum (parsed from the current answer)
+      // so target-echo misattribution is still caught on turn 1.
+      const effectiveTarget = candidateTarget && candidateTarget > 0
+        ? candidateTarget
+        : (lastCandNum && lastCandNum > 0 ? lastCandNum : null);
+      if (effectiveTarget !== null && clamped) {
         /* Round-3 expansion: the previous regex caught "your target of
            ₹N" / "you're looking for ₹N" but missed the most common
            drift pattern — "I heard ₹N from you" / "you mentioned ₹N" /
@@ -1092,15 +1103,14 @@ Repeat-text in followUpText is FORBIDDEN.`;
             (canonicalInitialOffer !== null && Math.abs(echoedTarget - canonicalInitialOffer) < 0.5) ||
             (typeof highestOfferMade === "number" && Math.abs(echoedTarget - highestOfferMade) < 0.5);
           const haveDifferentCandidateTarget =
-            candidateTarget !== null &&
-            Math.abs(echoedTarget - candidateTarget) > 0.5;
+            Math.abs(echoedTarget - effectiveTarget) > 0.5;
           if (matchesOwnOffer && !haveDifferentCandidateTarget) continue;
           // Tolerance: 0.5 LPA — anything further off is a misattribution.
-          if (Math.abs(echoedTarget - candidateTarget) > 0.5) {
-            console.warn(`[follow-up] Target echo mismatch: candidate target=${candidateTarget}, AI echoed as ${echoedTarget} — patching`);
+          if (Math.abs(echoedTarget - effectiveTarget) > 0.5) {
+            console.warn(`[follow-up] Target echo mismatch: candidate target=${effectiveTarget}, AI echoed as ${echoedTarget} — patching`);
             const fixed = teMatch[0].replace(
               /₹?\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore)/i,
-              `₹${candidateTarget} LPA`,
+              `₹${effectiveTarget} LPA`,
             );
             clamped = clamped.replace(teMatch[0], fixed);
             // Reset the regex's lastIndex so we don't skip overlapping matches
@@ -1415,9 +1425,13 @@ Repeat-text in followUpText is FORBIDDEN.`;
       let t = parsed.followUpText;
       // Collapse "., " → ". " and stray ",." / ".," → "."
       t = t.replace(/\.,\s+/g, ". ").replace(/,\.\s*/g, ". ").replace(/\.\.\s+/g, ". ");
-      // If sentence opens with "How|What|Why|When|Where|Walk me|Can you|Could you|Would you|Did you|Do you|Tell me" but ends with a period, swap to "?"
-      const interrogativeRe = /(^|[.!?]\s+)(how|what|why|when|where|walk me|can you|could you|would you|did you|do you|tell me)\b[^.?!]*\.(\s|$)/gi;
-      t = t.replace(interrogativeRe, (m) => m.replace(/\.(\s|$)$/, "?$1"));
+      t = t.replace(/,\s*([.!?])/g, "$1");
+      // Flip terminal "." to "?" ONLY when the sentence's first word is a
+      // genuine interrogative starter (How/What/Why/Can/etc.). Imperatives
+      // like "Walk me through X." or "Tell me about Y." are grammatical
+      // with a period and must not be touched.
+      const interrogativeRe = /(^|[.!?]\s+)((?:how|what|why|when|where|which|who|whose|whom|can|could|would|should|will|did|do|does|is|are|was|were|have|has|had)\b[^.?!]*)\.(\s|$)/gi;
+      t = t.replace(interrogativeRe, (_m, lead, body, tail) => `${lead}${body}?${tail}`);
       parsed.followUpText = t;
     }
 

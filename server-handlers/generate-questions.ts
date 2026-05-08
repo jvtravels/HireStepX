@@ -28,6 +28,7 @@ import {
   extractQuestionsArray,
   validateQuestionShape,
   normalizePanelPersonas,
+  sanitizeQuestionText,
   isSalaryNegotiationLengthOk,
   computeStepCount,
   buildStaticFallback,
@@ -489,6 +490,29 @@ If unclear, default to IAS-style interview tone.`,
     });
     const typeGuidance = (TYPE_GUIDANCE[interviewType] || "") + recipeFragment + (canonFragment ? `\n\n${canonFragment}` : "");
 
+    /* ROLE FENCE — keep questions inside the discipline the candidate is
+       actually being evaluated on. The user-reported failure mode: a
+       Senior Product Designer / Zepto behavioral session that asked
+       "Walk me through a system you designed that had to handle
+       scalability concerns. What were the key architectural decisions
+       you made, and how did you validate them?" — an SWE question that
+       has no business in a design round. follow-up.ts already has a
+       similar fence; mirroring it here closes the gap at generation
+       time. */
+    const roleLower = (typeof targetRole === "string" ? targetRole : "").toLowerCase();
+    let roleFenceDirective = "";
+    if (/(?:product designer|ui designer|ux designer|visual designer|interaction designer|design lead|design manager|product design|graphic designer)/i.test(roleLower)) {
+      roleFenceDirective = `\nROLE FENCE (mandatory): The candidate is interviewing for "${targetRole}". Questions MUST stay on design craft, user research, design systems, prototyping, hand-off, accessibility, design critique, stakeholder collaboration on design decisions, and product thinking from a design lens. DO NOT generate engineering/SWE questions (system design, architecture, scalability, sharding, rate-limiting, distributed systems), data-engineering questions (pipelines, ETL, query optimization), or pure PM-roadmap questions divorced from design. If a question would only make sense for an engineer or PM, REWRITE it from the designer's seat.\n`;
+    } else if (/(?:product manager|\bpm\b|product lead|associate product|program manager|chief product)/i.test(roleLower)) {
+      roleFenceDirective = `\nROLE FENCE (mandatory): The candidate is interviewing for "${targetRole}". Questions MUST stay on product sense, prioritization, roadmap trade-offs, user/customer insight, metrics, cross-functional leadership, and execution. DO NOT generate deep architecture / system-design / coding questions (those are for engineers) or pure visual-design-craft questions (those are for designers).\n`;
+    } else if (/(?:software engineer|backend|frontend|full.?stack|sre|devops|data engineer|ml engineer|machine learning|tech lead|engineering manager|staff engineer|principal engineer|architect)/i.test(roleLower)) {
+      roleFenceDirective = `\nROLE FENCE (mandatory): The candidate is interviewing for "${targetRole}". Questions MUST stay on engineering craft — system design, architecture, debugging, trade-offs, scalability, code quality, on-call/incidents — calibrated to the engineering specialty in the role title. DO NOT generate pure design-craft questions (visual hierarchy, Figma, design systems) or pure PM-roadmap questions.\n`;
+    } else if (/(?:content writer|copywriter|seo|technical writer|editor)/i.test(roleLower)) {
+      roleFenceDirective = `\nROLE FENCE (mandatory): The candidate is interviewing for "${targetRole}". Questions MUST stay on writing craft, content strategy, search intent, brand voice, editorial workflow, SEO basics, and stakeholder collaboration around content. DO NOT generate engineering, system-design, product-roadmap, or visual-design questions.\n`;
+    } else if (/(?:data analyst|business analyst|data scientist|analytics)/i.test(roleLower)) {
+      roleFenceDirective = `\nROLE FENCE (mandatory): The candidate is interviewing for "${targetRole}". Questions MUST stay on data craft — SQL, analysis, experimentation, metrics design, stakeholder communication of insights, dashboarding. DO NOT generate distributed-systems, design-craft, or pure PM-roadmap questions.\n`;
+    }
+
     // Cross-cutting: when a resume is available, at least one question MUST cite
     // a specific detail from it. Generic questions feel canned even when they're
     // technically valid — anchoring to "your role at <company>" or "the <project>
@@ -634,7 +658,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
       : "";
 
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
@@ -817,6 +841,10 @@ Requirements:
     if (!validateQuestionShape(questions)) {
       return new Response(JSON.stringify({ error: "LLM returned malformed question objects" }), { status: 502, headers });
     }
+
+    // Punctuation hygiene — fix LLM artifacts like "., " stitches and
+    // interrogatives that end with a period instead of a question mark.
+    sanitizeQuestionText(questions as RawQuestion[]);
 
     // For panel interviews: validate and fix persona assignments
     if (interviewType === "panel") {

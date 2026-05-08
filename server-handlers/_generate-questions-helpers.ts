@@ -63,6 +63,39 @@ export function validateQuestionShape(questions: unknown[]): boolean {
 }
 
 /**
+ * Mutates `questions` in place: cleans punctuation artifacts in aiText.
+ * LLMs occasionally produce "Tell me about a failure., What did you learn"
+ * (comma-period stitch) or end interrogatives with a period
+ * ("how did you measure the impact."). The fixes here are minimal —
+ * collapse stray punctuation joins and flip terminal "." to "?" when the
+ * sentence is clearly a question opener.
+ */
+export function sanitizeQuestionText(questions: RawQuestion[]): void {
+  // Only true interrogative openers — NOT imperatives like "Tell me about X."
+  // (which is grammatical with a period). Flipping imperatives would corrupt
+  // most behavioral questions.
+  const interrogOpeners = /^(how|what|why|when|where|which|who|whose|whom|can|could|would|should|will|did|do|does|is|are|was|were|have|has|had)\b/i;
+  for (const q of questions) {
+    if (typeof q.aiText !== "string" || q.aiText.length === 0) continue;
+    let t = q.aiText;
+    // Collapse "., " / ",." / ".." into ". "
+    t = t.replace(/\.,\s+/g, ". ").replace(/,\.\s*/g, ". ").replace(/\.\.\s+/g, ". ");
+    // Drop a stray comma before a sentence terminator ("retention,.")
+    t = t.replace(/,\s*([.!?])/g, "$1");
+    // Last sentence flip-to-? rule: only when its FIRST WORD is a true
+    // interrogative starter (How/What/Why/etc.) AND it ends with ".".
+    const lastSentenceMatch = t.match(/(?:^|[.!?]\s+)([^.!?]+)\.\s*$/);
+    if (lastSentenceMatch) {
+      const firstWord = lastSentenceMatch[1].trimStart();
+      if (interrogOpeners.test(firstWord)) {
+        t = t.replace(/\.\s*$/, "?");
+      }
+    }
+    q.aiText = t.trim();
+  }
+}
+
+/**
  * Mutates `questions` in place: assigns/normalizes a valid persona to
  * each step. Intro + closing always become "Hiring Manager"; other steps
  * round-robin across the three roles. Existing valid personas (any case)

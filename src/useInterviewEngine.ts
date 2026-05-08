@@ -2032,6 +2032,9 @@ export function useInterviewEngine() {
     setTranscript((prev) => [...prev, skippedEntry]);
     setCurrentTranscript("");
     setSkipsUsed((n) => n + 1);
+    // A skip is not a real answer — drop any stale tip from the previous
+    // turn so it doesn't read as coaching on the skipped question.
+    setMicroFeedback(null);
 
     // Advance to next step. We don't go through the follow-up pipeline
     // (skipped questions don't deserve probes). Mirrors the no-followup
