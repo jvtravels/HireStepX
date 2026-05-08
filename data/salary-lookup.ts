@@ -314,6 +314,100 @@ function getDearnessAllowanceContext(companyTier: string | undefined): string {
   return `DEARNESS ALLOWANCE (PSU/govt only): DA is pegged to CPI-IW and revised every Jan + July. Currently at ~50% of basic for central PSUs. This compounds the basic over time — a 7th CPC ₹1L basic today becomes ₹1.5L+ in DA-adjusted in-hand. PSU candidates should account for DA growth when comparing against private offers.`;
 }
 
+/** HRA exemption math walkthrough — Income Tax Act Section 10(13A).
+ * Exemption = MIN of (actual HRA received, X% of basic, rent paid - 10% of basic),
+ * where X = 50% for metros (Mumbai/Delhi/Kolkata/Chennai by IT Act; Bangalore /
+ * Hyderabad / Pune commonly treated as 50% by employers despite ambiguity)
+ * and 40% otherwise. Only available in the OLD tax regime.
+ *
+ * Most candidates don't compute this and overestimate their old-regime savings.
+ * Encoding the math here lets the LLM walk through it accurately when asked. */
+function getHraExemptionWalkthrough(cityTier: string | undefined, basicLpa: number, hraLpa: number): string {
+  const round1 = (x: number) => Math.round(x * 10) / 10;
+  const isMetro = cityTier === "tier1";
+  const pctOfBasic = isMetro ? 0.50 : 0.40;
+  const pctCap = round1(basicLpa * pctOfBasic);
+  const cityLabel = isMetro ? "metro (50% of basic)" : "non-metro (40% of basic)";
+  // Example: assume rent = 50% of HRA (typical in metros)
+  const exampleRent = round1(hraLpa * 0.6);
+  const rentMinusTenPct = round1(exampleRent - basicLpa * 0.10);
+  const exemption = round1(Math.min(hraLpa, pctCap, Math.max(0, rentMinusTenPct)));
+  return `HRA EXEMPTION MATH (old-regime only — Section 10(13A)):
+- Actual HRA received: ${fmtLPA(hraLpa)}
+- Cap based on city: ${fmtLPA(pctCap)} (${cityLabel})
+- Rent paid minus 10% of basic: ${fmtLPA(rentMinusTenPct)} (assumes rent ≈ ${fmtLPA(exampleRent)} — adjust for candidate's actual rent)
+- TAX-EXEMPT HRA: ${fmtLPA(exemption)} (the MINIMUM of the three above)
+
+If the candidate asks "how much HRA tax-free?", walk through THIS calculation with their actual rent. Don't quote a generic "HRA is tax-exempt" — that's the kind of vagueness candidates remember when comparing offers later.`;
+}
+
+/** ESOP dilution timeline — every funding round dilutes existing ESOPs.
+ * After 3 rounds (Series B → C → D → IPO) a Series-A grant is worth
+ * ~50-60% of its face value at vest. Real cost candidates miss. */
+function getEsopDilutionContext(companyTier: string | undefined, hasEquity: boolean): string {
+  if (!hasEquity) return "";
+  if (companyTier === "startup-early" || companyTier === "startup-growth") {
+    return `ESOP DILUTION REALITY (startup founder math):
+- Each funding round dilutes existing equity holders by 15-25%.
+- Typical path: Series A (today) → B (12-18 mo, ~20% dilution) → C (12-18 mo, ~15%) → D (~12%) → IPO (~10% additional).
+- A grant of, say, 0.1% at Series A is worth 0.1% × (1-0.20) × (1-0.15) × (1-0.12) × (1-0.10) ≈ 0.054% at IPO — roughly HALF the face value.
+- This isn't a bug; it's how venture funding works. Frame ESOPs as "1.5-2x growth potential offsetting dilution", NOT "guaranteed X LPA".
+- Anti-dilution clauses (full ratchet / weighted-average) protect investors, NOT employees. Employee ESOPs almost never have anti-dilution protection.`;
+  }
+  if (companyTier === "indian-unicorn" || companyTier === "saas-product") {
+    return `ESOP DILUTION REALITY (mid-late-stage unicorn): At unicorn stage there's typically 1-2 more rounds before IPO, so ~25-35% additional dilution from today. A ₹10 LPA grant face-value today is closer to ₹6.5-7.5 LPA at IPO time. Mention this when candidate gets too excited about the headline ESOP value.`;
+  }
+  return "";
+}
+
+/** Recent ESOP buyback events for top Indian unicorns. These are public
+ * and material to the candidate's equity valuation. Not exhaustive but
+ * covers the most-asked-about companies. */
+function getRecentBuybackContext(company: string | undefined): string {
+  const c = (company || "").toLowerCase().trim();
+  // Each entry is { match: substring, context: string }
+  const buybacks: Record<string, string> = {
+    "razorpay": "Razorpay has run 6 ESOP buybacks since 2018 (latest mid-2024 at ~$12B implied valuation). Vested ESOPs have liquefied multiple times — treat as real money, not paper.",
+    "phonepe": "PhonePe ran a ₹1,150 Cr ESOP buyback in 2022 (one of India's largest), and another in 2024 around its India domicile shift. Liquidity has been consistent — vested ESOPs are bankable.",
+    "cred": "CRED has done 3+ buyback events; latest around its 2022-23 round. ESOPs at CRED have appreciated meaningfully but cycle is irregular.",
+    "zerodha": "Zerodha is profitable + bootstrapped — no traditional buyback rounds, but distributes performance bonuses + occasional ESOP cash-out for senior team. Liquidity is high but informal.",
+    "groww": "Groww ran an ESOP buyback in 2024 covering tenured employees. Pre-IPO trajectory.",
+    "meesho": "Meesho ran a ₹250 Cr ESOP buyback in 2024 covering vested grants for current and former employees.",
+    "udaan": "Udaan has had limited buyback activity; ESOPs largely paper until exit.",
+    "swiggy": "Swiggy IPO'd Nov 2024; ESOPs that vested pre-IPO are now liquid via NSE/BSE.",
+    "zomato": "Zomato is publicly listed (Eternal Ltd post-rebrand) — RSUs and existing ESOPs liquid via NSE/BSE.",
+  };
+  for (const [key, ctx] of Object.entries(buybacks)) {
+    if (c.includes(key)) {
+      return `RECENT BUYBACK / LIQUIDITY EVENTS for ${company}: ${ctx} If candidate raises "but ESOPs are paper" framing, counter with this concrete history.`;
+    }
+  }
+  return "";
+}
+
+/** Regional role × city variation — same role pays differently across
+ * Indian cities even within the same tier. Bangalore is the design /
+ * tech premium hub; Chennai pays ~25% less for design but matches for
+ * core engineering; Pune sits in between. */
+function getRegionalRoleVariation(roleKey: string | undefined, cityTier: string | undefined, jobCity: string | undefined): string {
+  if (!cityTier || cityTier === "tier1") return ""; // tier-1 baseline; no adjustment commentary
+  const city = (jobCity || "").toLowerCase().trim();
+  if (!city) return "";
+  // Approximations grounded in Glassdoor / AmbitionBox 2024-25 medians:
+  const isDesignRole = roleKey === "ux-designer" || roleKey === "design-engineer";
+  const isProductRole = roleKey === "product-manager";
+  if (isDesignRole) {
+    if (city.includes("chennai")) return `REGIONAL ROLE VARIATION: Chennai design roles run 20-25% below Bangalore for the same band — design talent density is lower so companies don't pay the Bangalore premium. Don't over-correct: tier-2 multiplier already partially accounts for this.`;
+    if (city.includes("hyderabad")) return `REGIONAL ROLE VARIATION: Hyderabad design pays ~10-15% below Bangalore — closing the gap as more product cos open Hyderabad campuses but still trailing.`;
+    if (city.includes("pune")) return `REGIONAL ROLE VARIATION: Pune design pays ~10% below Bangalore for the same band — strong startup base but Bangalore still sets the price for senior design.`;
+  }
+  if (isProductRole) {
+    if (city.includes("hyderabad")) return `REGIONAL ROLE VARIATION: Hyderabad PM roles run ~10% below Bangalore — Microsoft / Google / Salesforce hubs help but Bangalore PM market is deeper.`;
+    if (city.includes("chennai")) return `REGIONAL ROLE VARIATION: Chennai PM market is thin — pays ~20% below Bangalore for the same band.`;
+  }
+  return "";
+}
+
 /** Compose all Indian-market context blocks into a single bandContext
  * suffix. Returns separate `campusWarning` (goes at very top, before
  * even the band) and `fullContextBlock` (goes between band breakdown
@@ -327,12 +421,17 @@ function buildIndianMarketContext(p: {
   exp: ExperienceLevel;
   totalCtc: number;
   basicLpa: number;
+  hraLpa?: number;
+  jobCity?: string;
+  roleKey?: string;
 }): { campusWarning: string; fullContextBlock: string } {
   const campusWarning = detectCampusHire(p.role);
   const inHand = getInHandRange(p.totalCtc, p.cityTier);
   const buyout = getNoticeBuyoutContext(p.companyTier, p.totalCtc);
   const equityLiq = getEquityLiquidityNote(p.company, p.companyTier, p.hasEquity);
   const esopRefresh = getEsopRefreshContext(p.companyTier, p.hasEquity);
+  const esopDilution = getEsopDilutionContext(p.companyTier, p.hasEquity);
+  const recentBuyback = getRecentBuybackContext(p.company);
   const dep = getDeputationContext(p.companyTier);
   const fest = getFestiveBonus(p.companyTier, p.basicLpa);
   const retention = getRetentionBonusContext(p.companyTier, p.exp, p.totalCtc);
@@ -342,12 +441,19 @@ function buildIndianMarketContext(p: {
   const bench = getBenchContext(p.companyTier);
   const taxSavings = getTaxSavingAllowances(p.companyTier);
   const da = getDearnessAllowanceContext(p.companyTier);
+  const hraExemption = (p.hraLpa && p.hraLpa > 0)
+    ? getHraExemptionWalkthrough(p.cityTier, p.basicLpa, p.hraLpa)
+    : "";
+  const regionalVariation = getRegionalRoleVariation(p.roleKey, p.cityTier, p.jobCity);
   // Compose only non-empty blocks so prompt stays focused per-tier.
   const blocks = [
     inHand.text,
+    hraExemption,
     buyout,
     equityLiq,
+    recentBuyback,
     esopRefresh,
+    esopDilution,
     dep,
     bench,
     fest.text,
@@ -357,6 +463,7 @@ function buildIndianMarketContext(p: {
     taxSavings,
     da,
     bond,
+    regionalVariation,
     COUNTER_OFFER_BLUFF_CHECK,
   ].filter(Boolean);
   return {
@@ -533,6 +640,9 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
       exp,
       totalCtc: initialOffer,
       basicLpa: components.basic,
+      hraLpa: components.hra,
+      jobCity: inferredJobCity,
+      roleKey,
     });
     const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
@@ -540,7 +650,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
 - Walk-away ceiling: ${fmtLPA(walkAway)}
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
-${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : "- No equity at this level (${noBonusTiers.has(companyTier) ? 'typical for this tier' : 'company-specific'})"}
+${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : `- No equity at this level (${noBonusTiers.has(companyTier) ? "typical for this tier" : "company-specific"})`}
 ${override.notes ? `- Note: ${override.notes}` : ""}
 SOURCE: ${override.source}.
 
@@ -628,8 +738,10 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // Tier-aware: PSUs get 0% variable, services 25%, FAANG 12%, etc.
   const components = buildComponentBreakdown(initialOffer, hasEquity, entry.equity_type, companyTier, jobCityTier);
   // Indian-market context (tax, notice, equity-liquidity, deputation,
-  // retention, festive, bond, campus). Each block is non-empty only when
-  // relevant for this tier so the prompt stays focused.
+  // retention, festive, bond, campus, HRA exemption math, recent buyback
+  // history, ESOP dilution timeline, regional role variation). Each block
+  // is non-empty only when relevant for this tier so the prompt stays
+  // focused per-session.
   const indianContext = buildIndianMarketContext({
     role: params.role,
     companyTier,
@@ -639,6 +751,9 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
     exp,
     totalCtc: initialOffer,
     basicLpa: components.basic,
+    hraLpa: components.hra,
+    jobCity: inferredJobCity,
+    roleKey,
   });
   const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
