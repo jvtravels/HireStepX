@@ -800,9 +800,66 @@ export const COMPANY_SALARY_OVERRIDES: Record<
   /* ─── IT Services ─────────────────────────────────────────────── */
   tcs: {
     "software-engineer": {
-      entry: { totalMin: 3.4, totalMax: 4.5, equityType: "none", source: "TCS NQT 2026 disclosure", lastVerified: "2026-05-07", notes: "TCS NQT entry-level; Digital track ₹7-9 LPA. No ESOP." },
-      mid: { totalMin: 5, totalMax: 9, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
-      senior: { totalMin: 9, totalMax: 16, equityType: "none", source: "AmbitionBox", lastVerified: "2026-05-07" },
+      /* TCS pays via THREE distinct fresher → IC tracks. The AI must probe
+         which track the candidate is on (or pattern-match from resume) before
+         quoting a number — quoting ₹4L to a Digital-track candidate destroys
+         simulation credibility instantly. Bands below cover the full
+         Ninja → Prime envelope; the `notes` field tells the LLM how to triage.
+         Track signals (use to anchor within the band):
+           - Ninja: standard NQT score, basic CS skills, no high-leverage signal
+           - Digital: top NQT/coding score, hackathon/internship/GitHub, CS+
+           - Prime: top-of-batch (rare), DSA-strong, often deferred-offer cases */
+      entry: {
+        totalMin: 3.4, totalMax: 11.5,
+        baseMin: 3.0, baseMax: 9.5,
+        equityType: "none",
+        joiningBonusOverride: [0, 1.5],
+        source: "TCS NQT 2026 disclosure (Ninja ₹3.36L / Digital ₹7-9L / Prime ₹11.5L) + AmbitionBox cross-check",
+        lastVerified: "2026-05-09",
+        notes: "Three fresher tracks — Ninja ₹3.4-4L (most common), Digital ₹7-9L (top NQT scorers + coding test), Prime ₹11.5L (small elite cohort). PROBE the candidate's track before quoting; default-anchor at ₹5-6L only if track is unknown. No ESOP. ₹0.5L service bond (waived for Digital/Prime). 90-day notice.",
+      },
+      mid: {
+        totalMin: 5, totalMax: 15,
+        baseMin: 4.2, baseMax: 12,
+        equityType: "none",
+        joiningBonusOverride: [0, 2],
+        source: "AmbitionBox 2026 + Glassdoor TCS Systems Engineer / IT Analyst cohort",
+        lastVerified: "2026-05-09",
+        notes: "3-5 YOE post-Ninja Systems Engineer / IT Analyst is ₹5-9L. Digital-track promoted ICs and lateral hires with niche skills (cloud, SAP, ServiceNow, GenAI) reach ₹10-15L. Onsite-deputation returnees often re-enter at ₹12-15L+.",
+      },
+      senior: {
+        totalMin: 10, totalMax: 25,
+        baseMin: 8, baseMax: 20,
+        equityType: "none",
+        joiningBonusOverride: [0, 3],
+        source: "AmbitionBox + Levels.fyi TCS Associate Consultant / IT Analyst Senior cohort",
+        lastVerified: "2026-05-09",
+        notes: "5-8 YOE Associate Consultant / IT Analyst Senior. Standard track ₹10-16L; Digital/specialty (cloud architect, SAP S/4 lead, GenAI) reaches ₹16-25L. Onsite-deputation premium adds ₹3-6L for US/UK returnees.",
+      },
+      lead: {
+        totalMin: 16, totalMax: 38,
+        baseMin: 13, baseMax: 30,
+        equityType: "none",
+        joiningBonusOverride: [0, 4],
+        source: "Glassdoor TCS Consultant / Senior Consultant + Levels.fyi",
+        lastVerified: "2026-05-09",
+        notes: "8-12 YOE Consultant / Senior Consultant. Service-line (BFSI, retail) ₹16-28L; Digital practice (cloud, AI, GenAI architect) ₹25-38L. Variable component 10-15% of CTC (low for tier-1 IT services).",
+      },
+      executive: {
+        totalMin: 28, totalMax: 65,
+        baseMin: 22, baseMax: 50,
+        equityType: "none",
+        joiningBonusOverride: [0, 6],
+        source: "Glassdoor TCS Manager / Delivery Manager + DRHP filings",
+        lastVerified: "2026-05-09",
+        notes: "12+ YOE Manager / Delivery Manager. Manager bracket ₹28-45L; Senior Manager / Delivery Lead ₹45-65L. P&L ownership is the lever. No equity but ESPP available.",
+      },
+    },
+    "ux-designer": {
+      entry: { totalMin: 4, totalMax: 6, equityType: "none", source: "AmbitionBox / Glassdoor 2026 (TCS UI/UX fresher–junior)", lastVerified: "2026-05-09", notes: "TCS designers are paid on the IT-services scale, not the unicorn-startup scale. AmbitionBox 2026: TCS UI/UX avg ₹6.5-7.5L. Don't anchor against Razorpay / Swiggy bands here." },
+      mid: { totalMin: 6, totalMax: 12, equityType: "none", source: "AmbitionBox / Glassdoor 2026 (TCS UI/UX 2-5 yr)", lastVerified: "2026-05-09", notes: "Mid-level TCS designer typically ₹8-10L; ₹12 only for Digital-track / onsite-bound specialists." },
+      senior: { totalMin: 10, totalMax: 15, equityType: "none", source: "AmbitionBox / Glassdoor 2026 (TCS UI/UX 5+ yr)", lastVerified: "2026-05-09", notes: "Senior TCS designer ₹10-15L. Above ₹15L only at Lead Designer / Design Manager band." },
+      lead: { totalMin: 14, totalMax: 22, equityType: "none", source: "AmbitionBox / Glassdoor 2026 (TCS Design Manager)", lastVerified: "2026-05-09" },
     },
   
     "qa-engineer": {

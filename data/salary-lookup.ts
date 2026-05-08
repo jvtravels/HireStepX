@@ -141,7 +141,11 @@ export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
 
 /** Tier-specific variable-bonus percentage of CTC. Indian-market grounded:
  *   - government-psu: 0% (7th CPC fixed pay; no performance variable)
- *   - it-services: 25% (billing-linked + deputation premium baked in)
+ *   - it-services: 10% (TCS/Infosys/Wipro/HCL: 1-2 month QPLC ≈ 8-15% of CTC.
+ *     Deputation allowance is paid OUT of base CTC during onsite, not as a
+ *     variable component layered on top. Previous 25% was the implicit
+ *     "Digital track" rate and double-counted deputation; for IC bands
+ *     across all tracks (designer, BA, traditional SE) 10% is correct.)
  *   - bfsi-global: 22% (Goldman, JPM, Barclays India — perf bonuses heavy)
  *   - bfsi-domestic: 15% (HDFC/ICICI — moderate variable)
  *   - consulting-mbb / consulting-big4: 20% (utilization-linked)
@@ -154,7 +158,7 @@ export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
 function getVariablePct(companyTier: string | undefined): number {
   switch (companyTier) {
     case "government-psu": return 0;
-    case "it-services": return 0.25;
+    case "it-services": return 0.10;
     case "bfsi-global": return 0.22;
     case "bfsi-domestic": return 0.15;
     case "consulting-mbb":
