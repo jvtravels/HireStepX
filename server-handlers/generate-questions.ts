@@ -6,6 +6,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, checkSessionLimit, sa
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
+import { formatCsvFocusContext } from "../data/csv-band-prompt";
 import { formatRecipe } from "../data/focus-question-recipes";
 import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
@@ -605,8 +606,25 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     });
     const referenceBlock = formatReferencesForPrompt(retrievalResult);
 
+    /* CSV-dataset grounding for the 9 non-salary focus areas. The
+       salary-negotiation flow gets the full curated block via
+       buildSalaryNegotiationGuidance — for everything else, surface
+       company-type / role-family / locations / primary focus / HR
+       posture / red-flags / benefits sourced from the 100-company
+       research dataset, so the LLM can ground STAR / panel / HR /
+       management / campus / govt prompts in real-world context.
+       Empty when the (company, role, level) tuple isn't covered. */
+    const csvFocusBlock = isSalaryType
+      ? ""
+      : formatCsvFocusContext(
+          companyName,
+          targetRole,
+          expLevel,
+          interviewFocus !== "general" ? interviewFocus : interviewType,
+        );
+
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${typeGuidance ? `\n${typeGuidance}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.

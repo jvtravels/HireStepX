@@ -24,6 +24,7 @@ import {
   formatCompanyNegotiationContext,
 } from "./company-negotiation-context";
 import { formatGranularBand } from "./india-salary-bands-2025";
+import { formatCsvSalaryNegContext } from "./csv-band-prompt";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../src/_ctc-breakdown";
 import { tierFlexibility, type CompanyTierBucket } from "../src/_negotiation-math";
 import { detectRoleCompanyFit } from "../src/_role-company-fit";
@@ -1397,6 +1398,17 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
     params.company,
   );
 
+  /* Curated 100-company CSV dataset block — research-verified ask
+     ladders (safe / strong / stretch / walkaway), HR pushback,
+     candidate-best/bad-response templates, rubric, benefits.
+     Gated on (company, role, level) match; "" when the tuple isn't
+     covered, so legacy companies fall through to the older blocks. */
+  const csvSalaryContext = formatCsvSalaryNegContext(
+    params.company,
+    params.role,
+    exp,
+  );
+
   /* Granular role band — the 2025 India market grid covering 80+
      specific roles (Frontend Developer, Senior Product Designer,
      GenAI Engineer, Enterprise Sales Manager, etc.) at the
@@ -1490,7 +1502,7 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
 
 ${equityRule}${govNote}${relocNote}
 
-${salaryContext}${granularBand}${companyNegContext}${marketReality}`;
+${salaryContext}${granularBand}${companyNegContext}${csvSalaryContext}${marketReality}`;
   }
 
   /* Prompt structure is ordered for Groq prompt-cache friendliness:
@@ -1557,7 +1569,7 @@ In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions
 
 ${equityRule}${govNote}${relocNote}
 
-${salaryContext}${granularBand}${companyNegContext}${marketReality}`;
+${salaryContext}${granularBand}${companyNegContext}${csvSalaryContext}${marketReality}`;
 }
 
 /* The static portion of the salary-neg system prompt. Identical across
