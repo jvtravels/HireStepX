@@ -1056,7 +1056,11 @@ Repeat-text in followUpText is FORBIDDEN.`;
         if (![total, base, variable, bonus].every((n) => Number.isFinite(n) && n > 0)) return full;
         const sum = base + variable + bonus;
         const allEqual = base === variable && variable === bonus;
-        const sumWayOff = Math.abs(sum - total) > Math.max(0.5, total * 0.05);
+        // Tightened tolerance from 5% → 3%. At 5%, breakdowns like "₹40 LPA =
+        // ₹25 base + ₹10 var + ₹3 bonus" (sum 38, off by 5%) ship as-is, which
+        // candidates immediately catch. 3% (₹1.2 on a ₹40 offer) is close to
+        // genuine rounding noise but flags real inconsistencies.
+        const sumWayOff = Math.abs(sum - total) > Math.max(0.5, total * 0.03);
         if (allEqual || sumWayOff) {
           // 78/15/7 split — realistic for Indian tech CTCs at the
           // junior-to-mid level. Bonus may be 0 if total is small.

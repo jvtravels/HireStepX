@@ -171,13 +171,26 @@ function bandToOverride(
   const scale =
     band.totalMaxLpa > 0 ? compressedMax / band.totalMaxLpa : 1;
   const round1 = (n: number) => Math.round(n * 10) / 10;
+  // Scale BOTH base/equity min and max so a downward compression doesn't
+  // leave baseMin > scaledBaseMax (band-shape invariant). Skip scaling on
+  // the lower bounds when scale > 1 so we never lift mins above their
+  // original CSV value (mins should stay sticky at the floor).
+  const minScale = scale < 1 ? scale : 1;
+  const scaledBaseMin = band.fixedMinLpa ? round1(band.fixedMinLpa * minScale) : undefined;
+  const scaledBaseMax = band.fixedMaxLpa ? round1(band.fixedMaxLpa * scale) : undefined;
+  const scaledEquityMin = band.equityMinLpa ? round1(band.equityMinLpa * minScale) : undefined;
+  const scaledEquityMax = band.equityMaxLpa ? round1(band.equityMaxLpa * scale) : undefined;
   return {
     totalMin: band.totalMinLpa,
     totalMax: compressedMax,
-    baseMin: band.fixedMinLpa || undefined,
-    baseMax: band.fixedMaxLpa ? round1(band.fixedMaxLpa * scale) : undefined,
-    equityMin: band.equityMinLpa || undefined,
-    equityMax: band.equityMaxLpa ? round1(band.equityMaxLpa * scale) : undefined,
+    baseMin: scaledBaseMin,
+    baseMax: scaledBaseMax !== undefined && scaledBaseMin !== undefined
+      ? Math.max(scaledBaseMax, scaledBaseMin)
+      : scaledBaseMax,
+    equityMin: scaledEquityMin,
+    equityMax: scaledEquityMax !== undefined && scaledEquityMin !== undefined
+      ? Math.max(scaledEquityMax, scaledEquityMin)
+      : scaledEquityMax,
     equityType,
     equityVesting: nonEmpty(band.vestingSchedule) ? band.vestingSchedule : undefined,
     source: `CSV research dataset 2026-05 (100-company aggregation; ${co.companyName} / ${csvRoleLabel} / ${lvl})`,
