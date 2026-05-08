@@ -156,13 +156,28 @@ function bandToOverride(
   lvl: CsvLevel,
 ): CompanyBandOverride {
   const equityType = deriveEquityType(band.equityType);
+  // Anchor totalMax at the CSV's *median* (not the staff/principal ceiling),
+  // so the 35th-percentile initialOffer formula in salary-lookup.ts opens
+  // at market median instead of overshooting. The original max is captured
+  // in `notes` for transparency. If median is missing/zero, fall back to a
+  // 0.7× compression of max (the typical median:max ratio across the dataset).
+  const compressedMax =
+    band.totalMedianLpa && band.totalMedianLpa > band.totalMinLpa
+      ? band.totalMedianLpa
+      : Math.round(band.totalMaxLpa * 0.7 * 10) / 10;
+  // Scale the component max fields proportionally so baseMax + equityMax
+  // remain consistent with the compressed totalMax (otherwise downstream
+  // band-shape invariants like baseMax <= totalMax can break).
+  const scale =
+    band.totalMaxLpa > 0 ? compressedMax / band.totalMaxLpa : 1;
+  const round1 = (n: number) => Math.round(n * 10) / 10;
   return {
     totalMin: band.totalMinLpa,
-    totalMax: band.totalMaxLpa,
+    totalMax: compressedMax,
     baseMin: band.fixedMinLpa || undefined,
-    baseMax: band.fixedMaxLpa || undefined,
+    baseMax: band.fixedMaxLpa ? round1(band.fixedMaxLpa * scale) : undefined,
     equityMin: band.equityMinLpa || undefined,
-    equityMax: band.equityMaxLpa || undefined,
+    equityMax: band.equityMaxLpa ? round1(band.equityMaxLpa * scale) : undefined,
     equityType,
     equityVesting: nonEmpty(band.vestingSchedule) ? band.vestingSchedule : undefined,
     source: `CSV research dataset 2026-05 (100-company aggregation; ${co.companyName} / ${csvRoleLabel} / ${lvl})`,
