@@ -14,7 +14,6 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       role: "Software Engineer",
       experienceLevel: "mid",
       company: "Razorpay",
-      location: "Bengaluru",
     });
     expect(prompt).toMatch(/MARKET REALITY/);
   });
@@ -24,7 +23,6 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       role: "Software Engineer",
       experienceLevel: "mid",
       company: "Razorpay",
-      location: "Bengaluru",
     });
     expect(prompt).toMatch(/monthly take-home/i);
     expect(prompt).toMatch(/₹\d+k/);
@@ -35,7 +33,6 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       role: "Software Engineer",
       experienceLevel: "mid",
       company: "Razorpay",
-      location: "Bengaluru",
     });
     expect(prompt).toMatch(/[Rr]ecruiter flexibility.*~?\d+%/);
   });
@@ -45,7 +42,6 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       role: "Software Engineer",
       experienceLevel: "mid",
       company: "Razorpay",
-      location: "Bengaluru",
     });
     expect(prompt).toMatch(/[Ee]quity discount|liquidity/);
   });
@@ -55,7 +51,6 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       role: "Software Engineer",
       experienceLevel: "mid",
       company: "ONGC",
-      location: "Delhi",
     });
     // The MARKET REALITY block is structured around stated→realistic,
     // not equity, for govt where equity_type is none.
@@ -68,7 +63,6 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       role: "Software Engineer",
       experienceLevel: "senior",
       company: "Flipkart",
-      location: "Bengaluru",
     });
     expect(prompt).toMatch(/realistic close|track this|do NOT contradict/i);
   });

@@ -12,6 +12,8 @@ import { matchRoleKey } from "../data/role-competencies";
 import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
+import { getCompanyTier } from "../data/company-tiers";
+import { tierFlexibility } from "../src/_negotiation-math";
 import {
   retrieveReferenceQuestions,
   formatReferencesForPrompt,
@@ -306,6 +308,22 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
       // admin dashboard can prioritize what to add overrides for next.
       // Volume of "tier-default" / "fallback" hits = backlog for the
       // human-in-the-loop sourcing pipeline.
+      // Tier flex factor for telemetry — lets us calibrate the prompt
+      // assumption against actual session-level realized closes.
+      const _tierFlexBucket = (() => {
+        const t = getCompanyTier(typeof companyName === "string" ? companyName : "");
+        switch (t) {
+          case "faang": case "big-tech": case "gcc":   return "listed_big_tech" as const;
+          case "indian-unicorn": case "saas-product":  return "mature_unicorn" as const;
+          case "edtech": case "startup-growth":        return "growth_startup" as const;
+          case "startup-early":                         return "early_startup" as const;
+          case "it-services":                           return "it_services" as const;
+          case "bfsi-global": case "bfsi-domestic":    return "bfsi" as const;
+          case "fmcg-mnc":                              return "fmcg" as const;
+          case "government-psu":                        return "psu" as const;
+          default:                                      return undefined;
+        }
+      })();
       void captureServerEvent("salary_band_resolved", distinctIdFrom(req, auth.userId), {
         company: typeof companyName === "string" ? companyName.slice(0, 80) : "",
         role: typeof targetRole === "string" ? targetRole.slice(0, 80) : "",
@@ -314,6 +332,9 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
         source_count: negotiationBandData.sourceCount ?? 0,
         is_synthetic: negotiationBandData.isSynthetic ?? false,
         initial_offer_lpa: negotiationBandData.initialOffer,
+        max_stretch_lpa: negotiationBandData.maxStretch,
+        tier_bucket: _tierFlexBucket ?? "unknown",
+        tier_flexibility: _tierFlexBucket ? tierFlexibility(_tierFlexBucket) : null,
       }, req);
       // Negotiation style
       const safeStyle = (negotiationStyle === "cooperative" || negotiationStyle === "aggressive" || negotiationStyle === "defensive") ? negotiationStyle as NegotiationStyle : "cooperative";

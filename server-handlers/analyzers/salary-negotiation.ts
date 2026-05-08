@@ -24,6 +24,25 @@ import { SALARY_DATA, CALIBRATION_DATE, type SalaryEntry, type ExperienceLevel }
 import { generateNegotiationBand } from "../../data/salary-lookup";
 import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { matchRoleKey } from "../../data/salaries";
+import { askPositioning, landingZone, type CompanyTierBucket } from "../../src/_negotiation-math";
+import { getCompanyTier } from "../../data/company-tiers";
+
+/** Local tier mapper. Mirrors the one in salary-lookup.ts. Kept here to
+ *  avoid circular imports between data/ and src/ helpers. */
+function tierBucket(co: string | undefined): CompanyTierBucket | undefined {
+  const t = getCompanyTier(co ?? "");
+  switch (t) {
+    case "faang": case "big-tech": case "gcc":          return "listed_big_tech";
+    case "indian-unicorn": case "saas-product":         return "mature_unicorn";
+    case "edtech": case "startup-growth":               return "growth_startup";
+    case "startup-early":                                return "early_startup";
+    case "it-services":                                  return "it_services";
+    case "bfsi-global": case "bfsi-domestic":           return "bfsi";
+    case "fmcg-mnc":                                     return "fmcg";
+    case "government-psu":                               return "psu";
+    default:                                             return undefined;
+  }
+}
 
 /** Plausibility bounds across the entire Indian market (LPA).
  *  Anything outside these is almost certainly hallucinated for any
@@ -620,6 +639,76 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       // Pattern B: AI eventually offered >= user's first ask. If AI never
       // said the ask was above market, that's silent capitulation.
       const userAsk = first.lpa;
+
+      // Ask-positioning vs band — flag underask (below band-min) and
+      // unsupported moonshot (above band-max with no BATNA mentioned).
+      if (session.target_role) {
+        const expLevel = (session.difficulty || "mid") as ExperienceLevel;
+        const roleKey = matchRoleKey(session.target_role);
+        const override = getCompanyBandOverride(session.target_company || undefined, roleKey, expLevel);
+        const bandRef = override
+          ? { totalMin: override.totalMin, totalMax: override.totalMax }
+          : (() => {
+              const b = generateNegotiationBand({
+                role: session.target_role!,
+                company: session.target_company || undefined,
+                experienceLevel: expLevel,
+              });
+              return { totalMin: b.minOffer, totalMax: b.maxStretch };
+            })();
+        const positioning = askPositioning(userAsk, bandRef);
+        if (positioning.position === "below_band") {
+          flags.add("user_below_band_underask");
+          gaps.push({
+            dimension: "negotiation_strategy",
+            expected: `Ask should be at least band-min (₹${bandRef.totalMin.toFixed(1)} LPA) for this role/company`,
+            observed: `User opened at ₹${userAsk.toFixed(1)} LPA — below documented band. Leaving money on the table.`,
+            severity: "high",
+          });
+        } else if (positioning.position === "moonshot") {
+          // Above band — only ok if BATNA was articulated.
+          const batnaMentioned = transcript.some(t => isUserTurn(t) && BATNA_RE.test(t.text || ""));
+          if (!batnaMentioned) {
+            flags.add("user_moonshot_no_batna");
+            gaps.push({
+              dimension: "negotiation_strategy",
+              expected: `Ask above band-max (₹${bandRef.totalMax.toFixed(1)} LPA) requires articulated BATNA or scope justification`,
+              observed: `User asked ₹${userAsk.toFixed(1)} LPA (moonshot) without mentioning competing offer or scope rationale. Risks credibility.`,
+              severity: "medium",
+            });
+          }
+        }
+
+        // Predicted-vs-actual close — did the AI close meaningfully outside
+        // the predicted landing zone for this tier?
+        const aiInitial = aiClaims.find(c => c.turn_idx < first.turn_idx);
+        const aiFinal = aiClaims[aiClaims.length - 1];
+        if (aiInitial && aiFinal && aiFinal.lpa > 0) {
+          const tier = tierBucket(session.target_company || undefined);
+          const zone = landingZone(aiInitial.lpa, userAsk, tier);
+          // Allow 20% tolerance around the zone before flagging.
+          const tooHigh = aiFinal.lpa > zone.highLpa * 1.20;
+          const tooLow = aiFinal.lpa < zone.lowLpa * 0.80 && aiFinal.lpa < userAsk;
+          if (tooHigh) {
+            flags.add("ai_unrealistic_close_above_predicted");
+            gaps.push({
+              dimension: "negotiation_realism",
+              expected: `Realistic close for this tier: ₹${zone.lowLpa}-${zone.highLpa} LPA (recruiter flex ${Math.round(zone.flexibility * 100)}% of gap)`,
+              observed: `AI closed at ₹${aiFinal.lpa.toFixed(1)} LPA — meaningfully above predicted zone for ${tier ?? "this tier"}.`,
+              severity: "medium",
+            });
+          } else if (tooLow) {
+            flags.add("ai_under_close_below_predicted");
+            gaps.push({
+              dimension: "negotiation_realism",
+              expected: `Realistic close for this tier: ₹${zone.lowLpa}-${zone.highLpa} LPA`,
+              observed: `AI closed at ₹${aiFinal.lpa.toFixed(1)} LPA — below predicted zone, harming candidate.`,
+              severity: "low",
+            });
+          }
+        }
+      }
+
       const aiMatched = aiClaims.find((c) => c.turn_idx > first.turn_idx && c.lpa >= userAsk * 0.95);
       if (aiMatched) {
         const allAiText = transcript.filter(isAiTurn).map((t) => t.text || "").join(" ");
