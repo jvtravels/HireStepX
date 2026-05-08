@@ -743,6 +743,16 @@ Requirements:
         hasEquity: negotiationBandData.hasEquity,
         equityRange: negotiationBandData.equityRange,
         bandContext: negotiationBandData.bandContext,
+        // Provenance hint so the client can render a confidence badge:
+        //   "Verified data" (company-override, sourceCount ≥ 2)
+        //   "Single-source" (company-override, sourceCount = 1)
+        //   "Sector approximation" (sector-override)
+        //   "Tier average" (tier-default)
+        //   "Conservative fallback" (fallback)
+        // UI uses this to set candidate expectations honestly — a tier-default
+        // band is a useful approximation, not a measured fact.
+        bandSource: negotiationBandData.bandSource ?? "tier-default",
+        sourceCount: negotiationBandData.sourceCount ?? 0,
       };
     }
     /* Aggregate the LLM's groundingCheck self-attestation across all
