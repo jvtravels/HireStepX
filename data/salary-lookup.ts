@@ -63,11 +63,87 @@ export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
   government: `INDUSTRY: Government/PSU. Pay fixed by 7th CPC bands. No negotiation on base. Negotiate: grade level, posting city (HRA varies 8-24%), housing, deputation allowance, training budget. Pension is the real wealth — defined benefit worth ₹50-150 LPA actuarially. Job security is the key selling point.`,
 };
 
+/** Indian-market component breakdown for a given total CTC.
+ *
+ * Real Indian salaries decompose CTC into:
+ *   - Base salary (~70-78% of CTC) — what taxes + PF compute on
+ *   - Variable / performance bonus (~8-15%, target-linked)
+ *   - Employer PF (~5%, mandatory for companies >20 employees)
+ *   - Gratuity + other allowances (~3%, mandatory after 5 yrs but accrued from day 1)
+ *   - ESOP / RSU (~5-15% of CTC equivalent, ONLY if hasEquity)
+ *
+ * Components MUST sum exactly to totalCtc (within ₹0.1 LPA rounding) so
+ * the LLM can quote them verbatim without inventing numbers.
+ *
+ * Why this matters: previous interviews offered "base ₹22 + bonus ₹22 +
+ * ESOP ₹22 = total ₹22 LPA" because the LLM was free-styling components.
+ * Now the LLM gets a literal block to copy from, eliminating that class of
+ * hallucination. */
+function buildComponentBreakdown(totalCtc: number, hasEquity: boolean, equityType: string): {
+  base: number;
+  variable: number;
+  pf: number;
+  gratuity_benefits: number;
+  esop_per_year: number;
+  text: string;
+} {
+  const round1 = (x: number) => Math.round(x * 10) / 10;
+  // Indian standards: PF 5% of CTC (employer share, ~12% of basic),
+  // Gratuity + benefits ~3% (LTA, medical, etc. accrued).
+  const pf = round1(totalCtc * 0.05);
+  const gratuity_benefits = round1(totalCtc * 0.03);
+  // ESOP only when company offers it. Annual vest value ≈ 8% CTC equivalent.
+  const esop_per_year = hasEquity ? round1(totalCtc * 0.08) : 0;
+  // Variable: 10% for IC roles. Becomes 15% for senior+ but keep simple here.
+  const variable = round1(totalCtc * 0.10);
+  // Base = whatever's left so the sum is exact.
+  const remaining = totalCtc - pf - gratuity_benefits - esop_per_year - variable;
+  const base = round1(remaining);
+
+  const lines = [`- Base salary: ${fmtLPA(base)}`];
+  if (variable > 0) lines.push(`- Performance-linked variable bonus: ${fmtLPA(variable)} (paid out against quarterly/annual targets)`);
+  lines.push(`- Employer PF contribution: ${fmtLPA(pf)} (mandatory; 12% of basic, ~5% of CTC)`);
+  lines.push(`- Gratuity + benefits (medical, LTA): ${fmtLPA(gratuity_benefits)}`);
+  if (hasEquity) {
+    const equityLabel = equityType === "rsu" ? "RSUs" : "ESOPs";
+    lines.push(`- ${equityLabel}: ${fmtLPA(esop_per_year)} per year (4yr vest with 1yr cliff)`);
+  }
+  lines.push(`- TOTAL CTC: ${fmtLPA(totalCtc)} (components above SUM EXACTLY to this)`);
+
+  return { base, variable, pf, gratuity_benefits, esop_per_year, text: lines.join("\n") };
+}
+
+/** Boost the experience level by the role title prefix when present.
+ *
+ * Why: a candidate may have 5 YOE (mid by raw years) but be applying for
+ * "Senior Product Designer" — a real recruiter would offer the senior band,
+ * not the mid band. Without this, Upstox Senior PD was being offered ₹14-22
+ * LPA (mid band) when AmbitionBox shows ₹30-33 LPA (the senior band).
+ *
+ * Floors only — never DOWNGRADES (a fresher applying for "Lead" still gets
+ * filtered through interview screens; if they make it to negotiation, the
+ * title is what's being negotiated). */
+function applyTitleExpFloor(role: string | undefined, baseExp: ExperienceLevel): ExperienceLevel {
+  if (!role) return baseExp;
+  const r = role.toLowerCase();
+  const RANK: ExperienceLevel[] = ["entry", "mid", "senior", "lead", "executive"];
+  const idx = (e: ExperienceLevel) => RANK.indexOf(e);
+  const max = (a: ExperienceLevel, b: ExperienceLevel) => idx(a) >= idx(b) ? a : b;
+  // Order matters: check executive titles BEFORE senior/lead so "VP of Engineering"
+  // doesn't match "engineer" first.
+  if (/\b(vp|vice president|director|head of|chief|cxo|c[deot]o|c-?suite|partner)\b/.test(r)) return max(baseExp, "executive");
+  if (/\b(lead|principal|staff|architect)\b/.test(r)) return max(baseExp, "lead");
+  if (/\b(senior|sr\.?|sr )/.test(r)) return max(baseExp, "senior");
+  return baseExp;
+}
+
 /** Generate a negotiation band for a given role/company/experience/city combination */
 export function generateNegotiationBand(params: SalaryLookupParams): NegotiationBand {
   const roleKey = matchRoleKey(params.role);
   const companyTier = getCompanyTier(params.company) ?? "indian-unicorn";
-  const exp = normalizeExp(params.experienceLevel);
+  // Boost experience by the role title — "Senior Product Designer" should
+  // use the senior band even when YOE-derived experience is "mid".
+  const exp = applyTitleExpFloor(params.role, normalizeExp(params.experienceLevel));
   // jobCity resolution priority: explicit param > company HQ city (when known)
   // > candidate's current city > tier-1 default. Lets a Razorpay offer default
   // to Bangalore even if user didn't specify, matching real recruiter behaviour.
@@ -92,6 +168,10 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
       ? [adjOv(override.equityMin ?? 0), adjOv(override.equityMax ?? 0)]
       : [0, 0];
     const joiningBonusRange: [number, number] = [0, Math.max(0.5, Math.round(initialOffer * 0.1 * 10) / 10)];
+    // Pre-compute the component breakdown for the initial offer so the LLM
+    // quotes exact, additive numbers instead of free-styling (which produced
+    // "base ₹22 + bonus ₹22 + ESOP ₹22 = total ₹22" hallucinations).
+    const components = buildComponentBreakdown(initialOffer, hasEquity, override.equityType ?? "none");
     const bandContext = `NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
@@ -101,6 +181,9 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
 ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : "- No equity at this level"}
 ${override.notes ? `- Note: ${override.notes}` : ""}
 SOURCE: ${override.source}.
+
+INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
+${components.text}
 
 These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from a different tier (e.g. unicorn bands for a small design studio) breaks the simulation. Stay anchored.`;
     return {
@@ -167,6 +250,9 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
     ? `\nDATA-PROVENANCE CAVEAT: This band is DERIVED from a sibling cell (${entry._synthetic_source ?? "tier-fallback"}), not independently researched for this exact role/tier combination. The figures are structurally consistent with neighboring cells but should be treated as estimates, not verified market data. If the candidate cites a specific source contradicting these numbers, defer rather than insist.\n`
     : "";
 
+  // Pre-compute Indian-market component breakdown for the initial offer.
+  // The LLM quotes from this block verbatim — no more invented numbers.
+  const components = buildComponentBreakdown(initialOffer, hasEquity, entry.equity_type);
   const bandContext = `${syntheticCaveat}NEGOTIATION BAND (your authority as hiring manager):
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
@@ -174,6 +260,9 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
 - Walk-away ceiling: ${fmtLPA(walkAway)} — if candidate demands above this, politely decline: "That's beyond our band for this level. I'd need to explore a senior/staff position instead."
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
 ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${entry.equity_vesting})` : "- No equity at this level"}
+
+INITIAL-OFFER COMPONENT BREAKDOWN (Indian-market standard — quote these EXACT numbers when the candidate asks "what's the breakdown?", do NOT invent your own):
+${components.text}
 
 ABSOLUTE NUMBER RULES (violations destroy realism):
 1. ALWAYS use a SINGLE precise figure. NEVER quote a range like "₹28-45 LPA" or "between X and Y" — real hiring managers state ONE number and defend it. The band above is YOUR internal authority, not a public range to share.

@@ -559,7 +559,11 @@ RULES:
 - INTERNAL CONSISTENCY (re-read your draft): If you say "I can't meet ₹X" or "I can't reach ₹X" in one sentence, you cannot then offer ₹X (or ≥₹X) in the next sentence — that's a self-contradiction. Either commit to "I can't do ₹X — here's my real best ₹Y (which is < X)" OR drop the "can't" framing entirely. Never both.
 - DON'T FABRICATE THE CANDIDATE'S MOTIVATION: Only mirror what the candidate has LITERALLY said in the transcript so far. If they only said "based on market research", do NOT invent "this isn't a growth opportunity for you" or "you're looking to make a switch" — those are your projections, not their words. Saying "I hear you that X" when the candidate never said X is a tell that you're confabulating context.
 - CONDITIONAL ≠ ACCEPTANCE: If the candidate says "IF you can do ₹X then it's worth switching" or "AS LONG AS the package is at ₹Y", that is a conditional, NOT acceptance. Do NOT respond with "I'm glad you're excited!" / "welcome aboard!" / "happy to have you!". Instead: explicitly confirm the deal terms first ("So if I can confirm ₹X total CTC, you'd accept — is that right?"). Only treat literal yes / I accept / I'm in / let's do it as acceptance.
-- NO PHRASE REPETITION (re-read your draft, do not loop): Each phrase appears at most ONCE per message. If you find yourself starting to write the same clause a second time — "that's the absolute top of what I can approve — that's the absolute top of what I can approve" — STOP. That's a generation loop, not communication. Truncate, rewrite the sentence cleanly, and never repeat a clause. A 4-sentence response that says distinct things beats a 12-sentence response that says one thing four times.
+- NO PHRASE REPETITION (re-read your draft, do not loop): Each phrase appears at most ONCE per message. If you find yourself starting to write the same clause a second time — "that's the absolute top of what I can approve — that's the absolute top of what I can approve" — STOP. That's a generation loop, not communication. Truncate, rewrite the sentence cleanly, and never repeat a clause. A 4-sentence response that says distinct things beats a 12-sentence response that says one thing four times. SPECIFIC BAN: the clause "that's the absolute top of what I can approve" appears AT MOST ONCE in your entire response. If a regex would find it twice, your response is invalid — rewrite.
+- COMPONENT ARITHMETIC MUST BE EXACT: When you quote a CTC breakdown (base + variable + ESOP + PF + benefits), the numbers MUST sum to the stated total CTC ± ₹0.1 LPA. Inventing components that don't add up ("base ₹22 + bonus ₹22 + ESOP ₹22 = total ₹22") is the most common LLM failure on this surface and the most trust-destroying for the candidate. If the bandContext above includes an INITIAL-OFFER COMPONENT BREAKDOWN block, copy those numbers VERBATIM. Do not invent your own. Do not equate base/bonus/ESOP to the same number — they are mathematically distinct.
+- DO NOT MISREPEAT THE CANDIDATE'S NUMBER: If the candidate says "₹30 to ₹32 LPA", do not echo it as "₹30 to ₹28.1 LPA". The candidate hears the discrepancy and loses trust. When in doubt about what they said, ask: "Just to confirm, you're saying ₹X to ₹Y LPA, correct?" Don't guess.
+- MARKDOWN-FREE OUTPUT: Never use markdown asterisks (*) or underscores (_) for emphasis. The interview UI may render them as italic/bold or read them aloud as "asterisk", which breaks the conversation. Plain prose only.
+- INDIAN COMPENSATION REALITY: Most Indian companies include PF (Provident Fund, ~5% of CTC, 12% of basic) as part of the standard package — mention it when discussing the breakdown. ESOPs are NOT universal — services firms (TCS, Infosys, Wipro), older PSUs, and many traditional companies don't offer them at all. If the bandContext says "No equity at this level", don't mention ESOPs in your offer breakdown.
 - NUMBER OWNERSHIP (track whose number is whose): The candidate's TARGET is what THEY asked for (their counter). Your OFFER is what YOU said you can pay. Do NOT swap them. Wrong: "I hear you saying ₹7.5 LPA is your target" when ₹7.5 was YOUR offer and they asked for ₹20. Before any "I hear you saying" sentence, verify: did the candidate actually say this number, or did I? If unsure, re-read the last user turn.
 - RANGES GO LOW TO HIGH: A range "₹X to ₹Y" requires X ≤ Y. "₹12 to ₹8.5 LPA" is not a range — it's gibberish. If you find yourself writing such a thing, your number-tracking is confused; stop, look up your actual numbers from the band, and rewrite cleanly.
 - ADDRESS CONFUSION FIRST (do not close on a complaint): If the candidate's last message contains confusion or frustration — "I'm confused", "I don't understand", "what are you saying", "you're confusing me", "this doesn't make sense", a question back to you about the offer — you MUST stop, recap your most recent offer plainly with the exact ₹ numbers (one short paragraph), and ask if that's clear. Do NOT pivot to "Great, thanks. I'll connect with HR" or any other closing language. Closing on a complaint is the worst possible move.
@@ -1066,6 +1070,31 @@ Repeat-text in followUpText is FORBIDDEN.`;
       });
 
       parsed.followUpText = clamped;
+
+      /* Final cleanup pass — defense-in-depth for two LLM artifacts that
+       * survive the monotonic / clamping logic above:
+       *
+       *   1. The "absolute top of what I can approve" duplication ("X — that's
+       *      the absolute top of what I can approve — that's the absolute top
+       *      of what I can approve"). Anti-repetition prompt rules don't
+       *      always hold; this regex strips any 2nd+ occurrence in the same
+       *      response.
+       *   2. Stray markdown emphasis (`_word_`, `*word*`) that the UI
+       *      renders as italic and TTS reads as "underscore word underscore".
+       */
+      const APPROVAL_PHRASE = "that's the absolute top of what I can approve";
+      let cleaned = parsed.followUpText;
+      // Collapse "X — that's the absolute top — that's the absolute top" → single occurrence
+      const dupRe = new RegExp(`(\\s*[—–-]?\\s*${APPROVAL_PHRASE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\s*[—–-]?\\s*${APPROVAL_PHRASE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "gi");
+      while (dupRe.test(cleaned)) {
+        cleaned = cleaned.replace(dupRe, "$1");
+      }
+      // Strip pair-wise markdown emphasis around single words (don't touch
+      // arithmetic like 4*5 or file_names because those don't match the
+      // pair-around-word shape).
+      cleaned = cleaned.replace(/\b_([A-Za-z][A-Za-z0-9 ]{0,40}?)_\b/g, "$1");
+      cleaned = cleaned.replace(/\*([A-Za-z][A-Za-z0-9 ]{0,40}?)\*/g, "$1");
+      parsed.followUpText = cleaned;
 
       /* Notice-buyout sanity cap. Real-world bug: LLM produced
          "I'll add a ₹18 LPA buyout bonus for joining within 30" —
