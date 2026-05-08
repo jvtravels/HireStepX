@@ -623,8 +623,15 @@ export default function SessionSetup() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const preselectedFocus = searchParams.get("type");
+  /* Bounce-back from useInterviewEngine when /interview was hit with a
+     hard role × company mismatch. We prefill role + company from the
+     URL so the candidate sees what got rejected, and surface the warn
+     reason via toast on mount (see effect below). */
+  const prefillRole = searchParams.get("role") || "";
+  const prefillCompany = searchParams.get("company") || "";
+  const warnFlag = searchParams.get("warn");
 
-  const [targetRole, setTargetRole] = useState(user?.targetRole || "");
+  const [targetRole, setTargetRole] = useState(prefillRole || user?.targetRole || "");
   const [roleTouched, setRoleTouched] = useState(false);
   const [companyTouched, setCompanyTouched] = useState(false);
   // User-added companies persisted in localStorage. Re-read on mount so
@@ -660,6 +667,7 @@ export default function SessionSetup() {
     return new Set(roleProfile.focuses);
   }, [targetRole, roleProfile]);
   const [targetCompany, setTargetCompany] = useState(() => {
+    if (prefillCompany) return prefillCompany;
     if (user?.targetCompany) return user.targetCompany;
     // Fallback variant carries job history — pull the latest employer if
     // the stored resume is the regex-parsed shape. AI variant has no
@@ -703,6 +711,21 @@ export default function SessionSetup() {
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
   const atSessionLimit = isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT;
   const { toast } = useToast();
+
+  /* Warn-flag bounce-back toast: useInterviewEngine sends users back
+     here with ?warn=role-company-mismatch when the role/company combo
+     would coach against a synthetic band. Surface that reason once. */
+  useEffect(() => {
+    if (warnFlag !== "role-company-mismatch") return;
+    if (!prefillRole || !prefillCompany) return;
+    const tier = getCompanyTier(prefillCompany);
+    const fit = detectRoleCompanyFit(matchRoleKey(prefillRole), tier, prefillCompany);
+    if (fit.fit === "hard_mismatch") {
+      toast(`We couldn't start that interview. ${fit.reason}`, "error");
+    }
+    // Mount-only — URL params are stable for this navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Redirect free users who've exhausted sessions to the upgrade modal
   useEffect(() => {

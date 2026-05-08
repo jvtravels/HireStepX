@@ -41,6 +41,9 @@ import { cleanSalarySttArtifacts } from "./_salary-stt-cleanup";
 import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
 import { extractNegotiationFacts } from "./interviewEvaluation";
+import { detectRoleCompanyFit } from "./_role-company-fit";
+import { matchRoleKey as matchSalaryRoleKey } from "../data/salaries";
+import { getCompanyTier } from "../data/company-tiers";
 import {
   normalizePersona,
   REACTIONS,
@@ -193,6 +196,37 @@ export function useInterviewEngine() {
       router.replace("/dashboard");
     }
     // Mount-only — re-running on prop changes would race with normal flow
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Role × company sector-fit guard for /interview entry points that
+     bypass SessionSetup (deep links, dashboard CTAs, draft-resume,
+     daily-challenge URLs). The same check lives in SessionSetup.tsx
+     for the fresh-start path; this is the safety net. Hard mismatches
+     (e.g. "Pilot @ Razorpay") would otherwise cause the LLM to coach
+     the candidate against a synthetic, irrelevant salary band. Soft
+     mismatches and universal roles pass through silently.
+     See src/_role-company-fit.ts + tests/roleCompanyFit.test.ts. */
+  useEffect(() => {
+    if (interviewType !== "salary-negotiation") return;
+    const role = (targetRole || user?.targetRole || "").trim();
+    const company = (targetCompany || user?.targetCompany || "").trim();
+    if (!role || !company) return;
+    const tier = getCompanyTier(company);
+    const roleKey = matchSalaryRoleKey(role);
+    const fit = detectRoleCompanyFit(roleKey, tier, company);
+    if (fit.fit === "hard_mismatch") {
+      console.warn("[interview] Hard role/company mismatch on entry — bouncing to /session/new", { role, company, tier, roleKey });
+      toast(fit.reason, "error");
+      const qp = new URLSearchParams({
+        type: "salary-negotiation",
+        role,
+        company,
+        warn: "role-company-mismatch",
+      });
+      router.replace(`/session/new?${qp.toString()}`);
+    }
+    // Mount-only: URL params are stable for an engine instance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

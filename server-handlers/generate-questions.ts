@@ -9,6 +9,8 @@ import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateN
 import { formatRecipe } from "../data/focus-question-recipes";
 import { loadRoleCompetency, loadCompanyGuidance } from "./_role-content";
 import { matchRoleKey } from "../data/role-competencies";
+import { matchRoleKey as matchSalaryRoleKey } from "../data/salaries";
+import { detectRoleCompanyFit } from "../src/_role-company-fit";
 import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -301,6 +303,24 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
     let salaryNegGuidance = "";
     let negotiationBandData: ReturnType<typeof generateNegotiationBand> | null = null;
     if (interviewType === "salary-negotiation") {
+      /* Role × company sector-fit gate. Mirrors SessionSetup.tsx +
+         useInterviewEngine.ts so a forged or deep-linked request can't
+         coach the candidate against a synthetic band for a role the
+         company doesn't actually hire (e.g. Pilot @ Razorpay). Returns
+         400 instead of 200 with bogus questions. */
+      const _gateRole = typeof targetRole === "string" ? targetRole : "";
+      const _gateCompany = typeof companyName === "string" ? companyName : "";
+      if (_gateRole && _gateCompany) {
+        const _fit = detectRoleCompanyFit(matchSalaryRoleKey(_gateRole), getCompanyTier(_gateCompany), _gateCompany);
+        if (_fit.fit === "hard_mismatch") {
+          void captureServerEvent("role_company_mismatch_blocked", distinctIdFrom(req, auth.userId), {
+            company: _gateCompany.slice(0, 80),
+            role: _gateRole.slice(0, 80),
+            reason: _fit.reason.slice(0, 200),
+          }, req);
+          return new Response(JSON.stringify({ error: "role_company_mismatch", reason: _fit.reason }), { status: 400, headers });
+        }
+      }
       salaryNegGuidance = buildSalaryNegotiationGuidance({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       negotiationBandData = generateNegotiationBand({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       salaryNegGuidance += `\n\n${negotiationBandData.bandContext}`;
