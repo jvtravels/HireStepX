@@ -385,9 +385,15 @@ describe("override map data integrity", () => {
         company: "TCS",
         experienceLevel: exp,
       });
-      /* TCS SE entry: ₹3.4-4.5L. Initial 35th ≈ ₹3.7L. NOT mid (₹6.7L). */
-      expect(band.initialOffer).toBeLessThan(6);
+      /* TCS SE entry now spans Ninja (₹3.4) → Prime (₹11.5) to cover all
+         three fresher tracks. With track unknown, the 35th-percentile
+         initial sits at ~₹6L — the deliberate "unknown-track default"
+         that's between Ninja (₹4) and Digital (₹8). The original
+         "<6" expectation reflected a Ninja-only band; the band is now
+         track-aware. The invariant we still want: initial is NOT in
+         mid-level territory (₹8L+) and IS NOT below Ninja floor. */
       expect(band.initialOffer).toBeGreaterThan(3);
+      expect(band.initialOffer).toBeLessThan(8);
     }
   });
 
@@ -560,6 +566,34 @@ describe("dataConfidence — calibration hedge for CSV-aggregated bands", () => 
       expect(band.bandContext).toMatch(/CALIBRATION:/);
       expect(band.bandContext).toMatch(/lower half of the band/i);
     }
+  });
+
+  it("TCS software-engineer entry covers Ninja → Digital → Prime full track envelope", () => {
+    /* Regression: prior version locked TCS entry at ₹3.4-4.5L (Ninja-only),
+       making Digital-track candidates feel mis-quoted. Band must now span
+       Ninja (₹3.4) → Prime (₹11.5) so the LLM can probe track + anchor. */
+    const ovr = getCompanyBandOverride("TCS", "software-engineer", "entry");
+    expect(ovr).toBeTruthy();
+    expect(ovr!.totalMin).toBeLessThanOrEqual(3.5); // Ninja floor
+    expect(ovr!.totalMax).toBeGreaterThanOrEqual(11); // Prime ceiling
+    expect(ovr!.notes).toMatch(/Ninja/i);
+    expect(ovr!.notes).toMatch(/Digital/i);
+    expect(ovr!.notes).toMatch(/Prime/i);
+    expect(ovr!.notes).toMatch(/PROBE/i); // LLM-facing track-probe instruction
+  });
+
+  it("TCS now exposes lead + executive bands for software-engineer", () => {
+    /* Regression: prior version stopped at senior, forcing 8+ YOE TCS
+       candidates to fall through to sector default. Lead/executive must
+       resolve to TCS-specific numbers, not __sector_it_services_legacy. */
+    const lead = getCompanyBandOverride("TCS", "software-engineer", "lead");
+    const exec = getCompanyBandOverride("TCS", "software-engineer", "executive");
+    expect(lead).toBeTruthy();
+    expect(exec).toBeTruthy();
+    expect(lead!.source).toMatch(/TCS|Glassdoor.*Consultant/i);
+    expect(exec!.source).toMatch(/TCS|Manager|Delivery/i);
+    // Lead < Executive (monotonicity)
+    expect(exec!.totalMin).toBeGreaterThanOrEqual(lead!.totalMin);
   });
 
   it("verified curator entry does NOT include the calibration hedge", () => {

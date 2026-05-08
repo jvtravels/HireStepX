@@ -95,10 +95,12 @@ describe("YOE 0→40 career-trajectory sweep", () => {
     for (let i = 1; i < t.length; i++) {
       expect(t[i].initial).toBeGreaterThanOrEqual(t[i - 1].initial - 1);
     }
-    /* TCS is the IT-services baseline. Entry ₹3.4-4.5L, mid ₹5-9L,
-       senior ₹9-16L. Growth is slower than product/unicorn. */
-    expect(t[0].initial).toBeLessThan(5);
-    expect(t[15].initial).toBeLessThan(50); // even at 15yr, IT services stays under ₹50L
+    /* TCS now spans full Ninja → Prime envelope at entry (₹3.4–11.5L)
+       to handle the multi-track reality. With unknown track, the 35th-
+       percentile initial sits near ₹6L (the unknown-track default).
+       Growth still slower than product/unicorn. */
+    expect(t[0].initial).toBeLessThan(8); // unknown-track entry default
+    expect(t[15].initial).toBeLessThan(55); // even at 15yr, IT services stays modest
     printTrajectory("📊 TCS × Software Engineer (IT-services baseline)", t);
   });
 
