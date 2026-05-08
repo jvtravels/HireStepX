@@ -1,5 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { computeCtcBreakdown, computeNewRegimeTaxLpa, liquidityFactorFromBuybackNote } from "../_ctc-breakdown";
+import { computeCtcBreakdown, computeNewRegimeTaxLpa, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../_ctc-breakdown";
+
+describe("variablePayoutFactorForTier", () => {
+  it("listed cos pay closer to target (≥ 0.90)", () => {
+    expect(variablePayoutFactorForTier("listed")).toBeGreaterThanOrEqual(0.90);
+  });
+
+  it("early-stage startups miss target more often (< 0.70)", () => {
+    expect(variablePayoutFactorForTier("early_startup")).toBeLessThan(0.70);
+  });
+
+  it("PSU is fixed pay (1.0)", () => {
+    expect(variablePayoutFactorForTier("psu")).toBe(1.00);
+  });
+
+  it("ordering: listed > mature_unicorn > growth > early", () => {
+    const l = variablePayoutFactorForTier("listed");
+    const m = variablePayoutFactorForTier("mature_unicorn");
+    const g = variablePayoutFactorForTier("growth_startup");
+    const e = variablePayoutFactorForTier("early_startup");
+    expect(l).toBeGreaterThan(m);
+    expect(m).toBeGreaterThan(g);
+    expect(g).toBeGreaterThan(e);
+  });
+
+  it("undefined falls back to safe default", () => {
+    const f = variablePayoutFactorForTier(undefined);
+    expect(f).toBeGreaterThan(0.70);
+    expect(f).toBeLessThanOrEqual(0.95);
+  });
+});
 
 describe("liquidityFactorFromBuybackNote", () => {
   it("returns baseline 0.30 when no note", () => {

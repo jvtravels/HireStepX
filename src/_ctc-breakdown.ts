@@ -42,6 +42,26 @@ export interface CtcBreakdownInput {
   equityLiquidityFactor?: number;
 }
 
+/** Variable-payout realism factor per company-tier. The default 0.85 was
+ *  a mature-unicorn average; in reality early-stage cos miss bonus targets
+ *  more often than listed cos hit theirs. Tier-aware factor so the
+ *  breakdown reflects the candidate's actual likely take-home. */
+export function variablePayoutFactorForTier(
+  tier: "listed" | "mature_unicorn" | "growth_startup" | "early_startup" | "it_services" | "bfsi" | "fmcg" | "psu" | undefined,
+): number {
+  switch (tier) {
+    case "listed":         return 0.95; // public co with disclosed bonus accrual
+    case "mature_unicorn": return 0.85; // late-stage; bonus pool tied to revenue
+    case "growth_startup": return 0.75; // Series C-D; missed targets common
+    case "early_startup":  return 0.60; // Series A-B; runway risk
+    case "it_services":    return 0.90; // structured bonus, predictable accrual
+    case "bfsi":           return 0.80; // bank/IB bonuses swing with cycle
+    case "fmcg":           return 0.95; // mature, formula-driven
+    case "psu":            return 1.00; // government, fixed
+    default:               return 0.85; // safe default
+  }
+}
+
 /** Map a company-override `recentBuybackNote` (or absence) to a liquidity
  *  factor for ESOP discount. Listed RSU is always 1.0 — this is just for
  *  pre-IPO ESOPs where buyback frequency is the only honest signal.
