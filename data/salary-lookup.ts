@@ -1226,6 +1226,21 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
  * Build the complete salary negotiation guidance for the LLM prompt.
  * Combines the lookup result with structural rules (equity constraints, examples).
  */
+/** Single source of truth for "the reference band for this role × company".
+ *  Both the LLM prompt's MARKET REALITY block and the post-session analyzer
+ *  must agree on this so coaching matches what the AI actually quoted.
+ *  Order: per-company override → tier-default negotiation band. */
+export function getReferenceBand(params: SalaryLookupParams): { totalMin: number; totalMax: number; bandSource: NegotiationBand["bandSource"] } {
+  const exp = normalizeExp(params.experienceLevel);
+  const roleKey = matchRoleKey(params.role);
+  const override = getCompanyBandOverride(params.company || undefined, roleKey, exp);
+  if (override) {
+    return { totalMin: override.totalMin, totalMax: override.totalMax, bandSource: "company-override" };
+  }
+  const band = generateNegotiationBand(params);
+  return { totalMin: band.initialOffer, totalMax: band.maxStretch, bandSource: band.bandSource };
+}
+
 export function buildSalaryNegotiationGuidance(params: SalaryLookupParams): string {
   const salaryContext = lookupSalaryContext(params);
   const exp = normalizeExp(params.experienceLevel);
@@ -1331,8 +1346,8 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
      pure helpers the UI uses. Without this, the LLM coaches against
      stated CTC and underestimates real recruiter movement. */
   const marketReality = (() => {
-    const band = generateNegotiationBand(params);
-    const midCtc = (band.initialOffer + band.maxStretch) / 2;
+    const ref = getReferenceBand(params);
+    const midCtc = (ref.totalMin + ref.totalMax) / 2;
     if (midCtc <= 0) return "";
 
     // Pull recentBuybackNote from COMPANY_META if curator documented one.
@@ -1378,13 +1393,11 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
 - Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.`;
   })();
 
-  return `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
-- Do NOT ask behavioral STAR questions, technical questions, or about past projects.
-- Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company. In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions).${ctcStructureNote}${familyFraming}
-
-${COMP_STRATEGY_NOTES}
-
-VOICE: Sound like a real Indian hiring manager — warm but businesslike. Use phrases like "We've been impressed with your profile", "Let me walk you through the offer", "I'll be transparent about our bands", "Let me see what I can do". Avoid robotic or overly formal language.
+  /* Prompt structure is ordered for Groq prompt-cache friendliness:
+     STATIC blocks first (longest shared prefix across sessions = cache
+     hit), DYNAMIC per-session blocks last. Reordered 2026-05-08.
+     Reordering this section breaks the cache for ~24 hours. */
+  return `${STATIC_NEG_PROMPT_HEADER}
 
 NEGOTIATION FLOW — Each question MUST follow this progression:
 1. INTRO: Welcome + set context. "We'd like to extend an offer for the [Role] position..."
@@ -1393,9 +1406,10 @@ NEGOTIATION FLOW — Each question MUST follow this progression:
 4. COUNTER-OFFER: Based on their response, present an improved package. Trade levers: base vs joining bonus vs flexible work vs relocation support vs learning budget. Example: "I can stretch the base to ₹X, or keep it at ₹Y and add a ₹Z joining bonus — which works better for you?"
 5. CLOSING: Finalize with timeline. "If we can agree on this, when can you join? What's your notice period situation?"
 
-${salaryContext}${granularBand}${marketReality}
+${COMP_STRATEGY_NOTES}
 
-${equityRule}
+VOICE: Sound like a real Indian hiring manager — warm but businesslike. Use phrases like "We've been impressed with your profile", "Let me walk you through the offer", "I'll be transparent about our bands", "Let me see what I can do". Avoid robotic or overly formal language.
+
 EQUITY VESTING DETAILS (use when candidate asks):
 - Amazon RSUs: back-loaded 5/15/40/40 over 4 years (Year 1 = only 5%).
 - Google/Meta: quarterly vesting after 1-year cliff (25% each year, spread quarterly).
@@ -1417,7 +1431,7 @@ HANDLING COUNTER-OFFERS (when candidate says their current employer will match):
 - If candidate says "My current company will counter": Respond: "I understand, and that's your call. But consider — why did you start looking? Counter-offers rarely address the root cause. We're offering [growth/scope/culture] that's different."
 - If candidate asks you to match a competing offer: "I can't get into a bidding war, but let me see what flexibility I have on [specific lever]. What would make this a clear yes?"
 - If candidate keeps pushing beyond your ceiling: "I've stretched as far as I can on base. Here's my best: ₹X CTC + ₹Y joining bonus + [benefits]. I'd need your decision by [date]."
-- NEVER say "take it or leave it" — always offer a graceful path: "Take 48 hours. I genuinely want you on the team."${govNote}${relocNote}
+- NEVER say "take it or leave it" — always offer a graceful path: "Take 48 hours. I genuinely want you on the team."
 
 PRESSURE TACTICS (use naturally, not all at once):
 - Competing candidates: "We have two other strong candidates at final stage."
@@ -1435,8 +1449,23 @@ THINGS TO NEGOTIATE BEYOND SALARY (bring these up if candidate only focuses on b
 - Title/level adjustment
 
 Example good: "We'd like to offer you ₹18 LPA — that's ₹14.5 LPA base with a 10% performance bonus and comprehensive health coverage. How does that compare with what you're looking at?"
-Example bad: "We can offer $120,000." (wrong currency), "Tell me about a time you led a project." (behavioral, not negotiation), "We're offering 15% equity." (unrealistically high)`;
+Example bad: "We can offer $120,000." (wrong currency), "Tell me about a time you led a project." (behavioral, not negotiation), "We're offering 15% equity." (unrealistically high)
+
+═══ SESSION-SPECIFIC CONTEXT BELOW (per-call dynamic) ═══
+
+In-hand ≈ ${inHandPct} of CTC (after PF, gratuity, professional tax deductions).${ctcStructureNote}${familyFraming}
+
+${equityRule}${govNote}${relocNote}
+
+${salaryContext}${granularBand}${marketReality}`;
 }
+
+/* The static portion of the salary-neg system prompt. Identical across
+ * all sessions, placed at the top so Groq prompt cache hits the longest
+ * shared prefix. Editing this string invalidates the cache for ~24h. */
+const STATIC_NEG_PROMPT_HEADER = `CRITICAL: This is a SALARY NEGOTIATION simulation, NOT a behavioral interview. You ARE the hiring manager — stay in character throughout.
+- Do NOT ask behavioral STAR questions, technical questions, or about past projects.
+- Use Indian Rupees (₹) and LPA (Lakhs Per Annum). CTC = Cost to Company.`;
 
 /**
  * Build compact salary context for experienceCalibration blocks.

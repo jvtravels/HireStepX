@@ -21,7 +21,7 @@ import {
   emptyResult,
 } from "./_types";
 import { SALARY_DATA, CALIBRATION_DATE, type SalaryEntry, type ExperienceLevel } from "../../data/salaries";
-import { generateNegotiationBand } from "../../data/salary-lookup";
+import { generateNegotiationBand, getReferenceBand } from "../../data/salary-lookup";
 import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { matchRoleKey } from "../../data/salaries";
 import { askPositioning, landingZone, type CompanyTierBucket } from "../../src/_negotiation-math";
@@ -644,18 +644,13 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       // unsupported moonshot (above band-max with no BATNA mentioned).
       if (session.target_role) {
         const expLevel = (session.difficulty || "mid") as ExperienceLevel;
-        const roleKey = matchRoleKey(session.target_role);
-        const override = getCompanyBandOverride(session.target_company || undefined, roleKey, expLevel);
-        const bandRef = override
-          ? { totalMin: override.totalMin, totalMax: override.totalMax }
-          : (() => {
-              const b = generateNegotiationBand({
-                role: session.target_role!,
-                company: session.target_company || undefined,
-                experienceLevel: expLevel,
-              });
-              return { totalMin: b.minOffer, totalMax: b.maxStretch };
-            })();
+        // Use the same getReferenceBand the LLM prompt sees, so the analyzer's
+        // verdict matches what the AI hiring manager was working from.
+        const bandRef = getReferenceBand({
+          role: session.target_role,
+          company: session.target_company || undefined,
+          experienceLevel: expLevel,
+        });
         const positioning = askPositioning(userAsk, bandRef);
         if (positioning.position === "below_band") {
           flags.add("user_below_band_underask");

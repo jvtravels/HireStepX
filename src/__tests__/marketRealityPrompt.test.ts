@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildSalaryNegotiationGuidance } from "../../data/salary-lookup";
+import { buildSalaryNegotiationGuidance, getReferenceBand } from "../../data/salary-lookup";
 
 /* MARKET REALITY block lock. The salary-neg LLM prompt now embeds
  * grounded take-home, equity-discount, and recruiter-flexibility numbers
@@ -96,6 +96,31 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
       // Google is FAANG / listed → label should NOT be "pre-IPO baseline".
       expect(reality).not.toMatch(/pre-IPO baseline/);
     }
+  });
+
+  it("static prefix is large enough to benefit prompt cache (>1024 tokens)", () => {
+    const prompt = buildSalaryNegotiationGuidance({
+      role: "Software Engineer",
+      experienceLevel: "mid",
+      company: "Razorpay",
+    });
+    const dynamicMarker = "═══ SESSION-SPECIFIC";
+    const idx = prompt.indexOf(dynamicMarker);
+    expect(idx, "static/dynamic boundary marker present").toBeGreaterThan(0);
+    // Groq cache threshold is 1024 tokens ≈ 4096 chars. We want the static
+    // prefix WAY above that so cache hits are reliable.
+    expect(idx).toBeGreaterThan(4096);
+  });
+
+  it("MARKET REALITY band matches getReferenceBand (analyzer parity)", () => {
+    const params = { role: "Software Engineer", experienceLevel: "mid" as const, company: "Razorpay" };
+    const ref = getReferenceBand(params);
+    const prompt = buildSalaryNegotiationGuidance(params);
+    const m = prompt.match(/Mid-band stated CTC ₹([\d.]+) LPA/);
+    expect(m, "mid-band line should appear").not.toBeNull();
+    const promptMid = parseFloat(m![1]!);
+    const refMid = (ref.totalMin + ref.totalMax) / 2;
+    expect(promptMid).toBeCloseTo(refMid, 1);
   });
 
   it("does not embed JS float artifacts like 0.36200000000000004", () => {
