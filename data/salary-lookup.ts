@@ -26,6 +26,7 @@ import {
 import { formatGranularBand } from "./india-salary-bands-2025";
 import { computeCtcBreakdown, liquidityFactorFromBuybackNote, variablePayoutFactorForTier } from "../src/_ctc-breakdown";
 import { tierFlexibility, type CompanyTierBucket } from "../src/_negotiation-math";
+import { detectRoleCompanyFit } from "../src/_role-company-fit";
 
 /** Map the legacy CompanyTier string to the new negotiation-math
  *  CompanyTierBucket vocabulary used by tierFlexibility / variable-payout
@@ -1156,6 +1157,15 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
     return `No specific salary data for this role/company combination. Use general India market rates for ${EXP_LABELS[exp]}.`;
   }
 
+  /* Per-company verified override takes precedence over the generic
+     tier band. Without this, the SALARY DATA block the LLM quotes
+     from would silently use tier defaults even when a curator has
+     pinned company-specific numbers (joining-bonus, equity, total
+     CTC) in COMPANY_SALARY_OVERRIDES. The MARKET REALITY block
+     further down already reads the override; this brings the
+     primary band block into alignment. */
+  const override = getCompanyBandOverride(params.company, roleKey, exp);
+
   const tierLabel = TIER_LABELS[companyTier];
   const cityNote = jobCityTier !== "tier1"
     ? ` (${jobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, ~${Math.round(CITY_MULTIPLIERS[jobCityTier].min * 100)}-${Math.round(CITY_MULTIPLIERS[jobCityTier].max * 100)}% of Tier 1 rates)`
@@ -1174,23 +1184,45 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
     : tierLabel;
   parts.push(`SALARY DATA for ${params.role || roleKey} at ${params.company || tierLabel} (${tierLabel}), ${EXP_LABELS[exp]}, ${locationLabel}${cityNote}:`);
 
-  // Line 2: Compensation breakdown
-  const base = `Base: ${fmtRange(adj(entry.base_min), adj(entry.base_max))}`;
+  /* Line 2: Compensation breakdown.
+     When an override is present, prefer its curated total CTC and
+     equity ranges (sourced from Levels.fyi / AmbitionBox / DRHP for
+     this specific company). Base/variable derive from the entry — the
+     override doesn't carry that split. */
+  const baseMin = override?.baseMin ?? entry.base_min;
+  const baseMax = override?.baseMax ?? entry.base_max;
+  const totalMin = override?.totalMin ?? entry.total_min;
+  const totalMax = override?.totalMax ?? entry.total_max;
+  const ovEquityType = override?.equityType ?? entry.equity_type;
+  const ovEquityMin = override?.equityMin ?? entry.equity_annual_min;
+  const ovEquityMax = override?.equityMax ?? entry.equity_annual_max;
+  const ovEquityVesting = override?.equityVesting ?? entry.equity_vesting;
+
+  const base = `Base: ${fmtRange(adj(baseMin), adj(baseMax))}`;
   const variable = entry.variable_min > 0 ? `Variable/Bonus: ${fmtRange(adj(entry.variable_min), adj(entry.variable_max))}` : "";
-  const equity = entry.equity_type !== "none"
-    ? `${entry.equity_type === "rsu" ? "RSUs" : "ESOPs"}: ${fmtRange(adj(entry.equity_annual_min), adj(entry.equity_annual_max))}/yr (${entry.equity_vesting})`
+  const equity = ovEquityType !== "none"
+    ? `${ovEquityType === "rsu" ? "RSUs" : "ESOPs"}: ${fmtRange(adj(ovEquityMin), adj(ovEquityMax))}/yr (${ovEquityVesting})`
     : "";
-  const total = `Total CTC: ${fmtRange(adj(entry.total_min), adj(entry.total_max))}`;
+  const total = `Total CTC: ${fmtRange(adj(totalMin), adj(totalMax))}`;
 
   parts.push([base, variable, equity, total].filter(Boolean).join(". ") + ".");
 
   // Line 3: Practical details
   const details: string[] = [];
   details.push(`In-hand: ~${Math.round(entry.in_hand_ratio * 100)}% of CTC`);
-  if (entry.joining_bonus_max > 0) {
+  /* Curator-pinned joining-bonus authority (joiningBonusOverride from
+     CompanyBandOverride) takes precedence — that's where the
+     screenshot research grids land. Falls back to the entry's
+     joining_bonus_max only when the override doesn't pin one. */
+  const jbo = override?.joiningBonusOverride;
+  if (jbo) {
+    details.push(`Joining bonus: ${fmtRange(jbo[0], jbo[1])}`);
+  } else if (entry.joining_bonus_max > 0) {
     details.push(`Joining bonus: ${fmtRange(entry.joining_bonus_min, entry.joining_bonus_max)}`);
   }
-  details.push(`Notice period: ${entry.notice_period_days} days`);
+  // Curator-pinned notice-period overrides the tier default.
+  const noticeDays = override?.noticePeriodDays ?? entry.notice_period_days;
+  details.push(`Notice period: ${noticeDays} days`);
   details.push(`Negotiation room: ${entry.negotiation_leverage}`);
   parts.push(details.join(". ") + ".");
 
@@ -1199,9 +1231,15 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
     parts.push(`Premium skills: ${entry.hot_skills.join(", ")}.`);
   }
 
-  // Line 5: Notes (if any)
-  if (entry.notes) {
-    parts.push(`Note: ${entry.notes}`);
+  // Line 5: Notes — prefer the curator's override note (more specific
+  // and includes the per-(role × level) negotiation focus phrase).
+  const noteText = override?.notes ?? entry.notes;
+  if (noteText) {
+    parts.push(`Note: ${noteText}`);
+  }
+  // Line 5b: Source provenance, when from a verified company override.
+  if (override?.source) {
+    parts.push(`Source: ${override.source} (verified ${override.lastVerified}).`);
   }
 
   // Line 6: Relocation context (when current city ≠ job city)
@@ -1424,10 +1462,19 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
       ? `\n- ⚠ DATA FRESHNESS: This band was last verified ${ref.ageDays} days ago. Numbers may be 10-20% off current 2026 reality — say "based on slightly older data" if quoting precise figures.`
       : "";
 
+    // Role × company fit advisory. Hard mismatches (Pilot @ Razorpay) get
+    // a strong upfront warning so the AI clarifies before quoting numbers.
+    const fit = detectRoleCompanyFit(roleKey, companyTier, params.company);
+    const fitNote = fit.fit === "hard_mismatch"
+      ? `\n- ⚠ ROLE / COMPANY MISMATCH: ${fit.reason} OPEN the conversation by clarifying: "Just to confirm — you're targeting a [Role] role at [Company]? That's an unusual combination; let me check what we have."`
+      : fit.fit === "soft_mismatch"
+        ? `\n- ⓘ ROLE FIT: ${fit.reason}`
+        : "";
+
     return `\n\nMARKET REALITY (use these grounded numbers — do NOT contradict them):
 - Mid-band stated CTC ₹${midCtc.toFixed(1)} LPA → monthly take-home ~₹${monthlyK}k after tax (new regime FY 2025-26).
 - Stated → realistic gap: ${gapPctDisplay}% (gap ₹${breakdown.gapLpa} LPA = the "marketing markup" candidate should be aware of).${equityNote}${variableNote}
-- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.${staleNote}`;
+- Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.${staleNote}${fitNote}`;
   })();
 
   /* PSU / govt has a fundamentally different negotiation surface: no
