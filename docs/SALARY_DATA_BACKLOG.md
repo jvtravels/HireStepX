@@ -60,77 +60,96 @@ Common mappings:
 
 ## Top-50 priority backlog
 
-Order = (estimated session volume) × (current coverage gap). Companies already with bespoke entries marked ✅; partial coverage (1-2 roles only) marked 🟡; no override marked ❌.
+Order = (estimated session volume) × (current coverage gap). Status is computed by `companySalaryOverridesCoverage.test.ts` against the canonical role set listed per row: ✅ all canonical roles present; 🟡 partial; ❌ no entry. Last automated reconciliation: **2026-05-08**.
+
+**Headline numbers**
+
+- Salary-override coverage: **127 / 141 expected role-cells = 90%** across the top-50.
+- Companies fully covered: **38 / 50 = 76%**. The remaining 12 rows have specific gaps listed in the table below.
+- Per-company negotiation context (`company-negotiation-context.ts`, the new strategic layer): **6 / 50 = 12%** (Meesho, Myntra, Nykaa, Paytm, Acko, Cars24). All other top-50 cos still rely on generic `COMP_STRATEGY_NOTES`.
 
 ### Tier 1 — High-traffic Indian product (likely 60% of all sessions)
 
-| \# | Company | Status | Key roles to cover | Primary source |
+| \# | Company | Status | Canonical roles / gaps | Primary source |
 | --- | --- | --- | --- | --- |
-| 1 | Razorpay | ✅ SE/PM/UX/Data/Sales/ML/DevOps | Refreshed 2026-05-08 (curated research) | AmbitionBox + Glassdoor + DRHP |
-| 2 | CRED | ✅ SE/PM/UX/Data/Marketing/ML/DevOps | Refreshed 2026-05-08 (curated research) | Glassdoor + Levels.fyi |
-| 3 | PhonePe | ✅ SE/PM/UX/Data/Risk/KAM/ML | Refreshed 2026-05-08 (curated research, +Risk Analyst +KAM) | AmbitionBox + DRHP |
-| 4 | Zerodha | ✅ SE | Add: PM, designer | Glassdoor |
-| 5 | Groww | ❌ | All roles | AmbitionBox |
-| 6 | Flipkart | ✅ SE | Add: PM, UX, ML, devops | Levels.fyi + Glassdoor |
-| 7 | Swiggy | ❌ | All roles | Levels.fyi (post-IPO) |
-| 8 | Zomato (Eternal) | ❌ | All roles | DRHP + Glassdoor |
-| 9 | Meesho | ✅ SE/PM | Add: UX, ML | AmbitionBox (listed Dec 2025) |
-| 10 | Myntra | ❌ | All roles | Glassdoor (Flipkart-grouped) |
-| 11 | Nykaa | ❌ | All roles | DRHP + AmbitionBox |
-| 12 | Paytm | ❌ | All roles | DRHP + Glassdoor |
-| 13 | Acko | ❌ | SE/PM | Glassdoor |
-| 14 | Cars24 | ❌ | All roles | AmbitionBox |
-| 15 | Dream11 | ❌ | All roles | Glassdoor |
-| 16 | Postman | ❌ | SE/PM/UX | Levels.fyi |
-| 17 | BrowserStack | ❌ | SE/PM | Glassdoor |
-| 18 | Freshworks | ❌ | All roles | DRHP (NASDAQ-listed) + Levels.fyi |
-| 19 | Zoho | ❌ | All roles | Glassdoor |
-| 20 | Atlassian India | ❌ | All roles | Levels.fyi |
+| 1 | Razorpay | 🟡 SE/PM/UX/Sales/ML/DevOps | **Add: data-scientist** | AmbitionBox + Glassdoor + DRHP |
+| 2 | CRED | 🟡 SE/PM/UX/Marketing/ML/DevOps | **Add: data-scientist** | Glassdoor + Levels.fyi |
+| 3 | PhonePe | ✅ SE/PM/UX/Data/Risk/KAM/ML | Refreshed 2026-05-08 | AmbitionBox + DRHP |
+| 4 | Zerodha | ✅ SE/PM/UX | — | Glassdoor |
+| 5 | Groww | 🟡 SE/PM/UX | **Add: data-scientist** | AmbitionBox |
+| 6 | Flipkart | ✅ SE/PM/UX/ML/DevOps | — | Levels.fyi + Glassdoor |
+| 7 | Swiggy | 🟡 SE/PM/UX/Operations | **Add: data-scientist** | Levels.fyi (post-IPO) |
+| 8 | Zomato (Eternal) | 🟡 SE/PM/UX | **Add: data-scientist** | DRHP + Glassdoor |
+| 9 | Meesho | ✅ SE/PM/UX/ML + neg-context | Refreshed 2026-05-08 (joining-bonus + neg-focus) | AmbitionBox (listed Dec 2025) |
+| 10 | Myntra | 🟡 SE/PM/UX + neg-context | **Add: marketing** | Glassdoor (Flipkart-grouped) |
+| 11 | Nykaa | 🟡 SE/PM/UX + neg-context | **Add: marketing** | DRHP + AmbitionBox |
+| 12 | Paytm | 🟡 SE/PM/UX + neg-context | **Add: data-scientist** | DRHP + Glassdoor |
+| 13 | Acko | 🟡 SE/PM + neg-context | **Add: data-scientist** | Glassdoor |
+| 14 | Cars24 | ✅ SE/PM/UX/Sales + neg-context | Refreshed 2026-05-08 | AmbitionBox |
+| 15 | Dream11 | ✅ SE/PM/Data | — | Glassdoor |
+| 16 | Postman | ✅ SE/PM/UX | — | Levels.fyi |
+| 17 | BrowserStack | ✅ SE/PM | — | Glassdoor |
+| 18 | Freshworks | ✅ SE/PM/UX | — | DRHP (NASDAQ-listed) + Levels.fyi |
+| 19 | Zoho | ✅ SE/PM | — | Glassdoor |
+| 20 | Atlassian India | ✅ SE/PM/UX | — | Levels.fyi |
 
 ### Tier 2 — FAANG / Big-Tech India (likely 20% of sessions)
 
+| \# | Company | Status | Canonical roles / gaps | Notes |
+| --- | --- | --- | --- | --- |
+| 21 | Google | ✅ SE/PM/UX/ML | — | Levels.fyi |
+| 22 | Microsoft | ✅ SE/PM/UX/ML | — | Levels.fyi |
+| 23 | Amazon | ✅ SE/PM/UX/ML | India SDE / SDM levels distinct from US | Levels.fyi |
+| 24 | Meta India | ✅ SE/PM/ML | — | Levels.fyi |
+| 25 | Apple India | ✅ SE/PM | — | Levels.fyi |
+| 26 | Adobe | ✅ SE/PM/UX | — | Levels.fyi |
+| 27 | Salesforce | ✅ SE/PM | — | Glassdoor |
+| 28 | Uber | ✅ SE/PM | — | Levels.fyi |
+| 29 | Netflix | ✅ SE/PM | — | Levels.fyi |
+| 30 | Walmart Global Tech | ✅ SE/PM/Data | — | Levels.fyi |
+| 31 | Goldman Sachs India | ✅ SE/Data/Finance | — | Levels.fyi + DRHP |
+| 32 | **JPMorgan India** | ❌ | **Add: SE, data-scientist, finance** (entire row missing) | Levels.fyi + Glassdoor |
+| 33 | Morgan Stanley India | ✅ SE/Finance | — | Glassdoor |
+| 34 | Stripe India | ✅ SE/PM | — | Levels.fyi |
+| 35 | Databricks India | 🟡 SE/ML | **Add: product-manager** | Levels.fyi |
+
+### Tier 3 — IT Services (likely 15% of sessions, mostly campus) — **100% covered**
+
 | \# | Company | Status | Notes |
 | --- | --- | --- | --- |
-| 21 | Google | ✅ SE/UX | Add: PM, ML separately (premium over SWE) |
-| 22 | Microsoft | ❌ | High volume; Hyderabad campus heavy |
-| 23 | Amazon | ❌ | India SDE / SDM levels distinct from US |
-| 24 | Meta India | ❌ | Smaller footprint; data-center + WhatsApp |
-| 25 | Apple India | ❌ | Bangalore + Hyderabad |
-| 26 | Adobe | ❌ | Noida + Bangalore |
-| 27 | Salesforce | ❌ | Hyderabad heavy |
-| 28 | Uber | ❌ | Bangalore engineering |
-| 29 | Netflix | ❌ | Small India presence |
-| 30 | Walmart Global Tech | ❌ | Bangalore SE-1 to SE-5 |
-| 31 | Goldman Sachs India | ❌ | Bangalore + Hyderabad strats / engineering |
-| 32 | JPMorgan India | ❌ | Bangalore + Hyderabad GCC |
-| 33 | Morgan Stanley India | ❌ | Mumbai + Bangalore |
-| 34 | Stripe India | ❌ | Bangalore engineering |
-| 35 | Databricks India | ❌ | Bangalore |
-
-### Tier 3 — IT Services (likely 15% of sessions, mostly campus)
-
-| \# | Company | Status | Notes |
-| --- | --- | --- | --- |
-| 36 | TCS | ❌ | Add COMPANY_META done; bands need adding |
-| 37 | Infosys | ❌ | SE / PP / DSE distinct tracks |
-| 38 | Wipro | ❌ | Elite / Turbo / WILP tracks |
-| 39 | HCL | ❌ | Tech Bee + Lateral |
-| 40 | Tech Mahindra | ❌ | ELTP + Lateral |
-| 41 | Cognizant | ❌ | GenC / GenC Pro / GenC Next |
-| 42 | Capgemini | ❌ | India ramp-up |
-| 43 | Accenture | ❌ | India lateral; ASE / SE / Sr SE |
-| 44 | LTIMindtree | ❌ | Post-merger normalization |
+| 36 | TCS | ✅ SE/QA/BA | — |
+| 37 | Infosys | ✅ SE | SE / PP / DSE distinct tracks documented in notes |
+| 38 | Wipro | ✅ SE | Elite / Turbo / WILP tracks |
+| 39 | HCL | ✅ SE | Tech Bee + Lateral |
+| 40 | Tech Mahindra | ✅ SE | ELTP + Lateral |
+| 41 | Cognizant | ✅ SE | GenC / GenC Pro / GenC Next |
+| 42 | Capgemini | ✅ SE | India ramp-up |
+| 43 | Accenture | ✅ SE | India lateral; ASE / SE / Sr SE |
+| 44 | LTIMindtree | ✅ SE | Post-merger normalization |
 
 ### Tier 4 — FMCG / Conglomerate / BFSI (likely 5% of sessions)
 
-| \# | Company | Status | Notes |
-| --- | --- | --- | --- |
-| 45 | HUL | ❌ | UFLP MT + lateral |
-| 46 | Godrej | ❌ | GLP MT |
-| 47 | Tata Steel | ❌ | TAS / Management Trainee |
-| 48 | Tata Motors | ❌ | GET / Lateral |
-| 49 | Mahindra | ❌ | Auto + IT services arm |
-| 50 | HDFC Bank | ❌ | Officer / Manager grades |
+| \# | Company | Status | Canonical roles / gaps | Notes |
+| --- | --- | --- | --- | --- |
+| 45 | HUL | ✅ Marketing/Sales | — | UFLP MT + lateral |
+| 46 | Godrej | ✅ Marketing/Sales | — | GLP MT |
+| 47 | Tata Steel | ✅ Mech-Eng | — | TAS / Management Trainee |
+| 48 | Tata Motors | ✅ Mech-Eng | — | GET / Lateral |
+| 49 | Mahindra | ✅ Mech-Eng | — | Auto + IT services arm |
+| 50 | HDFC Bank | 🟡 Finance | **Add: sales** | Officer / Manager grades |
+
+---
+
+## Curator action queue (prioritised by leverage)
+
+The 12 rows still 🟡 / ❌ above resolve down to **13 missing role-cells**. Tackle in this order:
+
+1. **JPMorgan India** — entire row missing; Tier-2 GCC, high session volume. SE / DS / Finance bands. (3 cells)
+2. **`data-scientist` sweep** — Razorpay, CRED, Groww, Swiggy, Zomato, Paytm, Acko (7 cells in one batch). DS is the single most-requested role we don't ground per-company.
+3. **`marketing` for Myntra + Nykaa** — required for Brand / Growth / Category roles per the negotiation-context grids already curated. (2 cells)
+4. **Databricks PM** + **HDFC Bank Sales**. (2 cells)
+
+After those 13 cells land, top-50 hits **100% / 100%** override coverage. Next phase shifts to the **negotiation-context layer** (currently 6/50; aim for the same Tier-1 set first).
 
 ---
 
@@ -210,9 +229,9 @@ That's the "mature" state. We're at \~30% today.
 
 ## 2026-05-08 bulk fill — current state
 
-Coverage materially expanded in commit `31be5ad`:
+Coverage materially expanded in commit `31be5ad`, refreshed in `96dfe64` (Meesho/Myntra/Nykaa/Paytm/Acko/Cars24 joining-bonus authority + per-(role × level) negotiation focus + new `company-negotiation-context.ts` layer).
 
-- **All 50 backlog companies** now have at least one verified-source band per per-company role-key set. Every Tier-1/2/3/4 row checks ✅ for the canonical roles listed in its column.
+- **49/50 backlog companies** have at least one verified-source band (only JPMorgan still empty). Across the canonical role set per row, **127/141 cells = 90%** are filled; **38/50 cos = 76%** are full ✅. Remaining gaps queued in the action list above.
 - **Sector defaults** (`__sector_*`) expanded from SE-only (1 role) to all 14 canonical roles (SE, PM, UX, ML, DS, DevOps, data-analyst, BA, sales, marketing, finance, operations, customer-success, hr) at every level. This is what the long tail of \~10k companies in the autocomplete actually hits.
 - **Classifier blind spots = 0.** All 845 companies in `company-tiers.ts` route to a sector via `classifyCompanyType()`.
 - `sectorRoleCoverage.test.ts` locks the role coverage in CI — fails the build if any sector silently regresses to SE-only.
