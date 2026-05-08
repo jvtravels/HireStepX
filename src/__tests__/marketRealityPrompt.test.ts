@@ -66,4 +66,44 @@ describe("MARKET REALITY block in buildSalaryNegotiationGuidance", () => {
     });
     expect(prompt).toMatch(/realistic close|track this|do NOT contradict/i);
   });
+
+  it("renders gap as a real percentage (e.g. 36.2%), not a fraction with % sign", () => {
+    const prompt = buildSalaryNegotiationGuidance({
+      role: "Software Engineer",
+      experienceLevel: "mid",
+      company: "Razorpay",
+    });
+    const reality = prompt.split("MARKET REALITY")[1] ?? "";
+    // Pull the gap line.
+    const m = reality.match(/Stated → realistic gap:\s*([\d.]+)%/);
+    expect(m, "gap line should match").not.toBeNull();
+    const pct = parseFloat(m![1]!);
+    // Realistic Indian CTC marketing markup runs 15-50% — anything outside
+    // this is either a math bug or a regression. The pre-fix bug rendered
+    // 0.36 as "0.36%" which catches here.
+    expect(pct).toBeGreaterThan(5);
+    expect(pct).toBeLessThan(70);
+  });
+
+  it("labels listed-RSU equity correctly (not as 'pre-IPO baseline')", () => {
+    const prompt = buildSalaryNegotiationGuidance({
+      role: "Software Engineer",
+      experienceLevel: "senior",
+      company: "Google",
+    });
+    const reality = prompt.split("MARKET REALITY")[1] ?? "";
+    if (/Equity discount/.test(reality)) {
+      // Google is FAANG / listed → label should NOT be "pre-IPO baseline".
+      expect(reality).not.toMatch(/pre-IPO baseline/);
+    }
+  });
+
+  it("does not embed JS float artifacts like 0.36200000000000004", () => {
+    const prompt = buildSalaryNegotiationGuidance({
+      role: "Software Engineer",
+      experienceLevel: "mid",
+      company: "Razorpay",
+    });
+    expect(prompt).not.toMatch(/0\.\d{10,}/);
+  });
 });

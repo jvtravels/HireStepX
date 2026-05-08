@@ -1358,15 +1358,23 @@ Do NOT present this as a normal corporate salary negotiation. Frame it as: "Let 
 
     const monthlyK = Math.round(breakdown.monthlyTakeHomeInr / 1000);
     const flexPct = Math.round(flex * 100);
+    // gapPct is a fraction (0.36 = 36%); render as percent with one decimal.
+    const gapPctDisplay = (breakdown.gapPct * 100).toFixed(1);
+    const isRsu = entry?.equity_type === "rsu";
+    const equityLiquidityLabel = recentBuybackNote
+      ? "documented buybacks"
+      : isRsu
+        ? "listed RSU"
+        : "pre-IPO baseline";
     const equityNote = hasEquity
-      ? ` Equity discount: face ₹${breakdown.equityLpa} LPA → realistic ₹${breakdown.equityRealisticLpa} LPA (${Math.round(liquidityFactor * 100)}% liquidity${recentBuybackNote ? "; documented buybacks" : "; pre-IPO baseline"}).`
+      ? ` Equity discount: face ₹${breakdown.equityLpa} LPA → realistic ₹${breakdown.equityRealisticLpa} LPA (${Math.round(liquidityFactor * 100)}% liquidity; ${equityLiquidityLabel}).`
       : "";
     const variableNote = hasVariable
       ? ` Variable target ₹${breakdown.variableTargetLpa} → realistic ₹${breakdown.variableRealisticLpa} LPA (${Math.round(payoutFactor * 100)}% historical payout for this tier).`
       : "";
     return `\n\nMARKET REALITY (use these grounded numbers — do NOT contradict them):
 - Mid-band stated CTC ₹${midCtc.toFixed(1)} LPA → monthly take-home ~₹${monthlyK}k after tax (new regime FY 2025-26).
-- Stated → realistic gap: ${breakdown.gapPct}% (gap ₹${breakdown.gapLpa} LPA = the "marketing markup" candidate should be aware of).${equityNote}${variableNote}
+- Stated → realistic gap: ${gapPctDisplay}% (gap ₹${breakdown.gapLpa} LPA = the "marketing markup" candidate should be aware of).${equityNote}${variableNote}
 - Recruiter flexibility for this tier: ~${flexPct}% of (ask − initial offer). Counter-offers should track this — if candidate asks ₹X above initial, realistic close is initial + (X − initial) × ${flex.toFixed(2)}, NOT meeting the full ask.`;
   })();
 
