@@ -4,6 +4,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { detectSalaryPhase as detectSalaryPhaseHelper } from "./_follow-up-helpers";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -170,6 +171,59 @@ export default async function handler(req: Request): Promise<Response> {
       ? `\nTENSE-AWARE PROBE (mandatory): The candidate's answer describes work that has NOT yet launched or been measured. Do NOT ask retro-impact questions ("what was the result", "how did you measure impact", "what changed after"). Instead, ask PROSPECTIVE probes: "what metrics would you track to know this worked?", "what's your biggest risk going in?", "what would you measure in week one?", "how will you know you got it right?". Asking for results that don't exist yet feels punitive and ignores what they actually said.`
       : "";
 
+    /* Mirroring grounding: extract the candidate's most distinctive
+       content nouns/phrases and surface them in the prompt so the LLM
+       has concrete words to echo. Without this, "MIRRORING (rapport)"
+       was a vague rule the LLM frequently ignored. We pull words ≥4 chars
+       that aren't in our stoplist, count frequency, and take the top 5
+       (capitalized words win ties — they tend to be proper nouns like
+       Stripe, Razorpay, Figma, Q3). Phrase bigrams with "the" / "my" /
+       "our" prefix are kept verbatim because they're the most echo-able
+       ("the migration", "my team of six"). */
+    const mirrorTokens = (() => {
+      if (!answer || answer.length < 30) return [] as string[];
+      const stop = new Set([
+        "the","and","you","your","what","when","where","which","who","whom","whose",
+        "how","why","that","this","these","those","with","from","into","onto","upon",
+        "have","has","had","was","were","been","being","are","could","should","would",
+        "did","does","but","not","all","any","one","two","three","for","its","their","them",
+        "they","there","then","than","also","just","like","about","after","before","each",
+        "such","very","over","much","more","most","some","many","tell","share","walk",
+        "give","make","made","take","took","get","got","said","say","says","really","actually",
+        "because","while","whilst","through","across","around","without","within","under","upon",
+        "myself","yourself","ourselves","themselves","itself","being","doing","going","saying",
+        "people","person","thing","things","stuff","really","quite","kind","sort","still","also",
+      ]);
+      const cleaned = answer.replace(/[^A-Za-z0-9\s'-]/g, " ");
+      const words = cleaned.split(/\s+/).filter(Boolean);
+      const freq = new Map<string, { count: number; capitalized: boolean }>();
+      for (const w of words) {
+        if (w.length < 4) continue;
+        const lower = w.toLowerCase();
+        if (stop.has(lower)) continue;
+        const cur = freq.get(lower) || { count: 0, capitalized: false };
+        cur.count++;
+        if (/^[A-Z]/.test(w)) cur.capitalized = true;
+        freq.set(lower, cur);
+      }
+      const ranked = Array.from(freq.entries())
+        .sort((a, b) => (b[1].count - a[1].count) || ((b[1].capitalized ? 1 : 0) - (a[1].capitalized ? 1 : 0)))
+        .slice(0, 5)
+        .map(([w]) => w);
+      // Also collect "the X" / "my X" / "our X" phrases (length ≤4 words, idiomatic).
+      const phraseRe = /\b(?:the|my|our)\s+([a-z][a-z-]{2,})(?:\s+([a-z][a-z-]{2,}))?\b/gi;
+      const phrases: string[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = phraseRe.exec(cleaned)) !== null && phrases.length < 4) {
+        const full = m[0].toLowerCase().replace(/\s+/g, " ");
+        if (!phrases.includes(full)) phrases.push(full);
+      }
+      return Array.from(new Set([...ranked, ...phrases])).slice(0, 6);
+    })();
+    const mirrorAnchorBlock = mirrorTokens.length > 0
+      ? `\nMIRRORING ANCHORS — words/phrases the candidate just used that you SHOULD echo (verbatim, lowercase preserved): ${mirrorTokens.map(t => `"${t}"`).join(", ")}. Pick ONE and weave it naturally into your follow-up. Do not paraphrase them ("the migration" → keep "the migration", not "the project").`
+      : "";
+
     const jdContext = jobDescription ? `The candidate is targeting this role: ${sanitizeForLLM(jobDescription, 500)}. If relevant, probe for skills mentioned in the JD.` : "";
     const resumeSkillsContext = Array.isArray(resumeTopSkills) && resumeTopSkills.length > 0
       ? `Candidate's key skills from resume: ${resumeTopSkills.slice(0, 6).map(s => sanitizeForLLM(s, 50)).filter(Boolean).join(", ")}. If relevant to the current topic, ask them to demonstrate these skills with specific examples.`
@@ -203,55 +257,14 @@ export default async function handler(req: Request): Promise<Response> {
     const presentedAnchor = isSalaryNeg ? parseHeadlineLPA(initialOfferText || "") : null;
     const canonicalInitialOffer = presentedAnchor ?? negotiationBand?.initialOffer ?? null;
 
-    // For salary negotiation: determine conversation phase from content + index
-    // Content-based detection: analyze what's happened so far to pick the right phase
-    function detectSalaryPhase(): string {
-      if (negotiationPhase) return negotiationPhase; // explicit override from client
-      const idx = questionIndex ?? 0;
-      const total = totalQuestions ?? 6;
-      const progressRatio = idx / Math.max(1, total);
-      const facts = negotiationFacts;
-
-      // Acceptance → skip to closing immediately. Was idx>=2; the
-      // Lemon Yellow session showed the failure: candidate accepted
-      // at idx=1, AI kept probing for 4 more turns.
-      if (facts?.acceptedImmediately) return "closing";
-      // Walk-away detected → closing-pressure (retention attempt)
-      const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass)\b/i;
-      if (walkAwayPat.test(answer)) return "closing-pressure";
-      // Has a counter number + past initial reaction → counter-offer phase.
-      // This now wins over the competing-offers probe so we don't keep
-      // probing once the candidate has stated a concrete number — that
-      // was producing 4 consecutive "tell me more about your number"
-      // turns and never a real counter.
-      if (facts?.candidateCounter && idx >= 2) return "counter-offer";
-      // Competing offers WITHOUT a stated number → probe expectations
-      // (we still don't know what they actually want).
-      if (facts?.hasCompetingOffers && !facts?.candidateCounter && idx <= 3) return "probe-expectations";
-      // Premature-close guard. Closing phases require either explicit
-      // acceptance (handled above) OR a stated candidate counter — the
-      // negotiation cannot end before a number has even been put on the
-      // table. Without this guard a low-engagement candidate who never
-      // counters slides into "let me put together the offer letter"
-      // wrap-up at idx>=0.85, fabricating a deal that doesn't exist.
-      const hasCounter = !!facts?.candidateCounter;
-      // Late in conversation → closing phases (only once a counter exists)
-      if (progressRatio >= 0.85 && hasCounter) return "closing";
-      if (progressRatio >= 0.7 && hasCounter) return "closing-pressure";
-      // Late but no counter → push for the number, don't wrap up.
-      if (progressRatio >= 0.7 && !hasCounter) return "probe-expectations";
-      // Topics raised beyond base → benefits-discussion
-      if (facts?.topicsRaised && facts.topicsRaised.length >= 2 && idx >= 3) return "benefits-discussion";
-      // Index-based fallback for earlier phases
-      if (idx <= 1) return "offer-reaction";
-      if (idx === 2) return "probe-expectations";
-      if (idx === 3) return "counter-offer";
-      if (idx === 4) return "benefits-discussion";
-      if (idx === 5) return hasCounter ? "closing-pressure" : "probe-expectations";
-      return hasCounter ? "closing" : "counter-offer";
-    }
     const salaryPhase = isSalaryNeg
-      ? detectSalaryPhase()
+      ? detectSalaryPhaseHelper({
+          negotiationPhase,
+          questionIndex,
+          totalQuestions,
+          facts: negotiationFacts,
+          answer,
+        })
       : "";
 
     // Depth 0: probe for detail (existing behavior)
@@ -782,7 +795,7 @@ ${tenseDirective}
 
 PUSHBACK RULE: Real interviewers push back on weak or vague answers — they don't just nod and move on. If the answer is high-level, generic, or lacks specifics (no metrics, no concrete actions, no "I" voice), your follow-up MUST press for specifics ONCE before changing topic. Examples: "That's high-level — what specifically did *you* do?", "Give me a concrete number.", "Walk me through one moment, not the general approach." Do NOT pile on with multiple challenges; one sharp pushback per weak answer.
 
-MIRRORING (rapport): Echo 1-2 distinctive nouns or phrases from the candidate's last answer in your follow-up. If they said "the migration" use "the migration" not "the project". If they said "my team of six" use "your team of six". Research shows verbal mirroring lifts perceived rapport ~30%. Don't be heavy-handed — one or two echoes per follow-up is enough.
+MIRRORING (rapport): Echo 1-2 distinctive nouns or phrases from the candidate's last answer in your follow-up. If they said "the migration" use "the migration" not "the project". If they said "my team of six" use "your team of six". Research shows verbal mirroring lifts perceived rapport ~30%. Don't be heavy-handed — one or two echoes per follow-up is enough.${mirrorAnchorBlock}
 
 ADAPTIVE DIFFICULTY: ${adaptiveDifficulty === "escalate" ? "The candidate is performing strongly across recent answers. Push harder — go deeper, ask more challenging follow-ups, probe for trade-offs and edge cases. Don't go easy." : adaptiveDifficulty === "ease" ? "The candidate is struggling across recent answers. Ease the pressure — phrase the follow-up gently, offer a smaller scope, give them a chance to recover with a more concrete or familiar angle. Do NOT give up; just calibrate down." : "The candidate is performing as expected. Hold steady on difficulty."}
 ${previousMentions && previousMentions.length > 0 ? `

@@ -139,3 +139,72 @@ export function truncateConversationHistory(history: string, budget: number): st
   // Keep the tail (most recent turns), prefix with marker.
   return `…[earlier turns truncated]\n${history.slice(-Math.max(budget - 40, 100))}`;
 }
+
+export interface PhaseFacts {
+  acceptedImmediately?: boolean;
+  candidateCounter?: string | null;
+  hasCompetingOffers?: boolean;
+  topicsRaised?: string[];
+}
+
+export interface DetectSalaryPhaseInput {
+  /** Explicit phase override from client. Wins unconditionally. */
+  negotiationPhase?: string;
+  /** 0-indexed question number within the negotiation. */
+  questionIndex?: number;
+  /** Total questions in this negotiation session. */
+  totalQuestions?: number;
+  /** Extracted negotiation facts. */
+  facts?: PhaseFacts | null;
+  /** The candidate's most recent answer (for walk-away detection). */
+  answer?: string;
+}
+
+export type SalaryPhase =
+  | "offer-reaction"
+  | "probe-expectations"
+  | "counter-offer"
+  | "benefits-discussion"
+  | "closing-pressure"
+  | "closing";
+
+/**
+ * Determine the negotiation conversation phase from session state.
+ *
+ * Closing phases require either explicit acceptance OR a stated counter.
+ * Without one, late turns route to probe-expectations / counter-offer
+ * instead — the negotiation cannot end before a number is on the table.
+ */
+export function detectSalaryPhase(input: DetectSalaryPhaseInput): SalaryPhase {
+  const { negotiationPhase, questionIndex, totalQuestions, facts, answer } = input;
+  if (negotiationPhase) return negotiationPhase as SalaryPhase;
+
+  const idx = questionIndex ?? 0;
+  const total = totalQuestions ?? 6;
+  const progressRatio = idx / Math.max(1, total);
+
+  if (facts?.acceptedImmediately) return "closing";
+
+  const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass)\b/i;
+  if (answer && walkAwayPat.test(answer)) return "closing-pressure";
+
+  if (facts?.candidateCounter && idx >= 2) return "counter-offer";
+
+  if (facts?.hasCompetingOffers && !facts?.candidateCounter && idx <= 3) return "probe-expectations";
+
+  const hasCounter = !!facts?.candidateCounter;
+  if (progressRatio >= 0.85 && hasCounter) return "closing";
+  if (progressRatio >= 0.7 && hasCounter) return "closing-pressure";
+  if (progressRatio >= 0.7 && !hasCounter) return "probe-expectations";
+
+  if (facts?.topicsRaised && facts.topicsRaised.length >= 2 && idx >= 3) {
+    return "benefits-discussion";
+  }
+
+  if (idx <= 1) return "offer-reaction";
+  if (idx === 2) return "probe-expectations";
+  if (idx === 3) return "counter-offer";
+  if (idx === 4) return "benefits-discussion";
+  if (idx === 5) return hasCounter ? "closing-pressure" : "probe-expectations";
+  return hasCounter ? "closing" : "counter-offer";
+}

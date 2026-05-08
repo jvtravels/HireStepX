@@ -917,6 +917,9 @@ export function useInterviewEngine() {
   const answerQualityRef = useRef<number[]>([]);
   // Track last few inline micro-feedback strings to avoid showing the same tip twice in a row.
   const recentFeedbacksRef = useRef<string[]>([]);
+  // Set by handleSkipQuestion, consumed by the next thinking-phrase build so
+  // the AI says "Noted — moving on" instead of reacting to a non-answer.
+  const skipPendingAckRef = useRef(false);
   // Mid-session coaching: track which phases already showed a hint (avoid repeats)
   const negCoachingShownRef = useRef<Set<string>>(new Set());
   // Last answer quality for contextual reactions
@@ -1046,7 +1049,10 @@ export function useInterviewEngine() {
       pushbackCount: negPushbackCountRef.current,
       lastQuestionSpoken: lastQuestionSpokenRef.current,
       timePressureSpoken: timePressureSpokenRef.current,
+      lastTurnWasSkip: skipPendingAckRef.current,
     });
+    // Consume the skip-ack flag so it only affects the next AI turn.
+    if (skipPendingAckRef.current) skipPendingAckRef.current = false;
     if (tp.pushbackDelta) negPushbackCountRef.current += tp.pushbackDelta;
     if (tp.dontKnowDelta) dontKnowCountRef.current += tp.dontKnowDelta;
     if (tp.markedLastQuestionSpoken) lastQuestionSpokenRef.current = true;
@@ -2057,6 +2063,9 @@ export function useInterviewEngine() {
     // A skip is not a real answer — drop any stale tip from the previous
     // turn so it doesn't read as coaching on the skipped question.
     setMicroFeedback(null);
+    // Mark the next AI turn so its thinking phrase acknowledges the skip
+    // ("Noted — moving on") instead of reacting to a non-answer.
+    skipPendingAckRef.current = true;
 
     // Advance to next step. We don't go through the follow-up pipeline
     // (skipped questions don't deserve probes). Mirrors the no-followup

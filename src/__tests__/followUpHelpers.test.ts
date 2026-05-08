@@ -3,6 +3,7 @@ import {
   detectCandidateIntent,
   extractCandidateSalaryNumber,
   truncateConversationHistory,
+  detectSalaryPhase,
 } from "../../server-handlers/_follow-up-helpers";
 
 /**
@@ -253,5 +254,107 @@ describe("truncateConversationHistory", () => {
     const out = truncateConversationHistory(history, 200);
     expect(out).toContain("MOST_RECENT_TURN");
     expect(out).not.toContain("OLD TURN");
+  });
+});
+
+describe("detectSalaryPhase", () => {
+  it("explicit phase override wins", () => {
+    expect(
+      detectSalaryPhase({ negotiationPhase: "benefits-discussion", questionIndex: 0 }),
+    ).toBe("benefits-discussion");
+  });
+
+  it("acceptance jumps to closing regardless of index", () => {
+    expect(
+      detectSalaryPhase({
+        questionIndex: 1,
+        totalQuestions: 6,
+        facts: { acceptedImmediately: true },
+      }),
+    ).toBe("closing");
+  });
+
+  it("walk-away language triggers closing-pressure (retention)", () => {
+    expect(
+      detectSalaryPhase({
+        questionIndex: 2,
+        answer: "I'm not interested at this number, I'll have to pass.",
+      }),
+    ).toBe("closing-pressure");
+  });
+
+  /* ─── Premature-close guard regression tests ─── */
+
+  it("[fixture: TCS-style premature close] late turns without counter → probe, not closing", () => {
+    /* Bug source: TCS UI/UX Designer session — recruiter wrapped up
+       at idx=5/6 even though the candidate never made a counter.
+       Engine now routes to probe-expectations until a number lands. */
+    expect(
+      detectSalaryPhase({
+        questionIndex: 5,
+        totalQuestions: 6,
+        facts: { candidateCounter: null, hasCompetingOffers: false },
+      }),
+    ).toBe("probe-expectations");
+  });
+
+  it("late turns WITH counter stay in counter-offer (the earlier counter-offer rule wins)", () => {
+    /* Once a counter is on the table (idx≥2), the AI keeps countering
+       until the candidate accepts. Closing only fires on acceptance —
+       deliberate, to prevent the "wrap up without resolution" failure. */
+    expect(
+      detectSalaryPhase({
+        questionIndex: 5,
+        totalQuestions: 6,
+        facts: { candidateCounter: "₹25 LPA" },
+      }),
+    ).toBe("counter-offer");
+  });
+
+  it("70% progress without counter → probe-expectations", () => {
+    expect(
+      detectSalaryPhase({
+        questionIndex: 5,
+        totalQuestions: 7, // 5/7 ≈ 0.71
+        facts: { candidateCounter: null },
+      }),
+    ).toBe("probe-expectations");
+  });
+
+  it("idx>=2 with counter → counter-offer phase", () => {
+    expect(
+      detectSalaryPhase({
+        questionIndex: 2,
+        totalQuestions: 6,
+        facts: { candidateCounter: "₹30 LPA" },
+      }),
+    ).toBe("counter-offer");
+  });
+
+  it("competing offers without counter early → probe-expectations", () => {
+    expect(
+      detectSalaryPhase({
+        questionIndex: 1,
+        totalQuestions: 6,
+        facts: { hasCompetingOffers: true, candidateCounter: null },
+      }),
+    ).toBe("probe-expectations");
+  });
+
+  it("idx=0 default → offer-reaction", () => {
+    expect(detectSalaryPhase({ questionIndex: 0, totalQuestions: 6 })).toBe("offer-reaction");
+  });
+
+  it("end-of-session without counter does NOT close (don't fabricate a deal)", () => {
+    /* Critical regression — idx=total used to flow into the index
+       fallback's plain `return "closing"`. Now the
+       progressRatio≥0.7 && !hasCounter branch wins first. */
+    const result = detectSalaryPhase({
+      questionIndex: 6,
+      totalQuestions: 6,
+      facts: { candidateCounter: null },
+    });
+    expect(result).not.toBe("closing");
+    expect(result).not.toBe("closing-pressure");
   });
 });
