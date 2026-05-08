@@ -850,7 +850,25 @@ Respond JSON only:
 
     function jaccardSimilarity(a: string, b: string): number {
       if (!a || !b) return 0;
-      const tokens = (s: string) => new Set(s.toLowerCase().split(/\s+/).filter((w) => w.length >= 3));
+      // Strip punctuation, drop very short tokens, drop English/interrogative
+      // stopwords. Without this, "what", "you", "the", "and" inflate the
+      // intersection and false-positive the dedup retry on legitimately
+      // distinct probes.
+      const stop = new Set([
+        "the","and","you","your","what","when","where","which","who","whom","whose",
+        "how","why","that","this","these","those","with","from","into","onto","upon",
+        "have","has","had","was","were","been","being","are","could","should","would",
+        "did","does","but","not","all","any","one","two","three","for","its","their","them",
+        "they","there","then","than","also","just","like","about","after","before","each",
+        "such","very","over","much","more","most","some","many","most","tell","share","walk",
+        "give","make","made","take","took","get","got","said","say","says","really","actually",
+      ]);
+      const tokens = (s: string) => new Set(
+        s.toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .split(/\s+/)
+          .filter((w) => w.length >= 4 && !stop.has(w)),
+      );
       const aSet = tokens(a);
       const bSet = tokens(b);
       const inter = Array.from(aSet).filter((w) => bSet.has(w)).length;
@@ -875,7 +893,7 @@ Respond JSON only:
         const tentative = extractJSON<{ followUpText?: string }>(result.text);
         const candidateText = (tentative?.followUpText || "").trim();
         const seedSim = candidateText ? jaccardSimilarity(candidateText, question) : 0;
-        if (candidateText && seedSim >= 0.55) {
+        if (candidateText && seedSim >= 0.5) {
           seedDupTriggered = true;
           retriedDueToDuplicate = true;
           console.warn(`[follow-up] LLM follow-up ${(seedSim * 100).toFixed(0)}% similar to seed question — retrying`);

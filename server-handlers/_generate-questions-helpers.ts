@@ -91,7 +91,15 @@ export function sanitizeQuestionText(questions: RawQuestion[]): void {
         t = t.replace(/\.\s*$/, "?");
       }
     }
-    q.aiText = t.trim();
+    t = t.trim();
+    // Defensive: capitalize the very first letter (closing/intro lines
+    // sometimes come back lowercase from the LLM, e.g. "thanks for your
+    // time. anything else?"). Only flips an already-letter first char,
+    // leaves emoji/quote/bracket prefixes alone.
+    if (t.length > 0 && /^[a-z]/.test(t)) {
+      t = t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    q.aiText = t;
   }
 }
 
@@ -156,6 +164,20 @@ export function flagOffRoleQuestions(
     offRoleRe = /\b(?:figma|design\s+token|visual\s+hierarchy|color\s+palette|brand\s+voice|copy\s+deck|sharding\s+strategy|kafka\s+partition|kubernetes\s+pod)\b/i;
   } else if (fam === "pm") {
     offRoleRe = /\b(?:figma\s+autolayout|design\s+token|leetcode|big[\s-]?o\s+complexity|garbage\s+collect|memory\s+leak|sql\s+join\s+key|sharding\s+strategy)\b/i;
+  } else if (fam === "sales" || fam === "bfsi-sales") {
+    offRoleRe = /\b(?:figma\s+autolayout|design\s+token|leetcode|sharding|kafka|kubernetes|sql\s+join|big[\s-]?o\s+complexity|garbage\s+collect|memory\s+leak|etl\s+pipeline|microservice\s+architecture)\b/i;
+  } else if (fam === "marketing") {
+    offRoleRe = /\b(?:sharding|kafka|kubernetes|sql\s+join\s+key|big[\s-]?o\s+complexity|leetcode|garbage\s+collect|microservice\s+architecture|figma\s+autolayout)\b/i;
+  } else if (fam === "hr") {
+    offRoleRe = /\b(?:sharding|kafka|kubernetes|sql\s+join\s+key|big[\s-]?o\s+complexity|leetcode|figma\s+autolayout|design\s+token)\b/i;
+  } else if (fam === "finance") {
+    offRoleRe = /\b(?:figma\s+autolayout|design\s+token|sharding\s+strategy|kafka\s+partition|kubernetes\s+pod|leetcode)\b/i;
+  } else if (fam === "consultant") {
+    offRoleRe = /\b(?:figma\s+autolayout|design\s+token|sharding|kafka\s+partition|kubernetes\s+pod|leetcode|garbage\s+collect|memory\s+leak)\b/i;
+  } else if (fam === "healthcare" || fam === "legal") {
+    offRoleRe = /\b(?:figma\s+autolayout|design\s+token|sharding|kafka|kubernetes|sql\s+join\s+key|leetcode|big[\s-]?o\s+complexity|microservice\s+architecture)\b/i;
+  } else if (fam === "ops") {
+    offRoleRe = /\b(?:figma\s+autolayout|design\s+token|sharding|kafka\s+partition|kubernetes\s+pod|leetcode|big[\s-]?o\s+complexity)\b/i;
   }
   if (!offRoleRe) return [];
   const flagged: number[] = [];

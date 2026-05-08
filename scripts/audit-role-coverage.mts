@@ -16,6 +16,34 @@
  * lead | executive`, with `·` for missing and `✓` for present.
  */
 import { COMPANY_SALARY_OVERRIDES } from "../data/company-salary-overrides";
+import { classifyCompanyType } from "../data/company-guidance";
+
+/* Per-bucket "roles a candidate plausibly applies to" filter. Without
+ * this filter the audit penalizes McKinsey for missing software-engineer
+ * cells and OpenAI for missing sales cells — neither is a real gap.
+ * If a bucket is missing, we fall back to the full role list (treats
+ * unknown sectors as "could hire anyone"). */
+const ROLES_BY_BUCKET: Record<string, readonly string[]> = {
+  consulting_strategy: ["consultant", "business-analyst"],
+  ibank_bulgebracket: ["finance", "business-analyst"],
+  quant_hft: ["software-engineer", "data-scientist", "ml-engineer"],
+  psu_bank: ["software-engineer", "data-analyst", "business-analyst", "hr"],
+  private_bank: ["software-engineer", "data-analyst", "business-analyst", "sales", "marketing", "hr"],
+  small_finance_bank: ["software-engineer", "data-analyst", "sales", "hr"],
+  indian_unicorn_fintech: ["software-engineer", "product-manager", "engineering-manager", "data-scientist", "data-analyst", "ml-engineer", "devops-sre", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer", "marketing", "sales", "hr", "business-analyst"],
+  indian_unicorn_consumer: ["software-engineer", "product-manager", "engineering-manager", "data-scientist", "data-analyst", "ml-engineer", "devops-sre", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer", "marketing", "sales", "hr", "business-analyst"],
+  indian_unicorn_edtech: ["software-engineer", "product-manager", "data-scientist", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer", "marketing", "sales", "hr"],
+  indian_unicorn_logistics: ["software-engineer", "product-manager", "data-scientist", "data-analyst", "frontend-developer", "backend-developer", "qa-engineer", "marketing", "sales", "hr", "business-analyst"],
+  gcc_global_capability_centre: ["software-engineer", "product-manager", "engineering-manager", "data-scientist", "data-analyst", "ml-engineer", "devops-sre", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer"],
+  indian_it_services: ["software-engineer", "data-analyst", "devops-sre", "frontend-developer", "backend-developer", "qa-engineer", "business-analyst", "hr"],
+  indian_pharma: ["data-analyst", "marketing", "sales", "hr", "business-analyst"],
+  indian_fmcg: ["data-analyst", "marketing", "sales", "hr", "business-analyst"],
+  ai_genai_startup: ["software-engineer", "ml-engineer", "data-scientist", "product-manager", "frontend-developer", "backend-developer"],
+  academia_iit_iim: [],
+  global_gaming: ["software-engineer", "product-manager", "ux-designer", "frontend-developer", "backend-developer", "qa-engineer"],
+  indian_gaming_realmoney: ["software-engineer", "product-manager", "data-analyst", "frontend-developer", "backend-developer", "qa-engineer", "marketing"],
+  indian_market_generic: ["software-engineer", "product-manager", "data-analyst", "marketing", "sales", "hr"],
+};
 
 const HIGH_TRAFFIC_ROLES = [
   "software-engineer",
@@ -54,7 +82,12 @@ const companies = Object.keys(COMPANY_SALARY_OVERRIDES).sort();
 
 for (const company of companies) {
   const companyEntry = COMPANY_SALARY_OVERRIDES[company] ?? {};
+  const bucket = classifyCompanyType(company);
+  const relevant = bucket && ROLES_BY_BUCKET[bucket.key] !== undefined
+    ? new Set(ROLES_BY_BUCKET[bucket.key])
+    : null; // null = no filter, score every role
   for (const role of HIGH_TRAFFIC_ROLES) {
+    if (relevant && !relevant.has(role)) continue;
     const roleEntry = companyEntry[role];
     const coverage: Record<string, boolean> = {};
     let missing = 0;

@@ -925,7 +925,7 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
   // Render SKIPPED sentinels as a friendly chip instead of leaking the
   // raw "[SKIPPED — reason: too_hard]" engineering token to the user.
   // The reason maps to a short human label.
-  const skipMatch = lastUserMsg.text.match(/^\[SKIPPED\s*[—-]\s*reason:\s*([^\]]+)\]$/i);
+  const skipMatch = lastUserMsg.text.trim().match(/^\[SKIPPED\s*[—–-]\s*reason:\s*([^\]]*)\]\s*$/i);
   const skipReasonLabel: string | null = skipMatch ? (() => {
     const raw = skipMatch[1].trim().toLowerCase();
     if (raw === "too_hard") return "Skipped — too hard";

@@ -113,6 +113,47 @@ export interface CompanyBandOverride {
     drhp?: string;
     operatorNetwork?: string;
   };
+
+  /** How many independent sources confirm this cell.
+   *    1 = single-source (e.g. only AmbitionBox)
+   *    2+ = cross-verified (counts as "verified" for CI purposes)
+   *  CI gate (scripts/check-data-freshness.mts) refuses to ship Tier-1
+   *  cells with agreementCount < 2. Default 1 when unset. */
+  agreementCount?: number;
+
+  /** Multi-track encoding for companies whose fresher-tier hires split
+   *  into distinct comp tracks (TCS Ninja/Digital/Prime, Infosys DSE/
+   *  Power/Specialist, Wipro Elite/Turbo/Velocity, Cognizant GenC/
+   *  GenC Next/GenC Pro, Accenture ASE/ASE-Plus, etc.).
+   *
+   *  The LLM is instructed to PROBE the candidate's resume for
+   *  `resumeSignals` (NQT score, hackathon win, internship at product
+   *  co, GitHub portfolio, DSA strength) before quoting a number. Only
+   *  populate when the company materially differentiates by track —
+   *  most product cos and FAANG don't and should leave this undefined.
+   *
+   *  When `tracks` is set, top-level `totalMin/Max` is the union
+   *  envelope (Ninja floor → Prime ceiling); per-track sub-bands give
+   *  the LLM the right anchor once the track is identified. */
+  tracks?: Array<{
+    /** Human-readable track label. */
+    trackName: string;
+    /** Per-track CTC band. */
+    totalMin: number;
+    totalMax: number;
+    baseMin?: number;
+    baseMax?: number;
+    equityMin?: number;
+    equityMax?: number;
+    joiningBonusOverride?: [number, number];
+    bondPenaltyLpa?: number;
+    /** Resume cues that signal this track. Used by the LLM to triage
+     *  before quoting. E.g. ["NQT top decile", "coding test invite",
+     *  "hackathon win at top-30 college"] for TCS Digital. */
+    resumeSignals: string[];
+    /** Track-specific pitfalls / ask hints. */
+    notes?: string;
+  }>;
 }
 
 /** Company-level metadata that doesn't vary by role/level. Lifts notice
