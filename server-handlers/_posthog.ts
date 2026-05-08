@@ -16,16 +16,26 @@ function getClient(): PostHog | null {
   const key = process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key) return null;
   if (_client) return _client;
-  _client = new PostHog(key, {
-    host: process.env.POSTHOG_HOST || "https://us.i.posthog.com",
-    flushAt: 1,
-    flushInterval: 0,
-    // enableExceptionAutocapture registers globalThis.process.on('uncaughtException'),
-    // which throws "globalThis.process?.on is not a function" in the Edge runtime
-    // (partial process polyfill, no event-emitter methods). We capture exceptions
-    // explicitly via captureServerException, so autocapture is unnecessary.
-    enableExceptionAutocapture: false,
-  });
+  // Wrap construction in try/catch so a misbehaving SDK (e.g. third-party
+  // module that touches Node-only APIs at init in the Edge runtime) can
+  // never take down a request handler. Telemetry init failure → telemetry
+  // disabled → request continues. Documented contract: telemetry must
+  // never break a request.
+  try {
+    _client = new PostHog(key, {
+      host: process.env.POSTHOG_HOST || "https://us.i.posthog.com",
+      flushAt: 1,
+      flushInterval: 0,
+      // enableExceptionAutocapture registers globalThis.process.on('uncaughtException'),
+      // which throws "globalThis.process?.on is not a function" in the Edge runtime
+      // (partial process polyfill, no event-emitter methods). We capture exceptions
+      // explicitly via captureServerException, so autocapture is unnecessary.
+      enableExceptionAutocapture: false,
+    });
+  } catch (e) {
+    console.warn("[posthog] init failed, telemetry disabled:", e);
+    _client = null;
+  }
   return _client;
 }
 
