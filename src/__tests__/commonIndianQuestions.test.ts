@@ -105,6 +105,35 @@ describe("Common Indian interview questions canon", () => {
     expect(out).not.toMatch(/improved a process/i);
   });
 
+  it("hr-round canon surfaces closing-question + CTC-trap pushback (v2 research additions)", () => {
+    const out = formatCommonIndianCanon({ focus: "hr-round", limit: 30 });
+    expect(out).toMatch(/any questions for us|when can you join/i);
+    expect(out).toMatch(/in-hand|payslip|breakdown|10-15%/i);
+  });
+
+  it("campus-placement canon surfaces service-bond + MBA probes for freshers", () => {
+    const out = formatCommonIndianCanon({ focus: "campus-placement", limit: 30 });
+    expect(out).toMatch(/2-year service agreement|tier-2 or tier-3|bond/i);
+    expect(out).toMatch(/MBA|specialization|CAT/i);
+  });
+
+  it("salary-negotiation canon surfaces CTC-trap recruiter playbook", () => {
+    const out = formatCommonIndianCanon({ focus: "salary-negotiation", limit: 30 });
+    expect(out).toMatch(/in-hand|payslip|breakdown|absolute minimum/i);
+  });
+
+  it("IT-services tier surfaces BOTH general client canon AND bond/relocation probes", () => {
+    const out = formatCommonIndianCanon({
+      focus: "behavioral",
+      companyTier: "it-services",
+      limit: 30,
+    });
+    // it_services category
+    expect(out).toMatch(/client|service agreement|rotational shifts/i);
+    // service_bond_relocation category (new in v2)
+    expect(out).toMatch(/2-year|tier-2|onsite|bench/i);
+  });
+
   it("FOCUS_TO_CANON_CATEGORIES is restricted to focuses where canon makes sense", () => {
     // Canon applies ONLY to these four — case-study / strategic / technical /
     // panel / management / government-psu intentionally absent (canon would
