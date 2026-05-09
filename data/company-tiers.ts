@@ -1174,23 +1174,26 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
  */
 export function companyTierUsesCityComp(tier: CompanyTier | null | undefined): boolean {
   switch (tier) {
+    /* Cases sharing the same `return false` outcome:
+     *  - faang / big-tech / gcc / it-services: standard tier-uniform comp.
+     *  - consulting-mbb / consulting-big4: MBB + Big-4 publish a single
+     *    India pay grade — Bain/McKinsey/BCG + Deloitte/EY/PwC/KPMG run
+     *    unified bands across BLR/MUM/DEL/GUR/HYD with no documented
+     *    city-tier discount. (Source: industry levels reports +
+     *    Glassdoor city-split data.)
+     *  - government-psu: pay fixed by the central Pay Commission and
+     *    identical nationwide for a given grade. Applying the tier-2
+     *    multiplier to ONGC Chennai vs Mumbai is empirically wrong.
+     *  - bfsi-global: GS/JPM/MS/DB/HSBC/Citi hire primarily in Bangalore
+     *    + Mumbai + Hyderabad GCCs at uniform India-grade pay. The
+     *    tier-2 discount doesn't apply. */
     case "faang":
     case "big-tech":
     case "gcc":
     case "it-services":
-    /* MBB / Big-4 publish a single India pay grade — Bain/McKinsey/BCG
-     * + Deloitte/EY/PwC/KPMG run unified compensation bands across BLR /
-     * MUM / DEL / GUR / HYD with no documented city-tier discount.
-     * (Source: industry levels reports + Glassdoor city-split data.) */
     case "consulting-mbb":
     case "consulting-big4":
-    /* PSU pay is fixed by the central Pay Commission and identical
-     * nationwide for a given grade. Applying the tier-2 multiplier
-     * to ONGC Chennai vs Mumbai is empirically wrong. */
     case "government-psu":
-    /* Global investment banks (GS / JPM / MS / DB / HSBC / Citi) hire
-     * primarily in Bangalore + Mumbai + Hyderabad GCCs at uniform
-     * India-grade pay. The tier-2 discount doesn't apply. */
     case "bfsi-global":
       return false;
     default:
