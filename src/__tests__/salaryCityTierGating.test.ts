@@ -91,6 +91,36 @@ describe("generateNegotiationBand — city tier gating", () => {
   });
 });
 
+describe("seed→AB flip — engineering-track entry/mid", () => {
+  it("Accenture SDE entry: pass-2 yoe-bucket AB beats seed-multiplier curator at n>=150", () => {
+    // Seed curator put Accenture SDE entry at ~₹10.5L (1.05x baseline);
+    // AB pass-2 0-1y bucket has the real ~₹4.4L fresher cohort. The
+    // looser n≥150 threshold for engineering-track entry/mid IT-services
+    // should flip the runtime to AB. Reality is ~₹4.5-6L (Accenture
+    // fresher disclosure).
+    const ctx = lookupSalaryContext({
+      role: "Software Engineer",
+      company: "Accenture",
+      experienceLevel: "entry",
+    });
+    // The flipped band's source URL points to AB, not "Seed dataset".
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+    expect(ctx).not.toMatch(/Seed dataset.*accenture.*software-engineer/);
+  });
+
+  it("Accenture business-analyst entry: still keeps curator (loose threshold gates by role)", () => {
+    // Engineering-track gate excludes business-analyst — AB cohort for
+    // BA at IT-services skews mid-career retitlings, not real freshers.
+    // Curator (even seed-multiplier) stays in.
+    const ctx = lookupSalaryContext({
+      role: "Business Analyst",
+      company: "Accenture",
+      experienceLevel: "entry",
+    });
+    expect(ctx).toMatch(/Seed dataset|Accenture/);
+  });
+});
+
 describe("lookupSalaryContext — sample-size confidence", () => {
   it("surfaces n=count + tier label when an AB-imported override is in effect", () => {
     // 1mg has no curator override — the AB-imported entry (n=63 SDE entry)

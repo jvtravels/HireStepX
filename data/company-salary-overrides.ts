@@ -94,8 +94,33 @@ function maybePreferImportedOverSeed(
   if (!curator.source?.startsWith("Seed dataset")) return null;
   const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
   if (!imported) return null;
-  // Require non-trivial sample size in the AB notes ("n=NNN").
-  if (extractSampleSize(imported.notes) < 1000) return null;
+  const n = extractSampleSize(imported.notes);
+  /* Sample-size threshold tuning:
+   *
+   * Pass-2 yoe-bucket scrapes (notes start "AB yoe-bucket scrape:")
+   * are sample-weighted across designations covering a true YOE
+   * bucket — ₹4.4L for Accenture SDE entry n=197 is the real fresher
+   * cohort, not a broad envelope. Pass-1 single-cell scrapes pool
+   * across YOE so need a larger n to be trustworthy.
+   *
+   * For *engineering-track* entry/mid roles (software-engineer,
+   * qa-engineer, data-engineer, devops-engineer) at IT-services we
+   * accept pass-2 down to n≥150 — these are the bands where AB
+   * samples are genuinely fresher/junior cohorts. Other roles
+   * (product-manager, business-analyst, engineering-manager) at
+   * IT-services keep the n≥1000 bar because their AB cohort skews
+   * to mid-career re-titlings rather than real freshers in that
+   * role. Senior+ levels keep n≥1000 always (AB undercounts seniors).
+   */
+  const isPass2 = imported.notes?.includes("yoe-bucket") ?? false;
+  const isEngineeringTrack = roleKey === "software-engineer"
+    || roleKey === "qa-engineer"
+    || roleKey === "data-engineer"
+    || roleKey === "devops-engineer";
+  const isJuniorLevel = experienceLevel === "entry" || experienceLevel === "mid";
+  const looseThresholdEligible = isPass2 && isEngineeringTrack && isJuniorLevel;
+  const threshold = looseThresholdEligible ? 150 : 1000;
+  if (n < threshold) return null;
   return tagImported(imported);
 }
 
