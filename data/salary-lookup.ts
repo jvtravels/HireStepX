@@ -15,7 +15,7 @@ import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES, COMPANY_META } from "
 const COMPANY_SALARY_OVERRIDES_KEYS = new Set(
   Object.keys(COMPANY_SALARY_OVERRIDES).filter(k => !k.startsWith("__sector_")),
 );
-import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, type CompanyTier } from "./company-tiers";
+import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, companyTierUsesCityComp, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { getCompanyCity } from "./company-cities";
 import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
@@ -361,6 +361,51 @@ function getBondWarning(companyTier: string | undefined, companyMeta?: CompanyMe
   return "";
 }
 
+/** Typical counter-offer bump % a recruiter can stretch to when the
+ *  candidate produces a written competing offer. Sourced from public
+ *  Blind / Reddit / TeamBlind India threads + first-hand recruiter
+ *  conversations. The range is the *typical* internal stretch budget
+ *  — not the absolute ceiling.
+ *
+ *  Used by the LLM hiring-manager persona so it knows how much room
+ *  it actually has when the candidate produces a bona-fide competing
+ *  letter, rather than guessing or anchoring on the initial offer.
+ */
+function getCounterOfferPlaybook(companyTier: CompanyTier | null | undefined): string {
+  switch (companyTier) {
+    case "faang":
+    case "big-tech":
+      return `COUNTER-OFFER PLAYBOOK: With a verified written competing offer, FAANG / Big Tech can typically stretch 8-15% over the initial offer (mostly via RSU sign-on top-up + small base bump). Beyond 15% requires committee re-approval and rarely lands. Frame any stretch as "let me see what I can do with the comp committee" — gives leverage without over-committing.`;
+    case "gcc":
+      return `COUNTER-OFFER PLAYBOOK: GCC India arms typically have 6-12% stretch room with a verified written counter (mostly base + joining bonus, equity-equivalent RSUs only at senior+). Approval chain is shorter than FAANG but slower than unicorns — quote 5-7 working days for a final answer.`;
+    case "indian-unicorn":
+    case "saas-product":
+      return `COUNTER-OFFER PLAYBOOK: Indian unicorns / late-stage SaaS typically stretch 10-25% on a verified written counter — they're still building out senior bench and lose deals over comp far more than FAANG do. Stretch usually splits across base (60%) + joining bonus (25%) + ESOP top-up (15%). Founders / VPs can sign off in 24-48 hrs.`;
+    case "startup-growth":
+      return `COUNTER-OFFER PLAYBOOK: Growth-stage startups (Series B/C) typically stretch 10-20% on counter, but most of the headroom is in ESOP top-up rather than cash — cash runway is tight. Be honest: "We can match cash within ~10%, the bigger lift will come via additional ESOPs vesting over 4 years."`;
+    case "startup-early":
+      return `COUNTER-OFFER PLAYBOOK: Early-stage (pre-Series-B) typically stretch 5-15% on cash, plus meaningful ESOP top-ups (an extra 0.05-0.25% can be approved by founders directly). Cash ceiling is hard — runway-bound. Lead with equity story.`;
+    case "it-services":
+      return `COUNTER-OFFER PLAYBOOK: IT-services firms (TCS / Infosys / Wipro / HCL / Tech Mahindra) typically stretch only 3-5% on counter — bands are tightly grade-gated and HR Comp & Ben rarely approves out-of-band. Frame realistically: "I can take this back, but our grade-band exception process gives ~5% headroom at most. The bigger lever for you is the onsite track or skill-premium grade."`;
+    case "consulting-mbb":
+      return `COUNTER-OFFER PLAYBOOK: MBB (McKinsey / BCG / Bain) bands are rigidly cohort-based — at the same level, EVERYONE gets the same number. Stretch is effectively 0% on base. The lever is signing bonus (5-10L cash) and external-hire premium (one level up). Frame: "Base is fixed for the cohort, but I have room on the joining bonus / level placement."`;
+    case "consulting-big4":
+      return `COUNTER-OFFER PLAYBOOK: Big 4 consulting (Deloitte / EY / KPMG / PwC) typically stretch 5-10% on counter, with most flex in joining bonus and grade placement (Senior Consultant vs Manager). Hot specialisations (Risk / Cyber / GenAI advisory) can land 10-15%.`;
+    case "bfsi-global":
+      return `COUNTER-OFFER PLAYBOOK: Global BFSI (Goldman / JPM / Morgan Stanley / Citi / Barclays / DB / UBS) stretch 8-15% on verified counter, with strong flex in deferred bonus / RSU lots (vest over 3 yrs). Cash base is harder to move — most lift comes via the variable / sign-on package.`;
+    case "bfsi-domestic":
+      return `COUNTER-OFFER PLAYBOOK: Indian banks (HDFC / ICICI / Axis / SBI / Kotak) stretch 5-10% on verified counter, mostly base + joining bonus. Variable pay is fixed by the role grade, not negotiable. ESOPs only at AVP+ levels.`;
+    case "government-psu":
+      return `COUNTER-OFFER PLAYBOOK: PSU / government roles have ZERO counter-offer flex — pay is set by Pay Commission grade, period. Frame any private-sector counter as "respectfully, our pay is determined by Government of India grade norms — but we also offer pension / housing / job security that the private offer doesn't include." Pivot to non-cash levers.`;
+    case "fmcg-mnc":
+      return `COUNTER-OFFER PLAYBOOK: FMCG MNC (HUL / P&G / Nestle / Colgate / Marico / Britannia) stretch 5-12% on counter, with most flex in performance bonus % (raise from 15% → 20% target) and joining bonus rather than base. Strong non-cash levers (premium health, family insurance, festive bonus). Ground in those when cash room is tight.`;
+    case "edtech":
+      return `COUNTER-OFFER PLAYBOOK: Edtech post-2023 reset (BYJU'S / Vedantu / Unacademy / PhysicsWallah / upGrad) — cash stretch only 5-10% (sector under margin pressure), but ESOP top-ups generous (0.1-0.5%) since equity is illiquid anyway. Be honest about ESOP value; don't quote unicorn-era valuations.`;
+    default:
+      return `COUNTER-OFFER PLAYBOOK: Typical Indian-market counter stretch with a verified written offer is 8-15% — split across base, joining bonus, and (where applicable) ESOP top-up. Approval chain runs 3-7 working days. Stretch beyond 15% is rare and almost always requires escalation to leadership.`;
+  }
+}
+
 /** Bluff-check rule for unverified counter-offers — distinct from the
  * existing Indian-context guidance because it specifies what the LLM
  * should DO when a counter is mentioned without a written letter. */
@@ -598,6 +643,10 @@ function buildIndianMarketContext(p: {
     ? getHraExemptionWalkthrough(p.cityTier, p.basicLpa, p.hraLpa, p.jobCity)
     : "";
   const regionalVariation = getRegionalRoleVariation(p.roleKey, p.cityTier, p.jobCity);
+  // Counter-offer stretch budget by tier — gives the LLM hiring-manager
+  // realistic room to negotiate when the candidate produces a written
+  // competing offer (vs guessing or anchoring on the initial number).
+  const counterOfferPlaybook = getCounterOfferPlaybook(p.companyTier as CompanyTier);
   // Compose only non-empty blocks so prompt stays focused per-tier.
   const blocks = [
     inHand.text,
@@ -617,6 +666,7 @@ function buildIndianMarketContext(p: {
     da,
     bond,
     regionalVariation,
+    counterOfferPlaybook,
     COUNTER_OFFER_BLUFF_CHECK,
   ].filter(Boolean);
   return {
@@ -747,7 +797,11 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
   // > candidate's current city > tier-1 default. Lets a Razorpay offer default
   // to Bangalore even if user didn't specify, matching real recruiter behaviour.
   const inferredJobCity = params.jobCity || getCompanyCity(params.company) || params.currentCity;
-  const jobCityTier = getCityTier(inferredJobCity);
+  const rawJobCityTier = getCityTier(inferredJobCity);
+  // FAANG / Big Tech / GCC / IT-services pay nationwide-uniform per AB
+  // recon (see docs/SALARY_CITY_RECON.md) — clamp to tier1 so the
+  // multiplier no-ops. Unicorns / startups still see geo variation.
+  const jobCityTier = companyTierUsesCityComp(companyTier) ? rawJobCityTier : "tier1";
 
   /* Layer 1: per-company verified override (data/company-salary-overrides.ts).
      When a high-traffic company has a verified band from
@@ -1187,7 +1241,10 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
   const exp = normalizeExp(params.experienceLevel);
 
   // Salary based on JOB location (where the offer is), fallback to current city, fallback to Tier 1
-  const jobCityTier = getCityTier(params.jobCity || params.currentCity);
+  const rawJobCityTier = getCityTier(params.jobCity || params.currentCity);
+  // Nationwide-uniform tiers (FAANG / Big Tech / GCC / IT-services) clamp
+  // to tier1 — see companyTierUsesCityComp + docs/SALARY_CITY_RECON.md.
+  const jobCityTier = companyTierUsesCityComp(companyTier) ? rawJobCityTier : "tier1";
   const currentCityTier = getCityTier(params.currentCity);
   const relocating = isRelocation(params.currentCity, params.jobCity);
 
@@ -1206,8 +1263,12 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
   const override = getCompanyBandOverride(params.company, roleKey, exp);
 
   const tierLabel = TIER_LABELS[companyTier];
-  const cityNote = jobCityTier !== "tier1"
-    ? ` (${jobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, ~${Math.round(CITY_MULTIPLIERS[jobCityTier].min * 100)}-${Math.round(CITY_MULTIPLIERS[jobCityTier].max * 100)}% of Tier 1 rates)`
+  const cityNote = rawJobCityTier !== "tier1"
+    ? jobCityTier === "tier1"
+      // Nationwide-uniform pay tier — surface the real city tier but
+      // note that comp doesn't vary across India for this employer.
+      ? ` (${rawJobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, but this employer pays nationwide-uniform — no city discount)`
+      : ` (${jobCityTier === "tier2" ? "Tier 2 city" : "Tier 3 city"}, ~${Math.round(CITY_MULTIPLIERS[jobCityTier].min * 100)}-${Math.round(CITY_MULTIPLIERS[jobCityTier].max * 100)}% of Tier 1 rates)`
     : " (Tier 1 city)";
 
   // Apply job city multiplier (salary = where the job is)

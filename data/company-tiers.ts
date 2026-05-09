@@ -1158,6 +1158,31 @@ export function getCompanyTier(company: string | undefined | null): CompanyTier 
  * Map certain tiers to equivalent salary tiers for lookup fallback.
  * e.g., saas-product companies pay similarly to indian-unicorn tier.
  */
+/**
+ * Whether this company-tier's compensation actually varies by job city.
+ *
+ * Empirical recon (docs/SALARY_CITY_RECON.md): MSFT Software Engineer
+ * across BLR/HYD/NOIDA/PUNE/CHE clusters within ±5%; TCS All-India vs
+ * Hyderabad bands are effectively identical. FAANG / Big Tech / GCC /
+ * IT-services pay nationwide-uniform — applying the tier-2 multiplier
+ * (~0.86x) wrongly discounts a Microsoft Chennai offer by 14%.
+ *
+ * Indian unicorns, startups, edtech, SaaS-product, consulting, and
+ * domestic BFSI / FMCG-MNC do show real geo variation (HQ city premium,
+ * tier-2 office discount), so multipliers stay on for those.
+ */
+export function companyTierUsesCityComp(tier: CompanyTier | null | undefined): boolean {
+  switch (tier) {
+    case "faang":
+    case "big-tech":
+    case "gcc":
+    case "it-services":
+      return false;
+    default:
+      return true;
+  }
+}
+
 export function getSalaryTierFallback(tier: CompanyTier): CompanyTier {
   switch (tier) {
     case "saas-product": return "indian-unicorn";
