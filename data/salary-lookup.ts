@@ -155,6 +155,29 @@ export const INDUSTRY_PACKAGE_CONTEXT: Record<string, string> = {
  *   - startup-growth / startup-early: 8% (cash-conservative; ESOP-heavy)
  *   - edtech: 12% (moderate variable; some target-linked)
  *   - default: 10% */
+/** Extract sample size + confidence label from a CompanyBandOverride.
+ *  The IMPORTED scrape pipeline embeds "n=NNN" trailers into notes; the
+ *  importer (data/company-salary-overrides.ts → tagImported) tiers
+ *  these into dataConfidenceTier. This surfaces both the raw count
+ *  AND the tier so the LLM can hedge proportionally rather than
+ *  treating every override as equally authoritative. Returns null when
+ *  the override has no embedded sample data (curator-only entries). */
+function describeBandConfidence(
+  notes: string | undefined,
+  tier: "high" | "medium" | "low" | undefined,
+): string {
+  if (!notes) return "";
+  const m = notes.match(/n=(\d+)/);
+  if (!m) return "";
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const tierLabel =
+    tier === "high" ? "high-confidence (n ≥ 1000)"
+    : tier === "low" ? "low-confidence (n < 250 — directional)"
+    : "medium-confidence";
+  return `Sample: ${n.toLocaleString("en-IN")} self-reports — ${tierLabel}`;
+}
+
 function getVariablePct(companyTier: string | undefined): number {
   switch (companyTier) {
     case "government-psu": return 0;
@@ -1352,6 +1375,14 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
   // Line 5b: Source provenance, when from a verified company override.
   if (override?.source) {
     parts.push(`Source: ${override.source} (verified ${override.lastVerified}).`);
+  }
+  // Line 5c: Sample-size confidence — lets the LLM hedge in proportion
+  // to how much real data backs the cell. n ≥ 1000 → speak with
+  // confidence; n < 250 → frame as directional and recommend the
+  // candidate validate against a recruiter screen.
+  const confidenceLine = describeBandConfidence(override?.notes, override?.dataConfidenceTier);
+  if (confidenceLine) {
+    parts.push(confidenceLine + ".");
   }
 
   // Line 6: Relocation context (when current city ≠ job city)

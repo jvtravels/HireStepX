@@ -91,6 +91,30 @@ describe("generateNegotiationBand — city tier gating", () => {
   });
 });
 
+describe("lookupSalaryContext — sample-size confidence", () => {
+  it("surfaces n=count + tier label when an AB-imported override is in effect", () => {
+    // 1mg has no curator override — the AB-imported entry (n=63 SDE entry)
+    // wins. Confirms the Sample line surfaces real scrape sample size.
+    const ctx = lookupSalaryContext({
+      role: "Software Engineer",
+      company: "1mg",
+      experienceLevel: "entry",
+    });
+    expect(ctx).toMatch(/Sample: [\d,]+ self-reports/);
+    expect(ctx).toMatch(/low-confidence|medium-confidence|high-confidence/);
+  });
+
+  it("emits no Sample line when no override is matched (curator-only path)", () => {
+    // ONGC senior comes from PSU curator entry without embedded n=.
+    const ctx = lookupSalaryContext({
+      role: "Manager",
+      company: "ONGC",
+      experienceLevel: "senior",
+    });
+    expect(ctx).not.toMatch(/Sample: \d+ self-reports/);
+  });
+});
+
 describe("lookupSalaryContext — city note", () => {
   it("FAANG in Chennai surfaces nationwide-uniform note (not Tier-1 relabel)", () => {
     const ctx = lookupSalaryContext({
