@@ -1,8 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   aggregateOffers,
   parseAggregateQuery,
   K_ANON_FLOOR,
+  normalizeExperienceLevel,
+  fetchLiveAggregate,
+  formatLiveAggregateBlock,
 } from "../../server-handlers/_salary-aggregator-helpers";
 
 function makeOffers(totals: number[], opts: { user_ids?: string[] } = {}) {
@@ -120,6 +123,15 @@ describe("parseAggregateQuery", () => {
     expect(r.ok).toBe(false);
   });
 
+  it("accepts level synonyms via normalizeExperienceLevel", () => {
+    expect(normalizeExperienceLevel("fresher")).toBe("entry");
+    expect(normalizeExperienceLevel("Mid-Level")).toBe("mid");
+    expect(normalizeExperienceLevel("staff")).toBe("lead");
+    expect(normalizeExperienceLevel("VP")).toBe("executive");
+    expect(normalizeExperienceLevel("garbage")).toBeNull();
+    expect(normalizeExperienceLevel(null)).toBeNull();
+  });
+
   it("accepts a valid triple", () => {
     const r = parseAggregateQuery(
       makeUrl({ company: "Google", role: "SDE", level: "mid" }),
@@ -130,5 +142,64 @@ describe("parseAggregateQuery", () => {
       expect(r.role).toBe("SDE");
       expect(r.level).toBe("mid");
     }
+  });
+});
+
+describe("fetchLiveAggregate", () => {
+  const cfg = { supabaseUrl: "https://example.supabase.co", serviceKey: "svc" };
+  const args = { company: "Google", role: "SDE", level: "mid" };
+
+  it("returns null when config is missing", async () => {
+    const r = await fetchLiveAggregate(args, { supabaseUrl: "", serviceKey: "" });
+    expect(r).toBeNull();
+  });
+
+  it("returns null on non-OK response", async () => {
+    const fake = vi.fn().mockResolvedValue({ ok: false } as Response);
+    const r = await fetchLiveAggregate(args, cfg, fake as unknown as typeof fetch);
+    expect(r).toBeNull();
+  });
+
+  it("returns null when fetch throws", async () => {
+    const fake = vi.fn().mockRejectedValue(new Error("network"));
+    const r = await fetchLiveAggregate(args, cfg, fake as unknown as typeof fetch);
+    expect(r).toBeNull();
+  });
+
+  it("returns aggregate when bucket has K+ contributors", async () => {
+    const rows = [
+      { user_id: "u1", total_ctc_lpa: 30 },
+      { user_id: "u2", total_ctc_lpa: 32 },
+      { user_id: "u3", total_ctc_lpa: 35 },
+      { user_id: "u4", total_ctc_lpa: 38 },
+      { user_id: "u5", total_ctc_lpa: 40 },
+    ];
+    const fake = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => rows,
+    } as unknown as Response);
+    const r = await fetchLiveAggregate(args, cfg, fake as unknown as typeof fetch);
+    expect(r).not.toBeNull();
+    expect(r!.uniqueContributors).toBe(5);
+    expect(fake).toHaveBeenCalledWith(
+      expect.stringContaining("may_share_aggregate=eq.true"),
+      expect.objectContaining({ headers: expect.objectContaining({ apikey: "svc" }) }),
+    );
+  });
+});
+
+describe("formatLiveAggregateBlock", () => {
+  it("renders total CTC + optional components", () => {
+    const block = formatLiveAggregateBlock({
+      count: 8,
+      uniqueContributors: 8,
+      totalCtc: { p25: 30, p50: 35, p75: 40 },
+      base: { p50: 24 },
+    });
+    expect(block).toContain("LIVE COMMUNITY DATA");
+    expect(block).toContain("8 self-reports");
+    expect(block).toContain("p50 ₹35L");
+    expect(block).toContain("Base p50: ₹24L");
+    expect(block).not.toContain("Variable p50");
   });
 });

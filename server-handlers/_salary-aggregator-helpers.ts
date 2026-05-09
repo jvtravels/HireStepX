@@ -98,6 +98,73 @@ export function aggregateOffers(rows: OfferAggregateInput[]): OfferAggregate | n
   return out;
 }
 
+/** Map free-form experienceLevel strings (engine vocabulary) to the
+ *  canonical salary_offers.level enum. Returns null if unrecognized. */
+export function normalizeExperienceLevel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const s = raw.trim().toLowerCase();
+  if (["entry", "fresher", "junior", "0-2"].includes(s)) return "entry";
+  if (["mid", "mid-level", "intermediate", "3-5"].includes(s)) return "mid";
+  if (["senior", "sr", "5-8"].includes(s)) return "senior";
+  if (["lead", "staff", "principal", "8-12"].includes(s)) return "lead";
+  if (["executive", "exec", "director", "vp", "12+"].includes(s)) return "executive";
+  return null;
+}
+
+/** Fetches opted-in salary_offers rows for a (company, role, level) bucket
+ *  via Supabase REST and feeds them into aggregateOffers. Returns null on
+ *  any failure (missing config, network, empty bucket, sub-K) so callers
+ *  can fall back to the static band silently. fetchImpl is injectable
+ *  for tests. */
+export async function fetchLiveAggregate(
+  args: { company: string; role: string; level: string },
+  config: { supabaseUrl: string; serviceKey: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<OfferAggregate | null> {
+  if (!config.supabaseUrl || !config.serviceKey) return null;
+  const params = new URLSearchParams({
+    select: "user_id,total_ctc_lpa,base_lpa,variable_lpa,joining_bonus_lpa",
+    company: `eq.${args.company}`,
+    role: `eq.${args.role}`,
+    level: `eq.${args.level}`,
+    may_share_aggregate: "eq.true",
+    limit: "5000",
+  });
+  try {
+    const res = await fetchImpl(`${config.supabaseUrl}/rest/v1/salary_offers?${params}`, {
+      headers: {
+        apikey: config.serviceKey,
+        Authorization: `Bearer ${config.serviceKey}`,
+      },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as OfferAggregateInput[];
+    return aggregateOffers(rows);
+  } catch {
+    return null;
+  }
+}
+
+/** Renders the live aggregate as a prompt-friendly block to append to
+ *  bandContext. Caller decides whether to show it (typically only when
+ *  the live n is high enough to be more reliable than the static band). */
+export function formatLiveAggregateBlock(agg: OfferAggregate): string {
+  const lines = [
+    "",
+    "── LIVE COMMUNITY DATA (HireStepX users) ──",
+    `Sample: ${agg.uniqueContributors} self-reports (K-anonymity floor ${K_ANON_FLOOR}).`,
+    `Total CTC: p25 ₹${agg.totalCtc.p25}L · p50 ₹${agg.totalCtc.p50}L · p75 ₹${agg.totalCtc.p75}L`,
+  ];
+  if (agg.base) lines.push(`Base p50: ₹${agg.base.p50}L`);
+  if (agg.variable) lines.push(`Variable p50: ₹${agg.variable.p50}L`);
+  if (agg.joiningBonus) lines.push(`Joining bonus p50: ₹${agg.joiningBonus.p50}L`);
+  lines.push(
+    "Treat this as ground truth when it diverges from static band — it reflects",
+    "actual closes by candidates with this exact (company, role, level) tuple.",
+  );
+  return lines.join("\n");
+}
+
 /** Validates and normalizes the GET query params for the aggregator. */
 export function parseAggregateQuery(url: URL): {
   ok: true;

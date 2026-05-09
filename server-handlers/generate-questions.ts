@@ -17,6 +17,11 @@ import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { getCompanyTier } from "../data/company-tiers";
+import {
+  fetchLiveAggregate,
+  formatLiveAggregateBlock,
+  normalizeExperienceLevel,
+} from "./_salary-aggregator-helpers";
 import { tierFlexibility } from "../src/_negotiation-math";
 import {
   retrieveReferenceQuestions,
@@ -328,6 +333,28 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
       salaryNegGuidance = buildSalaryNegotiationGuidance({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       negotiationBandData = generateNegotiationBand({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       salaryNegGuidance += `\n\n${negotiationBandData.bandContext}`;
+
+      /* Live community aggregate: if K=5 contributors have opted in for
+       * this exact (company, role, level) bucket, append their p25/p50/p75
+       * to the prompt so the LLM weights real closes over static seeds.
+       * Failures (no env, network, sub-K) silently fall through. */
+      const _liveLevel = normalizeExperienceLevel(typeof expLevel === "string" ? expLevel : "");
+      if (_liveLevel && typeof companyName === "string" && typeof targetRole === "string") {
+        const _liveAgg = await fetchLiveAggregate(
+          { company: companyName, role: targetRole, level: _liveLevel },
+          { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY },
+        );
+        if (_liveAgg) {
+          salaryNegGuidance += `\n${formatLiveAggregateBlock(_liveAgg)}`;
+          void captureServerEvent("salary_band_live_aggregate_hit", distinctIdFrom(req, auth.userId), {
+            company: companyName.slice(0, 80),
+            role: targetRole.slice(0, 80),
+            exp_level: _liveLevel,
+            n: _liveAgg.uniqueContributors,
+            p50: _liveAgg.totalCtc.p50,
+          }, req);
+        }
+      }
       // Telemetry: track which lookup-chain layer served this band so the
       // admin dashboard can prioritize what to add overrides for next.
       // Volume of "tier-default" / "fallback" hits = backlog for the

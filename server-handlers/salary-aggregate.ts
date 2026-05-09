@@ -17,10 +17,9 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import {
-  aggregateOffers,
+  fetchLiveAggregate,
   parseAggregateQuery,
   K_ANON_FLOOR,
-  type OfferAggregateInput,
 } from "./_salary-aggregator-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -60,32 +59,10 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: parsed.error }), { status: 400, headers });
   }
 
-  /* Filter on the server with the service role so RLS doesn't silently
-   * narrow to the calling user's own rows. We still respect the
-   * may_share_aggregate=true bit here — only opted-in offers feed
-   * the aggregate. K-anonymity is enforced inside aggregateOffers. */
-  const params = new URLSearchParams({
-    select: "user_id,total_ctc_lpa,base_lpa,variable_lpa,joining_bonus_lpa",
-    company: `eq.${parsed.company}`,
-    role: `eq.${parsed.role}`,
-    level: `eq.${parsed.level}`,
-    may_share_aggregate: "eq.true",
-    limit: "5000",
-  });
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/salary_offers?${params}`, {
-    headers: {
-      apikey: SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-    },
-  });
-  if (!res.ok) {
-    return new Response(JSON.stringify({ aggregate: null, k_anonymity_floor: K_ANON_FLOOR }), {
-      status: 200,
-      headers,
-    });
-  }
-  const rows = (await res.json()) as OfferAggregateInput[];
-  const aggregate = aggregateOffers(rows);
+  const aggregate = await fetchLiveAggregate(
+    { company: parsed.company, role: parsed.role, level: parsed.level },
+    { supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY },
+  );
   return new Response(
     JSON.stringify({ aggregate, k_anonymity_floor: K_ANON_FLOOR }),
     { status: 200, headers },
