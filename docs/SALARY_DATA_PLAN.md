@@ -1,15 +1,13 @@
 # Salary Data Coverage Plan
 
-**Author:** drafted 2026-05-09 by Jay + Claude
-**Status:** proposed — pending scope approval
-**Owner:** Jay (data acquisition + validation), Claude (schema + tooling + first-pass writes)
+**Author:** drafted 2026-05-09 by Jay + Claude **Status:** proposed — pending scope approval **Owner:** Jay (data acquisition + validation), Claude (schema + tooling + first-pass writes)
 
 ## Problem statement
 
 Today's coverage is uneven and the failure modes are user-visible:
 
-1. **Companies are partially curated.** ~135 in `COMPANY_SALARY_OVERRIDES`, 100 in CSV, ~70 overlap. Many candidates target companies we have nothing on.
-2. **Roles per company are sparse.** TCS shipped with `software-engineer + ux-designer + qa-engineer + business-analyst + project-manager` — but real TCS hires across ~25 distinct roles (SAP consultant, mainframe dev, cloud engineer, salesforce dev, ServiceNow dev, security engineer, network engineer, data engineer, ML engineer, scrum master, technical writer, etc.). When a candidate picks "SAP Consultant at TCS," they fall through to a generic `software-engineer` band that doesn't match SAP comp at all.
+1. **Companies are partially curated.** \~135 in `COMPANY_SALARY_OVERRIDES`, 100 in CSV, \~70 overlap. Many candidates target companies we have nothing on.
+2. **Roles per company are sparse.** TCS shipped with `software-engineer + ux-designer + qa-engineer + business-analyst + project-manager` — but real TCS hires across \~25 distinct roles (SAP consultant, mainframe dev, cloud engineer, salesforce dev, ServiceNow dev, security engineer, network engineer, data engineer, ML engineer, scrum master, technical writer, etc.). When a candidate picks "SAP Consultant at TCS," they fall through to a generic `software-engineer` band that doesn't match SAP comp at all.
 3. **Multi-track compression.** TCS, Infosys, Wipro, Cognizant, Accenture, HCL — all have 3+ fresher tracks (Ninja/Digital/Prime, DSE/Power/Specialist, Elite/Turbo/Velocity, GenC/GenC Next/GenC Pro). One band per level mis-quotes 60% of candidates. Fixed for TCS in `424a2b7`; structurally unfixed everywhere else.
 4. **No multi-source provenance.** A single `source` string can be "AmbitionBox" or "Levels.fyi" — but no field captures whether two independent sources agree. The internal calibration audit found 48% agreement between CSV and curator; we need to flag low-confidence cells, not just stamp them all "verified."
 5. **No freshness gate.** Stamps say `lastVerified: 2026-05-07` but nothing breaks CI when a stamp ages past 180 days. Comp moves quarterly in India tech.
@@ -17,10 +15,10 @@ Today's coverage is uneven and the failure modes are user-visible:
 
 ## Goals (in priority order)
 
-1. **Don't quote a wrong number to a real candidate.** Failure mode: hedge or refuse > quote a confident wrong number.
-2. **Cover the top 50 highest-traffic Indian companies × top 15 roles each, deeply.** That's 750 cells × 5 levels = ~3,750 cells with curator-grade data and multi-track encoding where applicable.
-3. **Tail coverage for the rest of the ~1000 companies in the autocomplete** — research-aggregated bands with explicit confidence labels and the calibration hedge that shipped today.
-4. **Maintainable** — quarterly refresh achievable in <1 day. CI breaks when stamps go stale.
+1. **Don't quote a wrong number to a real candidate.** Failure mode: hedge or refuse &gt; quote a confident wrong number.
+2. **Cover the top 50 highest-traffic Indian companies × top 15 roles each, deeply.** That's 750 cells × 5 levels = \~3,750 cells with curator-grade data and multi-track encoding where applicable.
+3. **Tail coverage for the rest of the \~1000 companies in the autocomplete** — research-aggregated bands with explicit confidence labels and the calibration hedge that shipped today.
+4. **Maintainable** — quarterly refresh achievable in &lt;1 day. CI breaks when stamps go stale.
 
 ## Non-goals (explicit)
 
@@ -35,7 +33,7 @@ Today's coverage is uneven and the failure modes are user-visible:
 
 **Purpose:** stop walking into the same data-quality trap twice. Build the scaffolding that makes the data work measurable, reviewable, and reversible.
 
-**Estimated effort:** 1 day eng. **Cost:** ~$0 LLM. **Blocker:** none.
+**Estimated effort:** 1 day eng. **Cost:** \~$0 LLM. **Blocker:** none.
 
 ### 0.1 — Schema upgrade: structured `tracks` field
 
@@ -123,50 +121,52 @@ Admin-dashboard surface lists open feedback for triage. Each piece of feedback i
 
 ### 0.6 — Role taxonomy expansion
 
-Today's `matchRoleKey` collapses to ~15 canonical roles. The IT-services reality needs ~30:
+Today's `matchRoleKey` collapses to \~15 canonical roles. The IT-services reality needs \~30:
+
 - `sap-consultant`, `mainframe-developer`, `cloud-engineer`, `devops-engineer`, `sre`, `security-engineer`, `network-engineer`, `salesforce-developer`, `servicenow-developer`, `data-engineer`, `ml-engineer`, `data-scientist`, `genai-engineer`, `scrum-master`, `technical-writer`, `business-analyst`, `product-manager`, `program-manager`, `engineering-manager`, `solutions-architect`, `pre-sales`, `qa-engineer`, `automation-engineer`, `mobile-android`, `mobile-ios`, `frontend-developer`, `backend-developer`, `fullstack-developer`, `embedded-engineer`, `firmware-engineer`, `dba`, `etl-developer`.
 
 Plus product-co specific: `growth-pm`, `staff-engineer`, `principal-engineer`, `developer-advocate`, `support-engineer`.
 
 Plus traditional: `mechanical-engineer`, `chemical-engineer`, `civil-engineer`, `electrical-engineer`, `quant-trader`, `quant-researcher`, `investment-banker`, `equity-research`, `consultant` (mgmt), `brand-manager`, `category-manager`, `supply-chain-manager`, `bank-po`, `gov-officer`.
 
-Total: ~50 roles. `matchRoleKey` needs to handle the alias explosion ("SAP ABAP Developer" → `sap-consultant`, "AWS Cloud Architect" → `cloud-engineer`, "ServiceNow Admin" → `servicenow-developer`).
+Total: \~50 roles. `matchRoleKey` needs to handle the alias explosion ("SAP ABAP Developer" → `sap-consultant`, "AWS Cloud Architect" → `cloud-engineer`, "ServiceNow Admin" → `servicenow-developer`).
 
 ### 0.7 — Per-cell data spec (the contract)
 
 Every (company, role, level) cell on Tier-1 companies MUST have:
 
 | Field | Required | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `totalMin`, `totalMax` | yes | LPA |
 | `baseMin`, `baseMax` | yes (Tier-1) | LPA, derived if absent |
 | `equityType` | yes | enum |
 | `equityMin`, `equityMax` | if equityType ≠ none | LPA annual |
 | `equityVesting` | if equityType ≠ none | "4yr / 1yr cliff" style |
-| `joiningBonusOverride` | recommended | [min, max] LPA |
+| `joiningBonusOverride` | recommended | \[min, max\] LPA |
 | `source` | yes | primary citation |
 | `sourceVerifiedAt` | yes | ≥1 dated source URL |
 | `agreementCount` | yes | 1-5 |
 | `lastVerified` | yes | ISO date |
 | `notes` | yes | candidate-facing pitfall + pushback hint |
 | `tracks` | when applicable | multi-track companies |
-| `variablePctOverride` | when ≠ tier default | |
+| `variablePctOverride` | when ≠ tier default |  |
 | `noticePeriodDays` | inherited from `COMPANY_META` | OK to omit per-cell |
 | `bondPenaltyLpa` | inherited from `COMPANY_META` | OK to omit per-cell |
 
 ---
 
-## Phase 1 — Tier-1 Indian IT services (10 companies, ~25 roles each)
+## Phase 1 — Tier-1 Indian IT services (10 companies, \~25 roles each)
 
 **Companies:** TCS (done), Infosys, Wipro, Cognizant, Accenture, HCL, Tech Mahindra, LTIMindtree, Capgemini, IBM India.
 
-**Estimated effort:** 2 days eng. **Cost:** ~$5 LLM if I batch-validate cells. **Blocker:** Phase 0.
+**Estimated effort:** 2 days eng. **Cost:** \~$5 LLM if I batch-validate cells. **Blocker:** Phase 0.
 
 ### Per-company deliverable
 
 For each company:
+
 1. Multi-track encoding for fresher tier (DSE/Power/Specialist for Infosys, Elite/Turbo/Velocity for Wipro, GenC tracks for Cognizant, ASE/ASE-Plus for Accenture, etc.)
-2. Full role coverage: ~25 roles × 5 levels = 125 cells
+2. Full role coverage: \~25 roles × 5 levels = 125 cells
 3. Per-company facts:
    - Notice period (already in `COMPANY_META`; verify)
    - Bond penalty (already in `COMPANY_META`; verify)
@@ -195,19 +195,20 @@ For each company:
 
 ---
 
-## Phase 2 — Tier-1 Indian product/unicorn (25 companies, ~15 roles each)
+## Phase 2 — Tier-1 Indian product/unicorn (25 companies, \~15 roles each)
 
 **Companies:** Razorpay, Flipkart, Swiggy, Zomato, PhonePe, CRED, Zerodha, Paytm, Ola, Meesho, Nykaa, MakeMyTrip, Dream11, Rapido, ixigo, Groww, Upstox, Pine Labs, BharatPe, Acko, Zepto, Inshorts, Lenskart, Urban Company, Cure.fit.
 
-**Estimated effort:** 2 days eng. **Cost:** ~$10 LLM. **Blocker:** Phase 1 done + spot-check passes.
+**Estimated effort:** 2 days eng. **Cost:** \~$10 LLM. **Blocker:** Phase 1 done + spot-check passes.
 
-### Roles per company (~15)
+### Roles per company (\~15)
 
 `software-engineer`, `frontend-developer`, `backend-developer`, `mobile-android`, `mobile-ios`, `devops-engineer`, `sre`, `ml-engineer`, `data-engineer`, `data-scientist`, `product-manager`, `ux-designer`, `growth-pm`, `engineering-manager`, `staff-engineer`.
 
 ### Per-cell focus
 
 Equity is the lever here, not base. Each cell needs:
+
 - `equityMin`, `equityMax` and `equityVesting` accurate
 - `liquidityRisk` accurate (private vs. public; recent buyback or IPO note)
 - `recentBuybackNote` populated (Razorpay 6+ buybacks, Flipkart $33B implied valuation, etc.)
@@ -223,12 +224,13 @@ Most product cos don't have multi-tracks at fresher level. Skip `tracks` field u
 ## Phase 3 — Tier-1 global tech India arms (25 companies)
 
 **Companies:**
+
 - FAANG: Google, Meta, Apple, Amazon, Microsoft, Netflix
 - Big tech: Adobe, Salesforce, Oracle, SAP Labs, Intel, Nvidia, Qualcomm, Cisco, VMware, ServiceNow, Atlassian, Stripe, Twilio, Walmart Global Tech
 - Banks/fintech GCC: JPMorgan, Goldman Sachs, Morgan Stanley, BofA, Wells Fargo
 - Consulting: McKinsey, BCG, Bain (already curated, verify)
 
-**Estimated effort:** 1.5 days. **Cost:** ~$5 LLM. **Blocker:** Phase 2.
+**Estimated effort:** 1.5 days. **Cost:** \~$5 LLM. **Blocker:** Phase 2.
 
 Most of these are already well-curated from prior sessions. Phase 3 is **verification + completing missing roles**, not full rewrite.
 
@@ -249,16 +251,19 @@ If forced: outsource to a data freelancer on Upwork (₹15-25K, 2 weeks) using t
 Once Phase 1-3 ship:
 
 ### Quarterly refresh
+
 - CI gate from Phase 0.3 fires when `lastVerified` ages past 180d (Tier 1) or 365d (Tier 2)
 - Quarterly: 1 focused day re-running coverage-gaps audit + spot-checking 30 random cells
 
 ### User-feedback funnel (Phase 0.4)
+
 - Salary-feedback admin dashboard reviewed weekly
 - Each "way_off" flag → 30-min targeted fix → regression test
 - Each "accurate" thumbs-up → bumps `agreementCount` (user counts as a source)
 
 ### Levels.fyi / AmbitionBox change detection (deferred)
-- Optional: scheduled scrape comparing our numbers to current public data, flagging >25% drift
+
+- Optional: scheduled scrape comparing our numbers to current public data, flagging &gt;25% drift
 - Cost: $20-50/month + setup
 - Defer until 100+ paying users
 
@@ -267,22 +272,22 @@ Once Phase 1-3 ship:
 ## Cost summary
 
 | Phase | Eng time | LLM spend | When |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 0 — Foundation | 1 day | $0 | now (gate for everything) |
-| 1 — IT Services | 2 days | ~$5 | after 0 |
-| 2 — Unicorns | 2 days | ~$10 | after 1 + spot-check |
-| 3 — Global Tech | 1.5 days | ~$5 | after 2 |
+| 1 — IT Services | 2 days | \~$5 | after 0 |
+| 2 — Unicorns | 2 days | \~$10 | after 1 + spot-check |
+| 3 — Global Tech | 1.5 days | \~$5 | after 2 |
 | 4 — Tail | deferred | — | post-revenue |
 | 5 — Maintenance | 30 min/wk | — | ongoing |
 
-**Total upfront: ~6.5 working days, ~$20 LLM spend.**
+**Total upfront: \~6.5 working days, \~$20 LLM spend.**
 
 ---
 
 ## Decision points (need approval before execution)
 
 1. **Scope confirmed?** Phase 0 → 1 → 2 → 3 in that order, deferring 4. Y/N.
-2. **Schema changes OK?** Adding `tracks`, `agreementCount`, structured `sourceVerifiedAt` to `CompanyBandOverride` is a non-trivial refactor — will touch ~135 existing entries (auto-migrate with default values). Y/N.
+2. **Schema changes OK?** Adding `tracks`, `agreementCount`, structured `sourceVerifiedAt` to `CompanyBandOverride` is a non-trivial refactor — will touch \~135 existing entries (auto-migrate with default values). Y/N.
 3. **CI gate OK?** Adding a freshness gate that fails CI on stale stamps is a small but real friction tax on every future commit. Y/N.
 4. **User-feedback table OK?** Adds a new Supabase table + admin surface. Small but real ongoing maintenance cost. Y/N.
 5. **Spot-check protocol** — after each phase ships, you (or I via WebFetch on levels.fyi/AmbitionBox where allowed) spot-check 10 random cells before promoting Tier-1. Y/N.
@@ -292,7 +297,7 @@ Once Phase 1-3 ship:
 
 ## What I recommend
 
-**Approve scope = Phase 0 + Phase 1.** That's 3 days of focused work, costs ~$5, and ships a foundation + the 10 highest-traffic Indian companies done correctly.
+**Approve scope = Phase 0 + Phase 1.** That's 3 days of focused work, costs \~$5, and ships a foundation + the 10 highest-traffic Indian companies done correctly.
 
 After Phase 1 lands and you've spot-checked one company's numbers against reality, decide on Phase 2 + 3.
 

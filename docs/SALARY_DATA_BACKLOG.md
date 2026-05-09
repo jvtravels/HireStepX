@@ -145,8 +145,8 @@ Order = (estimated session volume) × (current coverage gap). Status is computed
 The 12 rows still 🟡 / ❌ above resolve down to **13 missing role-cells**. Tackle in this order:
 
 1. **JPMorgan India** — entire row missing; Tier-2 GCC, high session volume. SE / DS / Finance bands. (3 cells)
-2. **`data-scientist` sweep** — Razorpay, CRED, Groww, Swiggy, Zomato, Paytm, Acko (7 cells in one batch). DS is the single most-requested role we don't ground per-company.
-3. **`marketing` for Myntra + Nykaa** — required for Brand / Growth / Category roles per the negotiation-context grids already curated. (2 cells)
+2. `data-scientist` **sweep** — Razorpay, CRED, Groww, Swiggy, Zomato, Paytm, Acko (7 cells in one batch). DS is the single most-requested role we don't ground per-company.
+3. `marketing` **for Myntra + Nykaa** — required for Brand / Growth / Category roles per the negotiation-context grids already curated. (2 cells)
 4. **Databricks PM** + **HDFC Bank Sales**. (2 cells)
 
 After those 13 cells land, top-50 hits **100% / 100%** override coverage. Next phase shifts to the **negotiation-context layer** (currently 6/50; aim for the same Tier-1 set first).
