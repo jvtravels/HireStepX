@@ -10,6 +10,8 @@ import {
   detectPlaceholderLeak,
   detectPhantomCounter,
   detectRepeatedQuestion,
+  detectHallucinatedEmployer,
+  detectRoleTitleDrift,
   detectAllFailures,
 } from "../../server-handlers/_negotiation-failures";
 
@@ -428,6 +430,67 @@ describe("detectAllFailures", () => {
       llmOutput: "We'll aim to have HR send you a formal offer letter with the revised package soon.",
     });
     expect(f?.code).toBe("premature-close");
+  });
+
+  /* ── #11 Hallucinated employer ─────────────────────────────────── */
+
+  it("[round-3] hallucinated-employer: 'notice period at 3INSYS' when candidate never said it", () => {
+    const f = detectHallucinatedEmployer({
+      ...baseCtx,
+      llmOutput: "What's your notice period at 3INSYS, and when can you join?",
+      hiringCompany: "Flipkart",
+      candidateTranscript: "I'd like to have 40 lakhs CTC because of the shift from Mumbai.",
+    });
+    expect(f?.code).toBe("hallucinated-employer");
+  });
+
+  it("[round-3] hallucinated-employer: does NOT fire when candidate said the company", () => {
+    const f = detectHallucinatedEmployer({
+      ...baseCtx,
+      llmOutput: "What's your notice period at Infosys?",
+      hiringCompany: "Flipkart",
+      candidateTranscript: "I'm currently at Infosys and have 30 days notice.",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("[round-3] hallucinated-employer: does NOT fire on city stoplist", () => {
+    const f = detectHallucinatedEmployer({
+      ...baseCtx,
+      llmOutput: "What's your notice period in Bangalore — when can you join?",
+      hiringCompany: "Flipkart",
+      candidateTranscript: "",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #12 Role-title drift ──────────────────────────────────────── */
+
+  it("[round-3] role-title-drift: cross-family — 'Engineering Manager' when role is 'backend-engineer'", () => {
+    const f = detectRoleTitleDrift({
+      ...baseCtx,
+      llmOutput: "For this Engineering Manager role, the band is ₹40 LPA.",
+      sessionRole: "backend-engineer",
+    });
+    expect(f?.code).toBe("role-title-drift");
+  });
+
+  it("[round-3] role-title-drift: cross-family — 'Senior Data Analyst' when role is 'data-scientist'", () => {
+    const f = detectRoleTitleDrift({
+      ...baseCtx,
+      llmOutput: "Welcome to the Senior Data Analyst position at our team.",
+      sessionRole: "data-scientist",
+    });
+    expect(f?.code).toBe("role-title-drift");
+  });
+
+  it("[round-3] role-title-drift: same-family variants are NOT flagged ('UI Designer' vs 'ux-designer')", () => {
+    const f = detectRoleTitleDrift({
+      ...baseCtx,
+      llmOutput: "We'd like you for the UI Designer role on the team.",
+      sessionRole: "ux-designer",
+    });
+    expect(f).toBeNull();
   });
 
   it("clean turn produces zero failures", () => {

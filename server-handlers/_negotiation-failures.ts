@@ -63,6 +63,16 @@ export interface DetectorContext {
   /** Prior AI turns in the same session, oldest first. Used to detect
    *  repeated questions (e.g. asking notice-period twice). */
   previousAiTurns?: string[];
+  /** Hiring company for this session (e.g. "Flipkart"). Used to detect
+   *  hallucinated current-employer mentions. */
+  hiringCompany?: string | null;
+  /** Concatenated candidate transcript so far. Used as a corpus the
+   *  detector can check before flagging "at <CompanyName>" — if the
+   *  candidate did say it, it's not hallucinated. */
+  candidateTranscript?: string | null;
+  /** Canonical role label for this session (e.g. "ux-designer" slug
+   *  or "UI/UX Designer" display). Used to detect role-title drift. */
+  sessionRole?: string | null;
 }
 
 /* ── #1 Premature close ───────────────────────────────────────────── */
@@ -408,6 +418,128 @@ export function detectRepeatedQuestion(ctx: DetectorContext): NegotiationFailure
   return null;
 }
 
+/* ── #11 Hallucinated employer name ──────────────────────────────── */
+/**
+ * Flags when the AI references the candidate's current employer by name
+ * but (a) the candidate never said that name in the session and (b) the
+ * name isn't the hiring company. Real production bug from Flipkart
+ * round-3: AI said "your notice period at 3INSYS" — the candidate
+ * never said any company name. Likely an ASR mishearing of "Infosys"
+ * (or pure hallucination) that the LLM propagated as fact.
+ *
+ * Pattern: "at|with|from <ProperNoun>" near notice/join/company words.
+ */
+// Allow ASR-garbled names that begin with a digit (e.g. "3INSYS",
+// "7-Eleven"). Real production: AI emitted "your notice period at
+// 3INSYS" when ASR mangled "Infosys".
+const EMPLOYER_PROBE_RE = /\b(?:at|with|from|in)\s+((?:[A-Z]|\d)[A-Za-z0-9]{1,}(?:\s+[A-Z][A-Za-z0-9]+)?)\b/g;
+const EMPLOYER_CONTEXT_RE = /\b(?:notice\s+period|current\s+company|current\s+employer|currently\s+at|currently\s+work|currently\s+working|leaving|joining)\b/i;
+// Common false-positive proper nouns that aren't current-employer names.
+const EMPLOYER_STOPLIST = new Set<string>([
+  "India", "Bangalore", "Bengaluru", "Mumbai", "Delhi", "Hyderabad",
+  "Chennai", "Pune", "Kolkata", "Gurgaon", "Noida", "Ahmedabad",
+  "HR", "Mr", "Ms", "Mrs", "Sir", "Madam", "Jay", "Rahul",
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]);
+
+export function detectHallucinatedEmployer(ctx: DetectorContext): NegotiationFailure | null {
+  const text = ctx.llmOutput;
+  // Need at least one of: notice-period / current-company context.
+  if (!EMPLOYER_CONTEXT_RE.test(text)) return null;
+  const candidateText = (ctx.candidateTranscript ?? "").toLowerCase();
+  const hiringCompany = (ctx.hiringCompany ?? "").toLowerCase();
+  EMPLOYER_PROBE_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = EMPLOYER_PROBE_RE.exec(text)) !== null) {
+    const name = m[1];
+    if (EMPLOYER_STOPLIST.has(name)) continue;
+    const lower = name.toLowerCase();
+    // Skip if it's the hiring company (can be referenced freely).
+    if (hiringCompany && (lower.includes(hiringCompany) || hiringCompany.includes(lower))) continue;
+    // Skip if the candidate actually said this name in the session.
+    if (candidateText && candidateText.includes(lower)) continue;
+    return {
+      code: "hallucinated-employer",
+      message: `AI referenced "${name}" as if it were the candidate's current employer — candidate never said it and it isn't the hiring company.`,
+      evidence: m[0],
+      severity: "blocker",
+    };
+  }
+  return null;
+}
+
+/* ── #12 Role-title drift ─────────────────────────────────────────── */
+/**
+ * Flags when the AI refers to the open role by a title that doesn't
+ * match the session's role. Real production bug: user picked "UI/UX
+ * Designer" but AI ran the negotiation as "Senior Product Designer".
+ *
+ * Heuristic: extract job-title-shaped phrases ("X Y Designer/Engineer/
+ * Manager/etc.") and check that at least one word overlaps with the
+ * canonical role string. Misses proper-noun titles like "Architect" if
+ * role is "developer", but those are edge cases — we err on flagging.
+ */
+const ROLE_TITLE_RE = /\b((?:[A-Z][a-z]+(?:[/-][A-Z][a-z]+)?\s+){1,3}(?:Designer|Engineer|Developer|Manager|Analyst|Architect|Scientist|Specialist|Consultant|Director|Lead|Officer))\b/g;
+// Role families grouped by interchangeable suffix. A role's suffix is
+// the last family-word in its slug (e.g. "ux-designer" → designer
+// family). Cross-family titles ("Engineering Manager" vs role
+// "backend-engineer") are flagged. Within-family variants ("UI
+// Designer" vs role "ux-designer") are NOT flagged — too noisy.
+const ROLE_SUFFIX_FAMILIES: Record<string, string[]> = {
+  designer: ["designer", "design"],
+  engineer: ["engineer", "developer", "dev"],
+  manager: ["manager", "management", "lead"],
+  analyst: ["analyst", "analytics", "analysis"],
+  scientist: ["scientist", "researcher"],
+  architect: ["architect"],
+  consultant: ["consultant"],
+  director: ["director"],
+  officer: ["officer"],
+  specialist: ["specialist"],
+};
+
+function familyFor(text: string): string | null {
+  // Tokenize on whitespace / hyphens / slashes and scan from the RIGHT —
+  // a role's family is its suffix word, not the first matching token.
+  // "Engineering Manager" → manager (not engineer); "backend-engineer" →
+  // engineer; "ux-designer" → designer; "Senior Product Designer" →
+  // designer. Token must match a family synonym exactly (substring would
+  // make "engineering" match the "engineer" synonym).
+  const tokens = text.toLowerCase().split(/[\s/\-]+/).filter(Boolean);
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const tok = tokens[i];
+    for (const [fam, syns] of Object.entries(ROLE_SUFFIX_FAMILIES)) {
+      if (syns.includes(tok)) return fam;
+    }
+  }
+  return null;
+}
+
+export function detectRoleTitleDrift(ctx: DetectorContext): NegotiationFailure | null {
+  const role = (ctx.sessionRole ?? "").trim();
+  if (!role) return null;
+  const roleFamily = familyFor(role);
+  if (!roleFamily) return null;
+  ROLE_TITLE_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = ROLE_TITLE_RE.exec(ctx.llmOutput)) !== null) {
+    const title = m[1];
+    const titleFamily = familyFor(title);
+    if (!titleFamily) continue;
+    if (titleFamily !== roleFamily) {
+      return {
+        code: "role-title-drift",
+        message: `AI referred to the role as "${m[1]}" but the session's role is "${role}".`,
+        evidence: m[0],
+        severity: "major",
+      };
+    }
+  }
+  return null;
+}
+
 /* ── Aggregate runner ─────────────────────────────────────────────── */
 const ALL_DETECTORS = [
   detectPrematureClose,
@@ -420,6 +552,8 @@ const ALL_DETECTORS = [
   detectPlaceholderLeak,
   detectPhantomCounter,
   detectRepeatedQuestion,
+  detectHallucinatedEmployer,
+  detectRoleTitleDrift,
 ];
 
 export function detectAllFailures(ctx: DetectorContext): NegotiationFailure[] {

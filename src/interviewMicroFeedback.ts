@@ -76,7 +76,9 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
   // Phase-specific feedback
   else if (phase === "offer-reaction") {
     if (mentionsNumber) {
-      feedback = "Tip: In the offer phase, listen first — don't counter yet. Ask about the full package.";
+      // Candidate already named a number — don't scold them for it.
+      // Acknowledge the anchor; nudge them to widen the lens to package.
+      feedback = "Solid anchor — you named a number. Worth asking about variable, joining bonus, and ESOPs before locking in.";
     } else if (mentionsBenefits) {
       feedback = "Smart — asking about the full package before reacting to numbers.";
     } else {

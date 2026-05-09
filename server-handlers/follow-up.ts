@@ -358,6 +358,21 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
       const offerCtx = initialOfferText
         ? `\nINITIAL OFFER YOU PRESENTED: "${sanitizeForLLM(initialOfferText, 500)}"\nYou MUST use these exact numbers when referencing the offer. Do NOT invent different figures.${anchorLine}`
         : anchorLine;
+      // Anchor role + employer-naming rules. Two production bugs from the
+      // Flipkart round-3 retest motivated these:
+      //   • Role drift — user picked "ux-designer" but AI ran the
+      //     negotiation as "Senior Product Designer". Rule: the role
+      //     title is fixed for the session; never substitute another.
+      //   • Hallucinated employer — AI said "your notice period at
+      //     3INSYS" when the candidate never named an employer. Likely
+      //     ASR garble propagated as fact. Rule: don't invent the
+      //     candidate's current company; ask if you need it.
+      const roleAnchorRule = isSalaryNeg && role
+        ? `\nROLE TITLE LOCK: This negotiation is for the position "${sanitizeForLLM(role, 80)}". When you reference the open role, use this exact title. NEVER substitute a different title (e.g. "Senior Product Designer" when the role is "${sanitizeForLLM(role, 80)}", "Product Manager" when the role is "Engineering Manager"). The candidate picked this role; switching titles mid-conversation breaks the simulation and feels like you weren't listening.`
+        : "";
+      const employerNameRule = isSalaryNeg
+        ? `\nDO NOT INVENT THE CANDIDATE'S CURRENT EMPLOYER: When discussing notice period, joining timeline, or current company context, do NOT name the candidate's current employer unless they have EXPLICITLY said the company name in this conversation. If you need to refer to it, say "your current company" or "your current role" or simply ask "where are you now?". Inventing names like "your notice period at <CompanyName>" — when the candidate never said that name — is a hallucination that destroys trust the moment they notice. ASR transcripts can mishear words; treat any seemingly-named company in transcript context as suspect unless it appears verbatim in the candidate's own words.`
+        : "";
 
       // Build structured facts context so the LLM has precise anchors
       const factsLines: string[] = [];
@@ -623,7 +638,7 @@ You may STILL ask about notice period, joining timeline, or remaining concerns �
 
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
 ${intentBanner}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
-${factsCtx}${offerCtx}${bandCtx}${offerTrackingCtx}${recommendedCounterCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
+${factsCtx}${offerCtx}${roleAnchorRule}${employerNameRule}${bandCtx}${offerTrackingCtx}${recommendedCounterCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
 ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}
@@ -1648,6 +1663,57 @@ Repeat-text in followUpText is FORBIDDEN.`;
           }
         }
 
+        // ── Hallucinated-employer rewrite ──────────────────────────
+        // If the AI named a current-employer near notice/joining/current
+        // context, and that name wasn't said by the candidate AND isn't
+        // the hiring company, replace "at <Name>" with "at your current
+        // company". Keeps the sentence grammatical without inventing.
+        const candidateText = [
+          typeof conversationHistory === "string" ? conversationHistory : "",
+          typeof answer === "string" ? answer : "",
+        ].join("\n").toLowerCase();
+        const hiringCompanyLower = (company || "").toLowerCase();
+        const employerCtxRe = /(notice\s+period|current\s+company|current\s+employer|currently\s+at|currently\s+work(?:ing)?|leaving|joining)\s+(at|with|from|in)\s+([A-Z][A-Za-z0-9]{1,}(?:\s+[A-Z][A-Za-z0-9]+)?)\b/gi;
+        const employerStoplist = new Set(["India","Bangalore","Bengaluru","Mumbai","Delhi","Hyderabad","Chennai","Pune","Kolkata","Gurgaon","Noida","Ahmedabad","HR","Mr","Ms","Mrs","Sir","Madam"]);
+        rewritten = rewritten.replace(employerCtxRe, (full, ctxWord, prep, name) => {
+          if (employerStoplist.has(name)) return full;
+          const lname = name.toLowerCase();
+          if (hiringCompanyLower && (lname.includes(hiringCompanyLower) || hiringCompanyLower.includes(lname))) return full;
+          if (candidateText.includes(lname)) return full;
+          console.warn(`[follow-up] Hallucinated employer "${name}" in "${full}" — replacing with "your current company"`);
+          return `${ctxWord} at your current company`;
+        });
+
+        // ── Role-title drift rewrite ───────────────────────────────
+        // If the AI references the open role with a title that doesn't
+        // share any token with the canonical role string, replace it
+        // with "this role". Less invasive than substituting the
+        // canonical title because slug↔display-form mismatch can make
+        // direct substitution sound robotic ("ux-designer position").
+        if (role) {
+          const roleLower = role.toLowerCase();
+          const roleTokens = new Set(
+            roleLower.split(/[\s/_-]+/).filter(t => t.length >= 3),
+          );
+          const familyTokens: Record<string, string[]> = {
+            designer: ["design", "ui", "ux", "product"],
+            engineer: ["engineer", "developer", "swe", "software"],
+            manager: ["manager", "management", "lead"],
+            analyst: ["analyst", "analytics", "data"],
+          };
+          for (const [fam, toks] of Object.entries(familyTokens)) {
+            if (roleLower.includes(fam)) toks.forEach(t => roleTokens.add(t));
+          }
+          const roleTitleRe = /\b((?:[A-Z][a-z]+(?:[/-][A-Z][a-z]+)?\s+){1,3}(?:Designer|Engineer|Developer|Manager|Analyst|Architect|Scientist|Specialist|Consultant|Director|Lead|Officer))\b/g;
+          rewritten = rewritten.replace(roleTitleRe, (full, title) => {
+            const tt: string = title.toLowerCase();
+            const overlaps = tt.split(/[\s/_-]+/).some((t: string) => roleTokens.has(t));
+            if (overlaps) return full;
+            console.warn(`[follow-up] Role drift: "${full}" — session role is "${role}", replacing with "this role"`);
+            return "this role";
+          });
+        }
+
         if (rewritten !== parsed.followUpText) {
           parsed.followUpText = rewritten;
         }
@@ -1687,6 +1753,12 @@ Repeat-text in followUpText is FORBIDDEN.`;
           isInitialOffer: questionIndex === 1,
           highestOfferMade: typeof highestOfferMade === "number" ? highestOfferMade : null,
           previousAiTurns: previousFollowUps,
+          hiringCompany: company || null,
+          candidateTranscript: [
+            typeof conversationHistory === "string" ? conversationHistory : "",
+            typeof answer === "string" ? answer : "",
+          ].join("\n"),
+          sessionRole: role || null,
         });
         if (failures.length > 0) {
           void captureServerEvent(
