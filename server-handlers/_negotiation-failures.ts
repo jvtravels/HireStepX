@@ -507,7 +507,7 @@ function familyFor(text: string): string | null {
   // engineer; "ux-designer" → designer; "Senior Product Designer" →
   // designer. Token must match a family synonym exactly (substring would
   // make "engineering" match the "engineer" synonym).
-  const tokens = text.toLowerCase().split(/[\s/\-]+/).filter(Boolean);
+  const tokens = text.toLowerCase().split(/[\s/-]+/).filter(Boolean);
   for (let i = tokens.length - 1; i >= 0; i--) {
     const tok = tokens[i];
     for (const [fam, syns] of Object.entries(ROLE_SUFFIX_FAMILIES)) {
