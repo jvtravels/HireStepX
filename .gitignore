@@ -41,3 +41,4 @@ tempo/build-storybook.log
 docs/coverage-gaps.md
 # Raw HTML cache from scripts/scrape-ambitionbox.mts (re-fetchable).
 data/.cache/
+data/.cache-levels-fyi/
