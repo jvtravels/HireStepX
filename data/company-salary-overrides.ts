@@ -25,10 +25,24 @@ import { classifyCompanyType } from "./company-guidance";
 import { getCsvDerivedBandOverride, getCsvBandOnly } from "./csv-derived-fallbacks";
 import { IMPORTED_SALARY_OVERRIDES } from "./_imported-salary-overrides.generated";
 
+/** Read the AmbitionBox sample size out of an imported band's notes
+ *  (the scraper emits "n=NNN" inside the notes string). */
+function extractSampleSize(notes: string | undefined): number {
+  const m = notes?.match(/n=(\d+)/);
+  return m ? Number(m[1]) : 0;
+}
+
 /** Stamp every IMPORTED_SALARY_OVERRIDES hit as research-aggregated so the
- *  negotiation prompt + UI hedge to the lower half of the band. */
+ *  negotiation prompt + UI hedge to the lower half of the band. Also
+ *  tiers the confidence by the AB sample size so the LLM can talk more
+ *  assertively about high-n cells (Tier A: ≥1000) and hedge harder on
+ *  low-n cells (Tier C: <250). See dataConfidenceTier docstring. */
 function tagImported(band: CompanyBandOverride): CompanyBandOverride {
-  return band.dataConfidence ? band : { ...band, dataConfidence: "research-aggregated" };
+  if (band.dataConfidence) return band;
+  const n = extractSampleSize(band.notes);
+  const tier: "high" | "medium" | "low" =
+    n >= 1000 ? "high" : n >= 250 ? "medium" : "low";
+  return { ...band, dataConfidence: "research-aggregated", dataConfidenceTier: tier };
 }
 
 /** IT-services + Indian-domestic-bank companies whose AmbitionBox cohort
@@ -41,6 +55,21 @@ const PREFER_IMPORTED_OVER_SEED_COMPANIES = new Set([
   "hdfc bank", "icici", "axis", "sbi", "kotak", "idfc",
 ]);
 
+/** Companies where AmbitionBox is authoritative regardless of curator
+ *  source. These are companies whose entire curator entry was derived
+ *  from an outdated/synthetic AB cohort or a multiplier — none have
+ *  Levels.fyi-sourced cells that would beat AB. Different from
+ *  PREFER_IMPORTED_OVER_SEED_COMPANIES (which only fires when curator
+ *  source starts with "Seed dataset").
+ *
+ *  zoho: bootstrapped, Tamil-Nadu-located, famously below-market pay.
+ *    Curator AB-tagged entries (e.g. PM mid ₹35.7L) were inflated 3×
+ *    via synthetic multipliers. Fresh AB scrape (n=744 PM) puts mid PM
+ *    at ₹9.6L which matches reality. */
+const PREFER_IMPORTED_REGARDLESS_COMPANIES = new Set([
+  "zoho",
+]);
+
 /** When curator entry is a Seed-dataset synthetic multiplier AND the
  *  company is in the IT-services / domestic-BFSI flip set AND AB has a
  *  scrape with reasonable sample size, prefer AB. Returns the flipped
@@ -51,14 +80,22 @@ function maybePreferImportedOverSeed(
   roleKey: string,
   experienceLevel: ExperienceLevel,
 ): CompanyBandOverride | null {
+  // Strongest case: company is on the regardless-of-source flip list.
+  if (PREFER_IMPORTED_REGARDLESS_COMPANIES.has(companyKey)) {
+    const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
+    // Lower n-threshold (50) than the seed-flip case because curator
+    // entries for these companies are KNOWN to be inflated synthetic
+    // numbers — even a small fresh AB sample beats a 3× wrong curator.
+    if (imported && extractSampleSize(imported.notes) >= 50) {
+      return tagImported(imported);
+    }
+  }
   if (!PREFER_IMPORTED_OVER_SEED_COMPANIES.has(companyKey)) return null;
   if (!curator.source?.startsWith("Seed dataset")) return null;
   const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
   if (!imported) return null;
   // Require non-trivial sample size in the AB notes ("n=NNN").
-  const m = imported.notes?.match(/n=(\d+)/);
-  const n = m ? Number(m[1]) : 0;
-  if (n < 1000) return null;
+  if (extractSampleSize(imported.notes) < 1000) return null;
   return tagImported(imported);
 }
 
@@ -97,6 +134,18 @@ export interface CompanyBandOverride {
    *      first-offer expectations at the LOWER half of the band.
    *  Defaults to "verified" when unset (curator entries omit it). */
   dataConfidence?: "verified" | "research-aggregated";
+
+  /** When dataConfidence is "research-aggregated", indicates the
+   *  AmbitionBox sample-size tier:
+   *    - "high":   n ≥ 1000  (TCS, Infosys, Wipro, Google, etc.) →
+   *                LLM treats numbers near-authoritatively, light hedge.
+   *    - "medium": 250 ≤ n < 1000  (default) → standard hedge to
+   *                lower half of band.
+   *    - "low":    n < 250  (long-tail companies) → strong hedge:
+   *                "directional estimate, verify with recruiter".
+   *  Used by salary-lookup to vary the CALIBRATION block in the LLM
+   *  negotiation prompt. Unset for "verified" entries. */
+  dataConfidenceTier?: "high" | "medium" | "low";
 
   /* ─── Optional company-specific overrides (Phase C — robustness work) ───
    *

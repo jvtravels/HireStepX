@@ -814,12 +814,31 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
        hard-coding a haircut that would under-call well-calibrated
        cells. Curator-verified entries skip this hedge. */
     const isAggregated = override.dataConfidence === "research-aggregated";
+    const tier = override.dataConfidenceTier ?? "medium";
+    const tierLabel = isAggregated
+      ? tier === "high"
+        ? "high-confidence research-aggregated (n ≥ 1000)"
+        : tier === "low"
+          ? "low-confidence research-aggregated (n < 250 — directional)"
+          : "research-aggregated"
+      : "verified";
     const bandHeader = isAggregated
-      ? `NEGOTIATION BAND (research-aggregated for ${params.company} from 100-company public-source dataset, last refreshed ${override.lastVerified}):`
+      ? `NEGOTIATION BAND (${tierLabel} for ${params.company}, last refreshed ${override.lastVerified}):`
       : `NEGOTIATION BAND (verified for ${params.company} from public sources, last verified ${override.lastVerified}):`;
-    const calibrationNote = isAggregated
-      ? `\nCALIBRATION: These numbers are aggregated from public scrapes (Levels.fyi / AmbitionBox / Glassdoor) and lean toward the upper-decile of reported offers. When coaching the candidate's first-offer expectation, anchor on the LOWER half of the band (close to ${fmtLPA(minOffer)}–${fmtLPA(initialOffer)}); reserve the upper end for stretch scenarios with strong leverage. If the candidate quotes a number above the median, validate it but don't reinforce it as "typical".`
-      : "";
+    /* Calibration hedge varies by sample-size tier so the LLM doesn't
+       hedge equally hard on a TCS cell (n=106k, near-authoritative) and
+       a 50-employee startup cell (n=80, directional only).
+         - high   → light hedge, treat numbers as solid market signal
+         - medium → standard hedge to lower half of band (legacy behavior)
+         - low    → strong hedge: encourage candidate to verify with
+                    recruiter; numbers are a starting point, not gospel. */
+    const calibrationNote = !isAggregated
+      ? ""
+      : tier === "high"
+        ? `\nCALIBRATION: These numbers come from a high-volume public-source aggregate (n ≥ 1000 self-reports). Treat the band as a reliable market signal. Anchor the candidate's first-offer expectation near the median; the lower end is realistic for slow-market years, the upper end requires strong leverage.`
+        : tier === "low"
+          ? `\nCALIBRATION: These numbers are aggregated from a SMALL public-source sample (n < 250). Treat them as DIRECTIONAL ONLY — the actual offer range may shift ±25% from what's shown. When coaching the candidate, frame the band as a "starting hypothesis" and recommend they validate against a recent hire at the company or a recruiter screen before locking in expectations. Do not commit to specific numbers as if they're authoritative.`
+          : `\nCALIBRATION: These numbers are aggregated from public scrapes (Levels.fyi / AmbitionBox / Glassdoor) and lean toward the upper-decile of reported offers. When coaching the candidate's first-offer expectation, anchor on the LOWER half of the band (close to ${fmtLPA(minOffer)}–${fmtLPA(initialOffer)}); reserve the upper end for stretch scenarios with strong leverage. If the candidate quotes a number above the median, validate it but don't reinforce it as "typical".`;
     const bandContext = `${indianContext.campusWarning ? `${indianContext.campusWarning}\n\n` : ""}${bandHeader}
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
