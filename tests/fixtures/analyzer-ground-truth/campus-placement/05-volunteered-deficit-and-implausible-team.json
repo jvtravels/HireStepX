@@ -1,0 +1,19 @@
+{
+  "name": "Fresher volunteers backlogs unprompted and claims to have led 20-person team",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me a bit about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a final-year BTech student. I have 2 backlogs in Mathematics-3 and DBMS but I'm clearing them this semester. My capstone is a chatbot built in Python using TensorFlow.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a leadership experience.", "time": "" },
+      { "speaker": "user", "text": "I led a team of 25 people in our final-year project where we built the chatbot. I assigned tasks, ran the standups, and made the architecture decisions. The team reported to me daily.", "time": "" },
+      { "speaker": "ai", "text": "When are you available to join?", "time": "" },
+      { "speaker": "user", "text": "I'm available to join from June after my graduation formalities are done.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["volunteered_academic_deficit", "implausible_team_size"],
+    "must_not_include": ["empty_transcript", "no_academic_project_discussed", "project_no_tech_stack"]
+  }
+}

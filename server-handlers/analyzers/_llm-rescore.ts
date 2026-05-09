@@ -85,6 +85,14 @@ Score 0-100. Strict rubric:
 - Team-level metrics: retention, promotions, hires, performance.
 - AI probed difficult conversations / underperformer / firing.
 - Leadership philosophy articulated; stakeholder management discussed.`,
+  "campus-placement": `
+Score 0-100. Strict rubric for fresher / 0-2 YOE candidates.
+- Project ownership: candidate articulated their specific contribution (vs. team's) with a concrete artefact + outcome. Generic "we built an app" caps at 50.
+- Fundamentals fluency: comfort with CS / domain basics appropriate for fresher level (DBMS, OS, OOP for tech; case math for biz). Encyclopaedic NOT required; workable IS.
+- Specificity over passion: replaces "passionate about technology" with a concrete project. Generic-passion language without artefact caps at 55.
+- Professionalism: zero badmouthing of college / professors / peers. Any badmouthing caps at 60.
+- Logistics realism: when asked about joining / relocation / shifts, gave honest answer with rationale (not blanket "yes anything").
+- Trap calibration: AI did NOT trap (trapBudget = 0 for freshers); penalty if AI used adversarial framing inappropriate for 0-2 YOE.`,
   "government-psu": `
 Score 0-100. Strict rubric:
 - Public-service / nation-building motivation explicit. Missing caps at 60.

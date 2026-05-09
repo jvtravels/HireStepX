@@ -1,0 +1,19 @@
+{
+  "name": "Fresher claims an internship but provides no substance when probed",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "accenture",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your projects and any work experience.", "time": "" },
+      { "speaker": "user", "text": "I did a 2-month internship last summer. It was a web-development internship and I learnt a lot from it. My CGPA is 7.9 and I'm in my final year of BTech.", "time": "" },
+      { "speaker": "ai", "text": "Tell me more about the internship.", "time": "" },
+      { "speaker": "user", "text": "It was a really good learning experience. I got to work on real-world things and pick up a lot of new skills. I'd say my technical skills improved significantly during the internship.", "time": "" },
+      { "speaker": "ai", "text": "What about your final-year project?", "time": "" },
+      { "speaker": "user", "text": "My final-year project is a college bus tracking app. I built the Android app using Java and integrated Firebase for the database. It is used by my batchmates daily for the college bus schedule. I can join from June.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["internship_unsubstantiated"],
+    "must_not_include": ["empty_transcript", "no_academic_project_discussed", "project_no_tech_stack", "generic_passion_no_substance"]
+  }
+}

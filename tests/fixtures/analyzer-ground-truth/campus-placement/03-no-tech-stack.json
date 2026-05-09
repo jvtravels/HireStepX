@@ -1,0 +1,19 @@
+{
+  "name": "Fresher narrates a project without naming the tech stack",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "tcs",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your final-year project.", "time": "" },
+      { "speaker": "user", "text": "Sure. My capstone project was a smart attendance system for our college. I built the backend, designed the user interface, and deployed it. We tested it with about 80 students from my batch. CGPA-wise I'm at 8.2.", "time": "" },
+      { "speaker": "ai", "text": "What was the most challenging part?", "time": "" },
+      { "speaker": "user", "text": "Honestly the integration was tricky. I built the face-detection part myself and we had to make it work end-to-end. Our project was demoed at the college tech fest.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "I can join from June after my semester exams end. Joining date is flexible if needed.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["project_no_tech_stack"],
+    "must_not_include": ["empty_transcript", "no_academic_project_discussed", "generic_passion_no_substance", "user_badmouthing_college", "availability_never_discussed"]
+  }
+}

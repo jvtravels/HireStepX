@@ -1,0 +1,19 @@
+{
+  "name": "Fresher gives generic 'great culture / brand' answer when asked why this company",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your major project.", "time": "" },
+      { "speaker": "user", "text": "I built a sentiment-analysis pipeline for Twitter data using Python, scikit-learn, and a small Flask API for the demo. CGPA is 8.5. Capstone went well.", "time": "" },
+      { "speaker": "ai", "text": "Why do you want to join us specifically? What attracted you to this company?", "time": "" },
+      { "speaker": "user", "text": "I think Infosys has a great culture and a really strong brand value. It's a big MNC with good growth opportunities and great learning opportunities for freshers like me. The reputation is excellent and I want to be part of a great company like this.", "time": "" },
+      { "speaker": "ai", "text": "Anything else?", "time": "" },
+      { "speaker": "user", "text": "Yeah just a great brand and great culture honestly. I can join from July after exams.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["no_company_specific_research"],
+    "must_not_include": ["empty_transcript", "no_academic_project_discussed", "project_no_tech_stack", "generic_passion_no_substance"]
+  }
+}
