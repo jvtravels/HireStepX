@@ -4,8 +4,8 @@
   "agreeCount": 32,
   "driftCount": 223,
   "buckets": {
-    "keep-curator": 146,
-    "accept-ab": 77,
+    "keep-curator": 147,
+    "accept-ab": 76,
     "manual-review": 0
   },
   "drifts": [
@@ -1925,8 +1925,8 @@
       "driftPct": 39,
       "curatorSource": "Seed dataset 2026-05-08 (meesho 0.95x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 0-1y (n=31); n=31",
-      "recommendation": "accept-ab",
-      "rationale": "indian-unicorn seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry sample."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn pass-2 cohort n<50; below the flip-threshold floor."
     },
     {
       "company": "razorpay",

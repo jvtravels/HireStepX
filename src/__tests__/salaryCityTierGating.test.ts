@@ -135,6 +135,87 @@ describe("seed→AB flip — engineering-track entry/mid", () => {
     expect(ctx).not.toMatch(/Seed dataset.*accenture.*software-engineer/);
   });
 
+  it("Phase 6: Accenture SE lead flips to AB (it-services engineering lead w/ pass-2)", () => {
+    // Seed curator puts Accenture SDE lead at ~₹60L via 0.62x multiplier
+    // of a ₹100L baseline. AB pass-2 "Senior SE 9-12y" cohort puts it
+    // at ~₹15-16L, matching realized comp for tenured IT-services SDEs.
+    const ctx = lookupSalaryContext({
+      role: "Software Engineer",
+      company: "Accenture",
+      experienceLevel: "lead",
+    });
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+  });
+
+  it("Phase 6: Wipro PM lead flips to AB (it-services PM/BA/QA seniorTrack)", () => {
+    const ctx = lookupSalaryContext({
+      role: "Project Manager",
+      company: "Wipro",
+      experienceLevel: "lead",
+    });
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+  });
+
+  it("Phase 6: HCL PM executive flips to AB", () => {
+    const ctx = lookupSalaryContext({
+      role: "Project Manager",
+      company: "HCL",
+      experienceLevel: "executive",
+    });
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+  });
+
+  it("Phase 6: HDFC Bank BA lead flips to AB (bfsi-domestic non-eng senior track)", () => {
+    const ctx = lookupSalaryContext({
+      role: "Business Analyst",
+      company: "HDFC Bank",
+      experienceLevel: "lead",
+    });
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+  });
+
+  it("Phase 6: Paytm PM mid flips to AB (indian-unicorn PM/BA seed-flip)", () => {
+    const ctx = lookupSalaryContext({
+      role: "Product Manager",
+      company: "Paytm",
+      experienceLevel: "mid",
+    });
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+  });
+
+  it("Phase 6: Zomato PM mid flips to AB even on pass-1 (regardless-flip set)", () => {
+    const ctx = lookupSalaryContext({
+      role: "Product Manager",
+      company: "Zomato",
+      experienceLevel: "mid",
+    });
+    expect(ctx).toMatch(/ambitionbox\.com/i);
+  });
+
+  it("Phase 6: Meesho BA entry KEEPS curator (n=31 below 50-floor)", () => {
+    // Validates the audit/runtime alignment fix — n<50 means we don't
+    // flip even though the company is on the unicorn flip list.
+    const ctx = lookupSalaryContext({
+      role: "Business Analyst",
+      company: "Meesho",
+      experienceLevel: "entry",
+    });
+    // Curator (Seed dataset) wins; not AB.
+    expect(ctx).not.toMatch(/ambitionbox\.com\/salaries\/meesho/i);
+  });
+
+  it("Phase 6: JPMC tier-classification fix — bfsi-global keep-curator path", () => {
+    // Before the fix, getCompanyTier("jpmc") returned null and the
+    // bfsi-global undercount-protection rule never fired. Now JPMC
+    // resolves to bfsi-global; SE senior keeps the Glassdoor curator.
+    const ctx = lookupSalaryContext({
+      role: "Software Engineer",
+      company: "JPMC",
+      experienceLevel: "senior",
+    });
+    expect(ctx).toMatch(/Glassdoor|JPMC/);
+  });
+
   it("Accenture business-analyst entry: still keeps curator (loose threshold gates by role)", () => {
     // Engineering-track gate excludes business-analyst — AB cohort for
     // BA at IT-services skews mid-career retitlings, not real freshers.

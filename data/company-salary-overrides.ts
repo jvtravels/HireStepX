@@ -161,13 +161,32 @@ function maybePreferImportedOverSeed(
    * SE is genuinely sparse on AB so stays at 1000. */
   const isItEngLead =
     isEngineeringTrack && experienceLevel === "lead" && curatorIsSeed;
+  /* Phase 6: indian-unicorn seed-multiplier at PM/BA mid/senior. Pass-2
+   * yoe-bucket cohorts here are smaller (paytm/zomato/meesho), so use a
+   * gentler n-floor — title-cohort at 50+ is meaningful when curator is
+   * a synthetic 0.85-1.05x guess. Pass-1 also acceptable here since the
+   * curator's source is provably non-empirical. */
+  const isUnicornPmBaSeed =
+    (roleKey === "product-manager" || roleKey === "business-analyst") &&
+    (experienceLevel === "mid" || experienceLevel === "senior" || experienceLevel === "entry") &&
+    curatorIsSeed &&
+    (companyKey === "paytm" || companyKey === "zomato" || companyKey === "meesho");
   const looseThresholdEligible =
-    isPass2 && (
+    (isPass2 && (
       (isEngineeringTrack && (isJuniorLevel || isMidOrSenior)) ||
       isItNonEngRoleSeniorTrack ||
       isItEngLead
-    );
-  const threshold = looseThresholdEligible ? 150 : 1000;
+    )) ||
+    isUnicornPmBaSeed;
+  /* Tiered n-floor: dense engineering pass-2 cohorts get 150 (existing
+   * Phase 4 calibration); unicorn PM/BA cohorts and BFSI BA lead get 50
+   * because AB title-cohort is sparser there but curator is provably a
+   * multiplier guess. Everything else stays at the strict 1000. */
+  const threshold = looseThresholdEligible
+    ? (isUnicornPmBaSeed ? 50
+      : isItNonEngRoleSeniorTrack ? 100
+      : 150)
+    : 1000;
   if (n < threshold) return null;
   return tagImported(imported);
 }

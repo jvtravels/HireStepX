@@ -84,7 +84,10 @@ function classifyDrift(
        * elsewhere keeps curator; this catches the seed-only path where
        * AB pass-2 is closer to disclosure. */
       (tier === "indian-unicorn" &&
-        (d.level === "entry" || d.level === "mid" || d.level === "senior"))
+        (d.level === "entry" || d.level === "mid" || d.level === "senior") &&
+        /* Indian-unicorn AB cohorts thin out at the edges; require n>=50
+         * to match the runtime n-floor for these flips. */
+        /n=(?:[5-9]\d|\d{3,})/.test(notes))
     )
   ) {
     return { rec: "accept-ab", why: `${tier} seed-multiplier vs pass-2 yoe-bucket AB; AB has dense ${d.level} sample.` };
@@ -184,10 +187,15 @@ function classifyDrift(
     return { rec: "accept-ab", why: "IT-services SE lead seed-multiplier; AB pass-2 9-12y cohort is real." };
   }
   /* Phase 6 final: low-n pass-2 at lead/exec for any tier — too sparse to
-   * trust over curator even when curator is seed-multiplier. */
+   * trust over curator even when curator is seed-multiplier. Also catches
+   * indian-unicorn entry/mid/senior cells with n<50 (e.g. meesho BA entry
+   * n=31) that the unicorn-flip rule explicitly excluded. */
   const lowNPass2 = isPass2 && /n=\d{1,2}\)/.test(notes);
   if (lowNPass2 && (d.level === "lead" || d.level === "executive")) {
     return { rec: "keep-curator", why: "Pass-2 AB sample n<100 at lead/exec; cohort too thin to displace curator." };
+  }
+  if (lowNPass2 && tier === "indian-unicorn") {
+    return { rec: "keep-curator", why: "Indian-unicorn pass-2 cohort n<50; below the flip-threshold floor." };
   }
   /* Phase 6 final: indian-unicorn seed at PM/BA mid with pass-1 high-n
    * (n>=50) AB scrape — synthetic 0.85-1.05x multiplier diverges from
