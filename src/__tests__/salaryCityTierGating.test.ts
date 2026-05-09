@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateNegotiationBand, lookupSalaryContext } from "../../data/salary-lookup";
-import { companyTierUsesCityComp } from "../../data/company-tiers";
+import { companyTierUsesCityComp, companyUsesCityComp } from "../../data/company-tiers";
 
 /**
  * Regression locks for the tier-gated city multiplier (commit 62ddbcf).
@@ -33,6 +33,33 @@ describe("companyTierUsesCityComp", () => {
   it("treats null/undefined as geo-varying (conservative default)", () => {
     expect(companyTierUsesCityComp(null)).toBe(true);
     expect(companyTierUsesCityComp(undefined)).toBe(true);
+  });
+
+  it("returns false for MBB / Big-4 / PSU / global BFSI (Phase 4 expansion)", () => {
+    expect(companyTierUsesCityComp("consulting-mbb")).toBe(false);
+    expect(companyTierUsesCityComp("consulting-big4")).toBe(false);
+    expect(companyTierUsesCityComp("government-psu")).toBe(false);
+    expect(companyTierUsesCityComp("bfsi-global")).toBe(false);
+  });
+});
+
+describe("companyUsesCityComp — per-company overrides", () => {
+  it("Zoho overrides saas-product geo-varying default to nationwide-uniform", () => {
+    expect(companyTierUsesCityComp("saas-product")).toBe(true);
+    expect(companyUsesCityComp("Zoho", "saas-product")).toBe(false);
+    expect(companyUsesCityComp("zoho", "saas-product")).toBe(false);
+    expect(companyUsesCityComp("  Zoho  ", "saas-product")).toBe(false);
+  });
+
+  it("Freshworks overrides saas-product to nationwide-uniform", () => {
+    expect(companyUsesCityComp("Freshworks", "saas-product")).toBe(false);
+  });
+
+  it("falls through to tier default when no per-company override", () => {
+    expect(companyUsesCityComp("Razorpay", "indian-unicorn")).toBe(true);
+    expect(companyUsesCityComp("Microsoft", "faang")).toBe(false);
+    expect(companyUsesCityComp(null, "indian-unicorn")).toBe(true);
+    expect(companyUsesCityComp(undefined, "faang")).toBe(false);
   });
 });
 

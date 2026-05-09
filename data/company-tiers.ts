@@ -1177,10 +1177,54 @@ export function companyTierUsesCityComp(tier: CompanyTier | null | undefined): b
     case "big-tech":
     case "gcc":
     case "it-services":
+    /* MBB / Big-4 publish a single India pay grade — Bain/McKinsey/BCG
+     * + Deloitte/EY/PwC/KPMG run unified compensation bands across BLR /
+     * MUM / DEL / GUR / HYD with no documented city-tier discount.
+     * (Source: industry levels reports + Glassdoor city-split data.) */
+    case "consulting-mbb":
+    case "consulting-big4":
+    /* PSU pay is fixed by the central Pay Commission and identical
+     * nationwide for a given grade. Applying the tier-2 multiplier
+     * to ONGC Chennai vs Mumbai is empirically wrong. */
+    case "government-psu":
+    /* Global investment banks (GS / JPM / MS / DB / HSBC / Citi) hire
+     * primarily in Bangalore + Mumbai + Hyderabad GCCs at uniform
+     * India-grade pay. The tier-2 discount doesn't apply. */
+    case "bfsi-global":
       return false;
     default:
       return true;
   }
+}
+
+/* Per-company exceptions to the tier-level rule, keyed by lowercase
+ * company name. A company can opt out of city compensation even if
+ * its tier says otherwise (e.g. an indian-unicorn that publishes a
+ * single nationwide grade), or opt in (e.g. a big-tech that does
+ * apply real city splits). Returning undefined means "use the tier
+ * default". Add an entry here only when there's documented evidence —
+ * unsupported overrides drift the band silently. */
+const COMPANY_CITY_COMP_OVERRIDES: Record<string, boolean> = {
+  /* Zoho publishes the same band across Chennai HQ + tier-2/3 offices
+   * (Tenkasi, Kodaikanal, etc.) — they ARE the well-known counter-
+   * example to the tier-2 multiplier within saas-product. */
+  zoho: false,
+  /* Freshworks: SaaS-product but pays Chennai-HQ-anchored uniformly
+   * across India offices (per AB n=1500+ Chennai vs BLR within ±3%). */
+  freshworks: false,
+};
+
+/** Returns true if (company, tier) should apply the city-tier
+ *  multiplier. Per-company override beats tier default. */
+export function companyUsesCityComp(
+  company: string | null | undefined,
+  tier: CompanyTier | null | undefined,
+): boolean {
+  if (company) {
+    const ov = COMPANY_CITY_COMP_OVERRIDES[company.toLowerCase().trim()];
+    if (typeof ov === "boolean") return ov;
+  }
+  return companyTierUsesCityComp(tier);
 }
 
 export function getSalaryTierFallback(tier: CompanyTier): CompanyTier {

@@ -15,7 +15,7 @@ import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES, COMPANY_META } from "
 const COMPANY_SALARY_OVERRIDES_KEYS = new Set(
   Object.keys(COMPANY_SALARY_OVERRIDES).filter(k => !k.startsWith("__sector_")),
 );
-import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, companyTierUsesCityComp, type CompanyTier } from "./company-tiers";
+import { getCompanyTier, getSalaryTierFallback, TIER_LABELS, companyUsesCityComp, type CompanyTier } from "./company-tiers";
 import { getCityTier, CITY_MULTIPLIERS, adjustForCity } from "./city-tiers";
 import { getCompanyCity } from "./company-cities";
 import { COMP_STRATEGY_NOTES, buildFamilyCompFraming } from "./salary-research-notes";
@@ -821,10 +821,11 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
   // to Bangalore even if user didn't specify, matching real recruiter behaviour.
   const inferredJobCity = params.jobCity || getCompanyCity(params.company) || params.currentCity;
   const rawJobCityTier = getCityTier(inferredJobCity);
-  // FAANG / Big Tech / GCC / IT-services pay nationwide-uniform per AB
-  // recon (see docs/SALARY_CITY_RECON.md) — clamp to tier1 so the
-  // multiplier no-ops. Unicorns / startups still see geo variation.
-  const jobCityTier = companyTierUsesCityComp(companyTier) ? rawJobCityTier : "tier1";
+  // FAANG / Big Tech / GCC / IT-services / MBB / Big-4 / PSU / global BFSI
+  // pay nationwide-uniform per AB recon (see docs/SALARY_CITY_RECON.md) —
+  // clamp to tier1 so the multiplier no-ops. Per-company exceptions
+  // (e.g. Zoho, Freshworks) layered via companyUsesCityComp.
+  const jobCityTier = companyUsesCityComp(params.company, companyTier) ? rawJobCityTier : "tier1";
 
   /* Layer 1: per-company verified override (data/company-salary-overrides.ts).
      When a high-traffic company has a verified band from
@@ -1265,9 +1266,11 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
 
   // Salary based on JOB location (where the offer is), fallback to current city, fallback to Tier 1
   const rawJobCityTier = getCityTier(params.jobCity || params.currentCity);
-  // Nationwide-uniform tiers (FAANG / Big Tech / GCC / IT-services) clamp
-  // to tier1 — see companyTierUsesCityComp + docs/SALARY_CITY_RECON.md.
-  const jobCityTier = companyTierUsesCityComp(companyTier) ? rawJobCityTier : "tier1";
+  // Nationwide-uniform tiers (FAANG / Big Tech / GCC / IT-services / MBB /
+  // Big-4 / PSU / global BFSI) clamp to tier1 — see companyUsesCityComp
+  // + docs/SALARY_CITY_RECON.md. Per-company exceptions (Zoho, Freshworks)
+  // layered on top.
+  const jobCityTier = companyUsesCityComp(params.company, companyTier) ? rawJobCityTier : "tier1";
   const currentCityTier = getCityTier(params.currentCity);
   const relocating = isRelocation(params.currentCity, params.jobCity);
 
