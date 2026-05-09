@@ -118,7 +118,15 @@ function maybePreferImportedOverSeed(
     || roleKey === "data-engineer"
     || roleKey === "devops-engineer";
   const isJuniorLevel = experienceLevel === "entry" || experienceLevel === "mid";
-  const looseThresholdEligible = isPass2 && isEngineeringTrack && isJuniorLevel;
+  /* Phase 4: extend the loose threshold to engineering-track senior at
+   * IT-services. AB pass-2 yoe-bucket scrapes for 5-8 YOE SDE roles at
+   * TCS/Infosys/Wipro/etc. produce dense (n≥300) cohorts that match the
+   * real ₹15-25L senior-engineer band. Curator's seed-multiplier here
+   * was extrapolated from entry — diverges 30-40% from disclosure data.
+   * Lead+ stays at n≥1000 since the cohort thins out fast. */
+  const isMidOrSenior = experienceLevel === "mid" || experienceLevel === "senior";
+  const looseThresholdEligible =
+    isPass2 && isEngineeringTrack && (isJuniorLevel || isMidOrSenior);
   const threshold = looseThresholdEligible ? 150 : 1000;
   if (n < threshold) return null;
   return tagImported(imported);

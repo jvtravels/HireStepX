@@ -68,6 +68,21 @@ function classifyDrift(
   if (isSeed && isPass2 && tier === "it-services" && (d.level === "entry" || d.level === "mid")) {
     return { rec: "accept-ab", why: "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample." };
   }
+  /* Phase 4 expansion: extend the seed→AB flip to IT-services senior +
+   * domestic-BFSI + saas-product + edtech entry/mid/senior. These are
+   * tiers where AB has dense self-report cohorts and curator's multiplier
+   * curve drifts noticeably from real disclosure. Lead/executive still
+   * need eyeballs (AB sparse at the top of the curve). */
+  if (
+    isSeed && isPass2 &&
+    (
+      (tier === "it-services" && d.level === "senior") ||
+      ((tier === "bfsi-domestic" || tier === "saas-product" || tier === "edtech") &&
+        (d.level === "entry" || d.level === "mid" || d.level === "senior"))
+    )
+  ) {
+    return { rec: "accept-ab", why: `${tier} seed-multiplier vs pass-2 yoe-bucket AB; AB has dense ${d.level} sample.` };
+  }
   if (isResearchVerified) {
     return { rec: "keep-curator", why: "Research-verified curator source (DRHP / official disclosure / cross-source)." };
   }
