@@ -45,6 +45,22 @@ function tagImported(band: CompanyBandOverride): CompanyBandOverride {
   return { ...band, dataConfidence: "research-aggregated", dataConfidenceTier: tier };
 }
 
+/** Phase 7: stamp seed-dataset multiplier cells as low-confidence
+ *  research-aggregated. Without this they fall through to the
+ *  "verified" branch in salary-lookup.ts and the LLM is told the
+ *  numbers are authoritative — they're not, they're tier × multiplier
+ *  × baseline guesses with no empirical grounding. The 854 such cells
+ *  span 80+ companies (paytm/freshworks/nykaa/zomato/salesforce/...)
+ *  and represent the long-tail roles AB never scraped (ux-designer,
+ *  ml-engineer, sales, customer-success, business-analyst non-mid).
+ *  Low tier triggers the explicit "directional only, validate with
+ *  recruiter" calibration block. */
+function tagSeedSynthetic(band: CompanyBandOverride): CompanyBandOverride {
+  if (band.dataConfidence) return band;
+  if (!band.source?.startsWith("Seed dataset")) return band;
+  return { ...band, dataConfidence: "research-aggregated", dataConfidenceTier: "low" };
+}
+
 /** IT-services + Indian-domestic-bank companies whose AmbitionBox cohort
  *  has tens of thousands of self-reports — AB is more accurate than the
  *  synthetic seed-dataset multipliers for these. (Product cos like Google
@@ -7257,19 +7273,19 @@ function reconcileWithCsv(
   roleKey: string,
   experienceLevel: ExperienceLevel,
 ): CompanyBandOverride {
-  // Fresh curator entry → keep as-is.
+  // Fresh curator entry → keep as-is (but tag synthetic seed cells as low-conf).
   if (curator.lastVerified) {
     const ageMs = CSV_DATASET_DATE_MS - Date.parse(curator.lastVerified);
     if (Number.isFinite(ageMs) && ageMs < CURATOR_FRESHNESS_DAYS * 86400_000) {
-      return curator;
+      return tagSeedSynthetic(curator);
     }
   }
   const csv = getCsvBandOnly(rawCompany, roleKey, experienceLevel);
-  if (!csv) return curator;
+  if (!csv) return tagSeedSynthetic(curator);
   const curatorMid = (curator.totalMin + curator.totalMax) / 2;
-  if (curatorMid <= 0) return curator;
+  if (curatorMid <= 0) return tagSeedSynthetic(curator);
   const drift = Math.abs(csv.totalMedian - curatorMid) / curatorMid;
-  if (drift <= CSV_DRIFT_TRIGGER) return curator;
+  if (drift <= CSV_DRIFT_TRIGGER) return tagSeedSynthetic(curator);
   // Drift exceeds threshold AND curator is stale → swap numbers.
   // Preserve curator's equity-type / vesting / notes / overrides; only
   // numeric bands change. Stamp the source so downstream knows.

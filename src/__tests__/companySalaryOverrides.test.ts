@@ -545,6 +545,28 @@ describe("dataConfidence — calibration hedge for CSV-aggregated bands", () => 
     }
   });
 
+  it("Phase 7: seed-multiplier cells stamp low-confidence research-aggregated", () => {
+    /* Without this stamp, synthetic seed-dataset cells (854 of them)
+       would tell the LLM the numbers are "verified" — they're not.
+       The fix triggers the LOW-tier "DIRECTIONAL ONLY" calibration. */
+    const ovr = getCompanyBandOverride("Paytm", "ux-designer", "entry");
+    expect(ovr).toBeTruthy();
+    expect(ovr?.source).toMatch(/^Seed dataset/);
+    expect(ovr?.dataConfidence).toBe("research-aggregated");
+    expect(ovr?.dataConfidenceTier).toBe("low");
+  });
+
+  it("Phase 7: seed-cell band emits the DIRECTIONAL ONLY calibration block", () => {
+    const band = generateNegotiationBand({
+      role: "ux-designer",
+      company: "Paytm",
+      experienceLevel: "entry",
+    });
+    expect(band.bandContext).toMatch(/low-confidence research-aggregated/i);
+    expect(band.bandContext).toMatch(/DIRECTIONAL ONLY/);
+    expect(band.bandContext).toMatch(/validate against a recent hire|recruiter screen/i);
+  });
+
   it("hand-curated entries default to verified (undefined dataConfidence)", () => {
     /* Razorpay SE mid was hand-verified 2026-05-08 — fresh curator,
        skips CSV reconciliation, no dataConfidence stamp. */
@@ -564,7 +586,11 @@ describe("dataConfidence — calibration hedge for CSV-aggregated bands", () => 
     });
     if (band.bandSource === "company-override" && /research-aggregated/i.test(band.bandContext)) {
       expect(band.bandContext).toMatch(/CALIBRATION:/);
-      expect(band.bandContext).toMatch(/lower half of the band/i);
+      // Phase 7: seed-multiplier curator cells now get the LOW-tier
+      // "DIRECTIONAL ONLY" hedge instead of the medium "lower half of
+      // the band" one. Accept either — both correctly hedge the LLM,
+      // the low one is just stronger for synthetic-multiplier sources.
+      expect(band.bandContext).toMatch(/lower half of the band|DIRECTIONAL ONLY/i);
     }
   });
 
