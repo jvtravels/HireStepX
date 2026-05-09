@@ -5,6 +5,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter } from "./_follow-up-helpers";
+import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
@@ -1555,6 +1556,70 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // Strip leading bullet/asterisk markers on lines.
       t = t.replace(/^\s*[*\-•]\s+/gm, "");
       parsed.followUpText = t;
+    }
+
+    /* Detector-based failure telemetry. After ALL post-LLM clamps and
+       strippers run, we feed the final reply through the same detector
+       suite the replay harness uses (server-handlers/_negotiation-failures.ts).
+       Any failure that survives the clamps is, by definition, a leak the
+       guardrails missed. We emit one event per turn that produced ≥1
+       failure code, with the llmOutput attached so the recorded reality
+       can be replayed offline as a new fixture. This builds the corpus
+       PostHog has been missing — without it, we can only ever fix the
+       bug in the screenshot in front of us. Fire-and-forget; never
+       blocks the response. */
+    if (parsed.followUpText && type === "salary-negotiation") {
+      try {
+        const failures = detectAllFailures({
+          llmOutput: parsed.followUpText,
+          acceptedImmediately: !!negotiationFacts?.acceptedImmediately,
+          rejectedOutright: !!negotiationFacts?.rejectedOutright,
+          candidateTargetLpa: typeof candidateTarget === "number" ? candidateTarget : null,
+          competingOfferLpa: typeof prepCompetingOffer === "number" ? prepCompetingOffer : null,
+          band: negotiationBand
+            ? {
+                initialOffer: negotiationBand.initialOffer,
+                maxStretch: negotiationBand.maxStretch,
+                walkAway: negotiationBand.walkAway,
+                hasEquity: negotiationBand.hasEquity,
+              }
+            : undefined,
+          phase: salaryPhase || undefined,
+          questionIndex,
+          isInitialOffer: questionIndex === 1,
+        });
+        if (failures.length > 0) {
+          void captureServerEvent(
+            "negotiation_turn_failure",
+            distinctIdFrom(req, auth.userId),
+            {
+              codes: failures.map(f => f.code).join(","),
+              code_count: failures.length,
+              top_severity: failures.find(f => f.severity === "blocker")
+                ? "blocker"
+                : failures.find(f => f.severity === "major")
+                  ? "major"
+                  : "minor",
+              llm_output: parsed.followUpText.slice(0, 2000),
+              candidate_target: typeof candidateTarget === "number" ? candidateTarget : null,
+              competing_offer: typeof prepCompetingOffer === "number" ? prepCompetingOffer : null,
+              band_initial_offer: negotiationBand?.initialOffer ?? null,
+              band_max_stretch: negotiationBand?.maxStretch ?? null,
+              band_walk_away: negotiationBand?.walkAway ?? null,
+              band_has_equity: negotiationBand?.hasEquity ?? null,
+              phase: salaryPhase || null,
+              question_index: questionIndex ?? null,
+              is_initial_offer: questionIndex === 1,
+              role: role || null,
+              company: company || null,
+            },
+            req,
+          );
+        }
+      } catch (e) {
+        // Telemetry must never break a request.
+        console.warn("[follow-up] negotiation_turn_failure capture failed:", e);
+      }
     }
 
     return new Response(JSON.stringify({

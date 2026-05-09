@@ -1,0 +1,56 @@
+{
+  "_comment": "Synthesized TCS Senior Engineer scenario. TCS is a services company — band.hasEquity=false. The failure mode this fixture pins: AI offers ESOPs/RSUs to TCS candidates because it doesn't read the band's hasEquity flag. Real candidates would catch this immediately and lose trust ('TCS doesn't even give ESOPs'). Pre-fix, equity tokens leaked because the prompt didn't disambiguate equity-band vs non-equity-band; the detector forces this asymmetry to be visible.",
+  "session": {
+    "role": "software-engineer",
+    "company": "tcs",
+    "experienceLevel": "senior",
+    "currentCity": "Pune",
+    "jobCity": "Pune"
+  },
+  "band": {
+    "initialOffer": 14,
+    "maxStretch": 19,
+    "walkAway": 11,
+    "hasEquity": false
+  },
+  "turns": [
+    {
+      "_label": "TCS turn-2 leaks ESOPs even though TCS gives no equity",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "For the Senior Engineer role at TCS, we'd like to extend ₹14 LPA total CTC. We can also discuss ESOPs vesting over 4 years as part of the total compensation. How does this initial offer align with your expectations?",
+      "expected": [
+        "equity-leak-on-non-equity-band",
+        "esop-in-initial-offer"
+      ]
+    },
+    {
+      "_label": "TCS counter-offer goes above maxStretch (₹19) → ₹24",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 22,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "I understand. Let me see what flexibility I have. I can stretch to ₹24 LPA total CTC — that's the absolute top of what I can approve.",
+      "expected": [
+        "above-max-stretch"
+      ]
+    },
+    {
+      "_label": "TCS clean turn after fixes",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "So, for the Senior Engineer role at TCS, we'd like to extend an offer at ₹14 LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?",
+      "expected": []
+    }
+  ]
+}

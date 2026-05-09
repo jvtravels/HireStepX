@@ -1,0 +1,68 @@
+{
+  "_comment": "Synthesized Microsoft Senior PM scenario. Pins two failure modes that are role-agnostic but easy to overlook on PM (vs SDE) sessions: (1) placeholder leak — LLM emits ₹X / [amount] when it should substitute, this is rare but catastrophic when it happens; (2) number-echo with a phrasing the original Flipkart fixture didn't cover ('your target of ₹X'). Markdown leak with backticks is also tested here — a different markdown variant from the underscore italics in Flipkart.",
+  "session": {
+    "role": "product-manager",
+    "company": "microsoft",
+    "experienceLevel": "senior",
+    "currentCity": "Hyderabad",
+    "jobCity": "Hyderabad"
+  },
+  "band": {
+    "initialOffer": 52,
+    "maxStretch": 72,
+    "walkAway": 42,
+    "hasEquity": true
+  },
+  "turns": [
+    {
+      "_label": "Microsoft placeholder leak — LLM left ₹X unsubstituted",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 70,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "I appreciate the data point. Let me see if I can move to ₹X LPA total CTC for you.",
+      "expected": [
+        "placeholder-leak"
+      ]
+    },
+    {
+      "_label": "Microsoft number-echo with 'your target of' phrasing",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 70,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "Understood — your target of ₹55 LPA is helpful context. Let me see what we can do within the band.",
+      "expected": [
+        "number-echo-misbind"
+      ]
+    },
+    {
+      "_label": "Microsoft markdown leak — backtick code formatting",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "benefits-discussion",
+      "candidateTargetLpa": 70,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "On the equity side, RSU grant is `40 LPA` over 4 years with a 1-year cliff. Joining bonus would be **₹5 LPA**.",
+      "expected": [
+        "markdown-leak"
+      ]
+    },
+    {
+      "_label": "Microsoft clean turn",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 70,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "I heard ₹70 LPA from you. Let me see what I can do — I can stretch to ₹65 LPA total CTC. Does that move us closer?",
+      "expected": []
+    }
+  ]
+}

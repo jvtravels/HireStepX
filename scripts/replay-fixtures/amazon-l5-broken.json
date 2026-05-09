@@ -1,0 +1,69 @@
+{
+  "_comment": "Synthesized Amazon L5 SDE scenario. Amazon grants RSUs (band.hasEquity=true) but the Indian-HR initial-offer convention still applies: turn 1 is headline-only, equity is deferred to benefits-discussion. This fixture pins two distinct failure modes: (1) initial offer with full breakdown including RSU grant, and (2) premature close in a later turn when the candidate stated a target but never accepted. Premature-close was the screenshot bug from Flipkart but is universal — it can fire on any company.",
+  "session": {
+    "role": "software-engineer",
+    "company": "amazon",
+    "experienceLevel": "senior",
+    "currentCity": "Bangalore",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 58,
+    "maxStretch": 78,
+    "walkAway": 48,
+    "hasEquity": true
+  },
+  "turns": [
+    {
+      "_label": "Amazon turn-2 initial offer with full RSU breakdown",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "Welcome! For the L5 SDE role, our offer is ₹62 LPA total CTC. Base salary is ₹38 LPA, variable component is ₹6 LPA, joining bonus is ₹4 LPA, plus RSUs vesting over 4 years (5-15-40-40 schedule), and standard benefits — PF, gratuity, health insurance. How does this initial offer align?",
+      "expected": [
+        "initial-offer-breakdown-leak",
+        "esop-in-initial-offer"
+      ]
+    },
+    {
+      "_label": "Amazon counter goes above maxStretch (₹78) → ₹95",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 90,
+      "competingOfferLpa": 88,
+      "acceptedImmediately": false,
+      "llmOutput": "Given your competing offer, let me push for what I can — I think I can stretch to ₹95 LPA total CTC.",
+      "expected": [
+        "above-max-stretch"
+      ]
+    },
+    {
+      "_label": "Amazon premature close — candidate never accepted",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "closing",
+      "candidateTargetLpa": 90,
+      "competingOfferLpa": 88,
+      "acceptedImmediately": false,
+      "llmOutput": "Great chat. I'll have HR send you the formal offer letter shortly — welcome to the team!",
+      "expected": [
+        "premature-close"
+      ]
+    },
+    {
+      "_label": "Amazon clean initial offer after fixes",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "So, for the L5 SDE position, we'd like to extend an offer at ₹58 LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?",
+      "expected": []
+    }
+  ]
+}
