@@ -40,6 +40,15 @@ const USER_AGENT =
 // AmbitionBox's company URL slug ≠ our override key in some cases.
 // This map handles the exceptions; everything else uses kebab-case of the key.
 const SLUG_OVERRIDES: Record<string, string> = {
+  // Phase 3 (2026-05-09): probed AB slugs for new override entries.
+  // krutrim: page exists at krutrim-si-designs but only 4 profiles all
+  //   below MIN_DATA_POINTS=50 — not enough to displace curator.
+  // sarvam ai: no AB page (the bare "sarvam" slug is a different company,
+  //   evidenced by bank-manager/teacher/psychologist profiles).
+  // ixigo: no AB page under any of {ixigo, ixigo-com, le-travenues-*}.
+  // lollypop design studio: no AB page under any tried slug.
+  // → all four keep curator entry as canonical until AB indexes them.
+  "krutrim": "krutrim-si-designs",
   tcs: "tcs",
   "tech mahindra": "tech-mahindra",
   ltimindtree: "ltimindtree",
