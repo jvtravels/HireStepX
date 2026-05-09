@@ -91,6 +91,39 @@ function classifyDrift(
   if ((tier === "faang" || tier === "big-tech" || tier === "gcc") && d.level !== "entry") {
     return { rec: "keep-curator", why: "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator." };
   }
+  /* Phase 5: bfsi-global mid+ (Goldman / Morgan Stanley / HSBC / Barclays /
+   * JPMC / Wells Fargo / Citi / Deutsche) follows the same dynamic as FAANG —
+   * AB self-reports skew to junior complaint-posters; senior bankers don't
+   * post. Levels.fyi-anchored curator entries are closer to realized comp.
+   * Keep curator for mid+. Entry can still flip if pass-2 has dense sample. */
+  if (tier === "bfsi-global" && d.level !== "entry") {
+    return { rec: "keep-curator", why: "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator." };
+  }
+  /* Phase 5: Indian-unicorn mid+ where curator was sourced from
+   * Levels.fyi / Glassdoor / Curated research is empirically closer to
+   * realized offer band than AB pass-2 (which skews to early-career
+   * IC reporters). Flipkart, Paytm, PhonePe, Swiggy, Myntra, Lenskart,
+   * Dream11, MakeMyTrip, Delhivery, etc. AB underreports by 28-55% on
+   * these — flipping would coach lower than reality. Trust curator. */
+  if (
+    tier === "indian-unicorn" &&
+    (d.level === "mid" || d.level === "senior" || d.level === "lead" || d.level === "executive") &&
+    /levels\.fyi|glassdoor|curated research/.test(src)
+  ) {
+    return { rec: "keep-curator", why: "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts." };
+  }
+  /* Phase 5: when both curator AND scrape are AmbitionBox-sourced but
+   * scrape is pass-2 yoe-bucket (strictly more granular), prefer the
+   * pass-2 scrape. Pass-1 collapses 0-8 YOE into one mid cell using
+   * profile-level YOE midpoint; pass-2 walks the bucket table per
+   * designation. Same data source, finer resolution. Applies to any
+   * tier so long as curator is unambiguously AB-derived (no Levels.fyi
+   * or research blend, since those are independent sources). */
+  const curatorIsAbOnly = /^ambitionbox/.test(src) &&
+    !/levels\.fyi|drhp|disclosure|verified/.test(src);
+  if (curatorIsAbOnly && isPass2) {
+    return { rec: "accept-ab", why: "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained." };
+  }
   return { rec: "manual-review", why: "No clear heuristic match — eyeball the cell." };
 }
 

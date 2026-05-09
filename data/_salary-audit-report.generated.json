@@ -4,9 +4,9 @@
   "agreeCount": 32,
   "driftCount": 223,
   "buckets": {
-    "keep-curator": 87,
-    "accept-ab": 19,
-    "manual-review": 117
+    "keep-curator": 113,
+    "accept-ab": 54,
+    "manual-review": 56
   },
   "drifts": [
     {
@@ -533,8 +533,8 @@
       "driftPct": 66,
       "curatorSource": "Seed dataset 2026-05-08 (accenture 0.62x software-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Application Development - Senior Analyst 6-9y (n=10133); Senior Software Engineer 6-9y (n=7402); Software Engineer 6-9y (n=800); n=19448",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "adobe",
@@ -569,8 +569,8 @@
       "driftPct": 66,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=800); Software Developer 6-9y (n=62); n=862",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "ibm",
@@ -641,8 +641,8 @@
       "driftPct": 65,
       "curatorSource": "Seed dataset 2026-05-08 (morgan stanley 1.1x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 6-9y (n=46); n=46",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "wipro",
@@ -773,8 +773,8 @@
       "driftPct": 62,
       "curatorSource": "Seed dataset 2026-05-08 (accenture 0.62x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Quality Analyst 6-9y (n=454); n=454",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "accenture",
@@ -797,8 +797,8 @@
       "driftPct": 62,
       "curatorSource": "Seed dataset 2026-05-08 (wipro 0.47x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 6-9y (n=255); n=255",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "hcl",
@@ -809,8 +809,8 @@
       "driftPct": 61,
       "curatorSource": "Seed dataset 2026-05-08 (hcl 0.5x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 6-9y (n=242); n=242",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "hdfc bank",
@@ -821,8 +821,8 @@
       "driftPct": 61,
       "curatorSource": "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 6-9y (n=240); n=240",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "bfsi-domestic seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "ibm",
@@ -977,8 +977,8 @@
       "driftPct": 58,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 1-3y (n=185); Senior Software Engineer 3-6y (n=1136); Software Engineer 1-3y (n=865); n=3124",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "walmart global tech",
@@ -1001,8 +1001,8 @@
       "driftPct": 58,
       "curatorSource": "AmbitionBox 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Member Technical Staff 1-3y (n=754); Member Technical Staff 3-6y (n=911); Software Developer 1-3y (n=379); n=2541",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "zoho",
@@ -1013,8 +1013,8 @@
       "driftPct": 58,
       "curatorSource": "AmbitionBox 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Member Technical Staff 6-9y (n=111); Senior Software Engineer 6-9y (n=66); n=177",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "citi",
@@ -1061,8 +1061,8 @@
       "driftPct": 56,
       "curatorSource": "Glassdoor",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 1-3y (n=137); Software Developer 3-6y (n=87); n=224",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "microsoft",
@@ -1109,8 +1109,8 @@
       "driftPct": 55,
       "curatorSource": "Curated research 2026-05-08 — Flipkart SE Senior worksheet",
       "scrapedNotes": "AB yoe-bucket scrape: Software Development Engineer II 6-9y (n=34); n=34",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "unacademy",
@@ -1145,8 +1145,8 @@
       "driftPct": 54,
       "curatorSource": "Seed dataset 2026-05-08 (cognizant 0.55x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Analyst 6-9y (n=431); n=431",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "jpmc",
@@ -1181,8 +1181,8 @@
       "driftPct": 54,
       "curatorSource": "AmbitionBox + Glassdoor 2026-05-08 (Zoho SE Junior India)",
       "scrapedNotes": "AB yoe-bucket scrape: Member Technical Staff 0-1y (n=197); Software Developer 0-1y (n=176); Software Engineer 0-1y (n=46); n=419",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "cred",
@@ -1193,8 +1193,8 @@
       "driftPct": 53,
       "curatorSource": "Curated research 2026-05-08",
       "scrapedNotes": "AB scrape: Product Manager (n=64); n=64",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "freshworks",
@@ -1229,8 +1229,8 @@
       "driftPct": 52,
       "curatorSource": "Levels.fyi 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 1-3y (n=317); Software Developer 3-6y (n=227); Software Engineer 1-3y (n=206); n=1157",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "goldman",
@@ -1241,8 +1241,8 @@
       "driftPct": 52,
       "curatorSource": "Glassdoor (Goldman VP India)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=54); n=54",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "pine labs",
@@ -1289,8 +1289,8 @@
       "driftPct": 51,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=2167); Software Engineer 3-6y (n=4593); Senior Software Engineer 1-3y (n=164); n=15367",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "accenture",
@@ -1313,8 +1313,8 @@
       "driftPct": 50,
       "curatorSource": "Curated research 2026-05-08 — Flipkart Category Manager Mid worksheet",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=158); Business Analyst 3-6y (n=189); n=347",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "jpmc",
@@ -1361,8 +1361,8 @@
       "driftPct": 49,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=13098); Software Engineer 3-6y (n=8125); Senior Software Engineer 1-3y (n=11727); n=50928",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "ltimindtree",
@@ -1409,8 +1409,8 @@
       "driftPct": 49,
       "curatorSource": "Seed dataset 2026-05-08 (tcs 0.45x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 6-9y (n=2282); n=2282",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "walmart global tech",
@@ -1445,8 +1445,8 @@
       "driftPct": 48,
       "curatorSource": "Curated research 2026-05-08 — Flipkart SE Mid worksheet",
       "scrapedNotes": "AB yoe-bucket scrape: Software Development Engineer II 1-3y (n=47); Software Development Engineer II 3-6y (n=435); Software Developer 1-3y (n=253); n=1569",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "tcs",
@@ -1481,8 +1481,8 @@
       "driftPct": 47,
       "curatorSource": "Levels.fyi SDE-2 India ₹4.27M-₹6.52M (median ₹53.4L)",
       "scrapedNotes": "AB scrape: Software Developer (n=54); n=54",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "infosys",
@@ -1493,8 +1493,8 @@
       "driftPct": 47,
       "curatorSource": "AmbitionBox",
       "scrapedNotes": "AB yoe-bucket scrape: Technology Analyst 6-9y (n=15518); Software Developer 6-9y (n=536); Senior Software Engineer 6-9y (n=1549); n=17603",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "pine labs",
@@ -1505,8 +1505,8 @@
       "driftPct": 47,
       "curatorSource": "AmbitionBox + IPO filing signal",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=353); Software Engineer 3-6y (n=218); Senior Software Engineer 1-3y (n=44); n=924",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "uber",
@@ -1541,8 +1541,8 @@
       "driftPct": 46,
       "curatorSource": "Seed dataset 2026-05-08 (capgemini 0.58x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 6-9y (n=68); n=68",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "cognizant",
@@ -1565,8 +1565,8 @@
       "driftPct": 46,
       "curatorSource": "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=175); Business Analyst 3-6y (n=289); n=464",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "bfsi-domestic seed-multiplier vs pass-2 yoe-bucket AB; AB has dense mid sample."
     },
     {
       "company": "jpmc",
@@ -1661,8 +1661,8 @@
       "driftPct": 45,
       "curatorSource": "Levels.fyi",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=299); Software Engineer 1-3y (n=105); Software Engineer 3-6y (n=225); n=808",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "nykaa",
@@ -1673,8 +1673,8 @@
       "driftPct": 45,
       "curatorSource": "Glassdoor + research backlog 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=32); n=32",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "paytm",
@@ -1733,8 +1733,8 @@
       "driftPct": 44,
       "curatorSource": "Seed dataset 2026-05-08 (morgan stanley 1.1x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 3-6y (n=73); n=73",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "atlassian",
@@ -1769,8 +1769,8 @@
       "driftPct": 43,
       "curatorSource": "Levels.fyi 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=113); Software Engineer 3-6y (n=70); Senior Software Engineer 3-6y (n=56); n=536",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "infosys",
@@ -1829,8 +1829,8 @@
       "driftPct": 42,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 1-3y (n=120); Software Development Engineer 1-3y (n=84); n=204",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "capgemini",
@@ -1841,8 +1841,8 @@
       "driftPct": 41,
       "curatorSource": "Seed dataset 2026-05-08 (capgemini 0.58x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Softwaretest Engineer 6-9y (n=181); n=181",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "linkedin",
@@ -1865,8 +1865,8 @@
       "driftPct": 41,
       "curatorSource": "Glassdoor",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=44); n=44",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "cognizant",
@@ -1913,8 +1913,8 @@
       "driftPct": 39,
       "curatorSource": "Glassdoor Bangalore (6,503 salaries)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=257); Software Engineer 3-6y (n=260); Software Developer 1-3y (n=156); n=1138",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "meesho",
@@ -1961,8 +1961,8 @@
       "driftPct": 39,
       "curatorSource": "Levels.fyi",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=678); Software Engineer 3-6y (n=397); Software Developer 1-3y (n=105); n=1249",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "wipro",
@@ -1973,8 +1973,8 @@
       "driftPct": 39,
       "curatorSource": "Seed dataset 2026-05-08 (wipro 0.47x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 6-9y (n=846); n=846",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "citi",
@@ -1985,8 +1985,8 @@
       "driftPct": 38,
       "curatorSource": "Levels.fyi 2026",
       "scrapedNotes": "AB scrape: Software Developer (n=611); Software Engineer (n=514); n=1125",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator."
     },
     {
       "company": "freshworks",
@@ -2033,8 +2033,8 @@
       "driftPct": 37,
       "curatorSource": "Seed dataset 2026-05-08 (infosys 0.48x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Analyst 6-9y (n=4976); Technical Test Leader 6-9y (n=1680); Quality Analyst 6-9y (n=817); n=7601",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "ltimindtree",
@@ -2069,8 +2069,8 @@
       "driftPct": 37,
       "curatorSource": "Glassdoor + research backlog 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=357); n=357",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "uber",
@@ -2093,8 +2093,8 @@
       "driftPct": 36,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=12910); Software Engineer 3-6y (n=12223); Senior Software Engineer 1-3y (n=1692); n=44691",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "ltimindtree",
@@ -2105,8 +2105,8 @@
       "driftPct": 36,
       "curatorSource": "AmbitionBox",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=6018); Software Engineering Specialist 6-9y (n=2665); Software Developer 6-9y (n=305); n=8988",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "mediatek",
@@ -2129,8 +2129,8 @@
       "driftPct": 36,
       "curatorSource": "Curated research 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 6-9y (n=50); n=50",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "postman",
@@ -2201,8 +2201,8 @@
       "driftPct": 35,
       "curatorSource": "Curated research 2026-05-08 — Swiggy SE Mid worksheet",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 1-3y (n=83); Software Developer 3-6y (n=140); n=223",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "bajaj finance",
@@ -2213,8 +2213,8 @@
       "driftPct": 34,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 1-3y (n=78); Senior Software Engineer 3-6y (n=104); n=182",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "capgemini",
@@ -2225,8 +2225,8 @@
       "driftPct": 34,
       "curatorSource": "AmbitionBox",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 6-9y (n=655); n=655",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "flipkart",
@@ -2261,8 +2261,8 @@
       "driftPct": 34,
       "curatorSource": "AmbitionBox",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=5465); Software Developer 6-9y (n=221); Member Technical Staff 6-9y (n=94); n=6330",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "mphasis",
@@ -2273,8 +2273,8 @@
       "driftPct": 34,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=3299); Software Developer 6-9y (n=78); n=3377",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "paytm",
@@ -2285,8 +2285,8 @@
       "driftPct": 34,
       "curatorSource": "Glassdoor + research backlog 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 1-3y (n=115); Senior Software Engineer 3-6y (n=1170); Software Engineer 1-3y (n=870); n=2777",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "tech mahindra",
@@ -2321,8 +2321,8 @@
       "driftPct": 33,
       "curatorSource": "AmbitionBox 2026 + Glassdoor TCS Systems Engineer / IT Analyst cohort",
       "scrapedNotes": "AB yoe-bucket scrape: System Engineer 1-3y (n=41875); System Engineer 3-6y (n=58126); IT Analyst 3-6y (n=18761); n=218343",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "tech mahindra",
@@ -2345,8 +2345,8 @@
       "driftPct": 32,
       "curatorSource": "AmbitionBox",
       "scrapedNotes": "AB yoe-bucket scrape: Technology Analyst 1-3y (n=1132); Technology Analyst 3-6y (n=36606); Senior Systems Engineer 1-3y (n=20044); n=147756",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "uber",
@@ -2381,8 +2381,8 @@
       "driftPct": 32,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Project Engineer 1-3y (n=20376); Project Engineer 3-6y (n=10692); Senior Software Engineer 1-3y (n=393); n=69588",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "wipro",
@@ -2393,8 +2393,8 @@
       "driftPct": 32,
       "curatorSource": "AmbitionBox + Glassdoor",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=11498); Senior Project Engineer 6-9y (n=6340); Software Engineer 6-9y (n=810); n=19196",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "browserstack",
@@ -2417,8 +2417,8 @@
       "driftPct": 31,
       "curatorSource": "AmbitionBox + research backlog 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Associate Product Manager 1-3y (n=107); Associate Product Manager 3-6y (n=55); Product Manager 3-6y (n=91); n=253",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "meta",
@@ -2477,8 +2477,8 @@
       "driftPct": 30,
       "curatorSource": "Seed dataset 2026-05-08 (ltimindtree 0.55x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Quality Engineer 6-9y (n=1158); Senior Test Engineer 6-9y (n=707); Specialist Testing 6-9y (n=1017); n=2882",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "it-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense senior sample."
     },
     {
       "company": "myntra",
@@ -2489,8 +2489,8 @@
       "driftPct": 30,
       "curatorSource": "Levels.fyi (median ₹3.65M India) + Glassdoor SDE-2 (avg ₹27L, p90 ₹49.6L) + research backlog 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=197); Software Engineer 1-3y (n=181); Software Engineer 3-6y (n=56); n=434",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "paytm",
@@ -2501,8 +2501,8 @@
       "driftPct": 30,
       "curatorSource": "AmbitionBox + Glassdoor 2026 + research backlog 2026-05-08",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 0-1y (n=179); Software Developer 0-1y (n=50); n=229",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "tcs",
@@ -2561,8 +2561,8 @@
       "driftPct": 28,
       "curatorSource": "Levels.fyi + Glassdoor (Lenskart median $37.5K = ₹31L; range ₹2.4L-₹77L)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=31); n=31",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "makemytrip",
@@ -2573,8 +2573,8 @@
       "driftPct": 28,
       "curatorSource": "Glassdoor",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 1-3y (n=88); Senior Software Engineer 3-6y (n=298); Software Engineer 1-3y (n=188); n=677",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts."
     },
     {
       "company": "mphasis",
@@ -2585,8 +2585,8 @@
       "driftPct": 28,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Associate Software Engineer 0-1y (n=430); n=430",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "hcl",
@@ -2657,8 +2657,8 @@
       "driftPct": 25,
       "curatorSource": "AmbitionBox 2026",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 0-1y (n=33); n=33",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "accept-ab",
+      "rationale": "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained."
     },
     {
       "company": "groww",

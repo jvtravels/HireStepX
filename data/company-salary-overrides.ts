@@ -91,7 +91,17 @@ function maybePreferImportedOverSeed(
     }
   }
   if (!PREFER_IMPORTED_OVER_SEED_COMPANIES.has(companyKey)) return null;
-  if (!curator.source?.startsWith("Seed dataset")) return null;
+  /* Phase 5: in addition to "Seed dataset" curator, also flip when the
+   * curator source is unambiguously AmbitionBox-only (no Levels.fyi /
+   * disclosure / verified blend) AND the imported entry is pass-2
+   * yoe-bucket. Same data source, finer resolution — pass-2 walks the
+   * 0-1 / 1-3 / 3-6 / 6-9 YOE bucket table per designation, while
+   * pass-1 collapses the whole 0-8 envelope into one mid cell. */
+  const curatorIsSeed = curator.source?.startsWith("Seed dataset") ?? false;
+  const curatorIsAbOnly =
+    /^AmbitionBox/i.test(curator.source ?? "") &&
+    !/Levels\.fyi|DRHP|disclosure|verified/i.test(curator.source ?? "");
+  if (!curatorIsSeed && !curatorIsAbOnly) return null;
   const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
   if (!imported) return null;
   const n = extractSampleSize(imported.notes);
@@ -113,6 +123,9 @@ function maybePreferImportedOverSeed(
    * role. Senior+ levels keep n≥1000 always (AB undercounts seniors).
    */
   const isPass2 = imported.notes?.includes("yoe-bucket") ?? false;
+  // The AB-only curator flip path requires pass-2 (finer-grained); a
+  // pass-1 curator should not be displaced by another pass-1.
+  if (curatorIsAbOnly && !curatorIsSeed && !isPass2) return null;
   const isEngineeringTrack = roleKey === "software-engineer"
     || roleKey === "qa-engineer"
     || roleKey === "data-engineer"
