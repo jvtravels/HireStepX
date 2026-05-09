@@ -802,3 +802,68 @@ create index if not exists idx_quality_recs_priority on quality_recommendations(
 create index if not exists idx_quality_recs_last_seen on quality_recommendations(last_seen_at);
 
 alter table quality_recommendations enable row level security;
+
+-- ═══════════════════════════════════════════════════════
+-- 21. Salary offers — user-reported ground truth
+--
+-- Per-user post-session capture of "what offer did you get?". This is
+-- the slow-burn moat for salary negotiation accuracy: every offer
+-- reported here can be aggregated server-side to ground-truth our
+-- per-(company, role, level, city) bands without the AB sampling bias
+-- (people earning 3rd-quartile self-select to post on AB more than
+-- 1st-quartile or 4th-quartile).
+--
+-- Privacy: rows are user-scoped under RLS. Only opt-in
+-- may_share_aggregate=true rows are eligible to roll into shared
+-- aggregates, and even those are only ever read in
+-- bucket-of-≥5-rows form (k-anonymity floor) by the aggregator.
+-- ═══════════════════════════════════════════════════════
+
+create table if not exists salary_offers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+
+  -- Offer dimensions (canonical lookup keys)
+  company text not null,
+  role text not null,
+  level text not null,                   -- entry|mid|senior|lead|executive
+  city text,                             -- job city (free text; resolved at read time)
+  company_tier text,                     -- snapshot of resolved CompanyTier at insert time
+
+  -- The number(s) — all in LPA (lakhs per annum). Nullable so partial
+  -- self-reports (just total CTC) still produce useful signal.
+  total_ctc_lpa numeric(8, 2) not null,
+  base_lpa numeric(8, 2),
+  variable_lpa numeric(8, 2),
+  joining_bonus_lpa numeric(8, 2),
+  equity_lpa numeric(8, 2),              -- annualized, for RSU-paying tiers
+
+  -- Negotiation context (informs counter-offer playbook calibration)
+  initial_offer_lpa numeric(8, 2),       -- what they offered first
+  final_offer_lpa numeric(8, 2),         -- what was signed (may equal total_ctc_lpa)
+  competing_offer_lpa numeric(8, 2),     -- the leverage offer, if any
+  yoe_at_offer numeric(4, 1),            -- e.g. 4.5 = 4 yrs 6 mo
+  outcome text not null,                 -- accepted|declined|negotiating|rescinded
+
+  -- Source / verification
+  has_written_letter boolean default false,
+  letter_storage_path text,              -- supabase storage path; NULL until uploaded
+  source text default 'self-reported',   -- self-reported|written-letter|verified
+
+  -- Privacy / sharing
+  may_share_aggregate boolean default false,
+  notes text,
+
+  reported_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_salary_offers_user on salary_offers(user_id);
+create index if not exists idx_salary_offers_lookup on salary_offers(company, role, level);
+create index if not exists idx_salary_offers_aggregate on salary_offers(company, role, level)
+  where may_share_aggregate = true;
+
+alter table salary_offers enable row level security;
+drop policy if exists "Users manage own offers" on salary_offers;
+create policy "Users manage own offers" on salary_offers
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
