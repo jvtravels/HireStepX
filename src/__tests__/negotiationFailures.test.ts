@@ -371,6 +371,65 @@ describe("detectAllFailures", () => {
     expect(codes).toContain("number-echo-misbind");
   });
 
+  /* ── Round-3 (flipkart-senior-pd-session-3) variants ───────────── */
+
+  it("[round-3] number-echo: 'driving that ₹X' anchor catches misbinds", () => {
+    const f = detectNumberEchoMisbind({
+      ...baseCtx,
+      llmOutput: "Can you share what's driving that ₹30 LPA figure, beyond the relocation?",
+      candidateTargetLpa: 40,
+    });
+    expect(f?.code).toBe("number-echo-misbind");
+  });
+
+  it("[round-3] phantom-counter: 'best offer … is a total CTC of ₹X' (parenthetical clause)", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput: "My current best offer, considering the role and our internal bands, is a total CTC of ₹40 LPA.",
+      highestOfferMade: 30,
+      band: { initialOffer: 30, maxStretch: 38, walkAway: 24, hasEquity: true },
+    });
+    expect(f?.code).toBe("phantom-counter");
+  });
+
+  it("[round-3] phantom-counter: 'the ₹30.4 LPA package' (precision leak from internal band)", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput: "The ₹30.4 LPA package — does that feel like the right ballpark for you?",
+      highestOfferMade: 30,
+      candidateTargetLpa: 40,
+      band: { initialOffer: 30.4, maxStretch: 38, walkAway: 24, hasEquity: true },
+    });
+    expect(f?.code).toBe("phantom-counter");
+  });
+
+  it("[round-3] phantom-counter: 'the ₹X package' does NOT fire when X matches a real reference", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput: "I hear you — the ₹30 LPA package doesn't fully reflect your value. Let's discuss.",
+      highestOfferMade: 30,
+      candidateTargetLpa: 40,
+      band: { initialOffer: 30, maxStretch: 38, walkAway: 24, hasEquity: true },
+    });
+    expect(f).toBeNull();
+  });
+
+  it("[round-3] premature-close: 'put together the final numbers' without 'let me' prefix", () => {
+    const f = detectPrematureClose({
+      ...baseCtx,
+      llmOutput: "I'll take all this feedback and put together the final numbers for you.",
+    });
+    expect(f?.code).toBe("premature-close");
+  });
+
+  it("[round-3] premature-close: 'HR send you a formal offer letter' (a vs the)", () => {
+    const f = detectPrematureClose({
+      ...baseCtx,
+      llmOutput: "We'll aim to have HR send you a formal offer letter with the revised package soon.",
+    });
+    expect(f?.code).toBe("premature-close");
+  });
+
   it("clean turn produces zero failures", () => {
     const failures = detectAllFailures({
       llmOutput: "I heard ₹70 LPA — that's at the top of our band. Let me see what I can do. I can stretch to ₹40 LPA total CTC. Does that get us closer?",

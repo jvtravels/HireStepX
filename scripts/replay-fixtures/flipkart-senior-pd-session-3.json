@@ -1,0 +1,125 @@
+{
+  "_comment": "Round-3 live retest. User picked UI/UX Designer at Flipkart Senior; AI ran as 'Senior Product Designer'. Six bugs across 5 turns:\n  • T2 number-misbind: candidate said ₹40, AI says 'what's driving that ₹30 LPA figure' (asks about company's own offer instead of candidate's target). Anchor 'driving that ₹X' is NOT in the round-2 echo regex set.\n  • T4 phantom number: 'The ₹30.4 LPA package' — ₹30.4 is the internal computed initialOffer leaking through (turn 1 displayed ₹30). 'the ₹X LPA package' isn't in the phantom-counter regex set (which only catches '… offer of ₹X').\n  • T5 phantom counter: 'My current best offer … is a total CTC of ₹40 LPA' — AI never moved from ₹30. Round-2 regex requires 'current/latest/revised/etc.' but 'best' isn't in the keyword list. Also same turn has 'your target of ₹30.4 LPA' — number-echo with the swapped phantom number.\n  • T6 premature close: 'put together the final numbers for you. HR send you a formal offer letter' — round-2 regex required 'let me put together' prefix and 'HR send you THE formal offer letter' (the vs a). Also hallucinated-employer '3INSYS' (candidate never said it; ASR garbled audio that the AI propagated as fact).",
+  "session": {
+    "role": "ux-designer",
+    "company": "flipkart",
+    "experienceLevel": "senior",
+    "currentCity": "Mumbai",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 30.4,
+    "maxStretch": 38,
+    "walkAway": 24,
+    "hasEquity": true
+  },
+  "turns": [
+    {
+      "_label": "T1 initial offer ₹30 LPA — clean",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": null,
+      "previousAiTurns": [],
+      "llmOutput": "Jay, we're looking at a total CTC of ₹30 LPA for this Senior Product Designer position. This is a competitive package within our band for this level. How does that align with your expectations for this role?",
+      "expected": []
+    },
+    {
+      "_label": "T2 NUMBER-MISBIND — 'driving that ₹30' when candidate target is ₹40",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 40,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 30,
+      "previousAiTurns": [
+        "Jay, we're looking at a total CTC of ₹30 LPA for this Senior Product Designer position. How does that align with your expectations?"
+      ],
+      "llmOutput": "I hear you, Jay, that you're looking for ₹40 LPA, especially considering the shift from Mumbai. That's a significant jump from our initial offer of ₹30 LPA and is above our typical band for this Senior Product Designer role. Can you share a bit more about what's driving that ₹30 LPA figure, beyond the relocation?",
+      "expected": [
+        "number-echo-misbind"
+      ]
+    },
+    {
+      "_label": "T3 weasel non-counter — clean (counter-evasion isn't a detector yet)",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 40,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 30,
+      "previousAiTurns": [
+        "Jay, we're looking at a total CTC of ₹30 LPA for this Senior Product Designer position.",
+        "I hear you, Jay, that you're looking for ₹40 LPA. Can you share a bit more about what's driving that ₹30 LPA figure?"
+      ],
+      "llmOutput": "I appreciate you sharing that. That's a bit above our initial band, but let me see what flexibility I have here. I want to find a package that works for both of us.",
+      "expected": []
+    },
+    {
+      "_label": "T4 PHANTOM NUMBER — 'The ₹30.4 LPA package' (computed initialOffer leaks)",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 40,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 30,
+      "previousAiTurns": [
+        "Jay, we're looking at a total CTC of ₹30 LPA for this Senior Product Designer position.",
+        "I hear you, Jay, that you're looking for ₹40 LPA. Can you share a bit more about what's driving that ₹30 LPA figure?",
+        "I appreciate you sharing that. That's a bit above our initial band, but let me see what flexibility I have here."
+      ],
+      "llmOutput": "I want to make sure we're on the same page. The ₹30.4 LPA package — does that feel like the right ballpark for you, or is there a specific area where you'd like to see more? I'm happy to talk through the breakdown.",
+      "expected": [
+        "phantom-counter"
+      ]
+    },
+    {
+      "_label": "T5 PHANTOM COUNTER + SWAPPED ECHO — 'best offer of ₹40' & 'target of ₹30.4'",
+      "isInitialOffer": false,
+      "questionIndex": 5,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 40,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 30,
+      "previousAiTurns": [
+        "Jay, we're looking at a total CTC of ₹30 LPA for this Senior Product Designer position.",
+        "I hear you, Jay, that you're looking for ₹40 LPA.",
+        "I appreciate you sharing that.",
+        "I want to make sure we're on the same page. The ₹30.4 LPA package — does that feel like the right ballpark?"
+      ],
+      "llmOutput": "I understand you're asking about the ₹40 LPA number, Jay. That was a figure we discussed earlier as a potential revised offer, but your consistent ask has been ₹40 LPA. My current best offer, considering the Senior Product Designer role and our internal bands, is a total CTC of ₹40 LPA. Can you help me understand what specifically about that ₹40 LPA package isn't aligning with your expectations, especially given your target of ₹30.4 LPA?",
+      "expected": [
+        "phantom-counter",
+        "number-echo-misbind"
+      ]
+    },
+    {
+      "_label": "T6 PREMATURE CLOSE — 'put together the final numbers' + 'HR send you a formal offer letter'",
+      "isInitialOffer": false,
+      "questionIndex": 6,
+      "phase": "closing",
+      "candidateTargetLpa": 40,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 30,
+      "previousAiTurns": [
+        "Jay, we're looking at a total CTC of ₹30 LPA for this Senior Product Designer position.",
+        "I hear you, Jay, that you're looking for ₹40 LPA.",
+        "I appreciate you sharing that.",
+        "I want to make sure we're on the same page. The ₹30.4 LPA package?",
+        "I understand you're asking about the ₹40 LPA number. My current best offer is a total CTC of ₹40 LPA."
+      ],
+      "llmOutput": "Jay, I think we've had a productive discussion. I'll take all this feedback and put together the final numbers for you. We'll aim to have HR send you a formal offer letter with the revised package soon. What's your notice period situation at 3INSYS, and what's a realistic target date for you to join us?",
+      "expected": [
+        "premature-close"
+      ]
+    }
+  ]
+}

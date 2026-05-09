@@ -76,10 +76,10 @@ export function detectPrematureClose(ctx: DetectorContext): NegotiationFailure |
   // send" anchors. The regex set is now broader; new variants → add a
   // pattern, never paper over.
   const closingPatterns = [
-    /let me put together the final numbers/i,
+    /(?:let me\s+)?put\s+together\s+(?:the\s+)?final\s+numbers/i,
     /(?:I[''’]?ll|we[''’]?ll|going\s+to)\s+work\s+with\s+HR\s+to\s+(?:put\s+together|prepare|finalize|draft)/i,
     /put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter/i,
-    /HR (?:will\s+)?send\s+you\s+the\s+(?:formal\s+)?offer\s+letter/i,
+    /HR (?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter/i,
     /(?:get\s+(?:that|it|the\s+offer\s+letter)\s+to\s+you|(?:offer\s+letter|paperwork)\s+(?:in|within)\s+(?:the\s+)?next\s+\d+[-–\s]*\d*\s*(?:hours|days|weeks))/i,
     /finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details)/i,
     /\bwelcome\s+(?:to\s+the\s+team|aboard)\b/i,
@@ -210,7 +210,7 @@ export function detectNumberEchoMisbind(ctx: DetectorContext): NegotiationFailur
   // pluralization. Real session that motivated each addition is in a
   // comment in the harness's fixtures/flipkart-ux-*.json.
   const echoPatterns = [
-    /(?:i\s+heard|you\s+(?:mentioned|said|stated)|your\s+(?:target|number)\s+of|thinking\s+around|looking\s+(?:for|at)|you[''’]?re\s+(?:looking|asking|seeking|targeting|thinking)(?:\s+(?:for|at|about|around))?|seeing|you\s+want)\s+(?:a\s+(?:total\s+)?(?:CTC|salary|package)\s+of\s+(?:around\s+)?)?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPAs?|lpas?|lakhs?|cr|crore)/gi,
+    /(?:i\s+heard|you\s+(?:mentioned|said|stated)|your\s+(?:target|number)\s+of|thinking\s+around|looking\s+(?:for|at)|you[''’]?re\s+(?:looking|asking|seeking|targeting|thinking)(?:\s+(?:for|at|about|around))?|seeing|you\s+want|driving\s+(?:that|this|the))\s+(?:a\s+(?:total\s+)?(?:CTC|salary|package)\s+of\s+(?:around\s+)?)?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPAs?|lpas?|lakhs?|cr|crore)/gi,
   ];
   const target = ctx.candidateTargetLpa;
   const competing = ctx.competingOfferLpa ?? null;
@@ -297,16 +297,53 @@ export function detectPlaceholderLeak(ctx: DetectorContext): NegotiationFailure 
 export function detectPhantomCounter(ctx: DetectorContext): NegotiationFailure | null {
   const ceiling = ctx.highestOfferMade ?? ctx.band?.initialOffer ?? null;
   if (ceiling == null) return null;
-  const re = /(?:our|the|my|company[''’]?s)\s+(?:current|latest|revised|updated|standing|new)\s+offer\s+of\s+₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
+  // Pattern A — named offer phrase ("our current/best/revised offer")
+  // followed (within ~160 chars, possibly past commas/parentheticals) by
+  // an LPA value. Decoupled because real LLM output puts the value past
+  // a clause: "My current best offer, considering the role and our
+  // internal bands, is a total CTC of ₹40 LPA".
+  const reA = /(?:our|the|my|company[''’]?s)\s+(?:current|latest|revised|updated|standing|new|best)\s+(?:best\s+)?offer\b[^.!?]{0,160}?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
+  // Pattern B — "the ₹X LPA package/offer/CTC" (computed-number leak,
+  // e.g. AI references the band's internal initialOffer ₹30.4 when the
+  // headline shown to the candidate was rounded to ₹30).
+  const reB = /(?:^|[\s,;.])(?:the|our)\s+₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)\s+(?:package|offer|comp(?:ensation)?|CTC)/gi;
+  // For pattern A (named offer phrase): fire when the value exceeds
+  // highestOfferMade by >5% — classic phantom-bumped offer.
+  // For pattern B ("the ₹X package"): fire when the value doesn't match
+  // ANY known reference (highest offer made, candidate target, competing
+  // offer) within 0.5 LPA — catches fabricated numbers like ₹30.4 when
+  // the headline was ₹30 (precision leak from internal band).
+  const refs = [
+    ctx.highestOfferMade ?? null,
+    ctx.candidateTargetLpa ?? null,
+    ctx.competingOfferLpa ?? null,
+  ].filter((n): n is number => n != null);
+  // Pattern B uses tight tolerance (0.15 LPA ≈ ₹15k) — the bug it
+  // catches is "₹30.4 LPA package" when the offer was rendered as
+  // ₹30 LPA (internal band's exact initialOffer leaked through). 0.5
+  // tolerance would mask precision-leaks that vary by ≤₹50k.
+  const matchesAnyRef = (v: number) => refs.some(r => Math.abs(v - r) < 0.15);
   let m: RegExpExecArray | null;
-  while ((m = re.exec(ctx.llmOutput)) !== null) {
+  while ((m = reA.exec(ctx.llmOutput)) !== null) {
     const isCr = /cr|crore/i.test(m[0]);
     const v = parseFloat(m[1]) * (isCr ? 100 : 1);
     if (v > ceiling * 1.05) {
       return {
         code: "phantom-counter",
-        message: `AI claimed "current offer of ₹${v} LPA" but highest offer this session was ₹${ceiling} LPA — counter was never explicitly stated.`,
+        message: `AI claimed "${m[0].trim()}" but highest offer this session was ₹${ceiling} LPA — counter was never explicitly stated.`,
         evidence: m[0],
+        severity: "blocker",
+      };
+    }
+  }
+  while ((m = reB.exec(ctx.llmOutput)) !== null) {
+    const isCr = /cr|crore/i.test(m[0]);
+    const v = parseFloat(m[1]) * (isCr ? 100 : 1);
+    if (!matchesAnyRef(v)) {
+      return {
+        code: "phantom-counter",
+        message: `AI referenced "${m[0].trim()}" — that number wasn't the offer (₹${ceiling}), the candidate's target, or a competing offer. Likely an internal-band number leaking.`,
+        evidence: m[0].trim(),
         severity: "blocker",
       };
     }
