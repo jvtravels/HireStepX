@@ -192,6 +192,25 @@ describe("extractCandidateSalaryNumber", () => {
     expect(extractCandidateSalaryNumber("targeting 22.5 LPA")).toBe("22.5");
   });
 
+  it("[fixture: Flipkart in-hand-vs-target] competing offer is NOT pulled as candidate target", () => {
+    /* Flipkart UX session bug: candidate said "I have an offer of 68
+       LPA in hand, my target is 70 LPA" and the AI echoed ₹68 as their
+       number — anchoring the counter below the candidate's actual ask.
+       Now: in-hand-offer numbers are filtered out; the latest target-
+       prefixed number wins. */
+    expect(
+      extractCandidateSalaryNumber("I have an offer of 68 LPA in hand from another company. My target is 70 LPA."),
+    ).toBe("70");
+  });
+
+  it("multiple target-prefixed numbers → latest wins (downward revision)", () => {
+    /* "I want 30, actually let me say I'd like 25" used to return 30
+       because the previous targetRe match was first-only. */
+    expect(
+      extractCandidateSalaryNumber("I want 30 LPA. Actually, let me say I'd like 25 LPA — that works for me."),
+    ).toBe("25");
+  });
+
   it("rupee symbol + LPA works", () => {
     expect(extractCandidateSalaryNumber("I want ₹35 LPA")).toBe("35");
   });

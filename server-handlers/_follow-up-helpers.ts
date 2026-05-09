@@ -101,6 +101,15 @@ export function extractCandidateSalaryNumber(answer: string): string | null {
   const salaryNumRe = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lacs?|legs|lax|l\b)/gi;
   const currentCtcRe = /(?:currently|current(?:ly)?|earning|getting|drawing|my ctc|i'm at|making|take home|i get|i earn)\s.*?(\d+(?:\.\d+)?)/i;
   const targetRe = /(?:expecting|looking for|want|need|asking|target|hoping|would like|i'd like|i want|i need|looking at|aiming)\s.*?(\d+(?:\.\d+)?)/i;
+  // Competing / in-hand offer — these are the candidate's BATNA, not
+  // their target. Pulling them as the "target" causes the AI to
+  // counter BELOW the candidate's actual ask. Captured separately so
+  // the latest target-prefixed number wins even if a competing-offer
+  // figure appears later in the same utterance.
+  const competingRe = /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)\s*₹?\s*(\d+(?:\.\d+)?)/gi;
+  const competingNums = new Set<string>();
+  let cm: RegExpExecArray | null;
+  while ((cm = competingRe.exec(answer)) !== null) competingNums.add(cm[1]);
 
   const allNums: string[] = [];
   let m: RegExpExecArray | null;
@@ -115,17 +124,36 @@ export function extractCandidateSalaryNumber(answer: string): string | null {
     }
   }
 
-  if (allNums.length === 0) return null;
+  // Strip competing-offer numbers from candidate-target consideration.
+  // These get captured by the caller's competingOfferAmount field.
+  const targetCandidates = allNums.filter(n => !competingNums.has(n));
+  if (targetCandidates.length === 0 && allNums.length === 0) return null;
+  // If every number was a competing-offer number, fall back to the last
+  // one (preserves prior behaviour for single-number utterances).
+  const pool = targetCandidates.length > 0 ? targetCandidates : allNums;
 
+  // Strongest signal: ALL target-prefixed numbers (latest wins).
+  // The previous regex took the FIRST target-prefix match, so
+  // "I want 20, actually let me say I'd like 25" returned 20.
+  // Iterate to find the LAST target-prefix match that appears in pool.
+  const allTargetRe = /(?:expecting|looking for|want|need|asking|target|hoping|would like|i'd like|i want|i need|looking at|aiming)\s.*?(\d+(?:\.\d+)?)/gi;
+  const targetMatches: string[] = [];
+  let tm: RegExpExecArray | null;
+  while ((tm = allTargetRe.exec(answer)) !== null) {
+    if (pool.includes(tm[1]) && !competingNums.has(tm[1])) targetMatches.push(tm[1]);
+  }
+  if (targetMatches.length > 0) return targetMatches[targetMatches.length - 1];
+
+  // Single-shot fallback to legacy behaviour for backward compat.
   const targetMatch = targetRe.exec(answer);
-  if (targetMatch && allNums.includes(targetMatch[1])) return targetMatch[1];
+  if (targetMatch && pool.includes(targetMatch[1])) return targetMatch[1];
 
   const currentMatch = currentCtcRe.exec(answer);
-  if (currentMatch && allNums.length > 1 && allNums[0] === currentMatch[1]) {
-    return allNums[allNums.length - 1];
+  if (currentMatch && pool.length > 1 && pool[0] === currentMatch[1]) {
+    return pool[pool.length - 1];
   }
 
-  return allNums[allNums.length - 1];
+  return pool[pool.length - 1];
 }
 
 /**

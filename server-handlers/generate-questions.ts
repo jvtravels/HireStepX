@@ -863,6 +863,33 @@ Requirements:
           (questions[1] as { question?: string; text?: string }).text = fallbackOffer;
         }
         console.warn(`[generate-questions] salary-neg initial offer was vague — injected fallback ₹${initial} LPA opener for ${company || "company"}`);
+      } else {
+        // Clamp the LLM-generated initial offer against maxStretch. The
+        // follow-up handler clamps follow-up turns; without a matching
+        // clamp here, the very FIRST offer can land above maxStretch
+        // (the Flipkart UX session anchored ₹58 vs maxStretch ₹52.6
+        // because step 2 was never clamped). Strategy: extract the
+        // largest ₹ figure from q[1], compare to maxStretch * 1.05, and
+        // if it exceeds, rewrite the headline to band.initialOffer.
+        const q1Obj = questions[1] as { question?: string; text?: string };
+        const q1Body = q1Obj?.question || q1Obj?.text || "";
+        const numRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/g;
+        const hits: number[] = [];
+        let nm: RegExpExecArray | null;
+        while ((nm = numRe.exec(q1Body)) !== null) {
+          const v = parseFloat(nm[1]);
+          const isCr = /cr|crore/i.test(nm[0]);
+          hits.push(isCr ? v * 100 : v);
+        }
+        const headline = hits.length > 0 ? Math.max(...hits) : null;
+        const ceiling = negotiationBandData.maxStretch;
+        if (headline !== null && headline > ceiling * 1.05) {
+          const safeOpener = Math.round(negotiationBandData.initialOffer);
+          const replacement = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${safeOpener} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
+          q1Obj.question = replacement;
+          q1Obj.text = replacement;
+          console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L exceeded maxStretch ₹${ceiling}L (5% tolerance) — rewrote to ₹${safeOpener}L for ${company || "company"}`);
+        }
       }
     }
 
