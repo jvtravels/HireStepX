@@ -14,6 +14,8 @@
  *   npx tsx scripts/audit-imported-vs-curator.mts
  *   npx tsx scripts/audit-imported-vs-curator.mts --threshold 0.15
  */
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { COMPANY_SALARY_OVERRIDES } from "../data/company-salary-overrides";
 import { IMPORTED_SALARY_OVERRIDES } from "../data/_imported-salary-overrides.generated";
 
@@ -26,6 +28,43 @@ interface Drift {
   driftPct: number;
   curatorSource: string | undefined;
   scrapedNotes: string | undefined;
+  /** Auto-classified follow-up — see classifyDrift(). */
+  recommendation: "keep-curator" | "accept-ab" | "manual-review";
+  /** One-line rationale shown next to the recommendation. */
+  rationale: string;
+}
+
+/**
+ * Heuristics distilled from the first round of cross-checks:
+ *   - Curator sources tagged "Levels.fyi" are research-verified at the
+ *     senior end where AB sample is too thin (most FAANG L5+ folks
+ *     don't self-post on AB). Trust curator.
+ *   - "Seed dataset" curator sources are tier-multiplier-derived, NOT
+ *     ground-truth — they were placeholders. When pass-2 AB has a real
+ *     YOE-bucket sample (notes prefixed "AB yoe-bucket scrape"), the
+ *     scrape wins for entry/mid IT-services where AB sample is dense.
+ *   - Otherwise the cell needs human eyes.
+ */
+function classifyDrift(
+  d: Pick<Drift, "level" | "curatorSource" | "scrapedNotes" | "driftPct">,
+): { rec: Drift["recommendation"]; why: string } {
+  const src = (d.curatorSource ?? "").toLowerCase();
+  const notes = (d.scrapedNotes ?? "").toLowerCase();
+  const isPass2 = notes.includes("yoe-bucket");
+  const isSeed = src.includes("seed dataset");
+  const isLevelsFyi = src.includes("levels.fyi");
+  const isResearchVerified = /verified|disclosure|drhp|glassdoor.+ambitionbox/.test(src);
+
+  if (isLevelsFyi && (d.level === "lead" || d.level === "senior" || d.level === "executive")) {
+    return { rec: "keep-curator", why: "Levels.fyi-verified senior comp; AB sample sparse at this level." };
+  }
+  if (isSeed && isPass2 && (d.level === "entry" || d.level === "mid")) {
+    return { rec: "accept-ab", why: "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample." };
+  }
+  if (isResearchVerified) {
+    return { rec: "keep-curator", why: "Research-verified curator source (DRHP / official disclosure / cross-source)." };
+  }
+  return { rec: "manual-review", why: "No clear heuristic match — eyeball the cell." };
 }
 
 const args = process.argv.slice(2);
@@ -56,6 +95,12 @@ for (const company of Object.keys(IMPORTED_SALARY_OVERRIDES)) {
       const drift = Math.abs(curMid - impMid) / curMid;
       if (drift <= 0.15) agreeCount++;
       if (drift >= THRESHOLD) {
+        const { rec, why } = classifyDrift({
+          level,
+          curatorSource: cur.source,
+          scrapedNotes: imp.notes,
+          driftPct: Math.round(drift * 100),
+        });
         drifts.push({
           company,
           role,
@@ -65,6 +110,8 @@ for (const company of Object.keys(IMPORTED_SALARY_OVERRIDES)) {
           driftPct: Math.round(drift * 100),
           curatorSource: cur.source,
           scrapedNotes: imp.notes,
+          recommendation: rec,
+          rationale: why,
         });
       }
     }
@@ -81,11 +128,34 @@ console.log();
 console.log(`# Highest-drift cells (eyeball these — see column meanings in script header)`);
 console.log(`# CURATOR / SCRAPED in LPA midpoint`);
 console.log();
-console.log(`| Drift | Company | Role | Level | Curator | Scraped | Curator source |`);
-console.log(`|---|---|---|---|---|---|---|`);
+console.log(`| Drift | Company | Role | Level | Curator | Scraped | Recommendation | Curator source |`);
+console.log(`|---|---|---|---|---|---|---|---|`);
 for (const d of drifts.slice(0, 40)) {
-  const src = (d.curatorSource ?? "—").slice(0, 50);
-  console.log(`| ${d.driftPct}% | ${d.company} | ${d.role} | ${d.level} | ₹${d.curatorMid}L | ₹${d.scrapedMid}L | ${src} |`);
+  const src = (d.curatorSource ?? "—").slice(0, 40);
+  console.log(`| ${d.driftPct}% | ${d.company} | ${d.role} | ${d.level} | ₹${d.curatorMid}L | ₹${d.scrapedMid}L | ${d.recommendation} | ${src} |`);
+}
+
+const buckets = drifts.reduce<Record<Drift["recommendation"], number>>(
+  (acc, d) => { acc[d.recommendation] = (acc[d.recommendation] ?? 0) + 1; return acc; },
+  { "keep-curator": 0, "accept-ab": 0, "manual-review": 0 },
+);
+console.log();
+console.log(`# Auto-classified drift recommendations`);
+console.log(`  keep-curator:  ${buckets["keep-curator"]}  (Levels.fyi / research-verified at senior tiers)`);
+console.log(`  accept-ab:     ${buckets["accept-ab"]}  (seed-dataset curator + pass-2 yoe-bucket AB)`);
+console.log(`  manual-review: ${buckets["manual-review"]}  (eyeball needed)`);
+
+if (args.includes("--export-json")) {
+  const outPath = resolve(process.cwd(), "data/_salary-audit-report.generated.json");
+  writeFileSync(outPath, JSON.stringify({
+    threshold: THRESHOLD,
+    bothCount,
+    agreeCount,
+    driftCount: drifts.length,
+    buckets,
+    drifts,
+  }, null, 2));
+  console.log(`\nWrote JSON report → ${outPath}`);
 }
 
 console.error(`\nDONE — review the top ${Math.min(40, drifts.length)} cells above.`);
