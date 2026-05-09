@@ -12,11 +12,13 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "entry": {"totalMin":13.9,"totalMax":17,"baseMin":10.4,"baseMax":12.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/1mg-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=63); n=63","agreementCount":1},
+      "mid": {"totalMin":23.7,"totalMax":26.2,"baseMin":17.8,"baseMax":19.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/1mg-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Development Engineer II (n=85); n=85","agreementCount":1},
     },
   },
   "accenture": {
     "business-analyst": {
       "mid": {"totalMin":9.2,"totalMax":10.2,"baseMin":6.9,"baseMax":7.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Business Analyst (n=3806); n=3806","agreementCount":1},
+      "senior": {"totalMin":30.3,"totalMax":33.5,"baseMin":22.7,"baseMax":25.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Management Consultant (n=4314); n=4314","agreementCount":1},
     },
     "data-engineer": {
       "mid": {"totalMin":7,"totalMax":8.7,"baseMin":5.3,"baseMax":6.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Engineer (n=4311); Data Analyst (n=3990); n=8301","agreementCount":1},
@@ -24,12 +26,16 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "devops-engineer": {
       "mid": {"totalMin":7.6,"totalMax":8.4,"baseMin":5.7,"baseMax":6.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Devops Engineer (n=3963); n=3963","agreementCount":1},
     },
+    "engineering-manager": {
+      "lead": {"totalMin":18.3,"totalMax":20.2,"baseMin":13.7,"baseMax":15.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Application Development Team Lead (n=10503); n=10503","agreementCount":1},
+    },
     "qa-engineer": {
       "mid": {"totalMin":5.3,"totalMax":5.9,"baseMin":4,"baseMax":4.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Quality Analyst (n=6669); n=6669","agreementCount":1},
     },
     "software-engineer": {
       "senior": {"totalMin":12.9,"totalMax":14.2,"baseMin":9.7,"baseMax":10.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=17208); n=17208","agreementCount":1},
       "mid": {"totalMin":8,"totalMax":10.7,"baseMin":6,"baseMax":8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=16598); Software Developer (n=6993); n=23591","agreementCount":1},
+      "entry": {"totalMin":4.1,"totalMax":4.9,"baseMin":3.1,"baseMax":3.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/accenture-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Associate Software Engineer (n=11824); Application Development Associate (n=6353); n=18177","agreementCount":1},
     },
   },
   "adobe": {
@@ -39,6 +45,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":20,"totalMax":30.5,"baseMin":13,"baseMax":19.8,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/adobe-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Developer (n=347); Software Engineer (n=330); Software Development Engineer (n=101); n=778; equity split estimated.","agreementCount":1},
       "senior": {"totalMin":29.9,"totalMax":34.1,"baseMin":19.4,"baseMax":22.2,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/adobe-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=278); n=278; equity split estimated.","agreementCount":1},
+      "entry": {"totalMin":19.6,"totalMax":22.3,"baseMin":12.7,"baseMax":14.5,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/adobe-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Member Technical Staff (n=126); n=126; equity split estimated.","agreementCount":1},
     },
   },
   "amazon": {
@@ -53,11 +60,15 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "mid": {"totalMin":20.6,"totalMax":28.9,"baseMin":13.4,"baseMax":18.8,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/amazon-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Developer (n=3212); Software Engineer (n=2873); Software Development Engineer (n=2660); n=8745; equity split estimated.","agreementCount":1},
+      "entry": {"totalMin":26.5,"totalMax":29.3,"baseMin":17.2,"baseMax":19,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/amazon-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Sde1 (n=2767); n=2767; equity split estimated.","agreementCount":1},
     },
   },
   "angel one": {
     "product-manager": {
       "senior": {"totalMin":29.7,"totalMax":33.5,"baseMin":22.3,"baseMax":25.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/angel-one-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Product Manager (n=101); n=101","agreementCount":1},
+    },
+    "software-engineer": {
+      "mid": {"totalMin":28.2,"totalMax":32.5,"baseMin":21.1,"baseMax":24.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/angel-one-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Development Engineer II (n=75); n=75","agreementCount":1},
     },
   },
   "apollo hospitals": {
@@ -82,6 +93,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
   "atlassian": {
     "data-engineer": {
       "mid": {"totalMin":30.3,"totalMax":35.4,"baseMin":19.7,"baseMax":23,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/atlassian-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Engineer (n=160); n=160; equity split estimated.","agreementCount":1},
+      "senior": {"totalMin":36.1,"totalMax":45.7,"baseMin":23.5,"baseMax":29.7,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/atlassian-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Data Engineer (n=131); n=131; equity split estimated.","agreementCount":1},
     },
     "data-scientist": {
       "mid": {"totalMin":64.9,"totalMax":76.9,"baseMin":42.2,"baseMax":50,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/atlassian-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Scientist (n=76); n=76; equity split estimated.","agreementCount":1},
@@ -92,6 +104,15 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "senior": {"totalMin":66.9,"totalMax":73.9,"baseMin":43.5,"baseMax":48,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/atlassian-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=684); n=684; equity split estimated.","agreementCount":1},
       "mid": {"totalMin":35.9,"totalMax":45.4,"baseMin":23.3,"baseMax":29.5,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/atlassian-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=402); Software Developer (n=260); n=662; equity split estimated.","agreementCount":1},
+      "entry": {"totalMin":48,"totalMax":61.3,"baseMin":31.2,"baseMax":39.8,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/atlassian-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Sde1 (n=76); n=76; equity split estimated.","agreementCount":1},
+    },
+  },
+  "bain": {
+    "business-analyst": {
+      "senior": {"totalMin":37.7,"totalMax":49.4,"baseMin":28.3,"baseMax":37,"equityType":"none","source":"https://www.ambitionbox.com/salaries/bain-and-company-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Management Consultant (n=53); n=53","agreementCount":1},
+    },
+    "engineering-manager": {
+      "mid": {"totalMin":27.1,"totalMax":29.9,"baseMin":20.3,"baseMax":22.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/bain-and-company-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Project Lead (n=453); n=453","agreementCount":1},
     },
   },
   "bajaj finance": {
@@ -144,6 +165,11 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
       "senior": {"totalMin":27.7,"totalMax":30.6,"baseMin":20.8,"baseMax":23,"equityType":"none","source":"https://www.ambitionbox.com/salaries/bcg-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=91); n=91","agreementCount":1},
     },
   },
+  "bharatpe": {
+    "software-engineer": {
+      "mid": {"totalMin":19.6,"totalMax":24.2,"baseMin":14.7,"baseMax":18.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/bharatpe-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Development Engineer II (n=56); n=56","agreementCount":1},
+    },
+  },
   "blinkit": {
     "business-analyst": {
       "mid": {"totalMin":8.9,"totalMax":10.8,"baseMin":6.7,"baseMax":8.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/blinkit-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Business Analyst (n=56); n=56","agreementCount":1},
@@ -157,11 +183,19 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "program-manager": {
       "mid": {"totalMin":22,"totalMax":24.3,"baseMin":16.5,"baseMax":18.2,"equityType":"none","source":"https://www.ambitionbox.com/salaries/blinkit-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Program Manager (n=202); n=202","agreementCount":1},
     },
+    "software-engineer": {
+      "mid": {"totalMin":38.8,"totalMax":43.8,"baseMin":29.1,"baseMax":32.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/blinkit-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Development Engineer II (n=60); n=60","agreementCount":1},
+    },
   },
   "browserstack": {
     "software-engineer": {
       "entry": {"totalMin":17.6,"totalMax":19.7,"baseMin":13.2,"baseMax":14.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/browserstack-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=149); n=149","agreementCount":1},
       "mid": {"totalMin":28.6,"totalMax":31.6,"baseMin":21.5,"baseMax":23.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/browserstack-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=92); n=92","agreementCount":1},
+    },
+  },
+  "byju's": {
+    "software-engineer": {
+      "entry": {"totalMin":9.6,"totalMax":11,"baseMin":7.2,"baseMax":8.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/byjus-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer (n=275); n=275","agreementCount":1},
     },
   },
   "capgemini": {
@@ -194,6 +228,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "mid": {"totalMin":5,"totalMax":9.4,"baseMin":3.8,"baseMax":7.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/capgemini-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=23520); Senior Software Engineer (n=21906); Software Developer (n=6283); n=51709","agreementCount":1},
+      "entry": {"totalMin":4.2,"totalMax":4.6,"baseMin":3.2,"baseMax":3.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/capgemini-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Associate Software Engineer (n=2363); n=2363","agreementCount":1},
     },
   },
   "cars24": {
@@ -283,6 +318,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":5.2,"totalMax":10.1,"baseMin":3.9,"baseMax":7.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/cognizant-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=19927); Senior Systems Engineer (n=6865); Software Developer (n=6593); n=33385","agreementCount":1},
       "senior": {"totalMin":17.7,"totalMax":19.6,"baseMin":13.3,"baseMax":14.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/cognizant-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=6310); n=6310","agreementCount":1},
+      "entry": {"totalMin":3.9,"totalMax":4.9,"baseMin":2.9,"baseMax":3.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/cognizant-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Programmer Analyst Trainee (n=9279); Junior Software Engineer (n=5899); n=15178","agreementCount":1},
     },
   },
   "cred": {
@@ -296,6 +332,15 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
   "cure.fit": {
     "program-manager": {
       "mid": {"totalMin":7.8,"totalMax":10.5,"baseMin":5.8,"baseMax":7.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/cure-fit-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Program Manager (n=65); n=65","agreementCount":1},
+    },
+  },
+  "de shaw": {
+    "data-engineer": {
+      "entry": {"totalMin":14.5,"totalMax":18.6,"baseMin":10.9,"baseMax":14,"equityType":"none","source":"https://www.ambitionbox.com/salaries/de-shaw-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Data Analyst (n=63); n=63","agreementCount":1},
+    },
+    "software-engineer": {
+      "senior": {"totalMin":36.5,"totalMax":41.3,"baseMin":27.4,"baseMax":31,"equityType":"none","source":"https://www.ambitionbox.com/salaries/de-shaw-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Software Engineer (n=77); n=77","agreementCount":1},
+      "entry": {"totalMin":27.3,"totalMax":45,"baseMin":20.5,"baseMax":33.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/de-shaw-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer (n=61); Member Technical Staff (n=59); n=120","agreementCount":1},
     },
   },
   "delhivery": {
@@ -328,6 +373,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":11,"totalMax":14.2,"baseMin":8.3,"baseMax":10.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/deloitte-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=2742); Software Developer (n=1859); n=4601","agreementCount":1},
       "senior": {"totalMin":15.3,"totalMax":16.9,"baseMin":11.5,"baseMax":12.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/deloitte-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=1980); n=1980","agreementCount":1},
+      "entry": {"totalMin":29.5,"totalMax":32.6,"baseMin":22.1,"baseMax":24.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/deloitte-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Sde1 (n=881); n=881","agreementCount":1},
     },
   },
   "deutsche bank": {
@@ -343,9 +389,13 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
   "dream11": {
     "software-engineer": {
       "mid": {"totalMin":25.9,"totalMax":31.2,"baseMin":19.4,"baseMax":23.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/dream11-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Developer (n=54); n=54","agreementCount":1},
+      "entry": {"totalMin":24.3,"totalMax":29,"baseMin":18.2,"baseMax":21.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/dream11-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Sde1 (n=54); n=54","agreementCount":1},
     },
   },
   "ey": {
+    "business-analyst": {
+      "mid": {"totalMin":6.8,"totalMax":7.5,"baseMin":5.1,"baseMax":5.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ey-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Advanced Analyst (n=3394); n=3394","agreementCount":1},
+    },
     "data-engineer": {
       "mid": {"totalMin":6.4,"totalMax":11.1,"baseMin":4.8,"baseMax":8.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ey-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Analyst (n=735); Data Engineer (n=638); n=1373","agreementCount":1},
     },
@@ -371,6 +421,9 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
   },
   "freshworks": {
+    "engineering-manager": {
+      "senior": {"totalMin":38.7,"totalMax":45.3,"baseMin":29,"baseMax":34,"equityType":"none","source":"https://www.ambitionbox.com/salaries/freshworks-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=72); n=72","agreementCount":1},
+    },
     "software-engineer": {
       "mid": {"totalMin":11.8,"totalMax":25.3,"baseMin":8.9,"baseMax":19,"equityType":"none","source":"https://www.ambitionbox.com/salaries/freshworks-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=537); Software Engineer (n=305); Software Developer (n=85); n=927","agreementCount":1},
     },
@@ -424,12 +477,17 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "engineering-manager": {
       "senior": {"totalMin":16.4,"totalMax":18.1,"baseMin":12.3,"baseMax":13.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Technical Lead (n=24393); n=24393","agreementCount":1},
+      "mid": {"totalMin":10.5,"totalMax":11.6,"baseMin":7.9,"baseMax":8.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=17690); n=17690","agreementCount":1},
+      "lead": {"totalMin":21.8,"totalMax":24.1,"baseMin":16.4,"baseMax":18.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Technical Lead (n=12946); n=12946","agreementCount":1},
+      "executive": {"totalMin":24.8,"totalMax":27.4,"baseMin":18.6,"baseMax":20.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Technical Manager (n=2949); n=2949","agreementCount":1},
     },
     "project-manager": {
       "executive": {"totalMin":17.4,"totalMax":19.2,"baseMin":13,"baseMax":14.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Project Manager (n=2958); n=2958","agreementCount":1},
     },
     "qa-engineer": {
       "mid": {"totalMin":5.1,"totalMax":6.1,"baseMin":3.8,"baseMax":4.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Softwaretest Engineer (n=2619); Test Engineer (n=1577); n=4196","agreementCount":1},
+      "lead": {"totalMin":14.2,"totalMax":15.7,"baseMin":10.6,"baseMax":11.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Test Lead (n=3200); n=3200","agreementCount":1},
+      "senior": {"totalMin":9.8,"totalMax":10.8,"baseMin":7.4,"baseMax":8.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Test Engineer (n=2258); n=2258","agreementCount":1},
     },
     "software-engineer": {
       "mid": {"totalMin":4.5,"totalMax":10.7,"baseMin":3.4,"baseMax":8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/hcl-technologies-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=26247); Senior Software Engineer (n=18129); Software Developer (n=4113); n=48489","agreementCount":1},
@@ -600,12 +658,20 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "qa-engineer": {
       "mid": {"totalMin":8.3,"totalMax":9.2,"baseMin":6.2,"baseMax":6.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ltimindtree-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Softwaretest Engineer (n=2072); n=2072","agreementCount":1},
+      "senior": {"totalMin":12.3,"totalMax":13.6,"baseMin":9.2,"baseMax":10.2,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ltimindtree-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Specialist Testing (n=1652); n=1652","agreementCount":1},
     },
     "software-engineer": {
       "mid": {"totalMin":4.9,"totalMax":12.5,"baseMin":3.7,"baseMax":9.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ltimindtree-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=21873); Software Engineer (n=16278); Software Developer (n=3106); n=41257","agreementCount":1},
+      "senior": {"totalMin":18.5,"totalMax":20.4,"baseMin":13.9,"baseMax":15.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ltimindtree-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineering Specialist (n=4598); n=4598","agreementCount":1},
+    },
+    "solutions-architect": {
+      "senior": {"totalMin":15.5,"totalMax":17.1,"baseMin":11.6,"baseMax":12.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ltimindtree-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Technical Specialist (n=2243); n=2243","agreementCount":1},
     },
   },
   "mahindra": {
+    "engineering-manager": {
+      "lead": {"totalMin":18,"totalMax":19.9,"baseMin":13.5,"baseMax":14.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mahindra-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=1228); n=1228","agreementCount":1},
+    },
     "program-manager": {
       "lead": {"totalMin":16.3,"totalMax":18.5,"baseMin":12.2,"baseMax":13.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mahindra-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Program Manager (n=136); n=136","agreementCount":1},
     },
@@ -631,6 +697,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "data-engineer": {
       "mid": {"totalMin":15.3,"totalMax":27.1,"baseMin":11.5,"baseMax":20.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mckinsey-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Engineer (n=93); Data Analyst (n=85); n=178","agreementCount":1},
+      "senior": {"totalMin":31.1,"totalMax":35.1,"baseMin":23.3,"baseMax":26.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mckinsey-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Data Engineer (n=55); n=55","agreementCount":1},
     },
     "data-scientist": {
       "mid": {"totalMin":27.2,"totalMax":31.6,"baseMin":20.4,"baseMax":23.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mckinsey-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Scientist (n=113); n=113","agreementCount":1},
@@ -665,6 +732,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "entry": {"totalMin":21.7,"totalMax":27.5,"baseMin":16.3,"baseMax":20.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/meesho-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Developer (n=76); n=76","agreementCount":1},
+      "mid": {"totalMin":33.1,"totalMax":37.8,"baseMin":24.8,"baseMax":28.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/meesho-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Development Engineer II (n=77); n=77","agreementCount":1},
     },
   },
   "meta": {
@@ -690,6 +758,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":28.6,"totalMax":33.2,"baseMin":18.6,"baseMax":21.6,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/microsoft-corporation-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=3428); Software Developer (n=1357); n=4785; equity split estimated.","agreementCount":1},
       "lead": {"totalMin":40.2,"totalMax":44.5,"baseMin":26.1,"baseMax":28.9,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/microsoft-corporation-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=2920); n=2920; equity split estimated.","agreementCount":1},
+      "senior": {"totalMin":39.9,"totalMax":47.7,"baseMin":25.9,"baseMax":31,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/microsoft-corporation-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer2 (n=1569); Software Development Engineer II (n=586); n=2155; equity split estimated.","agreementCount":1},
     },
   },
   "morgan stanley": {
@@ -698,6 +767,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "data-engineer": {
       "mid": {"totalMin":25.9,"totalMax":29.8,"baseMin":19.4,"baseMax":22.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/morgan-stanley-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Engineer (n=118); n=118","agreementCount":1},
+      "senior": {"totalMin":27.4,"totalMax":31.2,"baseMin":20.5,"baseMax":23.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/morgan-stanley-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Data Engineer (n=76); n=76","agreementCount":1},
     },
     "engineering-manager": {
       "lead": {"totalMin":30.6,"totalMax":34.7,"baseMin":23,"baseMax":26,"equityType":"none","source":"https://www.ambitionbox.com/salaries/morgan-stanley-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Technical Lead (n=91); n=91","agreementCount":1},
@@ -720,10 +790,12 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "qa-engineer": {
       "mid": {"totalMin":5.1,"totalMax":6.7,"baseMin":3.8,"baseMax":5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mphasis-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Softwaretest Engineer (n=1563); Test Engineer (n=591); n=2154","agreementCount":1},
+      "senior": {"totalMin":15.4,"totalMax":17,"baseMin":11.6,"baseMax":12.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mphasis-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Test Engineer (n=985); n=985","agreementCount":1},
     },
     "software-engineer": {
       "mid": {"totalMin":5.5,"totalMax":8.6,"baseMin":4.1,"baseMax":6.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mphasis-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=6760); Software Developer (n=1402); n=8162","agreementCount":1},
       "senior": {"totalMin":14,"totalMax":15.5,"baseMin":10.5,"baseMax":11.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mphasis-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=6437); n=6437","agreementCount":1},
+      "entry": {"totalMin":3.7,"totalMax":4.1,"baseMin":2.8,"baseMax":3.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/mphasis-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Associate Software Engineer (n=4991); n=4991","agreementCount":1},
     },
   },
   "myntra": {
@@ -767,6 +839,15 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "entry": {"totalMin":11.3,"totalMax":18.5,"baseMin":8.5,"baseMax":13.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ola-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Developer (n=70); Software Engineer (n=64); Software Development Engineer (n=59); n=193","agreementCount":1},
+      "mid": {"totalMin":24.9,"totalMax":28.3,"baseMin":18.7,"baseMax":21.2,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ola-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Development Engineer II (n=74); n=74","agreementCount":1},
+    },
+  },
+  "ola electric": {
+    "program-manager": {
+      "senior": {"totalMin":22.8,"totalMax":25.2,"baseMin":17.1,"baseMax":18.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ola-electric-mobility-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Program Manager (n=150); n=150","agreementCount":1},
+    },
+    "software-engineer": {
+      "entry": {"totalMin":16.7,"totalMax":21.8,"baseMin":12.5,"baseMax":16.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/ola-electric-mobility-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Developer (n=54); n=54","agreementCount":1},
     },
   },
   "oracle": {
@@ -846,6 +927,9 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
   },
   "pine labs": {
+    "engineering-manager": {
+      "senior": {"totalMin":24.6,"totalMax":29.5,"baseMin":18.5,"baseMax":22.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/pine-labs-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=96); n=96","agreementCount":1},
+    },
     "product-manager": {
       "mid": {"totalMin":20.2,"totalMax":26.1,"baseMin":15.1,"baseMax":19.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/pine-labs-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Product Manager (n=55); n=55","agreementCount":1},
       "lead": {"totalMin":37.4,"totalMax":45.6,"baseMin":28,"baseMax":34.2,"equityType":"none","source":"https://www.ambitionbox.com/salaries/pine-labs-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Product Manager (n=55); n=55","agreementCount":1},
@@ -882,6 +966,9 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "embedded-engineer": {
       "mid": {"totalMin":16.1,"totalMax":19.2,"baseMin":10.5,"baseMax":12.5,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/qualcomm-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Embedded Software Engineer (n=93); n=93; equity split estimated.","agreementCount":1},
     },
+    "engineering-manager": {
+      "senior": {"totalMin":38.6,"totalMax":42.6,"baseMin":25.1,"baseMax":27.7,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/qualcomm-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=399); n=399; equity split estimated.","agreementCount":1},
+    },
     "program-manager": {
       "lead": {"totalMin":37.6,"totalMax":41.9,"baseMin":24.4,"baseMax":27.2,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/qualcomm-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Program Manager (n=71); n=71; equity split estimated.","agreementCount":1},
     },
@@ -890,6 +977,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "mid": {"totalMin":22.5,"totalMax":34.9,"baseMin":14.6,"baseMax":22.7,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/qualcomm-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=1309); Senior Software Engineer (n=943); Software Developer (n=233); n=2485; equity split estimated.","agreementCount":1},
+      "entry": {"totalMin":16.7,"totalMax":20.3,"baseMin":10.9,"baseMax":13.2,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/qualcomm-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Associate Software Engineer (n=85); n=85; equity split estimated.","agreementCount":1},
     },
   },
   "rapido": {
@@ -945,6 +1033,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":28.9,"totalMax":33.4,"baseMin":18.8,"baseMax":21.7,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/servicenow-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=690); Software Developer (n=154); n=844; equity split estimated.","agreementCount":1},
       "senior": {"totalMin":39.1,"totalMax":43.2,"baseMin":25.4,"baseMax":28.1,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/servicenow-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=639); n=639; equity split estimated.","agreementCount":1},
+      "entry": {"totalMin":21.2,"totalMax":25.8,"baseMin":13.8,"baseMax":16.8,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/servicenow-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Associate Software Engineer (n=97); n=97; equity split estimated.","agreementCount":1},
     },
   },
   "spinny": {
@@ -974,7 +1063,29 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
       "mid": {"totalMin":21.8,"totalMax":24.4,"baseMin":16.4,"baseMax":18.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/swiggy-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Developer (n=223); n=223","agreementCount":1},
     },
   },
+  "target india": {
+    "data-engineer": {
+      "mid": {"totalMin":13.2,"totalMax":20.8,"baseMin":9.9,"baseMax":15.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Data Analyst (n=171); Data Engineer (n=102); n=273","agreementCount":1},
+      "senior": {"totalMin":28.2,"totalMax":32.4,"baseMin":21.1,"baseMax":24.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Data Engineer (n=100); n=100","agreementCount":1},
+    },
+    "data-scientist": {
+      "mid": {"totalMin":17.4,"totalMax":23.3,"baseMin":13,"baseMax":17.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Data Scientist (n=52); n=52","agreementCount":1},
+    },
+    "engineering-manager": {
+      "executive": {"totalMin":64,"totalMax":70.7,"baseMin":48,"baseMax":53,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=222); n=222","agreementCount":1},
+    },
+    "product-manager": {
+      "lead": {"totalMin":36.8,"totalMax":53,"baseMin":27.6,"baseMax":39.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Product Manager (n=119); Product Manager (n=94); n=213","agreementCount":1},
+    },
+    "software-engineer": {
+      "senior": {"totalMin":15.1,"totalMax":35,"baseMin":11.3,"baseMax":26.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Software Engineer (n=408); Software Developer (n=60); n=468","agreementCount":1},
+      "mid": {"totalMin":16.8,"totalMax":18.5,"baseMin":12.6,"baseMax":13.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/target-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer (n=364); n=364","agreementCount":1},
+    },
+  },
   "tata steel": {
+    "engineering-manager": {
+      "lead": {"totalMin":7.9,"totalMax":8.7,"baseMin":5.9,"baseMax":6.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tata-steel-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=376); n=376","agreementCount":1},
+    },
     "project-manager": {
       "lead": {"totalMin":18.6,"totalMax":20.9,"baseMin":14,"baseMax":15.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tata-steel-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Project Manager (n=145); n=145","agreementCount":1},
     },
@@ -1025,10 +1136,13 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "qa-engineer": {
       "mid": {"totalMin":4.6,"totalMax":5.4,"baseMin":3.4,"baseMax":4.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tech-mahindra-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Softwaretest Engineer (n=3887); Test Engineer (n=2824); n=6711","agreementCount":1},
+      "senior": {"totalMin":11.1,"totalMax":12.2,"baseMin":8.3,"baseMax":9.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tech-mahindra-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Test Engineer (n=2286); n=2286","agreementCount":1},
+      "lead": {"totalMin":17.8,"totalMax":19.7,"baseMin":13.4,"baseMax":14.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tech-mahindra-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Test Lead (n=1773); n=1773","agreementCount":1},
     },
     "software-engineer": {
       "mid": {"totalMin":4.9,"totalMax":8.5,"baseMin":3.7,"baseMax":6.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tech-mahindra-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=26955); Software Developer (n=4229); n=31184","agreementCount":1},
       "senior": {"totalMin":13.8,"totalMax":15.2,"baseMin":10.4,"baseMax":11.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tech-mahindra-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=23243); n=23243","agreementCount":1},
+      "entry": {"totalMin":3.5,"totalMax":3.8,"baseMin":2.6,"baseMax":2.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/tech-mahindra-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Associate Software Engineer (n=7109); n=7109","agreementCount":1},
     },
   },
   "uber": {
@@ -1050,6 +1164,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":32.9,"totalMax":58.2,"baseMin":21.4,"baseMax":37.8,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/uber-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=297); Software Developer (n=183); SDE-2 (n=63); n=543; equity split estimated.","agreementCount":1},
       "senior": {"totalMin":69.6,"totalMax":77.1,"baseMin":45.2,"baseMax":50.1,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/uber-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=294); n=294; equity split estimated.","agreementCount":1},
+      "entry": {"totalMin":28,"totalMax":39,"baseMin":18.2,"baseMax":25.4,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/uber-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Sde1 (n=72); n=72; equity split estimated.","agreementCount":1},
     },
   },
   "unacademy": {
@@ -1076,9 +1191,44 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     "software-engineer": {
       "mid": {"totalMin":22.1,"totalMax":29.6,"baseMin":14.4,"baseMax":19.2,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/vmware-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=114); Software Developer (n=65); n=179; equity split estimated.","agreementCount":1},
       "senior": {"totalMin":34.5,"totalMax":40.2,"baseMin":22.4,"baseMax":26.1,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/vmware-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=95); n=95; equity split estimated.","agreementCount":1},
+      "lead": {"totalMin":51.5,"totalMax":56.9,"baseMin":33.5,"baseMax":37,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/vmware-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Member of Technical Staff (n=467); n=467; equity split estimated.","agreementCount":1},
     },
     "sre": {
       "senior": {"totalMin":21.8,"totalMax":27.4,"baseMin":14.2,"baseMax":17.8,"equityType":"rsu","source":"https://www.ambitionbox.com/salaries/vmware-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Site Reliability Engineer (n=62); n=62; equity split estimated.","agreementCount":1},
+    },
+  },
+  "walmart global tech": {
+    "data-engineer": {
+      "senior": {"totalMin":24.2,"totalMax":26.7,"baseMin":18.1,"baseMax":20,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Data Engineer (n=318); n=318","agreementCount":1},
+      "lead": {"totalMin":49.2,"totalMax":54.3,"baseMin":36.9,"baseMax":40.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Data Engineer (n=304); n=304","agreementCount":1},
+    },
+    "data-scientist": {
+      "mid": {"totalMin":33.7,"totalMax":37.3,"baseMin":25.3,"baseMax":28,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Data Scientist (n=224); n=224","agreementCount":1},
+    },
+    "engineering-manager": {
+      "lead": {"totalMin":29.3,"totalMax":34,"baseMin":22,"baseMax":25.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Engineer (n=175); n=175","agreementCount":1},
+    },
+    "product-manager": {
+      "senior": {"totalMin":32.9,"totalMax":37.1,"baseMin":24.7,"baseMax":27.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Product Manager (n=221); n=221","agreementCount":1},
+      "lead": {"totalMin":44.1,"totalMax":49.8,"baseMin":33.1,"baseMax":37.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Product Manager (n=197); n=197","agreementCount":1},
+    },
+    "software-engineer": {
+      "senior": {"totalMin":42.9,"totalMax":47.5,"baseMin":32.2,"baseMax":35.6,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Software Engineer (n=2559); n=2559","agreementCount":1},
+      "mid": {"totalMin":24,"totalMax":28.1,"baseMin":18,"baseMax":21.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer (n=1210); Software Developer (n=614); n=1824","agreementCount":1},
+      "entry": {"totalMin":20.2,"totalMax":22.3,"baseMin":15.1,"baseMax":16.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/walmart-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer2 (n=211); n=211","agreementCount":1},
+    },
+  },
+  "wells fargo india": {
+    "data-engineer": {
+      "lead": {"totalMin":28.9,"totalMax":31.9,"baseMin":21.7,"baseMax":23.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wells-fargo-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Data Engineer (n=289); n=289","agreementCount":1},
+    },
+    "engineering-manager": {
+      "executive": {"totalMin":33,"totalMax":36.5,"baseMin":24.8,"baseMax":27.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wells-fargo-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Technical Lead (n=335); n=335","agreementCount":1},
+    },
+    "software-engineer": {
+      "lead": {"totalMin":32.2,"totalMax":35.6,"baseMin":24.2,"baseMax":26.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wells-fargo-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Software Engineer (n=6198); n=6198","agreementCount":1},
+      "mid": {"totalMin":20.9,"totalMax":23.1,"baseMin":15.7,"baseMax":17.3,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wells-fargo-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Engineer (n=1332); n=1332","agreementCount":1},
+      "senior": {"totalMin":22.8,"totalMax":25.2,"baseMin":17.1,"baseMax":18.9,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wells-fargo-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Software Developer (n=320); n=320","agreementCount":1},
     },
   },
   "wipro": {
@@ -1087,6 +1237,8 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "cloud-engineer": {
       "mid": {"totalMin":4.8,"totalMax":5.3,"baseMin":3.6,"baseMax":4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-08","notes":"AB scrape: System Administrator (n=3397); n=3397","agreementCount":1},
+      "lead": {"totalMin":17,"totalMax":18.8,"baseMin":12.8,"baseMax":14.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Lead Administrator (n=5147); n=5147","agreementCount":1},
+      "senior": {"totalMin":9.7,"totalMax":10.7,"baseMin":7.3,"baseMax":8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Administrator (n=4177); n=4177","agreementCount":1},
     },
     "data-engineer": {
       "mid": {"totalMin":4.9,"totalMax":5.4,"baseMin":3.7,"baseMax":4.1,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Data Analyst (n=2335); n=2335","agreementCount":1},
@@ -1102,6 +1254,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "qa-engineer": {
       "mid": {"totalMin":3.3,"totalMax":6.2,"baseMin":2.5,"baseMax":4.7,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Test Engineer (n=5024); Softwaretest Engineer (n=4734); Quality Analyst (n=3296); n=13054","agreementCount":1},
+      "senior": {"totalMin":11.1,"totalMax":12.3,"baseMin":8.3,"baseMax":9.2,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Senior Test Engineer (n=4854); n=4854","agreementCount":1},
     },
     "software-engineer": {
       "senior": {"totalMin":14.2,"totalMax":15.7,"baseMin":10.6,"baseMax":11.8,"equityType":"none","source":"https://www.ambitionbox.com/salaries/wipro-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Senior Software Engineer (n=25169); n=25169","agreementCount":1},
@@ -1154,6 +1307,7 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
     },
     "software-engineer": {
       "mid": {"totalMin":23.5,"totalMax":28.6,"baseMin":17.6,"baseMax":21.5,"equityType":"none","source":"https://www.ambitionbox.com/salaries/zomato-salaries","lastVerified":"2026-05-08","notes":"AB scrape: Software Engineer (n=132); n=132","agreementCount":1},
+      "entry": {"totalMin":30.2,"totalMax":34.7,"baseMin":22.6,"baseMax":26,"equityType":"none","source":"https://www.ambitionbox.com/salaries/zomato-salaries","lastVerified":"2026-05-09","notes":"AB scrape: Sde1 (n=134); n=134","agreementCount":1},
     },
   },
 };

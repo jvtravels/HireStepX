@@ -20,7 +20,9 @@
     "typecheck": "tsc --noEmit",
     "import:salaries": "tsx scripts/import-salary-csv.mts",
     "audit:coverage": "tsx scripts/audit-coverage-gaps.mts",
-    "audit:confidence": "tsx scripts/csv-confidence-audit.mts"
+    "audit:confidence": "tsx scripts/csv-confidence-audit.mts",
+    "audit:drift": "tsx scripts/audit-imported-vs-curator.mts",
+    "scrape:salaries": "tsx scripts/scrape-ambitionbox.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",

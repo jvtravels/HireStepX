@@ -373,3 +373,79 @@ myntra,data-engineer,mid,,8.8,9.8,6.6,7.4,0,0,none,,,,,,,,https://www.ambitionbo
 myntra,software-engineer,mid,,19.9,37.5,14.9,28.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/myntra-salaries,,,,,AB scrape: Senior Software Engineer (n=245); Software Engineer (n=237); Software Developer (n=92); n=574,2026-05-08
 myntra,engineering-manager,senior,,50.5,56.5,37.9,42.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/myntra-salaries,,,,,AB scrape: Technical Lead (n=58); n=58,2026-05-08
 dream11,software-engineer,mid,,25.9,31.2,19.4,23.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/dream11-salaries,,,,,AB scrape: Software Developer (n=54); n=54,2026-05-08
+zomato,software-engineer,entry,,30.2,34.7,22.6,26.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/zomato-salaries,,,,,AB scrape: Sde1 (n=134); n=134,2026-05-09
+meesho,software-engineer,mid,,33.1,37.8,24.8,28.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/meesho-salaries,,,,,AB scrape: Software Development Engineer II (n=77); n=77,2026-05-09
+microsoft,software-engineer,senior,,39.9,47.7,25.9,31.0,10.0,11.9,rsu,,,,,,,,https://www.ambitionbox.com/salaries/microsoft-corporation-salaries,,,,,AB scrape: Software Engineer2 (n=1569); Software Development Engineer II (n=586); n=2155; equity split estimated.,2026-05-09
+amazon,software-engineer,entry,,26.5,29.3,17.2,19.0,6.6,7.3,rsu,,,,,,,,https://www.ambitionbox.com/salaries/amazon-salaries,,,,,AB scrape: Sde1 (n=2767); n=2767; equity split estimated.,2026-05-09
+cognizant,software-engineer,entry,,3.9,4.9,2.9,3.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/cognizant-salaries,,,,,AB scrape: Programmer Analyst Trainee (n=9279); Junior Software Engineer (n=5899); n=15178,2026-05-09
+adobe,software-engineer,entry,,19.6,22.3,12.7,14.5,4.9,5.6,rsu,,,,,,,,https://www.ambitionbox.com/salaries/adobe-salaries,,,,,AB scrape: Member Technical Staff (n=126); n=126; equity split estimated.,2026-05-09
+atlassian,data-engineer,senior,,36.1,45.7,23.5,29.7,9.0,11.4,rsu,,,,,,,,https://www.ambitionbox.com/salaries/atlassian-salaries,,,,,AB scrape: Senior Data Engineer (n=131); n=131; equity split estimated.,2026-05-09
+atlassian,software-engineer,entry,,48.0,61.3,31.2,39.8,12.0,15.3,rsu,,,,,,,,https://www.ambitionbox.com/salaries/atlassian-salaries,,,,,AB scrape: Sde1 (n=76); n=76; equity split estimated.,2026-05-09
+uber,software-engineer,entry,,28.0,39.0,18.2,25.4,7.0,9.8,rsu,,,,,,,,https://www.ambitionbox.com/salaries/uber-salaries,,,,,AB scrape: Sde1 (n=72); n=72; equity split estimated.,2026-05-09
+wipro,cloud-engineer,lead,,17.0,18.8,12.8,14.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wipro-salaries,,,,,AB scrape: Lead Administrator (n=5147); n=5147,2026-05-09
+wipro,qa-engineer,senior,,11.1,12.3,8.3,9.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wipro-salaries,,,,,AB scrape: Senior Test Engineer (n=4854); n=4854,2026-05-09
+wipro,cloud-engineer,senior,,9.7,10.7,7.3,8.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wipro-salaries,,,,,AB scrape: Senior Administrator (n=4177); n=4177,2026-05-09
+hcl,engineering-manager,mid,,10.5,11.6,7.9,8.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/hcl-technologies-salaries,,,,,AB scrape: Lead Engineer (n=17690); n=17690,2026-05-09
+hcl,engineering-manager,lead,,21.8,24.1,16.4,18.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/hcl-technologies-salaries,,,,,AB scrape: Senior Technical Lead (n=12946); n=12946,2026-05-09
+hcl,qa-engineer,lead,,14.2,15.7,10.6,11.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/hcl-technologies-salaries,,,,,AB scrape: Test Lead (n=3200); n=3200,2026-05-09
+hcl,engineering-manager,executive,,24.8,27.4,18.6,20.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/hcl-technologies-salaries,,,,,AB scrape: Technical Manager (n=2949); n=2949,2026-05-09
+hcl,qa-engineer,senior,,9.8,10.8,7.4,8.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/hcl-technologies-salaries,,,,,AB scrape: Senior Test Engineer (n=2258); n=2258,2026-05-09
+ltimindtree,software-engineer,senior,,18.5,20.4,13.9,15.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ltimindtree-salaries,,,,,AB scrape: Software Engineering Specialist (n=4598); n=4598,2026-05-09
+ltimindtree,solutions-architect,senior,,15.5,17.1,11.6,12.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ltimindtree-salaries,,,,,AB scrape: Technical Specialist (n=2243); n=2243,2026-05-09
+ltimindtree,qa-engineer,senior,,12.3,13.6,9.2,10.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ltimindtree-salaries,,,,,AB scrape: Specialist Testing (n=1652); n=1652,2026-05-09
+tech mahindra,software-engineer,entry,,3.5,3.8,2.6,2.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/tech-mahindra-salaries,,,,,AB scrape: Associate Software Engineer (n=7109); n=7109,2026-05-09
+tech mahindra,qa-engineer,senior,,11.1,12.2,8.3,9.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/tech-mahindra-salaries,,,,,AB scrape: Senior Test Engineer (n=2286); n=2286,2026-05-09
+tech mahindra,qa-engineer,lead,,17.8,19.7,13.4,14.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/tech-mahindra-salaries,,,,,AB scrape: Test Lead (n=1773); n=1773,2026-05-09
+capgemini,software-engineer,entry,,4.2,4.6,3.2,3.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/capgemini-salaries,,,,,AB scrape: Associate Software Engineer (n=2363); n=2363,2026-05-09
+freshworks,engineering-manager,senior,,38.7,45.3,29.0,34.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/freshworks-salaries,,,,,AB scrape: Lead Engineer (n=72); n=72,2026-05-09
+mckinsey,data-engineer,senior,,31.1,35.1,23.3,26.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/mckinsey-salaries,,,,,AB scrape: Senior Data Engineer (n=55); n=55,2026-05-09
+bain,engineering-manager,mid,,27.1,29.9,20.3,22.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bain-and-company-salaries,,,,,AB scrape: Project Lead (n=453); n=453,2026-05-09
+bain,business-analyst,senior,,37.7,49.4,28.3,37.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bain-and-company-salaries,,,,,AB scrape: Management Consultant (n=53); n=53,2026-05-09
+walmart global tech,software-engineer,senior,,42.9,47.5,32.2,35.6,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Senior Software Engineer (n=2559); n=2559,2026-05-09
+walmart global tech,software-engineer,mid,,24.0,28.1,18.0,21.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Software Engineer (n=1210); Software Developer (n=614); n=1824,2026-05-09
+walmart global tech,data-engineer,senior,,24.2,26.7,18.1,20.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Data Engineer (n=318); n=318,2026-05-09
+walmart global tech,data-engineer,lead,,49.2,54.3,36.9,40.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Senior Data Engineer (n=304); n=304,2026-05-09
+walmart global tech,data-scientist,mid,,33.7,37.3,25.3,28.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Data Scientist (n=224); n=224,2026-05-09
+walmart global tech,product-manager,senior,,32.9,37.1,24.7,27.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Product Manager (n=221); n=221,2026-05-09
+walmart global tech,software-engineer,entry,,20.2,22.3,15.1,16.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Software Engineer2 (n=211); n=211,2026-05-09
+walmart global tech,product-manager,lead,,44.1,49.8,33.1,37.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Senior Product Manager (n=197); n=197,2026-05-09
+walmart global tech,engineering-manager,lead,,29.3,34.0,22.0,25.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/walmart-salaries,,,,,AB scrape: Lead Engineer (n=175); n=175,2026-05-09
+target india,software-engineer,senior,,15.1,35.0,11.3,26.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Senior Software Engineer (n=408); Software Developer (n=60); n=468,2026-05-09
+target india,software-engineer,mid,,16.8,18.5,12.6,13.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Software Engineer (n=364); n=364,2026-05-09
+target india,engineering-manager,executive,,64.0,70.7,48.0,53.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Lead Engineer (n=222); n=222,2026-05-09
+target india,data-engineer,mid,,13.2,20.8,9.9,15.6,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Data Analyst (n=171); Data Engineer (n=102); n=273,2026-05-09
+target india,product-manager,lead,,36.8,53.0,27.6,39.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Senior Product Manager (n=119); Product Manager (n=94); n=213,2026-05-09
+target india,data-engineer,senior,,28.2,32.4,21.1,24.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Senior Data Engineer (n=100); n=100,2026-05-09
+target india,data-scientist,mid,,17.4,23.3,13.0,17.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/target-salaries,,,,,AB scrape: Data Scientist (n=52); n=52,2026-05-09
+de shaw,software-engineer,senior,,36.5,41.3,27.4,31.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/de-shaw-salaries,,,,,AB scrape: Senior Software Engineer (n=77); n=77,2026-05-09
+de shaw,data-engineer,entry,,14.5,18.6,10.9,14.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/de-shaw-salaries,,,,,AB scrape: Data Analyst (n=63); n=63,2026-05-09
+de shaw,software-engineer,entry,,27.3,45.0,20.5,33.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/de-shaw-salaries,,,,,AB scrape: Software Engineer (n=61); Member Technical Staff (n=59); n=120,2026-05-09
+qualcomm,engineering-manager,senior,,38.6,42.6,25.1,27.7,9.7,10.7,rsu,,,,,,,,https://www.ambitionbox.com/salaries/qualcomm-salaries,,,,,AB scrape: Lead Engineer (n=399); n=399; equity split estimated.,2026-05-09
+qualcomm,software-engineer,entry,,16.7,20.3,10.9,13.2,4.2,5.1,rsu,,,,,,,,https://www.ambitionbox.com/salaries/qualcomm-salaries,,,,,AB scrape: Associate Software Engineer (n=85); n=85; equity split estimated.,2026-05-09
+servicenow,software-engineer,entry,,21.2,25.8,13.8,16.8,5.3,6.5,rsu,,,,,,,,https://www.ambitionbox.com/salaries/servicenow-salaries,,,,,AB scrape: Associate Software Engineer (n=97); n=97; equity split estimated.,2026-05-09
+deloitte,software-engineer,entry,,29.5,32.6,22.1,24.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/deloitte-salaries,,,,,AB scrape: Sde1 (n=881); n=881,2026-05-09
+ey,business-analyst,mid,,6.8,7.5,5.1,5.6,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ey-salaries,,,,,AB scrape: Advanced Analyst (n=3394); n=3394,2026-05-09
+ola,software-engineer,mid,,24.9,28.3,18.7,21.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ola-salaries,,,,,AB scrape: Software Development Engineer II (n=74); n=74,2026-05-09
+accenture,software-engineer,entry,,4.1,4.9,3.1,3.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/accenture-salaries,,,,,AB scrape: Associate Software Engineer (n=11824); Application Development Associate (n=6353); n=18177,2026-05-09
+accenture,engineering-manager,lead,,18.3,20.2,13.7,15.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/accenture-salaries,,,,,AB scrape: Application Development Team Lead (n=10503); n=10503,2026-05-09
+accenture,business-analyst,senior,,30.3,33.5,22.7,25.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/accenture-salaries,,,,,AB scrape: Management Consultant (n=4314); n=4314,2026-05-09
+byju's,software-engineer,entry,,9.6,11.0,7.2,8.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/byjus-salaries,,,,,AB scrape: Software Engineer (n=275); n=275,2026-05-09
+bharatpe,software-engineer,mid,,19.6,24.2,14.7,18.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bharatpe-salaries,,,,,AB scrape: Software Development Engineer II (n=56); n=56,2026-05-09
+pine labs,engineering-manager,senior,,24.6,29.5,18.5,22.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/pine-labs-salaries,,,,,AB scrape: Lead Engineer (n=96); n=96,2026-05-09
+blinkit,software-engineer,mid,,38.8,43.8,29.1,32.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/blinkit-salaries,,,,,AB scrape: Software Development Engineer II (n=60); n=60,2026-05-09
+1mg,software-engineer,mid,,23.7,26.2,17.8,19.6,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/1mg-salaries,,,,,AB scrape: Software Development Engineer II (n=85); n=85,2026-05-09
+vmware,software-engineer,lead,,51.5,56.9,33.5,37.0,12.9,14.2,rsu,,,,,,,,https://www.ambitionbox.com/salaries/vmware-salaries,,,,,AB scrape: Senior Member of Technical Staff (n=467); n=467; equity split estimated.,2026-05-09
+wells fargo india,software-engineer,lead,,32.2,35.6,24.2,26.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wells-fargo-salaries,,,,,AB scrape: Senior Software Engineer (n=6198); n=6198,2026-05-09
+wells fargo india,software-engineer,mid,,20.9,23.1,15.7,17.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wells-fargo-salaries,,,,,AB scrape: Software Engineer (n=1332); n=1332,2026-05-09
+wells fargo india,engineering-manager,executive,,33.0,36.5,24.8,27.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wells-fargo-salaries,,,,,AB scrape: Technical Lead (n=335); n=335,2026-05-09
+wells fargo india,software-engineer,senior,,22.8,25.2,17.1,18.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wells-fargo-salaries,,,,,AB scrape: Software Developer (n=320); n=320,2026-05-09
+wells fargo india,data-engineer,lead,,28.9,31.9,21.7,23.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/wells-fargo-salaries,,,,,AB scrape: Senior Data Engineer (n=289); n=289,2026-05-09
+morgan stanley,data-engineer,senior,,27.4,31.2,20.5,23.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/morgan-stanley-salaries,,,,,AB scrape: Senior Data Engineer (n=76); n=76,2026-05-09
+ola electric,program-manager,senior,,22.8,25.2,17.1,18.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ola-electric-mobility-salaries,,,,,AB scrape: Program Manager (n=150); n=150,2026-05-09
+ola electric,software-engineer,entry,,16.7,21.8,12.5,16.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ola-electric-mobility-salaries,,,,,AB scrape: Software Developer (n=54); n=54,2026-05-09
+angel one,software-engineer,mid,,28.2,32.5,21.1,24.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/angel-one-salaries,,,,,AB scrape: Software Development Engineer II (n=75); n=75,2026-05-09
+tata steel,engineering-manager,lead,,7.9,8.7,5.9,6.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/tata-steel-salaries,,,,,AB scrape: Lead Engineer (n=376); n=376,2026-05-09
+mahindra,engineering-manager,lead,,18.0,19.9,13.5,14.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/mahindra-salaries,,,,,AB scrape: Lead Engineer (n=1228); n=1228,2026-05-09
+mphasis,software-engineer,entry,,3.7,4.1,2.8,3.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/mphasis-salaries,,,,,AB scrape: Associate Software Engineer (n=4991); n=4991,2026-05-09
+mphasis,qa-engineer,senior,,15.4,17.0,11.6,12.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/mphasis-salaries,,,,,AB scrape: Senior Test Engineer (n=985); n=985,2026-05-09
+dream11,software-engineer,entry,,24.3,29.0,18.2,21.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/dream11-salaries,,,,,AB scrape: Sde1 (n=54); n=54,2026-05-09
