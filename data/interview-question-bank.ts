@@ -917,6 +917,238 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Flipkart GET / SDE-1 campus design round. Calibrated for fresher — wants entities + relationships + key endpoints, NOT distributed-systems framing. Over-engineering = lack of judgement.",
   },
 
+  /* ── Campus Placements — LTIMindtree / HCL / Capgemini / IBM ── */
+  {
+    text: "What is normalisation in DBMS? Walk me through 1NF → 2NF → 3NF on a student-marks table you'd build for your college.",
+    company: "ltimindtree", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "LTIMindtree fresher technical round. Textbook DBMS warmup. Strong candidates anchor each form to a concrete college table; weak ones recite definitions.",
+  },
+  {
+    text: "Tell me one thing that's not on your resume that I should know about you. Why didn't you put it on the resume?",
+    company: "hcl", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "HCL TechBee / GET HR round. Tests self-awareness about resume editing choices. 'Nothing, my resume is complete' fails — wants a real story (a fest organised, a hackathon DNF, a hobby) with reasoning.",
+  },
+  {
+    text: "Capgemini works across 50+ countries. If your first project puts you on a midnight shift for a French client for 3 months, how do you handle it?",
+    company: "capgemini", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Capgemini campus HR. Tests realistic acceptance + a coping plan, not blanket 'yes anything'. Mentioning sleep hygiene / family communication / health = mature signal.",
+  },
+  {
+    text: "Pick any one IBM product or service you've heard of. Tell me what problem it solves and who its biggest competitor is.",
+    company: "ibm", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "IBM campus screening. Watson / Red Hat / Z-mainframe / Cloud — pick any. Tests basic homework on the company. 'IBM makes computers' = unprepared.",
+  },
+
+  /* ── Campus Placements — Microsoft / Google / Adobe India ────── */
+  {
+    text: "You're given two sorted arrays of size m and n. Find the median in O(log(min(m,n))). Talk me through your approach before you write.",
+    company: "microsoft", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Microsoft IDC / Engage campus DSA round. The bar is genuine — partition-based binary search expected. Strong candidates state O(m+n) merge first, then optimise; weak ones go silent.",
+  },
+  {
+    text: "Why software engineering and not the M.Tech / MBA route your peers are taking? Talk me through how you decided.",
+    company: "microsoft", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Microsoft campus motivation probe. Tests genuine deliberation vs. herd choice. 'I love coding' alone weak — wants a counter-option they considered and why they ruled it out.",
+  },
+  {
+    text: "Google STEP — design a data structure that supports insert, delete, and getRandom all in O(1). Now extend it to allow duplicates.",
+    company: "google", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Google STEP / APAC campus DSA. HashMap + dynamic array combo. The duplicate extension is the real test — most miss the index-tracking nuance.",
+  },
+  {
+    text: "Adobe asks for a real-world bug you've debugged. Tell me about a project bug that took you more than a day to find. What was the root cause and what would you do differently?",
+    company: "adobe", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Adobe MTS-1 campus debugging probe. Tests genuine engineering reflection. 'I added more print statements' acceptable but want articulation of WHY the bug was hard (assumption violated, async race, env mismatch).",
+  },
+
+  /* ── Campus Placements — Oracle / Cisco / Salesforce / NVIDIA ── */
+  {
+    text: "Oracle Apps DBA fresher: explain a deadlock in a transactional database. Now tell me how you'd detect one programmatically.",
+    company: "oracle", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Oracle India campus tech. Wait-for-graph + cycle detection. Strong candidates draw a 2-txn deadlock on paper; weak ones describe symptoms only.",
+  },
+  {
+    text: "Walk me through what happens, packet by packet, when you type cisco.com into a browser and hit enter. Stop me at any layer you want to go deeper on.",
+    company: "cisco", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Cisco campus networking fundamentals. The classic — wants DNS → TCP → TLS → HTTP coverage with at least one layer drilled into. 'Browser sends a request' = fail.",
+  },
+  {
+    text: "Salesforce Trailhead — have you done any Trailhead modules? If yes, which one and what was the most surprising thing you learned. If no, why not?",
+    company: "salesforce", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Salesforce campus / Futureforce HR. Trailhead engagement is a real signal of self-driven learning. 'No' is acceptable IF paired with another concrete self-learning thread (LeetCode streak, Coursera cert).",
+  },
+  {
+    text: "NVIDIA — you've worked with PyTorch in college? Tell me what happens to a tensor in memory when you call .cuda() on it. What could go wrong?",
+    company: "nvidia", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "NVIDIA India campus DLI / SWE-ML. Tests whether ML coursework was conceptual or applied. Want: host→device copy, alignment, OOM, async semantics. 'It runs on GPU' = surface-level.",
+  },
+
+  /* ── Campus Placements — Indian product cos (Swiggy/Zomato/etc) */
+  {
+    text: "Swiggy delivery promise is 30 minutes. If your college fest catered through Swiggy and 4 of 200 orders missed the SLA, what data would you ask Swiggy for to figure out why?",
+    company: "swiggy", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Swiggy campus / Step-Up case round. Operational empathy + data instinct. Strong: order timestamps, restaurant prep time, rider assignment latency, distance, weather. Weak: 'I'd ask for delay reasons' generic.",
+  },
+  {
+    text: "Zomato — design the database schema for restaurant menus that supports daily specials and out-of-stock items in real time.",
+    company: "zomato", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Zomato campus SWE schema design. Wants restaurant→menu→item→variant tables + a separate availability/specials table with TTL. Over-normalisation or stuffing it all in one table both fail.",
+  },
+  {
+    text: "Razorpay handles payments. If a UPI debit succeeds at the bank but our webhook fails, what should the user see, and what should our system do?",
+    company: "razorpay", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Razorpay Road-to-Razorpay / SDE-1 campus. Idempotency + reconciliation thinking. Want: pending state for user, polling/reconcile job for system, eventual settlement. 'Show error' = fails the bar.",
+  },
+  {
+    text: "PhonePe processes ~25M transactions a day. As a fresher SDE, what's one thing you'd be most worried about breaking on your first deploy?",
+    company: "phonepe", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "PhonePe campus humility / scale-awareness probe. Strong: name a specific failure mode (cache stampede, schema migration lock, money-handling race). Weak: 'everything' / 'nothing, I'll be careful'.",
+  },
+  {
+    text: "Paytm — explain how you'd handle a refund that's been initiated twice by accident. Walk me through your idempotency strategy.",
+    company: "paytm", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Paytm campus SDE-1 fintech round. Idempotency keys + state machine for refunds. Wants explicit 'request_id' or 'refund_id' uniqueness, plus what state transitions are valid.",
+  },
+  {
+    text: "CRED's audience is the top 1% credit-card user. Pick one feature in the CRED app and tell me what you'd change for a tier-2 city user — and whether CRED should care.",
+    company: "cred", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "CRED campus product round. Tests strategic awareness — the 'should CRED care' is the real probe. Strong candidates note CRED's premium positioning and argue both sides; weak ones add tier-2 features uncritically.",
+  },
+  {
+    text: "Meesho's resellers are mostly women in tier-2/3 cities running WhatsApp shops. Design the simplest possible 'low-stock' notification for them. What's your channel and what's your message?",
+    company: "meesho", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Meesho campus PM / SDE-with-product-lens. Tests audience empathy. Wants: SMS/WhatsApp push (not email), Hindi/regional fallback, time-of-day awareness. 'In-app push' alone shows poor user model.",
+  },
+  {
+    text: "Freshworks builds B2B SaaS. As a fresher SDE, what's the difference between writing a feature for 100 customers vs. 100,000 — concretely, what changes in your code?",
+    company: "freshworks", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Freshworks campus SDE-1. Tests scale-thinking. Want: pagination, async jobs, tenant isolation, observability. 'Better code' generic = fail.",
+  },
+  {
+    text: "Zoho doesn't believe in the IIT premium — we hire from Tier-3 colleges too. Tell me one thing about your engineering ability that doesn't show up in your CGPA.",
+    company: "zoho", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Zoho campus / Schools-of-Learning HR round. Zoho's anti-pedigree culture is real and on the careers page. Wants: a side-project, an OSS contrib, a problem solved without coursework support. CGPA-defending answers fail.",
+  },
+  {
+    text: "Zerodha — explain what happens between you placing a market-buy order on Kite at 9:15:00 AM and the trade settling. Where could it fail?",
+    company: "zerodha", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Zerodha campus SDE — exchange-flow literacy. Wants: order routing → exchange matching → trade confirmation → T+1 settlement at clearing corp. Fresher pass-mark = naming three of these stages.",
+  },
+
+  /* ── Campus Placements — Banking / NBFC / Investment grad programs */
+  {
+    text: "HDFC Pragati — you're a branch officer. A senior citizen wants to invest 20 lakhs of retirement money in equity mutual funds because his neighbour told him to. What do you do in the next 10 minutes?",
+    company: "hdfc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "HDFC Pragati / management-trainee branch-banking ethics probe. Wants: risk-profiling, suitability assessment, debt allocation suggestion, written record. 'Sell him the equity fund, hit my target' = instant fail.",
+  },
+  {
+    text: "ICICI — pitch me the savings account I should open. I'm 22, just placed, ₹6 LPA, single, in Bangalore.",
+    company: "icici", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "ICICI campus PO / management trainee. Tests product knowledge + needs-based selling. Want: question first (spending pattern, debit-card use, salary credit), then product. Pitch-without-questions = fails.",
+  },
+  {
+    text: "Goldman Sachs Engineering analyst: estimate how much memory you'd need to store one year of NSE Nifty-50 tick data in RAM. Show your math.",
+    company: "goldman", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Goldman Bengaluru campus engineering analyst. Fermi estimation + finance literacy. Want: ticks/sec × bytes/tick × 50 stocks × seconds-in-trading-day × 250 days. Sanity check final number.",
+  },
+  {
+    text: "JPMorgan CCB analyst: a customer disputes a ₹50,000 credit-card charge. Walk me through what you check first, and whether you'd reverse it provisionally.",
+    company: "jpmc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "JPMC India CCB campus analyst. Tests risk + customer-experience trade-off. Want: merchant pattern, customer history, fraud rules, dispute timeline. RBI 'shadow reversal' rules are a bonus signal.",
+  },
+
+  /* ── Campus Placements — Consulting analyst programs ────────── */
+  {
+    text: "McKinsey BA case: an Indian quick-commerce player's profit per order has dropped 40% YoY despite GMV growth. Where do you start?",
+    company: "mckinsey", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "McKinsey India BA / fellow campus case. Profitability framework — revenue/order vs. cost/order. Strong: structures cost into rider, packaging, dark-store, discounting. Weak: jumps to 'reduce discounts'.",
+  },
+  {
+    text: "BCG Associate: estimate the size of the second-hand smartphone market in India per year. Walk me through your structure.",
+    company: "bcg", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "BCG India campus case interview. Sizing case. Want: top-down (smartphone users × replacement rate × resale rate × avg-price) AND a sanity check from bottom-up (Cashify/OLX volume estimate).",
+  },
+  {
+    text: "Bain Associate: a friend asks if she should leave her ₹14 LPA Bangalore PM job to start a D2C clothing brand. What three numbers do you ask her for first?",
+    company: "bain", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Bain India campus — applied-judgment screen. Tests business instincts on real-life decision. Strong: runway months, beach-head SKU CAC/AOV, competitor density. Weak: 'go for it / don't go for it' opinions without numbers.",
+  },
+  {
+    text: "Deloitte S&O analyst: a mid-sized Indian retail bank wants to enter wealth management. What are the top 3 risks you'd flag in week 1?",
+    company: "deloitte", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Deloitte campus analyst case. Wants: regulatory (SEBI/AMFI licences), capability (RM hiring + tech), conflict (existing bancassurance partners). Naming specific Indian regulators = strong.",
+  },
+
+  /* ── Campus Placements — FMCG MT / Sales-leadership programs ── */
+  {
+    text: "HUL Future Leaders: you're managing the Surf Excel team in Patna for 6 months. Modern trade is 5% there; the other 95% is kirana. What's your week-1 priority?",
+    company: "hul", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "HUL FLP campus stretch case. Tests channel-mix awareness. Want: distributor relationships, secondary-sales visibility, on-ground Vyapaari interactions. 'Run a digital campaign' = wrong audience.",
+  },
+  {
+    text: "P&G Brand MT: tell me about a time you had to convince a group of people to do something they didn't initially want to do. What would you do differently now?",
+    company: "p&g", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "P&G PEAK campus behavioural. Maps to P&G's 'Leadership' competency. Want: STAR with named stakeholders + a concrete tactic (data, 1:1s, demo). 'I made them see my point' = vague fail.",
+  },
+  {
+    text: "ITC Generation Next: pick any ITC product (Aashirvaad / Sunfeast / Bingo / Classmate / Wills). Tell me one thing you'd change about its packaging for tier-2 distribution and why.",
+    company: "itc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "ITC GenNxt campus FMCG product probe. Tests trade-channel awareness. Strong: smaller SKU for ₹5/₹10 price points, grammage, kirana shelf-fit. Weak: aesthetic redesign without distribution rationale.",
+  },
+
+  /* ── Campus Placements — Group Discussion / Aptitude transitions */
+  {
+    text: "Group discussion topic: 'AI tools should be banned in college coursework.' You have 2 minutes to take and defend a position. Take one now.",
+    company: "tcs", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "TCS / Wipro / Capgemini GD round. Tests stance-taking + conciseness, not 'right answer'. Strong: clear position in 15 seconds, one specific defence, one acknowledged counter. Weak: balanced waffling for 2 minutes.",
+  },
+  {
+    text: "Aptitude follow-up: a train 240m long crosses a 360m platform in 30 seconds. What's its speed in km/h, and would the answer change if the platform had a 60m incline?",
+    company: "infosys", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Infosys / Cognizant aptitude-to-interview transition probe. The base calc is rote; the incline twist tests whether the candidate questions assumptions. 'Same answer, distance is distance' is correct and a strong signal.",
+  },
+  {
+    text: "Coding-round handoff: in your assessment you got 2 out of 3 problems. Which one did you not solve, and walk me through your thought process when you got stuck.",
+    company: "amazon", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Amazon / Microsoft / Goldman post-assessment interview opener. Tests honesty + meta-cognition. Strong: names the problem, the approach attempted, where it broke, what they'd try now. 'I solved all 3' when records say otherwise = instant disqualification.",
+  },
+
   /* ── Management / Engineering Manager focus ─────────────────── */
   {
     text: "Walk me through a 1:1 you ran with a low performer. What did you say in the first five minutes?",

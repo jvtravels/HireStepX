@@ -399,7 +399,23 @@ function standardFeedback(text: string, wordCount: number, runningScores: number
     /* STAR-component-aware: when ≥ 30 words and clearly missing one of
        Action/Result, name the missing piece instead of a generic STAR
        tip. Helps the candidate self-correct on the next answer. */
-    if (wordCount >= 40 && starCount >= 2 && !hasAction) {
+    /* Turn-2 follow-through: if the previous tip was an Action nudge AND
+       the candidate fixed Action this turn but is still missing Result,
+       acknowledge the fix before naming the next gap. Reads as coached,
+       not robotic. Same pattern for Action→Situation/Task. */
+    const lastWasActionNudge = !!recentFeedbacks?.some(f => /what did \*you\* do|specific actions/i.test(f));
+    const lastWasResultNudge = !!recentFeedbacks?.some(f => /close with the outcome|End with the result/i.test(f));
+    if (wordCount >= 40 && lastWasActionNudge && hasAction && !hasResult) {
+      feedback = pick([
+        "Better — actions are clear now. Close with the outcome: what changed?",
+        "You fixed the action piece. End with the result, even a rough metric.",
+      ]);
+    } else if (wordCount >= 40 && lastWasResultNudge && hasResult && !hasSituation && !hasTask) {
+      feedback = pick([
+        "Result is in — anchor it with the situation up front next time.",
+        "Outcome's there. Open with where/when so the impact has a frame.",
+      ]);
+    } else if (wordCount >= 40 && starCount >= 2 && !hasAction) {
       feedback = pick([
         "You set the scene well — what did *you* do? Lead with 'I' verbs.",
         "Good context. Walk me through your specific actions, not the team's.",

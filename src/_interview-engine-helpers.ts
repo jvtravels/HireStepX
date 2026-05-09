@@ -210,3 +210,41 @@ export function pickRandom<T>(arr: T[]): T {
 export function randomDelay(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min));
 }
+
+/**
+ * Decide whether the closing turn should swap its cheery static text for
+ * an empathetic variant. Two trigger paths:
+ *   (a) Both of the recent user turns were tense (skip / <8 words / "I
+ *       don't know") — pure surface-level read.
+ *   (b) At least one turn was *very* tense (skip / <5 words / explicit
+ *       "I don't know") AND the running score average is sub-50 — catches
+ *       the long-OK-preamble-then-rough-finish case.
+ */
+export function shouldUseEmpatheticClosing(
+  recentUserTurns: string[],
+  recentScores: number[],
+): boolean {
+  const trimmed = recentUserTurns.filter(Boolean).map(t => t.trim());
+  const isTense = (t: string): boolean => {
+    if (/^\[SKIPPED\b/i.test(t)) return true;
+    const words = t.split(/\s+/).filter(Boolean);
+    if (words.length < 8) return true;
+    if (/\b(i don.?t know|not sure|no idea|can.?t (?:think|recall|remember))\b/i.test(t)) return true;
+    return false;
+  };
+  const isVeryTense = (t: string): boolean => {
+    if (/^\[SKIPPED\b/i.test(t)) return true;
+    const words = t.split(/\s+/).filter(Boolean);
+    if (words.length < 5) return true;
+    if (/\b(i don.?t know|no idea|can.?t (?:think|recall|remember))\b/i.test(t)) return true;
+    return false;
+  };
+  const tenseCount = trimmed.filter(isTense).length;
+  const avgScore = recentScores.length > 0
+    ? recentScores.reduce((a, b) => a + b, 0) / recentScores.length
+    : 100;
+  const struggling = avgScore < 50;
+  if (trimmed.length >= 2 && tenseCount >= 2) return true;
+  if (trimmed.some(isVeryTense) && struggling) return true;
+  return false;
+}

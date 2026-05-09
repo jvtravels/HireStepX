@@ -87,6 +87,12 @@ const DICT: Record<string, FriendlyFlag> = {
   generic_passion_no_substance: { label: "Generic 'I'm passionate' answer", description: "Used passion language without describing a built project.", category: "user_skipped_step" },
   availability_never_discussed: { label: "Availability / joining date never came up", description: "For freshers, joining timeline matters — wasn't discussed.", category: "user_skipped_step" },
   user_badmouthing_college: { label: "User badmouthed their college", description: "Negative language about college / professors — costs interview points.", category: "user_skipped_step" },
+  project_no_tech_stack: { label: "Project narrated without naming a stack", description: "Fresher described a project but didn't name a language / framework / DB / deployment target.", category: "user_skipped_step" },
+  implausible_team_size: { label: "Implausible team-size claim", description: "Fresher claimed to have led a 15+ person team — not credible at college level.", category: "user_skipped_step" },
+  no_company_specific_research: { label: "No company-specific research surfaced", description: "AI asked 'why us?' — user replied with generic 'great culture / brand value' filler.", category: "user_skipped_step" },
+  volunteered_academic_deficit: { label: "Volunteered backlogs / low CGPA unprompted", description: "User offered up an academic deficit before being asked — costs framing points.", category: "user_skipped_step" },
+  excessive_filler_words: { label: "Excessive filler words", description: "Fillers ('basically', 'as such', 'like') above 4 per 100 words — reads as nervous.", category: "user_skipped_step" },
+  internship_unsubstantiated: { label: "Internship claimed but not substantiated", description: "Internship mentioned without naming company / deliverable / mentor / outcome when probed.", category: "user_skipped_step" },
 
   // Management
   answered_as_ic_not_manager: { label: "Answered as IC, not as manager", description: "Stories used 'I built / I shipped' — should be 'my team / my report'.", category: "user_skipped_step" },

@@ -51,6 +51,7 @@ import {
   assessAnswerQuality,
   pickRandom,
   randomDelay,
+  shouldUseEmpatheticClosing,
 } from "./_interview-engine-helpers";
 import type { InterviewerPersonality } from "./_interview-engine-helpers";
 
@@ -2034,15 +2035,7 @@ export function useInterviewEngine() {
           ...transcript.filter(t => t.speaker === "user").slice(-1).map(t => t.text || ""),
           answerText || "",
         ].filter(Boolean);
-        const tenseTurns = recentUserTurns.filter(t => {
-          const trimmed = t.trim();
-          if (/^\[SKIPPED\b/i.test(trimmed)) return true;
-          const words = trimmed.split(/\s+/).filter(Boolean);
-          if (words.length < 8) return true;
-          if (/\b(i don.?t know|not sure|no idea|can.?t (?:think|recall|remember))\b/i.test(trimmed)) return true;
-          return false;
-        });
-        if (recentUserTurns.length >= 2 && tenseTurns.length >= 2) {
+        if (shouldUseEmpatheticClosing(recentUserTurns, answerQualityRef.current.slice(-3))) {
           const empatheticClosing = "Thanks for sticking with it — these conversations aren't easy. Generating your detailed report now. Stay on this screen for a moment.";
           if (empatheticClosing !== nextStep.aiText) {
             setInterviewScript(prev => {

@@ -6,6 +6,7 @@ import {
   isSalaryNegotiationLengthOk,
   computeStepCount,
   buildStaticFallback,
+  flagOffRoleQuestions,
   VALID_PERSONAS,
   type RawQuestion,
 } from "../../server-handlers/_generate-questions-helpers";
@@ -212,5 +213,53 @@ describe("buildStaticFallback", () => {
     for (const q of qs) {
       expect(q.aiText.length).toBeGreaterThan(0);
     }
+  });
+});
+
+
+describe("flagOffRoleQuestions", () => {
+  it("returns empty when roleFamily is undefined", () => {
+    const qs: RawQuestion[] = [{ type: "question", aiText: "Walk me through sharding strategy." }];
+    expect(flagOffRoleQuestions(qs, undefined)).toEqual([]);
+  });
+
+  it("flags a SQL JOIN / sharding question for a designer", () => {
+    const qs: RawQuestion[] = [
+      { type: "intro", aiText: "Hi" },
+      { type: "question", aiText: "Tell me about a recent product you designed." },
+      { type: "question", aiText: "How would you optimize a SQL JOIN on a 50M-row table?" },
+      { type: "closing", aiText: "Bye" },
+    ];
+    expect(flagOffRoleQuestions(qs, "design")).toEqual([2]);
+  });
+
+  it("flags a Figma-autolayout question for an engineer", () => {
+    const qs: RawQuestion[] = [
+      { type: "question", aiText: "Walk me through your Figma autolayout system." },
+      { type: "question", aiText: "How would you scale this service?" },
+    ];
+    expect(flagOffRoleQuestions(qs, "swe")).toEqual([0]);
+  });
+
+  it("flags a leetcode question for a sales role", () => {
+    const qs: RawQuestion[] = [{ type: "question", aiText: "How would you solve this leetcode problem?" }];
+    expect(flagOffRoleQuestions(qs, "sales")).toEqual([0]);
+  });
+
+  it("does NOT flag soft-overlap terms (metrics, users, team)", () => {
+    const qs: RawQuestion[] = [
+      { type: "question", aiText: "What metrics did you track for the team?" },
+      { type: "question", aiText: "How did you align with users?" },
+    ];
+    expect(flagOffRoleQuestions(qs, "design")).toEqual([]);
+    expect(flagOffRoleQuestions(qs, "swe")).toEqual([]);
+  });
+
+  it("ignores intro and closing steps", () => {
+    const qs: RawQuestion[] = [
+      { type: "intro", aiText: "Welcome — share your kafka partition strategy." },
+      { type: "closing", aiText: "Thanks for the sharding chat." },
+    ];
+    expect(flagOffRoleQuestions(qs, "design")).toEqual([]);
   });
 });

@@ -9,6 +9,7 @@ import {
   pickPersonality,
   pickRandom,
   randomDelay,
+  shouldUseEmpatheticClosing,
 } from "../_interview-engine-helpers";
 
 describe("normalizePersona", () => {
@@ -312,5 +313,34 @@ describe("SILENCE_NUDGES", () => {
       expect(typeof nudge).toBe("string");
       expect(nudge.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("shouldUseEmpatheticClosing", () => {
+  const longOK = "I shipped the migration project at my last company over six weeks and aligned the team carefully on scope.";
+
+  it("returns false on a normal interview close (high scores, full answers)", () => {
+    expect(shouldUseEmpatheticClosing([longOK, longOK], [80, 75, 82])).toBe(false);
+  });
+
+  it("returns true when both recent turns are short (<8 words)", () => {
+    expect(shouldUseEmpatheticClosing(["short.", "I tried."], [60, 55])).toBe(true);
+  });
+
+  it("returns true when both recent turns are skipped", () => {
+    expect(shouldUseEmpatheticClosing(["[SKIPPED — reason: pass]", "[SKIPPED — reason: pass]"], [50, 50])).toBe(true);
+  });
+
+  it("returns true when last turn is very tense AND running average is sub-50", () => {
+    // Long preamble then a final "I don't know" — running average sub-50.
+    expect(shouldUseEmpatheticClosing([longOK, "I don't know."], [40, 35, 30])).toBe(true);
+  });
+
+  it("returns false when one turn is very tense but average score is healthy", () => {
+    expect(shouldUseEmpatheticClosing([longOK, "I don't know."], [80, 75, 82])).toBe(false);
+  });
+
+  it("returns false on empty input", () => {
+    expect(shouldUseEmpatheticClosing([], [])).toBe(false);
   });
 });
