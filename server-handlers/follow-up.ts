@@ -404,9 +404,17 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
         ? `\n${sanitizeForLLM(negotiationBand.bandContext, 2400)}`
         : "";
 
+      // Round LPA values shown to the LLM so the candidate-visible
+      // number (rendered via fmtLPA → integer for ≥10 LPA) matches the
+      // number the LLM sees. Prior bug: bandContext rendered "₹30 LPA"
+      // but elsewhere we passed the raw 30.4, and the LLM emitted
+      // "the ₹30.4 LPA package" — a precision leak. Round to integer
+      // for ≥10 LPA, half-LPA below.
+      const roundLPA = (n: number): number =>
+        n >= 10 ? Math.round(n) : Math.round(n * 2) / 2;
       // Monotonic offer rule + candidate target context
       const offerTrackingCtx = highestOfferMade
-        ? `\nIMPORTANT: Your highest previous offer was ₹${highestOfferMade} LPA. Your next offer MUST be >= ₹${highestOfferMade} LPA. Never go backwards.`
+        ? `\nIMPORTANT: Your highest previous offer was ₹${roundLPA(highestOfferMade)} LPA. Your next offer MUST be >= ₹${roundLPA(highestOfferMade)} LPA. Never go backwards.`
         : "";
       // Server-deterministic recommended counter. Removes the LLM's
       // hand from picking ₹ values for counter / closing-pressure phases.
@@ -422,8 +430,9 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
             candidateTarget,
           })
         : null;
-      const recommendedCounterCtx = recommendedCounter !== null
-        ? `\nRECOMMENDED COUNTER FOR THIS TURN: ₹${recommendedCounter} LPA. This number is computed from the band + the candidate's stated target + your previous offers. Use this exact figure as your headline counter unless the candidate's last message gives you a specific reason to deviate (e.g. they explicitly accepted a different number, or their ask is below this figure — in which case match their ask). When you write component breakdowns (base + variable + bonus), make sure the components SUM to ₹${recommendedCounter} LPA.`
+      const recommendedCounterDisplay = recommendedCounter !== null ? roundLPA(recommendedCounter) : null;
+      const recommendedCounterCtx = recommendedCounterDisplay !== null
+        ? `\nRECOMMENDED COUNTER FOR THIS TURN: ₹${recommendedCounterDisplay} LPA. This number is computed from the band + the candidate's stated target + your previous offers. Use this exact figure as your headline counter unless the candidate's last message gives you a specific reason to deviate (e.g. they explicitly accepted a different number, or their ask is below this figure — in which case match their ask). When you write component breakdowns (base + variable + bonus), make sure the components SUM to ₹${recommendedCounterDisplay} LPA.`
         : "";
 
       const targetCtx = candidateTarget
@@ -1556,6 +1565,95 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // Strip leading bullet/asterisk markers on lines.
       t = t.replace(/^\s*[*\-•]\s+/gm, "");
       parsed.followUpText = t;
+    }
+
+    /* Detector-driven REWRITE pass. Before the telemetry block runs,
+       attempt to rewrite the LLM output so the candidate never sees the
+       failure modes the detector codifies. The clamp logic above handles
+       most numeric drift; this pass closes specific gaps:
+         • phantom-counter — replace fabricated "best offer of ₹X" /
+           "the ₹X package" with the highest offer the AI has actually
+           made this session.
+         • premature-close — truncate closing language so the AI's reply
+           ends at the last legitimate sentence, not at "I'll have HR
+           send you the offer letter".
+       This is intentionally narrow: only blocker-severity codes get a
+       rewrite. Number-echo-misbind already has a dedicated rewriter
+       above (targetEchoRe). Failures that survive the rewrite still flow
+       to the telemetry block below — that's the whole point of running
+       detection twice. */
+    if (parsed.followUpText && type === "salary-negotiation") {
+      try {
+        const roundLPA = (n: number): number => n >= 10 ? Math.round(n) : Math.round(n * 2) / 2;
+        const ceilingForRewrite = (typeof highestOfferMade === "number" ? highestOfferMade : null)
+          ?? (canonicalInitialOffer ?? negotiationBand?.initialOffer ?? null);
+        let rewritten = parsed.followUpText;
+
+        // ── Phantom-counter rewrite ────────────────────────────────
+        // Pattern A: named offer phrase ("our current best offer …
+        // is ₹X LPA"). Replace X with the real ceiling.
+        if (ceilingForRewrite != null) {
+          const phantomA = /((?:our|the|my|company[''’]?s)\s+(?:current|latest|revised|updated|standing|new|best)\s+(?:best\s+)?offer\b[^.!?]{0,160}?₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore))/gi;
+          rewritten = rewritten.replace(phantomA, (full, pre, num, post) => {
+            const isCr = /cr|crore/i.test(post);
+            const v = parseFloat(num) * (isCr ? 100 : 1);
+            if (v > ceilingForRewrite * 1.05) {
+              console.warn(`[follow-up] Phantom counter: "${full.trim()}" — rewriting ₹${v} → ₹${roundLPA(ceilingForRewrite)} LPA`);
+              return `${pre}${roundLPA(ceilingForRewrite)}${post.replace(/(?:lakhs?|cr|crore)/i, "LPA").replace(/lpa/i, "LPA")}`;
+            }
+            return full;
+          });
+          // Pattern B: "the ₹X package" with X not matching any reference number.
+          const refs = [
+            ceilingForRewrite,
+            typeof candidateTarget === "number" ? candidateTarget : null,
+            typeof prepCompetingOffer === "number" ? prepCompetingOffer : null,
+          ].filter((n): n is number => n != null);
+          const phantomB = /((?:^|[\s,;.])(?:the|our)\s+₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore)\s+(?:package|offer|comp(?:ensation)?|CTC))/gi;
+          rewritten = rewritten.replace(phantomB, (full, pre, num, post) => {
+            const isCr = /cr|crore/i.test(post);
+            const v = parseFloat(num) * (isCr ? 100 : 1);
+            if (refs.some(r => Math.abs(v - r) < 0.15)) return full;
+            console.warn(`[follow-up] Phantom number: "${full.trim()}" — rewriting ₹${v} → ₹${roundLPA(ceilingForRewrite)} LPA`);
+            return `${pre}${roundLPA(ceilingForRewrite)}${post}`;
+          });
+        }
+
+        // ── Premature-close truncation ─────────────────────────────
+        // If a closing phrase appears in a reply where the candidate
+        // hasn't accepted, truncate the reply at the start of the
+        // sentence containing the closing phrase. This preserves any
+        // legitimate substance earlier in the reply.
+        if (!negotiationFacts?.acceptedImmediately) {
+          const closingMarker = /(?:(?:let me\s+)?put\s+together\s+(?:the\s+)?final\s+numbers|(?:I[''’]?ll|we[''’]?ll|going\s+to)\s+(?:work\s+with|loop\s+in|connect\s+with|sync\s+with)\s+HR|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details))/i;
+          const cm = rewritten.match(closingMarker);
+          if (cm && typeof cm.index === "number") {
+            // Find the start of the sentence containing the closing phrase.
+            let sentStart = 0;
+            for (let i = cm.index; i > 0; i--) {
+              if (/[.!?]/.test(rewritten[i - 1]) && /\s/.test(rewritten[i] ?? "")) {
+                sentStart = i;
+                break;
+              }
+            }
+            const head = rewritten.slice(0, sentStart).trim();
+            // Drop the closing sentence; preserve everything before it.
+            // If the entire reply was the closing sentence, leave a
+            // safe non-closing redirect so we don't return an empty
+            // string (would surface as a blank turn).
+            const safeFallback = "Let's keep working through this — what specifically would change your mind on the package?";
+            const truncated = head.length > 20 ? head : safeFallback;
+            console.warn(`[follow-up] Premature close: truncating at "${cm[0]}" — kept ${truncated.length} chars`);
+            rewritten = truncated;
+          }
+        }
+
+        if (rewritten !== parsed.followUpText) {
+          parsed.followUpText = rewritten;
+        }
+      } catch (e) {
+        console.warn("[follow-up] detector-rewrite pass failed:", e);
+      }
     }
 
     /* Detector-based failure telemetry. After ALL post-LLM clamps and
