@@ -99,7 +99,7 @@ const PREFER_IMPORTED_REGARDLESS_COMPANIES = new Set([
  *  company is in the IT-services / domestic-BFSI flip set AND AB has a
  *  scrape with reasonable sample size, prefer AB. Returns the flipped
  *  band (research-aggregated) or null to keep curator. */
-function maybePreferImportedOverSeed(
+export function maybePreferImportedOverSeed(
   curator: CompanyBandOverride,
   companyKey: string,
   roleKey: string,
