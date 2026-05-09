@@ -53,6 +53,10 @@ const PREFER_IMPORTED_OVER_SEED_COMPANIES = new Set([
   "tcs", "infosys", "wipro", "cognizant", "accenture", "hcl", "hcl technologies",
   "tech mahindra", "ltimindtree", "capgemini", "ibm india", "ibm",
   "hdfc bank", "icici", "axis", "sbi", "kotak", "idfc",
+  /* Phase 6: indian-unicorn seed-multiplier curator entries (no Levels.fyi
+   * / Glassdoor blend) at PM/BA — AB pass-2 yoe-bucket dense cohorts
+   * track realized comp better than the synthetic 0.85-1.05x baseline. */
+  "paytm", "zomato", "meesho",
 ]);
 
 /** Companies where AmbitionBox is authoritative regardless of curator
@@ -138,8 +142,31 @@ function maybePreferImportedOverSeed(
    * was extrapolated from entry — diverges 30-40% from disclosure data.
    * Lead+ stays at n≥1000 since the cohort thins out fast. */
   const isMidOrSenior = experienceLevel === "mid" || experienceLevel === "senior";
+  /* Phase 6: extend loose threshold to IT-services PM/BA/QA at lead/exec.
+   * AB pass-2 captures real "Project Manager 9-12y" / "Senior Test
+   * Engineer 9-12y" cohorts with n in the 100s-1000s for TCS/Infosys/
+   * Wipro/HCL/Capgemini/Cognizant. Seed-multiplier curve (0.45-0.62x of
+   * ₹100L+ baseline) puts these at ₹45-65L which is 2-3× too high vs
+   * realized comp. Companies are already gated by
+   * PREFER_IMPORTED_OVER_SEED_COMPANIES, so this only fires for the
+   * IT-services / domestic-BFSI flip set. */
+  const isItNonEngRoleSeniorTrack =
+    (roleKey === "product-manager" || roleKey === "project-manager" ||
+      roleKey === "business-analyst" || roleKey === "qa-engineer") &&
+    (experienceLevel === "lead" || experienceLevel === "executive") &&
+    curatorIsSeed;
+  /* Phase 6: also allow engineering-track lead at IT-services (seed
+   * curator). AB pass-2 "Senior SE 9-12y" n is in the 100s for accenture/
+   * tcs/wipro/infosys — same n-floor (150) as the senior tier. Executive
+   * SE is genuinely sparse on AB so stays at 1000. */
+  const isItEngLead =
+    isEngineeringTrack && experienceLevel === "lead" && curatorIsSeed;
   const looseThresholdEligible =
-    isPass2 && isEngineeringTrack && (isJuniorLevel || isMidOrSenior);
+    isPass2 && (
+      (isEngineeringTrack && (isJuniorLevel || isMidOrSenior)) ||
+      isItNonEngRoleSeniorTrack ||
+      isItEngLead
+    );
   const threshold = looseThresholdEligible ? 150 : 1000;
   if (n < threshold) return null;
   return tagImported(imported);

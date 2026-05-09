@@ -330,6 +330,7 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "goldman sachs": "bfsi-global",
   "jp morgan": "bfsi-global",
   jpmorgan: "bfsi-global",
+  jpmc: "bfsi-global",
   "morgan stanley": "bfsi-global",
   "deutsche bank": "bfsi-global",
   barclays: "bfsi-global",
