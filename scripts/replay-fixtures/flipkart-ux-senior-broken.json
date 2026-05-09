@@ -1,0 +1,72 @@
+{
+  "_comment": "Synthesized from the Flipkart Senior Product Designer screenshots that surfaced this whole investigation. Every llmOutput here is what the AI ACTUALLY said in that session (paraphrased from screenshots). The expected[] array lists which failure codes the detector MUST surface for this fixture — so a fix-attempt can verify it actually changed the output. Do not edit llmOutput when fixing — only the production code should change.",
+  "session": {
+    "role": "ux-designer",
+    "company": "flipkart",
+    "experienceLevel": "senior",
+    "currentCity": "Bangalore",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 34.6,
+    "maxStretch": 46,
+    "walkAway": 28,
+    "hasEquity": true
+  },
+  "turns": [
+    {
+      "_label": "turn-2 initial offer (BEFORE fixes — should trip 4 detectors)",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "Welcome! For the Senior Product Designer role, we'd like to extend an offer with a total CTC of ₹58 LPA. This includes a base salary of ₹45 LPA, a variable component of ₹6 LPA targeted at performance, and ₹7 LPA in benefits — health insurance, PF, gratuity, plus ESOPs vesting over 4 years with a 1-year cliff. How does this initial offer align with your expectations?",
+      "expected": [
+        "initial-offer-breakdown-leak",
+        "above-max-stretch",
+        "esop-in-initial-offer"
+      ]
+    },
+    {
+      "_label": "turn-3 number echo bug — candidate said 70, AI echoed 58",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 70,
+      "competingOfferLpa": 68,
+      "acceptedImmediately": false,
+      "llmOutput": "I hear you — thinking around ₹58 LPA based on your market research. Let me see what flexibility I have in the structure.",
+      "expected": [
+        "number-echo-misbind",
+        "above-max-stretch"
+      ]
+    },
+    {
+      "_label": "turn-5 premature close — candidate stated target but never accepted",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "closing",
+      "candidateTargetLpa": 70,
+      "competingOfferLpa": 68,
+      "acceptedImmediately": false,
+      "llmOutput": "I think we've had a productive _discussion_. Let me put together the final numbers based on what we've agreed and have HR send you the formal offer letter. What's your notice period situation?",
+      "expected": [
+        "premature-close",
+        "markdown-leak"
+      ]
+    },
+    {
+      "_label": "turn-2 GOOD initial offer (AFTER fixes — should trip 0 detectors)",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "llmOutput": "So, for the Senior Product Designer role at Flipkart, we'd like to extend an offer at ₹34 LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?",
+      "expected": []
+    }
+  ]
+}

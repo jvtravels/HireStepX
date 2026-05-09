@@ -22,7 +22,8 @@
     "audit:coverage": "tsx scripts/audit-coverage-gaps.mts",
     "audit:confidence": "tsx scripts/csv-confidence-audit.mts",
     "audit:drift": "tsx scripts/audit-imported-vs-curator.mts",
-    "scrape:salaries": "tsx scripts/scrape-ambitionbox.mts"
+    "scrape:salaries": "tsx scripts/scrape-ambitionbox.mts",
+    "replay:negotiation": "tsx scripts/replay-negotiation.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",
