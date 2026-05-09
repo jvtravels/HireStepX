@@ -1,0 +1,88 @@
+name: Salary scrape (monthly)
+
+# Re-scrapes AmbitionBox on the 1st of each month (06:00 UTC ≈ 11:30 IST)
+# and compares the fresh snapshot to the committed one. If no cell drifts
+# ≥ 40%, the refreshed file is auto-committed (normal market noise). If
+# any cell drifts ≥ 40%, opens an issue with the drift report instead so
+# a human can decide whether the change is real or a scraper regression.
+#
+# Manual trigger via workflow_dispatch is also supported (for ad-hoc
+# refreshes between scheduled runs).
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  scrape-and-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Snapshot current generated file
+        run: cp data/_imported-salary-overrides.generated.ts /tmp/previous-snapshot.ts
+
+      - name: Re-scrape AmbitionBox + emit fresh snapshot
+        run: |
+          npm run scrape:salaries
+          npm run import:salaries -- --emit
+
+      - name: Diff old vs new snapshot
+        id: diff
+        run: |
+          set +e
+          npx tsx scripts/drift-vs-previous.mts \
+            /tmp/previous-snapshot.ts \
+            data/_imported-salary-overrides.generated.ts \
+            0.40 > /tmp/drift-report.md
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/drift-report.md
+          # Multiline output for the issue body
+          {
+            echo "report<<DRIFT_EOF"
+            cat /tmp/drift-report.md
+            echo "DRIFT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Auto-commit refreshed snapshot (no significant drift)
+        if: steps.diff.outputs.exit_code == '0'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/_imported-salary-overrides.generated.ts data/salary-data-input.csv; then
+            echo "No file changes after re-scrape. Skipping commit."
+            exit 0
+          fi
+          git add data/_imported-salary-overrides.generated.ts data/salary-data-input.csv
+          git commit -m "chore(salary): monthly AB re-scrape — no drift ≥ 40%"
+          git push origin main
+
+      - name: Open issue (drift detected)
+        if: steps.diff.outputs.exit_code == '1'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `${{ steps.diff.outputs.report }}\n\n---\nWorkflow: ${context.workflow} — run ${context.runId}\nScraped at: ${new Date().toISOString()}\n\n**Action required**: review the drift table above. Once decided, either:\n- Pull this branch and \`git checkout main -- data/_imported-salary-overrides.generated.ts\` to discard the fresh scrape, or\n- Manually merge the refreshed snapshot if the drift reflects real market change.\n\nThe scrape artefacts are NOT auto-committed when drift ≥ 40%.`;
+            const today = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[salary-drift ${today}] AmbitionBox scrape shows ≥40% drift on cells`,
+              body,
+              labels: ["salary-data", "needs-review"],
+            });
