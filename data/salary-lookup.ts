@@ -1238,7 +1238,19 @@ export function lookupSalaryContext(params: SalaryLookupParams): string {
   const ovEquityVesting = override?.equityVesting ?? entry.equity_vesting;
 
   const base = `Base: ${fmtRange(adj(baseMin), adj(baseMax))}`;
-  const variable = entry.variable_min > 0 ? `Variable/Bonus: ${fmtRange(adj(entry.variable_min), adj(entry.variable_max))}` : "";
+  // Curator-pinned variable% (variablePctOverride) takes precedence over
+  // tier-default entry.variable_min/max. This matters where a company's
+  // variable component diverges from the tier norm — e.g. consulting
+  // (BCG/Bain) at 25-35% vs IT-services 8-12% (same "consulting" tier).
+  let variable = "";
+  if (override?.variablePctOverride !== undefined) {
+    const totalMid = (totalMin + totalMax) / 2;
+    const pct = override.variablePctOverride;
+    const variableMid = totalMid * pct;
+    variable = `Variable/Bonus: ~${(pct * 100).toFixed(0)}% of CTC (≈${fmtLPA(adj(variableMid))})`;
+  } else if (entry.variable_min > 0) {
+    variable = `Variable/Bonus: ${fmtRange(adj(entry.variable_min), adj(entry.variable_max))}`;
+  }
   const equity = ovEquityType !== "none"
     ? `${ovEquityType === "rsu" ? "RSUs" : "ESOPs"}: ${fmtRange(adj(ovEquityMin), adj(ovEquityMax))}/yr (${ovEquityVesting})`
     : "";
