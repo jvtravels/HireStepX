@@ -31,6 +31,37 @@ function tagImported(band: CompanyBandOverride): CompanyBandOverride {
   return band.dataConfidence ? band : { ...band, dataConfidence: "research-aggregated" };
 }
 
+/** IT-services + Indian-domestic-bank companies whose AmbitionBox cohort
+ *  has tens of thousands of self-reports — AB is more accurate than the
+ *  synthetic seed-dataset multipliers for these. (Product cos like Google
+ *  / Amazon stay on curator because AB at senior+ is junior-skewed.) */
+const PREFER_IMPORTED_OVER_SEED_COMPANIES = new Set([
+  "tcs", "infosys", "wipro", "cognizant", "accenture", "hcl", "hcl technologies",
+  "tech mahindra", "ltimindtree", "capgemini", "ibm india", "ibm",
+  "hdfc bank", "icici", "axis", "sbi", "kotak", "idfc",
+]);
+
+/** When curator entry is a Seed-dataset synthetic multiplier AND the
+ *  company is in the IT-services / domestic-BFSI flip set AND AB has a
+ *  scrape with reasonable sample size, prefer AB. Returns the flipped
+ *  band (research-aggregated) or null to keep curator. */
+function maybePreferImportedOverSeed(
+  curator: CompanyBandOverride,
+  companyKey: string,
+  roleKey: string,
+  experienceLevel: ExperienceLevel,
+): CompanyBandOverride | null {
+  if (!PREFER_IMPORTED_OVER_SEED_COMPANIES.has(companyKey)) return null;
+  if (!curator.source?.startsWith("Seed dataset")) return null;
+  const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
+  if (!imported) return null;
+  // Require non-trivial sample size in the AB notes ("n=NNN").
+  const m = imported.notes?.match(/n=(\d+)/);
+  const n = m ? Number(m[1]) : 0;
+  if (n < 1000) return null;
+  return tagImported(imported);
+}
+
 /** Subset of SalaryEntry — the fields a company-band override needs. */
 export interface CompanyBandOverride {
   /** Total CTC range in LPA, post-adjustment. The lookup uses these
@@ -7135,7 +7166,11 @@ export function getCompanyBandOverride(
   // Direct match first (most specific).
   const directEntry = COMPANY_SALARY_OVERRIDES[cleaned]?.[roleKey];
   const directHit = pickLevelInRoleMap(directEntry, experienceLevel);
-  if (directHit) return reconcileWithCsv(directHit, rawCompany, roleKey, experienceLevel);
+  if (directHit) {
+    const flipped = maybePreferImportedOverSeed(directHit, cleaned, roleKey, experienceLevel);
+    if (flipped) return flipped;
+    return reconcileWithCsv(directHit, rawCompany, roleKey, experienceLevel);
+  }
 
   // Loose containment fallback (e.g. "Razorpay Internet Pvt Ltd" → razorpay).
   for (const [companyKey, roleMap] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
@@ -7143,7 +7178,11 @@ export function getCompanyBandOverride(
     if (companyKey.length < 4) continue;
     if (cleaned.includes(companyKey) || companyKey.includes(cleaned)) {
       const hit = pickLevelInRoleMap(roleMap[roleKey], experienceLevel);
-      if (hit) return reconcileWithCsv(hit, rawCompany, roleKey, experienceLevel);
+      if (hit) {
+        const flipped = maybePreferImportedOverSeed(hit, companyKey, roleKey, experienceLevel);
+        if (flipped) return flipped;
+        return reconcileWithCsv(hit, rawCompany, roleKey, experienceLevel);
+      }
     }
   }
   /* AmbitionBox-scraped fallback (data/_imported-salary-overrides.generated.ts).
