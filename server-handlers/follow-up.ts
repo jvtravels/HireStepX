@@ -55,6 +55,7 @@ export default async function handler(req: Request): Promise<Response> {
         candidateAskBase?: string;
         candidateCurrentCTC?: string;
         hasCompetingOffers?: boolean;
+        competingOfferAmount?: string;
         topicsRaised?: string[];
         deflectedNumbers?: boolean;
         askedForTime?: boolean;
@@ -368,6 +369,7 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
         }
         if (negotiationFacts.candidateCurrentCTC) factsLines.push(`- Candidate's current CTC: ${sanitizeForLLM(negotiationFacts.candidateCurrentCTC, 30)} — YOU KNOW THIS. Do NOT ask again.`);
         if (negotiationFacts.hasCompetingOffers) factsLines.push("- Candidate mentioned COMPETING OFFERS — you MUST address this: ask what they're offering, what matters beyond the number, and where you can differentiate.");
+        if (negotiationFacts.competingOfferAmount) factsLines.push(`- Candidate has a COMPETING / IN-HAND OFFER of ${sanitizeForLLM(negotiationFacts.competingOfferAmount, 30)}. This is their BATNA — distinct from their target/ask. Do NOT conflate the two. When you echo "you said you have an offer of ₹X", X MUST be ${sanitizeForLLM(negotiationFacts.competingOfferAmount, 30)}; when you echo "your target is ₹Y", Y is the candidate's target (separate field), NOT this competing-offer figure.`);
         if (negotiationFacts.deflectedNumbers) factsLines.push("- Candidate DEFLECTED sharing their numbers — recognize this tactic. Stay warm but firm: you need their input to negotiate.");
         if (negotiationFacts.askedForTime) factsLines.push("- Candidate asked for TIME TO THINK — respect this, but set a 48-hour window with a reason. Ask what's giving them pause.");
         if (negotiationFacts.usedTacticalSilence) factsLines.push("- Candidate used TACTICAL SILENCE (short/minimal responses) — they may be creating pressure. Don't rush to fill the silence. Acknowledge it calmly.");
@@ -1536,6 +1538,22 @@ Repeat-text in followUpText is FORBIDDEN.`;
       // with a period and must not be touched.
       const interrogativeRe = /(^|[.!?]\s+)((?:how|what|why|when|where|which|who|whose|whom|can|could|would|should|will|did|do|does|is|are|was|were|have|has|had)\b[^.?!]*)\.(\s|$)/gi;
       t = t.replace(interrogativeRe, (_m, lead, body, tail) => `${lead}${body}?${tail}`);
+      parsed.followUpText = t;
+    }
+
+    // Strip markdown — Indian-HR voice is plain text. The LLM occasionally
+    // emits italic/bold (`_word_`, `*word*`, `**word**`) or backtick-quoted
+    // code; in the spoken/rendered chat surface these leak as literal
+    // underscores or asterisks. Belt-and-suspenders: prompt forbids it AND
+    // we strip here. Order matters — peel ** before * to avoid mangling.
+    if (parsed.followUpText) {
+      let t = parsed.followUpText;
+      t = t.replace(/\*\*([^*\n]+?)\*\*/g, "$1");
+      t = t.replace(/(?<![A-Za-z0-9])\*([^*\n]+?)\*(?![A-Za-z0-9])/g, "$1");
+      t = t.replace(/(?<![A-Za-z0-9])_([^_\n]+?)_(?![A-Za-z0-9])/g, "$1");
+      t = t.replace(/`([^`\n]+?)`/g, "$1");
+      // Strip leading bullet/asterisk markers on lines.
+      t = t.replace(/^\s*[*\-•]\s+/gm, "");
       parsed.followUpText = t;
     }
 

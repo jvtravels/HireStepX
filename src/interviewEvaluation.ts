@@ -212,6 +212,12 @@ export interface NegotiationFacts {
   candidateCurrentCTC: string | null;
   /** Whether the candidate mentioned competing offers */
   hasCompetingOffers: boolean;
+  /** Amount of a competing offer / in-hand offer the candidate disclosed
+   *  (e.g., "₹68 LPA"). DISTINCT from candidateCounter — that's the
+   *  candidate's TARGET / ASK; this is their BATNA. The AI was conflating
+   *  "I have ₹68 in hand" with "I'm asking for ₹70" and offering the
+   *  lower number; surfacing them separately fixes the echo. */
+  competingOfferAmount: string | null;
   /** Specific benefits/topics the candidate asked about */
   topicsRaised: string[];
   /** Whether the candidate deflected/refused to share numbers */
@@ -306,13 +312,25 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
       if (num >= 3 && num <= 200) allSalaryMatches.push(bareMatch[1]);
     }
   }
+  // Extract competing-offer / in-hand-offer amount FIRST so we can
+  // exclude it from the candidate's target. The AI was conflating "I
+  // have ₹68 in hand" with "I'm asking for ₹70" and then anchoring its
+  // counter on ₹68 instead of the candidate's actual target. Surface
+  // them separately and strip the competing figure from candidateCounter.
+  const competingRePre = /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)\s*₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|cr|crore)/gi;
+  const competingStrings = new Set<string>();
+  let cPreMatch: RegExpExecArray | null;
+  while ((cPreMatch = competingRePre.exec(allText)) !== null) {
+    competingStrings.add(cPreMatch[1]);
+  }
+
   // Filter out numbers that matched as current CTC, then take the MAX as counter
   // Also prefer numbers that appear in target/ask context over generic mentions
   const targetContextRe = /(?:expecting|want|need|asking|target|hoping|looking for|would like|i'd like)\s*(?:₹?\s*)?(\d+(?:\.\d+)?)/gi;
   const targetNums = new Set<string>();
   let tMatch: RegExpExecArray | null;
   while ((tMatch = targetContextRe.exec(allText)) !== null) targetNums.add(tMatch[1]);
-  const counterNumbers = allSalaryMatches.filter(n => !ctcNumbers.has(n));
+  const counterNumbers = allSalaryMatches.filter(n => !ctcNumbers.has(n) && !competingStrings.has(n));
   // Use the LATEST stated target — chronological order is preserved by
   // regex.exec on the joined transcript. Picking the max would lock in
   // the candidate's first ask even after they revise downward
@@ -349,7 +367,25 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
   const candidateAskTotal = totalMatches.length > 0 ? `₹${totalMatches[totalMatches.length - 1]} LPA` : null;
   const candidateAskBase = baseMatches.length > 0 ? `₹${baseMatches[baseMatches.length - 1]} LPA` : null;
 
-  const hasCompetingOffers = /(?:other offer|competing|another company|counter.?offer|multiple offers|also talking|got an offer)/i.test(allText);
+  const hasCompetingOffers = /(?:other offer|competing|another company|counter.?offer|multiple offers|also talking|got an offer|in[-\s]?hand|already have)/i.test(allText);
+
+  // Extract the AMOUNT of a competing/in-hand offer separately from
+  // candidateCounter. Pattern matches "(I have|already have|received|
+  // offer of) ₹X LPA in hand" / "competing offer at X LPA" / "X LPA from
+  // <company>". Without this, the candidate stating "I have an offer of
+  // 68 in hand" pollutes candidateCounter with ₹68 and the AI counters
+  // BELOW the candidate's actual target of ₹70.
+  const competingRe = /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)\s*₹?\s*(\d+(?:\.\d+)?)\s*(lpa|lakhs?|cr|crore)/gi;
+  const competingNums: number[] = [];
+  let cMatch: RegExpExecArray | null;
+  while ((cMatch = competingRe.exec(allText)) !== null) {
+    const isCr = /^(cr|crore)$/i.test(cMatch[2] || "");
+    const v = parseFloat(cMatch[1]) * (isCr ? 100 : 1);
+    if (Number.isFinite(v) && v >= 3 && v <= 500) competingNums.push(v);
+  }
+  const competingOfferAmount = competingNums.length > 0
+    ? `₹${competingNums[competingNums.length - 1]} LPA`
+    : null;
 
   // Detect specific topics the candidate raised
   const topicsRaised: string[] = [];
@@ -396,6 +432,7 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
     candidateAskBase,
     candidateCurrentCTC,
     hasCompetingOffers,
+    competingOfferAmount,
     topicsRaised,
     deflectedNumbers,
     askedForTime,

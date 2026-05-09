@@ -755,15 +755,13 @@ ${isSalaryType
 
 MANDATORY CONVERSATION ARC — generate questions in this EXACT sequence:
 1. INTRO: Warm, human opener that grounds the simulation. 2-3 sentences. Mention (a) you're the hiring manager / HR partner for THIS specific role at THIS company, (b) the team has wrapped up technical/portfolio rounds and the candidate impressed, (c) you'll walk them through the offer in a moment and want to make sure the package works for both sides. End with "Ready to dive in?" or similar consent check. The intro should make the candidate feel like they're in a real call — not a quiz. Reference the role title and company by name. Do NOT include any ₹ numbers here.
-2. INITIAL OFFER: Present a specific CTC offer. Use exact ₹ amounts from the salary data above. IMPORTANT: Vary the offer structure — do NOT always use "base + performance bonus + benefits". Pick ONE of these structures randomly:
-   - Structure A (Component Split): "₹X LPA total CTC — ₹Y base, ₹Z variable, plus family health insurance and gratuity."
-   - Structure B (Headline + Perks): "₹X LPA CTC with 15 days joining bonus, relocation support, and our standard benefits package. Want me to break it down?"
-   - Structure C (Range Anchor): "Based on our band for this level, we're looking at ₹X to ₹Y LPA depending on the final structure. I was thinking ₹Z as a starting point."
-   ${negotiationBandData?.hasEquity ? `- Structure D (Total Comp Story): "The cash component is ₹X LPA. On top of that, there's ₹Y in ${negotiationBandData.equityRange ? 'ESOPs' : 'RSUs'} vesting over 4 years, plus a ₹Z joining bonus. Total first-year value is around ₹W."` : `- Structure D (Fixed + Bonus): "The fixed component is ₹X LPA. On top of that, there's a ₹Y joining bonus and our standard benefits package including health insurance and learning budget. Total first-year value is around ₹W."`}
-   - Structure E (Benchmark Framing): "For this level, our comp band is ₹X–₹Y LPA. We'd like to bring you in at ₹Z — that's above the midpoint. How does that land?"
-   - Structure F (Minimal + Probe): "We'd like to offer ₹X LPA for this role. Before I get into the breakdown, I'd love to hear your thoughts on the number."
-   Each structure creates a different negotiation dynamic. Pick whichever fits the role and company best — just don't always default to "base + bonus + benefits".
-   IMPORTANT: ${!negotiationBandData?.hasEquity ? "This role does NOT include equity/ESOPs/RSUs. Do NOT mention equity in any offer structure." : `This role includes ${negotiationBandData.equityRange ? 'equity' : 'equity'} — you may mention it in offer structures.`}
+2. INITIAL OFFER: Present a SINGLE total CTC headline. Use the exact ₹ initialOffer figure from the salary data above. CRITICAL — INDIAN HR CONVENTION: real Indian recruiters do NOT decompose the offer into base/variable/PF/gratuity/ESOPs/RSUs/joining-bonus on the very first turn. They share the headline number, gauge the candidate's reaction, and only break down the structure when the candidate ASKS for it ("can you walk me through the split?"). Anchoring with a full breakdown upfront feels robotic and gives away the negotiation. Pick ONE of these headline-only structures:
+   - Structure A (Headline + Invite): "₹X LPA total CTC for this role. Happy to break down the structure if you'd like — but first, how does the number land?"
+   - Structure B (Range Anchor): "Our band for this level is ₹X to ₹Y LPA. I was thinking ₹Z as a starting point. Where are you on that?"
+   - Structure C (Benchmark Framing): "For this level, we're looking at ₹X LPA — that's at the midpoint of our band for this city. What were you expecting?"
+   - Structure D (Minimal + Probe): "We'd like to offer ₹X LPA. Before I get into details, I'd love to hear your thoughts on the number."
+   FORBIDDEN in step 2: do NOT list base, variable, PF, gratuity, joining bonus, ESOPs, RSUs, equity, health insurance, or learning budget. Those belong in a LATER turn, only after the candidate asks for the breakdown. The initial offer is a single number with a single follow-up question, nothing more.
+   IMPORTANT: NEVER mention equity/ESOPs/RSUs in step 2 — equity discussion belongs to the benefits phase or only when the candidate raises it, regardless of whether this role grants equity.
 3. PROBE EXPECTATIONS: DO NOT include specific ₹ numbers in this step — you don't know what the candidate said yet. Write ONE focused question, not three stacked. Pick exactly one angle: target range OR benchmarking signal OR what's driving the candidate's expectations. Example (single question): "Help me understand — what range are you targeting for this role?" NOT: "What range are you targeting? Are you benchmarking? What's driving your expectations?" Multiple stacked questions overwhelm the candidate and get answered partially, breaking the conversation thread. Do NOT ask for current CTC. Do NOT include [pause] / [pause:long] / [breath] markers in the question text — prosody hints belong on the follow-up engine, not the script-generated questions; if you include them here they can leak past sanitizers and onto the candidate's screen.
 4. COUNTER-OFFER: DO NOT include specific ₹ counter-offer numbers — you don't know the candidate's ask yet. Write an adaptive response like: "Based on what you've shared, let me see what I can do. I want to find something that works for both of us." or "I hear you. Let me look at what flexibility I have in the package structure." The follow-up system will replace this with a real counter-offer with exact numbers based on the actual conversation.
 ${questionCount >= 5 ? `5. PACKAGE DISCUSSION: DO NOT repeat or invent new ₹ numbers. Instead, discuss the STRUCTURE of the package: "Beyond the base number, let me walk you through the full picture — there's variable pay, benefits, and some flexibility I can offer." Ask what matters most to them.` : ""}
@@ -851,10 +849,13 @@ Requirements:
           Math.round(negotiationBandData.walkAway),
         );
         const initial = safeInitial;
-        const base = Math.round(initial * 0.78);
-        const variable = Math.round(initial * 0.12);
-        const benefits = Math.max(1, initial - base - variable);
-        const fallbackOffer = `So, for the ${role || "role"} position, we'd like to extend an offer with a total CTC of ₹${initial} LPA. This includes a base salary of ₹${base} LPA, a variable component of ₹${variable} LPA targeted at performance, and ₹${benefits} LPA for benefits like health insurance and gratuity. How does this initial offer align with your expectations?`;
+        // Indian-HR convention: headline first, breakdown only on request.
+        // The earlier "base + variable + benefits + gratuity" template
+        // gave away the breakdown on turn 1, which never happens in real
+        // Indian negotiations. Now we present the total CTC as a single
+        // number and invite the candidate to ask for the structure if
+        // they want it.
+        const fallbackOffer = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${initial} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
         // Replace question 1 (initial offer) with the fallback. If the array
         // is shorter, push it.
         if (questions.length >= 2) {

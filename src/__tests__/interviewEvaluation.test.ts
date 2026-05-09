@@ -269,6 +269,28 @@ describe("extractNegotiationFacts", () => {
     expect(facts.candidateCounter).toBe("₹35 LPA");
   });
 
+  it("[fixture: Flipkart in-hand-vs-target] separates competing offer from candidateCounter", () => {
+    /* Bug source: Flipkart UX session. Candidate said "I have an offer
+       of 68 lakhs in hand, my target is 70 LPA". The AI conflated and
+       echoed ₹68 as the candidate's number, then countered below it.
+       Now: competingOfferAmount captures ₹68, candidateCounter captures
+       ₹70 — distinct fields, no anchor drift. */
+    const transcript = makeTranscript([
+      "I have an offer of 68 lakhs in hand from another company. My target for this role is 70 LPA.",
+    ]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.competingOfferAmount).toBe("₹68 LPA");
+    expect(facts.candidateCounter).toBe("₹70 LPA");
+    expect(facts.hasCompetingOffers).toBe(true);
+  });
+
+  it("competingOfferAmount stays null when candidate only states a target", () => {
+    const transcript = makeTranscript(["I'm looking for around 45 LPA."]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.competingOfferAmount).toBeNull();
+    expect(facts.candidateCounter).toBe("₹45 LPA");
+  });
+
   it("differentiates candidateAskTotal from candidateAskBase when phrased explicitly", () => {
     const transcript = makeTranscript(["Was expecting 12 lakhs per annum total CTC with 11 lakhs as base salary."]);
     const facts = extractNegotiationFacts(transcript);

@@ -193,7 +193,11 @@ export function detectSalaryPhase(input: DetectSalaryPhaseInput): SalaryPhase {
   if (facts?.hasCompetingOffers && !facts?.candidateCounter && idx <= 3) return "probe-expectations";
 
   const hasCounter = !!facts?.candidateCounter;
-  if (progressRatio >= 0.85 && hasCounter) return "closing";
+  // CLOSING REQUIRES EXPLICIT ACCEPTANCE. Stating a target ≠ agreeing
+  // to close. Without acceptedImmediately, the deepest phase we route
+  // to is closing-pressure — the AI keeps pushing for a yes, never
+  // wraps up with "let me put together the final numbers".
+  if (progressRatio >= 0.85 && hasCounter) return "closing-pressure";
   if (progressRatio >= 0.7 && hasCounter) return "closing-pressure";
   if (progressRatio >= 0.7 && !hasCounter) return "probe-expectations";
 
@@ -206,7 +210,7 @@ export function detectSalaryPhase(input: DetectSalaryPhaseInput): SalaryPhase {
   if (idx === 3) return "counter-offer";
   if (idx === 4) return "benefits-discussion";
   if (idx === 5) return hasCounter ? "closing-pressure" : "probe-expectations";
-  return hasCounter ? "closing" : "counter-offer";
+  return hasCounter ? "closing-pressure" : "counter-offer";
 }
 
 export interface PickCounterInput {
