@@ -18,6 +18,7 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { COMPANY_SALARY_OVERRIDES } from "../data/company-salary-overrides";
 import { IMPORTED_SALARY_OVERRIDES } from "../data/_imported-salary-overrides.generated";
+import { getCompanyTier } from "../data/company-tiers";
 
 interface Drift {
   company: string;
@@ -46,7 +47,7 @@ interface Drift {
  *   - Otherwise the cell needs human eyes.
  */
 function classifyDrift(
-  d: Pick<Drift, "level" | "curatorSource" | "scrapedNotes" | "driftPct">,
+  d: Pick<Drift, "company" | "level" | "curatorSource" | "scrapedNotes" | "driftPct">,
 ): { rec: Drift["recommendation"]; why: string } {
   const src = (d.curatorSource ?? "").toLowerCase();
   const notes = (d.scrapedNotes ?? "").toLowerCase();
@@ -54,15 +55,26 @@ function classifyDrift(
   const isSeed = src.includes("seed dataset");
   const isLevelsFyi = src.includes("levels.fyi");
   const isResearchVerified = /verified|disclosure|drhp|glassdoor.+ambitionbox/.test(src);
+  const tier = getCompanyTier(d.company);
 
   if (isLevelsFyi && (d.level === "lead" || d.level === "senior" || d.level === "executive")) {
     return { rec: "keep-curator", why: "Levels.fyi-verified senior comp; AB sample sparse at this level." };
   }
-  if (isSeed && isPass2 && (d.level === "entry" || d.level === "mid")) {
-    return { rec: "accept-ab", why: "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample." };
+  // Auto-accept AB ONLY for IT-services entry/mid where AB has dense
+  // cohort sample and curator was a tier-multiplier guess. FAANG /
+  // Big Tech / GCC at mid+ commonly under-report on AB (median earner
+  // doesn't post; outliers do), so even a "seed + pass-2" combo there
+  // needs human eyes.
+  if (isSeed && isPass2 && tier === "it-services" && (d.level === "entry" || d.level === "mid")) {
+    return { rec: "accept-ab", why: "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample." };
   }
   if (isResearchVerified) {
     return { rec: "keep-curator", why: "Research-verified curator source (DRHP / official disclosure / cross-source)." };
+  }
+  // Tier-aware defaults: at mid+ for FAANG / big-tech / gcc, AB
+  // chronically undercounts. Surface a curator-leaning recommendation.
+  if ((tier === "faang" || tier === "big-tech" || tier === "gcc") && d.level !== "entry") {
+    return { rec: "keep-curator", why: "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator." };
   }
   return { rec: "manual-review", why: "No clear heuristic match — eyeball the cell." };
 }
@@ -96,6 +108,7 @@ for (const company of Object.keys(IMPORTED_SALARY_OVERRIDES)) {
       if (drift <= 0.15) agreeCount++;
       if (drift >= THRESHOLD) {
         const { rec, why } = classifyDrift({
+          company,
           level,
           curatorSource: cur.source,
           scrapedNotes: imp.notes,

@@ -4,9 +4,9 @@
   "agreeCount": 32,
   "driftCount": 223,
   "buckets": {
-    "keep-curator": 41,
-    "accept-ab": 34,
-    "manual-review": 148
+    "keep-curator": 87,
+    "accept-ab": 19,
+    "manual-review": 117
   },
   "drifts": [
     {
@@ -19,7 +19,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (accenture 0.62x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Management Consultant 12+y (n=153); n=153",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "hcl",
@@ -31,7 +31,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (hcl 0.5x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Lead 12+y (n=287); n=287",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "cognizant",
@@ -43,7 +43,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (cognizant 0.55x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 12+y (n=6624); n=6624",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "capgemini",
@@ -55,7 +55,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (capgemini 0.58x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Consultant C1 12+y (n=276); n=276",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "wipro",
@@ -67,7 +67,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (wipro 0.47x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 12+y (n=3275); n=3275",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "infosys",
@@ -79,7 +79,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (infosys 0.48x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Engineer 0-1y (n=251); Technical Test Leader 12+y (n=1566); n=1817",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "hcl",
@@ -91,7 +91,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (hcl 0.5x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 12+y (n=2103); n=2103",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "infosys",
@@ -114,7 +114,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (infosys 0.48x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 12+y (n=3938); n=3938",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "tcs",
@@ -126,7 +126,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (tcs 0.45x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 12+y (n=231); n=231",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "capgemini",
@@ -138,7 +138,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (capgemini 0.58x project-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Project Manager 12+y (n=1565); n=1565",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "salesforce",
@@ -173,8 +173,8 @@
       "driftPct": 98,
       "curatorSource": "Seed dataset 2026-05-08 (google 1.75x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 12+y (n=35); n=35; equity split estimated.",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "amazon",
@@ -185,8 +185,8 @@
       "driftPct": 82,
       "curatorSource": "Seed dataset 2026-05-08 (amazon 1.35x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 9-12y (n=460); n=460; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "google",
@@ -245,8 +245,8 @@
       "driftPct": 79,
       "curatorSource": "Seed dataset 2026-05-08 (uber 1.55x program-manager)",
       "scrapedNotes": "AB scrape: Program Manager (n=94); n=94; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "google",
@@ -269,8 +269,8 @@
       "driftPct": 75,
       "curatorSource": "Seed dataset 2026-05-08 (amazon 1.35x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 6-9y (n=951); n=951; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "google",
@@ -281,8 +281,8 @@
       "driftPct": 75,
       "curatorSource": "Seed dataset 2026-05-08 (google 1.75x data-scientist)",
       "scrapedNotes": "AB yoe-bucket scrape: Data Scientist 6-9y (n=92); n=92; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "oracle",
@@ -329,8 +329,8 @@
       "driftPct": 73,
       "curatorSource": "Seed dataset 2026-05-08 (salesforce 1.35x product-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 9-12y (n=39); n=39; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "zoho",
@@ -365,8 +365,8 @@
       "driftPct": 72,
       "curatorSource": "Seed dataset 2026-05-08 (google 1.75x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 9-12y (n=64); n=64; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "uber",
@@ -377,8 +377,8 @@
       "driftPct": 72,
       "curatorSource": "Seed dataset 2026-05-08 (uber 1.55x product-manager)",
       "scrapedNotes": "AB scrape: Product Manager (n=61); n=61; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "capgemini",
@@ -449,8 +449,8 @@
       "driftPct": 70,
       "curatorSource": "Seed dataset 2026-05-08 (walmart global tech 1.25x product-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 9-12y (n=50); Senior Product Manager 9-12y (n=78); n=128",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "zoho",
@@ -557,8 +557,8 @@
       "driftPct": 66,
       "curatorSource": "Seed dataset 2026-05-08 (amazon 1.35x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 6-9y (n=403); n=403; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "hsbc",
@@ -665,8 +665,8 @@
       "driftPct": 64,
       "curatorSource": "Levels.fyi (Google India PM range ₹3.03M-₹31.02M, median ₹11.75M)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 1-3y (n=89); Product Manager 3-6y (n=190); n=279; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "google",
@@ -677,8 +677,8 @@
       "driftPct": 64,
       "curatorSource": "Seed dataset 2026-05-08 (google 1.75x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 6-9y (n=119); n=119; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "jpmc",
@@ -701,8 +701,8 @@
       "driftPct": 64,
       "curatorSource": "Levels.fyi (IC2-IC3, India median ₹67L)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=57); Software Engineer 1-3y (n=48); Software Engineer 3-6y (n=78); n=183; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "razorpay",
@@ -725,8 +725,8 @@
       "driftPct": 64,
       "curatorSource": "Seed dataset 2026-05-08 (walmart global tech 1.25x product-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 6-9y (n=79); Senior Product Manager 6-9y (n=89); n=168",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "capgemini",
@@ -749,8 +749,8 @@
       "driftPct": 63,
       "curatorSource": "Seed dataset 2026-05-08 (google 1.75x data-scientist)",
       "scrapedNotes": "AB yoe-bucket scrape: Data Scientist 1-3y (n=257); Data Scientist 3-6y (n=182); n=439; equity split estimated.",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "salesforce",
@@ -761,8 +761,8 @@
       "driftPct": 63,
       "curatorSource": "Seed dataset 2026-05-08 (salesforce 1.35x product-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 6-9y (n=52); n=52; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "accenture",
@@ -786,7 +786,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (accenture 0.62x software-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Application Development Analyst 1-3y (n=13748); Application Development Analyst 3-6y (n=22354); Application Development - Senior Analyst 1-3y (n=355); n=103149",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "wipro",
@@ -833,8 +833,8 @@
       "driftPct": 61,
       "curatorSource": "Levels.fyi (Band 7-8, median ₹27.3L)",
       "scrapedNotes": "AB yoe-bucket scrape: Application Developer 1-3y (n=2861); Application Developer 3-6y (n=6097); Software Engineer 1-3y (n=1600); n=25899; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "infosys",
@@ -930,7 +930,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (accenture 0.62x software-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Associate Software Engineer 0-1y (n=3441); Application Development Associate 0-1y (n=1554); Application Developer 0-1y (n=197); n=5192",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "adobe",
@@ -941,8 +941,8 @@
       "driftPct": 58,
       "curatorSource": "Levels.fyi (Adobe India median ₹6.98M, P30-P40)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 1-3y (n=128); Software Developer 3-6y (n=141); Software Engineer 1-3y (n=155); n=1117; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "amazon",
@@ -953,8 +953,8 @@
       "driftPct": 58,
       "curatorSource": "Seed dataset 2026-05-08 (amazon 1.35x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 1-3y (n=171); Program Manager 3-6y (n=842); n=1013; equity split estimated.",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "cisco",
@@ -989,8 +989,8 @@
       "driftPct": 58,
       "curatorSource": "Seed dataset 2026-05-08 (walmart global tech 1.25x data-scientist)",
       "scrapedNotes": "AB yoe-bucket scrape: Data Scientist 6-9y (n=73); n=73",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "zoho",
@@ -1049,8 +1049,8 @@
       "driftPct": 56,
       "curatorSource": "Levels.fyi (P40-P50 PM)",
       "scrapedNotes": "AB scrape: Product Manager (n=52); n=52; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "delhivery",
@@ -1217,8 +1217,8 @@
       "driftPct": 53,
       "curatorSource": "Seed dataset 2026-05-08 (microsoft 1.55x data-scientist)",
       "scrapedNotes": "AB yoe-bucket scrape: Data Scientist 1-3y (n=109); Data Scientist 3-6y (n=108); n=217; equity split estimated.",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "barclays",
@@ -1277,8 +1277,8 @@
       "driftPct": 51,
       "curatorSource": "Levels.fyi (Adobe India PM IC3-IC4)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 3-6y (n=42); n=42; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "mphasis",
@@ -1302,7 +1302,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (accenture 0.62x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Quality Analyst 1-3y (n=1654); Quality Analyst 3-6y (n=4561); n=6215",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "flipkart",
@@ -1325,8 +1325,8 @@
       "driftPct": 50,
       "curatorSource": "Seed dataset 2026-05-08 (jpmc 1.1x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 12+y (n=49); n=49",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "salesforce",
@@ -1397,8 +1397,8 @@
       "driftPct": 49,
       "curatorSource": "Levels.fyi (IC-2/IC-3, median ₹38.5L)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 1-3y (n=59); Senior Software Engineer 3-6y (n=834); Senior Member of Technical Staff 1-3y (n=36); n=6363; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "tcs",
@@ -1433,8 +1433,8 @@
       "driftPct": 48,
       "curatorSource": "Seed dataset 2026-05-08 (amazon 1.35x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=476); Business Analyst 3-6y (n=1089); n=1565; equity split estimated.",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "flipkart",
@@ -1517,8 +1517,8 @@
       "driftPct": 47,
       "curatorSource": "Seed dataset 2026-05-08 (uber 1.55x data-scientist)",
       "scrapedNotes": "AB scrape: Data Scientist (n=94); n=94; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "wells fargo india",
@@ -1565,8 +1565,8 @@
       "driftPct": 46,
       "curatorSource": "Seed dataset 2026-05-08 (hdfc bank 0.72x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=175); Business Analyst 3-6y (n=289); n=464",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "jpmc",
@@ -1577,8 +1577,8 @@
       "driftPct": 46,
       "curatorSource": "Seed dataset 2026-05-08 (jpmc 1.1x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=117); Business Analyst 3-6y (n=225); n=342",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "target india",
@@ -1613,8 +1613,8 @@
       "driftPct": 46,
       "curatorSource": "Seed dataset 2026-05-08 (walmart global tech 1.25x product-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 3-6y (n=68); n=68",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "amazon",
@@ -1625,8 +1625,8 @@
       "driftPct": 45,
       "curatorSource": "Levels.fyi (Amazon India SDE-2)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Developer 1-3y (n=1556); Software Developer 3-6y (n=1106); Software Engineer 1-3y (n=1503); n=11391; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "google",
@@ -1637,8 +1637,8 @@
       "driftPct": 45,
       "curatorSource": "Levels.fyi (Google India L4 SWE)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=2041); Software Engineer 3-6y (n=1533); Software Developer 1-3y (n=1300); n=7297; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "microsoft",
@@ -1649,8 +1649,8 @@
       "driftPct": 45,
       "curatorSource": "Levels.fyi",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 1-3y (n=78); Product Manager 3-6y (n=150); n=228; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "morgan stanley",
@@ -1685,8 +1685,8 @@
       "driftPct": 45,
       "curatorSource": "Seed dataset 2026-05-08 (paytm 0.85x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=107); Business Analyst 3-6y (n=124); n=231",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "amazon",
@@ -1709,8 +1709,8 @@
       "driftPct": 44,
       "curatorSource": "Seed dataset 2026-05-08 (google 1.75x program-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Program Manager 3-6y (n=76); n=76; equity split estimated.",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "microsoft",
@@ -1721,8 +1721,8 @@
       "driftPct": 44,
       "curatorSource": "Levels.fyi (Microsoft India SDE)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=1338); Software Engineer 3-6y (n=1271); Senior Software Engineer 3-6y (n=1383); n=6229; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "morgan stanley",
@@ -1733,8 +1733,8 @@
       "driftPct": 44,
       "curatorSource": "Seed dataset 2026-05-08 (morgan stanley 1.1x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 3-6y (n=73); n=73",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "atlassian",
@@ -1745,8 +1745,8 @@
       "driftPct": 43,
       "curatorSource": "Levels.fyi (P40-P50, median ₹8.28M)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=35); Software Engineer 1-3y (n=171); Software Engineer 3-6y (n=95); n=534; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "byju's",
@@ -1805,8 +1805,8 @@
       "driftPct": 43,
       "curatorSource": "Levels.fyi (median ₹7.23M)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Member of Technical Staff 3-6y (n=71); Member Technical Staff 1-3y (n=54); Member Technical Staff 3-6y (n=312); n=910; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "cisco",
@@ -1817,8 +1817,8 @@
       "driftPct": 42,
       "curatorSource": "Levels.fyi (SE-III ₹2.74M-₹4.64M, India median ₹30.9L)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=800); Software Engineer 3-6y (n=900); Senior Software Engineer 3-6y (n=187); n=2490; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "oyo",
@@ -1853,8 +1853,8 @@
       "driftPct": 41,
       "curatorSource": "Glassdoor",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 6-9y (n=72); n=72; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "makemytrip",
@@ -1878,7 +1878,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (cognizant 0.55x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Softwaretest Engineer 1-3y (n=1114); Softwaretest Engineer 3-6y (n=3756); Test Analyst 1-3y (n=1023); n=7576",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "target india",
@@ -1889,8 +1889,8 @@
       "driftPct": 40,
       "curatorSource": "Levels.fyi (Target India)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=185); Software Engineer 1-3y (n=185); Software Engineer 3-6y (n=123); n=493",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "vmware",
@@ -1925,8 +1925,8 @@
       "driftPct": 39,
       "curatorSource": "Seed dataset 2026-05-08 (meesho 0.95x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 0-1y (n=31); n=31",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "razorpay",
@@ -1949,8 +1949,8 @@
       "driftPct": 39,
       "curatorSource": "Levels.fyi",
       "scrapedNotes": "AB yoe-bucket scrape: Member Technical Staff 1-3y (n=120); Member Technical Staff 3-6y (n=166); Software Engineer 3-6y (n=54); n=340; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "wells fargo india",
@@ -2009,8 +2009,8 @@
       "driftPct": 38,
       "curatorSource": "Levels.fyi + Glassdoor (median ₹43.9L, P3-P4)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=271); Software Engineer 1-3y (n=235); Software Engineer 3-6y (n=593); n=1750",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "apple",
@@ -2021,8 +2021,8 @@
       "driftPct": 37,
       "curatorSource": "Levels.fyi (Apple India ICT3-ICT4)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=134); Software Engineer 3-6y (n=116); Software Developer 1-3y (n=52); n=414; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "infosys",
@@ -2057,8 +2057,8 @@
       "driftPct": 37,
       "curatorSource": "Seed dataset 2026-05-08 (paytm 0.85x product-manager)",
       "scrapedNotes": "AB yoe-bucket scrape: Product Manager 1-3y (n=119); Product Manager 3-6y (n=375); Senior Product Manager 3-6y (n=57); n=551",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "manual-review",
+      "rationale": "No clear heuristic match — eyeball the cell."
     },
     {
       "company": "paytm",
@@ -2117,8 +2117,8 @@
       "driftPct": 36,
       "curatorSource": "Levels.fyi (MediaTek India HW Eng ₹2.46M-₹3.98M, total comp ₹43.6L max)",
       "scrapedNotes": "AB scrape: Senior Software Engineer (n=69); n=69",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "phonepe",
@@ -2189,8 +2189,8 @@
       "driftPct": 35,
       "curatorSource": "Levels.fyi (IC2 ₹2.82M-₹4.57M, median ₹46.7L)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=157); Software Engineer 3-6y (n=498); Senior Software Engineer 3-6y (n=139); n=1000; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "swiggy",
@@ -2309,8 +2309,8 @@
       "driftPct": 33,
       "curatorSource": "Glassdoor + Levels.fyi (LinkedIn India SSE)",
       "scrapedNotes": "AB yoe-bucket scrape: Senior Software Engineer 3-6y (n=63); Software Engineer 1-3y (n=57); Software Engineer 3-6y (n=66); n=258; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "tcs",
@@ -2357,8 +2357,8 @@
       "driftPct": 32,
       "curatorSource": "Levels.fyi (SE-II)",
       "scrapedNotes": "AB yoe-bucket scrape: Software Engineer 1-3y (n=90); Software Engineer 3-6y (n=120); Senior Software Engineer 3-6y (n=72); n=562; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "wipro",
@@ -2370,7 +2370,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (wipro 0.47x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Engineer 1-3y (n=1921); Test Engineer 3-6y (n=2865); Senior Test Engineer 1-3y (n=83); n=14061",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "wipro",
@@ -2429,8 +2429,8 @@
       "driftPct": 31,
       "curatorSource": "Levels.fyi",
       "scrapedNotes": "AB scrape: Software Engineer (n=66); n=66; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "tcs",
@@ -2453,8 +2453,8 @@
       "driftPct": 31,
       "curatorSource": "Seed dataset 2026-05-08 (walmart global tech 1.25x data-scientist)",
       "scrapedNotes": "AB yoe-bucket scrape: Data Scientist 3-6y (n=116); n=116",
-      "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "jpmc",
@@ -2514,7 +2514,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (tcs 0.45x business-analyst)",
       "scrapedNotes": "AB yoe-bucket scrape: Business Analyst 1-3y (n=1620); Business Analyst 3-6y (n=3845); n=5465",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "wipro",
@@ -2549,8 +2549,8 @@
       "driftPct": 29,
       "curatorSource": "Levels.fyi (Workday India P2 ₹3.3M-P3 median ₹48.2L)",
       "scrapedNotes": "AB scrape: Software Developer (n=50); n=50; equity split estimated.",
-      "recommendation": "manual-review",
-      "rationale": "No clear heuristic match — eyeball the cell."
+      "recommendation": "keep-curator",
+      "rationale": "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator."
     },
     {
       "company": "lenskart",
@@ -2598,7 +2598,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (hcl 0.5x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Lead 3-6y (n=252); Softwaretest Engineer 1-3y (n=685); Softwaretest Engineer 3-6y (n=1934); n=5718",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "servicenow",
@@ -2634,7 +2634,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (infosys 0.48x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Test Analyst 1-3y (n=359); Test Analyst 3-6y (n=7360); Test Engineer 1-3y (n=4540); n=27255",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "capgemini",
@@ -2646,7 +2646,7 @@
       "curatorSource": "Seed dataset 2026-05-08 (capgemini 0.58x qa-engineer)",
       "scrapedNotes": "AB yoe-bucket scrape: Softwaretest Engineer 1-3y (n=924); Softwaretest Engineer 3-6y (n=2662); n=3586",
       "recommendation": "accept-ab",
-      "rationale": "Seed-multiplier curator vs pass-2 YOE-bucket AB scrape; AB has real sample."
+      "rationale": "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample."
     },
     {
       "company": "delhivery",
