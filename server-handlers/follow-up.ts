@@ -6,7 +6,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, valid
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter } from "./_follow-up-helpers";
 import { callLLM, extractJSON } from "./_llm";
-import { detectCandidateIntent, extractCandidateSalaryNumber } from "./_follow-up-helpers";
+import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
 
@@ -180,74 +180,9 @@ export default async function handler(req: Request): Promise<Response> {
        Stripe, Razorpay, Figma, Q3). Phrase bigrams with "the" / "my" /
        "our" prefix are kept verbatim because they're the most echo-able
        ("the migration", "my team of six"). */
-    const mirrorTokens = (() => {
-      if (!answer || answer.length < 30) return [] as string[];
-      const stop = new Set([
-        "the","and","you","your","what","when","where","which","who","whom","whose",
-        "how","why","that","this","these","those","with","from","into","onto","upon",
-        "have","has","had","was","were","been","being","are","could","should","would",
-        "did","does","but","not","all","any","one","two","three","for","its","their","them",
-        "they","there","then","than","also","just","like","about","after","before","each",
-        "such","very","over","much","more","most","some","many","tell","share","walk",
-        "give","make","made","take","took","get","got","said","say","says","really","actually",
-        "because","while","whilst","through","across","around","without","within","under","upon",
-        "myself","yourself","ourselves","themselves","itself","being","doing","going","saying",
-        "people","person","thing","things","stuff","really","quite","kind","sort","still","also",
-      ]);
-      /* Allowlist of always-capitalized tokens that are NOT personal names and
-         are safe to echo. Without this, the PII filter below would drop
-         "Stripe", "Figma", etc. when mentioned once. Kept small and tech/biz-
-         skewed; expanding it is fine when we observe drops in practice. */
-      const NON_PII_CAPS = new Set([
-        "stripe","razorpay","paytm","phonepe","figma","github","gitlab","slack","notion","jira",
-        "zoom","azure","aws","gcp","docker","kubernetes","python","javascript","typescript",
-        "react","node","postgres","mysql","redis","mongodb","graphql","rest","api","sdk",
-        "google","microsoft","amazon","apple","meta","netflix","uber","ola","swiggy","zomato",
-        "flipkart","myntra","cred","groww","zerodha","freshworks","zoho","tcs","infosys","wipro",
-        "accenture","deloitte","mckinsey","bain","bcg","kpmg","ey","pwc","sap","oracle","ibm",
-        "android","ios","linux","windows","macos","chrome","firefox","safari","cartesia","groq",
-        "gemini","openai","anthropic","claude","supabase","vercel","upstash","deepgram","sarvam",
-      ]);
-      const cleaned = answer.replace(/[^A-Za-z0-9\s'-]/g, " ");
-      const words = cleaned.split(/\s+/).filter(Boolean);
-      const freq = new Map<string, { count: number; capitalized: boolean; lowerCount: number }>();
-      for (const w of words) {
-        if (w.length < 4) continue;
-        const lower = w.toLowerCase();
-        if (stop.has(lower)) continue;
-        const cur = freq.get(lower) || { count: 0, capitalized: false, lowerCount: 0 };
-        cur.count++;
-        if (/^[A-Z]/.test(w)) cur.capitalized = true;
-        else cur.lowerCount++;
-        freq.set(lower, cur);
-      }
-      /* PII scrub: drop tokens that look like personal first names —
-         always-capitalized, low frequency, length 3-10, never seen lowercase,
-         not in our tech/company allowlist. "Sarah", "Raj", "Priya" go;
-         "Stripe" (in allowlist) and "API" (length-filtered above) stay. */
-      const ranked = Array.from(freq.entries())
-        .filter(([lower, info]) => {
-          if (!info.capitalized || info.lowerCount > 0) return true;
-          if (info.count > 2) return true;
-          if (lower.length > 10 || lower.length < 3) return true;
-          if (NON_PII_CAPS.has(lower)) return true;
-          return false;
-        })
-        .sort((a, b) => (b[1].count - a[1].count) || ((b[1].capitalized ? 1 : 0) - (a[1].capitalized ? 1 : 0)))
-        .slice(0, 5)
-        .map(([w]) => w);
-      // Also collect "the X" / "my X" / "our X" phrases (length ≤4 words, idiomatic).
-      const phraseRe = /\b(?:the|my|our)\s+([a-z][a-z-]{2,})(?:\s+([a-z][a-z-]{2,}))?\b/gi;
-      const phrases: string[] = [];
-      let m: RegExpExecArray | null;
-      while ((m = phraseRe.exec(cleaned)) !== null && phrases.length < 4) {
-        const full = m[0].toLowerCase().replace(/\s+/g, " ");
-        if (!phrases.includes(full)) phrases.push(full);
-      }
-      return Array.from(new Set([...ranked, ...phrases])).slice(0, 6);
-    })();
+    const mirrorTokens = extractMirrorTokens(answer);
     const mirrorAnchorBlock = mirrorTokens.length > 0
-      ? `\nMIRRORING ANCHORS — words/phrases the candidate just used that you SHOULD echo (verbatim, lowercase preserved): ${mirrorTokens.map(t => `"${t}"`).join(", ")}. Pick ONE and weave it naturally into your follow-up. Do not paraphrase them ("the migration" → keep "the migration", not "the project").`
+      ? `\nMIRRORING ANCHORS — words/phrases the candidate just used that you SHOULD echo (verbatim, casing preserved): ${mirrorTokens.map(t => `"${t}"`).join(", ")}. Pick ONE and weave it naturally into your follow-up. Do not paraphrase them ("the migration" → keep "the migration", not "the project").`
       : "";
 
     const jdContext = jobDescription ? `The candidate is targeting this role: ${sanitizeForLLM(jobDescription, 500)}. If relevant, probe for skills mentioned in the JD.` : "";

@@ -5,6 +5,7 @@ import {
   truncateConversationHistory,
   detectSalaryPhase,
   pickServerCounter,
+  extractMirrorTokens,
 } from "../../server-handlers/_follow-up-helpers";
 
 /**
@@ -460,5 +461,50 @@ describe("pickServerCounter", () => {
         candidateTarget: 28,
       }),
     ).toBe(20);
+  });
+});
+
+describe("extractMirrorTokens", () => {
+  it("returns [] for short answers", () => {
+    expect(extractMirrorTokens("Yes")).toEqual([]);
+    expect(extractMirrorTokens("ok thanks")).toEqual([]);
+  });
+
+  it("scrubs first-name-shaped tokens (single mention, always capitalized)", () => {
+    const tokens = extractMirrorTokens(
+      "I worked with Sarah on the migration project at our last team and we shipped it in two weeks together."
+    );
+    expect(tokens.map(t => t.toLowerCase())).not.toContain("sarah");
+  });
+
+  it("preserves tokens with internal capitals (PhonePe, OpenAI)", () => {
+    const tokens = extractMirrorTokens(
+      "I shipped a feature for PhonePe last quarter and it lifted activation across the team in two weeks."
+    );
+    expect(tokens.map(t => t.toLowerCase())).toContain("phonepe");
+  });
+
+  it("preserves company-suffix tokens (-ai, -labs, -tech)", () => {
+    const tokens = extractMirrorTokens(
+      "I built integrations for Spendly at our last team and partnered closely with Mindlabs on the rollout."
+    );
+    // "Mindlabs" should survive because of the -labs suffix even though it's
+    // single-mention, capitalized, not in any allowlist.
+    expect(tokens.map(t => t.toLowerCase())).toContain("mindlabs");
+  });
+
+  it("preserves casing in 'the X' phrases (the Migration Project)", () => {
+    const tokens = extractMirrorTokens(
+      "I led the Migration Project across our last team and shipped it before the holiday rush in just two weeks."
+    );
+    const hasTitleCasePhrase = tokens.some(t => /^the Migration/i.test(t) && t.includes("Migration"));
+    expect(hasTitleCasePhrase).toBe(true);
+  });
+
+  it("keeps allowlist tech terms (Stripe) on a single mention", () => {
+    const tokens = extractMirrorTokens(
+      "We integrated Stripe at our last team and shipped the checkout in just two weeks across regions."
+    );
+    expect(tokens.map(t => t.toLowerCase())).toContain("stripe");
   });
 });

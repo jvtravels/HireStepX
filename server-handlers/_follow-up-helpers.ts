@@ -286,3 +286,81 @@ export function pickServerCounter(input: PickCounterInput): number | null {
   next = Math.max(floor, Math.min(ceiling, next));
   return Math.round(next * 10) / 10;
 }
+
+/**
+ * Extract mirroring anchors from a candidate's answer — the words and
+ * phrases the LLM should echo verbatim in the follow-up to lift rapport.
+ *
+ * Two passes:
+ * 1. High-frequency / proper-noun word ranking (top 5 lowercased keys).
+ * 2. "the X" / "my X" / "our X" idiomatic phrases (length ≤4 words),
+ *    casing preserved so "the Migration Project" survives.
+ *
+ * PII scrub: drops always-capitalized, low-frequency tokens that look
+ * like personal first names. Tokens with internal caps (PhonePe), known
+ * tech / company allowlist members (Stripe, Figma), or company-shape
+ * suffixes (-ai, -labs, -tech, -inc, -corp, -io) survive.
+ */
+export function extractMirrorTokens(answer: string): string[] {
+  if (!answer || answer.length < 30) return [];
+  const stop = new Set([
+    "the","and","you","your","what","when","where","which","who","whom","whose",
+    "how","why","that","this","these","those","with","from","into","onto","upon",
+    "have","has","had","was","were","been","being","are","could","should","would",
+    "did","does","but","not","all","any","one","two","three","for","its","their","them",
+    "they","there","then","than","also","just","like","about","after","before","each",
+    "such","very","over","much","more","most","some","many","tell","share","walk",
+    "give","make","made","take","took","get","got","said","say","says","really","actually",
+    "because","while","whilst","through","across","around","without","within","under","upon",
+    "myself","yourself","ourselves","themselves","itself","being","doing","going","saying",
+    "people","person","thing","things","stuff","really","quite","kind","sort","still","also",
+  ]);
+  const NON_PII_CAPS = new Set([
+    "stripe","razorpay","paytm","phonepe","figma","github","gitlab","slack","notion","jira",
+    "zoom","azure","aws","gcp","docker","kubernetes","python","javascript","typescript",
+    "react","node","postgres","mysql","redis","mongodb","graphql","rest","api","sdk",
+    "google","microsoft","amazon","apple","meta","netflix","uber","ola","swiggy","zomato",
+    "flipkart","myntra","cred","groww","zerodha","freshworks","zoho","tcs","infosys","wipro",
+    "accenture","deloitte","mckinsey","bain","bcg","kpmg","ey","pwc","sap","oracle","ibm",
+    "android","ios","linux","windows","macos","chrome","firefox","safari","cartesia","groq",
+    "gemini","openai","anthropic","claude","supabase","vercel","upstash","deepgram","sarvam",
+  ]);
+  const COMPANY_SUFFIX = /(?:ai|ml|labs?|tech|inc|corp|io)$/i;
+
+  const cleaned = answer.replace(/[^A-Za-z0-9\s'-]/g, " ");
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  const freq = new Map<string, { count: number; capitalized: boolean; lowerCount: number; hasInternalCap: boolean }>();
+  for (const w of words) {
+    if (w.length < 4) continue;
+    const lower = w.toLowerCase();
+    if (stop.has(lower)) continue;
+    const cur = freq.get(lower) || { count: 0, capitalized: false, lowerCount: 0, hasInternalCap: false };
+    cur.count++;
+    if (/^[A-Z]/.test(w)) cur.capitalized = true;
+    else cur.lowerCount++;
+    if (/^[A-Za-z].*[A-Z]/.test(w.slice(1))) cur.hasInternalCap = true;
+    freq.set(lower, cur);
+  }
+  const ranked = Array.from(freq.entries())
+    .filter(([lower, info]) => {
+      if (!info.capitalized || info.lowerCount > 0) return true;
+      if (info.count > 2) return true;
+      if (lower.length > 10 || lower.length < 3) return true;
+      if (NON_PII_CAPS.has(lower)) return true;
+      if (info.hasInternalCap) return true;
+      if (COMPANY_SUFFIX.test(lower)) return true;
+      return false;
+    })
+    .sort((a, b) => (b[1].count - a[1].count) || ((b[1].capitalized ? 1 : 0) - (a[1].capitalized ? 1 : 0)))
+    .slice(0, 5)
+    .map(([w]) => w);
+
+  const phraseRe = /\b(?:the|my|our)\s+([a-z][a-z-]{2,})(?:\s+([a-z][a-z-]{2,}))?\b/gi;
+  const phrases: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = phraseRe.exec(answer)) !== null && phrases.length < 4) {
+    const full = m[0].replace(/\s+/g, " ");
+    if (!phrases.some(p => p.toLowerCase() === full.toLowerCase())) phrases.push(full);
+  }
+  return Array.from(new Set([...ranked, ...phrases])).slice(0, 6);
+}
