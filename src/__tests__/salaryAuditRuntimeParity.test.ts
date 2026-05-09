@@ -5,11 +5,11 @@
  *   - classifyDrift() — what the audit recommends
  *   - maybePreferImportedOverSeed() — what the runtime actually does
  *
- * Specifically: every "accept-ab" recommendation must produce a flip
- * at runtime, and every "keep-curator" must NOT. "manual-review" cells
- * are exempt (no rule fires either way). This test catches drift
- * between the two sites, which previously had to be re-derived by hand
- * after every rule change.
+ * The audit delegates the flip decision to shouldFlipToImported(), the
+ * same predicate the runtime calls — so accept-ab and keep-curator are
+ * in lockstep by construction. The remaining variable is the
+ * manual-review bucket (runtime keeps curator, no audit heuristic
+ * explains why); pinned below as a regression baseline.
  */
 import { describe, expect, it } from "vitest";
 import { COMPANY_SALARY_OVERRIDES, maybePreferImportedOverSeed } from "../../data/company-salary-overrides";
@@ -74,87 +74,44 @@ describe("salary audit ↔ runtime parity", () => {
     expect(cells.length).toBeLessThan(350);
   });
 
-  /* Pinned divergence baselines. Each entry is "<company>/<role>/<level>".
-   *
-   * accept-ab the runtime does NOT flip: the audit recommends preferring
-   * the AB scrape, but runtime's n-floor (looseThresholdEligible /
-   * PREFER_IMPORTED_OVER_SEED gating) keeps the curator. The audit is
-   * effectively saying "if this cell came up for review the human should
-   * lean toward AB" — the runtime is more conservative.
-   *
-   * keep-curator that the runtime DOES flip: curator source includes a
-   * Levels.fyi / curated-research mention but is still seed-prefixed, so
-   * the audit's isResearchSourced short-circuit fires while runtime treats
-   * it as seed and flips via PREFER_IMPORTED_OVER_SEED_COMPANIES.
-   *
-   * Adding cells: investigate first, then pin only if intentional.
-   * Removing cells: feel free — convergence is the goal. */
-  const KNOWN_ACCEPT_AB_NO_FLIP = new Set<string>([
-    "accenture/business-analyst/entry",
+  it("accept-ab ↔ runtime flip is in lockstep by construction", () => {
+    const acceptAbButNoFlip = cells.filter((c) => c.recommendation === "accept-ab" && !c.runtimeFlipped);
+    const keepCuratorButFlip = cells.filter((c) => c.recommendation === "keep-curator" && c.runtimeFlipped);
+    expect(acceptAbButNoFlip).toEqual([]);
+    expect(keepCuratorButFlip).toEqual([]);
+  });
+
+  /* manual-review baseline. These are cells where the runtime kept the
+   * curator (so accept-ab is correctly off) but no keep-curator heuristic
+   * fired either — typically because curator is plain AmbitionBox/seed
+   * with high drift but the company isn't on the prefer-imported list,
+   * or sample size missed the n-floor. They legitimately need human
+   * eyes; the test pins the set so new ones surface in CI. */
+  const KNOWN_MANUAL_REVIEW = new Set<string>([
     "bajaj finance/software-engineer/mid",
-    "capgemini/business-analyst/entry",
     "capgemini/project-manager/senior",
     "delhivery/software-engineer/entry",
     "hcl/project-manager/senior",
     "hdfc bank/business-analyst/mid",
     "hdfc bank/business-analyst/senior",
+    "meesho/business-analyst/entry",
     "meesho/product-manager/mid",
     "mphasis/software-engineer/entry",
     "mphasis/software-engineer/mid",
     "mphasis/software-engineer/senior",
     "oyo/software-engineer/mid",
     "pine labs/software-engineer/mid",
-    "tcs/business-analyst/entry",
     "unacademy/software-engineer/entry",
     "wipro/business-analyst/senior",
     "wipro/project-manager/senior",
   ]);
-  const KNOWN_KEEP_CURATOR_FLIPS = new Set<string>([
-    "paytm/software-engineer/entry",
-    "tcs/software-engineer/mid",
-    "wipro/software-engineer/senior",
-    "zoho/software-engineer/entry",
-  ]);
 
-  it("'accept-ab' divergences match the pinned baseline", () => {
+  it("manual-review bucket matches the pinned baseline", () => {
     const id = (c: ParityCell) => `${c.company}/${c.role}/${c.level}`;
-    const observed = new Set(
-      cells.filter((c) => c.recommendation === "accept-ab" && !c.runtimeFlipped).map(id),
-    );
-    const newDivergences = [...observed].filter((k) => !KNOWN_ACCEPT_AB_NO_FLIP.has(k));
-    const resolved = [...KNOWN_ACCEPT_AB_NO_FLIP].filter((k) => !observed.has(k));
-    expect(
-      newDivergences,
-      `New 'accept-ab' cells the runtime does NOT flip — investigate, then pin or fix:\n  ${newDivergences.join("\n  ")}`,
-    ).toEqual([]);
-    expect(
-      resolved,
-      `Pinned 'accept-ab' divergences are now resolved — remove from KNOWN_ACCEPT_AB_NO_FLIP:\n  ${resolved.join("\n  ")}`,
-    ).toEqual([]);
-  });
-
-  it("'keep-curator' divergences match the pinned baseline", () => {
-    const id = (c: ParityCell) => `${c.company}/${c.role}/${c.level}`;
-    const observed = new Set(
-      cells.filter((c) => c.recommendation === "keep-curator" && c.runtimeFlipped).map(id),
-    );
-    const newDivergences = [...observed].filter((k) => !KNOWN_KEEP_CURATOR_FLIPS.has(k));
-    const resolved = [...KNOWN_KEEP_CURATOR_FLIPS].filter((k) => !observed.has(k));
-    expect(
-      newDivergences,
-      `New 'keep-curator' cells the runtime DID flip — investigate, then pin or fix:\n  ${newDivergences.join("\n  ")}`,
-    ).toEqual([]);
-    expect(
-      resolved,
-      `Pinned 'keep-curator' divergences are now resolved — remove from KNOWN_KEEP_CURATOR_FLIPS:\n  ${resolved.join("\n  ")}`,
-    ).toEqual([]);
-  });
-
-  it("manual-review bucket is empty (Phase 6 invariant)", () => {
-    const stragglers = cells
-      .filter((c) => c.recommendation === "manual-review")
-      .map((c) => `${c.company} / ${c.role} / ${c.level}`);
-    expect(stragglers, `${stragglers.length} manual-review cells:\n  ${stragglers.join("\n  ")}`)
-      .toEqual([]);
+    const observed = new Set(cells.filter((c) => c.recommendation === "manual-review").map(id));
+    const added = [...observed].filter((k) => !KNOWN_MANUAL_REVIEW.has(k));
+    const resolved = [...KNOWN_MANUAL_REVIEW].filter((k) => !observed.has(k));
+    expect(added, `New manual-review cells — investigate, then pin or add a keep-curator heuristic:\n  ${added.join("\n  ")}`).toEqual([]);
+    expect(resolved, `Pinned manual-review cells are now resolved — remove from KNOWN_MANUAL_REVIEW:\n  ${resolved.join("\n  ")}`).toEqual([]);
   });
 });

@@ -76,14 +76,76 @@ export const NON_ENTRY_LEVELS: ReadonlySet<ExperienceLevel> = new Set([
 ]);
 
 /** Indian-unicorn companies whose seed-multiplier cells were proven
- *  3×-off in dense AB pass-2 cohorts. Mirrored in
- *  PREFER_IMPORTED_OVER_SEED_COMPANIES at runtime; the audit references
- *  this so its recommendations match the runtime flip. */
+ *  3×-off in dense AB pass-2 cohorts. Subset of
+ *  PREFER_IMPORTED_OVER_SEED_COMPANIES — kept separate because the
+ *  unicorn cohort gets a looser n-floor (50 vs 150) for PM/BA roles
+ *  given AB's denser title cohorts there. */
 export const UNICORN_SEED_FLIP_COMPANIES: ReadonlySet<string> = new Set([
   "paytm",
   "zomato",
   "meesho",
 ]);
+
+/** Companies whose curator entries are proven inflated by 2-3× and where
+ *  even fresh AB scrape (n>=50) is preferable. Used by both runtime and
+ *  the audit; kept here so the prefer-list lives in one place. */
+export const PREFER_IMPORTED_REGARDLESS_COMPANIES: ReadonlySet<string> = new Set([
+  "zoho",
+]);
+
+/** Companies whose curator entries either (a) have seed-multiplier guesses
+ *  for some cells, or (b) are unambiguously AmbitionBox-derived (no
+ *  research blend). For these, runtime prefers a fresh AB scrape provided
+ *  the sample size clears the role/level-tiered n-floor — see
+ *  shouldFlipToImported() for the threshold logic. */
+export const PREFER_IMPORTED_OVER_SEED_COMPANIES: ReadonlySet<string> = new Set([
+  "tcs", "infosys", "wipro", "cognizant", "accenture", "hcl", "hcl technologies",
+  "tech mahindra", "ltimindtree", "capgemini", "ibm india", "ibm",
+  "hdfc bank", "icici", "axis", "sbi", "kotak", "idfc",
+  "paytm", "zomato", "meesho",
+]);
+
+/** Should the runtime displace this curator cell with a fresh AmbitionBox
+ *  scrape? Single predicate so audit and runtime stay in lockstep. */
+export function shouldFlipToImported(opts: {
+  curatorSource: string | undefined;
+  scrapedNotes: string | undefined;
+  company: string;
+  role: string;
+  level: ExperienceLevel;
+}): boolean {
+  if (PREFER_IMPORTED_REGARDLESS_COMPANIES.has(opts.company)) {
+    return extractSampleSize(opts.scrapedNotes) >= 50;
+  }
+  if (!PREFER_IMPORTED_OVER_SEED_COMPANIES.has(opts.company)) return false;
+  const curatorIsSeed = isSeedSource(opts.curatorSource);
+  const curatorIsAbOnly = isAbOnlyCuratorSource(opts.curatorSource);
+  if (!curatorIsSeed && !curatorIsAbOnly) return false;
+  const n = extractSampleSize(opts.scrapedNotes);
+  const isPass2 = isPass2YoeBucket(opts.scrapedNotes);
+  if (curatorIsAbOnly && !curatorIsSeed && !isPass2) return false;
+  const isEng = ENGINEERING_TRACK_ROLES.has(opts.role);
+  const isItNonEng = IT_NON_ENG_ROLES.has(opts.role);
+  const isItNonEngLeadExec =
+    isItNonEng && LEAD_EXEC_LEVELS.has(opts.level) && curatorIsSeed;
+  const isItEngLead =
+    isEng && opts.level === "lead" && curatorIsSeed;
+  const isUnicornPmBaSeed =
+    (opts.role === "product-manager" || opts.role === "business-analyst") &&
+    (opts.level === "entry" || MID_OR_SENIOR_LEVELS.has(opts.level)) &&
+    curatorIsSeed &&
+    UNICORN_SEED_FLIP_COMPANIES.has(opts.company);
+  const isEngJuniorOrMidSenior =
+    isEng && (JUNIOR_LEVELS.has(opts.level) || MID_OR_SENIOR_LEVELS.has(opts.level));
+  const looseThresholdEligible =
+    (isPass2 && (isEngJuniorOrMidSenior || isItNonEngLeadExec || isItEngLead)) ||
+    isUnicornPmBaSeed;
+  const threshold = !looseThresholdEligible ? 1000
+    : isUnicornPmBaSeed ? 50
+    : isItNonEngLeadExec ? 100
+    : 150;
+  return n >= threshold;
+}
 
 /** YOE-bucket in scrape notes that's wildly mismatched with the cell's
  *  level — e.g. "12+y" bucket for an entry-level cell, or "0-1y" for

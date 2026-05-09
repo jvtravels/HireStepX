@@ -25,16 +25,9 @@ import { classifyCompanyType } from "./company-guidance";
 import { getCsvDerivedBandOverride, getCsvBandOnly } from "./csv-derived-fallbacks";
 import { IMPORTED_SALARY_OVERRIDES } from "./_imported-salary-overrides.generated";
 import {
-  ENGINEERING_TRACK_ROLES,
-  IT_NON_ENG_ROLES,
-  JUNIOR_LEVELS,
-  LEAD_EXEC_LEVELS,
-  MID_OR_SENIOR_LEVELS,
-  UNICORN_SEED_FLIP_COMPANIES,
   extractSampleSize,
-  isAbOnlyCuratorSource,
-  isPass2YoeBucket,
   isSeedSource,
+  shouldFlipToImported,
 } from "./_salary-source-helpers";
 
 /** Stamp every IMPORTED_SALARY_OVERRIDES hit as research-aggregated so the
@@ -66,99 +59,22 @@ function tagSeedSynthetic(band: CompanyBandOverride): CompanyBandOverride {
   return { ...band, dataConfidence: "research-aggregated", dataConfidenceTier: "low" };
 }
 
-/** IT-services + Indian-domestic-bank companies whose AmbitionBox cohort
- *  has tens of thousands of self-reports — AB is more accurate than the
- *  synthetic seed-dataset multipliers for these. (Product cos like Google
- *  / Amazon stay on curator because AB at senior+ is junior-skewed.) */
-const PREFER_IMPORTED_OVER_SEED_COMPANIES = new Set([
-  "tcs", "infosys", "wipro", "cognizant", "accenture", "hcl", "hcl technologies",
-  "tech mahindra", "ltimindtree", "capgemini", "ibm india", "ibm",
-  "hdfc bank", "icici", "axis", "sbi", "kotak", "idfc",
-  /* Phase 6: indian-unicorn seed-multiplier curator entries (no Levels.fyi
-   * / Glassdoor blend) at PM/BA — AB pass-2 yoe-bucket dense cohorts
-   * track realized comp better than the synthetic 0.85-1.05x baseline. */
-  "paytm", "zomato", "meesho",
-]);
-
-/** Companies where AmbitionBox is authoritative regardless of curator
- *  source. These are companies whose entire curator entry was derived
- *  from an outdated/synthetic AB cohort or a multiplier — none have
- *  Levels.fyi-sourced cells that would beat AB. Different from
- *  PREFER_IMPORTED_OVER_SEED_COMPANIES (which only fires when curator
- *  source starts with "Seed dataset").
- *
- *  zoho: bootstrapped, Tamil-Nadu-located, famously below-market pay.
- *    Curator AB-tagged entries (e.g. PM mid ₹35.7L) were inflated 3×
- *    via synthetic multipliers. Fresh AB scrape (n=744 PM) puts mid PM
- *    at ₹9.6L which matches reality. */
-const PREFER_IMPORTED_REGARDLESS_COMPANIES = new Set([
-  "zoho",
-]);
-
-/** When curator entry is a Seed-dataset synthetic multiplier AND the
- *  company is in the IT-services / domestic-BFSI flip set AND AB has a
- *  scrape with reasonable sample size, prefer AB. Returns the flipped
- *  band (research-aggregated) or null to keep curator. */
 export function maybePreferImportedOverSeed(
   curator: CompanyBandOverride,
   companyKey: string,
   roleKey: string,
   experienceLevel: ExperienceLevel,
 ): CompanyBandOverride | null {
-  // Strongest case: company is on the regardless-of-source flip list.
-  if (PREFER_IMPORTED_REGARDLESS_COMPANIES.has(companyKey)) {
-    const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
-    // Lower n-threshold (50) than the seed-flip case because curator
-    // entries for these companies are KNOWN to be inflated synthetic
-    // numbers — even a small fresh AB sample beats a 3× wrong curator.
-    if (imported && extractSampleSize(imported.notes) >= 50) {
-      return tagImported(imported);
-    }
-  }
-  if (!PREFER_IMPORTED_OVER_SEED_COMPANIES.has(companyKey)) return null;
-  /* Either (a) curator is a seed-multiplier guess, or (b) curator is
-   * unambiguously AmbitionBox-derived (not Levels.fyi-blended) and we
-   * have a finer-grained pass-2 scrape — same source, narrower YOE. */
-  const curatorIsSeed = isSeedSource(curator.source);
-  const curatorIsAbOnly = isAbOnlyCuratorSource(curator.source);
-  if (!curatorIsSeed && !curatorIsAbOnly) return null;
   const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
   if (!imported) return null;
-  const n = extractSampleSize(imported.notes);
-  const isPass2 = isPass2YoeBucket(imported.notes);
-  // AB-only curator path requires pass-2 — pass-1 should not displace
-  // another pass-1 at the same source resolution.
-  if (curatorIsAbOnly && !curatorIsSeed && !isPass2) return null;
-  /* Pass-2 yoe-bucket scrapes are sample-weighted across designations
-   * inside a real YOE window — ₹4.4L for Accenture SDE entry n=197 is
-   * a fresher cohort, not a broad envelope. Pass-1 collapses 0-8 YOE
-   * into one cell, so needs a larger n to be trustworthy. The tiered
-   * n-floor below mirrors this: engineering pass-2 cohorts get 150
-   * (dense), IT-services PM/BA lead-exec gets 100 (title-cohort still
-   * dense), unicorn PM/BA pass-2 gets 50 (sparser AB but curator is a
-   * proven-wrong synthetic guess), everything else stays at 1000. */
-  const isEng = ENGINEERING_TRACK_ROLES.has(roleKey);
-  const isItNonEng = IT_NON_ENG_ROLES.has(roleKey);
-  const isItNonEngLeadExec =
-    isItNonEng && LEAD_EXEC_LEVELS.has(experienceLevel) && curatorIsSeed;
-  const isItEngLead =
-    isEng && experienceLevel === "lead" && curatorIsSeed;
-  const isUnicornPmBaSeed =
-    (roleKey === "product-manager" || roleKey === "business-analyst") &&
-    (experienceLevel === "entry" || MID_OR_SENIOR_LEVELS.has(experienceLevel)) &&
-    curatorIsSeed &&
-    UNICORN_SEED_FLIP_COMPANIES.has(companyKey);
-  const isEngJuniorOrMidSenior =
-    isEng && (JUNIOR_LEVELS.has(experienceLevel) || MID_OR_SENIOR_LEVELS.has(experienceLevel));
-  const looseThresholdEligible =
-    (isPass2 && (isEngJuniorOrMidSenior || isItNonEngLeadExec || isItEngLead)) ||
-    isUnicornPmBaSeed;
-  const threshold = !looseThresholdEligible ? 1000
-    : isUnicornPmBaSeed ? 50
-    : isItNonEngLeadExec ? 100
-    : 150;
-  if (n < threshold) return null;
-  return tagImported(imported);
+  const flip = shouldFlipToImported({
+    curatorSource: curator.source,
+    scrapedNotes: imported.notes,
+    company: companyKey,
+    role: roleKey,
+    level: experienceLevel,
+  });
+  return flip ? tagImported(imported) : null;
 }
 
 /** Subset of SalaryEntry — the fields a company-band override needs. */
