@@ -55,19 +55,37 @@ export interface DetectorContext {
   questionIndex?: number;
   /** Whether this turn is the INITIAL offer (turn 1 / step 2). */
   isInitialOffer?: boolean;
+  /** Highest offer the AI has actually MADE so far this session (LPA).
+   *  Distinct from band.initialOffer — this is the live ceiling the AI
+   *  has committed to in prior turns. Used to detect phantom counter
+   *  movement: "our current offer of ₹X" when X > highestOfferMade. */
+  highestOfferMade?: number | null;
+  /** Prior AI turns in the same session, oldest first. Used to detect
+   *  repeated questions (e.g. asking notice-period twice). */
+  previousAiTurns?: string[];
 }
 
 /* ── #1 Premature close ───────────────────────────────────────────── */
 export function detectPrematureClose(ctx: DetectorContext): NegotiationFailure | null {
   if (ctx.acceptedImmediately) return null;
-  // Closing language patterns observed in the broken Flipkart session.
+  // Closing language patterns. Each pattern below was observed in a
+  // production session that the previous regex set missed — the
+  // Flipkart-session-2 retest produced "I'll work with HR to put
+  // together the final, formal offer letter… within 24-48 hours" which
+  // doesn't match "let me put together the final numbers" or "HR will
+  // send" anchors. The regex set is now broader; new variants → add a
+  // pattern, never paper over.
   const closingPatterns = [
     /let me put together the final numbers/i,
+    /(?:I[''’]?ll|we[''’]?ll|going\s+to)\s+work\s+with\s+HR\s+to\s+(?:put\s+together|prepare|finalize|draft)/i,
+    /put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter/i,
     /HR (?:will\s+)?send\s+you\s+the\s+(?:formal\s+)?offer\s+letter/i,
+    /(?:get\s+(?:that|it|the\s+offer\s+letter)\s+to\s+you|(?:offer\s+letter|paperwork)\s+(?:in|within)\s+(?:the\s+)?next\s+\d+[-–\s]*\d*\s*(?:hours|days|weeks))/i,
     /finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details)/i,
     /\bwelcome\s+(?:to\s+the\s+team|aboard)\b/i,
     /look\s+forward\s+to\s+having\s+you\s+(?:on\s+)?(?:the\s+team|board)/i,
     /\bcongratulations\b.{0,40}(?:joining|offer|accepted)/i,
+    /\bwith\s+(?:these|those|the)\s+adjustments\b/i,
   ];
   for (const re of closingPatterns) {
     const m = ctx.llmOutput.match(re);
@@ -186,8 +204,13 @@ export function detectNumberEchoMisbind(ctx: DetectorContext): NegotiationFailur
   // "thinking around ₹X" — when followed by an LPA number that ISN'T
   // the candidate's actual stated target. This was the Flipkart
   // "thinking around ₹58 LPAs" bug when candidate had said ₹70.
+  // Anchor phrases the AI uses when paraphrasing the candidate's stated
+  // target. Each captured group is the LPA number it claims to be
+  // echoing. Trailing-s on LPA matches the LLM's frequent "₹20 LPAs"
+  // pluralization. Real session that motivated each addition is in a
+  // comment in the harness's fixtures/flipkart-ux-*.json.
   const echoPatterns = [
-    /(?:i\s+heard|you\s+(?:mentioned|said|stated)|your\s+(?:target|number)\s+of|thinking\s+around)\s+₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/gi,
+    /(?:i\s+heard|you\s+(?:mentioned|said|stated)|your\s+(?:target|number)\s+of|thinking\s+around|looking\s+(?:for|at)|you[''’]?re\s+(?:looking|asking|seeking|targeting|thinking)(?:\s+(?:for|at|about|around))?|seeing|you\s+want)\s+(?:a\s+(?:total\s+)?(?:CTC|salary|package)\s+of\s+(?:around\s+)?)?₹?\s*(\d+(?:\.\d+)?)\s*(?:LPAs?|lpas?|lakhs?|cr|crore)/gi,
   ];
   const target = ctx.candidateTargetLpa;
   const competing = ctx.competingOfferLpa ?? null;
@@ -258,6 +281,96 @@ export function detectPlaceholderLeak(ctx: DetectorContext): NegotiationFailure 
   return null;
 }
 
+/* ── #9 Phantom counter movement ──────────────────────────────────── */
+/**
+ * Flags when the AI's reply references "our current/latest/revised
+ * offer of ₹X" with X > the highest offer the AI has actually made
+ * this session. Real production bug from the Flipkart UX retest:
+ *   turn 1: "₹20 LPA total CTC"           ← initial offer
+ *   turn 5: "our current offer of ₹24 LPA" ← phantom — never countered
+ * The "₹24" was the candidate's TARGET; the LLM conflated target with
+ * offer and silently teleported the offer to match. The candidate sees
+ * a confident hiring manager who happens to be lying. Detector requires
+ * highestOfferMade context — when that's missing we fall back to the
+ * band's initialOffer.
+ */
+export function detectPhantomCounter(ctx: DetectorContext): NegotiationFailure | null {
+  const ceiling = ctx.highestOfferMade ?? ctx.band?.initialOffer ?? null;
+  if (ceiling == null) return null;
+  const re = /(?:our|the|my|company[''’]?s)\s+(?:current|latest|revised|updated|standing|new)\s+offer\s+of\s+₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(ctx.llmOutput)) !== null) {
+    const isCr = /cr|crore/i.test(m[0]);
+    const v = parseFloat(m[1]) * (isCr ? 100 : 1);
+    if (v > ceiling * 1.05) {
+      return {
+        code: "phantom-counter",
+        message: `AI claimed "current offer of ₹${v} LPA" but highest offer this session was ₹${ceiling} LPA — counter was never explicitly stated.`,
+        evidence: m[0],
+        severity: "blocker",
+      };
+    }
+  }
+  return null;
+}
+
+/* ── #10 Repeated question ────────────────────────────────────────── */
+/**
+ * Flags when the AI asks the same probe twice (e.g. "What's your
+ * notice period?" in turn 4 and again in turn 6). Candidate experience:
+ * "you keep asking me the same thing." The existing Jaccard repetition
+ * guard in follow-up.ts can miss probe-shape repeats when the
+ * surrounding sentence varies; this is a post-hoc check on a small
+ * set of probe signatures that hurt most when repeated.
+ */
+const PROBE_SIGNATURES: Array<[RegExp, string]> = [
+  [/\bnotice\s+period\b/i, "notice-period"],
+  [/\bjoining\s+(?:date|bonus)\b/i, "joining"],
+  [/\bcurrent\s+CTC\b/i, "current-ctc"],
+  [/\bcompeting\s+offer/i, "competing-offer"],
+  [/what.{0,20}driving\s+(?:that|this|the)\s+number/i, "driving-number"],
+  [/\bwhat\s+would\s+it\s+take\b/i, "what-would-it-take"],
+];
+/**
+ * Returns true if `text` contains the probe phrase IN AN INTERROGATIVE
+ * SHAPE — "What's your notice period?" counts; "Thanks for clarifying
+ * your notice period" does not. Without this guard the detector flagged
+ * turn-5 of the Flipkart retest where the AI was acknowledging the
+ * answer it had received in turn-4. Heuristic: probe word must appear
+ * in the same sentence as a question marker (?, what, when, can you,
+ * could you, tell me, walk me, share, give us).
+ */
+function isProbeQuestion(text: string, probeRe: RegExp): boolean {
+  // Split into rough sentence chunks — keep terminators with each chunk.
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  for (const s of sentences) {
+    if (!probeRe.test(s)) continue;
+    const interrog =
+      /\?|^\s*(?:what|when|where|why|how|could|can|would|do)\b|\b(?:tell|let|walk)\s+me\b|\b(?:share|give\s+us)\b/i;
+    if (interrog.test(s)) return true;
+  }
+  return false;
+}
+
+export function detectRepeatedQuestion(ctx: DetectorContext): NegotiationFailure | null {
+  const prev = ctx.previousAiTurns;
+  if (!prev || prev.length === 0) return null;
+  const out = ctx.llmOutput;
+  for (const [re, label] of PROBE_SIGNATURES) {
+    if (!isProbeQuestion(out, re)) continue;
+    const priorHit = prev.some(p => isProbeQuestion(p, re));
+    if (priorHit) {
+      return {
+        code: "repeated-question",
+        message: `AI asked the "${label}" probe again — already asked in a prior turn this session.`,
+        evidence: out.slice(0, 140),
+        severity: "major",
+      };
+    }
+  }
+  return null;
+}
+
 /* ── Aggregate runner ─────────────────────────────────────────────── */
 const ALL_DETECTORS = [
   detectPrematureClose,
@@ -268,6 +381,8 @@ const ALL_DETECTORS = [
   detectNumberEchoMisbind,
   detectMarkdownLeak,
   detectPlaceholderLeak,
+  detectPhantomCounter,
+  detectRepeatedQuestion,
 ];
 
 export function detectAllFailures(ctx: DetectorContext): NegotiationFailure[] {

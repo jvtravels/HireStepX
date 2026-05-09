@@ -1,0 +1,123 @@
+{
+  "_comment": "REAL session captured from a live retest after the round-1 fixes. User picked 'UI/UX Designer' at Flipkart with no experience modifier → defaulted to mid-level band (totalMin:14, totalMax:32 → initialOffer ≈ ₹20.3 LPA, which is correct math for mid). Despite that, the LLM produced 6 distinct failures across 6 turns — none of which the round-1 detector set caught because the phrasings differed. This fixture pins them all so the next 'fix' must keep them green:\n  • Turn 2: number-echo bug (candidate said ₹24, AI echoed ₹20)\n  • Turn 4: counter-offer never explicitly stated despite candidate making the ask\n  • Turn 5: PHANTOM COUNTER — 'our current offer of ₹24 LPA' when AI never actually moved from ₹20 (this is new — the LLM teleported the offer to match the target)\n  • Turn 6: PREMATURE CLOSE with the variant phrasing 'I'll work with HR to put together the final, formal offer letter' (the round-1 regex anchored on 'let me put together the final numbers' / 'HR will send' and missed 'I'll work with HR to put together'). Also REPEATED QUESTION — notice period asked again after being asked in turn 4.\n  • The italic copper words 'align' / 'what' / 'situation' visible in screenshots were the rendering side (pickAccent in _accent-parser.ts ACCENT_PRIORITY set), not LLM markdown — fixed by gating pickAccent off in salary-negotiation mode.",
+  "session": {
+    "role": "ux-designer",
+    "company": "flipkart",
+    "experienceLevel": "mid",
+    "currentCity": "Bangalore",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 20.3,
+    "maxStretch": 26,
+    "walkAway": 16,
+    "hasEquity": true
+  },
+  "turns": [
+    {
+      "_label": "turn-2 initial offer — ₹20 LPA, headline-only (CORRECT for mid-level band)",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": null,
+      "previousAiTurns": [],
+      "llmOutput": "Great. So, Jay, we'd like to extend an offer for the Mid-level UX/UI Designer position with a total CTC of ₹20 LPA. We're quite excited about the impact you could make here. How does that align with your expectations.",
+      "expected": []
+    },
+    {
+      "_label": "turn-3 NUMBER-ECHO BUG — candidate said ₹24, AI echoed ₹20 + said '₹20 is a bit above our initial offer of ₹20'",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 24,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 20,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to extend an offer for the Mid-level UX/UI Designer position with a total CTC of ₹20 LPA. We're quite excited about the impact you could make here. How does that align with your expectations."
+      ],
+      "llmOutput": "I hear you, Jay, you're looking for a total CTC of around ₹20 LPAs per annum. That's a bit above our initial offer of ₹20 LPA, but I can definitely see what we can do. Can you tell me a bit more about what's driving that number for you?",
+      "expected": [
+        "number-echo-misbind"
+      ]
+    },
+    {
+      "_label": "turn-4 candidate corrects to ₹24, AI acknowledges and asks for justification — clean turn",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 24,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 20,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to extend an offer for the Mid-level UX/UI Designer position with a total CTC of ₹20 LPA. We're quite excited about the impact you could make here. How does that align with your expectations.",
+        "I hear you, Jay, you're looking for a total CTC of around ₹20 LPAs per annum. That's a bit above our initial offer of ₹20 LPA, but I can definitely see what we can do."
+      ],
+      "llmOutput": "Thanks for clarifying, Jay. I understand you're looking for ₹24 LPA. Can you tell me a bit more about what's driving that specific number for you?",
+      "expected": []
+    },
+    {
+      "_label": "turn-5 candidate gave market research; AI pivots to notice period WITHOUT countering",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 24,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 20,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to extend an offer for the Mid-level UX/UI Designer position with a total CTC of ₹20 LPA. We're quite excited about the impact you could make here. How does that align with your expectations.",
+        "I hear you, Jay, you're looking for a total CTC of around ₹20 LPAs per annum.",
+        "Thanks for clarifying, Jay. I understand you're looking for ₹24 LPA. Can you tell me a bit more about what's driving that specific number for you?"
+      ],
+      "llmOutput": "Thanks for sharing your market research, Jay. I understand you're seeing ₹24 LPA as an average for designers with your experience. While that's a bit above our initial offer of ₹20 LPA, I can definitely see what we can do to bridge that gap. What's your current notice period, and when would you ideally be looking to join?",
+      "expected": []
+    },
+    {
+      "_label": "turn-6 PHANTOM COUNTER — AI claims 'our current offer of ₹24 LPA' but never moved from ₹20",
+      "isInitialOffer": false,
+      "questionIndex": 5,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 24,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 20,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to extend an offer for the Mid-level UX/UI Designer position with a total CTC of ₹20 LPA.",
+        "I hear you, you're looking for a total CTC of around ₹20 LPAs per annum.",
+        "Thanks for clarifying, Jay. I understand you're looking for ₹24 LPA.",
+        "Thanks for sharing your market research. While that's a bit above our initial offer of ₹20 LPA, I can definitely see what we can do. What's your current notice period, and when would you ideally be looking to join?"
+      ],
+      "llmOutput": "Thanks for clarifying your notice period, Jay. It's good to know you can join in thirty days. Given your target of ₹24 LPA and our current offer of ₹24 LPA, what would it take for us to bridge that gap and get you on board.",
+      "expected": [
+        "phantom-counter"
+      ]
+    },
+    {
+      "_label": "turn-7 PREMATURE CLOSE variant + REPEATED notice-period question",
+      "isInitialOffer": false,
+      "questionIndex": 6,
+      "phase": "closing",
+      "candidateTargetLpa": 24,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 20,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to extend an offer for the Mid-level UX/UI Designer position with a total CTC of ₹20 LPA.",
+        "I hear you, you're looking for a total CTC of around ₹20 LPAs per annum.",
+        "Thanks for clarifying, Jay. I understand you're looking for ₹24 LPA.",
+        "Thanks for sharing your market research. While that's a bit above our initial offer of ₹20 LPA, I can definitely see what we can do. What's your current notice period, and when would you ideally be looking to join?",
+        "Given your target of ₹24 LPA and our current offer of ₹24 LPA, what would it take for us to bridge that gap and get you on board."
+      ],
+      "llmOutput": "Okay, Jay. This has been a very productive discussion. Based on our conversation, I'll work with HR to put together the final, formal offer letter with these adjustments. We aim to get that to you within the next 24-48 hours. What's your current notice period situation, and what would be your ideal joining date if we can move forward.",
+      "expected": [
+        "premature-close",
+        "repeated-question"
+      ]
+    }
+  ]
+}

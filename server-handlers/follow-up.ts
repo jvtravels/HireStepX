@@ -1587,6 +1587,8 @@ Repeat-text in followUpText is FORBIDDEN.`;
           phase: salaryPhase || undefined,
           questionIndex,
           isInitialOffer: questionIndex === 1,
+          highestOfferMade: typeof highestOfferMade === "number" ? highestOfferMade : null,
+          previousAiTurns: previousFollowUps,
         });
         if (failures.length > 0) {
           void captureServerEvent(

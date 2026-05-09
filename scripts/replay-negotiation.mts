@@ -33,6 +33,10 @@ interface FixtureTurn {
   candidateTargetLpa?: number | null;
   competingOfferLpa?: number | null;
   acceptedImmediately?: boolean;
+  /** Highest offer the AI has actually made BEFORE this turn (LPA). */
+  highestOfferMade?: number | null;
+  /** Prior AI turns in this session, oldest first. */
+  previousAiTurns?: string[];
   llmOutput: string;
   expected?: string[];
 }
@@ -88,6 +92,8 @@ for (const fixtureFile of fixtureFiles) {
       phase: turn.phase,
       questionIndex: turn.questionIndex,
       isInitialOffer: turn.isInitialOffer ?? false,
+      highestOfferMade: turn.highestOfferMade ?? null,
+      previousAiTurns: turn.previousAiTurns ?? [],
     });
     const detected = failures.map(f => f.code);
     const expected = turn.expected ?? [];

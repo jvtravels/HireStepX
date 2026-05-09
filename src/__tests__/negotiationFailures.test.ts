@@ -8,6 +8,8 @@ import {
   detectNumberEchoMisbind,
   detectMarkdownLeak,
   detectPlaceholderLeak,
+  detectPhantomCounter,
+  detectRepeatedQuestion,
   detectAllFailures,
 } from "../../server-handlers/_negotiation-failures";
 
@@ -213,6 +215,137 @@ describe("detectPlaceholderLeak", () => {
 
   it("flags [amount] placeholder", () => {
     expect(detectPlaceholderLeak({ ...baseCtx, llmOutput: "Counter at [amount] LPA." })?.code).toBe("placeholder-leak");
+  });
+});
+
+describe("detectPrematureClose — round-2 variants from real Flipkart retest", () => {
+  it("flags 'I'll work with HR to put together the final, formal offer letter'", () => {
+    const f = detectPrematureClose({
+      ...baseCtx,
+      llmOutput:
+        "Based on our conversation, I'll work with HR to put together the final, formal offer letter with these adjustments. We aim to get that to you within the next 24-48 hours.",
+    });
+    expect(f?.code).toBe("premature-close");
+  });
+
+  it("flags 'with these adjustments' commitment language alone", () => {
+    const f = detectPrematureClose({
+      ...baseCtx,
+      llmOutput: "Sounds good. We'll go ahead with these adjustments and confirm shortly.",
+    });
+    expect(f?.code).toBe("premature-close");
+  });
+
+  it("flags 'within 24-48 hours' offer-letter timing", () => {
+    const f = detectPrematureClose({
+      ...baseCtx,
+      llmOutput: "We'll get the offer letter to you in the next 24-48 hours.",
+    });
+    expect(f?.code).toBe("premature-close");
+  });
+});
+
+describe("detectNumberEchoMisbind — round-2 phrasing variants", () => {
+  it("[fixture: Flipkart retest] flags 'looking for a total CTC of around ₹20 LPAs' when target is ₹24", () => {
+    const f = detectNumberEchoMisbind({
+      ...baseCtx,
+      candidateTargetLpa: 24,
+      llmOutput: "I hear you, you're looking for a total CTC of around ₹20 LPAs per annum.",
+    });
+    expect(f?.code).toBe("number-echo-misbind");
+  });
+
+  it("flags 'seeing ₹X LPA' when X != target", () => {
+    const f = detectNumberEchoMisbind({
+      ...baseCtx,
+      candidateTargetLpa: 24,
+      llmOutput: "I understand you're seeing ₹18 LPA as the average for your level.",
+    });
+    expect(f?.code).toBe("number-echo-misbind");
+  });
+
+  it("matches LPAs (with trailing s) — LLM frequently pluralizes", () => {
+    const f = detectNumberEchoMisbind({
+      ...baseCtx,
+      candidateTargetLpa: 24,
+      llmOutput: "Thinking around ₹15 LPAs based on your experience.",
+    });
+    expect(f?.code).toBe("number-echo-misbind");
+  });
+});
+
+describe("detectPhantomCounter", () => {
+  it("[fixture: Flipkart retest] flags 'our current offer of ₹24 LPA' when AI never moved past ₹20", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput:
+        "Given your target of ₹24 LPA and our current offer of ₹24 LPA, what would it take to bridge that gap?",
+      highestOfferMade: 20,
+    });
+    expect(f?.code).toBe("phantom-counter");
+    expect(f?.severity).toBe("blocker");
+  });
+
+  it("does NOT flag when current offer matches highestOfferMade", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput: "Our current offer of ₹24 LPA stands.",
+      highestOfferMade: 24,
+    });
+    expect(f).toBeNull();
+  });
+
+  it("falls back to band.initialOffer when highestOfferMade is null", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput: "Our current offer of ₹40 LPA total CTC.",
+      highestOfferMade: null,
+      band: { initialOffer: 20, maxStretch: 28, walkAway: 16 },
+    });
+    expect(f?.code).toBe("phantom-counter");
+  });
+
+  it("does not fire when neither highestOfferMade nor band is provided", () => {
+    const f = detectPhantomCounter({
+      ...baseCtx,
+      llmOutput: "Our current offer of ₹40 LPA.",
+    });
+    expect(f).toBeNull();
+  });
+});
+
+describe("detectRepeatedQuestion", () => {
+  it("[fixture: Flipkart retest] flags asking notice-period twice", () => {
+    const f = detectRepeatedQuestion({
+      ...baseCtx,
+      previousAiTurns: [
+        "What's your current notice period, and when would you ideally be looking to join?",
+      ],
+      llmOutput:
+        "Okay. What's your current notice period situation, and what would be your ideal joining date?",
+    });
+    expect(f?.code).toBe("repeated-question");
+  });
+
+  it("does NOT flag when current turn merely acknowledges (not re-asks) the prior probe", () => {
+    const f = detectRepeatedQuestion({
+      ...baseCtx,
+      previousAiTurns: [
+        "What's your current notice period, and when would you ideally be looking to join?",
+      ],
+      llmOutput:
+        "Thanks for clarifying your notice period — good to know you can join in 30 days. What would it take to get you on board?",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("does not fire on the first AI turn (no prior context)", () => {
+    const f = detectRepeatedQuestion({
+      ...baseCtx,
+      previousAiTurns: [],
+      llmOutput: "What's your current notice period?",
+    });
+    expect(f).toBeNull();
   });
 });
 

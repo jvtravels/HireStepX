@@ -81,6 +81,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
   const { displayName, persisted } = useDashboardCore();
   const { calendarEvents, refreshSessions } = useDashboardSessions();
   const { isFree, isStarter, isPro, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek } = useDashboardSubscription();
+  // True when we have a session but profile fetch (tier-bearing) hasn't
+  // returned yet. profileToUser always sets subscriptionTier; the JWT-only
+  // fallback path leaves it undefined. Avoid rendering "Free Plan" in this
+  // window — it misleads Pro users until the background retry lands.
+  const tierKnown = !!user && user.subscriptionTier !== undefined;
   const {
     isMobile,
     showUpgradeModal, setShowUpgradeModal,
@@ -253,11 +258,11 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             )}
             <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: isPro ? c.sage : c.gilt }}>
-              {isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
+              {!tierKnown ? "Loading plan…" : isPro ? "Pro Plan" : isStarter ? "Starter Plan" : "Free Plan"}
             </span>
           </div>
-          <p style={{ fontFamily: font.ui, fontSize: 11, color: (isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0) ? c.ember : c.stone, lineHeight: 1.5, marginBottom: user?.subscriptionEnd && !isFree ? 4 : 10, fontWeight: (isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2) ? 600 : 400 }}>
-            {isPro ? "Unlimited sessions" : isStarter ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left this week${starterRemaining <= 2 && starterRemaining > 0 ? " — running low!" : ""}` : sessionsRemaining > 0 ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? " — last one!" : ""}` : "No sessions remaining — upgrade to continue"}
+          <p style={{ fontFamily: font.ui, fontSize: 11, color: tierKnown && ((isFree && sessionsRemaining <= 1 && sessionsRemaining > 0) || (isStarter && starterRemaining <= 2 && starterRemaining > 0)) ? c.ember : c.stone, lineHeight: 1.5, marginBottom: user?.subscriptionEnd && !isFree ? 4 : 10, fontWeight: tierKnown && ((isFree && sessionsRemaining <= 1) || (isStarter && starterRemaining <= 2)) ? 600 : 400 }}>
+            {!tierKnown ? "\u00a0" : isPro ? "Unlimited sessions" : isStarter ? `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left this week${starterRemaining <= 2 && starterRemaining > 0 ? " — running low!" : ""}` : sessionsRemaining > 0 ? `${sessionsRemaining} of ${FREE_SESSION_LIMIT} session${sessionsRemaining !== 1 ? "s" : ""} remaining${sessionsRemaining === 1 ? " — last one!" : ""}` : "No sessions remaining — upgrade to continue"}
           </p>
           {/* Bonus credits from streak milestones, referrals, or single-session purchases.
               Only shown when there's something to celebrate — suppress if 0. Hidden for
@@ -277,7 +282,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               Renews {new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
             </p>
           )}
-          {(isFree || isStarter) && (
+          {tierKnown && (isFree || isStarter) && (
             <div style={{ height: 3, borderRadius: 2, background: c.border, marginBottom: 12 }}>
               {isFree ? (
                 <div style={{ height: "100%", borderRadius: 2, background: sessionsRemaining === 0 ? c.ember : c.gilt, width: `${Math.min(100, (sessionsUsed / FREE_SESSION_LIMIT) * 100)}%`, transition: "width 0.3s" }} />
@@ -286,7 +291,9 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
               )}
             </div>
           )}
-          {isPro ? (
+          {!tierKnown ? (
+            <div aria-hidden="true" style={{ width: "100%", height: 32, borderRadius: 8, background: c.border, opacity: 0.4 }} />
+          ) : isPro ? (
             <button onClick={() => setShowUpgradeModal(true)} style={{ width: "100%", padding: "8px 0", borderRadius: 8, cursor: "pointer", border: `1px solid rgba(122,158,126,0.2)`, background: "#DCFCE7", color: c.sage, fontFamily: font.ui, fontSize: 12, fontWeight: 600, transition: "opacity 0.2s" }}
               onMouseEnter={(e) => e.currentTarget.style.opacity = "0.85"}
               onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}

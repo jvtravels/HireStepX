@@ -507,6 +507,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newUser);
     }
 
+    // When getProfile times out (extension-blocked fetch), we set a basic
+    // user from the JWT alone — missing subscriptionTier, resumeData, etc.
+    // That makes Pro users briefly see "Free Plan" in the sidebar until a
+    // hard refresh re-fetches the profile. Retry in the background with
+    // exponential backoff so the UI self-corrects without user action.
+    const retryProfileInBackground = (sess: Session) => {
+      let cancelled = false;
+      const delays = [1000, 2000, 4000, 8000, 16000];
+      (async () => {
+        for (const delay of delays) {
+          if (cancelled) return;
+          await new Promise((r) => setTimeout(r, delay));
+          if (cancelled) return;
+          try {
+            const profile = await Promise.race([
+              getProfile(sess.user.id),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error("getProfile retry timeout (8s)")), 8000),
+              ),
+            ]);
+            if (profile && !cancelled) {
+              setUser(profileToUser(profile, sess));
+              return;
+            }
+          } catch { /* keep retrying */ }
+        }
+      })();
+      return () => { cancelled = true; };
+    };
+
     // Safety timeout: ensure loading never hangs
     // Use longer timeout on slow connections (common on Indian mobile networks)
     const safetyMs = isSlowConnection() ? 15000 : 10000;
@@ -667,6 +697,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               hasCompletedOnboarding: meta.has_completed_onboarding || getLocalOnboardingDone(session.user.id) || false,
               emailVerified: meta.custom_email_verified === true || !!session.user.email_confirmed_at,
             });
+            retryProfileInBackground(session);
           }
         } else {
           setUser(null);
@@ -779,6 +810,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             // Best-effort row creation in the background.
             ensureProfile(session).catch(() => { /* expected on hang */ });
+            retryProfileInBackground(session);
           }
           setLoading(false);
         } else if (event === "SIGNED_OUT") {

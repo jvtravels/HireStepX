@@ -1194,7 +1194,21 @@ function InterviewInner() {
               // hand-picked at question-generation time. Falls back to
               // the local heuristic when LLM didn't comply or for
               // cached/legacy questions without the field.
-              const rawAccent = step.accentSplit ?? pickAccent(displayText);
+              //
+              // Salary-negotiation exception: pickAccent's ACCENT_PRIORITY
+              // set is tuned for behavioral question stems (situation,
+              // align, what, why) — those words ARE the load-bearing
+              // emphasis in "tell me about a *situation*" / "*why* did
+              // you choose…". In salary-neg prose those same words show
+              // up incidentally ("how does that *align*", "*what* would
+              // it take", "your notice period *situation*") and the
+              // italic-copper highlighting makes the AI look erratic.
+              // Real session: italics on align/what/situation across 3
+              // turns — interpreted by the user as "markdown leak".
+              // Suppress the heuristic accent for negotiation; LLM-
+              // marked accentSplit (rare in negotiation anyway) still
+              // honored if present.
+              const rawAccent = step.accentSplit ?? (isSalaryNegotiation ? null : pickAccent(displayText));
               // accentSplit may carry prosody markup if it was assembled
               // before stripping (LLM-marked accents on raw aiText). Strip
               // each segment defensively so [pause] never escapes.
