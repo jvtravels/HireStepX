@@ -24,13 +24,18 @@ import type { ExperienceLevel } from "./salaries";
 import { classifyCompanyType } from "./company-guidance";
 import { getCsvDerivedBandOverride, getCsvBandOnly } from "./csv-derived-fallbacks";
 import { IMPORTED_SALARY_OVERRIDES } from "./_imported-salary-overrides.generated";
-
-/** Read the AmbitionBox sample size out of an imported band's notes
- *  (the scraper emits "n=NNN" inside the notes string). */
-function extractSampleSize(notes: string | undefined): number {
-  const m = notes?.match(/n=(\d+)/);
-  return m ? Number(m[1]) : 0;
-}
+import {
+  ENGINEERING_TRACK_ROLES,
+  IT_NON_ENG_ROLES,
+  JUNIOR_LEVELS,
+  LEAD_EXEC_LEVELS,
+  MID_OR_SENIOR_LEVELS,
+  UNICORN_SEED_FLIP_COMPANIES,
+  extractSampleSize,
+  isAbOnlyCuratorSource,
+  isPass2YoeBucket,
+  isSeedSource,
+} from "./_salary-source-helpers";
 
 /** Stamp every IMPORTED_SALARY_OVERRIDES hit as research-aggregated so the
  *  negotiation prompt + UI hedge to the lower half of the band. Also
@@ -45,19 +50,19 @@ function tagImported(band: CompanyBandOverride): CompanyBandOverride {
   return { ...band, dataConfidence: "research-aggregated", dataConfidenceTier: tier };
 }
 
-/** Phase 7: stamp seed-dataset multiplier cells as low-confidence
+/** Stamp seed-dataset multiplier cells as low-confidence
  *  research-aggregated. Without this they fall through to the
  *  "verified" branch in salary-lookup.ts and the LLM is told the
  *  numbers are authoritative — they're not, they're tier × multiplier
- *  × baseline guesses with no empirical grounding. The 854 such cells
+ *  × baseline guesses with no empirical grounding. The ~850 such cells
  *  span 80+ companies (paytm/freshworks/nykaa/zomato/salesforce/...)
  *  and represent the long-tail roles AB never scraped (ux-designer,
  *  ml-engineer, sales, customer-success, business-analyst non-mid).
- *  Low tier triggers the explicit "directional only, validate with
- *  recruiter" calibration block. */
+ *  Low tier triggers the "directional only, validate with recruiter"
+ *  calibration block. */
 function tagSeedSynthetic(band: CompanyBandOverride): CompanyBandOverride {
   if (band.dataConfidence) return band;
-  if (!band.source?.startsWith("Seed dataset")) return band;
+  if (!isSeedSource(band.source)) return band;
   return { ...band, dataConfidence: "research-aggregated", dataConfidenceTier: "low" };
 }
 
@@ -111,98 +116,47 @@ function maybePreferImportedOverSeed(
     }
   }
   if (!PREFER_IMPORTED_OVER_SEED_COMPANIES.has(companyKey)) return null;
-  /* Phase 5: in addition to "Seed dataset" curator, also flip when the
-   * curator source is unambiguously AmbitionBox-only (no Levels.fyi /
-   * disclosure / verified blend) AND the imported entry is pass-2
-   * yoe-bucket. Same data source, finer resolution — pass-2 walks the
-   * 0-1 / 1-3 / 3-6 / 6-9 YOE bucket table per designation, while
-   * pass-1 collapses the whole 0-8 envelope into one mid cell. */
-  const curatorIsSeed = curator.source?.startsWith("Seed dataset") ?? false;
-  const curatorIsAbOnly =
-    /^AmbitionBox/i.test(curator.source ?? "") &&
-    !/Levels\.fyi|DRHP|disclosure|verified/i.test(curator.source ?? "");
+  /* Either (a) curator is a seed-multiplier guess, or (b) curator is
+   * unambiguously AmbitionBox-derived (not Levels.fyi-blended) and we
+   * have a finer-grained pass-2 scrape — same source, narrower YOE. */
+  const curatorIsSeed = isSeedSource(curator.source);
+  const curatorIsAbOnly = isAbOnlyCuratorSource(curator.source);
   if (!curatorIsSeed && !curatorIsAbOnly) return null;
   const imported = pickLevelInRoleMap(IMPORTED_SALARY_OVERRIDES[companyKey]?.[roleKey], experienceLevel);
   if (!imported) return null;
   const n = extractSampleSize(imported.notes);
-  /* Sample-size threshold tuning:
-   *
-   * Pass-2 yoe-bucket scrapes (notes start "AB yoe-bucket scrape:")
-   * are sample-weighted across designations covering a true YOE
-   * bucket — ₹4.4L for Accenture SDE entry n=197 is the real fresher
-   * cohort, not a broad envelope. Pass-1 single-cell scrapes pool
-   * across YOE so need a larger n to be trustworthy.
-   *
-   * For *engineering-track* entry/mid roles (software-engineer,
-   * qa-engineer, data-engineer, devops-engineer) at IT-services we
-   * accept pass-2 down to n≥150 — these are the bands where AB
-   * samples are genuinely fresher/junior cohorts. Other roles
-   * (product-manager, business-analyst, engineering-manager) at
-   * IT-services keep the n≥1000 bar because their AB cohort skews
-   * to mid-career re-titlings rather than real freshers in that
-   * role. Senior+ levels keep n≥1000 always (AB undercounts seniors).
-   */
-  const isPass2 = imported.notes?.includes("yoe-bucket") ?? false;
-  // The AB-only curator flip path requires pass-2 (finer-grained); a
-  // pass-1 curator should not be displaced by another pass-1.
+  const isPass2 = isPass2YoeBucket(imported.notes);
+  // AB-only curator path requires pass-2 — pass-1 should not displace
+  // another pass-1 at the same source resolution.
   if (curatorIsAbOnly && !curatorIsSeed && !isPass2) return null;
-  const isEngineeringTrack = roleKey === "software-engineer"
-    || roleKey === "qa-engineer"
-    || roleKey === "data-engineer"
-    || roleKey === "devops-engineer";
-  const isJuniorLevel = experienceLevel === "entry" || experienceLevel === "mid";
-  /* Phase 4: extend the loose threshold to engineering-track senior at
-   * IT-services. AB pass-2 yoe-bucket scrapes for 5-8 YOE SDE roles at
-   * TCS/Infosys/Wipro/etc. produce dense (n≥300) cohorts that match the
-   * real ₹15-25L senior-engineer band. Curator's seed-multiplier here
-   * was extrapolated from entry — diverges 30-40% from disclosure data.
-   * Lead+ stays at n≥1000 since the cohort thins out fast. */
-  const isMidOrSenior = experienceLevel === "mid" || experienceLevel === "senior";
-  /* Phase 6: extend loose threshold to IT-services PM/BA/QA at lead/exec.
-   * AB pass-2 captures real "Project Manager 9-12y" / "Senior Test
-   * Engineer 9-12y" cohorts with n in the 100s-1000s for TCS/Infosys/
-   * Wipro/HCL/Capgemini/Cognizant. Seed-multiplier curve (0.45-0.62x of
-   * ₹100L+ baseline) puts these at ₹45-65L which is 2-3× too high vs
-   * realized comp. Companies are already gated by
-   * PREFER_IMPORTED_OVER_SEED_COMPANIES, so this only fires for the
-   * IT-services / domestic-BFSI flip set. */
-  const isItNonEngRoleSeniorTrack =
-    (roleKey === "product-manager" || roleKey === "project-manager" ||
-      roleKey === "business-analyst" || roleKey === "qa-engineer") &&
-    (experienceLevel === "lead" || experienceLevel === "executive") &&
-    curatorIsSeed;
-  /* Phase 6: also allow engineering-track lead at IT-services (seed
-   * curator). AB pass-2 "Senior SE 9-12y" n is in the 100s for accenture/
-   * tcs/wipro/infosys — same n-floor (150) as the senior tier. Executive
-   * SE is genuinely sparse on AB so stays at 1000. */
+  /* Pass-2 yoe-bucket scrapes are sample-weighted across designations
+   * inside a real YOE window — ₹4.4L for Accenture SDE entry n=197 is
+   * a fresher cohort, not a broad envelope. Pass-1 collapses 0-8 YOE
+   * into one cell, so needs a larger n to be trustworthy. The tiered
+   * n-floor below mirrors this: engineering pass-2 cohorts get 150
+   * (dense), IT-services PM/BA lead-exec gets 100 (title-cohort still
+   * dense), unicorn PM/BA pass-2 gets 50 (sparser AB but curator is a
+   * proven-wrong synthetic guess), everything else stays at 1000. */
+  const isEng = ENGINEERING_TRACK_ROLES.has(roleKey);
+  const isItNonEng = IT_NON_ENG_ROLES.has(roleKey);
+  const isItNonEngLeadExec =
+    isItNonEng && LEAD_EXEC_LEVELS.has(experienceLevel) && curatorIsSeed;
   const isItEngLead =
-    isEngineeringTrack && experienceLevel === "lead" && curatorIsSeed;
-  /* Phase 6: indian-unicorn seed-multiplier at PM/BA mid/senior. Pass-2
-   * yoe-bucket cohorts here are smaller (paytm/zomato/meesho), so use a
-   * gentler n-floor — title-cohort at 50+ is meaningful when curator is
-   * a synthetic 0.85-1.05x guess. Pass-1 also acceptable here since the
-   * curator's source is provably non-empirical. */
+    isEng && experienceLevel === "lead" && curatorIsSeed;
   const isUnicornPmBaSeed =
     (roleKey === "product-manager" || roleKey === "business-analyst") &&
-    (experienceLevel === "mid" || experienceLevel === "senior" || experienceLevel === "entry") &&
+    (experienceLevel === "entry" || MID_OR_SENIOR_LEVELS.has(experienceLevel)) &&
     curatorIsSeed &&
-    (companyKey === "paytm" || companyKey === "zomato" || companyKey === "meesho");
+    UNICORN_SEED_FLIP_COMPANIES.has(companyKey);
+  const isEngJuniorOrMidSenior =
+    isEng && (JUNIOR_LEVELS.has(experienceLevel) || MID_OR_SENIOR_LEVELS.has(experienceLevel));
   const looseThresholdEligible =
-    (isPass2 && (
-      (isEngineeringTrack && (isJuniorLevel || isMidOrSenior)) ||
-      isItNonEngRoleSeniorTrack ||
-      isItEngLead
-    )) ||
+    (isPass2 && (isEngJuniorOrMidSenior || isItNonEngLeadExec || isItEngLead)) ||
     isUnicornPmBaSeed;
-  /* Tiered n-floor: dense engineering pass-2 cohorts get 150 (existing
-   * Phase 4 calibration); unicorn PM/BA cohorts and BFSI BA lead get 50
-   * because AB title-cohort is sparser there but curator is provably a
-   * multiplier guess. Everything else stays at the strict 1000. */
-  const threshold = looseThresholdEligible
-    ? (isUnicornPmBaSeed ? 50
-      : isItNonEngRoleSeniorTrack ? 100
-      : 150)
-    : 1000;
+  const threshold = !looseThresholdEligible ? 1000
+    : isUnicornPmBaSeed ? 50
+    : isItNonEngLeadExec ? 100
+    : 150;
   if (n < threshold) return null;
   return tagImported(imported);
 }

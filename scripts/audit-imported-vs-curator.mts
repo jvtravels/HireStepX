@@ -19,11 +19,28 @@ import { resolve } from "node:path";
 import { COMPANY_SALARY_OVERRIDES } from "../data/company-salary-overrides";
 import { IMPORTED_SALARY_OVERRIDES } from "../data/_imported-salary-overrides.generated";
 import { getCompanyTier } from "../data/company-tiers";
+import type { ExperienceLevel } from "../data/salaries";
+import {
+  IT_NON_ENG_ROLES,
+  LEAD_EXEC_LEVELS,
+  MID_OR_SENIOR_LEVELS,
+  NON_ENTRY_LEVELS,
+  extractSampleSize,
+  isAbOnlyCuratorSource,
+  isMisbinnedScrape,
+  isPass2YoeBucket,
+  isResearchSourced,
+  isSeedSource,
+} from "../data/_salary-source-helpers";
+
+const RESEARCH_VERIFIED_RE = /verified|disclosure|drhp|glassdoor.+ambitionbox/i;
+const LEVELS_FYI_RE = /levels\.fyi/i;
+const UNICORN_BLENDED_RE = /levels\.fyi|glassdoor|curated research/i;
 
 interface Drift {
   company: string;
   role: string;
-  level: string;
+  level: ExperienceLevel;
   curatorMid: number;
   scrapedMid: number;
   driftPct: number;
@@ -36,179 +53,129 @@ interface Drift {
 }
 
 /**
- * Heuristics distilled from the first round of cross-checks:
- *   - Curator sources tagged "Levels.fyi" are research-verified at the
- *     senior end where AB sample is too thin (most FAANG L5+ folks
- *     don't self-post on AB). Trust curator.
- *   - "Seed dataset" curator sources are tier-multiplier-derived, NOT
- *     ground-truth — they were placeholders. When pass-2 AB has a real
- *     YOE-bucket sample (notes prefixed "AB yoe-bucket scrape"), the
- *     scrape wins for entry/mid IT-services where AB sample is dense.
- *   - Otherwise the cell needs human eyes.
+ * Heuristics distilled across audit rounds. Predicates are shared with
+ * the runtime override (data/_salary-source-helpers.ts) so audit
+ * recommendations match what runtime actually does:
+ *   - Levels.fyi / Glassdoor / DRHP / disclosure / curated-research
+ *     curator entries are independently sourced — trust them at any
+ *     level (AB drift is noise, not signal).
+ *   - "Seed dataset" curator entries are tier × multiplier guesses.
+ *     When pass-2 AB has a dense yoe-bucket sample, scrape wins; the
+ *     n-floor varies by tier/role to mirror runtime's threshold.
+ *   - Mis-binned scrapes (junior YOE bucket on a senior cell, etc.) are
+ *     keep-curator regardless of source.
  */
 function classifyDrift(
   d: Pick<Drift, "company" | "role" | "level" | "curatorSource" | "scrapedNotes" | "driftPct">,
 ): { rec: Drift["recommendation"]; why: string } {
-  const src = (d.curatorSource ?? "").toLowerCase();
-  const notes = (d.scrapedNotes ?? "").toLowerCase();
-  const isPass2 = notes.includes("yoe-bucket");
-  const isSeed = src.includes("seed dataset");
-  const isLevelsFyi = src.includes("levels.fyi");
-  const isResearchVerified = /verified|disclosure|drhp|glassdoor.+ambitionbox/.test(src);
+  const src = d.curatorSource;
+  const notes = d.scrapedNotes;
+  const lvl = d.level;
+  const isPass2 = isPass2YoeBucket(notes);
+  const isSeed = isSeedSource(src);
+  const isLevelsFyi = src ? LEVELS_FYI_RE.test(src) : false;
+  const isResearchVerified = src ? RESEARCH_VERIFIED_RE.test(src) : false;
+  const curatorIsAbOnly = isAbOnlyCuratorSource(src);
+  const n = extractSampleSize(notes);
   const tier = getCompanyTier(d.company);
+  const isItNonEngRole = IT_NON_ENG_ROLES.has(d.role);
 
-  if (isLevelsFyi && (d.level === "lead" || d.level === "senior" || d.level === "executive")) {
+  if (isLevelsFyi && (lvl === "senior" || LEAD_EXEC_LEVELS.has(lvl))) {
     return { rec: "keep-curator", why: "Levels.fyi-verified senior comp; AB sample sparse at this level." };
   }
-  // Auto-accept AB ONLY for IT-services entry/mid where AB has dense
-  // cohort sample and curator was a tier-multiplier guess. FAANG /
-  // Big Tech / GCC at mid+ commonly under-report on AB (median earner
-  // doesn't post; outliers do), so even a "seed + pass-2" combo there
-  // needs human eyes.
-  if (isSeed && isPass2 && tier === "it-services" && (d.level === "entry" || d.level === "mid")) {
+  // IT-services entry/mid: AB has dense cohort sample; FAANG/Big-Tech/GCC
+  // at mid+ undercount on AB (median earner doesn't post) so they don't
+  // flip even with seed+pass-2.
+  if (isSeed && isPass2 && tier === "it-services" && (lvl === "entry" || lvl === "mid")) {
     return { rec: "accept-ab", why: "IT-services seed-multiplier vs pass-2 yoe-bucket AB; AB has dense entry/mid sample." };
   }
-  /* Phase 4 expansion: extend the seed→AB flip to IT-services senior +
-   * domestic-BFSI + saas-product + edtech entry/mid/senior. These are
-   * tiers where AB has dense self-report cohorts and curator's multiplier
-   * curve drifts noticeably from real disclosure. Lead/executive still
-   * need eyeballs (AB sparse at the top of the curve). */
+  // Extend seed→AB flip to it-services/bfsi-domestic/saas-product/edtech
+  // senior, plus indian-unicorn entry/mid/senior gated by n≥50 to match
+  // runtime's unicorn n-floor.
   if (
     isSeed && isPass2 &&
     (
-      (tier === "it-services" && d.level === "senior") ||
+      (tier === "it-services" && lvl === "senior") ||
       ((tier === "bfsi-domestic" || tier === "saas-product" || tier === "edtech") &&
-        (d.level === "entry" || d.level === "mid" || d.level === "senior" || d.level === "lead")) ||
-      /* Phase 6: indian-unicorn seed-multiplier (no Levels.fyi/Glassdoor
-       * blend) at entry/mid/senior. The Levels.fyi-blended unicorn rule
-       * elsewhere keeps curator; this catches the seed-only path where
-       * AB pass-2 is closer to disclosure. */
+        (lvl === "entry" || lvl === "mid" || lvl === "senior" || lvl === "lead")) ||
       (tier === "indian-unicorn" &&
-        (d.level === "entry" || d.level === "mid" || d.level === "senior") &&
-        /* Indian-unicorn AB cohorts thin out at the edges; require n>=50
-         * to match the runtime n-floor for these flips. */
-        /n=(?:[5-9]\d|\d{3,})/.test(notes))
+        (lvl === "entry" || MID_OR_SENIOR_LEVELS.has(lvl)) &&
+        n >= 50)
     )
   ) {
-    return { rec: "accept-ab", why: `${tier} seed-multiplier vs pass-2 yoe-bucket AB; AB has dense ${d.level} sample.` };
+    return { rec: "accept-ab", why: `${tier} seed-multiplier vs pass-2 yoe-bucket AB; AB has dense ${lvl} sample.` };
   }
   if (isResearchVerified) {
     return { rec: "keep-curator", why: "Research-verified curator source (DRHP / official disclosure / cross-source)." };
   }
-  /* Phase 6: broad research-sourced rule — Levels.fyi, Glassdoor,
-   * Curated research worksheets, Indeed/Weekday aggregates, NLTH
-   * (Wipro National Talent Hunt) and similar are independently sourced
-   * from AB. Trust curator at any level; AB drift is noise, not signal. */
-  const isResearchSourced =
-    /levels\.fyi|glassdoor|curated research|indeed|weekday|nlth|jpmc india analyst|p\d+ ₹/.test(src);
-  if (isResearchSourced) {
+  if (isResearchSourced(src)) {
     return { rec: "keep-curator", why: "Independently sourced curator (Levels.fyi / Glassdoor / curated research); AB drift is noise." };
   }
-  /* Phase 6: IT-services PM/BA/QA at lead/executive with seed-multiplier
-   * curator. AB has dense title-based cohorts ("Project Manager 9-12y",
-   * n in the hundreds-to-thousands) that match real delivery-manager
-   * comp better than a synthetic multiplier curve. Engineering-track
-   * already covered above; this catches the remaining roles. */
-  const isItNonEngRole =
-    /^(product-manager|project-manager|business-analyst|qa-engineer)$/.test(d.role);
-  if (isSeed && isPass2 && tier === "it-services" && isItNonEngRole &&
-      (d.level === "lead" || d.level === "executive")) {
+  // IT-services PM/BA/QA lead+exec: AB title-cohorts ("Project Manager
+  // 9-12y", n in hundreds-to-thousands) match real delivery-manager comp
+  // better than synthetic multipliers. Engineering-track is covered above.
+  if (isSeed && isPass2 && tier === "it-services" && isItNonEngRole && LEAD_EXEC_LEVELS.has(lvl)) {
     return { rec: "accept-ab", why: "IT-services lead/exec PM/BA/QA: AB title-cohort n is dense; seed-multiplier diverges." };
   }
-  /* Phase 6: pass-1 high-n seed flips for IT-services PM at executive.
-   * Pass-1 collapses YOE but at exec level the role is unambiguous and
-   * AB n=2k-8k is statistically dominant. */
-  if (isSeed && tier === "it-services" && d.level === "executive" &&
-      isItNonEngRole && /n=\d{4,}/.test(notes)) {
+  // Pass-1 collapses YOE, but at exec level the role is unambiguous and
+  // n≥1000 is statistically dominant.
+  if (isSeed && !isPass2 && tier === "it-services" && lvl === "executive" &&
+      isItNonEngRole && n >= 1000) {
     return { rec: "accept-ab", why: "IT-services exec PM/BA/QA pass-1: AB n>=1000, role unambiguous at exec." };
   }
-  /* Phase 6: scraped cell whose notes show a YOE bucket far from the
-   * level (e.g. "12+y" for entry, "0-1y" for executive) is mis-binned —
-   * keep curator. */
-  const scrapedYoeBucket = notes.match(/(\d+)\+?[-–](\d+)?y/);
-  if (scrapedYoeBucket || /\d+\+y/.test(notes)) {
-    const isHighYoeNote = /9-12y|12\+y|6-9y/.test(notes);
-    const isLowYoeNote = /0-1y|1-3y/.test(notes);
-    if ((d.level === "entry" && isHighYoeNote) ||
-        ((d.level === "lead" || d.level === "executive") && isLowYoeNote)) {
-      return { rec: "keep-curator", why: "Scrape YOE bucket mis-binned for level; curator more credible." };
-    }
+  if (isMisbinnedScrape(notes, lvl)) {
+    return { rec: "keep-curator", why: "Scrape YOE bucket mis-binned for level; curator more credible." };
   }
-  // Tier-aware defaults: at mid+ for FAANG / big-tech / gcc, AB
-  // chronically undercounts. Surface a curator-leaning recommendation.
-  if ((tier === "faang" || tier === "big-tech" || tier === "gcc") && d.level !== "entry") {
+  // Tier-aware defaults: AB chronically undercounts senior/lead at
+  // FAANG/big-tech/gcc and bfsi-global (median earners don't self-post).
+  if ((tier === "faang" || tier === "big-tech" || tier === "gcc") && NON_ENTRY_LEVELS.has(lvl)) {
     return { rec: "keep-curator", why: "FAANG / Big Tech / GCC mid+: AB undercounts (median earners don't post); trust curator." };
   }
-  /* Phase 5: bfsi-global mid+ (Goldman / Morgan Stanley / HSBC / Barclays /
-   * JPMC / Wells Fargo / Citi / Deutsche) follows the same dynamic as FAANG —
-   * AB self-reports skew to junior complaint-posters; senior bankers don't
-   * post. Levels.fyi-anchored curator entries are closer to realized comp.
-   * Keep curator for mid+. Entry can still flip if pass-2 has dense sample. */
-  if (tier === "bfsi-global" && d.level !== "entry") {
+  if (tier === "bfsi-global" && NON_ENTRY_LEVELS.has(lvl)) {
     return { rec: "keep-curator", why: "BFSI-global mid+: AB undercounts (senior bankers don't self-report); trust curator." };
   }
-  /* Phase 5: Indian-unicorn mid+ where curator was sourced from
-   * Levels.fyi / Glassdoor / Curated research is empirically closer to
-   * realized offer band than AB pass-2 (which skews to early-career
-   * IC reporters). Flipkart, Paytm, PhonePe, Swiggy, Myntra, Lenskart,
-   * Dream11, MakeMyTrip, Delhivery, etc. AB underreports by 28-55% on
-   * these — flipping would coach lower than reality. Trust curator. */
-  if (
-    tier === "indian-unicorn" &&
-    (d.level === "mid" || d.level === "senior" || d.level === "lead" || d.level === "executive") &&
-    /levels\.fyi|glassdoor|curated research/.test(src)
-  ) {
+  // Indian-unicorn mid+ with Levels.fyi/Glassdoor/research-blended curator:
+  // AB underreports by 28-55% (skews early-career IC reporters); flipping
+  // would coach lower than reality.
+  if (tier === "indian-unicorn" && NON_ENTRY_LEVELS.has(lvl) &&
+      src && UNICORN_BLENDED_RE.test(src)) {
     return { rec: "keep-curator", why: "Indian-unicorn mid+: curator anchored on Levels.fyi/Glassdoor/research; AB undercounts." };
   }
-  /* Phase 5: when both curator AND scrape are AmbitionBox-sourced but
-   * scrape is pass-2 yoe-bucket (strictly more granular), prefer the
-   * pass-2 scrape. Pass-1 collapses 0-8 YOE into one mid cell using
-   * profile-level YOE midpoint; pass-2 walks the bucket table per
-   * designation. Same data source, finer resolution. Applies to any
-   * tier so long as curator is unambiguously AB-derived (no Levels.fyi
-   * or research blend, since those are independent sources). */
-  const curatorIsAbOnly = /^ambitionbox/.test(src) &&
-    !/levels\.fyi|drhp|disclosure|verified/.test(src);
+  // Both curator and scrape AB-sourced, but scrape is pass-2 yoe-bucket
+  // (strictly finer-grained than pass-1's collapsed cell). Same data
+  // source, narrower YOE window.
   if (curatorIsAbOnly && isPass2) {
     return { rec: "accept-ab", why: "Both curator and scrape are AB-sourced; pass-2 yoe-bucket is strictly finer-grained." };
   }
-  /* Phase 6: zoho is on the PREFER_IMPORTED_REGARDLESS list at runtime —
-   * even pass-1-vs-pass-1 AB scrapes flip because curator was 3× inflated.
-   * Reflect that here so audit doesn't flag it as manual-review. */
+  // Zoho is on PREFER_IMPORTED_REGARDLESS at runtime: curator was AB-tagged
+  // but 3× inflated, so even pass-1-vs-pass-1 flips.
   if (d.company === "zoho" && curatorIsAbOnly) {
     return { rec: "accept-ab", why: "Zoho on regardless-flip list (curator AB-tagged but 3× inflated); fresh AB wins." };
   }
-  /* Phase 6: IT-services engineering-track lead with seed curator + pass-2.
-   * AB "Senior SE 9-12y" is the correct cohort for SE-lead at TCS/Wipro/
-   * Accenture-class IT-services. Curator's seed-multiplier extrapolated
-   * from baseline gives ₹60L+ which is 4× off realized comp. */
+  // IT-services SE lead: curator's multiplier extrapolation gives ₹60L+
+  // (4× off); AB "Senior SE 9-12y" cohort is the right reference.
   if (isSeed && isPass2 && tier === "it-services" &&
-      d.role === "software-engineer" && d.level === "lead") {
+      d.role === "software-engineer" && lvl === "lead") {
     return { rec: "accept-ab", why: "IT-services SE lead seed-multiplier; AB pass-2 9-12y cohort is real." };
   }
-  /* Phase 6 final: low-n pass-2 at lead/exec for any tier — too sparse to
-   * trust over curator even when curator is seed-multiplier. Also catches
-   * indian-unicorn entry/mid/senior cells with n<50 (e.g. meesho BA entry
-   * n=31) that the unicorn-flip rule explicitly excluded. */
-  const lowNPass2 = isPass2 && /n=\d{1,2}\)/.test(notes);
-  if (lowNPass2 && (d.level === "lead" || d.level === "executive")) {
+  // Low-n pass-2 sparse at lead/exec or for indian-unicorn — below the
+  // flip-threshold floor (e.g. meesho BA entry n=31).
+  const lowNPass2 = isPass2 && n > 0 && n < 100;
+  if (lowNPass2 && LEAD_EXEC_LEVELS.has(lvl)) {
     return { rec: "keep-curator", why: "Pass-2 AB sample n<100 at lead/exec; cohort too thin to displace curator." };
   }
-  if (lowNPass2 && tier === "indian-unicorn") {
+  if (isPass2 && n > 0 && n < 50 && tier === "indian-unicorn") {
     return { rec: "keep-curator", why: "Indian-unicorn pass-2 cohort n<50; below the flip-threshold floor." };
   }
-  /* Phase 6 final: indian-unicorn seed at PM/BA mid with pass-1 high-n
-   * (n>=50) AB scrape — synthetic 0.85-1.05x multiplier diverges from
-   * dense title-cohort. */
-  if (isSeed && tier === "indian-unicorn" && d.level === "mid" &&
+  // Indian-unicorn seed PM/BA mid with pass-1 high-n (n≥50) AB: synthetic
+  // 0.85-1.05x multiplier diverges from dense title-cohort.
+  if (isSeed && tier === "indian-unicorn" && lvl === "mid" &&
       (d.role === "product-manager" || d.role === "business-analyst") &&
-      /n=\d{2,}\)/.test(notes)) {
+      n >= 50) {
     return { rec: "accept-ab", why: "Indian-unicorn seed-multiplier PM/BA mid; AB title cohort dense." };
   }
-  /* Phase 6 final: edtech AB-only curator at entry SE — fresh AB scrape
-   * with n>=50 is preferable to stale single-snapshot curator. */
-  if (curatorIsAbOnly && tier === "edtech" && d.level === "entry" &&
-      /n=\d{2,}/.test(notes)) {
+  // Edtech entry AB-only curator vs fresh AB scrape: prefer fresh.
+  if (curatorIsAbOnly && tier === "edtech" && lvl === "entry" && n >= 10) {
     return { rec: "accept-ab", why: "Edtech entry AB-only curator vs fresh AB scrape; prefer fresh." };
   }
   return { rec: "manual-review", why: "No clear heuristic match — eyeball the cell." };
@@ -245,7 +212,7 @@ for (const company of Object.keys(IMPORTED_SALARY_OVERRIDES)) {
         const { rec, why } = classifyDrift({
           company,
           role,
-          level,
+          level: lvl,
           curatorSource: cur.source,
           scrapedNotes: imp.notes,
           driftPct: Math.round(drift * 100),
@@ -253,7 +220,7 @@ for (const company of Object.keys(IMPORTED_SALARY_OVERRIDES)) {
         drifts.push({
           company,
           role,
-          level,
+          level: lvl,
           curatorMid: Math.round(curMid * 10) / 10,
           scrapedMid: Math.round(impMid * 10) / 10,
           driftPct: Math.round(drift * 100),
