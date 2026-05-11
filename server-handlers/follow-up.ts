@@ -286,6 +286,7 @@ CRITICAL: NEVER offer more than what the candidate asked for. If they said ₹30
         "counter-offer": `PHASE: Making a counter-offer based on everything you've heard.
 
 YOUR GOAL: Close the deal as LOW as possible while keeping the candidate interested. You are the HIRING MANAGER — your job is to save the company money while making a fair offer.
+- COUNTER NUMBER PROTOCOL: When you make a counter-offer, set "proposedCounter" in your JSON to the number you want to offer (just the LPA figure, e.g. 28.5). The server validates this against your band ceiling and your previous offers, then writes the canonical counter sentence. You may still write a prose lead-in in followUpText, but the load-bearing rupee number lives in "proposedCounter". NEVER move backwards: proposedCounter must be >= your highest previous offer.
 - CRITICAL: Your counter-offer MUST be BELOW the candidate's ask. NEVER offer MORE than what they asked for. If they said ₹30 LPA and your band goes to ₹40 LPA, counter at ₹25-28 LPA — NOT ₹35-40 LPA. You want to save cost.
 - ALWAYS make a concrete counter with REAL numbers (substitute the figures from your band — for example "₹14 base, ₹2 variable, plus a ₹1.5 joining bonus, total ₹17.5 LPA"). NEVER write the literal characters ₹X, ₹Y, ₹Z, ₹W, ₹V, [amount], or [number] in your reply — those are placeholders for YOU to fill in. Never say vague things like "some flexibility."
 - If their ask is AT or BELOW your initial offer: "That's within our range — I can work with that." Close quickly — that's a win for you.
@@ -831,7 +832,7 @@ LANGUAGE: Conduct the interview in English only. Do not mix in Hindi or other la
 ${tierPromptSuffix(classifyCompanyTier(company))}
 
 Respond JSON only:
-{"needsFollowUp":true/false,"followUpText":"The follow-up question (2-3 sentences, conversational). Only include if needsFollowUp is true.","followUpType":"${followUpTypeLabel}","reason":"Brief reason"${isSalaryNeg ? ",\"wantsBreakdown\":true_if_giving_a_breakdown" : ""}}`;
+{"needsFollowUp":true/false,"followUpText":"The follow-up question (2-3 sentences, conversational). Only include if needsFollowUp is true.","followUpType":"${followUpTypeLabel}","reason":"Brief reason"${isSalaryNeg ? ",\"wantsBreakdown\":true_if_giving_a_breakdown,\"proposedCounter\":number_or_null_if_making_a_counter_offer" : ""}}`;
 
     // Salary-neg fallback: generate a context-aware response when LLM fails
     // This prevents the static pre-generated script (with wrong numbers) from playing
@@ -963,7 +964,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
       return new Response(JSON.stringify({ needsFollowUp: false, error: "LLM call failed" }), { status: 502, headers });
     }
     void retriedDueToDuplicate; // surfaced via console.warn above; reserved for future telemetry
-    const parsed = extractJSON<{ needsFollowUp?: boolean; followUpText?: string; followUpType?: string; wantsBreakdown?: boolean }>(result.text);
+    const parsed = extractJSON<{ needsFollowUp?: boolean; followUpText?: string; followUpType?: string; wantsBreakdown?: boolean; proposedCounter?: number | null }>(result.text);
     if (!parsed || typeof parsed !== "object") {
       if (isSalaryNeg) return salaryNegFallback();
       return new Response(JSON.stringify({ needsFollowUp: false, error: "LLM response parsing failed" }), { status: 502, headers });
@@ -988,6 +989,49 @@ Repeat-text in followUpText is FORBIDDEN.`;
         }
       } catch (e) {
         console.warn("[follow-up] structural breakdown templating failed:", e);
+      }
+    }
+
+    // ── Server-owned counter-offer templating ──────────────────────────
+    // When the LLM emits proposedCounter, validate against the band
+    // ([highestOfferMade, maxStretch*1.05]) and template the sentence
+    // server-side. If invalid or absent but we have a recommendedCounter,
+    // fall through to that. The LLM never authors the load-bearing number.
+    if (
+      isSalaryNeg &&
+      negotiationBand &&
+      typeof parsed.proposedCounter === "number" &&
+      parsed.wantsBreakdown !== true
+    ) {
+      try {
+        const { composeCounterReply } = await import("./_negotiation-counter");
+        // Recompute recommendedCounter here — the earlier one is scoped to
+        // the prompt-build block. pickServerCounter is pure; recomputing is
+        // cheaper than refactoring scopes across a 2000-line handler.
+        const { pickServerCounter: pickCounter } = await import("./_follow-up-helpers");
+        const recCounter = canonicalInitialOffer != null
+          ? pickCounter({
+              phase: salaryPhase,
+              initialOffer: canonicalInitialOffer,
+              maxStretch: negotiationBand.maxStretch,
+              walkAway: negotiationBand.walkAway,
+              highestOfferMade,
+              candidateTarget,
+            })
+          : null;
+        const composed = composeCounterReply(parsed.followUpText, parsed.proposedCounter, {
+          highestOfferMade: typeof highestOfferMade === "number" ? highestOfferMade : null,
+          maxStretch: negotiationBand.maxStretch,
+          recommendedCounter: recCounter,
+        });
+        if (composed) {
+          console.warn(
+            `[follow-up] Structural counter templating: ${composed.source} → ₹${composed.counter} LPA (ceiling ₹${negotiationBand.maxStretch}, highest ₹${highestOfferMade ?? "n/a"})`,
+          );
+          parsed.followUpText = composed.text;
+        }
+      } catch (e) {
+        console.warn("[follow-up] structural counter templating failed:", e);
       }
     }
 
