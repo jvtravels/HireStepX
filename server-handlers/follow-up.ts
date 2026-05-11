@@ -2065,6 +2065,38 @@ Repeat-text in followUpText is FORBIDDEN.`;
       }
     }
 
+    /* Duplicate-reply rescue. The LLM occasionally emits a verbatim
+       (or whitespace/case-only different) duplicate of a prior AI
+       reply — symptom of hitting the same fallback path twice after
+       failing to ground in the candidate's restated ask. The
+       `duplicate-reply` detector pins this offline; here we swap the
+       duplicate for a concrete-move escape hatch BEFORE the response
+       ships. Runs after all other clamps so the rescue is what the
+       candidate actually sees, and runs before the detector telemetry
+       so a successful rescue doesn't fire a false negative. */
+    if (
+      parsed.followUpText
+      && type === "salary-negotiation"
+      && previousFollowUps
+      && previousFollowUps.length > 0
+    ) {
+      try {
+        const { isDuplicateOfRecent, composeDuplicateReplyRescue } = await import("./_follow-up-helpers");
+        if (isDuplicateOfRecent(parsed.followUpText, previousFollowUps)) {
+          const rescued = composeDuplicateReplyRescue({
+            highestOfferMade: typeof highestOfferMade === "number" ? highestOfferMade : null,
+            maxStretch: negotiationBand?.maxStretch ?? null,
+          });
+          console.warn(
+            "[follow-up] Duplicate-reply rescue: LLM emitted a verbatim duplicate of a prior reply — replacing with concrete-move escape hatch.",
+          );
+          parsed.followUpText = rescued;
+        }
+      } catch (e) {
+        console.warn("[follow-up] duplicate-reply rescue failed:", e);
+      }
+    }
+
     /* Detector-based failure telemetry. After ALL post-LLM clamps and
        strippers run, we feed the final reply through the same detector
        suite the replay harness uses (server-handlers/_negotiation-failures.ts).

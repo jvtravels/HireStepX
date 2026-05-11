@@ -7,6 +7,9 @@ import {
   pickServerCounter,
   extractMirrorTokens,
   isBreakdownAsk,
+  normalizeForDuplicate,
+  isDuplicateOfRecent,
+  composeDuplicateReplyRescue,
 } from "../../server-handlers/_follow-up-helpers";
 
 /**
@@ -556,5 +559,79 @@ describe("isBreakdownAsk", () => {
     expect(isBreakdownAsk("Sounds good, I'll take it.")).toBe(false);
     expect(isBreakdownAsk("I'll think about it and get back to you.")).toBe(false);
     expect(isBreakdownAsk("")).toBe(false);
+  });
+});
+
+describe("normalizeForDuplicate", () => {
+  it("lowercases, collapses whitespace, strips terminal punctuation", () => {
+    expect(normalizeForDuplicate("Hello, World!")).toBe("hello world");
+    expect(normalizeForDuplicate("Hello,   world.")).toBe("hello world");
+    expect(normalizeForDuplicate("HELLO — WORLD")).toBe("hello world");
+  });
+  it("treats nbsp like normal whitespace", () => {
+    expect(normalizeForDuplicate("a\u00a0b\u00a0c")).toBe("a b c");
+  });
+  it("handles empty / null-ish", () => {
+    expect(normalizeForDuplicate("")).toBe("");
+    expect(normalizeForDuplicate("   ")).toBe("");
+  });
+});
+
+describe("isDuplicateOfRecent", () => {
+  const longA = "I hear you on wanting more — let me be upfront, the band for this role caps where I've already offered, and stretching further would require a different headcount slot than the one I have approval for today.";
+  const longB = "Totally fair to push back. Here's where I can move: I can stretch joining bonus and notice flexibility, but the recurring base is at the top of the band I'm authorized to commit to in this round.";
+  it("returns false when prev is empty / undefined", () => {
+    expect(isDuplicateOfRecent(longA, [])).toBe(false);
+    expect(isDuplicateOfRecent(longA, undefined)).toBe(false);
+    expect(isDuplicateOfRecent(longA, null)).toBe(false);
+  });
+  it("returns false for short replies even if they match", () => {
+    expect(isDuplicateOfRecent("Got it, thanks.", ["Got it, thanks."])).toBe(false);
+  });
+  it("returns true for verbatim long match", () => {
+    expect(isDuplicateOfRecent(longA, [longB, longA])).toBe(true);
+  });
+  it("returns true for case / whitespace / punctuation differences only", () => {
+    const variant = "  I HEAR you on wanting more — let me be upfront, the band  for this role caps where I've already offered, and stretching further would require a different headcount slot than the one I have approval for today!  ";
+    expect(isDuplicateOfRecent(variant, [longA])).toBe(true);
+  });
+  it("returns false when content actually differs", () => {
+    expect(isDuplicateOfRecent(longA, [longB])).toBe(false);
+  });
+});
+
+describe("composeDuplicateReplyRescue", () => {
+  it("forward counter when there is headroom between offer and ceiling", () => {
+    // offer 24, stretch 30 → next = 24 + 0.6*6 = 27.6
+    const out = composeDuplicateReplyRescue({ highestOfferMade: 24, maxStretch: 30 });
+    expect(out).toContain("circles");
+    expect(out).toContain("₹27.6 LPA");
+    expect(out).toContain("lever");
+  });
+  it("clamps the forward counter at maxStretch", () => {
+    // offer 29.5, stretch 30 → next would be 29.5 + 0.6*0.5 = 29.8 ≤ 30
+    const out = composeDuplicateReplyRescue({ highestOfferMade: 29.5, maxStretch: 30 });
+    expect(out).toMatch(/₹\d+(?:\.\d+)?\s+LPA/);
+    const m = out.match(/₹(\d+(?:\.\d+)?)\s+LPA/);
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBeLessThanOrEqual(30);
+  });
+  it("calls the question when offer is already at/above ceiling", () => {
+    const out = composeDuplicateReplyRescue({ highestOfferMade: 30, maxStretch: 30 });
+    expect(out).not.toMatch(/₹\d/);
+    expect(out).toMatch(/top of the band|pause|move you to yes/i);
+  });
+  it("falls back to lever-pointing prose when offer or ceiling missing", () => {
+    const noOffer = composeDuplicateReplyRescue({ highestOfferMade: null, maxStretch: 30 });
+    expect(noOffer).not.toMatch(/₹\d/);
+    expect(noOffer).toMatch(/lever/i);
+    const noStretch = composeDuplicateReplyRescue({ highestOfferMade: 24, maxStretch: null });
+    expect(noStretch).not.toMatch(/₹\d/);
+    expect(noStretch).toMatch(/lever/i);
+  });
+  it("rejects non-finite / non-positive inputs gracefully", () => {
+    const out = composeDuplicateReplyRescue({ highestOfferMade: NaN, maxStretch: -5 });
+    expect(out).not.toMatch(/₹/);
+    expect(out).toMatch(/lever/i);
   });
 });

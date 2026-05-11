@@ -417,3 +417,86 @@ export function extractMirrorTokens(answer: string): string[] {
   }
   return Array.from(new Set([...ranked, ...phrases])).slice(0, 6);
 }
+
+/* ── Duplicate-reply rescue ──────────────────────────────────────────
+ * Bug class: the LLM emits a verbatim (or near-verbatim) duplicate of a
+ * prior AI turn — usually because it hit the same fallback path twice
+ * after failing to ground in the candidate's restated ask. The
+ * `duplicate-reply` detector pins this offline; this helper is the
+ * runtime fix that swaps the duplicate for a concrete-move escape
+ * hatch BEFORE the response ships.
+ *
+ * The normalization (lowercase, collapse whitespace, strip punctuation)
+ * mirrors `normalizeForDuplicate` in _negotiation-failures.ts so the
+ * detector and rescue agree on what "duplicate" means. We require
+ * ≥ 80 chars before flagging — short acknowledgements ("Got it.")
+ * legitimately repeat.
+ */
+export function normalizeForDuplicate(s: string): string {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[.,;:!?—–-]+/g, " ")
+    .replace(/[\s\u00a0]+/g, " ")
+    .trim();
+}
+
+export function isDuplicateOfRecent(
+  text: string,
+  prev: readonly string[] | undefined | null,
+): boolean {
+  if (!prev || prev.length === 0) return false;
+  if (!text || text.trim().length < 80) return false;
+  const norm = normalizeForDuplicate(text);
+  if (!norm) return false;
+  for (const p of prev) {
+    if (normalizeForDuplicate(p) === norm) return true;
+  }
+  return false;
+}
+
+export interface DuplicateRescueContext {
+  /** Highest offer the AI has put on the table this session. */
+  highestOfferMade?: number | null;
+  /** The band's max-stretch ceiling — never exceeded by the rescue counter. */
+  maxStretch?: number | null;
+}
+
+/**
+ * When the LLM repeats itself verbatim, we replace the reply with a
+ * concrete-move sentence: acknowledge we've been circling, then either
+ * make a forward counter (if there's headroom between the current offer
+ * and the ceiling) or call the question (if we're already at the
+ * ceiling and the candidate is the one who has to move).
+ *
+ * The counter formula: move 60% of the remaining headroom toward the
+ * ceiling. That's aggressive enough to feel like real movement, and
+ * still leaves a small reserve. Clamped to maxStretch.
+ */
+export function composeDuplicateReplyRescue(
+  ctx: DuplicateRescueContext,
+): string {
+  const offer = typeof ctx.highestOfferMade === "number" && Number.isFinite(ctx.highestOfferMade) && ctx.highestOfferMade > 0
+    ? ctx.highestOfferMade
+    : null;
+  const stretch = typeof ctx.maxStretch === "number" && Number.isFinite(ctx.maxStretch) && ctx.maxStretch > 0
+    ? ctx.maxStretch
+    : null;
+
+  // Forward counter path: there's still headroom between the current
+  // offer and the ceiling. Move 60% of the way.
+  if (offer != null && stretch != null && stretch > offer) {
+    const next = Math.min(stretch, Math.round((offer + (stretch - offer) * 0.6) * 10) / 10);
+    return `You're right, I've been going in circles — apologies for that. Let me make a concrete move: I can stretch to ₹${next} LPA total CTC. That bumps base, keeps the variable structure intact, and includes our standard benefits. Does that get us closer to a yes, or is there a specific lever — base, joining, equity — you'd want me to revisit instead?`;
+  }
+
+  // Already at (or above) the ceiling — call the question rather than
+  // re-offer the same number. No rupee figure: the candidate has it.
+  if (offer != null && stretch != null && offer >= stretch) {
+    return `You're right, I've been circling — apologies. I've shared where I can land today, and I'm at the top of the band for this role. If the package doesn't work I'd rather know now than keep asking the same thing. What would actually move you to yes — or should we pause here?`;
+  }
+
+  // Fall-through: we don't have enough context (no offer or no
+  // ceiling) to make a numeric move. Still break the loop with
+  // honesty + a lever-pointing question.
+  return `You're right, I've been circling — apologies for repeating myself. Let me be straight: tell me which lever matters most to you — base, variable, joining bonus, or notice-period flexibility — and I'll work on that one concretely.`;
+}

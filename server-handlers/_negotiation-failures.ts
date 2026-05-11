@@ -932,11 +932,15 @@ export function detectNoticePeriodReask(ctx: DetectorContext): NegotiationFailur
 // current reply matches any prior AI turn under a high similarity
 // bar. We use a literal-equality check after normalization rather
 // than a fuzzy similarity score — cheap, no false positives.
+// Mirrors normalizeForDuplicate in _follow-up-helpers.ts. Kept inline
+// (not imported) so this detector file stays a leaf with no internal
+// deps — the replay harness imports it standalone. Both copies MUST
+// match: detector and runtime rescue have to agree on "duplicate".
 function normalizeForDuplicate(s: string): string {
   return s
     .toLowerCase()
+    .replace(/[.,;:!?—–-]+/g, " ")
     .replace(/[\s\u00a0]+/g, " ")
-    .replace(/[.,;:!?—–-]+/g, "")
     .trim();
 }
 export function detectDuplicateReply(ctx: DetectorContext): NegotiationFailure | null {
