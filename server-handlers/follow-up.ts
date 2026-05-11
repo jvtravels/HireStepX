@@ -1685,33 +1685,183 @@ Repeat-text in followUpText is FORBIDDEN.`;
         });
 
         // ── Role-title drift rewrite ───────────────────────────────
-        // If the AI references the open role with a title that doesn't
-        // share any token with the canonical role string, replace it
-        // with "this role". Less invasive than substituting the
-        // canonical title because slug↔display-form mismatch can make
-        // direct substitution sound robotic ("ux-designer position").
+        // Mirror the qualifier-group logic from
+        // _negotiation-failures.ts:detectRoleTitleDrift. Cross-family
+        // titles ("Engineering Manager" vs backend-engineer) always
+        // rewrite. Same-family titles with disjoint qualifier groups
+        // ("Senior Product Designer" vs ux-designer — same designer
+        // family, but {product} ≠ {ui-ux}) also rewrite. Within-group
+        // variants ("UI Designer" vs ux-designer) are left alone.
+        // Less invasive than substituting the canonical title — replace
+        // with "this role" so we don't fight slug↔display-form casing.
         if (role) {
-          const roleLower = role.toLowerCase();
-          const roleTokens = new Set(
-            roleLower.split(/[\s/_-]+/).filter(t => t.length >= 3),
-          );
-          const familyTokens: Record<string, string[]> = {
-            designer: ["design", "ui", "ux", "product"],
-            engineer: ["engineer", "developer", "swe", "software"],
-            manager: ["manager", "management", "lead"],
-            analyst: ["analyst", "analytics", "data"],
+          const SENIORITY = new Set(["senior","sr","junior","jr","principal","staff","lead","associate","entry","level"]);
+          const SUFFIX_FAMILIES: Record<string, string[]> = {
+            designer: ["designer","design"],
+            engineer: ["engineer","developer","dev"],
+            manager: ["manager","management","lead"],
+            analyst: ["analyst","analytics","analysis"],
+            scientist: ["scientist","researcher"],
+            architect: ["architect"], consultant: ["consultant"],
+            director: ["director"], officer: ["officer"], specialist: ["specialist"],
           };
-          for (const [fam, toks] of Object.entries(familyTokens)) {
-            if (roleLower.includes(fam)) toks.forEach(t => roleTokens.add(t));
-          }
+          const QGROUPS: Record<string,string> = {
+            ui:"ui-ux", ux:"ui-ux", fe:"frontend", frontend:"frontend",
+            "front-end":"frontend", be:"backend", backend:"backend",
+            "back-end":"backend", full:"fullstack", fullstack:"fullstack",
+            "full-stack":"fullstack", android:"mobile", ios:"mobile",
+            mobile:"mobile", ai:"ml", ml:"ml", machine:"ml",
+            infra:"platform", infrastructure:"platform", platform:"platform",
+          };
+          const tokensOf = (s: string) => s.toLowerCase().split(/[\s/_-]+/).filter(Boolean);
+          const familyOf = (s: string): string | null => {
+            const t = tokensOf(s);
+            for (let i = t.length - 1; i >= 0; i--) {
+              for (const [fam, syns] of Object.entries(SUFFIX_FAMILIES)) {
+                if (syns.includes(t[i])) return fam;
+              }
+            }
+            return null;
+          };
+          const groupsOf = (s: string): Set<string> => {
+            const t = tokensOf(s);
+            const fam = familyOf(s);
+            const famSyns = fam ? new Set(SUFFIX_FAMILIES[fam]) : new Set<string>();
+            const g = new Set<string>();
+            for (const tok of t) {
+              if (SENIORITY.has(tok)) continue;
+              if (famSyns.has(tok)) continue;
+              if (tok.length < 2) continue;
+              g.add(QGROUPS[tok] ?? tok);
+            }
+            return g;
+          };
+          const roleFam = familyOf(role);
+          const roleGroups = groupsOf(role);
           const roleTitleRe = /\b((?:[A-Z][a-z]+(?:[/-][A-Z][a-z]+)?\s+){1,3}(?:Designer|Engineer|Developer|Manager|Analyst|Architect|Scientist|Specialist|Consultant|Director|Lead|Officer))\b/g;
-          rewritten = rewritten.replace(roleTitleRe, (full, title) => {
-            const tt: string = title.toLowerCase();
-            const overlaps = tt.split(/[\s/_-]+/).some((t: string) => roleTokens.has(t));
-            if (overlaps) return full;
-            console.warn(`[follow-up] Role drift: "${full}" — session role is "${role}", replacing with "this role"`);
-            return "this role";
-          });
+          if (roleFam) {
+            rewritten = rewritten.replace(roleTitleRe, (full, title) => {
+              const titleFam = familyOf(title);
+              if (!titleFam) return full;
+              if (titleFam !== roleFam) {
+                console.warn(`[follow-up] Role drift (family): "${full}" vs role "${role}" — rewriting to "this role"`);
+                return "this role";
+              }
+              const titleGroups = groupsOf(title);
+              if (roleGroups.size > 0 && titleGroups.size > 0) {
+                let overlap = false;
+                for (const g of titleGroups) if (roleGroups.has(g)) { overlap = true; break; }
+                if (!overlap) {
+                  console.warn(`[follow-up] Role drift (qualifier): "${full}" vs role "${role}" — rewriting to "this role"`);
+                  return "this role";
+                }
+              }
+              return full;
+            });
+          }
+        }
+
+        // ── Flat-breakdown rewrite ─────────────────────────────────
+        // Razorpay round-5: every component was ₹49 LPA — placeholder
+        // substitution failure. We can't fabricate a correct breakdown
+        // post-hoc, but we can collapse the bogus breakdown to a
+        // headline+redirect that doesn't lie. Triggers when ≥3 LPA
+        // mentions of the same number appear alongside ≥2 component
+        // keywords (base/variable/ESOP/PF/joining/gratuity).
+        try {
+          const componentRe = /\b(?:base\s+(?:salary|pay|component)|variable\s+(?:component|pay|bonus)|joining\s+bonus|gratuity|provident\s+fund|\bPF\b|ESOPs?|RSUs?|stock\s+options)\b/gi;
+          const comps = rewritten.match(componentRe) ?? [];
+          if (comps.length >= 2) {
+            const numRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/g;
+            const counts = new Map<string, number>();
+            let mm: RegExpExecArray | null;
+            while ((mm = numRe.exec(rewritten)) !== null) {
+              const k = parseFloat(mm[1]).toFixed(2);
+              counts.set(k, (counts.get(k) ?? 0) + 1);
+            }
+            let flatNum: number | null = null;
+            for (const [k, c] of counts) {
+              if (c >= 3) { flatNum = parseFloat(k); break; }
+            }
+            if (flatNum != null) {
+              const headline = flatNum;
+              console.warn(`[follow-up] Flat breakdown: ₹${headline} LPA repeated — collapsing to headline.`);
+              rewritten = `The total CTC stays at ₹${headline} LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help. What part would you like to dig into?`;
+            }
+          }
+        } catch (e) {
+          console.warn("[follow-up] flat-breakdown rewrite failed:", e);
+        }
+
+        // ── Phantom competing-offer rewrite ────────────────────────
+        // Lemon-Yellow round-5: AI invented a competing offer the
+        // candidate never mentioned. If prepCompetingOffer is unset AND
+        // the candidate transcript doesn't reference a competing/in-hand
+        // offer, replace "your competing offer / the other company /
+        // their offer" with the neutral "your other options".
+        try {
+          const compRef = typeof prepCompetingOffer === "number" && prepCompetingOffer > 0;
+          const candidateMentionedCompeting =
+            /\b(?:i\s+have\s+(?:an?|another|a\s+competing)\s+offer|received\s+(?:an|another|a\s+competing)\s+offer|in[\s-]?hand\s+offer|another\s+company\s+(?:offered|has\s+offered)|got\s+(?:an|another)\s+offer\s+from)\b/i.test(candidateText) ||
+            /\b(?:competing|other|another)\s+offer\s+(?:of|at|for)\s+₹?\s*\d/i.test(candidateText);
+          if (!compRef && !candidateMentionedCompeting) {
+            const phantomRe = /\b((?:your|the|a|that)\s+competing\s+offer|the\s+other\s+(?:company|offer)|from\s+the\s+other\s+company|that\s+other\s+offer)\b/gi;
+            const before = rewritten;
+            rewritten = rewritten.replace(phantomRe, "your other options");
+            if (before !== rewritten) {
+              console.warn(`[follow-up] Phantom competing offer scrubbed.`);
+            }
+          }
+        } catch (e) {
+          console.warn("[follow-up] phantom-competing rewrite failed:", e);
+        }
+
+        // ── Counter-below-ceiling rewrite ──────────────────────────
+        // Razorpay round-5: "revised offer of ₹35.3 LPA" when ceiling
+        // was ₹49 LPA. Replace the number with the ceiling.
+        try {
+          if (ceilingForRewrite != null) {
+            const counterDownRe = /((?:revised|updated|new|pushed?(?:\s+for)?|can\s+do|stretch\s+to|landing\s+at|come\s+up\s+to|i'?ll\s+push\s+for)\s+(?:an?\s+|the\s+)?(?:revised\s+|updated\s+|new\s+)?offer\s+of\s+₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore))/gi;
+            rewritten = rewritten.replace(counterDownRe, (full, pre, num, post) => {
+              const isCr = /cr|crore/i.test(post);
+              const v = parseFloat(num) * (isCr ? 100 : 1);
+              if (v < ceilingForRewrite - 0.5) {
+                console.warn(`[follow-up] Counter-below-ceiling: "${full.trim()}" — rewriting ₹${v} → ₹${roundLPA(ceilingForRewrite)} LPA`);
+                return `${pre}${roundLPA(ceilingForRewrite)}${post.replace(/(?:lakhs?|cr|crore)/i, "LPA").replace(/lpa/i, "LPA")}`;
+              }
+              return full;
+            });
+          }
+        } catch (e) {
+          console.warn("[follow-up] counter-below-ceiling rewrite failed:", e);
+        }
+
+        // ── Trailing closing-question scrub ────────────────────────
+        // Every session in the bug doc had an outro that ended with a
+        // question and no answer affordance. If the (already-truncated
+        // or not) reply contains closing language AND ends with "?",
+        // drop the final question sentence and replace with a
+        // declarative close.
+        try {
+          const closingMarker = /(?:put\s+together\s+(?:the\s+)?final\s+numbers|work\s+with\s+HR\s+to|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork))/i;
+          const trimmed = rewritten.trim();
+          if (closingMarker.test(trimmed) && trimmed.endsWith("?")) {
+            // Find the start of the trailing question sentence.
+            let qStart = trimmed.length - 1;
+            for (let i = trimmed.length - 2; i >= 0; i--) {
+              if (/[.!?]/.test(trimmed[i]) && /\s/.test(trimmed[i + 1] ?? "")) {
+                qStart = i + 1;
+                break;
+              }
+              if (i === 0) qStart = 0;
+            }
+            const head = trimmed.slice(0, qStart).trim();
+            const declarativeTail = " HR will reach out shortly with next steps.";
+            rewritten = (head.length > 20 ? head : trimmed.slice(0, Math.min(trimmed.length, 120))) + declarativeTail;
+            console.warn(`[follow-up] Trailing closing-question stripped.`);
+          }
+        } catch (e) {
+          console.warn("[follow-up] trailing-question rewrite failed:", e);
         }
 
         if (rewritten !== parsed.followUpText) {

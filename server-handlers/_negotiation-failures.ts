@@ -500,14 +500,53 @@ const ROLE_SUFFIX_FAMILIES: Record<string, string[]> = {
   specialist: ["specialist"],
 };
 
+// Seniority/qualifier tokens that don't disambiguate the role at all.
+// "Senior", "Lead" etc. carry seniority not flavor — we strip them
+// before computing qualifier groups so "Senior Product Designer" and
+// "Product Designer" produce the same {product} group.
+const SENIORITY_TOKENS = new Set([
+  "senior", "sr", "junior", "jr", "principal", "staff", "lead",
+  "associate", "entry", "level",
+]);
+
+// Qualifier synonym groups. The big behavioral fix: "UI" and "UX" are
+// interchangeable in Indian recruiter usage so they share a group, but
+// "Product" is distinct — a "Senior Product Designer" when the candidate
+// picked "ux-designer" is a real role-title drift (Flipkart screenshots
+// 1–3, MakeMyTrip 2, KPIT 1). Groups are intentionally narrow — if a
+// qualifier doesn't appear here, it stays as itself (its own group).
+const QUALIFIER_GROUPS: Record<string, string> = {
+  ui: "ui-ux",
+  ux: "ui-ux",
+  // product is its own group → flags vs ui/ux
+  // data, backend, frontend, mobile, platform, ml, ai default to themselves
+  fe: "frontend",
+  frontend: "frontend",
+  "front-end": "frontend",
+  be: "backend",
+  backend: "backend",
+  "back-end": "backend",
+  full: "fullstack",
+  fullstack: "fullstack",
+  "full-stack": "fullstack",
+  android: "mobile",
+  ios: "mobile",
+  mobile: "mobile",
+  ai: "ml",
+  ml: "ml",
+  machine: "ml",
+  infra: "platform",
+  infrastructure: "platform",
+  platform: "platform",
+};
+
+function tokensOf(text: string): string[] {
+  return text.toLowerCase().split(/[\s/-]+/).filter(Boolean);
+}
+
 function familyFor(text: string): string | null {
-  // Tokenize on whitespace / hyphens / slashes and scan from the RIGHT —
-  // a role's family is its suffix word, not the first matching token.
-  // "Engineering Manager" → manager (not engineer); "backend-engineer" →
-  // engineer; "ux-designer" → designer; "Senior Product Designer" →
-  // designer. Token must match a family synonym exactly (substring would
-  // make "engineering" match the "engineer" synonym).
-  const tokens = text.toLowerCase().split(/[\s/-]+/).filter(Boolean);
+  // Suffix family = rightmost token that matches a family synonym.
+  const tokens = tokensOf(text);
   for (let i = tokens.length - 1; i >= 0; i--) {
     const tok = tokens[i];
     for (const [fam, syns] of Object.entries(ROLE_SUFFIX_FAMILIES)) {
@@ -517,17 +556,36 @@ function familyFor(text: string): string | null {
   return null;
 }
 
+function qualifierGroups(text: string): Set<string> {
+  // Tokens that aren't seniority and aren't the suffix family. Map each
+  // through QUALIFIER_GROUPS (falling back to the token itself) so that
+  // synonyms like {ui, ux} collapse to a single group "ui-ux".
+  const tokens = tokensOf(text);
+  const family = familyFor(text);
+  const familySyns = family ? new Set(ROLE_SUFFIX_FAMILIES[family]) : new Set<string>();
+  const groups = new Set<string>();
+  for (const tok of tokens) {
+    if (SENIORITY_TOKENS.has(tok)) continue;
+    if (familySyns.has(tok)) continue;
+    if (tok.length < 2) continue;
+    groups.add(QUALIFIER_GROUPS[tok] ?? tok);
+  }
+  return groups;
+}
+
 export function detectRoleTitleDrift(ctx: DetectorContext): NegotiationFailure | null {
   const role = (ctx.sessionRole ?? "").trim();
   if (!role) return null;
   const roleFamily = familyFor(role);
   if (!roleFamily) return null;
+  const roleGroups = qualifierGroups(role);
   ROLE_TITLE_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = ROLE_TITLE_RE.exec(ctx.llmOutput)) !== null) {
     const title = m[1];
     const titleFamily = familyFor(title);
     if (!titleFamily) continue;
+    // Cross-family always flags.
     if (titleFamily !== roleFamily) {
       return {
         code: "role-title-drift",
@@ -536,8 +594,149 @@ export function detectRoleTitleDrift(ctx: DetectorContext): NegotiationFailure |
         severity: "major",
       };
     }
+    // Same family — check qualifier-group overlap. If both sides have
+    // qualifier groups and they're disjoint, it's still drift ("Senior
+    // Product Designer" vs ux-designer = same family "designer" but
+    // disjoint groups {product} vs {ui-ux}).
+    const titleGroups = qualifierGroups(title);
+    if (roleGroups.size > 0 && titleGroups.size > 0) {
+      let overlap = false;
+      for (const g of titleGroups) if (roleGroups.has(g)) { overlap = true; break; }
+      if (!overlap) {
+        return {
+          code: "role-title-drift",
+          message: `AI referred to the role as "${m[1]}" but the session's role is "${role}".`,
+          evidence: m[0],
+          severity: "major",
+        };
+      }
+    }
   }
   return null;
+}
+
+/* ── #13 Flat-breakdown leak ──────────────────────────────────────── */
+/**
+ * Flags when the AI gives a "breakdown" where every component is the
+ * same LPA number — placeholder-substitution gone wrong. Real production
+ * bug from Razorpay round-5: "base salary of ₹49 LPA, variable
+ * component of ₹49 LPA, ESOPs worth ₹49 LPA, PF contribution of ₹49
+ * LPA". The candidate sees a confident HR who can't do basic math. The
+ * detector: ≥3 LPA numbers all equal within the same reply AND the
+ * reply contains ≥2 component keywords (base/variable/ESOP/PF/joining/
+ * gratuity). Below 3 same numbers it could be a legitimate "₹X LPA …
+ * total ₹X LPA" recap; above 3 it's always pathological.
+ */
+export function detectFlatBreakdown(ctx: DetectorContext): NegotiationFailure | null {
+  const text = ctx.llmOutput;
+  const componentRe = /\b(?:base\s+(?:salary|pay|component)|variable\s+(?:component|pay|bonus)|joining\s+bonus|gratuity|provident\s+fund|\bPF\b|ESOPs?|RSUs?|stock\s+options)\b/gi;
+  const components = text.match(componentRe) ?? [];
+  if (components.length < 2) return null;
+  const numRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/g;
+  const counts = new Map<string, number>();
+  let m: RegExpExecArray | null;
+  while ((m = numRe.exec(text)) !== null) {
+    const key = parseFloat(m[1]).toFixed(2);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  for (const [key, count] of counts) {
+    if (count >= 3) {
+      return {
+        code: "flat-breakdown",
+        message: `AI gave a breakdown where ₹${parseFloat(key)} LPA appears ${count}× across ${components.length} components — placeholder-substitution failure (every slot got the same number).`,
+        evidence: `₹${parseFloat(key)} LPA × ${count}`,
+        severity: "blocker",
+      };
+    }
+  }
+  return null;
+}
+
+/* ── #14 Phantom competing offer ──────────────────────────────────── */
+/**
+ * Flags when the AI references "your competing offer / the other
+ * company / the other offer" but (a) competingOfferLpa is null/0 and
+ * (b) the candidate transcript doesn't mention a competing/in-hand
+ * offer. Real production bug from Lemon Yellow round-5: candidate said
+ * "any competing offer as of now?" (no), AI replied "I appreciate you
+ * bringing up a competing offer, Jay" — pure fabrication.
+ */
+export function detectPhantomCompetingOffer(ctx: DetectorContext): NegotiationFailure | null {
+  // Has a real competing offer? Not phantom.
+  if (ctx.competingOfferLpa != null && ctx.competingOfferLpa > 0) return null;
+  const phantomRe = /\b(?:(?:your|the|a|that)\s+competing\s+offer|bringing\s+up\s+(?:a|the|your)\s+competing\s+offer|the\s+other\s+(?:company|offer)|from\s+the\s+other\s+company|that\s+other\s+offer|you(?:'?re|\s+are)\s+(?:weighing|considering)\s+(?:another|other)\s+offer)\b/i;
+  const m = ctx.llmOutput.match(phantomRe);
+  if (!m) return null;
+  const transcript = (ctx.candidateTranscript ?? "").toLowerCase();
+  // Allow if the candidate actually AFFIRMED having a competing/in-hand
+  // offer. Just the words "competing offer" aren't enough (candidate
+  // echoing the AI's question back doesn't count). Require an
+  // affirmative phrasing: "I have …", "received …", "in-hand …", or a
+  // ballpark number attached.
+  const candidateMentioned =
+    /\b(?:i\s+have\s+(?:an?|another|a\s+competing)\s+offer|received\s+(?:an|another|a\s+competing)\s+offer|in[\s-]?hand\s+offer|another\s+company\s+(?:offered|has\s+offered)|got\s+(?:an|another)\s+offer\s+from)\b/.test(transcript) ||
+    /\b(?:competing|other|another)\s+offer\s+(?:of|at|for)\s+₹?\s*\d/.test(transcript);
+  if (candidateMentioned) return null;
+  return {
+    code: "phantom-competing-offer",
+    message: "AI referenced a competing offer that doesn't exist — candidate never mentioned one and competingOfferLpa is unset.",
+    evidence: m[0],
+    severity: "blocker",
+  };
+}
+
+/* ── #15 Counter below ceiling ────────────────────────────────────── */
+/**
+ * Flags when the AI states a "revised / updated / new / pushed" offer
+ * of ₹X where X < highestOfferMade by ≥0.5 LPA. The Razorpay round-5
+ * screenshot: initial offer ₹49 LPA, two turns later "I can push for a
+ * revised offer of ₹35.3 LPA total CTC" — a phantom-counter that
+ * MOVES BACKWARDS. The monotonic clamp in follow-up.ts is supposed to
+ * catch this but missed it; the detector here pins the failure so the
+ * regression can't slip silently.
+ */
+export function detectCounterBelowCeiling(ctx: DetectorContext): NegotiationFailure | null {
+  const ceiling = ctx.highestOfferMade ?? null;
+  if (ceiling == null || ceiling <= 0) return null;
+  const re = /(?:revised|updated|new|pushed?(?:\s+for)?|can\s+do|stretch\s+to|landing\s+at|come\s+up\s+to|i'?ll\s+push\s+for)\s+(?:an?\s+|the\s+)?(?:revised\s+|updated\s+|new\s+)?offer\s+of\s+₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)|push\s+for\s+(?:a\s+)?(?:revised|updated|new)\s+offer\s+of\s+₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)|revised\s+offer\s+of\s+₹?\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(ctx.llmOutput)) !== null) {
+    const numStr = m[1] ?? m[2] ?? m[3];
+    if (!numStr) continue;
+    const isCr = /cr|crore/i.test(m[0]);
+    const v = parseFloat(numStr) * (isCr ? 100 : 1);
+    if (v < ceiling - 0.5) {
+      return {
+        code: "counter-below-ceiling",
+        message: `AI stated a "${m[0].trim()}" but the highest offer this session was ₹${ceiling} LPA — the counter moved BACKWARDS.`,
+        evidence: m[0].trim(),
+        severity: "blocker",
+      };
+    }
+  }
+  return null;
+}
+
+/* ── #16 Trailing closing question ────────────────────────────────── */
+/**
+ * Flags when the AI's reply contains closing language AND ends with a
+ * question. Real production bug across all five sessions in the bug
+ * doc: the "outro" message ends with "Anything else you'd like to
+ * clarify?" or similar but the UI shows a "View result" button with no
+ * answer affordance — the candidate has no way to respond. Closing
+ * messages should be declarative, not interrogative.
+ */
+export function detectTrailingClosingQuestion(ctx: DetectorContext): NegotiationFailure | null {
+  const closingMarker = /(?:put\s+together\s+(?:the\s+)?final\s+numbers|work\s+with\s+HR\s+to|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork))/i;
+  if (!closingMarker.test(ctx.llmOutput)) return null;
+  const trimmed = ctx.llmOutput.trim();
+  if (!trimmed.endsWith("?")) return null;
+  return {
+    code: "trailing-closing-question",
+    message: "AI's closing message ends with a question — UI offers no answer affordance in the outro state.",
+    evidence: trimmed.slice(-120),
+    severity: "major",
+  };
 }
 
 /* ── Aggregate runner ─────────────────────────────────────────────── */
@@ -554,6 +753,10 @@ const ALL_DETECTORS = [
   detectRepeatedQuestion,
   detectHallucinatedEmployer,
   detectRoleTitleDrift,
+  detectFlatBreakdown,
+  detectPhantomCompetingOffer,
+  detectCounterBelowCeiling,
+  detectTrailingClosingQuestion,
 ];
 
 export function detectAllFailures(ctx: DetectorContext): NegotiationFailure[] {

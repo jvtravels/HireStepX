@@ -119,7 +119,8 @@
       "llmOutput": "Jay, I think we've had a productive discussion. I'll take all this feedback and put together the final numbers for you. We'll aim to have HR send you a formal offer letter with the revised package soon. What's your notice period situation at 3INSYS, and what's a realistic target date for you to join us?",
       "expected": [
         "premature-close",
-        "hallucinated-employer"
+        "hallucinated-employer",
+        "trailing-closing-question"
       ]
     }
   ]

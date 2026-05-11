@@ -54,7 +54,8 @@
       "llmOutput": "I think we've had a productive _discussion_. Let me put together the final numbers based on what we've agreed and have HR send you the formal offer letter. What's your notice period situation?",
       "expected": [
         "premature-close",
-        "markdown-leak"
+        "markdown-leak",
+        "trailing-closing-question"
       ]
     },
     {

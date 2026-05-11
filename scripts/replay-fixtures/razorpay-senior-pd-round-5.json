@@ -1,0 +1,106 @@
+{
+  "_comment": "Round-5 live retest from the Hirestepx bug PDF. User picked Senior Product Designer at Razorpay. Three blocker bugs:\n  • T2 flat-breakdown: 'breakdown of the ₹49 LPA offer. base salary ₹49, variable ₹49, ESOPs ₹49, PF ₹49' — every component is the headline number. Placeholder-substitution failure. Detector: flat-breakdown.\n  • T4 counter-below-ceiling: 'revised offer of ₹35.3 LPA total CTC' when highest offer made was ₹49 LPA. Counter moves BACKWARDS. Detector: counter-below-ceiling (also phantom-counter overlaps).\n  • T5 premature close + trailing question: 'I'll work with HR to put together the formal offer letter with these updated numbers. What's your current notice period?' — premature-close + trailing-closing-question.",
+  "session": {
+    "role": "senior-product-designer",
+    "company": "razorpay",
+    "experienceLevel": "senior",
+    "currentCity": "Bangalore",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 49,
+    "maxStretch": 52,
+    "walkAway": 38,
+    "hasEquity": true
+  },
+  "turns": [
+    {
+      "_label": "T1 initial offer ₹49 LPA — clean",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": null,
+      "previousAiTurns": [],
+      "llmOutput": "Alright, so for this Senior Product Designer role, we're looking to offer a total CTC of ₹49 LPA. Happy to break down the structure if you'd like — but first, how does that number land with you?",
+      "expected": []
+    },
+    {
+      "_label": "T2 FLAT-BREAKDOWN — every component is ₹49 LPA",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 49,
+      "previousAiTurns": [
+        "Alright, so for this Senior Product Designer role, we're looking to offer a total CTC of ₹49 LPA."
+      ],
+      "llmOutput": "Absolutely, I can give you a breakdown of the ₹49 LPA offer. It includes a base salary of ₹49 LPA, a variable component of ₹49 LPA, and ESOPs worth ₹49 LPA per year over four years, plus a Provident Fund contribution of ₹49 LPA. Does understanding this structure for the Senior Product Designer role help clarify things for you?",
+      "expected": [
+        "flat-breakdown"
+      ]
+    },
+    {
+      "_label": "T3 candidate counters ₹51 — AI same-number echo (not pinned here)",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 51,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 49,
+      "previousAiTurns": [
+        "Alright, so for this Senior Product Designer role, we're looking to offer a total CTC of ₹49 LPA.",
+        "I can give you a breakdown of the ₹49 LPA offer."
+      ],
+      "llmOutput": "Thanks for clarifying that you have a competing offer of ₹49 LPA. That's helpful context. Can you share a bit more about the structure of that offer?",
+      "expected": [
+        "phantom-competing-offer"
+      ]
+    },
+    {
+      "_label": "T4 COUNTER-BELOW-CEILING — 'revised offer of ₹35.3 LPA' when ceiling was ₹49 LPA",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 51,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 49,
+      "previousAiTurns": [
+        "Alright, so for this Senior Product Designer role, we're looking to offer a total CTC of ₹49 LPA.",
+        "I can give you a breakdown of the ₹49 LPA offer.",
+        "Thanks for clarifying that you have a competing offer."
+      ],
+      "llmOutput": "I hear you, the number is purely the driving factor for you. While ₹51 LPA is above our typical band, I can push for a revised offer of ₹35.3 LPA total CTC. This is genuinely the top of what I can do for the recurring CTC. Additionally, what's your current notice period?",
+      "expected": [
+        "counter-below-ceiling"
+      ]
+    },
+    {
+      "_label": "T5 PREMATURE-CLOSE + TRAILING-QUESTION",
+      "isInitialOffer": false,
+      "questionIndex": 5,
+      "phase": "closing",
+      "candidateTargetLpa": 51,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 49,
+      "previousAiTurns": [
+        "Alright, so for this Senior Product Designer role, we're looking to offer a total CTC of ₹49 LPA.",
+        "I can give you a breakdown of the ₹49 LPA offer.",
+        "Thanks for clarifying that you have a competing offer.",
+        "I can push for a revised offer."
+      ],
+      "llmOutput": "Jay, I think we've had a very productive discussion today about the Senior Product Designer role and the compensation package. I'll work with HR to put together the formal offer letter with these updated numbers. What's your current notice period situation, and how soon would you ideally be looking to join us?",
+      "expected": [
+        "premature-close",
+        "trailing-closing-question"
+      ]
+    }
+  ]
+}

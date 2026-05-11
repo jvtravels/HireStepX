@@ -207,7 +207,25 @@ const TACTICS: Array<NegotiationTactic & { pattern: RegExp }> = [
 export function detectNegotiationTactic(aiText: string): NegotiationTactic | null {
   if (!aiText) return null;
   for (const t of TACTICS) {
-    if (t.pattern.test(aiText)) {
+    // Re-create the regex with the global flag so .exec gives us an index
+    // we can use to inspect surrounding context (false-positive guards).
+    const globalRe = new RegExp(t.pattern.source, t.pattern.flags.includes("g") ? t.pattern.flags : t.pattern.flags + "g");
+    let mm: RegExpExecArray | null;
+    while ((mm = globalRe.exec(aiText)) !== null) {
+      // False-positive guard for current-CTC probe: when the matched
+      // phrase appears in an options-list context ("is it X, Y, or your
+      // current package progression?") the AI isn't actually probing
+      // current CTC — they're listing causes. Lemon-Yellow round-5
+      // produced this exact wrong-phase tip.
+      if (t.id === "current_ctc_probe") {
+        const start = mm.index;
+        const pre = aiText.slice(Math.max(0, start - 40), start).toLowerCase();
+        // Preceded by "or " or ", or " → options-list, not a probe.
+        if (/(?:,\s*or|\bor)\s+(?:your\s+)?$/.test(pre)) continue;
+        // Followed by "progression" → growth-context, not CTC anchoring.
+        const post = aiText.slice(start + mm[0].length, start + mm[0].length + 20).toLowerCase();
+        if (/^\s*progression/.test(post)) continue;
+      }
       return { id: t.id, label: t.label, coaching: t.coaching, counterScripts: t.counterScripts };
     }
   }

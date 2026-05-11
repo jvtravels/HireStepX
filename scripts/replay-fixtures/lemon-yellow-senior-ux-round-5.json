@@ -1,0 +1,72 @@
+{
+  "_comment": "Round-5 Lemon Yellow Senior UX Designer retest (Hirestepx bug PDF). Three bugs:\n  • T2 flat-band leak: 'internal compensation bands range from ₹50 LPA to ₹50 LPA, with a maximum stretch to ₹50 LPA' — every band slot is the candidate's target. Caught by flat-breakdown detector via 'band' wording? No — flat-breakdown requires component keywords. Use phantom-counter / number-echo-misbind. We pin number-echo: AI echoed ₹50 but candidate target is ₹50 (matches), so the failure isn't echo-misbind. Pin via flat-breakdown only if component-words present; this turn isn't pinned cleanly without a new detector. Skip pinning, document the gap.\n  • T3 phantom-competing-offer: candidate said NO competing offer, AI replied 'I appreciate you bringing up a competing offer, Jay' — pure fabrication.\n  • T5 repeated probe + premature close + trailing question.",
+  "session": {
+    "role": "senior-ux-designer",
+    "company": "lemon-yellow",
+    "experienceLevel": "senior",
+    "currentCity": "Thane",
+    "jobCity": "Thane"
+  },
+  "band": {
+    "initialOffer": 27,
+    "maxStretch": 32,
+    "walkAway": 22,
+    "hasEquity": false
+  },
+  "turns": [
+    {
+      "_label": "T1 initial offer ₹27 LPA — clean",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": null,
+      "previousAiTurns": [],
+      "llmOutput": "Great. So, Jay, we'd like to offer you a total CTC of ₹27 LPA for this Senior UX Designer position. How does that number land with you initially?",
+      "expected": []
+    },
+    {
+      "_label": "T2 PHANTOM-COMPETING-OFFER — AI fabricates a competing offer after candidate said NONE",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "counter-offer",
+      "candidateTargetLpa": 50,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to offer you a total CTC of ₹27 LPA for this Senior UX Designer position.",
+        "I hear you — ₹50 LPA is what you're looking at."
+      ],
+      "candidateTranscript": "Any competing offer as of now? No, not really.",
+      "llmOutput": "I appreciate you bringing up a competing offer, Jay. To help me understand where we need to be competitive, could you share a bit more about what that offer entails, even if it's just a ballpark figure?",
+      "expected": [
+        "phantom-competing-offer"
+      ]
+    },
+    {
+      "_label": "T3 PREMATURE-CLOSE + TRAILING-QUESTION + repeated probe",
+      "isInitialOffer": false,
+      "questionIndex": 6,
+      "phase": "closing",
+      "candidateTargetLpa": 50,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Great. So, Jay, we'd like to offer you a total CTC of ₹27 LPA.",
+        "I hear you — ₹50 LPA is what you're looking at.",
+        "Thanks for confirming your 60-day notice period, Jay.",
+        "What's your notice period situation at your current role?"
+      ],
+      "llmOutput": "Jay, I think we've had a really productive discussion today. I'll take this back and work with the team to put together our best possible offer based on everything we've discussed. Once we've finalized that, we'll have HR send you the formal offer letter. What's your notice period situation at your current role?",
+      "expected": [
+        "premature-close",
+        "repeated-question",
+        "trailing-closing-question"
+      ]
+    }
+  ]
+}

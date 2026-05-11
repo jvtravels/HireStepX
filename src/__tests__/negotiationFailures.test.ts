@@ -12,6 +12,10 @@ import {
   detectRepeatedQuestion,
   detectHallucinatedEmployer,
   detectRoleTitleDrift,
+  detectFlatBreakdown,
+  detectPhantomCompetingOffer,
+  detectCounterBelowCeiling,
+  detectTrailingClosingQuestion,
   detectAllFailures,
 } from "../../server-handlers/_negotiation-failures";
 
@@ -489,6 +493,125 @@ describe("detectAllFailures", () => {
       ...baseCtx,
       llmOutput: "We'd like you for the UI Designer role on the team.",
       sessionRole: "ux-designer",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #12 round-5 role-drift: qualifier-group disjoint, same family ── */
+
+  it("[round-5] role-title-drift: 'Senior Product Designer' when role is 'ux-designer' (same family, different qualifier groups)", () => {
+    const f = detectRoleTitleDrift({
+      ...baseCtx,
+      llmOutput: "For the Senior Product Designer position, we're looking at a total CTC of ₹30 LPA.",
+      sessionRole: "ux-designer",
+    });
+    expect(f?.code).toBe("role-title-drift");
+  });
+
+  it("[round-5] role-title-drift: 'Senior Product Designer' when role is 'ui/ux-designer' (qualifier ui-ux vs product)", () => {
+    const f = detectRoleTitleDrift({
+      ...baseCtx,
+      llmOutput: "Welcome to the Senior Product Designer role.",
+      sessionRole: "ui/ux-designer",
+    });
+    expect(f?.code).toBe("role-title-drift");
+  });
+
+  it("[round-5] role-title-drift: 'Senior UX Designer' when role is 'ux-designer' is NOT flagged (seniority stripped)", () => {
+    const f = detectRoleTitleDrift({
+      ...baseCtx,
+      llmOutput: "For the Senior UX Designer position, our offer is ₹27 LPA.",
+      sessionRole: "ux-designer",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #13 flat-breakdown ────────────────────────────────────────── */
+
+  it("[round-5] flat-breakdown: every component is the same number (Razorpay session)", () => {
+    const f = detectFlatBreakdown({
+      ...baseCtx,
+      llmOutput: "Absolutely, I can give you a breakdown of the ₹49 LPA offer. It includes a base salary of ₹49 LPA, a variable component of ₹49 LPA, and ESOPs worth ₹49 LPA per year over four years, plus a Provident Fund contribution of ₹49 LPA.",
+    });
+    expect(f?.code).toBe("flat-breakdown");
+    expect(f?.severity).toBe("blocker");
+  });
+
+  it("flat-breakdown does NOT fire on legitimate breakdown with distinct numbers", () => {
+    const f = detectFlatBreakdown({
+      ...baseCtx,
+      llmOutput: "Total CTC is ₹30 LPA: base salary ₹22 LPA, variable component ₹4 LPA, joining bonus ₹4 LPA.",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #14 phantom-competing-offer ───────────────────────────────── */
+
+  it("[round-5] phantom-competing-offer: AI fabricates a competing offer (Lemon Yellow)", () => {
+    const f = detectPhantomCompetingOffer({
+      ...baseCtx,
+      llmOutput: "I appreciate you bringing up a competing offer, Jay. To help me understand where we need to be competitive, could you share a bit more about what that offer entails?",
+      competingOfferLpa: null,
+      candidateTranscript: "Any competing offer as of now?",
+    });
+    expect(f?.code).toBe("phantom-competing-offer");
+  });
+
+  it("phantom-competing-offer does NOT fire when candidate mentioned a competing offer", () => {
+    const f = detectPhantomCompetingOffer({
+      ...baseCtx,
+      llmOutput: "Tell me about your competing offer.",
+      competingOfferLpa: null,
+      candidateTranscript: "I have another offer from XYZ for ₹35 LPA in hand.",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("phantom-competing-offer does NOT fire when competingOfferLpa is set", () => {
+    const f = detectPhantomCompetingOffer({
+      ...baseCtx,
+      llmOutput: "Your competing offer at ₹35 LPA is helpful context.",
+      competingOfferLpa: 35,
+      candidateTranscript: "",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #15 counter-below-ceiling ─────────────────────────────────── */
+
+  it("[round-5] counter-below-ceiling: 'revised offer of ₹35.3 LPA' when highest was ₹49 LPA (Razorpay)", () => {
+    const f = detectCounterBelowCeiling({
+      ...baseCtx,
+      llmOutput: "I can push for a revised offer of ₹35.3 LPA total CTC, which would include a base of ₹5.9 LPA.",
+      highestOfferMade: 49,
+    });
+    expect(f?.code).toBe("counter-below-ceiling");
+    expect(f?.severity).toBe("blocker");
+  });
+
+  it("counter-below-ceiling does NOT fire when revised offer is at or above ceiling", () => {
+    const f = detectCounterBelowCeiling({
+      ...baseCtx,
+      llmOutput: "I can push for a revised offer of ₹52 LPA total CTC.",
+      highestOfferMade: 49,
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #16 trailing-closing-question ─────────────────────────────── */
+
+  it("[round-5] trailing-closing-question: closing reply ends with '?' (KPIT, Razorpay outros)", () => {
+    const f = detectTrailingClosingQuestion({
+      ...baseCtx,
+      llmOutput: "Great — I think we've had a really productive conversation. Let me put together the final numbers and have HR send you the formal offer letter. Anything else you'd like to clarify before HR follows up?",
+    });
+    expect(f?.code).toBe("trailing-closing-question");
+  });
+
+  it("trailing-closing-question does NOT fire when closing reply ends declaratively", () => {
+    const f = detectTrailingClosingQuestion({
+      ...baseCtx,
+      llmOutput: "Great. I'll have HR send you the formal offer letter shortly.",
     });
     expect(f).toBeNull();
   });
