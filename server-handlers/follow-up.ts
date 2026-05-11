@@ -10,7 +10,7 @@ import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
-import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
+import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -40,7 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -88,6 +88,7 @@ export default async function handler(req: Request): Promise<Response> {
       personaTrait?: string;
       candidateWalkAway?: number;
       candidateCompetingOffer?: number;
+      starGap?: "action" | "result" | "situation-task";
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -197,6 +198,64 @@ export default async function handler(req: Request): Promise<Response> {
       : "";
 
     const isSalaryNeg = type === "salary-negotiation";
+
+    /* ─── Server-authoritative band (Gap 1 minimum-viable) ───
+       Historically the client supplied negotiationBand on every turn,
+       which meant tampered or stale client state could push the LLM
+       above maxStretch or below walkAway. Now: on every salary-neg
+       turn the server recomputes the band from {role, company, city,
+       industry} and uses *that* as the source of truth. The client
+       band is only consulted when the server can't derive one (no
+       company/role). Divergence from client values is logged so we
+       can detect tampering or stale generate-questions cache hits. */
+    let negotiationBand: typeof clientNegotiationBand = clientNegotiationBand;
+    if (isSalaryNeg && typeof role === "string" && role.length > 0) {
+      try {
+        const serverBand = generateNegotiationBand({
+          role,
+          company: typeof company === "string" ? company : undefined,
+          currentCity: typeof currentCity === "string" ? currentCity : undefined,
+          jobCity: typeof jobCity === "string" ? jobCity : undefined,
+        });
+        const serverDerived = {
+          initialOffer: serverBand.initialOffer,
+          minOffer: serverBand.minOffer,
+          maxStretch: serverBand.maxStretch,
+          walkAway: serverBand.walkAway,
+          bandContext: serverBand.bandContext,
+          hasEquity: serverBand.hasEquity,
+        };
+        // Telemetry: detect significant divergence from client-supplied band.
+        // >20% delta on maxStretch flags either tampering or a stale
+        // band derived under different inputs (eg. company changed).
+        if (clientNegotiationBand && typeof clientNegotiationBand.maxStretch === "number") {
+          const clientMax = clientNegotiationBand.maxStretch;
+          const serverMax = serverDerived.maxStretch;
+          if (serverMax > 0) {
+            const pct = Math.abs(clientMax - serverMax) / serverMax;
+            if (pct > 0.2) {
+              void captureServerEvent(
+                "negotiation_band_divergence",
+                distinctIdFrom(req, auth.userId),
+                {
+                  client_max_stretch: clientMax,
+                  server_max_stretch: serverMax,
+                  client_initial: clientNegotiationBand.initialOffer ?? null,
+                  server_initial: serverDerived.initialOffer,
+                  pct_delta: Math.round(pct * 100) / 100,
+                  company: (company || "").slice(0, 80),
+                  role: role.slice(0, 80),
+                },
+                req,
+              );
+            }
+          }
+        }
+        negotiationBand = serverDerived;
+      } catch (e) {
+        console.warn("[follow-up] server-band derivation failed, falling back to client band:", e);
+      }
+    }
 
     /* ─── Anchor derivation ───
        The number the LLM PRESENTED in turn 1 (parsed from initialOfferText)
@@ -788,6 +847,18 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
 
     const panelContext = persona ? `\nYou are the "${sanitizeForLLM(persona, 30)}" panelist in a panel interview. Your follow-up should reflect your role's perspective.` : "";
 
+    /* Behavioural-mode guard — reciprocal of the salary-neg SCOPE FENCE
+       below. Without this, an LLM in a behavioural session can drift into
+       compensation probes ("so what's your target salary?") mid-story.
+       That breaks the focus and signals to the candidate the interviewer
+       isn't actually listening. */
+    const behavioralModeGuard = type === "behavioral"
+      ? `\nMODE FENCE — THIS IS A BEHAVIOURAL INTERVIEW, NOT A NEGOTIATION OR HR-ROUND CHECK.
+- DO NOT ask about target salary, current compensation, joining timeline, notice period, or location preferences. Those are HR-round / salary-neg probes.
+- DO NOT ask about visa, relocation willingness, or family situation.
+- STAY on examples and stories: situations the candidate has handled, decisions they made, what they did specifically, and what the outcome was. STAR shape (Situation → Task → Action → Result) is what you are probing for.`
+      : "";
+
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
     const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")
       ? `\n${lookupSalaryContext({ role, company, currentCity, jobCity })}\nUse ₹ and LPA. Follow-up offers/counters MUST stay within these ranges.
@@ -804,7 +875,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}

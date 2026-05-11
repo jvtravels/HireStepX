@@ -44,6 +44,23 @@ jobs:
       # on regression. Calibrate thresholds upward as coverage improves.
       - run: npm run test:coverage
 
+  replay-negotiation:
+    name: Negotiation Replay Harness
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Replays recorded LLM outputs through the failure detector in
+      # server-handlers/_negotiation-failures.ts. Fails CI when a fixture
+      # turn produces an unexpected failure code (regression) or stops
+      # producing one it's supposed to demonstrate (detector drift).
+      - run: npm run replay:negotiation
+
   build:
     name: Build
     runs-on: ubuntu-latest
