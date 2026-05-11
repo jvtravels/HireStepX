@@ -812,7 +812,12 @@ Requirements:
 
     // maxTokens tuned — typical question set (5 questions + metadata) lands around 900-1200 tokens.
     // Lowering from 2000 → 1400 saves ~$30/mo at 10k daily calls.
-    const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true }, 15000, { userId: auth.userId, endpoint: "generate" });
+    // Per-provider timeout sized to fit Vercel's Edge 25s budget.
+    // _llm.ts walks groq (≤6s) → gemini → cerebras, returning the first success.
+    // 8s here means worst-case wall time ≈ 22s (6 + 8 + 8), inside the budget.
+    // Was 15s; that allowed 6 + 15 + 15 ≈ 36s during a Groq incident, which is
+    // the FUNCTION_INVOCATION_TIMEOUT pattern surfaced in production logs.
+    const result = await callLLM({ prompt, temperature: 0.85, maxTokens: 1400, jsonMode: true }, 8000, { userId: auth.userId, endpoint: "generate" });
     const parsed = extractJSON<Record<string, unknown>>(result.text);
     if (!parsed) {
       return new Response(JSON.stringify({ error: "Failed to parse questions" }), { status: 500, headers });
