@@ -5,6 +5,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter } from "./_follow-up-helpers";
+import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens } from "./_follow-up-helpers";
@@ -591,30 +592,28 @@ Your response MUST directly address what they said above. Start by acknowledging
          when intent.rejected is true, and (b) inject a hard ban-list
          of agreement phrases into the prompt. The LLM may still close
          later — but only after the candidate has actually agreed. */
-      const rejectionLocksClosing = candidateRejected || candidateWalkAway;
-
-      /* Pending-question guard (Morningstar T6 bug). When the candidate's
-         last message contains an unanswered question or explicit request
-         ("Can you give me a breakdown of ₹27?"), the closing template
-         must NOT fire — answering the request takes priority. Without
-         this guard the phase machine ignores the request (especially
-         once acceptedImmediately is true and detectSalaryPhase forces
-         "closing" for the rest of the session). The detector
-         closing-with-pending-question catches the leak post-LLM; this
-         guard prevents it pre-LLM. */
-      const candidateAsked = typeof answer === "string" && (
-        /\?\s*$/.test(answer.trim()) ||
-        /\b(?:can\s+you|could\s+you|would\s+you|give\s+me|share|tell\s+me|walk\s+me\s+through|break\s*down|explain|clarify|what(?:'?s|\s+is)|how\s+(?:much|does|is)|why)\b/i.test(answer)
-      );
-      const pendingQuestionForcesOpen = candidateAsked
-        && (salaryPhase === "closing" || salaryPhase === "closing-pressure")
-        && !candidateAccepted; // a literal "yes" on this turn overrides — no pending Q to answer
-
-      const effectiveSalaryPhase = rejectionLocksClosing && (salaryPhase === "closing" || salaryPhase === "closing-pressure")
-        ? "counter-offer"
-        : pendingQuestionForcesOpen
-        ? "offer-reaction"
-        : salaryPhase;
+      /* Conversation state. Single source of truth — replaces the prior
+         override ladder (rejectionLocksClosing → pendingQuestionForcesOpen
+         → acceptedImmediately sticky). All routing decisions for the
+         prompt template are derived from this typed value. New edge
+         cases land as new cases in deriveConvState / phaseForState,
+         not as another override branch here. See _negotiation-state.ts
+         for the reducer. */
+      const acceptInHistoryRe2 = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+      const acceptedEverInHistory = conversationHistory ? acceptInHistoryRe2.test(conversationHistory) : false;
+      const convState: ConvState = deriveConvState({
+        acceptedThisTurn: candidateAccepted,
+        conditionalAccept: isConditionalAccept,
+        rejectedThisTurn: candidateRejected,
+        walkAwayThisTurn: candidateWalkAway,
+        deflectedThisTurn: candidateDeflected,
+        needsTimeThisTurn: candidateNeedsTime,
+        acceptedEverInHistory: acceptedEverInHistory || negotiationFacts?.acceptedImmediately === true,
+        answer: typeof answer === "string" ? answer : "",
+      });
+      const candidateAsked = convState.pendingRequest != null;
+      const rejectionLocksClosing = convState.kind === "rejected" || convState.kind === "walking";
+      const effectiveSalaryPhase = phaseForState(convState, salaryPhase);
       const rejectionGuard = rejectionLocksClosing
         ? `\nREJECTION LOCK — NO DEAL HAS BEEN REACHED. The candidate just pushed back. The following phrases are BANNED in your reply (using any of them fabricates an agreement that doesn't exist):
 - "productive discussion" / "great conversation" / "we've had a great chat"
@@ -639,9 +638,9 @@ You must either (a) make a CONCRETE counter with a new ₹ number above your pre
          the candidate has NOT explicitly accepted (current turn or
          ever in conversation history), ban the agreement-implying
          phrases and require a non-presumptive close. */
-      const acceptInHistoryRe = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
-      const everAcceptedInHistory = conversationHistory ? acceptInHistoryRe.test(conversationHistory) : false;
-      const candidateExplicitlyAccepted = candidateAccepted || isConditionalAccept || negotiationFacts?.acceptedImmediately === true || everAcceptedInHistory;
+      // Derived from convState — kept as a const so the readability of
+      // the noAgreementGuard predicate below isn't compromised.
+      const candidateExplicitlyAccepted = convState.kind === "accepted" || convState.kind === "conditional-accept";
       const noAgreementGuard = !candidateExplicitlyAccepted && !rejectionLocksClosing
         && (effectiveSalaryPhase === "closing" || effectiveSalaryPhase === "closing-pressure")
         ? `\nNO-AGREEMENT GUARD — THE CANDIDATE HAS NOT ACCEPTED THIS OFFER. Do not write the close as if a deal was reached. The following phrases are BANNED:
