@@ -4,6 +4,8 @@ import {
   formatBreakdownSentence,
   stripRupeeFigures,
   composeBreakdownReply,
+  formatClosingRecapSentence,
+  composeClosingRecapReply,
 } from "../../server-handlers/_negotiation-breakdown";
 
 describe("computeBreakdown", () => {
@@ -94,5 +96,55 @@ describe("composeBreakdownReply", () => {
   it("returns null when headline is invalid", () => {
     expect(composeBreakdownReply("anything", 0)).toBeNull();
     expect(composeBreakdownReply("anything", NaN)).toBeNull();
+  });
+});
+
+describe("formatClosingRecapSentence", () => {
+  it("renders the recap with all four components summing to the agreed total", () => {
+    const b = computeBreakdown(40)!;
+    const s = formatClosingRecapSentence(b);
+    expect(s).toContain("base ₹24 LPA");
+    expect(s).toContain("variable ₹8 LPA");
+    expect(s).toContain("joining bonus ₹4 LPA");
+    expect(s).toContain("PF and benefits ₹4 LPA");
+    expect(s).toContain("total ₹40 LPA CTC");
+  });
+});
+
+describe("composeClosingRecapReply", () => {
+  it("preserves the LLM warmth lead-in and appends the templated recap + logistics tail", () => {
+    const reply = composeClosingRecapReply("Wonderful, glad we got here", 27)!;
+    expect(reply.startsWith("Wonderful, glad we got here.")).toBe(true);
+    expect(reply).toContain("base ₹16.2 LPA");
+    expect(reply).toContain("total ₹27 LPA CTC");
+    expect(reply).toContain("offer letter");
+    expect(reply).toContain("notice-period");
+  });
+
+  it("strips rupee figures the LLM tried to emit in its lead-in (the flat-breakdown bug)", () => {
+    // The original bug: LLM wrote "base ₹49, variable ₹49, joining ₹49" — every
+    // slot equal to the headline. Server scrubs those before appending the
+    // real recap. The bogus repeated-headline pattern must not survive.
+    const reply = composeClosingRecapReply(
+      "Great — base ₹49 LPA, variable ₹49 LPA, joining ₹49 LPA, total ₹49 LPA",
+      49,
+    )!;
+    expect(reply).not.toMatch(/base\s+₹49\s+LPA[\s,]+variable\s+₹49/i);
+    // Real templated recap with distinct slot values lands at the end.
+    expect(reply).toContain("base ₹29.4 LPA");
+    expect(reply).toContain("variable ₹9.8 LPA");
+    expect(reply).toContain("total ₹49 LPA CTC");
+  });
+
+  it("falls back to a default warmth line when the LLM left followUpText empty", () => {
+    const reply = composeClosingRecapReply("", 30)!;
+    expect(reply.startsWith("Wonderful — really glad we landed somewhere that works for both sides.")).toBe(true);
+    expect(reply).toContain("total ₹30 LPA CTC");
+  });
+
+  it("returns null when agreedTotal is invalid", () => {
+    expect(composeClosingRecapReply("anything", 0)).toBeNull();
+    expect(composeClosingRecapReply("anything", NaN)).toBeNull();
+    expect(composeClosingRecapReply("anything", -10)).toBeNull();
   });
 });

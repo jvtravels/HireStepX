@@ -66,3 +66,34 @@ export function composeBreakdownReply(
     : "Sure, happy to walk through the structure.";
   return `${lead} ${formatBreakdownSentence(b)} What part would you like to dig into?`;
 }
+
+// ── Closing-recap templating ────────────────────────────────────────
+// Used when the candidate has accepted and the AI is wrapping up. The
+// load-bearing arithmetic ("base ₹A + variable ₹B + bonus ₹C = total ₹W")
+// was the most trust-destroying LLM failure mode on this surface (the
+// flat-breakdown bug — every component equals the headline number). The
+// structural fix: the LLM writes warmth prose only; the server appends
+// the recap sentence using the same 60/20/10/10 split as the breakdown
+// templating. The numbers are by construction internally consistent.
+
+export function formatClosingRecapSentence(b: SalaryBreakdown): string {
+  return `Just to confirm the package: base ₹${b.base} LPA, variable ₹${b.variable} LPA, joining bonus ₹${b.joining} LPA, plus PF and benefits ₹${b.pf} LPA — total ₹${b.total} LPA CTC.`;
+}
+
+// Compose the final closing-recap reply. Strips any rupee numbers the
+// LLM emitted (its recap arithmetic was the bug), then appends the
+// server-templated recap sentence plus a logistics tail (offer letter
+// timeline, notice-period probe). The LLM's prose lead-in carries the
+// warmth; the server carries the math.
+export function composeClosingRecapReply(
+  leadIn: string,
+  agreedTotalLpa: number,
+): string | null {
+  const b = computeBreakdown(agreedTotalLpa);
+  if (!b) return null;
+  const cleanedLead = stripRupeeFigures((leadIn || "").trim());
+  const lead = cleanedLead.length > 0
+    ? (cleanedLead.endsWith(".") ? cleanedLead : cleanedLead + ".")
+    : "Wonderful — really glad we landed somewhere that works for both sides.";
+  return `${lead} ${formatClosingRecapSentence(b)} I'll have HR send the formal offer letter shortly. What's your notice-period situation — when would you ideally start?`;
+}

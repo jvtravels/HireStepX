@@ -327,10 +327,9 @@ CRITICAL — READ THE INTENT BANNER ABOVE BEFORE PICKING A BRANCH:
 - If the candidate has NOT explicitly accepted (no acceptance in banner): use the "still-open" branch. Never claim agreement.
 
 [AGREED BRANCH — only when candidate said yes]
-- Recap with EXACT numbers: "Great. So here's what we've agreed: ₹X base, ₹Y variable, ₹Z joining bonus, [equity/benefits]. Total CTC: ₹W LPA." (₹X + ₹Y + ₹Z must SUM to ₹W. Sanity-check your arithmetic before writing.)
-- Set timeline: "I'll have HR send the formal offer letter by [day]. You'll have [X days] to review and sign."
-- Ask about notice: "What's your notice period? We'd love to have you start by [date]."
-- Warm close: "I'm really glad we found a number that works. I think you're going to do great things here, and the team is excited to have you."
+- DO NOT write a component breakdown ("base ₹A, variable ₹B, bonus ₹C, total ₹W") in your reply. The server templates that sentence from the agreed total using a fixed 60/20/10/10 split. You only contribute a short WARMTH lead-in (acknowledge the yes; one warm sentence) — the server appends the recap + offer-letter timeline + notice-period probe automatically.
+- Good warmth lead-in examples: "Wonderful — really glad we landed somewhere that works for both sides." / "Excellent. Happy we got there together."
+- Do NOT write rupee figures yourself in this branch — leave the load-bearing numbers to the server. If you write ₹ amounts, the server will strip them. Trust the templating.
 
 [STILL-OPEN BRANCH — when no explicit acceptance]
 - Acknowledge where things stand WITHOUT claiming agreement: "Where we are right now is — our offer is ₹X total. You've shared your concerns about [specific thing they raised]. I want to be clear: I'm not going to pressure you for a yes today."
@@ -1025,6 +1024,57 @@ Repeat-text in followUpText is FORBIDDEN.`;
         }
       } catch (e) {
         console.warn("[follow-up] structural breakdown templating failed:", e);
+      }
+    }
+
+    // ── Server-owned closing-recap templating ──────────────────────────
+    // When the candidate has accepted and we're in the closing phase, the
+    // LLM's recap arithmetic was the most trust-destroying failure mode
+    // (the Razorpay flat-breakdown bug: every component = the headline).
+    // Replace any LLM-authored recap with a templated one driven off the
+    // agreed total (= highestOfferMade after acceptance). The LLM's
+    // warmth prose stays as the lead-in. See _negotiation-breakdown.ts.
+    if (
+      isSalaryNeg &&
+      typeof highestOfferMade === "number" &&
+      highestOfferMade > 0 &&
+      parsed.wantsBreakdown !== true
+    ) {
+      try {
+        // Re-derive ConvState here — the prompt-build scope's convState is
+        // not in scope at post-LLM templating time. Re-running deriveConvState
+        // is cheap (pure function, regex on `answer`) and avoids hoisting
+        // a dozen intent flags out of the salary-neg branch.
+        const { detectCandidateIntent } = await import("./_follow-up-helpers");
+        const { deriveConvState, phaseForState } = await import("./_negotiation-state");
+        const intentLocal = detectCandidateIntent(typeof answer === "string" ? answer : "");
+        const acceptInHistoryReLocal = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+        const acceptedEverInHistoryLocal = conversationHistory ? acceptInHistoryReLocal.test(conversationHistory) : false;
+        const convStateLocal = deriveConvState({
+          acceptedThisTurn: intentLocal.accepted,
+          conditionalAccept: intentLocal.conditionalAccept,
+          rejectedThisTurn: intentLocal.rejected,
+          walkAwayThisTurn: intentLocal.walkAway,
+          deflectedThisTurn: intentLocal.deflected,
+          needsTimeThisTurn: intentLocal.needsTime,
+          acceptedEverInHistory: acceptedEverInHistoryLocal || negotiationFacts?.acceptedImmediately === true,
+          answer: typeof answer === "string" ? answer : "",
+        });
+        const effectivePhaseLocal = phaseForState(convStateLocal, salaryPhase);
+        if (
+          convStateLocal.kind === "accepted" &&
+          !convStateLocal.pendingRequest &&
+          effectivePhaseLocal === "closing"
+        ) {
+          const { composeClosingRecapReply } = await import("./_negotiation-breakdown");
+          const composed = composeClosingRecapReply(parsed.followUpText || "", highestOfferMade);
+          if (composed) {
+            console.warn("[follow-up] Structural closing-recap templating: total=₹" + highestOfferMade + " LPA");
+            parsed.followUpText = composed;
+          }
+        }
+      } catch (e) {
+        console.warn("[follow-up] closing-recap templating failed:", e);
       }
     }
 
