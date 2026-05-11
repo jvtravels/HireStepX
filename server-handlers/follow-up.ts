@@ -592,8 +592,28 @@ Your response MUST directly address what they said above. Start by acknowledging
          of agreement phrases into the prompt. The LLM may still close
          later — but only after the candidate has actually agreed. */
       const rejectionLocksClosing = candidateRejected || candidateWalkAway;
+
+      /* Pending-question guard (Morningstar T6 bug). When the candidate's
+         last message contains an unanswered question or explicit request
+         ("Can you give me a breakdown of ₹27?"), the closing template
+         must NOT fire — answering the request takes priority. Without
+         this guard the phase machine ignores the request (especially
+         once acceptedImmediately is true and detectSalaryPhase forces
+         "closing" for the rest of the session). The detector
+         closing-with-pending-question catches the leak post-LLM; this
+         guard prevents it pre-LLM. */
+      const candidateAsked = typeof answer === "string" && (
+        /\?\s*$/.test(answer.trim()) ||
+        /\b(?:can\s+you|could\s+you|would\s+you|give\s+me|share|tell\s+me|walk\s+me\s+through|break\s*down|explain|clarify|what(?:'?s|\s+is)|how\s+(?:much|does|is)|why)\b/i.test(answer)
+      );
+      const pendingQuestionForcesOpen = candidateAsked
+        && (salaryPhase === "closing" || salaryPhase === "closing-pressure")
+        && !candidateAccepted; // a literal "yes" on this turn overrides — no pending Q to answer
+
       const effectiveSalaryPhase = rejectionLocksClosing && (salaryPhase === "closing" || salaryPhase === "closing-pressure")
         ? "counter-offer"
+        : pendingQuestionForcesOpen
+        ? "offer-reaction"
         : salaryPhase;
       const rejectionGuard = rejectionLocksClosing
         ? `\nREJECTION LOCK — NO DEAL HAS BEEN REACHED. The candidate just pushed back. The following phrases are BANNED in your reply (using any of them fabricates an agreement that doesn't exist):
@@ -637,8 +657,25 @@ INSTEAD, use non-presumptive closing language that respects the candidate's open
 You may STILL ask about notice period, joining timeline, or remaining concerns — just frame them as "if you decide to accept" hypotheticals, not as faits accomplis.`
         : "";
 
+      /* Pending-question banner. Pairs with pendingQuestionForcesOpen
+         above. Forces the LLM to ANSWER the candidate's question/request
+         before doing anything else. Sized like the rejection/no-agreement
+         guards so it lands with the same authority. */
+      const pendingQuestionGuard = candidateAsked
+        ? `\nPENDING-QUESTION GUARD — THE CANDIDATE ASKED YOU A QUESTION: "${sanitizeForLLM(answer, 350)}"
+ANSWER THE QUESTION FIRST, in your next reply, with the specific information they asked for. Only after answering may you move the conversation forward.
+The following are BANNED in this reply (they ignore the question):
+- "I'll work with HR to put together the formal offer letter"
+- "HR will send you the offer letter"
+- "put together the final numbers" / "finalize the package"
+- "revised offer based on our conversation" (you can't promise a revision before answering the question they actually asked)
+- "welcome aboard" / "look forward to having you"
+- "is there anything else you'd like to discuss" — this dodges, it doesn't answer
+If the question is about a BREAKDOWN of the offer, set wantsBreakdown=true in your JSON (the server appends the templated component breakdown) and write a SHORT prose lead-in like "Sure, happy to walk through the structure." If the question is about something else (notice-period logistics, benefits, equity terms), answer it directly with concrete details.`
+        : "";
+
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
-${intentBanner}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
+${intentBanner}${pendingQuestionGuard}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
 ${factsCtx}${offerCtx}${roleAnchorRule}${employerNameRule}${bandCtx}${offerTrackingCtx}${recommendedCounterCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
