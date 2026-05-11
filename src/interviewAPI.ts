@@ -548,6 +548,13 @@ export async function fetchLLMEvaluation(params: {
     highestOfferMade?: number;
     negotiationStyle?: string;
   };
+  /** Behavioural-only: the live interviewer's name + personality trait, so the
+      evaluator's topPerformerAnswer matches the tone the candidate actually
+      heard. Without this, the live coach can be a warm mentor while the
+      report writes back in a clipped FAANG manager voice — same person,
+      different vibe, candidate is confused. */
+  interviewerName?: string;
+  interviewerPersonality?: string;
 }, timeoutMs = 14000): Promise<EvaluationResult | null> {
   // Client-side rate limit: max 5 evaluations per 60s
   if (!checkRateLimit("evaluate", 5, 60_000)) {
@@ -640,6 +647,11 @@ export async function fetchFollowUp(params: {
   personaTrait?: string;
   candidateWalkAway?: number;
   candidateCompetingOffer?: number;
+  /** Behavioural-only: which STAR component the engine has detected as
+      missing on this answer. The follow-up LLM uses this hint to target
+      a component-gap probe ("what specifically did *you* do?") instead
+      of escalating depth on whatever it happened to latch onto. */
+  starGap?: "action" | "result" | "situation-task";
 }): Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> {
   // Client-side rate limit: max 10 follow-ups per 60s
   if (!checkRateLimit("follow-up", 10, 60_000)) return null;
