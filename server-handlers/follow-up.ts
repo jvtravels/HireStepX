@@ -965,12 +965,62 @@ Do NOT paraphrase that question. Your follow-up MUST probe a different dimension
           result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry" });
         }
       }
+      // Verbatim-duplicate dedup retry: if the LLM's output normalizes to
+      // the same string as ANY prior follow-up in this session (case /
+      // whitespace / punctuation insensitive), retry once with explicit
+      // anti-repeat instruction citing the duplicate. Distinct from the
+      // jaccard-similarity check below — that one fires on "feels
+      // similar to the LAST turn"; this one fires on "byte-for-byte
+      // identical to ANY turn this session", which is the actual stuck-
+      // in-a-loop failure mode. Same call budget (one retry max) — we
+      // gate them with `seedDupTriggered` and the new
+      // `verbatimDupTriggered` flag so we never spend more than two
+      // LLM calls per follow-up.
+      let verbatimDupTriggered = false;
+      if (
+        !seedDupTriggered
+        && isSalaryNeg
+        && previousFollowUps
+        && previousFollowUps.length > 0
+      ) {
+        const tentative = extractJSON<{ followUpText?: string }>(result.text);
+        const candidateText = (tentative?.followUpText || "").trim();
+        if (candidateText.length >= 80) {
+          const { isDuplicateOfRecent } = await import("./_follow-up-helpers");
+          if (isDuplicateOfRecent(candidateText, previousFollowUps)) {
+            verbatimDupTriggered = true;
+            retriedDueToDuplicate = true;
+            // Find the matching prior turn so we can quote it back in the
+            // retry prompt — "you already said X" is far more steerable
+            // than a generic "don't repeat".
+            const { normalizeForDuplicate } = await import("./_follow-up-helpers");
+            const candNorm = normalizeForDuplicate(candidateText);
+            const matched = previousFollowUps.find(p => normalizeForDuplicate(p) === candNorm) || candidateText;
+            console.warn("[follow-up] LLM produced verbatim duplicate of a prior follow-up — retrying with anti-repeat instruction citing the duplicate");
+            const verbatimRetryPrompt = `${prompt}
+
+CRITICAL ANTI-REPEAT INSTRUCTION:
+You already said this exact reply earlier in this session:
+<duplicate_reply>
+${matched.slice(0, 500)}
+</duplicate_reply>
+
+The candidate has now responded. Repeating the SAME reply is forbidden — it makes the candidate feel unheard and breaks trust. Generate a COMPLETELY DIFFERENT response that:
+- Does NOT reuse the wording above (no shared 5+ word phrases)
+- ADVANCES the conversation — a concrete ₹ counter, a specific lever you can move (joining bonus / notice flexibility / equity), or an honest "I'm at the ceiling for this role" close
+- Acknowledges what the candidate just said in their most recent answer specifically
+Repeat-text is FORBIDDEN.`;
+            result = await callLLM({ prompt: verbatimRetryPrompt, temperature: Math.max(llmTemp + 0.2, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-verbatim-dedup-retry" });
+          }
+        }
+      }
       // Dedup retry: if the LLM's output is too similar to the previous
       // AI turn, retry once with explicit anti-repeat instruction. Hard
       // guarantee, not a prompt request. Skip if we already retried for
       // seed-question dedup — `previousAiTurnText` typically IS the seed
       // question, so retrying twice in a row wastes a third LLM call.
-      if (!seedDupTriggered && previousAiTurnText && previousAiTurnText.length > 40) {
+      // Also skip if the verbatim-duplicate retry already fired.
+      if (!seedDupTriggered && !verbatimDupTriggered && previousAiTurnText && previousAiTurnText.length > 40) {
         const tentative = extractJSON<{ followUpText?: string }>(result.text);
         const candidateText = (tentative?.followUpText || "").trim();
         const sim = candidateText ? jaccardSimilarity(candidateText, previousAiTurnText) : 0;
@@ -2065,15 +2115,16 @@ Repeat-text in followUpText is FORBIDDEN.`;
       }
     }
 
-    /* Duplicate-reply rescue. The LLM occasionally emits a verbatim
-       (or whitespace/case-only different) duplicate of a prior AI
-       reply — symptom of hitting the same fallback path twice after
-       failing to ground in the candidate's restated ask. The
-       `duplicate-reply` detector pins this offline; here we swap the
-       duplicate for a concrete-move escape hatch BEFORE the response
-       ships. Runs after all other clamps so the rescue is what the
-       candidate actually sees, and runs before the detector telemetry
-       so a successful rescue doesn't fire a false negative. */
+    /* Duplicate-reply rescue (second-line defense). The LLM-call layer
+       already attempts ONE regenerate with explicit anti-repeat
+       instruction when the initial output normalizes to a prior
+       follow-up (see verbatimDupTriggered above). If that retry STILL
+       produces a duplicate after all post-LLM clamps, this block is
+       the templated safety net — swap the duplicate for a concrete-
+       move escape hatch BEFORE the response ships. Runs after all
+       other clamps so the rescue is what the candidate actually sees,
+       and runs before the detector telemetry so a successful rescue
+       doesn't fire a false negative. */
     if (
       parsed.followUpText
       && type === "salary-negotiation"
