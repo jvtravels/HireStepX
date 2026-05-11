@@ -264,7 +264,7 @@ export default async function handler(req: Request): Promise<Response> {
 YOUR GOAL: Understand where they stand and steer toward specifics.
 - If they ACCEPTED immediately: acknowledge warmly, BUT gently probe — "That's great! But before we finalize, have you thought about [equity/flexibility/growth]? I want you to feel confident about the full picture." Accepting instantly is a missed opportunity — help them see that.
 - If they named a number: MIRROR IT BACK — "I heard ₹X from you. That's [above/within/below] our band for this role in [city]." Then ask what's driving their number — market data, competing offers, or expectations?
-- If they asked about breakdown: provide base/bonus/benefits split with EXACT numbers, then ask "Does knowing the structure change your thinking?"
+- If they asked about breakdown: set wantsBreakdown=true in your JSON and write a SHORT prose lead-in WITHOUT any ₹ numbers (the server appends the templated breakdown). Example followUpText: "Sure, happy to walk through the structure." Do NOT write base/variable/joining/PF amounts yourself.
 - If they said it's too low: "I hear you — help me understand what range feels right. Are you benchmarking against a specific offer or market data?"
 - If they deflected ("what's your offer first?"): recognize the tactic — "Nice try! I've already shared our number. I need to understand your side to see where we can meet. What range are you targeting?"
 - If they asked for time to think: "Of course — take a moment. But I should mention, we're looking to close this position by [date]. Can we reconnect in 48 hours?"
@@ -831,7 +831,7 @@ LANGUAGE: Conduct the interview in English only. Do not mix in Hindi or other la
 ${tierPromptSuffix(classifyCompanyTier(company))}
 
 Respond JSON only:
-{"needsFollowUp":true/false,"followUpText":"The follow-up question (2-3 sentences, conversational). Only include if needsFollowUp is true.","followUpType":"${followUpTypeLabel}","reason":"Brief reason"}`;
+{"needsFollowUp":true/false,"followUpText":"The follow-up question (2-3 sentences, conversational). Only include if needsFollowUp is true.","followUpType":"${followUpTypeLabel}","reason":"Brief reason"${isSalaryNeg ? ",\"wantsBreakdown\":true_if_giving_a_breakdown" : ""}}`;
 
     // Salary-neg fallback: generate a context-aware response when LLM fails
     // This prevents the static pre-generated script (with wrong numbers) from playing
@@ -963,7 +963,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
       return new Response(JSON.stringify({ needsFollowUp: false, error: "LLM call failed" }), { status: 502, headers });
     }
     void retriedDueToDuplicate; // surfaced via console.warn above; reserved for future telemetry
-    const parsed = extractJSON<{ needsFollowUp?: boolean; followUpText?: string; followUpType?: string }>(result.text);
+    const parsed = extractJSON<{ needsFollowUp?: boolean; followUpText?: string; followUpType?: string; wantsBreakdown?: boolean }>(result.text);
     if (!parsed || typeof parsed !== "object") {
       if (isSalaryNeg) return salaryNegFallback();
       return new Response(JSON.stringify({ needsFollowUp: false, error: "LLM response parsing failed" }), { status: 502, headers });
@@ -971,6 +971,25 @@ Repeat-text in followUpText is FORBIDDEN.`;
     // Sanitize LLM response fields
     if (typeof parsed.followUpText !== "string") parsed.followUpText = "";
     if (typeof parsed.needsFollowUp !== "boolean") parsed.needsFollowUp = false;
+
+    // ── Server-owned breakdown templating ──────────────────────────────
+    // When the LLM signals wantsBreakdown=true, it should NOT have written
+    // rupee numbers in followUpText (those were the placeholder-leak source).
+    // Compute the breakdown from canonicalInitialOffer (the band's source of
+    // truth) and template the sentence server-side. The LLM only contributes
+    // the prose lead-in.
+    if (isSalaryNeg && parsed.wantsBreakdown === true && canonicalInitialOffer != null) {
+      try {
+        const { composeBreakdownReply } = await import("./_negotiation-breakdown");
+        const composed = composeBreakdownReply(parsed.followUpText, canonicalInitialOffer);
+        if (composed) {
+          console.warn("[follow-up] Structural breakdown templating: headline=₹" + canonicalInitialOffer + " LPA");
+          parsed.followUpText = composed;
+        }
+      } catch (e) {
+        console.warn("[follow-up] structural breakdown templating failed:", e);
+      }
+    }
 
     // Salary hallucination guard: clamp any salary numbers in LLM response to negotiation band limits
     if (isSalaryNeg && negotiationBand && parsed.followUpText) {

@@ -1,0 +1,98 @@
+import { describe, it, expect } from "vitest";
+import {
+  computeBreakdown,
+  formatBreakdownSentence,
+  stripRupeeFigures,
+  composeBreakdownReply,
+} from "../../server-handlers/_negotiation-breakdown";
+
+describe("computeBreakdown", () => {
+  it("splits headline across base/variable/joining/PF summing exactly", () => {
+    const b = computeBreakdown(30)!;
+    expect(b.total).toBe(30);
+    expect(b.base).toBe(18);
+    expect(b.variable).toBe(6);
+    expect(b.joining).toBe(3);
+    expect(b.pf).toBe(3);
+    expect(b.base + b.variable + b.joining + b.pf).toBeCloseTo(30, 5);
+  });
+
+  it("handles decimal headlines (30.4) without slot collisions", () => {
+    const b = computeBreakdown(30.4)!;
+    // No slot should equal the headline — that was the original bug.
+    expect(b.base).not.toBe(30.4);
+    expect(b.variable).not.toBe(30.4);
+    expect(b.joining).not.toBe(30.4);
+    expect(b.pf).not.toBe(30.4);
+    expect(b.total).toBe(30.4);
+  });
+
+  it("returns null for non-positive / non-finite headlines", () => {
+    expect(computeBreakdown(0)).toBeNull();
+    expect(computeBreakdown(-5)).toBeNull();
+    expect(computeBreakdown(NaN)).toBeNull();
+    expect(computeBreakdown(Infinity)).toBeNull();
+  });
+});
+
+describe("formatBreakdownSentence", () => {
+  it("renders the four-slot sentence with rupee + LPA formatting", () => {
+    const b = computeBreakdown(50)!;
+    const s = formatBreakdownSentence(b);
+    expect(s).toContain("Base ₹30 LPA");
+    expect(s).toContain("variable ₹10 LPA");
+    expect(s).toContain("joining bonus ₹5 LPA");
+    expect(s).toContain("PF + benefits ₹5 LPA");
+    expect(s).toContain("₹50 LPA total");
+  });
+});
+
+describe("stripRupeeFigures", () => {
+  it("removes ₹X LPA / lakh / Cr shapes", () => {
+    expect(stripRupeeFigures("offer is ₹49 LPA across slots")).toBe(
+      "offer is the number across slots",
+    );
+    expect(stripRupeeFigures("₹2.5 Cr or ₹250 lakhs")).toBe(
+      "the number or the number",
+    );
+  });
+
+  it("collapses runs of substituted markers", () => {
+    expect(stripRupeeFigures("₹49 LPA ₹49 LPA")).toBe("the number");
+  });
+});
+
+describe("composeBreakdownReply", () => {
+  it("uses LLM lead-in if present, else default, and appends the templated breakdown", () => {
+    const reply = composeBreakdownReply("Sure, happy to walk through it", 30)!;
+    expect(reply.startsWith("Sure, happy to walk through it.")).toBe(true);
+    expect(reply).toContain("Base ₹18 LPA");
+    expect(reply).toContain("₹30 LPA total");
+    expect(reply).toContain("What part would you like to dig into?");
+  });
+
+  it("strips rupee numbers the LLM emitted in its lead-in", () => {
+    // This is the bug class: LLM ignored the rule and wrote "₹49 LPA" in prose.
+    // Server scrubs it before templating the breakdown.
+    const reply = composeBreakdownReply(
+      "Absolutely, the ₹49 LPA breakdown is base ₹49 LPA, variable ₹49 LPA",
+      49,
+    )!;
+    // None of the bogus ₹49 placeholder slots survive.
+    expect(reply).not.toMatch(/base\s+₹49\s+LPA[\s,]+variable\s+₹49/i);
+    // The real templated breakdown is appended with distinct slot values.
+    expect(reply).toContain("Base ₹29.4 LPA");
+    expect(reply).toContain("variable ₹9.8 LPA");
+    expect(reply).toContain("₹49 LPA total");
+  });
+
+  it("falls back to default lead-in when the LLM left followUpText empty", () => {
+    const reply = composeBreakdownReply("", 30)!;
+    expect(reply.startsWith("Sure, happy to walk through the structure.")).toBe(true);
+  });
+
+  it("returns null when headline is invalid", () => {
+    expect(composeBreakdownReply("anything", 0)).toBeNull();
+    expect(composeBreakdownReply("anything", NaN)).toBeNull();
+  });
+});
