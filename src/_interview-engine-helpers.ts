@@ -248,3 +248,25 @@ export function shouldUseEmpatheticClosing(
   if (trimmed.some(isVeryTense) && struggling) return true;
   return false;
 }
+
+/**
+ * Decide whether to inject a STAR component-gap follow-up for a behavioural
+ * answer. Pure function over the engine's per-question state — extracted so
+ * we can unit-test the budget semantics without booting the hook.
+ *
+ *   gap   – output of nextStarGap(); null when nothing to coach.
+ *   used  – follow-ups already injected for this question (engine ref).
+ *   cap   – budget cap. Default 1 — coach the gap once then move on.
+ *
+ * Returns { gap, nextUsed } when we should inject, or null when we
+ * should defer (no gap / budget exhausted).
+ */
+export function decideComponentGapFollowUp(
+  gap: "action" | "result" | "situation-task" | null,
+  used: number,
+  cap: number = 1,
+): { gap: "action" | "result" | "situation-task"; nextUsed: number } | null {
+  if (!gap) return null;
+  if (used >= cap) return null;
+  return { gap, nextUsed: used + 1 };
+}
