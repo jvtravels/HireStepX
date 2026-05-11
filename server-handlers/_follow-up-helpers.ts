@@ -204,41 +204,43 @@ export type SalaryPhase =
  * instead — the negotiation cannot end before a number is on the table.
  */
 export function detectSalaryPhase(input: DetectSalaryPhaseInput): SalaryPhase {
-  const { negotiationPhase, questionIndex, totalQuestions, facts, answer } = input;
+  const { negotiationPhase, questionIndex, facts, answer } = input;
   if (negotiationPhase) return negotiationPhase as SalaryPhase;
 
-  const idx = questionIndex ?? 0;
-  const total = totalQuestions ?? 6;
-  const progressRatio = idx / Math.max(1, total);
+  /* State-first derivation. Phase follows candidate signal — NOT
+     turn-index. This is the architectural fix the audit called out:
+     a candidate who counters on turn 1 should route to counter-offer
+     immediately, not be marched through probe-expectations because
+     the pre-baked arc says so. Turn-index is consulted only for the
+     cold-start ramp when zero state signals are available. */
 
+  // 1. Acceptance — closing wins everything.
   if (facts?.acceptedImmediately) return "closing";
 
+  // 2. Walk-away language — switch to closing-pressure (retention).
   const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass)\b/i;
   if (answer && walkAwayPat.test(answer)) return "closing-pressure";
 
-  if (facts?.candidateCounter && idx >= 2) return "counter-offer";
+  // 3. A number is on the table — counter-offer regardless of turn.
+  //    Previously gated on idx>=2, which marched-through-probe even
+  //    when the candidate had already given a counter on turn 1.
+  if (facts?.candidateCounter) return "counter-offer";
 
-  if (facts?.hasCompetingOffers && !facts?.candidateCounter && idx <= 3) return "probe-expectations";
+  // 4. Competing offers but no concrete counter — keep probing.
+  if (facts?.hasCompetingOffers) return "probe-expectations";
 
-  const hasCounter = !!facts?.candidateCounter;
-  // CLOSING REQUIRES EXPLICIT ACCEPTANCE. Stating a target ≠ agreeing
-  // to close. Without acceptedImmediately, the deepest phase we route
-  // to is closing-pressure — the AI keeps pushing for a yes, never
-  // wraps up with "let me put together the final numbers".
-  if (progressRatio >= 0.85 && hasCounter) return "closing-pressure";
-  if (progressRatio >= 0.7 && hasCounter) return "closing-pressure";
-  if (progressRatio >= 0.7 && !hasCounter) return "probe-expectations";
+  // 5. Multiple non-cash topics raised — benefits territory.
+  if (facts?.topicsRaised && facts.topicsRaised.length >= 2) return "benefits-discussion";
 
-  if (facts?.topicsRaised && facts.topicsRaised.length >= 2 && idx >= 3) {
-    return "benefits-discussion";
-  }
-
+  /* No state signals fired. Use turn-index as a cold-start ramp ONLY.
+     We never fabricate counter-offer / closing-pressure from index
+     alone — those require candidate state. The deepest the cold ramp
+     goes is probe-expectations, which is always safe (the AI asks for
+     a target; the candidate's answer then provides the signal that
+     moves us into a real phase). */
+  const idx = questionIndex ?? 0;
   if (idx <= 1) return "offer-reaction";
-  if (idx === 2) return "probe-expectations";
-  if (idx === 3) return "counter-offer";
-  if (idx === 4) return "benefits-discussion";
-  if (idx === 5) return hasCounter ? "closing-pressure" : "probe-expectations";
-  return hasCounter ? "closing-pressure" : "counter-offer";
+  return "probe-expectations";
 }
 
 export interface PickCounterInput {
@@ -317,6 +319,176 @@ export function pickServerCounter(input: PickCounterInput): number | null {
   // Clamp to band, floor at monotonic, round to 0.1.
   next = Math.max(floor, Math.min(ceiling, next));
   return Math.round(next * 10) / 10;
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * Typed move picker — pickNextMove
+ * ────────────────────────────────────────────────────────────────
+ * Until now the LLM decided which lever to pull on each turn (base
+ * bump, joining bonus, equity grant, hold firm). That decision drifted
+ * under pressure: ESOPs offered on non-equity bands, generic "learning
+ * budget" pulled on a designer when conference budget would land
+ * harder, the same lever repeated three turns in a row.
+ *
+ * pickNextMove makes the lever choice a pure server function. The LLM
+ * still writes the prose; it no longer chooses the structural move.
+ * Lever rotation prevents re-offering the same non-cash item; cash
+ * headroom is consumed first via pickServerCounter, then non-cash
+ * levers in a deterministic order. Hold-firm is the explicit exit
+ * when everything is exhausted — replaces the duplicate-reply rescue
+ * path that was papering over "no moves left".
+ */
+
+export type NegotiationLever =
+  | "open-with-offer"
+  | "probe"
+  | "counter-base"
+  | "joining-bonus"
+  | "equity-grant"
+  | "notice-buyout"
+  | "benefits-summary"
+  | "hold-firm"
+  | "close-acceptance";
+
+export interface NextMove {
+  lever: NegotiationLever;
+  /** New headline total CTC the AI should propose this turn, or null
+   *  when no money moves (probe / benefits / non-cash levers). */
+  newTotalLpa: number | null;
+  /** Increment over the highest previous offer. 0 for non-monetary
+   *  levers and for open-with-offer (the initial offer isn't an
+   *  increment). */
+  deltaLpa: number;
+  /** One-line server explanation suitable for inclusion in the LLM
+   *  prompt as a structural hint. */
+  rationale: string;
+}
+
+export interface PickNextMoveInput {
+  phase: SalaryPhase | string;
+  initialOffer: number;
+  maxStretch: number;
+  walkAway: number;
+  highestOfferMade?: number | null;
+  candidateTarget?: number | null;
+  hasEquity?: boolean;
+  /** Sticky: did the candidate accept at any point in this session? */
+  isAccepted?: boolean;
+  /** Levers the AI has already pulled this session. Used to rotate
+   *  non-cash levers so we don't re-offer the same joining bonus
+   *  three turns in a row. */
+  leversTried?: ReadonlyArray<NegotiationLever>;
+}
+
+export function pickNextMove(input: PickNextMoveInput): NextMove {
+  const {
+    phase,
+    initialOffer,
+    maxStretch,
+    walkAway,
+    highestOfferMade,
+    candidateTarget,
+    hasEquity,
+    isAccepted,
+    leversTried,
+  } = input;
+
+  // 1. Acceptance dominates — recap and close.
+  if (isAccepted) {
+    return {
+      lever: "close-acceptance",
+      newTotalLpa: highestOfferMade ?? initialOffer,
+      deltaLpa: 0,
+      rationale:
+        "Candidate has accepted. Recap the agreed package and move to logistics (notice period, joining date). Do NOT introduce a new number.",
+    };
+  }
+
+  // 2. Phase-locked moves that don't touch numbers.
+  if (phase === "offer-reaction") {
+    return {
+      lever: "open-with-offer",
+      newTotalLpa: initialOffer,
+      deltaLpa: 0,
+      rationale: `Present the initial ₹${initialOffer} LPA offer and ask for the candidate's reaction. Do not move the number yet.`,
+    };
+  }
+  if (phase === "probe-expectations") {
+    return {
+      lever: "probe",
+      newTotalLpa: null,
+      deltaLpa: 0,
+      rationale:
+        "Ask for the candidate's target range and the reasoning behind it before moving any number this turn.",
+    };
+  }
+  if (phase === "benefits-discussion") {
+    return {
+      lever: "benefits-summary",
+      newTotalLpa: null,
+      deltaLpa: 0,
+      rationale:
+        "Lay out the non-cash package (insurance, learning budget, flexibility). Do not move base this turn.",
+    };
+  }
+
+  // 3. Counter / closing-pressure — try cash headroom first.
+  const counter = pickServerCounter({
+    phase,
+    initialOffer,
+    maxStretch,
+    walkAway,
+    highestOfferMade,
+    candidateTarget,
+  });
+  const floor = Math.max(highestOfferMade ?? 0, initialOffer);
+  const triedSet = new Set<NegotiationLever>(leversTried ?? []);
+
+  if (counter !== null && counter > floor) {
+    return {
+      lever: "counter-base",
+      newTotalLpa: counter,
+      deltaLpa: Math.round((counter - floor) * 10) / 10,
+      rationale: `Move headline CTC to ₹${counter} LPA (split toward candidate target, capped at maxStretch ₹${maxStretch}).`,
+    };
+  }
+
+  // 4. No cash headroom — rotate non-cash levers in priority order.
+  if (!triedSet.has("joining-bonus")) {
+    return {
+      lever: "joining-bonus",
+      newTotalLpa: null,
+      deltaLpa: 0,
+      rationale:
+        "Base is at the ceiling. Offer a one-time joining bonus (₹1–3L typical) — does not inflate CTC commitment.",
+    };
+  }
+  if (hasEquity && !triedSet.has("equity-grant")) {
+    return {
+      lever: "equity-grant",
+      newTotalLpa: null,
+      deltaLpa: 0,
+      rationale:
+        "Base maxed; offer an equity bump (ESOPs / RSUs). Only valid when band.hasEquity=true — verified before reaching this lever.",
+    };
+  }
+  if (!triedSet.has("notice-buyout")) {
+    return {
+      lever: "notice-buyout",
+      newTotalLpa: null,
+      deltaLpa: 0,
+      rationale:
+        "Offer a notice-period buyout to accelerate joining — useful when candidate cites timing constraints.",
+    };
+  }
+
+  // 5. All levers exhausted — hold firm, ask for a decision.
+  return {
+    lever: "hold-firm",
+    newTotalLpa: floor,
+    deltaLpa: 0,
+    rationale: `All levers exhausted. State honestly that ₹${floor} LPA is the ceiling and ask for a decision. Do not introduce anything new — that's how duplicate-reply loops start.`,
+  };
 }
 
 /**

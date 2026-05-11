@@ -5,6 +5,7 @@ import {
   truncateConversationHistory,
   detectSalaryPhase,
   pickServerCounter,
+  pickNextMove,
   extractMirrorTokens,
   isBreakdownAsk,
   normalizeForDuplicate,
@@ -633,5 +634,171 @@ describe("composeDuplicateReplyRescue", () => {
     const out = composeDuplicateReplyRescue({ highestOfferMade: NaN, maxStretch: -5 });
     expect(out).not.toMatch(/₹/);
     expect(out).toMatch(/lever/i);
+  });
+});
+
+describe("pickNextMove", () => {
+  const band = { initialOffer: 20, maxStretch: 30, walkAway: 18 };
+
+  it("acceptance → close-acceptance, recap last offer", () => {
+    const m = pickNextMove({
+      phase: "closing",
+      ...band,
+      highestOfferMade: 25,
+      candidateTarget: 28,
+      isAccepted: true,
+    });
+    expect(m.lever).toBe("close-acceptance");
+    expect(m.newTotalLpa).toBe(25);
+    expect(m.deltaLpa).toBe(0);
+  });
+
+  it("offer-reaction → open-with-offer at initialOffer", () => {
+    const m = pickNextMove({ phase: "offer-reaction", ...band });
+    expect(m.lever).toBe("open-with-offer");
+    expect(m.newTotalLpa).toBe(20);
+  });
+
+  it("probe-expectations → probe lever, no money move", () => {
+    const m = pickNextMove({ phase: "probe-expectations", ...band });
+    expect(m.lever).toBe("probe");
+    expect(m.newTotalLpa).toBeNull();
+  });
+
+  it("benefits-discussion → benefits-summary, no money move", () => {
+    const m = pickNextMove({ phase: "benefits-discussion", ...band });
+    expect(m.lever).toBe("benefits-summary");
+    expect(m.newTotalLpa).toBeNull();
+  });
+
+  it("counter-offer with cash headroom → counter-base", () => {
+    const m = pickNextMove({
+      phase: "counter-offer",
+      ...band,
+      highestOfferMade: 20,
+      candidateTarget: 28,
+    });
+    expect(m.lever).toBe("counter-base");
+    expect(m.newTotalLpa).toBe(24);
+    expect(m.deltaLpa).toBe(4);
+  });
+
+  it("counter-offer at ceiling → rotates to joining-bonus", () => {
+    const m = pickNextMove({
+      phase: "counter-offer",
+      ...band,
+      highestOfferMade: 30, // already at maxStretch
+      candidateTarget: 35,
+    });
+    expect(m.lever).toBe("joining-bonus");
+    expect(m.newTotalLpa).toBeNull();
+  });
+
+  it("joining-bonus tried → rotates to notice-buyout when no equity", () => {
+    const m = pickNextMove({
+      phase: "closing-pressure",
+      ...band,
+      highestOfferMade: 30,
+      candidateTarget: 35,
+      hasEquity: false,
+      leversTried: ["joining-bonus"],
+    });
+    expect(m.lever).toBe("notice-buyout");
+  });
+
+  it("joining-bonus tried + hasEquity → rotates to equity-grant", () => {
+    const m = pickNextMove({
+      phase: "closing-pressure",
+      ...band,
+      highestOfferMade: 30,
+      candidateTarget: 35,
+      hasEquity: true,
+      leversTried: ["joining-bonus"],
+    });
+    expect(m.lever).toBe("equity-grant");
+  });
+
+  it("equity-grant NOT picked when hasEquity=false even if rotation reaches it", () => {
+    const m = pickNextMove({
+      phase: "closing-pressure",
+      ...band,
+      highestOfferMade: 30,
+      candidateTarget: 35,
+      hasEquity: false,
+      leversTried: ["joining-bonus", "notice-buyout"],
+    });
+    expect(m.lever).toBe("hold-firm");
+    expect(m.newTotalLpa).toBe(30);
+  });
+
+  it("all levers exhausted → hold-firm with current floor", () => {
+    const m = pickNextMove({
+      phase: "counter-offer",
+      ...band,
+      highestOfferMade: 30,
+      candidateTarget: 35,
+      hasEquity: true,
+      leversTried: ["joining-bonus", "equity-grant", "notice-buyout"],
+    });
+    expect(m.lever).toBe("hold-firm");
+    expect(m.rationale).toMatch(/ceiling/i);
+  });
+
+  it("acceptance dominates phase — wins even if phase says counter-offer", () => {
+    const m = pickNextMove({
+      phase: "counter-offer",
+      ...band,
+      highestOfferMade: 24,
+      candidateTarget: 30,
+      isAccepted: true,
+    });
+    expect(m.lever).toBe("close-acceptance");
+  });
+
+  it("rationale references the chosen number for the LLM prompt", () => {
+    const m = pickNextMove({
+      phase: "counter-offer",
+      ...band,
+      highestOfferMade: 20,
+      candidateTarget: 28,
+    });
+    expect(m.rationale).toMatch(/₹24/);
+  });
+});
+
+describe("detectSalaryPhase (state-first regressions)", () => {
+  it("candidateCounter on turn 1 → counter-offer (no more idx>=2 gate)", () => {
+    // Architectural fix: phase follows candidate signal, not turn index.
+    // Previously this returned offer-reaction because idx<2 blocked the
+    // counter-offer branch, marching the AI through probe even though
+    // the candidate had already given a number.
+    expect(
+      detectSalaryPhase({
+        questionIndex: 1,
+        totalQuestions: 6,
+        facts: { candidateCounter: "₹25 LPA" },
+      }),
+    ).toBe("counter-offer");
+  });
+
+  it("no facts at all on turn 0 → offer-reaction (cold-start ramp)", () => {
+    expect(detectSalaryPhase({ questionIndex: 0 })).toBe("offer-reaction");
+  });
+
+  it("no facts on a late turn → probe-expectations (never fabricates counter)", () => {
+    // Regression: index-based fallback used to fabricate counter-offer
+    // / closing-pressure at high idx with no state. Now we only ramp
+    // as deep as probe — the candidate's answer to that probe creates
+    // the state that drives the next phase.
+    expect(detectSalaryPhase({ questionIndex: 10 })).toBe("probe-expectations");
+  });
+
+  it("topicsRaised >= 2 → benefits-discussion regardless of turn", () => {
+    expect(
+      detectSalaryPhase({
+        questionIndex: 1,
+        facts: { topicsRaised: ["esops", "joining-bonus"] },
+      }),
+    ).toBe("benefits-discussion");
   });
 });

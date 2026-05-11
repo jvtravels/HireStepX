@@ -4,7 +4,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
-import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter } from "./_follow-up-helpers";
+import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter, pickNextMove } from "./_follow-up-helpers";
 import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
@@ -40,7 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -510,6 +510,31 @@ WORD BINDING: The phrase "initial offer" is PERMANENTLY bound to ₹${canonicalI
         ? `\nRECOMMENDED COUNTER FOR THIS TURN: ₹${recommendedCounterDisplay} LPA. This number is computed from the band + the candidate's stated target + your previous offers. Use this exact figure as your headline counter unless the candidate's last message gives you a specific reason to deviate (e.g. they explicitly accepted a different number, or their ask is below this figure — in which case match their ask). When you write component breakdowns (base + variable + bonus), make sure the components SUM to ₹${recommendedCounterDisplay} LPA.`
         : "";
 
+      /* Typed move recommendation. pickNextMove decides the structural
+         move (which lever, monetary or not) deterministically from
+         band + state; the LLM only renders prose around it. This stops
+         the "ESOPs on a non-equity band" and "same joining-bonus three
+         turns in a row" failure modes at the source. Soft hint — the
+         LLM still has prose latitude, but the chosen lever is named. */
+      const nextMove = isSalaryNeg && negotiationBand
+        ? pickNextMove({
+            phase: salaryPhase,
+            initialOffer: canonicalInitialOffer ?? negotiationBand.initialOffer,
+            maxStretch: negotiationBand.maxStretch,
+            walkAway: negotiationBand.walkAway,
+            highestOfferMade,
+            candidateTarget,
+            hasEquity: negotiationBand.hasEquity,
+            isAccepted: !!negotiationFacts?.acceptedImmediately,
+            // leversTried plumbing arrives with Gap 3 (server session
+            // memory). Until then, all non-cash levers are eligible
+            // every turn — the prompt's no-repeat rule covers the gap.
+          })
+        : null;
+      const nextMoveCtx = nextMove
+        ? `\nSTRUCTURAL MOVE FOR THIS TURN: lever=${nextMove.lever}. ${nextMove.rationale}`
+        : "";
+
       const targetCtx = candidateTarget
         ? `\nThe candidate's stated target is ₹${candidateTarget} LPA. Use this to calibrate your offers — if their target is within your band, work toward it. If above, reality-check it.
 TARGET WORD BINDING: Whenever you refer to "your target", "the candidate's target", "you're looking for", "you're asking for", "you mentioned", or "you said", you MUST use exactly ₹${candidateTarget} LPA. NEVER substitute a different number for the candidate's target — not your counter-offer, not your stretch number, not a compromise figure. Those are YOUR numbers, not theirs. Mixing them up ("your target of ₹{differentNum}") destroys candidate trust because they remember exactly what they said.`
@@ -733,7 +758,7 @@ If the question is about a BREAKDOWN of the offer, set wantsBreakdown=true in yo
 
       depthInstructions = `You are a HIRING MANAGER in a salary negotiation. You MUST stay in character. ALWAYS set needsFollowUp to true.
 ${intentBanner}${pendingQuestionGuard}${equityGuard}${rejectionGuard}${noAgreementGuard}${historyContext}
-${factsCtx}${offerCtx}${roleAnchorRule}${employerNameRule}${bandCtx}${offerTrackingCtx}${recommendedCounterCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
+${factsCtx}${offerCtx}${roleAnchorRule}${employerNameRule}${bandCtx}${offerTrackingCtx}${recommendedCounterCtx}${nextMoveCtx}${targetCtx}${styleCtx}${industryCtx}${roleFamilyLevers}${scenarioCtx}${personaTrait ? `\nINTERVIEWER PERSONA — ${personaTrait} Let this trait color your phrasing without making the candidate's experience worse. Don't announce the trait; just write in voice.` : ""}${(typeof prepWalkAway === "number" || typeof prepCompetingOffer === "number") ? `\nPRE-SESSION CANDIDATE FACTS (from their own prep — they shared these BEFORE the call):${typeof prepWalkAway === "number" ? ` walk-away ₹${prepWalkAway} LPA;` : ""}${typeof prepCompetingOffer === "number" ? ` competing offer ₹${prepCompetingOffer} LPA.` : ""} Treat these as quietly-known context for calibration. Do NOT cite them back unless the candidate volunteers them in the conversation — otherwise it'd feel like you read their notes.` : ""}
 
 CURRENT PHASE: ${effectiveSalaryPhase.toUpperCase()}
 ${phaseInstructions[effectiveSalaryPhase] || phaseInstructions["offer-reaction"]}
@@ -859,6 +884,21 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
 - STAY on examples and stories: situations the candidate has handled, decisions they made, what they did specifically, and what the outcome was. STAR shape (Situation → Task → Action → Result) is what you are probing for.`
       : "";
 
+    /* Behavioural-only: STAR component-gap hint from the engine. When the
+       engine has detected which pillar is conspicuously missing, point the
+       LLM at it directly — otherwise a generic "tell me more" probe burns
+       a turn without surfacing the gap. The engine budgets these per
+       question, so we don't drill on a stubbornly weak answer forever. */
+    const starGapDirective = (type === "behavioral" && starGap)
+      ? `\nSTAR-GAP TARGETING — the engine detected this answer is missing the "${starGap}" component. Your follow-up MUST probe specifically for that:
+${starGap === "action"
+  ? `  - Ask what THEY specifically did. "What were *your* specific actions?" / "Walk me through what *you* did, step by step — not what the team did."`
+  : starGap === "result"
+  ? `  - Ask for the outcome / measurable impact. "How did it turn out?" / "What was the impact — any numbers you remember?" / "How did you know it worked?"`
+  : `  - Ask for the setup. "Set the scene for me — when was this and what was the context?" / "What was the goal you were working toward?"`}
+- ONE question, no preamble. Do NOT escalate difficulty — escalation is for follow-ups on already-complete STAR answers.`
+      : "";
+
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
     const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")
       ? `\n${lookupSalaryContext({ role, company, currentCity, jobCity })}\nUse ₹ and LPA. Follow-up offers/counters MUST stay within these ranges.
@@ -875,7 +915,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}
