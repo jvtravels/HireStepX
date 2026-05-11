@@ -845,6 +845,121 @@ export function detectPhantomRevision(ctx: DetectorContext): NegotiationFailure 
   };
 }
 
+/* ── #21 Breakdown deflection ─────────────────────────────────────── */
+// Pine Labs Senior PD T3/T4: candidate asks "I would like to know a
+// breakdown of ₹33 LPA CTC", AI replies "happy to walk through the
+// structure (base, variable, joining bonus, PF) if that would help —
+// what part would you like to dig into?" — listing the categories
+// without the numbers, treating the breakdown ask as a menu choice.
+// This is the structural-fix-still-needed case: the LLM did not set
+// wantsBreakdown=true, so the server-side breakdown template did not
+// fire, and the LLM punted.
+//
+// Heuristic: candidate-last-message asks for a breakdown AND the AI
+// reply names at least two component categories but contains fewer
+// than two ₹-LPA figures (so it's listing slots without numbers).
+export function detectBreakdownDeflection(ctx: DetectorContext): NegotiationFailure | null {
+  if (!ctx.candidateLastMessage) return null;
+  const breakdownAskRe = /\b(?:break\s*down|breakup|components?|structure|split)\b/i;
+  if (!breakdownAskRe.test(ctx.candidateLastMessage)) return null;
+  const reply = ctx.llmOutput;
+  // Count component-category mentions.
+  const categoryHits = [
+    /\bbase\b/i,
+    /\bvariable\b/i,
+    /\bjoining\s+(?:bonus|amount)\b/i,
+    /\bpf\b|\bprovident\s+fund\b/i,
+    /\bgratuity\b/i,
+    /\besop|\brsu|\bequity\b/i,
+  ].reduce((n, re) => (re.test(reply) ? n + 1 : n), 0);
+  if (categoryHits < 2) return null;
+  // Count rupee-attached LPA numbers. A real breakdown has at least
+  // two of these (e.g. base ₹X LPA, variable ₹Y LPA). Fewer than two
+  // means the AI listed categories but didn't give the numbers.
+  const rupeeFigureRe = /₹\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|cr|crore)/gi;
+  const rupeeHits = (reply.match(rupeeFigureRe) || []).length;
+  if (rupeeHits >= 2) return null;
+  return {
+    code: "breakdown-deflection",
+    message: "Candidate explicitly asked for a breakdown; AI listed the component categories without the numbers (treating the ask as a menu choice instead of delivering the breakdown).",
+    evidence: reply.slice(0, 160),
+    severity: "major",
+  };
+}
+
+/* ── #22 Notice-period re-ask ─────────────────────────────────────── */
+// Pine Labs T5: candidate said "Join in thirty days itself" in T2.
+// AI's outro at T5: "What's your current notice period situation,
+// and what's the earliest you could potentially join us?" — re-asking
+// information the candidate already provided. Distinct from
+// repeated-question (which fires on AI asking itself the same thing
+// twice) — this fires when the candidate's transcript shows the
+// answer is on record.
+//
+// Why this is a blocker, not just annoying: the closing recap claims
+// to "reflect our agreed-upon terms" while simultaneously asking for
+// terms the candidate already stated. It contradicts the recap.
+export function detectNoticePeriodReask(ctx: DetectorContext): NegotiationFailure | null {
+  const transcript = (ctx.candidateTranscript || "").toLowerCase();
+  if (!transcript) return null;
+  // Did the candidate state a notice period / joining timeline?
+  const candidateAnsweredRe =
+    /\b(?:thirty|sixty|ninety|fifteen|forty[\s-]?five|\d+)\s*[-]?\s*(?:day|month|week)s?\b/i;
+  const explicitJoinRe = /\b(?:i\s+can\s+join|i['']?ll\s+join|join\s+in\s+\w+\s+(?:day|month|week)|notice\s+period\s+is)\b/i;
+  if (!candidateAnsweredRe.test(transcript) && !explicitJoinRe.test(transcript)) return null;
+  // Is the AI's current reply asking for the same thing again?
+  const aiAskRe =
+    /\b(?:(?:what['']?s|your)\s+(?:current\s+)?notice\s+period|earliest\s+you\s+could\s+(?:join|start)|when\s+(?:could|would|can)\s+you\s+(?:join|start)|how\s+soon\s+could\s+you\s+join|when\s+would\s+you\s+ideally\s+start)\b/i;
+  const m = ctx.llmOutput.match(aiAskRe);
+  if (!m) return null;
+  return {
+    code: "notice-period-reask",
+    message: "AI asked about notice period / joining timeline but the candidate already answered earlier in this session — the prior answer was dropped.",
+    evidence: m[0],
+    severity: "major",
+  };
+}
+
+/* ── #23 Duplicate reply (AI emitted same reply twice) ────────────── */
+// Pine Labs T4: candidate restated "Breakdown of all the parts" and
+// the AI emitted the EXACT same followUpText as T3 — verbatim. This
+// is distinct from repeated-question (which only fires on a fixed
+// probe-signature list, e.g. notice-period). Verbatim-repeat is a
+// "stuck in a loop" symptom regardless of what the reply was about,
+// and it strongly suggests the LLM hit the same fallback path twice.
+//
+// Heuristic: normalize whitespace + case, then check whether the
+// current reply matches any prior AI turn under a high similarity
+// bar. We use a literal-equality check after normalization rather
+// than a fuzzy similarity score — cheap, no false positives.
+function normalizeForDuplicate(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[\s\u00a0]+/g, " ")
+    .replace(/[.,;:!?—–-]+/g, "")
+    .trim();
+}
+export function detectDuplicateReply(ctx: DetectorContext): NegotiationFailure | null {
+  const prev = ctx.previousAiTurns;
+  if (!prev || prev.length === 0) return null;
+  const out = ctx.llmOutput.trim();
+  // Ignore very short replies — "Got it." matching another "Got it." is
+  // not a bug. Require ≥ 80 chars (a real sentence) before flagging.
+  if (out.length < 80) return null;
+  const norm = normalizeForDuplicate(out);
+  for (const p of prev) {
+    if (normalizeForDuplicate(p) === norm) {
+      return {
+        code: "duplicate-reply",
+        message: "AI's current reply is a verbatim duplicate of a prior reply in this session — the loop indicates the LLM took the same fallback twice instead of responding to the candidate's restated ask.",
+        evidence: out.slice(0, 140),
+        severity: "major",
+      };
+    }
+  }
+  return null;
+}
+
 /* ── Aggregate runner ─────────────────────────────────────────────── */
 const ALL_DETECTORS = [
   detectPrematureClose,
@@ -867,6 +982,9 @@ const ALL_DETECTORS = [
   detectIgnoredAcceptance,
   detectApologyLoopReprobe,
   detectPhantomRevision,
+  detectBreakdownDeflection,
+  detectNoticePeriodReask,
+  detectDuplicateReply,
 ];
 
 export function detectAllFailures(ctx: DetectorContext): NegotiationFailure[] {

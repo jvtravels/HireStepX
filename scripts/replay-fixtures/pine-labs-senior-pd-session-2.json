@@ -1,0 +1,115 @@
+{
+  "_comment": "Live session retest from `Hirestepx Bugs (2).pdf` — Senior Product Designer at Pine Labs. Google band ₹28.9–31.9 LPA; session AI quotes ₹33 (within the 5% above-max tolerance, so above-max-stretch does not fire — flagged only in commit notes as a design-band soft-violation). Three behavior bugs pinned here:\n  • T3 breakdown-deflection: candidate asks 'I would like to know a breakdown of ₹33 LPA CTC', AI lists categories (base, variable, joining, PF) but no numbers, treating the breakdown ask as a menu choice. wantsBreakdown=true never fired so the server template did not engage.\n  • T4 breakdown-deflection + duplicate-reply: candidate restates 'Breakdown of all the parts', AI emits the EXACT same reply as T3 — the duplicate-reply detector catches the verbatim loop (repeated-question only covers a fixed probe-signature list, not arbitrary verbatim duplicates).\n  • T5 trailing-closing-question + notice-period-reask: closing outro ends with a question, AND re-asks notice period despite T2 candidate already saying 'Join in thirty days itself'.\n",
+  "session": {
+    "role": "senior-product-designer",
+    "company": "pine-labs",
+    "experienceLevel": "senior",
+    "currentCity": "Bangalore",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 28.9,
+    "maxStretch": 31.9,
+    "walkAway": 24,
+    "hasEquity": false
+  },
+  "turns": [
+    {
+      "_label": "T1 candidate accepts; AI closes with timeline probe (clean for detectors)",
+      "isInitialOffer": false,
+      "questionIndex": 1,
+      "phase": "closing",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 33,
+      "previousAiTurns": [],
+      "candidateLastMessage": "I would like to accept this offer. I'm happy with this offer.",
+      "candidateTranscript": "I would like to accept this offer. I'm happy with this offer.",
+      "llmOutput": "That's fantastic to hear, Jay! I'm really glad you're happy with the offer for the Senior Product Designer role. To formalize things, I'll have HR send over the official offer letter with the total CTC of ₹33 LPA. We'd ideally like you to join us within 45 days of accepting; does that timeline work for you, considering your current notice period?",
+      "expected": []
+    },
+    {
+      "_label": "T2 candidate gives notice; AI confirms — clean",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "closing",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 33,
+      "previousAiTurns": [
+        "That's fantastic to hear, Jay! To formalize things, I'll have HR send over the official offer letter with the total CTC of ₹33 LPA. We'd ideally like you to join us within 45 days of accepting; does that timeline work for you, considering your current notice period?"
+      ],
+      "candidateLastMessage": "Join in thirty days itself.",
+      "candidateTranscript": "I would like to accept this offer. I'm happy with this offer. Join in thirty days itself.",
+      "llmOutput": "That's excellent, Jay. A 30-day joining period works perfectly for us. I'm glad we're aligned on the timeline and the ₹33 LPA total CTC. I'll have HR send over the formal offer letter shortly.",
+      "expected": []
+    },
+    {
+      "_label": "T3 BREAKDOWN-DEFLECTION — candidate asks for breakdown, AI lists categories without numbers",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "closing",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 33,
+      "previousAiTurns": [
+        "That's fantastic to hear, Jay! I'll have HR send over the official offer letter with the total CTC of ₹33 LPA.",
+        "That's excellent, Jay. A 30-day joining period works perfectly for us. I'll have HR send over the formal offer letter shortly."
+      ],
+      "candidateLastMessage": "I would like to know a breakdown of ₹33.0 lakhs LPA CTC.",
+      "candidateTranscript": "I would like to accept this offer. Join in thirty days itself. I would like to know a breakdown of ₹33.0 lakhs LPA CTC.",
+      "llmOutput": "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help. What part would you like to dig into?",
+      "expected": [
+        "breakdown-deflection"
+      ]
+    },
+    {
+      "_label": "T4 BREAKDOWN-DEFLECTION + REPEATED-QUESTION — candidate restates ask, AI repeats identical reply",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "closing",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 33,
+      "previousAiTurns": [
+        "That's fantastic to hear, Jay! I'll have HR send over the official offer letter with the total CTC of ₹33 LPA.",
+        "That's excellent, Jay. A 30-day joining period works perfectly for us.",
+        "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help. What part would you like to dig into?"
+      ],
+      "candidateLastMessage": "Breakdown of all the parts.",
+      "candidateTranscript": "I would like to accept this offer. Join in thirty days itself. I would like to know a breakdown of ₹33.0 lakhs LPA CTC. Breakdown of all the parts.",
+      "llmOutput": "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help. What part would you like to dig into?",
+      "expected": [
+        "breakdown-deflection",
+        "duplicate-reply"
+      ]
+    },
+    {
+      "_label": "T5 TRAILING-CLOSING-QUESTION + NOTICE-PERIOD-REASK — outro re-asks notice despite candidate's prior answer",
+      "isInitialOffer": false,
+      "questionIndex": 5,
+      "phase": "closing",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 33,
+      "previousAiTurns": [
+        "That's fantastic to hear, Jay! I'll have HR send over the official offer letter with the total CTC of ₹33 LPA.",
+        "That's excellent, Jay. A 30-day joining period works perfectly for us.",
+        "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help.",
+        "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help."
+      ],
+      "candidateLastMessage": "Sure.",
+      "candidateTranscript": "I would like to accept this offer. Join in thirty days itself. I would like to know a breakdown of ₹33.0 lakhs LPA CTC. Breakdown of all the parts. Sure.",
+      "llmOutput": "Thanks, Jay, this has been a very productive discussion. I'll consolidate our conversation and work with HR to put together the formal offer letter reflecting our agreed-upon terms. What's your current notice period situation, and what's the earliest you could potentially join us?",
+      "expected": [
+        "trailing-closing-question",
+        "notice-period-reask"
+      ]
+    }
+  ]
+}

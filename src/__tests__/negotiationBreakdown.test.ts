@@ -147,4 +147,11 @@ describe("composeClosingRecapReply", () => {
     expect(composeClosingRecapReply("anything", NaN)).toBeNull();
     expect(composeClosingRecapReply("anything", -10)).toBeNull();
   });
+
+  it("[Pine Labs T5 fix] does not re-ask notice period when caller signals it was already provided", () => {
+    const reply = composeClosingRecapReply("Great", 30, { noticeAlreadyProvided: true })!;
+    expect(reply).not.toMatch(/notice[-\s]period\s+situation/i);
+    expect(reply).not.toMatch(/when\s+would\s+you\s+ideally\s+start/i);
+    expect(reply).toMatch(/let me know if you have any other questions/i);
+  });
 });

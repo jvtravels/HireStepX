@@ -20,6 +20,9 @@ import {
   detectIgnoredAcceptance,
   detectApologyLoopReprobe,
   detectPhantomRevision,
+  detectBreakdownDeflection,
+  detectNoticePeriodReask,
+  detectDuplicateReply,
   detectAllFailures,
 } from "../../server-handlers/_negotiation-failures";
 
@@ -788,5 +791,136 @@ describe("detectAllFailures", () => {
       band: { initialOffer: 34, maxStretch: 46, walkAway: 28, hasEquity: true },
     });
     expect(failures).toEqual([]);
+  });
+});
+
+describe("detectBreakdownDeflection", () => {
+  it("[fixture: Pine Labs] flags listing component categories without numbers when candidate asked for breakdown", () => {
+    const f = detectBreakdownDeflection({
+      ...baseCtx,
+      candidateLastMessage: "I would like to know a breakdown of ₹33.0 lakhs LPA CTC.",
+      llmOutput:
+        "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help. What part would you like to dig into?",
+    });
+    expect(f?.code).toBe("breakdown-deflection");
+    expect(f?.severity).toBe("major");
+  });
+
+  it("does NOT fire when AI actually delivered the breakdown numbers", () => {
+    const f = detectBreakdownDeflection({
+      ...baseCtx,
+      candidateLastMessage: "Can you break down the ₹33?",
+      llmOutput:
+        "Sure. Base ₹19.8 LPA, variable ₹6.6 LPA, joining bonus ₹3.3 LPA, and PF + benefits ₹3.3 LPA — that adds up to ₹33 LPA total.",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("does NOT fire when the candidate did not ask for a breakdown", () => {
+    const f = detectBreakdownDeflection({
+      ...baseCtx,
+      candidateLastMessage: "I'll think about it.",
+      llmOutput: "Sure. The package includes base, variable, joining bonus, and PF.",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("does NOT fire when only one category is named (e.g. just 'base')", () => {
+    const f = detectBreakdownDeflection({
+      ...baseCtx,
+      candidateLastMessage: "Break it down please.",
+      llmOutput: "The base salary is part of the structure. What would you like to know?",
+    });
+    expect(f).toBeNull();
+  });
+});
+
+describe("detectNoticePeriodReask", () => {
+  it("[fixture: Pine Labs] flags re-asking notice period after candidate already gave it", () => {
+    const f = detectNoticePeriodReask({
+      ...baseCtx,
+      candidateTranscript: "I would like to accept this offer. Join in thirty days itself.",
+      llmOutput:
+        "Thanks, Jay. What's your current notice period situation, and what's the earliest you could potentially join us?",
+    });
+    expect(f?.code).toBe("notice-period-reask");
+    expect(f?.severity).toBe("major");
+  });
+
+  it("flags 'when would you ideally start' after explicit notice answer", () => {
+    const f = detectNoticePeriodReask({
+      ...baseCtx,
+      candidateTranscript: "My notice period is 60 days.",
+      llmOutput: "Great — when would you ideally start with us?",
+    });
+    expect(f?.code).toBe("notice-period-reask");
+  });
+
+  it("does NOT fire when the candidate has not yet stated a notice period", () => {
+    const f = detectNoticePeriodReask({
+      ...baseCtx,
+      candidateTranscript: "I'm interested in the role.",
+      llmOutput: "What's your current notice period situation?",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("does NOT fire when AI's reply is unrelated to joining timeline", () => {
+    const f = detectNoticePeriodReask({
+      ...baseCtx,
+      candidateTranscript: "I can join in thirty days.",
+      llmOutput: "Got it. Let me share the equity structure with you.",
+    });
+    expect(f).toBeNull();
+  });
+});
+
+describe("detectDuplicateReply", () => {
+  const longReply =
+    "The total CTC stays at ₹33 LPA — happy to walk through the structure (base, variable, joining bonus, PF) if that would help. What part would you like to dig into?";
+
+  it("[fixture: Pine Labs] flags verbatim repeat of a prior AI reply", () => {
+    const f = detectDuplicateReply({
+      ...baseCtx,
+      llmOutput: longReply,
+      previousAiTurns: ["Earlier turn unrelated text.", longReply],
+    });
+    expect(f?.code).toBe("duplicate-reply");
+    expect(f?.severity).toBe("major");
+  });
+
+  it("flags repeats that differ only in whitespace / punctuation", () => {
+    const f = detectDuplicateReply({
+      ...baseCtx,
+      llmOutput: longReply.replace(/—/g, "-").replace(/ /g, "  "),
+      previousAiTurns: [longReply],
+    });
+    expect(f?.code).toBe("duplicate-reply");
+  });
+
+  it("does NOT fire when there are no prior turns", () => {
+    expect(
+      detectDuplicateReply({ ...baseCtx, llmOutput: longReply, previousAiTurns: [] }),
+    ).toBeNull();
+  });
+
+  it("does NOT fire for short replies — 'Got it.' twice is not a bug", () => {
+    expect(
+      detectDuplicateReply({
+        ...baseCtx,
+        llmOutput: "Got it. Thanks.",
+        previousAiTurns: ["Got it. Thanks."],
+      }),
+    ).toBeNull();
+  });
+
+  it("does NOT fire when the current reply is materially different from prior turns", () => {
+    expect(
+      detectDuplicateReply({
+        ...baseCtx,
+        llmOutput: longReply,
+        previousAiTurns: ["Welcome — for this role we're looking at a total CTC of ₹27 LPA. What's driving your number?"],
+      }),
+    ).toBeNull();
   });
 });

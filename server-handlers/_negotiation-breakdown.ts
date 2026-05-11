@@ -82,12 +82,17 @@ export function formatClosingRecapSentence(b: SalaryBreakdown): string {
 
 // Compose the final closing-recap reply. Strips any rupee numbers the
 // LLM emitted (its recap arithmetic was the bug), then appends the
-// server-templated recap sentence plus a logistics tail (offer letter
-// timeline, notice-period probe). The LLM's prose lead-in carries the
-// warmth; the server carries the math.
+// server-templated recap sentence plus a logistics tail. The LLM's
+// prose lead-in carries the warmth; the server carries the math.
+//
+// `noticeAlreadyProvided`: when true, the tail does NOT re-ask notice
+// period (the Pine Labs T5 bug — closing recap re-asking info the
+// candidate gave earlier in the session). The detector
+// `notice-period-reask` will fire on the templated output otherwise.
 export function composeClosingRecapReply(
   leadIn: string,
   agreedTotalLpa: number,
+  opts?: { noticeAlreadyProvided?: boolean },
 ): string | null {
   const b = computeBreakdown(agreedTotalLpa);
   if (!b) return null;
@@ -95,5 +100,8 @@ export function composeClosingRecapReply(
   const lead = cleanedLead.length > 0
     ? (cleanedLead.endsWith(".") ? cleanedLead : cleanedLead + ".")
     : "Wonderful — really glad we landed somewhere that works for both sides.";
-  return `${lead} ${formatClosingRecapSentence(b)} I'll have HR send the formal offer letter shortly. What's your notice-period situation — when would you ideally start?`;
+  const tail = opts?.noticeAlreadyProvided
+    ? "I'll have HR send the formal offer letter shortly. Let me know if you have any other questions."
+    : "I'll have HR send the formal offer letter shortly. What's your notice-period situation — when would you ideally start?";
+  return `${lead} ${formatClosingRecapSentence(b)} ${tail}`;
 }

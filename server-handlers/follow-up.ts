@@ -1067,7 +1067,16 @@ Repeat-text in followUpText is FORBIDDEN.`;
           effectivePhaseLocal === "closing"
         ) {
           const { composeClosingRecapReply } = await import("./_negotiation-breakdown");
-          const composed = composeClosingRecapReply(parsed.followUpText || "", highestOfferMade);
+          // Did the candidate already state a notice period / joining
+          // timeline anywhere in the conversation? If so, the recap tail
+          // must NOT re-ask it (Pine Labs T5 bug: candidate said "Join
+          // in thirty days itself" earlier, AI's outro re-asked notice
+          // period — trips the notice-period-reask detector).
+          const transcriptForNotice = ((conversationHistory || "") + " " + (typeof answer === "string" ? answer : "")).toLowerCase();
+          const noticeAlreadyProvided =
+            /\b(?:thirty|sixty|ninety|fifteen|forty[\s-]?five|\d+)\s*[-]?\s*(?:day|month|week)s?\b/i.test(transcriptForNotice) ||
+            /\b(?:i\s+can\s+join|i['']?ll\s+join|join\s+in\s+\w+\s+(?:day|month|week)|notice\s+period\s+is)\b/i.test(transcriptForNotice);
+          const composed = composeClosingRecapReply(parsed.followUpText || "", highestOfferMade, { noticeAlreadyProvided });
           if (composed) {
             console.warn("[follow-up] Structural closing-recap templating: total=₹" + highestOfferMade + " LPA");
             parsed.followUpText = composed;
