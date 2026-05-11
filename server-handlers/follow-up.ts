@@ -1856,27 +1856,30 @@ Repeat-text in followUpText is FORBIDDEN.`;
           console.warn("[follow-up] flat-breakdown rewrite failed:", e);
         }
 
-        // ── Phantom competing-offer rewrite ────────────────────────
-        // Lemon-Yellow round-5: AI invented a competing offer the
-        // candidate never mentioned. If prepCompetingOffer is unset AND
-        // the candidate transcript doesn't reference a competing/in-hand
-        // offer, replace "your competing offer / the other company /
-        // their offer" with the neutral "your other options".
+        // ── Phantom competing-offer gate (structural) ──────────────
+        // Step 3 of the structural-fix series. Replaced the per-regex
+        // rewriter with a hard pre-send gate: if the session has no
+        // recorded competing offer AND the candidate didn't affirmatively
+        // mention one (with negation guard for the "any offer? no" pattern),
+        // strip ALL competing-offer references — sentence by sentence —
+        // instead of substituting per-phrase. Broad coverage by default;
+        // the LLM cannot invent a variant the rewriter misses.
         try {
-          const compRef = typeof prepCompetingOffer === "number" && prepCompetingOffer > 0;
-          const candidateMentionedCompeting =
-            /\b(?:i\s+have\s+(?:an?|another|a\s+competing)\s+offer|received\s+(?:an|another|a\s+competing)\s+offer|in[\s-]?hand\s+offer|another\s+company\s+(?:offered|has\s+offered)|got\s+(?:an|another)\s+offer\s+from)\b/i.test(candidateText) ||
-            /\b(?:competing|other|another)\s+offer\s+(?:of|at|for)\s+₹?\s*\d/i.test(candidateText);
-          if (!compRef && !candidateMentionedCompeting) {
-            const phantomRe = /\b((?:your|the|a|that)\s+competing\s+offer|the\s+other\s+(?:company|offer)|from\s+the\s+other\s+company|that\s+other\s+offer)\b/gi;
-            const before = rewritten;
-            rewritten = rewritten.replace(phantomRe, "your other options");
-            if (before !== rewritten) {
-              console.warn(`[follow-up] Phantom competing offer scrubbed.`);
-            }
+          const sessionHasCompetingOffer =
+            (typeof prepCompetingOffer === "number" && prepCompetingOffer > 0) ||
+            negotiationFacts?.hasCompetingOffers === true ||
+            negotiationScenario === "competing";
+          const { stripPhantomCompetingOffer } = await import("./_negotiation-competing");
+          const result = stripPhantomCompetingOffer(rewritten, {
+            sessionHasCompetingOffer,
+            candidateText,
+          });
+          if (result.stripped) {
+            console.warn("[follow-up] Phantom competing-offer gate: sentences stripped.");
+            rewritten = result.text;
           }
         } catch (e) {
-          console.warn("[follow-up] phantom-competing rewrite failed:", e);
+          console.warn("[follow-up] phantom-competing gate failed:", e);
         }
 
         // ── Counter-below-ceiling rewrite ──────────────────────────
