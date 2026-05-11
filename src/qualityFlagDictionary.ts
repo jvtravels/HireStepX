@@ -29,6 +29,14 @@ const DICT: Record<string, FriendlyFlag> = {
   ai_didnt_answer_direct_question: { label: "AI dodged a direct user question", description: "User asked 'what are you offering?' or 'can you clarify?' — AI replied with another question instead of giving an answer.", category: "ai_didnt_push_back" },
   ai_no_counter_offered: { label: "AI never made a numeric counter", description: "Salary-neg session went 4+ turns with the user asking for a number, but the AI never produced a specific counter — just deflection until close.", category: "ai_didnt_push_back" },
   stale_market_calibration: { label: "Salary data is out of date", description: "The reference data used to check AI claims hasn't been refreshed in over a year.", category: "ai_made_up_info" },
+  ai_arithmetic_error: { label: "AI's salary math is wrong", description: "AI computed a sum, percentage, or hike multiple incorrectly inside the offer (e.g. '20% above ₹12L = ₹13L').", category: "ai_made_up_info" },
+  ai_offer_regression: { label: "AI revised the offer downward mid-negotiation", description: "AI offered a higher number earlier in the same session and then quoted a lower one — never realistic in a real negotiation.", category: "ai_made_up_info" },
+  ai_usism_drift: { label: "AI slipped into US salary framing", description: "AI used '$', 'six figures', 'OTE', '401k' or similar US idioms in an Indian negotiation context — calibration drift the candidate will notice.", category: "ai_made_up_info" },
+  ai_under_close_below_predicted: { label: "AI closed below the realistic floor", description: "Final offer landed under the lower bound of the role's plausible band — would not happen in a real Indian negotiation.", category: "ai_made_up_info" },
+  ai_unrealistic_close_above_predicted: { label: "AI closed above the realistic ceiling", description: "Final offer exceeded the upper bound of the role's plausible band — sets a false expectation for the candidate's real negotiation.", category: "ai_made_up_info" },
+  role_company_mismatch: { label: "Role and company don't fit", description: "The requested role doesn't match the company's known hiring profile (e.g. 'Quant Researcher at TCS') — candidate practising on an unrealistic combo.", category: "system" },
+  user_below_band_underask: { label: "User asked for below market", description: "User's anchor was below the realistic lower band for the role — costs significant compensation. Coaching: research before anchoring.", category: "user_skipped_step" },
+  user_moonshot_no_batna: { label: "User asked for a moonshot number with no BATNA", description: "User anchored well above the realistic ceiling and never mentioned an alternative offer — leverage-free moonshot, AI will rightly walk away in a real session.", category: "user_skipped_step" },
   unverifiable_companies: { label: "User mentioned company not in resume", description: "User referenced an employer the resume doesn't list — could be hallucination on either side.", category: "ai_made_up_info" },
 
   // AI didn't push back hard enough
@@ -36,6 +44,12 @@ const DICT: Record<string, FriendlyFlag> = {
   ai_accepts_missing_result: { label: "AI moved on without asking for the outcome", description: "User didn't share the Result of their STAR story; AI didn't probe before changing topic.", category: "ai_didnt_push_back" },
   ai_accepts_hand_waving: { label: "AI accepted vague design answer", description: "User gave a hand-wavy answer; AI didn't ask a follow-up to pin it down.", category: "ai_didnt_push_back" },
   ai_accepted_without_verification: { label: "AI didn't verify the code", description: "AI said 'looks good' without checking correctness, edge cases, or complexity.", category: "ai_didnt_push_back" },
+  jumped_to_code_no_clarifying: { label: "User skipped scoping the problem", description: "User started coding immediately without asking about input constraints, edge cases, or sample I/O — interviewers grade scoping.", category: "user_skipped_step" },
+  no_test_walkthrough: { label: "User didn't trace their own code", description: "User wrote code but never walked through a concrete sample input — verification instinct is part of the grade.", category: "user_skipped_step" },
+  no_tradeoff_articulation: { label: "User presented one solution as the only option", description: "Senior-signal gap: no alternative approach named, no trade-off articulated. 'Hash-map for O(n); sort + two-pointer is O(n log n) but lower memory' is the shape.", category: "user_skipped_step" },
+  vague_complexity_claim: { label: "User used vague speed language instead of Big-O", description: "Phrases like 'pretty fast' / 'linear-ish' / 'fast enough' without a concrete O(...) — costs technical credibility.", category: "user_skipped_step" },
+  language_anti_pattern: { label: "Rookie language idiom in the code", description: "Anti-patterns like 'var' + loose-equality in JS, bare-except / range(len(...)) in Python, or string-concat-in-loop in Java — easy credibility hit.", category: "user_skipped_step" },
+  we_heavy_ownership: { label: "User said 'we' without saying what they did", description: "Long answer with multiple 'we / our' references and no 'I' — interviewer can't tell the candidate's individual contribution.", category: "user_skipped_step" },
 
   // User skipped a key step
   weak_star_structure: { label: "User answers missed STAR structure", description: "Most user answers were missing Situation / Task / Action / Result components.", category: "user_skipped_step" },

@@ -39,7 +39,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const { transcript, type, difficulty, role, company, questions, resumeText, jobDescription, previousScores, negotiationContext } = await req.json();
+    const { transcript, type, difficulty, role, company, questions, resumeText, jobDescription, previousScores, negotiationContext, interviewerName, interviewerPersonality } = await req.json();
 
     const validSpeakers = new Set(["ai", "user"]);
     if (!transcript || !Array.isArray(transcript) || transcript.length === 0 ||
@@ -189,8 +189,18 @@ Overall: ${previousScores.overall}/100
 ${previousScores.skills && typeof previousScores.skills === "object" ? Object.entries(previousScores.skills).map(([k, v]: [string, unknown]) => `${k}: ${v}`).join(", ") : ""}\n`
       : "";
 
+    /* Voice continuity: when the engine knows who ran the live session
+       (interviewer name + personality), tell the coach so any modelled
+       answers / restructures match the same vibe. Without this, the live
+       coach can be a warm mentor while the report writes back in a
+       clipped FAANG manager voice — same person, different tone, candidate
+       confused. */
+    const voiceContext = (typeof interviewerName === "string" && interviewerName) || (typeof interviewerPersonality === "string" && interviewerPersonality)
+      ? `\nLIVE INTERVIEWER CONTEXT (match this voice when modelling answers):${interviewerName ? `\n- Interviewer: ${sanitizeForLLM(String(interviewerName), 60)}` : ""}${interviewerPersonality ? `\n- Personality: ${sanitizeForLLM(String(interviewerPersonality), 60)}` : ""}\n`
+      : "";
+
     const prompt = `You are an expert interview coach evaluating a mock ${interviewType} interview for a ${interviewRole} candidate.${company ? ` Company: ${sanitizeForLLM(company, 100)}.` : ""} Difficulty: ${diffLevel}.${languageNote}
-${questionsContext}${resumeContext}${jdContext}${prevContext}
+${questionsContext}${resumeContext}${jdContext}${prevContext}${voiceContext}
 Transcript:
 ${formattedTranscript}
 

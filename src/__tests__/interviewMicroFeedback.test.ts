@@ -177,7 +177,7 @@ describe("computeMicroFeedback", () => {
     });
 
     it("praises project + learning answers", () => {
-      const text = pad("I built a hackathon project for accessibility and I learned that user research is critical to building products that actually work well for real users", 45);
+      const text = pad("I built a hackathon project for accessibility in Python using FastAPI and Postgres, and I learned that user research is critical to building products that actually work well for real users", 45);
       const r = computeMicroFeedback(text, "campus-placement", []);
       expect(r.feedback).toContain("Great answer");
     });

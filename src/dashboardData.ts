@@ -1082,6 +1082,11 @@ export interface EvaluateSessionInput {
     level?: string | null;
     difficulty?: "warmup" | "standard" | "hard";
     duration?: number;
+    /** Live interviewer name + personality. Threaded through so the rich
+        report's exemplar / restructured prose matches the voice the
+        candidate heard during the session. */
+    interviewerName?: string;
+    interviewerPersonality?: string;
   };
 }
 

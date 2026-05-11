@@ -2,6 +2,8 @@
 /* Pure function: given an answer and interview type, returns instant micro-feedback
    and a numeric quality score for difficulty tracking. Extracted from useInterviewEngine. */
 
+import { detectStarPresence } from "./_star-detection";
+
 export interface MicroFeedbackResult {
   feedback: string | null;
   score: number;
@@ -34,7 +36,15 @@ export function computeMicroFeedback(
   if (interviewType === "campus-placement") {
     return campusPlacementFeedback(answerText, wordCount);
   }
-  return standardFeedback(answerText, wordCount, runningScores, recentFeedbacks);
+  /* Behavioural is the canonical STAR-aware path. Technical / strategic /
+     panel etc. still pipe through here because STAR-shape + metrics +
+     structure are universally rewarded. If a future type needs to diverge
+     (e.g. system-design micro-feedback that ignores STAR), add an explicit
+     case ABOVE this — don't loosen behavioralFeedback to accommodate it. */
+  if (interviewType === "behavioral") {
+    return behavioralFeedback(answerText, wordCount, runningScores, recentFeedbacks);
+  }
+  return behavioralFeedback(answerText, wordCount, runningScores, recentFeedbacks);
 }
 
 /* ─── Salary Negotiation (phase-aware) ─── */
@@ -273,12 +283,28 @@ function managementFeedback(text: string, wordCount: number): MicroFeedbackResul
   return { feedback, score: clamp(score) };
 }
 
-/* ─── Campus Placement ─── */
+/* ─── Campus Placement ─── *
+ * Kept in sync with the v2 deterministic analyzer in
+ * server-handlers/analyzers/campus-placement.ts. The flags surfaced
+ * inline here must match what the post-session report can flag, so
+ * the candidate doesn't get one diagnosis live and a different one
+ * in the report. */
 function campusPlacementFeedback(text: string, wordCount: number): MicroFeedbackResult {
-  const mentionsProject = /project|built|developed|created|designed|implemented|hackathon|internship/i.test(text);
+  const mentionsProject = /project|built|developed|created|designed|implemented|hackathon|internship|capstone|final[- ]?year|cgpa|coursework/i.test(text);
   const hasLearning = /learned|realized|taught me|takeaway|improved|grew|mistake|challenge/i.test(text);
   const hasClarity = /because|reason|approach|decided|goal|objective/i.test(text);
   const hasFirstPerson = /\bI\b/.test(text);
+
+  // v2 analyzer flag mirrors — these are the same checks the report runs.
+  const techStack = /\b(python|java\b|javascript|typescript|c\+\+|kotlin|swift|go(?:lang)?|rust|node(?:\.?js)?|react|next(?:\.?js)?|angular|vue|django|flask|spring|express|fastapi|tensorflow|pytorch|numpy|pandas|scikit|opencv|sql|mysql|postgres|mongodb|redis|firebase|aws|gcp|azure|docker|kubernetes|git|linux|raspberry pi|arduino|html|css|tailwind|bootstrap|figma|excel|tableau|powerbi|matlab|verilog|vhdl|simulink|autocad|solidworks|catia|ansys|plc|scada)\b/i.test(text);
+  const projectNarration = /\b(my project|our project|the project|i (?:built|made|developed|coded|designed|trained|implemented)|we (?:built|made|developed|coded|designed|trained|implemented))\b/i.test(text);
+  const genericPassion = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?learn)\b/i.test(text);
+  const badmouthCollege = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:professors|faculty) (?:are|were) (?:useless|incompetent|terrible)|nothing was taught|wasted (?:my )?time)\b/i.test(text);
+  const volunteeredDeficit = /\b(?:i (?:have|had|got)|i'?ve got|unfortunately)\s+(?:\d+\s+)?(?:backlog|kts?|low\s+cgpa|bad\s+cgpa|poor\s+grade)/i.test(text);
+  const teamMatch = text.match(/\b(?:led|managed|headed|directed)\s+(?:a\s+)?team\s+of\s+(\d{2,})/i);
+  const implausibleTeam = !!(teamMatch && Number(teamMatch[1]) >= 15);
+  const fillerCount = (text.match(/\b(basically|as such|like,? you know|um,?|uh,?|sort of|kind of|i mean)\b/gi) || []).length;
+  const excessiveFiller = wordCount >= 100 && (fillerCount / wordCount) * 100 >= 4;
 
   let score = 50;
   if (wordCount >= 40) score += 10;
@@ -287,10 +313,30 @@ function campusPlacementFeedback(text: string, wordCount: number): MicroFeedback
   if (hasClarity) score += 10;
   if (hasFirstPerson) score += 5;
   if (wordCount < 20) score -= 10;
+  // v2 alignment: penalise the same patterns the report flags.
+  if (badmouthCollege) score -= 20;
+  if (volunteeredDeficit) score -= 10;
+  if (implausibleTeam) score -= 10;
+  if (projectNarration && !techStack) score -= 8;
+  if (genericPassion && !projectNarration) score -= 8;
+  if (excessiveFiller) score -= 5;
 
+  // Highest-severity tip wins — surface ONE actionable note, not a wall.
   let feedback: string | null;
   if (wordCount < 20) {
     feedback = "Try to say a bit more — even briefly describing your approach helps.";
+  } else if (badmouthCollege) {
+    feedback = "Reframe — even weak coursework can be framed as 'I supplemented with self-study.' Never criticise professors.";
+  } else if (volunteeredDeficit) {
+    feedback = "Don't volunteer backlogs / low CGPA. If asked, explain briefly and pivot to what you did about it.";
+  } else if (implausibleTeam) {
+    feedback = "A 15+ person team is implausible for a college project. Calibrate the claim or separate the leadership (e.g. fest) from the technical work.";
+  } else if (projectNarration && !techStack) {
+    feedback = "Name the stack — language, framework, DB, deployment target. 'I built it in Python, FastAPI, Postgres' beats 'I built a web app.'";
+  } else if (genericPassion && !projectNarration) {
+    feedback = "Replace 'passionate about tech' with one concrete project: 'I built X using Y, here's what I learned.'";
+  } else if (excessiveFiller) {
+    feedback = "Lots of fillers ('basically', 'as such', 'like') — replace each with a half-second pause.";
   } else if (!mentionsProject && !hasLearning) {
     feedback = "Tip: Reference a specific project or experience — concrete examples are powerful.";
   } else if (!hasLearning) {
@@ -325,8 +371,11 @@ function detectNonAnswer(text: string, wordCount: number): boolean {
   return patterns.some((re) => re.test(t));
 }
 
-/* ─── Standard (behavioral / technical / strategic / panel) ─── */
-function standardFeedback(text: string, wordCount: number, runningScores: number[], recentFeedbacks?: string[]): MicroFeedbackResult {
+/* ─── Behavioural (also the default fallthrough for technical / strategic
+       / panel). Renamed from standardFeedback to make the STAR-shape focus
+       explicit and to give a single grep target for "behavioural live
+       coach". ─── */
+function behavioralFeedback(text: string, wordCount: number, runningScores: number[], recentFeedbacks?: string[]): MicroFeedbackResult {
   if (detectNonAnswer(text, wordCount)) {
     // Empathic acknowledgement, no STAR-coaching tip. Score reflects
     // a non-answer (low) but doesn't crater the running average — the
@@ -336,25 +385,14 @@ function standardFeedback(text: string, wordCount: number, runningScores: number
       score: 35,
     };
   }
-  const hasMetrics = /\d+%|\$\d|[0-9]+x|[0-9]+ (users|customers|engineers|people)/i.test(text);
+  /* STAR-component detection lives in src/_star-detection.ts so the live
+     coach and the post-session evaluator share one regex set. See that
+     module for the rationale; do NOT inline regexes here. */
+  const star = detectStarPresence(text);
+  const { situation: hasSituation, task: hasTask, action: hasAction, result: hasResult, count: starCount, hasMetrics } = star;
   const hasStructure = /first|second|then|finally|result|outcome|impact/i.test(text);
   const hasFirstPerson = /\bI\b/i.test(text);
   const hasCounterfactual = /without|otherwise|if.*not|had.*not|wouldn't/i.test(text);
-
-  /* Lightweight STAR-component detection. Used to tell the candidate
-     WHICH part of the story they skipped, instead of a generic
-     "structure with STAR" tip. Heuristics:
-       Situation = setting markers (when/where/at <company>/in 20XX/we were)
-       Task      = problem markers (challenge/needed to/asked to/had to/goal)
-       Action    = first-person verbs (I built/I led/I designed/I shipped)
-       Result    = outcome markers (resulted in/which led to/we saw/by N%/<metric>)
-     A long answer that only matches Situation+Task and skips Action/Result
-     is the most common failure — the inline tip should call that out. */
-  const hasSituation = /\bat\s+(?:my\s+last|my\s+previous|my\s+current)?\s*(?:company|job|role|team|firm)\b|\bwhen\s+(?:i|we)\b|\bin\s+(?:20\d\d|q[1-4])\b|\bduring\s+(?:my|the)\b|\bwe\s+were\s+\b/i.test(text);
-  const hasTask = /\b(?:the\s+(?:challenge|problem|goal|task|ask|brief)|needed\s+to|had\s+to|was\s+(?:asked|tasked)\s+to|the\s+target\s+was|our\s+goal\s+was|the\s+brief\s+was)\b/i.test(text);
-  const hasAction = /\bi\s+(?:built|designed|shipped|led|drove|created|wrote|made|fixed|launched|coordinated|negotiated|trained|coached|presented|prototyped|tested|migrated|refactored|architected|implemented|defined|aligned|escalated|prioriti[sz]ed|de[\s-]?risked|set\s+up|put\s+together|reached\s+out)\b/i.test(text);
-  const hasResult = hasMetrics || /\bresult(?:ed|ing)?\b|\bwhich\s+led\s+to\b|\bwhich\s+drove\b|\bso\s+that\b|\bwe\s+saw\b|\bafter\s+(?:that|launch)\b|\bin\s+the\s+end\b|\boutcome\b|\bimpact\b|\bby\s+\d+/i.test(text);
-  const starCount = [hasSituation, hasTask, hasAction, hasResult].filter(Boolean).length;
 
   let score = 50;
   if (wordCount >= 50) score += 10;

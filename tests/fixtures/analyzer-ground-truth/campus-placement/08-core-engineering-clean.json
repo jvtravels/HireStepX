@@ -1,0 +1,18 @@
+{
+  "name": "Core-engineering campus pass — mechanical fresher with concrete stack",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your final-year project.", "time": "" },
+      { "speaker": "user", "text": "My final-year project was a vibration-damping mount for the BHEL turbine rotor test rig. I designed the geometry in SolidWorks, ran modal analysis in ANSYS, and validated the FFT plots against the lab measurements. CGPA 8.4. We reduced peak vibration amplitude by 22%.", "time": "" },
+      { "speaker": "ai", "text": "Why are you keen on joining us for the GET role?", "time": "" },
+      { "speaker": "user", "text": "I read about your recent acquisition of the renewables division and the Q3 launch of the new turbine line. The leadership principles around 'customer obsession' resonate with the rotor-balancing work I want to grow into.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "My final semester ends in May, available to join from June 10, open to posting in Trichy or Haridwar — I'm flexible on relocation.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["project_no_tech_stack", "no_academic_project_discussed", "generic_passion_no_substance", "user_badmouthing_college", "no_company_specific_research", "implausible_team_size", "availability_never_discussed", "volunteered_academic_deficit"]
+  }
+}

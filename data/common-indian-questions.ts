@@ -174,6 +174,16 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
   { category: "fresher", text: "Are you comfortable with a training or service agreement?", frequency: 4 },
   { category: "fresher", text: "Where do you see yourself in 2 years?", frequency: 3 },
   { category: "fresher", text: "Do you have any questions for us?", frequency: 4 },
+  { category: "fresher", text: "Walk me through your CGPA semester by semester. Any drops, and what caused them?", frequency: 3 },
+  { category: "fresher", text: "What was your specific contribution in your final-year project vs. the team's?", frequency: 5 },
+  { category: "fresher", text: "Explain DBMS normalisation up to 3NF with a real example.", frequency: 4 },
+  { category: "fresher", text: "What's the difference between an array and a linked list? When would you pick each?", frequency: 4 },
+  { category: "fresher", text: "Explain OOP — give me a real-world example, not the textbook one.", frequency: 4 },
+  { category: "fresher", text: "Have you contributed to any open-source project, hackathon, or coding contest? Walk me through one.", frequency: 3 },
+  { category: "fresher", text: "Tell me one thing you've learned in the last 30 days that you can't get from coursework.", frequency: 3 },
+  { category: "fresher", text: "What's not on your resume that I should know about you?", frequency: 3 },
+  { category: "fresher", text: "If you're given a 6-month-old project with no documentation, how do you onboard yourself in week 1?", frequency: 3 },
+  { category: "fresher", text: "Are you considering higher studies (MBA / MS) instead of joining the workforce? Why or why not?", frequency: 3 },
 
   /* IT services (TCS / Infosys / Wipro / HCL / Cognizant / Accenture / Capgemini / LTIMindtree / Tech Mahindra) */
   { category: "it_services", text: "Are you comfortable working on client projects?", frequency: 5 },

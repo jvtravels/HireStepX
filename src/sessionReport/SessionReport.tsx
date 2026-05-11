@@ -31,6 +31,7 @@ import type { DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
 import { sessionReportToInterviewResult } from "./adapter";
+import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
 
 /* ─── Helpers — small pure functions for transcript shaping + role-
@@ -249,6 +250,18 @@ export const SessionReport = memo(function SessionReport({
     async function load() {
       setLoading(true);
       setErrorMsg("");
+      /* Voice continuity: re-derive the same interviewer name the engine
+         used during the live session (deterministic from type-focus-
+         company-userId). Threading this into the report prompt keeps
+         exemplar/restructured prose in the same voice the candidate
+         heard live — otherwise the rich report sounds like a different
+         coach. The persona-trait string acts as a personality tag.
+         If the resolved name is empty (no userId yet, etc.) we just
+         omit the field — handler treats it as "no voice context". */
+      const interviewerSeed = `${session.type || "behavioral"}-${session.focus || "general"}-${user?.targetCompany || ""}-${user?.id || ""}`;
+      const liveInterviewerName = (() => {
+        try { return getInterviewerName(interviewerSeed); } catch { return undefined; }
+      })();
       const meta = {
         role: session.role,
         roleFamily,
@@ -257,6 +270,7 @@ export const SessionReport = memo(function SessionReport({
         difficulty:
           (session.difficulty as "warmup" | "standard" | "hard") || "standard",
         duration: parseDurationSec(session.duration),
+        interviewerName: liveInterviewerName,
       };
 
       const isTransient = (raw: string) =>

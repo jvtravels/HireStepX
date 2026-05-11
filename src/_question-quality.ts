@@ -82,7 +82,7 @@ const ROLE_ANCHORS_BY_FOCUS: Record<string, RegExp[]> = {
   management: [/team|hiring|delegate|escalat|stakeholder|priorit|deadline|review|feedback|performance|coach|mentor|onboard|process|retro/i],
   panel: [/team|stakeholder|trade[- ]?off|outcome|metric|impact|architecture|customer|user|ship/i],
   strategic: [/vision|alignment|roadmap|trade[- ]?off|outcome|metric|stakeholder|second[- ]order|long[- ]term|market|differentiat|positioning/i],
-  "campus-placement": [/college|project|intern|academic|fundamental|learn|technology|team|responsib/i],
+  "campus-placement": [/\b(college|university|btech|b\.?tech|bca|mca|m\.?tech|capstone|final[- ]?year|coursework|cgpa|gpa|sgpa|project|hackathon|intern(?:ship)?|trainee|fresher|placement|campus|on[- ]campus|fundamental|dbms|operating system|os fundamental|oop|data structure|algorithm|sdlc|relocate|service agreement|joining|graduation|exam|semester|stipend|mentor|nqt|infytq|techbee|genc|engage|step program|spirit of wipro|leadership principle)\b/i],
   "government-psu": [/public|service|ethic|policy|regulation|stakeholder|posting|department|integrity|due[- ]?process/i],
 };
 
@@ -174,8 +174,18 @@ function buildFallback(type: string, focus: string, role: string, idx: number, t
     if (idx === 1) return `Let's say a B2B SaaS in your domain is seeing 18% MoM signup growth but flat MRR. What's your first hypothesis, and how would you validate it?`;
     return `Stay with the same case — what's the single metric you'd ask the CEO for if you could only have one to make your call?`;
   }
-  if (focus === "hr-round") {
+  if (focus === "hr-round" || focus === "hr") {
     return `Tell me concretely — why are you exploring a change right now, and what's making you think this role specifically (not just any new role)?`;
+  }
+  if (focus === "panel") {
+    if (idx === 1) return `Each of us will dig into a different facet — I'll start with the broadest: walk us through the project that best represents how you operate end-to-end, not just the highlight reel.`;
+    if (idx >= total - 2) return `One of us is going to push back hard on a decision you stand by — pick that decision now and tell us what you'd defend, what data you'd bring, and where you'd genuinely concede.`;
+    return `Different functions in a panel notice different signals — tell us about a cross-functional disagreement where engineering, design, and business each saw the same situation differently. How did you read the room?`;
+  }
+  if (focus === "strategic") {
+    if (idx === 1) return `Set the strategic frame: pick one bet your org made in the last 18 months that you'd argue was right *or* wrong, and walk me through how you'd defend that view to the board.`;
+    if (idx >= total - 2) return `Tell me about a second-order consequence of a decision you owned that you didn't anticipate at the time. What would you change in how you scope decisions today?`;
+    return `Stay strategic — what's a trade-off in your roadmap right now where the obviously-correct answer is the one you're choosing *against*, and why?`;
   }
   if (focus === "salary-negotiation") {
     return `Help me understand where your expectations are anchored — what's driving the number you have in mind?`;

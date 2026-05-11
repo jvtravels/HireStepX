@@ -70,6 +70,11 @@ export interface EvaluationFlowInput {
   highestOfferMade?: number;
   negotiationStyle?: string;
 
+  /* Behavioural-only: who the candidate just talked to + how they sounded,
+     so the topPerformerAnswer matches the live interviewer's voice. */
+  interviewerName?: string;
+  interviewerPersonality?: string;
+
   /* Race control. */
   evalAbort: AbortController;
   sessionId: string;
@@ -183,6 +188,8 @@ export async function runEvaluationFlow(input: EvaluationFlowInput): Promise<Eva
           highestOfferMade: input.highestOfferMade && input.highestOfferMade > 0 ? input.highestOfferMade : undefined,
           negotiationStyle: input.negotiationStyle || undefined,
         } : undefined,
+        interviewerName: input.interviewerName,
+        interviewerPersonality: input.interviewerPersonality,
       }),
       input.evalAbort,
     );

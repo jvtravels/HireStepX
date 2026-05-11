@@ -1,0 +1,16 @@
+{
+  "name": "Python anti-pattern: bare-except + range(len()) in user code",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Are there any constraints on the array size or value range?", "time": "" },
+      { "speaker": "user", "text": "What's the input shape — are the elements ints? OK let me write it in Python:\n```\ndef sum_positive(arr):\n    total = 0\n    try:\n        for i in range(len(arr)):\n            if arr[i] > 0:\n                total += arr[i]\n    except:\n        return 0\n    return total\n```\nLet's trace with arr=[1,-2,3]: i=0 total=1, i=1 skipped, i=2 total=4 — returns 4. The alternative is sum(x for x in arr if x > 0) which is one line and faster but I went verbose for clarity. Time O(n), space O(1).", "time": "" },
+      { "speaker": "ai", "text": "What about edge cases?", "time": "" },
+      { "speaker": "user", "text": "Empty array returns 0, all-negative returns 0, mixed returns the positive sum.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["language_anti_pattern"],
+    "must_not_include": ["empty_transcript", "no_code_provided", "no_complexity_discussion", "jumped_to_code_no_clarifying", "no_test_walkthrough", "no_tradeoff_articulation"]
+  }
+}

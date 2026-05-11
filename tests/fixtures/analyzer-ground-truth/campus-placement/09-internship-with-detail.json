@@ -1,0 +1,16 @@
+{
+  "name": "Internship claim substantiated — mentor, stipend, shipped output",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your internship.", "time": "" },
+      { "speaker": "user", "text": "I did a 3-month summer internship at a fintech startup. My mentor was the staff engineer on the payments team. The deliverable was a webhook-retry service — I built it in Node.js, deployed it on AWS Lambda, and it shipped to production handling about 50k events a day. The stipend was 30k per month.", "time": "" },
+      { "speaker": "ai", "text": "What was the hardest part?", "time": "" },
+      { "speaker": "user", "text": "Debugging an idempotency edge case in production — duplicate webhooks were causing double charges. I worked with my mentor to add a Postgres dedupe key. Available from June 1, willing to relocate.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["internship_unsubstantiated", "project_no_tech_stack", "no_academic_project_discussed"]
+  }
+}

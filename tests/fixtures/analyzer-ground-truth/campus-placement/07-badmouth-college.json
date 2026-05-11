@@ -1,0 +1,16 @@
+{
+  "name": "Fresher badmouths college / professors — high-severity flag",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your college experience.", "time": "" },
+      { "speaker": "user", "text": "Honestly the professors were useless and nothing was taught — my college was bad. I self-studied everything from YouTube and built my own projects. The faculty didn't help at all.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through one of those self-built projects.", "time": "" },
+      { "speaker": "user", "text": "I built a stock-tracker dashboard in Python using FastAPI and Postgres. Available to join from July after my graduation in June.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["user_badmouthing_college"],
+    "must_not_include": ["empty_transcript", "no_academic_project_discussed", "project_no_tech_stack"]
+  }
+}

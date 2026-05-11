@@ -39,7 +39,13 @@ export type CompanyKey =
      hiring format. UPSC = civil services; SSC = staff selection
      (Group B/C); IBPS = banking PO; RBI = central-bank Grade B; ISRO
      /DRDO = scientist viva; SSB = defence forces. */
-  | "upsc" | "ssc" | "ibps" | "rbi" | "sebi" | "isro" | "drdo" | "ssb";
+  | "upsc" | "ssc" | "ibps" | "rbi" | "sebi" | "isro" | "drdo" | "ssb"
+  /* Core-engineering / PSU / manufacturing campus recruiters — added
+     2026-Q2 to support non-IT campus pipelines (mech / elec / civil).
+     These dominate tier-2/3 college placements and were previously
+     getting routed to generic behavioral. */
+  | "l-and-t" | "bhel" | "ongc" | "ntpc" | "mahindra" | "bajaj"
+  | "cummins" | "tata-steel" | "samsung";
 
 export type RoleFamily =
   | "swe" | "pm" | "em" | "data" | "design" | "behavioral"
@@ -1149,6 +1155,98 @@ export const QUESTION_BANK: BankEntry[] = [
     styleNote: "Amazon / Microsoft / Goldman post-assessment interview opener. Tests honesty + meta-cognition. Strong: names the problem, the approach attempted, where it broke, what they'd try now. 'I solved all 3' when records say otherwise = instant disqualification.",
   },
 
+  /* ── Campus placement: core-engineering & tier-3 pipelines ──── */
+  {
+    text: "Walk me through your final-year project — what was the deliverable, what tools did you use, and what would you change if you had another semester?",
+    company: "l-and-t", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "L&T / BHEL / Mahindra GET opener. Expect: deliverable, software (AutoCAD / SolidWorks / ANSYS / MATLAB), and one calibrated regret. Hand-waves like 'I designed something' without naming the CAD package fail the project_no_tech_stack check.",
+  },
+  {
+    text: "BHEL operates across thermal, hydro, nuclear and renewables. Which division would you want to be posted to and why — what's your reasoning?",
+    company: "bhel", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "BHEL GET interview classic. Tests division-awareness + posting flexibility. 'Renewables because of the energy transition' is fine if backed by one concrete BHEL renewables fact (Trichy plant, recent solar capacity announcement). Generic 'any division is fine sir' = weak signal.",
+  },
+  {
+    text: "ONGC postings can be offshore, in Assam, or in remote sites. Are you genuinely open to a remote posting for the first 3 years? Walk me through how you've thought about it.",
+    company: "ongc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "PSU posting-reality probe. The wrong answers are 'yes sir, anywhere' (no thought) and 'preferably metro' (deal-breaker). Strong: acknowledges the trade-off, has talked to family, names a concrete prep step.",
+  },
+  {
+    text: "NTPC follows a strict 2-year GET training cycle with rotation across plants. How comfortable are you with structured training versus diving straight into independent work?",
+    company: "ntpc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "PSU training-mindset probe. Strong: enjoys structured learning curve, knows the rotation gives plant-by-plant exposure. Red flag: 'I want autonomy from day one' (poor fit for a 60-year-old PSU).",
+  },
+  {
+    text: "Mahindra's automotive division ships products like XUV700 and Thar. Pick one Mahindra product and walk me through one engineering trade-off you'd want to dig into if you joined the team.",
+    company: "mahindra", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Mahindra GET technical-curiosity test. Naming a product is the floor; the win is articulating a real trade-off (NVH vs weight, ground clearance vs aero, dual-clutch vs torque-converter). Generic 'design is good' answers fail no_company_specific_research.",
+  },
+  {
+    text: "For a Bajaj Auto GET role, talk me through the difference between a four-stroke single cylinder and a parallel twin engine, and why Bajaj might pick one over the other for the Pulsar line.",
+    company: "bajaj", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Automotive fresher technical probe. Tests core mechanical knowledge + product-context bridge. Strong: cost / vibration / fuel-economy / serviceability trade-offs framed against Indian commuter use-case. Surface-level 'twin is smoother' answer leaves marks on the table.",
+  },
+  {
+    text: "Cummins is a global power-systems company. Why are you applying to Cummins specifically and not Caterpillar or Kirloskar — what makes you think you'd thrive here?",
+    company: "cummins", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Engine-OEM why-us probe. Bad: 'Cummins is a great brand.' Strong: names a recent Cummins announcement (hydrogen ICE platform, Phaltan plant expansion) or a values cue from the Cummins Code of Business Conduct.",
+  },
+  {
+    text: "Tier-2 college candidate: how do you compete with IIT / NIT applicants for the same role? Convince me your fundamentals are strong.",
+    company: "tcs", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Common Indian tier-3 college framing probe. Strong: pivots to concrete proof — coursework, projects shipped, certifications cleared, NQT score. Weak: 'colleges don't matter sir' (avoids the question). Watch for badmouth_college regression.",
+  },
+  {
+    text: "You have one backlog cleared in the supplementary exam. Walk me through what happened, what you fixed, and what you'd do if I gave you that semester back.",
+    company: "infosys", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Direct deficit-probe — appropriate framing when the AI initiates it. Strong: one-sentence cause (subject, why), specific corrective step (taught it, project, certification), and reflective close. Avoids over-explanation.",
+  },
+  {
+    text: "ITI / diploma to BTech lateral entry students often feel behind on coursework. If that's your path, how did you bridge the gap, and which specific topics did you have to grind to catch up?",
+    company: "wipro", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Wipro / TCS lateral-entry probe. Strong: names two concrete topics (DSA, OOP design patterns, electromagnetic theory), the resource used (NPTEL course, GATE prep book), and a measurable outcome (project shipped, GATE score).",
+  },
+  {
+    text: "Tata Steel campus offer: explain what you understand about the difference between a graduate engineer trainee and a management trainee, and which fits you better.",
+    company: "tata-steel", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "PSU / Tata role-clarity probe. Strong: GET = technical / plant-floor / process-engineering; MT = cross-functional rotations / strategy / operations. Picks one with reasoning grounded in their internship or aptitude. Weak: 'sir whatever the company decides'.",
+  },
+  {
+    text: "ISRO / DRDO scientist-B exam — you cleared the written but the interview is technical-deep. Walk me through one applied physics or signals problem from your coursework that you genuinely understand to the bone.",
+    company: "isro", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "ISRO / DRDO interview rigor probe. Strong: picks one well-bounded problem (FFT decomposition, control-loop stability, orbital mechanics), walks through derivation, and admits where the limit of their understanding is. Surface answers get a follow-up that exposes them fast.",
+  },
+  {
+    text: "PSU pay-scale discussion: are you aware of the 7th-CPC pay structure for graduate engineers, and how does the trade-off compare to a private-sector offer you've received?",
+    company: "ongc", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "PSU compensation-literacy probe. Strong: knows pay-band (E-1 / Rs 50k-160k), HRA + perks structure, and frames PSU stability vs private growth honestly. Weak: 'I don't know sir' = unprepared. Watch for naive 'private pays more' framing.",
+  },
+  {
+    text: "Open-source contribution — have you ever filed an issue or PR on a public repo? Walk me through the workflow you followed, even if it was a doc-typo fix.",
+    company: "google", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "warmup", confidence: "inferred",
+    styleNote: "Modern-fresher signal probe. Strong: even a typo PR shows comfort with fork → branch → PR → review cycle. Bonus: cites the repo. Empty answer is fine for non-IT freshers; an exaggerated 'I contribute to React' that the candidate can't back up is a credibility hit.",
+  },
+  {
+    text: "Tell me one engineering concept that you learned in college but found a real-world application for during a project or internship — what was the disconnect between textbook and practice?",
+    company: "samsung", roleFamily: "campus", focus: "campus-placement",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Samsung R&D / GE / Honeywell campus differentiator. Strong: names the concept (PID tuning, Big-O vs cache effects, Bode plot vs real damping), the project, and the specific gap. This is the question that separates rote-prep from genuine learners.",
+  },
+
   /* ── Management / Engineering Manager focus ─────────────────── */
   {
     text: "Walk me through a 1:1 you ran with a low performer. What did you say in the first five minutes?",
@@ -1679,5 +1777,47 @@ export const QUESTION_BANK: BankEntry[] = [
     company: "atlassian", roleFamily: "behavioral", focus: "panel",
     addedQuarter: "2026-Q2", difficulty: "standard",
     styleNote: "Panel closing reflective probe. Tests: self-awareness + genuine engagement with the panel content (vs. canned closer). 'Nothing makes me nervous' = soft signal you weren't really listening.",
+  },
+  {
+    text: "[Product Counterpart] Engineering has told us they want six weeks; the GM in this room wants three. Walk us through how *you'd* arbitrate that, knowing both of us are listening.",
+    company: "flipkart", roleFamily: "pm", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Indian e-commerce panel pattern — PM caught between Eng and GM in the same room. Tests: can the candidate run a real tradeoff conversation without flattering either side? Strong: names the scope cut, the risk owner, and the deadline they'd commit to.",
+  },
+  {
+    text: "[Tech Lead, follow-up to design] My colleague drew the system on the whiteboard — pick the single component you'd worry about first if traffic 5x'd overnight, and explain *to the non-engineer in the room* why it's the one to worry about.",
+    company: "phonepe", roleFamily: "swe", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "PhonePe / Razorpay panel — Tech Lead asks you to translate the bottleneck for HR/Hiring Manager. Tests: dual register (technical accuracy + business intelligibility). Win: 'the payments DB — because if it slows down, every transaction in the country slows down, and we'd lose customer trust before we lose money.'",
+  },
+  {
+    text: "[Hiring Manager + Skip-level both in the room] We sometimes disagree about the bar for this role. If you joined and the two of us gave you conflicting calibration feedback in your first quarter, what would you do?",
+    company: "google", roleFamily: "em", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Panel meta-question with both managers present. Tests: handling principal–agent ambiguity without flattering or dodging. Strong: acknowledges the conflict exists, names a forcing mechanism ('I'd ask the two of you to align on one written rubric I can use'), shows comfort with managing up.",
+  },
+  {
+    text: "[Cross-functional Partner from Marketing] Your engineering colleague spent ten minutes on the data pipeline. From a marketing-ops point of view, *why should I care* about any of that? Convince me.",
+    company: "swiggy", roleFamily: "data", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "standard", confidence: "inferred",
+    styleNote: "Panel translation probe — a non-engineering panelist deliberately challenges the technical depth. Tests: ability to anchor technical work in commercial outcome (CAC, attribution, campaign ROI). Failure mode: re-explaining the pipeline at the same depth.",
+  },
+  {
+    text: "[Senior IC peer, after HM has left the room] You don't have to be diplomatic with me — tell me one thing about your previous workplace that you'd never tell the recruiter, but that would matter to anyone working with you here.",
+    company: "stripe", roleFamily: "swe", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Bar-raiser / peer-IC panel probe done off-script. Tests: candour calibrated to context — does the candidate trust the peer enough to be real, without trash-talking? Strong: one honest cultural mismatch + what they did about it. Weak: 'everything was great' (no calibration) or trash-talking (no judgement).",
+  },
+  {
+    text: "[Director, observing two interviewers debate your last answer] My team is split on the trade-off you just described. Sarah thinks you optimised for the wrong thing; Raj thinks you got it right. Without taking sides — what *new* information would change *your* answer?",
+    company: "uber", roleFamily: "pm", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "Director-level meta-probe in a panel. Tests: epistemic humility + ability to state falsifiability conditions. Strong: names a concrete piece of evidence ('if our churn data showed X, I'd flip'). Weak: re-defending the original answer or agreeing with whichever interviewer is more senior.",
+  },
+  {
+    text: "[HR Partner, picking up a thread from Hiring Manager 20 minutes ago] You mentioned you 'managed conflict' on that project — Aakash heard the same word. I want the conflict, not the management. What was actually said, and by whom?",
+    company: "tcs", roleFamily: "em", focus: "panel",
+    addedQuarter: "2026-Q2", difficulty: "intense", confidence: "inferred",
+    styleNote: "HR partner doing a callback to an earlier panelist's question to extract specificity. Tests: STAR-level granularity under cross-reference. The 'managed conflict' euphemism gets called out. Win: names the people (role, not real name), the specific words, the resolution.",
   },
 ];

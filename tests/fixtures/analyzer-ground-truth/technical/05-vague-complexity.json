@@ -1,0 +1,16 @@
+{
+  "name": "User used vague speed language with no concrete Big-O",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Are there duplicates allowed in the input?", "time": "" },
+      { "speaker": "user", "text": "Sample input would be like [1,2,3,2,1] — can I assume sorted? OK assuming unsorted, let me write it:\n```\nfunction unique(arr) {\n  return [...new Set(arr)];\n}\n```\nIt should be pretty fast — linear-ish in practice and fast enough for the constraint you mentioned.", "time": "" },
+      { "speaker": "ai", "text": "What about edge cases?", "time": "" },
+      { "speaker": "user", "text": "Empty array returns empty array, single element returns itself. Should be fine.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["vague_complexity_claim", "no_complexity_discussion"],
+    "must_not_include": ["empty_transcript", "no_code_provided", "jumped_to_code_no_clarifying"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "We-heavy narrative with zero 'I' — can't tell candidate's contribution",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a recent technical project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Last quarter we shipped a payment-reconciliation service. We chose Kafka for the event stream because we needed to handle bursty traffic, and we set up the consumers with idempotent handlers. We profiled the throughput at about 12k events per second on our staging cluster. We discovered that our database writes were the bottleneck so we batched them. We also added retries with exponential backoff because we kept seeing transient failures from a downstream service that we depend on. Time complexity for the merge step was O(n log n) because we sort by event timestamp before batching. Overall the system handled the Diwali sale volume without incident.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["we_heavy_ownership"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

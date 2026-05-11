@@ -7,6 +7,7 @@ import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric } from "../data/focus-question-recipes";
+import { detectStarPresence } from "../src/_star-detection";
 import {
   GROUNDING_DIRECTIVE,
   FAIRNESS_DIRECTIVE,
@@ -172,6 +173,12 @@ interface EvaluateRequest {
     level?: string | null;
     difficulty?: "warmup" | "standard" | "hard";
     duration?: number; // seconds
+    /** Live interviewer name + personality. Used to keep
+        `topPerformerAnswer.text` in the same voice the candidate just
+        heard. Without this the rich report sounds like a different
+        coach than the one who ran the live session. */
+    interviewerName?: string;
+    interviewerPersonality?: string;
   };
 }
 
@@ -487,7 +494,15 @@ Role family: ${roleFamily}
 Company: ${sanitizeForLLM(meta?.targetCompany || "none", 80)}
 Level: ${sanitizeForLLM(meta?.level || "mid", 40)}
 Difficulty: ${meta?.difficulty || "standard"}
-Duration (s): ${durationSec}
+Duration (s): ${durationSec}${
+      // Voice continuity: when the engine passes who ran the live session,
+      // pin topPerformerAnswer/restructured prose to the same voice the
+      // candidate just heard. Without this, the live coach sounds warm
+      // and the post-session report sounds like a different LLM persona.
+      (meta?.interviewerName || meta?.interviewerPersonality)
+        ? `\nLive interviewer: ${sanitizeForLLM(meta?.interviewerName || "Coach", 60)}${meta?.interviewerPersonality ? ` (${sanitizeForLLM(meta.interviewerPersonality, 60)})` : ""} — model exemplar/restructured prose to match this voice.`
+        : ""
+    }
 
 TRANSCRIPT (numbered turns):
 """
@@ -686,6 +701,14 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
                       note: typeof lv.note === "string" ? lv.note.slice(0, 140) : "",
                     }
                   : null;
+              /* Deterministic STAR detection — override whatever the LLM
+                 reported with the shared regex set (src/_star-detection.ts).
+                 The LLM's starPresence can drift from the live coach's
+                 detection on the SAME text, eroding trust ("coach said
+                 Result was missing, report says it was present"). Pinning
+                 both surfaces to one detector keeps the story coherent. */
+              const det = detectStarPresence(pq.answerText || "");
+              const starPresence = { S: det.situation, T: det.task, A: det.action, R: det.result };
               return {
                 ...pq,
                 difficulty: diff,
@@ -693,6 +716,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
                 frequencyNote: typeof pq.frequencyNote === "string" ? pq.frequencyNote.slice(0, 80) : "",
                 likelyFollowUp,
                 lengthVerdict,
+                starPresence,
               };
             })
         : [],

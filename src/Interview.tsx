@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { e, ef } from "./interviewTokens";
 import {
   StatusToasts, PanelAvatarStage,
-  CompletionCard, MicroFeedbackPanel,
+  CompletionCard, MicroFeedbackPanel, CampusReadinessChips,
   TranscriptPanel, EndModal, EvaluatingOverlay,
   DealSummaryCard, AnnotatedReplayPanel,
   SaveToast, RepeatButton, MicQuietBanner, ReconnectingOverlay,
@@ -1340,6 +1340,14 @@ function InterviewInner() {
 
         {(phase === "thinking" || phase === "speaking") && (
           <MicroFeedbackPanel transcript={transcript} microFeedback={microFeedback} />
+        )}
+
+        {/* Fresher-specific readiness chips: live mirror of the v2 campus
+            analyzer. Renders any time we have transcript material in
+            campus-placement sessions — not gated on phase, so it stays
+            visible while the candidate is mid-answer too. */}
+        {(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("type") === "campus-placement") && transcript.length > 0 && (
+          <CampusReadinessChips transcript={transcript} />
         )}
 
         {/* Retake the just-sent answer — only useful during the brief

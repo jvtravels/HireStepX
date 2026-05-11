@@ -1,0 +1,16 @@
+{
+  "name": "User jumped to code with no clarifying questions",
+  "session": {
+    "type": "technical",
+    "transcript": [
+      { "speaker": "ai", "text": "Implement a function to find the most frequent element in an array.", "time": "" },
+      { "speaker": "user", "text": "Here you go:\n```\nfunction mostFrequent(arr) {\n  const map = new Map();\n  for (const x of arr) map.set(x, (map.get(x) || 0) + 1);\n  let best, bestCount = 0;\n  for (const [k, v] of map) if (v > bestCount) { best = k; bestCount = v; }\n  return best;\n}\n```\nTime O(n), space O(n).", "time": "" },
+      { "speaker": "ai", "text": "What if the array is empty?", "time": "" },
+      { "speaker": "user", "text": "Returns undefined. Probably should throw.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["jumped_to_code_no_clarifying"],
+    "must_not_include": ["empty_transcript", "no_code_provided", "no_complexity_discussion"]
+  }
+}

@@ -10,6 +10,7 @@ import {
   pickRandom,
   randomDelay,
   shouldUseEmpatheticClosing,
+  decideComponentGapFollowUp,
 } from "../_interview-engine-helpers";
 
 describe("normalizePersona", () => {
@@ -342,5 +343,53 @@ describe("shouldUseEmpatheticClosing", () => {
 
   it("returns false on empty input", () => {
     expect(shouldUseEmpatheticClosing([], [])).toBe(false);
+  });
+});
+
+describe("decideComponentGapFollowUp", () => {
+  it("returns null when no gap detected", () => {
+    expect(decideComponentGapFollowUp(null, 0)).toBeNull();
+  });
+
+  it("returns the gap and increments used when budget available", () => {
+    expect(decideComponentGapFollowUp("action", 0)).toEqual({ gap: "action", nextUsed: 1 });
+  });
+
+  it("returns null when budget exhausted at default cap=1", () => {
+    expect(decideComponentGapFollowUp("result", 1)).toBeNull();
+  });
+
+  it("respects a custom cap", () => {
+    expect(decideComponentGapFollowUp("result", 1, 2)).toEqual({ gap: "result", nextUsed: 2 });
+    expect(decideComponentGapFollowUp("result", 2, 2)).toBeNull();
+  });
+
+  it("handles each STAR gap variant", () => {
+    expect(decideComponentGapFollowUp("situation-task", 0)?.gap).toBe("situation-task");
+    expect(decideComponentGapFollowUp("action", 0)?.gap).toBe("action");
+    expect(decideComponentGapFollowUp("result", 0)?.gap).toBe("result");
+  });
+});
+
+describe("integration: budget exhaustion across two turns on same question", () => {
+  it("first turn injects gap, second turn refused (budget cap=1)", () => {
+    // Simulates engine state machine: question step 3, both turns missing
+    // Action. First call gets the gap + increments budget; second call
+    // sees budgetUsed=1, returns null.
+    let budgetUsed = 0;
+    const turn1Decision = decideComponentGapFollowUp("action", budgetUsed);
+    expect(turn1Decision).toEqual({ gap: "action", nextUsed: 1 });
+    budgetUsed = turn1Decision!.nextUsed;
+
+    const turn2Decision = decideComponentGapFollowUp("action", budgetUsed);
+    expect(turn2Decision).toBeNull();
+  });
+
+  it("new question step starts with fresh budget", () => {
+    // Q3 exhausted budget; Q4 starts at 0 and gets its gap.
+    const q3Used = 1;
+    expect(decideComponentGapFollowUp("result", q3Used)).toBeNull();
+    const q4Used = 0;
+    expect(decideComponentGapFollowUp("result", q4Used)).toEqual({ gap: "result", nextUsed: 1 });
   });
 });

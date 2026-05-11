@@ -1,4 +1,4 @@
-import React, { memo, useRef, useState, useEffect } from "react";
+import React, { memo, useRef, useState, useEffect, useMemo } from "react";
 import { e, ef } from "./interviewTokens";
 import {
   WaveformVisualizer, NetworkIndicator, DotGridVisualizer,
@@ -9,6 +9,7 @@ import type { PanelMember } from "./InterviewComponents";
 // for re-export at the bottom of this file.
 import { PaceMeter } from "./InterviewRobustness";
 import { stripProsodyMarkup } from "./_prosody";
+import { computeCampusReadiness, type CpChipState } from "./_campus-readiness";
 
 /* Bridge aliases removed — all inline-style call sites now reference
    `e.*` and `ef.*` directly from interviewTokens.ts. The rebrand is
@@ -1005,6 +1006,118 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
           }}>
             {microFeedback}
           </span>
+        </div>
+      )}
+    </div>
+  );
+});
+
+/* ─── Campus-placement readiness chips ─── *
+ * Fresher-specific micro-coach surface. Renders next to MicroFeedbackPanel
+ * when interviewType === "campus-placement".
+ *
+ * Pure detection logic lives in src/_campus-readiness.ts (unit-tested,
+ * regexes mirror server-handlers/analyzers/campus-placement.ts v2). This
+ * component is render-only. Three baseline chips (project, research,
+ * logistics) + optional internship chip + a red-flag alert row that only
+ * appears when the candidate trips a costly framing error (badmouth /
+ * volunteered deficit / implausible team) + a live filler counter.
+ *
+ * Why a separate red-flag row: the regret-class mistakes are rare-fire,
+ * high-cost. Inlining them with the always-on baseline chips would dilute
+ * the alarm. Surfacing them in a distinct red strip below the row makes
+ * them noticeable without screaming at every candidate. */
+function chipColors(state: CpChipState) {
+  if (state === "pass") return { bg: "rgba(21,128,61,0.10)", border: "rgba(21,128,61,0.20)", fg: e.success };
+  if (state === "warn") return { bg: "rgba(180,83,9,0.10)", border: "rgba(180,83,9,0.20)", fg: e.copper };
+  if (state === "alert") return { bg: "rgba(185,28,28,0.10)", border: "rgba(185,28,28,0.25)", fg: "#b91c1c" };
+  return { bg: e.creamSoft, border: e.line, fg: e.inkFaint };
+}
+
+function ChipIcon({ state, fg }: { state: CpChipState; fg: string }) {
+  return (
+    <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={fg} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      {state === "pass" ? <polyline points="20 6 9 17 4 12" />
+        : state === "warn" ? <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>
+        : state === "alert" ? <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>
+        : <circle cx="12" cy="12" r="9" />}
+    </svg>
+  );
+}
+
+function ReadinessChip({ label, state }: { label: string; state: CpChipState }) {
+  const col = chipColors(state);
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "4px 10px", borderRadius: 999,
+      background: col.bg, border: `1px solid ${col.border}`,
+      fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: col.fg,
+    }}>
+      <ChipIcon state={state} fg={col.fg} />
+      {label}
+    </span>
+  );
+}
+
+export const CampusReadinessChips = memo(function CampusReadinessChips({ transcript }: {
+  transcript: { speaker: string; text: string }[];
+}) {
+  // Memoize on the joined user-text identity — transcript array changes
+  // every render via setState but the meaningful slice only changes on
+  // new user turns. useMemo + transcript length keeps the cost flat.
+  const readiness = useMemo(
+    () => computeCampusReadiness(transcript),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transcript.length, transcript.map(t => t.text).join("|").length],
+  );
+  if (!readiness) return null;
+
+  const baselineChips = [
+    readiness.project,
+    readiness.research,
+    readiness.logistics,
+    ...(readiness.internship ? [readiness.internship] : []),
+  ];
+  const alertChips = [readiness.deficit, readiness.badmouth, readiness.team].filter(
+    (c): c is { state: CpChipState; label: string } => c !== null,
+  );
+  const { count, wordCount, per100, warn: fillerWarn } = readiness.filler;
+
+  return (
+    <div style={{
+      width: "100%", borderRadius: 14, padding: "12px 16px",
+      background: e.white, border: `1px solid ${e.line}`,
+      boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{
+          fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+          letterSpacing: 1.4, color: e.copper,
+        }}>
+          Campus readiness
+        </span>
+        {wordCount >= 50 && (
+          <span style={{
+            fontFamily: ef.mono, fontSize: 10, color: fillerWarn ? e.copper : e.inkFaint,
+          }}>
+            fillers {count}{wordCount >= 100 ? ` (${per100.toFixed(1)}/100w)` : ""}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {baselineChips.map((c, i) => (
+          <ReadinessChip key={`b-${i}`} label={c.label} state={c.state} />
+        ))}
+      </div>
+      {alertChips.length > 0 && (
+        <div style={{
+          marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${e.line}`,
+          display: "flex", flexWrap: "wrap", gap: 6,
+        }}>
+          {alertChips.map((c, i) => (
+            <ReadinessChip key={`a-${i}`} label={c.label} state={c.state} />
+          ))}
         </div>
       )}
     </div>
