@@ -37,6 +37,7 @@ import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, 
 import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
+import { detectStarPresence, nextStarGap } from "./_star-detection";
 import { cleanSalarySttArtifacts } from "./_salary-stt-cleanup";
 import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
@@ -52,6 +53,7 @@ import {
   pickRandom,
   randomDelay,
   shouldUseEmpatheticClosing,
+  decideComponentGapFollowUp,
 } from "./_interview-engine-helpers";
 import type { InterviewerPersonality } from "./_interview-engine-helpers";
 
@@ -903,7 +905,7 @@ export function useInterviewEngine() {
 
   // Interview flow: thinking -> speaking (with TTS) -> listening
   const flowGenerationRef = useRef(0);
-  const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> | null>(null);
+  const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string; conversationDone?: boolean } | null> | null>(null);
   /** Originating step index for the in-flight follow-up. When the
    *  follow-up resolves we verify the engine has advanced exactly one
    *  step from this — otherwise the user already moved past the question
@@ -921,6 +923,32 @@ export function useInterviewEngine() {
   // Set by handleSkipQuestion, consumed by the next thinking-phrase build so
   // the AI says "Noted — moving on" instead of reacting to a non-answer.
   const skipPendingAckRef = useRef(false);
+  /* ─── Behavioural interview state ───
+     Tracks STAR-component completeness per question so the engine can
+     decide whether to inject a *component-targeted* follow-up (depth -1)
+     versus the generic depth 0/1/2 ladder. Mirrors the negotiationFacts
+     ref shape salary-negotiation uses — behavioural is now a first-class
+     branch, not a default-fallthrough. Only meaningful when
+     interviewType === "behavioral"; other types leave it empty. */
+  const behavioralStateRef = useRef<{
+    /** Most recent STAR detection per question step index. */
+    starPerStep: Map<number, { situation: boolean; task: boolean; action: boolean; result: boolean; count: number; hasMetrics: boolean }>;
+    /** Per-question count of component-gap follow-ups already injected.
+        Caps at 1 per question — we coach the gap once, then move on. */
+    gapFollowUpsPerStep: Map<number, number>;
+  }>({ starPerStep: new Map(), gapFollowUpsPerStep: new Map() });
+
+  /* Reset behavioural state whenever the session key changes
+     (interviewType / focus / sessionId). Without this, a user who runs
+     multiple sessions in the same tab inherits stale per-question budget
+     counters from the previous run — the second interview's Q2 could
+     refuse a gap follow-up because the first interview's Q2 already
+     "used its one". Refs survive renders but should NOT survive a logical
+     session boundary. */
+  useEffect(() => {
+    behavioralStateRef.current.starPerStep.clear();
+    behavioralStateRef.current.gapFollowUpsPerStep.clear();
+  }, [interviewType, interviewFocus, liveSessionIdRef.current]);
   // Mid-session coaching: track which phases already showed a hint (avoid repeats)
   const negCoachingShownRef = useRef<Set<string>>(new Set());
   // Last answer quality for contextual reactions
@@ -1430,11 +1458,31 @@ export function useInterviewEngine() {
             // the closing slot, leaving the interview to end abruptly
             // without an AI wrap-up turn ("Suddenly interview ends" — bug
             // #21e). Closings always run.
+            /* Item #1 minimum-viable: when the server signals
+               conversationDone (candidate accepted or walked away),
+               drop all remaining question slots after the injected
+               follow-up. The closing step is preserved. This is what
+               makes the engine stop marching past acceptance — a
+               candidate who says yes on turn 1 hears the AI's
+               confirmation, then the closing wrap-up, instead of
+               being dragged through 4 more anchor phases. */
+            const serverSaysDone = isSalaryNegConversation && (result as { conversationDone?: boolean })?.conversationDone === true;
             setInterviewScript(prev => {
               const nextQuestionIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "question");
               if (nextQuestionIdx >= currentStep && nextQuestionIdx >= 0) {
                 // Replace the next question with the dynamic response
-                const updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
+                let updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
+                if (serverSaysDone) {
+                  // Keep everything up to and including the follow-up,
+                  // then jump straight to the closing step. Strips out
+                  // intermediate anchor questions that would otherwise
+                  // play after a resolved negotiation.
+                  const closingIdx = updated.findIndex((s, i) => i > nextQuestionIdx && s.type === "closing");
+                  if (closingIdx > nextQuestionIdx) {
+                    updated = [...updated.slice(0, nextQuestionIdx + 1), updated[closingIdx]];
+                  }
+                  return updated;
+                }
                 // Mark remaining pre-generated questions (after the replaced one) with adaptive placeholders
                 // so they don't play stale content if follow-up fails for a later turn
                 for (let i = nextQuestionIdx + 1; i < updated.length; i++) {
@@ -1799,6 +1847,20 @@ export function useInterviewEngine() {
         recentFeedbacksRef.current.push(feedback);
         if (recentFeedbacksRef.current.length > 3) recentFeedbacksRef.current.shift();
       }
+      /* Behavioural-only: snapshot STAR completeness for this question so
+         the follow-up decision below can branch on "what's missing" rather
+         than the generic depth ladder. Key by the original question step
+         (walk back through any inserted follow-ups to find it). */
+      if (interviewType === "behavioral") {
+        let questionStepIdx = currentStep;
+        for (let i = currentStep; i >= 0; i--) {
+          if (interviewScript[i]?.type === "question") { questionStepIdx = i; break; }
+        }
+        const star = detectStarPresence(answerText);
+        behavioralStateRef.current.starPerStep.set(questionStepIdx, {
+          situation: star.situation, task: star.task, action: star.action, result: star.result, count: star.count, hasMetrics: star.hasMetrics,
+        });
+      }
     }
 
     // Fire follow-up check in background
@@ -1903,6 +1965,32 @@ export function useInterviewEngine() {
         // engine has advanced past the next step by the time this resolves,
         // we'll drop the result (see check at the consumer site).
         pendingFollowUpStepRef.current = currentStep;
+
+        /* Behavioural-only: decide whether this follow-up should be a
+           targeted component-gap probe. We re-walk back to the original
+           question step (same key as the STAR snapshot above), check
+           which STAR pillar is missing, and gate by a per-question
+           budget so we don't drill on a stubbornly weak answer
+           indefinitely. The LLM still composes the actual probe text —
+           the hint just steers it. */
+        let starGapHint: "action" | "result" | "situation-task" | undefined;
+        if (interviewType === "behavioral") {
+          let questionStepIdx = currentStep;
+          for (let i = currentStep; i >= 0; i--) {
+            if (interviewScript[i]?.type === "question") { questionStepIdx = i; break; }
+          }
+          const star = behavioralStateRef.current.starPerStep.get(questionStepIdx);
+          const wordCount = answerText.trim().split(/\s+/).filter(Boolean).length;
+          const budgetUsed = behavioralStateRef.current.gapFollowUpsPerStep.get(questionStepIdx) ?? 0;
+          if (star) {
+            const decision = decideComponentGapFollowUp(nextStarGap(star, wordCount), budgetUsed);
+            if (decision) {
+              starGapHint = decision.gap;
+              behavioralStateRef.current.gapFollowUpsPerStep.set(questionStepIdx, decision.nextUsed);
+            }
+          }
+        }
+
         pendingFollowUpRef.current = fetchFollowUp({
           question: currentStepObj!.aiText,
           answer: answerText,
@@ -1952,6 +2040,7 @@ export function useInterviewEngine() {
           personaTrait: isSalaryNegType ? getPersonaTrait(interviewerName) : undefined,
           candidateState,
           previousMentions,
+          starGap: starGapHint,
         });
       } else {
         pendingFollowUpRef.current = null;
@@ -2321,6 +2410,8 @@ export function useInterviewEngine() {
       targetSalary,
       highestOfferMade: highestOfferRef.current,
       negotiationStyle: negotiationStyle || undefined,
+      interviewerName,
+      interviewerPersonality: personality,
       evalAbort,
       sessionId,
     });

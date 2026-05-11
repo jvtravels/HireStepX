@@ -888,14 +888,26 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
        engine has detected which pillar is conspicuously missing, point the
        LLM at it directly — otherwise a generic "tell me more" probe burns
        a turn without surfacing the gap. The engine budgets these per
-       question, so we don't drill on a stubbornly weak answer forever. */
-    const starGapDirective = (type === "behavioral" && starGap)
-      ? `\nSTAR-GAP TARGETING — the engine detected this answer is missing the "${starGap}" component. Your follow-up MUST probe specifically for that:
-${starGap === "action"
+       question, so we don't drill on a stubbornly weak answer forever.
+       Defensive: validate starGap matches one of the documented values
+       before constructing the directive. A garbage value (e.g. client
+       sent `true` or `"foo"`) would otherwise fall through the ternary
+       chain and emit a malformed prompt block. */
+    const validStarGaps = new Set(["action", "result", "situation-task"]);
+    const safeStarGap: "action" | "result" | "situation-task" | null =
+      (typeof starGap === "string" && validStarGaps.has(starGap))
+        ? (starGap as "action" | "result" | "situation-task")
+        : null;
+    const starGapDirective = (type === "behavioral" && safeStarGap)
+      ? `\nSTAR-GAP TARGETING — the engine detected this answer is missing the "${safeStarGap}" component. Your follow-up MUST probe specifically for that:
+${safeStarGap === "action"
   ? `  - Ask what THEY specifically did. "What were *your* specific actions?" / "Walk me through what *you* did, step by step — not what the team did."`
-  : starGap === "result"
+  : safeStarGap === "result"
   ? `  - Ask for the outcome / measurable impact. "How did it turn out?" / "What was the impact — any numbers you remember?" / "How did you know it worked?"`
-  : `  - Ask for the setup. "Set the scene for me — when was this and what was the context?" / "What was the goal you were working toward?"`}
+  // Situation/Task framing: "set the scene" alone reads as filler — force
+  // a problem/goal anchor so the candidate's next breath is the WHY of
+  // the story, not another round of context-padding.
+  : `  - Ask for the problem / goal. "What problem were you actually solving?" / "What was the goal — and why did it matter?" / "Before you got to the actions, what was the context that made this hard?"`}
 - ONE question, no preamble. Do NOT escalate difficulty — escalation is for follow-ups on already-complete STAR answers.`
       : "";
 
@@ -2332,11 +2344,25 @@ Repeat-text in followUpText is FORBIDDEN.`;
       }
     }
 
+    /* Item #1 minimum-viable: signal conversationDone so the client engine
+       can skip remaining anchors when the negotiation has resolved. True
+       when (a) candidate explicitly accepted OR (b) candidate walked
+       away. Rejection alone does NOT end the conversation — the AI
+       continues countering. The client uses this to jump straight to
+       the closing step instead of marching through the 5-anchor arc. */
+    const walkAwayPatFinal = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass|withdraw)\b/i;
+    const isCandidateAcceptance = type === "salary-negotiation" && !!negotiationFacts?.acceptedImmediately;
+    const isCandidateWalking = type === "salary-negotiation" && typeof answer === "string" && walkAwayPatFinal.test(answer);
+    const conversationDone = isCandidateAcceptance || isCandidateWalking;
+
     return new Response(JSON.stringify({
       needsFollowUp,
       followUpText: parsed.followUpText || "",
       followUpType: followUpTypeLabel,
       persona: persona ? ({"hiring manager": "Hiring Manager", "technical lead": "Technical Lead", "hr partner": "HR Partner"} as Record<string, string>)[persona.toLowerCase()] || persona : undefined,
+      // Salary-negotiation only. Always false for other interview types
+      // so the client can read the flag unconditionally.
+      conversationDone,
     }), { status: 200, headers });
   } catch (err) {
     console.error("Follow-up generation error:", err);
