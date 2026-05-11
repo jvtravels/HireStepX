@@ -1008,22 +1008,54 @@ Repeat-text in followUpText is FORBIDDEN.`;
     if (typeof parsed.followUpText !== "string") parsed.followUpText = "";
     if (typeof parsed.needsFollowUp !== "boolean") parsed.needsFollowUp = false;
 
+    // ── Breakdown-deflection rescue ──────────────────────────────────
+    // Pine Labs / Capgemini bug class (Hirestepx Bugs (3).pdf): candidate
+    // says "Can you just give me a breakdown on this ₹27 lakhs?" — and the
+    // LLM replies with the deflection "happy to walk through the structure
+    // (base, variable, joining bonus, PF) — what part would you like to
+    // dig into?". The LLM listed categories without numbers and DID NOT
+    // set wantsBreakdown=true, so the server-side templating below never
+    // fired. We've shipped that bug FOUR times now via the same regression
+    // path. Adding the structural guard here: if the candidate's last
+    // message asks for a breakdown, we FORCE wantsBreakdown=true on the
+    // parsed output regardless of what the LLM decided. The templating
+    // block then engages and emits real numbers. The LLM's deflection
+    // becomes the prose lead-in (and stripRupeeFigures scrubs any leaked
+    // rupee values from it before templating).
+    if (isSalaryNeg && parsed.wantsBreakdown !== true && typeof answer === "string" && answer.length > 0) {
+      const { isBreakdownAsk } = await import("./_follow-up-helpers");
+      if (isBreakdownAsk(answer)) {
+        parsed.wantsBreakdown = true;
+        console.warn("[follow-up] Breakdown-deflection rescue: candidate asked for breakdown but LLM did not set wantsBreakdown — forcing true.");
+      }
+    }
+
     // ── Server-owned breakdown templating ──────────────────────────────
     // When the LLM signals wantsBreakdown=true, it should NOT have written
     // rupee numbers in followUpText (those were the placeholder-leak source).
     // Compute the breakdown from canonicalInitialOffer (the band's source of
     // truth) and template the sentence server-side. The LLM only contributes
     // the prose lead-in.
-    if (isSalaryNeg && parsed.wantsBreakdown === true && canonicalInitialOffer != null) {
-      try {
-        const { composeBreakdownReply } = await import("./_negotiation-breakdown");
-        const composed = composeBreakdownReply(parsed.followUpText, canonicalInitialOffer);
-        if (composed) {
-          console.warn("[follow-up] Structural breakdown templating: headline=₹" + canonicalInitialOffer + " LPA");
-          parsed.followUpText = composed;
+    {
+      // Headline picker: prefer the live highestOfferMade (so a counter
+      // moves the breakdown headline too), fall back to the band anchor.
+      // Without this fallback chain the rescue path can fire while the
+      // templating skips for null canonicalInitialOffer — leaving the
+      // LLM's deflection in place.
+      const breakdownHeadline =
+        (typeof highestOfferMade === "number" && highestOfferMade > 0 ? highestOfferMade : null) ??
+        canonicalInitialOffer;
+      if (isSalaryNeg && parsed.wantsBreakdown === true && breakdownHeadline != null) {
+        try {
+          const { composeBreakdownReply } = await import("./_negotiation-breakdown");
+          const composed = composeBreakdownReply(parsed.followUpText, breakdownHeadline);
+          if (composed) {
+            console.warn("[follow-up] Structural breakdown templating: headline=₹" + breakdownHeadline + " LPA");
+            parsed.followUpText = composed;
+          }
+        } catch (e) {
+          console.warn("[follow-up] structural breakdown templating failed:", e);
         }
-      } catch (e) {
-        console.warn("[follow-up] structural breakdown templating failed:", e);
       }
     }
 

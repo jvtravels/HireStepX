@@ -6,6 +6,7 @@ import {
   detectSalaryPhase,
   pickServerCounter,
   extractMirrorTokens,
+  isBreakdownAsk,
 } from "../../server-handlers/_follow-up-helpers";
 
 /**
@@ -525,5 +526,35 @@ describe("extractMirrorTokens", () => {
       "We integrated Stripe at our last team and shipped the checkout in just two weeks across regions."
     );
     expect(tokens.map(t => t.toLowerCase())).toContain("stripe");
+  });
+});
+
+describe("isBreakdownAsk", () => {
+  // These are the EXACT candidate messages from Hirestepx Bugs (3).pdf
+  // that the LLM deflected on instead of setting wantsBreakdown=true.
+  // Every one of these MUST trigger the server-side rescue.
+  it("[fixture: Bugs 3 T2] catches 'Can you just give me a breakdown on this 27 lakhs?'", () => {
+    expect(isBreakdownAsk("Be with this offer. Can you just give me a breakdown on this 27 lakhs?")).toBe(true);
+  });
+  it("[fixture: Bugs 3 T3] catches 'All the parts, a complete breakdown of the CTC'", () => {
+    expect(isBreakdownAsk("Doctor Pepper. All the parts, a complete breakdown of the CTC.")).toBe(true);
+  });
+  it("[fixture: Bugs 3 T4] catches 'let me know the base salary?'", () => {
+    expect(isBreakdownAsk("Two Gae, you let me know the base salary?")).toBe(true);
+  });
+  it("[fixture: Bugs 3 T5] catches 'I want to know more about base salary.'", () => {
+    expect(isBreakdownAsk("I want to know more about base salary.")).toBe(true);
+  });
+
+  it("catches single-component asks for variable/joining/PF too", () => {
+    expect(isBreakdownAsk("What's the variable component?")).toBe(true);
+    expect(isBreakdownAsk("How much is the joining bonus?")).toBe(true);
+    expect(isBreakdownAsk("Tell me about the provident fund.")).toBe(true);
+  });
+
+  it("returns false for unrelated answers", () => {
+    expect(isBreakdownAsk("Sounds good, I'll take it.")).toBe(false);
+    expect(isBreakdownAsk("I'll think about it and get back to you.")).toBe(false);
+    expect(isBreakdownAsk("")).toBe(false);
   });
 });

@@ -333,6 +333,27 @@ export function pickServerCounter(input: PickCounterInput): number | null {
  * tech / company allowlist members (Stripe, Figma), or company-shape
  * suffixes (-ai, -labs, -tech, -inc, -corp, -io) survive.
  */
+/**
+ * Did the candidate's message ask for a breakdown of the offer (or any
+ * specific component of it)? Used by follow-up.ts to force wantsBreakdown=true
+ * on the LLM's parsed output when the LLM forgot to set it itself — the
+ * "breakdown-deflection rescue" path. We shipped the same bug four times
+ * via the LLM ignoring the wantsBreakdown=true instruction. This guard
+ * makes the rescue deterministic at the server boundary.
+ *
+ * Wide net: matches whole-package asks ("breakdown", "all the parts")
+ * AND component-specific asks ("the base salary", "what's the joining
+ * bonus"). Both deserve a full templated breakdown — the breakdown
+ * sentence is short enough to deliver in one turn regardless of which
+ * component was asked.
+ */
+export function isBreakdownAsk(answer: string): boolean {
+  if (!answer) return false;
+  const re =
+    /\b(?:break\s*down|breakup|components?|structure|split|all\s+the\s+parts|complete\s+breakdown|base\s+salary|the\s+base|variable\s+(?:pay|component)|joining\s+bonus|provident\s+fund|how\s+much\s+is\s+(?:the\s+)?(?:base|variable|joining|pf)|what(?:'?s|\s+is)\s+(?:the\s+)?(?:base|variable|joining|pf))\b/i;
+  return re.test(answer);
+}
+
 export function extractMirrorTokens(answer: string): string[] {
   if (!answer || answer.length < 30) return [];
   const stop = new Set([
