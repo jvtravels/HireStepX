@@ -16,6 +16,10 @@ import {
   detectPhantomCompetingOffer,
   detectCounterBelowCeiling,
   detectTrailingClosingQuestion,
+  detectClosingWithPendingQuestion,
+  detectIgnoredAcceptance,
+  detectApologyLoopReprobe,
+  detectPhantomRevision,
   detectAllFailures,
 } from "../../server-handlers/_negotiation-failures";
 
@@ -612,6 +616,165 @@ describe("detectAllFailures", () => {
     const f = detectTrailingClosingQuestion({
       ...baseCtx,
       llmOutput: "Great. I'll have HR send you the formal offer letter shortly.",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #17 closing-with-pending-question ─────────────────────────── */
+
+  it("[morningstar] closing-with-pending-question: candidate asked for breakdown, AI closed", () => {
+    const f = detectClosingWithPendingQuestion({
+      ...baseCtx,
+      llmOutput:
+        "Wonderful — I'll work with HR to put together the formal offer letter with all the details. We'll be in touch shortly.",
+      candidateLastMessage: "Can you give me a breakdown of the ₹27 LPA?",
+    });
+    expect(f?.code).toBe("closing-with-pending-question");
+    expect(f?.severity).toBe("blocker");
+  });
+
+  it("closing-with-pending-question fires on implicit request without question mark", () => {
+    const f = detectClosingWithPendingQuestion({
+      ...baseCtx,
+      llmOutput: "I'll work with HR to put together the formal offer letter with the next steps.",
+      candidateLastMessage: "Walk me through the breakdown please.",
+    });
+    expect(f?.code).toBe("closing-with-pending-question");
+  });
+
+  it("closing-with-pending-question does NOT fire when candidate's last message is a plain acceptance", () => {
+    const f = detectClosingWithPendingQuestion({
+      ...baseCtx,
+      llmOutput: "Wonderful — I'll work with HR to put together the formal offer letter.",
+      candidateLastMessage: "Yes, that works for me. Let's go ahead.",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("closing-with-pending-question does NOT fire when AI didn't close", () => {
+    const f = detectClosingWithPendingQuestion({
+      ...baseCtx,
+      llmOutput: "Sure — happy to break that down for you. The base is ₹17 LPA…",
+      candidateLastMessage: "Can you give me a breakdown of the ₹27 LPA?",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #18 ignored-acceptance ────────────────────────────────────── */
+
+  it("[morningstar] ignored-acceptance: 'anything else we need to discuss for your final decision' after candidate accepted", () => {
+    const f = detectIgnoredAcceptance({
+      ...baseCtx,
+      acceptedImmediately: true,
+      llmOutput:
+        "Great — is there anything else we need to discuss to help you make your final decision?",
+    });
+    expect(f?.code).toBe("ignored-acceptance");
+    expect(f?.severity).toBe("major");
+  });
+
+  it("ignored-acceptance: 'what would make this offer a yes' after accept", () => {
+    const f = detectIgnoredAcceptance({
+      ...baseCtx,
+      acceptedImmediately: true,
+      llmOutput: "What would make this offer a yes for you?",
+    });
+    expect(f?.code).toBe("ignored-acceptance");
+  });
+
+  it("ignored-acceptance does NOT fire when candidate hasn't accepted", () => {
+    const f = detectIgnoredAcceptance({
+      ...baseCtx,
+      acceptedImmediately: false,
+      llmOutput: "What would help your final decision here?",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("ignored-acceptance does NOT fire on confirmation language after accept", () => {
+    const f = detectIgnoredAcceptance({
+      ...baseCtx,
+      acceptedImmediately: true,
+      llmOutput: "Wonderful — I'll confirm the joining date with HR shortly.",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #19 apology-loop-reprobe ──────────────────────────────────── */
+
+  it("[morningstar] apology-loop-reprobe: 'Apologies, Jay … so to be clear, you could join in thirty days?'", () => {
+    const f = detectApologyLoopReprobe({
+      ...baseCtx,
+      llmOutput:
+        "Apologies, Jay — you're absolutely right that you mentioned a thirty-day notice period earlier. So, to be clear, you could join us in thirty days from the date of acceptance?",
+    });
+    expect(f?.code).toBe("apology-loop-reprobe");
+    expect(f?.severity).toBe("major");
+  });
+
+  it("apology-loop-reprobe: 'My apologies … just to confirm, what's your notice?'", () => {
+    const f = detectApologyLoopReprobe({
+      ...baseCtx,
+      llmOutput: "My apologies for asking again. Just to confirm, what's your notice period?",
+    });
+    expect(f?.code).toBe("apology-loop-reprobe");
+  });
+
+  it("apology-loop-reprobe does NOT fire on apology without a question after it", () => {
+    const f = detectApologyLoopReprobe({
+      ...baseCtx,
+      llmOutput: "My apologies for the confusion — you mentioned thirty days, got it.",
+    });
+    expect(f).toBeNull();
+  });
+
+  it("apology-loop-reprobe does NOT fire on plain question without apology", () => {
+    const f = detectApologyLoopReprobe({
+      ...baseCtx,
+      llmOutput: "Just to confirm, what's your current notice period?",
+    });
+    expect(f).toBeNull();
+  });
+
+  /* ── #20 phantom-revision ──────────────────────────────────────── */
+
+  it("[morningstar] phantom-revision: AI promises a 'revised offer' when no counter ever happened", () => {
+    const f = detectPhantomRevision({
+      ...baseCtx,
+      llmOutput:
+        "I'll take all this back and put together a revised offer based on our conversation.",
+      band: { initialOffer: 27, maxStretch: 32, walkAway: 22, hasEquity: false },
+      highestOfferMade: 27,
+    });
+    expect(f?.code).toBe("phantom-revision");
+    expect(f?.severity).toBe("major");
+  });
+
+  it("phantom-revision: 'updated package' counts as revision prose", () => {
+    const f = detectPhantomRevision({
+      ...baseCtx,
+      llmOutput: "HR will send the updated package shortly.",
+      band: { initialOffer: 27, maxStretch: 32, walkAway: 22 },
+      highestOfferMade: 27,
+    });
+    expect(f?.code).toBe("phantom-revision");
+  });
+
+  it("phantom-revision does NOT fire when a real counter happened", () => {
+    const f = detectPhantomRevision({
+      ...baseCtx,
+      llmOutput: "I'll put together a revised offer based on our conversation.",
+      band: { initialOffer: 27, maxStretch: 32, walkAway: 22 },
+      highestOfferMade: 30,
+    });
+    expect(f).toBeNull();
+  });
+
+  it("phantom-revision does NOT fire without a band (can't tell if counter moved)", () => {
+    const f = detectPhantomRevision({
+      ...baseCtx,
+      llmOutput: "I'll put together a revised offer based on our conversation.",
+      highestOfferMade: 27,
     });
     expect(f).toBeNull();
   });

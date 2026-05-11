@@ -37,6 +37,14 @@ interface FixtureTurn {
   highestOfferMade?: number | null;
   /** Prior AI turns in this session, oldest first. */
   previousAiTurns?: string[];
+  /** Candidate's most recent message before this AI reply. */
+  candidateLastMessage?: string | null;
+  /** Full candidate transcript so far (for hallucinated-employer / phantom-competing). */
+  candidateTranscript?: string | null;
+  /** Hiring company (for hallucinated-employer). */
+  hiringCompany?: string | null;
+  /** Canonical role label (for role-title-drift). */
+  sessionRole?: string | null;
   llmOutput: string;
   expected?: string[];
 }
@@ -94,6 +102,10 @@ for (const fixtureFile of fixtureFiles) {
       isInitialOffer: turn.isInitialOffer ?? false,
       highestOfferMade: turn.highestOfferMade ?? null,
       previousAiTurns: turn.previousAiTurns ?? [],
+      candidateLastMessage: turn.candidateLastMessage ?? null,
+      candidateTranscript: turn.candidateTranscript ?? null,
+      hiringCompany: turn.hiringCompany ?? null,
+      sessionRole: turn.sessionRole ?? null,
     });
     const detected = failures.map(f => f.code);
     const expected = turn.expected ?? [];

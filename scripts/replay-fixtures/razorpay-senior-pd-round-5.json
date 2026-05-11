@@ -78,7 +78,8 @@
       ],
       "llmOutput": "I hear you, the number is purely the driving factor for you. While ₹51 LPA is above our typical band, I can push for a revised offer of ₹35.3 LPA total CTC. This is genuinely the top of what I can do for the recurring CTC. Additionally, what's your current notice period?",
       "expected": [
-        "counter-below-ceiling"
+        "counter-below-ceiling",
+        "phantom-revision"
       ]
     },
     {

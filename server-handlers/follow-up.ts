@@ -1975,6 +1975,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
             typeof answer === "string" ? answer : "",
           ].join("\n"),
           sessionRole: role || null,
+          candidateLastMessage: typeof answer === "string" ? answer : null,
         });
         if (failures.length > 0) {
           void captureServerEvent(

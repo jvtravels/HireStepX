@@ -1,0 +1,131 @@
+{
+  "_comment": "Live session retest from `Hirestepx Bugs (1).pdf` — Senior Product Designer at Morningstar India. User-correct role/company (no drift). Five behavior bugs pinned here:\n  • T2 repeated-question: AI asks notice-period probe twice (T1 + T2). Detector: repeated-question.\n  • T4 apology-loop-reprobe: 'Apologies, Jay … so to be clear, you could join in thirty days?' — apology with same re-probe. Detector: apology-loop-reprobe.\n  • T5 ignored-acceptance: candidate already accepted, AI asks 'anything else for your final decision'. Detector: ignored-acceptance.\n  • T6 closing-with-pending-question: candidate asked 'Can you give me a breakdown of ₹27?', AI fired closing template instead. Detector: closing-with-pending-question. Same turn also has phantom-revision ('revised offer based on our conversation') because no counter ever happened.\n",
+  "session": {
+    "role": "senior-product-designer",
+    "company": "morningstar",
+    "experienceLevel": "senior",
+    "currentCity": "Bangalore",
+    "jobCity": "Bangalore"
+  },
+  "band": {
+    "initialOffer": 27,
+    "maxStretch": 32,
+    "walkAway": 22,
+    "hasEquity": false
+  },
+  "turns": [
+    {
+      "_label": "T1 initial offer + notice probe (clean)",
+      "isInitialOffer": true,
+      "questionIndex": 1,
+      "phase": "offer-reaction",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": null,
+      "previousAiTurns": [],
+      "candidateLastMessage": "Sure, I'm ready.",
+      "llmOutput": "Welcome — for this Senior Product Designer role, we're looking at a total CTC of ₹27 LPA. What's your current notice period, and how soon could you ideally join?",
+      "expected": []
+    },
+    {
+      "_label": "T2 REPEATED-QUESTION — notice-period asked again",
+      "isInitialOffer": false,
+      "questionIndex": 2,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": null,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Welcome — for this Senior Product Designer role, we're looking at a total CTC of ₹27 LPA. What's your current notice period, and how soon could you ideally join?"
+      ],
+      "candidateLastMessage": "I have a thirty-day notice period.",
+      "llmOutput": "Got it. And what's your current notice period situation — when realistically could you join us?",
+      "expected": [
+        "repeated-question"
+      ]
+    },
+    {
+      "_label": "T3 candidate states target (clean AI mirror)",
+      "isInitialOffer": false,
+      "questionIndex": 3,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 30,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Welcome — for this Senior Product Designer role, we're looking at a total CTC of ₹27 LPA.",
+        "Got it. And what's your current notice period situation — when realistically could you join us?"
+      ],
+      "candidateLastMessage": "I was looking at ₹30 LPA for this move.",
+      "llmOutput": "I hear ₹30 LPA from you. That's at the upper edge of our band for this level. What's driving that number — market data or your current package progression?",
+      "expected": []
+    },
+    {
+      "_label": "T4 APOLOGY-LOOP-REPROBE — apologises then re-asks notice",
+      "isInitialOffer": false,
+      "questionIndex": 4,
+      "phase": "probe-expectations",
+      "candidateTargetLpa": 30,
+      "competingOfferLpa": null,
+      "acceptedImmediately": false,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Welcome — for this Senior Product Designer role, we're looking at a total CTC of ₹27 LPA.",
+        "Got it. And what's your current notice period situation — when realistically could you join us?",
+        "I hear ₹30 LPA from you."
+      ],
+      "candidateLastMessage": "You already asked me that. I said thirty days.",
+      "llmOutput": "Apologies, Jay — you're absolutely right that you mentioned a thirty-day notice period earlier. So, to be clear, you could join us in thirty days from the date of acceptance?",
+      "expected": [
+        "apology-loop-reprobe"
+      ]
+    },
+    {
+      "_label": "T5 IGNORED-ACCEPTANCE — candidate accepted, AI re-opens decision",
+      "isInitialOffer": false,
+      "questionIndex": 5,
+      "phase": "closing",
+      "candidateTargetLpa": 30,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Welcome — for this Senior Product Designer role, we're looking at a total CTC of ₹27 LPA.",
+        "Got it. And what's your current notice period situation — when realistically could you join us?",
+        "I hear ₹30 LPA from you.",
+        "Apologies, Jay — so to be clear, you could join us in thirty days?"
+      ],
+      "candidateLastMessage": "Okay, ₹27 LPA works. I'll take it.",
+      "llmOutput": "Great — is there anything else we need to discuss to help you make your final decision?",
+      "expected": [
+        "ignored-acceptance"
+      ]
+    },
+    {
+      "_label": "T6 CLOSING-WITH-PENDING-QUESTION + PHANTOM-REVISION",
+      "isInitialOffer": false,
+      "questionIndex": 6,
+      "phase": "closing",
+      "candidateTargetLpa": 30,
+      "competingOfferLpa": null,
+      "acceptedImmediately": true,
+      "highestOfferMade": 27,
+      "previousAiTurns": [
+        "Welcome — for this Senior Product Designer role, we're looking at a total CTC of ₹27 LPA.",
+        "Got it. And what's your current notice period situation — when realistically could you join us?",
+        "I hear ₹30 LPA from you.",
+        "Apologies, Jay — so to be clear, you could join us in thirty days?",
+        "Great — is there anything else we need to discuss to help you make your final decision?"
+      ],
+      "candidateLastMessage": "Can you give me a breakdown of the ₹27 LPA?",
+      "llmOutput": "Wonderful — I'll take all this back and put together a revised offer based on our conversation. HR will send you the formal offer letter with all the details shortly.",
+      "expected": [
+        "closing-with-pending-question",
+        "phantom-revision"
+      ]
+    }
+  ]
+}

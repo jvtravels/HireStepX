@@ -73,6 +73,10 @@ export interface DetectorContext {
   /** Canonical role label for this session (e.g. "ux-designer" slug
    *  or "UI/UX Designer" display). Used to detect role-title drift. */
   sessionRole?: string | null;
+  /** The candidate's MOST RECENT message (their last turn before this
+   *  AI reply). Distinct from candidateTranscript which is the full
+   *  concatenation. Used by closing-with-pending-question. */
+  candidateLastMessage?: string | null;
 }
 
 /* ── #1 Premature close ───────────────────────────────────────────── */
@@ -739,6 +743,108 @@ export function detectTrailingClosingQuestion(ctx: DetectorContext): Negotiation
   };
 }
 
+// Shared regex set: closing-template markers used across multiple
+// detectors. Kept in sync with detectPrematureClose's pattern list.
+const CLOSING_OUTRO_RE = /(?:put\s+together\s+(?:the\s+)?final\s+numbers|work\s+with\s+HR\s+to|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details)|take\s+(?:all\s+)?this\s+(?:information\s+)?back|formal\s+offer\s+letter\s+with\s+(?:the|all)\s+(?:details|next))/i;
+
+/* ── #17 Closing while candidate has a pending question ───────────── */
+// The Senior PD / Morningstar session: candidate asked "Can you give me
+// a breakdown of ₹27?" and the AI closed instead. This is the
+// architectural failure that causes the "AI ends after 6 exchanges"
+// pattern — closing fires regardless of whether the candidate has an
+// active request the AI hasn't answered.
+export function detectClosingWithPendingQuestion(ctx: DetectorContext): NegotiationFailure | null {
+  if (!ctx.candidateLastMessage) return null;
+  if (!CLOSING_OUTRO_RE.test(ctx.llmOutput)) return null;
+  const last = ctx.candidateLastMessage.trim();
+  const isQuestion = /\?\s*$/.test(last);
+  const explicitRequest = /\b(?:can\s+you|could\s+you|would\s+you|give\s+me|share|tell\s+me|walk\s+me\s+through|break\s*down|explain|clarify|what(?:'?s|\s+is)|how\s+(?:much|does|is)|why)\b/i.test(last);
+  if (!isQuestion && !explicitRequest) return null;
+  return {
+    code: "closing-with-pending-question",
+    message: "AI fired the closing template while the candidate's last message contained an unanswered question/request — the request was dropped.",
+    evidence: last.slice(0, 140),
+    severity: "blocker",
+  };
+}
+
+/* ── #18 Ignored acceptance (re-opens decision after candidate accepted) ─ */
+// Once the candidate has accepted (acceptedImmediately === true), the
+// AI should be in confirmation/logistics mode — not asking "what would
+// help your final decision" or "anything else to discuss." That framing
+// treats the accepted offer as still open.
+export function detectIgnoredAcceptance(ctx: DetectorContext): NegotiationFailure | null {
+  if (!ctx.acceptedImmediately) return null;
+  const openDecisionPhrases = [
+    /\b(?:final|your)\s+decision\b/i,
+    /\banything\s+else\s+(?:that\s+we\s+need\s+to|we\s+need\s+to|to)\s+(?:discuss|clarify|cover|address)/i,
+    /\bwhat\s+would\s+(?:help|make|move)\s+(?:this|the)(?:\s+offer)?\s+(?:a\s+)?(?:yes|work)/i,
+    /\bare\s+you\s+(?:still\s+)?on\s+the\s+fence\b/i,
+    /\bis\s+there\s+(?:anything|something)\s+(?:that['']?s\s+)?holding\s+you\s+back\b/i,
+  ];
+  for (const re of openDecisionPhrases) {
+    const m = ctx.llmOutput.match(re);
+    if (m) {
+      return {
+        code: "ignored-acceptance",
+        message: "Candidate already accepted earlier in this session; AI is treating the offer as still undecided.",
+        evidence: m[0],
+        severity: "major",
+      };
+    }
+  }
+  return null;
+}
+
+/* ── #19 Apology-loop reprobe ─────────────────────────────────────── */
+// When the candidate complains "you already asked me that" and the AI
+// apologises BUT then asks the same thing again in the same message.
+// Senior PD / Morningstar T4: "Apologies, Jay, you're absolutely right
+// that you mentioned a thirty-day notice period… So, to be clear, you
+// could join us in thirty days from the date of acceptance?"
+export function detectApologyLoopReprobe(ctx: DetectorContext): NegotiationFailure | null {
+  const apologyRe = /\b(?:apologies|apologize|my\s+(?:apologies|mistake|bad)|you[''’]?re\s+(?:absolutely\s+)?right|sorry\s+(?:about|for))\b/i;
+  if (!apologyRe.test(ctx.llmOutput)) return null;
+  // After the apology, does the AI re-ask a question? A question mark
+  // in the same message AND a re-probe phrase = the loop pattern.
+  const apologyIdx = ctx.llmOutput.search(apologyRe);
+  const afterApology = ctx.llmOutput.slice(apologyIdx);
+  if (!afterApology.includes("?")) return null;
+  const reprobeRe = /\b(?:to\s+be\s+clear|just\s+to\s+(?:confirm|clarify|check)|so\s+(?:you|just\s+to)|let\s+me\s+(?:just\s+)?confirm|i\s+just\s+want(?:ed)?\s+to\s+(?:confirm|clarify))\b/i;
+  const m = afterApology.match(reprobeRe);
+  if (!m) return null;
+  return {
+    code: "apology-loop-reprobe",
+    message: "AI acknowledged a complaint about repetition but immediately re-asked the same question — apology without behavior change.",
+    evidence: m[0],
+    severity: "major",
+  };
+}
+
+/* ── #20 Phantom revision ─────────────────────────────────────────── */
+// AI's outro promises a "revised offer" or "updated offer" but the
+// candidate accepted the original number — nothing was revised. Senior
+// PD / Morningstar T6: "I'll take all this back and put together a
+// revised offer based on our conversation" — but the conversation
+// produced no counter-offer. Fires only when band.initialOffer is known
+// AND highestOfferMade === initialOffer (no counter happened).
+export function detectPhantomRevision(ctx: DetectorContext): NegotiationFailure | null {
+  if (!ctx.band) return null;
+  const noCounterHappened =
+    ctx.highestOfferMade == null ||
+    Math.abs((ctx.highestOfferMade ?? ctx.band.initialOffer) - ctx.band.initialOffer) < 0.05;
+  if (!noCounterHappened) return null;
+  const revisionRe = /\b(?:revised|updated|new|adjusted|reworked|improved)\s+(?:offer|package|number|figure|proposal)\b/i;
+  const m = ctx.llmOutput.match(revisionRe);
+  if (!m) return null;
+  return {
+    code: "phantom-revision",
+    message: "AI promised a 'revised/updated offer' but no number was ever revised — initial offer was accepted as-is.",
+    evidence: m[0],
+    severity: "major",
+  };
+}
+
 /* ── Aggregate runner ─────────────────────────────────────────────── */
 const ALL_DETECTORS = [
   detectPrematureClose,
@@ -757,6 +863,10 @@ const ALL_DETECTORS = [
   detectPhantomCompetingOffer,
   detectCounterBelowCeiling,
   detectTrailingClosingQuestion,
+  detectClosingWithPendingQuestion,
+  detectIgnoredAcceptance,
+  detectApologyLoopReprobe,
+  detectPhantomRevision,
 ];
 
 export function detectAllFailures(ctx: DetectorContext): NegotiationFailure[] {
