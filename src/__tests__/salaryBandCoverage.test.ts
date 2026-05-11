@@ -272,3 +272,52 @@ describe("salary-band coverage audit (RoleKey × Tier × Exp)", () => {
     expect(broken).toBe(0);
   });
 });
+
+describe("companyTierResolved flag + DocuSign band (Bugs (4).pdf fix)", () => {
+  /* DocuSign was unmapped → silent indian-unicorn sector-override
+     fallback → ₹27 LPA initial offer for senior Product Designer
+     (Bugs (4).pdf). Google's market band: ₹57-77L. After (a) mapping
+     DocuSign to big-tech and (b) blocking the indian_market_generic
+     sector override when the company has a high-tier mapping, the
+     band resolves via tier-default → ux-designer big-tech → fallback
+     faang senior band → initial offer in the ₹50-95L range.
+     ₹91 is at the upper end (FAANG total-comp w/ RSUs); ₹27 was the
+     clear bug. We bound generously to leave headroom for tier-band
+     recalibration without retripping this test. */
+  it("DocuSign senior Product Designer lands well above the ₹27 LPA bug threshold", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Product Designer",
+      company: "DocuSign",
+      experienceLevel: "senior",
+      currentCity: "Bangalore",
+    });
+    expect(band.companyTierResolved).toBe(true);
+    expect(band.bandSource).not.toBe("sector-override");
+    // Anything ≥45 means we escaped the indian_market_generic trap.
+    expect(band.initialOffer).toBeGreaterThanOrEqual(45);
+    // Upper bound prevents accidental fallback to the lead band (₹120+).
+    expect(band.initialOffer).toBeLessThanOrEqual(100);
+  });
+
+  it("companyTierResolved=false when the company is unmapped", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Product Designer",
+      // Chosen to bypass every substring + keyword fallback in
+      // getCompanyTier (no startup/tech/saas/design/consult/bank tokens).
+      company: "Qzxv Mlkj Pwrf",
+      experienceLevel: "senior",
+      currentCity: "Bangalore",
+    });
+    expect(band.companyTierResolved).toBe(false);
+  });
+
+  it("companyTierResolved=true for a mapped company (Razorpay)", () => {
+    const band = generateNegotiationBand({
+      role: "Senior Product Designer",
+      company: "Razorpay",
+      experienceLevel: "senior",
+      currentCity: "Bangalore",
+    });
+    expect(band.companyTierResolved).toBe(true);
+  });
+});

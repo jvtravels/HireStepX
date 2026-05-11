@@ -121,6 +121,11 @@ export interface NegotiationBand {
    * coverage telemetry (gq_band_resolved event). Highest accuracy is
    * "company-override"; lowest is "fallback". */
   bandSource?: "company-override" | "sector-override" | "tier-default" | "fallback";
+  /** True when `getCompanyTier(company)` returned null and we silently
+   * fell back to "indian-unicorn". Surfaced so call sites can emit
+   * telemetry — repeatedly hitting this means the wrong band is
+   * shipping for real companies (DocuSign→₹27 bug, Bugs (4).pdf). */
+  companyTierResolved?: boolean;
   /** Number of independent sources that agreed on the override band, if
    * sourceVerifiedAt is populated. 2+ = verified, 1 = single-source. */
   sourceCount?: number;
@@ -812,7 +817,14 @@ function applyTitleExpFloor(role: string | undefined, baseExp: ExperienceLevel):
 /** Generate a negotiation band for a given role/company/experience/city combination */
 export function generateNegotiationBand(params: SalaryLookupParams): NegotiationBand {
   const roleKey = matchRoleKey(params.role);
-  const companyTier = getCompanyTier(params.company) ?? "indian-unicorn";
+  const resolvedTier = getCompanyTier(params.company);
+  const companyTier = resolvedTier ?? "indian-unicorn";
+  // True when the company was found in COMPANY_TIER_MAP. False means we
+  // silently fell back to indian-unicorn — the failure mode behind the
+  // DocuSign-quoted-as-₹27 / Pine-Labs-quoted-as-₹27 bug class. Threaded
+  // into the returned band so call sites can emit unmapped-fallback
+  // telemetry.
+  const companyTierResolved = resolvedTier != null;
   // Boost experience by the role title — "Senior Product Designer" should
   // use the senior band even when YOE-derived experience is "mid".
   const exp = applyTitleExpFloor(params.role, normalizeExp(params.experienceLevel));
@@ -949,6 +961,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       bandContext,
       bandSource,
       sourceCount,
+      companyTierResolved,
     };
   }
 
@@ -974,6 +987,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
       bandContext: `No specific salary data for this role/company. Conservative fallback for ${exp} level: ₹${f.initial} LPA initial offer, ₹${f.max} LPA max stretch.`,
       bandSource: "fallback",
       sourceCount: 0,
+      companyTierResolved,
     };
   }
 
@@ -1083,6 +1097,7 @@ JOINING-BONUS / NOTICE-PERIOD INTELLIGENCE:
     isSynthetic, syntheticSource: entry._synthetic_source,
     bandSource: "tier-default",
     sourceCount: isSynthetic ? 0 : 1,
+    companyTierResolved,
   };
 }
 

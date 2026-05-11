@@ -22,6 +22,7 @@
 
 import type { ExperienceLevel } from "./salaries";
 import { classifyCompanyType } from "./company-guidance";
+import { getCompanyTier } from "./company-tiers";
 import { getCsvDerivedBandOverride, getCsvBandOnly } from "./csv-derived-fallbacks";
 import { IMPORTED_SALARY_OVERRIDES } from "./_imported-salary-overrides.generated";
 import {
@@ -7237,15 +7238,27 @@ export function getCompanyBandOverride(
 
   /* Sector-level fallback (covers the long tail of ~800 companies in
      the autocomplete that don't have bespoke entries). classifyCompanyType
-     maps the company name to one of ~25 sector buckets. */
+     maps the company name to one of ~25 sector buckets.
+     EXCEPT: when classification is the catch-all "indian_market_generic"
+     (₹20-40 senior band) BUT the company is explicitly mapped to a
+     high-tier in COMPANY_TIER_MAP (faang / big-tech / saas-product),
+     skip the generic sector and let the tier-default path resolve.
+     This was the DocuSign-quoted-as-₹27 bug class (Bugs (4).pdf):
+     DocuSign mapped to big-tech but the generic sector silently won
+     because classifyCompanyType lacks a US-SaaS pattern. */
   const classification = classifyCompanyType(rawCompany);
   if (classification) {
-    const sectorKey = `__sector_${classification.key}`;
-    const sectorHit = pickLevelInRoleMap(
-      COMPANY_SALARY_OVERRIDES[sectorKey]?.[roleKey],
-      experienceLevel,
-    );
-    if (sectorHit) return sectorHit;
+    const isGeneric = classification.key === "indian_market_generic";
+    const tier = isGeneric ? getCompanyTier(rawCompany) : null;
+    const tierIsHigh = tier === "faang" || tier === "big-tech" || tier === "saas-product";
+    if (!(isGeneric && tierIsHigh)) {
+      const sectorKey = `__sector_${classification.key}`;
+      const sectorHit = pickLevelInRoleMap(
+        COMPANY_SALARY_OVERRIDES[sectorKey]?.[roleKey],
+        experienceLevel,
+      );
+      if (sectorHit) return sectorHit;
+    }
   }
   return null;
 }

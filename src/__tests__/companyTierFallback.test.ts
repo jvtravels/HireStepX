@@ -63,3 +63,33 @@ describe("getCompanyTier — design-firm fallbacks (2026-Q2 fix)", () => {
     expect(getCompanyTier(undefined)).toBeNull();
   });
 });
+
+describe("getCompanyTier — US SaaS / enterprise (Bugs (4).pdf fix)", () => {
+  /* The DocuSign session in Bugs (4).pdf shipped an initial offer of
+     ₹27 LPA for senior Product Designer — Google's reported band for
+     DocuSign India is ₹57-77L. Root cause: DocuSign wasn't in
+     COMPANY_TIER_MAP, so getCompanyTier returned null and the lookup
+     silently fell back to "indian-unicorn". The fix maps DocuSign and
+     a cluster of similar US SaaS companies to "big-tech" (which then
+     falls back to the FAANG salary band — yielding ~₹55 LPA initial
+     offer, matching market). */
+  it("maps DocuSign to big-tech", () => {
+    expect(getCompanyTier("DocuSign")).toBe("big-tech");
+    expect(getCompanyTier("docusign")).toBe("big-tech");
+    expect(getCompanyTier("DocuSign India")).toBe("big-tech");
+    expect(getCompanyTier("Docu Sign")).toBe("big-tech");
+  });
+
+  it("maps the US-SaaS peer cluster to big-tech", () => {
+    expect(getCompanyTier("Databricks")).toBe("big-tech");
+    expect(getCompanyTier("Snowflake")).toBe("big-tech");
+    expect(getCompanyTier("Datadog")).toBe("big-tech");
+    expect(getCompanyTier("Cloudflare")).toBe("big-tech");
+    expect(getCompanyTier("HashiCorp")).toBe("big-tech");
+    expect(getCompanyTier("MongoDB")).toBe("big-tech");
+    expect(getCompanyTier("Okta")).toBe("big-tech");
+    expect(getCompanyTier("Palo Alto Networks")).toBe("big-tech");
+    expect(getCompanyTier("Confluent")).toBe("big-tech");
+    expect(getCompanyTier("Asana")).toBe("big-tech");
+  });
+});

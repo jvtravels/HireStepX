@@ -130,6 +130,22 @@ const COMPANY_TIER_MAP: Record<string, CompanyTier> = {
   "red hat": "big-tech",
   redhat: "big-tech",
   thoughtworks: "big-tech",
+  // US SaaS / enterprise — pay big-tech-tier in their India GCC arms.
+  // Caught by silent-fallback telemetry from Bugs (4): DocuSign session
+  // showed ₹27 LPA initial offer (the indian-unicorn fallback) vs
+  // Google-reported ₹57-77L band. Mapping these explicitly puts the
+  // lookup on the big-tech → faang path, yielding ~₹55 senior PD.
+  docusign: "big-tech",
+  "docu sign": "big-tech",
+  okta: "big-tech",
+  cloudflare: "big-tech",
+  veeva: "big-tech",
+  asana: "big-tech",
+  miro: "big-tech",
+  segment: "big-tech",
+  cohesity: "big-tech",
+  nutanix: "big-tech",
+  "pure storage": "big-tech",
 
   // Indian Unicorns
   flipkart: "indian-unicorn",

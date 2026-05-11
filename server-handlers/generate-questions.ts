@@ -334,6 +334,29 @@ REALISTIC EXPECTATIONS: Should demonstrate P&L ownership, hiring at scale, inves
       negotiationBandData = generateNegotiationBand({ role: targetRole, company: companyName, experienceLevel: expLevel, currentCity: sanitizedCurrentCity, jobCity: sanitizedJobCity });
       salaryNegGuidance += `\n\n${negotiationBandData.bandContext}`;
 
+      /* Unmapped-company telemetry. When the candidate selects a company
+         we don't have in COMPANY_TIER_MAP, the lookup silently falls
+         back to "indian-unicorn" — which produced the ₹27 LPA initial
+         offer for DocuSign senior Product Designer (Bugs (4).pdf) vs
+         the Google-reported ₹57-77L band. Emit one event per affected
+         session so we can rank which unmapped companies to add next.
+         Fire-and-forget; never blocks the request. */
+      if (negotiationBandData.companyTierResolved === false) {
+        void captureServerEvent(
+          "negotiation_band_company_unmapped",
+          distinctIdFrom(req, auth.userId),
+          {
+            company: (companyName || "").slice(0, 80),
+            role: (targetRole || "").slice(0, 80),
+            exp_level: typeof expLevel === "string" ? expLevel : null,
+            initial_offer: negotiationBandData.initialOffer,
+            max_stretch: negotiationBandData.maxStretch,
+            band_source: negotiationBandData.bandSource ?? null,
+          },
+          req,
+        );
+      }
+
       /* Live community aggregate: if K=5 contributors have opted in for
        * this exact (company, role, level) bucket, append their p25/p50/p75
        * to the prompt so the LLM weights real closes over static seeds.
