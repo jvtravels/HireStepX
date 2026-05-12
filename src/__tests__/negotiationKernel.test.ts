@@ -129,6 +129,20 @@ describe("parseCandidateAnswer", () => {
     expect(parseCandidateAnswer("Yeh nahi banega.").signalsWalkAway).toBe(true);
   });
 
+  it("parses Hinglish word-numbers (tees/chalees/pachas LPA)", () => {
+    /* Hinglish word-numbers like "tees" (30), "chalees" (40), "pachas"
+       (50) are common when candidates code-switch into Hindi for the
+       count. Pre-substitute into digits at the parser entry. */
+    expect(parseCandidateAnswer("Mujhe tees LPA chahiye.").target).toBe(30);
+    expect(parseCandidateAnswer("I'm looking for chalees LPA total.").target).toBe(40);
+    expect(parseCandidateAnswer("I want pachas LPA total.").target).toBe(50);
+  });
+
+  it("parses Hinglish currentCtc anchors", () => {
+    const p = parseCandidateAnswer("Currently bees LPA pe hu.");
+    expect(p.currentCtc).toBe(20);
+  });
+
   it("parses USD comp ($150k) and converts to LPA at 83 INR/USD", () => {
     /* $150k × 83 / 100k = 124.5 LPA */
     const p = parseCandidateAnswer("I'm expecting $150k for this role.");
@@ -158,6 +172,13 @@ describe("parseCandidateAnswer", () => {
   it("parses currentCtc range and binds upper bound", () => {
     const p = parseCandidateAnswer("I'm currently earning 25-28 LPA at my company.");
     expect(p.currentCtc).toBe(28);
+  });
+
+  it("parses crore range and scales upper bound (1-1.5 crore = 150 LPA)", () => {
+    /* Range regex has unit-on-tail, extractFirstNumber detects crore
+       in m[0] and scales — so the upper-bound crore should resolve. */
+    const p = parseCandidateAnswer("I'm looking for 1-1.5 crore for this role.");
+    expect(p.target).toBe(150);
   });
 
   it("binds the upper bound when candidate states a range", () => {
@@ -477,6 +498,13 @@ describe("findOutOfBandNumber", () => {
   it("does not flag in-band crore", () => {
     /* 0.22 crore = 22 LPA, inside BAND [16, 28]. */
     expect(findOutOfBandNumber("We can do ₹0.22 crore.", BAND)).toBeNull();
+  });
+
+  it("flags Rs. and INR prefixes (notation-switch guard)", () => {
+    /* An LLM switching from ₹ to Rs. / INR shouldn't bypass the check. */
+    expect(findOutOfBandNumber("My final offer is Rs. 40 LPA total.", BAND)).toBe(40);
+    expect(findOutOfBandNumber("How about INR 35 lakhs?", BAND)).toBe(35);
+    expect(findOutOfBandNumber("We can do Rs 2 crore.", BAND)).toBe(200);
   });
 });
 

@@ -175,8 +175,30 @@ export interface ParsedAnswer {
    number that wasn't already bound elsewhere. This is what the legacy
    extractor did across the whole transcript every render; here we run
    it once per candidate turn against the single fresh answer. */
+/* Hinglish word-numbers commonly heard in spoken negotiation calls
+   (and frequently mis-transcribed by STT into the wrong digit). We
+   pre-substitute the spelled form into a digit so the rest of the
+   parser sees a normal "30 LPA". Only the salary-relevant range
+   (10–100 lakhs) is mapped — outside that, candidates use English
+   digits anyway. Common surface forms: "tees LPA" (30), "paintees
+   LPA" (35), "chalis lakh chahiye" (40), "pachas LPA" (50). */
+const HINGLISH_NUMBERS: Record<string, string> = {
+  das: "10", gyarah: "11", barah: "12", terah: "13", chaudah: "14",
+  pandrah: "15", solah: "16", satrah: "17", atharah: "18", unnees: "19",
+  bees: "20", ikees: "21", baees: "22", tees: "30", paintees: "35",
+  chalees: "40", chalis: "40", paintaalis: "45", pachas: "50",
+  pachaas: "50", pachpan: "55", saath: "60", pasath: "65", sattar: "70",
+  pichattar: "75", assi: "80", pacchasi: "85", nabbe: "90", pachanve: "95",
+  sau: "100",
+};
+
+function substituteHinglishNumbers(s: string): string {
+  return s.replace(/\b(das|gyarah|barah|terah|chaudah|pandrah|solah|satrah|atharah|unnees|bees|ikees|baees|tees|paintees|chalees|chalis|paintaalis|pachas|pachaas|pachpan|saath|pasath|sattar|pichattar|assi|pacchasi|nabbe|pachanve|sau)\b/gi,
+    (m) => HINGLISH_NUMBERS[m.toLowerCase()] ?? m);
+}
+
 export function parseCandidateAnswer(answer: string): ParsedAnswer {
-  const a = (answer || "").trim();
+  const a = substituteHinglishNumbers((answer || "").trim());
   if (!a) {
     return { target: null, currentCtc: null, competing: null, signalsAcceptance: false, signalsWalkAway: false };
   }
@@ -577,10 +599,13 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
  *  "₹2 crore total" and bypass the validator entirely — a real risk
  *  since the upstream parser now accepts crore inputs from candidates. */
 export function findOutOfBandNumber(text: string, band: NegotiationBand): number | null {
-  const re = /₹\s*([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/g;
+  /* Currency prefix accepts ₹, Rs., Rs, INR so an LLM switching
+     notation can't sneak past validation. Strip commas before
+     parseFloat for "₹1,50,000 LPA"-style numbers. */
+  const re = /(?:₹|Rs\.?\s*|INR\s*)([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    let n = parseFloat(m[1]);
+    let n = parseFloat(m[1].replace(/,/g, ""));
     if (!Number.isFinite(n)) continue;
     if (/cr/i.test(m[2])) n *= 100;
     if (n > band.maxStretch + 0.01 || n < band.walkAway - 0.01) return n;
