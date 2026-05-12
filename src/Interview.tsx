@@ -1303,7 +1303,7 @@ function InterviewInner() {
             hasQuestion={!!step?.aiText}
             liveMetrics={liveMetrics}
             interviewType={typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("type") : null}
-            currentQuestionText={step?.aiText || ""}
+            currentQuestionText={step ? stripProsodyMarkup(step.aiTextDisplay ?? step.aiText) || "" : ""}
             timeRemaining={timeRemaining}
             timePercent={timePercent}
             skipsUsed={skipsUsed}

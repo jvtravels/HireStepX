@@ -424,7 +424,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
 /* ─── Question Card with timer ─── */
 
 export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptions, timeRemaining, timePercent, panelPersona, actualDuration, speechEnded, isSalaryNegotiation }: {
-  step: { aiText: string; scoreNote?: string; speakingDuration: number } | undefined;
+  step: { aiText: string; aiTextDisplay?: string; scoreNote?: string; speakingDuration: number } | undefined;
   phase: string; showCaptions: boolean;
   timeRemaining: number; timePercent: number;
   panelPersona?: { name: string; title: string; color: string } | null;
@@ -487,7 +487,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em", textWrap: "balance",
           opacity: phase === "listening" && !showCaptions ? 0.62 : 1,
           transition: "opacity 0.3s ease",
-        }}>{stripProsodyMarkup(step.aiText)}</p>
+        }}>{stripProsodyMarkup(step.aiTextDisplay ?? step.aiText)}</p>
       ) : null}
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
         <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining for this question`} style={{ marginTop: 16, opacity: isSalaryNegotiation ? 0.7 : 1, transition: "opacity 0.3s ease" }}>
