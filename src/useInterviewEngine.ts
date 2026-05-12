@@ -1492,10 +1492,24 @@ export function useInterviewEngine() {
                 // Replace the next question with the dynamic response
                 let updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
                 if (serverSaysDone) {
-                  // Keep everything up to and including the follow-up,
-                  // then jump straight to the closing step. Strips out
-                  // intermediate anchor questions that would otherwise
-                  // play after a resolved negotiation.
+                  /* Keep everything up to and including the follow-up,
+                     then jump straight to the closing step. Strips out
+                     intermediate anchor questions that would otherwise
+                     play after a resolved negotiation.
+
+                     KERNEL MODE: the kernel's terminal text (close-
+                     acceptance / close-walkaway / close-stalemate) IS
+                     the wrap-up — it already locks in the number,
+                     acknowledges the walk-away, etc. Convert the
+                     inserted followUpStep itself into the closing
+                     slot (set type=closing) and drop the static
+                     closing slot, so the user hears one clean wrap
+                     instead of "kernel wrap" + "static notice-period
+                     boilerplate" back-to-back. */
+                  if (negotiationKernelEnabledRef.current) {
+                    const wrapStep = { ...updated[nextQuestionIdx], type: "closing" as const, scoreNote: "Negotiation kernel terminal wrap" };
+                    return [...updated.slice(0, nextQuestionIdx), wrapStep];
+                  }
                   const closingIdx = updated.findIndex((s, i) => i > nextQuestionIdx && s.type === "closing");
                   if (closingIdx > nextQuestionIdx) {
                     updated = [...updated.slice(0, nextQuestionIdx + 1), updated[closingIdx]];
@@ -2083,10 +2097,23 @@ export function useInterviewEngine() {
                 /* serialized state shape changed under us — non-fatal,
                    the kernel still owns its own state. */
               }
+              /* Always speak the kernel's text. The previous mapping
+                 (needsFollowUp: !terminal) silently DROPPED the
+                 kernel's terminal wrap-up text on close-acceptance /
+                 close-walkaway / close-stalemate, because the engine's
+                 false-branch ignores result.followUpText and falls
+                 through to the static closing slot instead. That
+                 produced the "I accept" → "Thanks, what's your notice
+                 period?" mismatch users complained about.
+                 conversationDone routes through the engine's wrap
+                 handler which strips intermediate anchor questions,
+                 so the kernel's "Done — ₹X locked in" plays as the
+                 single closing turn. */
               return {
-                needsFollowUp: !turnRes.terminal,
+                needsFollowUp: true,
                 followUpText: turnRes.text,
                 followUpType: "negotiation",
+                conversationDone: turnRes.terminal,
               };
             } catch (err) {
               console.warn("[interview] kernel turn failed, falling back to legacy", err);
