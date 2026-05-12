@@ -182,10 +182,14 @@ export async function callLLM(opts: LLMOptions, timeoutMs = 15000, meta?: { user
 
   if (providers.length === 0) throw new Error("No LLM configured — set GROQ_API_KEY, GEMINI_API_KEY, or CEREBRAS_API_KEY");
 
-  // Per-provider timeout: tighter on Groq (p99 ~3s) so we fail over fast during
-  // incidents; full budget for Gemini/Cerebras since they're the fallback path.
+  // Per-provider timeout: cap Groq at 10s so a real incident fails over
+  // fast, but don't kneecap normal large-output calls (a 1400-token JSON
+  // response on llama-3.3-70b regularly takes 6-9s — the previous 6s cap
+  // was sized for short responses and killed legitimate calls, sending
+  // them to Gemini where Google-side "high demand" 503s would surface to
+  // the user). Fast 8B-instant calls finish well under 10s.
   const providerTimeout = (name: string) => {
-    if (name === "groq") return Math.min(timeoutMs, 6000);
+    if (name === "groq") return Math.min(timeoutMs, 10000);
     return timeoutMs;
   };
 
