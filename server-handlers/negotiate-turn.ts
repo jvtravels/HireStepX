@@ -25,7 +25,7 @@
 
 export const config = { runtime: "edge" };
 
-import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType } from "./_shared";
+import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx } from "./_shared";
 import { callLLM } from "./_llm";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { generateNegotiationBand } from "../data/salary-lookup";
@@ -50,6 +50,21 @@ import {
 declare const process: { env: Record<string, string | undefined> };
 
 const ENABLED = process.env.NEGOTIATION_KERNEL_ENABLED === "1";
+
+/** Hard cap on the candidate's free-text answer per turn. STT mishears
+ *  and copy-paste accidents can push payloads to tens of KB, which both
+ *  dominates the LLM prompt budget and surfaces TLS retransmit issues
+ *  on the kind of mobile networks we deploy on in India. 4 KB is well
+ *  above a normal spoken-answer length (~200 words ≈ 1.2 KB) but bounds
+ *  the worst case. */
+const MAX_CANDIDATE_ANSWER_CHARS = 4_000;
+
+/** Idempotency window for the turn endpoint. India-mobile retries
+ *  (TLS timeout → client re-fires) used to apply the same answer twice,
+ *  double-incrementing turnIndex and double-counting metric movements.
+ *  We hash (action + state + answer) and cache the *whole* response for
+ *  60 s; the second fire returns the first fire's body verbatim. */
+const IDEMPOTENCY_TTL_SEC = 60;
 
 const DEFAULT_BAND: NegotiationBand = {
   initialOffer: 20,
@@ -233,10 +248,31 @@ export default async function handler(
         return new Response(JSON.stringify({ error: "Invalid state" }), { status: 400, headers });
       }
 
+      /* Idempotency: same (state, candidateAnswer) within 60 s replays
+         the cached response instead of re-applying the turn. Protects
+         against client retries on flaky mobile networks where the
+         response was generated but TLS dropped the body. */
+      const safeAnswer = (body.candidateAnswer || "").slice(0, MAX_CANDIDATE_ANSWER_CHARS);
+      const idemKey = `nt:${await hashStable(`turn|${body.state}|${safeAnswer}`)}`;
+      const cached = await redisGet(idemKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as Record<string, unknown>;
+          void captureServerEvent("kernel_idempotency_hit", distinctId, {
+            turn_index: state.turnIndex,
+            phase: state.phase,
+          }, req);
+          return new Response(
+            JSON.stringify({ ...parsed, _replayed: true }),
+            { status: 200, headers },
+          );
+        } catch { /* malformed cache → fall through */ }
+      }
+
       const prevPhase = state.phase;
-      state = applyCandidateAnswer(state, body.candidateAnswer || "");
+      state = applyCandidateAnswer(state, safeAnswer);
       const move = pickAiMove(state);
-      const { text, source } = await generateAiText(state, move, body.candidateAnswer || "", llm, auth.userId);
+      const { text, source } = await generateAiText(state, move, safeAnswer, llm, auth.userId);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
 
@@ -267,17 +303,19 @@ export default async function handler(
         }, req);
       }
 
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          state: serializeState(state),
-          text,
-          move,
-          source,
-          terminal,
-        }),
-        { status: 200, headers },
-      );
+      const responseBody = {
+        ok: true,
+        state: serializeState(state),
+        text,
+        move,
+        source,
+        terminal,
+      };
+      /* Best-effort idempotency write — never block the response. A
+         missed cache write just means a retry will reprocess the turn
+         (the prior behaviour), not lose data. */
+      void redisSetEx(idemKey, IDEMPOTENCY_TTL_SEC, JSON.stringify(responseBody)).catch(() => {});
+      return new Response(JSON.stringify(responseBody), { status: 200, headers });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers });

@@ -214,7 +214,11 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
          Hindi-English STT output, previously dropped on the floor. */
   const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
   const targetHindiPostPat = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
-  let target = extractFirstNumber(a, [targetCtxPat, targetHindiPostPat]);
+  /* Range patterns — "30-35 LPA" / "30 to 35 lakhs" / "₹30 – ₹35 LPA".
+     Candidates anchor at the top of their stated range, so we bind the
+     upper bound as the target (more realistic recruiter framing). */
+  const targetRangePat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for|around|between)\s+(?:an?\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
+  let target = extractFirstNumber(a, [targetRangePat, targetCtxPat, targetHindiPostPat]);
 
   /* Disambiguation: if a number was already bound to current/
      competing, it isn't ALSO the target — drop it. */
@@ -406,7 +410,15 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
-  /* Counter-offer: split toward target, capped at maxStretch. */
+  /* Counter-offer: split toward target, capped at maxStretch.
+
+     Stiffening: the split factor decays as we repeat counter-base.
+     A flat 0.5 every turn was exploitable — a candidate who simply
+     re-asserted the same demand each turn could pull the offer to
+     maxStretch in 4–5 turns. Real recruiters concede less each time
+     the same lever is pulled. Schedule: 0.5 → 0.35 → 0.22 → 0.12 → 0.06,
+     then floor at 0.05. The full ceiling (maxStretch) remains the hard
+     cap, so this never *exceeds* band, only approaches it more slowly. */
   if (state.phase === "counter-offer") {
     const target = state.candidateTarget ?? state.band.maxStretch;
     const floor = Math.max(state.highestOfferMade, state.band.initialOffer);
@@ -417,11 +429,14 @@ export function pickAiMove(state: NegotiationState): AiMove {
     if (aspiration <= floor + 0.1) {
       return pickLeverExploreMove(state);
     }
-    const newTotal = Math.round((floor + (aspiration - floor) * 0.5) * 10) / 10;
+    const counterCount = state.leversUsed.filter(l => l === "counter-base").length;
+    const splitSchedule = [0.5, 0.35, 0.22, 0.12, 0.06];
+    const split = splitSchedule[counterCount] ?? 0.05;
+    const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
     return {
       lever: "counter-base",
       newTotalLpa: newTotal,
-      rationale: `Split toward target: floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}).`,
+      rationale: `Split toward target (stiffening ${split.toFixed(2)}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}).`,
     };
   }
 
@@ -514,11 +529,23 @@ export function findOutOfBandNumber(text: string, band: NegotiationBand): number
 
 /** Verbatim-repeat check. The LLM occasionally regenerates the
  *  identical question two turns in a row; this catches it without
- *  relying on Jaccard tuning. Returns true if `text` shares an
- *  8-content-word prefix with state.lastAiText. */
+ *  relying on Jaccard tuning. Returns true when both texts have a
+ *  matching 8-content-word prefix AND both have at least that many
+ *  content words. The min-length guard avoids false positives on very
+ *  short closers like "Sounds good." which legitimately repeat across
+ *  turns. */
+const FINGERPRINT_WORDS = 8;
+const MIN_CONTENT_WORDS = 4;
+
 export function isVerbatimRepeat(text: string, state: NegotiationState): boolean {
   if (!state.lastAiText || !text) return false;
-  return prefixFingerprint(text) === prefixFingerprint(state.lastAiText);
+  const a = fingerprintWords(text);
+  const b = fingerprintWords(state.lastAiText);
+  /* Min-length guard: trivial closers ("Sounds good.", "Right.") can't
+     trigger a verbatim flag — they have <4 content words and may
+     legitimately repeat across turns. */
+  if (a.length < MIN_CONTENT_WORDS || b.length < MIN_CONTENT_WORDS) return false;
+  return a.slice(0, FINGERPRINT_WORDS).join(" ") === b.slice(0, FINGERPRINT_WORDS).join(" ");
 }
 
 const STOP_WORDS = new Set([
@@ -527,13 +554,11 @@ const STOP_WORDS = new Set([
   "just","in","on","at","by","as","so","if","like","than","then","its","it","ll","ve","re",
 ]);
 
-function prefixFingerprint(s: string): string {
+function fingerprintWords(s: string): string[] {
   return s.toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .filter(w => w.length > 2 && !STOP_WORDS.has(w))
-    .slice(0, 8)
-    .join(" ");
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
 }
 
 /* ─── Serialization ──────────────────────────────────────────────── */

@@ -111,6 +111,19 @@ describe("parseCandidateAnswer", () => {
     expect(p.target).toBeNull();
   });
 
+  it("binds the upper bound when candidate states a range", () => {
+    /* Candidates anchor at the top of a stated range, so the upper
+       bound is the meaningful target signal. */
+    const p1 = parseCandidateAnswer("I'm looking for 30-35 LPA for this role.");
+    expect(p1.target).toBe(35);
+
+    const p2 = parseCandidateAnswer("Target around 28 to 32 lakhs.");
+    expect(p2.target).toBe(32);
+
+    const p3 = parseCandidateAnswer("Between ₹40 – ₹50 LPA would work.");
+    expect(p3.target).toBe(50);
+  });
+
   it("handles empty input safely", () => {
     expect(parseCandidateAnswer("")).toEqual({
       target: null, currentCtc: null, competing: null,
@@ -231,6 +244,27 @@ describe("pickAiMove", () => {
     /* target=40, ceiling=28 → aspiration=28, split = 20 + (28-20)*0.5 = 24 */
     const m = pickAiMove(init({ phase: "counter-offer", highestOfferMade: 20, candidateTarget: 40 }));
     expect(m.newTotalLpa).toBe(24);
+  });
+
+  it("counter-offer stiffens on repeated counter-base pulls (anti-exploitation)", () => {
+    /* floor=20, target=40, ceiling=28 → aspiration=28. Schedule
+       0.5 / 0.35 / 0.22 / 0.12 / 0.06 — so a candidate who keeps
+       hammering the same demand pulls the AI ever-smaller increments
+       rather than reaching maxStretch in 2 turns. */
+    const base = { phase: "counter-offer" as const, highestOfferMade: 20, candidateTarget: 40 };
+
+    const t1 = pickAiMove(init({ ...base, leversUsed: [] }));
+    expect(t1.newTotalLpa).toBe(24); // 20 + 8 * 0.5
+
+    const t2 = pickAiMove(init({ ...base, leversUsed: ["counter-base"] }));
+    expect(t2.newTotalLpa).toBe(22.8); // 20 + 8 * 0.35
+
+    const t3 = pickAiMove(init({ ...base, leversUsed: ["counter-base", "counter-base"] }));
+    expect(t3.newTotalLpa).toBe(21.8); // 20 + 8 * 0.22 = 21.76 → 21.8
+
+    /* Past schedule: floors at 0.05 split. */
+    const tLate = pickAiMove(init({ ...base, leversUsed: Array(10).fill("counter-base") }));
+    expect(tLate.newTotalLpa).toBe(20.4); // 20 + 8 * 0.05
   });
 
   it("counter-offer rotates to lever-explore when no headroom", () => {
@@ -403,6 +437,14 @@ describe("isVerbatimRepeat", () => {
 
   it("doesn't flag when no prior turn", () => {
     expect(isVerbatimRepeat("Anything goes here.", init())).toBe(false);
+  });
+
+  it("doesn't flag short closers like 'Sounds good.' (below min-length guard)", () => {
+    /* The previous 8-word fingerprint flagged short legitimate closers
+       as repeats. With min-length 6 content words, short responses
+       can't trigger the guard. */
+    const s = init({ lastAiText: "Sounds good." });
+    expect(isVerbatimRepeat("Sounds good.", s)).toBe(false);
   });
 });
 
