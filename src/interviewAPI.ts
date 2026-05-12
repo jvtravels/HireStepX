@@ -726,6 +726,12 @@ export interface NegotiationKernelResponse {
   move: NegotiationKernelMove;
   source: "llm" | "llm-retry" | "fallback";
   terminal?: boolean;
+  /** True when the server returned a cached response for an
+   *  idempotent retry (same state + candidateAnswer within 60s). The
+   *  caller MUST NOT re-apply the move to its own accumulators — the
+   *  first response already did. Without this guard the metrics
+   *  pipeline would double-count the turn on flaky-network retries. */
+  _replayed?: boolean;
 }
 
 export async function negotiationKernelInit(params: {

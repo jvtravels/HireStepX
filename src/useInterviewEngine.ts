@@ -1960,8 +1960,34 @@ export function useInterviewEngine() {
                 state: negotiationKernelStateRef.current,
                 candidateAnswer: answerText,
               });
-              if (!turnRes) return null;
+              if (!turnRes) {
+                /* Observability — silent null here was the previous
+                   behaviour and made kernel-turn failures invisible
+                   in PostHog. Network drops, 400 invalid-state, 5xx
+                   LLM crashes all collapse to null; tag the path so
+                   we can see hit rate. */
+                track("negotiate_turn_failed", { reason: "null_response" });
+                return null;
+              }
               negotiationKernelStateRef.current = turnRes.state;
+              /* Idempotency replay: server returned the cached prior
+                 response (same state + answer within 60s). The first
+                 response already advanced metrics; we MUST NOT push
+                 the move again or end-of-session metrics double-count
+                 turns. We still speak the same text and honour the
+                 terminal flag (idempotent UX). */
+              if (turnRes._replayed) {
+                track("negotiate_turn_replayed", {
+                  lever: turnRes.move.lever,
+                  terminal: Boolean(turnRes.terminal),
+                });
+                return {
+                  needsFollowUp: true,
+                  followUpText: turnRes.text,
+                  followUpType: "negotiation",
+                  conversationDone: turnRes.terminal,
+                };
+              }
               /* Mirror the kernel's highestOfferMade into the legacy
                  highestOfferRef so any code path still reading the legacy
                  ref (closing recap regex, monotonic guards, telemetry)

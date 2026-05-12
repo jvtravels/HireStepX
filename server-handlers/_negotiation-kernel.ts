@@ -513,15 +513,21 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
 /* ─── Validation helpers ─────────────────────────────────────────── */
 
 /** Does the LLM's generated text contain a salary number that
- *  violates the band? Returns the first violating number or null.
- *  Used by the route handler to detect when the LLM has invented a
- *  number outside the approved band. */
+ *  violates the band? Returns the first violating number (in LPA) or
+ *  null. Used by the route handler to detect when the LLM has invented
+ *  a number outside the approved band.
+ *
+ *  Unit-aware: matches both `LPA / lakh` and `cr / crore` and normalises
+ *  crore→LPA (×100). Without crore matching, the LLM could write
+ *  "₹2 crore total" and bypass the validator entirely — a real risk
+ *  since the upstream parser now accepts crore inputs from candidates. */
 export function findOutOfBandNumber(text: string, band: NegotiationBand): number | null {
-  const re = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/g;
+  const re = /₹\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    const n = parseFloat(m[1]);
+    let n = parseFloat(m[1]);
     if (!Number.isFinite(n)) continue;
+    if (/cr/i.test(m[2])) n *= 100;
     if (n > band.maxStretch + 0.01 || n < band.walkAway - 0.01) return n;
   }
   return null;

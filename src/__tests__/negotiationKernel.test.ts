@@ -417,6 +417,18 @@ describe("findOutOfBandNumber", () => {
   it("flags number below walkAway", () => {
     expect(findOutOfBandNumber("Our floor is ₹10 LPA.", BAND)).toBe(10);
   });
+
+  it("flags crore notation above maxStretch (LLM injection guard)", () => {
+    /* The LLM could route around the LPA-only matcher by writing
+       "₹2 crore". Scale crore→LPA so the band check applies. */
+    expect(findOutOfBandNumber("I can stretch to ₹2 crore for you.", BAND)).toBe(200);
+    expect(findOutOfBandNumber("How about ₹1.5 cr total?", BAND)).toBe(150);
+  });
+
+  it("does not flag in-band crore", () => {
+    /* 0.22 crore = 22 LPA, inside BAND [16, 28]. */
+    expect(findOutOfBandNumber("We can do ₹0.22 crore.", BAND)).toBeNull();
+  });
 });
 
 /* ─── isVerbatimRepeat ─────────────────────────────────────────── */
