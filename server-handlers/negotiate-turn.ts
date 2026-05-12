@@ -49,6 +49,7 @@ import {
   deterministicFallbackText,
   stripMarkdown,
 } from "./_negotiate-turn-helpers";
+import { checkBandSanity, bandFamilyForRole } from "./_band-sanity";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -260,6 +261,27 @@ export default async function handler(
       /* SECURITY: ignore body.band. Recompute server-side from (role,
          company) so a tampered client can't push the band ceiling. */
       const serverBand = resolveServerBand(role, company);
+
+      /* Phase 4 of the rebuild: log a sanity warning when the resolved
+         band sits outside the family's reasonable spread. Log-only at
+         runtime — clamping mid-init would mask curator errors and could
+         contradict the seed band the static script already used. The CI
+         audit (bandSanity.test.ts) catches commits that introduce bad
+         data; this telemetry catches stale-override / role-mismatch
+         paths that slip through. */
+      const bandWarnings = checkBandSanity(serverBand, role);
+      if (bandWarnings.length > 0) {
+        void captureServerEvent("kernel_band_sanity_warn", distinctId, {
+          role,
+          company: company.slice(0, 80),
+          family: bandFamilyForRole(role),
+          kinds: bandWarnings.map(w => w.kind).join(","),
+          initial: serverBand.initialOffer,
+          stretch: serverBand.maxStretch,
+          walk: serverBand.walkAway,
+        }, req);
+        console.warn(`[negotiate-turn] band sanity warnings for role="${role}" company="${company}":`, bandWarnings);
+      }
       let state = initState({
         sessionId: body.sessionId || crypto.randomUUID(),
         role,
