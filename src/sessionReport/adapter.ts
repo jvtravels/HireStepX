@@ -136,6 +136,7 @@ export function sessionReportToInterviewResult(
       : undefined,
     biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
     negotiationOutcome: isNegotiation ? buildNegotiationOutcome(report) : undefined,
+    kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
   };
 }
 

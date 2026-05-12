@@ -697,6 +697,111 @@ function HeroSection({ data }: { data: InterviewResultData }) {
    placement, NPV math, archetype + drills. The offer trajectory and
    transcript export are preserved inside the new component. */
 
+/* ─── Kernel Negotiation Quality (Phase 3 wire-up) ──────────────────
+ * Renders the metrics computed by _negotiation-metrics.ts from the
+ * persisted kernel move history. Distinct from NegotiationFullReport
+ * (which is transcript-derived heuristics). This card is the source-
+ * of-truth view because it's grounded in the actual lever/number
+ * decisions the kernel made, not regex extraction over the AI's prose.
+ */
+type KernelMetrics = NonNullable<InterviewResultData["kernelMetrics"]>;
+
+function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
+  const outcomeLabel = {
+    "accepted": "Accepted",
+    "walked-away": "Walked away",
+    "stalemate": "Stalemate",
+    "in-progress": "In progress",
+  }[m.outcome];
+  const outcomeColor = m.outcome === "accepted" ? "#16a34a"
+    : m.outcome === "walked-away" ? "#dc2626"
+    : m.outcome === "stalemate" ? "#d97706"
+    : t.inkSoft;
+  const anchorLabel = m.anchorTurn == null
+    ? "Never anchored"
+    : m.anchorTurn <= 1 ? `Turn ${m.anchorTurn} (early)`
+    : m.anchorTurn <= 3 ? `Turn ${m.anchorTurn}`
+    : `Turn ${m.anchorTurn} (late)`;
+  const traversalPct = m.bandTraversal == null ? null : Math.round(m.bandTraversal * 100);
+  const tiles: Array<{ label: string; value: string; sub?: string }> = [
+    { label: "Quality score", value: `${m.score}`, sub: "/100" },
+    { label: "Outcome", value: outcomeLabel },
+    { label: "Anchored at", value: anchorLabel },
+    { label: "LPA gained", value: `₹${m.lpaGained}`, sub: `LPA · ${m.lpaPerTurn}/turn` },
+    { label: "Band traversal", value: traversalPct == null ? "—" : `${traversalPct}%`, sub: traversalPct == null ? "no spread" : "of ceiling" },
+    { label: "Lever diversity", value: `${m.leverDiversity}`, sub: `lever${m.leverDiversity === 1 ? "" : "s"} explored` },
+  ];
+  return (
+    <section
+      id="ir-section-kernel-neg"
+      aria-labelledby="ir-kernel-neg-heading"
+      style={{
+        background: t.white,
+        border: `1px solid ${t.line}`,
+        borderRadius: 16,
+        padding: 28,
+        boxShadow: shadows.card,
+        scrollMarginTop: 72,
+      }}
+    >
+      <SectionEyebrow num="N1" label="Negotiation quality" />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <h2 id="ir-kernel-neg-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
+          How you negotiated
+        </h2>
+        <span style={{ fontFamily: f.mono, fontSize: 11, color: outcomeColor, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          {outcomeLabel}
+        </span>
+      </div>
+      <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.55 }}>
+        Computed from the {m.totalTurns} kernel-tracked turns in this session — the actual lever picks and counters,
+        not transcript regex. Anchoring early, climbing the band, and exploring multiple levers all lift the score.
+      </p>
+      <div className="ir-tile-grid">
+        {tiles.map((tile) => (
+          <div
+            key={tile.label}
+            style={{
+              background: t.creamSoft,
+              border: `1px solid ${t.line}`,
+              borderRadius: 12,
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{tile.label}</span>
+            <div style={{ fontFamily: f.serif, fontSize: 32, color: t.coal, lineHeight: 1, letterSpacing: "-0.02em" }}>
+              {tile.value}
+              {tile.sub && tile.label === "Quality score" && (
+                <span style={{ fontSize: 16, color: t.inkSoft, marginLeft: 2, fontFamily: f.mono }}>{tile.sub}</span>
+              )}
+            </div>
+            {tile.sub && tile.label !== "Quality score" && (
+              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: "0.04em" }}>{tile.sub}</div>
+            )}
+          </div>
+        ))}
+      </div>
+      {m.overBandViolation && (
+        <div style={{
+          marginTop: 14,
+          padding: "10px 14px",
+          background: "#fef2f2",
+          border: "1px solid #fecaca",
+          borderRadius: 8,
+          fontFamily: f.sans,
+          fontSize: 12,
+          color: "#991b1b",
+        }}>
+          Kernel anomaly: AI offered above the band ceiling on at least one turn. This shouldn't happen — please report.
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CoreMetricsSection({ metrics }: { metrics: DeliveryMetric[] }) {
   return (
     <section
@@ -2091,6 +2196,9 @@ export default function SessionReportView({
               daysUntilInterview={data.daysUntilInterview}
               priorSessionCount={data.priorSessionCount}
             />
+          )}
+          {data.kernelMetrics && (
+            <KernelNegotiationQualitySection m={data.kernelMetrics} />
           )}
           {data.priorSessionCount !== undefined && data.priorSessionCount >= 3 && data.crossSessionInsights && (
             <TrendStrip

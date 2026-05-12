@@ -255,4 +255,20 @@ export interface InterviewResultData {
      *  a runnable drill via slug or external URL. Optional. */
     drills?: Array<{ slug?: string; title: string; goal: string; effort: string }>;
   };
+
+  /** Kernel-aware negotiation metrics — present only when the session
+   *  ran through /api/negotiate-turn and the engine accumulated move
+   *  history. Surfaced as a "Negotiation Quality" card distinct from
+   *  the heuristic transcript-based negotiationOutcome above. */
+  kernelMetrics?: {
+    outcome: "accepted" | "walked-away" | "stalemate" | "in-progress";
+    anchorTurn: number | null;
+    leverDiversity: number;
+    lpaGained: number;
+    lpaPerTurn: number;
+    bandTraversal: number | null;
+    overBandViolation: boolean;
+    totalTurns: number;
+    score: number;
+  };
 }

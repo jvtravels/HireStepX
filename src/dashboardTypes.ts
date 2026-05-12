@@ -24,6 +24,20 @@ export interface DashboardSession {
   feedback: string;
   transcript: { speaker: string; text: string; scoreNote?: string }[];
   questionScores: { question: string; score: number; notes: string }[];
+  /** Kernel-aware negotiation metrics — populated for salary-neg
+   *  sessions that ran through /api/negotiate-turn. Surfaced in the
+   *  report's "Negotiation Quality" card. */
+  negotiationMetrics?: {
+    outcome: "accepted" | "walked-away" | "stalemate" | "in-progress";
+    anchorTurn: number | null;
+    leverDiversity: number;
+    lpaGained: number;
+    lpaPerTurn: number;
+    bandTraversal: number | null;
+    overBandViolation: boolean;
+    totalTurns: number;
+    score: number;
+  };
 }
 
 export interface SkillData {

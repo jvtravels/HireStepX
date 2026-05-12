@@ -48,6 +48,19 @@ export interface RealSession {
   questions: number;
   ai_feedback?: string;
   skill_scores?: Record<string, number> | null;
+  /** Kernel-aware negotiation metrics (salary-neg sessions). Loaded
+   *  from either localStorage or Supabase column `negotiation_metrics`. */
+  negotiationMetrics?: {
+    outcome: "accepted" | "walked-away" | "stalemate" | "in-progress";
+    anchorTurn: number | null;
+    leverDiversity: number;
+    lpaGained: number;
+    lpaPerTurn: number;
+    bandTraversal: number | null;
+    overBandViolation: boolean;
+    totalTurns: number;
+    score: number;
+  };
 }
 
 /* ─── Persisted State helpers ─── */
@@ -157,6 +170,7 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
         score: Math.max(60, Math.min(100, rs.score + Math.floor((Math.random() - 0.5) * 16))),
         notes: qi === 0 ? "Strong opening" : qi === rs.questions - 1 ? "Good closing" : "Solid answer",
       })),
+      negotiationMetrics: rs.negotiationMetrics,
     };
   });
 }

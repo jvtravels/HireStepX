@@ -163,6 +163,21 @@ export interface SessionResult {
   /** Captured at session start so the admin can see what the candidate was practicing for. */
   targetRole?: string;
   targetCompany?: string;
+  /** Kernel-aware negotiation quality metrics. Populated only for
+   *  salary-negotiation sessions that ran through /api/negotiate-turn
+   *  and accumulated a move history. Surfaced in the report's
+   *  "Negotiation Quality" card. */
+  negotiationMetrics?: {
+    outcome: "accepted" | "walked-away" | "stalemate" | "in-progress";
+    anchorTurn: number | null;
+    leverDiversity: number;
+    lpaGained: number;
+    lpaPerTurn: number;
+    bandTraversal: number | null;
+    overBandViolation: boolean;
+    totalTurns: number;
+    score: number;
+  };
 }
 
 export interface EvaluationResult {
@@ -248,6 +263,7 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
         jd_analysis: result.jdAnalysis || null,
         target_role: result.targetRole || null,
         target_company: result.targetCompany || null,
+        negotiation_metrics: result.negotiationMetrics || null,
         // Pin the resume version captured at session start. Server
         // falls back to resolveActiveResumeVersionId if absent, but
         // sending the client-captured value closes the edge case where

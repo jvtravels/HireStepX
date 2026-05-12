@@ -153,6 +153,7 @@ export interface SessionRecord {
   skill_scores: Record<string, number> | null;
   job_description?: string | null;
   jd_analysis?: Record<string, unknown> | null;
+  negotiation_metrics?: Record<string, unknown> | null;
   created_at: string;
 }
 

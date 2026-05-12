@@ -248,6 +248,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
           focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
           ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
+          /* Kernel-aware negotiation metrics. The Supabase column type
+             is jsonb so we get an unknown-shaped object back; the
+             RealSession field is strictly typed. Cast is intentional —
+             validateNegotiationMetrics in the report layer is the
+             trust boundary, not this mapping. */
+          negotiationMetrics: (s as { negotiation_metrics?: unknown }).negotiation_metrics as RealSession["negotiationMetrics"] | undefined,
         }));
         setSupabaseSessions(mapped);
         try { localStorage.setItem(sessionsCacheKey, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }

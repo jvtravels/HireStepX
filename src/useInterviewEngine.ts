@@ -112,9 +112,19 @@ export function useInterviewEngine() {
   // Negotiation band (populated by LLM question generation for salary-neg)
   const negotiationBandRef = useRef<NegotiationBandData | null>(null);
   /* Canonical negotiation kernel: serialized state passed back to the
-     server on each turn. Null until the kernel-flag path initialises it
-     on first follow-up. Stays null when the flag is off (legacy path). */
+     server on each turn. Null until the kernel path initialises it
+     on first follow-up. */
   const negotiationKernelStateRef = useRef<string | null>(null);
+  /* Move history accumulator — one entry per AI turn the kernel returns.
+     Consumed at session end to compute kernel-aware metrics (anchor
+     turn, lever diversity, band traversal, LPA per turn). Kept as a
+     ref because metrics derivation runs once, at save time. */
+  const kernelMovesRef = useRef<Array<{
+    lever: string;
+    newTotalLpa: number | null;
+    turnIndex: number;
+    candidateTargetAtTurn: number | null;
+  }>>([]);
   // Candidate's target salary (set via warm-up calibration card)
   const [targetSalary, setTargetSalary] = useState<number | null>(null);
   // Multi-round scenario mode
@@ -1931,6 +1941,20 @@ export function useInterviewEngine() {
                 });
                 if (!initRes) return null;
                 negotiationKernelStateRef.current = initRes.state;
+                /* Record the opener (open-with-offer / probe) in the
+                   move history so end-of-session metrics see it. */
+                try {
+                  const parsedInit = JSON.parse(initRes.state) as {
+                    turnIndex?: number;
+                    candidateTarget?: number | null;
+                  };
+                  kernelMovesRef.current.push({
+                    lever: initRes.move.lever,
+                    newTotalLpa: initRes.move.newTotalLpa,
+                    turnIndex: typeof parsedInit.turnIndex === "number" ? parsedInit.turnIndex : 0,
+                    candidateTargetAtTurn: typeof parsedInit.candidateTarget === "number" ? parsedInit.candidateTarget : null,
+                  });
+                } catch { /* non-fatal */ }
               }
               const turnRes = await negotiationKernelTurn({
                 state: negotiationKernelStateRef.current,
@@ -1946,11 +1970,27 @@ export function useInterviewEngine() {
                  state without bumping the ref, and the next legacy read
                  reports a stale number. */
               try {
-                const parsedState = JSON.parse(turnRes.state) as { highestOfferMade?: number };
+                const parsedState = JSON.parse(turnRes.state) as {
+                  highestOfferMade?: number;
+                  turnIndex?: number;
+                  candidateTarget?: number | null;
+                };
                 const kernelHigh = typeof parsedState.highestOfferMade === "number" ? parsedState.highestOfferMade : 0;
                 if (kernelHigh > highestOfferRef.current) {
                   highestOfferRef.current = kernelHigh;
                 }
+                /* Accumulate the move for end-of-session metrics. We
+                   snapshot the candidate's target AS OF this turn so
+                   anchor-turn detection can find the first non-null
+                   value. turnIndex comes from the kernel-after state
+                   (post-applyAiMove), which is the AI turn we're
+                   recording. */
+                kernelMovesRef.current.push({
+                  lever: turnRes.move.lever,
+                  newTotalLpa: turnRes.move.newTotalLpa,
+                  turnIndex: typeof parsedState.turnIndex === "number" ? parsedState.turnIndex : kernelMovesRef.current.length,
+                  candidateTargetAtTurn: typeof parsedState.candidateTarget === "number" ? parsedState.candidateTarget : null,
+                });
               } catch {
                 /* serialized state shape changed under us — non-fatal,
                    the kernel still owns its own state. */
@@ -2388,6 +2428,44 @@ export function useInterviewEngine() {
 
     let localOk = false;
     let cloudOk = false;
+
+    /* Kernel-aware metrics for salary-negotiation sessions. Pure
+       client-side derivation from the accumulated move history + the
+       kernel's final state. Only populated when the session actually
+       ran through the kernel (i.e. moves accumulated). Persisted via
+       the savePayload so the report layer can render the Negotiation
+       Quality card without re-deriving. */
+    let negotiationMetrics: {
+      outcome: "accepted" | "walked-away" | "stalemate" | "in-progress";
+      anchorTurn: number | null;
+      leverDiversity: number;
+      lpaGained: number;
+      lpaPerTurn: number;
+      bandTraversal: number | null;
+      overBandViolation: boolean;
+      totalTurns: number;
+      score: number;
+    } | undefined = undefined;
+    try {
+      if (
+        interviewType === "salary-negotiation" &&
+        kernelMovesRef.current.length > 0 &&
+        negotiationKernelStateRef.current
+      ) {
+        const finalState = JSON.parse(negotiationKernelStateRef.current);
+        const { computeNegotiationMetrics, scoreNegotiationBehaviour } = await import(
+          "../server-handlers/_negotiation-metrics"
+        );
+        const m = computeNegotiationMetrics({
+          finalState,
+          moves: kernelMovesRef.current as Parameters<typeof computeNegotiationMetrics>[0]["moves"],
+        });
+        negotiationMetrics = { ...m, score: scoreNegotiationBehaviour(m) };
+      }
+    } catch (e) {
+      console.warn("[interview] negotiation metrics derivation failed (non-fatal):", e);
+    }
+
     // Build the payload once so we can both attempt the save AND enqueue
     // it for retry if the cloud write fails. Sharing the literal across
     // both paths means the retry is byte-identical to what the user just
@@ -2416,6 +2494,7 @@ export function useInterviewEngine() {
       jdAnalysis: jdAnalysisData || null,
       targetRole: targetRole || user?.targetRole || undefined,
       targetCompany: targetCompany || user?.targetCompany || undefined,
+      negotiationMetrics,
     };
     try {
       // Race the entire save against a 10s ceiling — Supabase PATCH on slow

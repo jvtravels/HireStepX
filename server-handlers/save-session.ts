@@ -51,6 +51,35 @@ interface SessionBody {
   resume_version_id?: unknown;
   target_role?: unknown;
   target_company?: unknown;
+  negotiation_metrics?: unknown;
+}
+
+/** Whitelist the kernel-metrics payload to its known shape. Rejects
+ *  anything not a plain object, drops unknown keys, clamps numbers to
+ *  sane ranges. Returns null on any structural problem so the column
+ *  stays NULL rather than persisting tampered data. */
+function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const num = (n: unknown, lo: number, hi: number): number | null => {
+    if (typeof n !== "number" || !Number.isFinite(n)) return null;
+    return Math.max(lo, Math.min(hi, n));
+  };
+  const outcome = typeof o.outcome === "string" && ["accepted", "walked-away", "stalemate", "in-progress"].includes(o.outcome)
+    ? o.outcome
+    : null;
+  if (!outcome) return null;
+  return {
+    outcome,
+    anchorTurn: typeof o.anchorTurn === "number" && Number.isFinite(o.anchorTurn) ? Math.max(0, Math.min(50, o.anchorTurn)) : null,
+    leverDiversity: num(o.leverDiversity, 0, 11) ?? 0,
+    lpaGained: num(o.lpaGained, 0, 500) ?? 0,
+    lpaPerTurn: num(o.lpaPerTurn, 0, 500) ?? 0,
+    bandTraversal: typeof o.bandTraversal === "number" && Number.isFinite(o.bandTraversal) ? Math.max(0, Math.min(1, o.bandTraversal)) : null,
+    overBandViolation: o.overBandViolation === true,
+    totalTurns: num(o.totalTurns, 0, 50) ?? 0,
+    score: num(o.score, 0, 100) ?? 0,
+  };
 }
 
 function asString(v: unknown, max = 500): string {
@@ -122,6 +151,12 @@ export default async function handler(req: Request): Promise<Response> {
     resume_version_id: resolvedVersionId,
     target_role: asString(body.target_role, 200) || null,
     target_company: asString(body.target_company, 200) || null,
+    /* Kernel-aware negotiation metrics. Persisted on salary-neg
+       sessions only; null otherwise. Whitelisted to a fixed set of
+       primitive fields so a tampered client can't dump arbitrary
+       payload into the column. The column-stripping retry below
+       handles environments where the migration hasn't run yet. */
+    negotiation_metrics: sanitizeNegotiationMetrics(body.negotiation_metrics),
   };
 
   if (!sessionRow.id) {

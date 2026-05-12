@@ -653,6 +653,14 @@ alter table sessions add column if not exists target_company text;
 create index if not exists idx_sessions_target_role on sessions(target_role);
 create index if not exists idx_sessions_target_company on sessions(target_company);
 
+-- Kernel-aware negotiation metrics (salary-neg sessions only). Stores
+-- the structured summary computed by _negotiation-metrics.ts at session
+-- end: outcome, anchorTurn, leverDiversity, lpaGained, lpaPerTurn,
+-- bandTraversal, overBandViolation, totalTurns, score. NULL for any
+-- non-negotiation session. Idempotent ALTER for safe rollout.
+alter table sessions add column if not exists negotiation_metrics jsonb;
+create index if not exists idx_sessions_negotiation_metrics_score on sessions((negotiation_metrics->>'score'));
+
 create table if not exists session_insights (
   session_id text primary key references sessions(id) on delete cascade,
   user_id uuid references profiles(id) on delete cascade not null,
