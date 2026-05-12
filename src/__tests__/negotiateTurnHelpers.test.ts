@@ -37,6 +37,17 @@ describe("buildAiPrompt", () => {
     expect(user).toContain("I want 26 LPA");
   });
 
+  it("includes role and company verbatim in brief so LLM cannot hallucinate the title", () => {
+    /* Real MakeMyTrip UX session bug: LLM hallucinated "Senior Product
+       Designer" because the brief never named the role. Anchor with
+       role=... and company=... key/values. */
+    const state = baseState({ phase: "opening", role: "UX Designer", company: "MakeMyTrip" });
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toContain("role=UX Designer");
+    expect(user).toContain("company=MakeMyTrip");
+  });
+
   it("escapes candidateAnswer to prevent prompt injection", () => {
     /* User-controlled text was previously interpolated raw inside a
        quoted string — a candidate could close the quote with
@@ -115,6 +126,27 @@ describe("validateAiText", () => {
   it("flags empty text", () => {
     const r = validateAiText("   ", state, counterMove);
     expect(r.failures).toContainEqual({ kind: "empty" });
+  });
+
+  it("flags dangling unit when LLM emits 'basic salary of LPA' (no preceding number)", () => {
+    /* Real MakeMyTrip UX session bug: opener said "...with a basic
+       salary of LPA. We can also offer..." — number missing entirely.
+       Pre-fix the validator only checked that *some* number existed
+       in the text (the offer total was elsewhere), so the truncated
+       phrase passed through. Now the dangling-unit pattern flags it. */
+    const r = validateAiText(
+      "We're pleased to offer ₹20 LPA total, with a basic salary of LPA. Let me know.",
+      state, counterMove,
+    );
+    expect(r.failures.some(f => f.kind === "dangling-unit")).toBe(true);
+  });
+
+  it("flags dangling rupee glyph with no following digit", () => {
+    const r = validateAiText(
+      "We can offer ₹23 LPA total. The base is ₹ and the variable is the rest.",
+      state, counterMove,
+    );
+    expect(r.failures.some(f => f.kind === "dangling-unit")).toBe(true);
   });
 
   it("accepts non-numeric lever with no number in text", () => {

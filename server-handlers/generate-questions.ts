@@ -73,6 +73,56 @@ async function getCompanyGuidance(company: string): Promise<string> {
  * world interview experiences. Match is loose (substring) so "razorpay
  * payments india" still hits "razorpay".
  */
+/** Detect role-label hallucination in an LLM-generated opener.
+ *
+ * Returns the offending label if `text` mentions a role title that doesn't
+ * share any significant token with the user-typed `userRole`, otherwise
+ * empty string. The salary-negotiation static script's first AI turn must
+ * use the role the user selected; the LLM sometimes substitutes a
+ * higher-paying adjacent title (e.g. "Senior Product Designer" for a UX
+ * Designer slot) because the band numbers look senior, polluting the
+ * candidate's mental anchor before the kernel even starts.
+ *
+ * Token comparison is case- and stopword-insensitive. "UX designer" and
+ * "UX Designer" match. "UX Designer" and "Senior Product Designer" do
+ * NOT match (no shared significant token).
+ *
+ * KNOWN_ROLE_LABELS is intentionally narrow — only the titles the LLM
+ * actually substitutes in practice. False positives here are worse than
+ * false negatives because we'd silently rewrite a legitimate opener. */
+const KNOWN_ROLE_LABELS = [
+  "senior product designer", "product designer",
+  "senior ux designer", "ux designer", "ui designer", "ui/ux designer",
+  "senior software engineer", "software engineer", "senior swe", "swe",
+  "senior frontend engineer", "frontend engineer",
+  "senior backend engineer", "backend engineer",
+  "senior product manager", "product manager",
+  "senior data scientist", "data scientist",
+  "senior data analyst", "data analyst",
+  "senior engineering manager", "engineering manager",
+];
+const ROLE_STOPWORDS = new Set(["senior", "sr", "junior", "jr", "lead", "principal", "staff", "the", "a", "an"]);
+function tokenizeRole(r: string): string[] {
+  return r.toLowerCase().replace(/[^\w\s/]/g, " ").split(/\s+/).filter(t => t && !ROLE_STOPWORDS.has(t));
+}
+function detectRoleLabelMismatch(text: string, userRole: string): string {
+  if (!text || !userRole) return "";
+  const userTokens = new Set(tokenizeRole(userRole));
+  if (userTokens.size === 0) return "";
+  const lower = text.toLowerCase();
+  for (const label of KNOWN_ROLE_LABELS) {
+    if (!lower.includes(label)) continue;
+    const labelTokens = tokenizeRole(label);
+    /* If the label shares ZERO significant tokens with the user-typed role,
+       this is a hallucinated substitution. ("ux designer" vs "product designer"
+       share zero — flag. "senior ux designer" vs "ux designer" share "ux" and
+       "designer" — keep.) */
+    const shared = labelTokens.some(t => userTokens.has(t));
+    if (!shared) return label;
+  }
+  return "";
+}
+
 function getCompanyTone(company: string): string {
   if (!company) return "";
   const c = company.toLowerCase();
@@ -915,9 +965,17 @@ Requirements:
         // because step 2 was never clamped). Strategy: extract the
         // largest ₹ figure from q[1], compare to maxStretch * 1.05, and
         // if it exceeds, rewrite the headline to band.initialOffer.
+        //
+        // 2026-05 broadening: regex was previously `/₹\s*\d+.../` —
+        // strict ₹ glyph required. The LLM frequently emits "35 LPA",
+        // "Rs 35 LPA", or "INR 35 LPA" without the ₹ glyph, which
+        // bypassed the clamp entirely. The MakeMyTrip UX session
+        // shipped a ₹35 LPA opening offer against a ₹20-26.9 LPA band
+        // because of this. Now matches the same currency-prefix set
+        // as findOutOfBandNumber.
         const q1Obj = questions[1] as { question?: string; text?: string };
         const q1Body = q1Obj?.question || q1Obj?.text || "";
-        const numRe = /₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/g;
+        const numRe = /(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
         const hits: number[] = [];
         let nm: RegExpExecArray | null;
         while ((nm = numRe.exec(q1Body)) !== null) {
@@ -927,12 +985,29 @@ Requirements:
         }
         const headline = hits.length > 0 ? Math.max(...hits) : null;
         const ceiling = negotiationBandData.maxStretch;
-        if (headline !== null && headline > ceiling * 1.05) {
+        // Role-mismatch detection: the LLM sometimes hallucinates the
+        // role title in the opening line ("for the Senior Product Designer
+        // position" when the user typed "UX designer"). The MakeMyTrip
+        // session capture confirmed this — chip said "UX DESIGNER" but
+        // q[1] said "Senior Product Designer". We look for any of a
+        // curated list of common Indian-market designer/PM/SWE titles
+        // in q[1]; if one is present that doesn't share at least one
+        // significant token with the user-typed role, we rewrite the
+        // opener using the user's role verbatim. The fallback template
+        // already uses `${role}` directly, so the rewrite is reusable.
+        const roleMismatch = detectRoleLabelMismatch(q1Body, role || "");
+        const needsClamp = headline !== null && headline > ceiling * 1.05;
+        if (needsClamp || roleMismatch) {
           const safeOpener = Math.round(negotiationBandData.initialOffer);
           const replacement = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${safeOpener} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
           q1Obj.question = replacement;
           q1Obj.text = replacement;
-          console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L exceeded maxStretch ₹${ceiling}L (5% tolerance) — rewrote to ₹${safeOpener}L for ${company || "company"}`);
+          if (needsClamp) {
+            console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L exceeded maxStretch ₹${ceiling}L (5% tolerance) — rewrote to ₹${safeOpener}L for ${company || "company"}`);
+          }
+          if (roleMismatch) {
+            console.warn(`[generate-questions] salary-neg opener mentioned role "${roleMismatch}" but user picked "${role}" — rewrote opener for ${company || "company"}`);
+          }
         }
       }
     }

@@ -84,10 +84,20 @@ function resolveServerBand(role: string, company: string): NegotiationBand {
   if (!role) return DEFAULT_BAND;
   try {
     const b = generateNegotiationBand({ role, company: company || undefined });
+    /* SEMANTIC NORMALISATION: salary-lookup.ts stores `walkAway` as the
+       RECRUITER's upper ceiling (= 1.1 × maxStretch — i.e. an ask above
+       this and the recruiter walks). The kernel's `band.walkAway` means
+       the CANDIDATE's floor (an offer below which the candidate walks).
+       These are opposite ends of the band. Map salary-lookup's `minOffer`
+       (= 0.95 × totalMin) to the kernel's walkAway so downstream
+       validation (findOutOfBandNumber) lines up. Without this, every
+       legitimate offer was being flagged out-of-band, the LLM retried
+       endlessly, and we shipped the deterministic fallback unfiltered. */
+    const kernelWalkAway = typeof b.minOffer === "number" && b.minOffer > 0 ? b.minOffer : Math.max(1, b.initialOffer * 0.75);
     return {
       initialOffer: b.initialOffer,
       maxStretch: b.maxStretch,
-      walkAway: b.walkAway,
+      walkAway: kernelWalkAway,
       hasEquity: Boolean(b.hasEquity),
     };
   } catch {

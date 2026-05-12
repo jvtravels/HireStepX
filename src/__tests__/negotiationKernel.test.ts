@@ -93,6 +93,28 @@ describe("parseCandidateAnswer", () => {
     ).signalsAcceptance).toBe(true);
   });
 
+  it("catches soft-acceptance phrases from MakeMyTrip UX session (May 2026)", () => {
+    /* Real session capture: candidate said "yes, I like the initial offer"
+       and "we have already aligned with the initial offer" — the kernel
+       missed both and kept probing for expectations, infuriating the
+       candidate. Each must register as acceptance. */
+    expect(parseCandidateAnswer(
+      "Yes, I like the initial offer. Can you give me a breakdown?"
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "We have already aligned with the initial offer. Right? Why are you asking again?"
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "I'm aligned with your offer."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "The offer aligns with my expectations."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "I'm fine with the offer."
+    ).signalsAcceptance).toBe(true);
+  });
+
   it("catches more idiomatic English acceptance forms", () => {
     expect(parseCandidateAnswer("I'll take it.").signalsAcceptance).toBe(true);
     expect(parseCandidateAnswer("I'm in.").signalsAcceptance).toBe(true);
@@ -339,6 +361,45 @@ describe("derivePhase", () => {
     expect(derivePhase(init({ phase: "accepted" }))).toBe("accepted");
     expect(derivePhase(init({ phase: "walked-away" }))).toBe("walked-away");
   });
+
+  it("does NOT regress from counter-offer back to probe-expectations", () => {
+    /* MakeMyTrip UX session (May 2026): after the candidate engaged
+       with the offer and asked for a breakdown, the kernel re-derived
+       phase as probe-expectations on the next turn (because target
+       wasn't restated). The AI then asked "what are you hoping to
+       achieve" — three turns deep into the conversation. */
+    const s = init({
+      phase: "counter-offer",
+      highestOfferMade: 20,
+      candidateTarget: null, // candidate didn't restate this turn
+      leversUsed: ["open-with-offer", "counter-base"],
+    });
+    expect(derivePhase(s)).toBe("counter-offer");
+  });
+
+  it("does NOT regress from lever-explore back to probe-expectations", () => {
+    const s = init({
+      phase: "lever-explore",
+      highestOfferMade: 24,
+      candidateTarget: null,
+      leversUsed: ["open-with-offer", "counter-base", "equity-grant"],
+    });
+    expect(derivePhase(s)).toBe("lever-explore");
+  });
+
+  it("if already probed AND candidate engaged, goes to counter-offer not probe", () => {
+    /* Once probe has fired AND the candidate revealed ANY signal
+       (current CTC, competing offer, asked a question, used a tactic),
+       further turns belong in counter-offer territory — re-probing
+       would be circular. */
+    const s = init({
+      highestOfferMade: 20,
+      candidateTarget: null,
+      leversUsed: ["open-with-offer", "probe"],
+      infoAsked: ["fixed-vs-variable"],
+    });
+    expect(derivePhase(s)).toBe("counter-offer");
+  });
 });
 
 /* ─── pickAiMove ──────────────────────────────────────────────── */
@@ -558,6 +619,27 @@ describe("findOutOfBandNumber", () => {
     expect(findOutOfBandNumber("My final offer is Rs. 40 LPA total.", BAND)).toBe(40);
     expect(findOutOfBandNumber("How about INR 35 lakhs?", BAND)).toBe(35);
     expect(findOutOfBandNumber("We can do Rs 2 crore.", BAND)).toBe(200);
+  });
+
+  it("flags bare unit-suffix numbers without currency prefix", () => {
+    /* Real MakeMyTrip UX bug: the static-script opener said
+       "We're offering 35 LPA" with no ₹/Rs/INR prefix. The pre-fix
+       regex required a currency token and skipped it entirely. */
+    expect(findOutOfBandNumber("We're offering 35 LPA basic.", BAND)).toBe(35);
+    expect(findOutOfBandNumber("That comes to 40 lakhs total.", BAND)).toBe(40);
+  });
+
+  it("does NOT use walkAway as a floor when band is inverted (walkAway > maxStretch)", () => {
+    /* The salary-lookup band sometimes ships {init,max,walk} with
+       walk > max (walk is recruiter ceiling, max is offer ceiling).
+       In that mode walkAway is meaningless as a candidate floor, so
+       the under-floor check must be suppressed — otherwise every
+       legitimate offer gets flagged as out-of-band and dropped. */
+    const inverted = { initialOffer: 20, maxStretch: 26.9, walkAway: 31.9, hasEquity: false };
+    expect(findOutOfBandNumber("We're offering ₹20 LPA.", inverted)).toBeNull();
+    expect(findOutOfBandNumber("We can stretch to ₹26 LPA.", inverted)).toBeNull();
+    /* Above maxStretch is still flagged. */
+    expect(findOutOfBandNumber("We can do ₹35 LPA.", inverted)).toBe(35);
   });
 });
 

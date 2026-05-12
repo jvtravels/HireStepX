@@ -424,6 +424,19 @@ export function parseCandidateAnswer(
       String.raw`\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in)\b`,
       String.raw`\bhappy\s+to\s+accept\b`,
       String.raw`\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b`,
+      /* Soft-acceptance forms surfaced by the MakeMyTrip UX session
+         (2026-05-12): candidates frequently say "I like the offer" /
+         "I'm aligned with the initial offer" / "the offer aligns with
+         my expectations" — semantically yes, but the older patterns
+         required explicit "accept" / "agree" / "take it" verbs and
+         missed all of these. The kernel kept probing after a clear
+         soft acceptance, infuriating the candidate. */
+      String.raw`\bi\s+(?:really\s+|truly\s+)?like\s+(?:the|this|your)\s+(?:initial\s+)?offer\b`,
+      String.raw`\b(?:i'?m|i\s+am|we'?re|we\s+are)\s+aligned\s+(?:with|on)\s+(?:the|this|your)\s+(?:initial\s+)?offer\b`,
+      String.raw`\b(?:we|i)\s+(?:'?ve|have)\s+(?:already\s+)?aligned\s+(?:on|with)\s+(?:the|this|your)\s+(?:initial\s+)?offer\b`,
+      String.raw`\b(?:the|this|your)\s+(?:initial\s+)?offer\s+aligns?\s+with\b`,
+      String.raw`\bi'?m\s+fine\s+with\s+(?:the|this|your)\s+offer\b`,
+      String.raw`\bi'?m\s+good\s+with\s+(?:the|this|your)\s+offer\b`,
       // Hindi-mix.
       String.raw`\btheek\s+hai\b`,
       String.raw`\btheek\s+he\b`,
@@ -735,6 +748,35 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
   if (state.turnIndex >= state.maxTurns) return "stalemate";
 
   const target = state.candidateTarget;
+  /* Phase stickiness — the MakeMyTrip UX session regression:
+     once the conversation has progressed past probe (the candidate
+     has anchored, OR we've already entered counter-offer / lever-
+     explore / closing-pressure / closing), it MUST NOT regress to
+     probe-expectations just because a subsequent turn didn't restate
+     a target number. The candidate saying "do it, tell me more" on
+     turn 3 doesn't erase the target they stated on turn 2. The post-
+     offer phases form a one-way ratchet (except for the explicit
+     verbal-acceptance-then-renegotiate path, which is handled via
+     `verbalAcceptanceTurn` and never touches phase). */
+  const POST_PROBE_PHASES: NegotiationPhase[] = [
+    "counter-offer", "lever-explore", "closing-push",
+  ];
+  const isPostProbe = POST_PROBE_PHASES.includes(state.phase);
+  /* "Already probed" sticky-floor: once the AI has run a probe lever
+     and the candidate engaged (asked about breakdown, mentioned current
+     comp / competing, or used a Voss tactic), do not re-probe even if
+     the candidate's next utterance lacks an explicit target. The
+     MakeMyTrip session showed the AI asking "what are you hoping to
+     achieve" THREE turns after the candidate had engaged with the
+     offer, because no explicit target was ever parsed. We treat the
+     conversation as having moved on from discovery. */
+  const alreadyProbed = state.leversUsed.includes("probe");
+  const candidateEngagedAtAll =
+    state.candidateTarget != null ||
+    state.candidateCurrentCtc != null ||
+    state.competingOffer != null ||
+    state.vossTacticsUsed.length > 0 ||
+    state.infoAsked.length > 0;
 
   /* Target above max stretch + ≥2 levers tried → lever-explore. Only
      non-cash bridges remain. */
@@ -749,8 +791,17 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
 
   /* Offered, no target. If the candidate has revealed anything (current
      CTC, competing offer) or we've already probed, we're in probe
-     territory; otherwise we're awaiting their first reaction. */
+     territory; otherwise we're awaiting their first reaction.
+
+     BUT: if we're already in a post-probe phase, hold there (don't
+     ratchet backwards). The conversation is past discovery. */
   if (state.highestOfferMade > 0) {
+    if (isPostProbe) return state.phase;
+    /* If we've already probed AND the candidate has revealed anything,
+       further turns belong in counter-offer (treat candidateTarget=null
+       as "candidate didn't restate but has engaged" — pickAiMove will
+       fall to lever-explore on no headroom). Better than re-probing. */
+    if (alreadyProbed && candidateEngagedAtAll) return "counter-offer";
     const candidateEngaged =
       state.candidateCurrentCtc != null ||
       state.competingOffer != null ||
@@ -970,15 +1021,32 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
  *  since the upstream parser now accepts crore inputs from candidates. */
 export function findOutOfBandNumber(text: string, band: NegotiationBand): number | null {
   /* Currency prefix accepts ₹, Rs., Rs, INR so an LLM switching
-     notation can't sneak past validation. Strip commas before
-     parseFloat for "₹1,50,000 LPA"-style numbers. */
-  const re = /(?:₹|Rs\.?\s*|INR\s*)([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/gi;
+     notation can't sneak past validation. Now ALSO accepts a bare
+     number followed by LPA / lakh / cr — production LLMs frequently
+     drop the rupee glyph ("35 LPA"), and the prior strict regex was
+     letting those slip past as "no numbers found".
+
+     Strip commas before parseFloat for "₹1,50,000 LPA" style.
+
+     SEMANTIC NOTE on band.walkAway: in the kernel state, walkAway is
+     the candidate's FLOOR (recruiter going below this loses the
+     candidate). The salary-lookup pipeline historically stored a
+     RECRUITER ceiling here (= 1.1 × maxStretch), which made this
+     check reject every legitimate offer below that ceiling. The
+     server-side band resolver (`resolveServerBand` in negotiate-turn)
+     now maps salary-lookup's `minOffer` to the kernel's `walkAway` so
+     the semantics line up. The defensive `Math.min(...)` here is
+     belt-and-suspenders: if anything upstream ever passes a band where
+     walkAway >= maxStretch, we ignore the floor check entirely rather
+     than spurious-reject every number. */
+  const re = /(?:₹|Rs\.?\s*|INR\s*)?([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/gi;
+  const effectiveFloor = band.walkAway < band.maxStretch ? band.walkAway : -Infinity;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     let n = parseFloat(m[1].replace(/,/g, ""));
     if (!Number.isFinite(n)) continue;
     if (/cr/i.test(m[2])) n *= 100;
-    if (n > band.maxStretch + 0.01 || n < band.walkAway - 0.01) return n;
+    if (n > band.maxStretch + 0.01 || n < effectiveFloor - 0.01) return n;
   }
   return null;
 }

@@ -77,6 +77,18 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
     "STRICT RULES:\n" +
     " - You DO NOT invent salary numbers. The kernel has decided the " +
     "lever and (if any) the total CTC for this turn. Use them verbatim.\n" +
+    /* Role / company anchoring — added after the MakeMyTrip UX session
+       where the LLM substituted "Senior Product Designer" for the
+       candidate's actual "UX designer" role because the band numbers
+       happened to look senior-level. The brief carries role= and
+       company= fields verbatim; the LLM must echo those, not
+       paraphrase or upgrade to an adjacent title. */
+    " - The KERNEL BRIEF carries 'role=' and 'company=' fields. When " +
+    "you refer to the position, use the role label from the brief " +
+    "VERBATIM. Do not substitute a different job title, do not 'upgrade' " +
+    "to 'Senior X' if the brief says 'X', do not invent a company name.\n" +
+    " - NEVER emit a unit ('LPA', 'lakhs', '₹') without an adjacent " +
+    "number. If you don't have a number for a slot, omit the unit too.\n" +
     " - Indian context. INR / LPA. Conversational, professional, " +
     "respectful — never sycophantic, never adversarial.\n" +
     " - No headers, no bullet lists, no markdown. Plain speech.\n" +
@@ -176,9 +188,21 @@ function buildResponseHints(state: NegotiationState): string {
 }
 
 /** One-line, low-token brief for the LLM. Pure. Keep field order stable
- *  — Groq prefix-cache keys on shared prefixes. */
+ *  — Groq prefix-cache keys on shared prefixes.
+ *
+ *  Role + company come FIRST. Earlier versions omitted these entirely;
+ *  the LLM, given only a salary band, would hallucinate an adjacent role
+ *  ("Senior Product Designer" for a UX Designer slot at MakeMyTrip)
+ *  because the band numbers looked senior. Pinning role + company in the
+ *  brief gives the LLM a verbatim anchor and a system rule
+ *  ("USE THIS ROLE LABEL EXACTLY") binds it.
+ *
+ *  Empty role/company skip the field — keeps the brief compact for
+ *  unauthenticated test calls. */
 function compactBrief(state: NegotiationState, move: AiMove): string {
   const parts: string[] = [];
+  if (state.role) parts.push(`role=${state.role}`);
+  if (state.company) parts.push(`company=${state.company}`);
   parts.push(`lever=${move.lever}`);
   if (move.newTotalLpa != null) parts.push(`newTotalLpa=${move.newTotalLpa}`);
   parts.push(`phase=${state.phase}`);
@@ -199,7 +223,14 @@ export type ValidationFailure =
   | { kind: "out-of-band"; number: number }
   | { kind: "verbatim-repeat" }
   | { kind: "missing-required-number"; required: number }
-  | { kind: "empty" };
+  | { kind: "empty" }
+  /* "basic salary of LPA" / "₹ total CTC" — the LLM emitted a unit or
+     currency glyph but the adjacent number is missing. Real session
+     capture (MakeMyTrip UX, May 2026): the AI said "basic salary of
+     LPA, which would account for a significant portion of the CTC".
+     The number-interpolation slot rendered blank. Without this check
+     the candidate sees broken copy. Triggers a retry → fallback. */
+  | { kind: "dangling-unit"; snippet: string };
 
 export interface ValidationResult {
   ok: boolean;
@@ -267,6 +298,43 @@ export function validateAiText(
     if (!hasNumber) {
       failures.push({ kind: "missing-required-number", required: n });
     }
+  }
+
+  /* Dangling-unit / template-leak detection. The LLM occasionally
+     emits a unit ("LPA" / "lakhs") or currency glyph ("₹") with NO
+     adjacent number — a placeholder that rendered blank. We flag any
+     of:
+       - "LPA" / "lakh" / "lakhs" / "crore" preceded by no digit within
+         the prior 8 chars (modulo whitespace + currency prefix)
+       - "₹" not followed by a digit within the next 8 chars (modulo
+         whitespace)
+     These trip on the literal failure mode seen in the MakeMyTrip UX
+     session ("basic salary of LPA"). Captures up to ~30 chars of
+     surrounding context for telemetry. */
+  /* Use matchAll so we scan EVERY unit occurrence — the LLM may emit a
+     valid "₹20 LPA" earlier in the sentence and a dangling "of LPA"
+     later. Without /g we'd only inspect the first match and miss the
+     second one. */
+  const unitMatches = Array.from(t.matchAll(/(?:^|[^0-9.])(?:LPA|lpa|lakhs?|crore)\b/g));
+  for (const m of unitMatches) {
+    const idx = m.index ?? 0;
+    /* The match starts on the boundary char (or position 0). The unit
+       itself begins at idx+1 (unless we matched ^). Look back ~8 chars
+       from the unit start for a digit. */
+    const unitStart = m[0].match(/^[^0-9.]?/) ? idx + (m[0][0] && /[^A-Za-z]/.test(m[0][0]) ? 1 : 0) : idx;
+    const lookback = t.slice(Math.max(0, unitStart - 8), unitStart);
+    if (!/\d/.test(lookback)) {
+      const start = Math.max(0, idx - 20);
+      failures.push({ kind: "dangling-unit", snippet: t.slice(start, idx + 20) });
+      break;
+    }
+  }
+  /* Bare ₹ with no following digit. Less common but possible if the LLM
+     starts a fragment with the glyph and the number variable is null. */
+  const danglingRupee = t.match(/₹(?!\s*\d)/);
+  if (danglingRupee) {
+    const idx = danglingRupee.index ?? 0;
+    failures.push({ kind: "dangling-unit", snippet: t.slice(Math.max(0, idx - 10), idx + 20) });
   }
 
   return { ok: failures.length === 0, failures };
