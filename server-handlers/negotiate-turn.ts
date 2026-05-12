@@ -49,11 +49,18 @@ import {
   deterministicFallbackText,
   stripMarkdown,
 } from "./_negotiate-turn-helpers";
-import { checkBandSanity, bandFamilyForRole } from "./_band-sanity";
+import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
+import { getCompanyTier } from "../data/company-tiers";
 
 declare const process: { env: Record<string, string | undefined> };
 
-const ENABLED = process.env.NEGOTIATION_KERNEL_ENABLED === "1";
+/* Post-rebuild (Phase 7, May 2026): kernel is the live path by default.
+ * The flag flipped from opt-in to opt-OUT — set NEGOTIATION_KERNEL_ENABLED=0
+ * to disable. This is the right semantic now that the v2 kernel has
+ * surface parity with the old static script and addresses the five
+ * documented failure modes (Lollypop + Wipro sessions). Disable-flag
+ * exists only as an emergency stop if something regresses in prod. */
+const ENABLED = process.env.NEGOTIATION_KERNEL_ENABLED !== "0";
 
 /** Hard cap on the candidate's free-text answer per turn. STT mishears
  *  and copy-paste accidents can push payloads to tens of KB, which both
@@ -271,25 +278,63 @@ export default async function handler(
       const company = body.company || "";
       /* SECURITY: ignore body.band. Recompute server-side from (role,
          company) so a tampered client can't push the band ceiling. */
-      const serverBand = resolveServerBand(role, company);
+      const resolvedBand = resolveServerBand(role, company);
+      const companyTier = getCompanyTier(company);
+
+      /* Wipro UI/UX session (May 2026) revealed the failure mode that
+         family-wide sanity bounds cannot catch: the curator/sector-
+         fallback band returned ₹27 LPA opener for Wipro UI/UX (IT-services
+         tier, designer family P50 ≈ ₹8 LPA). Designer family bound is
+         ₹3-45 LPA so ₹27 passes — but it's 3.4× the tier P50 and the
+         candidate accepted on turn 2.
+
+         clampBandToTierP50 rewrites the band at INIT (and only at init)
+         when initialOffer > 2× tier P50. Mid-session clamping is still
+         off-limits — that would mask curator bugs and break thread
+         coherence. The original band is preserved in telemetry so
+         curator review can fix the source data upstream. */
+      const clampResult = clampBandToTierP50(resolvedBand, role, companyTier);
+      const serverBand = clampResult.clamped
+        ? { ...resolvedBand, ...clampResult.band }
+        : resolvedBand;
+
+      if (clampResult.clamped) {
+        void captureServerEvent("kernel_band_clamped_tier_p50", distinctId, {
+          role,
+          company: company.slice(0, 80),
+          tier: clampResult.tier ?? "unknown",
+          family: clampResult.family ?? "unknown",
+          p50: clampResult.p50,
+          original_initial: clampResult.originalInitial,
+          original_stretch: clampResult.originalStretch,
+          clamped_initial: serverBand.initialOffer,
+          clamped_stretch: serverBand.maxStretch,
+          reason: clampResult.reason,
+        }, req);
+        console.warn(
+          `[negotiate-turn] band clamped at init for role="${role}" company="${company}" ` +
+          `tier=${clampResult.tier} family=${clampResult.family}: ` +
+          `${clampResult.originalInitial}→${serverBand.initialOffer} LPA (P50=${clampResult.p50})`,
+        );
+      }
 
       /* Phase 4 of the rebuild: log a sanity warning when the resolved
-         band sits outside the family's reasonable spread. Log-only at
-         runtime — clamping mid-init would mask curator errors and could
-         contradict the seed band the static script already used. The CI
-         audit (bandSanity.test.ts) catches commits that introduce bad
-         data; this telemetry catches stale-override / role-mismatch
-         paths that slip through. */
-      const bandWarnings = checkBandSanity(serverBand, role);
+         band sits outside the family's reasonable spread, OR (Phase 7)
+         when it sits above the tier P50 — even if clamping didn't
+         trigger. This catches mild misfits (1.5-2× P50) before they
+         become severe enough to clamp. */
+      const bandWarnings = checkBandSanity(serverBand, role, companyTier);
       if (bandWarnings.length > 0) {
         void captureServerEvent("kernel_band_sanity_warn", distinctId, {
           role,
           company: company.slice(0, 80),
+          tier: companyTier ?? "unknown",
           family: bandFamilyForRole(role),
           kinds: bandWarnings.map(w => w.kind).join(","),
           initial: serverBand.initialOffer,
           stretch: serverBand.maxStretch,
           walk: serverBand.walkAway,
+          was_clamped: clampResult.clamped,
         }, req);
         console.warn(`[negotiate-turn] band sanity warnings for role="${role}" company="${company}":`, bandWarnings);
       }

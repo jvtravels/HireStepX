@@ -18,8 +18,14 @@ import {
   checkBandSanity,
   bandFamilyForRole,
   BAND_SANITY_BASELINES,
+  clampBandToTierP50,
+  lookupTierP50,
+  TIER_P50_WARN_MULTIPLIER,
+  TIER_P50_CLAMP_MULTIPLIER,
+  CLAMP_INITIAL_MULTIPLIER,
 } from "../../server-handlers/_band-sanity";
 import { generateNegotiationBand } from "../../data/salary-lookup";
+import { getCompanyTier } from "../../data/company-tiers";
 
 describe("checkBandSanity", () => {
   it("returns no warnings for a well-formed band in the designer family", () => {
@@ -134,4 +140,133 @@ describe("band sanity audit — real (role, company) tuples", () => {
       expect({ role, company, warnings }).toEqual({ role, company, warnings: [] });
     });
   }
+});
+
+/* ─── Tier × family P50 sanity (Phase 7 — Wipro UI/UX session) ────────── */
+
+describe("tier × family P50 (Phase 7)", () => {
+  it("looks up the IT-services designer P50 used in the Wipro UI/UX regression", () => {
+    const lookup = lookupTierP50("UI/UX Designer", "it-services");
+    expect(lookup).not.toBeNull();
+    expect(lookup!.family).toBe("designer");
+    expect(lookup!.tier).toBe("it-services");
+    expect(lookup!.p50).toBeGreaterThanOrEqual(6);
+    expect(lookup!.p50).toBeLessThanOrEqual(12);
+  });
+
+  it("returns null when the family has no opinion for the tier", () => {
+    /* No P50 row for engineer × consulting-mbb beyond what's in the
+       table — the lookup must return null and the sanity check must
+       skip the tier branch silently rather than throw. */
+    expect(lookupTierP50("Astronaut", "it-services")).toBeNull();
+    expect(lookupTierP50("Software Engineer", null)).toBeNull();
+  });
+
+  it("warns when band initial is above 1.5× tier P50 even if within family bounds", () => {
+    /* Wipro UI/UX case condensed: designer family allows up to ₹45 LPA,
+       but IT-services tier P50 is ~₹8 LPA. A ₹16 LPA opener passes the
+       family bound and fails the tier P50 check (2× P50 = above warn
+       threshold, below clamp threshold). */
+    const warnings = checkBandSanity(
+      { initialOffer: 16, maxStretch: 22, walkAway: 10 },
+      "UI/UX Designer",
+      "it-services",
+    );
+    expect(warnings.some(w => w.kind === "initial-above-tier-p50")).toBe(true);
+  });
+
+  it("does NOT warn when the band fits the company tier P50", () => {
+    /* Same designer family + IT-services tier, but a tier-realistic
+       ₹9 LPA opener — within 1.5× P50, no tier warning. */
+    const warnings = checkBandSanity(
+      { initialOffer: 9, maxStretch: 12, walkAway: 7 },
+      "UI/UX Designer",
+      "it-services",
+    );
+    expect(warnings.some(w => w.kind === "initial-above-tier-p50")).toBe(false);
+  });
+
+  it("clamps the band when initial > 2× tier P50 (Wipro UI/UX regression)", () => {
+    /* The exact Wipro UI/UX case: opener ₹27 LPA, IT-services designer
+       P50 ≈ ₹8 LPA. 27 > 2 × 8 = 16, so clamping must trigger and the
+       new initial sits around 1.4 × P50. */
+    const result = clampBandToTierP50(
+      { initialOffer: 27, maxStretch: 35, walkAway: 22 },
+      "UI/UX Designer",
+      "it-services",
+    );
+    expect(result.clamped).toBe(true);
+    expect(result.originalInitial).toBe(27);
+    /* Clamped initial = 1.4 × P50 (~₹11.2 for P50=8). */
+    expect(result.band.initialOffer).toBeLessThan(15);
+    expect(result.band.initialOffer).toBeGreaterThan(6);
+    /* Stretch must still sit above the new initial — band must be
+       non-degenerate. */
+    expect(result.band.maxStretch).toBeGreaterThan(result.band.initialOffer);
+    /* Walkaway below initial (kernel relies on this invariant). */
+    expect(result.band.walkAway!).toBeLessThan(result.band.initialOffer);
+    expect(result.p50).toBeGreaterThanOrEqual(6);
+    expect(result.tier).toBe("it-services");
+    expect(result.family).toBe("designer");
+  });
+
+  it("does NOT clamp when initial is within tier-plausible range", () => {
+    /* A ₹15 LPA opener for IT-services designer is above 1.5× P50 (warn)
+       but below 2× P50 (clamp). The band must pass through unchanged. */
+    const result = clampBandToTierP50(
+      { initialOffer: 15, maxStretch: 20, walkAway: 11 },
+      "UI/UX Designer",
+      "it-services",
+    );
+    expect(result.clamped).toBe(false);
+    expect(result.band.initialOffer).toBe(15);
+  });
+
+  it("does NOT clamp legitimate FAANG senior bands (engineer family)", () => {
+    /* A Google L5 / Microsoft Senior SDE legitimately resolves to ₹95-125
+       LPA. FAANG engineer P50 is ₹60 LPA in the table, so 95 < 2 × 60 =
+       120 — the clamp does NOT fire and the senior outlier ships intact. */
+    const result = clampBandToTierP50(
+      { initialOffer: 95, maxStretch: 130, walkAway: 80 },
+      "Senior Software Engineer",
+      "faang",
+    );
+    expect(result.clamped).toBe(false);
+    expect(result.band.initialOffer).toBe(95);
+  });
+
+  it("clamp threshold and warn threshold form a sensible band", () => {
+    /* Cheap invariant test: clamp threshold must be strictly higher than
+       warn threshold, otherwise every clamp would also fail the warning
+       and the telemetry would double-fire. */
+    expect(TIER_P50_CLAMP_MULTIPLIER).toBeGreaterThan(TIER_P50_WARN_MULTIPLIER);
+    /* And the clamped-to multiplier must sit between 1× and the warn
+       threshold so the new opener is plausible AND won't immediately
+       re-trip the warning post-clamp. */
+    expect(CLAMP_INITIAL_MULTIPLIER).toBeGreaterThan(1);
+    expect(CLAMP_INITIAL_MULTIPLIER).toBeLessThanOrEqual(TIER_P50_WARN_MULTIPLIER);
+  });
+
+  it("Wipro UI/UX × Designer resolves to a clampable band (end-to-end regression)", () => {
+    /* Wire the actual production data path: generateNegotiationBand →
+       clampBandToTierP50. We don't assert the EXACT clamped opener
+       (curator data may move), only that the clamp DOES fire — i.e.
+       the production data is currently mis-keyed for this combination
+       and the new guard catches it. If a future curator commit fixes
+       the underlying data and the clamp stops firing, this test should
+       be updated to assert clamped===false to lock in the fix. */
+    const b = generateNegotiationBand({ role: "UI/UX Designer", company: "Wipro" });
+    const tier = getCompanyTier("Wipro");
+    expect(tier).toBe("it-services");
+    const result = clampBandToTierP50(
+      { initialOffer: b.initialOffer, maxStretch: b.maxStretch },
+      "UI/UX Designer",
+      tier,
+    );
+    /* Either the clamp fires (current broken data) or the data has been
+       fixed upstream — both are acceptable, but the band MUST end up
+       below 2× IT-services designer P50. */
+    const effectiveInitial = result.clamped ? result.band.initialOffer : b.initialOffer;
+    expect(effectiveInitial).toBeLessThanOrEqual(16); // 2× P50=8
+  });
 });

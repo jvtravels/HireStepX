@@ -1,4 +1,5 @@
-/* Band sanity check — Phase 4 of the negotiation rebuild.
+/* Band sanity check — Phase 4 of the negotiation rebuild,
+ * Phase 7-tier extension after Wipro UI/UX session (May 2026).
  *
  * The Lollypop session (May 2026) exposed a class of band-data bug that
  * was invisible to the negotiation kernel because the kernel trusts whatever
@@ -30,6 +31,8 @@
  *     override is wildly off-baseline.
  *
  * Pure. */
+
+import type { CompanyTier } from "../data/company-tiers";
 
 export interface BandSanityBaseline {
   /** Role-family substring (matched case-insensitively against the
@@ -98,9 +101,237 @@ export interface BandLike {
 
 export interface BandSanityWarning {
   family: string;
-  kind: "initial-too-low" | "stretch-too-high" | "stretch-below-initial" | "walk-above-initial";
+  kind:
+    | "initial-too-low"
+    | "stretch-too-high"
+    | "stretch-below-initial"
+    | "walk-above-initial"
+    /* The family-wide bounds (above) can't catch a band that is
+       in-family-range but wildly mismatched for the COMPANY TIER.
+       Wipro UI/UX session (May 2026): designer family bound is
+       ₹3-45 LPA, ₹27 LPA opener passes — but Wipro is IT-services
+       where UI/UX P50 ≈ ₹8 LPA. The opener was 3.4× the tier P50
+       and the candidate accepted instantly. This warning fires
+       whenever initialOffer > 1.5× tier-family P50. */
+    | "initial-above-tier-p50";
   band: BandLike;
   bound: number;
+}
+
+/* Family × company-tier P50 (total CTC LPA). Reference points for the
+ * "is this band plausible for THIS company tier?" check. Pulled from
+ * AmbitionBox / Glassdoor / Levels.fyi / Naukri reconciliation, 2026.
+ *
+ * These are P50, not P75 — we want the CENTRE of the market for a tier,
+ * so we can tell when a curator override is way off (e.g. an IT-services
+ * company quoting a FAANG band).
+ *
+ * Sparse on purpose: only the tiers where we have reliable P50 data are
+ * listed. Missing combos mean "no opinion" and the check is skipped (the
+ * family-wide bound still applies). */
+export const TIER_FAMILY_P50_LPA: Record<string, Partial<Record<CompanyTier, number>>> = {
+  designer: {
+    "it-services": 8,
+    "indian-unicorn": 16,
+    "startup-growth": 14,
+    "startup-early": 10,
+    "saas-product": 18,
+    "gcc": 22,
+    "big-tech": 28,
+    "faang": 35,
+    "consulting-mbb": 30,
+    "consulting-big4": 18,
+    "bfsi-domestic": 12,
+    "bfsi-global": 22,
+    "fmcg-mnc": 14,
+    "government-psu": 9,
+    "edtech": 14,
+  },
+  engineer: {
+    "it-services": 10,
+    "indian-unicorn": 24,
+    "startup-growth": 22,
+    "startup-early": 16,
+    "saas-product": 28,
+    "gcc": 35,
+    "big-tech": 50,
+    "faang": 60,
+    "consulting-mbb": 28,
+    "consulting-big4": 16,
+    "bfsi-domestic": 14,
+    "bfsi-global": 28,
+    "fmcg-mnc": 16,
+    "government-psu": 12,
+    "edtech": 20,
+  },
+  "infra-engineer": {
+    "it-services": 11,
+    "indian-unicorn": 26,
+    "saas-product": 30,
+    "gcc": 38,
+    "big-tech": 50,
+    "faang": 65,
+    "bfsi-global": 30,
+  },
+  "engineering-manager": {
+    "it-services": 28,
+    "indian-unicorn": 60,
+    "startup-growth": 50,
+    "startup-early": 30,
+    "saas-product": 65,
+    "gcc": 75,
+    "big-tech": 90,
+    "faang": 110,
+    "consulting-mbb": 60,
+    "bfsi-domestic": 35,
+    "bfsi-global": 55,
+  },
+  "design-manager": {
+    "it-services": 18,
+    "indian-unicorn": 38,
+    "startup-growth": 32,
+    "saas-product": 42,
+    "gcc": 50,
+    "big-tech": 60,
+    "faang": 75,
+  },
+  "data-scientist": {
+    "it-services": 12,
+    "indian-unicorn": 28,
+    "startup-growth": 24,
+    "saas-product": 30,
+    "gcc": 35,
+    "big-tech": 45,
+    "faang": 55,
+  },
+  "data-ic": {
+    "it-services": 10,
+    "indian-unicorn": 20,
+    "startup-growth": 18,
+    "saas-product": 24,
+    "gcc": 28,
+    "big-tech": 35,
+    "faang": 45,
+  },
+  "product-manager": {
+    "it-services": 18,
+    "indian-unicorn": 35,
+    "startup-growth": 30,
+    "startup-early": 22,
+    "saas-product": 38,
+    "gcc": 42,
+    "big-tech": 50,
+    "faang": 65,
+    "consulting-mbb": 45,
+    "consulting-big4": 25,
+    "bfsi-domestic": 22,
+    "bfsi-global": 35,
+  },
+  pmm: {
+    "it-services": 16,
+    "indian-unicorn": 32,
+    "saas-product": 35,
+    "gcc": 38,
+    "big-tech": 45,
+    "faang": 55,
+  },
+};
+
+/** Multiplier above tier P50 that fires `initial-above-tier-p50` warning.
+ *  1.5× tier P50 = "this is the upper end of plausible for this tier" —
+ *  beyond it is either a senior IC band mis-labeled or curator data error. */
+export const TIER_P50_WARN_MULTIPLIER = 1.5;
+
+/** Multiplier above tier P50 that triggers CLAMPING at init (not just a
+ *  warning). 2.0× P50 = "the bot would open at twice the typical market
+ *  median for this tier" — the Wipro UI/UX case was 3.4×. We clamp at
+ *  init time only; mid-session band changes would mask curator bugs and
+ *  break thread coherence. */
+export const TIER_P50_CLAMP_MULTIPLIER = 2.0;
+
+/** When clamping, the new initial offer is set to this multiplier × P50.
+ *  1.4× = mid-to-upper of plausible, still believable as "this employer
+ *  knows the candidate is good", not "this employer is overpaying". */
+export const CLAMP_INITIAL_MULTIPLIER = 1.4;
+
+export interface TierP50Lookup {
+  p50: number;
+  family: string;
+  tier: CompanyTier;
+}
+
+/** Look up the (family, tier) P50 baseline for a role + company tier.
+ *  Returns null when we have no opinion (unknown family, unknown tier,
+ *  or no P50 row for that combo). Pure. */
+export function lookupTierP50(role: string, tier: CompanyTier | null | undefined): TierP50Lookup | null {
+  if (!tier) return null;
+  const family = bandFamilyForRole(role);
+  const familyTable = TIER_FAMILY_P50_LPA[family];
+  if (!familyTable) return null;
+  const p50 = familyTable[tier];
+  if (p50 == null) return null;
+  return { p50, family, tier };
+}
+
+export interface BandClampResult {
+  /** The band to actually use (possibly rewritten). */
+  band: BandLike;
+  /** True iff the band was rewritten because initialOffer was >2× tier P50. */
+  clamped: boolean;
+  /** Original initialOffer/maxStretch if clamped — kept for telemetry so we
+   *  can audit what the curator data said vs what we shipped to the user. */
+  originalInitial?: number;
+  originalStretch?: number;
+  reason?: string;
+  p50?: number;
+  tier?: CompanyTier;
+  family?: string;
+}
+
+/** If the resolved band's initialOffer is more than 2× the tier P50 for
+ *  the role's family, clamp the band to a tier-realistic spread. Returns
+ *  the original band unchanged when below threshold or when we have no
+ *  P50 opinion. Pure.
+ *
+ *  This is the only place in the system that REWRITES a band. It runs at
+ *  init time only — mid-session clamping is explicitly avoided. The
+ *  rationale: if the curator data is wrong for THIS company tier, we
+ *  should not subject the candidate to an unrealistic opener. The full
+ *  band + clamp result is emitted to telemetry so curator review can
+ *  catch the bad data upstream. */
+export function clampBandToTierP50(
+  band: BandLike,
+  role: string,
+  tier: CompanyTier | null | undefined,
+): BandClampResult {
+  const lookup = lookupTierP50(role, tier);
+  if (!lookup) return { band, clamped: false };
+  const { p50, family } = lookup;
+  if (band.initialOffer <= p50 * TIER_P50_CLAMP_MULTIPLIER) {
+    return { band, clamped: false, p50, tier: lookup.tier, family };
+  }
+  const clampedInitial = Math.round(p50 * CLAMP_INITIAL_MULTIPLIER * 10) / 10;
+  /* Stretch grows from clamped initial by ~40% to keep the negotiation
+     surface non-degenerate (counter-base levers need room to move).
+     Walk-away anchored at 75% of the new initial for the same reason —
+     using the curator-provided walkAway would often land it above the
+     clamped initial and invert the band. */
+  const clampedStretch = Math.round(p50 * CLAMP_INITIAL_MULTIPLIER * 1.4 * 10) / 10;
+  const clampedWalk = Math.round(clampedInitial * 0.75 * 10) / 10;
+  return {
+    band: {
+      initialOffer: clampedInitial,
+      maxStretch: clampedStretch,
+      walkAway: clampedWalk,
+    },
+    clamped: true,
+    originalInitial: band.initialOffer,
+    originalStretch: band.maxStretch,
+    reason: `initialOffer ${band.initialOffer} > ${TIER_P50_CLAMP_MULTIPLIER}× tier P50 (${p50}) for family=${family} tier=${tier}`,
+    p50,
+    tier: lookup.tier,
+    family,
+  };
 }
 
 /** Returns a list of sanity warnings for a resolved band, given the role
@@ -111,7 +342,11 @@ export interface BandSanityWarning {
  *  value tripped a guardrail. The CI audit (see bandSanity.test.ts)
  *  catches override commits that introduce bad data; production warnings
  *  catch the stale-data / role-mismatch path. */
-export function checkBandSanity(band: BandLike, role: string): BandSanityWarning[] {
+export function checkBandSanity(
+  band: BandLike,
+  role: string,
+  tier?: CompanyTier | null,
+): BandSanityWarning[] {
   const baseline = BAND_SANITY_BASELINES.find(b => b.pattern.test(role || ""))!;
   const warnings: BandSanityWarning[] = [];
 
@@ -130,6 +365,23 @@ export function checkBandSanity(band: BandLike, role: string): BandSanityWarning
   }
   if (band.walkAway != null && band.walkAway > band.initialOffer) {
     warnings.push({ family: baseline.family, kind: "walk-above-initial", band, bound: band.initialOffer });
+  }
+  /* Tier × family P50 check — fires when the curator/sector-fallback
+     band is plausibly within the family but mismatched for the company
+     tier. Wipro UI/UX session (May 2026) is the canonical case:
+     designer family allows ₹3-45 LPA, ₹27 LPA passes — but Wipro is
+     IT-services tier where designer P50 is ₹8 LPA. The check below
+     catches that. */
+  if (tier) {
+    const lookup = lookupTierP50(role, tier);
+    if (lookup && band.initialOffer > lookup.p50 * TIER_P50_WARN_MULTIPLIER) {
+      warnings.push({
+        family: lookup.family,
+        kind: "initial-above-tier-p50",
+        band,
+        bound: Math.round(lookup.p50 * TIER_P50_WARN_MULTIPLIER * 10) / 10,
+      });
+    }
   }
   return warnings;
 }
