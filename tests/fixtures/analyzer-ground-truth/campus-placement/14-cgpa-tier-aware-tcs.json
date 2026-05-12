@@ -1,0 +1,19 @@
+{
+  "name": "CGPA 6.7 — passes the service-tier (TCS) threshold of 6.5 without framing",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your academic background.", "time": "" },
+      { "speaker": "user", "text": "I'm a final-year BTech student. My CGPA is 6.7. My major project was a college bus-tracking app using Python and Flask deployed on AWS.", "time": "" },
+      { "speaker": "ai", "text": "Tell me more about the project.", "time": "" },
+      { "speaker": "user", "text": "The Flask backend stores routes in Postgres and pushes live driver location to students. 300 students at my college use it daily.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "I can join from July after my final semester ends.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "cgpa_low_no_framing"]
+  }
+}

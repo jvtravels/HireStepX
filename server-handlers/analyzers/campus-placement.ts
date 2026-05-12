@@ -14,6 +14,7 @@
  */
 
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
+import { classifyCompanyTier } from "../_company-tier";
 
 const isAi = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("a");
 const isUser = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("u");
@@ -57,6 +58,30 @@ const FILLER_PER_100_WORDS_THRESHOLD = 4;
 /* Internship probe + content. */
 const INTERNSHIP_CLAIM = /\b(internship|interned|intern at|summer intern|summer training|industrial training|6[- ]month\s+intern)\b/i;
 const INTERNSHIP_DETAIL = /\b(intern(ship)?\s+at\s+\w|stipend|deliverable|reported to|mentor|onboarded|shipped|merged|in production)\b/i;
+
+/* Mother-Tongue-Influence (MTI) — top high-frequency Indian-English deviations
+ * that recruiters flag in tier-2/3 freshers. Each entry is a distinct phrase
+ * shape; we count distinct hits across all patterns and trigger at ≥1. */
+const MTI_PATTERNS: RegExp[] = [
+  /\bdo(?:ing)?\s+the\s+needful\b/i,
+  /\brevert\s+back\b/i,                     // "revert" already means reply
+  /\bpass(?:ed|ing|\s+)?out\s+(?:of|from|in)\s+(?:20|19)\d{2}\b/i,
+  /\bpass(?:ed|ing)?\s+out\s+from\s+\w+/i,  // "passed out from XYZ college"
+  /\bmyself\s+[A-Z][a-z]+\b/,               // "Myself Rahul"
+  /\bgood\s+name\b/i,                       // "May I know your good name?"
+  /\bkindly\s+(?:do|find|note|revert|provide|share)\b/i,
+  /\bcope\s+up\s+with\b/i,                  // standard is "cope with"
+  /\bdiscuss\s+about\b/i,                   // standard is "discuss"
+  /\bhaving\s+(?:a\s+)?doubt\b/i,           // "doubt" = question in IndE
+  /\bprepone\b/i,                           // not standard English
+  /\breach\s+(?:by|at|till)\s+\d/i,         // "reach by 5" vs "arrive by 5"
+];
+
+/* Stated CGPA values — captures the numeric value so we can grade framing. */
+const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)/i;
+/* Framing context that excuses a low CGPA — must appear in the same user
+ * span as the number for the candidate to get credit. */
+const CGPA_FRAMING_CONTEXT = /\b(?:family|health|hospital|surgery|loss|covid|caregiv|financial|part[- ]?time job|supported|recovered|bounced back|after that|since then|the next sem|improved|trended? up|consistent improvement|i (?:worked on|focused on|built|shipped|interned|won|cleared|topped))\b/i;
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
@@ -175,6 +200,39 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
+    // Mother-Tongue-Influence (MTI) deviations — count distinct pattern hits
+    const mtiHits = MTI_PATTERNS.filter((rx) => rx.test(userText)).length;
+    if (mtiHits >= 1) {
+      flags.add("mti_pattern_detected");
+      gaps.push({
+        dimension: "communication clarity",
+        expected: "Swap MTI phrases for standard professional phrasing — 'please do this' instead of 'kindly do the needful', 'I graduated in 2024' instead of 'I passed out in 2024'",
+        observed: `User used ${mtiHits} Mother-Tongue-Influence phrase${mtiHits === 1 ? "" : "s"} — recruiters in tier-1 firms grade against these`,
+        severity: mtiHits >= 3 ? "medium" : "low",
+      });
+    }
+
+    // Low CGPA stated without framing context — tier-aware threshold.
+    // Tier-1 global firms (Google/MS/Amazon India) typically gate at 7.5;
+    // most others gate at 7.0; service-tier (TCS/Infosys/Wipro) at 6.5.
+    const companyTier = classifyCompanyTier(session.target_company);
+    const cgpaCutoff = companyTier === "product-global" ? 7.5
+      : companyTier === "service" ? 6.5
+      : 7.0;
+    const cgpaMatch = userText.match(CGPA_STATED);
+    if (cgpaMatch) {
+      const cgpa = Number(cgpaMatch[1]);
+      if (cgpa > 0 && cgpa < cgpaCutoff && !CGPA_FRAMING_CONTEXT.test(userText)) {
+        flags.add("cgpa_low_no_framing");
+        gaps.push({
+          dimension: "framing",
+          expected: `CGPA below ${cgpaCutoff.toFixed(1)} for this company tier needs a one-sentence honest reason + evidence of capability (project, internship, ranking improvement, hackathon)`,
+          observed: `User stated CGPA ${cgpa.toFixed(1)} with no framing — below the typical threshold for ${companyTier === "product-global" ? "tier-1 global product firms" : companyTier === "service" ? "Indian IT services" : "this company tier"}`,
+          severity: "high",
+        });
+      }
+    }
+
     // Internship claimed but no detail given (resume padding signal)
     if (INTERNSHIP_CLAIM.test(userText) && !INTERNSHIP_DETAIL.test(userText) && userTurnCount >= 3) {
       flags.add("internship_unsubstantiated");
@@ -196,6 +254,8 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("volunteered_academic_deficit")) tips.push("Don't volunteer backlogs or low CGPA. If asked directly, say what happened in one sentence and pivot to what you did about it.");
     if (flags.has("excessive_filler_words")) tips.push("Replace fillers with a half-second pause. Recording one mock and counting your 'basically's is the fastest fix.");
     if (flags.has("internship_unsubstantiated")) tips.push("If you list an internship, be ready with: company, duration, mentor, what shipped, and a measurable outcome.");
+    if (flags.has("mti_pattern_detected")) tips.push("Watch for Mother-Tongue-Influence phrasing: 'I graduated in 2024' (not 'passed out'), 'please reply' (not 'kindly revert back'), 'I have a question' (not 'doubt'), 'I'm Rahul' (not 'Myself Rahul').");
+    if (flags.has("cgpa_low_no_framing")) tips.push("If your CGPA is under 7, never state it bare. Use the 3-part frame: one-sentence honest reason → one piece of recent evidence (project / internship / hackathon) → forward-looking intent. Bare numbers below 7 stick in the interviewer's memory.");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

@@ -1,0 +1,18 @@
+{
+  "name": "User uses multiple MTI phrases that recruiters grade against",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Myself Rahul. I passed out of 2024 from a tier-2 college in Maharashtra. I built a college bus-tracking app using Python and Flask deployed on AWS. My CGPA is 8.2. I have one doubt about the role responsibilities — kindly do the needful and share the JD. I will revert back after reviewing.", "time": "" },
+      { "speaker": "ai", "text": "What was your role on the bus-tracking app?", "time": "" },
+      { "speaker": "user", "text": "I was the backend developer. I implemented the REST API in Flask with Postgres. We had a team of 4 — I owned the API and database schema. The app is used by 300 students daily in my college.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "My final exams end in May. I can join from June 15.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["mti_pattern_detected"],
+    "must_not_include": ["empty_transcript", "cgpa_low_no_framing", "user_badmouthing_college"]
+  }
+}

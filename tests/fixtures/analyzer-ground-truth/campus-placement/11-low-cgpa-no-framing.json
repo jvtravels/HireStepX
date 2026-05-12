@@ -1,0 +1,18 @@
+{
+  "name": "User states low CGPA bare without any framing or evidence",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your academic background.", "time": "" },
+      { "speaker": "user", "text": "I am a final year BTech student. My CGPA is 6.4. My major project was a sentiment analysis tool using Python and scikit-learn for classifying movie reviews.", "time": "" },
+      { "speaker": "ai", "text": "What did you build for the project?", "time": "" },
+      { "speaker": "user", "text": "It was a Flask web app where users paste a review and get a sentiment label. The model is a logistic regression trained on IMDB data.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "I can join from July after my graduation.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["cgpa_low_no_framing"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

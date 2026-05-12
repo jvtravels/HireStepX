@@ -1,0 +1,18 @@
+{
+  "name": "User explains low CGPA with honest context + recent evidence",
+  "session": {
+    "type": "campus-placement",
+    "transcript": [
+      { "speaker": "ai", "text": "I see your CGPA is on the lower side. Can you walk me through that?", "time": "" },
+      { "speaker": "user", "text": "Yes, my CGPA is 6.4. In my second year my father had a major surgery and I was the primary caregiver — that semester pulled the average down. Since then I have trended up consistently, and in the last two semesters I cleared GATE and built a sentiment analysis tool in Python that I deployed on Render. The project has 200 weekly active users from my college.", "time": "" },
+      { "speaker": "ai", "text": "Tell me more about the project.", "time": "" },
+      { "speaker": "user", "text": "It's a Flask web app trained on IMDB reviews with scikit-learn logistic regression. I added a fine-tuning loop so users can flag misclassifications and the model retrains weekly. I deployed it on Render with Postgres.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "I can join from July after my final semester ends.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "cgpa_low_no_framing", "user_badmouthing_college"]
+  }
+}

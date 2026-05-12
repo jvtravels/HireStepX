@@ -1,0 +1,19 @@
+{
+  "name": "CGPA 7.2 — fine for tier-2 firms but below tier-1 global threshold (Google India)",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Google India",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your academic background.", "time": "" },
+      { "speaker": "user", "text": "I'm a final-year BTech student. My CGPA is 7.2. My major project was a sentiment analysis tool using Python and scikit-learn for classifying movie reviews.", "time": "" },
+      { "speaker": "ai", "text": "Tell me more about the project.", "time": "" },
+      { "speaker": "user", "text": "It's a Flask web app trained on IMDB reviews with logistic regression. Deployed on Render.", "time": "" },
+      { "speaker": "ai", "text": "When can you join?", "time": "" },
+      { "speaker": "user", "text": "I can join from July after my final semester ends.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["cgpa_low_no_framing"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

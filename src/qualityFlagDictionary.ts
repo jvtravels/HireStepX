@@ -50,6 +50,8 @@ const DICT: Record<string, FriendlyFlag> = {
   vague_complexity_claim: { label: "User used vague speed language instead of Big-O", description: "Phrases like 'pretty fast' / 'linear-ish' / 'fast enough' without a concrete O(...) — costs technical credibility.", category: "user_skipped_step" },
   language_anti_pattern: { label: "Rookie language idiom in the code", description: "Anti-patterns like 'var' + loose-equality in JS, bare-except / range(len(...)) in Python, or string-concat-in-loop in Java — easy credibility hit.", category: "user_skipped_step" },
   we_heavy_ownership: { label: "User said 'we' without saying what they did", description: "Long answer with multiple 'we / our' references and no 'I' — interviewer can't tell the candidate's individual contribution.", category: "user_skipped_step" },
+  mti_pattern_detected: { label: "Mother-tongue-influenced English phrasing", description: "Phrases like 'do the needful', 'revert back', 'passout of 2024', 'kindly do', 'myself X', 'cope up with' — common Indian-English deviations that interviewers grade against. Swap for standard professional phrasing.", category: "user_skipped_step" },
+  cgpa_low_no_framing: { label: "Low CGPA stated without context", description: "User mentioned a CGPA under 7.0 but didn't frame it — no context on what happened, what they learned, or evidence of capability outside the number. Costs significant credibility for freshers.", category: "user_skipped_step" },
 
   // User skipped a key step
   weak_star_structure: { label: "User answers missed STAR structure", description: "Most user answers were missing Situation / Task / Action / Result components.", category: "user_skipped_step" },
