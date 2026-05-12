@@ -1593,8 +1593,15 @@ export function useInterviewEngine() {
                 if (s.type === "question") break;
                 if (s.type === "follow-up") perQuestionInserted++;
               }
-              const overGlobal = followUpInsertCountRef.current >= maxInserts;
-              const overPerQ = perQuestionInserted >= maxPerQuestion;
+              /* Kernel bypass: when the canonical negotiation kernel is
+                 driving, its turnRes.terminal flag owns conversation
+                 length. The session-global and per-question caps were
+                 sized for behavioural interviews and cause the
+                 premature-close bug for salary negotiation (engine
+                 gives up inserting, the static "closing" slot fires). */
+              const kernelOn = negotiationKernelEnabledRef.current;
+              const overGlobal = !kernelOn && followUpInsertCountRef.current >= maxInserts;
+              const overPerQ = !kernelOn && perQuestionInserted >= maxPerQuestion;
               if (!overGlobal && !overPerQ) {
                 const closingIdx = prev.findIndex((s, i) => i > currentStep && s.type === "closing");
                 if (closingIdx > currentStep) {
@@ -1643,11 +1650,24 @@ export function useInterviewEngine() {
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
           } else {
             setInterviewScript(prev => {
-              // Cap check — see src/_follow-up-cap.ts for the formula.
-              const cap = checkFollowUpCap({ script: prev });
-              if (!cap.allowed) {
-                console.warn(`[interview] Skipping follow-up — turn cap reached (${cap.currentTurns}/${cap.maxTurns})`);
-                return prev;
+              /* Cap check — see src/_follow-up-cap.ts for the formula.
+                 BYPASSED for the canonical negotiation kernel: the
+                 kernel owns its own terminal phase (accepted /
+                 walked-away / stalemate). Letting this generic-
+                 interview cap fire forces the engine to advance past
+                 the kernel-driven turn into the static "closing"
+                 slot, producing the "Thanks, what's your notice
+                 period?" premature-close bug seen in the Tech
+                 Mahindra UX-Designer screenshots. The kernel's
+                 turnRes.terminal flag is the right gate; the cap is
+                 a behavioral-interview safety net that doesn't apply
+                 here. */
+              if (!negotiationKernelEnabledRef.current) {
+                const cap = checkFollowUpCap({ script: prev });
+                if (!cap.allowed) {
+                  console.warn(`[interview] Skipping follow-up — turn cap reached (${cap.currentTurns}/${cap.maxTurns})`);
+                  return prev;
+                }
               }
               return [
                 ...prev.slice(0, currentStep),
