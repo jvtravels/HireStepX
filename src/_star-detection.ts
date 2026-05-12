@@ -39,6 +39,16 @@ export interface StarPresence {
   count: number;
   /** Metric/number signal — used by Result detection AND by the score rubric. */
   hasMetrics: boolean;
+  /** "we"-heavy attribution: the answer narrates collective action ("we
+   *  built / we shipped / our team did") without a clear first-person
+   *  Action contribution. Indian candidates default to "we" out of cultural
+   *  humility; treating that as an automatic Action-miss is a false negative.
+   *  When this fires we still want the follow-up to ask "what did *you*
+   *  specifically do?" — but framed as ownership clarification, not as
+   *  "you didn't act." Optional in the interface so callers that
+   *  synthesize a StarPresence by hand (e.g. nextStarGap unit tests)
+   *  don't need to set it — detectStarPresence always populates it. */
+  weHeavy?: boolean;
 }
 
 /* Numeric / metric markers. ₹50,000 / $5M / 40% / 3x / "50 users". */
@@ -60,6 +70,15 @@ const ACTION_RE = /\bi\s+(?:built|designed|shipped|led|drove|created|wrote|made|
    outcomes as clearly as "+40%". METRIC_RE stays strict (no false
    positives from random integers); this regex catches the narratively
    phrased wins that strict metric matching would miss. */
+/* "We"-action verbs — collective phrasing common in Indian candidates'
+   answers ("we built / we shipped / our team launched"). Used in tandem
+   with ACTION_RE: if WE_ACTION_RE fires several times but ACTION_RE
+   doesn't, the candidate is narrating collective work without claiming a
+   personal slice. That's the pronoun-attribution edge case, not a STAR
+   failure — handled by the weHeavy flag below, NOT by counting Action as
+   present (which would silently approve hiding behind the team). */
+const WE_ACTION_RE = /\b(?:we|our\s+team|the\s+team)\s+(?:built|designed|shipped|led|drove|created|wrote|made|fixed|launched|coordinated|negotiated|trained|coached|presented|prototyped|tested|migrated|refactored|architected|implemented|defined|aligned|escalated|prioriti[sz]ed|delivered|drafted|reviewed|analy[sz]ed|championed|spearheaded|pioneered|steered|rolled\s+out|stood\s+up|cut\s+over)\b/gi;
+
 const RESULT_BRIDGE_RE = /\bresult(?:ed|ing)?\b|\bwhich\s+led\s+to\b|\bwhich\s+drove\b|\bso\s+that\b|\bwe\s+saw\b|\bafter\s+(?:that|launch)\b|\bin\s+the\s+end\b|\boutcome\b|\bimpact\b|\bby\s+\d+|\bmost[\s-]used\b|\btop[\s-]rated\b|\bwidely[\s-]adopted\b|\bbecame\s+(?:the|a|our)\b|\bgained\s+(?:traction|adoption|users)\b|\bachieved\b|\b(?:was|were)\s+(?:successful|adopted)\b|\brolled\s+out\s+(?:to|across|org)\b|\bshipped\s+on\s+(?:time|schedule)\b|\bwent\s+(?:live|to\s+prod)\b/i;
 
 export function detectStarPresence(text: string): StarPresence {
@@ -70,7 +89,15 @@ export function detectStarPresence(text: string): StarPresence {
   const action = ACTION_RE.test(t);
   const result = hasMetrics || RESULT_BRIDGE_RE.test(t);
   const count = [situation, task, action, result].filter(Boolean).length;
-  return { situation, task, action, result, count, hasMetrics };
+  /* Pronoun-attribution signal. Fires when the answer leans on collective
+     phrasing (≥2 "we built / our team did" hits) without a balanced
+     first-person Action claim. The 2-hit floor avoids tagging a single
+     incidental "we shipped" as we-heavy when the rest of the answer is
+     "I designed / I led". Threshold tuned to flag answers that are
+     materially we-attributed, not ones with passing collective mentions. */
+  const weHits = (t.match(WE_ACTION_RE) || []).length;
+  const weHeavy = weHits >= 2 && !action;
+  return { situation, task, action, result, count, hasMetrics, weHeavy };
 }
 
 /** Which STAR component is most useful to nudge next, given current presence

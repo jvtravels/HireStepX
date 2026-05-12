@@ -11,6 +11,7 @@ import { callLLM, extractJSON } from "./_llm";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
+import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -40,7 +41,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -89,6 +90,7 @@ export default async function handler(req: Request): Promise<Response> {
       candidateWalkAway?: number;
       candidateCompetingOffer?: number;
       starGap?: "action" | "result" | "situation-task";
+      weHeavy?: boolean;
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -877,11 +879,25 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
        compensation probes ("so what's your target salary?") mid-story.
        That breaks the focus and signals to the candidate the interviewer
        isn't actually listening. */
+    /* Classify the question shape so non-STAR prompts (self-intro,
+       motivation, failure, conflict) get the right coaching framework.
+       STAR is the default for story-shaped prompts but is actively wrong
+       for self-intro ("tell me about yourself" → PPF) and motivation
+       ("why this company" → Hook-Evidence-Fit). The classifier returns
+       "generic" for anything ambiguous, which keeps the STAR path
+       intact for the common case. */
+    const behavioralCategory = type === "behavioral"
+      ? classifyBehavioralQuestion(question)
+      : "generic";
+    const frameworkOverride = type === "behavioral"
+      ? frameworkDirectiveFor(behavioralCategory)
+      : "";
+
     const behavioralModeGuard = type === "behavioral"
       ? `\nMODE FENCE — THIS IS A BEHAVIOURAL INTERVIEW, NOT A NEGOTIATION OR HR-ROUND CHECK.
 - DO NOT ask about target salary, current compensation, joining timeline, notice period, or location preferences. Those are HR-round / salary-neg probes.
 - DO NOT ask about visa, relocation willingness, or family situation.
-- STAY on examples and stories: situations the candidate has handled, decisions they made, what they did specifically, and what the outcome was. STAR shape (Situation → Task → Action → Result) is what you are probing for.`
+- STAY on examples and stories: situations the candidate has handled, decisions they made, what they did specifically, and what the outcome was.${frameworkOverride ? "" : " STAR shape (Situation → Task → Action → Result) is what you are probing for."}${frameworkOverride ? `\n${frameworkOverride}` : ""}`
       : "";
 
     /* Behavioural-only: STAR component-gap hint from the engine. When the
@@ -894,14 +910,31 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
        sent `true` or `"foo"`) would otherwise fall through the ternary
        chain and emit a malformed prompt block. */
     const validStarGaps = new Set(["action", "result", "situation-task"]);
+    /* Suppress STAR-gap targeting when the question isn't STAR-shaped.
+       Firing "missing the Action" on a "tell me about yourself" answer
+       (PPF-shaped) would teach the candidate the wrong lesson. The
+       framework override directive above already steers the coach to
+       the correct rubric — letting starGap also fire would create
+       conflicting guidance in the same prompt. */
+    const starGapSuppressed = type === "behavioral" && frameworkOverride !== "";
     const safeStarGap: "action" | "result" | "situation-task" | null =
-      (typeof starGap === "string" && validStarGaps.has(starGap))
+      (typeof starGap === "string" && validStarGaps.has(starGap) && !starGapSuppressed)
         ? (starGap as "action" | "result" | "situation-task")
         : null;
+    // Same suppression rule: pronoun-attribution probe assumes STAR-
+    // style "you did X" framing. On a PPF / HEF / SOAR / SBI prompt the
+    // framework directive owns the coaching shape; don't double up.
+    const safeWeHeavy = type === "behavioral" && weHeavy === true && !starGapSuppressed;
     const starGapDirective = (type === "behavioral" && safeStarGap)
       ? `\nSTAR-GAP TARGETING — the engine detected this answer is missing the "${safeStarGap}" component. Your follow-up MUST probe specifically for that:
 ${safeStarGap === "action"
-  ? `  - Ask what THEY specifically did. "What were *your* specific actions?" / "Walk me through what *you* did, step by step — not what the team did."`
+  ? (safeWeHeavy
+      // Action-gap + "we" attribution: the candidate IS narrating action,
+      // but as a collective ("we built / our team shipped"). Don't teach
+      // them "we" is wrong (Indian-context cultural humility). Instead
+      // ask them to slice out their personal contribution.
+      ? `  - The candidate is narrating with "we / our team" — this is normal (esp. for Indian candidates), NOT a failure. Do NOT correct their pronoun usage. Instead, ask them to slice out their individual contribution: "Within the team's work, what was *your* specific slice?" / "When you say 'we built X' — which part did *you* personally own?" / "Walk me through one decision YOU made on this project."`
+      : `  - Ask what THEY specifically did. "What were *your* specific actions?" / "Walk me through what *you* did, step by step — not what the team did."`)
   : safeStarGap === "result"
   ? `  - Ask for the outcome / measurable impact. "How did it turn out?" / "What was the impact — any numbers you remember?" / "How did you know it worked?"`
   // Situation/Task framing: "set the scene" alone reads as filler — force
@@ -909,7 +942,13 @@ ${safeStarGap === "action"
   // the story, not another round of context-padding.
   : `  - Ask for the problem / goal. "What problem were you actually solving?" / "What was the goal — and why did it matter?" / "Before you got to the actions, what was the context that made this hard?"`}
 - ONE question, no preamble. Do NOT escalate difficulty — escalation is for follow-ups on already-complete STAR answers.`
-      : "";
+      : (safeWeHeavy
+        // weHeavy without a starGap firing — answer is STAR-complete on
+        // paper but pronoun-ambiguous. Surface the ownership probe as a
+        // soft clarification, not a correction.
+        ? `\nPRONOUN-ATTRIBUTION CLARIFY — the candidate is narrating in "we / our team" voice without isolating their personal contribution. Do NOT correct the pronoun (cultural humility default, esp. for Indian candidates). Instead, ask ONE clarifying probe that surfaces individual ownership: "Within that team effort, what was *your* specific role?" / "When you say 'we' — which piece did you personally drive?" / "What's one decision *you* made on this that you'd own again?"
+- ONE question, no preamble.`
+        : "");
 
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
     const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")

@@ -9,7 +9,7 @@ import { detectStarPresence, nextStarGap } from "../_star-detection";
 describe("detectStarPresence", () => {
   it("returns all-false for empty input", () => {
     const r = detectStarPresence("");
-    expect(r).toMatchObject({ situation: false, task: false, action: false, result: false, count: 0, hasMetrics: false });
+    expect(r).toMatchObject({ situation: false, task: false, action: false, result: false, count: 0, hasMetrics: false, weHeavy: false });
   });
 
   it("detects a full STAR answer", () => {
@@ -69,6 +69,30 @@ describe("detectStarPresence", () => {
     expect(detectStarPresence("I spearheaded the cross-team rollout").action).toBe(true);
     expect(detectStarPresence("I steered the team through the cutover").action).toBe(true);
     expect(detectStarPresence("I rolled out the change in three phases").action).toBe(true);
+  });
+
+  it("weHeavy — flags collective phrasing without first-person action (Indian cultural humility default)", () => {
+    // ≥2 we-action hits + no I-action verb → weHeavy fires
+    const text = "At my last company, we built the onboarding flow, we shipped it in six weeks, and our team launched the dashboard right after.";
+    const r = detectStarPresence(text);
+    expect(r.weHeavy).toBe(true);
+    expect(r.action).toBe(false);
+  });
+
+  it("weHeavy — false when first-person Action is also present", () => {
+    // Even with we-mentions, an explicit I-verb means the candidate IS
+    // attributing personal action. Don't flag as we-heavy.
+    const text = "We built the system as a team but I led the architecture review and I designed the API.";
+    const r = detectStarPresence(text);
+    expect(r.action).toBe(true);
+    expect(r.weHeavy).toBe(false);
+  });
+
+  it("weHeavy — false when there's only one passing collective mention", () => {
+    // Single "we shipped" surrounded by I-verbs is normal narration, not we-heavy.
+    const text = "I designed the schema, I wrote the migration, and we shipped on Friday.";
+    const r = detectStarPresence(text);
+    expect(r.weHeavy).toBe(false);
   });
 
   it("count reflects partial STAR coverage", () => {

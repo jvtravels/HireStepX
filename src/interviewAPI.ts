@@ -668,6 +668,13 @@ export async function fetchFollowUp(params: {
       a component-gap probe ("what specifically did *you* do?") instead
       of escalating depth on whatever it happened to latch onto. */
   starGap?: "action" | "result" | "situation-task";
+  /** Behavioural-only: candidate's answer leans on collective ("we / our
+      team") attribution without a clear first-person Action. Distinct
+      from starGap because the fix is ownership clarification ("what did
+      *you* do?"), not STAR-shape correction. Indian candidates default
+      to "we" out of cultural humility — we want to surface the
+      individual contribution, not teach them "we" is wrong. */
+  weHeavy?: boolean;
 }): Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> {
   // Client-side rate limit: max 10 follow-ups per 60s
   if (!checkRateLimit("follow-up", 10, 60_000)) return null;
