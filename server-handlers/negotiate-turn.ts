@@ -161,9 +161,18 @@ export async function generateAiText(
      critical for diagnosing regressions in the wild (a transcript
      alone doesn't show *which* check fired). */
   failureKinds: string[];
+  /* Count of LLM attempts that returned text the structured-envelope
+     parser couldn't decode (LLM ignored jsonMode or wrapped its
+     response in unrecoverable prose). 0/1/2. Surfaced so the handler
+     can emit `kernel_structured_envelope_missing` PostHog events and
+     we can track the LLM provider's jsonMode-honouring rate over
+     time — directly addresses the "refusal rate is invisible" risk
+     called out post-Phase-2. */
+  envelopeMissingAttempts: number;
 }> {
   const { system, user } = buildAiPrompt({ state, move, candidateAnswer });
   const failureKinds: string[] = [];
+  let envelopeMissingAttempts = 0;
 
   /* One attempt = call LLM → parse JSON envelope → run text + structured
      validators. The structured envelope is Phase 2 of the rebuild
@@ -172,7 +181,7 @@ export async function generateAiText(
      malformed envelope, we fall through to the text-only path on the
      raw output — same validators still run on .text, so this is
      strictly additive vs the pre-Phase-2 behaviour. */
-  async function attempt(promptUser: string): Promise<{ text: string; failures: string[] } | { error: string }> {
+  async function attempt(promptUser: string): Promise<{ text: string; failures: string[]; envelopeOk: boolean } | { error: string }> {
     let raw: string;
     try {
       raw = await llm(system, promptUser, { userId });
@@ -191,14 +200,15 @@ export async function generateAiText(
     const v = validateAiText(text, state, move);
     const structured = parsed ? validateStructuredFields(parsed, state, move) : [];
     const allFailures = [...v.failures, ...structured];
-    return { text, failures: allFailures.map(f => f.kind) };
+    return { text, failures: allFailures.map(f => f.kind), envelopeOk: parsed !== null };
   }
 
   const a1 = await attempt(user);
   if ("error" in a1) {
-    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [a1.error] };
+    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [a1.error], envelopeMissingAttempts };
   }
-  if (a1.failures.length === 0) return { text: a1.text, source: "llm", failureKinds };
+  if (!a1.envelopeOk) envelopeMissingAttempts++;
+  if (a1.failures.length === 0) return { text: a1.text, source: "llm", failureKinds, envelopeMissingAttempts };
   failureKinds.push(...a1.failures);
 
   /* Retry with explicit failure feedback in the prompt. */
@@ -208,12 +218,13 @@ export async function generateAiText(
     `Try again. Stick to the kernel brief exactly and ensure the JSON envelope fields agree with the prose.`;
   const a2 = await attempt(retryUser);
   if ("error" in a2) {
-    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, a2.error] };
+    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, a2.error], envelopeMissingAttempts };
   }
-  if (a2.failures.length === 0) return { text: a2.text, source: "llm-retry", failureKinds };
+  if (!a2.envelopeOk) envelopeMissingAttempts++;
+  if (a2.failures.length === 0) return { text: a2.text, source: "llm-retry", failureKinds, envelopeMissingAttempts };
   failureKinds.push(...a2.failures);
 
-  return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds };
+  return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds, envelopeMissingAttempts };
 }
 
 /* ─── Handler ─────────────────────────────────────────────────────── */
@@ -290,7 +301,7 @@ export default async function handler(
         maxTurns: body.maxTurns,
       });
       const move = pickAiMove(state);
-      const { text, source, failureKinds } = await generateAiText(state, move, "", llm, auth.userId);
+      const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, "", llm, auth.userId);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
       if (failureKinds.length > 0) {
@@ -300,6 +311,22 @@ export default async function handler(
           phase: state.phase,
           where: "init",
           recovered: source !== "fallback",
+        }, req);
+      }
+      if (envelopeMissingAttempts > 0) {
+        /* LLM provider quietly disabled jsonMode for at least one
+           attempt. Phase 2 of the rebuild added structured JSON output
+           specifically so we could cross-check role/lever/number — when
+           the envelope is missing we lose that coverage and fall back
+           to text-only validation. Tracking this in PostHog lets us spot
+           a provider regression (e.g. Groq pushes a model that stops
+           respecting jsonMode) before the validation-failure rate
+           climbs as a downstream symptom. */
+        void captureServerEvent("kernel_structured_envelope_missing", distinctId, {
+          missing_attempts: envelopeMissingAttempts,
+          lever: move.lever,
+          phase: state.phase,
+          where: "init",
         }, req);
       }
       void captureServerEvent("kernel_init", distinctId, {
@@ -353,7 +380,7 @@ export default async function handler(
       const prevPhase = state.phase;
       state = applyCandidateAnswer(state, safeAnswer);
       const move = pickAiMove(state);
-      const { text, source, failureKinds } = await generateAiText(state, move, safeAnswer, llm, auth.userId);
+      const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, safeAnswer, llm, auth.userId);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
 
@@ -364,6 +391,15 @@ export default async function handler(
           phase: state.phase,
           where: "turn",
           recovered: source !== "fallback",
+        }, req);
+      }
+      if (envelopeMissingAttempts > 0) {
+        /* See init branch for rationale. */
+        void captureServerEvent("kernel_structured_envelope_missing", distinctId, {
+          missing_attempts: envelopeMissingAttempts,
+          lever: move.lever,
+          phase: state.phase,
+          where: "turn",
         }, req);
       }
 

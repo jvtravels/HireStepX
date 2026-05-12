@@ -474,3 +474,71 @@ describe("buildAiPrompt conversation history (Phase 5)", () => {
     expect(user).not.toContain("RECENT DIALOGUE");
   });
 });
+
+describe("prompt cache structure (post-Phase-5 hardening)", () => {
+  /* The previous prompt put per-turn LEVER GUIDANCE at the top of the
+     user message and re-embedded role/company/band in the brief on
+     every turn. Groq's longest-shared-prefix cache only matches what's
+     byte-identical, so a per-turn variable at the top defeats every
+     subsequent block. Restructure:
+       system            — fully invariant (LEVER GUIDANCE GLOSSARY
+                           embedded; cached across ALL sessions)
+       user[SESSION CTX] — session-stable role/company/band (cached
+                           across every turn of one session)
+       user[TURN BRIEF]  — per-turn dynamic
+       user[remainder]   — history / hints / candidate / instructions */
+  it("system prompt embeds the full lever glossary (so per-turn user prompt stays small)", () => {
+    const { system } = buildAiPrompt({
+      state: baseState(),
+      move: { lever: "counter-base", newTotalLpa: 23, rationale: "" },
+      candidateAnswer: "",
+    });
+    expect(system).toContain("LEVER GUIDANCE GLOSSARY");
+    expect(system).toContain("open-with-offer:");
+    expect(system).toContain("counter-base:");
+    expect(system).toContain("benefits-summary:");
+    expect(system).toContain("close-walkaway:");
+  });
+
+  it("user prompt no longer leads with a per-turn LEVER GUIDANCE block", () => {
+    const { user } = buildAiPrompt({
+      state: baseState(),
+      move: { lever: "counter-base", newTotalLpa: 23, rationale: "" },
+      candidateAnswer: "",
+    });
+    /* Previous version inlined the lever-specific guidance line at the
+       top of the user message — every turn invalidated the cache prefix
+       beyond system. The new structure leads with SESSION CONTEXT. */
+    expect(user).not.toMatch(/^LEVER GUIDANCE:/);
+    expect(user.startsWith("SESSION CONTEXT")).toBe(true);
+  });
+
+  it("SESSION CONTEXT block is byte-stable across turns of the same session", () => {
+    /* Two turns of one session — different lever, different phase,
+       different candidateAnswer, but role/company/band unchanged. The
+       SESSION CONTEXT block must be byte-identical so Groq's cache
+       prefix extends past system into the user message. */
+    const stableSeed = { role: "Senior UX Designer", company: "Lollypop" };
+    const s1 = baseState({ ...stableSeed, phase: "opening" });
+    const s2 = baseState({ ...stableSeed, phase: "counter-offer", turnIndex: 4, highestOfferMade: 22 });
+    const p1 = buildAiPrompt({ state: s1, move: { lever: "open-with-offer", newTotalLpa: 20, rationale: "" }, candidateAnswer: "" });
+    const p2 = buildAiPrompt({ state: s2, move: { lever: "counter-base", newTotalLpa: 23, rationale: "" }, candidateAnswer: "different" });
+    const head = (s: string) => s.slice(0, s.indexOf("TURN BRIEF"));
+    expect(head(p1.user)).toBe(head(p2.user));
+    expect(head(p1.user)).toContain("role=Senior UX Designer");
+    expect(head(p1.user)).toContain("company=Lollypop");
+  });
+
+  it("turn brief no longer duplicates role/company/band (they live in SESSION CONTEXT)", () => {
+    const { user } = buildAiPrompt({
+      state: baseState({ role: "UX Designer", company: "Lollypop" }),
+      move: { lever: "counter-base", newTotalLpa: 23, rationale: "" },
+      candidateAnswer: "",
+    });
+    const turnBriefLine = user.slice(user.indexOf("TURN BRIEF"), user.indexOf("\n\n", user.indexOf("TURN BRIEF")));
+    expect(turnBriefLine).toContain("lever=counter-base");
+    expect(turnBriefLine).not.toContain("role=");
+    expect(turnBriefLine).not.toContain("company=");
+    expect(turnBriefLine).not.toContain("band=");
+  });
+});
