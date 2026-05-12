@@ -206,9 +206,15 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
   ]);
 
   /* Target patterns. We require explicit ask context to bind — bare
-     numbers are ignored to avoid "currently 8.5" leaking to target. */
-  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)?/i;
-  let target = extractFirstNumber(a, [targetCtxPat]);
+     numbers are ignored to avoid "currently 8.5" leaking to target.
+     Both directions matter for Indian candidates:
+       - English / pre-number: "want / expecting / looking for N LPA"
+       - Hindi-mix / post-number: "N lakh chahiye", "N LPA ka package",
+         "N lakh mil jaye", "N LPA milna chahiye" — common in mixed
+         Hindi-English STT output, previously dropped on the floor. */
+  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)?/i;
+  const targetHindiPostPat = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
+  let target = extractFirstNumber(a, [targetCtxPat, targetHindiPostPat]);
 
   /* Disambiguation: if a number was already bound to current/
      competing, it isn't ALSO the target — drop it. */

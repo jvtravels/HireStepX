@@ -489,3 +489,41 @@ describe("engine wrap contract", () => {
     });
   }
 });
+
+/* ─── Hindi-mix parser coverage ────────────────────────────────────
+ * Audit gap: Indian candidates frequently code-switch ("Mujhe 25 LPA
+ * chahiye", "25 lakh ka package", "Mera target 30 LPA hai"). Deepgram
+ * preserves these tokens; the kernel parser previously matched only
+ * English ask-context words, so the candidateTarget never bound and the
+ * AI never anchored against the candidate's actual number. */
+describe("parseCandidateAnswer (Hindi-mix)", () => {
+  it("'Mujhe 25 LPA chahiye' → target 25", () => {
+    const p = parseCandidateAnswer("Mujhe 25 LPA chahiye");
+    expect(p.target).toBe(25);
+  });
+
+  it("'25 lakh chahiye' (post-number intent word) → target 25", () => {
+    const p = parseCandidateAnswer("Honestly, 25 lakh chahiye for this role.");
+    expect(p.target).toBe(25);
+  });
+
+  it("'30 LPA ka package' → target 30", () => {
+    const p = parseCandidateAnswer("Sir, 30 LPA ka package chahiye.");
+    expect(p.target).toBe(30);
+  });
+
+  it("'Mera target 28 LPA hai' → target 28", () => {
+    const p = parseCandidateAnswer("Mera target 28 LPA hai.");
+    expect(p.target).toBe(28);
+  });
+
+  it("'22 lakh mil jaye to bahut accha' → target 22", () => {
+    const p = parseCandidateAnswer("22 lakh mil jaye to bahut accha hoga.");
+    expect(p.target).toBe(22);
+  });
+
+  it("Hindi-mix with rupee symbol → target binds", () => {
+    const p = parseCandidateAnswer("Main ₹35 LPA expect karta hu.");
+    expect(p.target).toBe(35);
+  });
+});

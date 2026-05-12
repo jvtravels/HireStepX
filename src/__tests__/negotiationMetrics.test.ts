@@ -1,0 +1,163 @@
+import { describe, it, expect } from "vitest";
+import {
+  computeNegotiationMetrics,
+  scoreNegotiationBehaviour,
+  type KernelTurnSummary,
+} from "../../server-handlers/_negotiation-metrics";
+import type { NegotiationState, NegotiationBand } from "../../server-handlers/_negotiation-kernel";
+
+const BAND: NegotiationBand = { initialOffer: 20, maxStretch: 30, walkAway: 16, hasEquity: false };
+
+function makeState(over: Partial<NegotiationState>): NegotiationState {
+  return {
+    sessionId: "s1",
+    role: "swe",
+    company: "Acme",
+    band: BAND,
+    phase: "opening",
+    turnIndex: 0,
+    maxTurns: 8,
+    candidateTarget: null,
+    candidateCurrentCtc: null,
+    competingOffer: null,
+    highestOfferMade: 0,
+    leversUsed: [],
+    lastAiText: "",
+    acceptedAtTurn: null,
+    walkedAwayAtTurn: null,
+    ...over,
+  };
+}
+
+const move = (over: Partial<KernelTurnSummary>): KernelTurnSummary => ({
+  lever: "open-with-offer",
+  newTotalLpa: null,
+  turnIndex: 0,
+  candidateTargetAtTurn: null,
+  ...over,
+});
+
+describe("computeNegotiationMetrics", () => {
+  it("classifies accepted outcome", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "accepted", highestOfferMade: 25, acceptedAtTurn: 4 }),
+      moves: [move({ lever: "open-with-offer", newTotalLpa: 20 }), move({ lever: "counter-base", newTotalLpa: 25, turnIndex: 2 })],
+    });
+    expect(m.outcome).toBe("accepted");
+    expect(m.lpaGained).toBe(5);
+    expect(m.bandTraversal).toBe(0.5);
+  });
+
+  it("detects anchor turn (first non-null candidateTarget)", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "stalemate" }),
+      moves: [
+        move({ turnIndex: 0, candidateTargetAtTurn: null }),
+        move({ turnIndex: 2, candidateTargetAtTurn: 28 }),
+        move({ turnIndex: 4, candidateTargetAtTurn: 28 }),
+      ],
+    });
+    expect(m.anchorTurn).toBe(2);
+  });
+
+  it("anchor null when candidate never stated target", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ phase: "stalemate" }),
+      moves: [move({ turnIndex: 0 }), move({ turnIndex: 2 })],
+    });
+    expect(m.anchorTurn).toBe(null);
+  });
+
+  it("lever diversity counts distinct levers only", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({}),
+      moves: [
+        move({ lever: "open-with-offer" }),
+        move({ lever: "counter-base" }),
+        move({ lever: "counter-base" }),
+        move({ lever: "joining-bonus" }),
+      ],
+    });
+    expect(m.leverDiversity).toBe(3);
+  });
+
+  it("flags overBandViolation when an offer exceeds maxStretch", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ highestOfferMade: 32 }),
+      moves: [
+        move({ lever: "counter-base", newTotalLpa: 32 }), // > band.maxStretch (30)
+      ],
+    });
+    expect(m.overBandViolation).toBe(true);
+  });
+
+  it("bandTraversal null when band is degenerate", () => {
+    const degenerateBand: NegotiationBand = { initialOffer: 20, maxStretch: 20, walkAway: 16, hasEquity: false };
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ band: degenerateBand, highestOfferMade: 20 }),
+      moves: [],
+    });
+    expect(m.bandTraversal).toBe(null);
+  });
+
+  it("lpaPerTurn = lpaGained / cashTurns only", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({ highestOfferMade: 28 }),
+      moves: [
+        move({ lever: "open-with-offer", newTotalLpa: 20 }),
+        move({ lever: "probe", newTotalLpa: null }),
+        move({ lever: "counter-base", newTotalLpa: 24 }),
+        move({ lever: "counter-base", newTotalLpa: 28 }),
+      ],
+    });
+    // gained 8 over 3 cash turns
+    expect(m.lpaPerTurn).toBe(2.67);
+  });
+});
+
+describe("scoreNegotiationBehaviour", () => {
+  it("strong session: early anchor + ceiling + diverse levers + acceptance → high score", () => {
+    const score = scoreNegotiationBehaviour({
+      outcome: "accepted",
+      anchorTurn: 1,
+      leverDiversity: 4,
+      lpaGained: 10,
+      lpaPerTurn: 2,
+      bandTraversal: 1,
+      overBandViolation: false,
+      totalTurns: 6,
+    });
+    // 30 (anchor) + 30 (traversal) + 20 (diversity capped) + 20 (accepted) = 100
+    expect(score).toBe(100);
+  });
+
+  it("never-anchored, never-pushed walkaway → low score", () => {
+    const score = scoreNegotiationBehaviour({
+      outcome: "walked-away",
+      anchorTurn: null,
+      leverDiversity: 1,
+      lpaGained: 0,
+      lpaPerTurn: 0,
+      bandTraversal: 0,
+      overBandViolation: false,
+      totalTurns: 3,
+    });
+    // 0 + 0 + 5 + 10 = 15
+    expect(score).toBe(15);
+  });
+
+  it("overBandViolation penalty applies", () => {
+    const base = {
+      outcome: "accepted" as const,
+      anchorTurn: 1,
+      leverDiversity: 2,
+      lpaGained: 12,
+      lpaPerTurn: 4,
+      bandTraversal: 1,
+      totalTurns: 4,
+    };
+    const clean = scoreNegotiationBehaviour({ ...base, overBandViolation: false });
+    const dirty = scoreNegotiationBehaviour({ ...base, overBandViolation: true });
+    expect(dirty).toBe(Math.max(0, clean - 25));
+  });
+});

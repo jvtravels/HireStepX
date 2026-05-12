@@ -27,6 +27,8 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType } from "./_shared";
 import { callLLM } from "./_llm";
+import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { generateNegotiationBand } from "../data/salary-lookup";
 import {
   initState,
   applyCandidateAnswer,
@@ -55,6 +57,27 @@ const DEFAULT_BAND: NegotiationBand = {
   walkAway: 16,
   hasEquity: false,
 };
+
+/** Recompute the negotiation band server-side from (role, company).
+ *  The client MAY supply a band hint, but it is never trusted —
+ *  otherwise a tampered request could push the AI above maxStretch or
+ *  below walkAway. We fall back to DEFAULT_BAND only when the
+ *  data/salary-lookup pipeline can't resolve a band (no role / unknown
+ *  company / lookup throws). Pure given inputs. */
+function resolveServerBand(role: string, company: string): NegotiationBand {
+  if (!role) return DEFAULT_BAND;
+  try {
+    const b = generateNegotiationBand({ role, company: company || undefined });
+    return {
+      initialOffer: b.initialOffer,
+      maxStretch: b.maxStretch,
+      walkAway: b.walkAway,
+      hasEquity: Boolean(b.hasEquity),
+    };
+  } catch {
+    return DEFAULT_BAND;
+  }
+}
 
 interface InitRequest {
   action: "init";
@@ -164,19 +187,40 @@ export default async function handler(
   const llm = deps?.llm ?? defaultLlmCaller;
 
   try {
+    const distinctId = distinctIdFrom(req, auth.userId);
+
     if (body.action === "init") {
+      const role = body.role || "swe";
+      const company = body.company || "";
+      /* SECURITY: ignore body.band. Recompute server-side from (role,
+         company) so a tampered client can't push the band ceiling. */
+      const serverBand = resolveServerBand(role, company);
       let state = initState({
         sessionId: body.sessionId || crypto.randomUUID(),
-        role: body.role || "swe",
-        company: body.company || "",
-        band: body.band ?? DEFAULT_BAND,
+        role,
+        company,
+        band: serverBand,
         maxTurns: body.maxTurns,
       });
       const move = pickAiMove(state);
       const { text, source } = await generateAiText(state, move, "", llm, auth.userId);
       state = applyAiMove(state, move, text);
+      const terminal = isTerminalPhase(state.phase);
+      void captureServerEvent("kernel_init", distinctId, {
+        role,
+        company: company.slice(0, 80),
+        lever: move.lever,
+        source,
+        phase: state.phase,
+        band_initial: serverBand.initialOffer,
+        band_max: serverBand.maxStretch,
+        band_walk: serverBand.walkAway,
+      }, req);
+      if (source === "fallback") {
+        void captureServerEvent("kernel_fallback", distinctId, { lever: move.lever, phase: state.phase, where: "init" }, req);
+      }
       return new Response(
-        JSON.stringify({ ok: true, state: serializeState(state), text, move, source }),
+        JSON.stringify({ ok: true, state: serializeState(state), text, move, source, terminal }),
         { status: 200, headers },
       );
     }
@@ -189,10 +233,39 @@ export default async function handler(
         return new Response(JSON.stringify({ error: "Invalid state" }), { status: 400, headers });
       }
 
+      const prevPhase = state.phase;
       state = applyCandidateAnswer(state, body.candidateAnswer || "");
       const move = pickAiMove(state);
       const { text, source } = await generateAiText(state, move, body.candidateAnswer || "", llm, auth.userId);
       state = applyAiMove(state, move, text);
+      const terminal = isTerminalPhase(state.phase);
+
+      void captureServerEvent("kernel_turn", distinctId, {
+        lever: move.lever,
+        phase: state.phase,
+        prev_phase: prevPhase,
+        turn_index: state.turnIndex,
+        source,
+        new_total_lpa: move.newTotalLpa,
+        highest_offer: state.highestOfferMade,
+        candidate_target: state.candidateTarget,
+      }, req);
+      if (prevPhase !== state.phase) {
+        void captureServerEvent("kernel_phase_transition", distinctId, { from: prevPhase, to: state.phase, lever: move.lever }, req);
+      }
+      if (source === "fallback") {
+        void captureServerEvent("kernel_fallback", distinctId, { lever: move.lever, phase: state.phase, where: "turn" }, req);
+      }
+      if (terminal) {
+        void captureServerEvent("kernel_terminal", distinctId, {
+          phase: state.phase,
+          lever: move.lever,
+          turn_index: state.turnIndex,
+          highest_offer: state.highestOfferMade,
+          accepted: state.acceptedAtTurn != null,
+          walked_away: state.walkedAwayAtTurn != null,
+        }, req);
+      }
 
       return new Response(
         JSON.stringify({
@@ -201,7 +274,7 @@ export default async function handler(
           text,
           move,
           source,
-          terminal: isTerminalPhase(state.phase),
+          terminal,
         }),
         { status: 200, headers },
       );
