@@ -2046,6 +2046,23 @@ export function useInterviewEngine() {
               });
               if (!turnRes) return null;
               negotiationKernelStateRef.current = turnRes.state;
+              /* Mirror the kernel's highestOfferMade into the legacy
+                 highestOfferRef so any code path still reading the legacy
+                 ref (closing recap regex, monotonic guards, telemetry)
+                 stays in sync with the kernel's source of truth. Without
+                 this, the kernel's deterministic-fallback path can update
+                 state without bumping the ref, and the next legacy read
+                 reports a stale number. */
+              try {
+                const parsedState = JSON.parse(turnRes.state) as { highestOfferMade?: number };
+                const kernelHigh = typeof parsedState.highestOfferMade === "number" ? parsedState.highestOfferMade : 0;
+                if (kernelHigh > highestOfferRef.current) {
+                  highestOfferRef.current = kernelHigh;
+                }
+              } catch {
+                /* serialized state shape changed under us — non-fatal,
+                   the kernel still owns its own state. */
+              }
               return {
                 needsFollowUp: !turnRes.terminal,
                 followUpText: turnRes.text,
@@ -2136,10 +2153,18 @@ export function useInterviewEngine() {
       // follow-up resolution path uses. Without this, the upfront
       // closing fires with no awareness of how the conversation went.
       const nextIdx = currentStep + 1;
+      /* When the canonical kernel is driving, the kernel's close-acceptance
+         / close-walkaway / close-stalemate levers produce the closing text
+         via the LLM downstream of state — so the legacy outcome-aware
+         override (which runs its own regex extraction over the transcript)
+         MUST stand aside, otherwise we get two contradictory closings
+         racing on the script-advance frame. Defer to the kernel turn that
+         the pending follow-up will resolve into. */
       if (
         nextStep?.type === "closing" &&
         interviewType === "salary-negotiation" &&
-        !nextStep.scoreNote?.includes("Dynamic follow-up")
+        !nextStep.scoreNote?.includes("Dynamic follow-up") &&
+        !negotiationKernelEnabledRef.current
       ) {
         const facts = extractNegotiationFacts([
           ...transcript,
