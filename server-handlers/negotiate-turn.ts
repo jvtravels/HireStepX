@@ -285,6 +285,21 @@ export default async function handler(
         new_total_lpa: move.newTotalLpa,
         highest_offer: state.highestOfferMade,
         candidate_target: state.candidateTarget,
+        /* Tactic + intent telemetry — lets us measure candidate
+           negotiation skill in production before tuning boost weights.
+           Arrays serialized as comma-joined strings for easy PostHog
+           filtering (PostHog supports array props but joined strings
+           are easier to chart). */
+        candidate_target_as_range: state.candidateAskedAsRange,
+        voss_tactics: state.vossTacticsUsed.join(",") || null,
+        voss_tactics_count: state.vossTacticsUsed.length,
+        info_asked: state.infoAsked.join(",") || null,
+        info_asked_count: state.infoAsked.length,
+        verbal_acceptance_turn: state.verbalAcceptanceTurn,
+        walk_away_returned: state.walkAwayReturned,
+        hard_band_cap: state.hardBandCap,
+        market_mode: state.marketMode,
+        final_offer_asserted_count: state.finalOfferAssertedCount,
       }, req);
       if (prevPhase !== state.phase) {
         void captureServerEvent("kernel_phase_transition", distinctId, { from: prevPhase, to: state.phase, lever: move.lever }, req);
@@ -300,6 +315,19 @@ export default async function handler(
           highest_offer: state.highestOfferMade,
           accepted: state.acceptedAtTurn != null,
           walked_away: state.walkedAwayAtTurn != null,
+          /* Outcome attribution: which tactics did the candidate use
+             and what did they ask about? Lets us measure whether
+             calibrated questions + range asks correlate with higher
+             accepted offers. */
+          voss_tactics: state.vossTacticsUsed.join(",") || null,
+          info_asked: state.infoAsked.join(",") || null,
+          candidate_target_as_range: state.candidateAskedAsRange,
+          walk_away_returned: state.walkAwayReturned,
+          market_mode: state.marketMode,
+          band_initial: state.band.initialOffer,
+          band_max: state.band.maxStretch,
+          /* Useful delta for funnels: how far over initial did we end? */
+          offer_over_initial_lpa: state.highestOfferMade - state.band.initialOffer,
         }, req);
       }
 

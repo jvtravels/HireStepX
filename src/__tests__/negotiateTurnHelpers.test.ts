@@ -171,3 +171,43 @@ describe("integration: applyAiMove + lastAiText interaction", () => {
     expect(r.failures.some(f => f.kind === "verbatim-repeat")).toBe(true);
   });
 });
+
+describe("buildAiPrompt response hints", () => {
+  it("surfaces info-asked intents into the prompt", () => {
+    const state = baseState({ infoAsked: ["clawback-period", "vest-schedule"] });
+    const move: AiMove = { lever: "joining-bonus", newTotalLpa: null, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toContain("RESPONSE HINTS");
+    expect(user).toMatch(/clawback/i);
+    expect(user).toMatch(/vest/i);
+  });
+
+  it("surfaces voss tactic hints", () => {
+    const state = baseState({ vossTacticsUsed: ["calibrated", "sign-today-bundle"] });
+    const move: AiMove = { lever: "counter-base", newTotalLpa: 24, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/calibrated/i);
+    expect(user).toMatch(/sign today/i);
+  });
+
+  it("hints hardBandCap to redirect to non-cash", () => {
+    const state = baseState({ hardBandCap: true });
+    const move: AiMove = { lever: "joining-bonus", newTotalLpa: null, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/structurally capped/i);
+  });
+
+  it("hints verbal-acceptance lock when re-opening", () => {
+    const state = baseState({ verbalAcceptanceTurn: 3 });
+    const move: AiMove = { lever: "hold-firm", newTotalLpa: 25, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/risks the offer/i);
+  });
+
+  it("emits no hints block when no signals set", () => {
+    const state = baseState();
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).not.toContain("RESPONSE HINTS");
+  });
+});
