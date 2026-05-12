@@ -1811,8 +1811,30 @@ Repeat-text in followUpText is FORBIDDEN.`;
           const sim = union > 0 ? inter / union : 0;
           if (sim > maxSim) maxSim = sim;
         }
-        if (maxSim >= 0.55) {
-          console.warn(`[follow-up] Repetition guard fired: similarity=${maxSim.toFixed(2)} — replacing with progress move`);
+        /* Belt-and-braces: even if Jaccard is below threshold (e.g.
+           because the LLM padded the same probe with a couple new
+           filler words), a verbatim-prefix match against any recent AI
+           turn is a hard fail. Bombay Design Centre session: two
+           consecutive turns were literally "I appreciate you sharing
+           that. What's most important to you in this package — is it
+           the base number…" — Jaccard ~1.0, but `previousFollowUps`
+           apparently didn't include the right entries, so the gate
+           never tripped. Compute a stable 8-word content-prefix
+           fingerprint over the LLM output and trip on any match
+           anywhere in the recent script slice we got handed. */
+        const prefixFingerprint = (s: string): string => {
+          const stop = new Set(["the","a","an","is","are","be","you","your","i","we","our","that","this","of","to","for","and","or","but","with","what","how","do","does","can","could","would","should","let","me","just","in","on","at","by","as","so","if","like","than","then","its","it","ll","ve","re"]);
+          return s.toLowerCase()
+            .replace(/[^\w\s]/g, " ")
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !stop.has(w))
+            .slice(0, 8)
+            .join(" ");
+        };
+        const curFp = prefixFingerprint(parsed.followUpText);
+        const prefixHit = curFp.length > 0 && previousFollowUps.some(p => prefixFingerprint(p) === curFp);
+        if (maxSim >= 0.55 || prefixHit) {
+          console.warn(`[follow-up] Repetition guard fired: similarity=${maxSim.toFixed(2)} prefixHit=${prefixHit} — replacing with progress move`);
           const candidateNum =
             (typeof candidateTarget === "number" && candidateTarget > 0)
               ? candidateTarget

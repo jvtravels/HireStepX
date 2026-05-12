@@ -273,12 +273,39 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
   );
 
   // Extract salary numbers: distinguish "current CTC" from "expected/counter" numbers
-  // Strategy: first extract current CTC with context patterns, then treat remaining numbers as counter
+  // Strategy: first extract current CTC with context patterns, then treat remaining numbers as counter.
+  //
+  // Two-pass: first the strict "trigger immediately precedes number"
+  // patterns; second a permissive "current-package … is around N LPA"
+  // form. The Bombay Design Centre session ("It's on current package
+  // progression because my current package is around 8.5 LPA") slipped
+  // past the strict regex because "package is around" sits between
+  // "current" and the number — the engine then misread 8.5 as the
+  // candidate's target and the LLM echoed "₹8.5 LPA is what you're
+  // looking at." Allow up to ~30 non-terminator chars between the
+  // current-package phrase and the number to catch that idiom.
   const ctcPatterns = /(?:current(?:ly)?|earning|getting|drawing|my ctc|i.?m at|making|take home)\s*(?:is\s*)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakh|lakhs|l\b)/gi;
   const ctcNumbers = new Set<string>();
   let ctcExec: RegExpExecArray | null;
   while ((ctcExec = ctcPatterns.exec(allText)) !== null) {
     ctcNumbers.add(ctcExec[1]);
+  }
+  // Permissive "current package / current salary / current comp" with
+  // intervening words (up to ~30 chars, no sentence terminators).
+  const ctcLoosePatterns = /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)/gi;
+  let ctcLooseExec: RegExpExecArray | null;
+  while ((ctcLooseExec = ctcLoosePatterns.exec(allText)) !== null) {
+    ctcNumbers.add(ctcLooseExec[1]);
+  }
+  // Also: "package progression" phrasing — Indian candidates frequently
+  // describe their ask as "20% over my current package progression"
+  // and state the current number in the same clause. The number that
+  // follows "progression … N LPA" or precedes "package progression" is
+  // the CURRENT package, not the target.
+  const progressionRe = /\bpackage\s+progression[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)/gi;
+  let progExec: RegExpExecArray | null;
+  while ((progExec = progressionRe.exec(allText)) !== null) {
+    ctcNumbers.add(progExec[1]);
   }
   const candidateCurrentCTC = ctcNumbers.size > 0 ? `₹${[...ctcNumbers][ctcNumbers.size - 1]} LPA` : null;
 

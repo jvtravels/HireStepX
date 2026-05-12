@@ -2099,6 +2099,17 @@ export function useInterviewEngine() {
           closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
         } else if (stillNegotiatingPat.test(lastAns)) {
           closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
+        } else {
+          /* Fallback for unresolved conversations. Bombay Design Centre
+             session: candidate's final answer was "CTC. Overall CTC." —
+             a placeholder reply, not an acceptance and not a walk-away,
+             and not matching the explicit "negotiating" keywords. The
+             stock script closing ("Thank you for this transparent
+             conversation, I'll put together the formal offer letter")
+             then fired and made it sound like we'd reached a deal we
+             hadn't. Default to the "still pushing" closing so the
+             session never claims agreement that didn't happen. */
+          closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
         }
         if (closingText && closingText !== nextStep.aiText) {
           setInterviewScript(prev => {

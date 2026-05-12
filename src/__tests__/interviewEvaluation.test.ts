@@ -312,6 +312,31 @@ describe("extractNegotiationFacts", () => {
     expect(facts.candidateCurrentCTC).toBe("₹28 LPA");
   });
 
+  it("[fixture: Bombay Design Centre] 'my current package is around 8.5 LPA' is current CTC, not target", () => {
+    /* Real session: candidate had stated target ₹10 LPA in turn 1, then
+       in turn 2 said "It's on current package progression because my
+       current package is around 8.5 LPA". The strict CTC regex missed
+       this because "package is around" sat between the trigger word and
+       the number, so 8.5 fell through into counterNumbers and the LLM
+       echoed "₹8.5 LPA is what you're looking at" — switching the
+       candidate's apparent target downward from ₹10 to ₹8.5. */
+    const transcript = makeTranscript([
+      "I think the current salary is low. I would like to have around 10 lakhs per CTC for this role.",
+      "It's on current package progression because my current package is around 8.5 LPA.",
+    ]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateCurrentCTC).toBe("₹8.5 LPA");
+    // Target stays at the ₹10 LPA from turn 1 — not displaced by the
+    // current-package number in turn 2.
+    expect(facts.candidateCounter).toBe("₹10 LPA");
+  });
+
+  it("'my current salary is 12 lakhs' (loose form) detected as CTC", () => {
+    const transcript = makeTranscript(["My current salary is 12 lakhs and I'm looking for a step up."]);
+    const facts = extractNegotiationFacts(transcript);
+    expect(facts.candidateCurrentCTC).toBe("₹12 LPA");
+  });
+
   it("detects competing offers", () => {
     const transcript = makeTranscript(["I have another company offering a better package."]);
     const facts = extractNegotiationFacts(transcript);
