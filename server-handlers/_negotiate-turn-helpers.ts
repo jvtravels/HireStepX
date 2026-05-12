@@ -330,6 +330,19 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   if (state.candidateTarget != null) parts.push(`candTarget=${state.candidateTarget}`);
   if (state.candidateCurrentCtc != null) parts.push(`candCurrent=${state.candidateCurrentCtc}`);
   if (state.competingOffer != null) parts.push(`competing=${state.competingOffer}`);
+  /* Component breakdown — Phase 10A. When the candidate has stated
+     base/variable/equity, surface them so the LLM frames its counter
+     to respect (not silently violate) the stated constraints.
+     Recruiter-side enforcement of "counter base ≥ stated base"
+     deferred to a later phase. */
+  const cb = state.candidateComponentBreakdown;
+  if (cb && cb.hasAny) {
+    const cbParts: string[] = [];
+    if (cb.base != null) cbParts.push(`base=${cb.base}`);
+    if (cb.variable != null) cbParts.push(`var=${cb.variable}`);
+    if (cb.equity != null) cbParts.push(`eq=${cb.equity}`);
+    parts.push(`candComponents=[${cbParts.join(",")}]`);
+  }
   if (state.leversUsed.length > 0) parts.push(`leversUsed=[${state.leversUsed.join(",")}]`);
   parts.push(`rationale=${move.rationale}`);
   return parts.join(" | ");

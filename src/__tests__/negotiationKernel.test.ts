@@ -309,6 +309,7 @@ describe("parseCandidateAnswer", () => {
       signalsAcceptance: false, signalsWalkAway: false,
       targetAsRange: false, vossTactics: [], infoAsked: [],
       signalsCompetingExistsWithoutNumber: false,
+      componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     });
   });
 });

@@ -37,6 +37,11 @@
 
 import type { NegotiationFacts } from "../src/interviewEvaluation";
 import { classifyAcceptance } from "./_acceptance-classifier";
+import {
+  extractComponentBreakdown,
+  mergeBreakdown,
+  type ComponentBreakdown,
+} from "./_component-breakdown";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -149,6 +154,16 @@ export interface NegotiationState {
   candidateCurrentCtc: number | null;    // current package (NOT target)
   competingOffer: number | null;         // BATNA in hand (NOT target)
 
+  /* Component-level breakdown the candidate has stated about their
+   * ask or current — base / variable / equity in LPA. Phase 10A
+   * (2026-05-13). Carries cross-turn (last-stated-wins via
+   * mergeBreakdown). The LLM prompt surfaces these so the AI doesn't
+   * propose a counter that satisfies the candidate's total while
+   * violating their base-floor constraint. Detection-only at the
+   * kernel level: enforcement in the move-picker is deferred until
+   * the band schema also carries components. */
+  candidateComponentBreakdown: ComponentBreakdown;
+
   /* Range ask: candidate stated "30-35 LPA" instead of a single number.
      Research (Idaho / Harvard PON) shows range asks earn meaningfully
      more than single-point asks. We reward this in the counter-offer
@@ -238,6 +253,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateTarget: null,
     candidateCurrentCtc: null,
     competingOffer: null,
+    candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     candidateAskedAsRange: false,
     highestOfferMade: 0,
     leversUsed: [],
@@ -275,6 +291,13 @@ export interface ParsedAnswer {
      offers but can't share details"). Signals leverage without
      disclosing a number — kernel should respect but not anchor. */
   signalsCompetingExistsWithoutNumber: boolean;
+  /* Component breakdown the candidate stated this turn — base /
+     variable / equity. Phase 10A (2026-05-13). When `hasAny` is true,
+     the LLM prompt surfaces these so it can respect base-floor /
+     variable-cap constraints in subsequent offers. Detection-only at
+     this stage; move-picker enforcement is deferred to a later phase
+     once band schema also carries components. */
+  componentBreakdown: ComponentBreakdown;
 }
 
 /* Parse the candidate's free-text answer for salary-relevant numbers
@@ -408,6 +431,7 @@ export function parseCandidateAnswer(
       signalsAcceptance: false, signalsWalkAway: false,
       targetAsRange: false, vossTactics: [], infoAsked: [],
       signalsCompetingExistsWithoutNumber: false,
+      componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     };
   }
 
@@ -520,12 +544,14 @@ export function parseCandidateAnswer(
 
   const vossTactics = detectVossTactics(a, lastAiText);
   const infoAsked = detectInfoIntents(a);
+  const componentBreakdown = extractComponentBreakdown(a);
 
   return {
     target, currentCtc, competing,
     signalsAcceptance, signalsWalkAway,
     targetAsRange, vossTactics, infoAsked,
     signalsCompetingExistsWithoutNumber,
+    componentBreakdown,
   };
 }
 
@@ -623,6 +649,15 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;
   if (parsed.competing != null) next.competingOffer = parsed.competing;
   if (parsed.targetAsRange) next.candidateAskedAsRange = true;
+  /* Component breakdown — merge non-null fields into sticky state.
+     Last-stated wins per component; previously-stated components
+     persist when the current turn names only one. */
+  if (parsed.componentBreakdown.hasAny) {
+    next.candidateComponentBreakdown = mergeBreakdown(
+      state.candidateComponentBreakdown,
+      parsed.componentBreakdown,
+    );
+  }
 
   /* Merge tactic + info sets — sticky, never cleared. */
   for (const t of parsed.vossTactics) {
@@ -1195,6 +1230,14 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
+  if (s.candidateComponentBreakdown !== undefined) {
+    const cb = s.candidateComponentBreakdown as Record<string, unknown>;
+    if (!cb || typeof cb !== "object") throw new Error("state.candidateComponentBreakdown");
+    for (const k of ["base", "variable", "equity"] as const) {
+      if (!isFiniteNumOrNull(cb[k])) throw new Error(`state.candidateComponentBreakdown.${k}`);
+    }
+    if (typeof cb.hasAny !== "boolean") throw new Error("state.candidateComponentBreakdown.hasAny");
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -1228,5 +1271,7 @@ export function deserializeState(json: string): NegotiationState {
     hardBandCap: s.hardBandCap ?? false,
     marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",
     conversationLog: (s.conversationLog as NegotiationState["conversationLog"] | undefined) ?? [],
+    candidateComponentBreakdown: (s.candidateComponentBreakdown as ComponentBreakdown | undefined)
+      ?? { base: null, variable: null, equity: null, hasAny: false },
   };
 }

@@ -51,6 +51,7 @@ import {
 } from "./_negotiate-turn-helpers";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
+import { detectAdversarialInput, JAILBREAK_DEFLECTION_TEXT } from "./_adversarial-detector";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -423,9 +424,51 @@ export default async function handler(
       }
 
       const prevPhase = state.phase;
+
+      /* Phase 10B (2026-05-13): adversarial-input classifier.
+       * Detect jailbreaks / profanity / off-topic BEFORE folding the
+       * candidate's text into state. We always fold (turnIndex must
+       * advance, otherwise a hostile caller could spin indefinitely),
+       * but on jailbreak we short-circuit the LLM call entirely and
+       * return a canned deflection — this both prevents prompt
+       * disclosure and saves token cost. Telemetry is emitted for every
+       * non-"none" classification so we can see attack rate in prod. */
+      const adversarial = detectAdversarialInput(safeAnswer, { turnIndex: state.turnIndex });
+      if (adversarial.kind !== "none") {
+        void captureServerEvent("kernel_adversarial_input", distinctId, {
+          kind: adversarial.kind,
+          reasons: adversarial.reasons.join(",") || null,
+          short_circuited: adversarial.shouldShortCircuit,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+          role: state.role,
+          company: (state.company || "").slice(0, 80),
+        }, req);
+      }
+
       state = applyCandidateAnswer(state, safeAnswer);
       const move = pickAiMove(state);
-      const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, safeAnswer, llm, auth.userId);
+
+      let text: string;
+      let source: "llm" | "llm-retry" | "fallback" | "deflection";
+      let failureKinds: string[];
+      let envelopeMissingAttempts: number;
+      if (adversarial.shouldShortCircuit) {
+        /* Skip the LLM. The canned deflection is neutral and redirects
+         * the candidate back to the negotiation topic. The picked move
+         * still applies to state (so phase/lever progress stays
+         * coherent), but the prose is replaced. */
+        text = JAILBREAK_DEFLECTION_TEXT;
+        source = "deflection";
+        failureKinds = [];
+        envelopeMissingAttempts = 0;
+      } else {
+        const gen = await generateAiText(state, move, safeAnswer, llm, auth.userId);
+        text = gen.text;
+        source = gen.source;
+        failureKinds = gen.failureKinds;
+        envelopeMissingAttempts = gen.envelopeMissingAttempts;
+      }
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
 

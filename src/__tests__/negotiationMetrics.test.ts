@@ -34,6 +34,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
     marketMode: "neutral",
     acceptedAtTurn: null,
     walkedAwayAtTurn: null,
+    candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
     ...over,
   };
 }
