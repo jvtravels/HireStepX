@@ -195,9 +195,9 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
      package is 8.5 LPA" — that exact bug shipped in production
      (Bombay Design Centre session, May 2026). */
   const currentCtc = extractFirstNumber(a, [
-    /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)/i,
-    /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)/i,
-    /\bpackage\s+progression[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)/i,
+    /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+    /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+    /\bpackage\s+progression[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
   ]);
 
   /* Competing-offer patterns. Also must NOT bind to target. */
@@ -212,8 +212,8 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
        - Hindi-mix / post-number: "N lakh chahiye", "N LPA ka package",
          "N lakh mil jaye", "N LPA milna chahiye" — common in mixed
          Hindi-English STT output, previously dropped on the floor. */
-  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b)?/i;
-  const targetHindiPostPat = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
+  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
+  const targetHindiPostPat = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
   let target = extractFirstNumber(a, [targetCtxPat, targetHindiPostPat]);
 
   /* Disambiguation: if a number was already bound to current/
@@ -225,12 +225,24 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
   return { target, currentCtc, competing, signalsAcceptance, signalsWalkAway };
 }
 
+/* Extract the first numeric value from `text` using any of `patterns`.
+   Output is normalised to LPA.
+
+   Unit handling: when the matched substring contains a crore marker
+   (`cr` / `crore`) we multiply by 100 so "5 crore" → 500 LPA. Without
+   this, the senior/exec hiring path silently truncated magnitude (we
+   captured the digit `5` but treated it as 5 LPA). Clamp is widened
+   to 5000 LPA (= 50 crore) which covers C-suite while still rejecting
+   garbage from STT mishears like "five hundred thousand". */
 function extractFirstNumber(text: string, patterns: RegExp[]): number | null {
   for (const re of patterns) {
     const m = re.exec(text);
     if (m && m[1]) {
-      const n = parseFloat(m[1]);
-      if (Number.isFinite(n) && n >= 1 && n <= 500) return n;
+      let n = parseFloat(m[1]);
+      if (!Number.isFinite(n)) continue;
+      const isCrore = /\bcr\b|crore/i.test(m[0]);
+      if (isCrore) n *= 100;
+      if (n >= 1 && n <= 5000) return n;
     }
   }
   return null;
@@ -419,18 +431,24 @@ export function pickAiMove(state: NegotiationState): AiMove {
 
 function pickLeverExploreMove(state: NegotiationState): AiMove {
   const used = new Set(state.leversUsed);
+  /* Lever order optimises for company P&L: when the band supports equity
+     we prefer equity-grant FIRST because grants vest over multi-year
+     schedules and dilute cap-table paper (not in-year cash), whereas a
+     joining bonus is full sunk cash at hire. Falling back to joining-
+     bonus only when the tier has no equity to offer keeps the AI from
+     leaking the cheapest concession last. */
+  if (state.band.hasEquity && !used.has("equity-grant")) {
+    return {
+      lever: "equity-grant",
+      newTotalLpa: state.highestOfferMade,
+      rationale: "Add equity grant; cheaper long-term than cash sweeteners.",
+    };
+  }
   if (!used.has("joining-bonus")) {
     return {
       lever: "joining-bonus",
       newTotalLpa: state.highestOfferMade,
       rationale: "Cash headroom exhausted; add one-time joining bonus.",
-    };
-  }
-  if (state.band.hasEquity && !used.has("equity-grant")) {
-    return {
-      lever: "equity-grant",
-      newTotalLpa: state.highestOfferMade,
-      rationale: "Add equity grant; tier supports RSU/ESOP.",
     };
   }
   if (!used.has("notice-buyout")) {

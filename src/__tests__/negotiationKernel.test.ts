@@ -83,6 +83,34 @@ describe("parseCandidateAnswer", () => {
     expect(parseCandidateAnswer("This won't work, I'll walk away.").signalsWalkAway).toBe(true);
   });
 
+  it("scales crore to LPA on competing offers (senior/exec packages)", () => {
+    /* Bug class: extractFirstNumber accepted `crore` in the regex but
+       returned the raw digit, so "1.5 crore" parsed as 1.5 LPA. The
+       clamp at 500 then truncated higher numbers silently. Both fixed
+       — crore is normalised to LPA and the clamp is widened to 5000. */
+    const p1 = parseCandidateAnswer("I already have an offer of 1.5 crore in hand.");
+    expect(p1.competing).toBe(150);
+
+    const p2 = parseCandidateAnswer("I have a competing offer of 3 cr from another firm.");
+    expect(p2.competing).toBe(300);
+  });
+
+  it("scales crore on current-CTC for senior candidates", () => {
+    const p = parseCandidateAnswer("My current package is 1.2 crore at my current company.");
+    expect(p.currentCtc).toBe(120);
+  });
+
+  it("scales crore on target for executive asks", () => {
+    const p = parseCandidateAnswer("I'm expecting around 2 crore for this role.");
+    expect(p.target).toBe(200);
+  });
+
+  it("rejects absurd magnitudes outside the widened clamp", () => {
+    /* 100 crore = 10000 LPA — outside the 5000 ceiling, rejected. */
+    const p = parseCandidateAnswer("I'm looking for 100 crore.");
+    expect(p.target).toBeNull();
+  });
+
   it("handles empty input safely", () => {
     expect(parseCandidateAnswer("")).toEqual({
       target: null, currentCtc: null, competing: null,
@@ -206,28 +234,44 @@ describe("pickAiMove", () => {
   });
 
   it("counter-offer rotates to lever-explore when no headroom", () => {
-    /* floor=28, target=30, ceiling=28 → aspiration=28, no headroom */
+    /* floor=28, target=30, ceiling=28 → aspiration=28, no headroom.
+       With equity-first ordering, the cheapest concession (equity grant)
+       leads when the band supports it. */
     const m = pickAiMove(init({
       phase: "counter-offer", highestOfferMade: 28, candidateTarget: 30,
     }));
-    expect(m.lever).toBe("joining-bonus");
+    expect(m.lever).toBe("equity-grant");
   });
 
-  it("lever-explore: joining-bonus → equity → notice-buyout → benefits → hold-firm", () => {
+  it("lever-explore (equity band): equity → joining-bonus → notice-buyout → benefits → hold-firm", () => {
+    /* Equity-first ordering: equity vests over years (paper, dilutive),
+       joining bonus is sunk cash at hire — so equity is cheaper for the
+       company P&L and is offered first. */
     let state = init({ phase: "lever-explore", highestOfferMade: 28, candidateTarget: 35 });
-    expect(pickAiMove(state).lever).toBe("joining-bonus");
-
-    state = { ...state, leversUsed: ["joining-bonus"] };
     expect(pickAiMove(state).lever).toBe("equity-grant");
 
-    state = { ...state, leversUsed: ["joining-bonus", "equity-grant"] };
+    state = { ...state, leversUsed: ["equity-grant"] };
+    expect(pickAiMove(state).lever).toBe("joining-bonus");
+
+    state = { ...state, leversUsed: ["equity-grant", "joining-bonus"] };
     expect(pickAiMove(state).lever).toBe("notice-buyout");
 
-    state = { ...state, leversUsed: ["joining-bonus", "equity-grant", "notice-buyout"] };
+    state = { ...state, leversUsed: ["equity-grant", "joining-bonus", "notice-buyout"] };
     expect(pickAiMove(state).lever).toBe("benefits-summary");
 
-    state = { ...state, leversUsed: ["joining-bonus", "equity-grant", "notice-buyout", "benefits-summary"] };
+    state = { ...state, leversUsed: ["equity-grant", "joining-bonus", "notice-buyout", "benefits-summary"] };
     expect(pickAiMove(state).lever).toBe("hold-firm");
+  });
+
+  it("lever-explore (no-equity band): joining-bonus leads", () => {
+    /* Without equity in the band, joining-bonus is the cheapest available
+       lever and goes first. */
+    const noEquityBand = { ...BAND, hasEquity: false };
+    const state: NegotiationState = {
+      ...init({ phase: "lever-explore", highestOfferMade: 28, candidateTarget: 35 }),
+      band: noEquityBand,
+    };
+    expect(pickAiMove(state).lever).toBe("joining-bonus");
   });
 
   it("lever-explore skips equity-grant when band has no equity", () => {
