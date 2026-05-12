@@ -26,7 +26,6 @@ import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript } from "./interviewScripts";
 import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints, negotiationKernelInit, negotiationKernelTurn } from "./interviewAPI";
-import { isNegotiationKernelEnabled } from "./_negotiation-kernel-flag";
 import { initLiveSession, saveInterviewTurn } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
@@ -116,7 +115,6 @@ export function useInterviewEngine() {
      server on each turn. Null until the kernel-flag path initialises it
      on first follow-up. Stays null when the flag is off (legacy path). */
   const negotiationKernelStateRef = useRef<string | null>(null);
-  const negotiationKernelEnabledRef = useRef<boolean>(false);
   // Candidate's target salary (set via warm-up calibration card)
   const [targetSalary, setTargetSalary] = useState<number | null>(null);
   // Multi-round scenario mode
@@ -216,18 +214,6 @@ export function useInterviewEngine() {
      the candidate against a synthetic, irrelevant salary band. Soft
      mismatches and universal roles pass through silently.
      See src/_role-company-fit.ts + tests/roleCompanyFit.test.ts. */
-  /* One-shot read of the kernel feature flag at session start. We
-     freeze it in a ref so a mid-session localStorage toggle doesn't
-     half-flip behaviour — that produces the kind of bug where the
-     state machine and the legacy path both try to drive consecutive
-     turns. The flag is read once, behaviour is consistent thereafter. */
-  useEffect(() => {
-    if (interviewType !== "salary-negotiation") return;
-    negotiationKernelEnabledRef.current = isNegotiationKernelEnabled();
-    if (negotiationKernelEnabledRef.current) {
-      console.warn("[interview] negotiation kernel path ENABLED for this session");
-    }
-  }, [interviewType]);
 
   useEffect(() => {
     if (interviewType !== "salary-negotiation") return;
@@ -1244,123 +1230,6 @@ export function useInterviewEngine() {
     const pendingFollowUp = pendingFollowUpRef.current;
     const isSalaryNegConversation = interviewType === "salary-negotiation";
 
-    // Intent-aware fallback for salary-neg when follow-up times out / fails
-    // Returns true if early-close was triggered (caller should NOT call startSpeaking)
-    const applySalaryNegFallback = (): boolean => {
-      if (!isSalaryNegConversation) return false;
-      const lastAnswer = lastAnswerTextRef.current;
-      if (!lastAnswer) return false;
-      // Position-aware intent: "but I accept" → accept wins, "I accept but want more" → hedge wins
-      const acceptPat = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead)\b/i;
-      const hedgePat = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
-      const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline the offer|i decline|pull out|not worth|won.?t work|isn.?t going to work|move on|other option|take the other|thanks but no|not for me|have to pass)\b/i;
-      const isShortAffirmative = lastAnswer.trim().split(/\s+/).length < 8
-        && /^(yes|yeah|okay|ok|sure|deal|agreed|accept|sounds good|that works|fine)\b/i.test(lastAnswer.trim())
-        && !hedgePat.test(lastAnswer);
-      const acceptIdx = lastAnswer.search(acceptPat);
-      const hedgeIdx = lastAnswer.search(hedgePat);
-      const hasAcceptFirst = acceptIdx >= 0 && (hedgeIdx < 0 || hedgeIdx < acceptIdx);
-      const hasHedgeAfterAccept = acceptIdx >= 0 && hedgeIdx > acceptIdx;
-      // Guard: "I'm happy with the base" is partial acceptance of one component, not the full offer
-      const componentOnlyPat = /\b(?:i.?m happy with|fine with|accept)\s+(?:the\s+)?(?:base|variable|bonus|equity|benefits?|joining)\b/i;
-      const isComponentOnly = componentOnlyPat.test(lastAnswer) && !/\b(offer|package|deal|overall|total|ctc)\b/i.test(lastAnswer);
-      const userAccepted = (hasAcceptFirst || isShortAffirmative) && !hasHedgeAfterAccept && !isComponentOnly;
-      const userWalkAway = walkAwayPat.test(lastAnswer) && !acceptPat.test(lastAnswer);
-      const userRejected = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|way too low|that.?s insulting)\b/i.test(lastAnswer)
-        && !/\b(i accept|sounds good|deal)\b/i.test(lastAnswer);
-      // Also detect "need time to think" and competing offers
-      const thinkPat = /\b(need time|think about|sleep on|let me think|consider|talk to.*(?:family|partner|wife|husband)|get back to you|not ready)\b/i;
-      const competingPat = /\b(other offer|competing|another company|counter.?offer|multiple offers|also talking|got an offer)\b/i;
-      const userNeedsTime = thinkPat.test(lastAnswer);
-      const userMentionedCompeting = competingPat.test(lastAnswer);
-      // Reference actual ₹ numbers from negotiationBand when available
-      const band = negotiationBandRef.current;
-      const offerStr = band ? `₹${band.initialOffer} LPA` : "the offer";
-      const stretchStr = band ? `₹${band.maxStretch} LPA` : "the top of our band";
-
-      let fallbackText: string;
-      let scoreNote: string;
-      const waitForUser = true;
-      if (userWalkAway) {
-        // Distinct walk-away: hiring manager tries to retain with strategic pause
-        fallbackText = band
-          ? `I understand, and I respect that. But before you make a final decision — I genuinely believe you'd be a great fit here. Let me go back to my leadership. I may be able to push this closer to ${stretchStr}, which is the absolute ceiling for this band. Would that change things?`
-          : "I understand, and I respect that. But before you make a final decision — I genuinely believe you'd be a great fit here. Let me go back to my leadership and see if there's any room to move. Would you be open to hearing a revised number before walking away?";
-        scoreNote = "Candidate walked away — evaluate: did they walk away too early? Did they leave room for counter? Did they stay professional?";
-      } else if (userNeedsTime) {
-        // "Need time to think" — respect but create soft urgency
-        fallbackText = band
-          ? `Of course — it's an important decision, take the time you need. But I should mention, we're looking to close this position soon. Can we reconnect in 48 hours? The ${offerStr} package stands until then. Is there anything specific you'd like me to clarify in the meantime?`
-          : "Of course — it's an important decision. Can we reconnect in 48 hours? I want to make sure you have everything you need to decide. Is there anything specific giving you pause that we could talk through now?";
-        scoreNote = "Candidate asked for time — evaluate: did they use this tactically or were they genuinely undecided?";
-      } else if (userMentionedCompeting) {
-        // Competing offers — engage directly
-        fallbackText = band
-          ? `That's helpful to know — competition keeps everyone honest. Can you share what they're offering? Not to match blindly, but to understand where we need to be. What matters most to you beyond the number — the role, the team, or the growth path? Because our ${offerStr} package with equity and benefits might tell a different story.`
-          : "That's helpful to know. Can you share what they're offering? More importantly, what would make you choose us over them? Is it purely about the number, or are there other factors at play?";
-        scoreNote = "Candidate mentioned competing offers — evaluate: did they use BATNA effectively? Did they share details or keep leverage?";
-      } else if (userAccepted) {
-        fallbackText = band
-          ? `That's wonderful to hear! I'm really glad ${offerStr} works for you. Before we finalize, let me walk you through the complete package — the benefits, growth path, and everything that comes with this role. I want you to feel confident about the full picture.`
-          : "That's wonderful to hear! I'm glad the offer works for you. Before we finalize, let me walk you through the complete package — the benefits, growth path, and everything else that comes with this role. I want to make sure you have the full picture.";
-        scoreNote = "Candidate accepted — exploring full package";
-        // Early close: if we're past Q2 (step >= 3), skip remaining questions and go to closing
-        if (currentStepRef.current >= 3) {
-          const curStep = currentStepRef.current;
-          const closingText = band
-            ? `Great, so just to confirm — we're agreed on ${offerStr} total CTC, plus the benefits we discussed. I'll have HR send you the formal offer letter by tomorrow. Take a day to review and let us know. I'm really glad we worked this out — the team is excited to have you!`
-            : "Great, so we're agreed on the package we discussed. I'll have HR send you the formal offer letter by tomorrow. Take a day to review and let us know. I'm really glad we worked this out — welcome aboard!";
-          const closingWords = closingText.split(/\s+/).length;
-          const closingMs = Math.max(3000, Math.round((closingWords / 150) * 60 * 1000) + 1500);
-          const closingStep: InterviewStep = {
-            type: "closing", aiText: closingText,
-            thinkingDuration: 300, speakingDuration: closingMs, waitForUser: true,
-            scoreNote: "Early close — candidate accepted. Evaluate overall negotiation strategy.",
-          };
-          setInterviewScript(prev => {
-            return [...prev.slice(0, curStep + 1), closingStep];
-          });
-          // Advance to the closing step so the effect re-fires on the new step
-          setCurrentStep(curStep + 1);
-          return true;
-        }
-      } else if (userRejected) {
-        // Explicit rejection — make specific counter with ₹ numbers
-        fallbackText = band
-          ? `I hear you — ${offerStr} may not be where you need it. Let me see what I can do. I might be able to stretch to ${stretchStr} if we restructure the variable component. What's the minimum that makes this a clear yes for you?`
-          : "I understand your concern, and I appreciate your honesty. Let me see what flexibility I have — I want to make sure we find something that works for both of us. What's the minimum package that makes this a clear yes?";
-        scoreNote = "Candidate rejected — exploring alternatives";
-      } else {
-        // Vague or indirect answer — probe gently without assuming rejection
-        fallbackText = band
-          ? `I want to make sure we're on the same page. The ${offerStr} package — does that feel like the right ballpark for you, or is there a specific area where you'd like to see more? I'm happy to talk through the breakdown.`
-          : "I want to make sure we're aligned. How are you feeling about the overall package? Is there a specific part you'd like to dig into — whether that's base, variable, benefits, or something else entirely?";
-        scoreNote = "Candidate gave vague/indirect answer — evaluate: are they being strategic or genuinely unsure?";
-      }
-
-      const curStep = currentStepRef.current;
-      const fallbackWords = fallbackText.split(/\s+/).length;
-      const fallbackMs = Math.max(3000, Math.round((fallbackWords / 150) * 60 * 1000) + 1500);
-      const fallbackStep: InterviewStep = {
-        type: "question",
-        aiText: fallbackText,
-        // Fallback strings are mostly engine-authored constants, but a
-        // couple of paths feed through scoreNote builders that may carry
-        // stale markup. Sanitize defensively so the UI is never lied to.
-        aiTextDisplay: stripProsodyMarkup(fallbackText),
-        thinkingDuration: 300, speakingDuration: fallbackMs, waitForUser,
-        scoreNote,
-      };
-      setInterviewScript(prev => {
-        const nextIdx = prev.findIndex((s, i) => i > curStep && (s.type === "question" || s.type === "closing"));
-        if (nextIdx > curStep) {
-          return [...prev.slice(0, nextIdx), fallbackStep, ...prev.slice(nextIdx + 1)];
-        }
-        return prev;
-      });
-      return false;
-    };
-
     if (pendingFollowUp) {
       pendingFollowUpRef.current = null;
       const timeout = new Promise<null>(r => setTimeout(() => r(null), isSalaryNegConversation ? 13000 : 4000));
@@ -1490,31 +1359,18 @@ export function useInterviewEngine() {
               const nextQuestionIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "question");
               if (nextQuestionIdx >= currentStep && nextQuestionIdx >= 0) {
                 // Replace the next question with the dynamic response
-                let updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
+                const updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];
                 if (serverSaysDone) {
-                  /* Keep everything up to and including the follow-up,
-                     then jump straight to the closing step. Strips out
-                     intermediate anchor questions that would otherwise
-                     play after a resolved negotiation.
-
-                     KERNEL MODE: the kernel's terminal text (close-
-                     acceptance / close-walkaway / close-stalemate) IS
-                     the wrap-up — it already locks in the number,
-                     acknowledges the walk-away, etc. Convert the
-                     inserted followUpStep itself into the closing
-                     slot (set type=closing) and drop the static
-                     closing slot, so the user hears one clean wrap
-                     instead of "kernel wrap" + "static notice-period
-                     boilerplate" back-to-back. */
-                  if (negotiationKernelEnabledRef.current) {
-                    const wrapStep = { ...updated[nextQuestionIdx], type: "closing" as const, scoreNote: "Negotiation kernel terminal wrap" };
-                    return [...updated.slice(0, nextQuestionIdx), wrapStep];
-                  }
-                  const closingIdx = updated.findIndex((s, i) => i > nextQuestionIdx && s.type === "closing");
-                  if (closingIdx > nextQuestionIdx) {
-                    updated = [...updated.slice(0, nextQuestionIdx + 1), updated[closingIdx]];
-                  }
-                  return updated;
+                  /* The kernel's terminal text (close-acceptance /
+                     close-walkaway / close-stalemate) IS the wrap-up —
+                     it already locks in the number, acknowledges the
+                     walk-away, etc. Convert the inserted followUpStep
+                     itself into the closing slot and drop the static
+                     closing, so the user hears one clean wrap instead
+                     of "kernel wrap" + "static notice-period boilerplate"
+                     back-to-back. */
+                  const wrapStep = { ...updated[nextQuestionIdx], type: "closing" as const, scoreNote: "Negotiation kernel terminal wrap" };
+                  return [...updated.slice(0, nextQuestionIdx), wrapStep];
                 }
                 // Mark remaining pre-generated questions (after the replaced one) with adaptive placeholders
                 // so they don't play stale content if follow-up fails for a later turn
@@ -1607,15 +1463,14 @@ export function useInterviewEngine() {
                 if (s.type === "question") break;
                 if (s.type === "follow-up") perQuestionInserted++;
               }
-              /* Kernel bypass: when the canonical negotiation kernel is
-                 driving, its turnRes.terminal flag owns conversation
-                 length. The session-global and per-question caps were
-                 sized for behavioural interviews and cause the
-                 premature-close bug for salary negotiation (engine
-                 gives up inserting, the static "closing" slot fires). */
-              const kernelOn = negotiationKernelEnabledRef.current;
-              const overGlobal = !kernelOn && followUpInsertCountRef.current >= maxInserts;
-              const overPerQ = !kernelOn && perQuestionInserted >= maxPerQuestion;
+              /* Kernel bypass: for salary-negotiation the kernel's
+                 turnRes.terminal flag owns conversation length. The
+                 session-global and per-question caps were sized for
+                 behavioural interviews and would cause premature
+                 close ("Thanks, what's your notice period?") if applied
+                 here. */
+              const overGlobal = !isSalaryNegConversation && followUpInsertCountRef.current >= maxInserts;
+              const overPerQ = !isSalaryNegConversation && perQuestionInserted >= maxPerQuestion;
               if (!overGlobal && !overPerQ) {
                 const closingIdx = prev.findIndex((s, i) => i > currentStep && s.type === "closing");
                 if (closingIdx > currentStep) {
@@ -1664,19 +1519,12 @@ export function useInterviewEngine() {
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
           } else {
             setInterviewScript(prev => {
-              /* Cap check — see src/_follow-up-cap.ts for the formula.
-                 BYPASSED for the canonical negotiation kernel: the
-                 kernel owns its own terminal phase (accepted /
-                 walked-away / stalemate). Letting this generic-
-                 interview cap fire forces the engine to advance past
-                 the kernel-driven turn into the static "closing"
-                 slot, producing the "Thanks, what's your notice
-                 period?" premature-close bug seen in the Tech
-                 Mahindra UX-Designer screenshots. The kernel's
-                 turnRes.terminal flag is the right gate; the cap is
-                 a behavioral-interview safety net that doesn't apply
-                 here. */
-              if (!negotiationKernelEnabledRef.current) {
+              /* Cap check — see src/_follow-up-cap.ts. BYPASSED for
+                 salary-negotiation: the kernel owns its own terminal
+                 phase. Letting the behavioural-interview cap fire
+                 here forces the engine into the static closing slot
+                 producing premature close. */
+              if (!isSalaryNegConversation) {
                 const cap = checkFollowUpCap({ script: prev });
                 if (!cap.allowed) {
                   console.warn(`[interview] Skipping follow-up — turn cap reached (${cap.currentTurns}/${cap.maxTurns})`);
@@ -1692,9 +1540,6 @@ export function useInterviewEngine() {
           }
         } else if (!interviewEndedRef.current) {
           // Follow-up timed out or returned needsFollowUp=false
-          // For salary-neg: if user accepted/rejected, replace next question with an intent-aware response
-          const earlyClose = applySalaryNegFallback();
-          if (earlyClose) return; // Early close advances step — effect will re-fire
           if (isSalaryNegConversation) {
             // Thinking phrase already spoken — go directly to main response
             const microDelay = randomDelay(200, 500);
@@ -1708,8 +1553,6 @@ export function useInterviewEngine() {
         }
       }).catch(() => {
         if (!isStale() && !interviewEndedRef.current) {
-          const earlyClose = applySalaryNegFallback();
-          if (earlyClose) return; // Early close advances step — effect will re-fire
           if (isSalaryNegConversation) {
             const microDelay = randomDelay(200, 500);
             setTimeout(() => { if (!isStale() && !interviewEndedRef.current) startSpeaking(); }, microDelay);
@@ -2044,11 +1887,12 @@ export function useInterviewEngine() {
           }
         }
 
-        /* Ship 3 — canonical kernel path. Only fires when flag is on AND
-           we're in salary-negotiation. Routes through /api/negotiate-turn
-           which owns state via the kernel; falls back to legacy
-           fetchFollowUp on any kernel error so the user is never stuck. */
-        if (negotiationKernelEnabledRef.current && isSalaryNegType) {
+        /* Canonical kernel path for salary-negotiation. Routes through
+           /api/negotiate-turn which owns state via the kernel. On any
+           kernel error the async returns null so the resolution path
+           falls through to a no-op (engine continues with the static
+           script). */
+        if (isSalaryNegType) {
           pendingFollowUpRef.current = (async () => {
             const band = negotiationBandRef.current;
             if (!band) return null; /* legacy path didn't load band; bail */
@@ -2116,7 +1960,7 @@ export function useInterviewEngine() {
                 conversationDone: turnRes.terminal,
               };
             } catch (err) {
-              console.warn("[interview] kernel turn failed, falling back to legacy", err);
+              console.warn("[interview] kernel turn failed", err);
               return null;
             }
           })();
@@ -2193,70 +2037,7 @@ export function useInterviewEngine() {
          re-types" flash. React 18 batches both setStates here so the
          next render has both new step AND phase=thinking — the typewriter
          then takes over cleanly when the speak() effect fires. */
-      // Outcome-aware closing override. If we're about to advance INTO
-      // a closing step in a salary-neg session AND no runtime follow-up
-      // has replaced it (i.e. it's still the upfront LLM-generated /
-      // synthesized fallback closing), apply the same branching the
-      // follow-up resolution path uses. Without this, the upfront
-      // closing fires with no awareness of how the conversation went.
       const nextIdx = currentStep + 1;
-      /* When the canonical kernel is driving, the kernel's close-acceptance
-         / close-walkaway / close-stalemate levers produce the closing text
-         via the LLM downstream of state — so the legacy outcome-aware
-         override (which runs its own regex extraction over the transcript)
-         MUST stand aside, otherwise we get two contradictory closings
-         racing on the script-advance frame. Defer to the kernel turn that
-         the pending follow-up will resolve into. */
-      if (
-        nextStep?.type === "closing" &&
-        interviewType === "salary-negotiation" &&
-        !nextStep.scoreNote?.includes("Dynamic follow-up") &&
-        !negotiationKernelEnabledRef.current
-      ) {
-        const facts = extractNegotiationFacts([
-          ...transcript,
-          { speaker: "user" as const, text: answerText, time: "" },
-        ]);
-        const lastAns = answerText || "";
-        const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|move on|take the other|have to pass)\b/i;
-        const stillNegotiatingPat = /\b(higher|more|increase|stretch|push|counter ?offer|what.?s your counter|can you (?:offer|do|go)|i.?d like (?:a |to )?(?:higher|more)|i would like (?:a |to )?(?:higher|more)|can we (?:go|do)|already (?:mentioned|said|told)|as i (?:said|mentioned|told)|told you|mentioned (?:multiple times|earlier|before)|like to have higher|highest base)\b/i;
-        // Pull the agreed total — prefer highest offer made by AI
-        // (after counters), else the script's initial offer extracted
-        // from the offer step's aiText. Used to recap actual numbers
-        // in the close instead of hand-waving "the final numbers".
-        const offerStep = interviewScript.find(s => s.type === "question" && /₹\s*\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?)/.test(s.aiText || ""));
-        const offerMatch = offerStep?.aiText.match(/₹\s*(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?)/);
-        const initialOfferNum = offerMatch ? parseFloat(offerMatch[1]) : null;
-        const finalNum = highestOfferRef.current > 0 ? highestOfferRef.current : initialOfferNum;
-        const dealRecap = finalNum ? `at ₹${finalNum} LPA total CTC` : "at the package we discussed";
-
-        let closingText: string | null = null;
-        if (facts.acceptedImmediately) {
-          closingText = `Great — really glad we found terms that work. To recap: we're closing ${dealRecap}, with the breakdown we discussed. I'll have HR send the formal offer letter today. Welcome aboard.`;
-        } else if (facts.rejectedOutright || walkAwayPat.test(lastAns)) {
-          closingText = "I appreciate you being direct with me. We weren't able to bridge the gap today, but thank you for the conversation. Best of luck with the search.";
-        } else if (stillNegotiatingPat.test(lastAns)) {
-          closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
-        } else {
-          /* Fallback for unresolved conversations. Bombay Design Centre
-             session: candidate's final answer was "CTC. Overall CTC." —
-             a placeholder reply, not an acceptance and not a walk-away,
-             and not matching the explicit "negotiating" keywords. The
-             stock script closing ("Thank you for this transparent
-             conversation, I'll put together the formal offer letter")
-             then fired and made it sound like we'd reached a deal we
-             hadn't. Default to the "still pushing" closing so the
-             session never claims agreement that didn't happen. */
-          closingText = "I hear you — and I want to be straight with you: I've shared where I can land today. Take some time to think it through, and let me know by tomorrow if the package works or if there's a specific lever you want me to revisit. I'll hold the offer till then.";
-        }
-        if (closingText && closingText !== nextStep.aiText) {
-          setInterviewScript(prev => {
-            const updated = [...prev];
-            updated[nextIdx] = { ...updated[nextIdx], aiText: closingText! };
-            return updated;
-          });
-        }
-      }
       /* Sentiment-aware closing for general (non-negotiation) interviews.
          The static role closings are uniformly cheerful ("Great. That's
          all I had…"), which reads as oblivious when the candidate just
