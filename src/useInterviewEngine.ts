@@ -916,10 +916,24 @@ export function useInterviewEngine() {
    *  step from this — otherwise the user already moved past the question
    *  the follow-up was generated for, and applying it now would inject
    *  Q3's answer-shaped reply into Q5's slot (the cross-question
-   *  conflation that produced bug #6). */
+   *  conflation that produced bug #6).
+   *
+   *  Race-mitigation model (two layers, neither alone is sufficient):
+   *    1. pendingFollowUpStepRef tags the originating step when the
+   *       async fires (line ~1863) and is checked on resolution (~1281).
+   *       Stale results — where the user rapidly advanced — are dropped
+   *       with a console warning, never applied.
+   *    2. followUpInsertCountRef (below) is a monotonic counter,
+   *       incremented inside the setInterviewScript reducer (~1477)
+   *       which makes it atomic w.r.t. React's batched updates. Two
+   *       simultaneously-resolving follow-ups can never both pass the
+   *       cap because the second sees the first's bump. */
   const pendingFollowUpStepRef = useRef<number>(-1);
   const followUpDepthRef = useRef(0);
-  // Atomic follow-up insertion counter — prevents race when two follow-ups resolve simultaneously
+  /** Atomic follow-up insertion counter — incremented inside the
+   *  setInterviewScript reducer so React batching makes it race-free
+   *  even if two follow-ups resolve in the same tick. See the
+   *  race-mitigation model on pendingFollowUpStepRef. */
   const followUpInsertCountRef = useRef(0);
   // Dynamic difficulty: track answer quality mid-interview for escalation/de-escalation
   const answerQualityRef = useRef<number[]>([]);

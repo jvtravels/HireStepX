@@ -440,3 +440,52 @@ describe("serialize/deserialize", () => {
     expect(round).toEqual(s);
   });
 });
+
+/* ─── Engine wrap contract ─────────────────────────────────────── */
+
+/* These pin the invariant useInterviewEngine.ts relies on when it
+   sees `conversationDone: true` from /api/negotiate-turn: the kernel
+   must remain in a terminal phase across the closing AI move AND
+   across serialize/deserialize, so the engine never re-issues a
+   non-terminal turn after wrapping the script into a "closing" slot.
+   This is the contract behind the kernel-terminal → closing-slot
+   path at useInterviewEngine.ts ~1363-1373. */
+describe("engine wrap contract", () => {
+  const TERMINAL_PATHS: ReadonlyArray<{
+    name: "accepted" | "walked-away" | "stalemate";
+    triggerAnswer: string | null;
+    expectedLever: "close-acceptance" | "close-walkaway" | "close-stalemate";
+  }> = [
+    { name: "accepted", triggerAnswer: "I accept the offer, sounds good.", expectedLever: "close-acceptance" },
+    { name: "walked-away", triggerAnswer: "I'm out, I'll take the other offer.", expectedLever: "close-walkaway" },
+    { name: "stalemate", triggerAnswer: null, expectedLever: "close-stalemate" },
+  ];
+
+  for (const path of TERMINAL_PATHS) {
+    it(`${path.name}: terminal phase survives wrap move + round-trip`, () => {
+      let state = init({ maxTurns: path.name === "stalemate" ? 2 : 8 });
+      state = applyAiMove(state, pickAiMove(state), "Our offer is ₹20 LPA.");
+
+      if (path.triggerAnswer) {
+        state = applyCandidateAnswer(state, path.triggerAnswer);
+      } else {
+        /* Burn the turn budget for stalemate. */
+        state = applyAiMove(state, pickAiMove(state), "second turn");
+      }
+
+      expect(isTerminalPhase(state.phase)).toBe(true);
+
+      const move = pickAiMove(state);
+      expect(move.lever).toBe(path.expectedLever);
+
+      const wrapped = applyAiMove(state, move, "wrap text");
+      expect(wrapped.phase).toBe(path.name);
+      expect(isTerminalPhase(wrapped.phase)).toBe(true);
+
+      /* Serialized form preserves terminality — what crosses the
+         wire to the engine on the next turn (if any). */
+      const round = deserializeState(serializeState(wrapped));
+      expect(isTerminalPhase(round.phase)).toBe(true);
+    });
+  }
+});
