@@ -74,8 +74,17 @@ const FAMILY_PATTERNS: Array<{ family: RoleFamily; re: RegExp }> = [
   // Product Manager — must precede generic "manager"
   { family: "pm",        re: /\b(product\s+manager|associate\s+product\s+manager|apm|group\s+(pm|product\s+manager)|gpm|head\s+of\s+product|director\s+of\s+product|vp\s+(of\s+)?product|chief\s+product\s+officer|product\s+lead|principal\s+pm)\b/i },
 
-  // Design — picks up all design titles
-  { family: "designer",  re: /\b(product\s+designer|ux\s+designer|ui\s+designer|ux\/ui|visual\s+designer|interaction\s+designer|design\s+manager|head\s+of\s+design|director\s+of\s+design|ux\s+researcher|design\s+lead|design\s+director|design\s+ops)\b/i },
+  // Design — picks up all design titles. Earlier version listed only
+  // the product/UX/UI tribes and missed creative/motion subspecialties
+  // entirely (Motion Designer, Graphic Designer, Animator, Illustrator,
+  // 3D Designer, etc.) — those fell through to "other" and got the
+  // unfiltered 10-focus list. The Bombay Design Centre session
+  // surfaced this. Broadened to include the creative subspecialties
+  // plus a generic /\b\w+\s+designer\b/ catch-all so anything ending in
+  // "Designer" classifies as design — and any stray Designer title that
+  // somehow shouldn't be caught here would still pick up via specific
+  // earlier patterns (we don't have one for "Sound Designer" yet, etc.).
+  { family: "designer",  re: /\b(product\s+designer|ux\s+designer|ui\s+designer|ux\/ui|visual\s+designer|interaction\s+designer|motion\s+(?:graphic\s+)?designer|graphic\s+designer|brand\s+designer|3d\s+designer|industrial\s+designer|game\s+designer|illustrator|animator|motion\s+graphics?(?:\s+(?:designer|artist|specialist))?|design\s+manager|head\s+of\s+design|director\s+of\s+design|ux\s+researcher|design\s+lead|design\s+director|design\s+ops|creative\s+(?:designer|director|lead)|\w+\s+designer)\b/i },
 
   // Data / ML
   { family: "data",      re: /\b(data\s+scientist|data\s+analyst|data\s+engineer|ml\s+engineer|machine\s+learning\s+engineer|ai\s+engineer|applied\s+scientist|research\s+scientist|analytics\s+(engineer|manager)|business\s+analyst|bi\s+analyst)\b/i },
