@@ -135,6 +135,22 @@ describe("parseCandidateAnswer", () => {
     ).signalsAcceptance).toBe(true);
   });
 
+  it("does NOT fire on weak-affirmative conversational starters (Accenture session, May 2026)", () => {
+    /* Real session capture: candidate said "It okay. Let's get started."
+       at the very first turn — clearly conversational filler, not an
+       acceptance of the offer. The kernel jumped to `accepted` and
+       ignored a subsequent explicit counter ("I was looking around 32
+       lakhs"). Weak-affirmative phrases that don't reference the
+       offer/deal/number must not trigger acceptance. */
+    expect(parseCandidateAnswer("It okay. Let's get started.").signalsAcceptance).toBe(false);
+    expect(parseCandidateAnswer("Okay, let's begin.").signalsAcceptance).toBe(false);
+    expect(parseCandidateAnswer("Sure, let's get started.").signalsAcceptance).toBe(false);
+    expect(parseCandidateAnswer("Alright let's start.").signalsAcceptance).toBe(false);
+    /* But once the candidate actually names the offer, soft acceptance
+       still fires (regression guard for MakeMyTrip batch). */
+    expect(parseCandidateAnswer("Okay, I like the offer.").signalsAcceptance).toBe(true);
+  });
+
   it("catches more idiomatic English acceptance forms", () => {
     expect(parseCandidateAnswer("I'll take it.").signalsAcceptance).toBe(true);
     expect(parseCandidateAnswer("I'm in.").signalsAcceptance).toBe(true);

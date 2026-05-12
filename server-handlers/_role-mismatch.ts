@@ -49,6 +49,28 @@ export const ROLE_STOPWORDS = new Set([
   "the", "a", "an", "of", "for",
 ]);
 
+/* Seniority modifiers — tokens that change the *level* of a role
+ * without changing its domain. Promotion drift (LLM emits "Senior UX
+ * Designer" when user picked "UX Designer") was the Accenture session
+ * failure mode (2026-05-13): domain-token comparison treats both as
+ * {ux} and lets the drift through. We compare seniority asymmetry as
+ * a separate axis. */
+export const SENIORITY_MODIFIERS = new Set([
+  "senior", "sr", "junior", "jr", "lead", "principal", "staff",
+]);
+
+/** Returns the seniority modifier (lowercase) present in `r`, or null
+ *  if none. First match wins; the modifiers above are mutually
+ *  exclusive in practice. */
+export function extractSeniority(r: string): string | null {
+  const lower = r.toLowerCase();
+  for (const m of SENIORITY_MODIFIERS) {
+    const re = new RegExp(String.raw`\b${m}\b`, "i");
+    if (re.test(lower)) return m === "sr" ? "senior" : m === "jr" ? "junior" : m;
+  }
+  return null;
+}
+
 /* Family terms shared across role variants — "designer" is common to
  * UX, UI, product, visual, interaction designers. They count for
  * confirming the broader family but NOT for telling subfamilies apart.
@@ -87,6 +109,7 @@ export function detectRoleLabelMismatch(text: string, userRole: string): string 
      we can't tell drift apart — don't flag, be lenient. */
   if (userDomain.size === 0) return "";
 
+  const userSeniority = extractSeniority(userRole);
   const lower = text.toLowerCase();
   for (const label of KNOWN_ROLE_LABELS) {
     if (!lower.includes(label)) continue;
@@ -97,6 +120,17 @@ export function detectRoleLabelMismatch(text: string, userRole: string): string 
        domain tokens appear in the user's domain set. */
     const sharesDomain = Array.from(labelDomain).some(t => userDomain.has(t));
     if (!sharesDomain) return label;
+    /* Seniority drift — domain matches, but the LLM promoted or
+       demoted the candidate. "UX Designer" → "Senior UX Designer" is
+       a promotion; "Senior UX Designer" → "UX Designer" is a demotion.
+       Either way it misrepresents the candidate's level.
+       Early-good-exit: if the first (longest, most specific) matching
+       label also aligns on seniority, the text is fine — return "".
+       Otherwise return the offending label. The list is sorted
+       longest-first, so the first match is the most specific. */
+    const labelSeniority = extractSeniority(label);
+    if (labelSeniority === userSeniority) return "";
+    return label;
   }
   return "";
 }

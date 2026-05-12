@@ -166,16 +166,30 @@ describe("validateAiText", () => {
     expect(r.failures.some(f => f.kind === "role-drift")).toBe(true);
   });
 
-  it("does NOT flag role-drift when the LLM uses the same role family", () => {
-    /* "Senior UX Designer" → text mentions "UX designer" — shares
-       both "ux" and "designer" tokens. Don't flag. */
+  it("does NOT flag role-drift when role + seniority both match", () => {
+    /* "Senior UX Designer" → text mentions "Senior UX Designer" —
+       same domain + same seniority. Don't flag. */
     const matchState = baseState({ role: "Senior UX Designer", phase: "probe-expectations", highestOfferMade: 20 });
     const probeMove: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
     const r = validateAiText(
-      "For the UX designer role, what compensation are you targeting?",
+      "For the Senior UX Designer role, what compensation are you targeting?",
       matchState, probeMove,
     );
     expect(r.failures.some(f => f.kind === "role-drift")).toBe(false);
+  });
+
+  it("flags role-drift on seniority demotion (Phase 8)", () => {
+    /* "Senior UX Designer" → text drops "Senior" and says just
+       "UX designer". Seniority asymmetry is drift — the LLM is
+       implicitly downleveling the candidate. Symmetric to the
+       Accenture promotion case in the prior test. */
+    const demoteState = baseState({ role: "Senior UX Designer", phase: "probe-expectations", highestOfferMade: 20 });
+    const probeMove: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
+    const r = validateAiText(
+      "For the UX designer role, what compensation are you targeting?",
+      demoteState, probeMove,
+    );
+    expect(r.failures.some(f => f.kind === "role-drift")).toBe(true);
   });
 
   it("accepts non-numeric lever with no number in text", () => {

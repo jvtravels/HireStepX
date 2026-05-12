@@ -493,7 +493,20 @@ export function parseCandidateAnswer(
      within 60 chars of the conjunction. */
   const negotiatingButPat = /\b(?:but|however|lekin|magar)\b[^.!?\n]{0,60}?\b(?:more|higher|better|increase|raise|reduce|lower|stretch|bump|further|additional|negotiate|push|counter|extra|zyada|kam|aur)\b/i;
   const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
-  const signalsAcceptance = acceptPat.test(a) && !conditionalPat.test(a) && !negotiatingButPat.test(a) && !walkAwayPat.test(a);
+  /* Weak-affirmative veto — phrases like "it okay, let's get started",
+   * "okay let's begin", "sure let's start" sound agreeable but are
+   * conversational filler, not acceptance. The Accenture × UX Designer
+   * session (2026-05-13) fired premature `accepted` on "It okay. Let's
+   * get started." then ignored the candidate's subsequent counter
+   * ("I was looking around 32 lakhs"). Distinct from soft-acceptance
+   * forms ("I like the offer", "I'm aligned with the offer") that
+   * reference the offer itself. The veto fires only when the *only*
+   * acceptance-shaped tokens in the message are these conversational
+   * starters AND the message does not name the offer/deal/number. */
+  const weakAffirmativeOnlyPat = /^\s*(?:it'?s?\s+)?(?:ok(?:ay)?|alright|fine|sure|cool|good)[\s,.!]+(?:let'?s\s+(?:get\s+started|begin|start|kick\s+off|go|move\s+on)|let\s+us\s+(?:start|begin))[\s.!?]*$/i;
+  const mentionsOfferOrNumber = /\b(?:offer|deal|salary|ctc|package|lpa|lakhs?|₹|rs\.?|inr|\$)\b/i.test(a);
+  const isWeakAffirmativeOnly = weakAffirmativeOnlyPat.test(a.trim()) && !mentionsOfferOrNumber;
+  const signalsAcceptance = acceptPat.test(a) && !conditionalPat.test(a) && !negotiatingButPat.test(a) && !walkAwayPat.test(a) && !isWeakAffirmativeOnly;
   const signalsWalkAway = walkAwayPat.test(a);
 
   /* Current-CTC patterns. These claim their number FIRST so the
