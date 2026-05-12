@@ -961,7 +961,7 @@ export function useInterviewEngine() {
      interviewType === "behavioral"; other types leave it empty. */
   const behavioralStateRef = useRef<{
     /** Most recent STAR detection per question step index. */
-    starPerStep: Map<number, { situation: boolean; task: boolean; action: boolean; result: boolean; count: number; hasMetrics: boolean }>;
+    starPerStep: Map<number, { situation: boolean; task: boolean; action: boolean; result: boolean; count: number; hasMetrics: boolean; weHeavy: boolean }>;
     /** Per-question count of component-gap follow-ups already injected.
         Caps at 1 per question — we coach the gap once, then move on. */
     gapFollowUpsPerStep: Map<number, number>;
@@ -1778,7 +1778,7 @@ export function useInterviewEngine() {
         }
         const star = detectStarPresence(answerText);
         behavioralStateRef.current.starPerStep.set(questionStepIdx, {
-          situation: star.situation, task: star.task, action: star.action, result: star.result, count: star.count, hasMetrics: star.hasMetrics,
+          situation: star.situation, task: star.task, action: star.action, result: star.result, count: star.count, hasMetrics: star.hasMetrics, weHeavy: star.weHeavy ?? false,
         });
       }
     }
@@ -1894,6 +1894,13 @@ export function useInterviewEngine() {
            indefinitely. The LLM still composes the actual probe text —
            the hint just steers it. */
         let starGapHint: "action" | "result" | "situation-task" | undefined;
+        /* weHeavy is a parallel hint to starGap — it flags pronoun-
+           attribution ambiguity (the answer is collective, not
+           first-person) so the follow-up can clarify ownership without
+           teaching the candidate that "we" is wrong. Indian candidates
+           default to "we" out of cultural humility; we don't want to
+           punish that, just ask the next question. */
+        let weHeavyHint = false;
         if (interviewType === "behavioral") {
           let questionStepIdx = currentStep;
           for (let i = currentStep; i >= 0; i--) {
@@ -1908,6 +1915,7 @@ export function useInterviewEngine() {
               starGapHint = decision.gap;
               behavioralStateRef.current.gapFollowUpsPerStep.set(questionStepIdx, decision.nextUsed);
             }
+            if (star.weHeavy && wordCount >= 25) weHeavyHint = true;
           }
         }
 
@@ -2095,6 +2103,7 @@ export function useInterviewEngine() {
           candidateState,
           previousMentions,
           starGap: starGapHint,
+          weHeavy: weHeavyHint,
         }); }
       } else {
         pendingFollowUpRef.current = null;
@@ -2471,6 +2480,11 @@ export function useInterviewEngine() {
       overBandViolation: boolean;
       totalTurns: number;
       score: number;
+      vossTacticsUsed: ReadonlyArray<string>;
+      infoAsked: ReadonlyArray<string>;
+      walkAwayReturned: boolean;
+      hardBandCap: boolean;
+      marketMode: "soft" | "neutral" | "hot";
     } | undefined = undefined;
     try {
       if (

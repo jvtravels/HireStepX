@@ -706,6 +706,122 @@ function HeroSection({ data }: { data: InterviewResultData }) {
  */
 type KernelMetrics = NonNullable<InterviewResultData["kernelMetrics"]>;
 
+/* ─── Tactic + info-intent labels ─────────────────────────────────
+ * Plain-English descriptions of the Voss-style tactics and info
+ * intents the kernel detects. Used by the "Tactics you used /
+ * missed" panel below the tiles. Keep these short — they're chip
+ * labels with a one-line elaboration, not full lessons. */
+const TACTIC_LABELS: Record<string, { name: string; what: string }> = {
+  "calibrated": { name: "Calibrated question", what: "Asked a 'how' / 'what' question that made the recruiter solve the problem with you." },
+  "label": { name: "Label", what: "Named what the other side was feeling ('it sounds like budget is tight…') to defuse and unlock info." },
+  "mirror": { name: "Mirror", what: "Repeated their last 1–3 words to keep them talking and reveal more." },
+  "sign-today-bundle": { name: "Sign-today bundle", what: "Offered to close today *if* a specific lever moves — turns urgency into leverage." },
+  "deflect-current-ctc": { name: "Deflected current CTC", what: "Side-stepped the 'what's your current package?' anchor and re-asked about the role." },
+};
+const INFO_LABELS: Record<string, string> = {
+  "clawback-period": "Joining-bonus clawback (years + pro-ration)",
+  "variable-history": "Historical variable payout %",
+  "vest-schedule": "Equity vest schedule & cliff",
+  "strike-price": "Equity strike / FMV",
+  "in-hand-monthly": "In-hand monthly after tax",
+  "exercise-window": "Post-exit exercise window",
+  "acceleration": "Single/double-trigger acceleration",
+  "fixed-vs-variable": "Fixed-vs-variable split",
+  "perks-non-cash": "Non-cash perks (insurance, learning, etc.)",
+};
+const ALL_TACTICS = Object.keys(TACTIC_LABELS);
+
+function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
+  const used = (m.vossTacticsUsed ?? []).filter((tk) => TACTIC_LABELS[tk]);
+  const usedSet = new Set(used);
+  const missed = ALL_TACTICS.filter((tk) => !usedSet.has(tk));
+  const asked = (m.infoAsked ?? []).filter((k) => INFO_LABELS[k]);
+  const showCallouts = !!m.walkAwayReturned || !!m.hardBandCap || (m.marketMode && m.marketMode !== "neutral");
+  /* If there's nothing at all to show — no tactics, no intents, no
+     callouts — render nothing. The existing tiles still convey the
+     headline. */
+  if (used.length === 0 && asked.length === 0 && !showCallouts) return null;
+  const Chip = ({ children, tone }: { children: React.ReactNode; tone: "good" | "muted" }) => (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "5px 10px", borderRadius: 999,
+      fontFamily: f.sans, fontSize: 12, fontWeight: 500,
+      background: tone === "good" ? "#ecfdf5" : t.creamSoft,
+      color: tone === "good" ? "#065f46" : t.inkSoft,
+      border: `1px solid ${tone === "good" ? "#a7f3d0" : t.line}`,
+    }}>{children}</span>
+  );
+  return (
+    <div style={{ marginTop: 22, display: "grid", gap: 22 }}>
+      {(used.length > 0 || missed.length > 0) && (
+        <div>
+          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
+            Tactics
+          </h3>
+          {used.length > 0 && (
+            <>
+              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 6px" }}>You used:</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                {used.map((tk) => <Chip key={tk} tone="good">{TACTIC_LABELS[tk].name}</Chip>)}
+              </div>
+              <ul style={{ margin: "0 0 14px", paddingLeft: 18, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.55 }}>
+                {used.map((tk) => <li key={tk}><strong style={{ color: t.coal }}>{TACTIC_LABELS[tk].name}.</strong> {TACTIC_LABELS[tk].what}</li>)}
+              </ul>
+            </>
+          )}
+          {missed.length > 0 && (
+            <>
+              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 6px" }}>
+                {used.length > 0 ? "You didn't try:" : "Tactics worth practicing next session:"}
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {missed.map((tk) => <Chip key={tk} tone="muted">{TACTIC_LABELS[tk].name}</Chip>)}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+      {asked.length > 0 && (
+        <div>
+          <h3 style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, margin: "0 0 8px", letterSpacing: 0.2, textTransform: "uppercase" }}>
+            Questions you raised
+          </h3>
+          <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "0 0 6px" }}>
+            Specific levers you pried open — each is a number-mover most candidates skip.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {asked.map((k) => <Chip key={k} tone="good">{INFO_LABELS[k]}</Chip>)}
+          </div>
+        </div>
+      )}
+      {showCallouts && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {m.marketMode === "soft" && (
+            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+              Simulated <strong style={{ color: t.coal }}>soft market</strong> — recruiters concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.
+            </div>
+          )}
+          {m.marketMode === "hot" && (
+            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+              Simulated <strong style={{ color: t.coal }}>hot market</strong> — recruiters concede ~30% more than baseline. Match this anchoring discipline in a normal market.
+            </div>
+          )}
+          {m.hardBandCap && (
+            <div style={{ padding: "8px 12px", background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+              <strong style={{ color: t.coal }}>Hard band cap.</strong> The simulated company had a fixed fitment grid (services-co pattern). The kernel redirected to joining bonus, equity, and benefits — the right play.
+            </div>
+          )}
+          {m.walkAwayReturned && (
+            <div style={{ padding: "8px 12px", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 8, fontFamily: f.sans, fontSize: 12, color: "#78350f" }}>
+              <strong>You walked away and came back.</strong> This works, but the recruiter prices in your reduced leverage — concession rate halves after a return.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
   const outcomeLabel = {
     "accepted": "Accepted",
@@ -798,6 +914,7 @@ function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
           Kernel anomaly: AI offered above the band ceiling on at least one turn. This shouldn't happen — please report.
         </div>
       )}
+      <KernelTacticsPanel m={m} />
     </section>
   );
 }

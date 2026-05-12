@@ -54,6 +54,32 @@ describe("computeNegotiationMetrics", () => {
     expect(m.outcome).toBe("accepted");
     expect(m.lpaGained).toBe(5);
     expect(m.bandTraversal).toBe(0.5);
+    /* New fields surface kernel signals to the report layer. */
+    expect(m.vossTacticsUsed).toEqual([]);
+    expect(m.infoAsked).toEqual([]);
+    expect(m.walkAwayReturned).toBe(false);
+    expect(m.hardBandCap).toBe(false);
+    expect(m.marketMode).toBe("neutral");
+  });
+
+  it("surfaces voss tactics and info intents from final state", () => {
+    const m = computeNegotiationMetrics({
+      finalState: makeState({
+        phase: "accepted",
+        highestOfferMade: 26,
+        vossTacticsUsed: ["calibrated", "label"],
+        infoAsked: ["clawback-period", "vest-schedule"],
+        walkAwayReturned: true,
+        hardBandCap: true,
+        marketMode: "hot",
+      }),
+      moves: [move({ lever: "counter-base", newTotalLpa: 26 })],
+    });
+    expect(m.vossTacticsUsed).toEqual(["calibrated", "label"]);
+    expect(m.infoAsked).toEqual(["clawback-period", "vest-schedule"]);
+    expect(m.walkAwayReturned).toBe(true);
+    expect(m.hardBandCap).toBe(true);
+    expect(m.marketMode).toBe("hot");
   });
 
   it("detects anchor turn (first non-null candidateTarget)", () => {

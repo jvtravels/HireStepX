@@ -20,7 +20,14 @@
  * follow-up once kernel state is persisted alongside the transcript.
  */
 
-import type { NegotiationState, NegotiationLever, NegotiationBand } from "./_negotiation-kernel";
+import type {
+  NegotiationState,
+  NegotiationLever,
+  NegotiationBand,
+  VossTactic,
+  InfoIntent,
+  MarketMode,
+} from "./_negotiation-kernel";
 
 export interface KernelTurnSummary {
   /** The lever the AI pulled on this turn. */
@@ -65,6 +72,22 @@ export interface NegotiationMetrics {
   overBandViolation: boolean;
   /** Total AI turns counted. */
   totalTurns: number;
+  /** Voss-style tactics the candidate actually used at least once
+   *  (deduplicated across turns). Sourced from final kernel state. */
+  vossTacticsUsed: ReadonlyArray<VossTactic>;
+  /** Info intents the candidate raised — clawback, vest schedule, etc.
+   *  Each represents a *good* question they thought to ask. */
+  infoAsked: ReadonlyArray<InfoIntent>;
+  /** True if the candidate walked away and returned. Rare and risky;
+   *  surfaced separately so the report can call it out. */
+  walkAwayReturned: boolean;
+  /** True if the session ran with the hard band cap (services-co
+   *  fitment pattern) — affects how we evaluate cash gains. */
+  hardBandCap: boolean;
+  /** Market mode the session simulated. Coaches reading the report
+   *  need this to interpret bandTraversal — pushing 0.9 traversal in a
+   *  hot market is different from doing so in a soft one. */
+  marketMode: MarketMode;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -112,6 +135,11 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     bandTraversal: bandTraversal == null ? null : Math.round(bandTraversal * 100) / 100,
     overBandViolation,
     totalTurns: moves.length,
+    vossTacticsUsed: [...(finalState.vossTacticsUsed ?? [])],
+    infoAsked: [...(finalState.infoAsked ?? [])],
+    walkAwayReturned: finalState.walkAwayReturned ?? false,
+    hardBandCap: finalState.hardBandCap ?? false,
+    marketMode: finalState.marketMode ?? "neutral",
   };
 }
 
@@ -120,7 +148,11 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
  *  without a number), then traversal (did you push?), then diversity
  *  (did you explore non-cash levers?), then outcome (acceptance is a
  *  multiplier, walkaway is neutral, stalemate is a slight penalty). */
-export function scoreNegotiationBehaviour(m: NegotiationMetrics): number {
+export function scoreNegotiationBehaviour(
+  m: Pick<NegotiationMetrics,
+    | "anchorTurn" | "bandTraversal" | "leverDiversity" | "outcome" | "overBandViolation"
+    | "lpaGained" | "lpaPerTurn" | "totalTurns">,
+): number {
   let score = 0;
 
   /* Anchoring: 30 pts, front-loaded on early turns. */

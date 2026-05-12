@@ -270,5 +270,12 @@ export interface InterviewResultData {
     overBandViolation: boolean;
     totalTurns: number;
     score: number;
+    /* Kernel tactic + intent signals. Optional because rows persisted
+       before this ship landed will not have them. */
+    vossTacticsUsed?: ReadonlyArray<string>;
+    infoAsked?: ReadonlyArray<string>;
+    walkAwayReturned?: boolean;
+    hardBandCap?: boolean;
+    marketMode?: "soft" | "neutral" | "hot";
   };
 }

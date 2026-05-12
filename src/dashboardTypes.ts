@@ -37,6 +37,13 @@ export interface DashboardSession {
     overBandViolation: boolean;
     totalTurns: number;
     score: number;
+    /* Optional kernel signals — added in a later ship. Optional so old
+       rows persisted without them deserialize cleanly. */
+    vossTacticsUsed?: ReadonlyArray<string>;
+    infoAsked?: ReadonlyArray<string>;
+    walkAwayReturned?: boolean;
+    hardBandCap?: boolean;
+    marketMode?: "soft" | "neutral" | "hot";
   };
 }
 
