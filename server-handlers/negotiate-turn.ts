@@ -44,6 +44,8 @@ import {
 import {
   buildAiPrompt,
   validateAiText,
+  validateStructuredFields,
+  parseStructuredAiResponse,
   deterministicFallbackText,
   stripMarkdown,
 } from "./_negotiate-turn-helpers";
@@ -129,8 +131,13 @@ export interface LlmCaller {
 }
 
 const defaultLlmCaller: LlmCaller = async (system, user, opts) => {
+  /* jsonMode: true forces Groq / Gemini / Cerebras into structured
+     response mode. The prompt asks for a 4-field envelope (text,
+     roleMentioned, totalLpaMentioned, leverExecuted) — see
+     buildAiPrompt. maxTokens bumped from 220 to 320 to make room for
+     the JSON envelope keys; the actual prose stays 1–3 sentences. */
   const result = await callLLM(
-    { prompt: `${system}\n\n${user}`, temperature: 0.7, maxTokens: 220, fast: true },
+    { prompt: `${system}\n\n${user}`, temperature: 0.7, maxTokens: 320, fast: true, jsonMode: true },
     8000,
     { userId: opts.userId, endpoint: "negotiate-turn" },
   );
@@ -157,32 +164,53 @@ export async function generateAiText(
   const { system, user } = buildAiPrompt({ state, move, candidateAnswer });
   const failureKinds: string[] = [];
 
-  let text: string;
-  try {
-    text = stripMarkdown(await llm(system, user, { userId }));
-  } catch {
-    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: ["llm-throw"] };
+  /* One attempt = call LLM → parse JSON envelope → run text + structured
+     validators. The structured envelope is Phase 2 of the rebuild
+     (forcing the LLM to emit roleMentioned / totalLpaMentioned /
+     leverExecuted alongside the prose). When jsonMode produces a
+     malformed envelope, we fall through to the text-only path on the
+     raw output — same validators still run on .text, so this is
+     strictly additive vs the pre-Phase-2 behaviour. */
+  async function attempt(promptUser: string): Promise<{ text: string; failures: string[] } | { error: string }> {
+    let raw: string;
+    try {
+      raw = await llm(system, promptUser, { userId });
+    } catch {
+      return { error: "llm-throw" };
+    }
+    /* parseStructuredAiResponse tolerates fences, preambles, and trailing
+       prose. When it returns null the LLM either ignored JSON-mode or
+       emitted something unparseable; fall through to text-only validation
+       on the raw output (pre-Phase-2 behaviour). The structured-field
+       checks add coverage when present but don't gate when absent —
+       that way Phase 2 is purely additive, no regression in the path
+       where the upstream LLM provider quietly disables jsonMode. */
+    const parsed = parseStructuredAiResponse(raw);
+    const text = stripMarkdown(parsed ? parsed.text : raw);
+    const v = validateAiText(text, state, move);
+    const structured = parsed ? validateStructuredFields(parsed, state, move) : [];
+    const allFailures = [...v.failures, ...structured];
+    return { text, failures: allFailures.map(f => f.kind) };
   }
 
-  const v1 = validateAiText(text, state, move);
-  if (v1.ok) return { text, source: "llm", failureKinds };
-  for (const f of v1.failures) failureKinds.push(f.kind);
+  const a1 = await attempt(user);
+  if ("error" in a1) {
+    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [a1.error] };
+  }
+  if (a1.failures.length === 0) return { text: a1.text, source: "llm", failureKinds };
+  failureKinds.push(...a1.failures);
 
   /* Retry with explicit failure feedback in the prompt. */
   const retryUser =
     user +
-    `\n\nNOTE — your previous draft failed validation: ` +
-    JSON.stringify(v1.failures) +
-    `. Try again. Stick to the kernel brief exactly.`;
-  let retryText: string;
-  try {
-    retryText = stripMarkdown(await llm(system, retryUser, { userId }));
-  } catch {
-    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, "llm-throw"] };
+    `\n\nNOTE — your previous draft failed validation (kinds: ${a1.failures.join(", ")}). ` +
+    `Try again. Stick to the kernel brief exactly and ensure the JSON envelope fields agree with the prose.`;
+  const a2 = await attempt(retryUser);
+  if ("error" in a2) {
+    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, a2.error] };
   }
-  const v2 = validateAiText(retryText, state, move);
-  if (v2.ok) return { text: retryText, source: "llm-retry", failureKinds };
-  for (const f of v2.failures) failureKinds.push(f.kind);
+  if (a2.failures.length === 0) return { text: a2.text, source: "llm-retry", failureKinds };
+  failureKinds.push(...a2.failures);
 
   return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds };
 }

@@ -13,6 +13,8 @@ import {
 import {
   buildAiPrompt,
   validateAiText,
+  validateStructuredFields,
+  parseStructuredAiResponse,
   deterministicFallbackText,
   stripMarkdown,
 } from "../../server-handlers/_negotiate-turn-helpers";
@@ -304,5 +306,129 @@ describe("buildAiPrompt response hints", () => {
     const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
     const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
     expect(user).not.toContain("RESPONSE HINTS");
+  });
+});
+
+
+describe("parseStructuredAiResponse", () => {
+  /* Phase 2 of the rebuild forces the LLM into JSON-envelope output.
+     The parser must tolerate the three failure modes we've seen on
+     Groq + Gemini: stray markdown fences, "Here's the response:"
+     preambles, and trailing prose after the JSON. */
+  it("parses a clean JSON envelope", () => {
+    const raw = `{"text":"We'd like to offer ₹20 LPA.","roleMentioned":"UX Designer","totalLpaMentioned":20,"leverExecuted":"open-with-offer"}`;
+    const p = parseStructuredAiResponse(raw);
+    expect(p).not.toBeNull();
+    expect(p!.text).toBe("We'd like to offer ₹20 LPA.");
+    expect(p!.roleMentioned).toBe("UX Designer");
+    expect(p!.totalLpaMentioned).toBe(20);
+    expect(p!.leverExecuted).toBe("open-with-offer");
+  });
+
+  it("tolerates fenced ```json ... ``` wrapping", () => {
+    const raw = "```json\n{\"text\":\"Hi\",\"roleMentioned\":\"\",\"totalLpaMentioned\":null,\"leverExecuted\":\"probe\"}\n```";
+    const p = parseStructuredAiResponse(raw);
+    expect(p?.text).toBe("Hi");
+    expect(p?.totalLpaMentioned).toBeNull();
+  });
+
+  it("tolerates 'Here is the response:' preamble", () => {
+    const raw = `Here is the response:\n{"text":"Sure.","roleMentioned":"","totalLpaMentioned":null,"leverExecuted":"hold-firm"}`;
+    expect(parseStructuredAiResponse(raw)?.text).toBe("Sure.");
+  });
+
+  it("returns null on malformed JSON (caller falls back to text-only validation)", () => {
+    expect(parseStructuredAiResponse("not json at all")).toBeNull();
+    expect(parseStructuredAiResponse("{ broken: ")).toBeNull();
+    expect(parseStructuredAiResponse("")).toBeNull();
+  });
+
+  it("returns null when text field is missing or empty (no salvageable response)", () => {
+    expect(parseStructuredAiResponse(`{"roleMentioned":"x","totalLpaMentioned":1,"leverExecuted":"probe"}`)).toBeNull();
+    expect(parseStructuredAiResponse(`{"text":"","leverExecuted":"probe"}`)).toBeNull();
+  });
+});
+
+describe("validateStructuredFields", () => {
+  const state = baseState({ role: "Senior UX Designer", company: "Lollypop", highestOfferMade: 18 });
+  const counterMove: AiMove = { lever: "counter-base", newTotalLpa: 20, rationale: "" };
+
+  it("passes when all structured fields agree with kernel brief", () => {
+    const parsed = {
+      text: "We can stretch to ₹20 LPA.",
+      roleMentioned: "Senior UX Designer",
+      totalLpaMentioned: 20,
+      leverExecuted: "counter-base",
+    };
+    expect(validateStructuredFields(parsed, state, counterMove)).toEqual([]);
+  });
+
+  it("flags lever mismatch (LLM acted on a different lever than the kernel picked)", () => {
+    const parsed = {
+      text: "Tell us your range.",
+      roleMentioned: "",
+      totalLpaMentioned: null,
+      leverExecuted: "probe", // kernel asked for counter-base
+    };
+    const fs = validateStructuredFields(parsed, state, counterMove);
+    expect(fs).toContainEqual({ kind: "structured-lever-mismatch", expected: "counter-base", got: "probe" });
+  });
+
+  it("flags number mismatch beyond ±0.6 rounding tolerance", () => {
+    const parsed = {
+      text: "We can go to ₹25 LPA.",
+      roleMentioned: "",
+      totalLpaMentioned: 25, // kernel said 20
+      leverExecuted: "counter-base",
+    };
+    const fs = validateStructuredFields(parsed, state, counterMove);
+    expect(fs.some(f => f.kind === "structured-number-mismatch")).toBe(true);
+  });
+
+  it("absorbs ±0.5 rounding (kernel 20, LLM 20.5 — same intent, no flag)", () => {
+    const parsed = {
+      text: "We can offer ₹20.5 LPA.",
+      roleMentioned: "",
+      totalLpaMentioned: 20.5,
+      leverExecuted: "counter-base",
+    };
+    expect(validateStructuredFields(parsed, state, counterMove)).toEqual([]);
+  });
+
+  it("flags when LLM volunteers a number on a no-number lever", () => {
+    const probeMove: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
+    const parsed = {
+      text: "We're thinking ₹22 LPA.",
+      roleMentioned: "",
+      totalLpaMentioned: 22, // probe lever — must be null
+      leverExecuted: "probe",
+    };
+    const fs = validateStructuredFields(parsed, state, probeMove);
+    expect(fs).toContainEqual({ kind: "structured-number-mismatch", expected: null, got: 22 });
+  });
+
+  it("flags role mismatch (Lollypop session: 'Senior Product Designer' echoed in roleMentioned)", () => {
+    const parsed = {
+      text: "We can offer ₹20 LPA for the Senior Product Designer role.",
+      roleMentioned: "Senior Product Designer",
+      totalLpaMentioned: 20,
+      leverExecuted: "counter-base",
+    };
+    const fs = validateStructuredFields(parsed, state, counterMove);
+    expect(fs).toContainEqual({
+      kind: "structured-role-mismatch",
+      expected: "Senior UX Designer",
+      got: "Senior Product Designer",
+    });
+  });
+
+  it("does NOT flag role mismatch when LLM omits role this turn (mid-conversation)", () => {
+    const parsed = {
+      text: "We can stretch to ₹20 LPA. How does that land?",
+      roleMentioned: "", // not naming role mid-counter is allowed
+      totalLpaMentioned: 20,
+      leverExecuted: "counter-base",
+    };
+    expect(validateStructuredFields(parsed, state, counterMove)).toEqual([]);
   });
 });
