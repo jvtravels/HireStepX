@@ -182,28 +182,52 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
   }
 
   /* Acceptance / walk-away (single-turn). The session-long sticky
-     check sits in applyCandidateAnswer (consults existing state). */
-  const acceptPat = /(?:i (?:would like to |want to |'?d like to )?accept(?:\s+(?:this|the|your))?\s*(?:offer)?|sounds good|that works|it.?s a deal|let.?s go ahead|happy to accept|i agree|i.?m happy with that)\b/i;
-  const conditionalPat = /\b(?:if|unless|provided|on condition|contingent|only\s+if)\b/i;
-  const negotiatingButPat = /\b(?:but|however)\s+(?:i\s+)?(?:want|need|would like|expect|require)?\s*(?:more|higher|better|increase|raise|reduce|lower|stretch|change|different|bump|up|further|additional)/i;
-  const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on)\b/i;
+     check sits in applyCandidateAnswer (consults existing state).
+
+     Both English and Hindi-mix patterns are matched. Hindi-mix accept
+     phrases ("theek hai", "ho jayega", "kar dijiye", "manzoor hai")
+     and walk phrases ("nahi chahiye", "nahi karna", "nahi banega")
+     were previously invisible to the parser — candidates speaking
+     code-switched English/Hindi would have terminal-phase transitions
+     drop on the floor, leaving the AI to keep negotiating past a
+     clear yes/no signal. */
+  const acceptPat = /(?:i (?:would like to |want to |'?d like to )?accept(?:\s+(?:this|the|your))?\s*(?:offer)?|sounds good|that works|it.?s a deal|let.?s go ahead|happy to accept|i agree|i.?m happy with that|theek\s+hai|theek\s+he|ho\s+jayega|ho\s+jaega|kar\s+(?:di(?:ya|jiye)|do|dijiye)|manzoor(?:\s+hai)?|haan\s+(?:thik|theek|ok|okay|done))\b/i;
+  const conditionalPat = /\b(?:if|unless|provided|on condition|contingent|only\s+if|agar|jab\s+tak)\b/i;
+  const negotiatingButPat = /\b(?:but|however|lekin|magar)\s+(?:i\s+)?(?:want|need|would like|expect|require|chahiye|chahta|chahti)?\s*(?:more|higher|better|increase|raise|reduce|lower|stretch|change|different|bump|up|further|additional|zyada|kam|aur)/i;
+  const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
   const signalsAcceptance = acceptPat.test(a) && !conditionalPat.test(a) && !negotiatingButPat.test(a) && !walkAwayPat.test(a);
   const signalsWalkAway = walkAwayPat.test(a);
 
   /* Current-CTC patterns. These claim their number FIRST so the
      target regex can't accidentally pick "8.5" out of "my current
      package is 8.5 LPA" — that exact bug shipped in production
-     (Bombay Design Centre session, May 2026). */
-  const currentCtc = extractFirstNumber(a, [
-    /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-    /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-    /\bpackage\s+progression[^.!?\n₹]{0,30}?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-  ]);
+     (Bombay Design Centre session, May 2026).
+
+     Range support: "I'm earning 25-28 LPA" binds the upper bound so
+     a candidate's stated comp ceiling becomes the disclosed value
+     (matching how recruiters interpret stated current packages). */
+  const currentCtc =
+    extractUsdAmount(a, [
+      /\bcurrent(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay)[^.!?\n]{0,30}?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i,
+      /\b(?:currently|earning|getting|drawing|making|making\s+about|take\s+home|i\s+get|i\s+earn|i.?m\s+at)\s.*?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i,
+    ]) ??
+    extractFirstNumber(a, [
+      /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+      /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+      /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+      /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+      /\bpackage\s+progression[^.!?\n₹]{0,30}?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+    ]);
 
   /* Competing-offer patterns. Also must NOT bind to target. */
-  const competing = extractFirstNumber(a, [
-    /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)\s*₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|cr|crore)/i,
-  ]);
+  const competingCtx = /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)/i;
+  const competing =
+    extractUsdAmount(a, [
+      new RegExp(competingCtx.source + /\s*\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/.source, "i"),
+    ]) ??
+    extractFirstNumber(a, [
+      /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|cr|crore)/i,
+    ]);
 
   /* Target patterns. We require explicit ask context to bind — bare
      numbers are ignored to avoid "currently 8.5" leaking to target.
@@ -212,13 +236,17 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
        - Hindi-mix / post-number: "N lakh chahiye", "N LPA ka package",
          "N lakh mil jaye", "N LPA milna chahiye" — common in mixed
          Hindi-English STT output, previously dropped on the floor. */
-  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
-  const targetHindiPostPat = /₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
+  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
+  const targetHindiPostPat = /₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
   /* Range patterns — "30-35 LPA" / "30 to 35 lakhs" / "₹30 – ₹35 LPA".
      Candidates anchor at the top of their stated range, so we bind the
      upper bound as the target (more realistic recruiter framing). */
-  const targetRangePat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for|around|between)\s+(?:an?\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*₹?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
-  let target = extractFirstNumber(a, [targetRangePat, targetCtxPat, targetHindiPostPat]);
+  const targetRangePat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for|around|between)\s+(?:an?\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
+  /* USD anchors — "$150k", "$120,000", "USD 100k". Common in tech
+     candidates moving from US-comp companies. Converted to LPA at a
+     fixed rate so kernel math stays in one unit. */
+  const targetUsdPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for)\s+(?:an?\s+|about\s+|approximately\s+|roughly\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i;
+  let target = extractUsdAmount(a, [targetUsdPat]) ?? extractFirstNumber(a, [targetRangePat, targetCtxPat, targetHindiPostPat]);
 
   /* Disambiguation: if a number was already bound to current/
      competing, it isn't ALSO the target — drop it. */
@@ -237,16 +265,43 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
    this, the senior/exec hiring path silently truncated magnitude (we
    captured the digit `5` but treated it as 5 LPA). Clamp is widened
    to 5000 LPA (= 50 crore) which covers C-suite while still rejecting
-   garbage from STT mishears like "five hundred thousand". */
+   garbage from STT mishears like "five hundred thousand".
+
+   Comma stripping: Indian "30,00,000" and Western "3,000,000" both
+   strip to "3000000". The downstream LPA/lakh unit then resolves
+   them correctly. */
 function extractFirstNumber(text: string, patterns: RegExp[]): number | null {
   for (const re of patterns) {
     const m = re.exec(text);
     if (m && m[1]) {
-      let n = parseFloat(m[1]);
+      let n = parseFloat(m[1].replace(/,/g, ""));
       if (!Number.isFinite(n)) continue;
       const isCrore = /\bcr\b|crore/i.test(m[0]);
       if (isCrore) n *= 100;
       if (n >= 1 && n <= 5000) return n;
+    }
+  }
+  return null;
+}
+
+/* Convert a USD amount to LPA. Used when a candidate quotes US-comp
+   numbers ("$150k", "$120,000"). We use a fixed 83 INR/USD rate —
+   close enough for negotiation-band math and avoids the operational
+   risk of a live FX lookup on every turn. Anything outside 10k–5M USD
+   is rejected as malformed. */
+const USD_TO_INR = 83;
+function extractUsdAmount(text: string, patterns: RegExp[]): number | null {
+  for (const re of patterns) {
+    const m = re.exec(text);
+    if (m && m[1]) {
+      let usd = parseFloat(m[1].replace(/,/g, ""));
+      if (!Number.isFinite(usd)) continue;
+      /* The `k` suffix on the match means thousands. */
+      if (/k/i.test(m[2] || "")) usd *= 1000;
+      if (usd < 10_000 || usd > 5_000_000) continue;
+      /* USD → INR → lakhs. 1 lakh = 100k INR. */
+      const lpa = Math.round((usd * USD_TO_INR) / 100_000 * 10) / 10;
+      if (lpa >= 1 && lpa <= 5000) return lpa;
     }
   }
   return null;
@@ -522,7 +577,7 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
  *  "₹2 crore total" and bypass the validator entirely — a real risk
  *  since the upstream parser now accepts crore inputs from candidates. */
 export function findOutOfBandNumber(text: string, band: NegotiationBand): number | null {
-  const re = /₹\s*(\d+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/g;
+  const re = /₹\s*([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     let n = parseFloat(m[1]);

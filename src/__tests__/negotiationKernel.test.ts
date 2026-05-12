@@ -111,6 +111,55 @@ describe("parseCandidateAnswer", () => {
     expect(p.target).toBeNull();
   });
 
+  it("accepts Hindi acceptance phrases", () => {
+    expect(parseCandidateAnswer("Theek hai, kar dijiye.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("Ho jayega, manzoor hai.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("Haan thik hai, accept.").signalsAcceptance).toBe(true);
+  });
+
+  it("Hindi 'agar' conditional blocks acceptance", () => {
+    /* "Agar joining bonus mile, theek hai" — conditional accept, not real. */
+    const p = parseCandidateAnswer("Agar joining bonus mile, theek hai.");
+    expect(p.signalsAcceptance).toBe(false);
+  });
+
+  it("accepts Hindi walk-away phrases", () => {
+    expect(parseCandidateAnswer("Mujhe nahi chahiye, sorry.").signalsWalkAway).toBe(true);
+    expect(parseCandidateAnswer("Nahi karna mujhe.").signalsWalkAway).toBe(true);
+    expect(parseCandidateAnswer("Yeh nahi banega.").signalsWalkAway).toBe(true);
+  });
+
+  it("parses USD comp ($150k) and converts to LPA at 83 INR/USD", () => {
+    /* $150k × 83 / 100k = 124.5 LPA */
+    const p = parseCandidateAnswer("I'm expecting $150k for this role.");
+    expect(p.target).toBe(124.5);
+  });
+
+  it("parses USD with comma format ($120,000)", () => {
+    /* $120,000 × 83 / 100k = 99.6 LPA */
+    const p = parseCandidateAnswer("I'm currently earning $120,000 at my US employer.");
+    expect(p.currentCtc).toBe(99.6);
+  });
+
+  it("parses USD competing offer", () => {
+    /* $180k × 83 / 100k = 149.4 LPA */
+    const p = parseCandidateAnswer("I already have an offer of $180k from a US firm.");
+    expect(p.competing).toBe(149.4);
+  });
+
+  it("parses Indian comma-formatted lakhs (30,00,000 LPA)", () => {
+    /* 30,00,000 → strip commas → 3000000 LPA — outside clamp, rejected.
+       The realistic candidate input is "30 LPA" or "30 lakhs" though, so
+       this just confirms the clamp catches the unrealistic case. */
+    const p = parseCandidateAnswer("I'm expecting 30,00,000 lakhs.");
+    expect(p.target).toBeNull();
+  });
+
+  it("parses currentCtc range and binds upper bound", () => {
+    const p = parseCandidateAnswer("I'm currently earning 25-28 LPA at my company.");
+    expect(p.currentCtc).toBe(28);
+  });
+
   it("binds the upper bound when candidate states a range", () => {
     /* Candidates anchor at the top of a stated range, so the upper
        bound is the meaningful target signal. */
