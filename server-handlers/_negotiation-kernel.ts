@@ -404,6 +404,17 @@ export function parseCandidateAnswer(
       // "i'm accepting" / "i am accepting" / "i'll accept" / "i will accept"
       String.raw`\bi\s*(?:'m|am)\s+accept(?:ing|ed)?\b`,
       String.raw`\bi\s*(?:'?ll|will)\s+accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b`,
+      /* "i would like to accept" / "i'd like to accept" / "i want to
+         accept" — explicit textbook acceptances that the broader
+         rewrite (2026-05-12 MakeMyTrip soft-acceptance batch) had
+         accidentally dropped. The Lollypop session (2026-05-13) had
+         the candidate say verbatim "I would like to accept your
+         offer" — clear yes — and the kernel kept probing because
+         none of the patterns above match "would like to accept".
+         Re-anchor with three explicit forms. */
+      String.raw`\bi\s+would\s+(?:like\s+to|love\s+to)\s+accept\b`,
+      String.raw`\bi'?d\s+(?:like\s+to|love\s+to)\s+accept\b`,
+      String.raw`\bi\s+want\s+to\s+accept\b`,
       // "i've accepted" / "i have (already) accepted" / "i already accepted"
       String.raw`\bi\s*(?:'ve|have)\s+(?:already\s+)?accepted\b`,
       String.raw`\bi(?:\s+have)?\s+already\s+accepted\b`,

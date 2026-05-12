@@ -17,6 +17,7 @@ import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { getCompanyTier } from "../data/company-tiers";
+import { detectRoleLabelMismatch } from "./_role-mismatch";
 import {
   fetchLiveAggregate,
   formatLiveAggregateBlock,
@@ -90,38 +91,9 @@ async function getCompanyGuidance(company: string): Promise<string> {
  * KNOWN_ROLE_LABELS is intentionally narrow — only the titles the LLM
  * actually substitutes in practice. False positives here are worse than
  * false negatives because we'd silently rewrite a legitimate opener. */
-const KNOWN_ROLE_LABELS = [
-  "senior product designer", "product designer",
-  "senior ux designer", "ux designer", "ui designer", "ui/ux designer",
-  "senior software engineer", "software engineer", "senior swe", "swe",
-  "senior frontend engineer", "frontend engineer",
-  "senior backend engineer", "backend engineer",
-  "senior product manager", "product manager",
-  "senior data scientist", "data scientist",
-  "senior data analyst", "data analyst",
-  "senior engineering manager", "engineering manager",
-];
-const ROLE_STOPWORDS = new Set(["senior", "sr", "junior", "jr", "lead", "principal", "staff", "the", "a", "an"]);
-function tokenizeRole(r: string): string[] {
-  return r.toLowerCase().replace(/[^\w\s/]/g, " ").split(/\s+/).filter(t => t && !ROLE_STOPWORDS.has(t));
-}
-function detectRoleLabelMismatch(text: string, userRole: string): string {
-  if (!text || !userRole) return "";
-  const userTokens = new Set(tokenizeRole(userRole));
-  if (userTokens.size === 0) return "";
-  const lower = text.toLowerCase();
-  for (const label of KNOWN_ROLE_LABELS) {
-    if (!lower.includes(label)) continue;
-    const labelTokens = tokenizeRole(label);
-    /* If the label shares ZERO significant tokens with the user-typed role,
-       this is a hallucinated substitution. ("ux designer" vs "product designer"
-       share zero — flag. "senior ux designer" vs "ux designer" share "ux" and
-       "designer" — keep.) */
-    const shared = labelTokens.some(t => userTokens.has(t));
-    if (!shared) return label;
-  }
-  return "";
-}
+/* The canonical role-mismatch detector lives in _role-mismatch.ts —
+   both this generator and the kernel-turn validator import it, so the
+   two paths can't drift on what counts as "role hallucination". */
 
 function getCompanyTone(company: string): string {
   if (!company) return "";
@@ -958,92 +930,78 @@ Requirements:
         }
         console.warn(`[generate-questions] salary-neg initial offer was vague — injected fallback ₹${initial} LPA opener for ${company || "company"}`);
       } else {
-        // Clamp the LLM-generated initial offer against maxStretch. The
-        // follow-up handler clamps follow-up turns; without a matching
-        // clamp here, the very FIRST offer can land above maxStretch
-        // (the Flipkart UX session anchored ₹58 vs maxStretch ₹52.6
-        // because step 2 was never clamped). Strategy: extract the
-        // largest ₹ figure from q[1], compare to maxStretch * 1.05, and
-        // if it exceeds, rewrite the headline to band.initialOffer.
-        //
-        // 2026-05 broadening: regex was previously `/₹\s*\d+.../` —
-        // strict ₹ glyph required. The LLM frequently emits "35 LPA",
-        // "Rs 35 LPA", or "INR 35 LPA" without the ₹ glyph, which
-        // bypassed the clamp entirely. The MakeMyTrip UX session
-        // shipped a ₹35 LPA opening offer against a ₹20-26.9 LPA band
-        // because of this. Now matches the same currency-prefix set
-        // as findOutOfBandNumber.
-        const q1Obj = questions[1] as { question?: string; text?: string };
-        const q1Body = q1Obj?.question || q1Obj?.text || "";
-        const numRe = /(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
-        const hits: number[] = [];
-        let nm: RegExpExecArray | null;
-        while ((nm = numRe.exec(q1Body)) !== null) {
-          const v = parseFloat(nm[1]);
-          const isCr = /cr|crore/i.test(nm[0]);
-          hits.push(isCr ? v * 100 : v);
-        }
-        const headline = hits.length > 0 ? Math.max(...hits) : null;
+        /* Validate EVERY salary-negotiation script question, not just q[1].
+           Previously only the opener (q[1]) got band/role/dangling-unit
+           checks. The Lollypop "Senior UX Designer" session (2026-05-13)
+           shipped:
+             - q[2] hallucinating "Senior Product Designer" position
+             - q[3] proposing "₹43.6 LPA" against a maxStretch of ~22.5
+           Both q[2] and q[3] were never validated. The kernel takes
+           over on subsequent turns, but the engine can fall back to
+           the static script when kernel turns drop on timeout / stale
+           step / network blip — and those drops happen often enough
+           that letting q[2..N] ship un-validated is an unbounded risk.
+           Same checks, same single rewrite path, applied to every q. */
         const ceiling = negotiationBandData.maxStretch;
-        // Role-mismatch detection: the LLM sometimes hallucinates the
-        // role title in the opening line ("for the Senior Product Designer
-        // position" when the user typed "UX designer"). The MakeMyTrip
-        // session capture confirmed this — chip said "UX DESIGNER" but
-        // q[1] said "Senior Product Designer". We look for any of a
-        // curated list of common Indian-market designer/PM/SWE titles
-        // in q[1]; if one is present that doesn't share at least one
-        // significant token with the user-typed role, we rewrite the
-        // opener using the user's role verbatim. The fallback template
-        // already uses `${role}` directly, so the rewrite is reusable.
-        const roleMismatch = detectRoleLabelMismatch(q1Body, role || "");
-        const needsClamp = headline !== null && headline > ceiling * 1.05;
-        /* Below-band guard: an LLM emitting a number BELOW initialOffer
-           (e.g. ₹5 LPA opener when band starts at ₹20) was previously
-           silently shipped — needsClamp only checks the upper end.
-           Catch with a -10% floor on initialOffer. */
         const floor = negotiationBandData.initialOffer * 0.9;
-        const belowBand = headline !== null && headline < floor;
-        /* Dangling-unit guard: "basic salary of LPA" with no preceding
-           digit slipped past every prior check (hasRupee passed because
-           an earlier "₹20 LPA" existed, and the number scan only saw
-           the valid number). Mirror the same matchAll pattern the
-           kernel validator uses. */
-        const danglingUnit = (() => {
-          const m = Array.from(q1Body.matchAll(/(?:^|[^0-9.])(?:LPA|lpa|lakhs?|crore)\b/g));
-          for (const mm of m) {
-            const idx = mm.index ?? 0;
-            const unitStart = idx + (mm[0][0] && /[^A-Za-z]/.test(mm[0][0]) ? 1 : 0);
-            const lookback = q1Body.slice(Math.max(0, unitStart - 8), unitStart);
-            if (!/\d/.test(lookback)) return true;
-          }
-          return false;
-        })();
+        const safeOpener = Math.round(negotiationBandData.initialOffer);
+        const safeRewrite = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${safeOpener} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
+        const numRe = /(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
+        const unitRe = /(?:^|[^0-9.])(?:LPA|lpa|lakhs?|crore)\b/g;
 
-        const reasons: string[] = [];
-        if (needsClamp) reasons.push("above-band");
-        if (belowBand) reasons.push("below-band");
-        if (roleMismatch) reasons.push("role-mismatch");
-        if (danglingUnit) reasons.push("dangling-unit");
+        for (let qi = 1; qi < questions.length; qi++) {
+          const qObj = questions[qi] as { question?: string; text?: string };
+          const body = qObj?.question || qObj?.text || "";
+          if (!body) continue;
 
-        if (reasons.length > 0) {
-          const safeOpener = Math.round(negotiationBandData.initialOffer);
-          const replacement = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${safeOpener} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
-          q1Obj.question = replacement;
-          q1Obj.text = replacement;
-          if (needsClamp) {
-            console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L exceeded maxStretch ₹${ceiling}L (5% tolerance) — rewrote to ₹${safeOpener}L for ${company || "company"}`);
+          const hits: number[] = [];
+          let nm: RegExpExecArray | null;
+          numRe.lastIndex = 0;
+          while ((nm = numRe.exec(body)) !== null) {
+            const v = parseFloat(nm[1]);
+            const isCr = /cr|crore/i.test(nm[0]);
+            hits.push(isCr ? v * 100 : v);
           }
-          if (belowBand) {
-            console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L below floor ₹${floor.toFixed(1)}L — rewrote to ₹${safeOpener}L for ${company || "company"}`);
-          }
-          if (roleMismatch) {
-            console.warn(`[generate-questions] salary-neg opener mentioned role "${roleMismatch}" but user picked "${role}" — rewrote opener for ${company || "company"}`);
-          }
-          if (danglingUnit) {
-            console.warn(`[generate-questions] salary-neg opener had a dangling unit (no number before LPA/lakhs/crore) — rewrote for ${company || "company"}`);
-          }
+          const headline = hits.length > 0 ? Math.max(...hits) : null;
+          const aboveBand = headline !== null && headline > ceiling * 1.05;
+          /* Below-band only applies to q[1] (opener) — later turns may
+             reference the candidate's lower current CTC etc. */
+          const belowBand = qi === 1 && headline !== null && headline < floor;
+          const roleMismatch = detectRoleLabelMismatch(body, role || "");
+          const danglingUnit = (() => {
+            const m = Array.from(body.matchAll(unitRe));
+            for (const mm of m) {
+              const idx = mm.index ?? 0;
+              const unitStart = idx + (mm[0][0] && /[^A-Za-z]/.test(mm[0][0]) ? 1 : 0);
+              const lookback = body.slice(Math.max(0, unitStart - 8), unitStart);
+              if (!/\d/.test(lookback)) return true;
+            }
+            return false;
+          })();
+
+          const reasons: string[] = [];
+          if (aboveBand) reasons.push("above-band");
+          if (belowBand) reasons.push("below-band");
+          if (roleMismatch) reasons.push("role-mismatch");
+          if (danglingUnit) reasons.push("dangling-unit");
+          if (reasons.length === 0) continue;
+
+          /* Two rewrite templates: opener (q[1]) vs later turns. Later
+             turns can't reuse the opener template — pasting "we'd like
+             to extend an offer at ₹X" into q[3] would re-open. Instead
+             use a neutral "let me reset" line that hands control back
+             to the kernel on the next user response without committing
+             to a specific number or claim. */
+          const replacement = qi === 1
+            ? safeRewrite
+            : `Let me pause and reset on this. Based on where we are, the position we're discussing is ${role || "this role"}, and the offer on the table is ₹${safeOpener} LPA total CTC. What would you like to focus on from here?`;
+          qObj.question = replacement;
+          qObj.text = replacement;
+
+          console.warn(`[generate-questions] salary-neg q[${qi}] failed validation (${reasons.join(",")}) — rewrote for ${company || "company"} (role=${role || "?"}, band=₹${safeOpener}/${ceiling}L, headline=${headline ?? "none"})`);
           void captureServerEvent("opener_rewrite_triggered", distinctIdFrom(req, auth.userId), {
             reasons: reasons.join(","),
+            q_index: qi,
             role: role || null,
             company: (company || "").slice(0, 80),
             headline: headline ?? null,

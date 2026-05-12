@@ -24,6 +24,7 @@ import {
   findOutOfBandNumber,
   isVerbatimRepeat,
 } from "./_negotiation-kernel";
+import { detectRoleLabelMismatch } from "./_role-mismatch";
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 
@@ -230,7 +231,15 @@ export type ValidationFailure =
      LPA, which would account for a significant portion of the CTC".
      The number-interpolation slot rendered blank. Without this check
      the candidate sees broken copy. Triggers a retry → fallback. */
-  | { kind: "dangling-unit"; snippet: string };
+  | { kind: "dangling-unit"; snippet: string }
+  /* LLM substituted a different role title than the candidate
+     selected (e.g. "Senior Product Designer" when the brief says
+     "Senior UX Designer"). Real session capture (Lollypop Senior UX
+     Designer, May 2026): two separate turns mentioned "Senior Product
+     Designer" verbatim despite role= being in the brief. The static
+     system rule "use VERBATIM" wasn't enough on its own — we need a
+     post-generation check that triggers retry/fallback. */
+  | { kind: "role-drift"; label: string; userRole: string };
 
 export interface ValidationResult {
   ok: boolean;
@@ -335,6 +344,20 @@ export function validateAiText(
   if (danglingRupee) {
     const idx = danglingRupee.index ?? 0;
     failures.push({ kind: "dangling-unit", snippet: t.slice(Math.max(0, idx - 10), idx + 20) });
+  }
+
+  /* Role-drift: the LLM substituted a recognized job title that
+     shares zero significant tokens with state.role. The system
+     prompt says "use the role label VERBATIM", but real sessions
+     (Lollypop "Senior UX Designer" → "Senior Product Designer" twice
+     in one session, May 2026) show the rule isn't always honoured.
+     Post-validation catches it; the existing retry path then feeds
+     the failure back to the LLM as explicit corrective context. */
+  if (state.role) {
+    const drift = detectRoleLabelMismatch(t, state.role);
+    if (drift) {
+      failures.push({ kind: "role-drift", label: drift, userRole: state.role });
+    }
   }
 
   return { ok: failures.length === 0, failures };

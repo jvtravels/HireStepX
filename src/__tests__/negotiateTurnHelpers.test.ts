@@ -149,6 +149,33 @@ describe("validateAiText", () => {
     expect(r.failures.some(f => f.kind === "dangling-unit")).toBe(true);
   });
 
+  it("flags role-drift when LLM substitutes a different job title (Lollypop session, May 2026)", () => {
+    /* Real session capture: user picked "Senior UX Designer". LLM
+       emitted "Senior Product Designer position at this stage in your
+       career". role= was in the brief; system rule said "use VERBATIM".
+       Neither stopped it. Post-validation catches the drift so the
+       retry path can correct it. */
+    const driftState = baseState({ role: "Senior UX Designer", phase: "probe-expectations", highestOfferMade: 20 });
+    const probeMove: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
+    const r = validateAiText(
+      "Can you tell me what you're expecting for a Senior Product Designer position?",
+      driftState, probeMove,
+    );
+    expect(r.failures.some(f => f.kind === "role-drift")).toBe(true);
+  });
+
+  it("does NOT flag role-drift when the LLM uses the same role family", () => {
+    /* "Senior UX Designer" → text mentions "UX designer" — shares
+       both "ux" and "designer" tokens. Don't flag. */
+    const matchState = baseState({ role: "Senior UX Designer", phase: "probe-expectations", highestOfferMade: 20 });
+    const probeMove: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
+    const r = validateAiText(
+      "For the UX designer role, what compensation are you targeting?",
+      matchState, probeMove,
+    );
+    expect(r.failures.some(f => f.kind === "role-drift")).toBe(false);
+  });
+
   it("accepts non-numeric lever with no number in text", () => {
     const benefitsMove: AiMove = { lever: "benefits-summary", newTotalLpa: state.highestOfferMade, rationale: "" };
     const r = validateAiText(

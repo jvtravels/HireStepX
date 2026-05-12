@@ -115,6 +115,26 @@ describe("parseCandidateAnswer", () => {
     ).signalsAcceptance).toBe(true);
   });
 
+  it("catches 'I would like to accept' / 'I want to accept' (Lollypop session, May 2026)", () => {
+    /* Real session capture: candidate said verbatim "I would like to
+       accept your offer. Overall, CTC is good for me." — textbook
+       acceptance. The kernel matched none of its patterns (the
+       MakeMyTrip-batch rewrite dropped these forms) and kept probing.
+       Re-anchor with explicit "would like to" / "want to" verbs. */
+    expect(parseCandidateAnswer(
+      "I would like to accept your offer. Overall, CTC is good for me."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "I'd like to accept the offer."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "I want to accept this offer."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "I would love to accept your offer."
+    ).signalsAcceptance).toBe(true);
+  });
+
   it("catches more idiomatic English acceptance forms", () => {
     expect(parseCandidateAnswer("I'll take it.").signalsAcceptance).toBe(true);
     expect(parseCandidateAnswer("I'm in.").signalsAcceptance).toBe(true);
