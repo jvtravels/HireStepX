@@ -145,9 +145,12 @@ describe("normalizePanelPersonas", () => {
 });
 
 describe("isSalaryNegotiationLengthOk", () => {
-  it("requires at least 4 turns for salary negotiation arc", () => {
-    expect(isSalaryNegotiationLengthOk(true, 3)).toBe(false);
-    expect(isSalaryNegotiationLengthOk(true, 4)).toBe(true);
+  /* Salary-neg arc reduced from 5+ questions to a 3-step anchor (intro +
+     initial offer + closing). The NegotiationKernel owns every in-between
+     turn at runtime, so the script length floor drops from 4 to 3. */
+  it("requires at least 3 turns (intro+offer+closing) for salary negotiation", () => {
+    expect(isSalaryNegotiationLengthOk(true, 2)).toBe(false);
+    expect(isSalaryNegotiationLengthOk(true, 3)).toBe(true);
     expect(isSalaryNegotiationLengthOk(true, 7)).toBe(true);
   });
 
@@ -166,8 +169,9 @@ describe("computeStepCount", () => {
     expect(computeStepCount({ mini: true, isSalaryType: false })).toBe(5);
   });
 
-  it("mini salary-negotiation still gets full 5-question arc = 7 steps", () => {
-    expect(computeStepCount({ mini: true, isSalaryType: true })).toBe(7);
+  it("salary-negotiation is fixed at 3 steps regardless of mini flag — kernel owns the middle", () => {
+    expect(computeStepCount({ mini: true, isSalaryType: true })).toBe(3);
+    expect(computeStepCount({ mini: false, isSalaryType: true })).toBe(3);
   });
 });
 

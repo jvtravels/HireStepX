@@ -752,7 +752,7 @@ Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
-DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
+${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
 ${questionCount >= 4 ? `
 - Q1 (warmup): low-stakes, broad, easy to start. "Tell me about your most recent role" / "What's a project you're proud of?". No trick angles.
 - Q2 (foundational): tests one specific competency directly. Concrete, but not yet probing for trade-offs or failure modes.
@@ -762,7 +762,7 @@ ${questionCount >= 4 ? `
 - Q1 (warmup): broad and easy. "Tell me about yourself" or "Why this role?".
 - Q${Math.max(2, questionCount - 1)} (standard): bar-setting, requires structure and a specific metric.
 - Q${questionCount} (stretch): probes failure, ambiguity, or judgment under constraints.`}
-Do NOT make every question equally hard — that's a screening test, not an interview. The escalation itself is part of what reveals signal.
+Do NOT make every question equally hard — that's a screening test, not an interview. The escalation itself is part of what reveals signal.`}
 
 Each step: {"type":"intro|question|closing","aiText":"2-3 sentences spoken naturally by the interviewer","scoreNote":"specific evaluation criteria for this question"${interviewType === "panel" ? ',"persona":"Hiring Manager|Technical Lead|HR Partner"' : ""}${companyName ? ',"groundingCheck":"verified|generic|hypothetical"' : ""}}${panelNote}${companyName ? `
 
@@ -812,41 +812,33 @@ VOICE & DICTION (mandatory): write the way a real interviewer SPEAKS, not the wa
   Aim for: contractions ("you're", "don't", "I'd"), short clauses, the kind of phrasing a senior hiring manager would actually say in a Zoom call. If a question reads like it was generated, rewrite it.
 
 ${isSalaryType
-? `CRITICAL: This is a SALARY NEGOTIATION CONVERSATION, not a list of independent questions. Each question MUST flow logically from the previous one as a real hiring manager would speak.
+? `CRITICAL: This is a SALARY NEGOTIATION CONVERSATION. You generate ONLY the cold-open and the initial-offer anchor — every subsequent turn (probing, countering, package discussion, acceptance handling) is generated AT RUNTIME by the NegotiationKernel based on what the candidate actually says. Do NOT fabricate later turns; they will be inserted live.
 
-MANDATORY CONVERSATION ARC — generate questions in this EXACT sequence:
-1. INTRO: Warm, human opener that grounds the simulation. 2-3 sentences. Mention (a) you're the hiring manager / HR partner for THIS specific role at THIS company, (b) the team has wrapped up technical/portfolio rounds and the candidate impressed, (c) you'll walk them through the offer in a moment and want to make sure the package works for both sides. End with "Ready to dive in?" or similar consent check. The intro should make the candidate feel like they're in a real call — not a quiz. Reference the role title and company by name. Do NOT include any ₹ numbers here.
-2. INITIAL OFFER: Present a SINGLE total CTC headline. Use the exact ₹ initialOffer figure from the salary data above. CRITICAL — INDIAN HR CONVENTION: real Indian recruiters do NOT decompose the offer into base/variable/PF/gratuity/ESOPs/RSUs/joining-bonus on the very first turn. They share the headline number, gauge the candidate's reaction, and only break down the structure when the candidate ASKS for it ("can you walk me through the split?"). Anchoring with a full breakdown upfront feels robotic and gives away the negotiation. Pick ONE of these headline-only structures:
+MANDATORY 3-STEP STRUCTURE (intro + 1 question + closing):
+1. INTRO: Warm, human opener that grounds the simulation. 2-3 sentences. Mention (a) you're the hiring manager / HR partner for THIS specific role at THIS company, (b) the team has wrapped up technical/portfolio rounds and the candidate impressed, (c) you'll walk them through the offer in a moment and want to make sure the package works for both sides. End with "Ready to dive in?" or similar consent check. Reference the role title and company by name. Do NOT include any ₹ numbers here.
+2. INITIAL OFFER (the single "question" step): Present a SINGLE total CTC headline. Use the exact ₹ initialOffer figure from the salary data above. CRITICAL — INDIAN HR CONVENTION: real Indian recruiters do NOT decompose the offer into base/variable/PF/gratuity/ESOPs/RSUs/joining-bonus on the very first turn. They share the headline number, gauge the candidate's reaction, and only break down the structure when the candidate ASKS. Pick ONE of these headline-only structures:
    - Structure A (Headline + Invite): "₹X LPA total CTC for this role. Happy to break down the structure if you'd like — but first, how does the number land?"
    - Structure B (Range Anchor): "Our band for this level is ₹X to ₹Y LPA. I was thinking ₹Z as a starting point. Where are you on that?"
    - Structure C (Benchmark Framing): "For this level, we're looking at ₹X LPA — that's at the midpoint of our band for this city. What were you expecting?"
    - Structure D (Minimal + Probe): "We'd like to offer ₹X LPA. Before I get into details, I'd love to hear your thoughts on the number."
-   FORBIDDEN in step 2: do NOT list base, variable, PF, gratuity, joining bonus, ESOPs, RSUs, equity, health insurance, or learning budget. Those belong in a LATER turn, only after the candidate asks for the breakdown. The initial offer is a single number with a single follow-up question, nothing more.
-   IMPORTANT: NEVER mention equity/ESOPs/RSUs in step 2 — equity discussion belongs to the benefits phase or only when the candidate raises it, regardless of whether this role grants equity.
-3. PROBE EXPECTATIONS: DO NOT include specific ₹ numbers in this step — you don't know what the candidate said yet. Write ONE focused question, not three stacked. Pick exactly one angle: target range OR benchmarking signal OR what's driving the candidate's expectations. Example (single question): "Help me understand — what range are you targeting for this role?" NOT: "What range are you targeting? Are you benchmarking? What's driving your expectations?" Multiple stacked questions overwhelm the candidate and get answered partially, breaking the conversation thread. Do NOT ask for current CTC. Do NOT include [pause] / [pause:long] / [breath] markers in the question text — prosody hints belong on the follow-up engine, not the script-generated questions; if you include them here they can leak past sanitizers and onto the candidate's screen.
-4. COUNTER-OFFER: DO NOT include specific ₹ counter-offer numbers — you don't know the candidate's ask yet. Write an adaptive response like: "Based on what you've shared, let me see what I can do. I want to find something that works for both of us." or "I hear you. Let me look at what flexibility I have in the package structure." The follow-up system will replace this with a real counter-offer with exact numbers based on the actual conversation.
-${questionCount >= 5 ? `5. PACKAGE DISCUSSION: DO NOT repeat or invent new ₹ numbers. Instead, discuss the STRUCTURE of the package: "Beyond the base number, let me walk you through the full picture — there's variable pay, benefits, and some flexibility I can offer." Ask what matters most to them.` : ""}
-${questionCount >= 5 ? "6" : "5"}. CLOSING: DO NOT invent a final package number. Instead, write a wrap-up that references the conversation: "I think we've had a productive discussion. Let me put together the final numbers based on what we've agreed and have HR send you the formal offer letter. What's your notice period situation?" Stay in character.
+   FORBIDDEN in step 2: do NOT list base, variable, PF, gratuity, joining bonus, ESOPs, RSUs, equity, health insurance, or learning budget. The initial offer is a single number with a single follow-up question, nothing more.
+3. CLOSING: A neutral wrap-up that the runtime can replace with a real close when the candidate accepts or hits walk-away. Two safe sentences: "Thanks for the conversation today. We'll be in touch with next steps." Do NOT invent a final package number, do NOT promise specific numbers, do NOT thank them for "accepting" (they haven't yet). The kernel rewrites this with the real terms when negotiation terminates.
 
 RULES:
-- CRITICAL: ONLY step 2 (initial offer) should contain specific ₹ numbers. Steps 3-6 MUST NOT contain specific counter-offer numbers because you don't know what the candidate will say. The follow-up system will dynamically generate responses with real numbers based on the actual conversation. If steps 3-6 contain made-up numbers, they will be WRONG and confuse the candidate.
-- Each question after step 2 should use adaptive language that works regardless of what the candidate says (e.g., "I hear what you're saying...", "Let me see what I can do...", "Based on what you've shared...")
-- COST-SAVING MINDSET: You are the HIRING MANAGER. Your goal is to hire at the LOWEST possible cost.
-- COMPONENTS-SUM-TO-TOTAL: When the initial offer breaks a CTC into components, the parts MUST add up. "₹14 LPA total = ₹11 base + ₹2 variable + ₹1 benefits" sums to ₹14 ✓. "₹18 LPA total = ₹18 base + ₹18 variable + ₹18 bonus" sums to ₹54 ✗ — that's a hallucination, not an offer. Joining bonus is one-time and should be mentioned SEPARATELY ("plus a ₹2 LPA one-time joining bonus"), not folded into recurring CTC.
-- INITIAL OFFER STAYS INSIDE THE BAND: The initial-offer figure must use the value from the salary data above (initialOffer). Do NOT improvise a higher number. If you say ₹14 LPA when the band's initialOffer is ₹10 LPA, you've already overspent your authority.
+- ONLY step 2 contains a ₹ number — the band's initialOffer. No other step contains numbers.
+- INITIAL OFFER STAYS INSIDE THE BAND: the figure must equal the value from the salary data above (initialOffer). Do NOT improvise a higher number. If you say ₹14 LPA when the band's initialOffer is ₹10 LPA, you've overspent your authority.
+- ROLE FIDELITY: reference the candidate's role EXACTLY as provided. "Senior UX Designer" stays "Senior UX Designer" — never "Senior Product Designer", never "UX/UI Designer". Substituting a similar-sounding title breaks immersion.
 - NEVER ask behavioral questions ("Tell me about a time...")
 - NEVER break character — you ARE the hiring manager, not a coach
-- The closing summarizes the deal and sets next steps — no coaching tips
-- Use ₹ and LPA for all amounts (but ONLY in step 2 for the initial offer)
-- ONE question per turn. Do NOT stack multiple questions in a single turn (e.g., "What's your range? Are you benchmarking? What's driving your number?" → pick ONE). Stacked questions confuse the candidate and break conversation threading.
-- Do NOT include prosody markers ([pause], [pause:long], [breath]) in the script-generated question text. Those are TTS hints reserved for the runtime follow-up engine — if you include them here, sanitizers may miss one and they'll appear on the candidate's screen verbatim.
+- ONE question in step 2. Do NOT stack multiple questions ("What's your range? Are you benchmarking? What's driving it?" → pick ONE).
+- Do NOT include prosody markers ([pause], [pause:long], [breath]) in step 2. They leak past sanitizers and onto the candidate's screen.
+- DO NOT generate steps 3, 4, 5, or 6 from earlier prompt versions — the array is exactly 3 elements (intro, one question, closing). Anything extra will be discarded and counted as wasted tokens.
 
-Example good questions (notice variety in structure):
-- "We'd like to offer you ₹18 LPA — that's at the 75th percentile for this level. I can walk you through the split if you'd like. How does the number feel?"
-- "The package is ₹22 LPA CTC. That includes ₹16 LPA fixed, ₹3.5 LPA variable tied to quarterly OKRs, and ₹2.5 LPA in RSUs vesting over 4 years. Plus standard benefits. Thoughts?"
-- "For this role we're looking at ₹15-18 LPA range. Given your profile, I'd like to start at ₹16.5 LPA. What were you expecting?"
-Example bad question: "Tell me about a time you led a cross-functional project." (behavioral, NOT salary negotiation)
-Example bad question: "What salary range are you expecting?" (too generic — should follow from previous turn)`
+Example good initial offers:
+- "We'd like to offer you ₹18 LPA total CTC for this role. Happy to walk you through the structure if you'd like — but first, how does the number land?"
+- "Our band for this level is ₹15 to ₹20 LPA. I was thinking ₹17 as a starting point. Where are you on that?"
+Example bad: "Tell me about a time you negotiated a package." (behavioral)
+Example bad: stacking multiple questions in step 2.`
 : `IMPORTANT closing rules:
 - The closing step MUST be a brief, in-character wrap-up — exactly like a real interviewer ending a call. NOT an open-ended question.
 - DO NOT evaluate the candidate's performance. You are generating the closing BEFORE the interview runs, so you have no idea how it went. Phrases like "Great session", "You did well", "Strong strategic thinking", "To improve, try X" are HALLUCINATED PRAISE — the candidate may have answered poorly and your false praise will contradict the score they receive on the report screen. The system delivers real, evaluation-based feedback separately. Trust that. Stay in character.

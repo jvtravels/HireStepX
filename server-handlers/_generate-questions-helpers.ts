@@ -191,26 +191,40 @@ export function flagOffRoleQuestions(
 }
 
 /**
- * Salary-negotiation interviews need at least 4 turns to play out the
- * full arc (intro → offer → probe → counter → close). Anything shorter
- * is a malformed LLM response that won't make sense in the UI.
+ * Salary-negotiation scripts now emit ONLY intro + initial-offer + closing
+ * (3 steps total). Every turn in between is owned by the NegotiationKernel
+ * at runtime — see useInterviewEngine's insert-before-closing path.
+ *
+ * Why so short: the previous 5-question arc (intro/offer/probe/counter/
+ * package/closing) created a parallel response surface to the kernel. Every
+ * static slot was a place the LLM could hallucinate a number, a role title,
+ * or a phase mismatch — and a place we had to validate, rewrite, and keep
+ * in sync with the kernel's lever logic. Cutting the script to two
+ * anchored turns (the cold-open intro and the band-bounded initial offer)
+ * makes the kernel the single source of truth for everything after the
+ * candidate's first reaction.
+ *
+ * The minimum is 3 because anything shorter means the LLM dropped intro,
+ * offer, or closing — a malformed response, not a stylistic choice.
  */
 export function isSalaryNegotiationLengthOk(
   isSalaryType: boolean,
   questionLength: number,
 ): boolean {
   if (!isSalaryType) return true;
-  return questionLength >= 4;
+  return questionLength >= 3;
 }
 
 /**
  * The number of total interview steps to request from the LLM, given the
- * format. Mini sessions get 3 questions (or 5 for salary-negotiation,
- * which needs the full arc); regular sessions get 5. Total = +2 for
- * intro and closing.
+ * format. Salary-negotiation gets a fixed 3 steps (intro + initial offer +
+ * closing) regardless of mini/regular; the kernel fills the middle. Other
+ * types: mini → 3 questions, regular → 5 questions. Total = +2 for intro
+ * and closing.
  */
 export function computeStepCount(opts: { mini: boolean; isSalaryType: boolean }): number {
-  const questionCount = opts.mini ? (opts.isSalaryType ? 5 : 3) : 5;
+  if (opts.isSalaryType) return 3; // intro + initial-offer + closing
+  const questionCount = opts.mini ? 3 : 5;
   return questionCount + 2;
 }
 
