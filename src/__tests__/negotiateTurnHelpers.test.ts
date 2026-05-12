@@ -432,3 +432,45 @@ describe("validateStructuredFields", () => {
     expect(validateStructuredFields(parsed, state, counterMove)).toEqual([]);
   });
 });
+
+describe("buildAiPrompt conversation history (Phase 5)", () => {
+  /* The Lollypop session (May 2026) made it obvious that single-turn
+     prompts produce thread-incoherent replies: the LLM repeats earlier
+     phrases, ignores acceptance signals from 2 turns prior, and treats
+     each turn as if it's the first. Phase 5 surfaces the last 4
+     entries from state.conversationLog so the LLM sees recent dialogue
+     without blowing past Groq's prompt-cache prefix. */
+  it("includes recent dialogue history in user prompt (Phase 5 — Lollypop session, May 2026)", () => {
+    const state = baseState({
+      phase: "counter-offer",
+      highestOfferMade: 20,
+      conversationLog: [
+        { speaker: "ai", text: "Our offer for this role is ₹20 LPA total CTC." },
+        { speaker: "candidate", text: "I was hoping for something closer to ₹26 LPA." },
+        { speaker: "ai", text: "What's driving the ₹26 LPA target?" },
+        { speaker: "candidate", text: "Market median for senior IC is around ₹25 LPA in Bangalore." },
+      ],
+    });
+    const move: AiMove = { lever: "counter-base", newTotalLpa: 23, rationale: "split" };
+    const { user } = buildAiPrompt({
+      state,
+      move,
+      candidateAnswer: "Market median for senior IC is around ₹25 LPA in Bangalore.",
+    });
+    expect(user).toContain("RECENT DIALOGUE");
+    expect(user).toContain("₹20 LPA total CTC");
+    expect(user).toContain("₹26 LPA");
+    /* The current candidateAnswer is already shown elsewhere in the
+       prompt; it must not also appear in the history block, otherwise
+       the LLM sees it twice and over-anchors on it. */
+    const occurrences = (user.match(/Market median for senior IC/g) || []).length;
+    expect(occurrences).toBe(1);
+  });
+
+  it("omits history block entirely when conversationLog is empty (init turn)", () => {
+    const state = baseState({ phase: "opening" });
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).not.toContain("RECENT DIALOGUE");
+  });
+});

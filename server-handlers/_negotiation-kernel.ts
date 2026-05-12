@@ -159,6 +159,23 @@ export interface NegotiationState {
   leversUsed: NegotiationLever[];        // ordered history
   lastAiText: string;                    // for verbatim-repeat detection
 
+  /* Rolling conversation log — capped at the last CONVERSATION_LOG_CAP
+   * entries (= 4, i.e. last 2 exchanges). Phase 5 of the rebuild: the
+   * compact brief carried derived facts only (target, current, highest
+   * offer, etc.); the per-turn user prompt had `lastAiText` and the
+   * candidate's CURRENT answer but no thread before that. The Lollypop
+   * session (May 2026) showed the bot dropping context across turns
+   * (re-asking what the candidate had said two turns earlier). Carrying
+   * the last 2 exchanges into the prompt lets the LLM thread responses
+   * without re-deriving state from the full transcript.
+   *
+   * Capped on purpose. A growing log inflates the per-turn prompt and
+   * trips Groq's prefix cache (dynamic content drifts farther through
+   * the prompt with each turn). 4 entries = ~600 tokens of dialogue,
+   * which is enough thread for natural references and small enough that
+   * the cache prefix still hits. */
+  conversationLog: Array<{ speaker: "ai" | "candidate"; text: string }>;
+
   /* Recruiter-side tactic counters. `finalOfferAssertedCount` tracks
      how many times the AI (or upstream LLM) has claimed "best and
      final" — used by the move-picker to decay credibility after the
@@ -224,6 +241,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     highestOfferMade: 0,
     leversUsed: [],
     lastAiText: "",
+    conversationLog: [],
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
@@ -661,6 +679,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     leversUsed: [...state.leversUsed],
     vossTacticsUsed: [...state.vossTacticsUsed],
     infoAsked: [...state.infoAsked],
+    conversationLog: appendConversation(state.conversationLog, "candidate", answer),
   };
 
   /* Bind newly-stated facts. Last-stated wins (the candidate may
@@ -1036,6 +1055,28 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
   };
 }
 
+/* Cap on the rolling conversation log. 4 entries = the last 2 exchanges,
+ * which is what the per-turn LLM prompt embeds. Larger logs drift the
+ * dynamic portion of the prompt farther through Groq's prefix cache,
+ * costing both tokens and cache-hit rate without measurably improving
+ * thread coherence (the kernel brief carries the derived facts; the log
+ * is just for natural-language reference resolution). */
+export const CONVERSATION_LOG_CAP = 4;
+
+/** Push a new entry onto the rolling log, capping at the most recent
+ *  CONVERSATION_LOG_CAP entries. Empty text drops the entry (e.g. the
+ *  init turn where candidateAnswer = ""). Pure. */
+function appendConversation(
+  log: NegotiationState["conversationLog"],
+  speaker: "ai" | "candidate",
+  text: string,
+): NegotiationState["conversationLog"] {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return log.slice();
+  const next = [...log, { speaker, text: trimmed }];
+  return next.length > CONVERSATION_LOG_CAP ? next.slice(next.length - CONVERSATION_LOG_CAP) : next;
+}
+
 /* ─── State transition: apply an AI move ─────────────────────────── */
 
 /** Apply an AI move to state, incrementing turn index and recording
@@ -1047,6 +1088,7 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     turnIndex: state.turnIndex + 1,
     leversUsed: [...state.leversUsed, move.lever],
     lastAiText: aiText,
+    conversationLog: appendConversation(state.conversationLog, "ai", aiText),
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
@@ -1218,6 +1260,18 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
+  /* conversationLog: optional for backwards compat with in-flight
+     sessions; when present, every entry must have speaker ∈ {ai, candidate}
+     and a string text. */
+  if (s.conversationLog !== undefined) {
+    if (!Array.isArray(s.conversationLog)) throw new Error("state.conversationLog");
+    for (const e of s.conversationLog) {
+      const entry = e as Record<string, unknown>;
+      if (!entry || typeof entry !== "object") throw new Error("state.conversationLog entry");
+      if (entry.speaker !== "ai" && entry.speaker !== "candidate") throw new Error("state.conversationLog.speaker");
+      if (typeof entry.text !== "string") throw new Error("state.conversationLog.text");
+    }
+  }
 }
 
 export function deserializeState(json: string): NegotiationState {
@@ -1238,5 +1292,6 @@ export function deserializeState(json: string): NegotiationState {
     walkAwayReturned: s.walkAwayReturned ?? false,
     hardBandCap: s.hardBandCap ?? false,
     marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",
+    conversationLog: (s.conversationLog as NegotiationState["conversationLog"] | undefined) ?? [],
   };
 }
