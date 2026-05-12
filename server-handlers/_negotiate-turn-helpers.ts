@@ -206,6 +206,32 @@ export interface ValidationResult {
   failures: ValidationFailure[];
 }
 
+/** Strip markdown emphasis (italics, bold, inline-code) from LLM-
+ *  generated dialogue. The voice TTS layer reads asterisks/underscores
+ *  literally, and the on-screen quote bubble renders them as raw
+ *  punctuation since we don't run a markdown renderer there. Real
+ *  session capture (Tech-Mahindra UX session, May 2026) showed
+ *  "How does that *align* with your expectations" — the asterisks
+ *  shouldn't ever land in candidate-facing copy.
+ *
+ *  Strips: **bold**, __bold__, *italic*, _italic_, `code`, ~~strike~~.
+ *  Leaves: numbers, currency symbols, normal punctuation. */
+export function stripMarkdown(text: string): string {
+  if (!text) return text;
+  return text
+    /* Bold first (longer markers) so we don't half-strip ** to single *. */
+    .replace(/\*\*([^*\n]+?)\*\*/g, "$1")
+    .replace(/__([^_\n]+?)__/g, "$1")
+    /* Italics — require non-space immediately after the opening marker so
+       a stray "*" or "_" in body copy isn't treated as an opening tag. */
+    .replace(/(^|[\s(])\*(?=\S)([^*\n]+?)\*(?=[\s).,!?;:]|$)/g, "$1$2")
+    .replace(/(^|[\s(])_(?=\S)([^_\n]+?)_(?=[\s).,!?;:]|$)/g, "$1$2")
+    /* Inline code. */
+    .replace(/`([^`\n]+?)`/g, "$1")
+    /* Strikethrough. */
+    .replace(/~~([^~\n]+?)~~/g, "$1");
+}
+
 /** Validate the LLM-generated text against the kernel-chosen move and
  *  the band. Returns all failures (not just the first) so the caller
  *  can decide whether to retry or hard-fall back. Pure. */

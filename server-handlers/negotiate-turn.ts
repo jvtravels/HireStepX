@@ -45,6 +45,7 @@ import {
   buildAiPrompt,
   validateAiText,
   deterministicFallbackText,
+  stripMarkdown,
 } from "./_negotiate-turn-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -139,7 +140,7 @@ export async function generateAiText(
 
   let text: string;
   try {
-    text = await llm(system, user, { userId });
+    text = stripMarkdown(await llm(system, user, { userId }));
   } catch {
     return { text: deterministicFallbackText(state, move), source: "fallback" };
   }
@@ -155,7 +156,7 @@ export async function generateAiText(
     `. Try again. Stick to the kernel brief exactly.`;
   let retryText: string;
   try {
-    retryText = await llm(system, retryUser, { userId });
+    retryText = stripMarkdown(await llm(system, retryUser, { userId }));
   } catch {
     return { text: deterministicFallbackText(state, move), source: "fallback" };
   }

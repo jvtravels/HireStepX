@@ -78,6 +78,30 @@ describe("parseCandidateAnswer", () => {
     expect(parseCandidateAnswer("I'd accept but I want a bit more on base.").signalsAcceptance).toBe(false);
   });
 
+  it("catches real-world acceptance phrases that the old regex missed", () => {
+    /* Tech-Mahindra UX session, May 2026: candidate said all three of
+       these and the kernel never transitioned to accepted, so the AI
+       kept probing for expectations. Each must register. */
+    expect(parseCandidateAnswer(
+      "I am very excited to join, completely agree with your offer."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "Whatever is your initial offer, I am accepting your initial offer."
+    ).signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer(
+      "Why are you still asking? I've already accepted."
+    ).signalsAcceptance).toBe(true);
+  });
+
+  it("catches more idiomatic English acceptance forms", () => {
+    expect(parseCandidateAnswer("I'll take it.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("I'm in.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("Your offer works for me.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("Let's lock it in.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("Done deal.").signalsAcceptance).toBe(true);
+    expect(parseCandidateAnswer("I have accepted your offer.").signalsAcceptance).toBe(true);
+  });
+
   it("detects walk-away", () => {
     expect(parseCandidateAnswer("I'm going to have to pass.").signalsWalkAway).toBe(true);
     expect(parseCandidateAnswer("This won't work, I'll walk away.").signalsWalkAway).toBe(true);

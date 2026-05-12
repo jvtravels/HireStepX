@@ -376,9 +376,60 @@ export function parseCandidateAnswer(answer: string, lastAiText = ""): ParsedAns
      code-switched English/Hindi would have terminal-phase transitions
      drop on the floor, leaving the AI to keep negotiating past a
      clear yes/no signal. */
-  const acceptPat = /(?:i (?:would like to |want to |'?d like to )?accept(?:\s+(?:this|the|your))?\s*(?:offer)?|sounds good|that works|it.?s a deal|let.?s go ahead|happy to accept|i agree|i.?m happy with that|theek\s+hai|theek\s+he|ho\s+jayega|ho\s+jaega|kar\s+(?:di(?:ya|jiye)|do|dijiye)|manzoor(?:\s+hai)?|haan\s+(?:thik|theek|ok|okay|done))\b/i;
+  /* Broadened from the original "i (would like to|want to|'d like to) accept"
+     anchor. Real candidates speak much more loosely than that — the
+     Tech-Mahindra UX session (May 2026) had three explicit acceptance
+     phrases ("completely agree with your offer", "I am accepting your
+     initial offer", "I've already accepted") and the kernel matched
+     none of them, so the AI kept probing and the candidate got
+     frustrated. Each alternation is a single, readable phrase pattern;
+     the whole thing is OR-joined into one regex. Conditional / "but I
+     want more" gating is handled by the gates below, not in here. */
+  const acceptPat = new RegExp(
+    [
+      // "i accept the offer" / "i'd accept" / "i accept it"
+      String.raw`\bi(?:'d)?\s+accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b`,
+      // "i'm accepting" / "i am accepting" / "i'll accept" / "i will accept"
+      String.raw`\bi\s*(?:'m|am)\s+accept(?:ing|ed)?\b`,
+      String.raw`\bi\s*(?:'?ll|will)\s+accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b`,
+      // "i've accepted" / "i have (already) accepted" / "i already accepted"
+      String.raw`\bi\s*(?:'ve|have)\s+(?:already\s+)?accepted\b`,
+      String.raw`\bi(?:\s+have)?\s+already\s+accepted\b`,
+      // "accepting your offer" / "accepted your offer"
+      String.raw`\baccept(?:ing|ed)\s+(?:this|the|your)\s+offer\b`,
+      // "i (fully|totally|completely) agree" or bare "completely agree (with the offer)"
+      String.raw`\bi\s+(?:fully\s+|totally\s+|completely\s+)?agree\b`,
+      String.raw`\b(?:fully|totally|completely)\s+agree\b`,
+      // "i'll take it" / "i'm in" / "your offer works"
+      String.raw`\bi.?ll\s+take\s+(?:it|the\s+offer)\b`,
+      String.raw`\bi.?m\s+in\b`,
+      String.raw`\b(?:your|the)\s+offer\s+(?:works|sounds\s+good|is\s+fine|is\s+great)\b`,
+      // Idioms.
+      String.raw`\bsounds\s+good\b`,
+      String.raw`\bthat\s+works\b`,
+      String.raw`\bit.?s\s+a\s+deal\b`,
+      String.raw`\bdone\s+deal\b`,
+      String.raw`\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in)\b`,
+      String.raw`\bhappy\s+to\s+accept\b`,
+      String.raw`\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b`,
+      // Hindi-mix.
+      String.raw`\btheek\s+hai\b`,
+      String.raw`\btheek\s+he\b`,
+      String.raw`\bho\s+ja(?:y|e)ega\b`,
+      String.raw`\bkar\s+(?:di(?:ya|jiye)|do|dijiye)\b`,
+      String.raw`\bmanzoor(?:\s+hai)?\b`,
+      String.raw`\bhaan\s+(?:thik|theek|ok|okay|done)\b`,
+    ].join("|"),
+    "i",
+  );
   const conditionalPat = /\b(?:if|unless|provided|on condition|contingent|only\s+if|agar|jab\s+tak)\b/i;
-  const negotiatingButPat = /\b(?:but|however|lekin|magar)\s+(?:i\s+)?(?:want|need|would like|expect|require|chahiye|chahta|chahti)?\s*(?:more|higher|better|increase|raise|reduce|lower|stretch|change|different|bump|up|further|additional|zyada|kam|aur)/i;
+  /* "but/however/lekin/magar … <ask-for-more>" within a single
+     sentence. Previously this required the negotiation cue to sit
+     immediately next to "but" with at most whitespace in between, so
+     "but I want a bit more on base" missed (because of "a bit" between
+     "want" and "more"). The new pattern looks for any negotiation cue
+     within 60 chars of the conjunction. */
+  const negotiatingButPat = /\b(?:but|however|lekin|magar)\b[^.!?\n]{0,60}?\b(?:more|higher|better|increase|raise|reduce|lower|stretch|bump|further|additional|negotiate|push|counter|extra|zyada|kam|aur)\b/i;
   const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
   const signalsAcceptance = acceptPat.test(a) && !conditionalPat.test(a) && !negotiatingButPat.test(a) && !walkAwayPat.test(a);
   const signalsWalkAway = walkAwayPat.test(a);

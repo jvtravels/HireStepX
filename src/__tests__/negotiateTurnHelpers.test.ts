@@ -14,6 +14,7 @@ import {
   buildAiPrompt,
   validateAiText,
   deterministicFallbackText,
+  stripMarkdown,
 } from "../../server-handlers/_negotiate-turn-helpers";
 
 const BAND = { initialOffer: 20, maxStretch: 28, walkAway: 16, hasEquity: true };
@@ -169,6 +170,41 @@ describe("integration: applyAiMove + lastAiText interaction", () => {
     const probeMove: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
     const r = validateAiText(text, state, probeMove);
     expect(r.failures.some(f => f.kind === "verbatim-repeat")).toBe(true);
+  });
+});
+
+describe("stripMarkdown", () => {
+  it("removes italic asterisks from the middle of a sentence", () => {
+    /* Real session: "How does that *align* with your expectations." */
+    expect(stripMarkdown("How does that *align* with your expectations."))
+      .toBe("How does that align with your expectations.");
+  });
+
+  it("removes bold markers", () => {
+    expect(stripMarkdown("We can stretch to **₹23 LPA** total."))
+      .toBe("We can stretch to ₹23 LPA total.");
+  });
+
+  it("removes underscore italics", () => {
+    expect(stripMarkdown("This is _important_ for the offer."))
+      .toBe("This is important for the offer.");
+  });
+
+  it("leaves bare numbers and ₹ untouched", () => {
+    expect(stripMarkdown("Our offer is ₹20 LPA total CTC."))
+      .toBe("Our offer is ₹20 LPA total CTC.");
+  });
+
+  it("leaves multiplication or asterisks in body alone (asymmetric)", () => {
+    /* A stray "*" not paired with a closing "*" stays as-is rather than
+       half-stripping. */
+    expect(stripMarkdown("The bonus is 2 * the base."))
+      .toBe("The bonus is 2 * the base.");
+  });
+
+  it("strips inline code backticks", () => {
+    expect(stripMarkdown("Use `joining-bonus` lever next."))
+      .toBe("Use joining-bonus lever next.");
   });
 });
 
