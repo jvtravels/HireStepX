@@ -520,7 +520,72 @@ export function serializeState(state: NegotiationState): string {
   return JSON.stringify(state);
 }
 
+const VALID_PHASES: ReadonlySet<NegotiationPhase> = new Set<NegotiationPhase>([
+  "opening",
+  "offer-presented",
+  "probe-expectations",
+  "counter-offer",
+  "lever-explore",
+  "closing-push",
+  "accepted",
+  "walked-away",
+  "stalemate",
+]);
+
+const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set<NegotiationLever>([
+  "open-with-offer",
+  "probe",
+  "counter-base",
+  "joining-bonus",
+  "equity-grant",
+  "notice-buyout",
+  "benefits-summary",
+  "hold-firm",
+  "close-acceptance",
+  "close-walkaway",
+  "close-stalemate",
+]);
+
+function isFiniteNonNegInt(n: unknown): n is number {
+  return typeof n === "number" && Number.isFinite(n) && n >= 0 && Number.isInteger(n);
+}
+function isFiniteNumOrNull(n: unknown): n is number | null {
+  return n === null || (typeof n === "number" && Number.isFinite(n));
+}
+
+/** Throws if `state` is not a structurally valid NegotiationState. The
+ *  route relies on this — malformed/out-of-sequence state from the
+ *  client must not silently flow into applyCandidateAnswer. */
+export function validateState(state: unknown): asserts state is NegotiationState {
+  if (!state || typeof state !== "object") throw new Error("state: not an object");
+  const s = state as Record<string, unknown>;
+  if (typeof s.sessionId !== "string" || !s.sessionId) throw new Error("state.sessionId");
+  if (typeof s.role !== "string") throw new Error("state.role");
+  if (typeof s.company !== "string") throw new Error("state.company");
+  const band = s.band as Record<string, unknown> | undefined;
+  if (!band || typeof band !== "object") throw new Error("state.band");
+  if (typeof band.initialOffer !== "number" || !Number.isFinite(band.initialOffer)) throw new Error("state.band.initialOffer");
+  if (typeof band.maxStretch !== "number" || !Number.isFinite(band.maxStretch)) throw new Error("state.band.maxStretch");
+  if (typeof band.walkAway !== "number" || !Number.isFinite(band.walkAway)) throw new Error("state.band.walkAway");
+  if (typeof band.hasEquity !== "boolean") throw new Error("state.band.hasEquity");
+  if (typeof s.phase !== "string" || !VALID_PHASES.has(s.phase as NegotiationPhase)) throw new Error("state.phase");
+  if (!isFiniteNonNegInt(s.turnIndex)) throw new Error("state.turnIndex");
+  if (!isFiniteNonNegInt(s.maxTurns) || s.maxTurns === 0) throw new Error("state.maxTurns");
+  if (s.turnIndex > s.maxTurns + 1) throw new Error("state.turnIndex exceeds maxTurns");
+  if (!isFiniteNumOrNull(s.candidateTarget)) throw new Error("state.candidateTarget");
+  if (!isFiniteNumOrNull(s.candidateCurrentCtc)) throw new Error("state.candidateCurrentCtc");
+  if (!isFiniteNumOrNull(s.competingOffer)) throw new Error("state.competingOffer");
+  if (typeof s.highestOfferMade !== "number" || !Number.isFinite(s.highestOfferMade)) throw new Error("state.highestOfferMade");
+  if (!Array.isArray(s.leversUsed) || !s.leversUsed.every((l) => typeof l === "string" && VALID_LEVERS.has(l as NegotiationLever))) {
+    throw new Error("state.leversUsed");
+  }
+  if (typeof s.lastAiText !== "string") throw new Error("state.lastAiText");
+  if (s.acceptedAtTurn !== null && !isFiniteNonNegInt(s.acceptedAtTurn)) throw new Error("state.acceptedAtTurn");
+  if (s.walkedAwayAtTurn !== null && !isFiniteNonNegInt(s.walkedAwayAtTurn)) throw new Error("state.walkedAwayAtTurn");
+}
+
 export function deserializeState(json: string): NegotiationState {
-  const parsed = JSON.parse(json) as NegotiationState;
+  const parsed: unknown = JSON.parse(json);
+  validateState(parsed);
   return parsed;
 }
