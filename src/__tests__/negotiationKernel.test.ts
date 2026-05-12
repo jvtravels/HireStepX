@@ -437,6 +437,53 @@ describe("pickAiMove", () => {
     expect(m.newTotalLpa).toBeNull();
   });
 
+  it("intent override: candidate asked for breakdown → benefits-summary, NOT probe (Lollypop, May 2026)", () => {
+    /* Real session: phase was offer-presented, candidate said "could
+       you walk me through the package?", kernel returned `probe`
+       ("what range are you targeting?"). Phase-only routing missed the
+       intent. Phase 3 of the rebuild adds an intent override: when
+       infoAsked contains a breakdown-style intent AND an offer has been
+       made AND benefits-summary has not yet been used, jump to
+       benefits-summary. */
+    const m = pickAiMove(init({
+      phase: "offer-presented",
+      highestOfferMade: 20,
+      infoAsked: ["package-breakdown"],
+    }));
+    expect(m.lever).toBe("benefits-summary");
+    expect(m.newTotalLpa).toBe(20);
+  });
+
+  it("intent override does NOT fire when benefits-summary was already used (one-shot)", () => {
+    const m = pickAiMove(init({
+      phase: "offer-presented",
+      highestOfferMade: 20,
+      infoAsked: ["package-breakdown"],
+      leversUsed: ["open-with-offer", "benefits-summary"],
+    }));
+    expect(m.lever).toBe("probe");
+  });
+
+  it("intent override does NOT fire before an offer has been made", () => {
+    const m = pickAiMove(init({
+      phase: "opening",
+      highestOfferMade: 0,
+      infoAsked: ["package-breakdown"],
+    }));
+    expect(m.lever).toBe("open-with-offer");
+  });
+
+  it("fixed-vs-variable intent also routes to benefits-summary override", () => {
+    /* Symmetric to package-breakdown — the candidate asking for the
+       fixed/variable split is the same shape of ask, just narrower. */
+    const m = pickAiMove(init({
+      phase: "offer-presented",
+      highestOfferMade: 20,
+      infoAsked: ["fixed-vs-variable"],
+    }));
+    expect(m.lever).toBe("benefits-summary");
+  });
+
   it("counter-offer splits floor → aspiration", () => {
     /* floor=20, target=26, ceiling=28 → split = 20 + (26-20)*0.5 = 23 */
     const m = pickAiMove(init({ phase: "counter-offer", highestOfferMade: 20, candidateTarget: 26 }));
@@ -723,6 +770,15 @@ describe("Info-intent detection", () => {
   });
   it("detects acceleration question", () => {
     expect(parseCandidateAnswer("Is there accelerated vesting on change of control?").infoAsked).toContain("acceleration");
+  });
+  it("detects package-breakdown intent (Lollypop, May 2026)", () => {
+    /* The recurrent failure mode: candidate asks "walk me through the
+       offer" / "break it down" / "what's in the package", AI responded
+       with a probe instead of enumerating. New intent + override fixes it. */
+    expect(parseCandidateAnswer("Can you walk me through the package?").infoAsked).toContain("package-breakdown");
+    expect(parseCandidateAnswer("Could you break the offer down for me?").infoAsked).toContain("package-breakdown");
+    expect(parseCandidateAnswer("What's the structure of the CTC?").infoAsked).toContain("package-breakdown");
+    expect(parseCandidateAnswer("Tell me more about the package.").infoAsked).toContain("package-breakdown");
   });
 });
 

@@ -108,7 +108,8 @@ export type InfoIntent =
   | "exercise-window"      // post-termination ESOP exercise window
   | "acceleration"         // accelerated vesting on acquisition / RIF
   | "fixed-vs-variable"    // CTC split breakdown
-  | "perks-non-cash";      // Sodexo / gratuity / NPS lumping
+  | "perks-non-cash"       // Sodexo / gratuity / NPS lumping
+  | "package-breakdown";   // generic "walk me through the package" / "break it down" — added 2026-05 after the Lollypop session where the candidate asked for the structure and the AI responded with a probe ("what range are you targeting?") instead of providing the breakdown. The existing intents were all component-specific; this catches the higher-level "explain the offer" ask.
 
 /* Negotiation tactics from the Voss / interviewing.io canon that the
    parser detects and the move-picker rewards. Tracked so a candidate
@@ -352,6 +353,13 @@ function detectInfoIntents(a: string): InfoIntent[] {
   if (/\b(accelerat(?:ed|ion)\s+vest|change\s+of\s+control|acquisition\s+(?:trigger|clause|vesting)|single[-\s]?trigger|double[-\s]?trigger)\b/i.test(a)) out.push("acceleration");
   if (/\b(fixed\s+(?:vs|versus|and)\s+variable|split\s+(?:between|of)\s+fixed|how\s+much\s+(?:is\s+)?fixed|fixed\s+component|ctc\s+(?:breakdown|split))\b/i.test(a)) out.push("fixed-vs-variable");
   if (/\b(sodexo|food\s+coupon|gratuity|nps|insurance\s+(?:value|cost)|non[-\s]?cash|benefits\s+(?:value|in\s+ctc))\b/i.test(a)) out.push("perks-non-cash");
+  /* Generic "walk me through / break it down / what's the structure" —
+     the candidate is explicitly asking the recruiter to enumerate the
+     package, NOT to probe their expectations. The Lollypop session
+     (May 2026) showed the AI responding to "could you break down the
+     offer for me?" with "what range are you targeting?" — a phase
+     mismatch the move-picker now overrides via this intent. */
+  if (/\b(walk\s+me\s+through|break\s+(?:it|that|the\s+offer|the\s+package)\s+down|breakdown\s+of\s+(?:the\s+)?(?:offer|package|ctc)|structure\s+of\s+(?:the\s+)?(?:offer|package|ctc)|what(?:'s|\s+is)\s+(?:in\s+)?(?:the\s+)?(?:package|offer)|tell\s+me\s+more\s+about\s+(?:the\s+)?(?:package|offer|ctc))\b/i.test(a)) out.push("package-breakdown");
   return out;
 }
 
@@ -865,6 +873,38 @@ export function pickAiMove(state: NegotiationState): AiMove {
       lever: "open-with-offer",
       newTotalLpa: state.band.initialOffer,
       rationale: `Open with band initial ₹${state.band.initialOffer} LPA.`,
+    };
+  }
+
+  /* Intent override (Phase 3 of the rebuild — Lollypop session, May 2026).
+   *
+   * The phase machine alone is too coarse for one specific failure mode:
+   * the candidate explicitly asks the recruiter to enumerate the
+   * package ("can you break it down for me?", "walk me through the
+   * structure") while the phase is still offer-presented / probe-
+   * expectations. The default path here is the `probe` lever — but the
+   * candidate just told us what they want, and it isn't a probe.
+   * Responding with another question feels robotic and broke the
+   * Lollypop session ("what range are you targeting?" against an explicit
+   * ask for the structure).
+   *
+   * The override: when the candidate has asked for the package
+   * breakdown AND we've made an offer AND we haven't already done
+   * benefits-summary, jump straight to benefits-summary regardless of
+   * phase. The kernel still tracks phase for downstream concession
+   * curves, so this is intent-shaped routing on top of phase-shaped
+   * routing — not a replacement. */
+  const wantsBreakdown =
+    state.highestOfferMade > 0 &&
+    !state.leversUsed.includes("benefits-summary") &&
+    (state.infoAsked.includes("package-breakdown") ||
+      state.infoAsked.includes("fixed-vs-variable") ||
+      state.infoAsked.includes("perks-non-cash"));
+  if (wantsBreakdown) {
+    return {
+      lever: "benefits-summary",
+      newTotalLpa: state.highestOfferMade,
+      rationale: "Candidate asked for the package breakdown; enumerate components instead of probing.",
     };
   }
 
