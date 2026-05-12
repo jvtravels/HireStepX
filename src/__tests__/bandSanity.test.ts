@@ -20,12 +20,28 @@ import {
   BAND_SANITY_BASELINES,
   clampBandToTierP50,
   lookupTierP50,
+  TIER_FAMILY_P50_LPA,
   TIER_P50_WARN_MULTIPLIER,
   TIER_P50_CLAMP_MULTIPLIER,
   CLAMP_INITIAL_MULTIPLIER,
 } from "../../server-handlers/_band-sanity";
 import { generateNegotiationBand } from "../../data/salary-lookup";
 import { getCompanyTier } from "../../data/company-tiers";
+import type { CompanyTier } from "../../data/company-tiers";
+
+/** Pinned at Phase 9 (2026-05-13). When `CompanyTier` gains a new
+ *  variant the type-check will accept the new value here; the
+ *  completeness test will then fail until the new tier is added to
+ *  every TIER_FAMILY_P50_LPA family entry. That coupling is the
+ *  whole point — adding a tier must force a P50 reconciliation pass. */
+const ALL_COMPANY_TIERS: CompanyTier[] = [
+  "faang", "big-tech", "indian-unicorn", "it-services",
+  "startup-early", "startup-growth",
+  "consulting-mbb", "consulting-big4",
+  "bfsi-global", "bfsi-domestic",
+  "government-psu", "fmcg-mnc",
+  "edtech", "saas-product", "gcc",
+];
 
 describe("checkBandSanity", () => {
   it("returns no warnings for a well-formed band in the designer family", () => {
@@ -268,5 +284,45 @@ describe("tier × family P50 (Phase 7)", () => {
        below 2× IT-services designer P50. */
     const effectiveInitial = result.clamped ? result.band.initialOffer : b.initialOffer;
     expect(effectiveInitial).toBeLessThanOrEqual(16); // 2× P50=8
+  });
+});
+
+describe("tier × family P50 completeness (Phase 9)", () => {
+  /* Pre-Phase-9 the table was deliberately sparse — missing combos
+     meant "no opinion" and the tier check silently skipped. That was
+     a structural bug: an outlier band on an unmapped (family, tier)
+     pair would never trip the warning, so curator drift was invisible
+     for those cells. Phase 9 mandates that every cell has a value.
+     This test fails the build if a family entry loses a tier. */
+  const expectedFamilies = [
+    "designer", "engineer", "infra-engineer",
+    "engineering-manager", "design-manager",
+    "data-scientist", "data-ic",
+    "product-manager", "pmm",
+  ];
+
+  it("every known family has every CompanyTier populated", () => {
+    for (const family of expectedFamilies) {
+      const row = TIER_FAMILY_P50_LPA[family];
+      expect(row, `family=${family} missing from TIER_FAMILY_P50_LPA`).toBeDefined();
+      for (const tier of ALL_COMPANY_TIERS) {
+        const p50 = row![tier];
+        expect(
+          typeof p50 === "number" && p50 > 0,
+          `Missing P50 for family=${family} tier=${tier}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("P50 values are monotonic in the obvious places (sanity)", () => {
+    /* FAANG ≥ big-tech ≥ gcc for every family that has all three.
+       Cheap structural sanity — if someone fat-fingers a value and
+       puts faang=10 the test catches it. */
+    for (const family of expectedFamilies) {
+      const row = TIER_FAMILY_P50_LPA[family]!;
+      expect(row["faang"]!, `faang < big-tech for ${family}`).toBeGreaterThanOrEqual(row["big-tech"]!);
+      expect(row["big-tech"]!, `big-tech < gcc for ${family}`).toBeGreaterThanOrEqual(row["gcc"]!);
+    }
   });
 });

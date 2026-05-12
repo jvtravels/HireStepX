@@ -126,9 +126,22 @@ export interface BandSanityWarning {
  * so we can tell when a curator override is way off (e.g. an IT-services
  * company quoting a FAANG band).
  *
- * Sparse on purpose: only the tiers where we have reliable P50 data are
- * listed. Missing combos mean "no opinion" and the check is skipped (the
- * family-wide bound still applies). */
+ * Completeness policy (Phase 9, 2026-05-13): every (family × tier) cell
+ * is populated. Sparse data was a structural bug — missing cells silently
+ * skipped the tier check, so an outlier band (e.g. an edtech FAANG-tier
+ * quote) would pass with no warning. Cells we have weaker confidence on
+ * are still filled with the best market reconciliation; the warning
+ * MULTIPLIER (1.5×) absorbs noise, and `kernel_band_sanity_warn` events
+ * carry the family + tier so we can refine over time.
+ *
+ * Scaling principles applied uniformly across families to fill gaps:
+ *   - infra/platform engineer ≈ 1.1× base engineer
+ *   - engineering-manager ≈ 2.0–2.3× base engineer
+ *   - design-manager ≈ 2.0–2.5× base designer
+ *   - data-scientist ≈ 1.15× base engineer; data-ic ≈ 0.85× data-scientist
+ *   - product-manager ≈ 1.3× base engineer at growth tiers, flatter at
+ *     consulting / services tiers
+ *   - pmm ≈ 0.85× product-manager */
 export const TIER_FAMILY_P50_LPA: Record<string, Partial<Record<CompanyTier, number>>> = {
   designer: {
     "it-services": 8,
@@ -167,11 +180,19 @@ export const TIER_FAMILY_P50_LPA: Record<string, Partial<Record<CompanyTier, num
   "infra-engineer": {
     "it-services": 11,
     "indian-unicorn": 26,
+    "startup-growth": 24,
+    "startup-early": 17,
     "saas-product": 30,
     "gcc": 38,
     "big-tech": 50,
     "faang": 65,
+    "consulting-mbb": 30,
+    "consulting-big4": 17,
+    "bfsi-domestic": 15,
     "bfsi-global": 30,
+    "government-psu": 13,
+    "fmcg-mnc": 17,
+    "edtech": 22,
   },
   "engineering-manager": {
     "it-services": 28,
@@ -183,35 +204,63 @@ export const TIER_FAMILY_P50_LPA: Record<string, Partial<Record<CompanyTier, num
     "big-tech": 90,
     "faang": 110,
     "consulting-mbb": 60,
+    "consulting-big4": 38,
     "bfsi-domestic": 35,
     "bfsi-global": 55,
+    "government-psu": 28,
+    "fmcg-mnc": 40,
+    "edtech": 45,
   },
   "design-manager": {
     "it-services": 18,
     "indian-unicorn": 38,
     "startup-growth": 32,
+    "startup-early": 22,
     "saas-product": 42,
     "gcc": 50,
     "big-tech": 60,
     "faang": 75,
+    "consulting-mbb": 40,
+    "consulting-big4": 25,
+    "bfsi-domestic": 22,
+    "bfsi-global": 38,
+    "government-psu": 18,
+    "fmcg-mnc": 25,
+    "edtech": 28,
   },
   "data-scientist": {
     "it-services": 12,
     "indian-unicorn": 28,
     "startup-growth": 24,
+    "startup-early": 18,
     "saas-product": 30,
     "gcc": 35,
     "big-tech": 45,
     "faang": 55,
+    "consulting-mbb": 32,
+    "consulting-big4": 18,
+    "bfsi-domestic": 16,
+    "bfsi-global": 30,
+    "government-psu": 14,
+    "fmcg-mnc": 18,
+    "edtech": 22,
   },
   "data-ic": {
     "it-services": 10,
     "indian-unicorn": 20,
     "startup-growth": 18,
+    "startup-early": 13,
     "saas-product": 24,
     "gcc": 28,
     "big-tech": 35,
     "faang": 45,
+    "consulting-mbb": 24,
+    "consulting-big4": 14,
+    "bfsi-domestic": 12,
+    "bfsi-global": 24,
+    "government-psu": 11,
+    "fmcg-mnc": 14,
+    "edtech": 16,
   },
   "product-manager": {
     "it-services": 18,
@@ -226,14 +275,26 @@ export const TIER_FAMILY_P50_LPA: Record<string, Partial<Record<CompanyTier, num
     "consulting-big4": 25,
     "bfsi-domestic": 22,
     "bfsi-global": 35,
+    "government-psu": 18,
+    "fmcg-mnc": 26,
+    "edtech": 28,
   },
   pmm: {
     "it-services": 16,
     "indian-unicorn": 32,
+    "startup-growth": 26,
+    "startup-early": 18,
     "saas-product": 35,
     "gcc": 38,
     "big-tech": 45,
     "faang": 55,
+    "consulting-mbb": 38,
+    "consulting-big4": 22,
+    "bfsi-domestic": 18,
+    "bfsi-global": 30,
+    "government-psu": 15,
+    "fmcg-mnc": 22,
+    "edtech": 24,
   },
 };
 

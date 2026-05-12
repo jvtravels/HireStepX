@@ -2,6 +2,8 @@
 /* Pure functions for computing fallback scores and processing LLM evaluation results.
    Extracted from useInterviewEngine handleEnd(). */
 
+import { classifyAcceptance } from "../server-handlers/_acceptance-classifier";
+
 export interface TranscriptEntry {
   speaker: "ai" | "user";
   text: string;
@@ -248,24 +250,16 @@ export function extractNegotiationFacts(transcript: TranscriptEntry[]): Negotiat
      Also dropped the < 15 word limit — "I would like to accept this
      offer. But I would like to know more about benefits" is 16 words
      and was failing the cap. Acceptance length isn't a signal. */
-  const acceptedImmediately = userAnswers.some(a => {
-    const hasAcceptPattern = /(?:i (?:would like to |want to |'?d like to )?accept(?:\s+(?:this|the|your))?\s*(?:offer)?|sounds good|that works|it.?s a deal|i.?m happy|fine with me|yes.*accept|i agree|let.?s go ahead|happy to accept|would like to accept)/i.test(a);
-    /* Two-stage conditional check (refined 2026-Q2):
-       1. PRESENCE — any conditional keyword appears in the answer.
-       2. EXCEPTION — if the conditional is followed by a polite
-          info-seeking pattern ("if you could share / let me know /
-          tell me / it's possible to know"), it's NOT a negotiation
-          conditional. The user is asking for information, not
-          imposing terms.
-       Conditionals NOT followed by an info-seeking pattern are
-       treated as negotiation levers and block acceptance. */
-    const hasAnyConditional = /\b(?:if|unless|provided|on condition|contingent|only\s+if)\b/i.test(a);
-    const hasInfoSeekingConditional = /\b(?:if|unless|provided)\s+(?:you|it.?s|i)\s*(?:could|can|may|might|would|don.?t mind)?\s*(?:share|tell|let me know|elaborate|explain|clarify|confirm|provide|walk me through|give me|outline|show)\b/i.test(a);
-    const hasHardConditional = hasAnyConditional && !hasInfoSeekingConditional;
-    const hasNegotiatingBut = /\b(?:but|however)\s+(?:i\s+)?(?:want|need|would like|would appreciate|expect|require|will need)?\s*(?:more|higher|better|increase|raise|reduce|lower|stretch|change|modify|different|bump|up|further|additional)/i.test(a);
-    const hasNegation = /\b(no|not|don.?t|can.?t|won.?t|never)\s+(?:accept|interested|want|going|happy|comfortable|sure)\b/i.test(a);
-    return hasAcceptPattern && !hasHardConditional && !hasNegotiatingBut && !hasNegation;
-  });
+  /* Delegated to the unified `_acceptance-classifier` (Phase 9,
+     2026-05-13). This used to be a parallel detector with its own
+     regex bank and gate logic — it drifted from the kernel's
+     parseCandidateAnswer across the MakeMyTrip / Lollypop /
+     Accenture sessions because every fix had to land twice. Now
+     both detectors call the same classifier; bug-fixes land once.
+     `offerOnTable` is omitted: the legacy facts extractor sees the
+     whole transcript without phase context, so the phase gate is
+     not applied here. */
+  const acceptedImmediately = userAnswers.some(a => classifyAcceptance(a).accepted);
 
   const rejectedOutright = userAnswers.some(a =>
     /(?:way too low|not interested|can'?t accept|absolutely not|that'?s insulting|no way|i reject|no deal|not acceptable)\b/i.test(a) &&
