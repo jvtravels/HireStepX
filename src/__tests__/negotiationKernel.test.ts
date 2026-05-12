@@ -198,6 +198,8 @@ describe("parseCandidateAnswer", () => {
     expect(parseCandidateAnswer("")).toEqual({
       target: null, currentCtc: null, competing: null,
       signalsAcceptance: false, signalsWalkAway: false,
+      targetAsRange: false, vossTactics: [], infoAsked: [],
+      signalsCompetingExistsWithoutNumber: false,
     });
   });
 });
@@ -505,6 +507,192 @@ describe("findOutOfBandNumber", () => {
     expect(findOutOfBandNumber("My final offer is Rs. 40 LPA total.", BAND)).toBe(40);
     expect(findOutOfBandNumber("How about INR 35 lakhs?", BAND)).toBe(35);
     expect(findOutOfBandNumber("We can do Rs 2 crore.", BAND)).toBe(200);
+  });
+});
+
+/* ─── Voss tactic detection ───────────────────────────────────── */
+
+describe("Voss tactic detection", () => {
+  it("detects mirroring (echo + question)", () => {
+    const p = parseCandidateAnswer("Specific benefits?", "What's most important — base, overall CTC, or specific benefits?");
+    expect(p.vossTactics).toContain("mirror");
+  });
+
+  it("detects labeling", () => {
+    const p = parseCandidateAnswer("It sounds like budget is tight on this req.");
+    expect(p.vossTactics).toContain("label");
+  });
+
+  it("detects calibrated how-question", () => {
+    const p = parseCandidateAnswer("How am I supposed to accept this when comparable roles offer 35 LPA?");
+    expect(p.vossTactics).toContain("calibrated");
+  });
+
+  it("detects sign-today bundle", () => {
+    const p = parseCandidateAnswer("If you can do 30 base, 5L joining bonus, and an equity refresh I'll sign today.");
+    expect(p.vossTactics).toContain("sign-today-bundle");
+  });
+
+  it("detects current-CTC deflection", () => {
+    const p = parseCandidateAnswer("I'd rather not share my current CTC; let's focus on the expected range for this role.");
+    expect(p.vossTactics).toContain("deflect-current-ctc");
+  });
+
+  it("does not flag generic 'how are you' pleasantries", () => {
+    const p = parseCandidateAnswer("How are you today?");
+    expect(p.vossTactics).not.toContain("calibrated");
+  });
+});
+
+/* ─── Info-intent detection ───────────────────────────────────── */
+
+describe("Info-intent detection", () => {
+  it("detects clawback question", () => {
+    expect(parseCandidateAnswer("What's the clawback period on the joining bonus?").infoAsked).toContain("clawback-period");
+  });
+  it("detects vest schedule question", () => {
+    expect(parseCandidateAnswer("Can you walk me through the vesting schedule and cliff?").infoAsked).toContain("vest-schedule");
+  });
+  it("detects strike price question", () => {
+    expect(parseCandidateAnswer("What's the strike price based on the last 409A?").infoAsked).toContain("strike-price");
+  });
+  it("detects variable history question", () => {
+    expect(parseCandidateAnswer("What was the variable payout percentage over the last 3 years?").infoAsked).toContain("variable-history");
+  });
+  it("detects in-hand monthly question", () => {
+    expect(parseCandidateAnswer("Can I see the in-hand monthly breakdown?").infoAsked).toContain("in-hand-monthly");
+  });
+  it("detects fixed-vs-variable split question", () => {
+    expect(parseCandidateAnswer("What's the fixed vs variable split of the CTC?").infoAsked).toContain("fixed-vs-variable");
+  });
+  it("detects exercise window question", () => {
+    expect(parseCandidateAnswer("What's the post-termination exercise window for ESOPs?").infoAsked).toContain("exercise-window");
+  });
+  it("detects acceleration question", () => {
+    expect(parseCandidateAnswer("Is there accelerated vesting on change of control?").infoAsked).toContain("acceleration");
+  });
+});
+
+/* ─── Range ask + competing-without-number ────────────────────── */
+
+describe("targetAsRange + competing-without-number", () => {
+  it("flags range target", () => {
+    const p = parseCandidateAnswer("I'm looking for 30-35 LPA total.");
+    expect(p.targetAsRange).toBe(true);
+    expect(p.target).toBe(35);
+  });
+
+  it("flags competing without number when hedged", () => {
+    const p = parseCandidateAnswer("I have a competing offer but I can't share details.");
+    expect(p.competing).toBeNull();
+    expect(p.signalsCompetingExistsWithoutNumber).toBe(true);
+  });
+
+  it("does not flag competing-without-number when number is present", () => {
+    const p = parseCandidateAnswer("I have a competing offer of 32 LPA.");
+    expect(p.signalsCompetingExistsWithoutNumber).toBe(false);
+    expect(p.competing).toBe(32);
+  });
+});
+
+/* ─── State application: tactics + walk-away-return ──────────── */
+
+describe("applyCandidateAnswer — tactics", () => {
+  it("accumulates voss tactics across turns (sticky)", () => {
+    let s = init();
+    s = applyCandidateAnswer(s, "It sounds like budget is tight.");
+    expect(s.vossTacticsUsed).toContain("label");
+    s = applyCandidateAnswer(s, "How can we make this work at 30?");
+    expect(s.vossTacticsUsed).toContain("calibrated");
+    expect(s.vossTacticsUsed).toContain("label"); // still there
+  });
+
+  it("re-opens after walk-away on engagement", () => {
+    let s = init({ phase: "walked-away", walkedAwayAtTurn: 2 });
+    s = applyCandidateAnswer(s, "Actually let me reconsider — can we get to 25?");
+    expect(s.phase).not.toBe("walked-away");
+    expect(s.walkAwayReturned).toBe(true);
+  });
+
+  it("does NOT re-open on another walk-away phrase", () => {
+    let s = init({ phase: "walked-away", walkedAwayAtTurn: 2 });
+    s = applyCandidateAnswer(s, "I'm walking away for real now.");
+    expect(s.phase).toBe("walked-away");
+    expect(s.walkAwayReturned).toBe(false);
+  });
+});
+
+/* ─── pickAiMove — tactic boosts + modes ───────────────────────── */
+
+describe("pickAiMove tactic boosts", () => {
+  it("boosts counter for calibrated+range vs naked counter", () => {
+    const base = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20 });
+    const boosted = init({
+      phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20,
+      candidateAskedAsRange: true,
+      vossTacticsUsed: ["calibrated", "label"],
+    });
+    const m1 = pickAiMove(base);
+    const m2 = pickAiMove(boosted);
+    expect(m2.newTotalLpa).toBeGreaterThan(m1.newTotalLpa ?? 0);
+  });
+
+  it("hardBandCap routes to lever-explore instead of counter-base", () => {
+    const s = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, hardBandCap: true });
+    const m = pickAiMove(s);
+    expect(m.lever).not.toBe("counter-base");
+  });
+
+  it("verbalAcceptanceTurn forces hold-firm on subsequent counter", () => {
+    const s = init({
+      phase: "counter-offer", candidateTarget: 30, highestOfferMade: 22,
+      verbalAcceptanceTurn: 3,
+    });
+    const m = pickAiMove(s);
+    expect(m.lever).toBe("hold-firm");
+  });
+
+  it("soft market reduces concession vs hot market", () => {
+    const soft = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, marketMode: "soft" });
+    const hot = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, marketMode: "hot" });
+    const ms = pickAiMove(soft);
+    const mh = pickAiMove(hot);
+    expect(mh.newTotalLpa).toBeGreaterThan(ms.newTotalLpa ?? 0);
+  });
+
+  it("walkAwayReturned halves concession curve", () => {
+    const normal = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20 });
+    const returned = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, walkAwayReturned: true });
+    const mn = pickAiMove(normal);
+    const mr = pickAiMove(returned);
+    expect(mr.newTotalLpa).toBeLessThan(mn.newTotalLpa ?? Infinity);
+  });
+});
+
+/* ─── Deserialize backward compatibility ───────────────────────── */
+
+describe("deserializeState backfills new optional fields", () => {
+  it("accepts pre-tactic-fields state and defaults the new ones", () => {
+    /* Simulate an older serialized session that predates the tactic
+       fields. */
+    const old = {
+      sessionId: "s1", role: "swe", company: "acme",
+      band: BAND,
+      phase: "opening" as const,
+      turnIndex: 0, maxTurns: 8,
+      candidateTarget: null, candidateCurrentCtc: null, competingOffer: null,
+      highestOfferMade: 0, leversUsed: [], lastAiText: "",
+      acceptedAtTurn: null, walkedAwayAtTurn: null,
+    };
+    const s = deserializeState(JSON.stringify(old));
+    expect(s.vossTacticsUsed).toEqual([]);
+    expect(s.infoAsked).toEqual([]);
+    expect(s.marketMode).toBe("neutral");
+    expect(s.hardBandCap).toBe(false);
+    expect(s.walkAwayReturned).toBe(false);
+    expect(s.verbalAcceptanceTurn).toBeNull();
+    expect(s.finalOfferAssertedCount).toBe(0);
+    expect(s.candidateAskedAsRange).toBe(false);
   });
 });
 

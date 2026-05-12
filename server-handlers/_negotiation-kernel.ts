@@ -96,6 +96,35 @@ export interface NegotiationBand {
 
 /* ─── Canonical State ────────────────────────────────────────────── */
 
+/* Information items a candidate can interrogate the recruiter about.
+   Tracked as a set on state so we don't double-credit repeated asks
+   and so the move-picker can reward depth of due diligence. */
+export type InfoIntent =
+  | "clawback-period"      // joining-bonus clawback duration / pro-rata
+  | "variable-history"     // last 2-3yr variable payout %
+  | "vest-schedule"        // RSU/ESOP grant + cliff + slope
+  | "strike-price"         // ESOP exercise price / last 409A / FMV
+  | "in-hand-monthly"      // CTC → net take-home breakdown
+  | "exercise-window"      // post-termination ESOP exercise window
+  | "acceleration"         // accelerated vesting on acquisition / RIF
+  | "fixed-vs-variable"    // CTC split breakdown
+  | "perks-non-cash";      // Sodexo / gratuity / NPS lumping
+
+/* Negotiation tactics from the Voss / interviewing.io canon that the
+   parser detects and the move-picker rewards. Tracked so a candidate
+   who's clearly negotiating well faces less recruiter stiffening. */
+export type VossTactic =
+  | "mirror"               // repeats AI's last 1-3 words as a question
+  | "label"                // "it sounds like..." framing
+  | "calibrated"           // "how can I..." / "what's the best you can..."
+  | "sign-today-bundle"    // "if you can do X+Y+Z I'll sign today"
+  | "deflect-current-ctc"; // refuses to disclose current CTC
+
+/* Macro market mode — adjusts global concession curves. Soft markets
+   (post-layoff 2023-style) reduce concession willingness; hot markets
+   (AI/ML 2025-style) increase it. Default neutral. */
+export type MarketMode = "soft" | "neutral" | "hot";
+
 export interface NegotiationState {
   /* Identity */
   readonly sessionId: string;
@@ -118,10 +147,45 @@ export interface NegotiationState {
   candidateCurrentCtc: number | null;    // current package (NOT target)
   competingOffer: number | null;         // BATNA in hand (NOT target)
 
+  /* Range ask: candidate stated "30-35 LPA" instead of a single number.
+     Research (Idaho / Harvard PON) shows range asks earn meaningfully
+     more than single-point asks. We reward this in the counter-offer
+     split. */
+  candidateAskedAsRange: boolean;
+
   /* AI moves made */
   highestOfferMade: number;              // best number AI has put on table (LPA)
   leversUsed: NegotiationLever[];        // ordered history
   lastAiText: string;                    // for verbatim-repeat detection
+
+  /* Recruiter-side tactic counters. `finalOfferAssertedCount` tracks
+     how many times the AI (or upstream LLM) has claimed "best and
+     final" — used by the move-picker to decay credibility after the
+     AI then moves anyway. */
+  finalOfferAssertedCount: number;
+
+  /* Candidate-side tactic & intent counters. */
+  vossTacticsUsed: VossTactic[];
+  infoAsked: InfoIntent[];
+
+  /* Verbal-acceptance lock: the candidate said "yes" but then tried to
+     re-open the conversation. Distinct from terminal `accepted` — when
+     this fires, the move-picker stiffens dramatically and a small
+     rescission risk applies on the next turn. */
+  verbalAcceptanceTurn: number | null;
+
+  /* Walk-away-and-return: candidate hit `walked-away` and then re-
+     engaged. Comes with a penalty (loss of joining bonus, lower base
+     ceiling on return). */
+  walkAwayReturned: boolean;
+
+  /* Hard-vs-soft band cap. When true, `maxStretch` is genuinely
+     unreachable on base — the AI redirects to JB/equity/level instead
+     of conceding on base. Modeled after services-co fitment caps. */
+  hardBandCap: boolean;
+
+  /* Macro market mode — adjusts concession curve globally. */
+  marketMode: MarketMode;
 
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
@@ -138,7 +202,12 @@ export interface InitStateInput {
   maxTurns?: number;
 }
 
-export function initState(input: InitStateInput): NegotiationState {
+export interface InitStateExtras {
+  hardBandCap?: boolean;
+  marketMode?: MarketMode;
+}
+
+export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
   return {
     sessionId: input.sessionId,
     role: input.role,
@@ -150,9 +219,17 @@ export function initState(input: InitStateInput): NegotiationState {
     candidateTarget: null,
     candidateCurrentCtc: null,
     competingOffer: null,
+    candidateAskedAsRange: false,
     highestOfferMade: 0,
     leversUsed: [],
     lastAiText: "",
+    finalOfferAssertedCount: 0,
+    vossTacticsUsed: [],
+    infoAsked: [],
+    verbalAcceptanceTurn: null,
+    walkAwayReturned: false,
+    hardBandCap: input.hardBandCap ?? false,
+    marketMode: input.marketMode ?? "neutral",
     acceptedAtTurn: null,
     walkedAwayAtTurn: null,
   };
@@ -166,6 +243,18 @@ export interface ParsedAnswer {
   competing: number | null;
   signalsAcceptance: boolean;
   signalsWalkAway: boolean;
+  /* Candidate stated their target as a range ("30-35 LPA") rather than
+     a single number. Set on the turn it's detected; sticky on state. */
+  targetAsRange: boolean;
+  /* Voss / interviewing.io tactics detected this turn. Multiple may
+     fire on the same answer. */
+  vossTactics: VossTactic[];
+  /* Information items the candidate explicitly asked about this turn. */
+  infoAsked: InfoIntent[];
+  /* Candidate has explicitly hedged on a competing offer ("I have other
+     offers but can't share details"). Signals leverage without
+     disclosing a number — kernel should respect but not anchor. */
+  signalsCompetingExistsWithoutNumber: boolean;
 }
 
 /* Parse the candidate's free-text answer for salary-relevant numbers
@@ -197,10 +286,84 @@ function substituteHinglishNumbers(s: string): string {
     (m) => HINGLISH_NUMBERS[m.toLowerCase()] ?? m);
 }
 
-export function parseCandidateAnswer(answer: string): ParsedAnswer {
+/* Voss-tactic detection. These patterns are conservative — only
+   reasonably unambiguous formulations are recognized. False positives
+   here would silently boost concessions for candidates who didn't
+   actually negotiate well. */
+function detectVossTactics(a: string, lastAiText: string): VossTactic[] {
+  const out: VossTactic[] = [];
+
+  /* Mirror: candidate ends with a 1-3 word echo of the AI's last
+     content phrase, phrased as a question. We approximate by checking
+     for trailing "?" + last-AI 1-3 word echo. */
+  if (lastAiText && /\?\s*$/.test(a)) {
+    const aiWords = fingerprintWords(lastAiText);
+    const candWords = fingerprintWords(a);
+    if (aiWords.length >= 2 && candWords.length >= 1) {
+      const tail = candWords.slice(-3);
+      if (tail.length > 0 && aiWords.slice(-6).join(" ").includes(tail.join(" "))) {
+        out.push("mirror");
+      }
+    }
+  }
+
+  /* Label: "it sounds like X" / "it seems like X" / "you must be X".
+     The classic Voss formulations that name the other party's
+     constraint or emotion. */
+  if (/\b(it\s+(?:sounds|seems|looks|feels)\s+like|you\s+must\s+(?:be|feel|need)|it\s+appears\s+that)\b/i.test(a)) {
+    out.push("label");
+  }
+
+  /* Calibrated how/what question. We require "how"/"what" + a modal +
+     question mark to avoid grabbing every "how are you" pleasantry. */
+  if (/\b(how\s+(?:am\s+i|can\s+(?:we|i)|do\s+(?:you|we)|would\s+you|could\s+(?:we|you))|what.?s\s+(?:the\s+(?:best|most|maximum)|your\s+thinking|driving|behind))\b[^?]*\?/i.test(a)) {
+    out.push("calibrated");
+  }
+
+  /* "Sign today if X+Y+Z" bundle from interviewing.io playbook.
+     Matches both orderings: "sign today if X" and "if X I'll sign
+     today". */
+  const signToday = /\b(sign\s+today|accept\s+today|close\s+(?:this\s+)?today|done\s+today|sign\s+(?:right\s+)?now|sign\s+tonight)\b/i;
+  const conditional = /\b(if|when|provided|as\s+long\s+as)\b/i;
+  if (signToday.test(a) && conditional.test(a)) {
+    out.push("sign-today-bundle");
+  }
+
+  /* Current-CTC deflection. Candidate explicitly refuses to disclose
+     current package. */
+  if (/\b(?:prefer\s+not\s+to\s+(?:share|disclose)|company\s+policy.*(?:share|disclose|reveal)|(?:current\s+)?ctc\s+is\s+(?:irrelevant|confidential)|focus\s+on\s+(?:expected|market)|don.?t\s+(?:share|disclose)\s+(?:my\s+)?(?:current\s+)?ctc|rather\s+(?:not\s+)?(?:share|discuss)\s+(?:my\s+)?current)\b/i.test(a)) {
+    out.push("deflect-current-ctc");
+  }
+
+  return out;
+}
+
+/* Info-intent detection. The candidate explicitly asks about an offer
+   component. Each phrase is conservative — we'd rather miss an ask than
+   credit one that wasn't there. */
+function detectInfoIntents(a: string): InfoIntent[] {
+  const out: InfoIntent[] = [];
+  if (/\b(clawback|claw\s+back|return\s+(?:the\s+)?bonus|repay(?:ment)?|pro[-\s]?rata|tenure\s+requirement)\b/i.test(a)) out.push("clawback-period");
+  if (/\b(variable\s+(?:pay|component|payout|history)|bonus\s+payout\s+(?:history|last|past)|payout\s+(?:percentage|%|history)|how\s+much\s+variable)\b/i.test(a)) out.push("variable-history");
+  if (/\b(vest(?:ing)?\s+(?:schedule|period|cliff|slope)|cliff|grant\s+schedule|back[-\s]?loaded|monthly\s+vest|quarterly\s+vest)\b/i.test(a)) out.push("vest-schedule");
+  if (/\b(strike\s+price|exercise\s+price|409a|fmv|fair\s+market\s+value|grant\s+price)\b/i.test(a)) out.push("strike-price");
+  if (/\b(in[-\s]?hand|take[-\s]?home|net\s+(?:salary|monthly|pay)|monthly\s+(?:salary|pay|in\s+hand))\b/i.test(a)) out.push("in-hand-monthly");
+  if (/\b(exercise\s+window|post[-\s]?termination|after\s+(?:leaving|resignation)|exercise\s+period)\b/i.test(a)) out.push("exercise-window");
+  if (/\b(accelerat(?:ed|ion)\s+vest|change\s+of\s+control|acquisition\s+(?:trigger|clause|vesting)|single[-\s]?trigger|double[-\s]?trigger)\b/i.test(a)) out.push("acceleration");
+  if (/\b(fixed\s+(?:vs|versus|and)\s+variable|split\s+(?:between|of)\s+fixed|how\s+much\s+(?:is\s+)?fixed|fixed\s+component|ctc\s+(?:breakdown|split))\b/i.test(a)) out.push("fixed-vs-variable");
+  if (/\b(sodexo|food\s+coupon|gratuity|nps|insurance\s+(?:value|cost)|non[-\s]?cash|benefits\s+(?:value|in\s+ctc))\b/i.test(a)) out.push("perks-non-cash");
+  return out;
+}
+
+export function parseCandidateAnswer(answer: string, lastAiText = ""): ParsedAnswer {
   const a = substituteHinglishNumbers((answer || "").trim());
   if (!a) {
-    return { target: null, currentCtc: null, competing: null, signalsAcceptance: false, signalsWalkAway: false };
+    return {
+      target: null, currentCtc: null, competing: null,
+      signalsAcceptance: false, signalsWalkAway: false,
+      targetAsRange: false, vossTactics: [], infoAsked: [],
+      signalsCompetingExistsWithoutNumber: false,
+    };
   }
 
   /* Acceptance / walk-away (single-turn). The session-long sticky
@@ -276,7 +439,28 @@ export function parseCandidateAnswer(answer: string): ParsedAnswer {
     target = null;
   }
 
-  return { target, currentCtc, competing, signalsAcceptance, signalsWalkAway };
+  /* Range-ask detection — fires if any of the range patterns matched
+     regardless of whether the bound number came from a range or a
+     single-value path. */
+  const rangeAnyPat = /\b\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
+  const targetAsRange = rangeAnyPat.test(a) && target != null;
+
+  /* Competing-without-number: candidate has signaled competing exists
+     but refuses or omits to share magnitude. */
+  const competingMentionPat = /\b(competing\s+offer|another\s+offer|other\s+offers?|offer\s+in\s+hand|other\s+companies|elsewhere|other\s+conversations|in\s+the\s+market)\b/i;
+  const hedgePat = /\b(can.?t\s+share|prefer\s+not|nda|confidential|not\s+at\s+liberty|won.?t\s+disclose|details\s+(?:are\s+)?confidential)\b/i;
+  const signalsCompetingExistsWithoutNumber =
+    competing == null && competingMentionPat.test(a) && (hedgePat.test(a) || !/[\d]/.test(a));
+
+  const vossTactics = detectVossTactics(a, lastAiText);
+  const infoAsked = detectInfoIntents(a);
+
+  return {
+    target, currentCtc, competing,
+    signalsAcceptance, signalsWalkAway,
+    targetAsRange, vossTactics, infoAsked,
+    signalsCompetingExistsWithoutNumber,
+  };
 }
 
 /* Extract the first numeric value from `text` using any of `patterns`.
@@ -335,19 +519,73 @@ function extractUsdAmount(text: string, patterns: RegExp[]): number | null {
  *  mutates the input. Terminal phases are sticky: if state.phase is
  *  already terminal, returns state unchanged. */
 export function applyCandidateAnswer(state: NegotiationState, answer: string): NegotiationState {
+  /* Walk-away-and-return: if state is terminal `walked-away` but the
+     candidate sends a non-empty engagement, re-open the conversation
+     with a penalty flag. This is the only path out of a terminal phase
+     and it's a one-way trapdoor (the flag is sticky). */
+  if (state.phase === "walked-away" && (answer || "").trim().length > 0 &&
+      !/\b(walk away|walking away|not interested|withdraw|decline|won.?t work|isn.?t going to work|move on|nahi\s+(?:chahiye|karna|banega))\b/i.test(answer)) {
+    const reopened: NegotiationState = {
+      ...state,
+      leversUsed: [...state.leversUsed],
+      vossTacticsUsed: [...state.vossTacticsUsed],
+      infoAsked: [...state.infoAsked],
+      phase: "counter-offer",
+      walkAwayReturned: true,
+      walkedAwayAtTurn: null,
+    };
+    return applyCandidateAnswer(reopened, answer);
+  }
   if (isTerminalPhase(state.phase)) return state;
 
-  const parsed = parseCandidateAnswer(answer);
-  const next: NegotiationState = { ...state, leversUsed: [...state.leversUsed] };
+  const parsed = parseCandidateAnswer(answer, state.lastAiText);
+  const next: NegotiationState = {
+    ...state,
+    leversUsed: [...state.leversUsed],
+    vossTacticsUsed: [...state.vossTacticsUsed],
+    infoAsked: [...state.infoAsked],
+  };
 
   /* Bind newly-stated facts. Last-stated wins (the candidate may
      revise their target mid-conversation; that's allowed). */
   if (parsed.target != null) next.candidateTarget = parsed.target;
   if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;
   if (parsed.competing != null) next.competingOffer = parsed.competing;
+  if (parsed.targetAsRange) next.candidateAskedAsRange = true;
+
+  /* Merge tactic + info sets — sticky, never cleared. */
+  for (const t of parsed.vossTactics) {
+    if (!next.vossTacticsUsed.includes(t)) next.vossTacticsUsed.push(t);
+  }
+  for (const i of parsed.infoAsked) {
+    if (!next.infoAsked.includes(i)) next.infoAsked.push(i);
+  }
+
+  /* Verbal-acceptance lock — if the candidate previously said yes but
+     now is asking for more (target above current offer, or new lever
+     request), record the turn so the move-picker can stiffen. We do
+     NOT transition to terminal `accepted` in this case; the candidate
+     re-opened. */
+  const reneging =
+    next.verbalAcceptanceTurn != null &&
+    (parsed.target != null || parsed.vossTactics.includes("sign-today-bundle") || parsed.infoAsked.length > 0) &&
+    !parsed.signalsAcceptance;
+  if (reneging) {
+    /* Sticky — leave verbalAcceptanceTurn set so the move-picker keeps
+       seeing it across subsequent turns. */
+  }
 
   /* Terminal transitions. */
   if (parsed.signalsAcceptance) {
+    /* Conditional accept ("yes if X") set verbalAcceptanceTurn instead
+       of locking terminal. parseCandidateAnswer's acceptPat already
+       rejects most conditionals; this is belt-and-suspenders for the
+       sign-today-bundle path which carries its own implicit "if". */
+    if (parsed.vossTactics.includes("sign-today-bundle")) {
+      next.verbalAcceptanceTurn = state.turnIndex;
+      next.phase = derivePhase(next);
+      return next;
+    }
     next.phase = "accepted";
     next.acceptedAtTurn = state.turnIndex;
     return next;
@@ -369,7 +607,12 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
  *  new kernel can adopt them without re-parsing. */
 export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFacts): NegotiationState {
   if (isTerminalPhase(state.phase)) return state;
-  const next: NegotiationState = { ...state, leversUsed: [...state.leversUsed] };
+  const next: NegotiationState = {
+    ...state,
+    leversUsed: [...state.leversUsed],
+    vossTacticsUsed: [...state.vossTacticsUsed],
+    infoAsked: [...state.infoAsked],
+  };
   const num = (s: string | null): number | null => {
     if (!s) return null;
     const v = parseFloat(s.replace(/[^\d.]/g, ""));
@@ -497,6 +740,22 @@ export function pickAiMove(state: NegotiationState): AiMove {
      then floor at 0.05. The full ceiling (maxStretch) remains the hard
      cap, so this never *exceeds* band, only approaches it more slowly. */
   if (state.phase === "counter-offer") {
+    /* Hard band cap: base is structurally capped; redirect concession
+       energy to non-cash levers instead of inching toward maxStretch. */
+    if (state.hardBandCap) {
+      return pickLeverExploreMove(state);
+    }
+    /* Verbal-acceptance-then-renegotiate: heavy stiffening + reject any
+       further base movement. Modeled after the offer-rescission risk
+       documented in Salary.com survey data. */
+    if (state.verbalAcceptanceTurn != null) {
+      return {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade,
+        rationale: "Candidate verbally accepted; further base asks risk rescission. Hold firm.",
+      };
+    }
+
     const target = state.candidateTarget ?? state.band.maxStretch;
     const floor = Math.max(state.highestOfferMade, state.band.initialOffer);
     const ceiling = state.band.maxStretch;
@@ -508,12 +767,38 @@ export function pickAiMove(state: NegotiationState): AiMove {
     }
     const counterCount = state.leversUsed.filter(l => l === "counter-base").length;
     const splitSchedule = [0.5, 0.35, 0.22, 0.12, 0.06];
-    const split = splitSchedule[counterCount] ?? 0.05;
+    let split = splitSchedule[counterCount] ?? 0.05;
+
+    /* Tactic boost: candidates using calibrated questions, range asks,
+       and labeling get larger concessions per turn. Mirroring alone is
+       a softer signal so it earns a smaller bump. Sign-today bundles
+       get the biggest boost (Voss-canon-grade certainty-for-concession
+       trade). Cumulative, capped at 2x the base split. */
+    let boost = 1;
+    if (state.candidateAskedAsRange) boost += 0.15;
+    if (state.vossTacticsUsed.includes("calibrated")) boost += 0.25;
+    if (state.vossTacticsUsed.includes("label")) boost += 0.15;
+    if (state.vossTacticsUsed.includes("mirror")) boost += 0.05;
+    if (state.vossTacticsUsed.includes("sign-today-bundle")) boost += 0.35;
+    if (state.vossTacticsUsed.includes("deflect-current-ctc")) boost += 0.10;
+    if (boost > 2) boost = 2;
+    split = Math.min(split * boost, 0.6);
+
+    /* Market mode modulator. Soft markets squeeze candidates; hot
+       markets reward them. */
+    if (state.marketMode === "soft") split *= 0.7;
+    else if (state.marketMode === "hot") split *= 1.3;
+
+    /* Walk-away-and-return penalty: returning candidate gets a worse
+     * concession curve to model the loss of leverage. */
+    if (state.walkAwayReturned) split *= 0.5;
+
+    if (split > 0.95) split = 0.95;
     const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
     return {
       lever: "counter-base",
       newTotalLpa: newTotal,
-      rationale: `Split toward target (stiffening ${split.toFixed(2)}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}).`,
+      rationale: `Split toward target (stiffening ${splitSchedule[counterCount] ?? 0.05}, effective ${split.toFixed(2)}, boost ${boost.toFixed(2)}, market ${state.marketMode}${state.walkAwayReturned ? ", returned" : ""}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}).`,
     };
   }
 
@@ -717,10 +1002,37 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (typeof s.lastAiText !== "string") throw new Error("state.lastAiText");
   if (s.acceptedAtTurn !== null && !isFiniteNonNegInt(s.acceptedAtTurn)) throw new Error("state.acceptedAtTurn");
   if (s.walkedAwayAtTurn !== null && !isFiniteNonNegInt(s.walkedAwayAtTurn)) throw new Error("state.walkedAwayAtTurn");
+  /* Backward-compatible optional fields: tolerate absence (older
+     in-flight sessions) but reject malformed values. deserializeState
+     backfills defaults so the rest of the kernel sees a fully-shaped
+     state. */
+  if (s.finalOfferAssertedCount !== undefined && !isFiniteNonNegInt(s.finalOfferAssertedCount)) throw new Error("state.finalOfferAssertedCount");
+  if (s.candidateAskedAsRange !== undefined && typeof s.candidateAskedAsRange !== "boolean") throw new Error("state.candidateAskedAsRange");
+  if (s.vossTacticsUsed !== undefined && !(Array.isArray(s.vossTacticsUsed) && s.vossTacticsUsed.every((v) => typeof v === "string"))) throw new Error("state.vossTacticsUsed");
+  if (s.infoAsked !== undefined && !(Array.isArray(s.infoAsked) && s.infoAsked.every((v) => typeof v === "string"))) throw new Error("state.infoAsked");
+  if (s.verbalAcceptanceTurn !== undefined && s.verbalAcceptanceTurn !== null && !isFiniteNonNegInt(s.verbalAcceptanceTurn)) throw new Error("state.verbalAcceptanceTurn");
+  if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
+  if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
+  if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
 }
 
 export function deserializeState(json: string): NegotiationState {
   const parsed: unknown = JSON.parse(json);
   validateState(parsed);
-  return parsed;
+  /* Backfill defaults for optional fields added after the wire format
+     was first deployed. Existing in-flight sessions serialized without
+     these keys; we default them on read so the rest of the kernel can
+     assume they exist. */
+  const s = parsed as NegotiationState & Partial<Record<string, unknown>>;
+  return {
+    ...parsed,
+    candidateAskedAsRange: s.candidateAskedAsRange ?? false,
+    finalOfferAssertedCount: s.finalOfferAssertedCount ?? 0,
+    vossTacticsUsed: (s.vossTacticsUsed as VossTactic[] | undefined) ?? [],
+    infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],
+    verbalAcceptanceTurn: s.verbalAcceptanceTurn ?? null,
+    walkAwayReturned: s.walkAwayReturned ?? false,
+    hardBandCap: s.hardBandCap ?? false,
+    marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",
+  };
 }
