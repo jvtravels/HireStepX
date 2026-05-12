@@ -25,7 +25,8 @@ import { useToast } from "./Toast";
 import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript } from "./interviewScripts";
-import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints } from "./interviewAPI";
+import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints, negotiationKernelInit, negotiationKernelTurn } from "./interviewAPI";
+import { isNegotiationKernelEnabled } from "./_negotiation-kernel-flag";
 import { initLiveSession, saveInterviewTurn } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
@@ -111,6 +112,11 @@ export function useInterviewEngine() {
   );
   // Negotiation band (populated by LLM question generation for salary-neg)
   const negotiationBandRef = useRef<NegotiationBandData | null>(null);
+  /* Canonical negotiation kernel: serialized state passed back to the
+     server on each turn. Null until the kernel-flag path initialises it
+     on first follow-up. Stays null when the flag is off (legacy path). */
+  const negotiationKernelStateRef = useRef<string | null>(null);
+  const negotiationKernelEnabledRef = useRef<boolean>(false);
   // Candidate's target salary (set via warm-up calibration card)
   const [targetSalary, setTargetSalary] = useState<number | null>(null);
   // Multi-round scenario mode
@@ -210,6 +216,19 @@ export function useInterviewEngine() {
      the candidate against a synthetic, irrelevant salary band. Soft
      mismatches and universal roles pass through silently.
      See src/_role-company-fit.ts + tests/roleCompanyFit.test.ts. */
+  /* One-shot read of the kernel feature flag at session start. We
+     freeze it in a ref so a mid-session localStorage toggle doesn't
+     half-flip behaviour — that produces the kind of bug where the
+     state machine and the legacy path both try to drive consecutive
+     turns. The flag is read once, behaviour is consistent thereafter. */
+  useEffect(() => {
+    if (interviewType !== "salary-negotiation") return;
+    negotiationKernelEnabledRef.current = isNegotiationKernelEnabled();
+    if (negotiationKernelEnabledRef.current) {
+      console.warn("[interview] negotiation kernel path ENABLED for this session");
+    }
+  }, [interviewType]);
+
   useEffect(() => {
     if (interviewType !== "salary-negotiation") return;
     const role = (targetRole || user?.targetRole || "").trim();
@@ -1991,7 +2010,54 @@ export function useInterviewEngine() {
           }
         }
 
-        pendingFollowUpRef.current = fetchFollowUp({
+        /* Ship 3 — canonical kernel path. Only fires when flag is on AND
+           we're in salary-negotiation. Routes through /api/negotiate-turn
+           which owns state via the kernel; falls back to legacy
+           fetchFollowUp on any kernel error so the user is never stuck. */
+        if (negotiationKernelEnabledRef.current && isSalaryNegType) {
+          pendingFollowUpRef.current = (async () => {
+            const band = negotiationBandRef.current;
+            if (!band) return null; /* legacy path didn't load band; bail */
+            try {
+              /* Init lazily on first call. We treat the FIRST candidate
+                 answer as a "turn" against a freshly-initialised state;
+                 the engine's static-script opening offer is what got us
+                 here, so the kernel starts from after the open. We seed
+                 by calling init then immediately turn — two round-trips
+                 first turn only, single round-trip every turn after. */
+              if (!negotiationKernelStateRef.current) {
+                const initRes = await negotiationKernelInit({
+                  sessionId: crypto.randomUUID(),
+                  role: user?.targetRole || "swe",
+                  company: user?.targetCompany || "",
+                  band: {
+                    initialOffer: band.initialOffer,
+                    maxStretch: band.maxStretch,
+                    walkAway: band.walkAway,
+                    hasEquity: !!band.hasEquity,
+                  },
+                });
+                if (!initRes) return null;
+                negotiationKernelStateRef.current = initRes.state;
+              }
+              const turnRes = await negotiationKernelTurn({
+                state: negotiationKernelStateRef.current,
+                candidateAnswer: answerText,
+              });
+              if (!turnRes) return null;
+              negotiationKernelStateRef.current = turnRes.state;
+              return {
+                needsFollowUp: !turnRes.terminal,
+                followUpText: turnRes.text,
+                followUpType: "negotiation",
+              };
+            } catch (err) {
+              console.warn("[interview] kernel turn failed, falling back to legacy", err);
+              return null;
+            }
+          })();
+          /* Skip legacy fetchFollowUp this turn — kernel owns it. */
+        } else { pendingFollowUpRef.current = fetchFollowUp({
           question: currentStepObj!.aiText,
           answer: answerText,
           type: interviewType,
@@ -2041,7 +2107,7 @@ export function useInterviewEngine() {
           candidateState,
           previousMentions,
           starGap: starGapHint,
-        });
+        }); }
       } else {
         pendingFollowUpRef.current = null;
       }

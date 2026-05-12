@@ -683,6 +683,73 @@ export async function fetchFollowUp(params: {
   }
 }
 
+/* ─── Canonical Negotiation Kernel client (Ship 3) ────────────────────
+ * Thin typed wrapper around /api/negotiate-turn. Used by the engine
+ * when the feature flag is on (see _negotiation-kernel-flag.ts).
+ * The endpoint is gated server-side too — flag off = 404.
+ */
+
+export interface NegotiationKernelBand {
+  initialOffer: number;
+  maxStretch: number;
+  walkAway: number;
+  hasEquity: boolean;
+}
+
+export interface NegotiationKernelMove {
+  lever: string;
+  newTotalLpa: number | null;
+  rationale: string;
+}
+
+export interface NegotiationKernelResponse {
+  ok: true;
+  /** Serialized state — opaque to the client; pass back on next turn. */
+  state: string;
+  text: string;
+  move: NegotiationKernelMove;
+  source: "llm" | "llm-retry" | "fallback";
+  terminal?: boolean;
+}
+
+export async function negotiationKernelInit(params: {
+  sessionId: string;
+  role: string;
+  company: string;
+  band: NegotiationKernelBand;
+  maxTurns?: number;
+}): Promise<NegotiationKernelResponse | null> {
+  return postKernel({ action: "init", ...params });
+}
+
+export async function negotiationKernelTurn(params: {
+  state: string;
+  candidateAnswer: string;
+}): Promise<NegotiationKernelResponse | null> {
+  return postKernel({ action: "turn", ...params });
+}
+
+async function postKernel(body: Record<string, unknown>): Promise<NegotiationKernelResponse | null> {
+  if (!checkRateLimit("negotiate-turn", 30, 60_000)) return null;
+  try {
+    const { authHeaders: getAuthHeaders } = await import("./supabase");
+    const headers = await getAuthHeaders();
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 14_000);
+    const res = await fetch("/api/negotiate-turn", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: ac.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    return await res.json() as NegotiationKernelResponse;
+  } catch {
+    return null;
+  }
+}
+
 /** Retry queued offline evaluations */
 export async function retryQueuedEvals(): Promise<void> {
   try {
