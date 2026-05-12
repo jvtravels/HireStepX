@@ -102,6 +102,33 @@ describe("parseCandidateAnswer", () => {
     expect(parseCandidateAnswer("I have accepted your offer.").signalsAcceptance).toBe(true);
   });
 
+  it("binds bare number in probe-expectations phase as target", () => {
+    /* Tech-Mahindra UX session (May 2026): candidate replied
+       "30 lpa thirty lakhs per ctc" with no "want / expecting / looking for"
+       cue, so the old parser left target=null and the AI kept probing.
+       In probe-expectations phase, a bare number with no current/competing
+       markers is the expectation. */
+    const p = parseCandidateAnswer("30 lpa thirty lakhs per ctc", "", "probe-expectations");
+    expect(p.target).toBe(30);
+    expect(p.currentCtc).toBeNull();
+    expect(p.competing).toBeNull();
+  });
+
+  it("does NOT bind bare number outside probe-expectations phase", () => {
+    /* The fallback is intentionally narrow — only fires in probe phase to
+       avoid ambiguous binding mid-counter. */
+    const p = parseCandidateAnswer("30 lpa", "", "counter-offer");
+    expect(p.target).toBeNull();
+  });
+
+  it("still binds 'my current ctc is X' when phase=probe-expectations", () => {
+    /* Bare-number fallback must NOT swallow numbers attached to current CTC.
+       Guard tested explicitly so future relaxation can't break it. */
+    const p = parseCandidateAnswer("my current ctc is 18 LPA", "", "probe-expectations");
+    expect(p.currentCtc).toBe(18);
+    expect(p.target).toBeNull();
+  });
+
   it("detects walk-away", () => {
     expect(parseCandidateAnswer("I'm going to have to pass.").signalsWalkAway).toBe(true);
     expect(parseCandidateAnswer("This won't work, I'll walk away.").signalsWalkAway).toBe(true);

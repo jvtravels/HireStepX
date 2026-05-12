@@ -55,6 +55,12 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
   const mentionsCompeting = /other offer|competing|another company|counter/i.test(text);
   const mentionsResearch = /market|glassdoor|research|benchmark|industry|average|range|data/i.test(text);
   const acceptsImmediately = /(?:sounds good|i accept|that works|deal|perfect|okay sure|fine with me|yes.*accept)/i.test(text) && wordCount < 25;
+  /* Broader acceptance detection (no word-count gate). Covers the
+     Tech-Mahindra UX session phrases ("completely agree", "I am accepting",
+     "I've already accepted") so phase-specific coaching can avoid telling
+     a candidate to "ask about equity, bonuses, growth before countering"
+     after they've already accepted. */
+  const signalsAccepted = /\b(?:i\s+(?:fully\s+|totally\s+|completely\s+)?agree|completely\s+agree|i\s*(?:'m|am)\s+accept(?:ing|ed)|i\s*(?:'?ve|have)\s+(?:already\s+)?accepted|already\s+accepted|i\s*(?:'?ll|will)\s+accept|i.?ll\s+take\s+it|i.?m\s+in|happy\s+to\s+accept|done\s+deal|let.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in))\b/i.test(text);
   const rejectsOutright = /(?:way too low|not interested|can'?t accept|wouldn'?t consider|absolutely not|that'?s insulting|no way)/i.test(text);
   // Candidate signalling "you already asked / I already answered". Generic
   // tips like "share more detail" feel mocking on top of this — replace
@@ -72,6 +78,13 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
   // Universal checks first (override phase-specific)
   if (rejectsOutright && wordCount < 30) {
     feedback = "Tip: Stay open and professional — counter with data, don't reject outright.";
+  } else if (signalsAccepted) {
+    /* Clear acceptance signal — the coach tip must respect that.
+       Telling a just-accepted candidate to "ask about equity before
+       countering" reads as dismissive of the decision they just made. */
+    feedback = phase === "closing" || phase === "closing-pressure"
+      ? "Confirmed — get the offer letter with all terms in writing: base, bonus, equity, start date, notice period."
+      : "Locked in. Before signing, make sure you've seen the full package — base, variable, joining bonus, equity vest, notice buyout.";
   } else if (acceptsImmediately) {
     feedback = phase === "closing"
       ? "Tip: Before accepting, confirm all terms — base, bonus, equity, start date."
@@ -126,7 +139,10 @@ function salaryNegFeedback(text: string, wordCount: number, phase?: string): Mic
     if (mentionsCompeting) {
       feedback = "Using leverage well. Stay firm but professional.";
     } else {
-      feedback = "Closing phase — anchor on your BATNA / market data; don't drop your number without getting something in return.";
+      /* Plain-English replacement for "BATNA" — candidates new to
+         negotiation theory don't know the term, and reading "BATNA" in a
+         live tip reads as jargon-coded gatekeeping. */
+      feedback = "Closing phase — back your number with market data or your other options. If you drop, ask for something in return (joining bonus, equity, earlier review).";
     }
   } else if (phase === "closing") {
     if (mentionsBenefits && mentionsNumber) {

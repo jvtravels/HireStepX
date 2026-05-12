@@ -355,7 +355,19 @@ function detectInfoIntents(a: string): InfoIntent[] {
   return out;
 }
 
-export function parseCandidateAnswer(answer: string, lastAiText = ""): ParsedAnswer {
+/* Phase param is optional and only used to widen target-binding when
+ * the recruiter just asked for expectations. The Tech-Mahindra UX
+ * session (May 2026) had the candidate reply "30 lpa thirty lakhs
+ * per ctc" — bare number, no "looking for / want / expecting"
+ * trigger — and the kernel left target = null, so the AI kept
+ * probing instead of countering. When `phase === "probe-expectations"`
+ * a bare "<n> LPA / lakhs" is accepted as the target (still gated
+ * by the current/competing disambiguator). */
+export function parseCandidateAnswer(
+  answer: string,
+  lastAiText = "",
+  phase?: NegotiationPhase,
+): ParsedAnswer {
   const a = substituteHinglishNumbers((answer || "").trim());
   if (!a) {
     return {
@@ -484,6 +496,28 @@ export function parseCandidateAnswer(answer: string, lastAiText = ""): ParsedAns
   const targetUsdPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for)\s+(?:an?\s+|about\s+|approximately\s+|roughly\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i;
   let target = extractUsdAmount(a, [targetUsdPat]) ?? extractFirstNumber(a, [targetRangePat, targetCtxPat, targetHindiPostPat]);
 
+  /* Phase-aware bare-number fallback. When the recruiter is in
+     probe-expectations and the candidate replies with a number+LPA
+     but no "looking for / want" trigger ("30 lpa thirty lakhs per
+     ctc"), accept the number as target. Skip when the sentence has
+     current/competing markers — those paths already bound. */
+  if (
+    target == null &&
+    phase === "probe-expectations" &&
+    currentCtc == null &&
+    competing == null
+  ) {
+    const bareNumberPat = /(?:^|[^a-z])₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\b/i;
+    /* "per ctc" / "per annum ctc" is a unit qualifier — only treat "ctc"
+       as a current-CTC marker when prefixed by current/my (or the explicit
+       earning/drawing verbs). Otherwise "30 lpa per ctc" is a target. */
+    const hasCurrentCtcWord = /\bcurrent(?:ly)?\b|\bmy\s+ctc\b|\bearning\b|\bgetting\b|\bdrawing\b|\bmaking\b|\btake\s+home\b/i.test(a);
+    const hasCompetingWord = /\b(?:competing|another|other)\s+offer\b|\bin[-\s]?hand\b|\boffer\s+of\b/i.test(a);
+    if (!hasCurrentCtcWord && !hasCompetingWord) {
+      target = extractFirstNumber(a, [bareNumberPat]);
+    }
+  }
+
   /* Disambiguation: if a number was already bound to current/
      competing, it isn't ALSO the target — drop it. */
   if (target != null && (target === currentCtc || target === competing)) {
@@ -589,7 +623,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   }
   if (isTerminalPhase(state.phase)) return state;
 
-  const parsed = parseCandidateAnswer(answer, state.lastAiText);
+  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
