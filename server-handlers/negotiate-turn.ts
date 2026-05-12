@@ -145,18 +145,28 @@ export async function generateAiText(
   candidateAnswer: string,
   llm: LlmCaller,
   userId?: string,
-): Promise<{ text: string; source: "llm" | "llm-retry" | "fallback" }> {
+): Promise<{
+  text: string;
+  source: "llm" | "llm-retry" | "fallback";
+  /* Validation failures observed across attempts. Captured so the
+     handler can emit telemetry without needing to re-run validators —
+     critical for diagnosing regressions in the wild (a transcript
+     alone doesn't show *which* check fired). */
+  failureKinds: string[];
+}> {
   const { system, user } = buildAiPrompt({ state, move, candidateAnswer });
+  const failureKinds: string[] = [];
 
   let text: string;
   try {
     text = stripMarkdown(await llm(system, user, { userId }));
   } catch {
-    return { text: deterministicFallbackText(state, move), source: "fallback" };
+    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: ["llm-throw"] };
   }
 
   const v1 = validateAiText(text, state, move);
-  if (v1.ok) return { text, source: "llm" };
+  if (v1.ok) return { text, source: "llm", failureKinds };
+  for (const f of v1.failures) failureKinds.push(f.kind);
 
   /* Retry with explicit failure feedback in the prompt. */
   const retryUser =
@@ -168,12 +178,13 @@ export async function generateAiText(
   try {
     retryText = stripMarkdown(await llm(system, retryUser, { userId }));
   } catch {
-    return { text: deterministicFallbackText(state, move), source: "fallback" };
+    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, "llm-throw"] };
   }
   const v2 = validateAiText(retryText, state, move);
-  if (v2.ok) return { text: retryText, source: "llm-retry" };
+  if (v2.ok) return { text: retryText, source: "llm-retry", failureKinds };
+  for (const f of v2.failures) failureKinds.push(f.kind);
 
-  return { text: deterministicFallbackText(state, move), source: "fallback" };
+  return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds };
 }
 
 /* ─── Handler ─────────────────────────────────────────────────────── */
@@ -229,9 +240,18 @@ export default async function handler(
         maxTurns: body.maxTurns,
       });
       const move = pickAiMove(state);
-      const { text, source } = await generateAiText(state, move, "", llm, auth.userId);
+      const { text, source, failureKinds } = await generateAiText(state, move, "", llm, auth.userId);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
+      if (failureKinds.length > 0) {
+        void captureServerEvent("kernel_validate_fail", distinctId, {
+          kinds: failureKinds.join(","),
+          lever: move.lever,
+          phase: state.phase,
+          where: "init",
+          recovered: source !== "fallback",
+        }, req);
+      }
       void captureServerEvent("kernel_init", distinctId, {
         role,
         company: company.slice(0, 80),
@@ -283,9 +303,19 @@ export default async function handler(
       const prevPhase = state.phase;
       state = applyCandidateAnswer(state, safeAnswer);
       const move = pickAiMove(state);
-      const { text, source } = await generateAiText(state, move, safeAnswer, llm, auth.userId);
+      const { text, source, failureKinds } = await generateAiText(state, move, safeAnswer, llm, auth.userId);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
+
+      if (failureKinds.length > 0) {
+        void captureServerEvent("kernel_validate_fail", distinctId, {
+          kinds: failureKinds.join(","),
+          lever: move.lever,
+          phase: state.phase,
+          where: "turn",
+          recovered: source !== "fallback",
+        }, req);
+      }
 
       void captureServerEvent("kernel_turn", distinctId, {
         lever: move.lever,

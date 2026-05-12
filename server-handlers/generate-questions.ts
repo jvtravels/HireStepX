@@ -997,7 +997,35 @@ Requirements:
         // already uses `${role}` directly, so the rewrite is reusable.
         const roleMismatch = detectRoleLabelMismatch(q1Body, role || "");
         const needsClamp = headline !== null && headline > ceiling * 1.05;
-        if (needsClamp || roleMismatch) {
+        /* Below-band guard: an LLM emitting a number BELOW initialOffer
+           (e.g. ₹5 LPA opener when band starts at ₹20) was previously
+           silently shipped — needsClamp only checks the upper end.
+           Catch with a -10% floor on initialOffer. */
+        const floor = negotiationBandData.initialOffer * 0.9;
+        const belowBand = headline !== null && headline < floor;
+        /* Dangling-unit guard: "basic salary of LPA" with no preceding
+           digit slipped past every prior check (hasRupee passed because
+           an earlier "₹20 LPA" existed, and the number scan only saw
+           the valid number). Mirror the same matchAll pattern the
+           kernel validator uses. */
+        const danglingUnit = (() => {
+          const m = Array.from(q1Body.matchAll(/(?:^|[^0-9.])(?:LPA|lpa|lakhs?|crore)\b/g));
+          for (const mm of m) {
+            const idx = mm.index ?? 0;
+            const unitStart = idx + (mm[0][0] && /[^A-Za-z]/.test(mm[0][0]) ? 1 : 0);
+            const lookback = q1Body.slice(Math.max(0, unitStart - 8), unitStart);
+            if (!/\d/.test(lookback)) return true;
+          }
+          return false;
+        })();
+
+        const reasons: string[] = [];
+        if (needsClamp) reasons.push("above-band");
+        if (belowBand) reasons.push("below-band");
+        if (roleMismatch) reasons.push("role-mismatch");
+        if (danglingUnit) reasons.push("dangling-unit");
+
+        if (reasons.length > 0) {
           const safeOpener = Math.round(negotiationBandData.initialOffer);
           const replacement = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${safeOpener} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
           q1Obj.question = replacement;
@@ -1005,9 +1033,23 @@ Requirements:
           if (needsClamp) {
             console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L exceeded maxStretch ₹${ceiling}L (5% tolerance) — rewrote to ₹${safeOpener}L for ${company || "company"}`);
           }
+          if (belowBand) {
+            console.warn(`[generate-questions] salary-neg initial offer ₹${headline}L below floor ₹${floor.toFixed(1)}L — rewrote to ₹${safeOpener}L for ${company || "company"}`);
+          }
           if (roleMismatch) {
             console.warn(`[generate-questions] salary-neg opener mentioned role "${roleMismatch}" but user picked "${role}" — rewrote opener for ${company || "company"}`);
           }
+          if (danglingUnit) {
+            console.warn(`[generate-questions] salary-neg opener had a dangling unit (no number before LPA/lakhs/crore) — rewrote for ${company || "company"}`);
+          }
+          void captureServerEvent("opener_rewrite_triggered", distinctIdFrom(req, auth.userId), {
+            reasons: reasons.join(","),
+            role: role || null,
+            company: (company || "").slice(0, 80),
+            headline: headline ?? null,
+            band_initial: negotiationBandData.initialOffer,
+            band_max: ceiling,
+          }, req);
         }
       }
     }
