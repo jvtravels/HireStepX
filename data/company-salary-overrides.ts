@@ -2603,12 +2603,17 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 100, totalMax: 168, equityMin: 23, equityMax: 53, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket product-manager derived from SE band)", lastVerified: "2026-05-08" },
       executive: { totalMin: 168, totalMax: 368, equityMin: 53, equityMax: 137, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket product-manager derived from SE band)", lastVerified: "2026-05-08" },
     },
+    /* ux-designer recalibrated 2026-05-13 (was SE-derived → senior ₹50-86L
+       ≈3x bulge-bracket designer market; ibanks pay parity for SE because
+       trading systems are revenue-critical but design is a cost centre).
+       AmbitionBox 2025-26 puts GS / MS / JPM Bengaluru Sr Product
+       Designer at ₹26-38L. */
     "ux-designer": {
-      entry: { totalMin: 16, totalMax: 25, equityMin: 1, equityMax: 2, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 27, totalMax: 50, equityMin: 2, equityMax: 6, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 50, totalMax: 86, equityMin: 6, equityMax: 17, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 86, totalMax: 144, equityMin: 17, equityMax: 38, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 144, totalMax: 315, equityMin: 38, equityMax: 99, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket ux-designer derived from SE band)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 12, totalMax: 18, equityMin: 0.5, equityMax: 1, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "AmbitionBox 2025-26 (bulge-bracket ibank Jr PD India)", lastVerified: "2026-05-13" },
+      mid: { totalMin: 18, totalMax: 28, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "AmbitionBox 2025-26 (bulge-bracket ibank mid PD India)", lastVerified: "2026-05-13" },
+      senior: { totalMin: 26, totalMax: 38, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "AmbitionBox 2025-26 (GS / MS / JPM Bengaluru Sr PD median ₹26-32L)", lastVerified: "2026-05-13" },
+      lead: { totalMin: 40, totalMax: 60, equityMin: 7, equityMax: 14, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Glassdoor 2025-26 (Lead PD / Design Manager at bulge-bracket ibank India)", lastVerified: "2026-05-13" },
+      executive: { totalMin: 70, totalMax: 130, equityMin: 15, equityMax: 38, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Glassdoor 2025-26 (Head of Design at bulge-bracket ibank India)", lastVerified: "2026-05-13" },
     },
     "ml-engineer": {
       entry: { totalMin: 22, totalMax: 34, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "3yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_ibank_bulgebracket ml-engineer derived from SE band)", lastVerified: "2026-05-08" },
@@ -3183,12 +3188,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 63, totalMax: 105, equityMin: 16, equityMax: 42, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer product-manager derived from SE band)", lastVerified: "2026-05-08" },
       executive: { totalMin: 100, totalMax: 231, equityMin: 32, equityMax: 95, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer product-manager derived from SE band)", lastVerified: "2026-05-08" },
     },
+    /* ux-designer recalibrated 2026-05-13 (was SE-derived → senior ₹34-59L
+       wildly above 2025-26 Indian consumer-unicorn market). AmbitionBox /
+       Glassdoor caps Sr Product Designer at Mamaearth / boAt / Sugar /
+       Purplle at ~₹22-32L; consumer brands pay below SE for design. */
     "ux-designer": {
-      entry: { totalMin: 13, totalMax: 20, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 20, totalMax: 34, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 34, totalMax: 59, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 54, totalMax: 90, equityMin: 11, equityMax: 31, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 86, totalMax: 198, equityMin: 23, equityMax: 69, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer ux-designer derived from SE band)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 5, totalMax: 9, equityMin: 0.5, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (consumer unicorn Jr Product Designer)", lastVerified: "2026-05-13" },
+      mid: { totalMin: 12, totalMax: 20, equityMin: 1.5, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (consumer unicorn mid PD)", lastVerified: "2026-05-13" },
+      senior: { totalMin: 22, totalMax: 32, equityMin: 3, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (Mamaearth / boAt / Purplle Sr Product Designer median ₹22-30L)", lastVerified: "2026-05-13" },
+      lead: { totalMin: 32, totalMax: 48, equityMin: 5, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Lead/Design Manager at Indian consumer unicorn)", lastVerified: "2026-05-13" },
+      executive: { totalMin: 50, totalMax: 90, equityMin: 10, equityMax: 24, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Head of Design / VP Design at Indian consumer unicorn)", lastVerified: "2026-05-13" },
     },
     "ml-engineer": {
       entry: { totalMin: 17, totalMax: 26, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_consumer ml-engineer derived from SE band)", lastVerified: "2026-05-08" },
@@ -3283,12 +3292,16 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 53, totalMax: 95, equityMin: 13, equityMax: 32, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech product-manager derived from SE band)", lastVerified: "2026-05-08" },
       executive: { totalMin: 84, totalMax: 189, equityMin: 26, equityMax: 74, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech product-manager derived from SE band)", lastVerified: "2026-05-08" },
     },
+    /* ux-designer recalibrated 2026-05-13 (was SE-derived → senior ₹27-50L
+       above edtech market). AmbitionBox 2025-26 puts Sr PD at BYJU's /
+       upGrad / Vedantu / PhysicsWallah at ₹15-26L; edtech sub-pays
+       design vs engineering. */
     "ux-designer": {
-      entry: { totalMin: 7, totalMax: 14, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 14, totalMax: 27, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 27, totalMax: 50, equityMin: 4, equityMax: 11, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 45, totalMax: 81, equityMin: 9, equityMax: 23, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 72, totalMax: 162, equityMin: 19, equityMax: 54, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 4, totalMax: 7, equityMin: 0.5, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (edtech Jr PD)", lastVerified: "2026-05-13" },
+      mid: { totalMin: 9, totalMax: 15, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (edtech mid PD)", lastVerified: "2026-05-13" },
+      senior: { totalMin: 15, totalMax: 26, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (BYJU's / upGrad / Vedantu Sr Product Designer median ₹15-22L)", lastVerified: "2026-05-13" },
+      lead: { totalMin: 26, totalMax: 40, equityMin: 4, equityMax: 8, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Design Lead at Indian edtech unicorn)", lastVerified: "2026-05-13" },
+      executive: { totalMin: 45, totalMax: 80, equityMin: 8, equityMax: 20, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Head of Design at Indian edtech unicorn)", lastVerified: "2026-05-13" },
     },
     "ml-engineer": {
       entry: { totalMin: 10, totalMax: 19, equityMin: 1, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_edtech ml-engineer derived from SE band)", lastVerified: "2026-05-08" },
@@ -3383,12 +3396,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 58, totalMax: 100, equityMin: 15, equityMax: 37, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics product-manager derived from SE band)", lastVerified: "2026-05-08" },
       executive: { totalMin: 95, totalMax: 210, equityMin: 29, equityMax: 84, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics product-manager derived from SE band)", lastVerified: "2026-05-08" },
     },
+    /* ux-designer recalibrated 2026-05-13 (was SE-derived → senior ₹34-54L
+       above logistics market). Delhivery / Shiprocket / Ecom Express Sr
+       PD lands at ₹18-28L per AmbitionBox 2025-26. */
     "ux-designer": {
-      entry: { totalMin: 13, totalMax: 20, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 20, totalMax: 34, equityMin: 2, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 34, totalMax: 54, equityMin: 5, equityMax: 14, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 50, totalMax: 86, equityMin: 11, equityMax: 27, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 81, totalMax: 180, equityMin: 21, equityMax: 61, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics ux-designer derived from SE band)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 5, totalMax: 8, equityMin: 0.5, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (logistics unicorn Jr PD)", lastVerified: "2026-05-13" },
+      mid: { totalMin: 10, totalMax: 17, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (logistics unicorn mid PD)", lastVerified: "2026-05-13" },
+      senior: { totalMin: 18, totalMax: 28, equityMin: 2, equityMax: 5, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (Delhivery / Shiprocket / Ecom Express Sr PD median ₹20L)", lastVerified: "2026-05-13" },
+      lead: { totalMin: 28, totalMax: 42, equityMin: 4, equityMax: 9, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Design Lead at Indian logistics unicorn)", lastVerified: "2026-05-13" },
+      executive: { totalMin: 45, totalMax: 85, equityMin: 8, equityMax: 22, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Head of Design at Indian logistics unicorn)", lastVerified: "2026-05-13" },
     },
     "ml-engineer": {
       entry: { totalMin: 17, totalMax: 26, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_logistics ml-engineer derived from SE band)", lastVerified: "2026-05-08" },
@@ -3484,11 +3500,15 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 137, totalMax: 294, equityMin: 47, equityMax: 116, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre product-manager derived from SE band)", lastVerified: "2026-05-08" },
     },
     "ux-designer": {
-      entry: { totalMin: 13, totalMax: 20, equityMin: 1, equityMax: 2, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 20, totalMax: 36, equityMin: 2, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 36, totalMax: 68, equityMin: 6, equityMax: 17, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 63, totalMax: 117, equityMin: 15, equityMax: 38, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 117, totalMax: 252, equityMin: 34, equityMax: 84, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre ux-designer derived from SE band)", lastVerified: "2026-05-08" },
+      /* ux-designer recalibrated 2026-05-13 (was SE-derived → senior ₹36-68L
+         ≈1.7x GCC designer market; GCCs pay SE near global parity but
+         design tracks Indian market). AmbitionBox 2025-26 puts MS / Wells
+         Fargo / Walmart Global Tech / Target Bengaluru Sr PD at ₹24-38L. */
+      entry: { totalMin: 8, totalMax: 14, equityMin: 0.5, equityMax: 1, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox 2025-26 (GCC Jr PD India)", lastVerified: "2026-05-13" },
+      mid: { totalMin: 14, totalMax: 24, equityMin: 1, equityMax: 3, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox 2025-26 (GCC mid PD India)", lastVerified: "2026-05-13" },
+      senior: { totalMin: 24, totalMax: 38, equityMin: 3, equityMax: 7, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "AmbitionBox 2025-26 (MS / Walmart Global Tech / Target Sr PD median ₹26-32L)", lastVerified: "2026-05-13" },
+      lead: { totalMin: 40, totalMax: 60, equityMin: 7, equityMax: 16, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor 2025-26 (Lead PD / Design Manager at India GCC)", lastVerified: "2026-05-13" },
+      executive: { totalMin: 65, totalMax: 120, equityMin: 18, equityMax: 42, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Glassdoor 2025-26 (Head of Design at India GCC)", lastVerified: "2026-05-13" },
     },
     "ml-engineer": {
       entry: { totalMin: 17, totalMax: 26, equityMin: 1, equityMax: 4, equityType: "rsu", equityVesting: "4yr / 25-25-25-25", source: "Sector default 2026-05-08 (__sector_gcc_global_capability_centre ml-engineer derived from SE band)", lastVerified: "2026-05-08" },

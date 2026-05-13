@@ -354,6 +354,23 @@ export interface NegotiationState {
      rescission risk applies on the next turn. */
   verbalAcceptanceTurn: number | null;
 
+  /* Phase 25d (2026-05-13) — rescission escalation. Counts candidate
+   * turns AFTER verbalAcceptanceTurn on which the candidate is still
+   * asking for more (target/info/tactic firing without acceptance).
+   * 2+ = the offer is being rescinded; move-picker routes directly to
+   * close-walkaway and the red-flag layer surfaces "rescission-risk"
+   * as a blocker. */
+  postVerbalRenegotiationCount: number;
+
+  /* Phase 21b (2026-05-13) — recovery actualization. True on the AI
+   * turn that immediately follows a candidate utterance carrying a
+   * recovery signal (desperate / salary-only / avoids-anchor /
+   * personal-expense / offer-shopping recovered). Read by
+   * pickAiMove to un-stiffen the counter split for one turn. Reset
+   * to false in applyAiMove so it never bleeds into the next AI
+   * turn. */
+  recentRecoveryActive: boolean;
+
   /* Walk-away-and-return: candidate hit `walked-away` and then re-
      engaged. Comes with a penalty (loss of joining bonus, lower base
      ceiling on return). */
@@ -479,6 +496,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     vossTacticsUsed: [],
     infoAsked: [],
     verbalAcceptanceTurn: null,
+    postVerbalRenegotiationCount: 0,
+    recentRecoveryActive: false,
     walkAwayReturned: false,
     hardBandCap: input.hardBandCap ?? false,
     marketMode: input.marketMode ?? "neutral",
@@ -1025,6 +1044,21 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     );
   }
 
+  /* Phase 12c (2026-05-13) — structural hard-band-cap detection. If
+   * the candidate's stated base floor exceeds the band's
+   * baseStretch, the cap is structural (not just band): no amount
+   * of total-CTC stretching satisfies the constraint, because base
+   * is the binding component. Flip hardBandCap so the move-picker
+   * redirects all concession energy to non-cash levers instead of
+   * inching the total toward maxStretch on impossible base. */
+  if (
+    next.candidateComponentBreakdown.base != null &&
+    state.band.baseStretch != null &&
+    next.candidateComponentBreakdown.base > state.band.baseStretch
+  ) {
+    next.hardBandCap = true;
+  }
+
   /* Phase 11 — hike% is recomputed each turn from the LATEST
      target+currentCtc (after current-turn binding). Rationale is
      sticky: last-stated wins, prior preserved when current turn
@@ -1084,6 +1118,10 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       recovery,
     );
   }
+  /* Phase 21b recovery actualization (2026-05-13) — mark the AI's next
+   * turn as eligible for a small un-stiffening boost in the move-picker.
+   * Reset to false in applyAiMove so the bonus is one-shot, not sticky. */
+  next.recentRecoveryActive = hasRecovery;
 
   /* Phase 24c — merge sales / contract comp-structure detectors.
    * Only merge when the new utterance carried a signal; otherwise
@@ -1116,7 +1154,11 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     !parsed.signalsAcceptance;
   if (reneging) {
     /* Sticky — leave verbalAcceptanceTurn set so the move-picker keeps
-       seeing it across subsequent turns. */
+       seeing it across subsequent turns. Phase 25d: also escalate the
+       rescission counter so 2+ consecutive renegotiation attempts trip
+       a hard close-walkaway path in the move-picker AND a "rescission-
+       risk" blocker in the red-flag layer. */
+    next.postVerbalRenegotiationCount = state.postVerbalRenegotiationCount + 1;
   }
 
   /* Terminal transitions. */
@@ -1196,6 +1238,19 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
   if (isTerminalPhase(state.phase)) return state.phase;
   if (state.turnIndex >= state.maxTurns) return "stalemate";
 
+  /* Phase 25e (2026-05-13) — closing-push runway. The previous machine
+   * jumped straight from counter-offer / lever-explore to stalemate the
+   * instant turn budget elapsed, denying the AI a final framed close.
+   * One turn before stalemate, when we're still mid-negotiation, route
+   * into closing-push so the LLM can issue a clean "I need a decision
+   * today" turn before the budget terminates. */
+  if (
+    state.turnIndex === state.maxTurns - 1 &&
+    (state.phase === "counter-offer" || state.phase === "lever-explore")
+  ) {
+    return "closing-push";
+  }
+
   const target = state.candidateTarget;
   /* Phase stickiness — the MakeMyTrip UX session regression:
      once the conversation has progressed past probe (the candidate
@@ -1270,6 +1325,13 @@ export interface AiMove {
   newTotalLpa: number | null;
   /** Human-readable rationale for telemetry and prompt context. */
   rationale: string;
+  /** Phase 24d (2026-05-13) — market modulation hint for non-cash
+   *  levers. counter-base bakes marketMode into the numeric split,
+   *  but joining-bonus / equity-grant / notice-buyout amounts come
+   *  from the LLM, not the kernel. Surface a tone hint so the LLM
+   *  sizes those concessions in line with the market: hot → be
+   *  generous, soft → be tight, neutral → standard. */
+  marketModeHint?: string;
 }
 
 /** Pick the AI's move for this turn from state alone. Pure. */
@@ -1364,8 +1426,21 @@ export function pickAiMove(state: NegotiationState): AiMove {
     }
     /* Verbal-acceptance-then-renegotiate: heavy stiffening + reject any
        further base movement. Modeled after the offer-rescission risk
-       documented in Salary.com survey data. */
+       documented in Salary.com survey data.
+
+       Phase 25d (2026-05-13) — escalation. A first re-open earns
+       hold-firm; the second re-open is the trigger for offer
+       rescission: route directly to close-walkaway. The red-flag
+       layer surfaces "rescission-risk" as a blocker on the same
+       state so the coach layer can explain what just happened. */
     if (state.verbalAcceptanceTurn != null) {
+      if (state.postVerbalRenegotiationCount >= 2) {
+        return {
+          lever: "close-walkaway",
+          newTotalLpa: null,
+          rationale: "Candidate verbally accepted then re-opened twice — the offer is being rescinded.",
+        };
+      }
       return {
         lever: "hold-firm",
         newTotalLpa: state.highestOfferMade,
@@ -1398,6 +1473,20 @@ export function pickAiMove(state: NegotiationState): AiMove {
     if (state.vossTacticsUsed.includes("mirror")) boost += 0.05;
     if (state.vossTacticsUsed.includes("sign-today-bundle")) boost += 0.35;
     if (state.vossTacticsUsed.includes("deflect-current-ctc")) boost += 0.10;
+    /* Smart-question reward (Phase 25c, 2026-05-13). Asking specific
+     * structural questions (clawback, vesting, strike, in-hand, etc.)
+     * is itself a sophisticated negotiation tactic and should earn
+     * the candidate a small but real concession boost. +0.03 per
+     * unique info intent, capped at +0.10 (so ~3 smart questions
+     * roughly equals one Voss tactic). */
+    const infoBoost = Math.min(state.infoAsked.length * 0.03, 0.10);
+    boost += infoBoost;
+    /* Phase 21b recovery actualization (2026-05-13). A candidate who
+     * course-corrected from a desperation / salary-only / personal-
+     * expense / offer-shopping / no-anchor tell on the most recent
+     * utterance shouldn't stay punished by an earlier stance breach.
+     * Mirror a small "mirror"-tier bump for this AI turn only. */
+    if (state.recentRecoveryActive) boost += 0.05;
     if (boost > 2) boost = 2;
     split = Math.min(split * boost, 0.6);
 
@@ -1411,7 +1500,28 @@ export function pickAiMove(state: NegotiationState): AiMove {
     if (state.walkAwayReturned) split *= 0.5;
 
     if (split > 0.95) split = 0.95;
-    const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
+    let newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
+
+    /* Phase 12b (2026-05-13) — band-component cap enforcement. When
+     * the band declares baseStretch + (optional) variableMax, the
+     * counter MUST respect the structural envelope. Total CTC =
+     * base + variable, so the max defensible total is
+     *   baseStretch + (variableMax ?? 0).
+     * If the headline split crossed that, clamp the total down AND
+     * route to lever-explore: the cash ceiling has been hit on
+     * structure, not on band — non-cash levers remain the path
+     * forward. Without this, the AI is implicitly promising base it
+     * can't deliver. */
+    if (state.band.baseStretch != null) {
+      const componentCap = state.band.baseStretch + (state.band.variableMax ?? 0);
+      if (newTotal > componentCap + 0.01) {
+        /* Clamp kicked in: the headline split would have promised
+         * base the structure can't deliver. Route to lever-explore;
+         * non-cash levers (JB / equity / notice-buyout) remain the
+         * only honest path forward. */
+        return pickLeverExploreMove(state);
+      }
+    }
     return {
       lever: "counter-base",
       newTotalLpa: newTotal,
@@ -1425,6 +1535,16 @@ export function pickAiMove(state: NegotiationState): AiMove {
 
 function pickLeverExploreMove(state: NegotiationState): AiMove {
   const used = new Set(state.leversUsed);
+  /* Phase 24d (2026-05-13) — market mode applied to non-cash levers
+   * via a tone hint. counter-base already bakes marketMode into the
+   * numeric split; JB / equity / notice-buyout amounts come from the
+   * LLM, so we surface a hint instead of a scalar. */
+  const marketModeHint =
+    state.marketMode === "hot"
+      ? "hot market — be generous on non-cash (JB ~1.5x baseline, equity +25%, full notice buyout where applicable)"
+      : state.marketMode === "soft"
+      ? "soft market — non-cash is also tight (JB ~0.7x baseline, equity -25%, only partial notice buyout)"
+      : "neutral market — standard non-cash sizing";
   /* Lever order optimises for company P&L: when the band supports equity
      we prefer equity-grant FIRST because grants vest over multi-year
      schedules and dilute cap-table paper (not in-year cash), whereas a
@@ -1436,6 +1556,7 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
       lever: "equity-grant",
       newTotalLpa: state.highestOfferMade,
       rationale: "Add equity grant; cheaper long-term than cash sweeteners.",
+      marketModeHint,
     };
   }
   if (!used.has("joining-bonus")) {
@@ -1443,6 +1564,7 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
       lever: "joining-bonus",
       newTotalLpa: state.highestOfferMade,
       rationale: "Cash headroom exhausted; add one-time joining bonus.",
+      marketModeHint,
     };
   }
   if (!used.has("notice-buyout")) {
@@ -1450,6 +1572,7 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
       lever: "notice-buyout",
       newTotalLpa: state.highestOfferMade,
       rationale: "Offer notice-period buyout as soft lever.",
+      marketModeHint,
     };
   }
   if (!used.has("benefits-summary")) {
@@ -1500,6 +1623,10 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     leversUsed: [...state.leversUsed, move.lever],
     lastAiText: aiText,
     conversationLog: appendConversation(state.conversationLog, "ai", aiText),
+    /* Phase 21b: recovery boost is one-shot — clear after the AI's
+     * turn fires so subsequent turns aren't permanently un-stiffened
+     * after a single recovery utterance. */
+    recentRecoveryActive: false,
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
@@ -1668,6 +1795,8 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.vossTacticsUsed !== undefined && !(Array.isArray(s.vossTacticsUsed) && s.vossTacticsUsed.every((v) => typeof v === "string"))) throw new Error("state.vossTacticsUsed");
   if (s.infoAsked !== undefined && !(Array.isArray(s.infoAsked) && s.infoAsked.every((v) => typeof v === "string"))) throw new Error("state.infoAsked");
   if (s.verbalAcceptanceTurn !== undefined && s.verbalAcceptanceTurn !== null && !isFiniteNonNegInt(s.verbalAcceptanceTurn)) throw new Error("state.verbalAcceptanceTurn");
+  if (s.postVerbalRenegotiationCount !== undefined && !isFiniteNonNegInt(s.postVerbalRenegotiationCount)) throw new Error("state.postVerbalRenegotiationCount");
+  if (s.recentRecoveryActive !== undefined && typeof s.recentRecoveryActive !== "boolean") throw new Error("state.recentRecoveryActive");
   if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
@@ -1814,6 +1943,8 @@ export function deserializeState(json: string): NegotiationState {
     vossTacticsUsed: (s.vossTacticsUsed as VossTactic[] | undefined) ?? [],
     infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],
     verbalAcceptanceTurn: s.verbalAcceptanceTurn ?? null,
+    postVerbalRenegotiationCount: (s.postVerbalRenegotiationCount as number | undefined) ?? 0,
+    recentRecoveryActive: (s.recentRecoveryActive as boolean | undefined) ?? false,
     walkAwayReturned: s.walkAwayReturned ?? false,
     hardBandCap: s.hardBandCap ?? false,
     marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",

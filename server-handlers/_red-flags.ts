@@ -67,7 +67,9 @@ export type RedFlagCode =
   /* Phase 27 — retention / competing-leverage / FBP. */
   | "retention-counter-trap"
   | "competing-offer-on-hold"
-  | "fbp-not-discussed";
+  | "fbp-not-discussed"
+  /* Phase 25d — verbal-accept renegotiation escalation. */
+  | "rescission-risk";
 
 export type RedFlagSeverity = "info" | "concern" | "blocker";
 
@@ -156,6 +158,8 @@ const REWRITES: Record<RedFlagCode, string> = {
     "Say: \"To be transparent — my competing offer at <Company> is on hold due to BGV / joining freeze. I'm not using it as leverage; I'm evaluating you on your own merits and a fair market band.\"",
   "fbp-not-discussed":
     "Say: \"Before we close on a number, can we walk through the FBP — HRA, LTA, telephone, fuel — so I can compare apples-to-apples on in-hand, not just CTC?\"",
+  "rescission-risk":
+    "Say: \"I committed verbally — I'm going to honour that and accept the terms as agreed. Apologies for re-opening; if I need any small follow-up I'll handle it post-signature.\"",
 };
 
 interface DetectorInput {
@@ -633,6 +637,21 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
       code: "verbal-accept-no-breakup",
       severity: "concern",
       detail: "candidate accepted verbally but offer breakup never recorded",
+    });
+  }
+
+  /* 33. Phase 25d — rescission risk. Candidate verbally accepted then
+   *     re-opened the conversation 2+ times. At this point the
+   *     recruiter is justified in pulling the offer; surface as a
+   *     hard blocker so the coach layer explains what happened. */
+  if (
+    state.verbalAcceptanceTurn != null &&
+    state.postVerbalRenegotiationCount >= 2
+  ) {
+    out.push({
+      code: "rescission-risk",
+      severity: "blocker",
+      detail: `candidate verbally accepted then re-opened ${state.postVerbalRenegotiationCount} times — recruiter is justified in rescinding`,
     });
   }
 

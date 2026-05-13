@@ -36,6 +36,8 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
     vossTacticsUsed: [],
     infoAsked: [],
     verbalAcceptanceTurn: null,
+    postVerbalRenegotiationCount: 0,
+    recentRecoveryActive: false,
     walkAwayReturned: false,
     hardBandCap: false,
     marketMode: "neutral",

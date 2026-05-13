@@ -226,7 +226,7 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
      recognised negotiation tactic, surface that to the LLM so the
      reply addresses what the candidate actually asked. Without this,
      the kernel knows but the prose doesn't. */
-  const hints = buildResponseHints(state);
+  const hints = buildResponseHints(state, move);
   const hintsBlock = hints ? `RESPONSE HINTS:\n${hints}\n\n` : "";
 
   /* Last 2 exchanges of dialogue (capped to the most recent 4 entries on
@@ -309,13 +309,20 @@ const PERSONA_HINTS: Record<NonNullable<NegotiationState["recruiterPersona"]>, s
     "PERSONA — external agency recruiter on commission. Tone: deal-making, surface-level, optimistic. You don't fully know the band; you're optimising for closure speed and your commission. You'll lightly oversell ('I think we can stretch this' without specifics), push acceptance harder than the band warrants, and avoid technical specifics about equity / clawback / variable. If the candidate goes deep on structure, deflect to 'let me check with the team and circle back'.",
 };
 
-function buildResponseHints(state: NegotiationState): string {
+function buildResponseHints(state: NegotiationState, move?: AiMove): string {
   const hints: string[] = [];
   /* Persona directive ALWAYS goes first so it shapes the LLM's voice
    * for everything that follows. Default falls through to consultative
    * for safety on legacy sessions. */
   const persona = state.recruiterPersona ?? "consultative";
   hints.push(PERSONA_HINTS[persona]);
+  /* Phase 24d (2026-05-13) — market mode applied to non-cash levers
+   * via a tone hint surfaced from the move. Counter-base modulates
+   * marketMode numerically; JB / equity / notice-buyout amounts
+   * come from the LLM, so the hint tells it which way to size them. */
+  if (move?.marketModeHint) {
+    hints.push(`MARKET HINT — ${move.marketModeHint}`);
+  }
   for (const intent of state.infoAsked) {
     const a = INFO_ANSWERS[intent];
     if (a) hints.push(a);
@@ -328,7 +335,11 @@ function buildResponseHints(state: NegotiationState): string {
     hints.push("Candidate stated target as a range. Acknowledge the upper bound as their anchor.");
   }
   if (state.verbalAcceptanceTurn != null) {
-    hints.push("Candidate previously gave verbal acceptance and is now re-opening. Be firm; signal that further movement risks the offer.");
+    if (state.postVerbalRenegotiationCount >= 2) {
+      hints.push("RESCISSION — candidate verbally accepted then re-opened 2+ times. The offer is being pulled. Frame as 'the offer is being rescinded — you said yes, then re-opened twice' and close respectfully.");
+    } else {
+      hints.push("Candidate previously gave verbal acceptance and is now re-opening. Be firm; signal that further movement risks the offer.");
+    }
   }
   if (state.walkAwayReturned) {
     hints.push("Candidate previously walked away and re-engaged. Note leverage is reduced; do not offer the joining bonus again.");
