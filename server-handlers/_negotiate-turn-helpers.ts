@@ -33,6 +33,10 @@ import {
   lookupCompanyCompStructure,
   formatCompStructureForPrompt,
 } from "../data/company-compensation-structure";
+import {
+  lookupCompanyNoticeNorm,
+  formatNoticeNormForPrompt,
+} from "../data/company-notice-norms";
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 
@@ -55,6 +59,10 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Recap the total non-cash package — health, learning budget, leave, hybrid policy. No new numbers.",
   "compensation-summary":
     "Describe the COMPANY's typical compensation STRUCTURE — base/variable/equity ratios, bonus frequency, vesting. Use the COMPENSATION BREAKDOWN block below verbatim for figures. Do NOT propose a new total CTC and do NOT renegotiate; this is a structure-disclosure turn.",
+  "notice-period-summary":
+    "Disclose the company's joining window / notice / buyout policy. Use the NOTICE PERIOD DISCLOSURE block below verbatim for the policy. Do NOT propose a new total CTC, do NOT push for acceptance — this is an info-disclosure turn. After stating the policy, invite the candidate to share their earliest possible start date.",
+  "hike-context-summary":
+    "Frame the hike% this offer represents. Use the HIKE CALCULATION block below for the computed delta (or the market-norms guidance if current CTC is unknown). Do NOT propose a new total CTC, do NOT push for acceptance — this is an info turn.",
   "hold-firm":
     "State respectfully that this is final. Acknowledge their position. Invite them to think it over.",
   "close-acceptance":
@@ -390,6 +398,50 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
       "after enumerating, briefly invite a follow-up about a specific component.\n" +
       formatCompStructureForPrompt(struct, totalCtc),
     );
+  }
+  /* Audit Session C (2026-05-14) — notice-period-ask disclosure block.
+   * Candidate asked the recruiter about the OFFERING company's notice /
+   * start-date / buyout policy. Inject the per-company norm so the LLM
+   * answers with concrete India-relevant policy rather than inventing
+   * a number. This is an INFO turn — must not propose a new CTC or
+   * re-trigger close. */
+  if (state.infoAsked.includes("notice-period-ask")) {
+    const notice = lookupCompanyNoticeNorm(state.company);
+    hints.push(
+      "NOTICE PERIOD DISCLOSURE — the candidate asked about the joining window / notice / buyout. " +
+      "Use the company norms below to answer factually. Do NOT propose a new total CTC, " +
+      "do NOT renegotiate, do NOT push for acceptance — this is an info turn. " +
+      "After stating the policy, invite the candidate to share their earliest possible start date.\n" +
+      formatNoticeNormForPrompt(notice),
+    );
+  }
+  /* Audit Session C (2026-05-14) — hike-percentage-ask disclosure block.
+   * Candidate asked what hike% this offer represents. If we know both
+   * candidateCurrentCtc and highestOfferMade, compute the delta and feed
+   * it to the LLM; otherwise prompt the recruiter to ask politely OR cite
+   * Indian market norms (15-30% typical switch, 30-50% for hot skills /
+   * tier transitions). Info turn — never re-trigger close. */
+  if (state.infoAsked.includes("hike-percentage-ask")) {
+    const cur = state.candidateCurrentCtc;
+    const off = state.highestOfferMade;
+    if (cur != null && cur > 0 && off > 0) {
+      const pct = Math.round(((off - cur) / cur) * 100);
+      hints.push(
+        `HIKE CALCULATION — the candidate asked what hike% this offer represents. ` +
+        `Their stated current CTC is ₹${cur} LPA; the current offer is ₹${off} LPA, ` +
+        `which is a ${pct}% hike. State this delta plainly and contextualise it against ` +
+        `Indian market norms (15-30% is typical switch-job range; 30-50% for hot-skill ` +
+        `or tier-up moves). Do NOT propose a new CTC or re-trigger close; this is an info turn.`,
+      );
+    } else {
+      hints.push(
+        "HIKE CALCULATION — the candidate asked what hike% this offer represents, but " +
+        "we don't have their current CTC on record. Politely ask for their current package " +
+        "so you can frame the delta concretely. While they think about it, cite Indian market " +
+        "norms (15-30% typical switch, 30-50% for hot skills / tier transitions). " +
+        "Do NOT propose a new CTC or re-trigger close; this is an info turn.",
+      );
+    }
   }
   for (const tactic of state.vossTacticsUsed) {
     const h = TACTIC_HINTS[tactic];
@@ -1111,6 +1163,17 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       return `Beyond cash, the package includes health cover, learning budget, and flexible hybrid. Worth factoring in.`;
     case "compensation-summary":
       return `Typical structure here is base around 75-85% of CTC, the rest as performance variable, with equity for senior roles. Happy to dig into any specific component.`;
+    case "notice-period-summary":
+      return `Standard joining window is 60-90 days; we can discuss buyout if needed. What's the earliest start date that works for you?`;
+    case "hike-context-summary": {
+      const cur = state.candidateCurrentCtc;
+      const off = state.highestOfferMade;
+      if (cur != null && cur > 0 && off > 0) {
+        const pct = Math.round(((off - cur) / cur) * 100);
+        return `That works out to roughly a ${pct}% hike over your current ₹${cur} LPA — in the 15-30% range that's typical for switch moves in the Indian market.`;
+      }
+      return `Happy to walk through that — what's your current package so I can frame the hike concretely? Typical switch-job hikes land at 15-30%, more for hot skills.`;
+    }
     case "hold-firm":
       return `₹${state.highestOfferMade} LPA is what we can do for this role. Take your time and let us know.`;
     case "close-acceptance":

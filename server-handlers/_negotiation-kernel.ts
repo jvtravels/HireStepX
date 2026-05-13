@@ -146,6 +146,8 @@ export type NegotiationLever =
   | "notice-buyout"     // buy out notice period
   | "benefits-summary"  // recap non-cash
   | "compensation-summary" // disclose company comp STRUCTURE (base/var/equity ratios, bonus freq, vesting) — session 12 bug fix 2026-05-14
+  | "notice-period-summary" // disclose company notice / start-date / buyout policy — audit Session C 2026-05-14
+  | "hike-context-summary"  // surface hike% delta + Indian market context — audit Session C 2026-05-14
   | "hold-firm"         // explicit "this is final"
   | "close-acceptance"  // wrap with agreed terms
   | "close-walkaway"    // wrap acknowledging no-deal
@@ -1719,6 +1721,38 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
+  /* Notice-period-ask routing (audit Session C, 2026-05-14). Candidate
+     asked about the offering company's notice / start-date / buyout
+     policy. Route to a notice-period-summary lever; response-hint layer
+     injects the per-company NOTICE PERIOD DISCLOSURE block. Terminal
+     phases preserved — the prose layer handles the hint there without
+     re-running move-picker. */
+  const wantsNoticePolicy =
+    !isTerminalPhase(state.phase) &&
+    state.infoAsked.includes("notice-period-ask");
+  if (wantsNoticePolicy) {
+    return {
+      lever: "notice-period-summary",
+      newTotalLpa: state.highestOfferMade > 0 ? state.highestOfferMade : null,
+      rationale: "Candidate asked about joining window / notice / buyout; disclose company policy instead of re-closing.",
+    };
+  }
+
+  /* Hike-percentage-ask routing (audit Session C, 2026-05-14). Candidate
+     asked what hike% this offer represents. Route to hike-context-summary;
+     response-hint layer computes the delta if currentCtc is known and
+     supplies Indian market context otherwise. Terminal phases preserved. */
+  const wantsHikeContext =
+    !isTerminalPhase(state.phase) &&
+    state.infoAsked.includes("hike-percentage-ask");
+  if (wantsHikeContext) {
+    return {
+      lever: "hike-context-summary",
+      newTotalLpa: state.highestOfferMade > 0 ? state.highestOfferMade : null,
+      rationale: "Candidate asked what hike% this offer represents; surface delta / market norms instead of re-closing.",
+    };
+  }
+
   /* No candidate anchor yet → probe. */
   if (state.phase === "offer-presented" || state.phase === "probe-expectations") {
     return {
@@ -2110,6 +2144,8 @@ const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set<NegotiationLever>([
   "notice-buyout",
   "benefits-summary",
   "compensation-summary",
+  "notice-period-summary",
+  "hike-context-summary",
   "hold-firm",
   "close-acceptance",
   "close-walkaway",

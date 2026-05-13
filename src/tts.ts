@@ -1100,7 +1100,7 @@ export function expandCurrencyForSpeech(text: string): string {
   // hypothetical LPA we missed; (?!\w) ensures we don't eat into other
   // tokens like "Lacs" or "Lakh".
   out = out.replace(
-    /(₹\s*)?(\d+(?:\.\d+)?)\s*L(?![A-Za-z])/g,
+    /(₹\s*)?(\d+(?:\.\d+)?)\s*L(?![A-Za-z])/gi,
     (_m, _r, n: string) => {
       const num = parseFloat(n);
       const word = num === 1 ? "lakh" : "lakhs";
