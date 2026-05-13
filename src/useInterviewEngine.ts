@@ -1430,6 +1430,28 @@ export function useInterviewEngine() {
             const serverSaysDone = isSalaryNegConversation && (result as { conversationDone?: boolean })?.conversationDone === true;
             setInterviewScript(prev => {
               const nextQuestionIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "question");
+              /* Sticky terminal-phase safety net (session 13 bug,
+                 2026-05-14): if the kernel signals terminal but the
+                 script has already been truncated to a single wrap
+                 step from a PRIOR terminal turn, findIndex returns -1
+                 and the original code returned `prev` unchanged —
+                 dropping the followUpStep AND silently leaving the UI
+                 in phase="listening" with the "Start Speaking" mic.
+                 Append a fresh wrapStep at the end so the engine has
+                 a step to advance into with waitForUser:false, which
+                 routes through the speaking-end branch into
+                 phase="done" and the View Result CTA. */
+              if (serverSaysDone && (nextQuestionIdx < 0 || nextQuestionIdx < currentStep)) {
+                const wrapStep = {
+                  ...followUpStep,
+                  type: "closing" as const,
+                  waitForUser: false,
+                  scoreNote: "Negotiation kernel terminal restate",
+                };
+                /* Truncate any tail beyond currentStep so we don't
+                   advance past the wrap into stale scripted slots. */
+                return [...prev.slice(0, currentStep + 1), wrapStep];
+              }
               if (nextQuestionIdx >= currentStep && nextQuestionIdx >= 0) {
                 // Replace the next question with the dynamic response
                 const updated = [...prev.slice(0, nextQuestionIdx), followUpStep, ...prev.slice(nextQuestionIdx + 1)];

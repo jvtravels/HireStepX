@@ -63,6 +63,8 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Acknowledge respectfully that this isn't going to work. Keep the door open for future roles. Brief, warm.",
   "close-stalemate":
     "Note that you've run out of turns. Suggest they take time and circle back. Brief, neutral.",
+  "terminal-restate":
+    "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. One or two short sentences only.",
 };
 
 export interface BuildPromptInput {
@@ -1119,5 +1121,11 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       return `I understand. Thanks for the conversation — we'd love to stay in touch for future roles.`;
     case "close-stalemate":
       return `We've covered a lot. Take some time and let us know how you'd like to proceed.`;
+    case "terminal-restate": {
+      const lpa = move.newTotalLpa ?? state.highestOfferMade ?? state.band.initialOffer;
+      return typeof move.joiningBonusAmount === "number"
+        ? `Welcome aboard! Your offer is confirmed at ₹${lpa} LPA fixed + ₹${move.joiningBonusAmount}L one-time joining bonus — the offer letter will follow shortly.`
+        : `Welcome aboard! Your offer is confirmed at ₹${lpa} LPA — the offer letter will follow shortly.`;
+    }
   }
 }

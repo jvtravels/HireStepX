@@ -149,7 +149,12 @@ export type NegotiationLever =
   | "hold-firm"         // explicit "this is final"
   | "close-acceptance"  // wrap with agreed terms
   | "close-walkaway"    // wrap acknowledging no-deal
-  | "close-stalemate";  // wrap acknowledging out of turns
+  | "close-stalemate"   // wrap acknowledging out of turns
+  /* Re-served wrap when the candidate keeps talking AFTER a terminal
+   * phase was reached. Distinct from close-acceptance so we can tell in
+   * telemetry / tests that this turn is a sticky restate, not a fresh
+   * transition. Always carries terminal=true in the response payload. */
+  | "terminal-restate";
 
 /* ─── Band — server-derived once at session start ────────────────── */
 
@@ -1493,6 +1498,38 @@ export function clampToCloseFloor(state: NegotiationState, value: number): numbe
 
 /** Pick the AI's move for this turn from state alone. Pure. */
 export function pickAiMove(state: NegotiationState): AiMove {
+  /* Terminal stickiness guard (session 13 bug, 2026-05-14): when the
+   * candidate keeps talking AFTER a terminal phase was already reached
+   * on a prior turn, do NOT re-run the close-* / move-picking logic —
+   * just re-emit a minimal restate that the engine sees with the
+   * server-derived `terminal: true` flag. This keeps the UI honest about
+   * "View Result" transitions even when the candidate volleys a
+   * follow-up question / chit-chat after acceptance ("Are the variable
+   * components?", "Let's get started", "I have already accepted").
+   *
+   * The first terminal-transition turn (acceptedAtTurn === turnIndex)
+   * still routes through close-acceptance below so the full recap +
+   * JB phrasing fires once; only subsequent turns from a terminal state
+   * hit this branch. */
+  if (
+    isTerminalPhase(state.phase) &&
+    (
+      (state.phase === "accepted" && state.acceptedAtTurn != null && state.acceptedAtTurn < state.turnIndex) ||
+      (state.phase === "walked-away" && state.walkedAwayAtTurn != null && state.walkedAwayAtTurn < state.turnIndex) ||
+      /* stalemate sets no transition-turn marker; use the lever
+       * trail instead — if close-stalemate has already fired once,
+       * any subsequent picker entry is a restate. */
+      (state.phase === "stalemate" && state.leversUsed.includes("close-stalemate"))
+    )
+  ) {
+    return {
+      lever: "terminal-restate",
+      newTotalLpa: clampToCloseFloor(state, state.highestOfferMade || state.band.initialOffer),
+      joiningBonusAmount: state.lastJoiningBonusOffered ?? undefined,
+      rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? "?"}; restate close.`,
+    };
+  }
+
   /* Terminal closings. */
   if (state.phase === "accepted") {
     /* Phase 28 — carry the previously-offered JB into the close so the
@@ -2039,6 +2076,7 @@ const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set<NegotiationLever>([
   "close-acceptance",
   "close-walkaway",
   "close-stalemate",
+  "terminal-restate",
 ]);
 
 function isFiniteNonNegInt(n: unknown): n is number {
