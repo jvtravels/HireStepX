@@ -263,7 +263,7 @@ export async function generateAiText(
 
   const a1 = await attempt(user);
   if ("error" in a1) {
-    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [a1.error], envelopeMissingAttempts };
+    return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds: [a1.error], envelopeMissingAttempts };
   }
   if (!a1.envelopeOk) envelopeMissingAttempts++;
   if (a1.failures.length === 0) return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
@@ -276,13 +276,13 @@ export async function generateAiText(
     `Try again. Stick to the kernel brief exactly and ensure the JSON envelope fields agree with the prose.`;
   const a2 = await attempt(retryUser);
   if ("error" in a2) {
-    return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, a2.error], envelopeMissingAttempts };
+    return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds: [...failureKinds, a2.error], envelopeMissingAttempts };
   }
   if (!a2.envelopeOk) envelopeMissingAttempts++;
   if (a2.failures.length === 0) return { text: enforceRoleLabel(a2.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
   failureKinds.push(...a2.failures);
 
-  return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds, envelopeMissingAttempts };
+  return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds, envelopeMissingAttempts };
 }
 
 /* ─── Handler ─────────────────────────────────────────────────────── */

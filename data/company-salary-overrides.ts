@@ -6533,6 +6533,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       mid: { totalMin: 32, totalMax: 50, equityMin: 4, equityMax: 10, equityType: "esop", equityVesting: "4yr", source: "Levels.fyi", lastVerified: "2026-05-07" },
       senior: { totalMin: 50, totalMax: 80, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr", source: "Glassdoor", lastVerified: "2026-05-07" },
     },
+    /* Bug-report 13 (2026-05-14) — Zepto Operations Manager band.
+     * Without this entry, an Operations Manager request fell through to
+     * Zepto's tier-default (unicorn ⇒ software-engineer-ish curve),
+     * which over-anchored a domain-pivoting candidate at ₹25L. Google
+     * market data: avg ₹6.6L-₹12L; early-career ₹4L-₹8L; mid-senior
+     * ₹8L-₹14L; Senior Ops Manager ₹17L-₹24L. Quick-commerce ops is
+     * notably non-tech-comp so we use market floors directly. */
+    "operations": {
+      entry: { totalMin: 4, totalMax: 6, equityType: "none", source: "Google market data (Zepto Operations Manager 2026)", lastVerified: "2026-05-14", notes: "Zepto entry-level Operations Manager / Ops Executive (<=1yr)." },
+      mid: { totalMin: 6, totalMax: 9, equityType: "none", source: "Google market data (Zepto Operations Manager 2026)", lastVerified: "2026-05-14", notes: "Zepto Operations Manager 2-4y." },
+      senior: { totalMin: 10, totalMax: 16, equityType: "none", source: "Google market data (Zepto Operations Manager 2026)", lastVerified: "2026-05-14", notes: "Zepto Senior Operations Manager 5-8y; Mid-Senior band ₹8-₹14L plus Zepto unicorn premium." },
+      lead: { totalMin: 17, totalMax: 24, equityType: "none", source: "Google market data (Zepto Senior Operations Manager 2026)", lastVerified: "2026-05-14", notes: "Zepto Lead / Senior Operations Manager 9+y." },
+    },
   },
   blinkit: {
     "software-engineer": {

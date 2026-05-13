@@ -469,9 +469,20 @@ const DOMAIN_KEYWORDS: Array<[RegExp, string]> = [
   [/\b(customer\s+success|cs\s+manager|implementation)\b/i, "customer-success"],
   [/\b(qa\s+(engineer)?|test\s+(engineer|automation)|sdet)\b/i, "qa"],
   [/\b(content\s+(writer|strategist)|technical\s+writer|copywriter)\b/i, "content"],
-  [/\b(hr|human\s+resources|people\s+ops|recruiter|talent\s+acquisition)\b/i, "hr"],
-  [/\b(finance|accountant|controller|fp&a)\b/i, "finance"],
-  [/\b(operations|ops\s+manager)\b/i, "operations"],
+  [/\b(hr\b|human\s+resources|people\s+(ops|operations)|recruiter|talent\s+acquisition|hr\s+manager|hrbp)\b/i, "hr-people"],
+  [/\b(finance\s+(manager|analyst)?|financial\s+analyst|accountant|controller|fp&a|treasur(er|y))\b/i, "finance"],
+  /* Bug-report 13 (2026-05-14) — Operations / management / business
+   * domain mappings. Pre-13 the table only had a single "operations"
+   * keyword which matched too narrowly, and no entries for management /
+   * business analyst / customer-success-manager etc., so a Senior
+   * Product Designer applying for Operations Manager was getting an
+   * "unknown" classification on the target side → applicableYoe
+   * defaulted to totalYoe → senior band → catastrophic ₹25L opener. */
+  [/\b(operations\s+(manager|lead|head|director)?|ops\s+(manager|lead|head)?|coo\b|chief\s+operating\s+officer|supply\s+chain\s+(manager|lead)?|logistics\s+(manager|lead)?|warehouse\s+(manager|lead)?|fulfilment|fulfillment)\b/i, "operations"],
+  [/\b(project\s+manager|program\s+manager|engineering\s+manager|general\s+manager|delivery\s+manager|gm\b|pmo\b)\b/i, "management"],
+  [/\b(business\s+(analyst|operations|ops)|biz\s*ops|bizops)\b/i, "business"],
+  [/\b(account\s+manager|customer\s+success\s+(manager|lead)?|customer\s+experience\s+(lead|manager)?|cx\s+(lead|manager))\b/i, "customer-success"],
+  [/\b(brand\s+(manager|lead)|growth\s+(manager|lead)|marketing\s+(manager|lead|director)?)\b/i, "marketing"],
   [/\b(consultant|consulting|advisory)\b/i, "consulting"],
   [/\b(teach(ing|er)?|educator|instructor|professor)\b/i, "education"],
 ];
@@ -501,6 +512,17 @@ const ADJACENT: Record<string, string[]> = {
   "marketing": ["product-marketing", "content"],
   "sales": ["customer-success"],
   "customer-success": ["sales", "product-management"],
+  /* Bug-report 13 — management cluster is internally adjacent (e.g.
+   * Engineering Manager → Program Manager). Operations / business /
+   * hr-people / finance are intentionally NOT adjacent to anything else
+   * outside their own bucket: cross-bucket transitions (Product Design
+   * → Operations Manager, Engineering → Operations) must classify as
+   * pivot to keep applicableYoe=0 and prevent over-anchoring. */
+  "management": ["product-management", "program-management"],
+  "business": ["data-analyst", "consulting"],
+  "operations": [],
+  "hr-people": [],
+  "finance": [],
 };
 
 function canonDomain(s: string | null | undefined): DomainCanon | null {
