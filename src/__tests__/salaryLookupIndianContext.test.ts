@@ -386,7 +386,12 @@ describe("bandSource provenance", () => {
  * salary-neg fallback offer in generate-questions.ts:709 was vulnerable
  * to before the Math.min clamp. */
 describe("NegotiationBand invariants", () => {
-  it("initialOffer never exceeds walkAway across sample role × company combos", () => {
+  /* Kernel invariant per _negotiation-kernel.ts applyPersonaToBand lines
+     269-273:  walkAway < initialOffer < maxStretch.
+     walkAway is the candidate-floor (the minimum the candidate would
+     accept), NOT a ceiling above maxStretch. Pre-2026-05 these tests
+     asserted the inverted relationship which encoded the production bug. */
+  it("walkAway < initialOffer across sample role × company combos", () => {
     const samples = [
       { role: "Software Engineer", company: "Razorpay", experienceLevel: "mid" },
       { role: "Senior Product Designer", company: "Google", experienceLevel: "senior" },
@@ -398,13 +403,13 @@ describe("NegotiationBand invariants", () => {
     for (const s of samples) {
       const band = generateNegotiationBand(s);
       expect(
-        band.initialOffer,
-        `${s.role} at ${s.company} (${s.experienceLevel}): initialOffer ${band.initialOffer} > walkAway ${band.walkAway}`,
-      ).toBeLessThanOrEqual(band.walkAway);
+        band.walkAway,
+        `${s.role} at ${s.company} (${s.experienceLevel}): walkAway ${band.walkAway} >= initialOffer ${band.initialOffer}`,
+      ).toBeLessThan(band.initialOffer);
     }
   });
 
-  it("minOffer ≤ initialOffer ≤ maxStretch ≤ walkAway", () => {
+  it("walkAway < minOffer ≤ initialOffer ≤ maxStretch", () => {
     const samples = [
       { role: "Software Engineer", company: "Razorpay", experienceLevel: "mid" },
       { role: "Senior Software Engineer", company: "Google", experienceLevel: "senior" },
@@ -412,9 +417,9 @@ describe("NegotiationBand invariants", () => {
     ];
     for (const s of samples) {
       const band = generateNegotiationBand(s);
+      expect(band.walkAway).toBeLessThan(band.initialOffer);
       expect(band.minOffer).toBeLessThanOrEqual(band.initialOffer);
       expect(band.initialOffer).toBeLessThanOrEqual(band.maxStretch);
-      expect(band.maxStretch).toBeLessThanOrEqual(band.walkAway);
     }
   });
 });

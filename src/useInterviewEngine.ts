@@ -43,6 +43,7 @@ import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
 import { extractNegotiationFacts } from "./interviewEvaluation";
 import { detectRoleCompanyFit } from "./_role-company-fit";
+import { detectRoleLabelMismatch } from "../server-handlers/_role-mismatch";
 import { matchRoleKey as matchSalaryRoleKey } from "../data/salaries";
 import { getCompanyTier } from "../data/company-tiers";
 import {
@@ -345,7 +346,28 @@ export function useInterviewEngine() {
       }
     } catch { /* silent */ }
 
-    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[] } | undefined;
+    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string } | undefined;
+    /* Resume-role contamination guard for salary-negotiation sessions.
+       Production bug (2026-05): user with a "Senior Product Designer" resume
+       selected "Java Developer" + TCS + salary-neg; the LLM personalised
+       the static script around the resume role and opened at a designer-tier
+       ₹38L offer. Root cause: resumeText fed into generate-questions leaked
+       the resume role into the negotiation script copy. Fix: when the resume
+       headline domain-mismatches the session role, scrub resume context for
+       this salary-neg fetch only. Behavioral flow still uses resume because
+       there the role-role match is unambiguous. */
+    const sessionRoleForFetch = targetRole || user?.targetRole || "";
+    const resumeHeadlineRole = (aiProfile?.headline || "").split(/\s+with\s+/i)[0]?.trim() || "";
+    const resumeRoleMismatch =
+      interviewType === "salary-negotiation"
+      && !!sessionRoleForFetch
+      && !!resumeHeadlineRole
+      && detectRoleLabelMismatch(resumeHeadlineRole, sessionRoleForFetch) !== "";
+    if (resumeRoleMismatch) {
+      console.warn(`[salary-neg] resume role "${resumeHeadlineRole}" mismatches session role "${sessionRoleForFetch}" — scrubbing resume context.`);
+      try { toast(`Using market data for ${sessionRoleForFetch} — your resume role differs.`, "info"); } catch { /* silent */ }
+    }
+    const effectiveUseResume = shouldUseResume && !resumeRoleMismatch;
     const llmPromise = fetchLLMQuestions({
       type: interviewType,
       focus: interviewFocus,
@@ -355,15 +377,15 @@ export function useInterviewEngine() {
       currentCity: currentCity,
       jobCity: jobCity,
       industry: user?.industry,
-      resumeText: shouldUseResume ? user?.resumeText : undefined,
+      resumeText: effectiveUseResume ? user?.resumeText : undefined,
       pastTopics: adaptiveHints.pastTopics.length > 0 ? adaptiveHints.pastTopics : undefined,
       weakSkills: adaptiveHints.weakSkills.length > 0 ? adaptiveHints.weakSkills : undefined,
       jobDescription: jobDescription || undefined,
       experienceLevel: user?.experienceLevel || undefined,
       mini: isMiniMode || undefined,
-      resumeStrengths: shouldUseResume ? aiProfile?.interviewStrengths : undefined,
-      resumeGaps: shouldUseResume ? aiProfile?.interviewGaps : undefined,
-      resumeTopSkills: shouldUseResume ? aiProfile?.topSkills : undefined,
+      resumeStrengths: effectiveUseResume ? aiProfile?.interviewStrengths : undefined,
+      resumeGaps: effectiveUseResume ? aiProfile?.interviewGaps : undefined,
+      resumeTopSkills: effectiveUseResume ? aiProfile?.topSkills : undefined,
       candidateName: user?.name || undefined,
       negotiationStyle: negotiationStyle || undefined,
     });
@@ -1999,8 +2021,8 @@ export function useInterviewEngine() {
               if (!negotiationKernelStateRef.current) {
                 const initRes = await negotiationKernelInit({
                   sessionId: crypto.randomUUID(),
-                  role: user?.targetRole || "swe",
-                  company: user?.targetCompany || "",
+                  role: targetRole || user?.targetRole || "swe",
+                  company: targetCompany || user?.targetCompany || "",
                   band: {
                     initialOffer: band.initialOffer,
                     maxStretch: band.maxStretch,
@@ -2118,9 +2140,9 @@ export function useInterviewEngine() {
           question: currentStepObj!.aiText,
           answer: answerText,
           type: interviewType,
-          role: user?.targetRole || "senior role",
+          role: targetRole || user?.targetRole || "senior role",
           jobDescription: jobDescription || undefined,
-          company: user?.targetCompany,
+          company: targetCompany || user?.targetCompany,
           currentCity: currentCity || undefined,
           jobCity: jobCity || undefined,
           followUpDepth: depth,
@@ -2483,7 +2505,7 @@ export function useInterviewEngine() {
         .filter(s => s.type === "question" || s.type === "follow-up")
         .map(s => s.aiText),
       role: targetRole || user?.targetRole || "the role",
-      company: user?.targetCompany,
+      company: targetCompany || user?.targetCompany,
       resumeText: shouldUseResume ? user?.resumeText : undefined,
       jobDescription: jobDescription || undefined,
       negotiationBand: negotiationBandRef.current,

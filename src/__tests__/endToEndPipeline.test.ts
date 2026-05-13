@@ -87,8 +87,11 @@ describe("end-to-end pipeline smoke tests", () => {
       /* Min ≤ initial ≤ max. */
       expect(band.minOffer).toBeLessThanOrEqual(band.initialOffer);
       expect(band.initialOffer).toBeLessThanOrEqual(band.maxStretch);
-      /* Walkaway above max. */
-      expect(band.walkAway).toBeGreaterThanOrEqual(band.maxStretch);
+      /* Kernel invariant: walkAway is the candidate-floor, strictly below
+         initialOffer. (Pre-2026-05 this test asserted the opposite — it
+         encoded the very inversion that broke production. See
+         applyPersonaToBand in _negotiation-kernel.ts lines 269-273.) */
+      expect(band.walkAway).toBeLessThan(band.initialOffer);
       /* Band-context must be non-empty and cite a source. */
       expect(band.bandContext.length).toBeGreaterThan(50);
       expect(band.bandContext).toMatch(/(verified|median|tier|source|Levels|AmbitionBox|Glassdoor|7th CPC|UGC|InsideIIM|Naukri)/i);

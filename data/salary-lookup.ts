@@ -851,7 +851,16 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     const initialOffer = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
     const minOffer = Math.round(totalMin * 0.95 * 10) / 10;
     const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
-    const walkAway = Math.round(totalMax * 1.1 * 10) / 10;
+    /* `walkAway` is the kernel's CANDIDATE-FLOOR — the offer below which
+       the recruiter would rather walk than entertain. Must satisfy
+       walkAway < initialOffer < maxStretch (kernel invariant). We compute
+       it from the band floor, not the band ceiling. Historical bug: this
+       used to be totalMax*1.1 (a ceiling concept) and the kernel
+       interpreted that as a floor, inverting band ordering. */
+    const recruiterCeiling = Math.round(totalMax * 1.1 * 10) / 10;
+    let walkAway = Math.round(Math.min(minOffer, initialOffer * 0.9) * 10) / 10;
+    if (walkAway >= initialOffer) walkAway = Math.round((initialOffer - 0.5) * 10) / 10;
+    if (walkAway < 0.5) walkAway = 0.5;
     const hasEquity = (override.equityType ?? "none") !== "none";
     const equityRange: [number, number] = hasEquity
       ? [adjOv(override.equityMin ?? 0), adjOv(override.equityMax ?? 0)]
@@ -933,7 +942,8 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
-- Walk-away ceiling: ${fmtLPA(walkAway)}
+- Walk-away ceiling: ${fmtLPA(recruiterCeiling)}
+- Walk-away floor (below which this offer is sub-market): ${fmtLPA(walkAway)}
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
 ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : `- No equity at this level (${noBonusTiers.has(companyTier) ? "typical for this tier" : "company-specific"})`}
 ${override.notes ? `- Note: ${override.notes}` : ""}
@@ -973,12 +983,15 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // offers for unknown junior roles (e.g. ₹22 LPA for a junior UI/UX
   // role at a small Mumbai design studio).
   if (!entry) {
+    /* Note: `walk` here is the kernel-semantic FLOOR (below initialOffer),
+       not a ceiling. Pre-2026-05 it was a ceiling, which inverted the band
+       invariant. */
     const fallbackByExp: Record<string, { initial: number; min: number; max: number; walk: number }> = {
-      entry:     { initial: 5,  min: 3,   max: 8,   walk: 12 },
-      mid:       { initial: 10, min: 7,   max: 15,  walk: 20 },
-      senior:    { initial: 18, min: 14,  max: 28,  walk: 35 },
-      lead:      { initial: 28, min: 22,  max: 45,  walk: 55 },
-      executive: { initial: 50, min: 40,  max: 90,  walk: 120 },
+      entry:     { initial: 5,  min: 3,   max: 8,   walk: 2.5 },
+      mid:       { initial: 10, min: 7,   max: 15,  walk: 6 },
+      senior:    { initial: 18, min: 14,  max: 28,  walk: 12 },
+      lead:      { initial: 28, min: 22,  max: 45,  walk: 20 },
+      executive: { initial: 50, min: 40,  max: 90,  walk: 38 },
     };
     const f = fallbackByExp[exp] ?? fallbackByExp.mid;
     return {
@@ -1004,8 +1017,12 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // Max stretch: 90th percentile of range
   const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
 
-  // Walk-away: above the top of the range — if candidate demands more, manager declines
-  const walkAway = Math.round(totalMax * 1.1 * 10) / 10;
+  // Walk-away floor: kernel-semantic floor (below initialOffer). Anchored to
+  // minOffer when valid, otherwise 90% of initialOffer. Invariant clamp at end.
+  const recruiterCeiling = Math.round(totalMax * 1.1 * 10) / 10;
+  let walkAway = Math.round(Math.min(minOffer, initialOffer * 0.9) * 10) / 10;
+  if (walkAway >= initialOffer) walkAway = Math.round((initialOffer - 0.5) * 10) / 10;
+  if (walkAway < 0.5) walkAway = 0.5;
 
   const hasEquity = entry.equity_type !== "none";
   const equityRange: [number, number] = hasEquity
@@ -1060,7 +1077,8 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
 - Initial offer: ${fmtLPA(initialOffer)} CTC — this is what you PRESENT FIRST
 - Floor (minimum you can offer): ${fmtLPA(minOffer)} CTC
 - Max stretch (with approval): ${fmtLPA(maxStretch)} CTC
-- Walk-away ceiling: ${fmtLPA(walkAway)} — if candidate demands above this, politely decline: "That's beyond our band for this level. I'd need to explore a senior/staff position instead."
+- Walk-away ceiling: ${fmtLPA(recruiterCeiling)} — if candidate demands above this, politely decline: "That's beyond our band for this level. I'd need to explore a senior/staff position instead."
+- Walk-away floor (sub-market offers below this): ${fmtLPA(walkAway)}
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
 ${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${entry.equity_vesting})` : "- No equity at this level"}
 
@@ -1072,7 +1090,7 @@ ${indianContext.fullContextBlock}
 ABSOLUTE NUMBER RULES (violations destroy realism):
 1. ALWAYS use a SINGLE precise figure. NEVER quote a range like "₹28-45 LPA" or "between X and Y" — real hiring managers state ONE number and defend it. The band above is YOUR internal authority, not a public range to share.
 2. NEVER write a placeholder like "₹X" / "₹X LPA" / "TBD" / "[amount]". Every figure you say MUST be a real LPA number derived from the band above. If you don't know, don't quote.
-3. NEVER quote a number ABOVE ${fmtLPA(walkAway)} — that's outside your authority for this role and level.
+3. NEVER quote a number ABOVE ${fmtLPA(recruiterCeiling)} — that's outside your authority for this role and level.
 4. NEVER quote a number that conflicts with this band's CTC tier. The band is calibrated to the candidate's role, company tier, experience, and city — overriding it with bigger numbers (e.g. unicorn-tier figures for a services-firm role) breaks the simulation.
 
 YOUR GOAL AS HIRING MANAGER: SAVE COST. You want the best talent at the LOWEST possible CTC. You are NOT a friendly career coach — you protect the budget.
@@ -1080,7 +1098,7 @@ YOUR GOAL AS HIRING MANAGER: SAVE COST. You want the best talent at the LOWEST p
 - If the candidate asks for LESS than your initial offer: close immediately — that's a win for you.
 - If the candidate asks for MORE than your initial offer: PUSH BACK firmly. Counter BELOW their ask, not above it. Meet them partway, NOT at their number. NEVER agree to the candidate's stated number on the first ask — that signals you had budget to spare and ruins your authority for the rest of the conversation.
 - NEVER offer MORE than what the candidate asked for. That is unrealistic and wasteful.
-- Resist arbitrary numbers. If a content-writer candidate at TCS asks for ₹50 LPA, DO NOT quote a range, DO NOT engage with it as if it's reasonable. Reply: "That's well above where this role lands at our company. Our band for this role is ${fmtLPA(initialOffer)}-${fmtLPA(maxStretch)}, and I'd need a strong story to even approach ${fmtLPA(maxStretch)}. What's making you think this role is worth ${fmtLPA(walkAway)}+ ?".
+- Resist arbitrary numbers. If a content-writer candidate at TCS asks for ₹50 LPA, DO NOT quote a range, DO NOT engage with it as if it's reasonable. Reply: "That's well above where this role lands at our company. Our band for this role is ${fmtLPA(initialOffer)}-${fmtLPA(maxStretch)}, and I'd need a strong story to even approach ${fmtLPA(maxStretch)}. What's making you think this role is worth ${fmtLPA(recruiterCeiling)}+ ?".
 - Concede in small increments (₹0.5-1.5 LPA per round). Make them EARN every rupee.
 - Trade — don't just give. If you raise base, reduce variable or delay review cycle.
 - Max stretch requires leadership approval. Use it reluctantly, only after the candidate pushes hard with a concrete justification.
