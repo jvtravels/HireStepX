@@ -52,7 +52,13 @@ export type RedFlagCode =
   /* Phase 22 — comp-structure red flags (sales OTE + contract rate). */
   | "ote-as-guaranteed"
   | "no-attainment-history"
-  | "day-rate-fte-confusion";
+  | "day-rate-fte-confusion"
+  /* Phase 25 — drift / pivot / disclosure / rigidity. */
+  | "target-drifted-upward"
+  | "domain-pivot-full-rate"
+  | "compensation-history-issue"
+  | "rigid-no-range"
+  | "offer-no-company-disclosure";
 
 export type RedFlagSeverity = "info" | "concern" | "blocker";
 
@@ -114,6 +120,17 @@ const REWRITES: Record<RedFlagCode, string> = {
     "Say: \"My last 3-year quota attainment was N%, M%, P% — happy to share W2/Form-16 + manager letters to back it up.\"",
   "day-rate-fte-confusion":
     "Say: \"At ₹X/day I billed ~D days last year for ~₹Y realised. For an FTE conversation, I'd target ₹Z LPA accounting for benefits, leave, and bench risk on my side.\"",
+  /* Phase 25 — drift / pivot / disclosure / rigidity. */
+  "target-drifted-upward":
+    "Say: \"To clarify — my target has been ₹X LPA since we started; I shouldn't have moved the number mid-process. Let's stick with ₹X.\"",
+  "domain-pivot-full-rate":
+    "Say: \"I'm pivoting from <prior> to <new domain>, so I'm anchoring on a ramp-friendly ₹X — below my prior peak but fair for first-year-in-domain.\"",
+  "compensation-history-issue":
+    "Say: \"My last cycle was delayed/unpaid for N months — I'm using market data, not last-drawn, to anchor: ₹X LPA based on peer offers.\"",
+  "rigid-no-range":
+    "Say: \"I'm targeting ₹X-Y LPA fixed based on market for <role> at <tier>. I'm flexible on structure if we land in that range.\"",
+  "offer-no-company-disclosure":
+    "Say: \"My competing offer is from <Company> at <stage> — I can share the offer letter under NDA if useful for your benchmarking.\"",
 };
 
 interface DetectorInput {
@@ -134,6 +151,13 @@ const HUGE_HIKE_THRESHOLD = 40;
  * absence of an annual figure on the same turn. */
 const MONTHLY_FIGURE = /\b(\d{2,3}(?:[.,]\d+)?)\s*k?\s*(?:per\s+month|\/\s*month|monthly|p\.?m\.?)\b/i;
 const ANNUAL_CONTEXT = /\b(lpa|lakhs?\s+per\s+(?:year|annum)|annual|per\s+annum|p\.?a\.?|cr|crore)\b/i;
+
+/* Phase 25 — "nothing below ₹X" / "minimum ₹X" / "won't accept under ₹X"
+ * surface a hard floor with no range. Distinct from `demands-no-flex`
+ * which is the stance-derived posture; this catches the single-number
+ * utterance form even when the candidate hasn't otherwise been rigid. */
+const RIGID_NO_RANGE = /\b(?:nothing\s+below|won['']?t\s+(?:accept|consider|go)\s+(?:below|under)|minimum|at\s+least|floor\s+is)\s*[₹rs.]*\s*(\d+(?:[.,]\d+)?)\s*(?:l|lpa|lakhs?|cr|crore)?\b/i;
+const RANGE_HINT = /\b(\d+(?:[.,]\d+)?)\s*(?:l|lpa|lakhs?|cr|crore)?\s*(?:-|to|–)\s*(\d+(?:[.,]\d+)?)\s*(?:l|lpa|lakhs?|cr|crore)?\b/i;
 
 /* "Lies about offer" is unsafe to detect from text alone. We use a
  * narrow heuristic: candidate names a competing company + a number
@@ -393,6 +417,74 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
       code: "day-rate-fte-confusion",
       severity: "concern",
       detail: `candidate annualised ₹${contract.dayRate}/day to FTE without discussing utilization / bench`,
+    });
+  }
+
+  /* Phase 25 — drift / pivot / disclosure / rigidity. */
+
+  /* 21. Target drifted upward mid-process. Compares the FIRST anchored
+   *     number against the current target; a >10% upward drift signals
+   *     the candidate is chasing the recruiter's reveals instead of
+   *     holding an anchored position. */
+  if (
+    state.firstAnchoredTarget != null &&
+    state.candidateTarget != null &&
+    state.candidateTarget > state.firstAnchoredTarget * 1.1
+  ) {
+    out.push({
+      code: "target-drifted-upward",
+      severity: "concern",
+      detail: `target drifted from ₹${state.firstAnchoredTarget}L to ₹${state.candidateTarget}L mid-process — anchor weakened`,
+    });
+  }
+
+  /* 22. Domain pivot but asking full-rate hike. Candidate is moving
+   *     into a new domain (where they'd typically ramp at a haircut)
+   *     yet asking >30% hike like a same-domain move. */
+  if (
+    state.candidateProfile.domainPivot &&
+    state.hikePercent != null &&
+    state.hikePercent > 30
+  ) {
+    out.push({
+      code: "domain-pivot-full-rate",
+      severity: "concern",
+      detail: `candidate is pivoting domains but asking +${Math.round(state.hikePercent)}% — pivot-typical haircut not acknowledged`,
+    });
+  }
+
+  /* 23. Compensation history issue surfaced (delayed / unpaid salary).
+   *     The recruiter needs to know last-drawn may not anchor cleanly. */
+  if (state.candidateProfile.compensationHistoryIssue != null) {
+    out.push({
+      code: "compensation-history-issue",
+      severity: "info",
+      detail: `candidate disclosed ${state.candidateProfile.compensationHistoryIssue} salary at current/prior employer — last-drawn unreliable as anchor`,
+    });
+  }
+
+  /* 24. Rigid single-number floor with no range. Fires on text form
+   *     "nothing below ₹X" UNLESS a range is also present. */
+  if (u && RIGID_NO_RANGE.test(u) && !RANGE_HINT.test(u)) {
+    out.push({
+      code: "rigid-no-range",
+      severity: "concern",
+      detail: "candidate stated a single hard floor with no range — leaves no negotiation surface",
+    });
+  }
+
+  /* 25. Competing offer claimed without company disclosure. Fires
+   *     after turn 2 (recruiter has had a chance to ask) when a
+   *     competing-offer NUMBER is on the table but the COMPANY is not. */
+  if (
+    state.turnIndex >= 2 &&
+    state.competingOffer != null &&
+    state.competingOfferDetail.company == null
+  ) {
+    out.push({
+      code: "offer-no-company-disclosure",
+      severity: "concern",
+      detail: "competing offer amount stated but counterparty company never disclosed — unverifiable",
     });
   }
 

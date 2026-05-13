@@ -285,7 +285,12 @@ export interface NegotiationState {
   /* Candidate-stated facts. Folded in via applyCandidateAnswer or
      foldFactsIntoState — set ONCE per turn, never re-derived from
      transcript. Null = not stated. */
-  candidateTarget: number | null;        // their ask (LPA)
+  candidateTarget: number | null;        // their ask (LPA, last-stated-wins)
+  /** Phase 25a (2026-05-13) — the FIRST number the candidate ever
+   *  anchored. Frozen on first non-null assignment; never updated
+   *  after. Lets the red-flag layer detect upward drift ("Earlier
+   *  you mentioned ₹18L; now you're at ₹24L"). */
+  firstAnchoredTarget: number | null;
   candidateCurrentCtc: number | null;    // current package (NOT target)
   competingOffer: number | null;         // BATNA in hand (NOT target)
 
@@ -450,6 +455,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     turnIndex: 0,
     maxTurns: input.maxTurns ?? 8,
     candidateTarget: null,
+    firstAnchoredTarget: null,
     candidateCurrentCtc: null,
     competingOffer: null,
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
@@ -515,6 +521,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       careerGapActivity: null,
       tenureSignal: null,
       levelMismatch: null,
+      domainPivot: false,
+      transferableSkillsClaimed: false,
+      compensationHistoryIssue: null,
       hasAny: false,
     },
     miscSignals: {
@@ -729,7 +738,7 @@ export function parseCandidateAnswer(
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
-      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
     };
@@ -976,8 +985,13 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   };
 
   /* Bind newly-stated facts. Last-stated wins (the candidate may
-     revise their target mid-conversation; that's allowed). */
-  if (parsed.target != null) next.candidateTarget = parsed.target;
+     revise their target mid-conversation; that's allowed). Phase 25a
+     also records the FIRST anchored target, frozen — used by the
+     red-flag layer to detect upward drift. */
+  if (parsed.target != null) {
+    next.candidateTarget = parsed.target;
+    if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
+  }
   if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;
   if (parsed.competing != null) next.competingOffer = parsed.competing;
   if (parsed.targetAsRange) next.candidateAskedAsRange = true;
@@ -1128,7 +1142,10 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
   const t = num(facts.candidateCounter);
   const c = num(facts.candidateCurrentCTC);
   const comp = num(facts.competingOfferAmount ?? null);
-  if (t != null) next.candidateTarget = t;
+  if (t != null) {
+    next.candidateTarget = t;
+    if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = t;
+  }
   if (c != null) next.candidateCurrentCtc = c;
   if (comp != null) next.competingOffer = comp;
   if (facts.acceptedImmediately) {
@@ -1766,6 +1783,10 @@ export function deserializeState(json: string): NegotiationState {
   return {
     ...parsed,
     candidateAskedAsRange: s.candidateAskedAsRange ?? false,
+    firstAnchoredTarget:
+      typeof s.firstAnchoredTarget === "number"
+        ? s.firstAnchoredTarget
+        : (s.candidateTarget as number | null) ?? null,
     finalOfferAssertedCount: s.finalOfferAssertedCount ?? 0,
     vossTacticsUsed: (s.vossTacticsUsed as VossTactic[] | undefined) ?? [],
     infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],
@@ -1790,15 +1811,30 @@ export function deserializeState(json: string): NegotiationState {
     decisionDeadline: (s.decisionDeadline as DecisionDeadlineResult | undefined) ?? {
       deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false,
     },
-    candidateProfile: (s.candidateProfile as CandidateProfileResult | undefined) ?? {
-      careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, hasAny: false,
-    },
+    candidateProfile: backfillCandidateProfile(s.candidateProfile),
     miscSignals: (s.miscSignals as MiscSignalsResult | undefined) ?? {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,
     },
     candidateStance: backfillCandidateStance(s.candidateStance),
     salesOTE: (s.salesOTE as SalesOTEResult | undefined) ?? { ...EMPTY_SALES_OTE },
     contractRate: (s.contractRate as ContractRateResult | undefined) ?? { ...EMPTY_CONTRACT_RATE },
+  };
+}
+
+/* Phase 25b — domainPivot / transferableSkillsClaimed / compensationHistoryIssue
+ * were added after the wire format first deployed. Legacy in-flight
+ * sessions serialized candidateProfile without these keys; backfill them. */
+function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
+  const v = raw as Partial<CandidateProfileResult> | undefined;
+  return {
+    careerGapMonths: v?.careerGapMonths ?? null,
+    careerGapActivity: v?.careerGapActivity ?? null,
+    tenureSignal: v?.tenureSignal ?? null,
+    levelMismatch: v?.levelMismatch ?? null,
+    domainPivot: v?.domainPivot ?? false,
+    transferableSkillsClaimed: v?.transferableSkillsClaimed ?? false,
+    compensationHistoryIssue: v?.compensationHistoryIssue ?? null,
+    hasAny: v?.hasAny ?? false,
   };
 }
 

@@ -261,3 +261,141 @@ describe("detectRedFlags — Phase 22 comp structure", () => {
     expect(ote!.rewriteSuggestion).toMatch(/base|attainment/i);
   });
 });
+
+describe("Phase 25 — target-drifted-upward", () => {
+  it("fires when target rose >10% above first anchor", () => {
+    const state = baseState({ firstAnchoredTarget: 28, candidateTarget: 33 });
+    expect(codes(state)).toContain("target-drifted-upward");
+  });
+
+  it("does NOT fire on small drift within 10%", () => {
+    const state = baseState({ firstAnchoredTarget: 28, candidateTarget: 30 });
+    expect(codes(state)).not.toContain("target-drifted-upward");
+  });
+
+  it("does NOT fire when no first anchor recorded", () => {
+    const state = baseState({ firstAnchoredTarget: null, candidateTarget: 35 });
+    expect(codes(state)).not.toContain("target-drifted-upward");
+  });
+
+  it("does NOT fire when target moved DOWN", () => {
+    const state = baseState({ firstAnchoredTarget: 30, candidateTarget: 26 });
+    expect(codes(state)).not.toContain("target-drifted-upward");
+  });
+});
+
+describe("Phase 25 — domain-pivot-full-rate", () => {
+  it("fires when pivoting domain and asking >30% hike", () => {
+    const state = baseState({
+      hikePercent: 50,
+      candidateProfile: {
+        careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
+        levelMismatch: null, domainPivot: true, transferableSkillsClaimed: true,
+        compensationHistoryIssue: null, hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("domain-pivot-full-rate");
+  });
+
+  it("does NOT fire when domain pivot but modest hike", () => {
+    const state = baseState({
+      hikePercent: 20,
+      candidateProfile: {
+        careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
+        levelMismatch: null, domainPivot: true, transferableSkillsClaimed: true,
+        compensationHistoryIssue: null, hasAny: true,
+      },
+    });
+    expect(codes(state)).not.toContain("domain-pivot-full-rate");
+  });
+
+  it("does NOT fire when no domain pivot", () => {
+    const state = baseState({ hikePercent: 50 });
+    expect(codes(state)).not.toContain("domain-pivot-full-rate");
+  });
+});
+
+describe("Phase 25 — compensation-history-issue", () => {
+  it("fires when delayed-salary recorded on profile", () => {
+    const state = baseState({
+      candidateProfile: {
+        careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
+        levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
+        compensationHistoryIssue: "delayed", hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("compensation-history-issue");
+  });
+
+  it("fires when unpaid-salary recorded", () => {
+    const state = baseState({
+      candidateProfile: {
+        careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
+        levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
+        compensationHistoryIssue: "unpaid", hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("compensation-history-issue");
+  });
+
+  it("does NOT fire when issue is null", () => {
+    expect(codes(baseState())).not.toContain("compensation-history-issue");
+  });
+});
+
+describe("Phase 25 — rigid-no-range", () => {
+  it("fires on 'nothing below ₹25L'", () => {
+    expect(codes(baseState(), emptyStance, "Nothing below ₹25L works for me."))
+      .toContain("rigid-no-range");
+  });
+
+  it("fires on 'minimum 25 LPA'", () => {
+    expect(codes(baseState(), emptyStance, "Minimum 25 LPA is my floor."))
+      .toContain("rigid-no-range");
+  });
+
+  it("does NOT fire when a range is also present", () => {
+    expect(codes(baseState(), emptyStance, "Nothing below ₹25L; I'm targeting ₹25-30 LPA."))
+      .not.toContain("rigid-no-range");
+  });
+
+  it("does NOT fire on neutral text", () => {
+    expect(codes(baseState(), emptyStance, "I'm flexible on structure."))
+      .not.toContain("rigid-no-range");
+  });
+});
+
+describe("Phase 25 — offer-no-company-disclosure", () => {
+  it("fires when competing offer amount stated but company null after turn 2", () => {
+    const state = baseState({
+      turnIndex: 3,
+      competingOffer: 28,
+      competingOfferDetail: {
+        company: null, status: null, stage: null, letterShareOffered: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("offer-no-company-disclosure");
+  });
+
+  it("does NOT fire when company is disclosed", () => {
+    const state = baseState({
+      turnIndex: 3,
+      competingOffer: 28,
+      competingOfferDetail: {
+        company: "Razorpay", status: "verbal", stage: "offer", letterShareOffered: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).not.toContain("offer-no-company-disclosure");
+  });
+
+  it("does NOT fire early (turn 0/1)", () => {
+    const state = baseState({
+      turnIndex: 1,
+      competingOffer: 28,
+      competingOfferDetail: {
+        company: null, status: null, stage: null, letterShareOffered: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).not.toContain("offer-no-company-disclosure");
+  });
+});

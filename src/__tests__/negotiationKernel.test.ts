@@ -356,6 +356,9 @@ describe("parseCandidateAnswer", () => {
         careerGapActivity: null,
         tenureSignal: null,
         levelMismatch: null,
+        domainPivot: false,
+        transferableSkillsClaimed: false,
+        compensationHistoryIssue: null,
         hasAny: false,
       },
       miscSignals: {
@@ -1090,6 +1093,7 @@ describe("serialize/deserialize", () => {
       phase: "counter-offer",
       turnIndex: 3,
       candidateTarget: 26,
+      firstAnchoredTarget: 26,
       candidateCurrentCtc: 18,
       highestOfferMade: 22,
       leversUsed: ["open-with-offer", "probe", "counter-base"],
@@ -1184,5 +1188,35 @@ describe("parseCandidateAnswer (Hindi-mix)", () => {
   it("Hindi-mix with rupee symbol → target binds", () => {
     const p = parseCandidateAnswer("Main ₹35 LPA expect karta hu.");
     expect(p.target).toBe(35);
+  });
+});
+
+describe("Phase 25a — firstAnchoredTarget freezes on first non-null target", () => {
+  it("captures first target and does not change when later target rises", () => {
+    const s0 = initState({
+      sessionId: "p25a",
+      role: "swe",
+      company: "Acme",
+      band: { initialOffer: 22, maxStretch: 30, walkAway: 18, hasEquity: false },
+    });
+    expect(s0.firstAnchoredTarget).toBe(null);
+    const s1 = applyCandidateAnswer(s0, "I'd like ₹28 LPA.");
+    expect(s1.firstAnchoredTarget).toBe(28);
+    expect(s1.candidateTarget).toBe(28);
+    const s2 = applyCandidateAnswer(s1, "Actually I want ₹35 LPA now.");
+    /* current target drifts upward; firstAnchoredTarget remains frozen */
+    expect(s2.candidateTarget).toBe(35);
+    expect(s2.firstAnchoredTarget).toBe(28);
+  });
+
+  it("stays null while no target has been stated", () => {
+    const s0 = initState({
+      sessionId: "p25a2",
+      role: "swe",
+      company: "Acme",
+      band: { initialOffer: 22, maxStretch: 30, walkAway: 18, hasEquity: false },
+    });
+    const s1 = applyCandidateAnswer(s0, "Tell me more about the role first.");
+    expect(s1.firstAnchoredTarget).toBe(null);
   });
 });

@@ -19,6 +19,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
     turnIndex: 0,
     maxTurns: 8,
     candidateTarget: null,
+    firstAnchoredTarget: null,
     candidateCurrentCtc: null,
     competingOffer: null,
     candidateAskedAsRange: false,
@@ -84,6 +85,9 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       careerGapActivity: null,
       tenureSignal: null,
       levelMismatch: null,
+      domainPivot: false,
+      transferableSkillsClaimed: false,
+      compensationHistoryIssue: null,
       hasAny: false,
     },
     miscSignals: {

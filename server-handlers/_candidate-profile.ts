@@ -51,6 +51,15 @@ export type LevelMismatch =
   /** Candidate is below the typical YOE/level for the role. */
   | "under";
 
+/** Phase 25b — payroll-issue history. Materially affects how the AI
+ *  should anchor when current CTC is below market: a delayed/unpaid
+ *  history means "current CTC" isn't a clean signal of market price. */
+export type CompensationHistoryIssue =
+  /** Salary was paid but delayed by months on at least one occasion. */
+  | "delayed"
+  /** Salary was withheld entirely / partial months unpaid. */
+  | "unpaid";
+
 export interface CandidateProfileResult {
   /** Stated career-gap duration in months. Range 1–60 (5 years max).
    *  Null when unstated. */
@@ -62,6 +71,16 @@ export interface CandidateProfileResult {
   tenureSignal: TenureSignal | null;
   /** Over- or under-qualified self-statement. Null when unstated. */
   levelMismatch: LevelMismatch | null;
+  /** Phase 25b — domain pivot. True when the candidate says they're
+   *  changing function/industry ("teacher → EdTech sales", "designer
+   *  → PM"). Materially affects how the AI grades the comp ask. */
+  domainPivot: boolean;
+  /** Phase 25b — candidate claimed transferable skills as justification
+   *  for full-rate comp despite the pivot. Used together with
+   *  domainPivot to flag overreach. */
+  transferableSkillsClaimed: boolean;
+  /** Phase 25b — payroll history issue. Null when not stated. */
+  compensationHistoryIssue: CompensationHistoryIssue | null;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -71,6 +90,9 @@ const EMPTY: CandidateProfileResult = {
   careerGapActivity: null,
   tenureSignal: null,
   levelMismatch: null,
+  domainPivot: false,
+  transferableSkillsClaimed: false,
+  compensationHistoryIssue: null,
   hasAny: false,
 };
 
@@ -197,6 +219,64 @@ function extractLevelMismatch(text: string): LevelMismatch | null {
   return null;
 }
 
+/* Phase 25b — domain-pivot patterns. Two flavours: explicit transition
+ * ("moving from teaching to sales", "career change") and "transferable
+ * skills" framing that almost always accompanies a pivot. We require
+ * a transition phrase OR an explicit pivot keyword; transferable-skills
+ * alone is too noisy (anyone might say it in passing). */
+const DOMAIN_PIVOT_PATTERNS: RegExp[] = [
+  /\b(?:transition(?:ing)?|moving|switching|pivot(?:ing)?|shift(?:ing)?)\s+(?:from|out\s+of|into)\s+\w+(?:\s+\w+){0,3}\s+(?:to|into)\s+\w+/i,
+  /\b(?:career\s+(?:change|switch|pivot|transition)|domain\s+(?:change|switch|pivot)|changing\s+(?:domain|field|industry|function))\b/i,
+  /\bfrom\s+(?:teaching|design|support|qa|sales|marketing|finance|consulting|operations|hr|customer\s+success)\s+to\s+(?:edtech|product|engineering|pm|data|design|marketing|sales|qa)\b/i,
+  /\b(?:i\s+am|i'm|am)\s+(?:transitioning|making\s+a\s+transition|making\s+a\s+pivot|making\s+a\s+switch)\b/i,
+];
+
+const TRANSFERABLE_SKILLS_PATTERNS: RegExp[] = [
+  /\btransferable\s+skills?\b/i,
+  /\b(?:my\s+)?(?:experience|background|skills?)\s+(?:translates?|maps?|carr(?:y|ies))\s+(?:over|across|directly)\b/i,
+  /\b(?:adjacent|cross[-\s]?functional|cross[-\s]?domain)\s+(?:skills?|experience|expertise)\b/i,
+];
+
+function detectDomainPivot(text: string): {
+  domainPivot: boolean;
+  transferableSkillsClaimed: boolean;
+} {
+  const pivot = DOMAIN_PIVOT_PATTERNS.some((p) => p.test(text));
+  const transferable = TRANSFERABLE_SKILLS_PATTERNS.some((p) => p.test(text));
+  return {
+    domainPivot: pivot,
+    /* Only count "transferable skills" claims in the context of a pivot
+     * — otherwise an SWE saying "my skills carry over to this role" at
+     * the same company false-fires. */
+    transferableSkillsClaimed: pivot && transferable,
+  };
+}
+
+/* Phase 25b — payroll-history patterns. "delayed" beats "unpaid" only
+ * if both fire; unpaid is the more severe signal so we prefer it when
+ * both are present. */
+const DELAYED_SALARY_PATTERNS: RegExp[] = [
+  /\b(?:salary|salaries|pay(?:cheques?|checks?)?|wages?|comp(?:ensation)?)\s+(?:was|were|got|has\s+been|have\s+been|is\s+being)\s+(?:delayed|late|deferred|withheld\s+briefly)\b/i,
+  /\b(?:delayed|late|deferred)\s+(?:salary|salaries|pay(?:cheques?|checks?)?|wages?|payroll)\b/i,
+  /\bpayroll\s+(?:was\s+)?(?:delayed|late|deferred|inconsistent|irregular)\b/i,
+  /\b(?:company|employer)\s+(?:was|has\s+been)\s+(?:delaying|withholding)\s+(?:salary|payment|pay)/i,
+];
+
+const UNPAID_SALARY_PATTERNS: RegExp[] = [
+  /\b(?:salary|salaries|wages?|pay(?:cheques?|checks?)?)\s+(?:was|were|has\s+been|have\s+been)\s+unpaid\b/i,
+  /\b(?:unpaid|outstanding)\s+(?:salary|salaries|wages?|dues?|payroll|months?)\b/i,
+  /\b(?:didn't|did\s+not|hasn'?t|haven'?t)\s+(?:get|receive|been\s+paid)\s+(?:salary|paid|paycheck|wages?)\s+(?:for\s+|in\s+)?(?:\d+\s+)?(?:months?|weeks?)/i,
+  /\b(?:not\s+been\s+paid|haven'?t\s+been\s+paid|unpaid\s+for|owed)\s+(?:for\s+)?\d+\s+(?:months?|weeks?)/i,
+];
+
+function detectCompensationHistoryIssue(
+  text: string,
+): CompensationHistoryIssue | null {
+  if (UNPAID_SALARY_PATTERNS.some((p) => p.test(text))) return "unpaid";
+  if (DELAYED_SALARY_PATTERNS.some((p) => p.test(text))) return "delayed";
+  return null;
+}
+
 export function extractCandidateProfile(text: string): CandidateProfileResult {
   if (!text) return EMPTY;
 
@@ -220,13 +300,27 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
 
   const tenureSignal = extractTenureSignal(text);
   const levelMismatch = extractLevelMismatch(text);
+  const { domainPivot, transferableSkillsClaimed } = detectDomainPivot(text);
+  const compensationHistoryIssue = detectCompensationHistoryIssue(text);
 
   const hasAny =
     careerGapMonths != null ||
     careerGapActivity != null ||
     tenureSignal != null ||
-    levelMismatch != null;
-  return { careerGapMonths, careerGapActivity, tenureSignal, levelMismatch, hasAny };
+    levelMismatch != null ||
+    domainPivot ||
+    transferableSkillsClaimed ||
+    compensationHistoryIssue != null;
+  return {
+    careerGapMonths,
+    careerGapActivity,
+    tenureSignal,
+    levelMismatch,
+    domainPivot,
+    transferableSkillsClaimed,
+    compensationHistoryIssue,
+    hasAny,
+  };
 }
 
 export function mergeCandidateProfile(
@@ -239,12 +333,28 @@ export function mergeCandidateProfile(
     careerGapActivity: next.careerGapActivity ?? p.careerGapActivity,
     tenureSignal: next.tenureSignal ?? p.tenureSignal,
     levelMismatch: next.levelMismatch ?? p.levelMismatch,
+    /* domainPivot + transferableSkillsClaimed are monotone-up — once
+     * the candidate disclosed a pivot the recruiter would remember. */
+    domainPivot: p.domainPivot || next.domainPivot,
+    transferableSkillsClaimed:
+      p.transferableSkillsClaimed || next.transferableSkillsClaimed,
+    /* compensationHistoryIssue prefers the more severe of the two
+     * (unpaid > delayed). Last-stated escalation wins. */
+    compensationHistoryIssue:
+      next.compensationHistoryIssue === "unpaid"
+        ? "unpaid"
+        : p.compensationHistoryIssue === "unpaid"
+          ? "unpaid"
+          : (next.compensationHistoryIssue ?? p.compensationHistoryIssue),
     hasAny: false,
   };
   merged.hasAny =
     merged.careerGapMonths != null ||
     merged.careerGapActivity != null ||
     merged.tenureSignal != null ||
-    merged.levelMismatch != null;
+    merged.levelMismatch != null ||
+    merged.domainPivot ||
+    merged.transferableSkillsClaimed ||
+    merged.compensationHistoryIssue != null;
   return merged;
 }

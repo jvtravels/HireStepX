@@ -103,3 +103,77 @@ describe("extractCandidateProfile — hasAny + merge", () => {
     expect(mergeCandidateProfile(null, extractCandidateProfile("overqualified")).levelMismatch).toBe("over");
   });
 });
+
+describe("Phase 25b — domain pivot", () => {
+  it("detects 'transitioning from teaching to EdTech sales'", () => {
+    const r = extractCandidateProfile("I'm transitioning from teaching to EdTech sales");
+    expect(r.domainPivot).toBe(true);
+  });
+
+  it("detects 'career change'", () => {
+    const r = extractCandidateProfile("This is a career change for me.");
+    expect(r.domainPivot).toBe(true);
+  });
+
+  it("transferable-skills alone (no pivot) does NOT count", () => {
+    const r = extractCandidateProfile("My skills carry over to this role.");
+    expect(r.transferableSkillsClaimed).toBe(false);
+  });
+
+  it("transferable-skills + pivot context counts both", () => {
+    const r = extractCandidateProfile(
+      "I'm pivoting from design to product, and my transferable skills should translate.",
+    );
+    expect(r.domainPivot).toBe(true);
+    expect(r.transferableSkillsClaimed).toBe(true);
+  });
+
+  it("merge: domainPivot is monotone-up", () => {
+    const prior = mergeCandidateProfile(
+      null,
+      extractCandidateProfile("career change into product"),
+    );
+    expect(prior.domainPivot).toBe(true);
+    const next = extractCandidateProfile("just discussing comp now");
+    expect(mergeCandidateProfile(prior, next).domainPivot).toBe(true);
+  });
+});
+
+describe("Phase 25b — compensation history", () => {
+  it("detects delayed salary", () => {
+    const r = extractCandidateProfile("My salary was delayed for 2 months at my current firm.");
+    expect(r.compensationHistoryIssue).toBe("delayed");
+  });
+
+  it("detects unpaid salary", () => {
+    const r = extractCandidateProfile("I haven't been paid for 3 months.");
+    expect(r.compensationHistoryIssue).toBe("unpaid");
+  });
+
+  it("unpaid beats delayed when both present", () => {
+    const r = extractCandidateProfile(
+      "Salary was delayed for months and eventually unpaid wages piled up.",
+    );
+    expect(r.compensationHistoryIssue).toBe("unpaid");
+  });
+
+  it("merge: unpaid escalation sticks", () => {
+    const prior = mergeCandidateProfile(
+      null,
+      extractCandidateProfile("salary was delayed last cycle"),
+    );
+    expect(prior.compensationHistoryIssue).toBe("delayed");
+    const next = extractCandidateProfile("actually haven't been paid for 2 months now");
+    expect(mergeCandidateProfile(prior, next).compensationHistoryIssue).toBe("unpaid");
+  });
+
+  it("merge: unpaid prior is not overwritten by later delayed", () => {
+    const prior = mergeCandidateProfile(
+      null,
+      extractCandidateProfile("haven't been paid for 4 months"),
+    );
+    expect(prior.compensationHistoryIssue).toBe("unpaid");
+    const next = extractCandidateProfile("payroll was just delayed last cycle");
+    expect(mergeCandidateProfile(prior, next).compensationHistoryIssue).toBe("unpaid");
+  });
+});
