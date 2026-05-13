@@ -272,6 +272,12 @@ export function applyPersonaToBand(
    * maxStretch strictly above initialOffer. */
   if (out.walkAway >= base.initialOffer) out.walkAway = base.initialOffer - 0.5;
   if (out.maxStretch <= base.initialOffer) out.maxStretch = base.initialOffer + 0.5;
+  /* P35 clamp invariant (session 12 fix — 2026-05-14). Persona never
+   * raises initialOffer; this preserves the 35th-percentile opening
+   * anchor set at construction time in salary-lookup.ts. Defensive: if
+   * future persona logic ever bumped initialOffer above the input base
+   * (e.g. a "founder" boost), this clamp would catch it. */
+  if (out.initialOffer > base.initialOffer) out.initialOffer = base.initialOffer;
   return out;
 }
 

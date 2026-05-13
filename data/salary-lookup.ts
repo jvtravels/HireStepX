@@ -848,7 +848,18 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
     const adjOv = (v: number) => jobCityTier === "tier1" ? v : adjustForCity(v, jobCityTier);
     const totalMin = adjOv(override.totalMin);
     const totalMax = adjOv(override.totalMax);
-    const initialOffer = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
+    /* Opening offer: 35th percentile of (totalMin..totalMax). The P35
+     * clamp below is a safety net — should the formula ever drift (e.g.
+     * a curator tweaks the constant, or a per-company override injects
+     * its own opener), the opener can NEVER anchor above the 35th
+     * percentile of the resolved band. Session 12 (2026-05-14): Razorpay
+     * Product Designer was opening at ₹49L for a 5y candidate because
+     * the senior band was miscalibrated wide (₹29.4-84L); the band is
+     * now ₹30-42L (P35 ≈ ₹34L) and this clamp guarantees future
+     * miscalibrations can't reproduce the bug class. */
+    const p35Cap = totalMin + 0.35 * (totalMax - totalMin);
+    const initialOfferRaw = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
+    const initialOffer = Math.min(initialOfferRaw, Math.round(p35Cap * 10) / 10);
     const minOffer = Math.round(totalMin * 0.95 * 10) / 10;
     const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
     /* `walkAway` is the kernel's CANDIDATE-FLOOR — the offer below which
@@ -1006,10 +1017,13 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
 
   const adj = (v: number) => jobCityTier === "tier1" ? v : adjustForCity(v, jobCityTier);
 
-  // Initial offer: ~75th percentile of the range (leaves room to negotiate up)
+  // Initial offer: 35th percentile of the range (leaves room to negotiate up).
+  // P35 clamp safety net — see override-path comment above for rationale.
   const totalMin = adj(entry.total_min);
   const totalMax = adj(entry.total_max);
-  const initialOffer = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
+  const p35Cap = totalMin + 0.35 * (totalMax - totalMin);
+  const initialOfferRaw = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
+  const initialOffer = Math.min(initialOfferRaw, Math.round(p35Cap * 10) / 10);
 
   // Min offer: slightly below the data range min (floor)
   const minOffer = Math.round(totalMin * 0.95 * 10) / 10;

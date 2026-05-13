@@ -633,3 +633,47 @@ describe("dataConfidence — calibration hedge for CSV-aggregated bands", () => 
     }
   });
 });
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Session 12 (2026-05-14) — Razorpay Product Designer band recalibration
+ * + P35 opening-offer clamp.
+ *
+ * Pre-fix: 5y PD candidate routed to the (29.4..84.0) senior band,
+ * yielding an opener of ₹49L versus a market 35th-pct of ~₹32L. The
+ * band has been recalibrated to (30..42) for senior and the opener
+ * formula has a defensive P35 clamp at construction time so future
+ * miscalibrations can't reproduce the bug class. */
+describe("Razorpay PD band recalibration — session 12 fix", () => {
+  it("senior (5y) opener lands at ~₹34L, not ₹49L", () => {
+    const band = generateNegotiationBand({
+      role: "Product Designer",
+      company: "Razorpay",
+      experienceLevel: "senior",
+    });
+    // P35 of (30..42) = 30 + 0.35*12 = 34.2.
+    expect(band.initialOffer).toBeLessThanOrEqual(35);
+    expect(band.initialOffer).toBeGreaterThan(30);
+  });
+
+  it("mid (2-4y) opener stays within the mid-tier band", () => {
+    const band = generateNegotiationBand({
+      role: "Product Designer",
+      company: "Razorpay",
+      experienceLevel: "mid",
+    });
+    // P35 of (22..32) = 22 + 0.35*10 = 25.5.
+    expect(band.initialOffer).toBeLessThanOrEqual(25.5);
+    expect(band.initialOffer).toBeGreaterThan(20);
+  });
+
+  it("entry (≤1y) opener stays within the entry-tier band", () => {
+    const band = generateNegotiationBand({
+      role: "Product Designer",
+      company: "Razorpay",
+      experienceLevel: "entry",
+    });
+    // P35 of (15..22) = 15 + 0.35*7 = 17.45.
+    expect(band.initialOffer).toBeLessThanOrEqual(17.5);
+    expect(band.initialOffer).toBeGreaterThan(14);
+  });
+});

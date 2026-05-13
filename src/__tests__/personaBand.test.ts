@@ -90,3 +90,25 @@ describe("initState — applies persona band economics at construction", () => {
     expect(state.band.hasEquity).toBe(true);
   });
 });
+
+/* Session 12 (2026-05-14) — P35 invariant: persona modulation must
+ * never raise the opener above the band's input initialOffer. The
+ * opener is anchored at the 35th percentile of the resolved band at
+ * construction time in salary-lookup.ts; persona shifts walkAway /
+ * maxStretch but must leave initialOffer ≤ input. */
+describe("applyPersonaToBand — P35 opening-offer invariant", () => {
+  it("opener is never raised above input initialOffer across all personas", () => {
+    for (const persona of ["hardline", "consultative", "founder", "agency"] as const) {
+      const out = applyPersonaToBand(BASE, persona);
+      expect(out.initialOffer).toBeLessThanOrEqual(BASE.initialOffer);
+    }
+  });
+
+  it("persona-soft scenario: a hypothetically reduced opener is preserved (clamp does NOT raise)", () => {
+    // Synthetic: pretend a downstream layer pre-applied a lower opener.
+    // The persona helper must not bump it back up to base.
+    const reduced: NegotiationBand = { ...BASE, initialOffer: 19 };
+    const out = applyPersonaToBand(reduced, "consultative");
+    expect(out.initialOffer).toBe(19);
+  });
+});
