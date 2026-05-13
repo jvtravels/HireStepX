@@ -32,6 +32,10 @@ import {
   critiqueRecruiterStrategy,
   type RecruiterCritiqueItem,
 } from "./_recruiter-critique";
+import {
+  analyzePivotalTurn,
+  type PivotalTurn,
+} from "./_pivotal-turn";
 
 export interface KernelTurnSummary {
   /** The lever the AI pulled on this turn. */
@@ -97,6 +101,10 @@ export interface NegotiationMetrics {
    *  Empty array = no detected mistakes. Pure derivation from the
    *  same final-state + move history; no transcript re-parse. */
   recruiterCritique: ReadonlyArray<RecruiterCritiqueItem>;
+  /** Phase 24a — single pivotal turn for counterfactual coaching.
+   *  Surfaces "the one moment that mattered most" rather than the
+   *  whole list, so the post-session view stays focused. */
+  pivotalTurn: PivotalTurn;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -150,6 +158,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     hardBandCap: finalState.hardBandCap ?? false,
     marketMode: finalState.marketMode ?? "neutral",
     recruiterCritique: critiqueRecruiterStrategy({ finalState, moves }),
+    pivotalTurn: analyzePivotalTurn({ finalState, moves }),
   };
 }
 

@@ -227,3 +227,70 @@ export function extractSalesOTE(text: string): SalesOTEResult {
 export function extractContractRate(text: string): ContractRateResult {
   return detectContractRate(text);
 }
+
+/* ── Phase 24c — stateful promotion ──────────────────────────────── */
+
+/* Empty constants so kernel initState + backfill can reuse them. */
+export const EMPTY_SALES_OTE: SalesOTEResult = {
+  oteAmount: null,
+  baseAmount: null,
+  attainmentPct: null,
+  quotesOteAsGuaranteed: false,
+  hasAny: false,
+};
+
+export const EMPTY_CONTRACT_RATE: ContractRateResult = {
+  dayRate: null,
+  monthlyRetainer: null,
+  utilizationPct: null,
+  dayRateAsAnnualConfusion: false,
+  hasAny: false,
+};
+
+/* Merge semantics (mirrors the kernel's house style):
+ *   - Numeric facts: last-stated-wins (next.value ?? prior.value).
+ *     A new utterance carrying a number supersedes the older one,
+ *     but a turn with no number doesn't blank out earlier disclosure.
+ *   - Booleans (red-flag-grade): monotone-up. Once the candidate
+ *     quoted OTE as guaranteed or annualised a day rate without
+ *     utilization, the recruiter would remember — so the flag stays.
+ *   - hasAny: OR of components. */
+export function mergeSalesOTE(
+  prior: SalesOTEResult | null,
+  next: SalesOTEResult,
+): SalesOTEResult {
+  const p = prior ?? EMPTY_SALES_OTE;
+  const merged: SalesOTEResult = {
+    oteAmount: next.oteAmount ?? p.oteAmount,
+    baseAmount: next.baseAmount ?? p.baseAmount,
+    attainmentPct: next.attainmentPct ?? p.attainmentPct,
+    quotesOteAsGuaranteed: p.quotesOteAsGuaranteed || next.quotesOteAsGuaranteed,
+    hasAny: false,
+  };
+  merged.hasAny =
+    merged.oteAmount != null ||
+    merged.baseAmount != null ||
+    merged.attainmentPct != null ||
+    merged.quotesOteAsGuaranteed;
+  return merged;
+}
+
+export function mergeContractRate(
+  prior: ContractRateResult | null,
+  next: ContractRateResult,
+): ContractRateResult {
+  const p = prior ?? EMPTY_CONTRACT_RATE;
+  const merged: ContractRateResult = {
+    dayRate: next.dayRate ?? p.dayRate,
+    monthlyRetainer: next.monthlyRetainer ?? p.monthlyRetainer,
+    utilizationPct: next.utilizationPct ?? p.utilizationPct,
+    dayRateAsAnnualConfusion: p.dayRateAsAnnualConfusion || next.dayRateAsAnnualConfusion,
+    hasAny: false,
+  };
+  merged.hasAny =
+    merged.dayRate != null ||
+    merged.monthlyRetainer != null ||
+    merged.utilizationPct != null ||
+    merged.dayRateAsAnnualConfusion;
+  return merged;
+}

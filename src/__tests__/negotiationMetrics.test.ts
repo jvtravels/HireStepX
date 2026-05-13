@@ -108,6 +108,20 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       overpromisesJoining: false,
       hasAny: false,
     },
+    salesOTE: {
+      oteAmount: null,
+      baseAmount: null,
+      attainmentPct: null,
+      quotesOteAsGuaranteed: false,
+      hasAny: false,
+    },
+    contractRate: {
+      dayRate: null,
+      monthlyRetainer: null,
+      utilizationPct: null,
+      dayRateAsAnnualConfusion: false,
+      hasAny: false,
+    },
     ...over,
   };
 }

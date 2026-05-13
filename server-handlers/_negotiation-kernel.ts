@@ -88,6 +88,16 @@ import {
   detectRecoverySignals,
   type CandidateStanceResult,
 } from "./_candidate-stance";
+import {
+  extractSalesOTE,
+  extractContractRate,
+  mergeSalesOTE,
+  mergeContractRate,
+  EMPTY_SALES_OTE,
+  EMPTY_CONTRACT_RATE,
+  type SalesOTEResult,
+  type ContractRateResult,
+} from "./_comp-structure";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -212,6 +222,50 @@ export type MarketMode = "soft" | "neutral" | "hot";
  * cleanly to a transparent hiring-manager persona, so callers that
  * don't specify persona see no change. */
 export type RecruiterPersona = "hardline" | "consultative" | "founder" | "agency";
+
+/* Phase 24b (2026-05-13) — persona-conditional band economics.
+ * Earlier persona work modulated STYLE (hints, probes). This pure
+ * helper modulates the BAND itself so persona affects what's actually
+ * negotiable:
+ *   - hardline:    +1L walkAway (less willing to chase low), -1L maxStretch
+ *                  (less willing to flex high). Tighter band overall.
+ *   - founder:     hasEquity forced true (equity is the trade lever),
+ *                  +0.5L maxStretch (founder authority to flex on TC).
+ *   - agency:      +0.5L maxStretch (commission-motivated to close).
+ *   - consultative: no change (baseline).
+ *
+ * Invariants preserved:
+ *   - walkAway < initialOffer < maxStretch (clamped if persona deltas
+ *     would invert).
+ *   - If a caller pre-applied tighter bounds, we never widen past
+ *     {initialOffer ± 0.01} into invalid territory. */
+export function applyPersonaToBand(
+  base: NegotiationBand,
+  persona: RecruiterPersona,
+): NegotiationBand {
+  const out: NegotiationBand = { ...base };
+  switch (persona) {
+    case "hardline":
+      out.walkAway = base.walkAway + 1;
+      out.maxStretch = base.maxStretch - 1;
+      break;
+    case "founder":
+      out.hasEquity = true;
+      out.maxStretch = base.maxStretch + 0.5;
+      break;
+    case "agency":
+      out.maxStretch = base.maxStretch + 0.5;
+      break;
+    case "consultative":
+      /* no change */
+      break;
+  }
+  /* Clamp to preserve invariants: walkAway strictly below initialOffer,
+   * maxStretch strictly above initialOffer. */
+  if (out.walkAway >= base.initialOffer) out.walkAway = base.initialOffer - 0.5;
+  if (out.maxStretch <= base.initialOffer) out.maxStretch = base.initialOffer + 0.5;
+  return out;
+}
 
 export interface NegotiationState {
   /* Identity */
@@ -359,6 +413,15 @@ export interface NegotiationState {
    * router and red-flag detector — both pure derived views recomputed
    * each turn. */
   candidateStance: CandidateStanceResult;
+
+  /* Phase 24c (2026-05-13) — promoted sales / contract comp-structure
+   * detectors. Previously utterance-grade only (Phase 22). Now sticky
+   * across turns: numeric facts (OTE, base, attainment, day rate,
+   * utilization) are last-stated-wins; red-flag booleans are
+   * monotone-up. Lets the recruiter side reason across turns ("you
+   * quoted ₹40L OTE 3 turns ago; what was the base?"). */
+  salesOTE: SalesOTEResult;
+  contractRate: ContractRateResult;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -382,7 +445,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     sessionId: input.sessionId,
     role: input.role,
     company: input.company,
-    band: { ...input.band },
+    band: applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
     phase: "opening",
     turnIndex: 0,
     maxTurns: input.maxTurns ?? 8,
@@ -476,6 +539,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       overpromisesJoining: false,
       hasAny: false,
     },
+    salesOTE: { ...EMPTY_SALES_OTE },
+    contractRate: { ...EMPTY_CONTRACT_RATE },
   };
 }
 
@@ -981,6 +1046,18 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       parsed.candidateStance,
       recovery,
     );
+  }
+
+  /* Phase 24c — merge sales / contract comp-structure detectors.
+   * Only merge when the new utterance carried a signal; otherwise
+   * leave prior state intact (we never blank out earlier disclosure). */
+  const freshSales = extractSalesOTE(answer);
+  if (freshSales.hasAny) {
+    next.salesOTE = mergeSalesOTE(state.salesOTE, freshSales);
+  }
+  const freshContract = extractContractRate(answer);
+  if (freshContract.hasAny) {
+    next.contractRate = mergeContractRate(state.contractRate, freshContract);
   }
 
   /* Merge tactic + info sets — sticky, never cleared. */
@@ -1720,6 +1797,8 @@ export function deserializeState(json: string): NegotiationState {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,
     },
     candidateStance: backfillCandidateStance(s.candidateStance),
+    salesOTE: (s.salesOTE as SalesOTEResult | undefined) ?? { ...EMPTY_SALES_OTE },
+    contractRate: (s.contractRate as ContractRateResult | undefined) ?? { ...EMPTY_CONTRACT_RATE },
   };
 }
 
