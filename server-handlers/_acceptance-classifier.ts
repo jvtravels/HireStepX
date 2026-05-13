@@ -60,6 +60,13 @@ export interface AcceptanceResult {
    *  rule fired. Each string is a rule id, e.g. "performative-verb",
    *  "weak-affirmative-only-veto", "phase-gate-no-offer". */
   reasons: string[];
+  /** Split-clause detection (Session 12 regression, 2026-05-14):
+   *  candidate accepts AND asks a follow-up info question in the same
+   *  utterance, e.g. "I'll join. Can you let me know the benefits?".
+   *  When true, orchestrator should both transition to `accepted` AND
+   *  also disclose the requested info in the same response. Optional —
+   *  callers that don't read it still get correct `accepted` semantics. */
+  hasFollowUpQuestion?: boolean;
 }
 
 /* ─── Pattern bank ─────────────────────────────────────────────── */
@@ -83,6 +90,11 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bhappy\s+to\s+accept\b/i,
   /\bi.?m\s+signing\s+(?:today|now|tonight)\b/i,
   /\bsign\s+(?:today|right\s+now|tonight)\b/i,
+  /* "I'll join" — commit-to-join verb, structurally as strong as
+     "I accept". Added 2026-05-14 (Session 12). */
+  /\bi.?ll\s+join(?:\s+(?:the\s+)?(?:company|team|firm|role|offer))?\b/i,
+  /\bi.?ll\s+go\s+with\s+(?:this|the\s+offer|that)\b/i,
+  /\bworks\s+for\s+me[,\s]+i.?ll\s+sign\b/i,
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -163,10 +175,83 @@ const NEGATION_PATTERN =
 const WEAK_AFFIRMATIVE_ONLY_PATTERN =
   /^\s*(?:it'?s?\s+)?(?:ok(?:ay)?|alright|fine|sure|cool|good)[\s,.!]+(?:let'?s\s+(?:get\s+started|begin|start|kick\s+off|go|move\s+on)|let\s+us\s+(?:start|begin))[\s.!?]*$/i;
 
+/** Split-clause acceptance phrases (Session 12 regression, 2026-05-14).
+ *  Strong commit-to-join verbs that may appear as the first clause of
+ *  an "accept + follow-up question" utterance. Kept separate from the
+ *  performative bank so we can scope them to a per-sentence pass
+ *  without changing whole-utterance classification semantics. */
+const SPLIT_CLAUSE_ACCEPTANCE_PATTERNS: RegExp[] = [
+  /\bi.?ll\s+join(?:\s+(?:the\s+)?(?:company|team|firm|role|offer))?\b/i,
+  /\bi\s+accept\b/i,
+  /\bi.?ll\s+accept\b/i,
+  /\bi.?ll\s+take\s+(?:it|the\s+offer)\b/i,
+  /\bsounds\s+good[,\s]+i.?ll\s+(?:join|take|sign|accept|go\s+with)\b/i,
+  /\blet.?s\s+(?:do\s+it|go\s+ahead|lock\s+it\s+in)\b/i,
+  /\bokay[,\s]+let.?s\s+go\s+ahead\b/i,
+  /\bi.?m\s+in\b/i,
+  /\baccepted\b/i,
+  /\bi.?ll\s+go\s+with\s+(?:this|the\s+offer|that)\b/i,
+  /\bworks\s+for\s+me[,\s]+i.?ll\s+sign\b/i,
+  /\bit.?s\s+a\s+deal\b/i,
+  /\bdone\s+deal\b/i,
+  /\bdeal\b/i,
+];
+
+/** Question / info-ask cue at the clause level. */
+const QUESTION_INTENT_PATTERN =
+  /(?:\?\s*$)|^\s*(?:can\s+you|could\s+you|would\s+you|let\s+me\s+know|tell\s+me|what\s+about|give\s+me\s+details|share|explain|walk\s+me\s+through)\b/i;
+
 /* ─── Helpers ──────────────────────────────────────────────────── */
 
 function anyMatch(text: string, patterns: RegExp[]): boolean {
   return patterns.some(p => p.test(text));
+}
+
+/** Tokenize into clause-ish sentences by `.`, `!`, `?`, or `; `. */
+function splitSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+|;\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}
+
+/** Per-sentence split-clause detection. Returns:
+ *   - acceptance: at least one sentence carries strong accept phrasing
+ *     AND has no negation;
+ *   - question: at least one DIFFERENT sentence asks for info.
+ *  Caller treats `acceptance && question` as accept-plus-followup. */
+function detectSplitClause(text: string): {
+  acceptance: boolean;
+  question: boolean;
+  acceptIdx: number;
+} {
+  const sentences = splitSentences(text);
+  let acceptIdx = -1;
+  let questionIdx = -1;
+  for (let i = 0; i < sentences.length; i++) {
+    const s = sentences[i];
+    /* Negation in the same sentence vetoes acceptance for that
+       sentence — "I won't join" must never trigger. "not yet" is
+       caught here too. */
+    if (NEGATION_PATTERN.test(s)) continue;
+    if (/\b(?:won.?t|can.?t|don.?t|not|never|no)\s+(?:join|take|accept|sign|go|do|interested)\b/i.test(s)) continue;
+    if (/\bnot\s+yet\b/i.test(s)) continue;
+    if (acceptIdx === -1 && anyMatch(s, SPLIT_CLAUSE_ACCEPTANCE_PATTERNS)) {
+      acceptIdx = i;
+    }
+  }
+  for (let i = 0; i < sentences.length; i++) {
+    if (i === acceptIdx) continue;
+    if (QUESTION_INTENT_PATTERN.test(sentences[i])) {
+      questionIdx = i;
+      break;
+    }
+  }
+  return {
+    acceptance: acceptIdx !== -1,
+    question: questionIdx !== -1,
+    acceptIdx,
+  };
 }
 
 /* ─── Classifier ──────────────────────────────────────────────── */
@@ -221,7 +306,51 @@ export function classifyAcceptance(
   /* Step 2: performative verb. Unambiguous speech act. */
   if (anyMatch(a, STRONG_PERFORMATIVE_PATTERNS)) {
     reasons.push("performative-verb");
-    return { accepted: true, confidence: "strong", reasons };
+    const split = detectSplitClause(a);
+    return {
+      accepted: true,
+      confidence: "strong",
+      reasons,
+      hasFollowUpQuestion: split.acceptance && split.question,
+    };
+  }
+
+  /* Step 2.5: split-clause acceptance with follow-up question.
+     "I accept. What about variable components?" — the trailing
+     interrogative would otherwise mask the commit clause from some
+     downstream consumers; flag `hasFollowUpQuestion` so the
+     orchestrator both transitions to `accepted` AND discloses the
+     requested info in the same response. Only fires when BOTH
+     halves are present (pure acceptance and pure question are
+     handled by steps 2 / 3 / 4 / 5 / no-match respectively).
+
+     Phase gate is preserved: if `offerOnTable === false` and the
+     matched accept phrase is a soft commitment idiom (e.g. "let's
+     do it") without a strong commit verb, we defer to step 4/5's
+     existing gate logic by skipping the early return here. */
+  {
+    const split = detectSplitClause(a);
+    if (split.acceptance && split.question) {
+      const acceptedSentence = splitSentences(a)[split.acceptIdx] || "";
+      const isStrongClause =
+        anyMatch(acceptedSentence, STRONG_PERFORMATIVE_PATTERNS) ||
+        /\bi.?ll\s+join\b/i.test(acceptedSentence) ||
+        /\baccepted\b/i.test(acceptedSentence) ||
+        /\bi\s+accept\b/i.test(acceptedSentence);
+      const gateBlocks =
+        context.offerOnTable === false &&
+        !isStrongClause &&
+        !OFFER_REFERENCE_PATTERN.test(a);
+      if (!gateBlocks) {
+        reasons.push("split-clause-acceptance", "follow-up-question");
+        return {
+          accepted: true,
+          confidence: isStrongClause ? "strong" : "medium",
+          reasons,
+          hasFollowUpQuestion: true,
+        };
+      }
+    }
   }
 
   /* Step 3: soft alignment. Each pattern names the offer itself,

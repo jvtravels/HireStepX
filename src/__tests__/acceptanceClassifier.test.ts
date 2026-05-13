@@ -109,6 +109,58 @@ describe("classifyAcceptance — Hindi-mix", () => {
   });
 });
 
+describe("classifyAcceptance — Session 12 split-clause regression (2026-05-14)", () => {
+  /* Candidate said: "I'll join the company. Can you let me know all the
+     benefits of the oral CTC?" The trailing interrogative masked the
+     commit verb from whole-utterance scans, the kernel never reached
+     `accepted`, and benefits disclosure was gated off. Split-clause
+     pass tokenizes by sentence boundary and treats acceptance + info
+     question as accepted-with-follow-up. */
+
+  it("accepts 'I'll join the company. Can you let me know all the benefits of the oral CTC?'", () => {
+    const r = classifyAcceptance(
+      "I'll join the company. Can you let me know all the benefits of the oral CTC?",
+    );
+    expect(r.accepted).toBe(true);
+    expect(r.hasFollowUpQuestion).toBe(true);
+  });
+
+  it("accepts 'I accept. What about variable components?'", () => {
+    const r = classifyAcceptance("I accept. What about variable components?");
+    expect(r.accepted).toBe(true);
+    expect(r.hasFollowUpQuestion).toBe(true);
+  });
+
+  it("accepts 'sounds good, I'll take it. Can you share the joining date?'", () => {
+    const r = classifyAcceptance(
+      "sounds good, I'll take it. Can you share the joining date?",
+    );
+    expect(r.accepted).toBe(true);
+    expect(r.hasFollowUpQuestion).toBe(true);
+  });
+
+  it("does NOT accept a pure follow-up question with no acceptance verb", () => {
+    const r = classifyAcceptance("Can you tell me about benefits?");
+    expect(r.accepted).toBe(false);
+  });
+
+  it("accepts pure acceptance without a follow-up question", () => {
+    const r = classifyAcceptance("I'll join the company.");
+    expect(r.accepted).toBe(true);
+    expect(r.hasFollowUpQuestion).toBe(false);
+  });
+
+  it("does NOT accept 'I won't join. Can you do better?' (negation)", () => {
+    const r = classifyAcceptance("I won't join. Can you do better?");
+    expect(r.accepted).toBe(false);
+  });
+
+  it("does NOT accept 'not yet, can I get more time?'", () => {
+    const r = classifyAcceptance("not yet, can I get more time?");
+    expect(r.accepted).toBe(false);
+  });
+});
+
 describe("classifyAcceptance — Accenture regression (Phase 9)", () => {
   it("does NOT accept 'It okay. Let's get started.' even with no context", () => {
     /* Real session capture (2026-05-13): candidate said this at turn 1.
