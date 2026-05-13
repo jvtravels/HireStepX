@@ -1545,7 +1545,7 @@ export function pickAiMove(state: NegotiationState): AiMove {
     if (state.walkAwayReturned) split *= 0.5;
 
     if (split > 0.95) split = 0.95;
-    let newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
+    const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
 
     /* Phase 12b (2026-05-13) — band-component cap enforcement. When
      * the band declares baseStretch + (optional) variableMax, the
