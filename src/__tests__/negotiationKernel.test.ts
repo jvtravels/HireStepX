@@ -310,6 +310,35 @@ describe("parseCandidateAnswer", () => {
       targetAsRange: false, vossTactics: [], infoAsked: [],
       signalsCompetingExistsWithoutNumber: false,
       componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
+      rationale: null,
+      noticeJoining: {
+        noticePeriodDays: null,
+        buyoutRequested: false,
+        joiningBonusAsk: null,
+        earlyJoinPreferred: false,
+        hasAny: false,
+      },
+      equityVesting: {
+        vestingYears: null,
+        cliffMonths: null,
+        preference: null,
+        familiarity: null,
+        hasAny: false,
+      },
+      locationMode: {
+        workMode: null,
+        locationCity: null,
+        relocationRequested: false,
+        relocationRefused: false,
+        hasAny: false,
+      },
+      competingOfferDetail: {
+        company: null,
+        status: null,
+        stage: null,
+        letterShareOffered: false,
+        hasAny: false,
+      },
     });
   });
 });

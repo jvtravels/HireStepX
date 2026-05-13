@@ -312,6 +312,91 @@ function buildResponseHints(state: NegotiationState): string {
   if (state.hardBandCap) {
     hints.push("Band is structurally capped on base. Redirect to non-cash levers; do not promise base movement.");
   }
+
+  /* Phase 11 — hike% framing + rationale acknowledgement. The
+     hike-category bucket lets the LLM calibrate its pushback intensity
+     (conservative = accept; normal = mild probe; aggressive/extreme =
+     hard justify). When the candidate has STATED a rationale, the LLM
+     should engage that frame specifically rather than ask for one
+     generically. */
+  if (state.hikePercent != null) {
+    const pct = state.hikePercent;
+    if (pct >= 50) {
+      hints.push(`Hike is ${pct}% — extreme. Frame your pushback respectfully; ask for the justification before any concession.`);
+    } else if (pct >= 30) {
+      hints.push(`Hike is ${pct}% — aggressive. A justification probe is appropriate before counter-offering.`);
+    } else if (pct >= 15) {
+      hints.push(`Hike is ${pct}% — normal switch-job range. Probe lightly or proceed to counter.`);
+    } else if (pct >= 0) {
+      hints.push(`Hike is ${pct}% — conservative. The candidate's ask is well within market norms; consider matching.`);
+    }
+  }
+  if (state.rationale) {
+    const r = state.rationale;
+    hints.push(`Candidate justified ask with: ${r.kind} ("${r.evidence}"). Engage this frame specifically.`);
+  }
+
+  /* Phase 12 — component base-floor enforcement. When the candidate
+     has stated a base floor AND the lever is counter-base, the
+     counter MUST be framed as having base ≥ candidateBase. The LLM
+     should explicitly mention the base composition (not just the
+     total) so the candidate sees the constraint respected. */
+  const cb = state.candidateComponentBreakdown;
+  if (cb && cb.base != null) {
+    hints.push(`Candidate's stated base floor is ₹${cb.base} LPA. Any counter must respect base ≥ ₹${cb.base} LPA — mention the base composition explicitly in your response.`);
+  }
+  if (cb && cb.variable != null) {
+    hints.push(`Candidate stated variable comfort at ₹${cb.variable} LPA. Avoid loading more variable than this without explicit acknowledgement.`);
+  }
+
+  /* Phase 13 — notice/joining/buyout context for the LLM. */
+  const nj = state.noticeJoining;
+  if (nj && nj.buyoutRequested) {
+    hints.push(`Candidate requested notice-period buyout. Respond with company policy on this (typical: yes, up to 30-60 days) — do not invent rupee figures unless you know the band has headroom.`);
+  }
+  if (nj && nj.joiningBonusAsk != null) {
+    hints.push(`Candidate asked for joining bonus of ₹${nj.joiningBonusAsk} LPA. If the lever is joining-bonus, negotiate on this number; otherwise acknowledge and defer.`);
+  }
+  if (nj && nj.earlyJoinPreferred) {
+    hints.push("Candidate wants to join earlier than full notice. Flag this as positive flexibility but don't conflate with the buyout chip.");
+  }
+
+  /* Phase 14 — equity preference + literacy framing. */
+  const ev = state.equityVesting;
+  if (ev && ev.preference === "equity-pref") {
+    hints.push("Candidate prefers equity over cash. Lead with equity-grant lever when concessions are needed; frame as long-term upside.");
+  }
+  if (ev && ev.preference === "cash-pref") {
+    hints.push("Candidate prefers cash over equity. Avoid leading with equity sweeteners; use joining-bonus or base movement instead.");
+  }
+  if (ev && ev.familiarity === "novice") {
+    hints.push("Candidate is new to equity. Explain vesting mechanics briefly (cliff, slope) before assuming buy-in.");
+  }
+
+  /* Phase 15 — work-mode + relocation framing. */
+  const lm = state.locationMode;
+  if (lm && lm.relocationRefused) {
+    hints.push("Candidate has refused relocation. Do NOT propose relocation packages; respect the constraint and pivot to remote/hybrid framing if available.");
+  }
+  if (lm && lm.relocationRequested) {
+    hints.push("Candidate requested relocation assistance. Acknowledge the company offers a standard relocation package (do not commit to specific figures unless authorized).");
+  }
+  if (lm && lm.workMode === "remote") {
+    hints.push("Candidate prefers fully remote. If the role is hybrid/office, flag the constraint honestly — do not over-promise remote flexibility.");
+  }
+
+  /* Phase 16 — competing-offer detail probing. */
+  const co = state.competingOfferDetail;
+  if (co && co.status === "verbal") {
+    hints.push("Candidate's competing offer is only verbal. The leverage is real but unverified — frame your counter accordingly (give weight, don't over-match).");
+  }
+  if (co && co.letterShareOffered) {
+    hints.push("Candidate offered to share the competing offer letter. Acknowledge this positively; it strengthens their leverage and reduces verification friction.");
+  }
+  if (co && co.stage === "interviewing") {
+    hints.push("Candidate is still INTERVIEWING with the competing company (not offered). Discount the leverage — the competing 'offer' is hypothetical.");
+  }
+
   return hints.join("\n");
 }
 
@@ -342,6 +427,56 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cb.variable != null) cbParts.push(`var=${cb.variable}`);
     if (cb.equity != null) cbParts.push(`eq=${cb.equity}`);
     parts.push(`candComponents=[${cbParts.join(",")}]`);
+  }
+  /* Phase 11 — hike% + rationale framing. The AI uses these to
+     ground its pushback ("that's a 67% hike — how did you arrive at
+     this?" / "market data is a strong frame, here's where our band
+     sits"). Without these the LLM has to recompute hike% from
+     target+currentCtc each turn and never sees the framing the
+     candidate used. */
+  if (state.hikePercent != null) parts.push(`hike=${state.hikePercent}%`);
+  if (state.rationale) parts.push(`rationaleKind=${state.rationale.kind}`);
+  /* Phase 13 — notice/joining-bonus economics. Days + buyout-ask +
+     joining-bonus-ask are all separable chips the recruiter side
+     reasons about distinctly. */
+  const nj = state.noticeJoining;
+  if (nj && nj.hasAny) {
+    const njParts: string[] = [];
+    if (nj.noticePeriodDays != null) njParts.push(`days=${nj.noticePeriodDays}`);
+    if (nj.buyoutRequested) njParts.push("buyoutAsk");
+    if (nj.joiningBonusAsk != null) njParts.push(`jbAsk=${nj.joiningBonusAsk}`);
+    if (nj.earlyJoinPreferred) njParts.push("earlyJoin");
+    parts.push(`notice=[${njParts.join(",")}]`);
+  }
+  /* Phase 14 — equity vesting + preference + literacy. */
+  const ev = state.equityVesting;
+  if (ev && ev.hasAny) {
+    const evParts: string[] = [];
+    if (ev.vestingYears != null) evParts.push(`yrs=${ev.vestingYears}`);
+    if (ev.cliffMonths != null) evParts.push(`cliff=${ev.cliffMonths}mo`);
+    if (ev.preference) evParts.push(`pref=${ev.preference}`);
+    if (ev.familiarity) evParts.push(`fam=${ev.familiarity}`);
+    parts.push(`equity=[${evParts.join(",")}]`);
+  }
+  /* Phase 15 — work mode + location + relocation. */
+  const lm = state.locationMode;
+  if (lm && lm.hasAny) {
+    const lmParts: string[] = [];
+    if (lm.workMode) lmParts.push(`mode=${lm.workMode}`);
+    if (lm.locationCity) lmParts.push(`city=${lm.locationCity}`);
+    if (lm.relocationRequested) lmParts.push("relocReq");
+    if (lm.relocationRefused) lmParts.push("relocNo");
+    parts.push(`loc=[${lmParts.join(",")}]`);
+  }
+  /* Phase 16 — competing-offer paperwork detail. */
+  const co = state.competingOfferDetail;
+  if (co && co.hasAny) {
+    const coParts: string[] = [];
+    if (co.company) coParts.push(`co=${co.company}`);
+    if (co.status) coParts.push(`status=${co.status}`);
+    if (co.stage) coParts.push(`stage=${co.stage}`);
+    if (co.letterShareOffered) coParts.push("willShare");
+    parts.push(`competingDetail=[${coParts.join(",")}]`);
   }
   if (state.leversUsed.length > 0) parts.push(`leversUsed=[${state.leversUsed.join(",")}]`);
   parts.push(`rationale=${move.rationale}`);

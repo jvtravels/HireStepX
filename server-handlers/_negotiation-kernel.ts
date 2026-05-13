@@ -42,6 +42,31 @@ import {
   mergeBreakdown,
   type ComponentBreakdown,
 } from "./_component-breakdown";
+import {
+  extractHikeRationale,
+  computeHikePercent,
+  type RationaleResult,
+} from "./_hike-rationale";
+import {
+  extractNoticeJoining,
+  mergeNoticeJoining,
+  type NoticeJoiningResult,
+} from "./_notice-joining";
+import {
+  extractEquityVesting,
+  mergeEquityVesting,
+  type EquityVestingResult,
+} from "./_equity-vesting";
+import {
+  extractLocationMode,
+  mergeLocationMode,
+  type LocationModeResult,
+} from "./_location-mode";
+import {
+  extractCompetingOfferDetail,
+  mergeCompetingOfferDetail,
+  type CompetingOfferDetail,
+} from "./_competing-offer-detail";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -98,6 +123,15 @@ export interface NegotiationBand {
   walkAway: number;
   /** Whether equity/RSU is on the table for this role/company tier. */
   hasEquity: boolean;
+  /** Phase 12 (2026-05-13): optional base/variable component bounds.
+   *  When set, the move-picker + validator enforce that any counter
+   *  respects the candidate's stated base floor (via
+   *  `candidateComponentBreakdown.base`) AND the recruiter's
+   *  structural caps. Optional so legacy bands without this info
+   *  fall through to the prior total-CTC-only behaviour. */
+  baseFloor?: number;
+  baseStretch?: number;
+  variableMax?: number;
 }
 
 /* ─── Canonical State ────────────────────────────────────────────── */
@@ -224,6 +258,32 @@ export interface NegotiationState {
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
   walkedAwayAtTurn: number | null;
+
+  /* Phase 11 (2026-05-13) — hike % + candidate-stated rationale.
+   * Computed sticky: hikePercent regenerates each turn from
+   * (target, currentCtc); rationale is last-stated-wins. */
+  hikePercent: number | null;
+  rationale: RationaleResult | null;
+
+  /* Phase 13 (2026-05-13) — notice period + joining bonus + buyout
+   * signals. Sticky: notice days and joining-bonus ask persist
+   * across turns; buyoutRequested / earlyJoinPreferred booleans are
+   * monotone-up. */
+  noticeJoining: NoticeJoiningResult;
+
+  /* Phase 14 (2026-05-13) — equity vesting preferences + literacy.
+   * Captures vesting years, cliff months, cash/equity preference,
+   * and candidate's prior equity experience. */
+  equityVesting: EquityVestingResult;
+
+  /* Phase 15 (2026-05-13) — work mode (remote/hybrid/office) +
+   * candidate location + relocation signals. */
+  locationMode: LocationModeResult;
+
+  /* Phase 16 (2026-05-13) — structured competing-offer detail.
+   * Complements the existing `competingOffer: number` magnitude with
+   * company + status + stage + letter-share signals. */
+  competingOfferDetail: CompetingOfferDetail;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -268,6 +328,36 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     marketMode: input.marketMode ?? "neutral",
     acceptedAtTurn: null,
     walkedAwayAtTurn: null,
+    hikePercent: null,
+    rationale: null,
+    noticeJoining: {
+      noticePeriodDays: null,
+      buyoutRequested: false,
+      joiningBonusAsk: null,
+      earlyJoinPreferred: false,
+      hasAny: false,
+    },
+    equityVesting: {
+      vestingYears: null,
+      cliffMonths: null,
+      preference: null,
+      familiarity: null,
+      hasAny: false,
+    },
+    locationMode: {
+      workMode: null,
+      locationCity: null,
+      relocationRequested: false,
+      relocationRefused: false,
+      hasAny: false,
+    },
+    competingOfferDetail: {
+      company: null,
+      status: null,
+      stage: null,
+      letterShareOffered: false,
+      hasAny: false,
+    },
   };
 }
 
@@ -294,10 +384,20 @@ export interface ParsedAnswer {
   /* Component breakdown the candidate stated this turn — base /
      variable / equity. Phase 10A (2026-05-13). When `hasAny` is true,
      the LLM prompt surfaces these so it can respect base-floor /
-     variable-cap constraints in subsequent offers. Detection-only at
-     this stage; move-picker enforcement is deferred to a later phase
-     once band schema also carries components. */
+     variable-cap constraints in subsequent offers. Phase 12 added
+     enforcement in the move-picker (response hints + base-floor
+     validator). */
   componentBreakdown: ComponentBreakdown;
+  /* Phase 11 (2026-05-13) — rationale + hike justification cues. */
+  rationale: RationaleResult | null;
+  /* Phase 13 — notice / joining bonus / buyout signals. */
+  noticeJoining: NoticeJoiningResult;
+  /* Phase 14 — equity vesting preferences + literacy. */
+  equityVesting: EquityVestingResult;
+  /* Phase 15 — work-mode + location + relocation signals. */
+  locationMode: LocationModeResult;
+  /* Phase 16 — competing-offer paperwork / company / stage detail. */
+  competingOfferDetail: CompetingOfferDetail;
 }
 
 /* Parse the candidate's free-text answer for salary-relevant numbers
@@ -432,6 +532,11 @@ export function parseCandidateAnswer(
       targetAsRange: false, vossTactics: [], infoAsked: [],
       signalsCompetingExistsWithoutNumber: false,
       componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
+      rationale: null,
+      noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, hasAny: false },
+      equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, hasAny: false },
+      locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
+      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, hasAny: false },
     };
   }
 
@@ -545,6 +650,16 @@ export function parseCandidateAnswer(
   const vossTactics = detectVossTactics(a, lastAiText);
   const infoAsked = detectInfoIntents(a);
   const componentBreakdown = extractComponentBreakdown(a);
+  /* Phases 11/13/14/15/16 parsers — each returns a structured record
+   * with `hasAny` (or null for the rationale singleton). They run
+   * over the SAME normalized text so a single utterance "I'm in
+   * Bangalore, 90-day notice, market is 32 LPA for my YOE" populates
+   * location + notice + rationale in one pass. */
+  const hikeRationale = extractHikeRationale(a, target, currentCtc);
+  const noticeJoining = extractNoticeJoining(a);
+  const equityVesting = extractEquityVesting(a);
+  const locationMode = extractLocationMode(a);
+  const competingOfferDetail = extractCompetingOfferDetail(a);
 
   return {
     target, currentCtc, competing,
@@ -552,6 +667,11 @@ export function parseCandidateAnswer(
     targetAsRange, vossTactics, infoAsked,
     signalsCompetingExistsWithoutNumber,
     componentBreakdown,
+    rationale: hikeRationale.rationale,
+    noticeJoining,
+    equityVesting,
+    locationMode,
+    competingOfferDetail,
   };
 }
 
@@ -656,6 +776,33 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     next.candidateComponentBreakdown = mergeBreakdown(
       state.candidateComponentBreakdown,
       parsed.componentBreakdown,
+    );
+  }
+
+  /* Phase 11 — hike% is recomputed each turn from the LATEST
+     target+currentCtc (after current-turn binding). Rationale is
+     sticky: last-stated wins, prior preserved when current turn
+     mentions no rationale cue. */
+  next.hikePercent = computeHikePercent(next.candidateTarget, next.candidateCurrentCtc);
+  if (parsed.rationale) next.rationale = parsed.rationale;
+
+  /* Phase 13/14/15/16 — merge non-empty parses into sticky state.
+     Each merger preserves prior fields when the current turn doesn't
+     mention them; non-null new values overwrite. Booleans are
+     monotone-up (once requested/refused, stays). */
+  if (parsed.noticeJoining.hasAny) {
+    next.noticeJoining = mergeNoticeJoining(state.noticeJoining, parsed.noticeJoining);
+  }
+  if (parsed.equityVesting.hasAny) {
+    next.equityVesting = mergeEquityVesting(state.equityVesting, parsed.equityVesting);
+  }
+  if (parsed.locationMode.hasAny) {
+    next.locationMode = mergeLocationMode(state.locationMode, parsed.locationMode);
+  }
+  if (parsed.competingOfferDetail.hasAny) {
+    next.competingOfferDetail = mergeCompetingOfferDetail(
+      state.competingOfferDetail,
+      parsed.competingOfferDetail,
     );
   }
 
@@ -1238,6 +1385,56 @@ export function validateState(state: unknown): asserts state is NegotiationState
     }
     if (typeof cb.hasAny !== "boolean") throw new Error("state.candidateComponentBreakdown.hasAny");
   }
+  /* Phase 11–16 optional fields. Tolerate absence on legacy in-flight
+     sessions; deserializeState backfills. Reject only malformed
+     shapes. Lightweight checks — we don't enum-validate every value,
+     just structural shape, because adversarial state authorship is
+     already gated by the route auth + idempotency. */
+  if (s.hikePercent !== undefined && !isFiniteNumOrNull(s.hikePercent)) {
+    throw new Error("state.hikePercent");
+  }
+  if (s.rationale !== undefined && s.rationale !== null) {
+    const r = s.rationale as Record<string, unknown>;
+    if (typeof r !== "object" || typeof r.kind !== "string" || typeof r.evidence !== "string") {
+      throw new Error("state.rationale");
+    }
+  }
+  if (s.noticeJoining !== undefined) {
+    const nj = s.noticeJoining as Record<string, unknown>;
+    if (!nj || typeof nj !== "object") throw new Error("state.noticeJoining");
+    if (!isFiniteNumOrNull(nj.noticePeriodDays)) throw new Error("state.noticeJoining.noticePeriodDays");
+    if (typeof nj.buyoutRequested !== "boolean") throw new Error("state.noticeJoining.buyoutRequested");
+    if (!isFiniteNumOrNull(nj.joiningBonusAsk)) throw new Error("state.noticeJoining.joiningBonusAsk");
+    if (typeof nj.earlyJoinPreferred !== "boolean") throw new Error("state.noticeJoining.earlyJoinPreferred");
+    if (typeof nj.hasAny !== "boolean") throw new Error("state.noticeJoining.hasAny");
+  }
+  if (s.equityVesting !== undefined) {
+    const ev = s.equityVesting as Record<string, unknown>;
+    if (!ev || typeof ev !== "object") throw new Error("state.equityVesting");
+    if (!isFiniteNumOrNull(ev.vestingYears)) throw new Error("state.equityVesting.vestingYears");
+    if (!isFiniteNumOrNull(ev.cliffMonths)) throw new Error("state.equityVesting.cliffMonths");
+    if (ev.preference !== null && typeof ev.preference !== "string") throw new Error("state.equityVesting.preference");
+    if (ev.familiarity !== null && typeof ev.familiarity !== "string") throw new Error("state.equityVesting.familiarity");
+    if (typeof ev.hasAny !== "boolean") throw new Error("state.equityVesting.hasAny");
+  }
+  if (s.locationMode !== undefined) {
+    const lm = s.locationMode as Record<string, unknown>;
+    if (!lm || typeof lm !== "object") throw new Error("state.locationMode");
+    if (lm.workMode !== null && typeof lm.workMode !== "string") throw new Error("state.locationMode.workMode");
+    if (lm.locationCity !== null && typeof lm.locationCity !== "string") throw new Error("state.locationMode.locationCity");
+    if (typeof lm.relocationRequested !== "boolean") throw new Error("state.locationMode.relocationRequested");
+    if (typeof lm.relocationRefused !== "boolean") throw new Error("state.locationMode.relocationRefused");
+    if (typeof lm.hasAny !== "boolean") throw new Error("state.locationMode.hasAny");
+  }
+  if (s.competingOfferDetail !== undefined) {
+    const co = s.competingOfferDetail as Record<string, unknown>;
+    if (!co || typeof co !== "object") throw new Error("state.competingOfferDetail");
+    if (co.company !== null && typeof co.company !== "string") throw new Error("state.competingOfferDetail.company");
+    if (co.status !== null && typeof co.status !== "string") throw new Error("state.competingOfferDetail.status");
+    if (co.stage !== null && typeof co.stage !== "string") throw new Error("state.competingOfferDetail.stage");
+    if (typeof co.letterShareOffered !== "boolean") throw new Error("state.competingOfferDetail.letterShareOffered");
+    if (typeof co.hasAny !== "boolean") throw new Error("state.competingOfferDetail.hasAny");
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -1273,5 +1470,19 @@ export function deserializeState(json: string): NegotiationState {
     conversationLog: (s.conversationLog as NegotiationState["conversationLog"] | undefined) ?? [],
     candidateComponentBreakdown: (s.candidateComponentBreakdown as ComponentBreakdown | undefined)
       ?? { base: null, variable: null, equity: null, hasAny: false },
+    hikePercent: (s.hikePercent as number | null | undefined) ?? null,
+    rationale: (s.rationale as RationaleResult | null | undefined) ?? null,
+    noticeJoining: (s.noticeJoining as NoticeJoiningResult | undefined) ?? {
+      noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, hasAny: false,
+    },
+    equityVesting: (s.equityVesting as EquityVestingResult | undefined) ?? {
+      vestingYears: null, cliffMonths: null, preference: null, familiarity: null, hasAny: false,
+    },
+    locationMode: (s.locationMode as LocationModeResult | undefined) ?? {
+      workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false,
+    },
+    competingOfferDetail: (s.competingOfferDetail as CompetingOfferDetail | undefined) ?? {
+      company: null, status: null, stage: null, letterShareOffered: false, hasAny: false,
+    },
   };
 }
