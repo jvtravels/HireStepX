@@ -1,0 +1,312 @@
+[
+{
+"Example_ID": "HSTX-SAL-0401",
+"Scenario": "Current CTC clarity",
+"Answer_Label": "weak",
+"Candidate_Answer": "I want ₹7L because market is paying that much.",
+"HR_Question": "What is your current CTC?",
+"Red_Flags": "generic market claim",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-0402",
+"Scenario": "Expected CTC",
+"Answer_Label": "weak",
+"Candidate_Answer": "Anything is fine. I just need the job.",
+"HR_Question": "What is your expected CTC?",
+"Red_Flags": "too desperate",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-0403",
+"Scenario": "High hike justification",
+"Answer_Label": "weak",
+"Candidate_Answer": "I do not know my fixed salary exactly, but my CTC is around ₹8L.",
+"HR_Question": "What is your current fixed and variable breakup?",
+"Red_Flags": "does not know salary breakup",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-0404",
+"Scenario": "Budget pushback",
+"Answer_Label": "weak",
+"Candidate_Answer": "I will not join below ₹14L.",
+"HR_Question": "What is your monthly in-hand salary?",
+"Red_Flags": "too rigid",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-0405",
+"Scenario": "Fixed vs variable",
+"Answer_Label": "weak",
+"Candidate_Answer": "I need this salary because my expenses are high.",
+"HR_Question": "Why are you expecting this salary?",
+"Red_Flags": "personal expense justification",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-0406",
+"Scenario": "ESOP / equity",
+"Answer_Label": "weak",
+"Candidate_Answer": "I have many offers, so you need to match them.",
+"HR_Question": "How did you arrive at this number?",
+"Red_Flags": "offer-shopping risk",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-0407",
+"Scenario": "Joining bonus",
+"Answer_Label": "weak",
+"Candidate_Answer": "ESOP is also money, so I am okay with any structure.",
+"HR_Question": "Are you flexible on salary?",
+"Red_Flags": "treats ESOP as cash",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-0408",
+"Scenario": "Notice period buyout",
+"Answer_Label": "weak",
+"Candidate_Answer": "Variable is fine. I only care about total CTC.",
+"HR_Question": "What is your minimum acceptable salary?",
+"Red_Flags": "ignores variable risk",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-0409",
+"Scenario": "Competing offer",
+"Answer_Label": "weak",
+"Candidate_Answer": "I can join immediately, even though my notice period is 0 days.",
+"HR_Question": "What is your ideal salary range?",
+"Red_Flags": "overpromises joining",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-0410",
+"Scenario": "Counteroffer risk",
+"Answer_Label": "weak",
+"Candidate_Answer": "As per company standards. You can decide.",
+"HR_Question": "What salary would make you accept immediately?",
+"Red_Flags": "avoids salary anchor",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-0411",
+"Scenario": "Career gap + salary",
+"Answer_Label": "weak",
+"Candidate_Answer": "I want ₹6L because market is paying that much.",
+"HR_Question": "Do you have any other offers?",
+"Red_Flags": "generic market claim",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-0414",
+"Scenario": "Relocation salary",
+"Answer_Label": "weak",
+"Candidate_Answer": "I will not join below ₹20L.",
+"HR_Question": "If we match your offer, will you accept?",
+"Red_Flags": "too rigid",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-0419",
+"Scenario": "Appraisal cycle",
+"Answer_Label": "weak",
+"Candidate_Answer": "I can join immediately, even though my notice period is 60 days.",
+"HR_Question": "Our budget is lower than your expectation. Can you reconsider?",
+"Red_Flags": "overpromises joining",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-0421",
+"Scenario": "Current CTC clarity",
+"Answer_Label": "weak",
+"Candidate_Answer": "I want ₹5L because market is paying that much.",
+"HR_Question": "What if we offer more variable and less fixed?",
+"Red_Flags": "generic market claim",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-0424",
+"Scenario": "Budget pushback",
+"Answer_Label": "weak",
+"Candidate_Answer": "I will not join below ₹16L.",
+"HR_Question": "Would you accept lower fixed salary with higher ESOP?",
+"Red_Flags": "too rigid",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-0429",
+"Scenario": "Competing offer",
+"Answer_Label": "weak",
+"Candidate_Answer": "I can join immediately, even though my notice period is 30 days.",
+"HR_Question": "What is your notice period?",
+"Red_Flags": "overpromises joining",
+"Next_Action": "probe_or_coach_after_interview",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-1352",
+"Scenario": "Expected CTC",
+"Answer_Label": "average",
+"Candidate_Answer": "My current CTC is ₹6L and I am expecting around ₹10L. I am flexible depending on the role and company.",
+"HR_Question": "How did you arrive at this number?",
+"Red_Flags": "limited justification",
+"Next_Action": "ask_justification_follow_up",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-1353",
+"Scenario": "High hike justification",
+"Answer_Label": "weak",
+"Candidate_Answer": "I do not know my fixed salary exactly, but my CTC is around ₹8L.",
+"HR_Question": "Do you have any other offers?",
+"Red_Flags": "vague / unsupported",
+"Next_Action": "probe_salary_clarity",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-1354",
+"Scenario": "Budget pushback",
+"Answer_Label": "risky",
+"Candidate_Answer": "I will join whoever gives me ₹20L or more. I can join immediately if needed.",
+"HR_Question": "What stage are you at with other companies?",
+"Red_Flags": "offer risk; overcommitment",
+"Next_Action": "test_commitment_and_notice",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-1355",
+"Scenario": "Fixed vs variable",
+"Answer_Label": "needs_follow_up",
+"Candidate_Answer": "I am looking for a good salary based on market standards.",
+"HR_Question": "What if we offer more variable and less fixed?",
+"Red_Flags": "generic; no anchor",
+"Next_Action": "ask_expected_range_and_breakup",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-1357",
+"Scenario": "Joining bonus",
+"Answer_Label": "average",
+"Candidate_Answer": "My current CTC is ₹18L and I am expecting around ₹27L. I am flexible depending on the role and company.",
+"HR_Question": "What is your last working day?",
+"Red_Flags": "limited justification",
+"Next_Action": "ask_justification_follow_up",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-1358",
+"Scenario": "Notice period buyout",
+"Answer_Label": "weak",
+"Candidate_Answer": "Variable is fine. I only care about total CTC.",
+"HR_Question": "What matters more to you: role, company, salary, or growth?",
+"Red_Flags": "vague / unsupported",
+"Next_Action": "probe_salary_clarity",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-1359",
+"Scenario": "Competing offer",
+"Answer_Label": "risky",
+"Candidate_Answer": "I will join whoever gives me ₹50L or more. I can join immediately if needed.",
+"HR_Question": "Are you comfortable with our compensation structure?",
+"Red_Flags": "offer risk; overcommitment",
+"Next_Action": "test_commitment_and_notice",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-1362",
+"Scenario": "Frequent job switches",
+"Answer_Label": "average",
+"Candidate_Answer": "My current CTC is ₹6L and I am expecting around ₹8L. I am flexible depending on the role and company.",
+"HR_Question": "Are you comfortable with a probation-linked confirmation?",
+"Red_Flags": "limited justification",
+"Next_Action": "ask_justification_follow_up",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-1364",
+"Scenario": "Relocation salary",
+"Answer_Label": "risky",
+"Candidate_Answer": "I will join whoever gives me ₹16L or more. I can join immediately if needed.",
+"HR_Question": "What is your target achievement history?",
+"Red_Flags": "offer risk; overcommitment",
+"Next_Action": "test_commitment_and_notice",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-1367",
+"Scenario": "Salary proof request",
+"Answer_Label": "average",
+"Candidate_Answer": "My current CTC is ₹18L and I am expecting around ₹22L. I am flexible depending on the role and company.",
+"HR_Question": "Would you consider a counteroffer from your current employer?",
+"Red_Flags": "limited justification",
+"Next_Action": "ask_justification_follow_up",
+"Difficulty": "Medium"
+},
+{
+"Example_ID": "HSTX-SAL-1369",
+"Scenario": "Appraisal cycle",
+"Answer_Label": "risky",
+"Candidate_Answer": "I will join whoever gives me ₹42L or more. I can join immediately if needed.",
+"HR_Question": "Are you expecting relocation support for moving cities?",
+"Red_Flags": "offer risk; overcommitment",
+"Next_Action": "test_commitment_and_notice",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-1372",
+"Scenario": "Expected CTC",
+"Answer_Label": "average",
+"Candidate_Answer": "My current CTC is ₹6L and I am expecting around ₹12L. I am flexible depending on the role and company.",
+"HR_Question": "How did you arrive at this number?",
+"Red_Flags": "limited justification",
+"Next_Action": "ask_justification_follow_up",
+"Difficulty": "Easy"
+},
+{
+"Example_ID": "HSTX-SAL-1374",
+"Scenario": "Budget pushback",
+"Answer_Label": "risky",
+"Candidate_Answer": "I will join whoever gives me ₹14L or more. I can join immediately if needed.",
+"HR_Question": "What stage are you at with other companies?",
+"Red_Flags": "offer risk; overcommitment",
+"Next_Action": "test_commitment_and_notice",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-1377",
+"Scenario": "Joining bonus",
+"Answer_Label": "average",
+"Candidate_Answer": "My current CTC is ₹18L and I am expecting around ₹32L. I am flexible depending on the role and company.",
+"HR_Question": "What is your last working day?",
+"Red_Flags": "limited justification",
+"Next_Action": "ask_justification_follow_up",
+"Difficulty": "Hard"
+},
+{
+"Example_ID": "HSTX-SAL-1379",
+"Scenario": "Competing offer",
+"Answer_Label": "risky",
+"Candidate_Answer": "I will join whoever gives me ₹35L or more. I can join immediately if needed.",
+"HR_Question": "Are you comfortable with our compensation structure?",
+"Red_Flags": "offer risk; overcommitment",
+"Next_Action": "test_commitment_and_notice",
+"Difficulty": "Medium"
+}
+]

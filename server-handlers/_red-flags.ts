@@ -43,7 +43,11 @@ export type RedFlagCode =
   | "demands-no-flex"
   | "treats-equity-as-cash"
   | "ignores-variable-risk"
-  | "verbal-accept-no-breakup";
+  | "verbal-accept-no-breakup"
+  /* Phase 19 — corpus-derived red flags. */
+  | "avoids-anchor"
+  | "personal-expense-justification"
+  | "offer-shopping";
 
 export type RedFlagSeverity = "info" | "concern" | "blocker";
 
@@ -154,8 +158,11 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
     });
   }
 
-  /* 7. Overcommits joining date — early-join preference WITH a non-
-   *    trivial notice period the candidate hasn't said is bought out. */
+  /* 7. Overcommits joining date — two firing paths:
+   *    a) Structural — early-join preference WITH a non-trivial notice
+   *       period the candidate hasn't said is bought out.
+   *    b) Text-side (Phase 19) — candidate explicitly said they can
+   *       join "immediately even though my notice is N days". */
   const np = state.noticeJoining.noticePeriodDays;
   if (
     state.noticeJoining.earlyJoinPreferred &&
@@ -167,6 +174,12 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
       code: "overcommits-joining",
       severity: "info",
       detail: `candidate wants early join with ${np}-day notice and no buyout discussion`,
+    });
+  } else if (stance.overpromisesJoining) {
+    out.push({
+      code: "overcommits-joining",
+      severity: "concern",
+      detail: "candidate verbally promised early joining despite stated notice period",
     });
   }
 
@@ -215,13 +228,19 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
     });
   }
 
-  /* 13. Ignores variable-pay risk. Composite: candidate has a stated
-   *     breakdown WITH a non-trivial variable component AND a target
-   *     that only makes sense if 100pct of variable is paid out
-   *     (target ≥ base + 90pct of stated variable). We approximate
-   *     "ignores risk" as: variable > 15pct of breakdown total AND
-   *     candidate's target equals base+variable sum (no haircut). */
+  /* 13. Ignores variable-pay risk. Two firing paths:
+   *
+   *     a) Structural — candidate has a stated breakdown WITH a non-
+   *        trivial variable component AND a target that only makes
+   *        sense if 100pct of variable is paid out (target equals
+   *        base+variable sum, no haircut).
+   *
+   *     b) Text-side (Phase 19, corpus-derived) — candidate explicitly
+   *        SAID "variable is fine, I only care about total CTC". The
+   *        text signal fires even without a stated breakdown. */
   const cb = state.candidateComponentBreakdown;
+  let ignoresVariable = false;
+  let ignoresVariableDetail = "";
   if (
     cb.hasAny &&
     cb.base != null &&
@@ -233,12 +252,49 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
     const variablePct = total > 0 ? cb.variable / total : 0;
     const targetMatchesNoHaircut = Math.abs(state.candidateTarget - total) < 0.5;
     if (variablePct >= 0.15 && targetMatchesNoHaircut) {
-      out.push({
-        code: "ignores-variable-risk",
-        severity: "info",
-        detail: "target equals base+variable sum with no payout-risk haircut",
-      });
+      ignoresVariable = true;
+      ignoresVariableDetail = "target equals base+variable sum with no payout-risk haircut";
     }
+  }
+  if (!ignoresVariable && stance.dismissesVariableRisk) {
+    ignoresVariable = true;
+    ignoresVariableDetail = "candidate explicitly dismissed variable-pay risk in dialogue";
+  }
+  if (ignoresVariable) {
+    out.push({
+      code: "ignores-variable-risk",
+      severity: "info",
+      detail: ignoresVariableDetail,
+    });
+  }
+
+  /* Phase 19 — corpus-derived red flags. */
+
+  /* 15. Avoids anchor — "as per company standards", "you decide". */
+  if (stance.avoidsAnchor) {
+    out.push({
+      code: "avoids-anchor",
+      severity: "concern",
+      detail: "candidate refused to anchor on a number — no negotiation surface to work with",
+    });
+  }
+
+  /* 16. Personal-expense justification — not a market-value argument. */
+  if (stance.personalExpenseJustification) {
+    out.push({
+      code: "personal-expense-justification",
+      severity: "concern",
+      detail: "candidate justified ask via personal expenses, not market value",
+    });
+  }
+
+  /* 17. Offer-shopping demand — transactional "match or I'll leave". */
+  if (stance.offerShoppingDemand) {
+    out.push({
+      code: "offer-shopping",
+      severity: "concern",
+      detail: "candidate is using other offers as a demand, not as leverage data",
+    });
   }
 
   /* 14. Verbal accept without breakup. Candidate has signalled

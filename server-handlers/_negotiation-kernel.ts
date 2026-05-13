@@ -435,6 +435,11 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       confidentialOvershare: false,
       soundsDesperate: false,
       treatsEquityAsCash: false,
+      avoidsAnchor: false,
+      personalExpenseJustification: false,
+      offerShoppingDemand: false,
+      dismissesVariableRisk: false,
+      overpromisesJoining: false,
       hasAny: false,
     },
   };
@@ -627,7 +632,7 @@ export function parseCandidateAnswer(
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
       candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
-      candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, hasAny: false },
+      candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
     };
   }
 
@@ -1596,6 +1601,10 @@ export function validateState(state: unknown): asserts state is NegotiationState
     for (const k of ["marketReferenceVague", "salaryOnlyFactor", "badmouthsCurrent", "confidentialOvershare", "soundsDesperate", "treatsEquityAsCash", "hasAny"] as const) {
       if (typeof cs[k] !== "boolean") throw new Error(`state.candidateStance.${k}`);
     }
+    /* Phase 19 — corpus-derived stance booleans. Optional for back-compat. */
+    for (const k of ["avoidsAnchor", "personalExpenseJustification", "offerShoppingDemand", "dismissesVariableRisk", "overpromisesJoining"] as const) {
+      if (cs[k] !== undefined && typeof cs[k] !== "boolean") throw new Error(`state.candidateStance.${k}`);
+    }
   }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
@@ -1651,16 +1660,29 @@ export function deserializeState(json: string): NegotiationState {
     miscSignals: (s.miscSignals as MiscSignalsResult | undefined) ?? {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,
     },
-    candidateStance: (s.candidateStance as CandidateStanceResult | undefined) ?? {
-      flexibilityPosture: null,
-      marketReferenceVague: false,
-      salaryOnlyFactor: false,
-      badmouthsCurrent: false,
-      confidentialOvershare: false,
-      soundsDesperate: false,
-      treatsEquityAsCash: false,
-      hasAny: false,
-    },
+    candidateStance: backfillCandidateStance(s.candidateStance),
+  };
+}
+
+/* Phase 19 — corpus-derived stance fields were added after the wire
+ * format first deployed. Legacy in-flight sessions serialized
+ * candidateStance without these keys; backfill them. */
+function backfillCandidateStance(raw: unknown): CandidateStanceResult {
+  const v = raw as Partial<CandidateStanceResult> | undefined;
+  return {
+    flexibilityPosture: v?.flexibilityPosture ?? null,
+    marketReferenceVague: v?.marketReferenceVague ?? false,
+    salaryOnlyFactor: v?.salaryOnlyFactor ?? false,
+    badmouthsCurrent: v?.badmouthsCurrent ?? false,
+    confidentialOvershare: v?.confidentialOvershare ?? false,
+    soundsDesperate: v?.soundsDesperate ?? false,
+    treatsEquityAsCash: v?.treatsEquityAsCash ?? false,
+    avoidsAnchor: v?.avoidsAnchor ?? false,
+    personalExpenseJustification: v?.personalExpenseJustification ?? false,
+    offerShoppingDemand: v?.offerShoppingDemand ?? false,
+    dismissesVariableRisk: v?.dismissesVariableRisk ?? false,
+    overpromisesJoining: v?.overpromisesJoining ?? false,
+    hasAny: v?.hasAny ?? false,
   };
 }
 

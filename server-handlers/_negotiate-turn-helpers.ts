@@ -701,6 +701,11 @@ const EMPTY_STANCE: CandidateStanceResult = {
   confidentialOvershare: false,
   soundsDesperate: false,
   treatsEquityAsCash: false,
+  avoidsAnchor: false,
+  personalExpenseJustification: false,
+  offerShoppingDemand: false,
+  dismissesVariableRisk: false,
+  overpromisesJoining: false,
   hasAny: false,
 };
 

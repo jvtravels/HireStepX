@@ -50,6 +50,38 @@ export interface CandidateStanceResult {
    *  a literacy gap — kernel should add an ESOP-risk follow-up. */
   treatsEquityAsCash: boolean;
 
+  /** Phase 19 (2026-05-13) — corpus-derived.
+   *
+   *  Candidate refuses to anchor on a number ("as per company
+   *  standards", "you decide", "whatever you offer"). Distinct from
+   *  marketReferenceVague: that one names "market" without anchoring;
+   *  this one names nothing at all. Recruiters consistently asked an
+   *  expected-range follow-up after this. */
+  avoidsAnchor: boolean;
+
+  /** Candidate justifies the ask via personal expenses ("my rent is
+   *  high", "EMI / loan / family commitments"). Recruiters in the
+   *  training corpus weighted this NEGATIVELY — personal-finance
+   *  framing is not a market-value argument. */
+  personalExpenseJustification: boolean;
+
+  /** Candidate uses other offers as a transactional demand ("match my
+   *  other offer or I'll join whoever pays more"). Distinct from a
+   *  competing-offer mention — the difference is the demand grammar.
+   *  Recruiters log this as offer-shopping risk. */
+  offerShoppingDemand: boolean;
+
+  /** Candidate explicitly dismisses variable-pay risk ("variable is
+   *  fine", "I only care about total CTC"). Text-side mirror to the
+   *  structural ignores-variable-risk red flag — captures the SAYING
+   *  even before the numbers line up. */
+  dismissesVariableRisk: boolean;
+
+  /** Candidate says they can join sooner than their notice allows
+   *  ("I can join immediately even though my notice is 60 days").
+   *  Text-side mirror to the overcommits-joining structural flag. */
+  overpromisesJoining: boolean;
+
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -62,6 +94,11 @@ const EMPTY: CandidateStanceResult = {
   confidentialOvershare: false,
   soundsDesperate: false,
   treatsEquityAsCash: false,
+  avoidsAnchor: false,
+  personalExpenseJustification: false,
+  offerShoppingDemand: false,
+  dismissesVariableRisk: false,
+  overpromisesJoining: false,
   hasAny: false,
 };
 
@@ -77,6 +114,10 @@ const RIGID_PATTERNS: RegExp[] = [
   /\bhard\s+(?:floor|number|ask)\b/i,
   /\bno\s+(?:compromise|flexibility|wiggle\s+room|negotiation)\s+on\s+(?:salary|the\s+number|comp|ctc)/i,
   /\btake\s+it\s+or\s+leave\s+it\b/i,
+  /* Corpus-derived (Phase 19): "I will not join below ₹14L" /
+   * "won't join below 20" — the candidate is naming a hard floor as
+   * a take-it-or-leave-it stance, not a flexible floor. */
+  /\b(?:won.?t|will\s+not|wouldn.?t|won.?t\s+ever)\s+(?:join|accept|consider|sign)\s+below\s+₹?\s*\d/i,
 ];
 
 /* Flexible: "I'm flexible", "open to discussion", "we can work
@@ -106,9 +147,12 @@ function detectFlexibility(text: string): "rigid" | "flexible" | null {
  * number" by requiring no digit within 30 chars after the phrase. */
 const MARKET_REFERENCE_PATTERNS: RegExp[] = [
   /\bas\s+per\s+(?:the\s+)?market\b/i,
-  /\bmarket\s+(?:standard|rate|range|value|norms?|benchmark)\b/i,
+  /\bmarket\s+(?:standards?|rates?|ranges?|values?|norms?|benchmarks?)\b/i,
   /\bindustry\s+(?:standard|average|norm)\b/i,
   /\bgoing\s+rate\b/i,
+  /* Phase 19 (corpus): "market is paying that much", "market pays
+   * that much" — the candidate gestures at market without a number. */
+  /\b(?:the\s+)?market\s+(?:is\s+(?:paying|offering)|pays|offers)\b(?!\s+₹?\s*\d)/i,
 ];
 
 function detectMarketReferenceVague(text: string): boolean {
@@ -177,6 +221,12 @@ const DESPERATION_PATTERNS: RegExp[] = [
   /\bbeggars\s+can.?t\s+be\s+choosers\b/i,
   /\bi.?m\s+(?:running\s+out\s+of\s+(?:time|options|runway|savings)|out\s+of\s+work|unemployed\s+and)\b/i,
   /\b(?:i\s+have\s+no\s+other\s+offers|nothing\s+else\s+(?:in\s+hand|lined\s+up)|this\s+is\s+my\s+only\s+(?:offer|option))\b/i,
+  /* Phase 19 (corpus): "I just need the job", "I simply need this
+   * role" — non-superlative-but-still-pleading need framing. */
+  /\bi\s+(?:just|simply)\s+need\s+(?:this|the|a|any)\s+(?:job|offer|role|opportunity)\b/i,
+  /* Phase 19 (corpus): "Anything is fine. I just need the job." —
+   * pairing 'anything is fine/ok' near 'need/take a job'. */
+  /\banything\s+(?:is\s+)?(?:fine|ok|okay)\b[\s\S]{0,60}\b(?:need|take|accept)\s+(?:this|the|a|any)?\s*(?:job|offer|role|opportunity)\b/i,
 ];
 
 function detectDesperation(text: string): boolean {
@@ -193,10 +243,93 @@ const EQUITY_AS_CASH_PATTERNS: RegExp[] = [
   /\b(?:esop|equity|stock|options?|rsu)s?\s+(?:is|are)\s+(?:basically|essentially|just|like)\s+cash\b/i,
   /\b(?:the\s+)?(?:esop|equity|stock|options?|rsu)\s+(?:is|are)\s+₹?\s*\d+\s*(?:lpa|lakhs?|cr|crore)\s+in\s+(?:my\s+)?pocket\b/i,
   /\bguaranteed\s+payout\s+(?:on|from)\s+(?:the\s+)?(?:esop|equity|stock|options?)\b/i,
+  /* Phase 19 (corpus): "ESOP is also money", "equity is also money",
+   * "stock is money" — equating equity with cash without qualification. */
+  /\b(?:esop|equity|stock|options?|rsu)s?\s+(?:is|are)\s+(?:also\s+)?(?:money|cash)\b/i,
 ];
 
 function detectEquityAsCash(text: string): boolean {
   return EQUITY_AS_CASH_PATTERNS.some((p) => p.test(text));
+}
+
+/* ── Phase 19 corpus-derived signals ─────────────────────────────── */
+
+/* Avoids anchoring: "as per company standards", "you decide",
+ * "whatever you offer", "as per your discretion", "I leave it to
+ * you", "happy with whatever". Distinct from marketReferenceVague —
+ * that one names "market"; this one names nothing. */
+const AVOIDS_ANCHOR_PATTERNS: RegExp[] = [
+  /\bas\s+per\s+(?:company|your)\s+(?:standards?|policy|norms?|discretion|decision)\b/i,
+  /\byou\s+(?:can\s+)?decide\b/i,
+  /\bi(?:.?ll|\s+will)?\s+leave\s+(?:it|that)\s+(?:to|with)\s+you\b/i,
+  /\bwhatever\s+(?:you\s+)?(?:offer|decide|think\s+is\s+fair|company\s+(?:decides|gives))\b/i,
+  /\bhappy\s+with\s+whatever\b/i,
+  /\bi\s+(?:don.?t|do\s+not)\s+have\s+a\s+specific\s+(?:number|range|expectation)\b/i,
+];
+
+function detectAvoidsAnchor(text: string): boolean {
+  return AVOIDS_ANCHOR_PATTERNS.some((p) => p.test(text));
+}
+
+/* Personal-expense justification: candidate explains the ask via
+ * personal finance ("my rent is high", "EMI", "family responsibilities",
+ * "expenses are high", "loan to pay"). NOT a market-value argument. */
+const PERSONAL_EXPENSE_PATTERNS: RegExp[] = [
+  /\b(?:my\s+)?(?:expenses|rent|emi|loans?|debts?|bills?)\s+(?:are|is)\s+(?:high|too\s+much|increasing|growing)\b/i,
+  /\bneed\s+this\s+(?:salary|amount|money|number|figure)\s+(?:because|since|as)\s+(?:my\s+)?(?:expenses|rent|emi|loan|family|kids|parents|household)/i,
+  /\b(?:cost\s+of\s+living|household\s+(?:expenses|costs)|family\s+(?:expenses|responsibilities|commitments))\s+(?:is|are|have)\s+(?:high|increased|gone\s+up|risen)/i,
+  /\b(?:home\s+loan|car\s+loan|education\s+loan|personal\s+loan)\s+(?:emi|payment|installment)/i,
+  /\bsupport(?:ing)?\s+(?:my\s+)?(?:family|parents|kids|household)\s+(?:financially|with\s+(?:money|salary))/i,
+];
+
+function detectPersonalExpenseJustification(text: string): boolean {
+  return PERSONAL_EXPENSE_PATTERNS.some((p) => p.test(text));
+}
+
+/* Offer-shopping demand: candidate uses other offers as a
+ * transactional demand. Key cues: "you need to match", "match my
+ * other offer or", "I'll join whoever pays/gives more", "highest
+ * bidder", "match or beat". Distinct from a competing-offer mention. */
+const OFFER_SHOPPING_PATTERNS: RegExp[] = [
+  /\b(?:you|company|hr)\s+(?:need|have|got)\s+to\s+(?:match|beat)\s+(?:my\s+)?(?:other\s+offers?|competing\s+offers?|them)/i,
+  /\bi.?ll\s+join\s+whoever\s+(?:gives|pays|offers)\s+(?:me\s+)?(?:more|the\s+most|highest|₹?\s*\d)/i,
+  /\bwill\s+join\s+whoever\s+(?:gives|pays|offers)\s+(?:me\s+)?(?:more|the\s+most|highest|₹?\s*\d)/i,
+  /\bgo(?:ing)?\s+with\s+(?:the\s+)?highest\s+(?:bidder|offer)/i,
+  /\b(?:match|beat)\s+(?:my\s+)?(?:other\s+)?offers?\s+or\s+i.?ll\b/i,
+  /\bi\s+have\s+(?:many|multiple|several|other)\s+offers?,?\s+(?:so\s+)?you\s+(?:need\s+to|have\s+to|must)\s+(?:match|beat|exceed)/i,
+];
+
+function detectOfferShoppingDemand(text: string): boolean {
+  return OFFER_SHOPPING_PATTERNS.some((p) => p.test(text));
+}
+
+/* Dismisses variable-pay risk by SAYING ("variable is fine", "I only
+ * care about total CTC", "doesn't matter how it's split"). Text-side
+ * mirror to the structural red flag in _red-flags.ts. */
+const DISMISSES_VARIABLE_PATTERNS: RegExp[] = [
+  /\bvariable\s+(?:is|.?s)\s+(?:fine|ok|okay|no\s+problem|not\s+a\s+(?:problem|concern|issue))\b/i,
+  /\b(?:only|just)\s+care(?:s)?\s+about\s+(?:the\s+)?total\s+(?:ctc|comp|package|number)\b/i,
+  /\b(?:doesn.?t|does\s+not)\s+matter\s+(?:to\s+me\s+)?how\s+(?:it.?s|the\s+(?:ctc|comp|package))\s+(?:split|structured|broken)/i,
+  /\bany\s+(?:split|structure|breakup)\s+(?:is\s+)?(?:fine|ok|okay|works)\b/i,
+  /\bi.?m\s+okay\s+with\s+any\s+(?:structure|split|breakup)\b/i,
+];
+
+function detectDismissesVariableRisk(text: string): boolean {
+  return DISMISSES_VARIABLE_PATTERNS.some((p) => p.test(text));
+}
+
+/* Overpromises joining: candidate says they can join sooner than
+ * their stated notice ("I can join immediately even though my notice
+ * is 60 days"). The corpus has the exact "immediately even though"
+ * idiom; we accept variants. */
+const OVERPROMISES_JOINING_PATTERNS: RegExp[] = [
+  /\b(?:i\s+can\s+)?join\s+(?:immediately|right\s+away|today|tomorrow|this\s+week|next\s+week|in\s+\d+\s+days?)\s*(?:,|\.)?\s*(?:even\s+though|despite|although|but)\s+(?:my\s+)?(?:notice|notice\s+period)/i,
+  /\bjoin\s+immediately(?:\s+if\s+(?:needed|required))?\s*(?:,|\.)?\s*(?:even|despite|although)\s+(?:my\s+)?(?:notice|with\s+a)/i,
+  /\b(?:will|can)\s+(?:start|join)\s+(?:right\s+)?(?:away|now|today)\s+(?:irrespective|regardless)\s+of\s+(?:my\s+)?notice/i,
+];
+
+function detectOverpromisesJoining(text: string): boolean {
+  return OVERPROMISES_JOINING_PATTERNS.some((p) => p.test(text));
 }
 
 /* ── Public API ──────────────────────────────────────────────────── */
@@ -210,6 +343,11 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
   const confidentialOvershare = detectConfidentialOvershare(text);
   const soundsDesperate = detectDesperation(text);
   const treatsEquityAsCash = detectEquityAsCash(text);
+  const avoidsAnchor = detectAvoidsAnchor(text);
+  const personalExpenseJustification = detectPersonalExpenseJustification(text);
+  const offerShoppingDemand = detectOfferShoppingDemand(text);
+  const dismissesVariableRisk = detectDismissesVariableRisk(text);
+  const overpromisesJoining = detectOverpromisesJoining(text);
   const hasAny =
     flexibilityPosture != null ||
     marketReferenceVague ||
@@ -217,7 +355,12 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
     badmouthsCurrent ||
     confidentialOvershare ||
     soundsDesperate ||
-    treatsEquityAsCash;
+    treatsEquityAsCash ||
+    avoidsAnchor ||
+    personalExpenseJustification ||
+    offerShoppingDemand ||
+    dismissesVariableRisk ||
+    overpromisesJoining;
   return {
     flexibilityPosture,
     marketReferenceVague,
@@ -226,6 +369,11 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
     confidentialOvershare,
     soundsDesperate,
     treatsEquityAsCash,
+    avoidsAnchor,
+    personalExpenseJustification,
+    offerShoppingDemand,
+    dismissesVariableRisk,
+    overpromisesJoining,
     hasAny,
   };
 }
@@ -246,6 +394,11 @@ export function mergeCandidateStance(
     confidentialOvershare: p.confidentialOvershare || next.confidentialOvershare,
     soundsDesperate: p.soundsDesperate || next.soundsDesperate,
     treatsEquityAsCash: p.treatsEquityAsCash || next.treatsEquityAsCash,
+    avoidsAnchor: p.avoidsAnchor || next.avoidsAnchor,
+    personalExpenseJustification: p.personalExpenseJustification || next.personalExpenseJustification,
+    offerShoppingDemand: p.offerShoppingDemand || next.offerShoppingDemand,
+    dismissesVariableRisk: p.dismissesVariableRisk || next.dismissesVariableRisk,
+    overpromisesJoining: p.overpromisesJoining || next.overpromisesJoining,
     hasAny: false,
   };
   merged.hasAny =
@@ -255,6 +408,11 @@ export function mergeCandidateStance(
     merged.badmouthsCurrent ||
     merged.confidentialOvershare ||
     merged.soundsDesperate ||
-    merged.treatsEquityAsCash;
+    merged.treatsEquityAsCash ||
+    merged.avoidsAnchor ||
+    merged.personalExpenseJustification ||
+    merged.offerShoppingDemand ||
+    merged.dismissesVariableRisk ||
+    merged.overpromisesJoining;
   return merged;
 }
