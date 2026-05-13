@@ -74,6 +74,36 @@ describe("extractEquityVesting — hasAny", () => {
   });
 });
 
+describe("extractEquityVesting — Phase 17E extensions", () => {
+  it("detects strike-price discussion", () => {
+    expect(extractEquityVesting("what's the strike price?").strikePriceDiscussed).toBe(true);
+  });
+
+  it("detects 409A FMV mention", () => {
+    expect(extractEquityVesting("any recent 409A valuation?").strikePriceDiscussed).toBe(true);
+  });
+
+  it("detects valuation discussion", () => {
+    expect(extractEquityVesting("what's the current valuation?").valuationDiscussed).toBe(true);
+  });
+
+  it("detects 'last round' valuation", () => {
+    expect(extractEquityVesting("last-round preferred share price?").valuationDiscussed).toBe(true);
+  });
+
+  it("detects liquidity event mention", () => {
+    expect(extractEquityVesting("any liquidity event planned?").liquidityDiscussed).toBe(true);
+  });
+
+  it("detects IPO timeline", () => {
+    expect(extractEquityVesting("what's the IPO timeline?").liquidityDiscussed).toBe(true);
+  });
+
+  it("hasAny fires for extensions", () => {
+    expect(extractEquityVesting("strike price?").hasAny).toBe(true);
+  });
+});
+
 describe("mergeEquityVesting", () => {
   it("non-null overrides prior", () => {
     const prior = extractEquityVesting("4 year vesting");

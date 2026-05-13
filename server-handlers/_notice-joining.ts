@@ -45,6 +45,16 @@ export interface NoticeJoiningResult {
    *  earlier than their full notice? Common chip: "I can join in 30
    *  days if you can buy out the remaining notice." */
   earlyJoinPreferred: boolean;
+  /** Phase 17D (2026-05-13) — Did the candidate explicitly mention
+   *  clawback clauses on the joining bonus? "Is there a clawback if I
+   *  leave in 12 months?" is a literacy signal AND a negotiation chip
+   *  (candidate may push for reduced clawback period). */
+  joiningBonusClawbackDiscussed: boolean;
+  /** Phase 17D (2026-05-13) — Candidate's stated last-working-day, as
+   *  a free-text phrase (not parsed to a Date — we keep it informative
+   *  so the AI can quote it back). Examples: "Dec 15", "next Friday",
+   *  "after my project handover". Bounded to 60 chars. */
+  lastWorkingDayText: string | null;
   /** Convenience: any non-default field set. */
   hasAny: boolean;
 }
@@ -54,6 +64,8 @@ const EMPTY: NoticeJoiningResult = {
   buyoutRequested: false,
   joiningBonusAsk: null,
   earlyJoinPreferred: false,
+  joiningBonusClawbackDiscussed: false,
+  lastWorkingDayText: null,
   hasAny: false,
 };
 
@@ -141,6 +153,30 @@ function normalizeLpa(raw: string, unit?: string): number | null {
   return Math.round(lpa * 10) / 10;
 }
 
+const CLAWBACK_PATTERNS = [
+  /\b(?:clawback|claw\s+back|clawed\s+back|return\s+(?:the\s+)?bonus|repay(?:ment)?\s+(?:of\s+)?(?:joining|sign[-\s]?on|bonus)|tenure\s+requirement|pro[-\s]?rata\s+(?:return|repay)|joining\s+bonus\s+(?:lock|tenure))\b/i,
+];
+
+/** Last-working-day textual phrasing. We don't parse to a Date — we
+ *  preserve the candidate's own phrasing so the AI can quote it
+ *  naturally. Patterns match "last working day is X" / "LWD is X" /
+ *  "after my project handover" / "Dec 15". The captured snippet is
+ *  bounded for safety. */
+function extractLastWorkingDay(text: string): string | null {
+  const patterns = [
+    /\b(?:last\s+working\s+day|lwd|final\s+day)\s+(?:is|will\s+be|on)?\s+([^.!?\n,]{2,40})/i,
+    /\b(?:last\s+day|relieving\s+date|exit\s+date)\s+(?:is|will\s+be|on)?\s+([^.!?\n,]{2,40})/i,
+  ];
+  for (const re of patterns) {
+    const m = re.exec(text);
+    if (m && m[1]) {
+      const snippet = m[1].trim().replace(/\s+/g, " ").slice(0, 60);
+      if (snippet.length >= 2) return snippet;
+    }
+  }
+  return null;
+}
+
 /** Parse notice-period + buyout + joining-bonus signals from a single
  *  candidate utterance. Returns EMPTY when none found. */
 export function extractNoticeJoining(text: string): NoticeJoiningResult {
@@ -149,16 +185,22 @@ export function extractNoticeJoining(text: string): NoticeJoiningResult {
   const buyoutRequested = BUYOUT_PATTERNS.some((p) => p.test(text));
   const joiningBonusAsk = extractJoiningBonus(text);
   const earlyJoinPreferred = EARLY_JOIN_PATTERNS.some((p) => p.test(text));
+  const joiningBonusClawbackDiscussed = CLAWBACK_PATTERNS.some((p) => p.test(text));
+  const lastWorkingDayText = extractLastWorkingDay(text);
   const hasAny =
     days != null ||
     buyoutRequested ||
     joiningBonusAsk != null ||
-    earlyJoinPreferred;
+    earlyJoinPreferred ||
+    joiningBonusClawbackDiscussed ||
+    lastWorkingDayText != null;
   return {
     noticePeriodDays: days,
     buyoutRequested,
     joiningBonusAsk,
     earlyJoinPreferred,
+    joiningBonusClawbackDiscussed,
+    lastWorkingDayText,
     hasAny,
   };
 }
@@ -175,12 +217,17 @@ export function mergeNoticeJoining(
     buyoutRequested: p.buyoutRequested || next.buyoutRequested,
     joiningBonusAsk: next.joiningBonusAsk ?? p.joiningBonusAsk,
     earlyJoinPreferred: p.earlyJoinPreferred || next.earlyJoinPreferred,
+    joiningBonusClawbackDiscussed:
+      p.joiningBonusClawbackDiscussed || next.joiningBonusClawbackDiscussed,
+    lastWorkingDayText: next.lastWorkingDayText ?? p.lastWorkingDayText,
     hasAny: false,
   };
   merged.hasAny =
     merged.noticePeriodDays != null ||
     merged.buyoutRequested ||
     merged.joiningBonusAsk != null ||
-    merged.earlyJoinPreferred;
+    merged.earlyJoinPreferred ||
+    merged.joiningBonusClawbackDiscussed ||
+    merged.lastWorkingDayText != null;
   return merged;
 }

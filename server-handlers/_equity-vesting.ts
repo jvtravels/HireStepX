@@ -50,6 +50,18 @@ export interface EquityVestingResult {
   preference: EquityPreference | null;
   /** Has the candidate held equity before? */
   familiarity: EquityFamiliarity | null;
+  /** Phase 17E (2026-05-13) — Did the candidate explicitly ask about
+   *  strike price / exercise price / 409A FMV? Materially shifts AI
+   *  framing: literacy signal + chip for negotiation. */
+  strikePriceDiscussed: boolean;
+  /** Phase 17E — Did the candidate ask about current company valuation
+   *  / last-round price / preferred-share price? Signals sophistication
+   *  + dilution awareness. */
+  valuationDiscussed: boolean;
+  /** Phase 17E — Did the candidate ask about liquidity events,
+   *  secondaries, tender offers, or IPO timeline? Often paired with
+   *  valuation; signals exit-aware framing. */
+  liquidityDiscussed: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -59,6 +71,9 @@ const EMPTY: EquityVestingResult = {
   cliffMonths: null,
   preference: null,
   familiarity: null,
+  strikePriceDiscussed: false,
+  valuationDiscussed: false,
+  liquidityDiscussed: false,
   hasAny: false,
 };
 
@@ -150,12 +165,28 @@ export function extractEquityVesting(text: string): EquityVestingResult {
     }
   }
 
+  const strikePriceDiscussed = /\b(?:strike\s+price|exercise\s+price|409a|fmv|fair\s+market\s+value|grant\s+price)\b/i.test(text);
+  const valuationDiscussed = /\b(?:current\s+valuation|company\s+valuation|last[-\s]?round|preferred[-\s]?share\s+price|post[-\s]?money|pre[-\s]?money|series\s+[a-h]\s+(?:price|valuation)|cap\s+table|dilution)\b/i.test(text);
+  const liquidityDiscussed = /\b(?:liquidity\s+(?:event|window)|secondary\s+(?:sale|market|tender)|tender\s+offer|ipo\s+(?:timeline|date|plan)|exit\s+(?:strategy|plan|event)|acquisition\s+(?:plan|trigger))\b/i.test(text);
+
   const hasAny =
     vestingYears != null ||
     cliffMonths != null ||
     preference != null ||
-    familiarity != null;
-  return { vestingYears, cliffMonths, preference, familiarity, hasAny };
+    familiarity != null ||
+    strikePriceDiscussed ||
+    valuationDiscussed ||
+    liquidityDiscussed;
+  return {
+    vestingYears,
+    cliffMonths,
+    preference,
+    familiarity,
+    strikePriceDiscussed,
+    valuationDiscussed,
+    liquidityDiscussed,
+    hasAny,
+  };
 }
 
 export function mergeEquityVesting(
@@ -168,12 +199,18 @@ export function mergeEquityVesting(
     cliffMonths: next.cliffMonths ?? p.cliffMonths,
     preference: next.preference ?? p.preference,
     familiarity: next.familiarity ?? p.familiarity,
+    strikePriceDiscussed: p.strikePriceDiscussed || next.strikePriceDiscussed,
+    valuationDiscussed: p.valuationDiscussed || next.valuationDiscussed,
+    liquidityDiscussed: p.liquidityDiscussed || next.liquidityDiscussed,
     hasAny: false,
   };
   merged.hasAny =
     merged.vestingYears != null ||
     merged.cliffMonths != null ||
     merged.preference != null ||
-    merged.familiarity != null;
+    merged.familiarity != null ||
+    merged.strikePriceDiscussed ||
+    merged.valuationDiscussed ||
+    merged.liquidityDiscussed;
   return merged;
 }

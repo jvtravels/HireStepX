@@ -67,6 +67,21 @@ import {
   mergeCompetingOfferDetail,
   type CompetingOfferDetail,
 } from "./_competing-offer-detail";
+import {
+  extractDecisionDeadline,
+  mergeDecisionDeadline,
+  type DecisionDeadlineResult,
+} from "./_decision-deadline";
+import {
+  extractCandidateProfile,
+  mergeCandidateProfile,
+  type CandidateProfileResult,
+} from "./_candidate-profile";
+import {
+  extractMiscSignals,
+  mergeMiscSignals,
+  type MiscSignalsResult,
+} from "./_misc-signals";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -284,6 +299,22 @@ export interface NegotiationState {
    * Complements the existing `competingOffer: number` magnitude with
    * company + status + stage + letter-share signals. */
   competingOfferDetail: CompetingOfferDetail;
+
+  /* Phase 17A (2026-05-13) — decision deadline + conditional accept.
+   * deadlineDays sets the AI's closing-pressure pacing; conditional
+   * acceptance downgrades the legacy signalsAcceptance to a "trade
+   * proposal" the move-picker should counter on. */
+  decisionDeadline: DecisionDeadlineResult;
+
+  /* Phase 17B (2026-05-13) — candidate background. Career gap, tenure
+   * cadence, and over/under-qualified self-statement. Materially
+   * affects the AI's framing of joining bonus, level fit, and
+   * retention. */
+  candidateProfile: CandidateProfileResult;
+
+  /* Phase 17F (2026-05-13) — scalar candidate signals: floor, salary-
+   * review cycle, proof-of-CTC shareability, internal-counter risk. */
+  miscSignals: MiscSignalsResult;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -335,6 +366,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       buyoutRequested: false,
       joiningBonusAsk: null,
       earlyJoinPreferred: false,
+      joiningBonusClawbackDiscussed: false,
+      lastWorkingDayText: null,
       hasAny: false,
     },
     equityVesting: {
@@ -342,6 +375,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       cliffMonths: null,
       preference: null,
       familiarity: null,
+      strikePriceDiscussed: false,
+      valuationDiscussed: false,
+      liquidityDiscussed: false,
       hasAny: false,
     },
     locationMode: {
@@ -356,6 +392,27 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       status: null,
       stage: null,
       letterShareOffered: false,
+      hasAny: false,
+    },
+    decisionDeadline: {
+      deadlineDays: null,
+      deadlineExplicit: false,
+      conditionalAcceptance: false,
+      conditionalEvidence: null,
+      hasAny: false,
+    },
+    candidateProfile: {
+      careerGapMonths: null,
+      careerGapActivity: null,
+      tenureSignal: null,
+      levelMismatch: null,
+      hasAny: false,
+    },
+    miscSignals: {
+      candidateFloor: null,
+      salaryReviewMonths: null,
+      proofOfCtcShareable: null,
+      internalCounterRisk: null,
       hasAny: false,
     },
   };
@@ -398,6 +455,12 @@ export interface ParsedAnswer {
   locationMode: LocationModeResult;
   /* Phase 16 — competing-offer paperwork / company / stage detail. */
   competingOfferDetail: CompetingOfferDetail;
+  /* Phase 17A — deadline + conditional accept. */
+  decisionDeadline: DecisionDeadlineResult;
+  /* Phase 17B — candidate background (gap / tenure / level mismatch). */
+  candidateProfile: CandidateProfileResult;
+  /* Phase 17F — floor / review / proof / internal-counter scalars. */
+  miscSignals: MiscSignalsResult;
 }
 
 /* Parse the candidate's free-text answer for salary-relevant numbers
@@ -533,10 +596,13 @@ export function parseCandidateAnswer(
       signalsCompetingExistsWithoutNumber: false,
       componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
       rationale: null,
-      noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, hasAny: false },
-      equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, hasAny: false },
+      noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false, lastWorkingDayText: null, hasAny: false },
+      equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: false },
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, hasAny: false },
+      decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, hasAny: false },
+      miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
     };
   }
 
@@ -660,10 +726,22 @@ export function parseCandidateAnswer(
   const equityVesting = extractEquityVesting(a);
   const locationMode = extractLocationMode(a);
   const competingOfferDetail = extractCompetingOfferDetail(a);
+  const decisionDeadline = extractDecisionDeadline(a);
+  const candidateProfile = extractCandidateProfile(a);
+  const miscSignals = extractMiscSignals(a);
+
+  /* Phase 17A — when a conditional acceptance fires, the legacy
+   * `signalsAcceptance` boolean must be downgraded. A conditional
+   * commit is not an unconditional accept; the AI should respond to
+   * the CONDITION, not close the deal. The classifier already requires
+   * an "if X" clause to fire conditional, so this is structural:
+   * conditional ⇒ NOT accepted. */
+  const signalsAcceptanceFinal =
+    signalsAcceptance && !decisionDeadline.conditionalAcceptance;
 
   return {
     target, currentCtc, competing,
-    signalsAcceptance, signalsWalkAway,
+    signalsAcceptance: signalsAcceptanceFinal, signalsWalkAway,
     targetAsRange, vossTactics, infoAsked,
     signalsCompetingExistsWithoutNumber,
     componentBreakdown,
@@ -672,6 +750,9 @@ export function parseCandidateAnswer(
     equityVesting,
     locationMode,
     competingOfferDetail,
+    decisionDeadline,
+    candidateProfile,
+    miscSignals,
   };
 }
 
@@ -804,6 +885,18 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       state.competingOfferDetail,
       parsed.competingOfferDetail,
     );
+  }
+
+  /* Phase 17 — fold deadline + profile + misc scalars. Same
+   * last-stated-wins / monotone-up merge semantics. */
+  if (parsed.decisionDeadline.hasAny) {
+    next.decisionDeadline = mergeDecisionDeadline(state.decisionDeadline, parsed.decisionDeadline);
+  }
+  if (parsed.candidateProfile.hasAny) {
+    next.candidateProfile = mergeCandidateProfile(state.candidateProfile, parsed.candidateProfile);
+  }
+  if (parsed.miscSignals.hasAny) {
+    next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
   }
 
   /* Merge tactic + info sets — sticky, never cleared. */
@@ -1435,6 +1528,34 @@ export function validateState(state: unknown): asserts state is NegotiationState
     if (typeof co.letterShareOffered !== "boolean") throw new Error("state.competingOfferDetail.letterShareOffered");
     if (typeof co.hasAny !== "boolean") throw new Error("state.competingOfferDetail.hasAny");
   }
+  /* Phase 17 optional fields — structural shape checks only. */
+  if (s.decisionDeadline !== undefined) {
+    const dd = s.decisionDeadline as Record<string, unknown>;
+    if (!dd || typeof dd !== "object") throw new Error("state.decisionDeadline");
+    if (!isFiniteNumOrNull(dd.deadlineDays)) throw new Error("state.decisionDeadline.deadlineDays");
+    if (typeof dd.deadlineExplicit !== "boolean") throw new Error("state.decisionDeadline.deadlineExplicit");
+    if (typeof dd.conditionalAcceptance !== "boolean") throw new Error("state.decisionDeadline.conditionalAcceptance");
+    if (dd.conditionalEvidence !== null && typeof dd.conditionalEvidence !== "string") throw new Error("state.decisionDeadline.conditionalEvidence");
+    if (typeof dd.hasAny !== "boolean") throw new Error("state.decisionDeadline.hasAny");
+  }
+  if (s.candidateProfile !== undefined) {
+    const cp = s.candidateProfile as Record<string, unknown>;
+    if (!cp || typeof cp !== "object") throw new Error("state.candidateProfile");
+    if (!isFiniteNumOrNull(cp.careerGapMonths)) throw new Error("state.candidateProfile.careerGapMonths");
+    if (cp.careerGapActivity !== null && typeof cp.careerGapActivity !== "string") throw new Error("state.candidateProfile.careerGapActivity");
+    if (cp.tenureSignal !== null && typeof cp.tenureSignal !== "string") throw new Error("state.candidateProfile.tenureSignal");
+    if (cp.levelMismatch !== null && typeof cp.levelMismatch !== "string") throw new Error("state.candidateProfile.levelMismatch");
+    if (typeof cp.hasAny !== "boolean") throw new Error("state.candidateProfile.hasAny");
+  }
+  if (s.miscSignals !== undefined) {
+    const ms = s.miscSignals as Record<string, unknown>;
+    if (!ms || typeof ms !== "object") throw new Error("state.miscSignals");
+    if (!isFiniteNumOrNull(ms.candidateFloor)) throw new Error("state.miscSignals.candidateFloor");
+    if (!isFiniteNumOrNull(ms.salaryReviewMonths)) throw new Error("state.miscSignals.salaryReviewMonths");
+    if (ms.proofOfCtcShareable !== null && typeof ms.proofOfCtcShareable !== "boolean") throw new Error("state.miscSignals.proofOfCtcShareable");
+    if (ms.internalCounterRisk !== null && typeof ms.internalCounterRisk !== "string") throw new Error("state.miscSignals.internalCounterRisk");
+    if (typeof ms.hasAny !== "boolean") throw new Error("state.miscSignals.hasAny");
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -1472,17 +1593,56 @@ export function deserializeState(json: string): NegotiationState {
       ?? { base: null, variable: null, equity: null, hasAny: false },
     hikePercent: (s.hikePercent as number | null | undefined) ?? null,
     rationale: (s.rationale as RationaleResult | null | undefined) ?? null,
-    noticeJoining: (s.noticeJoining as NoticeJoiningResult | undefined) ?? {
-      noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, hasAny: false,
-    },
-    equityVesting: (s.equityVesting as EquityVestingResult | undefined) ?? {
-      vestingYears: null, cliffMonths: null, preference: null, familiarity: null, hasAny: false,
-    },
+    noticeJoining: backfillNoticeJoining(s.noticeJoining),
+    equityVesting: backfillEquityVesting(s.equityVesting),
     locationMode: (s.locationMode as LocationModeResult | undefined) ?? {
       workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false,
     },
     competingOfferDetail: (s.competingOfferDetail as CompetingOfferDetail | undefined) ?? {
       company: null, status: null, stage: null, letterShareOffered: false, hasAny: false,
     },
+    decisionDeadline: (s.decisionDeadline as DecisionDeadlineResult | undefined) ?? {
+      deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false,
+    },
+    candidateProfile: (s.candidateProfile as CandidateProfileResult | undefined) ?? {
+      careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, hasAny: false,
+    },
+    miscSignals: (s.miscSignals as MiscSignalsResult | undefined) ?? {
+      candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,
+    },
+  };
+}
+
+/* Phase 17D — joiningBonusClawbackDiscussed + lastWorkingDayText were
+ * added after the wire format first deployed. Legacy in-flight sessions
+ * serialized noticeJoining without these keys; backfill them. */
+function backfillNoticeJoining(raw: unknown): NoticeJoiningResult {
+  const v = raw as Partial<NoticeJoiningResult> | undefined;
+  return {
+    noticePeriodDays: v?.noticePeriodDays ?? null,
+    buyoutRequested: v?.buyoutRequested ?? false,
+    joiningBonusAsk: v?.joiningBonusAsk ?? null,
+    earlyJoinPreferred: v?.earlyJoinPreferred ?? false,
+    joiningBonusClawbackDiscussed: v?.joiningBonusClawbackDiscussed ?? false,
+    lastWorkingDayText: v?.lastWorkingDayText ?? null,
+    hasAny: v?.hasAny ?? false,
+  };
+}
+
+/* Phase 17E — strikePriceDiscussed / valuationDiscussed /
+ * liquidityDiscussed were added after the wire format first deployed.
+ * Legacy in-flight sessions serialized equityVesting without these
+ * keys; backfill them. */
+function backfillEquityVesting(raw: unknown): EquityVestingResult {
+  const v = raw as Partial<EquityVestingResult> | undefined;
+  return {
+    vestingYears: v?.vestingYears ?? null,
+    cliffMonths: v?.cliffMonths ?? null,
+    preference: v?.preference ?? null,
+    familiarity: v?.familiarity ?? null,
+    strikePriceDiscussed: v?.strikePriceDiscussed ?? false,
+    valuationDiscussed: v?.valuationDiscussed ?? false,
+    liquidityDiscussed: v?.liquidityDiscussed ?? false,
+    hasAny: v?.hasAny ?? false,
   };
 }

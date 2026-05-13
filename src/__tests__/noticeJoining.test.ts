@@ -96,6 +96,31 @@ describe("extractNoticeJoining — empty/hasAny", () => {
   });
 });
 
+describe("extractNoticeJoining — Phase 17D extensions", () => {
+  it("detects clawback discussion", () => {
+    expect(extractNoticeJoining("is there a clawback period?").joiningBonusClawbackDiscussed).toBe(true);
+  });
+
+  it("detects 'claw back'", () => {
+    expect(extractNoticeJoining("any claw back if I leave?").joiningBonusClawbackDiscussed).toBe(true);
+  });
+
+  it("parses last-working-day text", () => {
+    const r = extractNoticeJoining("my last working day is Dec 15");
+    expect(r.lastWorkingDayText).toContain("Dec 15");
+  });
+
+  it("parses 'LWD is X'", () => {
+    const r = extractNoticeJoining("LWD is January 10");
+    expect(r.lastWorkingDayText).toContain("January 10");
+  });
+
+  it("hasAny fires for extensions", () => {
+    expect(extractNoticeJoining("is there a clawback?").hasAny).toBe(true);
+    expect(extractNoticeJoining("my last working day is Dec 15").hasAny).toBe(true);
+  });
+});
+
 describe("mergeNoticeJoining", () => {
   it("non-null fields overwrite prior", () => {
     const prior = extractNoticeJoining("30 day notice");

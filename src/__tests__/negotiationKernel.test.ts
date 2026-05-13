@@ -316,6 +316,8 @@ describe("parseCandidateAnswer", () => {
         buyoutRequested: false,
         joiningBonusAsk: null,
         earlyJoinPreferred: false,
+        joiningBonusClawbackDiscussed: false,
+        lastWorkingDayText: null,
         hasAny: false,
       },
       equityVesting: {
@@ -323,6 +325,9 @@ describe("parseCandidateAnswer", () => {
         cliffMonths: null,
         preference: null,
         familiarity: null,
+        strikePriceDiscussed: false,
+        valuationDiscussed: false,
+        liquidityDiscussed: false,
         hasAny: false,
       },
       locationMode: {
@@ -337,6 +342,27 @@ describe("parseCandidateAnswer", () => {
         status: null,
         stage: null,
         letterShareOffered: false,
+        hasAny: false,
+      },
+      decisionDeadline: {
+        deadlineDays: null,
+        deadlineExplicit: false,
+        conditionalAcceptance: false,
+        conditionalEvidence: null,
+        hasAny: false,
+      },
+      candidateProfile: {
+        careerGapMonths: null,
+        careerGapActivity: null,
+        tenureSignal: null,
+        levelMismatch: null,
+        hasAny: false,
+      },
+      miscSignals: {
+        candidateFloor: null,
+        salaryReviewMonths: null,
+        proofOfCtcShareable: null,
+        internalCounterRisk: null,
         hasAny: false,
       },
     });

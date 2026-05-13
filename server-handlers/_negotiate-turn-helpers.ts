@@ -397,6 +397,90 @@ function buildResponseHints(state: NegotiationState): string {
     hints.push("Candidate is still INTERVIEWING with the competing company (not offered). Discount the leverage — the competing 'offer' is hypothetical.");
   }
 
+  /* Phase 17A — decision deadline + conditional accept. The deadline
+     informs pacing (sub-3-day = closing-push appropriate; longer =
+     more probing room). Conditional accept downgrades the close —
+     the AI should respond to the CONDITION, not close. */
+  const dd = state.decisionDeadline;
+  if (dd && dd.deadlineDays != null) {
+    if (dd.deadlineDays <= 1) {
+      hints.push(`Candidate has a ${dd.deadlineDays === 0 ? "same-day" : "1-day"} deadline. Move efficiently — do not introduce new probing questions; advance to terms.`);
+    } else if (dd.deadlineDays <= 3) {
+      hints.push(`Candidate has a tight ${dd.deadlineDays}-day deadline. Keep counter cycles short; surface non-cash levers early if base is capped.`);
+    } else if (dd.deadlineDays <= 14) {
+      hints.push(`Candidate's deadline is ${dd.deadlineDays} days out. Normal pacing; you have room to probe.`);
+    }
+  }
+  if (dd && dd.conditionalAcceptance) {
+    hints.push(`Candidate gave a CONDITIONAL acceptance ("${dd.conditionalEvidence ?? "if X then yes"}"). Do NOT treat as an unconditional yes — respond to the condition: either match it (close), trade for it (sweetener), or counter it (lower amount + sweetener).`);
+  }
+
+  /* Phase 17B — candidate background framing. */
+  const cp = state.candidateProfile;
+  if (cp && cp.careerGapMonths != null) {
+    const activityNote = cp.careerGapActivity
+      ? ` (filled with ${cp.careerGapActivity})`
+      : "";
+    hints.push(`Candidate has a ${cp.careerGapMonths}-month career gap${activityNote}. Frame compensation on CURRENT readiness — do not punish the gap with base reduction, but you may sequence a smaller joining bonus given retention uncertainty.`);
+  }
+  if (cp && cp.tenureSignal === "frequent") {
+    hints.push("Candidate has a frequent-switch tenure pattern. Retention is a concern — keep joining bonus modest with a clawback period; emphasise growth path / stability in your framing.");
+  }
+  if (cp && cp.tenureSignal === "stable") {
+    hints.push("Candidate has stable tenure history. Lower retention risk — joining bonus and equity can be more generous.");
+  }
+  if (cp && cp.levelMismatch === "over") {
+    hints.push("Candidate is over-qualified for this level. Probe motivation explicitly ('what makes this role interesting?') before committing — they may leave when a more senior role opens elsewhere.");
+  }
+  if (cp && cp.levelMismatch === "under") {
+    hints.push("Candidate is under-qualified for the stated level. Either re-level the offer (one band down with matching CTC), or anchor the CTC at the lower-band ceiling. Do not stretch on a level fit you can't justify.");
+  }
+
+  /* Phase 17F — floor / review-cycle / proof / counter-risk. */
+  const ms = state.miscSignals;
+  if (ms && ms.candidateFloor != null) {
+    hints.push(`Candidate's stated FLOOR is ₹${ms.candidateFloor} LPA — distinct from their target. Any number below this triggers walk-away; do not anchor below ₹${ms.candidateFloor} LPA without a strong non-cash sweetener.`);
+  }
+  if (ms && ms.salaryReviewMonths != null) {
+    hints.push(`Candidate is open to a salary review at the ${ms.salaryReviewMonths}-month mark. This is a viable bridge when base is capped — package it as a written commitment in the offer letter.`);
+  }
+  if (ms && ms.proofOfCtcShareable === true) {
+    hints.push("Candidate has offered to share CTC proof (slips / offer letter). Treat their stated current CTC and competing offer as verified; their leverage strengthens.");
+  }
+  if (ms && ms.proofOfCtcShareable === false) {
+    hints.push("Candidate has declined to share CTC proof. Treat stated numbers cautiously; do not anchor your counter solely on their stated current CTC.");
+  }
+  if (ms && ms.internalCounterRisk === "received") {
+    hints.push("Candidate has RECEIVED an internal counter-offer from current employer. High retention risk — surface joining bonus + level + start-date flexibility together to differentiate.");
+  }
+  if (ms && ms.internalCounterRisk === "rejected") {
+    hints.push("Candidate has already REJECTED their internal counter. Strong joining signal — proceed confidently to close.");
+  }
+  if (ms && ms.internalCounterRisk === "asked") {
+    hints.push("Candidate has asked internally for a counter. Outcome unknown — close quickly before the internal counter lands.");
+  }
+
+  /* Phase 17D — notice extensions. */
+  const njX = state.noticeJoining;
+  if (njX && njX.joiningBonusClawbackDiscussed) {
+    hints.push("Candidate raised joining-bonus clawback. Quote the standard clawback (typically 1-year pro-rata) and offer to soften only if their tenure history is stable.");
+  }
+  if (njX && njX.lastWorkingDayText) {
+    hints.push(`Candidate's stated last-working-day: "${njX.lastWorkingDayText}". Use this in start-date framing; do not propose start dates earlier than this without offering buyout.`);
+  }
+
+  /* Phase 17E — equity extensions. */
+  const evX = state.equityVesting;
+  if (evX && evX.strikePriceDiscussed) {
+    hints.push("Candidate asked about strike price / 409A. Provide the current strike (or 'last 409A was X') if known; this is a literacy signal — engage substantively, do not deflect.");
+  }
+  if (evX && evX.valuationDiscussed) {
+    hints.push("Candidate asked about valuation / cap-table. They are sophisticated — be precise about the last preferred round price; vague answers will hurt credibility.");
+  }
+  if (evX && evX.liquidityDiscussed) {
+    hints.push("Candidate asked about liquidity / IPO / secondaries. Address timing realistically; over-promising liquidity is a common red flag they'll spot.");
+  }
+
   return hints.join("\n");
 }
 
@@ -477,6 +561,56 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (co.stage) coParts.push(`stage=${co.stage}`);
     if (co.letterShareOffered) coParts.push("willShare");
     parts.push(`competingDetail=[${coParts.join(",")}]`);
+  }
+  /* Phase 17A — decision deadline + conditional accept signal. The
+     deadline informs closing-pressure pacing; the conditional flag
+     prevents the AI from misreading "if you match X, I'll sign" as
+     an unconditional commitment. */
+  const dd = state.decisionDeadline;
+  if (dd && dd.hasAny) {
+    const ddParts: string[] = [];
+    if (dd.deadlineDays != null) ddParts.push(`days=${dd.deadlineDays}`);
+    if (dd.deadlineExplicit) ddParts.push("explicit");
+    if (dd.conditionalAcceptance) ddParts.push("conditional");
+    parts.push(`deadline=[${ddParts.join(",")}]`);
+  }
+  /* Phase 17B — candidate background. Gap / tenure / level mismatch
+     reshape the AI's framing of joining-bonus and retention. */
+  const cp = state.candidateProfile;
+  if (cp && cp.hasAny) {
+    const cpParts: string[] = [];
+    if (cp.careerGapMonths != null) cpParts.push(`gapMo=${cp.careerGapMonths}`);
+    if (cp.careerGapActivity) cpParts.push(`gapAct=${cp.careerGapActivity}`);
+    if (cp.tenureSignal) cpParts.push(`tenure=${cp.tenureSignal}`);
+    if (cp.levelMismatch) cpParts.push(`level=${cp.levelMismatch}`);
+    parts.push(`profile=[${cpParts.join(",")}]`);
+  }
+  /* Phase 17F — floor + review-cycle + proof + counter-risk scalars. */
+  const ms = state.miscSignals;
+  if (ms && ms.hasAny) {
+    const msParts: string[] = [];
+    if (ms.candidateFloor != null) msParts.push(`floor=${ms.candidateFloor}`);
+    if (ms.salaryReviewMonths != null) msParts.push(`reviewMo=${ms.salaryReviewMonths}`);
+    if (ms.proofOfCtcShareable === true) msParts.push("proofYes");
+    if (ms.proofOfCtcShareable === false) msParts.push("proofNo");
+    if (ms.internalCounterRisk) msParts.push(`counter=${ms.internalCounterRisk}`);
+    parts.push(`misc=[${msParts.join(",")}]`);
+  }
+  /* Phase 17D/E — notice + equity extensions. */
+  const njExt = state.noticeJoining;
+  if (njExt && (njExt.joiningBonusClawbackDiscussed || njExt.lastWorkingDayText)) {
+    const extParts: string[] = [];
+    if (njExt.joiningBonusClawbackDiscussed) extParts.push("clawback");
+    if (njExt.lastWorkingDayText) extParts.push(`lwd="${njExt.lastWorkingDayText.slice(0, 30)}"`);
+    parts.push(`noticeExt=[${extParts.join(",")}]`);
+  }
+  const evExt = state.equityVesting;
+  if (evExt && (evExt.strikePriceDiscussed || evExt.valuationDiscussed || evExt.liquidityDiscussed)) {
+    const extParts: string[] = [];
+    if (evExt.strikePriceDiscussed) extParts.push("strike");
+    if (evExt.valuationDiscussed) extParts.push("valuation");
+    if (evExt.liquidityDiscussed) extParts.push("liquidity");
+    parts.push(`equityExt=[${extParts.join(",")}]`);
   }
   if (state.leversUsed.length > 0) parts.push(`leversUsed=[${state.leversUsed.join(",")}]`);
   parts.push(`rationale=${move.rationale}`);
