@@ -365,6 +365,16 @@ describe("parseCandidateAnswer", () => {
         internalCounterRisk: null,
         hasAny: false,
       },
+      candidateStance: {
+        flexibilityPosture: null,
+        marketReferenceVague: false,
+        salaryOnlyFactor: false,
+        badmouthsCurrent: false,
+        confidentialOvershare: false,
+        soundsDesperate: false,
+        treatsEquityAsCash: false,
+        hasAny: false,
+      },
     });
   });
 });

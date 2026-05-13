@@ -25,6 +25,9 @@ import {
   isVerbatimRepeat,
 } from "./_negotiation-kernel";
 import { detectRoleLabelMismatch } from "./_role-mismatch";
+import type { CandidateStanceResult } from "./_candidate-stance";
+import { recommendFollowups } from "./_followup-router";
+import { detectRedFlags } from "./_red-flags";
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 
@@ -481,6 +484,50 @@ function buildResponseHints(state: NegotiationState): string {
     hints.push("Candidate asked about liquidity / IPO / secondaries. Address timing realistically; over-promising liquidity is a common red flag they'll spot.");
   }
 
+  /* Phase 18 — stance / follow-up router / red-flag framing. */
+  const cs = state.candidateStance;
+  if (cs && cs.flexibilityPosture === "rigid") {
+    hints.push("Candidate signalled a hardline / non-negotiable stance. Do NOT immediately concede; reframe by probing what besides comp (role scope, growth, equity, start date) could move them.");
+  }
+  if (cs && cs.flexibilityPosture === "flexible") {
+    hints.push("Candidate is openly flexible. Do not interpret as weakness — anchor at your fair number first, then ask for their floor before conceding.");
+  }
+  if (cs && cs.marketReferenceVague) {
+    hints.push("Candidate invoked 'market' / 'industry standard' without a number. Probe: ask which roles/companies/sources they're benchmarking against — do not let a vague market reference anchor the conversation.");
+  }
+  if (cs && cs.salaryOnlyFactor) {
+    hints.push("Candidate stated salary is the only thing that matters. Surface non-comp value (role, growth, mentorship, equity, learning) explicitly — this is the moment to expand the value pie, not match the comp ask alone.");
+  }
+  if (cs && cs.badmouthsCurrent) {
+    hints.push("Candidate disparaged their current employer. Do not engage / validate. Pivot to forward-looking framing — culture risk is now on the table, weight retention levers accordingly.");
+  }
+  if (cs && cs.confidentialOvershare) {
+    hints.push("Candidate shared confidential info. Do NOT prompt for more; acknowledge minimally and steer back to their public-facing levers. Integrity risk recorded.");
+  }
+  if (cs && cs.soundsDesperate) {
+    hints.push("Candidate signalled desperation. Do NOT exploit — stay at fair-market framing. Predatory low-balls produce churn; the kernel anchors at the band midpoint regardless.");
+  }
+  if (cs && cs.treatsEquityAsCash) {
+    hints.push("Candidate is treating equity as guaranteed cash. Briefly explain risk-adjusted value (vesting, dilution, liquidity timing) — do NOT match cash-equivalent expectations against equity face value.");
+  }
+
+  const followups = recommendFollowups({ state, stance: cs ?? EMPTY_STANCE });
+  if (followups.length > 0) {
+    const top = followups.slice(0, 3);
+    const labels = top.map((f) => `${f.category} (${f.reason})`).join("; ");
+    hints.push(`Follow-up router — top recommended questions, by priority: ${labels}. Pick at most one to ask this turn; the rest are for later turns.`);
+  }
+
+  const flags = detectRedFlags({ state, stance: cs ?? EMPTY_STANCE, utterance: lastCandidateText(state) });
+  const blockers = flags.filter((f) => f.severity === "blocker");
+  if (blockers.length > 0) {
+    hints.push(`BLOCKER red flags: ${blockers.map((f) => `${f.code} — ${f.detail}`).join("; ")}. Pause before advancing the offer; verify the underlying claim.`);
+  }
+  const concerns = flags.filter((f) => f.severity === "concern");
+  if (concerns.length > 0) {
+    hints.push(`Concern red flags: ${concerns.map((f) => f.code).join(", ")}. Soften pacing; address one explicitly if the move-picker allows it.`);
+  }
+
   return hints.join("\n");
 }
 
@@ -612,9 +659,58 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (evExt.liquidityDiscussed) extParts.push("liquidity");
     parts.push(`equityExt=[${extParts.join(",")}]`);
   }
+  /* Phase 18 — candidate stance (posture / sentiment scalars). Only
+   * emit fields that fired; the brief stays compact. */
+  const cs = state.candidateStance;
+  if (cs && cs.hasAny) {
+    const csParts: string[] = [];
+    if (cs.flexibilityPosture) csParts.push(`stance=${cs.flexibilityPosture}`);
+    if (cs.marketReferenceVague) csParts.push("market-ref");
+    if (cs.salaryOnlyFactor) csParts.push("salary-only");
+    if (cs.badmouthsCurrent) csParts.push("badmouth");
+    if (cs.confidentialOvershare) csParts.push("confidential");
+    if (cs.soundsDesperate) csParts.push("desperate");
+    if (cs.treatsEquityAsCash) csParts.push("equity-as-cash");
+    parts.push(`stance=[${csParts.join(",")}]`);
+  }
+  /* Phase 18 — recommended follow-up categories from the rule-based
+   * router. Brief surfaces top 3 by priority so the LLM has a clear
+   * "what to ask next" anchor when no overriding kernel move applies. */
+  const followups = recommendFollowups({ state, stance: cs ?? EMPTY_STANCE });
+  if (followups.length > 0) {
+    const top = followups.slice(0, 3).map((f) => f.category);
+    parts.push(`followups=[${top.join(",")}]`);
+  }
+  /* Phase 18 — red flags. Only include "concern" + "blocker"; "info"
+   * flags are diagnostic and shouldn't crowd the brief. */
+  const flags = detectRedFlags({ state, stance: cs ?? EMPTY_STANCE, utterance: lastCandidateText(state) });
+  const seriousFlags = flags.filter((f) => f.severity !== "info").map((f) => f.code);
+  if (seriousFlags.length > 0) {
+    parts.push(`redflags=[${seriousFlags.join(",")}]`);
+  }
   if (state.leversUsed.length > 0) parts.push(`leversUsed=[${state.leversUsed.join(",")}]`);
   parts.push(`rationale=${move.rationale}`);
   return parts.join(" | ");
+}
+
+const EMPTY_STANCE: CandidateStanceResult = {
+  flexibilityPosture: null,
+  marketReferenceVague: false,
+  salaryOnlyFactor: false,
+  badmouthsCurrent: false,
+  confidentialOvershare: false,
+  soundsDesperate: false,
+  treatsEquityAsCash: false,
+  hasAny: false,
+};
+
+function lastCandidateText(state: NegotiationState): string {
+  const log = state.conversationLog;
+  if (!log || log.length === 0) return "";
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i]?.speaker === "candidate") return log[i].text ?? "";
+  }
+  return "";
 }
 
 /* ─── Validation ──────────────────────────────────────────────────── */

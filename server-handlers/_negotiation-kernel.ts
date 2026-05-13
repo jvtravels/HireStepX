@@ -82,6 +82,11 @@ import {
   mergeMiscSignals,
   type MiscSignalsResult,
 } from "./_misc-signals";
+import {
+  extractCandidateStance,
+  mergeCandidateStance,
+  type CandidateStanceResult,
+} from "./_candidate-stance";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -315,6 +320,13 @@ export interface NegotiationState {
   /* Phase 17F (2026-05-13) — scalar candidate signals: floor, salary-
    * review cycle, proof-of-CTC shareability, internal-counter risk. */
   miscSignals: MiscSignalsResult;
+
+  /* Phase 18 (2026-05-13) — candidate stance / posture (rigidity,
+   * market-reference, salary-only-factor, badmouth, confidential
+   * overshare, desperation, equity-as-cash). Drives the follow-up
+   * router and red-flag detector — both pure derived views recomputed
+   * each turn. */
+  candidateStance: CandidateStanceResult;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -415,6 +427,16 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       internalCounterRisk: null,
       hasAny: false,
     },
+    candidateStance: {
+      flexibilityPosture: null,
+      marketReferenceVague: false,
+      salaryOnlyFactor: false,
+      badmouthsCurrent: false,
+      confidentialOvershare: false,
+      soundsDesperate: false,
+      treatsEquityAsCash: false,
+      hasAny: false,
+    },
   };
 }
 
@@ -461,6 +483,8 @@ export interface ParsedAnswer {
   candidateProfile: CandidateProfileResult;
   /* Phase 17F — floor / review / proof / internal-counter scalars. */
   miscSignals: MiscSignalsResult;
+  /* Phase 18 — candidate stance / posture scalars. */
+  candidateStance: CandidateStanceResult;
 }
 
 /* Parse the candidate's free-text answer for salary-relevant numbers
@@ -603,6 +627,7 @@ export function parseCandidateAnswer(
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
       candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
+      candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, hasAny: false },
     };
   }
 
@@ -729,6 +754,7 @@ export function parseCandidateAnswer(
   const decisionDeadline = extractDecisionDeadline(a);
   const candidateProfile = extractCandidateProfile(a);
   const miscSignals = extractMiscSignals(a);
+  const candidateStance = extractCandidateStance(a);
 
   /* Phase 17A — when a conditional acceptance fires, the legacy
    * `signalsAcceptance` boolean must be downgraded. A conditional
@@ -753,6 +779,7 @@ export function parseCandidateAnswer(
     decisionDeadline,
     candidateProfile,
     miscSignals,
+    candidateStance,
   };
 }
 
@@ -897,6 +924,9 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   }
   if (parsed.miscSignals.hasAny) {
     next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
+  }
+  if (parsed.candidateStance.hasAny) {
+    next.candidateStance = mergeCandidateStance(state.candidateStance, parsed.candidateStance);
   }
 
   /* Merge tactic + info sets — sticky, never cleared. */
@@ -1556,6 +1586,17 @@ export function validateState(state: unknown): asserts state is NegotiationState
     if (ms.internalCounterRisk !== null && typeof ms.internalCounterRisk !== "string") throw new Error("state.miscSignals.internalCounterRisk");
     if (typeof ms.hasAny !== "boolean") throw new Error("state.miscSignals.hasAny");
   }
+  /* Phase 18 — candidate stance. Optional for backwards-compat. */
+  if (s.candidateStance !== undefined) {
+    const cs = s.candidateStance as Record<string, unknown>;
+    if (!cs || typeof cs !== "object") throw new Error("state.candidateStance");
+    if (cs.flexibilityPosture !== null && typeof cs.flexibilityPosture !== "string") {
+      throw new Error("state.candidateStance.flexibilityPosture");
+    }
+    for (const k of ["marketReferenceVague", "salaryOnlyFactor", "badmouthsCurrent", "confidentialOvershare", "soundsDesperate", "treatsEquityAsCash", "hasAny"] as const) {
+      if (typeof cs[k] !== "boolean") throw new Error(`state.candidateStance.${k}`);
+    }
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -1609,6 +1650,16 @@ export function deserializeState(json: string): NegotiationState {
     },
     miscSignals: (s.miscSignals as MiscSignalsResult | undefined) ?? {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,
+    },
+    candidateStance: (s.candidateStance as CandidateStanceResult | undefined) ?? {
+      flexibilityPosture: null,
+      marketReferenceVague: false,
+      salaryOnlyFactor: false,
+      badmouthsCurrent: false,
+      confidentialOvershare: false,
+      soundsDesperate: false,
+      treatsEquityAsCash: false,
+      hasAny: false,
     },
   };
 }
