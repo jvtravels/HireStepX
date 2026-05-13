@@ -34,6 +34,27 @@ import { detectRoleCompanyFit } from "../src/_role-company-fit";
  *  helpers. Listed-detection nuance (Swiggy/Zomato/Meesho post-IPO are
  *  listed unicorns) is left to the per-company override; this is the
  *  conservative default mapping. */
+/* ─── P35 opener clamp (Session B — Area 8) ──────────────────────────
+ *
+ * Single source of truth for the opening-offer percentile. Two band
+ * construction paths used to inline the same `totalMin + 0.35 * span`
+ * + `Math.min(p35Raw, p35Cap)` arithmetic. Factored to one helper so
+ * any future tweak to the opener percentile (or to the clamp shape)
+ * lands once.
+ *
+ * Invariant: returned value <= totalMin + 0.35 * (totalMax - totalMin).
+ * The clamp is structurally identical to the raw value today (both are
+ * P35) — the `Math.min` is kept so that if the raw value formula ever
+ * drifts up (e.g. to 0.40), the cap still enforces "never above P35".
+ *
+ * Pure. */
+export function clampOpenerToP35(totalMin: number, totalMax: number): number {
+  const p35Cap = totalMin + 0.35 * (totalMax - totalMin);
+  const initialOfferRaw = totalMin + (totalMax - totalMin) * 0.35;
+  const opener = Math.min(initialOfferRaw, p35Cap);
+  return Math.round(opener * 10) / 10;
+}
+
 function tierBucketFromCompanyTier(t: CompanyTier | null | undefined): CompanyTierBucket | undefined {
   switch (t) {
     case "faang":
@@ -857,9 +878,7 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
      * the senior band was miscalibrated wide (₹29.4-84L); the band is
      * now ₹30-42L (P35 ≈ ₹34L) and this clamp guarantees future
      * miscalibrations can't reproduce the bug class. */
-    const p35Cap = totalMin + 0.35 * (totalMax - totalMin);
-    const initialOfferRaw = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
-    const initialOffer = Math.min(initialOfferRaw, Math.round(p35Cap * 10) / 10);
+    const initialOffer = clampOpenerToP35(totalMin, totalMax);
     const minOffer = Math.round(totalMin * 0.95 * 10) / 10;
     const maxStretch = Math.round((totalMin + (totalMax - totalMin) * 0.85) * 10) / 10;
     /* `walkAway` is the kernel's CANDIDATE-FLOOR — the offer below which
@@ -1021,9 +1040,7 @@ These numbers are calibrated to the COMPANY (not the tier). Quoting numbers from
   // P35 clamp safety net — see override-path comment above for rationale.
   const totalMin = adj(entry.total_min);
   const totalMax = adj(entry.total_max);
-  const p35Cap = totalMin + 0.35 * (totalMax - totalMin);
-  const initialOfferRaw = Math.round((totalMin + (totalMax - totalMin) * 0.35) * 10) / 10;
-  const initialOffer = Math.min(initialOfferRaw, Math.round(p35Cap * 10) / 10);
+  const initialOffer = clampOpenerToP35(totalMin, totalMax);
 
   // Min offer: slightly below the data range min (floor)
   const minOffer = Math.round(totalMin * 0.95 * 10) / 10;

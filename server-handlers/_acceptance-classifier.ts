@@ -90,6 +90,10 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bhappy\s+to\s+accept\b/i,
   /\bi.?m\s+signing\s+(?:today|now|tonight)\b/i,
   /\bsign\s+(?:today|right\s+now|tonight)\b/i,
+  /* Session B (2026-05-14) — bare "I'll sign" / "let me sign" commit
+   * verb (no time qualifier needed; the verb itself is the speech act). */
+  /\bi.?ll\s+sign\b/i,
+  /\blet\s+me\s+sign\b/i,
   /* "I'll join" — commit-to-join verb, structurally as strong as
      "I accept". Added 2026-05-14 (Session 12). */
   /\bi.?ll\s+join(?:\s+(?:the\s+)?(?:company|team|firm|role|offer))?\b/i,
@@ -107,9 +111,19 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
   /\bthat\s+works\b/i,
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
-  /\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in)\b/i,
+  /\blet.?s\s+(?:go\s+ahead|do\s+it|lock\s+it\s+in|proceed)\b/i,
   /\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b/i,
   /\bfine\s+with\s+me\b/i,
+  /* Session B (2026-05-14) — bare commitment tokens. Each must be the
+   * whole utterance or terminated cleanly — "deal" as a single word,
+   * "sold", "done" (not "let me think about it, done"). Capturing them
+   * as commitment idioms (not performative) keeps the phase gate active:
+   * "deal" before any number is on the table is filler. */
+  /^\s*deal\s*[.!?]?\s*$/i,
+  /^\s*sold\s*[.!?]?\s*$/i,
+  /^\s*done\s*[.!?]?\s*$/i,
+  /^\s*let'?s\s+go\s*[.!?]?\s*$/i,
+  /^\s*works\s+for\s+me\s*[.!?]?\s*$/i,
 ];
 
 /** Soft-alignment forms — language that affirms the offer
@@ -195,6 +209,14 @@ const SPLIT_CLAUSE_ACCEPTANCE_PATTERNS: RegExp[] = [
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
   /\bdeal\b/i,
+  /* Session B (2026-05-14) — bare-token commit phrases. Per-sentence
+   * pass via splitSentences means "done. when's the start date?" splits
+   * into "done." + "when's the start date?", and the first sentence
+   * matches these. */
+  /^\s*done\s*[.!?]?\s*$/i,
+  /^\s*sold\s*[.!?]?\s*$/i,
+  /^\s*let'?s\s+go\s*[.!?]?\s*$/i,
+  /^\s*works\s+for\s+me\s*[.!?]?\s*$/i,
 ];
 
 /** Question / info-ask cue at the clause level. */

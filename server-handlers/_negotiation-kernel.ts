@@ -195,7 +195,9 @@ export type InfoIntent =
   | "perks-non-cash"       // Sodexo / gratuity / NPS lumping
   | "package-breakdown"    // generic "walk me through the package" / "break it down" — added 2026-05 after the Lollypop session where the candidate asked for the structure and the AI responded with a probe ("what range are you targeting?") instead of providing the breakdown. The existing intents were all component-specific; this catches the higher-level "explain the offer" ask.
   | "benefits-overview"    // "what are the benefits?" / "what perks do you offer?" — added 2026-05 (bug report 11 follow-up E). Distinct from `perks-non-cash` (Sodexo / gratuity lump-into-CTC trick) and from `package-breakdown` (offer-component enumeration). This is the candidate asking what's IN the benefits package — health insurance, PF, leaves, learning budget, work mode. Routed to a company-aware disclosure in the helpers layer.
-  | "compensation-breakdown"; // "explain the variable components" / "ESOP details?" / "what's the bonus structure?" — added 2026-05 (session 12 bug). Distinct from `package-breakdown` (offer-component enumeration of THIS offer) and `fixed-vs-variable` (just the split). This is the candidate asking about the GENERAL compensation STRUCTURE at the company — base/variable/equity ratios, bonus frequency, vesting. Routed to a company-aware compensation disclosure (data/company-compensation-structure.ts) via the response-hint layer.
+  | "compensation-breakdown" // "explain the variable components" / "ESOP details?" / "what's the bonus structure?" — added 2026-05 (session 12 bug). Distinct from `package-breakdown` (offer-component enumeration of THIS offer) and `fixed-vs-variable` (just the split). This is the candidate asking about the GENERAL compensation STRUCTURE at the company — base/variable/equity ratios, bonus frequency, vesting. Routed to a company-aware compensation disclosure (data/company-compensation-structure.ts) via the response-hint layer.
+  | "notice-period-ask"    // Session B (2026-05-14): candidate asking ABOUT notice / start-date / buyout — "notice period?", "when can I join?", "earliest start date?", "buyout?". Distinct from the noticeJoining EXTRACTION (candidate stating THEIR notice). An info-ask the recruiter should answer in-channel.
+  | "hike-percentage-ask"; // Session B (2026-05-14): candidate asking what hike% this offer represents — "what hike is this?", "is this a 30% hike?", "% raise?". Distinct from hikeRationale (candidate justifying their ask). Recruiter should respond with the computed delta if currentCtc known.
 
 /* Negotiation tactics from the Voss / interviewing.io canon that the
    parser detects and the move-picker rewards. Tracked so a candidate
@@ -793,7 +795,7 @@ function detectInfoIntents(a: string): InfoIntent[] {
   if (/\b(in[-\s]?hand|take[-\s]?home|net\s+(?:salary|monthly|pay)|monthly\s+(?:salary|pay|in\s+hand))\b/i.test(a)) out.push("in-hand-monthly");
   if (/\b(exercise\s+window|post[-\s]?termination|after\s+(?:leaving|resignation)|exercise\s+period)\b/i.test(a)) out.push("exercise-window");
   if (/\b(accelerat(?:ed|ion)\s+vest|change\s+of\s+control|acquisition\s+(?:trigger|clause|vesting)|single[-\s]?trigger|double[-\s]?trigger)\b/i.test(a)) out.push("acceleration");
-  if (/\b(fixed\s+(?:vs|versus|and)\s+variable|split\s+(?:between|of)\s+fixed|how\s+much\s+(?:is\s+)?fixed|fixed\s+component|ctc\s+(?:breakdown|split))\b/i.test(a)) out.push("fixed-vs-variable");
+  if (/\b(fixed\s+(?:vs|versus|and|or)\s+variable|variable\s+(?:vs|versus|or)\s+fixed|split\s+(?:between|of)\s+fixed|how\s+much\s+(?:is\s+)?fixed|fixed\s+component|ctc\s+(?:breakdown|split)|base\s+fixed\s+or\s+variable)\b/i.test(a)) out.push("fixed-vs-variable");
   if (/\b(sodexo|food\s+coupon|gratuity|nps|insurance\s+(?:value|cost)|non[-\s]?cash|benefits\s+(?:value|in\s+ctc))\b/i.test(a)) out.push("perks-non-cash");
   /* Generic "walk me through / break it down / what's the structure" —
      the candidate is explicitly asking the recruiter to enumerate the
@@ -829,8 +831,12 @@ function detectInfoIntents(a: string): InfoIntent[] {
   const questionLead = /\b(?:what\s+are|what\s+is|what['’]s|how\s+about|how\s+does|what\s+does|what\s+kind\s+of|which)\b/i.test(a);
   const broadBenefitsMatch = hasBenefitsWord && (endsWithQuestion || imperativeCue || questionLead);
   const legacyBenefitsMatch =
-    /\b(?:what(?:'s|\s+is|\s+are)?\s+(?:the\s+|some\s+|your\s+)?(?:benefits|perks)|tell\s+me\s+(?:about\s+)?(?:the\s+)?(?:benefits|perks)|(?:any|other)\s+(?:benefits|perks)|let\s+me\s+know\s+(?:about\s+)?(?:are\s+)?(?:the\s+)?(?:benefits|perks)|for\s+the\s+(?:benefits|perks)\b|what\s+do\s+i\s+get|benefits\s+(?:for\s+this\s+role|package|breakdown)|perks\s+(?:do\s+you|of\s+(?:this|the))|fringe\s+benefits)\b/i.test(a);
-  if (broadBenefitsMatch || legacyBenefitsMatch) out.push("benefits-overview");
+    /\b(?:what(?:'s|\s+is|\s+are)?\s+(?:the\s+|some\s+|your\s+)?(?:benefits|perks)|tell\s+me\s+(?:about\s+)?(?:the\s+)?(?:benefits|perks)|(?:any|other)\s+(?:benefits|perks)|let\s+me\s+know\s+(?:about\s+)?(?:are\s+)?(?:the\s+)?(?:benefits|perks)|for\s+the\s+(?:benefits|perks)\b|what\s+do\s+i\s+get|benefits\s+(?:for\s+this\s+role|package|breakdown)|perks\s+(?:do\s+you|of\s+(?:this|the)))\b/i.test(a);
+  /* "fringe benefits" used to be a standalone trigger; it now requires
+   * interrogative shape so "fringe benefits of equity are nice"
+   * (declarative) does not fire. */
+  const fringeBenefitsMatch = /\bfringe\s+benefits\b/i.test(a) && (endsWithQuestion || imperativeCue || questionLead);
+  if (broadBenefitsMatch || legacyBenefitsMatch || fringeBenefitsMatch) out.push("benefits-overview");
 
   /* Bug session 12 (2026-05-14) — compensation-breakdown.
    * Candidate asking about variable / bonus / ESOP / equity / RSU /
@@ -851,6 +857,38 @@ function detectInfoIntents(a: string): InfoIntent[] {
   if (hasCompWord && (endsWithQuestion || imperativeCue || questionLead)) {
     out.push("compensation-breakdown");
   }
+
+  /* Session B (2026-05-14) — notice-period info ask. Anchored to
+   * interrogative shapes around notice / start-date / joining-date /
+   * buyout so declarative "I have a 60-day notice" doesn't trip. */
+  const noticeAskPatterns = [
+    /\bnotice\s+period\s*\?/i,
+    /\b(?:what(?:'s|\s+is)|how\s+long\s+is)\s+(?:the\s+)?(?:notice|notice\s+period)\b/i,
+    /\b(?:when|how\s+soon)\s+can\s+i\s+(?:join|start)\b/i,
+    /\b(?:earliest|expected)\s+(?:start\s+date|joining\s+date)\s*\??/i,
+    /\bjoining\s+date\s*\?/i,
+    /\bstart\s+date\s*\?/i,
+    /\bbuyout\s*\?/i,
+    /\b(?:do\s+you|will\s+you|can\s+you)\s+(?:offer|cover|do)\s+(?:a\s+)?buy[-\s]?out\b/i,
+    /\bbuy[-\s]?out\s+option\b/i,
+  ];
+  if (noticeAskPatterns.some((p) => p.test(a))) out.push("notice-period-ask");
+
+  /* Session B (2026-05-14) — hike-percentage info ask. The candidate
+   * is asking what hike% the offer represents vs their current CTC.
+   * Anchored to interrogative shape so declarative "I want a 30% hike"
+   * doesn't fire. */
+  const hikeDeclarativeGuard = /\b(?:i\s+want|i.?m\s+asking|i\s+expect|i\s+need|i.?d\s+like|i\s+am\s+looking\s+for|expecting)\b/i.test(a);
+  const hikeAskPatterns = [
+    /\b(?:what(?:'s|\s+is)?|how\s+much)\s+(?:(?:the|a)\s+)?(?:hike|raise|increment|bump)\b/i,
+    /\bhike\s*%/i,
+    /(?:^|\s)%\s+(?:hike|raise|increment)\s*\?/i,
+    /\b(?:is\s+this|will\s+this\s+be)\s+(?:a\s+)?\d{1,3}\s*%\s+(?:hike|raise|increment|bump)\b/i,
+    /\bhike\s+(?:from|on)\s+(?:my\s+)?current\b/i,
+    /\bwhat\s+hike\s+is\s+this\b/i,
+  ];
+  if (!hikeDeclarativeGuard && hikeAskPatterns.some((p) => p.test(a))) out.push("hike-percentage-ask");
+
   return out;
 }
 
