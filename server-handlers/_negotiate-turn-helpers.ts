@@ -28,6 +28,7 @@ import { detectRoleLabelMismatch } from "./_role-mismatch";
 import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
 import { detectRedFlags } from "./_red-flags";
+import { lookupCompanyBenefits, formatBenefitsForPrompt } from "../data/company-benefits";
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 
@@ -298,6 +299,9 @@ const INFO_ANSWERS: Record<string, string> = {
   "acceleration": "Address acceleration: double-trigger on change-of-control + role elimination, standard.",
   "fixed-vs-variable": "Address split: 80% fixed, 20% variable for IC roles at this band.",
   "perks-non-cash": "Address non-cash: gratuity + NPS + Sodexo + insurance bundled into CTC headline.",
+  /* `benefits-overview` is injected per-state in buildResponseHints (it
+   * depends on state.company to look up the right package), so it's
+   * intentionally NOT in this static table. */
 };
 
 /* Pre-canned tactic acknowledgements — short hints, not full
@@ -344,6 +348,22 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
   for (const intent of state.infoAsked) {
     const a = INFO_ANSWERS[intent];
     if (a) hints.push(a);
+  }
+  /* Bug report 11 follow-up E (2026-05-14) — benefits-overview is
+   * state-derived (depends on company), so it's hinted here rather than
+   * via the static INFO_ANSWERS table. The disclosure must NOT renegotiate
+   * salary and must NOT re-trigger close-acceptance; this is purely an
+   * info turn that keeps the candidate in their current phase. */
+  if (state.infoAsked.includes("benefits-overview")) {
+    const benefits = lookupCompanyBenefits(state.company);
+    hints.push(
+      "BENEFITS DISCLOSURE — the candidate asked about benefits / perks. " +
+      "Itemize the non-cash package below in plain prose (no bullet points " +
+      "in your spoken output). Do NOT restate the CTC, do NOT propose a new " +
+      "number, do NOT push for acceptance — this is an info turn. After " +
+      "enumerating, briefly invite any follow-up question about a specific item.\n" +
+      formatBenefitsForPrompt(benefits),
+    );
   }
   for (const tactic of state.vossTacticsUsed) {
     const h = TACTIC_HINTS[tactic];

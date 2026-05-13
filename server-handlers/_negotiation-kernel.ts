@@ -187,7 +187,8 @@ export type InfoIntent =
   | "acceleration"         // accelerated vesting on acquisition / RIF
   | "fixed-vs-variable"    // CTC split breakdown
   | "perks-non-cash"       // Sodexo / gratuity / NPS lumping
-  | "package-breakdown";   // generic "walk me through the package" / "break it down" — added 2026-05 after the Lollypop session where the candidate asked for the structure and the AI responded with a probe ("what range are you targeting?") instead of providing the breakdown. The existing intents were all component-specific; this catches the higher-level "explain the offer" ask.
+  | "package-breakdown"    // generic "walk me through the package" / "break it down" — added 2026-05 after the Lollypop session where the candidate asked for the structure and the AI responded with a probe ("what range are you targeting?") instead of providing the breakdown. The existing intents were all component-specific; this catches the higher-level "explain the offer" ask.
+  | "benefits-overview";   // "what are the benefits?" / "what perks do you offer?" — added 2026-05 (bug report 11 follow-up E). Distinct from `perks-non-cash` (Sodexo / gratuity lump-into-CTC trick) and from `package-breakdown` (offer-component enumeration). This is the candidate asking what's IN the benefits package — health insurance, PF, leaves, learning budget, work mode. Routed to a company-aware disclosure in the helpers layer.
 
 /* Negotiation tactics from the Voss / interviewing.io canon that the
    parser detects and the move-picker rewards. Tracked so a candidate
@@ -777,6 +778,16 @@ function detectInfoIntents(a: string): InfoIntent[] {
      offer for me?" with "what range are you targeting?" — a phase
      mismatch the move-picker now overrides via this intent. */
   if (/\b(walk\s+me\s+through|break\s+(?:it|that|the\s+offer|the\s+package)\s+down|breakdown\s+of\s+(?:the\s+)?(?:offer|package|ctc)|structure\s+of\s+(?:the\s+)?(?:offer|package|ctc)|what(?:'s|\s+is)\s+(?:in\s+)?(?:the\s+)?(?:package|offer)|tell\s+me\s+more\s+about\s+(?:the\s+)?(?:package|offer|ctc))\b/i.test(a)) out.push("package-breakdown");
+  /* Generic benefits / perks ask — "what are the benefits?", "what
+     perks do you offer?", "what do I get besides salary?", "tell me
+     about the benefits package", "for the benefits.". Bug report 11
+     follow-up E (2026-05-14): the recruiter previously had no response
+     for this and looped close-acceptance. Distinct from `perks-non-cash`
+     (lump-into-CTC trick) — this is purely an info disclosure. We
+     deliberately do NOT match a bare "benefits" word standing alone
+     against substrings like "fringe benefits of equity"; we anchor to
+     interrogative shapes or the explicit "for the benefits" follow-up. */
+  if (/\b(?:what(?:'s|\s+is|\s+are)?\s+(?:the\s+|some\s+|your\s+)?(?:benefits|perks)|tell\s+me\s+(?:about\s+)?(?:the\s+)?(?:benefits|perks)|(?:any|other)\s+(?:benefits|perks)|let\s+me\s+know\s+(?:about\s+)?(?:are\s+)?(?:the\s+)?(?:benefits|perks)|for\s+the\s+(?:benefits|perks)\b|what\s+do\s+i\s+get|benefits\s+(?:for\s+this\s+role|package|breakdown)|perks\s+(?:do\s+you|of\s+(?:this|the))|fringe\s+benefits)\b/i.test(a)) out.push("benefits-overview");
   return out;
 }
 
@@ -1490,6 +1501,28 @@ export function pickAiMove(state: NegotiationState): AiMove {
       lever: "benefits-summary",
       newTotalLpa: state.highestOfferMade,
       rationale: "Candidate asked for the package breakdown; enumerate components instead of probing.",
+    };
+  }
+
+  /* Benefits-overview intent (bug report 11 follow-up E, 2026-05-14).
+     Distinct from the package-breakdown override above: a candidate
+     asking "what are the benefits?" wants the NON-CASH package (health
+     insurance, PF, leaves, learning budget), not a fixed/variable
+     enumeration of the offer. Routes to `benefits-summary` lever
+     regardless of whether benefits-summary has been used before — a
+     repeat ask deserves a fresh disclosure, NOT a re-close. The
+     terminal-phase gate is preserved so we don't reopen `accepted`
+     into a non-terminal lever; in terminal phases the prose-layer
+     handles the disclosure via the response hint without re-running
+     the move-picker. */
+  const wantsBenefits =
+    !isTerminalPhase(state.phase) &&
+    state.infoAsked.includes("benefits-overview");
+  if (wantsBenefits) {
+    return {
+      lever: "benefits-summary",
+      newTotalLpa: state.highestOfferMade > 0 ? state.highestOfferMade : null,
+      rationale: "Candidate asked about benefits / perks; enumerate the non-cash package instead of re-closing.",
     };
   }
 

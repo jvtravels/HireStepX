@@ -1042,6 +1042,88 @@ export function setProsodyEnabled(enabled: boolean): void {
 const NON_LATIN_SCRIPT_RE = /[\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Gurmukhi}\p{Script=Gujarati}\p{Script=Oriya}\p{Script=Tamil}\p{Script=Telugu}\p{Script=Kannada}\p{Script=Malayalam}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 const NON_LATIN_SCRIPT_STRIP_RE = /[\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Gurmukhi}\p{Script=Gujarati}\p{Script=Oriya}\p{Script=Tamil}\p{Script=Telugu}\p{Script=Kannada}\p{Script=Malayalam}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+/gu;
 
+/**
+ * Expand Indian-currency abbreviations so TTS pronounces them as words
+ * rather than spelling out the letter.
+ *
+ * Bug report 11 follow-up F (2026-05-14): "₹1L" was rendered to TTS
+ * verbatim and Azure / Cartesia / browser SpeechSynthesis read the "L"
+ * as the LETTER ELL ("one ell" / "twenty four point five ell pee ay"),
+ * which broke comprehension in salary-negotiation flows. We keep the
+ * compact form on-screen (the UI surfaces ₹1L deliberately for density)
+ * and only expand on the speech-synthesis path. Pure, idempotent: a
+ * second pass over already-expanded text is a no-op because the
+ * patterns require the L/Cr/LPA tokens.
+ *
+ * Order matters:
+ *   1. Multi-letter compound tokens first (`LPA`, `Cr`, `Cr.`) so
+ *      `25 LPA` doesn't get partially matched as `25 L` + stray `PA`.
+ *   2. Single-letter `L` last, anchored so it only fires when adjacent
+ *      to a number (optionally with ₹). Bare prose containing the
+ *      letter L (e.g. "ESOPs vest over 4 years") is untouched.
+ *
+ * Pluralization: 1 → singular ("1 lakh"), everything else → plural.
+ * Fractional values pluralize ("1.5 lakhs") per the spec. */
+export function expandCurrencyForSpeech(text: string): string {
+  if (!text) return text;
+  let out = text;
+
+  // Step 1 — `LPA` / `lpa` standalone or after a number (with or without ₹).
+  // Pattern catches: "₹24.5 LPA", "25LPA", "25 lpa", "lpa" standalone in a
+  // sentence. The number-prefixed form pluralizes; the standalone form just
+  // expands the acronym.
+  out = out.replace(
+    /(₹\s*)?(\d+(?:\.\d+)?)\s*LPA\b/gi,
+    (_m, _r, n: string) => {
+      const num = parseFloat(n);
+      const word = num === 1 ? "lakh per annum" : "lakhs per annum";
+      return `${n} ${word}`;
+    },
+  );
+  out = out.replace(/\bLPA\b/g, "lakhs per annum");
+
+  // Step 2 — Crore: `₹1Cr`, `1 Cr`, `1cr`, `1Cr.`. Decimals → plural.
+  out = out.replace(
+    /(₹\s*)?(\d+(?:\.\d+)?)\s*Cr\b\.?/gi,
+    (_m, _r, n: string) => {
+      const num = parseFloat(n);
+      const word = num === 1 ? "crore" : "crores";
+      return `${n} ${word}`;
+    },
+  );
+
+  // Step 3 — Lakhs single-letter `L` form: `₹1L`, `₹1.5L`, `1L`, `1 L`.
+  // Anchored: number REQUIRED on the left (so prose "L" letter survives).
+  // Right boundary is non-letter so we don't eat into "LPA" (already
+  // handled in step 1, but a defensive negative lookahead protects
+  // against future re-orderings). The (?!P) lookahead handles a
+  // hypothetical LPA we missed; (?!\w) ensures we don't eat into other
+  // tokens like "Lacs" or "Lakh".
+  out = out.replace(
+    /(₹\s*)?(\d+(?:\.\d+)?)\s*L(?![A-Za-z])/g,
+    (_m, _r, n: string) => {
+      const num = parseFloat(n);
+      const word = num === 1 ? "lakh" : "lakhs";
+      return `${n} ${word}`;
+    },
+  );
+
+  // Step 4 — strip leftover ₹ before a number now that abbreviations are
+  // expanded ("₹25 lakhs per annum" → "25 lakhs per annum"). Without this
+  // some engines read ₹ as "indian rupee" out of order. We keep the ₹ in
+  // the on-screen text — this only runs on the speech path.
+  out = out.replace(/₹\s*(\d)/g, "$1 rupees ").replace(/\s{2,}/g, " ");
+  // The simpler "₹25 lakhs" reads naturally as "25 lakhs"; the rupees
+  // injection only matters when no unit follows. Collapse the redundant
+  // form: "25 rupees lakhs" → "25 lakhs". Same idea for crore.
+  out = out
+    .replace(/\brupees\s+(lakh|lakhs|crore|crores)\b/gi, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return out;
+}
+
 function sanitizeForTTS(text: string): string {
   if (!text) return text;
   // Render or strip prosody markup first — the markdown stripper below
@@ -1057,6 +1139,9 @@ function sanitizeForTTS(text: string): string {
     .replace(/[ \t]+/g, " ")                  // collapse spaces
     .replace(/\s*\n\s*/g, " ")                // collapse newlines
     .trim();
+  // Expand Indian currency abbreviations BEFORE the non-Latin-script
+  // guard so the expansion text remains pure ASCII.
+  cleaned = expandCurrencyForSpeech(cleaned);
   // Hindi-voice-leak guard. If any non-Latin script slipped through (LLM
   // code-switching), strip it and warn so we can trace which prompt let
   // it through. Replacement char is " " so we don't merge words.
