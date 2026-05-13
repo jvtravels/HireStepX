@@ -19,6 +19,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
     turnIndex: 0,
     maxTurns: 8,
     candidateTarget: null,
+    lastCandidateCounterLpa: null,
     firstAnchoredTarget: null,
     candidateCurrentCtc: null,
     competingOffer: null,

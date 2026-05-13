@@ -76,7 +76,11 @@ describe("bug-report 11 — Bug B: Accenture BA entry-band opens around 35th pct
 });
 
 describe("bug-report 11 — Bug C: candidate ask below offer auto-accepts", () => {
-  it("ask ₹14L vs offer ₹25L routes to close-acceptance at ₹14L", () => {
+  it("ask ₹14L vs offer ₹25L routes to close-acceptance clamped to floor ₹25L", () => {
+    /* Bug-report 12 (2026-05-14) update: the gate still fires when a
+     * fresh in-turn counter is below the current offer, but the
+     * close-floor invariant clamps the close value to highestOfferMade.
+     * Candidate already has ₹25L on the table; they don't get less. */
     let state = initState({
       sessionId: "s1",
       role: "Business Analyst",
@@ -88,7 +92,7 @@ describe("bug-report 11 — Bug C: candidate ask below offer auto-accepts", () =
     state = applyCandidateAnswer(state, "I'm looking for around 14 LPA.");
     const move = pickAiMove(state);
     expect(move.lever).toBe("close-acceptance");
-    expect(move.newTotalLpa).toBe(14);
+    expect(move.newTotalLpa).toBe(25);
   });
 
   it("ask EQUAL to offer also accepts at offer value", () => {

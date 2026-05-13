@@ -294,6 +294,16 @@ export interface NegotiationState {
      foldFactsIntoState — set ONCE per turn, never re-derived from
      transcript. Null = not stated. */
   candidateTarget: number | null;        // their ask (LPA, last-stated-wins)
+  /** Bug-report 12 (2026-05-14) — the numeric counter the candidate
+   *  parsed THIS turn (LPA). Distinct from `candidateTarget` which is
+   *  sticky from intake / earliest anchor; this field is the per-turn
+   *  fresh-counter signal. Set in applyCandidateAnswer when parsed.target
+   *  is non-null AND differs from the prior sticky candidateTarget (so
+   *  re-asserting the same number doesn't count as a "fresh" counter).
+   *  Cleared by applyAiMove so it never bleeds into the next AI turn.
+   *  Used by the auto-accept gate so a stale intake target can NEVER
+   *  close the AI below highestOfferMade without an in-turn counter. */
+  lastCandidateCounterLpa: number | null;
   /** Phase 25a (2026-05-13) — the FIRST number the candidate ever
    *  anchored. Frozen on first non-null assignment; never updated
    *  after. Lets the red-flag layer detect upward drift ("Earlier
@@ -518,6 +528,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     turnIndex: 0,
     maxTurns: input.maxTurns ?? 8,
     candidateTarget: null,
+    lastCandidateCounterLpa: null,
     firstAnchoredTarget: null,
     candidateCurrentCtc: null,
     competingOffer: null,
@@ -1078,6 +1089,15 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
      also records the FIRST anchored target, frozen — used by the
      red-flag layer to detect upward drift. */
   if (parsed.target != null) {
+    /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
+       Only count as a fresh counter when the parsed number is
+       materially different from the prior sticky candidateTarget; a
+       candidate re-asserting the same intake number doesn't unlock
+       the auto-accept gate. */
+    const prior = state.candidateTarget;
+    if (prior == null || Math.abs(prior - parsed.target) > 0.05) {
+      next.lastCandidateCounterLpa = parsed.target;
+    }
     next.candidateTarget = parsed.target;
     if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
   }
@@ -1406,6 +1426,24 @@ export interface AiMove {
   joiningBonusAmount?: number;
 }
 
+/** Bug-report 12 (2026-05-14) — close-floor invariant. Every
+ *  close-acceptance return MUST clamp newTotalLpa to at least
+ *  highestOfferMade (falling back to band.initialOffer when the AI
+ *  hasn't opened yet). The kernel must NEVER close below the number
+ *  it already put on the table — once an offer is out there, that's
+ *  the floor for any future close. Belt-and-suspenders against any
+ *  logic path that tries to close low (e.g. the auto-accept gate when
+ *  candidate counters DOWN below the offer they already have on the
+ *  table — they don't need to take less than what was offered, so we
+ *  honor the higher number).
+ *  Pure. */
+export function clampToCloseFloor(state: NegotiationState, value: number): number {
+  const closeFloor = state.highestOfferMade > 0
+    ? state.highestOfferMade
+    : state.band.initialOffer;
+  return Math.max(closeFloor, value);
+}
+
 /** Pick the AI's move for this turn from state alone. Pure. */
 export function pickAiMove(state: NegotiationState): AiMove {
   /* Terminal closings. */
@@ -1417,7 +1455,7 @@ export function pickAiMove(state: NegotiationState): AiMove {
     const jb = state.lastJoiningBonusOffered;
     return {
       lever: "close-acceptance",
-      newTotalLpa: state.highestOfferMade || state.band.initialOffer,
+      newTotalLpa: clampToCloseFloor(state, state.highestOfferMade || state.band.initialOffer),
       joiningBonusAmount: jb != null ? jb : undefined,
       rationale: `Candidate accepted; recap terms${jb != null ? ` including ₹${jb}L one-time JB` : ""}.`,
     };
@@ -1437,29 +1475,44 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
-  /* Bug-report 11 (2026-05-14) — candidate ask BELOW current offer.
+  /* Bug-report 11 (2026-05-14) — candidate counter BELOW current offer.
    * Real failure mode: AI opened at ₹25L, candidate asked ₹14L, AI
    * countered down to ₹24.5L (still way above ask). The candidate had
    * just signalled willingness to accept materially less than what's
-   * on the table; the right move is to close at the candidate-favorable
-   * lower number (min of offer and ask), not to keep negotiating up.
+   * on the table; the right move is to close.
    *
-   * Gate fires only when the candidate has stated a target AND there's
-   * an offer on the table AND the target is at-or-below the offer.
-   * Routes directly to close-acceptance at min(offer, target). */
+   * Bug-report 12 (2026-05-14) — CATASTROPHIC fix. The original gate
+   * fired on `state.candidateTarget` which is sticky from intake. In
+   * Session 12 the AI opened at ₹49L while the intake-target was
+   * ₹22.4L, and the gate fired immediately, closing the AI at ₹22.4L
+   * even though the candidate had never countered down. Hard
+   * invariant: the kernel must NEVER close below highestOfferMade.
+   *
+   * The fix is twofold:
+   *   (1) Gate fires ONLY on an explicit numeric counter parsed in
+   *       the CURRENT turn (`lastCandidateCounterLpa`). Stale intake
+   *       targets do NOT trigger.
+   *   (2) The closing value is clamped to the close-floor (=
+   *       highestOfferMade). Even when the candidate explicitly
+   *       counters DOWN below the offer they already have on the
+   *       table, the AI closes at the HIGHER number — the candidate
+   *       already had it on the table and doesn't need to take less. */
   if (
-    state.candidateTarget != null &&
+    state.lastCandidateCounterLpa != null &&
     state.highestOfferMade > 0 &&
-    state.candidateTarget <= state.highestOfferMade &&
+    state.lastCandidateCounterLpa <= state.highestOfferMade &&
     !isTerminalPhase(state.phase)
   ) {
-    const accLpa = Math.min(state.highestOfferMade, state.candidateTarget);
+    const accLpa = clampToCloseFloor(
+      state,
+      Math.min(state.highestOfferMade, state.lastCandidateCounterLpa),
+    );
     const jb = state.lastJoiningBonusOffered;
     return {
       lever: "close-acceptance",
       newTotalLpa: accLpa,
       joiningBonusAmount: jb != null ? jb : undefined,
-      rationale: `Candidate ask ₹${state.candidateTarget}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (candidate-favorable).`,
+      rationale: `Candidate counter ₹${state.lastCandidateCounterLpa}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (floor = highest offer).`,
     };
   }
 
@@ -1787,6 +1840,11 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * turn fires so subsequent turns aren't permanently un-stiffened
      * after a single recovery utterance. */
     recentRecoveryActive: false,
+    /* Bug-report 12 (2026-05-14): the per-turn fresh-counter signal
+     * is also one-shot — clear after the AI's turn so a sticky intake
+     * target can't keep firing the auto-accept gate on subsequent
+     * turns where the candidate didn't actually re-counter. */
+    lastCandidateCounterLpa: null,
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
@@ -2165,6 +2223,10 @@ export function deserializeState(json: string): NegotiationState {
     candidateApplicableYoe: (s.candidateApplicableYoe as number | null | undefined) ?? null,
     candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
     freshGradDisclosed: (s.freshGradDisclosed as boolean | undefined) ?? false,
+    /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
+     * Optional for back-compat; defaults to null (treat in-flight
+     * sessions as if no fresh counter has been parsed). */
+    lastCandidateCounterLpa: (s.lastCandidateCounterLpa as number | null | undefined) ?? null,
   };
 }
 
