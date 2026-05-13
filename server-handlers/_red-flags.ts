@@ -56,7 +56,53 @@ export interface RedFlag {
   severity: RedFlagSeverity;
   /** Short human-readable rationale for the brief. */
   detail: string;
+  /** Phase 20 — pedagogical "say this instead" example. Concrete
+   *  candidate-side rewrite that turns the red-flag utterance into a
+   *  stronger framing. The LLM uses this for in-conversation coaching
+   *  and the report layer renders it in post-session feedback. */
+  rewriteSuggestion: string;
 }
+
+/* Per-code rewrite suggestions. Each is a SHORT exemplar the candidate
+ * could have said instead — quotable, not abstract advice. Kept tight
+ * (~25 words) so the brief doesn't bloat the prompt. India-market
+ * grounded (₹, LPA, notice). */
+const REWRITES: Record<RedFlagCode, string> = {
+  "no-current-ctc":
+    "Say: \"My current fixed CTC is ₹X, with variable of ~₹Y at typical payout — happy to walk through the breakup.\"",
+  "no-fixed-variable-breakup":
+    "Say: \"Of the ₹X total, ₹Y is fixed base and ₹Z is variable / performance pay. Joining bonus is separate.\"",
+  "ctc-inhand-confusion":
+    "Say: \"My annual CTC is ₹X LPA, fixed component ₹Y LPA. In-hand monthly is ~₹Z post-tax — keeping the conversation in annual fixed.\"",
+  "huge-hike-no-rationale":
+    "Say: \"I know it's a steep hike — it reflects (a) level/scope change to <role>, (b) my last cycle's underpayment, and (c) recent peer offers at ₹X.\"",
+  "salary-only-factor":
+    "Say: \"Comp is one factor, but I'm also weighing role scope, manager, growth runway, and stack. Salary alone won't decide it.\"",
+  "lies-about-offer":
+    "Say: \"I have a competing offer at ₹X from <stage>. I can share the offer letter under NDA if helpful for your benchmarking.\"",
+  "overcommits-joining":
+    "Say: \"My notice is N days. I can request early release or fund a buyout of ₹X if joining sooner is critical — let's discuss what works.\"",
+  "sounds-desperate":
+    "Say: \"I'm evaluating this alongside other conversations. I'm excited about the role and want to make sure the comp lands fairly.\"",
+  "badmouths-current":
+    "Say: \"My current role has plateaued on <specific dimension>. I'm looking for <forward-looking thing>, which is what drew me here.\"",
+  "shares-confidential":
+    "Say: \"I'd rather not share specifics from my current company. Happy to talk about my own numbers and what I'm targeting.\"",
+  "demands-no-flex":
+    "Say: \"₹X is my strong preference based on <reason>. I'm open on structure — fixed/variable mix, joining bonus, equity — if it helps land there.\"",
+  "treats-equity-as-cash":
+    "Say: \"I'd value the ESOP at ~30–50% of face given vesting and liquidity risk. Could we discuss the strike, vest schedule, and last 409A?\"",
+  "ignores-variable-risk":
+    "Say: \"On variable, can we ground the discussion in last year's actual payout %? I'd like to risk-adjust the total rather than count the headline.\"",
+  "verbal-accept-no-breakup":
+    "Say: \"I'm verbally aligned at ₹X total. Before I formally accept, can we lock the fixed/variable/joining-bonus/ESOP split in writing?\"",
+  "avoids-anchor":
+    "Say: \"Based on my research for <role> at <tier>, I'm targeting ₹X–₹Y LPA fixed. Where does the band sit?\"",
+  "personal-expense-justification":
+    "Say: \"My target of ₹X is grounded in market data for <role> at <tier> and recent peer offers — happy to share the benchmarks I'm using.\"",
+  "offer-shopping":
+    "Say: \"I have other conversations in flight, but I'm not auctioning. I want to land at a fair number on both sides — what's the band here?\"",
+};
 
 interface DetectorInput {
   state: NegotiationState;
@@ -84,7 +130,11 @@ const ANNUAL_CONTEXT = /\b(lpa|lakhs?\s+per\s+(?:year|annum)|annual|per\s+annum|
 
 export function detectRedFlags(input: DetectorInput): RedFlag[] {
   const { state, stance, utterance } = input;
-  const out: RedFlag[] = [];
+  /* Phase 20 — detectors push the raw triple; the rewrite is attached
+   * uniformly at the end via the REWRITES table so we don't sprinkle
+   * the same string literal across every detector. */
+  type Raw = Omit<RedFlag, "rewriteSuggestion">;
+  const out: Raw[] = [];
   const u = (utterance || "").trim();
 
   /* 1. Doesn't know current CTC — fires after turn 2 when the
@@ -311,5 +361,5 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
     });
   }
 
-  return out;
+  return out.map((r) => ({ ...r, rewriteSuggestion: REWRITES[r.code] }));
 }

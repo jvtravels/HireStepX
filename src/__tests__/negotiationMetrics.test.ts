@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeNegotiationMetrics,
   scoreNegotiationBehaviour,
+  scoreNegotiationBehaviourDetailed,
   type KernelTurnSummary,
 } from "../../server-handlers/_negotiation-metrics";
 import type { NegotiationState, NegotiationBand } from "../../server-handlers/_negotiation-kernel";
@@ -266,5 +267,78 @@ describe("scoreNegotiationBehaviour", () => {
     const clean = scoreNegotiationBehaviour({ ...base, overBandViolation: false });
     const dirty = scoreNegotiationBehaviour({ ...base, overBandViolation: true });
     expect(dirty).toBe(Math.max(0, clean - 25));
+  });
+});
+
+describe("scoreNegotiationBehaviourDetailed — Phase 20 breakdown", () => {
+  it("returns score + per-component breakdown summing to total (clean session)", () => {
+    const result = scoreNegotiationBehaviourDetailed({
+      outcome: "accepted",
+      anchorTurn: 1,
+      leverDiversity: 4,
+      lpaGained: 10,
+      lpaPerTurn: 2,
+      bandTraversal: 1,
+      overBandViolation: false,
+      totalTurns: 6,
+    });
+    expect(result.score).toBe(100);
+    /* 4 components: anchoring + traversal + diversity + outcome.
+     * No penalty component when overBandViolation is false. */
+    expect(result.breakdown).toHaveLength(4);
+    const sum = result.breakdown.reduce((a, c) => a + c.points, 0);
+    expect(sum).toBe(result.score);
+    /* Every component has a non-empty explanation. */
+    for (const c of result.breakdown) {
+      expect(c.explanation.length).toBeGreaterThan(20);
+    }
+  });
+
+  it("never-anchored breakdown explains the zero-anchor penalty", () => {
+    const result = scoreNegotiationBehaviourDetailed({
+      outcome: "walked-away",
+      anchorTurn: null,
+      leverDiversity: 1,
+      lpaGained: 0,
+      lpaPerTurn: 0,
+      bandTraversal: 0,
+      overBandViolation: false,
+      totalTurns: 3,
+    });
+    const anchor = result.breakdown.find((c) => c.key === "anchoring");
+    expect(anchor).toBeDefined();
+    expect(anchor!.points).toBe(0);
+    expect(anchor!.explanation).toMatch(/never anchored/i);
+  });
+
+  it("over-band violation appears as a negative component", () => {
+    const result = scoreNegotiationBehaviourDetailed({
+      outcome: "accepted",
+      anchorTurn: 1,
+      leverDiversity: 2,
+      lpaGained: 12,
+      lpaPerTurn: 4,
+      bandTraversal: 1,
+      overBandViolation: true,
+      totalTurns: 4,
+    });
+    const penalty = result.breakdown.find((c) => c.key === "over-band-penalty");
+    expect(penalty).toBeDefined();
+    expect(penalty!.points).toBe(-25);
+    expect(penalty!.max).toBe(0);
+  });
+
+  it("legacy scoreNegotiationBehaviour returns the same number as detailed.score", () => {
+    const input = {
+      outcome: "stalemate" as const,
+      anchorTurn: 4,
+      leverDiversity: 2,
+      lpaGained: 3,
+      lpaPerTurn: 1,
+      bandTraversal: 0.3,
+      overBandViolation: false,
+      totalTurns: 5,
+    };
+    expect(scoreNegotiationBehaviour(input)).toBe(scoreNegotiationBehaviourDetailed(input).score);
   });
 });

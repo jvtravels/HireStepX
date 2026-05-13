@@ -527,6 +527,14 @@ function buildResponseHints(state: NegotiationState): string {
   if (concerns.length > 0) {
     hints.push(`Concern red flags: ${concerns.map((f) => f.code).join(", ")}. Soften pacing; address one explicitly if the move-picker allows it.`);
   }
+  /* Phase 20 — pedagogical rewrites. Surface ONE rewrite per turn
+   * (the most severe outstanding flag) so the LLM can coach the
+   * candidate in-line without flooding them with every fix at once.
+   * The brief stays focused; the report layer can show the full set. */
+  const teachableFlag = blockers[0] ?? concerns[0] ?? null;
+  if (teachableFlag) {
+    hints.push(`COACHING — for the "${teachableFlag.code}" red flag, the candidate could have said: ${teachableFlag.rewriteSuggestion} Weave this guidance naturally into your next turn IF it does not break recruiter persona.`);
+  }
 
   return hints.join("\n");
 }

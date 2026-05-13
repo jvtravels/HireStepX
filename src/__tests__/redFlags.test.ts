@@ -164,3 +164,55 @@ describe("detectRedFlags — empty case", () => {
     expect(codes(baseState())).toEqual([]);
   });
 });
+
+describe("detectRedFlags — Phase 20 rewrite suggestions", () => {
+  it("every fired flag carries a non-empty rewriteSuggestion", () => {
+    const flags = detectRedFlags({
+      state: baseState({ turnIndex: 3 }),
+      stance: emptyStance,
+      utterance: "",
+    });
+    expect(flags.length).toBeGreaterThan(0);
+    for (const f of flags) {
+      expect(f.rewriteSuggestion, `flag ${f.code} missing rewriteSuggestion`).toBeTruthy();
+      expect(f.rewriteSuggestion.length).toBeGreaterThan(15);
+    }
+  });
+
+  it("rewrite for sounds-desperate starts with 'Say:' and is candidate-voiced", () => {
+    const text = "I really need this job, please consider me.";
+    const stance = extractCandidateStance(text);
+    const flags = detectRedFlags({ state: baseState({ turnIndex: 1 }), stance, utterance: text });
+    const desperate = flags.find((f) => f.code === "sounds-desperate");
+    expect(desperate).toBeDefined();
+    expect(desperate!.rewriteSuggestion).toMatch(/^Say:/);
+    /* Sanity: rewrite should not contain the desperation language. */
+    expect(desperate!.rewriteSuggestion).not.toMatch(/\b(?:desperately|please consider me|really need)\b/i);
+  });
+});
+
+describe("detectRedFlags — Phase 20 Hinglish coverage", () => {
+  it("'isse kam nahi' triggers rigid → demands-no-flex", () => {
+    const text = "Mera target ₹25L hai, isse kam nahi.";
+    const stance = extractCandidateStance(text);
+    expect(stance.flexibilityPosture).toBe("rigid");
+  });
+
+  it("'aap decide kar lijiye' triggers avoidsAnchor → avoids-anchor", () => {
+    const text = "Salary ke baare mein aap decide kar lijiye, mujhe koi specific number nahi pata.";
+    const stance = extractCandidateStance(text);
+    expect(stance.avoidsAnchor).toBe(true);
+  });
+
+  it("'job ki bahut zaroorat hai' triggers desperation", () => {
+    const text = "Sir, mujhe is job ki bahut zaroorat hai.";
+    const stance = extractCandidateStance(text);
+    expect(stance.soundsDesperate).toBe(true);
+  });
+
+  it("'flexible hoon' triggers flexible posture", () => {
+    const text = "Main flexible hoon, hum baat kar sakte hain.";
+    const stance = extractCandidateStance(text);
+    expect(stance.flexibilityPosture).toBe("flexible");
+  });
+});

@@ -143,43 +143,140 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   };
 }
 
-/** Map a metrics snapshot to a 0–100 candidate-behaviour score. The
- *  weighting is editorial: anchoring matters most (you can't negotiate
- *  without a number), then traversal (did you push?), then diversity
- *  (did you explore non-cash levers?), then outcome (acceptance is a
- *  multiplier, walkaway is neutral, stalemate is a slight penalty). */
+/** Phase 20 — per-component score breakdown for the report layer.
+ *  Each entry: how many points the candidate earned out of how many
+ *  available, plus a one-line explanation. Lets the UI render
+ *  "you lost X because Y" instead of an opaque 0-100 number. */
+export interface ScoreComponent {
+  /** Stable identifier (UI can map to icon / label). */
+  key: "anchoring" | "band-traversal" | "lever-diversity" | "outcome" | "over-band-penalty";
+  /** Human-friendly label for the report. */
+  label: string;
+  /** Points earned in this component (negative for penalties). */
+  points: number;
+  /** Maximum points available (0 for penalty-only components). */
+  max: number;
+  /** Why the candidate earned (or lost) these points. */
+  explanation: string;
+}
+
+export interface ScoredNegotiation {
+  /** Total 0–100 score (same as the legacy scalar). */
+  score: number;
+  /** Per-component breakdown for explainability. */
+  breakdown: ReadonlyArray<ScoreComponent>;
+}
+
+/** Map a metrics snapshot to a 0–100 candidate-behaviour score with
+ *  per-component breakdown. The weighting is editorial: anchoring
+ *  matters most (you can't negotiate without a number), then traversal
+ *  (did you push?), then diversity (did you explore non-cash levers?),
+ *  then outcome (acceptance is a multiplier, walkaway is neutral,
+ *  stalemate is a slight penalty). */
+export function scoreNegotiationBehaviourDetailed(
+  m: Pick<NegotiationMetrics,
+    | "anchorTurn" | "bandTraversal" | "leverDiversity" | "outcome" | "overBandViolation"
+    | "lpaGained" | "lpaPerTurn" | "totalTurns">,
+): ScoredNegotiation {
+  const breakdown: ScoreComponent[] = [];
+
+  /* Anchoring: 30 pts, front-loaded on early turns. */
+  let anchorPts = 0;
+  let anchorExpl: string;
+  if (m.anchorTurn == null) {
+    anchorPts = 0;
+    anchorExpl = "Never anchored — the recruiter never had a candidate number to react to. Anchor in the first 1–2 turns next time.";
+  } else if (m.anchorTurn <= 1) {
+    anchorPts = 30;
+    anchorExpl = `Anchored on turn ${m.anchorTurn} — strong early anchor, full credit.`;
+  } else if (m.anchorTurn <= 3) {
+    anchorPts = 22;
+    anchorExpl = `Anchored on turn ${m.anchorTurn} — good, but earlier (turn 0–1) would lock the recruiter's mental band sooner.`;
+  } else if (m.anchorTurn <= 5) {
+    anchorPts = 14;
+    anchorExpl = `Anchored on turn ${m.anchorTurn} — late. By this point the recruiter has framed the band; you're reacting, not setting.`;
+  } else {
+    anchorPts = 8;
+    anchorExpl = `Anchored on turn ${m.anchorTurn} — very late. Most of the value is set in the first 3 turns; this gives up that leverage.`;
+  }
+  breakdown.push({ key: "anchoring", label: "Anchoring", points: anchorPts, max: 30, explanation: anchorExpl });
+
+  /* Band traversal: up to 30 pts, linear in fraction climbed. */
+  let traversalPts = 0;
+  let traversalExpl: string;
+  if (m.bandTraversal == null) {
+    traversalExpl = "Band traversal not measurable (degenerate band).";
+  } else {
+    traversalPts = Math.round(m.bandTraversal * 30);
+    const pct = Math.round(m.bandTraversal * 100);
+    if (m.bandTraversal >= 0.85) {
+      traversalExpl = `Pushed the recruiter to ${pct}% of the band — near the ceiling. You captured almost all the available upside.`;
+    } else if (m.bandTraversal >= 0.5) {
+      traversalExpl = `Climbed ${pct}% of the band — solid push. Each additional ask explored (joining bonus, equity, retention) could have squeezed more.`;
+    } else if (m.bandTraversal > 0) {
+      traversalExpl = `Climbed only ${pct}% of the band — you left meaningful room on the table. Counter at least once more next time.`;
+    } else {
+      traversalExpl = "Took the opening offer — zero band traversal. Always counter once, even if just to test the ceiling.";
+    }
+  }
+  breakdown.push({ key: "band-traversal", label: "Band traversal", points: traversalPts, max: 30, explanation: traversalExpl });
+
+  /* Lever diversity: 1 lever = 5, 2 = 10, 3 = 15, 4+ = 20. */
+  const diversityPts = Math.min(20, m.leverDiversity * 5);
+  const diversityExpl = m.leverDiversity <= 1
+    ? `Only ${m.leverDiversity} lever explored — the negotiation stayed one-dimensional. Try joining bonus, equity refresh, start date, retention bonus.`
+    : m.leverDiversity <= 2
+      ? `${m.leverDiversity} levers explored — getting there. The strongest sessions touch 3–4 non-cash levers in addition to base.`
+      : `${m.leverDiversity} levers explored — good range, recruiter saw a sophisticated counterpart.`;
+  breakdown.push({ key: "lever-diversity", label: "Lever diversity", points: diversityPts, max: 20, explanation: diversityExpl });
+
+  /* Outcome modifier (max 20). */
+  let outcomePts = 0;
+  let outcomeExpl: string;
+  switch (m.outcome) {
+    case "accepted":
+      outcomePts = 20;
+      outcomeExpl = `Accepted at +₹${m.lpaGained}L over the opening offer — landed the deal.`;
+      break;
+    case "walked-away":
+      outcomePts = 10;
+      outcomeExpl = "Walked away — neutral. Disciplined exit can be the right call; partial credit because we don't know what they would have escalated to.";
+      break;
+    case "stalemate":
+      outcomePts = 5;
+      outcomeExpl = "Ran out of turns without resolution. Push to either close or explicitly walk; stalemates leave value on the table.";
+      break;
+    case "in-progress":
+      outcomePts = 0;
+      outcomeExpl = "Session did not reach an outcome.";
+      break;
+  }
+  breakdown.push({ key: "outcome", label: "Outcome", points: outcomePts, max: 20, explanation: outcomeExpl });
+
+  /* Hard penalty: over-band offers are a kernel bug AND inflate the
+     candidate's perceived win. Apply as a separate negative component
+     so the report can show the user it happened. */
+  let raw = anchorPts + traversalPts + diversityPts + outcomePts;
+  if (m.overBandViolation) {
+    breakdown.push({
+      key: "over-band-penalty",
+      label: "Over-band penalty",
+      points: -25,
+      max: 0,
+      explanation: "Recruiter offered above the published ceiling — kernel guardrail violation. Score reduced so the bug doesn't inflate perceived skill.",
+    });
+    raw -= 25;
+  }
+
+  const score = Math.max(0, Math.min(100, raw));
+  return { score, breakdown };
+}
+
+/** Legacy scalar API — preserved for callers that only want the number. */
 export function scoreNegotiationBehaviour(
   m: Pick<NegotiationMetrics,
     | "anchorTurn" | "bandTraversal" | "leverDiversity" | "outcome" | "overBandViolation"
     | "lpaGained" | "lpaPerTurn" | "totalTurns">,
 ): number {
-  let score = 0;
-
-  /* Anchoring: 30 pts, front-loaded on early turns. */
-  if (m.anchorTurn != null) {
-    if (m.anchorTurn <= 1) score += 30;
-    else if (m.anchorTurn <= 3) score += 22;
-    else if (m.anchorTurn <= 5) score += 14;
-    else score += 8;
-  }
-
-  /* Band traversal: up to 30 pts, linear in fraction climbed. */
-  if (m.bandTraversal != null) score += Math.round(m.bandTraversal * 30);
-
-  /* Lever diversity: 1 lever = 5, 2 = 10, 3 = 15, 4+ = 20. */
-  score += Math.min(20, m.leverDiversity * 5);
-
-  /* Outcome modifier (max 20). */
-  switch (m.outcome) {
-    case "accepted":     score += 20; break;
-    case "walked-away":  score += 10; break;
-    case "stalemate":    score += 5;  break;
-    case "in-progress":  score += 0;  break;
-  }
-
-  /* Hard penalty: over-band offers are a kernel bug AND inflate the
-     candidate's perceived win. Zero them out so the bug doesn't pay. */
-  if (m.overBandViolation) score = Math.max(0, score - 25);
-
-  return Math.max(0, Math.min(100, score));
+  return scoreNegotiationBehaviourDetailed(m).score;
 }

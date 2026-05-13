@@ -105,7 +105,12 @@ const EMPTY: CandidateStanceResult = {
 /* ── Flexibility posture ─────────────────────────────────────────── */
 
 /* Rigid: "non-negotiable", "this is my number period", "I won't budge",
- * "firm on X", "hard floor", "no compromise on salary". */
+ * "firm on X", "hard floor", "no compromise on salary".
+ *
+ * Phase 20 — Hinglish coverage: Indian candidates routinely mix Hindi
+ * idioms ("isse kam nahi", "final hai", "fix hai") into English calls.
+ * Patterns are still anchored on English negotiation vocabulary so we
+ * don't false-fire on neutral Hinglish. */
 const RIGID_PATTERNS: RegExp[] = [
   /\bnon[-\s]?negotiable\b/i,
   /\bthis\s+is\s+(?:my\s+)?(?:number|ask|figure)\s*(?:,|\.|\s+)?\s*period\b/i,
@@ -118,6 +123,11 @@ const RIGID_PATTERNS: RegExp[] = [
    * "won't join below 20" — the candidate is naming a hard floor as
    * a take-it-or-leave-it stance, not a flexible floor. */
   /\b(?:won.?t|will\s+not|wouldn.?t|won.?t\s+ever)\s+(?:join|accept|consider|sign)\s+below\s+₹?\s*\d/i,
+  /* Phase 20 (Hinglish): "isse kam nahi" / "isse neeche nahi" — "not
+   * less than this". "final hai" / "fix hai" — "this is final/fixed". */
+  /\b(?:isse|usse|is\s+se)\s+(?:kam|kum|neeche|niche|low)\s+nahi(?:n|.?n)?\b/i,
+  /\b(?:final|fix(?:ed)?|pakka|pucca)\s+hai\b/i,
+  /\bnegotiate\s+nahi(?:n|.?n)?\s+(?:karunga|karenge|hoga|kar\s+sakta)/i,
 ];
 
 /* Flexible: "I'm flexible", "open to discussion", "we can work
@@ -130,6 +140,11 @@ const FLEXIBLE_PATTERNS: RegExp[] = [
   /\b(?:happy|willing|open)\s+to\s+(?:find|reach|work\s+out)\s+(?:a\s+)?(?:middle\s+ground|compromise|fair\s+number)\b/i,
   /\bwe\s+can\s+(?:work\s+(?:something|this)\s+out|figure\s+(?:something|this)\s+out)\b/i,
   /\bsome\s+(?:flex|wiggle\s+room|give)\s+(?:on\s+my\s+side|here|there)?/i,
+  /* Phase 20 (Hinglish): "flexible hoon" / "negotiable hai" / "dekh
+   * lenge" — "I'm flexible" / "we'll work it out". */
+  /\bflexible\s+(?:hoon|hu|hain)\b/i,
+  /\bnegotiable\s+hai\b/i,
+  /\b(?:dekh|baat)\s+(?:lenge|sakte\s+hain)\b/i,
 ];
 
 function detectFlexibility(text: string): "rigid" | "flexible" | null {
@@ -227,6 +242,12 @@ const DESPERATION_PATTERNS: RegExp[] = [
   /* Phase 19 (corpus): "Anything is fine. I just need the job." —
    * pairing 'anything is fine/ok' near 'need/take a job'. */
   /\banything\s+(?:is\s+)?(?:fine|ok|okay)\b[\s\S]{0,60}\b(?:need|take|accept)\s+(?:this|the|a|any)?\s*(?:job|offer|role|opportunity)\b/i,
+  /* Phase 20 (Hinglish): "job ki bahut zaroorat hai" — "I really need
+   * this job". "kuch bhi chalega" — "anything will work". "please
+   * consider kar lijiye" — "please consider me". */
+  /\b(?:job|offer|role|opportunity)\s+(?:ki\s+)?(?:bahut|bohot|bahot)\s+(?:zaroorat|jaroorat|need)\s+hai\b/i,
+  /\bkuch\s+bhi\s+chalega\b/i,
+  /\bplease\s+consider\s+kar\s+(?:lijiye|lo|le\s+lijiye)\b/i,
 ];
 
 function detectDesperation(text: string): boolean {
@@ -265,6 +286,12 @@ const AVOIDS_ANCHOR_PATTERNS: RegExp[] = [
   /\bwhatever\s+(?:you\s+)?(?:offer|decide|think\s+is\s+fair|company\s+(?:decides|gives))\b/i,
   /\bhappy\s+with\s+whatever\b/i,
   /\bi\s+(?:don.?t|do\s+not)\s+have\s+a\s+specific\s+(?:number|range|expectation)\b/i,
+  /* Phase 20 (Hinglish): "aap decide kar lijiye" / "company decide
+   * karegi" / "jo aap sahi samjho" — "you decide" / "whatever you
+   * think is right". */
+  /\b(?:aap|app|company|HR)\s+(?:hi\s+)?decide\s+kar\s+(?:lijiye|lo|le|denge|legi|karenge)/i,
+  /\bjo\s+(?:aap|app|company)\s+(?:sahi|theek|thik)\s+(?:samjho|samjhe|samjhein|lage)/i,
+  /\bjo\s+(?:bhi|company|aap)\s+(?:offer|de)\s+(?:karenge|karegi|denge|dega)/i,
 ];
 
 function detectAvoidsAnchor(text: string): boolean {
