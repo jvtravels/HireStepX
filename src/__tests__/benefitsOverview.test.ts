@@ -45,6 +45,29 @@ describe("benefits-overview detection", () => {
     const r = parseCandidateAnswer("I already counted the benefits.");
     expect(r.infoAsked).not.toContain("benefits-overview");
   });
+
+  /* ── Session 12 bug regressions (2026-05-14) ─────────────────────── */
+
+  it("[session 12] 'Can you let me know all the benefits of the oral CTC?'", () => {
+    const r = parseCandidateAnswer("Can you let me know all the benefits of the oral CTC?");
+    expect(r.infoAsked).toContain("benefits-overview");
+  });
+
+  it("[session 12] 'give me details about benefits and variable components'", () => {
+    const r = parseCandidateAnswer("give me details about benefits and variable components");
+    expect(r.infoAsked).toContain("benefits-overview");
+  });
+
+  it("[session 12 verbatim] 'for the benefits.'", () => {
+    const r = parseCandidateAnswer("for the benefits.");
+    expect(r.infoAsked).toContain("benefits-overview");
+  });
+
+  it("does NOT trip on declarative 'I counted the benefits.'", () => {
+    /* Re-asserted negative case: this verbatim phrase must not fire. */
+    const r = parseCandidateAnswer("I counted the benefits.");
+    expect(r.infoAsked).not.toContain("benefits-overview");
+  });
 });
 
 describe("lookupCompanyBenefits", () => {

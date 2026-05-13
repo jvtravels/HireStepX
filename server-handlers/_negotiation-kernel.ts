@@ -145,6 +145,7 @@ export type NegotiationLever =
   | "equity-grant"      // RSU/ESOP top-up
   | "notice-buyout"     // buy out notice period
   | "benefits-summary"  // recap non-cash
+  | "compensation-summary" // disclose company comp STRUCTURE (base/var/equity ratios, bonus freq, vesting) — session 12 bug fix 2026-05-14
   | "hold-firm"         // explicit "this is final"
   | "close-acceptance"  // wrap with agreed terms
   | "close-walkaway"    // wrap acknowledging no-deal
@@ -188,7 +189,8 @@ export type InfoIntent =
   | "fixed-vs-variable"    // CTC split breakdown
   | "perks-non-cash"       // Sodexo / gratuity / NPS lumping
   | "package-breakdown"    // generic "walk me through the package" / "break it down" — added 2026-05 after the Lollypop session where the candidate asked for the structure and the AI responded with a probe ("what range are you targeting?") instead of providing the breakdown. The existing intents were all component-specific; this catches the higher-level "explain the offer" ask.
-  | "benefits-overview";   // "what are the benefits?" / "what perks do you offer?" — added 2026-05 (bug report 11 follow-up E). Distinct from `perks-non-cash` (Sodexo / gratuity lump-into-CTC trick) and from `package-breakdown` (offer-component enumeration). This is the candidate asking what's IN the benefits package — health insurance, PF, leaves, learning budget, work mode. Routed to a company-aware disclosure in the helpers layer.
+  | "benefits-overview"    // "what are the benefits?" / "what perks do you offer?" — added 2026-05 (bug report 11 follow-up E). Distinct from `perks-non-cash` (Sodexo / gratuity lump-into-CTC trick) and from `package-breakdown` (offer-component enumeration). This is the candidate asking what's IN the benefits package — health insurance, PF, leaves, learning budget, work mode. Routed to a company-aware disclosure in the helpers layer.
+  | "compensation-breakdown"; // "explain the variable components" / "ESOP details?" / "what's the bonus structure?" — added 2026-05 (session 12 bug). Distinct from `package-breakdown` (offer-component enumeration of THIS offer) and `fixed-vs-variable` (just the split). This is the candidate asking about the GENERAL compensation STRUCTURE at the company — base/variable/equity ratios, bonus frequency, vesting. Routed to a company-aware compensation disclosure (data/company-compensation-structure.ts) via the response-hint layer.
 
 /* Negotiation tactics from the Voss / interviewing.io canon that the
    parser detects and the move-picker rewards. Tracked so a candidate
@@ -804,7 +806,46 @@ function detectInfoIntents(a: string): InfoIntent[] {
      deliberately do NOT match a bare "benefits" word standing alone
      against substrings like "fringe benefits of equity"; we anchor to
      interrogative shapes or the explicit "for the benefits" follow-up. */
-  if (/\b(?:what(?:'s|\s+is|\s+are)?\s+(?:the\s+|some\s+|your\s+)?(?:benefits|perks)|tell\s+me\s+(?:about\s+)?(?:the\s+)?(?:benefits|perks)|(?:any|other)\s+(?:benefits|perks)|let\s+me\s+know\s+(?:about\s+)?(?:are\s+)?(?:the\s+)?(?:benefits|perks)|for\s+the\s+(?:benefits|perks)\b|what\s+do\s+i\s+get|benefits\s+(?:for\s+this\s+role|package|breakdown)|perks\s+(?:do\s+you|of\s+(?:this|the))|fringe\s+benefits)\b/i.test(a)) out.push("benefits-overview");
+  /* Bug session 12 (2026-05-14) — broaden benefits detection.
+   * Trigger when an utterance contains \bbenefits?\b OR \bperks?\b AND
+   * shows interrogative / imperative shape:
+   *   - ends with `?`
+   *   - imperative verb: tell|let me know|give|share|explain|list|
+   *     describe|details|breakdown|elaborate|walk me through
+   *   - question lead: what are|what is|what's|how about|how does|
+   *     what does|what kind of|which|can you|could you
+   * Falsy guard: bare declaratives like "I counted the benefits." don't
+   * trip because they lack interrogative shape and end with `.`.
+   * Existing narrow phrases (for the benefits., what do I get, etc.)
+   * still match via the legacy regex. */
+  const hasBenefitsWord = /\b(?:benefits?|perks?)\b/i.test(a);
+  const endsWithQuestion = /\?\s*$/.test(a.trim());
+  const imperativeCue = /\b(?:tell\s+me|let\s+me\s+know|give\s+(?:me)?|share|explain|list|describe|details?|breakdown|elaborate|walk\s+me\s+through|can\s+you|could\s+you|would\s+you)\b/i.test(a);
+  const questionLead = /\b(?:what\s+are|what\s+is|what['’]s|how\s+about|how\s+does|what\s+does|what\s+kind\s+of|which)\b/i.test(a);
+  const broadBenefitsMatch = hasBenefitsWord && (endsWithQuestion || imperativeCue || questionLead);
+  const legacyBenefitsMatch =
+    /\b(?:what(?:'s|\s+is|\s+are)?\s+(?:the\s+|some\s+|your\s+)?(?:benefits|perks)|tell\s+me\s+(?:about\s+)?(?:the\s+)?(?:benefits|perks)|(?:any|other)\s+(?:benefits|perks)|let\s+me\s+know\s+(?:about\s+)?(?:are\s+)?(?:the\s+)?(?:benefits|perks)|for\s+the\s+(?:benefits|perks)\b|what\s+do\s+i\s+get|benefits\s+(?:for\s+this\s+role|package|breakdown)|perks\s+(?:do\s+you|of\s+(?:this|the))|fringe\s+benefits)\b/i.test(a);
+  if (broadBenefitsMatch || legacyBenefitsMatch) out.push("benefits-overview");
+
+  /* Bug session 12 (2026-05-14) — compensation-breakdown.
+   * Candidate asking about variable / bonus / ESOP / equity / RSU /
+   * OTE structure — generally, NOT about THIS offer's components. Same
+   * interrogative/imperative shape gate as benefits-overview so bare
+   * declaratives ("the variable was 12% last year") don't trip. */
+  const hasCompWord =
+    /\bvariable\s+(?:components?|pay|comp(?:ensation)?)\b/i.test(a) ||
+    /\bbonus(?:es)?\b/i.test(a) ||
+    /\bESOPs?\b/i.test(a) ||
+    /\bstock\s+options?\b/i.test(a) ||
+    /\bRSUs?\b/i.test(a) ||
+    /\bequity\b/i.test(a) ||
+    /\bOTE\b/i.test(a) ||
+    /on[-\s]target\s+earnings/i.test(a) ||
+    /performance\s+bonus/i.test(a) ||
+    /\bcommission\b/i.test(a);
+  if (hasCompWord && (endsWithQuestion || imperativeCue || questionLead)) {
+    out.push("compensation-breakdown");
+  }
   return out;
 }
 
@@ -1585,6 +1626,24 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
+  /* Compensation-breakdown intent (session 12 bug, 2026-05-14). The
+     candidate is asking about the company's variable / equity / bonus
+     STRUCTURE (not THIS offer's components). Route to a
+     compensation-summary lever variant that re-uses benefits-summary
+     plumbing for prose framing — the response-hint layer injects the
+     per-company structure block. Terminal-phase gate preserved so we
+     don't reopen an accepted close. */
+  const wantsCompStructure =
+    !isTerminalPhase(state.phase) &&
+    state.infoAsked.includes("compensation-breakdown");
+  if (wantsCompStructure) {
+    return {
+      lever: "compensation-summary",
+      newTotalLpa: state.highestOfferMade > 0 ? state.highestOfferMade : null,
+      rationale: "Candidate asked about variable/equity/bonus structure; disclose company comp structure instead of re-closing.",
+    };
+  }
+
   /* No candidate anchor yet → probe. */
   if (state.phase === "offer-presented" || state.phase === "probe-expectations") {
     return {
@@ -1975,6 +2034,7 @@ const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set<NegotiationLever>([
   "equity-grant",
   "notice-buyout",
   "benefits-summary",
+  "compensation-summary",
   "hold-firm",
   "close-acceptance",
   "close-walkaway",

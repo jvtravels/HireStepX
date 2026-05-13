@@ -29,6 +29,10 @@ import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
 import { detectRedFlags } from "./_red-flags";
 import { lookupCompanyBenefits, formatBenefitsForPrompt } from "../data/company-benefits";
+import {
+  lookupCompanyCompStructure,
+  formatCompStructureForPrompt,
+} from "../data/company-compensation-structure";
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 
@@ -49,6 +53,8 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Offer to buy out their notice period as a soft non-cash sweetener. Don't quantify unless they push.",
   "benefits-summary":
     "Recap the total non-cash package — health, learning budget, leave, hybrid policy. No new numbers.",
+  "compensation-summary":
+    "Describe the COMPANY's typical compensation STRUCTURE — base/variable/equity ratios, bonus frequency, vesting. Use the COMPENSATION BREAKDOWN block below verbatim for figures. Do NOT propose a new total CTC and do NOT renegotiate; this is a structure-disclosure turn.",
   "hold-firm":
     "State respectfully that this is final. Acknowledge their position. Invite them to think it over.",
   "close-acceptance":
@@ -364,6 +370,23 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
       "number, do NOT push for acceptance — this is an info turn. After " +
       "enumerating, briefly invite any follow-up question about a specific item.\n" +
       formatBenefitsForPrompt(benefits),
+    );
+  }
+  /* Session 12 bug (2026-05-14) — compensation-breakdown info intent.
+   * Inject a STRUCTURE disclosure block. Uses the latest offer on the
+   * table for rupee figures when available; falls back to percentage
+   * only when no offer exists. Guardrail prevents the LLM from
+   * re-proposing a number or re-triggering close. */
+  if (state.infoAsked.includes("compensation-breakdown")) {
+    const struct = lookupCompanyCompStructure(state.company);
+    const totalCtc = state.highestOfferMade > 0 ? state.highestOfferMade : 0;
+    hints.push(
+      "COMPENSATION BREAKDOWN — the candidate asked about variable / equity / bonus structure. " +
+      "Describe the company's TYPICAL compensation structure (base, variable, equity ratios, bonus frequency, vesting). " +
+      "This is a STRUCTURE disclosure. Do NOT propose a new number or renegotiate. " +
+      "Do NOT push for acceptance — this is an info turn. Use the figures below verbatim; " +
+      "after enumerating, briefly invite a follow-up about a specific component.\n" +
+      formatCompStructureForPrompt(struct, totalCtc),
     );
   }
   for (const tactic of state.vossTacticsUsed) {
@@ -1084,6 +1107,8 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       return `We can also buy out your notice period if that helps. Would that change things?`;
     case "benefits-summary":
       return `Beyond cash, the package includes health cover, learning budget, and flexible hybrid. Worth factoring in.`;
+    case "compensation-summary":
+      return `Typical structure here is base around 75-85% of CTC, the rest as performance variable, with equity for senior roles. Happy to dig into any specific component.`;
     case "hold-firm":
       return `₹${state.highestOfferMade} LPA is what we can do for this role. Take your time and let us know.`;
     case "close-acceptance":
