@@ -3075,12 +3075,20 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       lead: { totalMin: 68, totalMax: 116, equityMin: 19, equityMax: 47, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech product-manager derived from SE band)", lastVerified: "2026-05-08" },
       executive: { totalMin: 105, totalMax: 263, equityMin: 37, equityMax: 105, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech product-manager derived from SE band)", lastVerified: "2026-05-08" },
     },
+    /* ux-designer recalibrated 2026-05-13 (was SE-derived → wildly above
+       market). Real-market validation: AmbitionBox / Glassdoor 2025-26 for
+       Upstox / Razorpay / Slice / CRED / Zerodha Sr Product Designer caps
+       at ₹24-36L total, not ₹38-63L. The "derived from SE band" auto-fill
+       was treating designer comp at parity with engineering, which was
+       producing ₹47L opening offers on the live demo for ₹24-33L roles.
+       Numbers now align with the `indian-unicorn` ux-designer tier band in
+       data/salaries.ts:752-756; fintech doesn't pay a designer premium. */
     "ux-designer": {
-      entry: { totalMin: 14, totalMax: 22, equityMin: 1, equityMax: 2, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 23, totalMax: 38, equityMin: 2, equityMax: 7, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 38, totalMax: 63, equityMin: 6, equityMax: 15, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 59, totalMax: 99, equityMin: 14, equityMax: 34, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 90, totalMax: 225, equityMin: 27, equityMax: 77, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech ux-designer derived from SE band)", lastVerified: "2026-05-08" },
+      entry: { totalMin: 6, totalMax: 10, equityMin: 0.5, equityMax: 1, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox / Glassdoor 2025-26 (Razorpay / Slice / CRED Sr/Jr Product Designer)", lastVerified: "2026-05-13" },
+      mid: { totalMin: 14, totalMax: 22, equityMin: 1.5, equityMax: 3, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox / Glassdoor 2025-26 (mid PD at Indian fintech unicorn)", lastVerified: "2026-05-13" },
+      senior: { totalMin: 24, totalMax: 36, equityMin: 3, equityMax: 6, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "AmbitionBox 2025-26 (Upstox / Razorpay / Zerodha Sr Product Designer median ₹24-33L, p90 ₹36L)", lastVerified: "2026-05-13" },
+      lead: { totalMin: 35, totalMax: 50, equityMin: 5, equityMax: 10, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Lead/Principal PD or Design Manager at Indian fintech unicorn)", lastVerified: "2026-05-13" },
+      executive: { totalMin: 55, totalMax: 95, equityMin: 10, equityMax: 25, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Glassdoor 2025-26 (Head of Design / VP Design at Indian fintech unicorn)", lastVerified: "2026-05-13" },
     },
     "ml-engineer": {
       entry: { totalMin: 18, totalMax: 29, equityMin: 1, equityMax: 4, equityType: "esop", equityVesting: "4yr / 1yr cliff", source: "Sector default 2026-05-08 (__sector_indian_unicorn_fintech ml-engineer derived from SE band)", lastVerified: "2026-05-08" },

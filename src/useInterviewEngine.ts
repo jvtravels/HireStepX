@@ -1522,10 +1522,36 @@ export function useInterviewEngine() {
               const overGlobal = !isSalaryNegConversation && followUpInsertCountRef.current >= maxInserts;
               const overPerQ = !isSalaryNegConversation && perQuestionInserted >= maxPerQuestion;
               if (!overGlobal && !overPerQ) {
-                const closingIdx = prev.findIndex((s, i) => i > currentStep && s.type === "closing");
-                if (closingIdx > currentStep) {
+                /* Salary-neg race fix (2026-05-13). Was `i > currentStep`
+                 * which silently failed when currentStep IS the closing
+                 * slot — the case for every 3-step salary-neg script
+                 * (intro + initial offer + closing) after the candidate
+                 * answers the lone question. The engine had already
+                 * advanced past the question by the time the kernel
+                 * resolved, so the lookup found no closing AFTER
+                 * currentStep, the insert was silently dropped, and the
+                 * static "Thanks for the conversation today" closing
+                 * played as the AI's response to the candidate's first
+                 * counter. Result: ENTIRE salary negotiation collapsed
+                 * to one back-and-forth.
+                 *
+                 * Switch to `i >= currentStep` so the insert finds the
+                 * closing at currentStep and inserts BEFORE it. When
+                 * closingIdx === currentStep we also CLONE the closing
+                 * before placing it back into the script — the closure-
+                 * captured `step` is the original closing object, and
+                 * the mutation block below needs to retarget it to the
+                 * follow-up content for the about-to-fire startSpeaking.
+                 * Without the clone, mutating `step.aiText` would also
+                 * pollute the still-in-script closing slot. */
+                const closingIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "closing");
+                if (closingIdx >= currentStep && closingIdx >= 0) {
                   followUpInsertCountRef.current++;
                   const insertStep = { ...followUpStep, type: "follow-up" as const };
+                  if (closingIdx === currentStep) {
+                    const closingClone = { ...prev[closingIdx] };
+                    return [...prev.slice(0, closingIdx), insertStep, closingClone, ...prev.slice(closingIdx + 1)];
+                  }
                   return [...prev.slice(0, closingIdx), insertStep, ...prev.slice(closingIdx)];
                 }
               }
@@ -1543,7 +1569,16 @@ export function useInterviewEngine() {
                (shouldn't happen with the i >= currentStep change above,
                but defensive), we leave step alone and the follow-up will
                surface on the next step naturally. */
-            if (step.type === "question" || step.type === "follow-up") {
+            /* Salary-neg race fix (2026-05-13). When the 3-step salary-neg
+               script has currentStep === closingIdx, the closure-captured
+               `step` is the "closing" object. The insert above placed a
+               follow-up at currentStep and CLONED the original closing one
+               slot later, so the in-script closing is now a separate
+               object. We must update the closure's step (still the
+               original closing reference) so the about-to-fire
+               startSpeaking reads the follow-up text — otherwise the
+               static "Thanks for the conversation today" would play. */
+            if (step.type === "question" || step.type === "follow-up" || (isSalaryNegConversation && step.type === "closing")) {
               step.aiText = followUpStep.aiText;
               /* aiTextDisplay MUST track aiText. The user-reported
                  "audio TTS is different from written question" bug
