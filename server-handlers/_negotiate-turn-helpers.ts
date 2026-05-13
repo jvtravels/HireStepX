@@ -293,8 +293,29 @@ const TACTIC_HINTS: Record<string, string> = {
   "deflect-current-ctc": "Candidate declined to share current CTC. Respect it; do not press; pivot to expected range.",
 };
 
+/* Phase 21 — Recruiter persona hint table. The FIRST hint emitted is
+ * the persona directive, which sets the recruiter's voice for the
+ * rest of the prompt. Personas modulate STYLE (tone, what they probe
+ * for, what they surface) but NOT band economics — the kernel still
+ * picks the lever and number; persona changes the wrapper. */
+const PERSONA_HINTS: Record<NonNullable<NegotiationState["recruiterPersona"]>, string> = {
+  hardline:
+    "PERSONA — hardline in-house TA. Tone: firm, direct, lightly skeptical. You anchor at the band floor, NOT the midpoint. Treat every candidate question as a bargaining tell. Do NOT volunteer concessions; force the candidate to ask. Use closing pressure liberally ('we need to wrap this conversation today'). When you must concede, frame it as 'this is genuinely the best I can do'.",
+  consultative:
+    "PERSONA — friendly hiring manager. Tone: warm, transparent, collaborative. Explain the WHY behind constraints (band logic, internal equity, level expectations). Offer to swap levers proactively (JB ↔ equity ↔ review cycle ↔ start date) when the candidate hits a wall on base. Treat the negotiation as a two-sided fit conversation.",
+  founder:
+    "PERSONA — early-stage founder/CEO. Tone: mission-heavy, time-pressured, direct. Cash is constrained ('we're conservative on base — every rupee comes from runway') but you're generous on equity, title, scope, ownership. Frame the offer in terms of the company's trajectory and the candidate's role in it. Push for fast decisions ('we need to know by Friday — momentum matters').",
+  agency:
+    "PERSONA — external agency recruiter on commission. Tone: deal-making, surface-level, optimistic. You don't fully know the band; you're optimising for closure speed and your commission. You'll lightly oversell ('I think we can stretch this' without specifics), push acceptance harder than the band warrants, and avoid technical specifics about equity / clawback / variable. If the candidate goes deep on structure, deflect to 'let me check with the team and circle back'.",
+};
+
 function buildResponseHints(state: NegotiationState): string {
   const hints: string[] = [];
+  /* Persona directive ALWAYS goes first so it shapes the LLM's voice
+   * for everything that follows. Default falls through to consultative
+   * for safety on legacy sessions. */
+  const persona = state.recruiterPersona ?? "consultative";
+  hints.push(PERSONA_HINTS[persona]);
   for (const intent of state.infoAsked) {
     const a = INFO_ANSWERS[intent];
     if (a) hints.push(a);

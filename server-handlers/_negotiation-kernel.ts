@@ -85,6 +85,7 @@ import {
 import {
   extractCandidateStance,
   mergeCandidateStance,
+  detectRecoverySignals,
   type CandidateStanceResult,
 } from "./_candidate-stance";
 
@@ -186,6 +187,32 @@ export type VossTactic =
    (AI/ML 2025-style) increase it. Default neutral. */
 export type MarketMode = "soft" | "neutral" | "hot";
 
+/* Phase 21 — Recruiter persona. The same kernel state can be played
+ * by four distinct recruiter archetypes; each modulates tactical
+ * preferences (concession curve, what they probe for, what they
+ * surface unprompted, tone). The kernel uses persona ONLY at the
+ * response-hints layer so band math stays persona-agnostic — the
+ * candidate's *experience* changes, not the underlying economics.
+ *
+ *   hardline      — aggressive in-house TA. Anchors at walkAway,
+ *                   resists concessions, treats every probe as a
+ *                   bargaining tell. Closing-pressure heavy.
+ *   consultative  — friendly hiring manager. Transparent about the
+ *                   band, willing to swap levers (JB ↔ equity ↔
+ *                   review cycle), explains the why.
+ *   founder       — early-stage founder/CEO. Mission-heavy, equity-
+ *                   heavy, time-pressured ("we need to move fast"),
+ *                   conservative on cash but generous on title/scope.
+ *   agency        — external agency recruiter on commission. Surface-
+ *                   level, deal-making, optimises for closure speed,
+ *                   pushes acceptance harder than is warranted by
+ *                   the actual band.
+ *
+ * Default: "consultative" — the existing kernel behaviour mapped
+ * cleanly to a transparent hiring-manager persona, so callers that
+ * don't specify persona see no change. */
+export type RecruiterPersona = "hardline" | "consultative" | "founder" | "agency";
+
 export interface NegotiationState {
   /* Identity */
   readonly sessionId: string;
@@ -275,6 +302,11 @@ export interface NegotiationState {
   /* Macro market mode — adjusts concession curve globally. */
   marketMode: MarketMode;
 
+  /* Phase 21 — Recruiter persona archetype. Influences response-hint
+   * tone and tactical preferences but NOT band math. Frozen at session
+   * start. Default "consultative" preserves legacy behaviour. */
+  recruiterPersona: RecruiterPersona;
+
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
   walkedAwayAtTurn: number | null;
@@ -342,6 +374,7 @@ export interface InitStateInput {
 export interface InitStateExtras {
   hardBandCap?: boolean;
   marketMode?: MarketMode;
+  recruiterPersona?: RecruiterPersona;
 }
 
 export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
@@ -369,6 +402,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     walkAwayReturned: false,
     hardBandCap: input.hardBandCap ?? false,
     marketMode: input.marketMode ?? "neutral",
+    recruiterPersona: input.recruiterPersona ?? "consultative",
     acceptedAtTurn: null,
     walkedAwayAtTurn: null,
     hikePercent: null,
@@ -930,8 +964,23 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   if (parsed.miscSignals.hasAny) {
     next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
   }
-  if (parsed.candidateStance.hasAny) {
-    next.candidateStance = mergeCandidateStance(state.candidateStance, parsed.candidateStance);
+  /* Phase 21 — pass recovery signals so posture booleans (desperate,
+   * salary-only, avoids-anchor, personal-expense, offer-shopping) can
+   * decay when the candidate course-corrects in a later turn. Other
+   * red flags (badmouth, equity-as-cash, etc.) stay sticky. */
+  const recovery = detectRecoverySignals(answer);
+  const hasRecovery =
+    recovery.desperateRecovered ||
+    recovery.salaryOnlyRecovered ||
+    recovery.avoidsAnchorRecovered ||
+    recovery.personalExpenseRecovered ||
+    recovery.offerShoppingRecovered;
+  if (parsed.candidateStance.hasAny || hasRecovery) {
+    next.candidateStance = mergeCandidateStance(
+      state.candidateStance,
+      parsed.candidateStance,
+      recovery,
+    );
   }
 
   /* Merge tactic + info sets — sticky, never cleared. */
@@ -1505,6 +1554,15 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
+  if (
+    s.recruiterPersona !== undefined &&
+    s.recruiterPersona !== "hardline" &&
+    s.recruiterPersona !== "consultative" &&
+    s.recruiterPersona !== "founder" &&
+    s.recruiterPersona !== "agency"
+  ) {
+    throw new Error("state.recruiterPersona");
+  }
   if (s.candidateComponentBreakdown !== undefined) {
     const cb = s.candidateComponentBreakdown as Record<string, unknown>;
     if (!cb || typeof cb !== "object") throw new Error("state.candidateComponentBreakdown");
@@ -1638,6 +1696,7 @@ export function deserializeState(json: string): NegotiationState {
     walkAwayReturned: s.walkAwayReturned ?? false,
     hardBandCap: s.hardBandCap ?? false,
     marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",
+    recruiterPersona: (s.recruiterPersona as RecruiterPersona | undefined) ?? "consultative",
     conversationLog: (s.conversationLog as NegotiationState["conversationLog"] | undefined) ?? [],
     candidateComponentBreakdown: (s.candidateComponentBreakdown as ComponentBreakdown | undefined)
       ?? { base: null, variable: null, equity: null, hasAny: false },

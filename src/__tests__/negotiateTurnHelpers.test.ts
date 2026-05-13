@@ -315,11 +315,54 @@ describe("buildAiPrompt response hints", () => {
     expect(user).toMatch(/risks the offer/i);
   });
 
-  it("emits no hints block when no signals set", () => {
+  /* Phase 21 — RESPONSE HINTS is always present because the recruiter
+   * persona directive is unconditionally emitted as the first hint.
+   * What we still want to verify: with no signals set, the hints block
+   * contains ONLY the persona directive and nothing else (no info-
+   * intent answers, no Voss-tactic hints, no red-flag coaching). */
+  it("hints block contains only the persona directive when no other signals are set", () => {
     const state = baseState();
     const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
     const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
-    expect(user).not.toContain("RESPONSE HINTS");
+    expect(user).toContain("RESPONSE HINTS");
+    expect(user).toMatch(/PERSONA — /);
+    /* No follow-up router hints, no red-flag coaching when state is clean. */
+    expect(user).not.toMatch(/Follow-up router/);
+    expect(user).not.toMatch(/COACHING —/);
+  });
+});
+
+describe("Phase 21 — recruiter persona variance", () => {
+  it("default persona is consultative", () => {
+    const state = baseState();
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/PERSONA — friendly hiring manager/);
+  });
+
+  it("hardline persona surfaces the right tactical directives", () => {
+    const state = baseState({ recruiterPersona: "hardline" });
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/PERSONA — hardline/);
+    expect(user).toMatch(/anchor at the band floor/i);
+    expect(user).toMatch(/closing pressure/i);
+  });
+
+  it("founder persona pushes equity / mission framing", () => {
+    const state = baseState({ recruiterPersona: "founder" });
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/PERSONA — early-stage founder/);
+    expect(user).toMatch(/equity|mission/i);
+  });
+
+  it("agency persona signals deal-making + commission incentive", () => {
+    const state = baseState({ recruiterPersona: "agency" });
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toMatch(/PERSONA — external agency/);
+    expect(user).toMatch(/closure speed|commission/i);
   });
 });
 

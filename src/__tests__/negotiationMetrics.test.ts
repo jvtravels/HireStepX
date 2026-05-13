@@ -33,6 +33,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
     walkAwayReturned: false,
     hardBandCap: false,
     marketMode: "neutral",
+    recruiterPersona: "consultative",
     acceptedAtTurn: null,
     walkedAwayAtTurn: null,
     candidateComponentBreakdown: { base: null, variable: null, equity: null, hasAny: false },

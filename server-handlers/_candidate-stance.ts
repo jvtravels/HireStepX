@@ -359,6 +359,100 @@ function detectOverpromisesJoining(text: string): boolean {
   return OVERPROMISES_JOINING_PATTERNS.some((p) => p.test(text));
 }
 
+/* ── Phase 21 — Recovery signals (multi-turn posture decay) ──────── */
+
+/* A candidate who said "I really need this job" on turn 1 but on
+ * turn 4 says "Based on market data my target is ₹22L; I'm also
+ * weighing the role scope" has recovered. Without decay logic, the
+ * Phase 18 sticky-boolean semantics keeps `soundsDesperate` true for
+ * the rest of the session, which (a) misleads the LLM into continued
+ * predatory pacing and (b) tanks the candidate's score unfairly.
+ *
+ * Recovery is NOT total: red flags about events (badmouthing, equity-
+ * as-cash, confidential overshare) STAY sticky — they happened, and
+ * the recruiter would remember. Only POSTURE signals can decay:
+ *   - soundsDesperate
+ *   - salaryOnlyFactor
+ *   - avoidsAnchor
+ *   - personalExpenseJustification
+ *   - offerShoppingDemand
+ *
+ * Each has its own recovery condition:
+ *   - desperate → candidate anchors on a number OR mentions non-comp value
+ *   - salary-only → candidate names a non-comp factor
+ *   - avoids-anchor → candidate states a concrete target
+ *   - personal-expense → candidate uses market or competing-offer rationale
+ *   - offer-shopping → candidate explicitly de-escalates ("not auctioning",
+ *                      "fair number on both sides") */
+export interface RecoverySignals {
+  desperateRecovered: boolean;
+  salaryOnlyRecovered: boolean;
+  avoidsAnchorRecovered: boolean;
+  personalExpenseRecovered: boolean;
+  offerShoppingRecovered: boolean;
+}
+
+/* "I'm also weighing role / scope / growth / mentorship / equity /
+ * learning / team / manager / mission" — explicit non-comp value. */
+const NON_COMP_FACTOR_PATTERNS: RegExp[] = [
+  /\b(?:role|scope|growth|mentorship|learning|team|manager|mission|impact|culture|stack|technology|product)\s+(?:is|are|matters?|important|factor|driver|consideration)/i,
+  /\b(?:weighing|considering|evaluating|looking\s+at)\b[\s\S]{0,40}\b(?:role|scope|growth|mentorship|learning|team|manager|mission|impact|culture|stack)/i,
+  /\bnot\s+(?:just|only|purely)\s+about\s+(?:the\s+)?(?:salary|money|comp|package|number)/i,
+  /\b(?:salary|comp|money)\s+(?:is|.?s)\s+(?:one|just\s+one|a|a\s+single)\s+(?:factor|consideration|piece)/i,
+];
+
+/* Market or competing-offer rationale: "market data", "peer offers",
+ * "competing offer at ₹X", "₹X for similar role at <company>". */
+const MARKET_RATIONALE_PATTERNS: RegExp[] = [
+  /\bmarket\s+(?:data|benchmark|research|comp(?:arable)?|rate|range)\b[\s\S]{0,40}\d/i,
+  /\b(?:peer|competing|other)\s+offers?\s+(?:at|of|around)\s+₹?\s*\d/i,
+  /\bbased\s+on\s+(?:my\s+)?(?:research|benchmarking|data|levels.?fyi|glassdoor)/i,
+  /\bsimilar\s+(?:role|position|level)s?\s+at\s+(?:.+?)\s+(?:pay|offer|are\s+at)/i,
+];
+
+/* Explicit offer-shopping de-escalation: "not auctioning", "fair on
+ * both sides", "I'm not playing offers off". */
+const OFFER_SHOPPING_DEESCALATION: RegExp[] = [
+  /\bnot\s+(?:auctioning|playing\s+(?:offers\s+)?off|shopping\s+(?:offers|around))/i,
+  /\bfair\s+(?:number|deal|outcome|landing)\s+(?:on\s+)?both\s+sides/i,
+  /\bnot\s+(?:about|asking\s+for)\s+(?:the\s+)?highest\s+(?:bidder|offer)/i,
+];
+
+/* Anchor presence: candidate has stated a concrete number as their
+ * target/ask in this utterance. We look for "I'm targeting/asking/
+ * looking at ₹N" or "my expectation is ₹N" — distinct from random
+ * digits (current CTC mentions don't anchor the FUTURE ask). */
+const ANCHOR_NUMBER_PATTERNS: RegExp[] = [
+  /\b(?:i.?m|i\s+am)\s+(?:targeting|asking\s+for|looking\s+at|expecting|hoping\s+for)\s+₹?\s*\d/i,
+  /\b(?:my|the)\s+(?:target|ask|expectation|number|figure)\s+(?:is|.?s)\s+₹?\s*\d/i,
+  /\b(?:looking\s+at|targeting)\s+(?:a\s+)?range\s+of\s+₹?\s*\d/i,
+];
+
+export function detectRecoverySignals(text: string): RecoverySignals {
+  if (!text) {
+    return {
+      desperateRecovered: false,
+      salaryOnlyRecovered: false,
+      avoidsAnchorRecovered: false,
+      personalExpenseRecovered: false,
+      offerShoppingRecovered: false,
+    };
+  }
+  const hasNonComp = NON_COMP_FACTOR_PATTERNS.some((p) => p.test(text));
+  const hasMarketRationale = MARKET_RATIONALE_PATTERNS.some((p) => p.test(text));
+  const hasAnchor = ANCHOR_NUMBER_PATTERNS.some((p) => p.test(text));
+  const hasDeescalation = OFFER_SHOPPING_DEESCALATION.some((p) => p.test(text));
+  return {
+    /* Desperate clears on EITHER anchoring (confidence) OR surfacing
+     * non-comp value (showing other options matter). */
+    desperateRecovered: hasAnchor || hasNonComp,
+    salaryOnlyRecovered: hasNonComp,
+    avoidsAnchorRecovered: hasAnchor,
+    personalExpenseRecovered: hasMarketRationale,
+    offerShoppingRecovered: hasDeescalation || hasNonComp,
+  };
+}
+
 /* ── Public API ──────────────────────────────────────────────────── */
 
 export function extractCandidateStance(text: string): CandidateStanceResult {
@@ -408,22 +502,55 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
 export function mergeCandidateStance(
   prior: CandidateStanceResult | null | undefined,
   next: CandidateStanceResult,
+  /* Phase 21 — optional recovery signals from the current utterance.
+   * When supplied, the matching prior sticky boolean is cleared (only
+   * if next.* didn't re-fire it). This makes posture decay possible
+   * without breaking the audit-trail semantics of red-flag stickiness. */
+  recovery?: RecoverySignals,
 ): CandidateStanceResult {
   const p = prior ?? EMPTY;
+  const r = recovery ?? {
+    desperateRecovered: false,
+    salaryOnlyRecovered: false,
+    avoidsAnchorRecovered: false,
+    personalExpenseRecovered: false,
+    offerShoppingRecovered: false,
+  };
+  /* Decay rule: prior sticky boolean is cleared iff
+   *   (recovery signal fires) AND (next utterance does NOT re-fire it).
+   * If the candidate is BOTH anchoring AND simultaneously dropping a
+   * new desperate cue, the new cue is stronger and we keep it true. */
+  const decayedDesperate =
+    p.soundsDesperate && r.desperateRecovered && !next.soundsDesperate ? false : p.soundsDesperate;
+  const decayedSalaryOnly =
+    p.salaryOnlyFactor && r.salaryOnlyRecovered && !next.salaryOnlyFactor ? false : p.salaryOnlyFactor;
+  const decayedAvoidsAnchor =
+    p.avoidsAnchor && r.avoidsAnchorRecovered && !next.avoidsAnchor ? false : p.avoidsAnchor;
+  const decayedPersonalExpense =
+    p.personalExpenseJustification && r.personalExpenseRecovered && !next.personalExpenseJustification
+      ? false
+      : p.personalExpenseJustification;
+  const decayedOfferShopping =
+    p.offerShoppingDemand && r.offerShoppingRecovered && !next.offerShoppingDemand
+      ? false
+      : p.offerShoppingDemand;
+
   /* Flexibility: last-stated wins (the candidate may shift posture
-   * mid-conversation; that's a real signal, not noise). Booleans are
-   * monotone-up — once a red flag fires, it sticks. */
+   * mid-conversation; that's a real signal, not noise). Non-decaying
+   * red flags stay monotone-up — once a behavioural breach (badmouth,
+   * confidential overshare, equity-as-cash, overpromise) fires, it
+   * stays in the audit trail. */
   const merged: CandidateStanceResult = {
     flexibilityPosture: next.flexibilityPosture ?? p.flexibilityPosture,
     marketReferenceVague: p.marketReferenceVague || next.marketReferenceVague,
-    salaryOnlyFactor: p.salaryOnlyFactor || next.salaryOnlyFactor,
+    salaryOnlyFactor: decayedSalaryOnly || next.salaryOnlyFactor,
     badmouthsCurrent: p.badmouthsCurrent || next.badmouthsCurrent,
     confidentialOvershare: p.confidentialOvershare || next.confidentialOvershare,
-    soundsDesperate: p.soundsDesperate || next.soundsDesperate,
+    soundsDesperate: decayedDesperate || next.soundsDesperate,
     treatsEquityAsCash: p.treatsEquityAsCash || next.treatsEquityAsCash,
-    avoidsAnchor: p.avoidsAnchor || next.avoidsAnchor,
-    personalExpenseJustification: p.personalExpenseJustification || next.personalExpenseJustification,
-    offerShoppingDemand: p.offerShoppingDemand || next.offerShoppingDemand,
+    avoidsAnchor: decayedAvoidsAnchor || next.avoidsAnchor,
+    personalExpenseJustification: decayedPersonalExpense || next.personalExpenseJustification,
+    offerShoppingDemand: decayedOfferShopping || next.offerShoppingDemand,
     dismissesVariableRisk: p.dismissesVariableRisk || next.dismissesVariableRisk,
     overpromisesJoining: p.overpromisesJoining || next.overpromisesJoining,
     hasAny: false,

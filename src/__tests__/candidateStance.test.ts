@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   extractCandidateStance,
   mergeCandidateStance,
+  detectRecoverySignals,
 } from "../../server-handlers/_candidate-stance";
 
 describe("extractCandidateStance — flexibility posture", () => {
@@ -133,5 +134,69 @@ describe("extractCandidateStance — hasAny + merge", () => {
 
   it("merge: handles null prior", () => {
     expect(mergeCandidateStance(null, extractCandidateStance("non-negotiable")).flexibilityPosture).toBe("rigid");
+  });
+});
+
+describe("Phase 21 — multi-turn posture decay", () => {
+  it("desperate decays when candidate later anchors on a number", () => {
+    const turn1 = extractCandidateStance("I really need this job, please consider me.");
+    expect(turn1.soundsDesperate).toBe(true);
+    const turn2Text = "I'm targeting ₹22L for this role based on market data.";
+    const turn2 = extractCandidateStance(turn2Text);
+    const recovery = detectRecoverySignals(turn2Text);
+    const merged = mergeCandidateStance(turn1, turn2, recovery);
+    expect(merged.soundsDesperate).toBe(false);
+  });
+
+  it("desperate decays when candidate surfaces non-comp value", () => {
+    const turn1 = extractCandidateStance("I'll take anything, I really need this job.");
+    expect(turn1.soundsDesperate).toBe(true);
+    const turn2Text = "Salary is one factor, but role scope, growth, and team are equally important to me.";
+    const turn2 = extractCandidateStance(turn2Text);
+    const recovery = detectRecoverySignals(turn2Text);
+    const merged = mergeCandidateStance(turn1, turn2, recovery);
+    expect(merged.soundsDesperate).toBe(false);
+  });
+
+  it("avoidsAnchor decays when candidate later states a concrete target", () => {
+    const turn1 = extractCandidateStance("You decide, whatever the company offers.");
+    expect(turn1.avoidsAnchor).toBe(true);
+    const turn2Text = "My target is ₹18L LPA fixed.";
+    const turn2 = extractCandidateStance(turn2Text);
+    const recovery = detectRecoverySignals(turn2Text);
+    const merged = mergeCandidateStance(turn1, turn2, recovery);
+    expect(merged.avoidsAnchor).toBe(false);
+  });
+
+  it("badmouthsCurrent does NOT decay — it's a behavioural breach that stays sticky", () => {
+    const turn1 = extractCandidateStance("My current company is toxic and the manager is a tyrant.");
+    expect(turn1.badmouthsCurrent).toBe(true);
+    const turn2Text = "I'm targeting ₹22L based on market data for the role.";
+    const turn2 = extractCandidateStance(turn2Text);
+    const recovery = detectRecoverySignals(turn2Text);
+    const merged = mergeCandidateStance(turn1, turn2, recovery);
+    /* Badmouthing happened; the recruiter would remember. No decay. */
+    expect(merged.badmouthsCurrent).toBe(true);
+  });
+
+  it("desperate does NOT decay if the new utterance re-fires it", () => {
+    const turn1 = extractCandidateStance("I really need this job.");
+    expect(turn1.soundsDesperate).toBe(true);
+    /* Anchor present but ALSO new desperation cue — the new cue dominates. */
+    const turn2Text = "I'm targeting ₹15L but honestly I'll take anything you offer.";
+    const turn2 = extractCandidateStance(turn2Text);
+    const recovery = detectRecoverySignals(turn2Text);
+    const merged = mergeCandidateStance(turn1, turn2, recovery);
+    expect(merged.soundsDesperate).toBe(true);
+  });
+
+  it("personalExpenseJustification decays on market-data rationale", () => {
+    const turn1 = extractCandidateStance("I need this salary because my home loan EMI is high.");
+    expect(turn1.personalExpenseJustification).toBe(true);
+    const turn2Text = "Based on Levels.fyi data, peers at similar levels are at ₹26L.";
+    const turn2 = extractCandidateStance(turn2Text);
+    const recovery = detectRecoverySignals(turn2Text);
+    const merged = mergeCandidateStance(turn1, turn2, recovery);
+    expect(merged.personalExpenseJustification).toBe(false);
   });
 });
