@@ -28,6 +28,7 @@
 
 import type { NegotiationState } from "./_negotiation-kernel";
 import type { CandidateStanceResult } from "./_candidate-stance";
+import { extractSalesOTE, extractContractRate } from "./_comp-structure";
 
 export type RedFlagCode =
   | "no-current-ctc"
@@ -47,7 +48,11 @@ export type RedFlagCode =
   /* Phase 19 — corpus-derived red flags. */
   | "avoids-anchor"
   | "personal-expense-justification"
-  | "offer-shopping";
+  | "offer-shopping"
+  /* Phase 22 — comp-structure red flags (sales OTE + contract rate). */
+  | "ote-as-guaranteed"
+  | "no-attainment-history"
+  | "day-rate-fte-confusion";
 
 export type RedFlagSeverity = "info" | "concern" | "blocker";
 
@@ -102,6 +107,13 @@ const REWRITES: Record<RedFlagCode, string> = {
     "Say: \"My target of ₹X is grounded in market data for <role> at <tier> and recent peer offers — happy to share the benchmarks I'm using.\"",
   "offer-shopping":
     "Say: \"I have other conversations in flight, but I'm not auctioning. I want to land at a fair number on both sides — what's the band here?\"",
+  /* Phase 22 — comp-structure rewrites. */
+  "ote-as-guaranteed":
+    "Say: \"My OTE is ₹X — that's ₹Y base + ₹Z at-target variable. Last cycle I hit N% attainment, so realised was ~₹W.\"",
+  "no-attainment-history":
+    "Say: \"My last 3-year quota attainment was N%, M%, P% — happy to share W2/Form-16 + manager letters to back it up.\"",
+  "day-rate-fte-confusion":
+    "Say: \"At ₹X/day I billed ~D days last year for ~₹Y realised. For an FTE conversation, I'd target ₹Z LPA accounting for benefits, leave, and bench risk on my side.\"",
 };
 
 interface DetectorInput {
@@ -344,6 +356,43 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
       code: "offer-shopping",
       severity: "concern",
       detail: "candidate is using other offers as a demand, not as leverage data",
+    });
+  }
+
+  /* Phase 22 — Sales / contract comp structure detectors. Utterance-
+   * grade (run on the current turn's text), NOT folded into state.
+   * Detection-only; the rewrite layer surfaces the coaching. */
+
+  /* 18. OTE quoted as guaranteed. Sales candidate cites their OTE
+   *     figure without naming base/variable split OR attainment history. */
+  const sales = extractSalesOTE(u);
+  if (sales.quotesOteAsGuaranteed) {
+    out.push({
+      code: "ote-as-guaranteed",
+      severity: "concern",
+      detail: `candidate quoted OTE (₹${sales.oteAmount}L) as if guaranteed — no base/variable split or attainment context`,
+    });
+  }
+  /* 19. No attainment history. Candidate stated an OTE and a base
+   *     (so they understand the structure) but never named their
+   *     attainment %. Recruiter side cannot calibrate the OTE without it. */
+  if (sales.hasAny && sales.oteAmount != null && sales.baseAmount != null && sales.attainmentPct == null) {
+    out.push({
+      code: "no-attainment-history",
+      severity: "info",
+      detail: "OTE + base stated but candidate did not share quota attainment history",
+    });
+  }
+
+  /* 20. Day-rate ↔ FTE confusion. Contract candidate moving to FTE
+   *     annualised their day rate × ~250 days without accounting for
+   *     bench / leave / benefits / tax. */
+  const contract = extractContractRate(u);
+  if (contract.dayRateAsAnnualConfusion) {
+    out.push({
+      code: "day-rate-fte-confusion",
+      severity: "concern",
+      detail: `candidate annualised ₹${contract.dayRate}/day to FTE without discussing utilization / bench`,
     });
   }
 

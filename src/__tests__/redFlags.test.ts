@@ -216,3 +216,48 @@ describe("detectRedFlags — Phase 20 Hinglish coverage", () => {
     expect(stance.flexibilityPosture).toBe("flexible");
   });
 });
+
+describe("detectRedFlags — Phase 22 comp structure", () => {
+  it("'OTE ₹40L' alone fires ote-as-guaranteed", () => {
+    const text = "My package is ₹40L OTE.";
+    const flags = codes(baseState(), emptyStance, text);
+    expect(flags).toContain("ote-as-guaranteed");
+  });
+
+  it("OTE + base (no attainment) fires no-attainment-history, NOT ote-as-guaranteed", () => {
+    const text = "OTE of ₹40L with base of ₹25L.";
+    const flags = codes(baseState(), emptyStance, text);
+    expect(flags).toContain("no-attainment-history");
+    expect(flags).not.toContain("ote-as-guaranteed");
+  });
+
+  it("OTE + base + attainment fires neither comp-structure flag", () => {
+    const text = "OTE of ₹40L, base of ₹25L, I hit 110% last year.";
+    const flags = codes(baseState(), emptyStance, text);
+    expect(flags).not.toContain("ote-as-guaranteed");
+    expect(flags).not.toContain("no-attainment-history");
+  });
+
+  it("day rate annualised without utilization fires day-rate-fte-confusion", () => {
+    const text = "I charge ₹10K/day so that's ₹25L per year as FTE.";
+    const flags = codes(baseState(), emptyStance, text);
+    expect(flags).toContain("day-rate-fte-confusion");
+  });
+
+  it("day rate with utilization does NOT fire day-rate-fte-confusion", () => {
+    const text = "₹10K/day at 85% utilization works out to ₹25L per year.";
+    const flags = codes(baseState(), emptyStance, text);
+    expect(flags).not.toContain("day-rate-fte-confusion");
+  });
+
+  it("Phase 22 flags carry rewrite suggestions", () => {
+    const flags = detectRedFlags({
+      state: baseState(),
+      stance: emptyStance,
+      utterance: "My package is ₹40L OTE.",
+    });
+    const ote = flags.find((f) => f.code === "ote-as-guaranteed");
+    expect(ote).toBeDefined();
+    expect(ote!.rewriteSuggestion).toMatch(/base|attainment/i);
+  });
+});
