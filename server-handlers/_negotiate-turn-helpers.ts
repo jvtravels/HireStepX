@@ -41,7 +41,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "counter-base":
     "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response.",
   "joining-bonus":
-    "Acknowledge cash base is at its ceiling. Offer a one-time joining bonus as a bridge. State an amount range if asked but do not change the base total.",
+    "Acknowledge cash base is at its ceiling. Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total.",
   "equity-grant":
     "Add an equity / RSU grant. Note the vesting shape ('25% per year over 4 years' or similar) and frame it as upside.",
   "notice-buyout":
@@ -51,7 +51,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "hold-firm":
     "State respectfully that this is final. Acknowledge their position. Invite them to think it over.",
   "close-acceptance":
-    "Congratulate them. Restate the agreed total CTC. Mention next steps (offer letter, start date discussion).",
+    "Congratulate them. Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion).",
   "close-walkaway":
     "Acknowledge respectfully that this isn't going to work. Keep the door open for future roles. Brief, warm.",
   "close-stalemate":
@@ -257,6 +257,12 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
     (move.newTotalLpa != null
       ? `Include the number ₹${move.newTotalLpa} LPA verbatim in \`text\` AND set totalLpaMentioned=${move.newTotalLpa}.`
       : `Do not introduce any salary number that is not already in the brief; set totalLpaMentioned=null.`) +
+    /* Phase 28 — when the kernel has surfaced a JB amount, the LLM
+       MUST quote it. Non-negotiable: this is the fix for the May 2026
+       "joining bonus three times without a number" failure. */
+    (typeof move.joiningBonusAmount === "number"
+      ? ` Also include the one-time joining bonus amount ₹${move.joiningBonusAmount}L verbatim in \`text\` and frame it as ONE-TIME (not annual).`
+      : "") +
     (state.role
       ? ` When you reference the position, use the role label "${state.role}" verbatim and echo it in roleMentioned.`
       : ` Set roleMentioned="" if you do not name the role.`) +
@@ -580,6 +586,12 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   const parts: string[] = [];
   parts.push(`lever=${move.lever}`);
   if (move.newTotalLpa != null) parts.push(`newTotalLpa=${move.newTotalLpa}`);
+  /* Phase 28 — kernel-computed JB amount (LPA, one-time). The LLM
+     MUST quote this number verbatim on joining-bonus turns and in
+     the close-acceptance recap when present. */
+  if (typeof move.joiningBonusAmount === "number") {
+    parts.push(`joiningBonusAmount=${move.joiningBonusAmount}`);
+  }
   parts.push(`phase=${state.phase}`);
   parts.push(`turn=${state.turnIndex}`);
   parts.push(`highestOffer=${state.highestOfferMade}`);
@@ -995,7 +1007,9 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
     case "counter-base":
       return `We can stretch the base to ₹${n} LPA total. Does that work for you?`;
     case "joining-bonus":
-      return `We're at the ceiling on base, but we can add a joining bonus on top. Would that bridge the gap?`;
+      return typeof move.joiningBonusAmount === "number"
+        ? `We're at the ceiling on base, but we can add a one-time joining bonus of ₹${move.joiningBonusAmount}L on top. Would that bridge the gap?`
+        : `We're at the ceiling on base, but we can add a one-time joining bonus on top. Would that bridge the gap?`;
     case "equity-grant":
       return `We can add an equity grant vesting over four years on top of the ₹${state.highestOfferMade} LPA base. Interested?`;
     case "notice-buyout":
@@ -1005,7 +1019,9 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
     case "hold-firm":
       return `₹${state.highestOfferMade} LPA is what we can do for this role. Take your time and let us know.`;
     case "close-acceptance":
-      return `Wonderful — we'll send the offer letter for ₹${state.highestOfferMade} LPA shortly. Welcome aboard.`;
+      return typeof move.joiningBonusAmount === "number"
+        ? `Welcome aboard! Your offer: ₹${move.newTotalLpa ?? state.highestOfferMade} LPA fixed base + ₹${move.joiningBonusAmount}L one-time joining bonus. We'll send the formal letter shortly.`
+        : `Wonderful — we'll send the offer letter for ₹${state.highestOfferMade} LPA shortly. Welcome aboard.`;
     case "close-walkaway":
       return `I understand. Thanks for the conversation — we'd love to stay in touch for future roles.`;
     case "close-stalemate":

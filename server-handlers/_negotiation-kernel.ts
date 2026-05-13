@@ -321,6 +321,14 @@ export interface NegotiationState {
   leversUsed: NegotiationLever[];        // ordered history
   lastAiText: string;                    // for verbatim-repeat detection
 
+  /** Phase 28 (2026-05-13) — last kernel-computed joining-bonus amount
+   *  the AI has put on the table this session (LPA, one-time). Null
+   *  until a joining-bonus move fires. Carries across turns so
+   *  close-acceptance can include it in the recap — without this the
+   *  JB silently disappeared from the close summary (May 2026 session).
+   *  Sticky (never reset to null after being set). */
+  lastJoiningBonusOffered: number | null;
+
   /* Rolling conversation log — capped at the last CONVERSATION_LOG_CAP
    * entries (= 4, i.e. last 2 exchanges). Phase 5 of the rebuild: the
    * compact brief carried derived facts only (target, current, highest
@@ -491,6 +499,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     highestOfferMade: 0,
     leversUsed: [],
     lastAiText: "",
+    lastJoiningBonusOffered: null,
     conversationLog: [],
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
@@ -1332,16 +1341,32 @@ export interface AiMove {
    *  sizes those concessions in line with the market: hot → be
    *  generous, soft → be tight, neutral → standard. */
   marketModeHint?: string;
+  /** Kernel-computed joining-bonus amount (LPA, one-time). Set when
+   *  lever='joining-bonus' OR when lever='close-acceptance' and a
+   *  JB had previously been offered this session. The LLM MUST quote
+   *  this number — non-negotiable. Sizing logic: 40% of the gap
+   *  between current highest offer and candidateTarget (or maxStretch
+   *  when target is null), modulated by marketMode (hot 1.5 / neutral
+   *  1.0 / soft 0.7), clamped to [1.0, 6.0] LPA. Without this, the
+   *  LLM offered "joining bonus" three times without ever naming an
+   *  amount (May 2026 session). */
+  joiningBonusAmount?: number;
 }
 
 /** Pick the AI's move for this turn from state alone. Pure. */
 export function pickAiMove(state: NegotiationState): AiMove {
   /* Terminal closings. */
   if (state.phase === "accepted") {
+    /* Phase 28 — carry the previously-offered JB into the close so the
+       recap reflects both base + one-time JB. Without this the close
+       summary silently dropped any JB that had been put on the table
+       earlier in the session (May 2026 session). */
+    const jb = state.lastJoiningBonusOffered;
     return {
       lever: "close-acceptance",
       newTotalLpa: state.highestOfferMade || state.band.initialOffer,
-      rationale: "Candidate accepted; recap terms.",
+      joiningBonusAmount: jb != null ? jb : undefined,
+      rationale: `Candidate accepted; recap terms${jb != null ? ` including ₹${jb}L one-time JB` : ""}.`,
     };
   }
   if (state.phase === "walked-away") {
@@ -1533,6 +1558,39 @@ export function pickAiMove(state: NegotiationState): AiMove {
   return pickLeverExploreMove(state);
 }
 
+/** Phase 28 (2026-05-13) — compute the joining-bonus amount the LLM
+ *  MUST quote. The previous behaviour delegated this to the LLM and the
+ *  LLM punted ("a joining bonus" with no number, three turns running).
+ *  Sizing:
+ *    gap        = max(0, candidateTarget − highestOfferMade)
+ *                 (target null → gap = maxStretch − highestOfferMade)
+ *    baseJB     = clamp(gap × 0.4, 1.0, 6.0)
+ *    multiplier = marketMode: hot 1.5 / neutral 1.0 / soft 0.7
+ *    final      = round(baseJB × multiplier × 10) / 10
+ *  Annual-equivalent sanity cap: never exceed (maxStretch − initialOffer)
+ *  so the one-time JB doesn't blow past the band's full year-1 spread.
+ *  Edge cases:
+ *    - gap ≤ 0 (we're already above the candidate's target): JB still
+ *      hits the ₹1L floor so the lever fires meaningfully rather than
+ *      producing a ₹0 "bonus".
+ *    - hot market with tight band: the band-spread cap kicks in.
+ *  Pure. */
+function computeJoiningBonusAmount(state: NegotiationState): number {
+  const target = state.candidateTarget;
+  const refTop = target != null ? target : state.band.maxStretch;
+  const gap = Math.max(0, refTop - state.highestOfferMade);
+  const baseJB = Math.min(6.0, Math.max(1.0, gap * 0.4));
+  const multiplier =
+    state.marketMode === "hot" ? 1.5 :
+    state.marketMode === "soft" ? 0.7 : 1.0;
+  let final = Math.round(baseJB * multiplier * 10) / 10;
+  const bandSpreadCap = Math.max(1.0, state.band.maxStretch - state.band.initialOffer);
+  if (final > bandSpreadCap) final = Math.round(bandSpreadCap * 10) / 10;
+  /* Guard against NaN / Infinity from a degenerate band. */
+  if (!Number.isFinite(final) || final <= 0) return 1.0;
+  return final;
+}
+
 function pickLeverExploreMove(state: NegotiationState): AiMove {
   const used = new Set(state.leversUsed);
   /* Phase 24d (2026-05-13) — market mode applied to non-cash levers
@@ -1563,6 +1621,7 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
     return {
       lever: "joining-bonus",
       newTotalLpa: state.highestOfferMade,
+      joiningBonusAmount: computeJoiningBonusAmount(state),
       rationale: "Cash headroom exhausted; add one-time joining bonus.",
       marketModeHint,
     };
@@ -1630,6 +1689,13 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
+  }
+  /* Phase 28 — record the kernel-computed JB amount when a JB lever
+     fires so close-acceptance can include it in the recap. Sticky:
+     once set, only an upward replacement clobbers it (a subsequent JB
+     lever would re-compute against the new highestOfferMade). */
+  if (move.lever === "joining-bonus" && typeof move.joiningBonusAmount === "number") {
+    next.lastJoiningBonusOffered = move.joiningBonusAmount;
   }
   /* Re-derive phase only for non-terminal states (terminal phases set
      by candidate-turn don't get clobbered by an AI move that follows). */
@@ -1784,6 +1850,11 @@ export function validateState(state: unknown): asserts state is NegotiationState
     throw new Error("state.leversUsed");
   }
   if (typeof s.lastAiText !== "string") throw new Error("state.lastAiText");
+  /* Phase 28 — sticky JB amount. Optional for back-compat with legacy
+     in-flight sessions; deserializeState backfills to null. */
+  if (s.lastJoiningBonusOffered !== undefined && !isFiniteNumOrNull(s.lastJoiningBonusOffered)) {
+    throw new Error("state.lastJoiningBonusOffered");
+  }
   if (s.acceptedAtTurn !== null && !isFiniteNonNegInt(s.acceptedAtTurn)) throw new Error("state.acceptedAtTurn");
   if (s.walkedAwayAtTurn !== null && !isFiniteNonNegInt(s.walkedAwayAtTurn)) throw new Error("state.walkedAwayAtTurn");
   /* Backward-compatible optional fields: tolerate absence (older
@@ -1968,6 +2039,7 @@ export function deserializeState(json: string): NegotiationState {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false,
     },
     candidateStance: backfillCandidateStance(s.candidateStance),
+    lastJoiningBonusOffered: (s.lastJoiningBonusOffered as number | null | undefined) ?? null,
     salesOTE: (s.salesOTE as SalesOTEResult | undefined) ?? { ...EMPTY_SALES_OTE },
     contractRate: (s.contractRate as ContractRateResult | undefined) ?? { ...EMPTY_CONTRACT_RATE },
     retentionCounter: (s.retentionCounter as RetentionCounterResult | undefined) ?? { ...EMPTY_RETENTION_COUNTER },

@@ -30,6 +30,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
     highestOfferMade: 0,
     leversUsed: [],
     lastAiText: "",
+    lastJoiningBonusOffered: null,
     conversationLog: [],
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],

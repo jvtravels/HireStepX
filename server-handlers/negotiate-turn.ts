@@ -91,10 +91,28 @@ const DEFAULT_BAND: NegotiationBand = {
  *  below walkAway. We fall back to DEFAULT_BAND only when the
  *  data/salary-lookup pipeline can't resolve a band (no role / unknown
  *  company / lookup throws). Pure given inputs. */
-function resolveServerBand(role: string, company: string): NegotiationBand {
+/** Senior-inference fallback. When the client doesn't pass an explicit
+ *  experienceLevel (legacy session, missing onboarding field), infer it
+ *  from role-title prefixes so seniority still propagates into the band.
+ *  Mirrors data/salary-lookup.ts:applyTitleExpFloor — that helper is
+ *  private to salary-lookup so we duplicate the regex shape here at the
+ *  resolveServerBand boundary. Returns undefined when no signal — caller
+ *  passes-through to generateNegotiationBand which has its own
+ *  applyTitleExpFloor pass over (params.role) downstream. */
+function inferExperienceFromRole(role: string): string | undefined {
+  if (!role) return undefined;
+  const r = role.toLowerCase();
+  if (/\b(vp|vice president|director|head of|chief|cxo|c[deot]o|c-?suite|partner)\b/.test(r)) return "executive";
+  if (/\b(lead|principal|staff|architect)\b/.test(r)) return "lead";
+  if (/\b(senior|sr\.?|sr )/.test(r)) return "senior";
+  return undefined;
+}
+
+function resolveServerBand(role: string, company: string, experienceLevel?: string): NegotiationBand {
   if (!role) return DEFAULT_BAND;
   try {
-    const b = generateNegotiationBand({ role, company: company || undefined });
+    const expForBand = experienceLevel || inferExperienceFromRole(role);
+    const b = generateNegotiationBand({ role, company: company || undefined, experienceLevel: expForBand });
     /* SEMANTIC NORMALISATION: salary-lookup.ts stores `walkAway` as the
        RECRUITER's upper ceiling (= 1.1 × maxStretch — i.e. an ask above
        this and the recruiter walks). The kernel's `band.walkAway` means
@@ -123,6 +141,13 @@ interface InitRequest {
   company: string;
   band?: NegotiationBand;
   maxTurns?: number;
+  /** Candidate's self-reported experience level (entry/mid/senior/lead/
+   *  executive). Threaded through to generateNegotiationBand so the
+   *  server-resolved band reflects seniority — without this, a senior
+   *  Java dev applying to TCS was getting the entry-level band ceiling
+   *  (May 2026 session). Untrusted in the sense that the salary-lookup
+   *  pipeline gates downstream, but the field itself is informational. */
+  experienceLevel?: string;
 }
 
 interface TurnRequest {
@@ -279,7 +304,7 @@ export default async function handler(
       const company = body.company || "";
       /* SECURITY: ignore body.band. Recompute server-side from (role,
          company) so a tampered client can't push the band ceiling. */
-      const resolvedBand = resolveServerBand(role, company);
+      const resolvedBand = resolveServerBand(role, company, body.experienceLevel);
       const companyTier = getCompanyTier(company);
 
       /* Wipro UI/UX session (May 2026) revealed the failure mode that

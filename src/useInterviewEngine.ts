@@ -2029,6 +2029,12 @@ export function useInterviewEngine() {
                     walkAway: band.walkAway,
                     hasEquity: !!band.hasEquity,
                   },
+                  /* Seniority routing (May 2026): without this, a senior
+                     Java/TCS session was getting the entry-level band
+                     ceiling because the server's resolveServerBand fell
+                     through to generateNegotiationBand without an
+                     experienceLevel hint. */
+                  experienceLevel: user?.experienceLevel || undefined,
                 });
                 if (!initRes) return null;
                 negotiationKernelStateRef.current = initRes.state;

@@ -747,6 +747,10 @@ export async function negotiationKernelInit(params: {
   company: string;
   band: NegotiationKernelBand;
   maxTurns?: number;
+  /** Candidate experience level — server uses this when resolving the
+   *  band from data/salary-lookup so seniority propagates into the
+   *  band ceiling. Undefined falls back to title-regex inference. */
+  experienceLevel?: string;
 }): Promise<NegotiationKernelResponse | null> {
   return postKernel({ action: "init", ...params });
 }
