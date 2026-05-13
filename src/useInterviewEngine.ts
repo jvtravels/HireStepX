@@ -1442,7 +1442,26 @@ export function useInterviewEngine() {
                      closing, so the user hears one clean wrap instead
                      of "kernel wrap" + "static notice-period boilerplate"
                      back-to-back. */
-                  const wrapStep = { ...updated[nextQuestionIdx], type: "closing" as const, scoreNote: "Negotiation kernel terminal wrap" };
+                  /* waitForUser: false — the kernel has reached a
+                     terminal phase (accepted / walked-away / stalemate),
+                     so the conversation is over. Inheriting waitForUser
+                     from the followUpStep (true) left phase="listening"
+                     after the kernel's wrap-up text finished, which
+                     surfaced the "Start Speaking" mic instead of routing
+                     into the phase==="done" branch that owns the
+                     post-interview report flow (DealSummaryCard, eval
+                     overlay, "View Result" CTA). Forcing waitForUser
+                     false here is the single signal the UI uses to
+                     transition into the done phase for ALL terminal
+                     kernel phases — accepted, walked-away, stalemate
+                     (and any future terminal phase the kernel adds, as
+                     long as it sets the server's terminal flag). */
+                  const wrapStep = {
+                    ...updated[nextQuestionIdx],
+                    type: "closing" as const,
+                    waitForUser: false,
+                    scoreNote: "Negotiation kernel terminal wrap",
+                  };
                   return [...updated.slice(0, nextQuestionIdx), wrapStep];
                 }
                 // Mark remaining pre-generated questions (after the replaced one) with adaptive placeholders
