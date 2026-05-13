@@ -177,3 +177,48 @@ describe("Phase 25b — compensation history", () => {
     expect(mergeCandidateProfile(prior, next).compensationHistoryIssue).toBe("unpaid");
   });
 });
+
+describe("Phase 26 — service-bond detection", () => {
+  it("detects 'service agreement'", () => {
+    expect(extractCandidateProfile("I'm on a 2-year service agreement").serviceBondAccepted).toBe(true);
+  });
+
+  it("detects 'training bond'", () => {
+    expect(extractCandidateProfile("There's a training bond at my current firm.").serviceBondAccepted).toBe(true);
+  });
+
+  it("detects 'signed a bond'", () => {
+    expect(extractCandidateProfile("I signed a bond when I joined.").serviceBondAccepted).toBe(true);
+  });
+
+  it("does NOT false-fire on 'bond market' / 'bonds'", () => {
+    expect(extractCandidateProfile("I work in the bond market.").serviceBondAccepted).toBe(false);
+  });
+
+  it("merge: serviceBondAccepted is monotone-up", () => {
+    const prior = mergeCandidateProfile(null, extractCandidateProfile("I have a service agreement"));
+    expect(prior.serviceBondAccepted).toBe(true);
+    const next = extractCandidateProfile("just discussing comp now");
+    expect(mergeCandidateProfile(prior, next).serviceBondAccepted).toBe(true);
+  });
+});
+
+describe("Phase 26 — probation-comp detection", () => {
+  it("detects 'probation salary'", () => {
+    expect(extractCandidateProfile("Will the probation salary differ from confirmed?").probationCompMentioned).toBe(true);
+  });
+
+  it("detects 'during probation'", () => {
+    expect(extractCandidateProfile("During probation, is comp different?").probationCompMentioned).toBe(true);
+  });
+
+  it("detects 'post-confirmation salary'", () => {
+    expect(extractCandidateProfile("What's the post-confirmation salary?").probationCompMentioned).toBe(true);
+  });
+
+  it("merge: probationCompMentioned is monotone-up", () => {
+    const prior = mergeCandidateProfile(null, extractCandidateProfile("probation salary please"));
+    expect(prior.probationCompMentioned).toBe(true);
+    expect(mergeCandidateProfile(prior, extractCandidateProfile("ok")).probationCompMentioned).toBe(true);
+  });
+});

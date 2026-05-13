@@ -88,6 +88,8 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       domainPivot: false,
       transferableSkillsClaimed: false,
       compensationHistoryIssue: null,
+      serviceBondAccepted: false,
+      probationCompMentioned: false,
       hasAny: false,
     },
     miscSignals: {

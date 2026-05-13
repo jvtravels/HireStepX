@@ -58,7 +58,12 @@ export type RedFlagCode =
   | "domain-pivot-full-rate"
   | "compensation-history-issue"
   | "rigid-no-range"
-  | "offer-no-company-disclosure";
+  | "offer-no-company-disclosure"
+  /* Phase 26 — commitment / structure gaps. */
+  | "offer-drop-risk"
+  | "buyout-amount-unspecified"
+  | "service-bond-unverified"
+  | "probation-comp-unclarified";
 
 export type RedFlagSeverity = "info" | "concern" | "blocker";
 
@@ -131,6 +136,15 @@ const REWRITES: Record<RedFlagCode, string> = {
     "Say: \"I'm targeting ₹X-Y LPA fixed based on market for <role> at <tier>. I'm flexible on structure if we land in that range.\"",
   "offer-no-company-disclosure":
     "Say: \"My competing offer is from <Company> at <stage> — I can share the offer letter under NDA if useful for your benchmarking.\"",
+  /* Phase 26 — commitment / structure gaps. */
+  "offer-drop-risk":
+    "Say: \"I have accepted another offer, and I'm being transparent about that. I'm still evaluating because this role aligns more strongly with my target — but I want a responsible decision either way.\"",
+  "buyout-amount-unspecified":
+    "Say: \"My buyout works out to ₹X based on my last-drawn — happy to confirm the exact figure with my HR. I'd want this reimbursed as part of joining bonus.\"",
+  "service-bond-unverified":
+    "Say: \"My current bond is for N years with a ₹X penalty on early exit. I'm comfortable signing a bond here too if the terms — duration, exit conditions, financial penalty — are clear up front.\"",
+  "probation-comp-unclarified":
+    "Say: \"Could we confirm whether the probation-period salary matches the post-confirmation CTC? I'd like the offer letter to spell out both numbers explicitly.\"",
 };
 
 interface DetectorInput {
@@ -151,6 +165,12 @@ const HUGE_HIKE_THRESHOLD = 40;
  * absence of an annual figure on the same turn. */
 const MONTHLY_FIGURE = /\b(\d{2,3}(?:[.,]\d+)?)\s*k?\s*(?:per\s+month|\/\s*month|monthly|p\.?m\.?)\b/i;
 const ANNUAL_CONTEXT = /\b(lpa|lakhs?\s+per\s+(?:year|annum)|annual|per\s+annum|p\.?a\.?|cr|crore)\b/i;
+
+/* Phase 26 — buyout-amount cue. The candidate (or recruiter) named a
+ * specific rupee figure adjacent to a buyout / notice-buyout / serve-
+ * notice token. Used as the "amount stated" signal — buyoutRequested
+ * without this cue surfaces as `buyout-amount-unspecified`. */
+const BUYOUT_AMOUNT_PATTERN = /\b(?:buyout|buy[-\s]?out|notice[-\s]?buyout|serve\s+notice|early\s+release)\b[^.\n]{0,80}?[₹rs.]*\s*(\d+(?:[.,]\d+)?)\s*(?:l|lpa|lakhs?|k|thousand|cr|crore)?/i;
 
 /* Phase 25 — "nothing below ₹X" / "minimum ₹X" / "won't accept under ₹X"
  * surface a hard floor with no range. Distinct from `demands-no-flex`
@@ -485,6 +505,58 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
       code: "offer-no-company-disclosure",
       severity: "concern",
       detail: "competing offer amount stated but counterparty company never disclosed — unverifiable",
+    });
+  }
+
+  /* Phase 26 — commitment / structure gaps. */
+
+  /* 26. Offer-drop risk. Candidate already accepted a competing offer
+   *     (stage="accepted") but is still in this conversation — material
+   *     signal the recruiter needs to factor into their commit decision. */
+  if (state.competingOfferDetail.stage === "accepted") {
+    out.push({
+      code: "offer-drop-risk",
+      severity: "blocker",
+      detail: "candidate already accepted a competing offer but is still negotiating — high drop-risk after offer issued",
+    });
+  }
+
+  /* 27. Buyout requested but amount unspecified. Notice-period buyout
+   *     is on the table; without a rupee figure the recruiter cannot
+   *     size the joining-bonus ask. The utterance must mention buyout
+   *     WITHOUT a number; if the candidate names a ₹ amount we let it
+   *     through. */
+  if (
+    state.noticeJoining.buyoutRequested &&
+    u &&
+    !BUYOUT_AMOUNT_PATTERN.test(u)
+  ) {
+    out.push({
+      code: "buyout-amount-unspecified",
+      severity: "info",
+      detail: "buyout discussed but no rupee amount cited — recruiter can't size the joining-bonus ask",
+    });
+  }
+
+  /* 28. Service-bond accepted without verification. Candidate brought
+   *     up a bond / service agreement; surfaces as concern so the
+   *     recruiter ensures the candidate knows the exit terms. */
+  if (state.candidateProfile.serviceBondAccepted) {
+    out.push({
+      code: "service-bond-unverified",
+      severity: "concern",
+      detail: "candidate raised service-agreement / bond — exit conditions and financial penalty should be confirmed in writing",
+    });
+  }
+
+  /* 29. Probation-comp unclarified. Mentioned but the candidate hasn't
+   *     also locked written confirmation that probation = post-confirm
+   *     comp; we surface so the recruiter prompts for it. */
+  if (state.candidateProfile.probationCompMentioned) {
+    out.push({
+      code: "probation-comp-unclarified",
+      severity: "info",
+      detail: "probation comp surfaced — confirm probation salary matches post-confirmation CTC in the offer letter",
     });
   }
 

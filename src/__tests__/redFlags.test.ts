@@ -291,7 +291,7 @@ describe("Phase 25 — domain-pivot-full-rate", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: true, transferableSkillsClaimed: true,
-        compensationHistoryIssue: null, hasAny: true,
+        compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("domain-pivot-full-rate");
@@ -303,7 +303,7 @@ describe("Phase 25 — domain-pivot-full-rate", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: true, transferableSkillsClaimed: true,
-        compensationHistoryIssue: null, hasAny: true,
+        compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("domain-pivot-full-rate");
@@ -321,7 +321,7 @@ describe("Phase 25 — compensation-history-issue", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
-        compensationHistoryIssue: "delayed", hasAny: true,
+        compensationHistoryIssue: "delayed", serviceBondAccepted: false, probationCompMentioned: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("compensation-history-issue");
@@ -332,7 +332,7 @@ describe("Phase 25 — compensation-history-issue", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
-        compensationHistoryIssue: "unpaid", hasAny: true,
+        compensationHistoryIssue: "unpaid", serviceBondAccepted: false, probationCompMentioned: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("compensation-history-issue");
@@ -382,7 +382,7 @@ describe("Phase 25 — offer-no-company-disclosure", () => {
       turnIndex: 3,
       competingOffer: 28,
       competingOfferDetail: {
-        company: "Razorpay", status: "verbal", stage: "offer", letterShareOffered: false, hasAny: true,
+        company: "Razorpay", status: "verbal", stage: "offered", letterShareOffered: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("offer-no-company-disclosure");
@@ -397,5 +397,94 @@ describe("Phase 25 — offer-no-company-disclosure", () => {
       },
     });
     expect(codes(state)).not.toContain("offer-no-company-disclosure");
+  });
+});
+
+describe("Phase 26 — offer-drop-risk", () => {
+  it("fires when competing offer is already accepted", () => {
+    const state = baseState({
+      competingOffer: 30,
+      competingOfferDetail: {
+        company: "Razorpay", status: "signed", stage: "accepted", letterShareOffered: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("offer-drop-risk");
+  });
+
+  it("does NOT fire when stage is offered (still deciding)", () => {
+    const state = baseState({
+      competingOffer: 30,
+      competingOfferDetail: {
+        company: "Razorpay", status: "letter", stage: "offered", letterShareOffered: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).not.toContain("offer-drop-risk");
+  });
+});
+
+describe("Phase 26 — buyout-amount-unspecified", () => {
+  it("fires when buyout discussed but no amount in utterance", () => {
+    const state = baseState({
+      noticeJoining: {
+        noticePeriodDays: 90, buyoutRequested: true, joiningBonusAsk: null,
+        earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false,
+        lastWorkingDayText: null, hasAny: true,
+      },
+    });
+    expect(codes(state, emptyStance, "I'd like a notice buyout but need to check the amount."))
+      .toContain("buyout-amount-unspecified");
+  });
+
+  it("does NOT fire when buyout utterance names ₹ amount", () => {
+    const state = baseState({
+      noticeJoining: {
+        noticePeriodDays: 90, buyoutRequested: true, joiningBonusAsk: null,
+        earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false,
+        lastWorkingDayText: null, hasAny: true,
+      },
+    });
+    expect(codes(state, emptyStance, "My notice buyout is ₹3L based on last-drawn."))
+      .not.toContain("buyout-amount-unspecified");
+  });
+
+  it("does NOT fire when buyout not requested at all", () => {
+    expect(codes(baseState(), emptyStance, "I'll serve full notice."))
+      .not.toContain("buyout-amount-unspecified");
+  });
+});
+
+describe("Phase 26 — service-bond-unverified", () => {
+  it("fires when candidate raised service-bond on profile", () => {
+    const state = baseState({
+      candidateProfile: {
+        careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
+        levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
+        compensationHistoryIssue: null, serviceBondAccepted: true,
+        probationCompMentioned: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("service-bond-unverified");
+  });
+
+  it("does NOT fire when bond never raised", () => {
+    expect(codes(baseState())).not.toContain("service-bond-unverified");
+  });
+});
+
+describe("Phase 26 — probation-comp-unclarified", () => {
+  it("fires when probation comp surfaced", () => {
+    const state = baseState({
+      candidateProfile: {
+        careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
+        levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
+        compensationHistoryIssue: null, serviceBondAccepted: false,
+        probationCompMentioned: true, hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("probation-comp-unclarified");
+  });
+
+  it("does NOT fire when probation never raised", () => {
+    expect(codes(baseState())).not.toContain("probation-comp-unclarified");
   });
 });

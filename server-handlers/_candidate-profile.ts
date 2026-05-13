@@ -81,6 +81,15 @@ export interface CandidateProfileResult {
   transferableSkillsClaimed: boolean;
   /** Phase 25b — payroll history issue. Null when not stated. */
   compensationHistoryIssue: CompensationHistoryIssue | null;
+  /** Phase 26 — service-agreement / training bond accepted or being
+   *  asked about. True when the candidate has signed (or is being asked
+   *  to sign) a bond. Doesn't say whether terms are clear — that's the
+   *  red-flag's job to surface. */
+  serviceBondAccepted: boolean;
+  /** Phase 26 — probation period vs confirmed salary distinction surfaced
+   *  in dialogue. True when probation is mentioned in a comp context
+   *  (i.e. probation salary may differ from post-confirmation salary). */
+  probationCompMentioned: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -93,6 +102,8 @@ const EMPTY: CandidateProfileResult = {
   domainPivot: false,
   transferableSkillsClaimed: false,
   compensationHistoryIssue: null,
+  serviceBondAccepted: false,
+  probationCompMentioned: false,
   hasAny: false,
 };
 
@@ -277,6 +288,38 @@ function detectCompensationHistoryIssue(
   return null;
 }
 
+/* Phase 26 — service-agreement / training-bond patterns. Fires when the
+ * candidate either accepts a bond or is being explicitly asked about
+ * one in a current/prior employment context. The red-flag layer then
+ * surfaces it as "unverified" unless the candidate also discussed exit
+ * conditions / financial penalty. */
+const SERVICE_BOND_PATTERNS: RegExp[] = [
+  /\bservice\s+(?:agreement|bond|commitment)\b/i,
+  /\btraining\s+bond\b/i,
+  /\b(?:\d+)[-\s]?(?:year|yr|years|yrs)\s+(?:bond|commitment|service\s+agreement)\b/i,
+  /\bsigned?\s+a?\s+bond\b/i,
+  /\bbond\s+(?:period|amount|penalty|clause|terms?)\b/i,
+];
+
+function detectServiceBond(text: string): boolean {
+  return SERVICE_BOND_PATTERNS.some((p) => p.test(text));
+}
+
+/* Phase 26 — probation-comp patterns. The probation period typically
+ * carries a lower salary than post-confirmation comp; recruiters often
+ * leave this implicit. Fires when probation is mentioned alongside a
+ * comp/salary token, OR explicitly named as a comp period. */
+const PROBATION_COMP_PATTERNS: RegExp[] = [
+  /\bprobation\s+(?:period|salary|comp(?:ensation)?|pay|ctc)\b/i,
+  /\b(?:during|in)\s+probation\b/i,
+  /\bpost[-\s]?(?:confirmation|probation)\s+(?:salary|comp|ctc|pay)\b/i,
+  /\b(?:after|once)\s+(?:confirmation|probation)\s+(?:i|my|the)?\s*(?:salary|ctc|pay|comp)/i,
+];
+
+function detectProbationComp(text: string): boolean {
+  return PROBATION_COMP_PATTERNS.some((p) => p.test(text));
+}
+
 export function extractCandidateProfile(text: string): CandidateProfileResult {
   if (!text) return EMPTY;
 
@@ -302,6 +345,8 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const levelMismatch = extractLevelMismatch(text);
   const { domainPivot, transferableSkillsClaimed } = detectDomainPivot(text);
   const compensationHistoryIssue = detectCompensationHistoryIssue(text);
+  const serviceBondAccepted = detectServiceBond(text);
+  const probationCompMentioned = detectProbationComp(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -310,7 +355,9 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     levelMismatch != null ||
     domainPivot ||
     transferableSkillsClaimed ||
-    compensationHistoryIssue != null;
+    compensationHistoryIssue != null ||
+    serviceBondAccepted ||
+    probationCompMentioned;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -319,6 +366,8 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     domainPivot,
     transferableSkillsClaimed,
     compensationHistoryIssue,
+    serviceBondAccepted,
+    probationCompMentioned,
     hasAny,
   };
 }
@@ -346,6 +395,11 @@ export function mergeCandidateProfile(
         : p.compensationHistoryIssue === "unpaid"
           ? "unpaid"
           : (next.compensationHistoryIssue ?? p.compensationHistoryIssue),
+    /* Phase 26 — both fields are monotone-up: once the candidate has
+     * disclosed a bond or raised the probation-comp question, the
+     * recruiter would remember through the rest of the session. */
+    serviceBondAccepted: p.serviceBondAccepted || next.serviceBondAccepted,
+    probationCompMentioned: p.probationCompMentioned || next.probationCompMentioned,
     hasAny: false,
   };
   merged.hasAny =
@@ -355,6 +409,8 @@ export function mergeCandidateProfile(
     merged.levelMismatch != null ||
     merged.domainPivot ||
     merged.transferableSkillsClaimed ||
-    merged.compensationHistoryIssue != null;
+    merged.compensationHistoryIssue != null ||
+    merged.serviceBondAccepted ||
+    merged.probationCompMentioned;
   return merged;
 }

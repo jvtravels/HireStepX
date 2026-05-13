@@ -359,6 +359,8 @@ describe("parseCandidateAnswer", () => {
         domainPivot: false,
         transferableSkillsClaimed: false,
         compensationHistoryIssue: null,
+        serviceBondAccepted: false,
+        probationCompMentioned: false,
         hasAny: false,
       },
       miscSignals: {

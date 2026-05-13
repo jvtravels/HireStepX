@@ -524,6 +524,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       domainPivot: false,
       transferableSkillsClaimed: false,
       compensationHistoryIssue: null,
+      serviceBondAccepted: false,
+      probationCompMentioned: false,
       hasAny: false,
     },
     miscSignals: {
@@ -738,7 +740,7 @@ export function parseCandidateAnswer(
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
-      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
     };
@@ -1834,6 +1836,8 @@ function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
     domainPivot: v?.domainPivot ?? false,
     transferableSkillsClaimed: v?.transferableSkillsClaimed ?? false,
     compensationHistoryIssue: v?.compensationHistoryIssue ?? null,
+    serviceBondAccepted: v?.serviceBondAccepted ?? false,
+    probationCompMentioned: v?.probationCompMentioned ?? false,
     hasAny: v?.hasAny ?? false,
   };
 }
