@@ -49,6 +49,7 @@ import {
   deterministicFallbackText,
   stripMarkdown,
 } from "./_negotiate-turn-helpers";
+import { enforceRoleLabel } from "./_role-label";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { experienceLevelFromYoe } from "./_candidate-profile";
 import { getCompanyTier } from "../data/company-tiers";
@@ -265,7 +266,7 @@ export async function generateAiText(
     return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [a1.error], envelopeMissingAttempts };
   }
   if (!a1.envelopeOk) envelopeMissingAttempts++;
-  if (a1.failures.length === 0) return { text: a1.text, source: "llm", failureKinds, envelopeMissingAttempts };
+  if (a1.failures.length === 0) return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
   failureKinds.push(...a1.failures);
 
   /* Retry with explicit failure feedback in the prompt. */
@@ -278,7 +279,7 @@ export async function generateAiText(
     return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds: [...failureKinds, a2.error], envelopeMissingAttempts };
   }
   if (!a2.envelopeOk) envelopeMissingAttempts++;
-  if (a2.failures.length === 0) return { text: a2.text, source: "llm-retry", failureKinds, envelopeMissingAttempts };
+  if (a2.failures.length === 0) return { text: enforceRoleLabel(a2.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
   failureKinds.push(...a2.failures);
 
   return { text: deterministicFallbackText(state, move), source: "fallback", failureKinds, envelopeMissingAttempts };

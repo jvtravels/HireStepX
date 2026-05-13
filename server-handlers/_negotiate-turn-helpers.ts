@@ -277,7 +277,8 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
       ? ` Also include the one-time joining bonus amount ₹${move.joiningBonusAmount}L verbatim in \`text\` and frame it as ONE-TIME (not annual).`
       : "") +
     (state.role
-      ? ` When you reference the position, use the role label "${state.role}" verbatim and echo it in roleMentioned.`
+      ? ` When you reference the position, use the role label "${state.role}" verbatim and echo it in roleMentioned.` +
+        ` The role label is EXACTLY "${state.role}". NEVER add seniority prefixes like "Senior", "Lead", "Principal", "Junior", "Staff", "Associate" unless they are part of the literal role string above.`
       : ` Set roleMentioned="" if you do not name the role.`) +
     ` Set leverExecuted="${move.lever}".`;
 
