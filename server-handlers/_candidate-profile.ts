@@ -444,7 +444,11 @@ interface DomainCanon {
 
 /* Lowercase-keyword → canonical domain. Order matters: more-specific
  * phrases first so "product designer" beats "designer". */
-const DOMAIN_KEYWORDS: Array<[RegExp, string]> = [
+/* Exported for the domain-graph invariant test
+ * (src/__tests__/domainGraphInvariants.test.ts). Not part of the
+ * runtime public API — leading double underscore signals "internal,
+ * audit-only". */
+export const __DOMAIN_KEYWORDS_INTERNAL: Array<[RegExp, string]> = [
   [/\b(product\s+design(er)?|ux\s+design(er)?|ui\/?ux|interaction\s+design)\b/i, "product-design"],
   [/\b(visual\s+design|graphic\s+design|brand\s+design)\b/i, "visual-design"],
   [/\b(java\s+(backend|developer|engineer)|spring\s+boot|java\s+ee|j2ee)\b/i, "java-backend"],
@@ -489,12 +493,21 @@ const DOMAIN_KEYWORDS: Array<[RegExp, string]> = [
 
 /* Adjacency graph — keyed by canonical domain. Edges are bidirectional
  * conceptually but stored from-each-side for O(1) lookup. */
-const ADJACENT: Record<string, string[]> = {
+/* Session A (2026-05-14) audit — graph normalised to be bidirectional
+ * and every key referenced by DOMAIN_KEYWORDS / by an edge value MUST
+ * be a key in this record (no orphan nodes). The runtime classifier
+ * uses `cand.adj.includes(b) || b.adj.includes(a)` so prior asymmetries
+ * were behaviour-equivalent, but the audit invariant test now enforces
+ * proper bidirectionality so the graph can be reasoned about. The
+ * operations / hr-people / finance / qa / education buckets remain
+ * intentionally pivot-only (no outgoing adjacency) — this is the
+ * design intent from bug-report 13. */
+export const __ADJACENT_INTERNAL: Record<string, string[]> = {
   "product-design": ["visual-design", "frontend"],
   "visual-design": ["product-design"],
   "frontend": ["fullstack", "mobile", "product-design"],
-  "fullstack": ["frontend", "backend"],
-  "backend": ["fullstack", "java-backend", "python-backend", "node-backend", "dotnet-backend", "go-backend", "devops"],
+  "fullstack": ["frontend", "backend", "java-backend", "node-backend"],
+  "backend": ["fullstack", "java-backend", "python-backend", "node-backend", "dotnet-backend", "go-backend", "devops", "data-engineering", "security"],
   "java-backend": ["backend", "fullstack"],
   "python-backend": ["backend", "data-engineering"],
   "node-backend": ["backend", "fullstack"],
@@ -502,12 +515,12 @@ const ADJACENT: Record<string, string[]> = {
   "go-backend": ["backend", "devops"],
   "mobile": ["frontend"],
   "data-science": ["data-engineering", "data-analyst"],
-  "data-engineering": ["data-science", "backend"],
-  "data-analyst": ["data-science", "product-management"],
-  "devops": ["backend", "security"],
+  "data-engineering": ["data-science", "backend", "python-backend"],
+  "data-analyst": ["data-science", "product-management", "business"],
+  "devops": ["backend", "security", "go-backend"],
   "security": ["devops", "backend"],
-  "product-management": ["product-marketing", "program-management", "data-analyst"],
-  "program-management": ["product-management"],
+  "product-management": ["product-marketing", "program-management", "data-analyst", "customer-success", "management"],
+  "program-management": ["product-management", "management"],
   "product-marketing": ["product-management", "marketing"],
   "marketing": ["product-marketing", "content"],
   "sales": ["customer-success"],
@@ -520,15 +533,20 @@ const ADJACENT: Record<string, string[]> = {
    * pivot to keep applicableYoe=0 and prevent over-anchoring. */
   "management": ["product-management", "program-management"],
   "business": ["data-analyst", "consulting"],
+  "consulting": ["business"],
+  "content": ["marketing"],
+  /* Pivot-only buckets — empty adjacency by design. */
   "operations": [],
   "hr-people": [],
   "finance": [],
+  "qa": [],
+  "education": [],
 };
 
 function canonDomain(s: string | null | undefined): DomainCanon | null {
   if (!s) return null;
-  for (const [pat, key] of DOMAIN_KEYWORDS) {
-    if (pat.test(s)) return { key, adjacent: ADJACENT[key] ?? [] };
+  for (const [pat, key] of __DOMAIN_KEYWORDS_INTERNAL) {
+    if (pat.test(s)) return { key, adjacent: __ADJACENT_INTERNAL[key] ?? [] };
   }
   return null;
 }

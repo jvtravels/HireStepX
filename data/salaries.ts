@@ -3352,6 +3352,12 @@ export function matchRoleKey(role: string): RoleKey {
     chro: "hr",
     cmo: "marketing",
     cro: "sales",
+    /* Session A audit (2026-05-14) — acronyms that previously fell to
+     * software-engineer default. */
+    tpm: "program-manager",
+    pmm: "product-marketing-manager",
+    sde: "software-engineer",
+    swe: "software-engineer",
   };
   if (acronymMap[normalized]) return acronymMap[normalized];
 
@@ -3791,8 +3797,13 @@ export function matchRoleKey(role: string): RoleKey {
     [["relationship manager", "bank po", "ibps po", "sbi po", "sales executive", "sales manager", "account executive", "key account manager", "business development manager", "channel manager", "territory manager", "area sales manager", "regional sales manager", "branch manager", "wealth manager", "loan officer", "financial advisor", "medical representative", "real estate agent", "property consultant"], "sales"],
     /* Marketing / Brand — needed for FMCG MT track. */
     [["brand manager", "marketing manager", "digital marketing", "growth manager", "performance marketing", "product marketing manager", "marketing executive", "management trainee", "category manager", "shopper marketing"], "marketing"],
-    /* Operations — aviation / hotels / hospital / general ops. */
-    [["operations manager", "operations executive", "ops manager", "supply chain", "logistics manager", "warehouse manager", "fleet manager", "front office", "f&b manager", "f and b manager", "housekeeping manager", "ground staff", "cabin crew", "flight attendant", "airport operations", "ground operations", "operations analyst", "production manager", "delivery manager", "shift manager", "site engineer", "site manager", "plant manager", "plant head", "category buyer", "store manager", "retail manager", "buyer", "merchandiser", "visual merchandiser", "marketplace manager", "ecommerce manager", "catalog manager", "listing specialist", "pricing analyst", "pricing manager", "import-export", "trade compliance", "custom broker", "process engineer", "quality engineer", "quality manager", "industrial engineer", "ehs manager", "safety officer", "lean manager", "continuous improvement manager", "kaizen manager", "maintenance engineer", "reliability engineer", "estimation engineer", "tender manager", "planning engineer", "quantity surveyor", "tour operator", "travel consultant", "travel manager", "hotel manager", "chef", "sous chef", "head chef", "executive chef", "pastry chef", "bartender", "sommelier"], "operations"],
+    /* Operations — aviation / hotels / hospital / general ops.
+     * Session A audit (2026-05-14): added "operations lead", "ops lead",
+     * "mgr operations", "manager operations" so abbreviations + reversed
+     * word-order ("Mgr. Operations") classify correctly. */
+    [["operations lead", "ops lead", "head of operations", "head of ops",
+      "mgr operations", "manager operations", "asst manager operations",
+      "operations manager", "operations executive", "ops manager", "supply chain", "logistics manager", "warehouse manager", "fleet manager", "front office", "f&b manager", "f and b manager", "housekeeping manager", "ground staff", "cabin crew", "flight attendant", "airport operations", "ground operations", "operations analyst", "production manager", "delivery manager", "shift manager", "site engineer", "site manager", "plant manager", "plant head", "category buyer", "store manager", "retail manager", "buyer", "merchandiser", "visual merchandiser", "marketplace manager", "ecommerce manager", "catalog manager", "listing specialist", "pricing analyst", "pricing manager", "import-export", "trade compliance", "custom broker", "process engineer", "quality engineer", "quality manager", "industrial engineer", "ehs manager", "safety officer", "lean manager", "continuous improvement manager", "kaizen manager", "maintenance engineer", "reliability engineer", "estimation engineer", "tender manager", "planning engineer", "quantity surveyor", "tour operator", "travel consultant", "travel manager", "hotel manager", "chef", "sous chef", "head chef", "executive chef", "pastry chef", "bartender", "sommelier"], "operations"],
     /* Sound / audio engineering — domain "operations" rather than SWE. */
     [["sound engineer", "audio engineer", "music producer", "dj", "composer"], "operations"],
     /* Writing / editorial / journalism / content design — was silently
