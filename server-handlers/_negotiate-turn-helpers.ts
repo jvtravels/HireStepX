@@ -477,6 +477,25 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
     hints.push("Candidate is under-qualified for the stated level. Either re-level the offer (one band down with matching CTC), or anchor the CTC at the lower-band ceiling. Do not stretch on a level fit you can't justify.");
   }
 
+  /* Phase 29 (2026-05-14) — role-applicable YOE framing. When the
+   * candidate's primary domain differs from the target role's domain
+   * (a true domain pivot), we surface BOTH numbers so the recruiter
+   * prose anchors on entry/mid for the target role and explicitly
+   * acknowledges transferable-but-not-paid-for tenure. Guard: only
+   * fire when applicableYoe is materially below totalYoe (≥ 2yr gap),
+   * so a one-year-tenured cross-domain candidate doesn't trigger the
+   * full pivot speech. */
+  if (
+    typeof state.candidateTotalYoe === "number" &&
+    typeof state.candidateApplicableYoe === "number" &&
+    state.candidateTotalYoe - state.candidateApplicableYoe >= 2
+  ) {
+    const domain = state.candidatePrimaryDomain || "their prior field";
+    hints.push(
+      `CANDIDATE CONTEXT: ${state.candidateTotalYoe} yrs total experience in ${domain}, but ${state.candidateApplicableYoe} yrs applicable to ${state.role || "this role"}. Treat as domain pivot — expect modest hike expectations, anchor on entry/mid band for target role, acknowledge transferable skills but do not pay senior rates for unrelated tenure.`,
+    );
+  }
+
   /* Phase 17F — floor / review-cycle / proof / counter-risk. */
   const ms = state.miscSignals;
   if (ms && ms.candidateFloor != null) {

@@ -78,10 +78,58 @@ function normalizeResumeProfile(profile: Record<string, unknown>): Record<string
     }
   }
   // Scalar string fields — coerce in case the LLM nested them
-  for (const key of ["headline", "summary", "careerTrajectory", "seniorityLevel"]) {
+  for (const key of ["headline", "summary", "careerTrajectory", "seniorityLevel", "primaryDomain"]) {
     if (profile[key] != null && typeof profile[key] !== "string") {
       profile[key] = asPlainString(profile[key]);
     }
+  }
+  // Default primaryDomain to "" so downstream consumers can rely on
+  // the field existing.
+  if (typeof profile.primaryDomain !== "string") profile.primaryDomain = "";
+
+  // ─── totalYearsExperience — structured numeric YOE ─────────────────
+  // Phase 29 (2026-05-14). The LLM also emits a legacy `yearsExperience`
+  // field which we preserve; totalYearsExperience is the new canonical
+  // signal. Coerce to a non-negative integer (clamp 0..50) or null.
+  {
+    const raw = profile.totalYearsExperience;
+    let v: number | null = null;
+    if (typeof raw === "number" && Number.isFinite(raw)) v = raw;
+    else if (typeof raw === "string" && raw.trim()) {
+      const parsed = parseFloat(raw);
+      if (Number.isFinite(parsed)) v = parsed;
+    }
+    if (v == null && typeof profile.yearsExperience === "number" && Number.isFinite(profile.yearsExperience as number)) {
+      // Fall back to the legacy field — same semantic for resumes that
+      // existed before the prompt was updated.
+      v = profile.yearsExperience as number;
+    }
+    if (v != null) {
+      v = Math.max(0, Math.min(50, Math.round(v)));
+      profile.totalYearsExperience = v;
+    } else {
+      profile.totalYearsExperience = 0;
+    }
+  }
+
+  // ─── domainYearsExperience — { domain: years } map ─────────────────
+  // Optional, defaults to {}. Values clamped 0..50.
+  {
+    const raw = profile.domainYearsExperience;
+    const out: Record<string, number> = {};
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+        const name = asPlainString(k);
+        let years: number | null = null;
+        if (typeof v === "number" && Number.isFinite(v)) years = v;
+        else if (typeof v === "string") {
+          const parsed = parseFloat(v);
+          if (Number.isFinite(parsed)) years = parsed;
+        }
+        if (name && years != null) out[name] = Math.max(0, Math.min(50, Math.round(years)));
+      }
+    }
+    profile.domainYearsExperience = out;
   }
 
   // ─── Structured experiences[] ──────────────────────────────────────
@@ -244,6 +292,9 @@ Return a JSON object with ALL of these fields filled in thoroughly:
   "headline": "A compelling one-line professional identity (e.g. 'Senior Product Designer with 5+ years in B2B SaaS')",
   "summary": "A 2-3 sentence professional narrative covering their career arc, key strengths, and what makes them stand out. Write in third person. Be specific — reference actual companies, roles, or domains from the resume.",
   "yearsExperience": <number or null>,
+  "totalYearsExperience": <integer 0-50. The candidate's TOTAL career years of experience overall, regardless of domain. Sum of all professional work history. Example: a Senior Product Designer with 6 years across two companies → 6.>,
+  "primaryDomain": "<short canonical domain label for the candidate's strongest functional area, e.g. 'Product Design', 'Java Backend', 'Frontend Engineering', 'Data Science', 'Product Management', 'Sales', 'Marketing'. Pick ONE — the area where the resume shows the most depth + recency. This is critical: downstream logic uses primaryDomain vs the target role to decide whether the candidate is a domain pivot vs an in-domain hire.>",
+  "domainYearsExperience": { "<domain label>": <years>, ... } /* optional. Years per distinct domain when the resume shows split experience, e.g. {"Product Design": 5, "Frontend Engineering": 1}. Omit or return {} if the candidate has only one domain. */,
   "seniorityLevel": "<one of: Entry, Mid, Senior, Staff, Lead, Principal, Director, VP, C-Suite>",
   "scoreBreakdown": {
     "quantifiedAchievements": <integer 0-20. How well bullets use numbers, percentages, dollar amounts. 0 = no metrics anywhere; 10 = some bullets quantified; 20 = nearly every accomplishment has a metric.>,

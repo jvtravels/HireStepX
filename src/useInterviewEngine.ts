@@ -44,6 +44,7 @@ import { useInterviewSTT } from "./useInterviewSTT";
 import { extractNegotiationFacts } from "./interviewEvaluation";
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { detectRoleLabelMismatch } from "../server-handlers/_role-mismatch";
+import { computeApplicableYoe } from "../server-handlers/_candidate-profile";
 import { matchRoleKey as matchSalaryRoleKey } from "../data/salaries";
 import { getCompanyTier } from "../data/company-tiers";
 import {
@@ -2019,9 +2020,31 @@ export function useInterviewEngine() {
                  by calling init then immediately turn — two round-trips
                  first turn only, single round-trip every turn after. */
               if (!negotiationKernelStateRef.current) {
+                /* Phase 29 (2026-05-14) — role-applicable YOE plumbing.
+                   Pull totalYearsExperience + primaryDomain off the
+                   resume's aiProfile and combine with the session
+                   targetRole to compute applicableYoe. A Senior Product
+                   Designer with 6 yrs applying for "Java Developer"
+                   yields applicableYoe=0; the server uses that to pick
+                   the entry-level band instead of senior. */
+                const aiProf = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as
+                  | { totalYearsExperience?: number; primaryDomain?: string }
+                  | undefined;
+                const totalYoeFromResume = typeof aiProf?.totalYearsExperience === "number"
+                  ? aiProf.totalYearsExperience
+                  : null;
+                const primaryDomainFromResume = typeof aiProf?.primaryDomain === "string" && aiProf.primaryDomain
+                  ? aiProf.primaryDomain
+                  : null;
+                const sessionRole = targetRole || user?.targetRole || "swe";
+                const yoeResult = computeApplicableYoe({
+                  totalYoe: totalYoeFromResume,
+                  primaryDomain: primaryDomainFromResume,
+                  targetRole: sessionRole,
+                });
                 const initRes = await negotiationKernelInit({
                   sessionId: crypto.randomUUID(),
-                  role: targetRole || user?.targetRole || "swe",
+                  role: sessionRole,
                   company: targetCompany || user?.targetCompany || "",
                   band: {
                     initialOffer: band.initialOffer,
@@ -2035,6 +2058,9 @@ export function useInterviewEngine() {
                      through to generateNegotiationBand without an
                      experienceLevel hint. */
                   experienceLevel: user?.experienceLevel || undefined,
+                  totalYoe: totalYoeFromResume,
+                  applicableYoe: yoeResult.applicableYoe,
+                  primaryDomain: primaryDomainFromResume,
                 });
                 if (!initRes) return null;
                 negotiationKernelStateRef.current = initRes.state;

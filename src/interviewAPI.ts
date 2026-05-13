@@ -751,6 +751,15 @@ export async function negotiationKernelInit(params: {
    *  band from data/salary-lookup so seniority propagates into the
    *  band ceiling. Undefined falls back to title-regex inference. */
   experienceLevel?: string;
+  /** Phase 29 (2026-05-14) — role-applicable YOE. When the candidate's
+   *  primary domain (from the resume) differs from the target role's
+   *  domain, applicableYoe collapses (pivot=0, adjacent=0.5x, match=1x)
+   *  and the server uses it to derive the band experienceLevel instead
+   *  of the onboarding-time field. All optional; nullish falls back to
+   *  the legacy experienceLevel path. */
+  totalYoe?: number | null;
+  applicableYoe?: number | null;
+  primaryDomain?: string | null;
 }): Promise<NegotiationKernelResponse | null> {
   return postKernel({ action: "init", ...params });
 }

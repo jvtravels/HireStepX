@@ -50,6 +50,7 @@ import {
   stripMarkdown,
 } from "./_negotiate-turn-helpers";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
+import { experienceLevelFromYoe } from "./_candidate-profile";
 import { getCompanyTier } from "../data/company-tiers";
 import { detectAdversarialInput, JAILBREAK_DEFLECTION_TEXT } from "./_adversarial-detector";
 
@@ -108,10 +109,22 @@ function inferExperienceFromRole(role: string): string | undefined {
   return undefined;
 }
 
-function resolveServerBand(role: string, company: string, experienceLevel?: string): NegotiationBand {
+function resolveServerBand(
+  role: string,
+  company: string,
+  experienceLevel?: string,
+  applicableYoe?: number | null,
+): NegotiationBand {
   if (!role) return DEFAULT_BAND;
   try {
-    const expForBand = experienceLevel || inferExperienceFromRole(role);
+    /* Phase 29 — when applicableYoe is known, derive the level from it
+     * instead of trusting the onboarding-time experienceLevel. The
+     * domain-pivot scenario (Senior PD → Java) explicitly requires this:
+     * onboarding said "senior" but applicableYoe=0, so band must be
+     * "entry". applicableYoe wins, then onboarding experienceLevel,
+     * then title-regex inference. */
+    const expFromYoe = experienceLevelFromYoe(applicableYoe ?? null);
+    const expForBand = expFromYoe || experienceLevel || inferExperienceFromRole(role);
     const b = generateNegotiationBand({ role, company: company || undefined, experienceLevel: expForBand });
     /* SEMANTIC NORMALISATION: salary-lookup.ts stores `walkAway` as the
        RECRUITER's upper ceiling (= 1.1 × maxStretch — i.e. an ask above
@@ -148,6 +161,17 @@ interface InitRequest {
    *  (May 2026 session). Untrusted in the sense that the salary-lookup
    *  pipeline gates downstream, but the field itself is informational. */
   experienceLevel?: string;
+  /* Phase 29 (2026-05-14) — role-applicable YOE. The client computes
+   * (totalYoe, primaryDomain) from the resume and applicableYoe from
+   * the (primaryDomain, role) pair. When applicableYoe is provided, it
+   * trumps experienceLevel — a Senior Product Designer pivoting to
+   * Java would carry experienceLevel="senior" from onboarding but
+   * applicableYoe≈0, and the band must reflect the latter. Untrusted
+   * in the band-resolution sense (salary-lookup gates downstream), but
+   * the dispatch field is informational. */
+  totalYoe?: number | null;
+  applicableYoe?: number | null;
+  primaryDomain?: string | null;
 }
 
 interface TurnRequest {
@@ -304,7 +328,16 @@ export default async function handler(
       const company = body.company || "";
       /* SECURITY: ignore body.band. Recompute server-side from (role,
          company) so a tampered client can't push the band ceiling. */
-      const resolvedBand = resolveServerBand(role, company, body.experienceLevel);
+      const applicableYoe = typeof body.applicableYoe === "number" && Number.isFinite(body.applicableYoe)
+        ? body.applicableYoe
+        : null;
+      const totalYoe = typeof body.totalYoe === "number" && Number.isFinite(body.totalYoe)
+        ? body.totalYoe
+        : null;
+      const primaryDomain = typeof body.primaryDomain === "string" && body.primaryDomain
+        ? body.primaryDomain
+        : null;
+      const resolvedBand = resolveServerBand(role, company, body.experienceLevel, applicableYoe);
       const companyTier = getCompanyTier(company);
 
       /* Wipro UI/UX session (May 2026) revealed the failure mode that
@@ -370,6 +403,9 @@ export default async function handler(
         company,
         band: serverBand,
         maxTurns: body.maxTurns,
+        candidateTotalYoe: totalYoe,
+        candidateApplicableYoe: applicableYoe,
+        candidatePrimaryDomain: primaryDomain,
       });
       const move = pickAiMove(state);
       const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, "", llm, auth.userId);

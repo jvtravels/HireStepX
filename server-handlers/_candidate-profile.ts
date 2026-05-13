@@ -372,6 +372,163 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   };
 }
 
+/* ─── Phase 29 (2026-05-14) — Role-applicable YOE ────────────────────
+ *
+ * A Senior Product Designer with 6 years of experience applying for a
+ * Java Developer role has totalYoe=6 but applicableYoe≈0 — the
+ * negotiation kernel must NOT pay senior rates for unrelated tenure.
+ *
+ * Two inputs:
+ *   - resumeProfile.primaryDomain (e.g. "Product Design", "Java
+ *     Backend", "Data Science") — emitted by analyze-resume.
+ *   - targetRole (e.g. "java developer") — known at session start.
+ *
+ * Three outcomes:
+ *   - match    → applicableYoe = totalYoe
+ *   - adjacent → applicableYoe = totalYoe * 0.5
+ *   - pivot    → applicableYoe = 0
+ *
+ * Conservative: when primaryDomain is missing/empty we fall back to
+ * domainPivot / transferableSkillsClaimed utterance signals (if a pivot
+ * is asserted in dialogue, applicableYoe collapses to 0).
+ *
+ * Pure: no clock, no IO. */
+
+interface ApplicableYoeInputs {
+  totalYoe: number | null;
+  primaryDomain: string | null;
+  targetRole: string;
+  /** Optional fallbacks from utterance-derived candidateProfile. */
+  domainPivot?: boolean;
+}
+
+interface DomainCanon {
+  /** Canonical domain key surfaced from a free-form string. */
+  key: string;
+  /** Adjacent domains by canonical key. */
+  adjacent: string[];
+}
+
+/* Lowercase-keyword → canonical domain. Order matters: more-specific
+ * phrases first so "product designer" beats "designer". */
+const DOMAIN_KEYWORDS: Array<[RegExp, string]> = [
+  [/\b(product\s+design(er)?|ux\s+design(er)?|ui\/?ux|interaction\s+design)\b/i, "product-design"],
+  [/\b(visual\s+design|graphic\s+design|brand\s+design)\b/i, "visual-design"],
+  [/\b(java\s+(backend|developer|engineer)|spring\s+boot|java\s+ee|j2ee)\b/i, "java-backend"],
+  [/\b(python\s+backend|django|flask|fastapi)\b/i, "python-backend"],
+  [/\b(node\.?js|nodejs\s+backend|express\s+backend)\b/i, "node-backend"],
+  [/\b(\.net|c#|dotnet)\s+(backend|developer|engineer)?\b/i, "dotnet-backend"],
+  [/\b(go(lang)?\s+(backend|developer|engineer))\b/i, "go-backend"],
+  [/\b(backend\s+(engineer|developer|engineering)|server[-\s]side)\b/i, "backend"],
+  [/\b(frontend\s+(engineer|developer|engineering)|react|angular|vue|web\s+frontend)\b/i, "frontend"],
+  [/\b(full[-\s]?stack)\b/i, "fullstack"],
+  [/\b(mobile|android|ios|react\s+native|flutter)\s*(engineer|developer)?\b/i, "mobile"],
+  [/\b(data\s+(science|scientist)|machine\s+learning|ml\s+engineer|ai\s+engineer)\b/i, "data-science"],
+  [/\b(data\s+(engineer|engineering)|etl|pipeline|warehouse)\b/i, "data-engineering"],
+  [/\b(data\s+analyst|business\s+analyst|analytics)\b/i, "data-analyst"],
+  [/\b(devops|sre|site\s+reliability|platform\s+engineer|infrastructure)\b/i, "devops"],
+  [/\b(security\s+engineer|appsec|infosec|cybersecurity)\b/i, "security"],
+  [/\b(product\s+manager|product\s+management|pm\b)\b/i, "product-management"],
+  [/\b(program\s+manager|tpm|technical\s+program)\b/i, "program-management"],
+  [/\b(product\s+marketing|pmm)\b/i, "product-marketing"],
+  [/\b(marketing\s+(manager|lead)?|growth\s+marketing|digital\s+marketing)\b/i, "marketing"],
+  [/\b(sales\s+(engineer|executive|manager)?|account\s+executive|sdr|bdr)\b/i, "sales"],
+  [/\b(customer\s+success|cs\s+manager|implementation)\b/i, "customer-success"],
+  [/\b(qa\s+(engineer)?|test\s+(engineer|automation)|sdet)\b/i, "qa"],
+  [/\b(content\s+(writer|strategist)|technical\s+writer|copywriter)\b/i, "content"],
+  [/\b(hr|human\s+resources|people\s+ops|recruiter|talent\s+acquisition)\b/i, "hr"],
+  [/\b(finance|accountant|controller|fp&a)\b/i, "finance"],
+  [/\b(operations|ops\s+manager)\b/i, "operations"],
+  [/\b(consultant|consulting|advisory)\b/i, "consulting"],
+  [/\b(teach(ing|er)?|educator|instructor|professor)\b/i, "education"],
+];
+
+/* Adjacency graph — keyed by canonical domain. Edges are bidirectional
+ * conceptually but stored from-each-side for O(1) lookup. */
+const ADJACENT: Record<string, string[]> = {
+  "product-design": ["visual-design", "frontend"],
+  "visual-design": ["product-design"],
+  "frontend": ["fullstack", "mobile", "product-design"],
+  "fullstack": ["frontend", "backend"],
+  "backend": ["fullstack", "java-backend", "python-backend", "node-backend", "dotnet-backend", "go-backend", "devops"],
+  "java-backend": ["backend", "fullstack"],
+  "python-backend": ["backend", "data-engineering"],
+  "node-backend": ["backend", "fullstack"],
+  "dotnet-backend": ["backend"],
+  "go-backend": ["backend", "devops"],
+  "mobile": ["frontend"],
+  "data-science": ["data-engineering", "data-analyst"],
+  "data-engineering": ["data-science", "backend"],
+  "data-analyst": ["data-science", "product-management"],
+  "devops": ["backend", "security"],
+  "security": ["devops", "backend"],
+  "product-management": ["product-marketing", "program-management", "data-analyst"],
+  "program-management": ["product-management"],
+  "product-marketing": ["product-management", "marketing"],
+  "marketing": ["product-marketing", "content"],
+  "sales": ["customer-success"],
+  "customer-success": ["sales", "product-management"],
+};
+
+function canonDomain(s: string | null | undefined): DomainCanon | null {
+  if (!s) return null;
+  for (const [pat, key] of DOMAIN_KEYWORDS) {
+    if (pat.test(s)) return { key, adjacent: ADJACENT[key] ?? [] };
+  }
+  return null;
+}
+
+export type ApplicableYoeRelation = "match" | "adjacent" | "pivot" | "unknown";
+
+export interface ApplicableYoeResult {
+  applicableYoe: number | null;
+  relation: ApplicableYoeRelation;
+  /** The canonical key inferred for the candidate's primary domain. */
+  candidateDomainKey: string | null;
+  /** The canonical key inferred for the target role's domain. */
+  targetDomainKey: string | null;
+}
+
+/** Map (primaryDomain, targetRole, totalYoe) → applicableYoe.
+ *  Pure. */
+export function computeApplicableYoe(input: ApplicableYoeInputs): ApplicableYoeResult {
+  const { totalYoe, primaryDomain, targetRole, domainPivot } = input;
+  const cand = canonDomain(primaryDomain);
+  const tgt = canonDomain(targetRole);
+
+  /* Conservative defaults when we can't classify both sides. */
+  if (totalYoe == null) {
+    return { applicableYoe: null, relation: "unknown", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
+  }
+  if (!cand || !tgt) {
+    /* If the utterance-layer signalled a pivot, honour it — applicableYoe
+     * collapses regardless of missing canonicalisation. Otherwise we
+     * cannot tell, so default to totalYoe (no penalty). */
+    if (domainPivot) {
+      return { applicableYoe: 0, relation: "pivot", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
+    }
+    return { applicableYoe: totalYoe, relation: "unknown", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
+  }
+  if (cand.key === tgt.key) {
+    return { applicableYoe: totalYoe, relation: "match", candidateDomainKey: cand.key, targetDomainKey: tgt.key };
+  }
+  if (cand.adjacent.includes(tgt.key) || tgt.adjacent.includes(cand.key)) {
+    return { applicableYoe: Math.round(totalYoe * 0.5 * 10) / 10, relation: "adjacent", candidateDomainKey: cand.key, targetDomainKey: tgt.key };
+  }
+  return { applicableYoe: 0, relation: "pivot", candidateDomainKey: cand.key, targetDomainKey: tgt.key };
+}
+
+/** Convert applicableYoe → experienceLevel keyword consumed by the
+ *  salary-lookup band resolver. Buckets: 0–1 entry, 2–4 mid, 5–8 senior,
+ *  9+ staff. Null when no signal. Pure. */
+export function experienceLevelFromYoe(yoe: number | null | undefined): "entry" | "mid" | "senior" | "staff" | null {
+  if (yoe == null || !Number.isFinite(yoe)) return null;
+  if (yoe <= 1) return "entry";
+  if (yoe <= 4) return "mid";
+  if (yoe <= 8) return "senior";
+  return "staff";
+}
+
 export function mergeCandidateProfile(
   prior: CandidateProfileResult | null | undefined,
   next: CandidateProfileResult,

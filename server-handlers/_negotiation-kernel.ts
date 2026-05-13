@@ -463,6 +463,18 @@ export interface NegotiationState {
    * affects the new-employer's leverage: they now have to beat TWO
    * numbers, and the candidate's "exit story" gets noisier. */
   retentionCounter: RetentionCounterResult;
+
+  /* Phase 29 (2026-05-14) — Role-applicable YOE. Distinguishes the
+   * candidate's TOTAL career YOE from the YOE that maps to the TARGET
+   * role's domain. A Senior Product Designer with 6 years applying for
+   * a Java Developer role has totalYoe=6 but applicableYoe≈0; the
+   * kernel must use applicableYoe (not totalYoe) when sizing the band,
+   * the hike%, and the recruiter framing for a domain pivot. All three
+   * are session-immutable once initialised (computed from resumeProfile
+   * + targetRole at init); null = unknown signal. */
+  candidateTotalYoe: number | null;
+  candidateApplicableYoe: number | null;
+  candidatePrimaryDomain: string | null;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -479,6 +491,11 @@ export interface InitStateExtras {
   hardBandCap?: boolean;
   marketMode?: MarketMode;
   recruiterPersona?: RecruiterPersona;
+  /* Phase 29 — role-applicable YOE plumbed from the client (resume
+   * profile + target role). All three optional; defaults to null. */
+  candidateTotalYoe?: number | null;
+  candidateApplicableYoe?: number | null;
+  candidatePrimaryDomain?: string | null;
 }
 
 export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
@@ -593,6 +610,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     salesOTE: { ...EMPTY_SALES_OTE },
     contractRate: { ...EMPTY_CONTRACT_RATE },
     retentionCounter: { ...EMPTY_RETENTION_COUNTER },
+    candidateTotalYoe: input.candidateTotalYoe ?? null,
+    candidateApplicableYoe: input.candidateApplicableYoe ?? null,
+    candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
   };
 }
 
@@ -1948,6 +1968,21 @@ export function validateState(state: unknown): asserts state is NegotiationState
     if (dd.conditionalEvidence !== null && typeof dd.conditionalEvidence !== "string") throw new Error("state.decisionDeadline.conditionalEvidence");
     if (typeof dd.hasAny !== "boolean") throw new Error("state.decisionDeadline.hasAny");
   }
+  /* Phase 29 — role-applicable YOE. All three optional + null-tolerant
+   * for back-compat with in-flight sessions. */
+  if (s.candidateTotalYoe !== undefined && !isFiniteNumOrNull(s.candidateTotalYoe)) {
+    throw new Error("state.candidateTotalYoe");
+  }
+  if (s.candidateApplicableYoe !== undefined && !isFiniteNumOrNull(s.candidateApplicableYoe)) {
+    throw new Error("state.candidateApplicableYoe");
+  }
+  if (
+    s.candidatePrimaryDomain !== undefined &&
+    s.candidatePrimaryDomain !== null &&
+    typeof s.candidatePrimaryDomain !== "string"
+  ) {
+    throw new Error("state.candidatePrimaryDomain");
+  }
   if (s.candidateProfile !== undefined) {
     const cp = s.candidateProfile as Record<string, unknown>;
     if (!cp || typeof cp !== "object") throw new Error("state.candidateProfile");
@@ -2043,6 +2078,11 @@ export function deserializeState(json: string): NegotiationState {
     salesOTE: (s.salesOTE as SalesOTEResult | undefined) ?? { ...EMPTY_SALES_OTE },
     contractRate: (s.contractRate as ContractRateResult | undefined) ?? { ...EMPTY_CONTRACT_RATE },
     retentionCounter: (s.retentionCounter as RetentionCounterResult | undefined) ?? { ...EMPTY_RETENTION_COUNTER },
+    /* Phase 29 — role-applicable YOE. Optional for back-compat with
+     * in-flight sessions serialized before this field shipped. */
+    candidateTotalYoe: (s.candidateTotalYoe as number | null | undefined) ?? null,
+    candidateApplicableYoe: (s.candidateApplicableYoe as number | null | undefined) ?? null,
+    candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
   };
 }
 

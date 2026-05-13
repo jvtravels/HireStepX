@@ -77,6 +77,9 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       internalCounterRisk: null, hasAny: false,
     },
     retentionCounter: { amountLpa: null, declined: false, hasAny: false },
+    candidateTotalYoe: null,
+    candidateApplicableYoe: null,
+    candidatePrimaryDomain: null,
     candidateStance: emptyStance(),
     salesOTE: {
       oteAmount: null, baseAmount: null, attainmentPct: null,
