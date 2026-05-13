@@ -75,6 +75,7 @@ import {
 import {
   extractCandidateProfile,
   mergeCandidateProfile,
+  detectFreshGradDisclosure,
   type CandidateProfileResult,
 } from "./_candidate-profile";
 import {
@@ -475,6 +476,14 @@ export interface NegotiationState {
   candidateTotalYoe: number | null;
   candidateApplicableYoe: number | null;
   candidatePrimaryDomain: string | null;
+
+  /* Bug-report 11 (2026-05-14) — mid-session fresh-grad disclosure. The
+   * candidate told us mid-conversation that they're pre-graduate / a
+   * fresh grad / still in college. When true, candidateApplicableYoe is
+   * forced to 0 and the AI MUST acknowledge the disclosure in the next
+   * turn (band stays as-resolved at init for now; the brief surfaces
+   * a hint so the recruiter prose downshifts). Sticky once set. */
+  freshGradDisclosed: boolean;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -613,6 +622,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateTotalYoe: input.candidateTotalYoe ?? null,
     candidateApplicableYoe: input.candidateApplicableYoe ?? null,
     candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
+    freshGradDisclosed: false,
   };
 }
 
@@ -1123,6 +1133,18 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   if (parsed.candidateProfile.hasAny) {
     next.candidateProfile = mergeCandidateProfile(state.candidateProfile, parsed.candidateProfile);
   }
+
+  /* Bug-report 11 (2026-05-14) — fresh-grad disclosure overrides the
+   * resume-derived applicableYoe. If the candidate says "I'm pre-grad"
+   * / "fresh graduate" / "still in college" mid-session, force
+   * candidateApplicableYoe to 0 and flip freshGradDisclosed sticky-true.
+   * The brief in _negotiate-turn-helpers surfaces this so the AI
+   * acknowledges the disclosure rather than continuing to anchor on
+   * the senior bucket inferred from the resume. */
+  if (!state.freshGradDisclosed && detectFreshGradDisclosure(answer)) {
+    next.freshGradDisclosed = true;
+    next.candidateApplicableYoe = 0;
+  }
   if (parsed.miscSignals.hasAny) {
     next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
   }
@@ -1401,6 +1423,32 @@ export function pickAiMove(state: NegotiationState): AiMove {
       lever: "close-stalemate",
       newTotalLpa: state.highestOfferMade || state.band.initialOffer,
       rationale: "Turn budget exhausted; offer time to think.",
+    };
+  }
+
+  /* Bug-report 11 (2026-05-14) — candidate ask BELOW current offer.
+   * Real failure mode: AI opened at ₹25L, candidate asked ₹14L, AI
+   * countered down to ₹24.5L (still way above ask). The candidate had
+   * just signalled willingness to accept materially less than what's
+   * on the table; the right move is to close at the candidate-favorable
+   * lower number (min of offer and ask), not to keep negotiating up.
+   *
+   * Gate fires only when the candidate has stated a target AND there's
+   * an offer on the table AND the target is at-or-below the offer.
+   * Routes directly to close-acceptance at min(offer, target). */
+  if (
+    state.candidateTarget != null &&
+    state.highestOfferMade > 0 &&
+    state.candidateTarget <= state.highestOfferMade &&
+    !isTerminalPhase(state.phase)
+  ) {
+    const accLpa = Math.min(state.highestOfferMade, state.candidateTarget);
+    const jb = state.lastJoiningBonusOffered;
+    return {
+      lever: "close-acceptance",
+      newTotalLpa: accLpa,
+      joiningBonusAmount: jb != null ? jb : undefined,
+      rationale: `Candidate ask ₹${state.candidateTarget}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (candidate-favorable).`,
     };
   }
 
@@ -2083,6 +2131,7 @@ export function deserializeState(json: string): NegotiationState {
     candidateTotalYoe: (s.candidateTotalYoe as number | null | undefined) ?? null,
     candidateApplicableYoe: (s.candidateApplicableYoe as number | null | undefined) ?? null,
     candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
+    freshGradDisclosed: (s.freshGradDisclosed as boolean | undefined) ?? false,
   };
 }
 

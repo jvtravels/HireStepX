@@ -320,6 +320,39 @@ function detectProbationComp(text: string): boolean {
   return PROBATION_COMP_PATTERNS.some((p) => p.test(text));
 }
 
+/* ─── Bug-report 11 (2026-05-14) — Fresh-grad disclosure ─────────────
+ *
+ * A candidate may disclose mid-session that they are actually a pre-
+ * graduate / fresh graduate / still in college / have zero applicable
+ * experience. The previous parser had no signal for this: applicableYoe
+ * was frozen at init from the resume, so a "Senior Product Designer"
+ * resume applying for Business Analyst kept the senior bucket forever
+ * even when the candidate said "I'm graduating, pre-graduate."
+ *
+ * Returns true when ANY of the following are stated:
+ *   - "pre-graduate", "pre graduation", "yet to graduate"
+ *   - "fresh graduate", "fresher", "freshly graduated"
+ *   - "still in college", "still studying", "final year"
+ *   - "haven't graduated", "haven't completed"
+ *   - explicit "0 years of experience" / "no experience" in context
+ *   - "graduating this year / next month / soon" (active student)
+ * Pure. */
+const FRESH_GRAD_PATTERNS: RegExp[] = [
+  /\b(pre[-\s]?grad(?:uate|uation)?|yet\s+to\s+graduate)\b/i,
+  /\b(fresh(?:\s+|-)?grad(?:uate)?|fresher|fresh(?:ly|er|ers)?\s+(?:graduated|out\s+of\s+(?:college|university)))\b/i,
+  /\b(still\s+(?:in\s+college|in\s+university|studying|a\s+student)|final[-\s]?year(?:\s+student)?|last[-\s]?year\s+(?:student|college))\b/i,
+  /\b(haven'?t\s+(?:graduated|completed\s+(?:my\s+)?(?:degree|college))|not\s+(?:yet\s+)?graduated)\b/i,
+  /\b(graduating\s+(?:this\s+year|next\s+(?:month|year)|soon|in\s+\w+))\b/i,
+  /\b(0|zero)\s+(?:years?|yrs?)\s+(?:of\s+)?(?:experience|exp|yoe)\b/i,
+  /\b(no\s+(?:prior\s+|professional\s+|real\s+|actual\s+)?(?:work\s+)?experience)\b/i,
+  /\bi'?m\s+(?:graduating|a\s+fresher|a\s+fresh\s+grad)\b/i,
+];
+
+export function detectFreshGradDisclosure(text: string): boolean {
+  if (!text) return false;
+  return FRESH_GRAD_PATTERNS.some((p) => p.test(text));
+}
+
 export function extractCandidateProfile(text: string): CandidateProfileResult {
   if (!text) return EMPTY;
 

@@ -157,6 +157,18 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "When you refer to the position, use the role label VERBATIM. Do " +
   "not substitute a different job title, do not 'upgrade' to 'Senior X' " +
   "if it says 'X', do not invent a company name.\n" +
+  /* Bug-report 11 (2026-05-14) — the LLM was opening with a role
+     derived from the candidate's RESUME (Senior Product Designer)
+     instead of the SESSION target role (Business Analyst). Resume
+     context never enters this prompt, but the LLM still sometimes
+     fabricates a plausible role from cached / training-data context.
+     This rule is absolute: the ONLY authoritative role is SESSION
+     CONTEXT 'role='. If you do not have a role= field, refer to the
+     position as 'this role' / 'the role', NEVER infer one. */
+  " - The candidate's prior job title (from their resume) is NEVER " +
+  "the role being negotiated. Do NOT mention any job title other " +
+  "than the one in SESSION CONTEXT 'role='. If 'role=' is missing, " +
+  "say 'this role' / 'the role' generically; never invent.\n" +
   " - NEVER emit a unit ('LPA', 'lakhs', '₹') without an adjacent " +
   "number. If you don't have a number for a slot, omit the unit too.\n" +
   " - Indian context. INR / LPA. Conversational, professional, " +
@@ -475,6 +487,17 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
   }
   if (cp && cp.levelMismatch === "under") {
     hints.push("Candidate is under-qualified for the stated level. Either re-level the offer (one band down with matching CTC), or anchor the CTC at the lower-band ceiling. Do not stretch on a level fit you can't justify.");
+  }
+
+  /* Bug-report 11 (2026-05-14) — mid-session fresh-grad disclosure.
+   * Sticky on state once detected; forces applicableYoe=0. The
+   * recruiter MUST acknowledge the disclosure and reframe at the
+   * entry-level expectation — do not silently keep anchoring at
+   * resume-derived seniority. */
+  if (state.freshGradDisclosed) {
+    hints.push(
+      `FRESH-GRAD DISCLOSURE — candidate has revealed they are pre-graduate / fresh graduate / 0 YOE applicable to ${state.role || "this role"}. Acknowledge this disclosure explicitly in your next turn. Reframe your anchor at the entry-level band; do not keep offering senior-bucket numbers. If the offer on the table is materially above entry-band, name the new anchor at the entry 35th-percentile and explain the recalibration honestly.`,
+    );
   }
 
   /* Phase 29 (2026-05-14) — role-applicable YOE framing. When the
@@ -1020,7 +1043,12 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
   const n = move.newTotalLpa;
   switch (move.lever) {
     case "open-with-offer":
-      return `Our offer for this role is ₹${n} LPA total CTC. What's your reaction?`;
+      /* Bug-report 11 fix: pin the role label to the SESSION target
+       * (state.role), never any resume-derived role. When state.role
+       * is unset we deliberately stay generic ('this role'). */
+      return state.role
+        ? `Our offer for the ${state.role} position is ₹${n} LPA total CTC. What's your reaction?`
+        : `Our offer for this role is ₹${n} LPA total CTC. What's your reaction?`;
     case "probe":
       return `Before we go further — what range were you expecting for this role?`;
     case "counter-base":

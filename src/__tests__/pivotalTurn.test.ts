@@ -80,6 +80,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
     candidateTotalYoe: null,
     candidateApplicableYoe: null,
     candidatePrimaryDomain: null,
+    freshGradDisclosed: false,
     candidateStance: emptyStance(),
     salesOTE: {
       oteAmount: null, baseAmount: null, attainmentPct: null,

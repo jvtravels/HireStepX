@@ -6238,11 +6238,19 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       executive: { totalMin: 22, totalMax: 59, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x qa-engineer)", lastVerified: "2026-05-08" },
     },
     "business-analyst": {
-      entry: { totalMin: 2, totalMax: 11, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x business-analyst)", lastVerified: "2026-05-08" },
-      mid: { totalMin: 7, totalMax: 20, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x business-analyst)", lastVerified: "2026-05-08" },
-      senior: { totalMin: 12, totalMax: 34, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x business-analyst)", lastVerified: "2026-05-08" },
-      lead: { totalMin: 20, totalMax: 53, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x business-analyst)", lastVerified: "2026-05-08" },
-      executive: { totalMin: 28, totalMax: 74, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x business-analyst)", lastVerified: "2026-05-08" },
+      /* Recalibrated 2026-05-14 from bug-report 11. Prior seed-dataset
+       * bands (totalMax=34 senior, 11 entry) implied entry-level
+       * Accenture BAs could top out at ₹11L which was both too high
+       * for entry and too low for senior; opening offer landed at
+       * resume-derived "senior" bucket of ₹25L despite 0 YOE. New
+       * bands are derived from Google/AmbitionBox/Glassdoor 2026:
+       * entry 1-3y ₹6-8L, mid 3-6y ₹9-12L, senior 6-9y ₹14-18L,
+       * with lead/executive tracking IT-services scaling. */
+      entry: { totalMin: 6, totalMax: 8, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Business Analyst (Associate, 1-3 yrs)", lastVerified: "2026-05-14" },
+      mid: { totalMin: 9, totalMax: 12, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Business Analyst (3-6 yrs)", lastVerified: "2026-05-14" },
+      senior: { totalMin: 14, totalMax: 18, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Senior Business Analyst (6-9 yrs)", lastVerified: "2026-05-14" },
+      lead: { totalMin: 20, totalMax: 28, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Lead BA / Consultant (9+ yrs)", lastVerified: "2026-05-14" },
+      executive: { totalMin: 28, totalMax: 42, equityType: "none", source: "AmbitionBox/Glassdoor 2026-05-14 — Accenture Principal/Senior Manager BA", lastVerified: "2026-05-14" },
     },
     "project-manager": {
       entry: { totalMin: 6, totalMax: 14, equityType: "none", source: "Seed dataset 2026-05-08 (accenture 0.62x project-manager)", lastVerified: "2026-05-08" },
