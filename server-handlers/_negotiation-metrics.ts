@@ -28,6 +28,10 @@ import type {
   InfoIntent,
   MarketMode,
 } from "./_negotiation-kernel";
+import {
+  critiqueRecruiterStrategy,
+  type RecruiterCritiqueItem,
+} from "./_recruiter-critique";
 
 export interface KernelTurnSummary {
   /** The lever the AI pulled on this turn. */
@@ -88,6 +92,11 @@ export interface NegotiationMetrics {
    *  need this to interpret bandTraversal — pushing 0.9 traversal in a
    *  hot market is different from doing so in a soft one. */
   marketMode: MarketMode;
+  /** Phase 23 — recruiter-side strategy critique. Graded against the
+   *  AI's own moves (anchoring, pacing, hold-firm credibility, etc.).
+   *  Empty array = no detected mistakes. Pure derivation from the
+   *  same final-state + move history; no transcript re-parse. */
+  recruiterCritique: ReadonlyArray<RecruiterCritiqueItem>;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -140,6 +149,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     walkAwayReturned: finalState.walkAwayReturned ?? false,
     hardBandCap: finalState.hardBandCap ?? false,
     marketMode: finalState.marketMode ?? "neutral",
+    recruiterCritique: critiqueRecruiterStrategy({ finalState, moves }),
   };
 }
 
