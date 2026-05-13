@@ -108,3 +108,35 @@ describe("mergeCompetingOfferDetail", () => {
     expect(mergeCompetingOfferDetail(null, next).company).toBe("google");
   });
 });
+
+describe("Phase 27 — competing-offer onHold detection", () => {
+  it("detects 'joining is on hold'", () => {
+    expect(extractCompetingOfferDetail("My joining is on hold at Flipkart.").onHold).toBe(true);
+  });
+
+  it("detects 'offer rescinded'", () => {
+    expect(extractCompetingOfferDetail("They rescinded the offer after the hiring freeze.").onHold).toBe(true);
+  });
+
+  it("detects 'BGV is pending'", () => {
+    expect(extractCompetingOfferDetail("BGV is pending, joining delayed").onHold).toBe(true);
+  });
+
+  it("detects 'joining frozen'", () => {
+    expect(extractCompetingOfferDetail("joining is frozen until Q3").onHold).toBe(true);
+  });
+
+  it("false when not mentioned", () => {
+    expect(extractCompetingOfferDetail("I have a great offer from Google").onHold).toBe(false);
+  });
+
+  it("merge: onHold is monotone-up", () => {
+    const prior = extractCompetingOfferDetail("joining is on hold");
+    const next = extractCompetingOfferDetail("hello");
+    expect(mergeCompetingOfferDetail(prior, next).onHold).toBe(true);
+  });
+
+  it("hasAny true when only onHold fires", () => {
+    expect(extractCompetingOfferDetail("joining is on hold").hasAny).toBe(true);
+  });
+});

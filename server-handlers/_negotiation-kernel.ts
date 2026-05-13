@@ -98,6 +98,12 @@ import {
   type SalesOTEResult,
   type ContractRateResult,
 } from "./_comp-structure";
+import {
+  extractRetentionCounter,
+  mergeRetentionCounter,
+  EMPTY_RETENTION_COUNTER,
+  type RetentionCounterResult,
+} from "./_retention-counter";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -427,6 +433,11 @@ export interface NegotiationState {
    * quoted ₹40L OTE 3 turns ago; what was the base?"). */
   salesOTE: SalesOTEResult;
   contractRate: ContractRateResult;
+
+  /* Phase 27 — retention-counter from current employer. Materially
+   * affects the new-employer's leverage: they now have to beat TWO
+   * numbers, and the candidate's "exit story" gets noisier. */
+  retentionCounter: RetentionCounterResult;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -507,6 +518,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       status: null,
       stage: null,
       letterShareOffered: false,
+      onHold: false,
       hasAny: false,
     },
     decisionDeadline: {
@@ -552,6 +564,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     },
     salesOTE: { ...EMPTY_SALES_OTE },
     contractRate: { ...EMPTY_CONTRACT_RATE },
+    retentionCounter: { ...EMPTY_RETENTION_COUNTER },
   };
 }
 
@@ -600,6 +613,8 @@ export interface ParsedAnswer {
   miscSignals: MiscSignalsResult;
   /* Phase 18 — candidate stance / posture scalars. */
   candidateStance: CandidateStanceResult;
+  /* Phase 27 — retention-counter from current employer. */
+  retentionCounter: RetentionCounterResult;
 }
 
 /* Parse the candidate's free-text answer for salary-relevant numbers
@@ -738,11 +753,12 @@ export function parseCandidateAnswer(
       noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false, lastWorkingDayText: null, hasAny: false },
       equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: false },
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
-      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, hasAny: false },
+      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
       candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
+      retentionCounter: { ...EMPTY_RETENTION_COUNTER },
     };
   }
 
@@ -870,6 +886,7 @@ export function parseCandidateAnswer(
   const candidateProfile = extractCandidateProfile(a);
   const miscSignals = extractMiscSignals(a);
   const candidateStance = extractCandidateStance(a);
+  const retentionCounter = extractRetentionCounter(a);
 
   /* Phase 17A — when a conditional acceptance fires, the legacy
    * `signalsAcceptance` boolean must be downgraded. A conditional
@@ -895,6 +912,7 @@ export function parseCandidateAnswer(
     candidateProfile,
     miscSignals,
     candidateStance,
+    retentionCounter,
   };
 }
 
@@ -1044,6 +1062,9 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   }
   if (parsed.miscSignals.hasAny) {
     next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
+  }
+  if (parsed.retentionCounter.hasAny) {
+    next.retentionCounter = mergeRetentionCounter(state.retentionCounter, parsed.retentionCounter);
   }
   /* Phase 21 — pass recovery signals so posture booleans (desperate,
    * salary-only, avoids-anchor, personal-expense, offer-shopping) can
@@ -1807,9 +1828,7 @@ export function deserializeState(json: string): NegotiationState {
     locationMode: (s.locationMode as LocationModeResult | undefined) ?? {
       workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false,
     },
-    competingOfferDetail: (s.competingOfferDetail as CompetingOfferDetail | undefined) ?? {
-      company: null, status: null, stage: null, letterShareOffered: false, hasAny: false,
-    },
+    competingOfferDetail: backfillCompetingOfferDetail(s.competingOfferDetail),
     decisionDeadline: (s.decisionDeadline as DecisionDeadlineResult | undefined) ?? {
       deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false,
     },
@@ -1820,6 +1839,22 @@ export function deserializeState(json: string): NegotiationState {
     candidateStance: backfillCandidateStance(s.candidateStance),
     salesOTE: (s.salesOTE as SalesOTEResult | undefined) ?? { ...EMPTY_SALES_OTE },
     contractRate: (s.contractRate as ContractRateResult | undefined) ?? { ...EMPTY_CONTRACT_RATE },
+    retentionCounter: (s.retentionCounter as RetentionCounterResult | undefined) ?? { ...EMPTY_RETENTION_COUNTER },
+  };
+}
+
+/* Phase 27 — competingOfferDetail.onHold was added after the wire format
+ * first deployed. Legacy in-flight sessions serialized this without the
+ * onHold key; backfill it. */
+function backfillCompetingOfferDetail(raw: unknown): CompetingOfferDetail {
+  const v = raw as Partial<CompetingOfferDetail> | undefined;
+  return {
+    company: v?.company ?? null,
+    status: v?.status ?? null,
+    stage: v?.stage ?? null,
+    letterShareOffered: v?.letterShareOffered ?? false,
+    onHold: v?.onHold ?? false,
+    hasAny: v?.hasAny ?? false,
   };
 }
 

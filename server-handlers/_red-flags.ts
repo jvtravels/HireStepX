@@ -63,7 +63,11 @@ export type RedFlagCode =
   | "offer-drop-risk"
   | "buyout-amount-unspecified"
   | "service-bond-unverified"
-  | "probation-comp-unclarified";
+  | "probation-comp-unclarified"
+  /* Phase 27 — retention / competing-leverage / FBP. */
+  | "retention-counter-trap"
+  | "competing-offer-on-hold"
+  | "fbp-not-discussed";
 
 export type RedFlagSeverity = "info" | "concern" | "blocker";
 
@@ -145,6 +149,13 @@ const REWRITES: Record<RedFlagCode, string> = {
     "Say: \"My current bond is for N years with a ₹X penalty on early exit. I'm comfortable signing a bond here too if the terms — duration, exit conditions, financial penalty — are clear up front.\"",
   "probation-comp-unclarified":
     "Say: \"Could we confirm whether the probation-period salary matches the post-confirmation CTC? I'd like the offer letter to spell out both numbers explicitly.\"",
+  /* Phase 27 — retention / competing-leverage / FBP. */
+  "retention-counter-trap":
+    "Say: \"My current employer offered a retention counter at ₹X — I've declined it. Industry data shows counter-accepters leave within 6 months anyway; my move here is forward-looking, not a leverage play.\"",
+  "competing-offer-on-hold":
+    "Say: \"To be transparent — my competing offer at <Company> is on hold due to BGV / joining freeze. I'm not using it as leverage; I'm evaluating you on your own merits and a fair market band.\"",
+  "fbp-not-discussed":
+    "Say: \"Before we close on a number, can we walk through the FBP — HRA, LTA, telephone, fuel — so I can compare apples-to-apples on in-hand, not just CTC?\"",
 };
 
 interface DetectorInput {
@@ -558,6 +569,57 @@ export function detectRedFlags(input: DetectorInput): RedFlag[] {
       severity: "info",
       detail: "probation comp surfaced — confirm probation salary matches post-confirmation CTC in the offer letter",
     });
+  }
+
+  /* 30. Phase 27 — retention-counter trap. Candidate disclosed a
+   *     retention counter from current employer. Research shows ~80% of
+   *     counter-accepters leave within 6 months; surface so the recruiter
+   *     coaches the candidate to either decline cleanly or commit. We
+   *     downgrade severity if the candidate has already declined it. */
+  if (state.retentionCounter.hasAny) {
+    out.push({
+      code: "retention-counter-trap",
+      severity: state.retentionCounter.declined ? "info" : "concern",
+      detail: state.retentionCounter.declined
+        ? "candidate disclosed and DECLINED a retention counter — strong forward-looking signal, note for the brief"
+        : "current employer has made a retention counter — counter-accepters leave within 6 months on average; candidate should decline cleanly or commit to staying",
+    });
+  }
+
+  /* 31. Phase 27 — competing offer on hold / frozen. The candidate's
+   *     stated competing offer has been put on hold / revoked / BGV
+   *     pending. Materially weakens the leverage of any prior anchor;
+   *     surface so the recruiter doesn't pay a premium for a phantom. */
+  if (state.competingOfferDetail.onHold) {
+    out.push({
+      code: "competing-offer-on-hold",
+      severity: "concern",
+      detail: "competing offer is on hold / frozen / BGV pending — the stated competing number is no longer a credible alternative",
+    });
+  }
+
+  /* 32. Phase 27 — FBP / in-hand never discussed. India offers routinely
+   *     split CTC across HRA, LTA, telephone, fuel, meal, NPS, etc., and
+   *     in-hand differs materially from CTC. We surface this when the
+   *     conversation has reached counter-offer or later but no FBP /
+   *     in-hand / take-home tokens appear in the candidate's own
+   *     utterances across the log. Utterance-grade; doesn't need state. */
+  if (
+    (state.phase === "counter-offer" || state.phase === "accepted" || state.phase === "stalemate") &&
+    state.conversationLog.length > 0
+  ) {
+    const FBP_TOKENS = /\b(?:fbp|flexi(?:\s+benefit)?|hra|lta|telephone\s+allowance|fuel\s+allowance|meal\s+(?:card|allowance)|in[-\s]?hand|take[-\s]?home|post[-\s]?tax|net\s+(?:pay|salary)|gross\s+(?:to|vs)\s+net)\b/i;
+    const candidateText = state.conversationLog
+      .filter((e) => e.speaker === "candidate")
+      .map((e) => e.text)
+      .join(" ");
+    if (candidateText && !FBP_TOKENS.test(candidateText)) {
+      out.push({
+        code: "fbp-not-discussed",
+        severity: "info",
+        detail: "deep into negotiation but candidate never raised FBP / HRA / LTA / in-hand — CTC vs take-home math may not have been done",
+      });
+    }
   }
 
   /* 14. Verbal accept without breakup. Candidate has signalled

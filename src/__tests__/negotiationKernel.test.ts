@@ -342,6 +342,7 @@ describe("parseCandidateAnswer", () => {
         status: null,
         stage: null,
         letterShareOffered: false,
+        onHold: false,
         hasAny: false,
       },
       decisionDeadline: {
@@ -383,6 +384,11 @@ describe("parseCandidateAnswer", () => {
         offerShoppingDemand: false,
         dismissesVariableRisk: false,
         overpromisesJoining: false,
+        hasAny: false,
+      },
+      retentionCounter: {
+        amountLpa: null,
+        declined: false,
         hasAny: false,
       },
     });

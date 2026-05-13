@@ -45,6 +45,10 @@ export interface CompetingOfferDetail {
   stage: CompetingOfferStage | null;
   /** Did candidate explicitly offer to share / forward the offer letter? */
   letterShareOffered: boolean;
+  /** Phase 27 — competing offer is on hold / revoked / joining frozen.
+   *  Materially weakens the candidate's leverage (the "I have another
+   *  offer at ₹X" anchor is no longer a credible alternative). */
+  onHold: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -54,8 +58,21 @@ const EMPTY: CompetingOfferDetail = {
   status: null,
   stage: null,
   letterShareOffered: false,
+  onHold: false,
   hasAny: false,
 };
+
+/* Phase 27 — competing offer on hold / revoked / joining frozen.
+ * Common India patterns: BGV pending, joining date pushed, offer
+ * rescinded after hiring freeze. Materially weakens the leverage of
+ * a stated competing number. */
+const ON_HOLD_PATTERNS: RegExp[] = [
+  /\b(?:joining\s+(?:is\s+)?(?:on\s+hold|frozen|delayed|pushed|deferred|postponed))\b/i,
+  /\b(?:offer\s+(?:is\s+)?(?:on\s+hold|rescinded|revoked|withdrawn|frozen|delayed))\b/i,
+  /\b(?:hiring\s+freeze|joining\s+date\s+(?:moved|pushed|delayed))\b/i,
+  /\b(?:bgv|background\s+(?:check|verification))\s+(?:is\s+)?(?:pending|delayed|stuck|on\s+hold)/i,
+  /\b(?:they.?ve\s+(?:put|placed)\s+(?:my\s+)?(?:offer|joining)\s+on\s+hold|put\s+on\s+hold)\b/i,
+];
 
 /* Recognized India-market hiring brands. Patterns require word boundaries
  * to avoid catching substrings (e.g. "tcs" inside other words). */
@@ -158,10 +175,11 @@ export function extractCompetingOfferDetail(text: string): CompetingOfferDetail 
   }
 
   const letterShareOffered = LETTER_SHARE_PATTERNS.some((p) => p.test(text));
+  const onHold = ON_HOLD_PATTERNS.some((p) => p.test(text));
 
   const hasAny =
-    company != null || status != null || stage != null || letterShareOffered;
-  return { company, status, stage, letterShareOffered, hasAny };
+    company != null || status != null || stage != null || letterShareOffered || onHold;
+  return { company, status, stage, letterShareOffered, onHold, hasAny };
 }
 
 export function mergeCompetingOfferDetail(
@@ -174,12 +192,17 @@ export function mergeCompetingOfferDetail(
     status: next.status ?? p.status,
     stage: next.stage ?? p.stage,
     letterShareOffered: p.letterShareOffered || next.letterShareOffered,
+    /* Phase 27 — onHold is monotone-up. Once the recruiter knows the
+     * competing offer is shaky, the leverage damage persists even if
+     * the candidate later claims it's "back on track". */
+    onHold: p.onHold || next.onHold,
     hasAny: false,
   };
   merged.hasAny =
     merged.company != null ||
     merged.status != null ||
     merged.stage != null ||
-    merged.letterShareOffered;
+    merged.letterShareOffered ||
+    merged.onHold;
   return merged;
 }

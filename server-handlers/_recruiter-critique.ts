@@ -52,7 +52,11 @@ export type RecruiterCritiqueCode =
   | "hold-firm-then-concede"
   | "no-probe"
   | "closed-without-breakup"
-  | "walkaway-without-warning";
+  | "walkaway-without-warning"
+  /* Phase 27 — bias / inappropriate question scanning across the
+   * conversationLog. Fires when the recruiter AI asks personal or
+   * protected-attribute questions that have no business in a comp talk. */
+  | "asks-inappropriate-personal-question";
 
 export type RecruiterCritiqueSeverity = "info" | "concern" | "blocker";
 
@@ -253,6 +257,44 @@ export function critiqueRecruiterStrategy(
       turnIndex: finalState.acceptedAtTurn,
       detail: `Closed at acceptance without a base/variable/equity breakdown on record. Verbal close turns into a written offer dispute — always lock the component split before saying "you're in."`,
     });
+  }
+
+  /* 11. Phase 27 — recruiter asked an inappropriate personal /
+   *     protected-attribute question. Scans AI utterances across the
+   *     conversation log for India-context patterns: marital status,
+   *     children / family planning, religion / caste, age, gender, visa
+   *     status absent legitimate work-authorization context. False
+   *     positives here are damaging, so patterns are narrow. */
+  const INAPPROPRIATE_PATTERNS: { kind: string; pattern: RegExp }[] = [
+    { kind: "marital", pattern: /\b(?:are\s+you\s+married|marital\s+status|when\s+are\s+you\s+(?:getting\s+married|planning\s+to\s+marry)|your\s+(?:husband|wife|spouse)\b)/i },
+    { kind: "family-planning", pattern: /\b(?:planning\s+(?:a\s+)?(?:family|kids|children|baby)|when\s+(?:are\s+you|do\s+you)\s+(?:planning|going)\s+to\s+have\s+(?:kids|children|a\s+baby)|pregnan(?:t|cy)\s+plans)\b/i },
+    { kind: "children", pattern: /\b(?:do\s+you\s+have\s+(?:kids|children)|how\s+many\s+(?:kids|children)\s+do\s+you\s+have)\b/i },
+    { kind: "religion", pattern: /\b(?:what(?:'s|\s+is)\s+your\s+religion|which\s+(?:caste|religion|community)|your\s+caste\b)/i },
+    { kind: "age", pattern: /\b(?:how\s+old\s+are\s+you|what(?:'s|\s+is)\s+your\s+age)\b/i },
+    { kind: "gender", pattern: /\b(?:we\s+(?:prefer|need|want)\s+(?:a\s+)?(?:male|female)\s+candidate|gender\s+preference)\b/i },
+  ];
+  if (finalState.conversationLog.length > 0) {
+    const offences: { kind: string; turnIndex: number; snippet: string }[] = [];
+    finalState.conversationLog.forEach((entry, idx) => {
+      if (entry.speaker !== "ai") return;
+      for (const { kind, pattern } of INAPPROPRIATE_PATTERNS) {
+        const m = pattern.exec(entry.text);
+        if (m) {
+          offences.push({ kind, turnIndex: idx, snippet: m[0] });
+          break;
+        }
+      }
+    });
+    if (offences.length > 0) {
+      const first = offences[0];
+      const kinds = [...new Set(offences.map((o) => o.kind))].join(", ");
+      out.push({
+        code: "asks-inappropriate-personal-question",
+        severity: "blocker",
+        turnIndex: first.turnIndex,
+        detail: `Recruiter asked personal / protected-attribute question(s) (${kinds}) in conversation log — e.g. "${first.snippet}". These have no place in a comp talk; they expose the company to bias complaints and damage candidate trust.`,
+      });
+    }
   }
 
   /* 10. walkaway-without-warning — walkaway closure with no prior

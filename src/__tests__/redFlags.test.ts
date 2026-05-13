@@ -488,3 +488,96 @@ describe("Phase 26 — probation-comp-unclarified", () => {
     expect(codes(baseState())).not.toContain("probation-comp-unclarified");
   });
 });
+
+describe("Phase 27 — retention-counter-trap", () => {
+  it("fires as concern when retention counter is on the table (not declined)", () => {
+    const state = baseState({
+      retentionCounter: { amountLpa: 35, declined: false, hasAny: true },
+    });
+    const flags = detectRedFlags({ state, stance: emptyStance, utterance: "" });
+    const rc = flags.find((f) => f.code === "retention-counter-trap");
+    expect(rc).toBeDefined();
+    expect(rc!.severity).toBe("concern");
+  });
+
+  it("fires as info when candidate has declined the retention counter", () => {
+    const state = baseState({
+      retentionCounter: { amountLpa: 35, declined: true, hasAny: true },
+    });
+    const flags = detectRedFlags({ state, stance: emptyStance, utterance: "" });
+    const rc = flags.find((f) => f.code === "retention-counter-trap");
+    expect(rc).toBeDefined();
+    expect(rc!.severity).toBe("info");
+  });
+
+  it("does NOT fire when no retention counter", () => {
+    expect(codes(baseState())).not.toContain("retention-counter-trap");
+  });
+});
+
+describe("Phase 27 — competing-offer-on-hold", () => {
+  it("fires when competingOfferDetail.onHold is true", () => {
+    const state = baseState({
+      competingOffer: 28,
+      competingOfferDetail: {
+        company: "flipkart", status: null, stage: "offered",
+        letterShareOffered: false, onHold: true, hasAny: true,
+      },
+    });
+    expect(codes(state)).toContain("competing-offer-on-hold");
+  });
+
+  it("does NOT fire when onHold false", () => {
+    const state = baseState({
+      competingOffer: 28,
+      competingOfferDetail: {
+        company: "flipkart", status: "letter", stage: "offered",
+        letterShareOffered: false, onHold: false, hasAny: true,
+      },
+    });
+    expect(codes(state)).not.toContain("competing-offer-on-hold");
+  });
+});
+
+describe("Phase 27 — fbp-not-discussed", () => {
+  it("fires when deep into negotiation but no FBP tokens in candidate log", () => {
+    const state = baseState({
+      phase: "counter-offer",
+      conversationLog: [
+        { speaker: "candidate", text: "I'm looking for 28 LPA fixed." },
+        { speaker: "candidate", text: "My current is 22 LPA." },
+      ],
+    });
+    expect(codes(state)).toContain("fbp-not-discussed");
+  });
+
+  it("does NOT fire when candidate mentioned HRA", () => {
+    const state = baseState({
+      phase: "counter-offer",
+      conversationLog: [
+        { speaker: "candidate", text: "How is the HRA structured?" },
+      ],
+    });
+    expect(codes(state)).not.toContain("fbp-not-discussed");
+  });
+
+  it("does NOT fire when candidate mentioned in-hand", () => {
+    const state = baseState({
+      phase: "accepted",
+      conversationLog: [
+        { speaker: "candidate", text: "I'd like to confirm in-hand monthly." },
+      ],
+    });
+    expect(codes(state)).not.toContain("fbp-not-discussed");
+  });
+
+  it("does NOT fire in early phases (probe-expectations)", () => {
+    const state = baseState({
+      phase: "probe-expectations",
+      conversationLog: [
+        { speaker: "candidate", text: "I'm looking for 28 LPA." },
+      ],
+    });
+    expect(codes(state)).not.toContain("fbp-not-discussed");
+  });
+});
