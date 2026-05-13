@@ -63,7 +63,7 @@ export type RoleKey =
   | "legal" | "operations" | "customer-success"
   | "teacher" | "mobile-developer" | "frontend-developer" | "backend-developer"
   | "scrum-master" | "solutions-architect" | "tech-lead"
-  | "embedded-engineer" | "database-administrator" | "network-engineer"
+  | "embedded-engineer" | "firmware-engineer" | "database-administrator" | "network-engineer"
   | "mechanical-engineer" | "electrical-engineer" | "civil-engineer"
   | "chartered-accountant" | "doctor" | "pharmacist"
   | "design-engineer" | "product-marketing-manager"
@@ -3842,8 +3842,14 @@ export function matchRoleKey(role: string): RoleKey {
     [["dba", "database administrator", "database admin", "database engineer", "database architect", "sql developer", "etl developer", "power bi developer", "tableau developer", "looker developer", "qlik developer", "informatica developer", "oracle dba", "pl/sql developer", "mainframe developer", "cobol developer", "as400 developer"], "database-administrator"],
     [["network engineer", "network admin", "ccna", "ccnp", "ccie", "network architect", "linux administrator", "windows administrator", "noc engineer", "network operations engineer"], "network-engineer"],
     [["tech support engineer", "application support engineer", "l1 support", "l2 support", "l3 support", "production support engineer", "it support specialist", "helpdesk engineer", "support engineer"], "customer-success"],
+    /* Firmware engineer — distinct from embedded (closer-to-hardware
+       silicon/SoC/peripheral firmware, vs embedded which spans embedded
+       application software). Must be matched BEFORE the embedded
+       patterns to win precedence. Session B (2026-05-14): RoleKey added
+       to resolve apple.firmware-engineer dead-cells. */
+    [["firmware engineer", "firmware developer"], "firmware-engineer"],
     /* Embedded / hardware. */
-    [["embedded software engineer", "firmware engineer", "rtos", "iot engineer", "iot architect", "edge computing engineer", "hardware engineer"], "embedded-engineer"],
+    [["embedded software engineer", "rtos", "iot engineer", "iot architect", "edge computing engineer", "hardware engineer"], "embedded-engineer"],
     /* Solutions architect. */
     [["solutions architect", "solution architect", "enterprise architect", "domain architect", "integration architect", "salesforce solutions architect"], "solutions-architect"],
     /* Design / creative — was defaulting to SWE for ~50 roles. */
@@ -3921,7 +3927,8 @@ export function matchRoleKey(role: string): RoleKey {
     [["scrum master", "agile coach", "agile lead"], "scrum-master"],
     [["solutions architect", "solution architect", "enterprise architect", "cloud architect"], "solutions-architect"],
     [["tech lead", "technical lead", "lead engineer", "staff engineer", "principal engineer"], "tech-lead"],
-    [["embedded", "firmware", "rtos", "iot engineer", "hardware engineer"], "embedded-engineer"],
+    [["firmware"], "firmware-engineer"],
+    [["embedded", "rtos", "iot engineer", "hardware engineer"], "embedded-engineer"],
     [["dba", "database admin", "database engineer", "database architect"], "database-administrator"],
     [["network engineer", "network admin", "ccna", "ccnp", "ccie", "network architect"], "network-engineer"],
     [["mechanical engineer", "mechanical", "automobile engineer", "automotive engineer", "manufacturing engineer"], "mechanical-engineer"],

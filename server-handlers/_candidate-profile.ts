@@ -503,11 +503,11 @@ export const __DOMAIN_KEYWORDS_INTERNAL: Array<[RegExp, string]> = [
  * intentionally pivot-only (no outgoing adjacency) — this is the
  * design intent from bug-report 13. */
 export const __ADJACENT_INTERNAL: Record<string, string[]> = {
-  "product-design": ["visual-design", "frontend"],
+  "product-design": ["visual-design", "frontend", "product-management"],
   "visual-design": ["product-design"],
   "frontend": ["fullstack", "mobile", "product-design"],
   "fullstack": ["frontend", "backend", "java-backend", "node-backend"],
-  "backend": ["fullstack", "java-backend", "python-backend", "node-backend", "dotnet-backend", "go-backend", "devops", "data-engineering", "security"],
+  "backend": ["fullstack", "java-backend", "python-backend", "node-backend", "dotnet-backend", "go-backend", "devops", "data-engineering", "security", "management"],
   "java-backend": ["backend", "fullstack"],
   "python-backend": ["backend", "data-engineering"],
   "node-backend": ["backend", "fullstack"],
@@ -519,11 +519,11 @@ export const __ADJACENT_INTERNAL: Record<string, string[]> = {
   "data-analyst": ["data-science", "product-management", "business"],
   "devops": ["backend", "security", "go-backend"],
   "security": ["devops", "backend"],
-  "product-management": ["product-marketing", "program-management", "data-analyst", "customer-success", "management"],
+  "product-management": ["product-marketing", "program-management", "data-analyst", "customer-success", "management", "product-design"],
   "program-management": ["product-management", "management"],
   "product-marketing": ["product-management", "marketing"],
-  "marketing": ["product-marketing", "content"],
-  "sales": ["customer-success"],
+  "marketing": ["product-marketing", "content", "sales"],
+  "sales": ["customer-success", "marketing"],
   "customer-success": ["sales", "product-management"],
   /* Bug-report 13 — management cluster is internally adjacent (e.g.
    * Engineering Manager → Program Manager). Operations / business /
@@ -531,7 +531,7 @@ export const __ADJACENT_INTERNAL: Record<string, string[]> = {
    * outside their own bucket: cross-bucket transitions (Product Design
    * → Operations Manager, Engineering → Operations) must classify as
    * pivot to keep applicableYoe=0 and prevent over-anchoring. */
-  "management": ["product-management", "program-management"],
+  "management": ["product-management", "program-management", "backend"],
   "business": ["data-analyst", "consulting"],
   "consulting": ["business"],
   "content": ["marketing"],

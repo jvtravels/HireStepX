@@ -86,28 +86,23 @@ describe("domain graph invariants", () => {
     const cases: Array<{ cand: string; tgt: string; expect: "match" | "adjacent" | "pivot" | "unknown" }> = [
       /* Engineering ↔ Engineering: match. */
       { cand: "Backend Engineer", tgt: "Backend Engineer", expect: "match" },
-      /* Engineering ↔ Engineering Management: adjacent. EM is in
-       * "management" bucket per DOMAIN_KEYWORDS; backend is in
-       * "backend". They're NOT adjacent (engineering side has no
-       * management edge). So this is "pivot" per current model —
-       * which arguably needs a follow-up. Surface as the present
-       * behaviour. */
-      { cand: "Backend Engineer", tgt: "Engineering Manager", expect: "pivot" },
+      /* Engineering ↔ Engineering Management: adjacent (Session B —
+       * resolved deferred semantics). EM ↔ Backend is now bidirectionally
+       * adjacent. */
+      { cand: "Backend Engineer", tgt: "Engineering Manager", expect: "adjacent" },
       /* Product Design ↔ Engineering (frontend): adjacent. */
       { cand: "Product Designer", tgt: "Frontend Engineer", expect: "adjacent" },
       /* Product Design ↔ Backend (different craft): pivot (PD is
        * adjacent to frontend only — backend is not in PD's adjacency). */
       { cand: "Product Designer", tgt: "Backend Engineer", expect: "pivot" },
-      /* Product Design ↔ Product Management: pivot in current model
-       * (PD doesn't list product-management; PM doesn't list product-
-       * design). Note: brief lists this as "adjacent" intuitively —
-       * flagged as a follow-up. */
-      { cand: "Product Designer", tgt: "Product Manager", expect: "pivot" },
+      /* Product Design ↔ Product Management: adjacent (Session B —
+       * resolved deferred semantics). */
+      { cand: "Product Designer", tgt: "Product Manager", expect: "adjacent" },
       /* Sales ↔ Customer Success: adjacent. */
       { cand: "Sales Manager", tgt: "Customer Success Manager", expect: "adjacent" },
-      /* Sales ↔ Marketing: pivot in current model (neither lists the
-       * other; product-marketing is the bridge). Flagged in report. */
-      { cand: "Sales Executive", tgt: "Marketing Manager", expect: "pivot" },
+      /* Sales ↔ Marketing: adjacent (Session B — resolved deferred
+       * semantics). */
+      { cand: "Sales Executive", tgt: "Marketing Manager", expect: "adjacent" },
       /* Operations ↔ Engineering: pivot (operations is pivot-only). */
       { cand: "Operations Manager", tgt: "Backend Engineer", expect: "pivot" },
       /* HR ↔ Engineering: pivot. */

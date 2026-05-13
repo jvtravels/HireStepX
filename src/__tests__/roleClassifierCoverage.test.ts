@@ -32,7 +32,7 @@ const ALL_ROLE_KEYS: ReadonlyArray<string> = [
   "legal","operations","customer-success",
   "teacher","mobile-developer","frontend-developer","backend-developer",
   "scrum-master","solutions-architect","tech-lead",
-  "embedded-engineer","database-administrator","network-engineer",
+  "embedded-engineer","firmware-engineer","database-administrator","network-engineer",
   "mechanical-engineer","electrical-engineer","civil-engineer",
   "chartered-accountant","doctor","pharmacist",
   "design-engineer","product-marketing-manager",
@@ -86,12 +86,10 @@ describe("role-classifier coverage — every emitted key resolves to either an o
     if (DEAD.length > 0) {
       process.stderr.write(`\n[gap] override map contains role-keys NOT in RoleKey type — dead/unreachable cells: ${DEAD.join(", ")}\n`);
     }
-    /* Known dead: "firmware-engineer" appears at apple/* but
-     * matchRoleKey routes "firmware engineer" to embedded-engineer.
-     * Cells are unreachable. Tolerated (≤1) so test doesn't fail until
-     * decision is made: rename to embedded-engineer OR add firmware-
-     * engineer to RoleKey union. Surfaced in audit report. */
-    expect(DEAD.length).toBeLessThanOrEqual(1);
+    /* Session B (2026-05-14) — resolved: firmware-engineer added to
+     * RoleKey union + classifier patterns, so apple/firmware-engineer
+     * cells are now reachable. Dead count must be 0. */
+    expect(DEAD).toEqual([]);
   });
 
   it("for every RoleKey: it is either represented by ≥1 company override OR documented as fallback-only", () => {
@@ -171,6 +169,14 @@ describe("matchRoleKey — edge inputs and Indian-English variants", () => {
     ["Operations Lead", "operations"],
     ["Operations Manager", "operations"],
     ["Director of Engineering", "engineering-manager"],
+    /* Firmware vs embedded — firmware-engineer is a distinct RoleKey
+     * (closer-to-hardware silicon/SoC); embedded-engineer covers IoT /
+     * RTOS / embedded application. */
+    ["Firmware Engineer", "firmware-engineer"],
+    ["Firmware Developer", "firmware-engineer"],
+    ["Senior Firmware Engineer", "firmware-engineer"],
+    ["Embedded Software Engineer", "embedded-engineer"],
+    ["IoT Engineer", "embedded-engineer"],
     /* Gibberish lands on default (we want this — opposite would
      * silently hide a typo). */
     ["xyzzy", "software-engineer"],
