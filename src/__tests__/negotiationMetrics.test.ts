@@ -71,6 +71,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       status: null,
       stage: null,
       letterShareOffered: false,
+      onHold: false,
       hasAny: false,
     },
     decisionDeadline: {
@@ -99,6 +100,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       internalCounterRisk: null,
       hasAny: false,
     },
+    retentionCounter: { amountLpa: null, declined: false, hasAny: false },
     candidateStance: {
       flexibilityPosture: null,
       marketReferenceVague: false,

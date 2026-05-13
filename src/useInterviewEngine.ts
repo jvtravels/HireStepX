@@ -1126,11 +1126,26 @@ export function useInterviewEngine() {
       setTtsDurationMs(undefined);
       setSpeechEnded(false);
 
-      setTranscript(prev => [...prev, {
-        speaker: "ai",
-        text: step.persona ? `[${step.persona}] ${step.aiText}` : step.aiText,
-        time: formatTime(elapsed),
-      }]);
+      /* Defer transcript append until audio actually starts playing.
+       * Previously, the AI bubble appeared instantly while the user
+       * waited 500-1500ms for the Azure REST round-trip on Q1 (no
+       * thinking phrase → no warm prefetch). Now the bubble is revealed
+       * in sync with audio onset, and we keep an 800ms fallback timer
+       * in case the provider never fires `onAudioStarted` (e.g.
+       * autoplay-blocked path, browser-TTS fallback failure). */
+      let transcriptRevealed = false;
+      const revealTranscript = () => {
+        if (transcriptRevealed || isStale()) return;
+        transcriptRevealed = true;
+        setTranscript(prev => [...prev, {
+          speaker: "ai",
+          text: step.persona ? `[${step.persona}] ${step.aiText}` : step.aiText,
+          time: formatTime(elapsed),
+        }]);
+      };
+      // Fallback: if audio onset never fires (autoplay block, voice disabled,
+      // provider miss), reveal anyway so the candidate can read the question.
+      const transcriptFallbackTimer = setTimeout(revealTranscript, aiVoiceEnabled ? 1200 : 0);
 
       ttsCancelRef.current?.();
 
@@ -1138,6 +1153,11 @@ export function useInterviewEngine() {
       const onSpeechEnd = () => {
         if (localSpeechEnded || isStale()) return;
         localSpeechEnded = true;
+        // Safety: ensure transcript is visible by the time speech ends —
+        // covers the rare case where neither onAudioStarted nor the
+        // 1.2s fallback fired (e.g. very short utterance).
+        clearTimeout(transcriptFallbackTimer);
+        revealTranscript();
         setSpeechEnded(true);
         if (safetyTimer) clearTimeout(safetyTimer);
         setIsRecording(false);
@@ -1194,9 +1214,12 @@ export function useInterviewEngine() {
           // Azure voice selection so the gender at least matches even
           // if individual voices don't differ.
           const fallbackGender = isPanelInterview ? (panelGender ?? interviewerGender) : interviewerGender;
+          /* onAudioStarted reveals the AI bubble at audio onset so text
+           * doesn't lead the voice. Falls back to the 1.2s timer if the
+           * provider doesn't fire it. */
           return panelVoiceId
-            ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onSpeechEnd, panelGender, onDurationKnown)
-            : speak(step.aiText, onSpeechEnd, onSpeechEnd, fallbackGender, onDurationKnown);
+            ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onSpeechEnd, panelGender, onDurationKnown, revealTranscript)
+            : speak(step.aiText, onSpeechEnd, onSpeechEnd, fallbackGender, onDurationKnown, revealTranscript);
         };
         speakPanel().then(handle => {
           if (ttsInstanceIdRef.current === instanceId) {
@@ -1212,6 +1235,9 @@ export function useInterviewEngine() {
           console.warn("[interview] TTS speak() rejected:", msg.slice(0, 120));
           track("tts_failed", { phase: "question", error: msg.slice(0, 200) });
           flagTtsError("Audio temporarily unavailable — read the question above.");
+          // Reveal transcript so candidate can read the question text
+          // even when audio playback is permanently broken.
+          revealTranscript();
           onSpeechEnd();
         });
       } else {

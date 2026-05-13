@@ -94,7 +94,7 @@ describe("recommendFollowups — competing-offer-criteria", () => {
     const state = baseState({
       competingOffer: 30,
       decisionDeadline: { deadlineDays: 5, deadlineExplicit: true, conditionalAcceptance: false, conditionalEvidence: null, hasAny: true },
-      competingOfferDetail: { company: "X", status: "letter", stage: "offered", letterShareOffered: true, hasAny: true },
+      competingOfferDetail: { company: "X", status: "letter", stage: "offered", letterShareOffered: true, onHold: false, hasAny: true },
     });
     expect(categories(state)).not.toContain("competing-offer-criteria");
   });

@@ -58,7 +58,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       relocationRefused: false, hasAny: false,
     },
     competingOfferDetail: {
-      company: null, status: null, stage: null, letterShareOffered: false, hasAny: false,
+      company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false,
     },
     decisionDeadline: {
       deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false,
@@ -73,6 +73,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null,
       internalCounterRisk: null, hasAny: false,
     },
+    retentionCounter: { amountLpa: null, declined: false, hasAny: false },
     candidateStance: emptyStance(),
     salesOTE: {
       oteAmount: null, baseAmount: null, attainmentPct: null,
