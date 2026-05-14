@@ -1121,6 +1121,67 @@ export function expandCurrencyForSpeech(text: string): string {
     .replace(/\s{2,}/g, " ")
     .trim();
 
+  // Step 5 (Phase 33, 2026-05-14) — international currencies + K/M/B
+  // magnitude suffixes. Before this block we only expanded ₹/LPA/Cr/L;
+  // any international offer ($120K, €80K, £75K, ¥10M) reached the TTS
+  // engine raw, which read "$" as literal "dollar sign" and skipped the
+  // K/M/B suffix entirely. Order matters: handle magnitude suffix +
+  // currency symbol together so we know singular vs plural.
+  //
+  // Symbol → unit:
+  //   $ → dollars,  € → euros,  £ → pounds,  ¥ → yen
+  //
+  // Magnitude → expansion:
+  //   K → thousand,  M → million,  B → billion
+  //
+  // Examples:
+  //   "$120K"     → "120 thousand dollars"
+  //   "€1.5M"     → "1.5 million euros"
+  //   "£75,000"   → "75,000 pounds"
+  //   "¥10M"      → "10 million yen"
+  //   "USD 200K"  → "200 thousand dollars"
+  const SYMBOL_TO_WORD: Record<string, { singular: string; plural: string }> = {
+    $: { singular: "dollar", plural: "dollars" },
+    "€": { singular: "euro", plural: "euros" },
+    "£": { singular: "pound", plural: "pounds" },
+    "¥": { singular: "yen", plural: "yen" }, // 'yen' is invariant
+  };
+  const MAG: Record<string, string> = { K: "thousand", M: "million", B: "billion" };
+
+  // 5a — symbol-prefix form: "$120K", "€ 1.5M", "$75"
+  // The (?:\s*([KMB])\b)? group keeps the trailing whitespace inside the
+  // optional magnitude — when no K/M/B is present we don't consume the
+  // space, so "$1 per share" → "1 dollar per share" not "1 dollarper share".
+  out = out.replace(
+    /([$€£¥])\s*(\d+(?:[\d,]*\d)?(?:\.\d+)?)(?:\s*([KMB])\b)?/g,
+    (_m, sym: string, n: string, mag: string | undefined) => {
+      const cleanN = n.replace(/,/g, "");
+      const num = parseFloat(cleanN);
+      const isOne = num === 1;
+      const unit = SYMBOL_TO_WORD[sym];
+      const word = isOne ? unit.singular : unit.plural;
+      if (mag) return `${n} ${MAG[mag]} ${word}`;
+      return `${n} ${word}`;
+    },
+  );
+
+  // 5b — ISO code prefix form: "USD 200K", "EUR 80,000", "GBP 50K". Case-
+  // sensitive on the code so we don't mangle prose like "Eur". The space
+  // is required to avoid matching "USDA" / "EURope".
+  const CODE_TO_SYM: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JPY: "¥" };
+  out = out.replace(
+    /\b(USD|EUR|GBP|JPY)\s+(\d+(?:[\d,]*\d)?(?:\.\d+)?)(?:\s*([KMB])\b)?/g,
+    (_m, code: string, n: string, mag: string | undefined) => {
+      const sym = CODE_TO_SYM[code];
+      const cleanN = n.replace(/,/g, "");
+      const num = parseFloat(cleanN);
+      const unit = SYMBOL_TO_WORD[sym];
+      const word = num === 1 ? unit.singular : unit.plural;
+      if (mag) return `${n} ${MAG[mag]} ${word}`;
+      return `${n} ${word}`;
+    },
+  );
+
   return out;
 }
 
