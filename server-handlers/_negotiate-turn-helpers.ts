@@ -150,7 +150,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "probe":
     "Ask the candidate what they're looking for. Do NOT propose a new number — you want their anchor first.",
   "probe-justification":
-    "The candidate has stated a target materially above the initial offer but has not justified it. Acknowledge their number warmly, then ask ONE direct question about what's driving it — benchmarking (Levels.fyi, Glassdoor), a competing offer, hike math against current package, or specific role complexity. Do NOT propose a new number, do NOT concede yet — you need their reasoning before you move money. One short sentence of acknowledgement + one question.",
+    "The candidate has stated a target materially above the initial offer but has not justified it. Acknowledge their number warmly, then ask ONE direct question about what's driving it — benchmarking (Levels.fyi, Glassdoor), a competing offer, hike math against current package, or specific role complexity. Do NOT propose a new number, do NOT concede yet — you need their reasoning before you move money. One short sentence of acknowledgement + one question. INDIAN JUNIOR-FLOW (2026-05-14e): when `profile=[...earlySwitch...]` is in the brief (candidate is on their first job switch within ≤2 years), the probe question should specifically be 'you've been at your current company for about a year — what's prompting the switch now, and how are you arriving at this number?' This is the canonical Indian HR pushback for 1-year switchers and lands more naturally than a generic benchmarking ask. When `profile=[...lowCtc...]` is set (candidate self-stated low current CTC), DON'T treat the hike% as a stretch — instead ask 'help me understand your current package — what's the structure and what's driving the gap with your target?' so you anchor to market reality, not the suppressed base. When `profile=[...serviceBg...]` AND the target company is product (FAANG/unicorn/SaaS), the probe should be 'your service background is solid — tell me what product-side depth (systems design / platform ownership / on-call) you've built up that supports this number?'",
     "counter-base":
     "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response. CRITICAL — when the turn brief includes a COMPONENT BREAKDOWN block (base / variable splits), restate the new total AS the split: '₹{total} LPA = ₹{base}L base + ₹{variable}L variable'. Candidates routinely ask for this breakdown two turns later; surfacing it on the counter itself prevents the repeat-ask loop. If a one-time joining bonus is already on the table from a prior turn, also restate it explicitly. BANNED — do NOT reference 'the existing split', 'the previous breakdown', 'keeping the structure intact', or any phrase implying a prior split was disclosed unless a base/variable breakdown was actually quoted in an earlier AI turn (check RECENT DIALOGUE). The opener typically discloses a HEADLINE number only, not a split — referencing a phantom prior breakdown confuses the candidate. State the new split fresh; do not pretend they've already seen one.",
   "joining-bonus":
@@ -166,7 +166,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "notice-period-summary":
     "Disclose the company's joining window / notice / buyout policy. Use the NOTICE PERIOD DISCLOSURE block below verbatim for the policy. Do NOT propose a new total CTC, do NOT push for acceptance — this is an info-disclosure turn. After stating the policy, invite the candidate to share their earliest possible start date.",
   "hike-context-summary":
-    "Frame the hike% this offer represents. Use the HIKE CALCULATION block below for the computed delta (or the market-norms guidance if current CTC is unknown). Do NOT propose a new total CTC, do NOT push for acceptance — this is an info turn.",
+    "Frame the hike% this offer represents. Use the HIKE CALCULATION block below for the computed delta (or the market-norms guidance if current CTC is unknown). Do NOT propose a new total CTC, do NOT push for acceptance — this is an info turn. INDIAN JUNIOR-FLOW (2026-05-14e): when `profile=[...lowCtc...]` is in the brief, FLIP the framing — the candidate's current CTC was below market, so our offer reflects market-rate for the role, NOT a 2× hike. 'Your prior CTC was on the lower side for your skill set; ₹X LPA is what the market pays for this role at our tier — frame it as market correction, not a 2× bump.' When `profile=[...earlySwitch...]` is set, acknowledge that a single-year hike% looks aggressive on paper but contextualize: 'a 50%+ jump at the 1-year mark is unusual; the bump that fits is typically 25-35% — here's how we got to ₹X.' When `profile=[...serviceBg...]` AND target is product, frame the comp uplift as a 'tier crossover' (service → product), not a within-tier hike — that reframes a 30-40% jump as market-aligned rather than steep.",
   "hold-firm":
     "State respectfully that this is final. Acknowledge their position. Invite them to think it over. Indian phrasings that fit: 'This is the maximum I can do without going to leadership', 'That itself is at the top of the band for this role', 'Do take your time and revert', 'Let me know how you'd like to proceed'. Tone is warm but settled — no apologies, no further movement implied. INDIAN FRESHER CAMPUS-HIRE MODE: when the brief carries `bandExt=[probOff=...]` (IT-services / Big-4 / BFSI entry) AND `profile=[...]` shows no senior-YOE signals, the cash is genuinely campus-standard — say so explicitly. Pivot the close to non-cash flexibility: 'the cash component is set by our campus standard, but we have room on joining-date, location preference, and project assignment — what matters most to you on those?' Real campus HR doesn't pretend the salary is up for negotiation when it isn't.",
     "close-acceptance":
@@ -428,6 +428,40 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "location preference, project/team allocation, or probation-month " +
   "reduction. 'CTC is set by the campus grid this year, but I can flag " +
   "location preference and earlier joining for you' is the natural move.\n" +
+  /* Junior-flow (0-2 YoE) signals (audit fix 2026-05-14e) — promoted
+     to top-level prompt rules so the LLM picks up the framing reliably
+     even on briefs where compactTurnBrief might truncate the profile
+     field. These four signals capture the four canonical 0-2 YoE
+     pushback patterns: (1) "only 1 year — why this hike?",
+     (2) "your base was below market", (3) "fresher or junior?",
+     (4) "service background vs product depth". */
+  " - INDIAN JUNIOR-FLOW (0-2 YoE) SIGNALS: when the TURN BRIEF profile " +
+  "field carries any of `earlySwitch` / `lowCtc` / `priorIntern` / " +
+  "`serviceBg`, you are in a 0-2 YoE negotiation. Specific behaviour:\n" +
+  "   • `earlySwitch` (first job switch within ≤2 years): challenge the " +
+  "hike honestly — 'you've been at your current company about a year; " +
+  "what changed that justifies this jump?' A 50%+ hike at 1-year tenure " +
+  "is unusual; the typical Indian-market jump that lands is 25-35%. Do " +
+  "NOT congratulate the candidate on the switch; probe motivation first.\n" +
+  "   • `lowCtc` (candidate self-stated below-market current CTC): FLIP " +
+  "the hike% framing — the offer is a MARKET CORRECTION, not a multiple " +
+  "of an anomalous low base. 'Your prior CTC was below market for the " +
+  "role; ₹X is what the band pays — frame it as market-rate, not a 2× " +
+  "bump.' Don't compute hike% against a suppressed base as if it were " +
+  "the real market signal.\n" +
+  "   • `priorIntern` (interned at company A, then full-time at B, now " +
+  "negotiating with C): classify cleanly up front — 'we'll treat you as " +
+  "a junior-level hire based on your full-time YoE; your internship " +
+  "counts toward skills, not tenure.' Don't treat them as a true fresher " +
+  "(stipend band) and don't anchor at senior either.\n" +
+  "   • `serviceBg` (current/prior employer is TCS/Infosys/Wipro/" +
+  "Cognizant/etc) + target is a product company: reframe depth, not " +
+  "loyalty. 'Service experience is solid — product roles value different " +
+  "depth: systems design, platform ownership, on-call. Our band reflects " +
+  "product-market for your applicable YoE, which is actually above " +
+  "service-market for the same tenure.' This is the canonical 'service " +
+  "→ product' Indian-HR move. Don't apologize for the band; explain the " +
+  "tier crossover.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
@@ -1101,6 +1135,15 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cp.probationCompMentioned) cpParts.push("probationQ");
     if (cp.internshipConversion) cpParts.push("ppo");
     if (cp.collegeTier) cpParts.push(`college=${cp.collegeTier}`);
+    /* Junior-flow signals (2026-05-14e). Surfaced to let LEVER_GUIDANCE
+     * (and the deterministic fallback) pick the right 0-2 YoE register:
+     * early-switcher → "what changed?" pushback, lowCtc → market-anchor
+     * reframe, priorIntern → fresher-or-junior classifier, service →
+     * service-vs-product depth reframe. */
+    if (cp.earlySwitcher) cpParts.push("earlySwitch");
+    if (cp.lowCtcAlert) cpParts.push("lowCtc");
+    if (cp.priorInternshipNonConversion) cpParts.push("priorIntern");
+    if (cp.serviceCompanyBackground) cpParts.push("serviceBg");
     parts.push(`profile=[${cpParts.join(",")}]`);
   }
   /* Indian fresher-flow band extensions — surface probation structure

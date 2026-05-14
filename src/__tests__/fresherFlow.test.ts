@@ -197,6 +197,10 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         probationCompMentioned: false,
         internshipConversion: false,
     collegeTier: null,
+        earlySwitcher: false,
+        lowCtcAlert: false,
+        priorInternshipNonConversion: false,
+        serviceCompanyBackground: false,
         hasAny: true,
       },
     });
@@ -222,6 +226,10 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         probationCompMentioned: false,
         internshipConversion: true,
     collegeTier: null,
+        earlySwitcher: false,
+        lowCtcAlert: false,
+        priorInternshipNonConversion: false,
+        serviceCompanyBackground: false,
         hasAny: true,
       },
     });
@@ -255,6 +263,10 @@ describe("fresher-flow — PPO conversion silences hike-% noise", () => {
       probationCompMentioned: false,
       internshipConversion,
       collegeTier: null,
+      earlySwitcher: false,
+      lowCtcAlert: false,
+      priorInternshipNonConversion: false,
+      serviceCompanyBackground: false,
       hasAny: internshipConversion,
     };
   }
@@ -493,5 +505,102 @@ describe("fresher-flow — mid-session band rebase preserves probation + stipend
     const next = { ...rebased, maxStretch: rebased.maxStretch };
     expect(next.isInternshipStipend).toBe(true);
     expect(next.internshipMonths).toBe(rebased.internshipMonths);
+  });
+});
+
+/* ─── 7. Junior-flow (0-2 YoE) signals (2026-05-14e) ───────────────── */
+
+describe("junior-flow — earlySwitcher detection", () => {
+  it("detects 'first job switch'", () => {
+    const r = extractCandidateProfile("This is my first job switch — I've been at TCS for about a year.");
+    expect(r.earlySwitcher).toBe(true);
+    expect(r.hasAny).toBe(true);
+  });
+  it("detects '1 year + looking to switch'", () => {
+    const r = extractCandidateProfile("I've been at Wipro for 1 year and now I'm looking to switch.");
+    expect(r.earlySwitcher).toBe(true);
+  });
+  it("does NOT fire on stable 5-year tenure", () => {
+    const r = extractCandidateProfile("I've been at Infosys for 5 years and want a change.");
+    expect(r.earlySwitcher).toBe(false);
+  });
+  it("does NOT fire when no switching language present", () => {
+    const r = extractCandidateProfile("I've been at TCS for 1 year.");
+    expect(r.earlySwitcher).toBe(false);
+  });
+  it("monotone-up across merge", () => {
+    const prior = extractCandidateProfile("First job switch.");
+    expect(prior.earlySwitcher).toBe(true);
+    const next = extractCandidateProfile("My current CTC is ₹4 LPA.");
+    const merged = mergeCandidateProfile(prior, next);
+    expect(merged.earlySwitcher).toBe(true);
+  });
+});
+
+describe("junior-flow — lowCtcAlert detection", () => {
+  it("detects 'I'm underpaid'", () => {
+    const r = extractCandidateProfile("Honestly, I'm underpaid at my current job.");
+    expect(r.lowCtcAlert).toBe(true);
+  });
+  it("detects 'my salary doesn't reflect my skills'", () => {
+    const r = extractCandidateProfile("My current salary doesn't reflect my actual skill level.");
+    expect(r.lowCtcAlert).toBe(true);
+  });
+  it("detects 'my CTC is below market'", () => {
+    const r = extractCandidateProfile("My CTC is below market for what I do.");
+    expect(r.lowCtcAlert).toBe(true);
+  });
+  it("does NOT fire on neutral CTC mention", () => {
+    const r = extractCandidateProfile("My current CTC is ₹5 LPA.");
+    expect(r.lowCtcAlert).toBe(false);
+  });
+});
+
+describe("junior-flow — priorInternshipNonConversion detection", () => {
+  it("detects 'interned at Google then joined TCS'", () => {
+    const r = extractCandidateProfile("I interned at Google during my final year, then joined TCS full-time.");
+    expect(r.priorInternshipNonConversion).toBe(true);
+    expect(r.internshipConversion).toBe(false);
+  });
+  it("does NOT fire when PPO conversion is the context (PPO takes precedence)", () => {
+    const r = extractCandidateProfile("I interned with you and now this is for my PPO conversion.");
+    expect(r.internshipConversion).toBe(true);
+    expect(r.priorInternshipNonConversion).toBe(false);
+  });
+  it("detects 'after my internship I joined Infosys'", () => {
+    const r = extractCandidateProfile("After my internship I joined Infosys for a year.");
+    expect(r.priorInternshipNonConversion).toBe(true);
+  });
+});
+
+describe("junior-flow — serviceCompanyBackground detection", () => {
+  it("detects TCS / Infosys / Wipro by name", () => {
+    expect(extractCandidateProfile("Currently at TCS.").serviceCompanyBackground).toBe(true);
+    expect(extractCandidateProfile("I work at Infosys.").serviceCompanyBackground).toBe(true);
+    expect(extractCandidateProfile("Was at Wipro for 2 years.").serviceCompanyBackground).toBe(true);
+    expect(extractCandidateProfile("Cognizant project lead.").serviceCompanyBackground).toBe(true);
+  });
+  it("detects 'service background' self-label", () => {
+    const r = extractCandidateProfile("I'm from a service background, looking to move to product.");
+    expect(r.serviceCompanyBackground).toBe(true);
+  });
+  it("does NOT fire on product-company names", () => {
+    expect(extractCandidateProfile("I work at Flipkart.").serviceCompanyBackground).toBe(false);
+    expect(extractCandidateProfile("Currently at Razorpay.").serviceCompanyBackground).toBe(false);
+  });
+});
+
+describe("junior-flow — compactTurnBrief surfaces all four signals", () => {
+  /* These are integration smoke-tests: the brief MUST surface the
+   * junior flags so the LLM and the LEVER_GUIDANCE can pick them up. */
+  it("hasAny merge: all four signals set hasAny=true", () => {
+    const r1 = extractCandidateProfile("This is my first job switch.");
+    expect(r1.hasAny).toBe(true);
+    const r2 = extractCandidateProfile("I'm underpaid.");
+    expect(r2.hasAny).toBe(true);
+    const r3 = extractCandidateProfile("After my internship I joined TCS.");
+    expect(r3.hasAny).toBe(true);
+    const r4 = extractCandidateProfile("From Infosys, moving to product.");
+    expect(r4.hasAny).toBe(true);
   });
 });

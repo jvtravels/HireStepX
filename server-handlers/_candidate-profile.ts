@@ -117,6 +117,35 @@ export interface CandidateProfileResult {
    *  band-resolver to shift the entry band ±20-25% — tier-1 anchors
    *  above the standard fresher rate, tier-3 below. */
   collegeTier: CollegeTier | null;
+  /** Junior-flow extension (2026-05-14e). Candidate signals a single
+   *  recent job switch (1 or 2 stints within ≤2 years). Distinct from
+   *  `tenureSignal="frequent"` which gates on ≥3 switches. Used by
+   *  LEVER_GUIDANCE to trigger the "only 1 year — what changed that
+   *  justifies this hike?" pushback move. Monotone-up. */
+  earlySwitcher: boolean;
+  /** Junior-flow extension (2026-05-14e). Candidate self-states that
+   *  their current CTC is below market / their actual skill level
+   *  ("I'm underpaid", "my current salary doesn't reflect my skills",
+   *  "my CTC is low for what I do"). Routes the recruiter to a
+   *  "market-anchor-not-hike" reframe instead of pushing back on the
+   *  big hike percentage. Monotone-up. */
+  lowCtcAlert: boolean;
+  /** Junior-flow extension (2026-05-14e). Candidate signals they did
+   *  an internship at a DIFFERENT company before their current/prior
+   *  full-time role — the internship is a credential, not a current
+   *  PPO-conversion event. Distinct from `internshipConversion` (which
+   *  is for converting the CURRENT internship at THIS company). Routes
+   *  to a "fresher-or-junior" classifier voice. Monotone-up. */
+  priorInternshipNonConversion: boolean;
+  /** Junior-flow extension (2026-05-14e). Candidate currently works
+   *  at an Indian IT-services company (TCS/Infosys/Wipro/Cognizant/HCL/
+   *  TechM/Mindtree/LTI/etc) or self-labels "service background". When
+   *  the target is a product company (FAANG/unicorn/SaaS), routes to a
+   *  "service vs product depth" reframe — service experience is solid
+   *  but product values different depth (systems design vs platform
+   *  ops), so the band anchors on entry/mid for product even at 2-3
+   *  YoE service. Monotone-up. */
+  serviceCompanyBackground: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -133,6 +162,10 @@ const EMPTY: CandidateProfileResult = {
   probationCompMentioned: false,
   internshipConversion: false,
   collegeTier: null,
+  earlySwitcher: false,
+  lowCtcAlert: false,
+  priorInternshipNonConversion: false,
+  serviceCompanyBackground: false,
   hasAny: false,
 };
 
@@ -407,6 +440,97 @@ const COLLEGE_TIER_3_PATTERNS: RegExp[] = [
   /\b(?:non[-\s]?tier[-\s]?1|non[-\s]?premier)\s+(?:college|institute)\b/i,
 ];
 
+/* ─── Junior-flow extensions (2026-05-14e) ────────────────────────── */
+
+/* `earlySwitcher` — candidate is on their first or second job switch
+ * within ≤2 years of total experience. Distinct from frequent-switcher
+ * (≥3 switches). Three classes of evidence:
+ *   - explicit "first job switch", "first switch", "switching for the
+ *     first time"
+ *   - "1 year" or "X months" tenure + currently looking ("switching",
+ *     "moving", "looking for change") — captures "I've been at TCS for
+ *     1 year and now want to switch"
+ *   - "first job" + "X months/years" + transition language */
+const EARLY_SWITCHER_PATTERNS: RegExp[] = [
+  /\bfirst\s+(?:job\s+)?(?:switch|move|change|transition|jump)\b/i,
+  /\b(?:switching|moving|changing)\s+(?:jobs?|companies)\s+for\s+the\s+first\s+time\b/i,
+  /\b(?:i'?ve\s+been|been|after)\s+(?:at\s+\w+\s+|here\s+|with\s+\w+\s+)?(?:for\s+)?(?:about\s+|just\s+|only\s+)?(\d+)\s+(?:month|mo|months|mos|year|yr|years|yrs)\b.{0,80}\b(?:looking|switching|moving|change|want\s+to\s+(?:switch|move|leave|change))\b/i,
+  /\bonly\s+(?:about\s+|just\s+)?(\d+)\s+(?:month|months|year|years|yr|yrs)\s+(?:at|in)\b.{0,40}\b(?:switching|moving|change)\b/i,
+];
+
+function detectEarlySwitcher(text: string): boolean {
+  for (const re of EARLY_SWITCHER_PATTERNS) {
+    const m = re.exec(text);
+    if (!m) continue;
+    /* When a tenure-count is captured, require ≤24 months — anything
+     * above 2 years stops being "early". When no number is captured
+     * (explicit "first switch" phrasing), the keyword is its own
+     * evidence. */
+    if (m[1]) {
+      const n = parseInt(m[1], 10);
+      if (!Number.isFinite(n)) continue;
+      const isYear = /year|yr/i.test(m[0]);
+      const months = isYear ? n * 12 : n;
+      if (months <= 24) return true;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+/* `lowCtcAlert` — candidate self-states that their current CTC is
+ * below market or below what their skills warrant. Fires the
+ * "market-anchor-not-hike" reframe in LEVER_GUIDANCE. Conservative:
+ * needs explicit self-statement, not just a low number — the numeric
+ * check is the kernel's job (state.candidateCurrentCtc vs band). */
+const LOW_CTC_PATTERNS: RegExp[] = [
+  /\b(?:my\s+(?:current\s+)?(?:salary|ctc|pay|comp(?:ensation)?))\s+(?:is\s+)?(?:low|below\s+market|under\s+market|underpaid|much\s+lower|too\s+low|on\s+the\s+lower\s+side)\b/i,
+  /\b(?:i'?m|i\s+am|i\s+feel)\s+(?:underpaid|undervalued|under[-\s]?compensated|under\s+market|below\s+market)\b/i,
+  /\b(?:current|prior|last)\s+(?:salary|ctc|pay|package)\s+(?:doesn'?t|does\s+not|never)\s+(?:reflect|match|capture|represent)\s+(?:my\s+)?(?:current\s+|actual\s+|real\s+)?(?:skill|skills|level|responsibilities|work|value)\b/i,
+  /\b(?:underpaid\s+for|under\s+market\s+for)\s+(?:my\s+|the\s+)?(?:role|skill|work|level)\b/i,
+];
+
+function detectLowCtcAlert(text: string): boolean {
+  return LOW_CTC_PATTERNS.some((p) => p.test(text));
+}
+
+/* `priorInternshipNonConversion` — candidate did an internship at a
+ * DIFFERENT company before their current/prior full-time role. The
+ * internship is a credential on the resume, not a PPO conversion
+ * event for this negotiation. Distinct from `internshipConversion`:
+ *   - internshipConversion = "I'm your intern, converting to FT"
+ *   - priorInternshipNonConversion = "I interned at Google, then joined
+ *     TCS, now applying to Flipkart" */
+const PRIOR_INTERNSHIP_NONCONVERSION_PATTERNS: RegExp[] = [
+  /\b(?:i\s+)?intern(?:ed|ship)\s+(?:at|with|for)\s+(?!you\b|us\b|here\b|this\s+company\b)\w+/i,
+  /\b(?:summer\s+intern(?:ship)?|winter\s+intern(?:ship)?|industrial\s+trainee)\s+(?:at|with)\s+\w+/i,
+  /\b(?:after\s+(?:my\s+)?internship|post[-\s]?internship)\s+(?:i\s+)?(?:joined|moved|went\s+to|started)\b/i,
+  /\b(?:did|completed|finished)\s+(?:an?\s+|my\s+)?internship\s+(?:before|prior\s+to|earlier)\b/i,
+];
+
+function detectPriorInternshipNonConversion(text: string, isConversionDetected: boolean): boolean {
+  if (isConversionDetected) return false; /* current PPO trumps prior credential */
+  return PRIOR_INTERNSHIP_NONCONVERSION_PATTERNS.some((p) => p.test(text));
+}
+
+/* `serviceCompanyBackground` — candidate works at / came from an
+ * Indian IT-services company. Two classes of evidence:
+ *   - explicit company name (TCS/Infosys/Wipro/Cognizant/HCL/TechM/
+ *     Mindtree/LTI/L&T Infotech/Capgemini/Accenture-India/IBM-India/
+ *     DXC/Mphasis)
+ *   - self-label ("service company", "service background", "from
+ *     services side", "IT services") */
+const SERVICE_COMPANY_PATTERNS: RegExp[] = [
+  /\b(tcs|infosys|wipro|cognizant|hcl\s+(?:tech|technologies)?|tech\s+mahindra|techm|mindtree|lti|l&t\s+infotech|capgemini|accenture(?:\s+india)?|ibm\s+india|dxc|mphasis|persistent\s+systems|hexaware|coforge|birlasoft|kpit|cyient|nseit|sonata)\b/i,
+  /\b(?:it[-\s]?services|service[-\s]company|service[-\s]background|services\s+side|services\s+company|services\s+firm)\b/i,
+  /\b(?:from|in|at)\s+(?:a\s+)?service[-\s]?(?:based\s+)?(?:company|firm|background|side)\b/i,
+];
+
+function detectServiceCompanyBackground(text: string): boolean {
+  return SERVICE_COMPANY_PATTERNS.some((p) => p.test(text));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -479,6 +603,11 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const probationCompMentioned = detectProbationComp(text);
   const internshipConversion = detectInternshipConversion(text);
   const collegeTier = detectCollegeTier(text);
+  /* Junior-flow (2026-05-14e) — four 0-2 YoE signals. */
+  const earlySwitcher = detectEarlySwitcher(text);
+  const lowCtcAlert = detectLowCtcAlert(text);
+  const priorInternshipNonConversion = detectPriorInternshipNonConversion(text, internshipConversion);
+  const serviceCompanyBackground = detectServiceCompanyBackground(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -491,7 +620,11 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     serviceBondAccepted ||
     probationCompMentioned ||
     internshipConversion ||
-    collegeTier != null;
+    collegeTier != null ||
+    earlySwitcher ||
+    lowCtcAlert ||
+    priorInternshipNonConversion ||
+    serviceCompanyBackground;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -504,6 +637,10 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     probationCompMentioned,
     internshipConversion,
     collegeTier,
+    earlySwitcher,
+    lowCtcAlert,
+    priorInternshipNonConversion,
+    serviceCompanyBackground,
     hasAny,
   };
 }
@@ -762,6 +899,14 @@ export function mergeCandidateProfile(
     /* collegeTier — last-stated wins (recruiter would update mental
      * model on disclosure), but never demoted from null. */
     collegeTier: next.collegeTier ?? p.collegeTier,
+    /* Junior-flow (2026-05-14e) — all four are monotone-up. Once the
+     * candidate disclosed an early switch / low CTC / prior internship
+     * / service background, the recruiter would remember through the
+     * rest of the session. */
+    earlySwitcher: p.earlySwitcher || next.earlySwitcher,
+    lowCtcAlert: p.lowCtcAlert || next.lowCtcAlert,
+    priorInternshipNonConversion: p.priorInternshipNonConversion || next.priorInternshipNonConversion,
+    serviceCompanyBackground: p.serviceCompanyBackground || next.serviceCompanyBackground,
     hasAny: false,
   };
   merged.hasAny =
@@ -775,6 +920,10 @@ export function mergeCandidateProfile(
     merged.serviceBondAccepted ||
     merged.probationCompMentioned ||
     merged.internshipConversion ||
-    merged.collegeTier != null;
+    merged.collegeTier != null ||
+    merged.earlySwitcher ||
+    merged.lowCtcAlert ||
+    merged.priorInternshipNonConversion ||
+    merged.serviceCompanyBackground;
   return merged;
 }

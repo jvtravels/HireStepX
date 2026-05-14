@@ -679,6 +679,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       probationCompMentioned: false,
     internshipConversion: false,
     collegeTier: null,
+      earlySwitcher: false,
+      lowCtcAlert: false,
+      priorInternshipNonConversion: false,
+      serviceCompanyBackground: false,
       hasAny: false,
     },
     miscSignals: {
@@ -985,7 +989,7 @@ export function parseCandidateAnswer(
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
-      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
       retentionCounter: { ...EMPTY_RETENTION_COUNTER },
@@ -2156,6 +2160,10 @@ function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
     probationCompMentioned: v?.probationCompMentioned ?? false,
     internshipConversion: v?.internshipConversion ?? false,
     collegeTier: v?.collegeTier ?? null,
+    earlySwitcher: v?.earlySwitcher ?? false,
+    lowCtcAlert: v?.lowCtcAlert ?? false,
+    priorInternshipNonConversion: v?.priorInternshipNonConversion ?? false,
+    serviceCompanyBackground: v?.serviceCompanyBackground ?? false,
     hasAny: v?.hasAny ?? false,
   };
 }
