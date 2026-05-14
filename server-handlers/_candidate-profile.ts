@@ -468,6 +468,7 @@ export const __DOMAIN_KEYWORDS_INTERNAL: Array<[RegExp, string]> = [
   [/\b(product\s+manager|product\s+management|pm\b)\b/i, "product-management"],
   [/\b(program\s+manager|tpm|technical\s+program)\b/i, "program-management"],
   [/\b(product\s+marketing|pmm)\b/i, "product-marketing"],
+  [/\b(social\s+media\s+(manager|lead|specialist|executive|coordinator|strategist)?|community\s+manager|influencer\s+(marketing|manager))\b/i, "social-media"],
   [/\b(marketing\s+(manager|lead)?|growth\s+marketing|digital\s+marketing)\b/i, "marketing"],
   [/\b(sales\s+(engineer|executive|manager)?|account\s+executive|sdr|bdr)\b/i, "sales"],
   [/\b(customer\s+success|cs\s+manager|implementation)\b/i, "customer-success"],
@@ -522,7 +523,12 @@ export const __ADJACENT_INTERNAL: Record<string, string[]> = {
   "product-management": ["product-marketing", "program-management", "data-analyst", "customer-success", "management", "product-design"],
   "program-management": ["product-management", "management"],
   "product-marketing": ["product-management", "marketing"],
-  "marketing": ["product-marketing", "content", "sales"],
+  "marketing": ["product-marketing", "content", "sales", "social-media"],
+  /* Bug-report 14 (2026-05-14) — social-media as its own bucket.
+   * Adjacent to marketing + content (skill transfer is real: copy,
+   * brand, audience). Not adjacent to product-design — a Senior
+   * Product Designer → Social Media Manager is a true craft pivot. */
+  "social-media": ["marketing", "content"],
   "sales": ["customer-success", "marketing"],
   "customer-success": ["sales", "product-management"],
   /* Bug-report 13 — management cluster is internally adjacent (e.g.
@@ -534,7 +540,7 @@ export const __ADJACENT_INTERNAL: Record<string, string[]> = {
   "management": ["product-management", "program-management", "backend"],
   "business": ["data-analyst", "consulting"],
   "consulting": ["business"],
-  "content": ["marketing"],
+  "content": ["marketing", "social-media"],
   /* Pivot-only buckets — empty adjacency by design. */
   "operations": [],
   "hr-people": [],
@@ -565,7 +571,7 @@ export interface ApplicableYoeResult {
 /** Map (primaryDomain, targetRole, totalYoe) → applicableYoe.
  *  Pure. */
 export function computeApplicableYoe(input: ApplicableYoeInputs): ApplicableYoeResult {
-  const { totalYoe, primaryDomain, targetRole, domainPivot } = input;
+  const { totalYoe, primaryDomain, targetRole } = input;
   const cand = canonDomain(primaryDomain);
   const tgt = canonDomain(targetRole);
 
@@ -574,13 +580,30 @@ export function computeApplicableYoe(input: ApplicableYoeInputs): ApplicableYoeR
     return { applicableYoe: null, relation: "unknown", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
   }
   if (!cand || !tgt) {
-    /* If the utterance-layer signalled a pivot, honour it — applicableYoe
-     * collapses regardless of missing canonicalisation. Otherwise we
-     * cannot tell, so default to totalYoe (no penalty). */
-    if (domainPivot) {
-      return { applicableYoe: 0, relation: "pivot", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
-    }
-    return { applicableYoe: totalYoe, relation: "unknown", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
+    /* Bug-report 14 (2026-05-14) — when either side fails to classify
+     * we previously defaulted to `relation: "unknown"` with applicableYoe
+     * = totalYoe (full credit). That is the wrong direction for a
+     * salary kernel: granting full credit to an unrecognised target role
+     * lets a senior candidate's YoE anchor a senior-tier band for a
+     * role the system has no model of. Bug-13 (Senior Product Designer
+     * → Operations Manager → ₹25L opener) and Bug-14 (Senior Product
+     * Designer → Social Media Manager → ₹32L opener) are the same
+     * bug class, both rooted here. Band-aiding by adding more domain
+     * keywords fixes the symptom for that role and leaves the next
+     * unknown role exposed.
+     *
+     * Correct contract: when we cannot model the relationship, treat
+     * it as a pivot. applicableYoe collapses to 0, the band-resolver
+     * picks the entry tier, and the recruiter offers conservatively.
+     * If the candidate IS in fact senior in the unknown role, they
+     * will negotiate up from a low opener — the failure mode is mild
+     * (under-offer + counter) rather than catastrophic (6–8× market
+     * offer that destroys the simulation's pedagogical value).
+     *
+     * `relation: "unknown"` is still emitted when totalYoe is null
+     * (the truly unknowable case, handled above), so callers that
+     * branch on "unknown" for telemetry continue to work. */
+    return { applicableYoe: 0, relation: "pivot", candidateDomainKey: cand?.key ?? null, targetDomainKey: tgt?.key ?? null };
   }
   if (cand.key === tgt.key) {
     return { applicableYoe: totalYoe, relation: "match", candidateDomainKey: cand.key, targetDomainKey: tgt.key };

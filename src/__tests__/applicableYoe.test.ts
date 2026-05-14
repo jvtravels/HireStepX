@@ -88,14 +88,20 @@ describe("computeApplicableYoe — domain-pivot vs match vs adjacent", () => {
     expect(r.relation).toBe("pivot");
   });
 
-  it("unclassifiable domains + no pivot signal → fall back to totalYoe", () => {
+  it("unclassifiable domains → pivot (applicableYoe=0), even with no explicit pivot signal", () => {
+    /* Bug-report 14 (2026-05-14) — pre-fix this returned applicableYoe=8
+     * with relation="unknown", which let a senior candidate's YoE
+     * anchor a senior-tier band for an unrecognised target role. The
+     * correct conservative default is pivot — see the long comment in
+     * computeApplicableYoe for why band-aiding via keyword additions
+     * was the wrong fix for Bug-13 and would have left Bug-14 exposed. */
     const r = computeApplicableYoe({
       totalYoe: 8,
       primaryDomain: "Astrophysicist",
       targetRole: "Underwater Basket Weaver",
     });
-    expect(r.applicableYoe).toBe(8);
-    expect(r.relation).toBe("unknown");
+    expect(r.applicableYoe).toBe(0);
+    expect(r.relation).toBe("pivot");
   });
 
   it("end-to-end pipeline: Senior Product Designer 6y → Java → entry-level band", () => {
