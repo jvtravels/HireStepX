@@ -98,14 +98,20 @@ export interface TurnUsageRecord {
    * tokenization was performed upstream. Not retained in the log. */
   inputText?: string | null;
   outputText?: string | null;
+  /* A/B prompt variant attribution (2026-05-14). Surfaced so the
+   * structured-usage log can be joined to PostHog A/B-experiment
+   * aggregates. Optional — non-A/B paths leave this null. */
+  promptVariant?: "control" | "variant-a" | "variant-b" | null;
 }
 
-/** Approximate token count from a string. ~4 chars / token is a
- *  reasonable English-mix heuristic; finer tokenizers exist but they
- *  add a runtime dependency. Pure. */
+import { countTokens } from "./_tokenizer";
+
+/** Approximate token count. Back-compat alias — delegates to the
+ *  unified `countTokens` helper in _tokenizer.ts which combines a
+ *  char-based lower bound (ceil(len/4)) with a whitespace-aware upper
+ *  bound (words * 1.3) and takes their max. Pure. */
 export function estimateTokens(text: string | null | undefined): number {
-  if (!text || typeof text !== "string" || text.length === 0) return 0;
-  return Math.ceil(text.length / 4);
+  return countTokens(text);
 }
 
 /** Placeholder Groq pricing — used purely as a cost-attribution signal
@@ -163,6 +169,7 @@ export function logTurnUsage(record: TurnUsageRecord): void {
       costInr,
       latencyMs: record.latencyMs ?? null,
       injectionDetected: record.injectionDetected === true,
+      promptVariant: record.promptVariant ?? null,
     };
     /* eslint-disable-next-line no-console */
     console.log(JSON.stringify(payload));

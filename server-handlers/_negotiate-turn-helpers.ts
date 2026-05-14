@@ -24,6 +24,7 @@ import {
   findOutOfBandNumber,
   isVerbatimRepeat,
 } from "./_negotiation-kernel";
+import { summarizeTranscriptIfLong, type TranscriptTurn } from "./_transcript-summarizer";
 import { detectRoleLabelMismatch } from "./_role-mismatch";
 import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
@@ -1178,21 +1179,56 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
   const hints = buildResponseHints(state, move);
   const hintsBlock = hints ? `RESPONSE HINTS:\n${hints}\n\n` : "";
 
-  /* Last 2 exchanges of dialogue (capped to the most recent 4 entries on
-     state.conversationLog). Phase 5 of the rebuild: prior turns gives
-     the LLM enough thread to reference what was said earlier without
-     re-deriving from the full transcript. We OMIT the entry that
-     matches the candidate's current answer (safeAnswer) because it's
-     surfaced immediately below as "CANDIDATE JUST SAID" — duplicating
-     it confuses the model. */
-  const recent = state.conversationLog.slice(-4);
-  const recentExcludingCurrent = recent.filter(
-    (e, i) => !(i === recent.length - 1 && e.speaker === "candidate" && e.text === (candidateAnswer || "").trim()),
+  /* Recent dialogue window. Phase 5 of the rebuild surfaced the last 4
+     entries; the May-2026 long-session telemetry showed the LLM losing
+     thread coherence on sessions past 20 turns where a referenced
+     exchange fell outside the 4-entry window. We now surface the last
+     10 entries and, when the conversation has run past `summarize`
+     threshold (30), prepend a synthesized "Earlier in conversation: ..."
+     line built from the candidate-profile snapshot. The summary line is
+     structural (no LLM call) and gives the model enough context to
+     reference earlier moves without re-deriving from the full
+     transcript. We OMIT the entry that matches the candidate's current
+     answer (safeAnswer) because it's surfaced immediately below as
+     "CANDIDATE JUST SAID" — duplicating it confuses the model. */
+  const conversationTurns: TranscriptTurn[] = state.conversationLog.map((e) => ({
+    role: (e.speaker === "candidate" ? "user" : "bot") as "user" | "bot",
+    text: e.text,
+  }));
+  const summarised = summarizeTranscriptIfLong(conversationTurns, {
+    threshold: 30,
+    tailKeep: 10,
+    candidateProfile: state.candidateProfile ?? null,
+    candidateTarget: state.candidateTarget ?? null,
+    highestOfferMade: state.highestOfferMade,
+    role: state.role,
+    company: state.company,
+  });
+  /* Map the summarised transcript back onto the (speaker,text) shape the
+     prompt block uses. The synthetic summary line surfaces as role=system
+     so we render it distinctly. */
+  const summaryHeader = summarised.summarized && summarised.transcript.length > 0
+    && summarised.transcript[0].role === "system"
+    ? `[Earlier in conversation: ${summarised.transcript[0].text}]`
+    : "";
+  const tailEntries = summarised.summarized
+    ? summarised.transcript.slice(1)
+    : summarised.transcript;
+  /* Reattach speaker labels by replaying against the original log: when
+     summarised, the tail mirrors the last N entries of conversationLog. */
+  const tailOriginal = summarised.summarized
+    ? state.conversationLog.slice(state.conversationLog.length - tailEntries.length)
+    : state.conversationLog.slice(-10);
+  const recentExcludingCurrent = tailOriginal.filter(
+    (e, i) => !(i === tailOriginal.length - 1 && e.speaker === "candidate" && e.text === (candidateAnswer || "").trim()),
   );
-  const historyBlock = recentExcludingCurrent.length > 0
-    ? `RECENT DIALOGUE (most recent last):\n${recentExcludingCurrent
-        .map(e => `${e.speaker === "ai" ? "You" : "Candidate"}: ${e.text}`)
-        .join("\n")}\n\n`
+  const historyLines: string[] = [];
+  if (summaryHeader) historyLines.push(summaryHeader);
+  for (const e of recentExcludingCurrent) {
+    historyLines.push(`${e.speaker === "ai" ? "You" : "Candidate"}: ${e.text}`);
+  }
+  const historyBlock = historyLines.length > 0
+    ? `RECENT DIALOGUE (most recent last):\n${historyLines.join("\n")}\n\n`
     : "";
 
   const user =

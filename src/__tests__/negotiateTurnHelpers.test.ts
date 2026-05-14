@@ -567,6 +567,35 @@ describe("buildAiPrompt conversation history (Phase 5)", () => {
     const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
     expect(user).not.toContain("RECENT DIALOGUE");
   });
+
+  it("long sessions (>30 turns) prepend a synthesized 'Earlier in conversation' summary and keep last 10 turns verbatim", () => {
+    /* 2026-05-14 — wired summarizeTranscriptIfLong into the recent-
+     * dialogue block. With 40 turns of log, the prompt must surface:
+     *   1) one [Earlier in conversation: ...] header (no LLM call —
+     *      synthesised from the candidate-profile snapshot + target/offer),
+     *   2) the last 10 turns verbatim,
+     *   3) NOT the first 30. */
+    const log: Array<{ speaker: "ai" | "candidate"; text: string }> = [];
+    for (let i = 0; i < 40; i++) {
+      log.push({ speaker: i % 2 === 0 ? "ai" : "candidate", text: `turn-${i}` });
+    }
+    const state = baseState({
+      phase: "counter-offer",
+      role: "Senior SWE",
+      company: "Acme",
+      candidateTarget: 28,
+      highestOfferMade: 25,
+      conversationLog: log,
+    });
+    const move: AiMove = { lever: "counter-base", newTotalLpa: 26, rationale: "" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(user).toContain("RECENT DIALOGUE");
+    expect(user).toContain("[Earlier in conversation:");
+    expect(user).toContain("turn-30");
+    expect(user).toContain("turn-39");
+    expect(user).not.toContain("turn-0\n");
+    expect(user).not.toContain("turn-29\n");
+  });
 });
 
 describe("prompt cache structure (post-Phase-5 hardening)", () => {

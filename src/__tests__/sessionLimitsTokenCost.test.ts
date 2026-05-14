@@ -14,14 +14,18 @@ describe("estimateTokens", () => {
     expect(estimateTokens(undefined as unknown as string)).toBe(0);
   });
 
-  it("approximates ~4 chars per token", () => {
-    expect(estimateTokens("abcd")).toBe(1);
+  it("approximates ~4 chars per token (whitespace-aware max)", () => {
+    /* New (2026-05-14): countTokens takes max(ceil(len/4), ceil(words*1.3)).
+     * Single-word ascii strings hit the words*1.3 ceiling when shorter
+     * than ~5 chars; long single-char repeats are dominated by the
+     * char bound. */
+    expect(estimateTokens("abcd")).toBe(2);
     expect(estimateTokens("abcdefgh")).toBe(2);
     expect(estimateTokens("a".repeat(400))).toBe(100);
   });
 
   it("rounds up partial tokens", () => {
-    expect(estimateTokens("abc")).toBe(1);
+    expect(estimateTokens("abc")).toBe(2);
     expect(estimateTokens("abcde")).toBe(2);
   });
 });
@@ -80,7 +84,7 @@ describe("logTurnUsage — token + cost telemetry", () => {
     });
     const p = lastPayload();
     expect(p.costInr).toBeCloseTo(
-      1 * GROQ_INPUT_RATE_INR_PER_TOKEN + 1 * GROQ_OUTPUT_RATE_INR_PER_TOKEN,
+      2 * GROQ_INPUT_RATE_INR_PER_TOKEN + 2 * GROQ_OUTPUT_RATE_INR_PER_TOKEN,
       12,
     );
   });

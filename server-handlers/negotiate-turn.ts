@@ -67,6 +67,7 @@ import {
   logTurnUsage,
 } from "./_session-limits";
 import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
+import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -170,6 +171,7 @@ export async function generateAiText(
   candidateAnswer: string,
   llm: LlmCaller,
   userId?: string,
+  promptVariant?: PromptVariant,
 ): Promise<{
   text: string;
   source: "llm" | "llm-retry" | "fallback";
@@ -187,7 +189,14 @@ export async function generateAiText(
      called out post-Phase-2. */
   envelopeMissingAttempts: number;
 }> {
-  const { system, user } = buildAiPrompt({ state, move, candidateAnswer });
+  const built = buildAiPrompt({ state, move, candidateAnswer });
+  /* A/B prompt-variant transform — applied at the leaf so the kernel
+   * brief / user message stays cache-stable. The variant is selected
+   * once per session by `selectPromptVariant`; we accept it as a param
+   * so the handler can log it via PostHog without re-selecting. */
+  const variant: PromptVariant = promptVariant ?? "control";
+  const system = getSystemPrompt(variant, built.system);
+  const user = built.user;
   const failureKinds: string[] = [];
   let envelopeMissingAttempts = 0;
 
@@ -385,7 +394,8 @@ export default async function handler(
         candidatePrimaryDomain: primaryDomain,
       });
       const move = pickAiMove(state);
-      const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, "", llm, auth.userId);
+      const promptVariant = selectPromptVariant(state.sessionId);
+      const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, "", llm, auth.userId, promptVariant);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
       if (failureKinds.length > 0) {
@@ -560,12 +570,14 @@ export default async function handler(
         failureKinds = [];
         envelopeMissingAttempts = 0;
       } else {
-        const gen = await generateAiText(state, move, sanitizedAnswer, llm, auth.userId);
+        const promptVariantTurn = selectPromptVariant(state.sessionId);
+        const gen = await generateAiText(state, move, sanitizedAnswer, llm, auth.userId, promptVariantTurn);
         text = gen.text;
         source = gen.source;
         failureKinds = gen.failureKinds;
         envelopeMissingAttempts = gen.envelopeMissingAttempts;
       }
+      const promptVariant = selectPromptVariant(state.sessionId);
       /* LLM-output token-leak guard (2026-05-14). Scrub any internal
        * kernel tokens / system-prompt fragments before applying to
        * state and returning. Caught leaks fire telemetry so we can
@@ -679,6 +691,7 @@ export default async function handler(
         outputText: text,
         latencyMs: Date.now() - turnStartedAt,
         injectionDetected,
+        promptVariant,
       });
       /* Bump the per-user daily counter AFTER a successful turn. We
        * deliberately do this in fire-and-forget mode — a counter miss
