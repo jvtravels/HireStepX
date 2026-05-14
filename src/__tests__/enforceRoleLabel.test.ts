@@ -72,4 +72,34 @@ describe("enforceRoleLabel", () => {
       enforceRoleLabel("the senior product designer slot", "Product Designer"),
     ).toBe("the Product Designer slot");
   });
+
+  /* Bug-report 14 (2026-05-14) — the bug session had sessionRole
+   * "Social Media Manager" and the LLM emitted "Senior Social Media
+   * Manager". The strip pattern uses \s+ between the adjective and the
+   * role, and literal (escaped) spaces inside the role, so multi-word
+   * roles must still strip correctly. */
+  it("strips Senior from a multi-word session role (Social Media Manager)", () => {
+    expect(
+      enforceRoleLabel(
+        "We're hiring for our Senior Social Media Manager position.",
+        "Social Media Manager",
+      ),
+    ).toBe("We're hiring for our Social Media Manager position.");
+  });
+
+  it("strips Lead from a multi-word session role mid-sentence", () => {
+    expect(
+      enforceRoleLabel(
+        "The Lead Customer Success Manager will own the book.",
+        "Customer Success Manager",
+      ),
+    ).toBe("The Customer Success Manager will own the book.");
+  });
+
+  it("idempotent on already-clean multi-word role text", () => {
+    const clean = "Welcome to the Social Media Manager team.";
+    expect(enforceRoleLabel(clean, "Social Media Manager")).toBe(clean);
+    /* Run twice — second pass must be a no-op (idempotency contract). */
+    expect(enforceRoleLabel(enforceRoleLabel(clean, "Social Media Manager"), "Social Media Manager")).toBe(clean);
+  });
 });
