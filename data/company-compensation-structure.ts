@@ -1,22 +1,29 @@
 /* Company-specific compensation STRUCTURE overrides.
  *
+ * Session C follow-up (2026-05-14): this module is now a thin SHIM
+ * over `data/company-facts.ts`, which holds the unified per-company
+ * table. `CompanyCompensationStructure`, `GENERIC_INDIA_COMP`,
+ * `lookupCompanyCompStructure`, and `formatCompStructureForPrompt` are
+ * preserved exactly so call sites/tests keep working. New code should
+ * prefer `lookupCompanyFacts` directly.
+ *
+ * Original module purpose, retained for context:
  * Added in session 12 bug fix (2026-05-14). The kernel previously had
  * no handler for utterances like "explain the variable components" or
  * "ESOP details?" — those are asks about the COMPANY's general
- * compensation structure (base/variable/equity ratios, bonus
- * frequency, vesting), not about the candidate's specific offer.
- *
- * Looked up by `lookupCompanyCompStructure(company)` in
+ * compensation structure (base/variable/equity ratios, bonus frequency,
+ * vesting), not about the candidate's specific offer. Looked up by
+ * `lookupCompanyCompStructure(company)` in
  * `_negotiate-turn-helpers.ts` when the candidate has asked for the
- * compensation structure (`compensation-breakdown` info intent). Match
- * is case-insensitive substring. Missing entry falls back to a generic
- * Indian-corporate package; never throws.
+ * compensation structure (`compensation-breakdown` info intent).
  *
- * Ratios sum to ~1.0 but are intentionally illustrative (not
- * committed numbers for THIS offer — that's the kernel's job). The
- * response-hint layer phrases them as "typical structure at <company>"
- * to keep the disclosure non-binding.
+ * Match is case-insensitive substring. Missing entry falls back to a
+ * generic Indian-corporate package; never throws. Ratios sum to ~1.0
+ * but are intentionally illustrative (not committed numbers for THIS
+ * offer — that's the kernel's job).
  */
+
+import { lookupCompanyFacts, COMPANY_FACTS } from "./company-facts";
 
 export interface CompanyCompensationStructure {
   /** Fraction of total CTC that is base / fixed salary. 0-1. */
@@ -45,34 +52,25 @@ export const GENERIC_INDIA_COMP: CompanyCompensationStructure = {
   notes: "Typical Indian-corporate structure; equity component depends on role seniority.",
 };
 
-/** Per-company overrides. Keyed by lowercase canonical name; lookup is
- *  case-insensitive substring match. */
-export const COMPANY_COMP: Record<string, CompanyCompensationStructure> = {
-  razorpay: { baseRatio: 0.75, variableRatio: 0.15, equityRatio: 0.10, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "ESOPs vested quarterly after cliff." },
-  accenture: { baseRatio: 0.85, variableRatio: 0.15, equityRatio: 0.0, bonusFrequency: "annual", vestingSchedule: "n/a", notes: "Performance bonus tied to annual ratings; no equity component for standard hires." },
-  tcs: { baseRatio: 0.90, variableRatio: 0.10, equityRatio: 0.0, bonusFrequency: "quarterly", vestingSchedule: "n/a", notes: "Quarterly variable allowance based on QAVA." },
-  google: { baseRatio: 0.55, variableRatio: 0.15, equityRatio: 0.30, bonusFrequency: "annual", vestingSchedule: "4-year, monthly after 1-year cliff", notes: "GSU equity grant; annual refreshers." },
-  microsoft: { baseRatio: 0.60, variableRatio: 0.15, equityRatio: 0.25, bonusFrequency: "annual", vestingSchedule: "4-year, 20/20/30/30 quarterly", notes: "Stock awards via Promote/Connect cycle." },
-  amazon: { baseRatio: 0.50, variableRatio: 0.10, equityRatio: 0.40, bonusFrequency: "annual sign-on; no annual perf bonus", vestingSchedule: "4-year, 5/15/40/40 backloaded", notes: "Sign-on bonus front-loaded to offset backloaded RSUs." },
-  flipkart: { baseRatio: 0.70, variableRatio: 0.15, equityRatio: 0.15, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "ESOPs typical for senior roles." },
-  swiggy: { baseRatio: 0.70, variableRatio: 0.20, equityRatio: 0.10, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "" },
-  zomato: { baseRatio: 0.72, variableRatio: 0.18, equityRatio: 0.10, bonusFrequency: "annual", vestingSchedule: "4-year, 1-year cliff", notes: "" },
-  infosys: { baseRatio: 0.88, variableRatio: 0.12, equityRatio: 0.0, bonusFrequency: "annual", vestingSchedule: "n/a", notes: "" },
-  wipro: { baseRatio: 0.88, variableRatio: 0.12, equityRatio: 0.0, bonusFrequency: "annual", vestingSchedule: "n/a", notes: "" },
-};
+/** Back-compat: per-company comp structures keyed by canonical name.
+ *  Derived from the unified `COMPANY_FACTS` table — DO NOT add new
+ *  entries here; add to `data/company-facts.ts` instead. */
+/* Keys are lowercased here for back-compat with the pre-consolidation
+ * casing convention this module used (tests access `.razorpay`,
+ * `.tcs`, etc.). */
+export const COMPANY_COMP: Record<string, CompanyCompensationStructure> = Object.fromEntries(
+  Object.entries(COMPANY_FACTS)
+    .filter(([, v]) => v.compStructure != null)
+    .map(([k, v]) => [k.toLowerCase(), v.compStructure as CompanyCompensationStructure]),
+);
 
 /** Look up the comp structure for a company. Case-insensitive substring
- *  match; falls back to the generic package. Pure. */
+ *  match via the unified facts table; falls back to GENERIC_INDIA_COMP.
+ *  Pure. */
 export function lookupCompanyCompStructure(
   company: string | null | undefined,
 ): CompanyCompensationStructure {
-  if (!company || typeof company !== "string") return GENERIC_INDIA_COMP;
-  const c = company.trim().toLowerCase();
-  if (!c) return GENERIC_INDIA_COMP;
-  for (const [key, value] of Object.entries(COMPANY_COMP)) {
-    if (c.includes(key)) return value;
-  }
-  return GENERIC_INDIA_COMP;
+  return lookupCompanyFacts(company).compStructure ?? GENERIC_INDIA_COMP;
 }
 
 /** Format a CompanyCompensationStructure into a prose blob for the

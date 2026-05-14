@@ -182,9 +182,38 @@ export interface NegotiationBand {
 
 /* ─── Canonical State ────────────────────────────────────────────── */
 
-/* Information items a candidate can interrogate the recruiter about.
-   Tracked as a set on state so we don't double-credit repeated asks
-   and so the move-picker can reward depth of due diligence. */
+/**
+ * Information items a candidate can interrogate the recruiter about.
+ * Tracked as a set on state so we don't double-credit repeated asks
+ * and so the move-picker can reward depth of due diligence.
+ *
+ * CONVENTION — two tiers of handling (see `_negotiate-turn-helpers.ts`
+ * `INFO_ANSWERS` for the long-form note):
+ *
+ *  - STATIC ONE-LINERS (9): clawback-period, variable-history,
+ *    vest-schedule, strike-price, in-hand-monthly, exercise-window,
+ *    acceleration, fixed-vs-variable, perks-non-cash. Each maps to a
+ *    fixed snippet in the `INFO_ANSWERS` table — no state interpolation.
+ *
+ *  - STATE-DERIVED BLOCKS (4): benefits-overview, compensation-breakdown,
+ *    notice-period-ask, hike-percentage-ask. These have bespoke
+ *    `if (state.infoAsked.includes(...))` blocks inside
+ *    `buildResponseHints` that interpolate kernel state (state.company,
+ *    state.highestOfferMade, state.candidateCurrentCtc, etc.) and
+ *    matching lever-routing branches in `pickAiMove` (search for
+ *    `wantsBenefits` / `wantsCompStructure` / `wantsNoticePolicy` /
+ *    `wantsHikeContext` for the pattern).
+ *
+ *  - HYBRID: `package-breakdown` is handled by lever-routing in
+ *    `pickAiMove` (`wantsBreakdown` → `benefits-summary` lever) and has
+ *    no dedicated `INFO_ANSWERS` row — the lever itself drives the
+ *    response. `fixed-vs-variable` and `perks-non-cash` appear in BOTH
+ *    tiers (one-liner fallback + breakdown lever trigger).
+ *
+ * When adding a new intent: if it's a state-free policy snippet, add
+ * a row to `INFO_ANSWERS`. If it requires kernel state, add a block to
+ * `buildResponseHints` AND a routing branch to `pickAiMove`.
+ */
 export type InfoIntent =
   | "clawback-period"      // joining-bonus clawback duration / pro-rata
   | "variable-history"     // last 2-3yr variable payout %

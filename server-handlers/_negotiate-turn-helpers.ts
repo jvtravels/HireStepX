@@ -305,7 +305,33 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
    what to say without us hand-writing 9 different prompts. Keeping
    these short and concrete reduces the chance the LLM invents a
    spurious number ("clawback is ₹5 lakh") instead of giving the
-   policy ("clawback is 2 years, pro-rated"). */
+   policy ("clawback is 2 years, pro-rated").
+   ─────────────────────────────────────────────────────────────────
+   CONVENTION — two-tier info-intent handling:
+
+   (A) STATIC ONE-LINERS — entries in this `INFO_ANSWERS` table.
+       Currently 9: clawback-period, variable-history, vest-schedule,
+       strike-price, in-hand-monthly, exercise-window, acceleration,
+       fixed-vs-variable, perks-non-cash. Use this tier when the
+       answer is a fixed policy snippet that does NOT depend on
+       kernel state (company, current offer, candidate CTC, etc.).
+       The hint is appended verbatim to the response-hint stack
+       inside `buildResponseHints`.
+
+   (B) STATE-DERIVED BLOCKS — bespoke `if (state.infoAsked.includes(...))`
+       branches in `buildResponseHints`. Currently 4: benefits-overview,
+       compensation-breakdown, notice-period-ask, hike-percentage-ask.
+       Use this tier when the response must interpolate kernel state
+       (state.company → per-company facts lookup; state.highestOfferMade
+       and state.candidateCurrentCtc → hike-delta calculation, etc.).
+
+   When adding a new intent: if it's a static one-liner with no state
+   dependency, just add a row here and update the `InfoIntent` union
+   in `_negotiation-kernel.ts`. If it needs state interpolation, add
+   a bespoke block in `buildResponseHints` below AND a lever-routing
+   branch in `pickAiMove` (search for `wantsBenefits` /
+   `wantsCompStructure` for the routing pattern).
+   ───────────────────────────────────────────────────────────────── */
 const INFO_ANSWERS: Record<string, string> = {
   "clawback-period": "Address clawback: 2-year clawback, pro-rated by months served, gross amount on exit.",
   "variable-history": "Address variable history: typical payout 80-100% in last 3 years, no zero years.",
