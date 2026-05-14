@@ -129,14 +129,32 @@ describe("recommendFollowups — esop-literacy", () => {
 describe("recommendFollowups — gap-readiness", () => {
   it("fires when gap >= 3 months and activity is not upskill/study", () => {
     const state = baseState({
-      candidateProfile: { careerGapMonths: 8, careerGapActivity: "family", tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true },
+      candidateProfile: { careerGapMonths: 8, careerGapActivity: "family", tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false,
+        peopleManagementClaimed: false,
+        crossBorderAnchor: false,
+        unvestedEquityLossClaim: false,
+        explodingOfferPressure: false,
+        postAcceptanceRenege: false,
+        quotaAttainmentClaimed: false,
+        gardenLeaveDisclosed: false,
+        nonCompeteFlagged: false,
+        relocationBonusAsked: false, hasAny: true },
     });
     expect(categories(state)).toContain("gap-readiness");
   });
 
   it("suppresses when activity is upskill", () => {
     const state = baseState({
-      candidateProfile: { careerGapMonths: 8, careerGapActivity: "upskill", tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true },
+      candidateProfile: { careerGapMonths: 8, careerGapActivity: "upskill", tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false,
+        peopleManagementClaimed: false,
+        crossBorderAnchor: false,
+        unvestedEquityLossClaim: false,
+        explodingOfferPressure: false,
+        postAcceptanceRenege: false,
+        quotaAttainmentClaimed: false,
+        gardenLeaveDisclosed: false,
+        nonCompeteFlagged: false,
+        relocationBonusAsked: false, hasAny: true },
     });
     expect(categories(state)).not.toContain("gap-readiness");
   });

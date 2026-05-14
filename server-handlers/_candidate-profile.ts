@@ -191,6 +191,55 @@ export interface CandidateProfileResult {
    *  we'll target a post-festival joining and lock the offer letter
    *  now"). Monotone-up. */
   culturalJoiningConstraint: boolean;
+  /** Senior-flow extension (2026-05-14h) — candidate claims people-
+   *  management scope ("I lead a team of N", "managed X engineers",
+   *  "EM / Engineering Manager / Director title"). Routes to a senior-
+   *  voice: probe scope (IC+management split, comp-decisions owned)
+   *  before pricing the band. Monotone-up. */
+  peopleManagementClaimed: boolean;
+  /** Senior-flow extension (2026-05-14h) — candidate anchors on a
+   *  cross-border / overseas TC ("my Bay Area TC was $250k", "I'm
+   *  returning from Singapore / Dubai / London"). Routes recruiter to
+   *  the PPP-correction rule: do NOT match USD/SGD/GBP directly;
+   *  explain India-market parity for the role. Monotone-up. */
+  crossBorderAnchor: boolean;
+  /** Senior-flow extension (2026-05-14h) — candidate claims unvested
+   *  equity / RSU loss / underwater options as a comp-justification
+   *  for higher signing bonus or stretch base. Routes recruiter to a
+   *  "we can address unvested via signing-bonus, not base" voice.
+   *  Monotone-up. */
+  unvestedEquityLossClaim: boolean;
+  /** Process-dynamics extension (2026-05-14h) — recruiter from another
+   *  company has given an exploding offer (24-72h deadline pressure).
+   *  Routes to a "don't get pressured" coaching voice + accelerated
+   *  decision support. Monotone-up. */
+  explodingOfferPressure: boolean;
+  /** Process-dynamics extension (2026-05-14h) — candidate signals they
+   *  have accepted then reneged on an offer before, or is considering
+   *  reneging now. HIGH RED-FLAG in Indian recruiting; routes recruiter
+   *  to a "we're optimizing for a clean acceptance, not a fast one"
+   *  voice. Monotone-up. */
+  postAcceptanceRenege: boolean;
+  /** Process-dynamics extension (2026-05-14h) — sales candidate claims
+   *  quota attainment ("hit 140% of quota", "President's Club", "top
+   *  performer"). Routes to a probe-the-claim voice + scope sales OTE
+   *  framing. Monotone-up. */
+  quotaAttainmentClaimed: boolean;
+  /** Long-tail extension (2026-05-14h) — candidate is on garden leave
+   *  / forced paid time-off between resignation and last-working-day.
+   *  Routes recruiter to "joining timeline is firm; we can use GL
+   *  productively" framing. Monotone-up. */
+  gardenLeaveDisclosed: boolean;
+  /** Long-tail extension (2026-05-14h) — candidate's current employer
+   *  has a non-compete / restrictive covenant restricting joining
+   *  competitors. Routes recruiter to a "let's review the clause and
+   *  consult counsel before signing" voice. Monotone-up. */
+  nonCompeteFlagged: boolean;
+  /** Long-tail extension (2026-05-14h) — candidate asks about a
+   *  relocation bonus / moving allowance (common when moving
+   *  Bangalore↔Hyderabad↔Pune↔Gurgaon etc). Routes recruiter to
+   *  surface the standard relo package proactively. Monotone-up. */
+  relocationBonusAsked: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -217,6 +266,15 @@ const EMPTY: CandidateProfileResult = {
   pipDisclosed: false,
   verbalOnlyOffer: false,
   culturalJoiningConstraint: false,
+  peopleManagementClaimed: false,
+  crossBorderAnchor: false,
+  unvestedEquityLossClaim: false,
+  explodingOfferPressure: false,
+  postAcceptanceRenege: false,
+  quotaAttainmentClaimed: false,
+  gardenLeaveDisclosed: false,
+  nonCompeteFlagged: false,
+  relocationBonusAsked: false,
   hasAny: false,
 };
 
@@ -686,6 +744,110 @@ function detectCulturalJoiningConstraint(text: string): boolean {
   return CULTURAL_JOINING_PATTERNS.some((p) => p.test(text));
 }
 
+/* ─── Senior-flow + process + long-tail (2026-05-14h) ──────────────── */
+
+/* `peopleManagementClaimed` — candidate self-states management scope. */
+const PEOPLE_MGMT_PATTERNS: RegExp[] = [
+  /\b(?:i\s+(?:lead|manage|run|head))\s+(?:a\s+)?(?:team\s+of\s+)?\d+\s+(?:engineers?|people|reports?|folks|members|developers?|designers?|analysts?|managers?)\b/i,
+  /\b(?:i\s+have|managing|leading)\s+\d+\s+(?:direct\s+)?reports?\b/i,
+  /\b(?:engineering\s+manager|eng\s+manager|em\b|director\s+of\s+engineering|head\s+of\s+(?:engineering|product|design|data)|senior\s+(?:engineering\s+)?manager|tech\s+lead\s+manager|tlm\b|people\s+manager|line\s+manager)\b/i,
+  /\b(?:team\s+of\s+\d+|\d+\s+person\s+team|\d+[-\s]person\s+team)\b/i,
+  /\b(?:managing|leading|owned)\s+(?:a\s+)?(?:team|squad|pod|tribe)\s+(?:of\s+)?(?:engineers?|people|designers?|analysts?)/i,
+];
+function detectPeopleManagementClaimed(text: string): boolean {
+  return PEOPLE_MGMT_PATTERNS.some((p) => p.test(text));
+}
+
+/* `crossBorderAnchor` — candidate cites overseas TC / return-to-India. */
+const CROSS_BORDER_PATTERNS: RegExp[] = [
+  /\b(?:returning|moving\s+back|coming\s+back|relocat(?:ing|ed))\s+(?:to\s+india\s+)?from\s+(?:the\s+)?(?:us|usa|united\s+states|bay\s+area|silicon\s+valley|seattle|new\s+york|sf|san\s+francisco|singapore|sg|dubai|uae|london|uk|united\s+kingdom|canada|australia|berlin|germany|netherlands|amsterdam|zurich|switzerland)\b/i,
+  /\b(?:my|current|prior|last)\s+(?:tc|total\s+comp(?:ensation)?|salary|package|comp(?:ensation)?)\s+(?:is|was)\s+(?:\$|usd|sgd|gbp|eur|aed|cad|aud)\s*[\d,.]+/i,
+  /\b(?:bay\s+area|silicon\s+valley|us\s+market|singapore\s+market|dubai\s+market|london\s+market)\s+(?:tc|comp|salary|package|rates?|standards?)\b/i,
+  /\b(?:nri|non[-\s]resident\s+indian|h1b|h[-\s]?1b|green\s+card|ep\s+pass|employment\s+pass)\b/i,
+  /\b(?:return(?:ing)?\s+to\s+india|move\s+back\s+to\s+india|coming\s+home\s+to\s+india)\b/i,
+];
+function detectCrossBorderAnchor(text: string): boolean {
+  return CROSS_BORDER_PATTERNS.some((p) => p.test(text));
+}
+
+/* `unvestedEquityLossClaim` — candidate cites unvested equity loss. */
+const UNVESTED_EQUITY_PATTERNS: RegExp[] = [
+  /\b(?:unvested|leaving\s+behind|walking\s+away\s+from|forfeit(?:ing)?|losing)\s+(?:my\s+|the\s+)?(?:rsus?|stock|equity|options?|shares?|grant|esops?|vesting)\b/i,
+  /\b(?:rsus?|stock|equity|options?|esops?)\s+(?:left|remaining|outstanding|unvested|not\s+(?:yet\s+)?vested)\b/i,
+  /\b(?:underwater|out\s+of\s+the\s+money|otm)\s+(?:options?|stock|equity|grants?)\b/i,
+  /\b(?:signing\s+bonus|joining\s+bonus|sign[-\s]on|sign\s+on)\s+(?:to\s+)?(?:offset|cover|make\s+up\s+for|compensate)\s+(?:the\s+)?(?:unvested|loss|equity|rsus?|stock)\b/i,
+  /\b(?:make\s+(?:me\s+)?whole|whole\s+(?:me\s+)?up)\s+(?:for|on)\s+(?:the\s+)?(?:unvested|rsus?|equity|stock|grant)\b/i,
+];
+function detectUnvestedEquityLossClaim(text: string): boolean {
+  return UNVESTED_EQUITY_PATTERNS.some((p) => p.test(text));
+}
+
+/* `explodingOfferPressure` — another company gave a tight deadline. */
+const EXPLODING_OFFER_PATTERNS: RegExp[] = [
+  /\b(?:exploding\s+offer|24[-\s]?hour\s+(?:deadline|window)|48[-\s]?hour\s+(?:deadline|window)|72[-\s]?hour\s+(?:deadline|window))\b/i,
+  /\b(?:they|other\s+(?:company|recruiter|offer|firm))\s+(?:want|wants|need|needs|gave\s+me|are\s+giving\s+me|said)\s+(?:a\s+)?(?:decision|answer|response)\s+(?:in|within|by)\s+(?:\d+\s+)?(?:hours?|days?|tomorrow|tonight|end\s+of\s+(?:day|week))\b/i,
+  /\b(?:decide|decision)\s+(?:by\s+)?(?:tomorrow|tonight|end\s+of\s+(?:day|week)|in\s+\d+\s+(?:hours?|days?))\b/i,
+  /\b(?:pressured|pressuring|rushing|rushed)\s+(?:me\s+)?(?:to\s+)?(?:decide|accept|sign|commit)\b/i,
+  /\b(?:offer\s+expires?|expires?\s+(?:in|on)|valid\s+(?:for\s+)?(?:only\s+)?(?:\d+\s+)?(?:hours?|days?))\b/i,
+];
+function detectExplodingOfferPressure(text: string): boolean {
+  return EXPLODING_OFFER_PATTERNS.some((p) => p.test(text));
+}
+
+/* `postAcceptanceRenege` — candidate has reneged before or is now. */
+const POST_ACCEPTANCE_RENEGE_PATTERNS: RegExp[] = [
+  /\b(?:accepted\s+(?:another\s+offer\s+)?(?:then|but)\s+(?:reneged|backed\s+out|changed\s+my\s+mind|declined|reneg(?:ed|ing)))\b/i,
+  /\b(?:renege|reneged|reneging|back\s+out\s+of|backed\s+out\s+of|backing\s+out\s+of|pulling\s+out\s+of)\s+(?:an?\s+|the\s+)?(?:offer|acceptance|commitment)\b/i,
+  /\b(?:dropping|drop|ghost(?:ing|ed)?)\s+(?:another\s+offer|previously\s+accepted\s+offer|the\s+previous\s+offer)\b/i,
+  /\b(?:already\s+(?:accepted|signed)\s+(?:another|a\s+different)\s+offer\s+(?:but|and\s+now))\b/i,
+  /\b(?:bait\s+and\s+switch|reneged\s+on|broke\s+(?:my\s+|the\s+)?commitment)\b/i,
+];
+function detectPostAcceptanceRenege(text: string): boolean {
+  return POST_ACCEPTANCE_RENEGE_PATTERNS.some((p) => p.test(text));
+}
+
+/* `quotaAttainmentClaimed` — sales candidate cites attainment metric. */
+const QUOTA_ATTAINMENT_PATTERNS: RegExp[] = [
+  /\b(?:hit|achieved|attained|exceeded|crushed|beat|delivered)\s+\d{2,3}\s*%\s+(?:of\s+)?(?:my\s+|the\s+)?(?:quota|target|number|plan)\b/i,
+  /\b\d{2,3}\s*%\s+(?:quota|target|attainment|of\s+plan|to\s+quota|to\s+target)\b/i,
+  /\b(?:president'?s?\s+club|club\s+winner|top\s+performer|top\s+(?:\d+\s*%|quartile|decile)|rep\s+of\s+the\s+(?:year|quarter))\b/i,
+  /\b(?:quota\s+attainment|attainment\s+(?:of|was|is)|quota[-\s]carrying)\b/i,
+  /\b(?:closed|booked|brought\s+in|generated)\s+(?:\$|usd|inr|₹|rs\.?)\s*[\d,.]+\s*(?:m|mn|million|cr|crore|lakhs?|l|k)\s+(?:in\s+)?(?:arr|bookings|revenue|pipeline|deals?)/i,
+];
+function detectQuotaAttainmentClaimed(text: string): boolean {
+  return QUOTA_ATTAINMENT_PATTERNS.some((p) => p.test(text));
+}
+
+/* `gardenLeaveDisclosed` — candidate is on / will be on garden leave. */
+const GARDEN_LEAVE_PATTERNS: RegExp[] = [
+  /\bgarden(?:ing)?\s+leave\b/i,
+  /\b(?:on\s+|in\s+)?(?:paid\s+leave|paid\s+notice|paid\s+sit[-\s]out)\s+(?:period|between\s+jobs|until|till)\b/i,
+  /\b(?:asked|told|forced)\s+to\s+(?:sit\s+out|stay\s+home|not\s+work)\s+(?:my\s+|the\s+)?notice\b/i,
+];
+function detectGardenLeaveDisclosed(text: string): boolean {
+  return GARDEN_LEAVE_PATTERNS.some((p) => p.test(text));
+}
+
+/* `nonCompeteFlagged` — current contract has restrictive covenant. */
+const NON_COMPETE_PATTERNS: RegExp[] = [
+  /\b(?:non[-\s]?compete(?:\s+clause|\s+agreement)?|nca\b|restrictive\s+covenant|restraint\s+of\s+trade)\b/i,
+  /\b(?:non[-\s]?solicit(?:ation)?(?:\s+clause)?|cannot\s+join\s+competitors?|restricted\s+from\s+(?:joining|working\s+with))\b/i,
+  /\b(?:competitor\s+list|competing\s+(?:companies|firms|employers))\s+(?:clause|in\s+(?:my\s+)?contract)\b/i,
+];
+function detectNonCompeteFlagged(text: string): boolean {
+  return NON_COMPETE_PATTERNS.some((p) => p.test(text));
+}
+
+/* `relocationBonusAsked` — candidate asks about relo package. */
+const RELOCATION_PATTERNS: RegExp[] = [
+  /\b(?:relocation|relo|moving|move)\s+(?:bonus|allowance|package|assistance|support|reimbursement|expenses?)\b/i,
+  /\b(?:cover|reimburse|pay\s+for)\s+(?:my\s+|the\s+)?(?:moving|relocation|move)\s+(?:cost|expense|charges)/i,
+  /\b(?:relocating|moving)\s+(?:to|from)\s+(?:bangalore|bengaluru|hyderabad|pune|gurgaon|gurugram|noida|chennai|mumbai|delhi|kolkata|kochi|ahmedabad)\b.{0,80}\b(?:bonus|allowance|package|support|cover)/i,
+];
+function detectRelocationBonusAsked(text: string): boolean {
+  return RELOCATION_PATTERNS.some((p) => p.test(text));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -771,6 +933,16 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const pipDisclosed = detectPipDisclosed(text);
   const verbalOnlyOffer = detectVerbalOnlyOffer(text);
   const culturalJoiningConstraint = detectCulturalJoiningConstraint(text);
+  /* Senior + process + long-tail (2026-05-14h). */
+  const peopleManagementClaimed = detectPeopleManagementClaimed(text);
+  const crossBorderAnchor = detectCrossBorderAnchor(text);
+  const unvestedEquityLossClaim = detectUnvestedEquityLossClaim(text);
+  const explodingOfferPressure = detectExplodingOfferPressure(text);
+  const postAcceptanceRenege = detectPostAcceptanceRenege(text);
+  const quotaAttainmentClaimed = detectQuotaAttainmentClaimed(text);
+  const gardenLeaveDisclosed = detectGardenLeaveDisclosed(text);
+  const nonCompeteFlagged = detectNonCompeteFlagged(text);
+  const relocationBonusAsked = detectRelocationBonusAsked(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -793,7 +965,16 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     hotDomainPremium ||
     pipDisclosed ||
     verbalOnlyOffer ||
-    culturalJoiningConstraint;
+    culturalJoiningConstraint ||
+    peopleManagementClaimed ||
+    crossBorderAnchor ||
+    unvestedEquityLossClaim ||
+    explodingOfferPressure ||
+    postAcceptanceRenege ||
+    quotaAttainmentClaimed ||
+    gardenLeaveDisclosed ||
+    nonCompeteFlagged ||
+    relocationBonusAsked;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -816,6 +997,15 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     pipDisclosed,
     verbalOnlyOffer,
     culturalJoiningConstraint,
+    peopleManagementClaimed,
+    crossBorderAnchor,
+    unvestedEquityLossClaim,
+    explodingOfferPressure,
+    postAcceptanceRenege,
+    quotaAttainmentClaimed,
+    gardenLeaveDisclosed,
+    nonCompeteFlagged,
+    relocationBonusAsked,
     hasAny,
   };
 }
@@ -1090,6 +1280,16 @@ export function mergeCandidateProfile(
     pipDisclosed: p.pipDisclosed || next.pipDisclosed,
     verbalOnlyOffer: p.verbalOnlyOffer || next.verbalOnlyOffer,
     culturalJoiningConstraint: p.culturalJoiningConstraint || next.culturalJoiningConstraint,
+    /* Senior + process + long-tail (2026-05-14h) — all monotone-up. */
+    peopleManagementClaimed: p.peopleManagementClaimed || next.peopleManagementClaimed,
+    crossBorderAnchor: p.crossBorderAnchor || next.crossBorderAnchor,
+    unvestedEquityLossClaim: p.unvestedEquityLossClaim || next.unvestedEquityLossClaim,
+    explodingOfferPressure: p.explodingOfferPressure || next.explodingOfferPressure,
+    postAcceptanceRenege: p.postAcceptanceRenege || next.postAcceptanceRenege,
+    quotaAttainmentClaimed: p.quotaAttainmentClaimed || next.quotaAttainmentClaimed,
+    gardenLeaveDisclosed: p.gardenLeaveDisclosed || next.gardenLeaveDisclosed,
+    nonCompeteFlagged: p.nonCompeteFlagged || next.nonCompeteFlagged,
+    relocationBonusAsked: p.relocationBonusAsked || next.relocationBonusAsked,
     hasAny: false,
   };
   merged.hasAny =
@@ -1113,6 +1313,15 @@ export function mergeCandidateProfile(
     merged.hotDomainPremium ||
     merged.pipDisclosed ||
     merged.verbalOnlyOffer ||
-    merged.culturalJoiningConstraint;
+    merged.culturalJoiningConstraint ||
+    merged.peopleManagementClaimed ||
+    merged.crossBorderAnchor ||
+    merged.unvestedEquityLossClaim ||
+    merged.explodingOfferPressure ||
+    merged.postAcceptanceRenege ||
+    merged.quotaAttainmentClaimed ||
+    merged.gardenLeaveDisclosed ||
+    merged.nonCompeteFlagged ||
+    merged.relocationBonusAsked;
   return merged;
 }

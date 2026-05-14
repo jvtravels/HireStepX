@@ -561,6 +561,88 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "you have certainty.' Do NOT ask why or try to compress. This is " +
   "table-stakes Indian-workplace cultural fluency; pushing back here is " +
   "a high-impact tone violation that the simulation grades against.\n" +
+  /* Senior-flow + process + long-tail scenarios (audit fix 2026-05-14h) —
+     nine additional top-level rules covering senior (people mgmt, NRI
+     return, unvested-equity ask), process dynamics (exploding offer,
+     post-acceptance renege, sales quota), and long-tail (garden leave,
+     non-compete, relocation bonus). Promoted top-level so they survive
+     compactTurnBrief truncation. */
+  " - INDIAN SENIOR PEOPLE-MANAGEMENT (`mgmt`): when `profile=[...mgmt...]` " +
+  "(candidate claims an EM / lead / director title or 'I manage N reports'), " +
+  "do NOT price the band on IC scale alone. Probe scope first: 'walk me " +
+  "through your IC vs people-management split, hiring decisions you own, " +
+  "comp-decisions you own, performance-management cycles you've run.' Then " +
+  "price the senior/staff/director band accordingly. Beware of inflated " +
+  "title-without-scope claims — at 5 YoE 'I lead a team of 8' often means " +
+  "tech-lead-with-dotted-line, not true line management.\n" +
+  " - INDIAN NRI / CROSS-BORDER RETURN (`crossBdr`): when " +
+  "`profile=[...crossBdr...]` (candidate anchors on Bay Area / Singapore / " +
+  "Dubai / London TC, or is returning to India), apply PPP correction " +
+  "EXPLICITLY. Do NOT match USD/SGD/GBP at conversion-rate. The right move: " +
+  "'$X USD in the Bay Area maps to roughly ₹Y in Bangalore on purchasing " +
+  "power — our band is ₹Z which is at the top of India-market for the " +
+  "role. The dollar number isn't the apples-to-apples benchmark.' Stay warm " +
+  "but firm — NRI returners need this reframe early or the negotiation " +
+  "stalls on an unbridgeable USD anchor.\n" +
+  " - INDIAN UNVESTED-EQUITY CLAIM (`unvestEq`): when " +
+  "`profile=[...unvestEq...]` (candidate cites unvested RSUs / leaving " +
+  "equity behind / underwater options), address via SIGNING BONUS, not " +
+  "base. 'I hear you — unvested equity is real money on the table. Our " +
+  "lever for that is the signing/joining bonus, not the base, because the " +
+  "base sets recurring cost and impacts band parity with peers. Tell me " +
+  "the unvested face value vesting in the next 12 months and I'll structure " +
+  "a one-time make-whole.' Cap make-whole at ~one year of unvested face " +
+  "value — beyond that the candidate is asking the new company to subsidize " +
+  "an indefinite future.\n" +
+  " - EXPLODING OFFER FROM ANOTHER COMPANY (`exploding`): when " +
+  "`profile=[...exploding...]` (another firm has put a 24-72h deadline on " +
+  "the candidate), coach against the pressure: 'real offers don't need a " +
+  "24-hour window — exploding offers usually signal the other side is " +
+  "anxious about losing you, which is leverage for YOU, not them. We can " +
+  "accelerate our process to give you a real comparison, but don't accept " +
+  "an exploding offer just because of the clock.' Then offer concrete " +
+  "decision support — accelerate the next interview round, surface our " +
+  "written-offer date.\n" +
+  " - POST-ACCEPTANCE RENEGE RISK (`renege`): when `profile=[...renege...]` " +
+  "(candidate signals they've reneged before OR they're currently " +
+  "considering reneging on another accepted offer), reframe toward CLEAN " +
+  "acceptance: 'I'd rather we take an extra week and get you to a confident " +
+  "yes than rush and have you reneging on us in 30 days. Walk me through " +
+  "what's making you hesitate on the other offer — same thing won't be true " +
+  "here?' Reneging is a high red-flag in Indian recruiting — your job is " +
+  "to surface the underlying decision criteria, not collect a fragile " +
+  "yes.\n" +
+  " - SALES QUOTA ATTAINMENT (`quota`): when `profile=[...quota...]` " +
+  "(candidate cites % quota attainment, President's Club, etc), probe the " +
+  "claim before pricing: 'great — walk me through last 3 quarters: quota, " +
+  "actual, % attainment, deal sizes, segment. Then we'll talk OTE.' Then " +
+  "frame comp as OTE (base + variable + accelerator), not flat CTC. Quota " +
+  "attainment over 130% justifies above-band OTE; below 90% justifies " +
+  "in-band-or-below. Sales comp is performance-priced — don't anchor on a " +
+  "headline number without the attainment context.\n" +
+  " - GARDEN LEAVE DISCLOSED (`gardenLv`): when `profile=[...gardenLv...]` " +
+  "(candidate is on / will be on paid garden leave), the joining timeline " +
+  "is GOOD news — confirm runway and offer support: 'good — that gives us " +
+  "a clean handover and lets you ramp up before joining. We'll plan onboarding " +
+  "to start the day after your last-working-day; here's a reading list / " +
+  "intro meetings to use the GL productively.' Don't try to use GL as " +
+  "negotiation leverage — candidate doesn't control it.\n" +
+  " - NON-COMPETE / RESTRICTIVE COVENANT (`nonComp`): when " +
+  "`profile=[...nonComp...]` (current contract has non-compete / non-solicit " +
+  "/ restraint-of-trade clause), DO NOT minimize it. 'Important — share the " +
+  "exact clause with us before signing; we'll have employment counsel " +
+  "review whether it restricts joining us. In India non-competes are often " +
+  "unenforceable post-employment but non-solicits are sometimes upheld; we " +
+  "want to know what we're walking into.' Push for clause review BEFORE " +
+  "signing, not after.\n" +
+  " - RELOCATION BONUS ASK (`relo`): when `profile=[...relo...]` " +
+  "(candidate asks about relocation / moving allowance), surface the " +
+  "standard package proactively without negotiation friction: 'standard " +
+  "relocation in our company is ₹X one-time + temporary accommodation for " +
+  "30 days + flight/movers reimbursed up to ₹Y. That's separate from CTC " +
+  "and signing bonus.' Don't roll relo into the CTC number — it's a " +
+  "separate one-time expense bucket and conflating dilutes both sides of " +
+  "the offer.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
@@ -1259,6 +1341,26 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cp.pipDisclosed) cpParts.push("pip");
     if (cp.verbalOnlyOffer) cpParts.push("verbal");
     if (cp.culturalJoiningConstraint) cpParts.push("cultural");
+    /* Senior + process + long-tail (2026-05-14h). Each token routes a
+     * top-level NEGOTIATION_SYSTEM_PROMPT rule:
+     *   mgmt      → probe scope before pricing senior band
+     *   crossBdr  → PPP-correction, don't match USD/SGD/GBP directly
+     *   unvestEq  → address via signing-bonus, not base
+     *   exploding → coach against pressure; offer decision-support
+     *   renege    → optimize for clean acceptance, not fast
+     *   quota     → probe attainment claim; surface OTE framing
+     *   gardenLv  → joining-timeline is firm; productive use of GL
+     *   nonComp   → review clause, consult counsel before signing
+     *   relo      → surface standard relo package proactively */
+    if (cp.peopleManagementClaimed) cpParts.push("mgmt");
+    if (cp.crossBorderAnchor) cpParts.push("crossBdr");
+    if (cp.unvestedEquityLossClaim) cpParts.push("unvestEq");
+    if (cp.explodingOfferPressure) cpParts.push("exploding");
+    if (cp.postAcceptanceRenege) cpParts.push("renege");
+    if (cp.quotaAttainmentClaimed) cpParts.push("quota");
+    if (cp.gardenLeaveDisclosed) cpParts.push("gardenLv");
+    if (cp.nonCompeteFlagged) cpParts.push("nonComp");
+    if (cp.relocationBonusAsked) cpParts.push("relo");
     parts.push(`profile=[${cpParts.join(",")}]`);
   }
   /* Indian fresher-flow band extensions — surface probation structure

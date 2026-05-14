@@ -71,7 +71,16 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
     candidateProfile: {
       careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
       levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
-      compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: false,
+      compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false,
+        peopleManagementClaimed: false,
+        crossBorderAnchor: false,
+        unvestedEquityLossClaim: false,
+        explodingOfferPressure: false,
+        postAcceptanceRenege: false,
+        quotaAttainmentClaimed: false,
+        gardenLeaveDisclosed: false,
+        nonCompeteFlagged: false,
+        relocationBonusAsked: false, hasAny: false,
     },
     miscSignals: {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null,
