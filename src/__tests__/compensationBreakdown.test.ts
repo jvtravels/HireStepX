@@ -4,8 +4,8 @@ import {
   lookupCompanyCompStructure,
   formatCompStructureForPrompt,
   GENERIC_INDIA_COMP,
-  COMPANY_COMP,
-} from "../../data/company-compensation-structure";
+  COMPANY_FACTS,
+} from "../../data/company-facts";
 
 /**
  * Session 12 bug (2026-05-14): candidate utterances like
@@ -82,8 +82,8 @@ describe("lookupCompanyCompStructure", () => {
   });
 
   it("matches case-insensitively and on substrings", () => {
-    expect(lookupCompanyCompStructure("RAZORPAY")).toBe(COMPANY_COMP.razorpay);
-    expect(lookupCompanyCompStructure("Accenture India Pvt Ltd")).toBe(COMPANY_COMP.accenture);
+    expect(lookupCompanyCompStructure("RAZORPAY")).toBe(COMPANY_FACTS.razorpay.compStructure);
+    expect(lookupCompanyCompStructure("Accenture India Pvt Ltd")).toBe(COMPANY_FACTS.accenture.compStructure);
   });
 
   it("covers all 11 documented companies", () => {
@@ -92,13 +92,16 @@ describe("lookupCompanyCompStructure", () => {
       "amazon", "flipkart", "swiggy", "zomato", "infosys", "wipro",
     ];
     for (const c of expected) {
-      expect(COMPANY_COMP[c], `missing override for ${c}`).toBeDefined();
+      expect(COMPANY_FACTS[c]?.compStructure, `missing comp override for ${c}`).toBeDefined();
     }
-    expect(Object.keys(COMPANY_COMP).length).toBe(11);
+    const compCount = Object.values(COMPANY_FACTS).filter((f) => f.compStructure != null).length;
+    expect(compCount).toBe(11);
   });
 
   it("every entry's ratios are well-formed (each 0-1 and sum ≤ 1.05)", () => {
-    for (const [name, s] of Object.entries(COMPANY_COMP)) {
+    for (const [name, facts] of Object.entries(COMPANY_FACTS)) {
+      const s = facts.compStructure;
+      if (!s) continue;
       expect(s.baseRatio, `${name}.baseRatio`).toBeGreaterThanOrEqual(0);
       expect(s.baseRatio, `${name}.baseRatio`).toBeLessThanOrEqual(1);
       expect(s.variableRatio, `${name}.variableRatio`).toBeGreaterThanOrEqual(0);
@@ -112,7 +115,7 @@ describe("lookupCompanyCompStructure", () => {
 
 describe("formatCompStructureForPrompt", () => {
   it("includes rupee figures when totalCtc > 0", () => {
-    const s = formatCompStructureForPrompt(COMPANY_COMP.razorpay, 40);
+    const s = formatCompStructureForPrompt(COMPANY_FACTS.razorpay.compStructure!, 40);
     expect(s).toContain("Base: ₹30 LPA");
     expect(s).toContain("(75%");
     expect(s).toContain("Variable / performance bonus");
@@ -122,18 +125,18 @@ describe("formatCompStructureForPrompt", () => {
   });
 
   it("omits rupee figures when totalCtc is 0", () => {
-    const s = formatCompStructureForPrompt(COMPANY_COMP.razorpay, 0);
+    const s = formatCompStructureForPrompt(COMPANY_FACTS.razorpay.compStructure!, 0);
     expect(s).toContain("Base: 75% of CTC");
     expect(s).not.toContain("Base: ₹");
   });
 
   it("flags 'not part of standard hires' for zero-equity companies", () => {
-    const s = formatCompStructureForPrompt(COMPANY_COMP.tcs, 12);
+    const s = formatCompStructureForPrompt(COMPANY_FACTS.tcs.compStructure!, 12);
     expect(s).toContain("Equity: not part of standard hires");
   });
 
   it("omits notes line when notes is empty string", () => {
-    const s = formatCompStructureForPrompt(COMPANY_COMP.swiggy, 25);
+    const s = formatCompStructureForPrompt(COMPANY_FACTS.swiggy.compStructure!, 25);
     expect(s).not.toContain("Notes:");
   });
 });

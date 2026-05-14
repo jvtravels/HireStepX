@@ -8,26 +8,30 @@
  * new company, three drift surfaces, and three risks of accidentally
  * inventing data for a company that's only present in one file.
  *
+ * Follow-up (2026-05-14, post-consolidation): the three legacy shim
+ * modules (`company-benefits.ts`, `company-compensation-structure.ts`,
+ * `company-notice-norms.ts`) have been deleted; every call site now
+ * imports types, GENERIC_INDIA_* defaults, and format helpers directly
+ * from here. Keys on `COMPANY_FACTS` are lowercase canonical slugs
+ * (`razorpay`, `accenture`, etc.) — never capitalized display names —
+ * because `lookupCompanyFacts` already normalizes the input via
+ * lowercase substring match.
+ *
  * Design:
- *  - One canonical record (`COMPANY_FACTS`) keyed by canonical company
- *    name. Each entry has optional `benefits`, `compStructure`,
+ *  - One canonical record (`COMPANY_FACTS`) keyed by lowercase canonical
+ *    slug. Each entry has optional `benefits`, `compStructure`,
  *    `noticeNorms` sub-objects — absence is meaningful (the format
- *    helpers fall through to the GENERIC_INDIA defaults defined by
- *    the per-domain shim modules).
+ *    helpers fall through to the GENERIC_INDIA defaults defined below).
  *  - One substring matcher (`lookupCompanyFacts`) that's run ONCE
- *    per candidate utterance. Per-domain accessors (`benefits`,
- *    `compStructure`, `noticeNorms`) return the domain slice or
- *    `undefined`.
- *  - The three legacy modules (`company-benefits.ts`,
- *    `company-compensation-structure.ts`, `company-notice-norms.ts`)
- *    remain as thin shims that delegate here, so all existing call
- *    sites and tests work without modification. Full call-site
- *    migration is a separate refactor.
+ *    per candidate utterance. Per-domain accessors
+ *    (`lookupCompanyBenefits`, `lookupCompanyCompStructure`,
+ *    `lookupCompanyNoticeNorm`) return the domain slice or the
+ *    GENERIC_INDIA_* fallback.
  *
  * Audit (companies and their coverage):
- *  Accenture, TCS, Infosys, Wipro, Google, Microsoft, Amazon, Flipkart,
- *  Swiggy, Zomato, Razorpay — all 3 domains.
- *  Zepto — notice-norms only (no benefits / comp entries on file; the
+ *  accenture, tcs, infosys, wipro, google, microsoft, amazon, flipkart,
+ *  swiggy, zomato, razorpay — all 3 domains.
+ *  zepto — notice-norms only (no benefits / comp entries on file; the
  *  format helpers will return the GENERIC_INDIA defaults for those).
  *
  * IMPORTANT: do NOT invent missing sub-objects to "fill out" a row.
@@ -36,9 +40,57 @@
  * silently commit the simulator to non-authoritative numbers.
  */
 
-import type { CompanyBenefits } from "./company-benefits";
-import type { CompanyCompensationStructure } from "./company-compensation-structure";
-import type { CompanyNoticeNorm } from "./company-notice-norms";
+/* ─── Types ───────────────────────────────────────────────────────── */
+
+export interface CompanyBenefits {
+  /** Health insurance — coverage amount and dependents covered. */
+  healthInsurance: string;
+  /** Provident Fund — usually statutory 12% but some startups top up. */
+  providentFund: string;
+  /** Gratuity policy — 5-year vesting is statutory in India. */
+  gratuity: string;
+  /** Paid time off (annual leave + sick + holidays). */
+  paidTimeOff: string;
+  /** Performance bonus / variable. Phrased as a typical range so the
+   *  recruiter doesn't conflate this with a committed number. */
+  performanceBonus: string;
+  /** Annual learning / certification reimbursement. */
+  learningBudget: string;
+  /** Remote / hybrid / on-site policy. */
+  workMode: string;
+  /** One or two "signature" perks the company is known for (free meals,
+   *  travel allowance, etc.). Optional. */
+  signaturePerks?: string;
+}
+
+export interface CompanyCompensationStructure {
+  /** Fraction of total CTC that is base / fixed salary. 0-1. */
+  baseRatio: number;
+  /** Fraction of total CTC that is variable / performance bonus. 0-1. */
+  variableRatio: number;
+  /** Fraction of total CTC attributed to equity (annualised). 0-1.
+   *  Zero for service companies / no-equity hires. */
+  equityRatio: number;
+  /** Bonus payout cadence, e.g. "annual", "quarterly". */
+  bonusFrequency: string;
+  /** RSU/ESOP vesting shape, e.g. "4-year, 1-year cliff". "n/a" when
+   *  the company doesn't offer equity for standard hires. */
+  vestingSchedule: string;
+  /** Optional context — refresh cycle, sign-on offset, etc. */
+  notes: string;
+}
+
+export interface CompanyNoticeNorm {
+  /** Typical notice period the candidate would owe their NEXT employer
+   *  (= the offering company). Most tier-1s align at 60 days; IT services
+   *  / mature Indian corporates often want 90. */
+  expectedJoiningWindowDays: string;
+  /** Whether the offering company typically buys out previous-employer
+   *  notice. Recruiter should state this honestly. */
+  buyoutPolicy: string;
+  /** Short signature note about flexibility / start-date negotiation. */
+  flexibility?: string;
+}
 
 export interface CompanyFacts {
   benefits?: CompanyBenefits;
@@ -46,13 +98,47 @@ export interface CompanyFacts {
   noticeNorms?: CompanyNoticeNorm;
 }
 
-/* Per-company unified facts. Keys are canonical names; the substring
- * matcher is case-insensitive, so "Accenture India" hits "Accenture".
- * Order matters: when a free-text company name could substring-match
- * multiple keys, earlier keys win — keep more-specific names above
- * more-generic ones. */
+/* ─── GENERIC_INDIA fallbacks ────────────────────────────────────── */
+
+/** Generic India-corporate fallback benefits package. The kernel emits
+ *  this when no company override is found OR when company is unknown.
+ *  Numbers are the statutory / typical floor — never a commitment. */
+export const GENERIC_INDIA_BENEFITS: CompanyBenefits = {
+  healthInsurance: "Group health insurance covering employee + family (spouse, children, optionally parents), typical sum insured ₹5-10 lakh",
+  providentFund: "Provident Fund — statutory 12% employer contribution on basic, matched by employee",
+  gratuity: "Gratuity per Payment of Gratuity Act — vests at 5 years of continuous service",
+  paidTimeOff: "15-20 days annual leave + sick leave + national/state public holidays",
+  performanceBonus: "Annual performance bonus — variable component, typically 10-20% of CTC depending on role and rating",
+  learningBudget: "Annual learning and development allowance for certifications, conferences, and courses",
+  workMode: "Hybrid work policy (typically 2-3 days in office)",
+};
+
+/** Generic India-corporate fallback compensation structure. */
+export const GENERIC_INDIA_COMP: CompanyCompensationStructure = {
+  baseRatio: 0.80,
+  variableRatio: 0.15,
+  equityRatio: 0.05,
+  bonusFrequency: "annual",
+  vestingSchedule: "4-year, 1-year cliff (when equity is granted)",
+  notes: "Typical Indian-corporate structure; equity component depends on role seniority.",
+};
+
+/** Generic India-corporate fallback notice norms. */
+export const GENERIC_INDIA_NOTICE: CompanyNoticeNorm = {
+  expectedJoiningWindowDays: "Standard joining window is 60-90 days from offer letter",
+  buyoutPolicy: "Notice-period buyout is negotiable case-by-case (typically up to 30-60 days)",
+  flexibility: "If you can join earlier, we can flex the start date — let us know your no-earlier-than date",
+};
+
+/* ─── Per-company unified facts ──────────────────────────────────── */
+
+/* Per-company unified facts. Keys are LOWERCASE canonical slugs; the
+ * substring matcher is case-insensitive, so "Accenture India" hits
+ * "accenture". Order matters: when a free-text company name could
+ * substring-match multiple keys, earlier keys win — keep more-specific
+ * names above more-generic ones. */
 export const COMPANY_FACTS: Record<string, CompanyFacts> = {
-  Accenture: {
+  accenture: {
     benefits: {
       healthInsurance: "Group medical insurance for employee + spouse + 2 children + parents, ₹5-7 lakh cover; OPD reimbursement available",
       providentFund: "Standard 12% Provident Fund employer contribution",
@@ -69,7 +155,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout up to 30 days available for senior bands",
     },
   },
-  TCS: {
+  tcs: {
     benefits: {
       healthInsurance: "Group medical cover for employee + family, ~₹3-5 lakh sum insured",
       providentFund: "12% PF employer contribution",
@@ -86,7 +172,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       flexibility: "If you can serve your existing notice cleanly, that's preferred",
     },
   },
-  Infosys: {
+  infosys: {
     benefits: {
       healthInsurance: "Group medical insurance for employee + dependents, ~₹3-6 lakh cover",
       providentFund: "12% PF employer contribution",
@@ -102,7 +188,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout limited; case-by-case approval, typically up to 30 days",
     },
   },
-  Wipro: {
+  wipro: {
     benefits: {
       healthInsurance: "Group medical cover for employee + family, ~₹3-5 lakh sum insured",
       providentFund: "12% PF employer contribution",
@@ -118,7 +204,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout case-by-case, typically capped at 30 days",
     },
   },
-  Google: {
+  google: {
     benefits: {
       healthInsurance: "Premium group medical + dental + vision for employee + family + parents, ₹10 lakh+ cover, no co-pay on most claims",
       providentFund: "PF + NPS options; employer matches additional contribution",
@@ -136,7 +222,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       flexibility: "Flexible start date negotiation supported",
     },
   },
-  Microsoft: {
+  microsoft: {
     benefits: {
       healthInsurance: "Group medical + dental + vision for employee + family + parents, ₹7-10 lakh cover",
       providentFund: "PF + NPS options with employer match",
@@ -153,7 +239,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout up to 60 days supported",
     },
   },
-  Amazon: {
+  amazon: {
     benefits: {
       healthInsurance: "Group medical + parents cover, ~₹5-8 lakh sum insured",
       providentFund: "12% PF employer contribution",
@@ -170,7 +256,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout up to 60 days supported via signing bonus structure",
     },
   },
-  Flipkart: {
+  flipkart: {
     benefits: {
       healthInsurance: "Group medical for employee + spouse + 2 kids + parents, ₹5-10 lakh cover",
       providentFund: "12% PF employer contribution",
@@ -187,7 +273,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Notice buyout commonly approved up to 60 days",
     },
   },
-  Swiggy: {
+  swiggy: {
     benefits: {
       healthInsurance: "Group medical for employee + spouse + kids + parents, ₹5 lakh+ cover",
       providentFund: "12% PF employer contribution",
@@ -204,7 +290,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout up to 60 days supported",
     },
   },
-  Zomato: {
+  zomato: {
     benefits: {
       healthInsurance: "Group medical for employee + family, ~₹5 lakh cover",
       providentFund: "12% PF employer contribution",
@@ -221,7 +307,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
       buyoutPolicy: "Buyout up to 30-60 days routinely approved",
     },
   },
-  Razorpay: {
+  razorpay: {
     benefits: {
       healthInsurance: "Group medical for employee + spouse + kids + parents, ₹5-8 lakh cover",
       providentFund: "12% PF employer contribution",
@@ -242,7 +328,7 @@ export const COMPANY_FACTS: Record<string, CompanyFacts> = {
   /* Zepto is intentionally notice-only — there's no curated benefits or
    * comp-structure data on file. Format helpers fall back to GENERIC_INDIA
    * for those domains. Do NOT fabricate the missing slices. */
-  Zepto: {
+  zepto: {
     noticeNorms: {
       expectedJoiningWindowDays: "30-day joining window preferred (early-stage pace)",
       buyoutPolicy: "Notice buyout up to 30 days supported",
@@ -262,7 +348,106 @@ export function lookupCompanyFacts(company: string | null | undefined): CompanyF
   const c = company.trim().toLowerCase();
   if (!c) return EMPTY_FACTS;
   for (const [key, value] of Object.entries(COMPANY_FACTS)) {
+    /* Keys are already lowercase by convention; the toLowerCase() here is
+     * defensive in case a future contributor adds a non-lowercased key. */
     if (c.includes(key.toLowerCase())) return value;
   }
   return EMPTY_FACTS;
+}
+
+/* ─── Per-domain accessors ───────────────────────────────────────── */
+
+/** Look up benefits for a company. Case-insensitive substring matching:
+ *  "Accenture India" matches the "accenture" entry. Returns the generic
+ *  fallback if no entry matches. Pure. */
+export function lookupCompanyBenefits(company: string | null | undefined): CompanyBenefits {
+  return lookupCompanyFacts(company).benefits ?? GENERIC_INDIA_BENEFITS;
+}
+
+/** Look up the comp structure for a company. Case-insensitive substring
+ *  match via the unified facts table; falls back to GENERIC_INDIA_COMP.
+ *  Pure. */
+export function lookupCompanyCompStructure(
+  company: string | null | undefined,
+): CompanyCompensationStructure {
+  return lookupCompanyFacts(company).compStructure ?? GENERIC_INDIA_COMP;
+}
+
+/** Look up notice norms for a company. Pure; case-insensitive substring
+ *  match via the unified facts table; falls back to GENERIC_INDIA_NOTICE
+ *  for unknown companies. */
+export function lookupCompanyNoticeNorm(
+  company: string | null | undefined,
+): CompanyNoticeNorm {
+  return lookupCompanyFacts(company).noticeNorms ?? GENERIC_INDIA_NOTICE;
+}
+
+/* ─── Format helpers ─────────────────────────────────────────────── */
+
+/** Format a CompanyBenefits record into a recruiter-spoken prose blob
+ *  for the LLM response-hint layer. Kept short so the LLM has room to
+ *  paraphrase. */
+export function formatBenefitsForPrompt(b: CompanyBenefits): string {
+  const lines = [
+    `- Health insurance: ${b.healthInsurance}`,
+    `- Provident Fund: ${b.providentFund}`,
+    `- Gratuity: ${b.gratuity}`,
+    `- Paid time off: ${b.paidTimeOff}`,
+    `- Performance bonus: ${b.performanceBonus}`,
+    `- Learning budget: ${b.learningBudget}`,
+    `- Work mode: ${b.workMode}`,
+  ];
+  if (b.signaturePerks) lines.push(`- Other perks: ${b.signaturePerks}`);
+  return lines.join("\n");
+}
+
+/** Format a CompanyCompensationStructure into a prose blob for the
+ *  response-hint layer. When `totalCtc` is provided (in LPA), surface
+ *  per-component rupee figures alongside the percentages. Pure. */
+export function formatCompStructureForPrompt(
+  s: CompanyCompensationStructure,
+  totalCtc: number,
+): string {
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  const basePct = Math.round(s.baseRatio * 100);
+  const varPct = Math.round(s.variableRatio * 100);
+  const eqPct = Math.round(s.equityRatio * 100);
+  const hasCtc = Number.isFinite(totalCtc) && totalCtc > 0;
+  const baseLpa = hasCtc ? round1(totalCtc * s.baseRatio) : null;
+  const varLpa = hasCtc ? round1(totalCtc * s.variableRatio) : null;
+  const eqLpa = hasCtc ? round1(totalCtc * s.equityRatio) : null;
+  const lines: string[] = [];
+  lines.push(
+    hasCtc
+      ? `- Base: ₹${baseLpa} LPA (${basePct}% of CTC)`
+      : `- Base: ${basePct}% of CTC`,
+  );
+  lines.push(
+    hasCtc
+      ? `- Variable / performance bonus: ₹${varLpa} LPA (${varPct}% of CTC)`
+      : `- Variable / performance bonus: ${varPct}% of CTC`,
+  );
+  if (s.equityRatio > 0) {
+    lines.push(
+      hasCtc
+        ? `- Equity (annualised): ₹${eqLpa} LPA (${eqPct}% of CTC)`
+        : `- Equity (annualised): ${eqPct}% of CTC`,
+    );
+  } else {
+    lines.push(`- Equity: not part of standard hires at this band`);
+  }
+  lines.push(`- Bonus frequency: ${s.bonusFrequency}`);
+  lines.push(`- Vesting schedule: ${s.vestingSchedule}`);
+  if (s.notes) lines.push(`- Notes: ${s.notes}`);
+  return lines.join("\n");
+}
+
+/** Format a CompanyNoticeNorm record for the LLM response-hint layer. */
+export function formatNoticeNormForPrompt(n: CompanyNoticeNorm): string {
+  const lines = [
+    `- Joining window: ${n.expectedJoiningWindowDays}`,
+    `- Buyout policy: ${n.buyoutPolicy}`,
+  ];
+  if (n.flexibility) lines.push(`- Flexibility: ${n.flexibility}`);
+  return lines.join("\n");
 }

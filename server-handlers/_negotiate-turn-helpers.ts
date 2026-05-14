@@ -28,15 +28,14 @@ import { detectRoleLabelMismatch } from "./_role-mismatch";
 import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
 import { detectRedFlags } from "./_red-flags";
-import { lookupCompanyBenefits, formatBenefitsForPrompt } from "../data/company-benefits";
 import {
+  lookupCompanyBenefits,
+  formatBenefitsForPrompt,
   lookupCompanyCompStructure,
   formatCompStructureForPrompt,
-} from "../data/company-compensation-structure";
-import {
   lookupCompanyNoticeNorm,
   formatNoticeNormForPrompt,
-} from "../data/company-notice-norms";
+} from "../data/company-facts";
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 

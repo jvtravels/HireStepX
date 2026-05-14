@@ -4,8 +4,8 @@ import {
   lookupCompanyBenefits,
   formatBenefitsForPrompt,
   GENERIC_INDIA_BENEFITS,
-  COMPANY_BENEFITS,
-} from "../../data/company-benefits";
+  COMPANY_FACTS,
+} from "../../data/company-facts";
 
 /**
  * Bug report 11 follow-up E (2026-05-14): the candidate's "can you let
@@ -82,24 +82,26 @@ describe("lookupCompanyBenefits", () => {
   });
 
   it("matches case-insensitively", () => {
-    expect(lookupCompanyBenefits("accenture")).toBe(COMPANY_BENEFITS.Accenture);
-    expect(lookupCompanyBenefits("ACCENTURE")).toBe(COMPANY_BENEFITS.Accenture);
+    expect(lookupCompanyBenefits("accenture")).toBe(COMPANY_FACTS.accenture.benefits);
+    expect(lookupCompanyBenefits("ACCENTURE")).toBe(COMPANY_FACTS.accenture.benefits);
   });
 
   it("matches substring (company suffix tolerated)", () => {
-    expect(lookupCompanyBenefits("Accenture Solutions Pvt Ltd")).toBe(COMPANY_BENEFITS.Accenture);
-    expect(lookupCompanyBenefits("TCS Bangalore")).toBe(COMPANY_BENEFITS.TCS);
+    expect(lookupCompanyBenefits("Accenture Solutions Pvt Ltd")).toBe(COMPANY_FACTS.accenture.benefits);
+    expect(lookupCompanyBenefits("TCS Bangalore")).toBe(COMPANY_FACTS.tcs.benefits);
   });
 
   it("covers the documented company list", () => {
-    const expected = ["Accenture", "TCS", "Infosys", "Wipro", "Google", "Microsoft", "Amazon", "Flipkart", "Swiggy", "Zomato", "Razorpay"];
+    const expected = ["accenture", "tcs", "infosys", "wipro", "google", "microsoft", "amazon", "flipkart", "swiggy", "zomato", "razorpay"];
     for (const c of expected) {
-      expect(COMPANY_BENEFITS[c], `missing override for ${c}`).toBeDefined();
+      expect(COMPANY_FACTS[c]?.benefits, `missing benefits override for ${c}`).toBeDefined();
     }
   });
 
   it("every benefits package has all required fields", () => {
-    for (const [name, pkg] of Object.entries(COMPANY_BENEFITS)) {
+    for (const [name, facts] of Object.entries(COMPANY_FACTS)) {
+      const pkg = facts.benefits;
+      if (!pkg) continue;
       expect(pkg.healthInsurance, `${name}.healthInsurance`).toBeTruthy();
       expect(pkg.providentFund, `${name}.providentFund`).toBeTruthy();
       expect(pkg.gratuity, `${name}.gratuity`).toBeTruthy();
@@ -124,7 +126,7 @@ describe("formatBenefitsForPrompt", () => {
   });
 
   it("includes signature perks when present (Google)", () => {
-    const s = formatBenefitsForPrompt(COMPANY_BENEFITS.Google);
+    const s = formatBenefitsForPrompt(COMPANY_FACTS.google.benefits!);
     expect(s).toContain("Other perks");
   });
 
