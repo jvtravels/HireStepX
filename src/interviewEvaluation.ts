@@ -195,7 +195,17 @@ export function processLLMEvaluation(
    These facts anchor the LLM so it references real numbers instead of hallucinating. */
 
 export interface NegotiationFacts {
-  /** Whether the candidate accepted the offer outright */
+  /** Whether the candidate accepted the offer outright.
+   *
+   *  @deprecated (Phase 32, 2026-05-14) — prefer the kernel's
+   *  `signalsAcceptance` (ParsedAnswer) / `phase === "accepted"`
+   *  (NegotiationState). This legacy field is still populated by
+   *  `extractNegotiationFacts` for back-compat with code paths that
+   *  pre-date the kernel (useInterviewEngine.ts, _advance-helpers.ts,
+   *  legacy session-end closings). Both call sites now route through
+   *  the SAME `classifyAcceptance` so the values stay in sync — see
+   *  `acceptanceClassifierParity.test.ts` which pins this. New code
+   *  should read the kernel state directly. */
   acceptedImmediately: boolean;
   /** Whether the candidate rejected the offer outright */
   rejectedOutright: boolean;
