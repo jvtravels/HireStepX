@@ -1048,6 +1048,69 @@ function detectInfoIntents(a: string): InfoIntent[] {
   return out;
 }
 
+/* ─── Input-sanity bounds (launch-blocker, 2026-05-14) ──────────────
+ *
+ * The kernel previously accepted any number the parsers extracted —
+ * including absurd values like "₹50,000 crore" from STT mishears or
+ * scripted abuse. That number then propagated into hike-% math, band-
+ * comparison branches, and telemetry. The clamping helpers below pin
+ * each numeric input to a plausible upper bound and reject negative /
+ * NaN / Infinity. Out-of-bounds values become null — which is the
+ * "not-stated" sentinel the rest of the kernel already handles. */
+
+/** Hard ceiling on INR LPA values. 5000 LPA = ₹50 Cr per annum, which
+ *  is well above any real Indian comp number (top-of-market C-suite
+ *  TC is ~₹15-25 Cr including equity). Anything above this is a
+ *  parser / STT artefact. */
+export const MAX_INR_LPA = 5000;
+
+/** Hard ceiling on notice-period days. 365 days = 1 year, which is
+ *  the longest realistic notice (some senior overseas contracts).
+ *  Anything above is a parser artefact. */
+export const MAX_NOTICE_DAYS = 365;
+
+/** Hard ceiling on career-gap months. 60 months = 5 years, which is
+ *  the soft outer bound already enforced by extractGapMonths. We add
+ *  a defensive clamp here so out-of-band values from any source get
+ *  rejected. */
+export const MAX_GAP_MONTHS = 60;
+
+/** Clamp an INR LPA-denominated number to [0, MAX_INR_LPA]. Returns
+ *  null for negative, NaN, ±Infinity, or > MAX_INR_LPA. Zero is
+ *  accepted (a candidate stating "current package zero" / fresher
+ *  with no prior salary is structurally valid). */
+export function clampInr(v: number | null): number | null {
+  if (v == null) return null;
+  if (typeof v !== "number") return null;
+  if (!Number.isFinite(v)) return null;
+  if (v < 0) return null;
+  if (v > MAX_INR_LPA) return null;
+  return v;
+}
+
+/** Clamp notice-period days to (0, MAX_NOTICE_DAYS]. Zero is
+ *  rejected (candidate states "no notice" via other signals, not 0
+ *  days). Negative / NaN / ±Infinity / overflow → null. */
+export function clampNoticeDays(v: number | null): number | null {
+  if (v == null) return null;
+  if (typeof v !== "number") return null;
+  if (!Number.isFinite(v)) return null;
+  if (v <= 0) return null;
+  if (v > MAX_NOTICE_DAYS) return null;
+  return v;
+}
+
+/** Clamp career-gap months to (0, MAX_GAP_MONTHS]. Same rules as
+ *  clampNoticeDays — zero is rejected (no gap means null, not 0). */
+export function clampGapMonths(v: number | null): number | null {
+  if (v == null) return null;
+  if (typeof v !== "number") return null;
+  if (!Number.isFinite(v)) return null;
+  if (v <= 0) return null;
+  if (v > MAX_GAP_MONTHS) return null;
+  return v;
+}
+
 /* Phase param is optional and only used to widen target-binding when
  * the recruiter just asked for expectations. The Tech-Mahindra UX
  * session (May 2026) had the candidate reply "30 lpa thirty lakhs
@@ -1223,19 +1286,35 @@ export function parseCandidateAnswer(
   const signalsAcceptanceFinal =
     signalsAcceptance && !decisionDeadline.conditionalAcceptance;
 
+  /* Input-sanity clamps — out-of-bound numeric values become null at
+   * the parse boundary so they never leak into hike-% math, band
+   * comparisons, or telemetry. See clampInr / clampNoticeDays /
+   * clampGapMonths above for the policy. */
+  const sanitizedNoticeJoining = {
+    ...noticeJoining,
+    noticePeriodDays: clampNoticeDays(noticeJoining.noticePeriodDays),
+    joiningBonusAsk: clampInr(noticeJoining.joiningBonusAsk),
+  };
+  const sanitizedCandidateProfile = {
+    ...candidateProfile,
+    careerGapMonths: clampGapMonths(candidateProfile.careerGapMonths),
+  };
+
   return {
-    target, currentCtc, competing,
+    target: clampInr(target),
+    currentCtc: clampInr(currentCtc),
+    competing: clampInr(competing),
     signalsAcceptance: signalsAcceptanceFinal, signalsWalkAway,
     targetAsRange, vossTactics, infoAsked,
     signalsCompetingExistsWithoutNumber,
     componentBreakdown,
     rationale: hikeRationale.rationale,
-    noticeJoining,
+    noticeJoining: sanitizedNoticeJoining,
     equityVesting,
     locationMode,
     competingOfferDetail,
     decisionDeadline,
-    candidateProfile,
+    candidateProfile: sanitizedCandidateProfile,
     miscSignals,
     candidateStance,
     retentionCounter,

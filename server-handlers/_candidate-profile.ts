@@ -23,6 +23,167 @@
  * silently teaching the kernel a candidate background that wasn't
  * stated. */
 
+/* ─── Wave kill-switches (launch-blocker, 2026-05-14) ──────────────
+ *
+ * Each wave of profile flags can be disabled independently via env
+ * vars on Vercel. When a wave is disabled, its flags are forced to
+ * `false` in extractCandidateProfile, regardless of utterance content,
+ * before the result is returned. This gives ops a no-deploy rollback
+ * if a wave starts mis-firing in production.
+ *
+ *   HSX_DISABLE_WAVE_2=1 — disables the 20 Wave-2 flags
+ *     (parentInsurance, inHand, rto, returnship, payBand, taxStruct,
+ *      bgvAnxiety, esopSoph, spouseJob, agingParent, moonlighting,
+ *      mentalHealth, payParity, preemptCounter, acceptTime, crypto,
+ *      gccArb, benchTime, founderSecond, latecareerAge).
+ *   HSX_DISABLE_WAVE_3=1 — disables the 25 Wave-3 flags.
+ *   HSX_DISABLE_WAVE_4=1 — disables the 32 Wave-4 flags.
+ *
+ * Resolved at module-evaluation time. Tests use vi.stubEnv +
+ * vi.resetModules() to flip values between runs. */
+declare const process: { env: Record<string, string | undefined> };
+const DISABLE_WAVE_2 = process.env.HSX_DISABLE_WAVE_2 === "1";
+const DISABLE_WAVE_3 = process.env.HSX_DISABLE_WAVE_3 === "1";
+const DISABLE_WAVE_4 = process.env.HSX_DISABLE_WAVE_4 === "1";
+
+/** Wave-2 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_2=1. */
+const WAVE_2_FLAGS: ReadonlyArray<string> = [
+  "parentInsuranceAsked", "inHandTakehomeFocus", "rtoPushback",
+  "returnshipMaternity", "payBandAsked", "taxStructureAsked",
+  "bgvAnxiety", "esopSophisticationProbe", "spouseJobConstraint",
+  "agingParentCare", "moonlightingDisclosed", "mentalHealthDisclosed",
+  "payParityAsked", "preemptiveCounterReceived", "acceptanceTimeRequest",
+  "cryptoTokenComp", "gccArbitrageAnchor", "benchTimeDisclosed",
+  "founderSecondInnings", "latecareerAgeBias",
+];
+
+/** Wave-3 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_3=1. */
+const WAVE_3_FLAGS: ReadonlyArray<string> = [
+  "titlePrecisionAsk", "currentCtcRefusal", "pregnancyDisclosed",
+  "boomerangRehire", "referralReceived", "hometownReturnPreference",
+  "pwdDisability", "gratuityVestingNear", "acquisitionContextAsk",
+  "lgbtqDisclosure", "chronicIllnessDisclosed", "noticeBuyoutAsk",
+  "bfsiClawbackContext", "bigFourGradeStep", "securityClearanceNeeded",
+  "missionDrivenComp", "edtechReputationCheck", "acquiHireContext",
+  "cabinParkingAsk", "spanOfControlAsk", "preResignationStealth",
+  "reverseAnchorAsk", "dietaryReligiousNeed", "oldEmployerDocsIssue",
+  "equityRefreshCadenceAsk",
+];
+
+/** Wave-4 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_4=1. */
+const WAVE_4_FLAGS: ReadonlyArray<string> = [
+  "signOnClawback", "variableTrackRecord", "wfhEquipmentStipend",
+  "salaryReviewCadenceAsk", "multipleOffersJuggling",
+  "recruitmentAgencyMediation", "internalTransferContext",
+  "offerRescindedHistory", "internationalDegreePremium",
+  "domesticTopMbaAnchor", "toxicManagerContext", "visaSponsorshipNeed",
+  "casteReservationContext", "veteranTransition", "singleParentConstraint",
+  "jointFamilyFinancialResp", "paternityLeaveAsk", "menstrualLeavePolicy",
+  "esopExerciseLoanAsk", "preIpoSecondaryAsk", "accelerationTriggerAsk",
+  "esopPerquisiteTaxAsk", "tenderOfferCycleAsk",
+  "probationaryDurationAsk", "offerLetterTurnaroundDemand",
+  "contractToHireAsk", "headcountApprovalCheck", "ipAssignmentClauseAsk",
+  "healthcarePharmaContext", "manufacturingCoreContext",
+  "quickCommerceContext", "d2cConsumerEquity",
+];
+
+/** Exported for tests so the wave-membership lists are auditable. */
+export const __WAVE_FLAGS_INTERNAL = {
+  wave2: WAVE_2_FLAGS,
+  wave3: WAVE_3_FLAGS,
+  wave4: WAVE_4_FLAGS,
+};
+
+/** Read the kill-switch env vars at call time (not module-load) so
+ *  tests can flip env between runs without resetModules. */
+function readWaveDisables(): { w2: boolean; w3: boolean; w4: boolean } {
+  return {
+    w2: process.env.HSX_DISABLE_WAVE_2 === "1" || DISABLE_WAVE_2,
+    w3: process.env.HSX_DISABLE_WAVE_3 === "1" || DISABLE_WAVE_3,
+    w4: process.env.HSX_DISABLE_WAVE_4 === "1" || DISABLE_WAVE_4,
+  };
+}
+
+function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResult {
+  const { w2, w3, w4 } = readWaveDisables();
+  if (!w2 && !w3 && !w4) return result;
+  const out = result as unknown as Record<string, unknown>;
+  if (w2) for (const k of WAVE_2_FLAGS) out[k] = false;
+  if (w3) for (const k of WAVE_3_FLAGS) out[k] = false;
+  if (w4) for (const k of WAVE_4_FLAGS) out[k] = false;
+  /* Recompute hasAny against the zeroed flags so downstream code sees
+   * consistent state. We check a small union — any non-null/true value
+   * across the remaining surface. */
+  const r = out as unknown as CandidateProfileResult;
+  r.hasAny =
+    r.careerGapMonths != null ||
+    r.careerGapActivity != null ||
+    r.tenureSignal != null ||
+    r.levelMismatch != null ||
+    r.domainPivot ||
+    r.transferableSkillsClaimed ||
+    r.compensationHistoryIssue != null ||
+    r.serviceBondAccepted ||
+    r.probationCompMentioned ||
+    r.internshipConversion ||
+    r.collegeTier != null ||
+    r.earlySwitcher ||
+    r.lowCtcAlert ||
+    r.priorInternshipNonConversion ||
+    r.serviceCompanyBackground ||
+    r.compBreakupUnknown ||
+    r.recentLayoff ||
+    r.hotDomainPremium ||
+    r.pipDisclosed ||
+    r.verbalOnlyOffer ||
+    r.culturalJoiningConstraint ||
+    r.peopleManagementClaimed ||
+    r.crossBorderAnchor ||
+    r.unvestedEquityLossClaim ||
+    r.explodingOfferPressure ||
+    r.postAcceptanceRenege ||
+    r.quotaAttainmentClaimed ||
+    r.gardenLeaveDisclosed ||
+    r.nonCompeteFlagged ||
+    r.relocationBonusAsked ||
+    (!w2 && (
+      r.parentInsuranceAsked || r.inHandTakehomeFocus || r.rtoPushback ||
+      r.returnshipMaternity || r.payBandAsked || r.taxStructureAsked ||
+      r.bgvAnxiety || r.esopSophisticationProbe || r.spouseJobConstraint ||
+      r.agingParentCare || r.moonlightingDisclosed || r.mentalHealthDisclosed ||
+      r.payParityAsked || r.preemptiveCounterReceived || r.acceptanceTimeRequest ||
+      r.cryptoTokenComp || r.gccArbitrageAnchor || r.benchTimeDisclosed ||
+      r.founderSecondInnings || r.latecareerAgeBias
+    )) ||
+    (!w3 && (
+      r.titlePrecisionAsk || r.currentCtcRefusal || r.pregnancyDisclosed ||
+      r.boomerangRehire || r.referralReceived || r.hometownReturnPreference ||
+      r.pwdDisability || r.gratuityVestingNear || r.acquisitionContextAsk ||
+      r.lgbtqDisclosure || r.chronicIllnessDisclosed || r.noticeBuyoutAsk ||
+      r.bfsiClawbackContext || r.bigFourGradeStep || r.securityClearanceNeeded ||
+      r.missionDrivenComp || r.edtechReputationCheck || r.acquiHireContext ||
+      r.cabinParkingAsk || r.spanOfControlAsk || r.preResignationStealth ||
+      r.reverseAnchorAsk || r.dietaryReligiousNeed || r.oldEmployerDocsIssue ||
+      r.equityRefreshCadenceAsk
+    )) ||
+    (!w4 && (
+      r.signOnClawback || r.variableTrackRecord || r.wfhEquipmentStipend ||
+      r.salaryReviewCadenceAsk || r.multipleOffersJuggling ||
+      r.recruitmentAgencyMediation || r.internalTransferContext ||
+      r.offerRescindedHistory || r.internationalDegreePremium ||
+      r.domesticTopMbaAnchor || r.toxicManagerContext || r.visaSponsorshipNeed ||
+      r.casteReservationContext || r.veteranTransition || r.singleParentConstraint ||
+      r.jointFamilyFinancialResp || r.paternityLeaveAsk || r.menstrualLeavePolicy ||
+      r.esopExerciseLoanAsk || r.preIpoSecondaryAsk || r.accelerationTriggerAsk ||
+      r.esopPerquisiteTaxAsk || r.tenderOfferCycleAsk ||
+      r.probationaryDurationAsk || r.offerLetterTurnaroundDemand ||
+      r.contractToHireAsk || r.headcountApprovalCheck || r.ipAssignmentClauseAsk ||
+      r.healthcarePharmaContext || r.manufacturingCoreContext ||
+      r.quickCommerceContext || r.d2cConsumerEquity
+    ));
+  return r;
+}
+
 export type CareerGapActivity =
   /** Upskilling / certification / course. */
   | "upskill"
@@ -595,6 +756,61 @@ export interface CandidateProfileResult {
   d2cConsumerEquity: boolean;
   /** Convenience flag. */
   hasAny: boolean;
+}
+
+/* ─── DPDP Special Personal Data classification ──────────────────────
+ *
+ * Under India's Digital Personal Data Protection Act, 2023 (DPDP) and
+ * adjacent global frameworks (GDPR Art. 9 "special categories"), the
+ * following candidate-profile flags encode SENSITIVE / SPECIAL personal
+ * data: health, sexual orientation, caste / religion, family / care
+ * status, disability, and gender / reproductive context.
+ *
+ * These flags MUST NOT be written to analytics logs, retention stores,
+ * or any non-essential persistence layer in cleartext. Any code path
+ * that emits a candidateProfile snapshot to a log/analytics sink MUST
+ * route the snapshot through `redactCandidateProfileForLogs()` first.
+ *
+ * The kernel still computes these flags in-memory for turn-by-turn
+ * dialogue framing (e.g. choosing an empathetic voice for a layoff or
+ * PIP disclosure), but they are zeroed before any telemetry write.
+ *
+ * Adding a new sensitive flag? Add the key here, ensure it's a boolean
+ * on CandidateProfileResult, and update the redaction tests. */
+export const SPECIAL_PERSONAL_DATA_FLAGS: ReadonlyArray<keyof CandidateProfileResult> = [
+  "pregnancyDisclosed",
+  "pipDisclosed",
+  "mentalHealthDisclosed",
+  "lgbtqDisclosure",
+  "casteReservationContext",
+  "pwdDisability",
+  "chronicIllnessDisclosed",
+  "dietaryReligiousNeed",
+  "singleParentConstraint",
+  "paternityLeaveAsk",
+  "menstrualLeavePolicy",
+  "agingParentCare",
+  "returnshipMaternity",
+];
+
+/**
+ * Return a shallow copy of `p` with every flag in
+ * SPECIAL_PERSONAL_DATA_FLAGS forced to `false`. All other fields pass
+ * through unchanged. The input object is NOT mutated.
+ *
+ * Use this at every analytics / log write boundary that includes a
+ * candidate-profile snapshot (PostHog events, retention tables, error
+ * reports, debug dumps). See DPDP rationale above.
+ */
+export function redactCandidateProfileForLogs(
+  p: CandidateProfileResult,
+): CandidateProfileResult {
+  const out: CandidateProfileResult = { ...p };
+  for (const key of SPECIAL_PERSONAL_DATA_FLAGS) {
+    /* Every listed flag is a boolean field on the interface; zero it. */
+    (out as unknown as Record<string, unknown>)[key as string] = false;
+  }
+  return out;
 }
 
 const EMPTY: CandidateProfileResult = {
@@ -2499,7 +2715,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     manufacturingCoreContext ||
     quickCommerceContext ||
     d2cConsumerEquity;
-  return {
+  return applyWaveDisables({
     careerGapMonths,
     careerGapActivity,
     tenureSignal,
@@ -2608,7 +2824,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     quickCommerceContext,
     d2cConsumerEquity,
     hasAny,
-  };
+  });
 }
 
 /* ─── Phase 29 (2026-05-14) — Role-applicable YOE ────────────────────

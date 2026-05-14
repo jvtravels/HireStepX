@@ -53,6 +53,12 @@ import { enforceRoleLabel } from "./_role-label";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
 import { detectAdversarialInput, JAILBREAK_DEFLECTION_TEXT } from "./_adversarial-detector";
+import {
+  clampInput,
+  checkSessionTurnLimit,
+  checkUserDailyLimit,
+  logTurnUsage,
+} from "./_session-limits";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -426,11 +432,34 @@ export default async function handler(
         return new Response(JSON.stringify({ error: "Invalid state" }), { status: 400, headers });
       }
 
+      /* Session-turn-cap enforcement (launch-blocker). Past the
+         ceiling, return a 429-equivalent error and skip the LLM call. */
+      const turnCapCheck = checkSessionTurnLimit(state.turnIndex);
+      if (!turnCapCheck.allowed) {
+        return new Response(
+          JSON.stringify({ error: "session-turn-cap", reason: turnCapCheck.reason }),
+          { status: 429, headers },
+        );
+      }
+      /* Daily per-user cap. The backing-store for turnsToday is TBD
+         (KV / Redis counter keyed on userId + ymd). Until that lands
+         we feed 0 so the check is a no-op but the call site is wired. */
+      const turnsToday = 0; // TODO: read from per-user daily counter store
+      const dailyCheck = checkUserDailyLimit(turnsToday);
+      if (!dailyCheck.allowed) {
+        return new Response(
+          JSON.stringify({ error: "user-daily-cap", reason: dailyCheck.reason }),
+          { status: 429, headers },
+        );
+      }
+
       /* Idempotency: same (state, candidateAnswer) within 60 s replays
          the cached response instead of re-applying the turn. Protects
          against client retries on flaky mobile networks where the
          response was generated but TLS dropped the body. */
-      const safeAnswer = (body.candidateAnswer || "").slice(0, MAX_CANDIDATE_ANSWER_CHARS);
+      const clamped = clampInput(body.candidateAnswer || "");
+      const safeAnswer = clamped.text.slice(0, MAX_CANDIDATE_ANSWER_CHARS);
+      const turnStartedAt = Date.now();
       const idemKey = `nt:${await hashStable(`turn|${body.state}|${safeAnswer}`)}`;
       const cached = await redisGet(idemKey);
       if (cached) {
@@ -582,6 +611,14 @@ export default async function handler(
          missed cache write just means a retry will reprocess the turn
          (the prior behaviour), not lose data. */
       void redisSetEx(idemKey, IDEMPOTENCY_TTL_SEC, JSON.stringify(responseBody)).catch(() => {});
+      /* Cost / abuse observability — structured stdout log captured by
+         the platform pipeline. Fire-and-forget; logger swallows errors. */
+      logTurnUsage({
+        sessionId: state.sessionId,
+        userId: auth.userId,
+        inputChars: safeAnswer.length,
+        latencyMs: Date.now() - turnStartedAt,
+      });
       return new Response(JSON.stringify(responseBody), { status: 200, headers });
     }
 
