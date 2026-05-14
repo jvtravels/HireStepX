@@ -71,7 +71,7 @@ describe("Phase 32 — acceptance classifier parity (kernel vs legacy paths)", (
     it(`agrees on '${label}'`, () => {
       const fromKernelPath = classifyAcceptance(utterance).accepted;
       const fromLegacyPath = extractNegotiationFacts([
-        { speaker: "user", text: utterance, time: 0 },
+        { speaker: "user", text: utterance, time: "0" },
       ]).acceptedImmediately;
       expect(fromLegacyPath).toBe(fromKernelPath);
     });
@@ -82,9 +82,9 @@ describe("Phase 32 — acceptance classifier parity (kernel vs legacy paths)", (
      * true if ANY user turn signals acceptance. Pin that semantic
      * against an explicit OR over per-turn classifyAcceptance calls. */
     const turns = [
-      { speaker: "user" as const, text: "Can you do better?", time: 0 },
-      { speaker: "user" as const, text: "Let me think.", time: 1 },
-      { speaker: "user" as const, text: "Okay, I accept.", time: 2 },
+      { speaker: "user" as const, text: "Can you do better?", time: "0" },
+      { speaker: "user" as const, text: "Let me think.", time: "1" },
+      { speaker: "user" as const, text: "Okay, I accept.", time: "2" },
     ];
     const fromLegacy = extractNegotiationFacts(turns).acceptedImmediately;
     const fromPerTurn = turns.some((t) => classifyAcceptance(t.text).accepted);
