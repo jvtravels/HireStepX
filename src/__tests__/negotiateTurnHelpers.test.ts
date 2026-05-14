@@ -232,6 +232,43 @@ describe("deterministicFallbackText", () => {
     const text = deterministicFallbackText(state, { lever: "close-acceptance", newTotalLpa: 25, rationale: "" });
     expect(text).toMatch(/25/);
   });
+
+  /* User request (2026-05-14) — once the candidate accepts, the
+   * recruiter should prompt for basic Indian onboarding documents
+   * (Aadhaar, PAN, payslips). Pin the deterministic fallback so the
+   * doc request can't silently disappear from the close-acceptance
+   * recap, and so callers/tests that grep for it have a stable shape. */
+  it("close-acceptance fallback requests Aadhaar + PAN + payslips", () => {
+    const state = baseState({ highestOfferMade: 25 });
+    const text = deterministicFallbackText(state, { lever: "close-acceptance", newTotalLpa: 25, rationale: "" });
+    expect(text).toMatch(/Aadhaar/i);
+    expect(text).toMatch(/PAN/);
+    expect(text).toMatch(/payslip|relieving/i);
+  });
+
+  it("close-acceptance with joining bonus still requests onboarding docs", () => {
+    const state = baseState({ highestOfferMade: 25 });
+    const text = deterministicFallbackText(state, {
+      lever: "close-acceptance",
+      newTotalLpa: 25,
+      joiningBonusAmount: 3,
+      rationale: "",
+    });
+    /* Salary recap intact. */
+    expect(text).toMatch(/25/);
+    expect(text).toMatch(/3L/);
+    /* Doc request alongside. */
+    expect(text).toMatch(/Aadhaar/i);
+    expect(text).toMatch(/PAN/);
+  });
+
+  it("terminal-restate fallback also nudges for onboarding docs", () => {
+    const state = baseState({ phase: "accepted", highestOfferMade: 22, acceptedAtTurn: 2 });
+    const text = deterministicFallbackText(state, { lever: "terminal-restate", newTotalLpa: 22, rationale: "" });
+    expect(text).toMatch(/22/);
+    expect(text).toMatch(/Aadhaar/i);
+    expect(text).toMatch(/PAN/);
+  });
 });
 
 describe("integration: applyAiMove + lastAiText interaction", () => {

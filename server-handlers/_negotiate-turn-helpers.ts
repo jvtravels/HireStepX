@@ -65,13 +65,13 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "hold-firm":
     "State respectfully that this is final. Acknowledge their position. Invite them to think it over.",
   "close-acceptance":
-    "Congratulate them. Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion).",
+    "Congratulate them. Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion). REQUIRED: ask the candidate to share their basic onboarding documents — Aadhaar card, PAN card, and recent payslips / relieving letter — so the offer letter and BGV can proceed. Keep the ask warm and matter-of-fact, not bureaucratic.",
   "close-walkaway":
     "Acknowledge respectfully that this isn't going to work. Keep the door open for future roles. Brief, warm.",
   "close-stalemate":
     "Note that you've run out of turns. Suggest they take time and circle back. Brief, neutral.",
   "terminal-restate":
-    "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. One or two short sentences only.",
+    "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. If the prior turn did not yet collect onboarding documents (Aadhaar / PAN / recent payslips), gently re-prompt for them. One or two short sentences only.",
 };
 
 export interface BuildPromptInput {
@@ -1201,19 +1201,29 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
     }
     case "hold-firm":
       return `₹${state.highestOfferMade} LPA is what we can do for this role. Take your time and let us know.`;
-    case "close-acceptance":
-      return typeof move.joiningBonusAmount === "number"
-        ? `Welcome aboard! Your offer: ₹${move.newTotalLpa ?? state.highestOfferMade} LPA fixed base + ₹${move.joiningBonusAmount}L one-time joining bonus. We'll send the formal letter shortly.`
-        : `Wonderful — we'll send the offer letter for ₹${state.highestOfferMade} LPA shortly. Welcome aboard.`;
+    case "close-acceptance": {
+      /* Bug-report 14 follow-up (2026-05-14) — on acceptance, recruiters
+       * in India routinely collect basic onboarding documents (Aadhaar,
+       * PAN, recent payslips / relieving letter for BGV). Surfacing the
+       * ask in the fallback path means the simulation teaches candidates
+       * what to expect post-acceptance, not just the salary math. */
+      const head =
+        typeof move.joiningBonusAmount === "number"
+          ? `Welcome aboard! Your offer: ₹${move.newTotalLpa ?? state.highestOfferMade} LPA fixed base + ₹${move.joiningBonusAmount}L one-time joining bonus.`
+          : `Wonderful — we'll send the offer letter for ₹${state.highestOfferMade} LPA shortly. Welcome aboard.`;
+      return `${head} To kick off onboarding, please share your Aadhaar card, PAN card, and your recent payslips or relieving letter — we'll send the formal offer letter alongside.`;
+    }
     case "close-walkaway":
       return `I understand. Thanks for the conversation — we'd love to stay in touch for future roles.`;
     case "close-stalemate":
       return `We've covered a lot. Take some time and let us know how you'd like to proceed.`;
     case "terminal-restate": {
       const lpa = move.newTotalLpa ?? state.highestOfferMade ?? state.band.initialOffer;
-      return typeof move.joiningBonusAmount === "number"
-        ? `Welcome aboard! Your offer is confirmed at ₹${lpa} LPA fixed + ₹${move.joiningBonusAmount}L one-time joining bonus — the offer letter will follow shortly.`
-        : `Welcome aboard! Your offer is confirmed at ₹${lpa} LPA — the offer letter will follow shortly.`;
+      const head =
+        typeof move.joiningBonusAmount === "number"
+          ? `Welcome aboard! Your offer is confirmed at ₹${lpa} LPA fixed + ₹${move.joiningBonusAmount}L one-time joining bonus — the offer letter will follow shortly.`
+          : `Welcome aboard! Your offer is confirmed at ₹${lpa} LPA — the offer letter will follow shortly.`;
+      return `${head} If you haven't already, please share your Aadhaar, PAN, and recent payslips so we can get the paperwork moving.`;
     }
   }
 }
