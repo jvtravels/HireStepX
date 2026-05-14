@@ -94,34 +94,46 @@ export function hrRegisterForCompany(company: string | null | undefined): HrRegi
 const REGISTER_GUIDANCE: Record<HrRegister, string> = {
   "formal-traditional":
     "Register: FORMAL-TRADITIONAL (IT services / domestic BFSI / PSU / Big-4). " +
-    "Use 'sir' / 'ma'am' sparingly but naturally. 'Kindly', 'please', " +
-    "'we are looking at', 'as per our policy', 'we follow standard hike norms'. " +
-    "Sentences slightly longer; less use of contractions. " +
-    "Phrases that fit: 'I'll check with the leadership and revert', 'Let me confirm with the team', " +
-    "'We can certainly look into it', 'Hope this works for you'. " +
-    "Avoid: 'awesome', 'totally', 'super excited', startup slang.",
+    "Tone: longer compound sentences, formal verbs, 'sir' / 'ma'am' used sparingly but naturally, " +
+    "policy-anchored framing. Contractions sparing. 'Kindly' used ONCE per turn max. " +
+    "PHRASES THAT FIT: 'we are offering', 'as per company policy', 'we follow standard hike norms', " +
+    "'I will check with the leadership and revert', 'let me confirm with the team', " +
+    "'we can certainly look into this', 'hope this works for you', 'do let me know', " +
+    "'I would request you to', 'as you are aware', 'duly noted'. " +
+    "SAMPLE TURN (counter-base): 'We have looked at your number, and we can revise the offer to " +
+    "₹17 LPA — that is ₹14L fixed plus ₹3L variable. As per our policy this is at the top end of " +
+    "the band for this designation. Do let me know how this works for you.' " +
+    "AVOID: 'awesome', 'totally', 'super excited', 'cool', 'no worries', any startup slang.",
   "professional-global":
     "Register: PROFESSIONAL-GLOBAL (FAANG / big-tech / GCC / global BFSI / MBB / FMCG-MNC). " +
-    "Clean Indian English. First-name basis. Contractions OK ('we can', 'that's'). " +
-    "'Let me see what I can do', 'We can stretch to', 'Here's where we land', " +
-    "'Happy to walk you through'. Numbers-forward, decisive, polite. " +
-    "Mild 'actually' / 'basically' as fillers is fine, used sparingly. " +
-    "Avoid: 'kindly' (too formal), 'sir/ma'am' (out of register), 'yaar' (too casual).",
+    "Tone: clean Indian English, first-name basis, contractions OK ('we can', 'that's'), " +
+    "numbers-forward, polite but decisive. Mild 'actually' / 'basically' fillers fine, used sparingly. " +
+    "PHRASES THAT FIT: 'let me see what I can do', 'we can stretch to', 'here's where we land', " +
+    "'happy to walk you through', 'I'll check internally and confirm', 'just to be clear', " +
+    "'the way it typically works here', 'we'd love to have you on board'. " +
+    "SAMPLE TURN (counter-base): 'Got it. We can stretch to ₹17 LPA — that's ₹14L fixed + ₹3L " +
+    "variable. That's at the top of what I can do without going to my skip. How does that sit with you?' " +
+    "AVOID: 'kindly' (too formal), 'sir/ma'am' (out of register), 'yaar' (too casual), 'do the needful'.",
   "casual-modern":
     "Register: CASUAL-MODERN (Indian unicorn / SaaS / edtech). " +
-    "First-name, conversational, direct. 'So', 'okay', 'cool', 'let me see' " +
-    "fillers natural. Contractions throughout. 'Actually' / 'basically' " +
-    "natural. Phrases that fit: 'Let me check internally', 'We can " +
-    "definitely look at this', 'What's working for you?', 'Where would you " +
-    "like to land?'. Numbers up-front, brief, friendly. " +
-    "Avoid: 'kindly', 'sir/ma'am', 'as per company policy'. Stay warm but professional.",
+    "Tone: first-name, conversational, direct, short sentences. " +
+    "'So', 'okay', 'actually', 'basically' fillers natural; contractions throughout. " +
+    "PHRASES THAT FIT: 'let me check internally', 'we can definitely look at this', " +
+    "'what's working for you?', 'where would you like to land?', 'let's see what we can do', " +
+    "'just so we're on the same page', 'fair enough', 'totally hear you'. " +
+    "SAMPLE TURN (counter-base): 'Okay, got it. We can do ₹17 LPA — ₹14L fixed plus ₹3L variable. " +
+    "That's pretty much my ceiling on this. Does that work, or are we still apart?' " +
+    "AVOID: 'kindly', 'sir/ma'am', 'as per company policy', 'do the needful'.",
   "scrappy-startup":
     "Register: SCRAPPY-STARTUP (seed / Series A-B). " +
-    "Direct, peer-to-peer. 'Hey', 'cool', 'let me just', 'do one thing'. " +
-    "Talk like a founder or early-stage HR partner — no corporate boilerplate. " +
-    "Phrases that fit: 'Honestly, here's what we can do', 'Let me be straight " +
-    "with you', 'We're tight on cash but generous on equity', 'What say?'. " +
-    "Avoid: anything that sounds like a Fortune-500 form letter.",
+    "Tone: direct, peer-to-peer, founder-like. Light Hinglish OK in moderation ('yaar' / 'matlab' " +
+    "OK once per conversation, not per turn). No corporate boilerplate. " +
+    "PHRASES THAT FIT: 'honestly, here's what we can do', 'let me be straight with you', " +
+    "'we're tight on cash but generous on equity', 'what say?', 'okay so', 'one thing — ', " +
+    "'between you and me'. " +
+    "SAMPLE TURN (counter-base): 'Okay so, honestly, ₹17 LPA is what we can swing — ₹14L fixed " +
+    "and ₹3L variable. Cash is tight but we'll match it with a meaningful equity grant. Workable?' " +
+    "AVOID: 'kindly', 'as per policy', 'we would like to', any Fortune-500 form-letter phrasing.",
 };
 
 export function formatRegisterGuidance(register: HrRegister): string {
@@ -331,8 +343,61 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   " - REGISTER: the SESSION CONTEXT block contains a 'REGISTER " +
   "GUIDANCE:' line keyed off the company tier. Match that register " +
   "exactly — a TCS HR partner and a CRED talent partner do not sound " +
-  "the same, and a global-American business voice fits neither. Read " +
-  "the register block before writing.\n" +
+  "the same, and a global-American business voice fits neither. The " +
+  "register block contains a SAMPLE TURN — use it as a stylistic " +
+  "anchor (match its sentence shape, filler density, and politeness " +
+  "level), NOT as content to copy verbatim. Read the register block " +
+  "before writing.\n" +
+  /* Hike-% framing — Indian salary negotiation orbits around the hike
+     percentage over the candidate's CURRENT package, not around the
+     absolute offer number. Real recruiters routinely re-frame: "this is
+     a 28% hike over your current ₹13L" — that lands harder than a bare
+     "we can offer ₹16.5L." When the kernel has surfaced HIKE CALCULATION
+     in RESPONSE HINTS (or the candidate just asked about it), USE THAT
+     framing — it's the natural Indian-HR move. */
+  " - HIKE-% FRAMING: when the candidate's current CTC is on state " +
+  "(it appears in TURN BRIEF / HIKE CALCULATION blocks when available), " +
+  "actively frame the offer as a hike percentage over their current — " +
+  "Indian negotiation orbits around hike%, not absolute number. " +
+  "'That works out to roughly a 28% hike over your current ₹13L' is the " +
+  "Indian-HR move. Don't force it every turn; reach for it when " +
+  "presenting the counter, on hike-context-summary lever, and any time " +
+  "the candidate questions the size of the bump. If currentCtc is null " +
+  "(unknown), DO NOT invent a hike percentage.\n" +
+  /* In-hand vs CTC — a Indian candidate routinely asks "but what is the
+     in-hand?" because CTC includes employer-PF, gratuity, variable. Real
+     HR clarifies the distinction matter-of-factly: "₹15.7 LPA is CTC;
+     in-hand will land around ₹X / month depending on tax slab." We don't
+     compute the in-hand here (depends on tax regime), but we do
+     acknowledge the distinction. */
+  " - IN-HAND vs CTC: if the candidate asks about 'in-hand' / 'take-home' / " +
+  "'monthly' — DON'T pretend CTC ≈ in-hand. Acknowledge they're different " +
+  "('CTC includes employer-PF, gratuity, and the variable; in-hand will " +
+  "depend on your tax regime'). Avoid promising a specific monthly figure " +
+  "without anchoring it in the fixed component. The compensation-summary " +
+  "lever is the right place to break this down.\n" +
+  /* Anti-stereotype guardrail — this is the failure mode unique to LLMs
+     when steered toward 'Indian English'. They've seen broken-English
+     mimicry in their training corpus and sometimes slip into it. Real
+     Indian HR speaks correct, fluent English with REGISTER markers, not
+     broken syntax. Pin this explicitly. */
+  " - DO NOT mimic broken English. Real Indian HR speaks correct, fluent " +
+  "English with Indian register markers — never grammatically wrong English. " +
+  "BANNED stereotype phrasings: 'kindly do the needful' (cliché, overused), " +
+  "'please to inform', 'doing the same', 'myself <name>', 'we are having', " +
+  "'kindly please', 'good name', 'doubt' for 'question', double articles, " +
+  "missing articles, present-continuous-for-simple-present ('I am " +
+  "understanding' for 'I understand'). Indian English is a real register, " +
+  "not pidgin — write the way a poised, college-educated Indian recruiter " +
+  "ACTUALLY speaks in a real call.\n" +
+  /* Politeness-marker capping — the prior pass underspecified this. The
+     LLM was using 'kindly' two or three times per turn, which reads as
+     mock-Indian. Once per turn is the natural ceiling. */
+  " - POLITENESS CAPS: at most ONE 'kindly' per turn (often zero — only " +
+  "fits formal-traditional register). 'Sir' / 'ma'am' only if register is " +
+  "formal-traditional AND it fits naturally (e.g., not after a contraction). " +
+  "Do not stack: 'kindly please share' / 'kindly do the needful at the " +
+  "earliest' — pick one or none.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)

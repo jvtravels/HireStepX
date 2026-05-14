@@ -343,4 +343,44 @@ describe("Indianization — register guidance is plumbed into SESSION CONTEXT", 
     expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/touch base/);
     expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/circle back/);
   });
+
+  it("system prompt teaches HIKE-% framing", () => {
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/HIKE-% FRAMING/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/hike percentage/);
+    /* Negative anchor: must explicitly warn against fabricating a hike% */
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/DO NOT invent a hike percentage/);
+  });
+
+  it("system prompt distinguishes in-hand vs CTC", () => {
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/IN-HAND vs CTC/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/take-home/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/employer-PF/);
+  });
+
+  it("system prompt has anti-stereotype guardrail (no broken-English mimicry)", () => {
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/DO NOT mimic broken English/);
+    /* Each of these is a stereotype the LLM should NOT produce */
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/kindly do the needful/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/myself <name>/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/good name/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/doing the same/);
+  });
+
+  it("system prompt caps over-politeness (one 'kindly' max per turn)", () => {
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/POLITENESS CAPS/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/ONE 'kindly' per turn/);
+  });
+
+  it("each register block contains a SAMPLE TURN few-shot anchor", () => {
+    /* Few-shot anchors are the highest-leverage prompt-engineering move.
+     * Each of the 4 register blocks must include a verbatim sample turn
+     * the LLM can pattern-match against. */
+    for (const r of ["formal-traditional", "professional-global", "casual-modern", "scrappy-startup"] as const) {
+      const g = formatRegisterGuidance(r);
+      expect(g, `${r} missing SAMPLE TURN`).toMatch(/SAMPLE TURN/);
+      /* Sample turns reference concrete LPA numbers (anchors the LLM to
+       * use Indian units) — every sample has an LPA figure. */
+      expect(g, `${r} sample turn must mention LPA`).toMatch(/LPA/);
+    }
+  });
 });
