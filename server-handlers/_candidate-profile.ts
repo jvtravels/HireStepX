@@ -333,6 +333,136 @@ export interface CandidateProfileResult {
    *  warm-affirming voice + frame seniority as asset, not liability.
    *  Monotone-up. */
   latecareerAgeBias: boolean;
+  /* ─── Wave-3 (2026-05-14j) — 25 new flags spanning identity / title /
+   * sensitive disclosures (7), history / relationship / retention (6),
+   * domain / vertical voice (7), and process / coaching surface (5). */
+  /** Wave-3A — candidate asks about exact title / designation /
+   *  grade-step ("what's the exact designation?", "SDE-2 or Senior
+   *  SDE?", "M5 or M6"). India places huge weight on resume-readable
+   *  titles. Routes to designation / grade voice. Monotone-up. */
+  titlePrecisionAsk: boolean;
+  /** Wave-3A — candidate refuses to share current CTC ("I'd prefer not
+   *  to share", "rather not say my current package"). Routes recruiter
+   *  to RESPECT the refusal — pivot to band-anchored pricing without
+   *  pressuring for the number. Monotone-up. */
+  currentCtcRefusal: boolean;
+  /** Wave-3A — candidate discloses pregnancy / expecting / due date /
+   *  imminent maternity leave. SENSITIVE — recruiter must NOT anchor
+   *  down; do not let comp be influenced by maternity context. Routes
+   *  to warm + maternity-benefit-detail voice. Monotone-up. */
+  pregnancyDisclosed: boolean;
+  /** Wave-3A — candidate is a returning ex-employee ("I worked here
+   *  before", "boomerang hire", "rejoining after 3 years"). Routes to
+   *  rehire-eligibility / institutional-knowledge voice. Monotone-up. */
+  boomerangRehire: boolean;
+  /** Wave-3A — candidate was referred by a current employee ("X
+   *  referred me", "internal referral", "employee referral"). Routes
+   *  recruiter to surface referral-bonus / honor-referrer voice and
+   *  note the social-debt context. Monotone-up. */
+  referralReceived: boolean;
+  /** Wave-3A — candidate wants to relocate to hometown / tier-2 city
+   *  ("back to my hometown", "move closer to family in Indore /
+   *  Coimbatore"). Distinct from spouseJobConstraint. Routes to
+   *  tier-2-city PPP-adjusted band voice. Monotone-up. */
+  hometownReturnPreference: boolean;
+  /** Wave-3A — candidate discloses a disability / accessibility need /
+   *  PWD reservation ("hearing impairment", "wheelchair accessible",
+   *  "PWD candidate", "accommodation required"). SENSITIVE — routes
+   *  recruiter to "yes, we accommodate; what specifically?" voice. Must
+   *  not anchor down. Monotone-up. */
+  pwdDisability: boolean;
+  /** Wave-3A — candidate cites being close to gratuity vesting (4.6+
+   *  years; "I'll lose gratuity if I leave now", "almost 5 years for
+   *  gratuity"). Routes recruiter to "we can cover the gratuity gap in
+   *  the signing bonus" voice. Monotone-up. */
+  gratuityVestingNear: boolean;
+  /** Wave-3A — candidate asks about acquisition / merger context
+   *  ("are you being acquired?", "I heard about the M&A", "post-
+   *  acquisition retention"). Routes to "here's where we are on the
+   *  M&A; here's how it affects your offer" voice. Monotone-up. */
+  acquisitionContextAsk: boolean;
+  /** Wave-3A — candidate discloses LGBTQ+ identity / asks about partner
+   *  benefits / same-sex spouse insurance. SENSITIVE — routes to
+   *  "yes, partner benefits cover same-sex partners" voice. Must not
+   *  anchor down. Monotone-up. */
+  lgbtqDisclosure: boolean;
+  /** Wave-3A — candidate discloses a chronic illness / ongoing
+   *  treatment / dialysis / cancer-survivor / autoimmune. SENSITIVE
+   *  — routes recruiter to EAP / medical-leave / accommodation voice.
+   *  Must not anchor down. Monotone-up. */
+  chronicIllnessDisclosed: boolean;
+  /** Wave-3A — candidate explicitly asks about notice-period buyout /
+   *  shortfall ("can you buy out my notice?", "notice buyout amount?").
+   *  Distinct from Phase-25 noticePeriodDays; this is the buyout-money
+   *  ask. Routes to "yes/no on notice buyout, here's the cap" voice.
+   *  Monotone-up. */
+  noticeBuyoutAsk: boolean;
+  /** Wave-3B — candidate from BFSI cites year-end / variable / bonus
+   *  clawback if they leave before March ("bonus locked till March",
+   *  "joining bonus clawback if I leave under 1 year"). Routes to
+   *  "we can cover the clawback in the signing bonus" voice.
+   *  Monotone-up. */
+  bfsiClawbackContext: boolean;
+  /** Wave-3B — candidate is at Deloitte/EY/PwC/KPMG and references
+   *  grade step (Consultant → Senior Consultant → Manager → SM → D,
+   *  "S2 to M1 lateral"). Routes to Big-4 grade-step band voice.
+   *  Monotone-up. */
+  bigFourGradeStep: boolean;
+  /** Wave-3B — candidate raises security clearance / defence / govt
+   *  project requirement ("I need clearance", "DRDO/ISRO project",
+   *  "DoD clearance"). Routes to clearance-status / timeline voice.
+   *  Monotone-up. */
+  securityClearanceNeeded: boolean;
+  /** Wave-3B — candidate signals willingness to take below-market for
+   *  mission (climate, healthtech, public sector, social impact, NGO).
+   *  Routes to "we won't lowball you even if you're mission-aligned"
+   *  voice. Monotone-up. */
+  missionDrivenComp: boolean;
+  /** Wave-3B — candidate probes edtech company reputation / mass-firing
+   *  history / Byju's-parallel anxiety. Routes to honest-stability /
+   *  runway / unit-economics voice. Monotone-up. */
+  edtechReputationCheck: boolean;
+  /** Wave-3B — candidate's CURRENT company is being acquired / wound
+   *  down and they're moving as a result. Distinct from
+   *  acquisitionContextAsk which is about OUR company's M&A.
+   *  Routes to "stale CTC is non-signal, we price the role" voice.
+   *  Monotone-up. */
+  acquiHireContext: boolean;
+  /** Wave-3B — candidate asks about cabin / parking / dedicated
+   *  workstation / company car / fuel reimbursement. Traditional
+   *  Indian seniority perks. Routes to perk-disclosure voice.
+   *  Monotone-up. */
+  cabinParkingAsk: boolean;
+  /** Wave-3B — candidate asks about their span of control / team size
+   *  to manage / org structure / reporting lines / number of reports.
+   *  Routes to "here's the org chart and your span of control" voice.
+   *  Monotone-up. */
+  spanOfControlAsk: boolean;
+  /** Wave-3C — candidate has NOT yet told current employer ("they
+   *  don't know I'm interviewing", "stealth job search"). Routes to
+   *  "we'll structure the offer to give you confidentiality cover"
+   *  voice. Monotone-up. */
+  preResignationStealth: boolean;
+  /** Wave-3C — candidate refuses to give a number first and asks the
+   *  recruiter to anchor ("what's your budget?", "you tell me",
+   *  "what range did you have in mind?"). Routes to coaching: do not
+   *  anchor first unless band data is firm. Monotone-up. */
+  reverseAnchorAsk: boolean;
+  /** Wave-3C — candidate raises dietary / religious accommodation
+   *  (Jain / halal / vegetarian-cafeteria / Friday prayers / Ramzan /
+   *  Sabbath). Routes to dietary-accommodation voice. Monotone-up. */
+  dietaryReligiousNeed: boolean;
+  /** Wave-3C — candidate has trouble retrieving relieving letter /
+   *  experience letter / payslips from a prior employer. Affects BGV.
+   *  Routes to "we accept affidavit / alternate proof" voice.
+   *  Monotone-up. */
+  oldEmployerDocsIssue: boolean;
+  /** Wave-3C — candidate asks about equity refresh cadence / top-up
+   *  grants / promotion refresh ("when's my next RSU grant?", "annual
+   *  refresh policy?", "promotion top-up?"). Distinct from
+   *  esopSophisticationProbe (which is initial-grant mechanics).
+   *  Routes to refresh-cadence voice. Monotone-up. */
+  equityRefreshCadenceAsk: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -388,6 +518,32 @@ const EMPTY: CandidateProfileResult = {
   benchTimeDisclosed: false,
   founderSecondInnings: false,
   latecareerAgeBias: false,
+  /* Wave-3 (2026-05-14j) — 25 new flags. */
+  titlePrecisionAsk: false,
+  currentCtcRefusal: false,
+  pregnancyDisclosed: false,
+  boomerangRehire: false,
+  referralReceived: false,
+  hometownReturnPreference: false,
+  pwdDisability: false,
+  gratuityVestingNear: false,
+  acquisitionContextAsk: false,
+  lgbtqDisclosure: false,
+  chronicIllnessDisclosed: false,
+  noticeBuyoutAsk: false,
+  bfsiClawbackContext: false,
+  bigFourGradeStep: false,
+  securityClearanceNeeded: false,
+  missionDrivenComp: false,
+  edtechReputationCheck: false,
+  acquiHireContext: false,
+  cabinParkingAsk: false,
+  spanOfControlAsk: false,
+  preResignationStealth: false,
+  reverseAnchorAsk: false,
+  dietaryReligiousNeed: false,
+  oldEmployerDocsIssue: false,
+  equityRefreshCadenceAsk: false,
   hasAny: false,
 };
 
@@ -1190,6 +1346,325 @@ function detectLatecareerAgeBias(t: string): boolean {
   return LATECAREER_AGE_BIAS_PATTERNS.some((p) => p.test(t));
 }
 
+/* ─── Wave-3 (2026-05-14j) — 25 new flags ──────────────────────────── */
+
+/* Wave-3A — titlePrecisionAsk: candidate probes exact designation /
+ * grade-step. Indian resume-readable-title weight is enormous. */
+const TITLE_PRECISION_PATTERNS: RegExp[] = [
+  /\b(?:exact|specific|precise|actual)\s+(?:title|designation|grade|level|band)\b/i,
+  /\b(?:what'?s?|tell\s+me)\s+(?:the\s+)?(?:exact\s+)?(?:designation|title|grade[-\s]?step)\b/i,
+  /\b(?:sde[-\s]?\d|swe[-\s]?\d|l[-\s]?\d{1,2}|m[-\s]?\d|ic[-\s]?\d|p[-\s]?\d{1,2})\b\s+(?:or\s+|vs\s+|versus\s+)?(?:sde[-\s]?\d|swe[-\s]?\d|l[-\s]?\d{1,2}|m[-\s]?\d|senior|staff|principal)/i,
+  /\b(?:senior\s+sde|principal\s+engineer|staff\s+engineer|associate\s+director)\b\s+(?:level|grade|band|step|or\s+)/i,
+  /\b(?:resume[-\s]?readable|on\s+(?:my\s+)?resume|how\s+(?:will|does)\s+it\s+(?:read|appear)\s+on\s+(?:my\s+)?resume)\b/i,
+];
+function detectTitlePrecisionAsk(t: string): boolean {
+  return TITLE_PRECISION_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — currentCtcRefusal: candidate declines to share current
+ * package. Recruiter must RESPECT and pivot to band-anchored pricing. */
+const CTC_REFUSAL_PATTERNS: RegExp[] = [
+  /\b(?:prefer\s+not\s+to\s+(?:share|disclose|say)|rather\s+not\s+(?:share|say|disclose))\b.{0,40}\b(?:ctc|salary|package|comp(?:ensation)?|current\s+pay|number)\b/i,
+  /\b(?:not\s+comfortable|uncomfortable)\s+(?:sharing|disclosing|revealing)\s+(?:my\s+)?(?:current\s+)?(?:ctc|salary|package|comp(?:ensation)?|number)\b/i,
+  /\b(?:i\s+won'?t|i\s+will\s+not|i'?d\s+rather\s+not|won'?t\s+be)\s+(?:share|sharing|disclose|disclosing|tell|tell\s+you|reveal)\s+(?:my\s+)?(?:current\s+)?(?:ctc|salary|package|number)\b/i,
+  /\b(?:current\s+ctc|current\s+(?:salary|package))\s+(?:is\s+)?(?:confidential|private|not\s+(?:something|relevant))/i,
+  /\b(?:decline\s+to\s+(?:share|disclose)|keep\s+(?:that|it)\s+(?:confidential|private))\b.{0,40}\b(?:ctc|salary|package|comp)\b/i,
+];
+function detectCurrentCtcRefusal(t: string): boolean {
+  return CTC_REFUSAL_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — pregnancyDisclosed: candidate discloses pregnancy / due
+ * date / imminent maternity leave. SENSITIVE — must not anchor down. */
+const PREGNANCY_PATTERNS: RegExp[] = [
+  /\b(?:i'?m\s+)?(?:pregnant|expecting|with\s+child|carrying)\b/i,
+  /\b(?:due\s+date|due\s+in\s+\w+|expecting\s+(?:a\s+)?(?:baby|child)\s+in\s+\w+)\b/i,
+  /\b(?:maternity\s+leave\s+(?:is\s+)?(?:imminent|coming\s+up|soon|in\s+(?:a\s+)?(?:few\s+)?(?:weeks?|months?))|going\s+on\s+maternity\s+(?:leave|soon))\b/i,
+  /\b(?:in\s+(?:my\s+)?(?:second|third|first|1st|2nd|3rd)\s+trimester|trimester\s+of\s+pregnancy)\b/i,
+  /\b(?:will\s+(?:be\s+)?need(?:ing)?\s+maternity\s+leave|need(?:ing)?\s+(?:to\s+take\s+)?maternity)\b/i,
+];
+function detectPregnancyDisclosed(t: string): boolean {
+  return PREGNANCY_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — boomerangRehire: candidate is a returning ex-employee. */
+const BOOMERANG_PATTERNS: RegExp[] = [
+  /\b(?:i\s+(?:worked|was)\s+(?:here|at\s+(?:this|the)\s+co(?:mpany)?)\s+(?:before|previously|earlier))\b/i,
+  /\b(?:boomerang\s+(?:hire|rehire|employee|candidate)|boomeranging\s+back)\b/i,
+  /\b(?:rejoining|coming\s+back|returning)\s+(?:after\s+\d+\s+(?:years?|months?)|to\s+(?:the\s+)?(?:co(?:mpany)?|team)|the\s+(?:company|firm))\b/i,
+  /\b(?:ex[-\s]?(?:employee|colleague)|alumni|former\s+(?:employee|teammate))\s+(?:of\s+(?:this|the)\s+co(?:mpany)?|returning|coming\s+back)\b/i,
+  /\b(?:rehire|re[-\s]hire|re[-\s]?joined?)\b/i,
+];
+function detectBoomerangRehire(t: string): boolean {
+  return BOOMERANG_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — referralReceived: candidate was referred internally. */
+const REFERRAL_PATTERNS: RegExp[] = [
+  /\b(?:was|got|received|have)\s+(?:an?\s+)?(?:internal\s+|employee\s+)?referr(?:al|ed)\b/i,
+  /\b(?:employee\s+referral|referral\s+bonus|referred\s+(?:me|by\s+\w+))\b/i,
+  /\b\w+\s+referred\s+me\s+(?:to|for|here)\b/i,
+  /\b(?:through\s+(?:an?\s+)?(?:employee\s+)?referral|via\s+(?:an?\s+)?referral)\b/i,
+  /\b(?:my\s+(?:friend|colleague|ex[-\s]?colleague)\s+\w+\s+(?:works\s+here|is\s+(?:at|on)\s+the\s+team))\b/i,
+];
+function detectReferralReceived(t: string): boolean {
+  return REFERRAL_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — hometownReturnPreference: candidate wants to move to
+ * hometown / tier-2 city. Distinct from spouseJobConstraint. */
+const HOMETOWN_PATTERNS: RegExp[] = [
+  /\b(?:back\s+to\s+(?:my\s+)?(?:hometown|native\s+place|native\s+city|roots)|return(?:ing)?\s+to\s+(?:my\s+)?(?:hometown|native))\b/i,
+  /\b(?:closer\s+to\s+(?:my\s+)?(?:family|parents|home)|move\s+closer\s+to\s+(?:family|home|parents))\b/i,
+  /\b(?:move|relocate|moving|relocating)\s+(?:back\s+)?(?:to\s+)?(?:indore|coimbatore|bhubaneswar|jaipur|nagpur|kochi|trivandrum|kolkata|ahmedabad|lucknow|chandigarh|patna|vadodara|nashik|surat|visakhapatnam|vizag|guwahati|raipur|ranchi|dehradun|mysore|mangalore|trichy|madurai|vijayawada|tier[-\s]?2\s+city|tier[-\s]?ii\s+city)\b/i,
+  /\b(?:my\s+(?:home[-\s]?town|native)\s+is\s+\w+|hometown\s+(?:posting|role|opportunity))\b/i,
+  /\b(?:want\s+to\s+(?:settle|move)\s+(?:back\s+)?(?:in\s+|to\s+)?(?:my\s+)?(?:hometown|native|tier[-\s]?2))\b/i,
+];
+function detectHometownReturnPreference(t: string): boolean {
+  return HOMETOWN_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — pwdDisability: candidate discloses disability /
+ * accessibility need / PWD reservation. SENSITIVE. */
+const PWD_PATTERNS: RegExp[] = [
+  /\b(?:pwd|person\s+with\s+disability|persons?\s+with\s+disabilities|differently[-\s]?abled)\b/i,
+  /\b(?:wheelchair|wheel[-\s]?chair)\s+(?:accessible|access|ramp|user)?\b/i,
+  /\b(?:hearing|visual|vision|mobility|speech)\s+(?:impair(?:ment|ed)|disability|loss|challenge)\b/i,
+  /\b(?:accessibility\s+(?:need|requirement|accommodation)|reasonable\s+accommodation|workplace\s+accommodation)\b/i,
+  /\b(?:i\s+(?:have|am)\s+(?:a\s+)?(?:disability|disabled|deaf|blind|hard\s+of\s+hearing))\b/i,
+  /\b(?:sign\s+language\s+interpreter|screen\s+reader|braille|adaptive\s+(?:tech|equipment))\b/i,
+];
+function detectPwdDisability(t: string): boolean {
+  return PWD_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — gratuityVestingNear: candidate close to 5-yr gratuity. */
+const GRATUITY_VESTING_PATTERNS: RegExp[] = [
+  /\b(?:gratuity)\s+(?:vest(?:ing|s)?|eligibility|cliff|completion|kicks?\s+in)\b/i,
+  /\b(?:lose\s+(?:my\s+)?gratuity|forfeit\s+gratuity|gratuity\s+(?:loss|forfeit))\b/i,
+  /\b(?:almost|nearly|close\s+to|just\s+short\s+of|few\s+months\s+(?:to|from|away\s+from))\s+(?:5\s+years?|five\s+years?|gratuity)\b/i,
+  /\b(?:4\.\d|four\s+point\s+\w+)\s+years?\b.{0,40}\b(?:gratuity|tenure|completion|current)/i,
+  /\b(?:gratuity\s+(?:gap|shortfall|payout)|cover(?:ing)?\s+(?:my\s+|the\s+)?gratuity)\b/i,
+];
+function detectGratuityVestingNear(t: string): boolean {
+  return GRATUITY_VESTING_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — acquisitionContextAsk: candidate asks about OUR M&A. */
+const ACQUISITION_CONTEXT_PATTERNS: RegExp[] = [
+  /\b(?:are\s+you|is\s+(?:the\s+)?(?:co(?:mpany)?|firm))\s+(?:being\s+)?(?:acquired|getting\s+acquired|in\s+(?:an?\s+)?m&a)\b/i,
+  /\b(?:m\s*&\s*a|merger|acquisition)\s+(?:rumour|rumor|news|talks?|deal|context|impact|effect)\b/i,
+  /\b(?:post[-\s]?acquisition|post[-\s]?merger|after\s+(?:the\s+)?acquisition)\s+(?:retention|comp|package|stock|options?)\b/i,
+  /\b(?:heard\s+about\s+(?:the\s+|your\s+)?(?:m&a|merger|acquisition|deal)|rumours?\s+about\s+(?:m&a|merger|acquisition))\b/i,
+  /\b(?:retention\s+(?:bonus|pool|grant)\s+post[-\s]?(?:acquisition|merger))\b/i,
+];
+function detectAcquisitionContextAsk(t: string): boolean {
+  return ACQUISITION_CONTEXT_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — lgbtqDisclosure: candidate discloses LGBTQ+ identity or
+ * asks about partner benefits. SENSITIVE. */
+const LGBTQ_PATTERNS: RegExp[] = [
+  /\b(?:lgbtq\+?|lgbt|lgbtqia\+?|queer|gay|lesbian|bisexual|transgender|non[-\s]?binary|gender[-\s]?fluid)\b/i,
+  /\b(?:same[-\s]?sex\s+(?:partner|spouse|marriage)|same\s+gender\s+partner)\b/i,
+  /\b(?:partner\s+(?:insurance|benefits?|cover|medical))\b.{0,80}\b(?:same[-\s]?sex|gay|lesbian|lgbt|domestic\s+partner)/i,
+  /\b(?:domestic\s+partner(?:ship)?|civil\s+(?:union|partnership))\s+(?:benefits?|cover|insurance)?\b/i,
+  /\b(?:my\s+(?:partner|spouse)\s+is\s+(?:also\s+)?(?:a\s+)?(?:man|woman|male|female)\b.{0,40}\b(?:insurance|cover|benefit))/i,
+];
+function detectLgbtqDisclosure(t: string): boolean {
+  return LGBTQ_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — chronicIllnessDisclosed: chronic illness / ongoing
+ * treatment / cancer-survivor / autoimmune. SENSITIVE. */
+const CHRONIC_ILLNESS_PATTERNS: RegExp[] = [
+  /\b(?:chronic\s+(?:illness|condition|disease|pain)|ongoing\s+(?:treatment|medical\s+condition))\b/i,
+  /\b(?:dialysis|chemo(?:therapy)?|radiation|immunotherapy)\b/i,
+  /\b(?:cancer\s+survivor|cancer\s+patient|in\s+remission|undergoing\s+(?:treatment|chemo|therapy))\b/i,
+  /\b(?:autoimmune|lupus|crohn'?s|colitis|rheumatoid\s+arthritis|multiple\s+sclerosis|ms\s+diagnosis)\b/i,
+  /\b(?:diabetes\s+type\s+1|type\s+1\s+diabetes|insulin[-\s]?dependent|kidney\s+(?:disease|failure)|liver\s+(?:disease|cirrhosis))\b/i,
+  /\b(?:i\s+have\s+(?:a\s+)?(?:chronic|long[-\s]?term|ongoing)\s+(?:illness|condition|disease))\b/i,
+];
+function detectChronicIllnessDisclosed(t: string): boolean {
+  return CHRONIC_ILLNESS_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3A — noticeBuyoutAsk: candidate asks about notice buyout
+ * money. Distinct from noticePeriodDays. */
+const NOTICE_BUYOUT_PATTERNS: RegExp[] = [
+  /\b(?:notice\s+(?:period\s+)?buy[-\s]?out|buy[-\s]?out\s+(?:my\s+)?notice|buy\s+out\s+(?:my\s+)?notice)\b/i,
+  /\b(?:can\s+you\s+(?:cover|buy[-\s]?out|pay)\s+(?:my\s+)?notice|notice[-\s]?period\s+shortfall|cover\s+the\s+(?:notice|shortfall))\b/i,
+  /\b(?:notice\s+(?:buy[-\s]?out\s+)?amount|buyout\s+(?:cap|amount|fee))\b/i,
+  /\b\d{1,3}[-\s]?day\s+notice\b.{0,40}\b(?:buy[-\s]?out|cover|pay\s+(?:off|out)|shortfall)/i,
+  /\b(?:reimburse|recover|recoup)\s+(?:the\s+)?notice[-\s]?(?:period\s+)?(?:buyout|recovery)/i,
+];
+function detectNoticeBuyoutAsk(t: string): boolean {
+  return NOTICE_BUYOUT_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — bfsiClawbackContext: BFSI bonus clawback if leaving
+ * before March / under 1 year. */
+const BFSI_CLAWBACK_PATTERNS: RegExp[] = [
+  /\b(?:bonus|joining\s+bonus|sign[-\s]?on|deferred\s+(?:comp|bonus))\s+clawback\b/i,
+  /\b(?:clawback\s+(?:if|when|clause|provision)|locked\s+(?:in\s+)?(?:till|until)\s+(?:march|q[14]|year[-\s]?end))\b/i,
+  /\b(?:bonus\s+(?:locked|payable|paid\s+out)\s+(?:in|by|till|after)\s+(?:march|april|q[14]))\b/i,
+  /\b(?:variable\s+pay\s+(?:locked|deferred)|deferred\s+comp\s+(?:clawback|vesting))\b/i,
+  /\b(?:if\s+i\s+leave\s+(?:before|under|within)\s+(?:march|\d+\s+(?:year|month)s?))\b.{0,80}\b(?:bonus|clawback|forfeit|lose)/i,
+];
+function detectBfsiClawbackContext(t: string): boolean {
+  return BFSI_CLAWBACK_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — bigFourGradeStep: Deloitte/EY/PwC/KPMG grade reference. */
+const BIG_FOUR_GRADE_PATTERNS: RegExp[] = [
+  /\b(?:deloitte|ernst\s*&?\s*young|\bey\b|pwc|price\s*waterhouse|kpmg|big[-\s]?(?:4|four))\b/i,
+  /\b(?:consultant\s+to\s+senior\s+consultant|sc\s+to\s+manager|manager\s+to\s+senior\s+manager|sm\s+to\s+director)\b/i,
+  /\b(?:s[12]\s+to\s+m[12]|c[12]\s+to\s+sc|grade[-\s]?step|grade\s+jump|lateral\s+at\s+(?:m1|m2|sm|sc|consultant))\b/i,
+  /\b(?:senior\s+consultant|associate\s+manager|managing\s+director)\b.{0,80}\b(?:big[-\s]?4|deloitte|ey|pwc|kpmg|grade\s+step)/i,
+  /\b(?:m1|m2|sm|smd|amd|svp|d\b)\s+(?:level|grade|step|band)\b.{0,40}\b(?:consulting|advisory|big[-\s]?4)/i,
+];
+function detectBigFourGradeStep(t: string): boolean {
+  return BIG_FOUR_GRADE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — securityClearanceNeeded: defence / govt / clearance ask. */
+const SECURITY_CLEARANCE_PATTERNS: RegExp[] = [
+  /\b(?:security\s+clearance|clearance\s+(?:status|required|needed|process)|need\s+(?:a\s+)?clearance)\b/i,
+  /\b(?:drdo|isro|baba\s+atomic|bhel|bel|hal\s+aero|defence\s+(?:sector|project|contractor)|defense\s+(?:sector|project|contractor))\b/i,
+  /\b(?:dod|department\s+of\s+defense|secret\s+clearance|top[-\s]?secret|ts[-\s]?sci|polygraph)\b/i,
+  /\b(?:government\s+(?:project|contract|clearance)|govt\s+project|classified\s+(?:project|work))\b/i,
+  /\b(?:police\s+verification|character\s+verification\s+(?:for|by))\b.{0,80}\b(?:clearance|defence|defense|gov)/i,
+];
+function detectSecurityClearanceNeeded(t: string): boolean {
+  return SECURITY_CLEARANCE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — missionDrivenComp: willingness to take below-market for
+ * mission-aligned roles (climate, healthtech, social, NGO). */
+const MISSION_DRIVEN_PATTERNS: RegExp[] = [
+  /\b(?:mission[-\s]?(?:driven|aligned|first)|impact[-\s]?(?:driven|first|focused)|purpose[-\s]?(?:driven|aligned))\b/i,
+  /\b(?:climate|cleantech|clean[-\s]?tech|sustainability|renewable|esg)\b.{0,80}\b(?:below[-\s]?market|lower\s+(?:pay|comp)|pay\s+cut|less\s+(?:money|comp))/i,
+  /\b(?:healthtech|health[-\s]?tech|public\s+(?:sector|health)|govtech|gov[-\s]?tech|social\s+(?:impact|sector)|ngo|non[-\s]?profit)\b.{0,80}\b(?:open\s+to|willing\s+to|fine\s+with|happy\s+with)/i,
+  /\b(?:open\s+to|willing\s+to|fine\s+(?:with|taking))\s+(?:a\s+)?(?:below[-\s]?market|pay\s+cut|lower\s+(?:pay|comp|ctc|salary))\s+(?:for\s+(?:the\s+)?(?:mission|impact|cause))/i,
+  /\b(?:work\s+(?:for\s+)?(?:a\s+)?cause|cause[-\s]?driven|do\s+meaningful\s+work)\b/i,
+];
+function detectMissionDrivenComp(t: string): boolean {
+  return MISSION_DRIVEN_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — edtechReputationCheck: edtech stability anxiety. */
+const EDTECH_REPUTATION_PATTERNS: RegExp[] = [
+  /\b(?:byju'?s|unacademy|whitehat\s+jr|vedantu|upgrad|toppr|simplilearn)\b.{0,120}\b(?:debacle|layoff|firing|stability|debacle|collapse|shutdown|crisis)/i,
+  /\b(?:edtech\s+(?:stability|crisis|debacle|layoff|risk|reputation|future|winter))\b/i,
+  /\b(?:are\s+you\s+(?:laying\s+off|firing|cutting))\b.{0,80}\b(?:like\s+(?:byju'?s|unacademy)|edtech)/i,
+  /\b(?:worried|concerned|anxious)\s+(?:about\s+)?(?:after|because\s+of)\s+(?:the\s+)?(?:byju'?s|unacademy)\b/i,
+  /\b(?:mass\s+(?:firing|layoff|exits?)|company\s+(?:winding\s+down|shutting\s+down|going\s+under))\b.{0,80}\b(?:edtech|byju|unacademy)/i,
+];
+function detectEdtechReputationCheck(t: string): boolean {
+  return EDTECH_REPUTATION_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — acquiHireContext: candidate's CURRENT company is being
+ * acquired / wound down. Distinct from acquisitionContextAsk. */
+const ACQUI_HIRE_PATTERNS: RegExp[] = [
+  /\b(?:my\s+)?(?:current\s+)?(?:company|employer|startup|firm)\s+(?:is\s+)?(?:being\s+)?(?:acquired|getting\s+acquired|in\s+talks\s+to\s+(?:be\s+)?(?:acquired|sold))\b/i,
+  /\b(?:acqui[-\s]?hire|acquihire|talent\s+acquisition\s+deal)\b/i,
+  /\b(?:my\s+)?(?:current\s+)?(?:company|startup|employer)\s+(?:is\s+)?(?:winding\s+down|shutting\s+down|going\s+under|in\s+wind[-\s]?down)\b/i,
+  /\b(?:we'?re\s+being\s+(?:acquired|bought|absorbed)|company\s+(?:got|just\s+got)\s+acquired)\b/i,
+  /\b(?:moving\s+(?:to|because)\s+(?:of\s+)?(?:the\s+)?(?:acquisition|wind[-\s]?down|shutdown))\b/i,
+];
+function detectAcquiHireContext(t: string): boolean {
+  return ACQUI_HIRE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — cabinParkingAsk: traditional Indian seniority perks. */
+const CABIN_PARKING_PATTERNS: RegExp[] = [
+  /\b(?:cabin|private\s+(?:office|cabin|workspace)|corner\s+(?:office|cabin))\b/i,
+  /\b(?:dedicated\s+(?:parking|workstation|seat|desk)|reserved\s+parking|parking\s+(?:slot|spot|space|allotment))\b/i,
+  /\b(?:company\s+car|car\s+lease|fuel\s+reimbursement|fuel\s+allowance|driver\s+(?:allowance|reimbursement|salary))\b/i,
+  /\b(?:executive\s+(?:cabin|parking|perks?)|corner\s+seat|window\s+seat\s+(?:allotment|preference))\b/i,
+  /\b(?:do\s+(?:i|we)\s+get\s+(?:a\s+)?(?:cabin|car|parking|driver))\b/i,
+];
+function detectCabinParkingAsk(t: string): boolean {
+  return CABIN_PARKING_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3B — spanOfControlAsk: team size / org / reporting probe. */
+const SPAN_OF_CONTROL_PATTERNS: RegExp[] = [
+  /\b(?:span\s+of\s+control|how\s+(?:big|large)\s+(?:is\s+)?(?:the\s+)?team|team\s+size\s+(?:i'?ll|to|that\s+i))\b/i,
+  /\b(?:how\s+many\s+(?:reports?|directs?|people)\s+(?:will|do)\s+i\s+(?:have|manage))\b/i,
+  /\b(?:number\s+of\s+(?:direct\s+)?reports?|direct\s+reports?\s+count|reporting\s+(?:to|lines?|structure))\b/i,
+  /\b(?:org(?:anization)?\s+(?:chart|structure|hierarchy)|reporting\s+(?:hierarchy|structure))\b/i,
+  /\b(?:who\s+(?:reports\s+to\s+me|will\s+report\s+to\s+me|are\s+my\s+(?:directs?|reports?)))\b/i,
+];
+function detectSpanOfControlAsk(t: string): boolean {
+  return SPAN_OF_CONTROL_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3C — preResignationStealth: candidate hasn't told current
+ * employer; stealth job search. */
+const PRE_RESIGNATION_STEALTH_PATTERNS: RegExp[] = [
+  /\b(?:they\s+don'?t\s+know|hasn'?t\s+(?:told|informed)\s+(?:my\s+)?(?:manager|employer|company))\b.{0,40}\b(?:interview|job|search|looking)/i,
+  /\b(?:stealth\s+(?:job\s+)?search|stealth\s+mode|on\s+the\s+down[-\s]?low|quietly\s+(?:interview|looking))\b/i,
+  /\b(?:keep(?:ing)?\s+(?:this|it|the\s+search)\s+confidential|confidential(?:ity)?\s+(?:on\s+|of\s+)?(?:my\s+)?(?:search|interview))\b/i,
+  /\b(?:current\s+(?:co|company|employer|manager)\s+doesn'?t\s+know|haven'?t\s+(?:told|informed|resigned|put\s+in\s+papers))\b/i,
+  /\b(?:please\s+(?:don'?t|do\s+not)\s+(?:contact|inform|tell)\s+(?:my\s+)?(?:current|present)\s+(?:co|company|employer))\b/i,
+];
+function detectPreResignationStealth(t: string): boolean {
+  return PRE_RESIGNATION_STEALTH_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3C — reverseAnchorAsk: candidate asks recruiter to anchor
+ * first. Routes to coaching: don't be the first to anchor. */
+const REVERSE_ANCHOR_PATTERNS: RegExp[] = [
+  /\b(?:what'?s?\s+your\s+(?:budget|range|band)|what\s+range\s+(?:did\s+you|do\s+you|are\s+you))\s+(?:have\s+)?(?:in\s+mind|thinking|budgeted)?\b/i,
+  /\b(?:you\s+tell\s+me|what\s+(?:would\s+you|do\s+you)\s+offer|you\s+(?:make\s+|put\s+)?(?:the\s+)?(?:first\s+)?offer)\b/i,
+  /\b(?:what'?s?\s+the\s+(?:budget|allocation|number)\s+for\s+(?:this|the)\s+role)\b/i,
+  /\b(?:i'?d\s+(?:rather|prefer)\s+(?:hear|know)\s+(?:your\s+)?(?:offer|range|number)\s+first|hear\s+(?:your|the)\s+(?:offer|number)\s+first)\b/i,
+  /\b(?:share\s+(?:the\s+)?range\s+first|range\s+first\s+please|what\s+(?:can|do)\s+you\s+(?:offer|pay))\b/i,
+];
+function detectReverseAnchorAsk(t: string): boolean {
+  return REVERSE_ANCHOR_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3C — dietaryReligiousNeed: dietary / religious accommodation. */
+const DIETARY_RELIGIOUS_PATTERNS: RegExp[] = [
+  /\b(?:jain\s+(?:food|diet|meals?)|halal|kosher|vegetarian\s+(?:cafeteria|canteen|meals?|option))\b/i,
+  /\b(?:friday\s+prayers?|jumma|namaz|ramzan|ramadan)\b.{0,80}\b(?:timing|break|leave|accommodation|flexibility)?/i,
+  /\b(?:sabbath|shabbat|saturday\s+off\s+for\s+(?:religious|sabbath))\b/i,
+  /\b(?:no\s+(?:onion|garlic|beef|pork)|onion[-\s]?garlic[-\s]?free|pure\s+veg)\b/i,
+  /\b(?:religious\s+(?:accommodation|observance|holiday)|prayer\s+(?:room|break|time))\b/i,
+];
+function detectDietaryReligiousNeed(t: string): boolean {
+  return DIETARY_RELIGIOUS_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3C — oldEmployerDocsIssue: missing relieving / experience /
+ * payslips. Affects BGV. */
+const OLD_EMPLOYER_DOCS_PATTERNS: RegExp[] = [
+  /\b(?:relieving\s+letter|experience\s+letter|exp\s+letter)\b.{0,80}\b(?:not\s+(?:given|received|provided)|haven'?t\s+(?:given|received|got)|missing|lost|trouble|issue|problem|delay)/i,
+  /\b(?:ex[-\s]?employer|previous\s+(?:employer|company))\s+(?:hasn'?t|has\s+not|won'?t|will\s+not|didn'?t|did\s+not)\s+(?:give(?:n)?|provid(?:e|ed)|issue(?:d)?|hand\s+over)\b/i,
+  /\b(?:lost\s+(?:my\s+)?(?:payslips?|salary\s+slips?|offer\s+letter|relieving|experience))\b/i,
+  /\b(?:company\s+(?:shut\s+down|wound\s+down|closed)|previous\s+(?:co|employer)\s+(?:shut|closed))\b.{0,80}\b(?:no\s+(?:docs?|relieving|payslips?|letter)|can'?t\s+(?:get|retrieve|provide))/i,
+  /\b(?:affidavit|self[-\s]?declaration)\b.{0,40}\b(?:relieving|experience|prior\s+employer|bgv)/i,
+];
+function detectOldEmployerDocsIssue(t: string): boolean {
+  return OLD_EMPLOYER_DOCS_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-3C — equityRefreshCadenceAsk: refresh / top-up / promotion
+ * grant cadence. Distinct from initial-grant mechanics. */
+const EQUITY_REFRESH_PATTERNS: RegExp[] = [
+  /\b(?:equity\s+refresh|refresh\s+(?:grant|cadence|cycle|policy)|annual\s+refresh)\b/i,
+  /\b(?:top[-\s]?up\s+grant|top[-\s]?up\s+(?:rsu|esop|equity)|refresher\s+grant)\b/i,
+  /\b(?:promotion\s+(?:top[-\s]?up|grant|refresh|equity)|promo\s+(?:grant|refresh))\b/i,
+  /\b(?:next\s+(?:rsu|esop|equity|stock)\s+grant|when\s+(?:do|will)\s+i\s+(?:get|receive)\s+(?:my\s+)?(?:next\s+)?(?:rsu|grant|refresh))\b/i,
+  /\b(?:refresh\s+policy|refresh\s+(?:every|each)\s+(?:year|cycle)|annual\s+(?:rsu|equity)\s+(?:cycle|grant))\b/i,
+];
+function detectEquityRefreshCadenceAsk(t: string): boolean {
+  return EQUITY_REFRESH_PATTERNS.some((p) => p.test(t));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -1306,6 +1781,32 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const benchTimeDisclosed = detectBenchTimeDisclosed(text);
   const founderSecondInnings = detectFounderSecondInnings(text);
   const latecareerAgeBias = detectLatecareerAgeBias(text);
+  /* Wave-3 (2026-05-14j) — 25 new signals. */
+  const titlePrecisionAsk = detectTitlePrecisionAsk(text);
+  const currentCtcRefusal = detectCurrentCtcRefusal(text);
+  const pregnancyDisclosed = detectPregnancyDisclosed(text);
+  const boomerangRehire = detectBoomerangRehire(text);
+  const referralReceived = detectReferralReceived(text);
+  const hometownReturnPreference = detectHometownReturnPreference(text);
+  const pwdDisability = detectPwdDisability(text);
+  const gratuityVestingNear = detectGratuityVestingNear(text);
+  const acquisitionContextAsk = detectAcquisitionContextAsk(text);
+  const lgbtqDisclosure = detectLgbtqDisclosure(text);
+  const chronicIllnessDisclosed = detectChronicIllnessDisclosed(text);
+  const noticeBuyoutAsk = detectNoticeBuyoutAsk(text);
+  const bfsiClawbackContext = detectBfsiClawbackContext(text);
+  const bigFourGradeStep = detectBigFourGradeStep(text);
+  const securityClearanceNeeded = detectSecurityClearanceNeeded(text);
+  const missionDrivenComp = detectMissionDrivenComp(text);
+  const edtechReputationCheck = detectEdtechReputationCheck(text);
+  const acquiHireContext = detectAcquiHireContext(text);
+  const cabinParkingAsk = detectCabinParkingAsk(text);
+  const spanOfControlAsk = detectSpanOfControlAsk(text);
+  const preResignationStealth = detectPreResignationStealth(text);
+  const reverseAnchorAsk = detectReverseAnchorAsk(text);
+  const dietaryReligiousNeed = detectDietaryReligiousNeed(text);
+  const oldEmployerDocsIssue = detectOldEmployerDocsIssue(text);
+  const equityRefreshCadenceAsk = detectEquityRefreshCadenceAsk(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -1357,7 +1858,32 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     gccArbitrageAnchor ||
     benchTimeDisclosed ||
     founderSecondInnings ||
-    latecareerAgeBias;
+    latecareerAgeBias ||
+    titlePrecisionAsk ||
+    currentCtcRefusal ||
+    pregnancyDisclosed ||
+    boomerangRehire ||
+    referralReceived ||
+    hometownReturnPreference ||
+    pwdDisability ||
+    gratuityVestingNear ||
+    acquisitionContextAsk ||
+    lgbtqDisclosure ||
+    chronicIllnessDisclosed ||
+    noticeBuyoutAsk ||
+    bfsiClawbackContext ||
+    bigFourGradeStep ||
+    securityClearanceNeeded ||
+    missionDrivenComp ||
+    edtechReputationCheck ||
+    acquiHireContext ||
+    cabinParkingAsk ||
+    spanOfControlAsk ||
+    preResignationStealth ||
+    reverseAnchorAsk ||
+    dietaryReligiousNeed ||
+    oldEmployerDocsIssue ||
+    equityRefreshCadenceAsk;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -1409,6 +1935,31 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     benchTimeDisclosed,
     founderSecondInnings,
     latecareerAgeBias,
+    titlePrecisionAsk,
+    currentCtcRefusal,
+    pregnancyDisclosed,
+    boomerangRehire,
+    referralReceived,
+    hometownReturnPreference,
+    pwdDisability,
+    gratuityVestingNear,
+    acquisitionContextAsk,
+    lgbtqDisclosure,
+    chronicIllnessDisclosed,
+    noticeBuyoutAsk,
+    bfsiClawbackContext,
+    bigFourGradeStep,
+    securityClearanceNeeded,
+    missionDrivenComp,
+    edtechReputationCheck,
+    acquiHireContext,
+    cabinParkingAsk,
+    spanOfControlAsk,
+    preResignationStealth,
+    reverseAnchorAsk,
+    dietaryReligiousNeed,
+    oldEmployerDocsIssue,
+    equityRefreshCadenceAsk,
     hasAny,
   };
 }
@@ -1714,6 +2265,32 @@ export function mergeCandidateProfile(
     benchTimeDisclosed: p.benchTimeDisclosed || next.benchTimeDisclosed,
     founderSecondInnings: p.founderSecondInnings || next.founderSecondInnings,
     latecareerAgeBias: p.latecareerAgeBias || next.latecareerAgeBias,
+    /* Wave-3 (2026-05-14j) — all monotone-up. */
+    titlePrecisionAsk: p.titlePrecisionAsk || next.titlePrecisionAsk,
+    currentCtcRefusal: p.currentCtcRefusal || next.currentCtcRefusal,
+    pregnancyDisclosed: p.pregnancyDisclosed || next.pregnancyDisclosed,
+    boomerangRehire: p.boomerangRehire || next.boomerangRehire,
+    referralReceived: p.referralReceived || next.referralReceived,
+    hometownReturnPreference: p.hometownReturnPreference || next.hometownReturnPreference,
+    pwdDisability: p.pwdDisability || next.pwdDisability,
+    gratuityVestingNear: p.gratuityVestingNear || next.gratuityVestingNear,
+    acquisitionContextAsk: p.acquisitionContextAsk || next.acquisitionContextAsk,
+    lgbtqDisclosure: p.lgbtqDisclosure || next.lgbtqDisclosure,
+    chronicIllnessDisclosed: p.chronicIllnessDisclosed || next.chronicIllnessDisclosed,
+    noticeBuyoutAsk: p.noticeBuyoutAsk || next.noticeBuyoutAsk,
+    bfsiClawbackContext: p.bfsiClawbackContext || next.bfsiClawbackContext,
+    bigFourGradeStep: p.bigFourGradeStep || next.bigFourGradeStep,
+    securityClearanceNeeded: p.securityClearanceNeeded || next.securityClearanceNeeded,
+    missionDrivenComp: p.missionDrivenComp || next.missionDrivenComp,
+    edtechReputationCheck: p.edtechReputationCheck || next.edtechReputationCheck,
+    acquiHireContext: p.acquiHireContext || next.acquiHireContext,
+    cabinParkingAsk: p.cabinParkingAsk || next.cabinParkingAsk,
+    spanOfControlAsk: p.spanOfControlAsk || next.spanOfControlAsk,
+    preResignationStealth: p.preResignationStealth || next.preResignationStealth,
+    reverseAnchorAsk: p.reverseAnchorAsk || next.reverseAnchorAsk,
+    dietaryReligiousNeed: p.dietaryReligiousNeed || next.dietaryReligiousNeed,
+    oldEmployerDocsIssue: p.oldEmployerDocsIssue || next.oldEmployerDocsIssue,
+    equityRefreshCadenceAsk: p.equityRefreshCadenceAsk || next.equityRefreshCadenceAsk,
     hasAny: false,
   };
   merged.hasAny =
@@ -1766,6 +2343,31 @@ export function mergeCandidateProfile(
     merged.gccArbitrageAnchor ||
     merged.benchTimeDisclosed ||
     merged.founderSecondInnings ||
-    merged.latecareerAgeBias;
+    merged.latecareerAgeBias ||
+    merged.titlePrecisionAsk ||
+    merged.currentCtcRefusal ||
+    merged.pregnancyDisclosed ||
+    merged.boomerangRehire ||
+    merged.referralReceived ||
+    merged.hometownReturnPreference ||
+    merged.pwdDisability ||
+    merged.gratuityVestingNear ||
+    merged.acquisitionContextAsk ||
+    merged.lgbtqDisclosure ||
+    merged.chronicIllnessDisclosed ||
+    merged.noticeBuyoutAsk ||
+    merged.bfsiClawbackContext ||
+    merged.bigFourGradeStep ||
+    merged.securityClearanceNeeded ||
+    merged.missionDrivenComp ||
+    merged.edtechReputationCheck ||
+    merged.acquiHireContext ||
+    merged.cabinParkingAsk ||
+    merged.spanOfControlAsk ||
+    merged.preResignationStealth ||
+    merged.reverseAnchorAsk ||
+    merged.dietaryReligiousNeed ||
+    merged.oldEmployerDocsIssue ||
+    merged.equityRefreshCadenceAsk;
   return merged;
 }
