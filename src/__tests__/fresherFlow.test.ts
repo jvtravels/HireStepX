@@ -202,6 +202,11 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         priorInternshipNonConversion: false,
         serviceCompanyBackground: false,
         compBreakupUnknown: false,
+        recentLayoff: false,
+        hotDomainPremium: false,
+        pipDisclosed: false,
+        verbalOnlyOffer: false,
+        culturalJoiningConstraint: false,
         hasAny: true,
       },
     });
@@ -232,6 +237,11 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         priorInternshipNonConversion: false,
         serviceCompanyBackground: false,
         compBreakupUnknown: false,
+        recentLayoff: false,
+        hotDomainPremium: false,
+        pipDisclosed: false,
+        verbalOnlyOffer: false,
+        culturalJoiningConstraint: false,
         hasAny: true,
       },
     });
@@ -270,6 +280,11 @@ describe("fresher-flow — PPO conversion silences hike-% noise", () => {
       priorInternshipNonConversion: false,
       serviceCompanyBackground: false,
       compBreakupUnknown: false,
+        recentLayoff: false,
+        hotDomainPremium: false,
+        pipDisclosed: false,
+        verbalOnlyOffer: false,
+        culturalJoiningConstraint: false,
       hasAny: internshipConversion,
     };
   }

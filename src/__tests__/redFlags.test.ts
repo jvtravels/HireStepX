@@ -291,7 +291,7 @@ describe("Phase 25 — domain-pivot-full-rate", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: true, transferableSkillsClaimed: true,
-        compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, hasAny: true,
+        compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("domain-pivot-full-rate");
@@ -303,7 +303,7 @@ describe("Phase 25 — domain-pivot-full-rate", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: true, transferableSkillsClaimed: true,
-        compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, hasAny: true,
+        compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("domain-pivot-full-rate");
@@ -321,7 +321,7 @@ describe("Phase 25 — compensation-history-issue", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
-        compensationHistoryIssue: "delayed", serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, hasAny: true,
+        compensationHistoryIssue: "delayed", serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("compensation-history-issue");
@@ -332,7 +332,7 @@ describe("Phase 25 — compensation-history-issue", () => {
       candidateProfile: {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
-        compensationHistoryIssue: "unpaid", serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, hasAny: true,
+        compensationHistoryIssue: "unpaid", serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("compensation-history-issue");
@@ -460,7 +460,7 @@ describe("Phase 26 — service-bond-unverified", () => {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
         compensationHistoryIssue: null, serviceBondAccepted: true,
-        probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, hasAny: true,
+        probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("service-bond-unverified");
@@ -478,7 +478,7 @@ describe("Phase 26 — probation-comp-unclarified", () => {
         careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
         levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
         compensationHistoryIssue: null, serviceBondAccepted: false,
-        probationCompMentioned: true, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, hasAny: true,
+        probationCompMentioned: true, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("probation-comp-unclarified");

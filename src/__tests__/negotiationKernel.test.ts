@@ -369,6 +369,11 @@ describe("parseCandidateAnswer", () => {
         priorInternshipNonConversion: false,
         serviceCompanyBackground: false,
         compBreakupUnknown: false,
+        recentLayoff: false,
+        hotDomainPremium: false,
+        pipDisclosed: false,
+        verbalOnlyOffer: false,
+        culturalJoiningConstraint: false,
         hasAny: false,
       },
       miscSignals: {

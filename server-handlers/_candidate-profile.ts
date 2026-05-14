@@ -154,6 +154,43 @@ export interface CandidateProfileResult {
    *  summary instead of negotiating against unknown numbers.
    *  Monotone-up. */
   compBreakupUnknown: boolean;
+  /** Real-world Indian extension (2026-05-14g) — candidate was recently
+   *  laid off (Byju's / Unacademy / startup shutdown / mass layoff).
+   *  Distinct from `careerGapMonths`: this is the REASON for the gap and
+   *  it changes the voice — empathetic tone, do NOT anchor down on
+   *  current-CTC (the candidate may have been let go before promotion/
+   *  appraisal). Monotone-up. */
+  recentLayoff: boolean;
+  /** Real-world Indian extension (2026-05-14g) — candidate's role is in
+   *  a hot-domain bucket (AI/ML/GenAI, Security/AppSec, Quant/HFT).
+   *  These commanded 30-50% premium over standard SWE bands in 2026.
+   *  Routes the recruiter to a "premium-justified, but show specialty"
+   *  voice instead of pushing back on the headline number.
+   *  Monotone-up. */
+  hotDomainPremium: boolean;
+  /** Real-world Indian extension (2026-05-14g) — candidate disclosed
+   *  they are on a Performance Improvement Plan / forced exit / "asked
+   *  to leave" / non-voluntary separation. HIGH-RISK oversharing
+   *  pattern — the recruiter must coach NOT to volunteer this to other
+   *  interviewers and must NOT anchor down on current CTC because of
+   *  it. Distinct from layoff (PIP = performance signal; layoff =
+   *  org/macro signal). Monotone-up. */
+  pipDisclosed: boolean;
+  /** Real-world Indian extension (2026-05-14g) — candidate states the
+   *  offer was made verbally / no offer letter yet / waiting on written
+   *  confirmation. Extremely common Indian pattern and a high source of
+   *  candidate anxiety. Routes recruiter to a "we'll get the written
+   *  offer to you by [date], here's exactly what it will say" voice.
+   *  Monotone-up. */
+  verbalOnlyOffer: boolean;
+  /** Real-world Indian extension (2026-05-14g) — candidate cites a
+   *  culturally-rooted joining constraint: muhurat date, wedding,
+   *  Diwali, religious festival, family function. Distinct from generic
+   *  noticePeriod / joiningDate — recruiters in India should NOT push
+   *  back on these; the right voice is accommodating ("understood,
+   *  we'll target a post-festival joining and lock the offer letter
+   *  now"). Monotone-up. */
+  culturalJoiningConstraint: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -175,6 +212,11 @@ const EMPTY: CandidateProfileResult = {
   priorInternshipNonConversion: false,
   serviceCompanyBackground: false,
   compBreakupUnknown: false,
+  recentLayoff: false,
+  hotDomainPremium: false,
+  pipDisclosed: false,
+  verbalOnlyOffer: false,
+  culturalJoiningConstraint: false,
   hasAny: false,
 };
 
@@ -556,6 +598,94 @@ function detectCompBreakupUnknown(text: string): boolean {
   return COMP_BREAKUP_UNKNOWN_PATTERNS.some((p) => p.test(text));
 }
 
+/* ─── Real-world Indian extensions (2026-05-14g) ────────────────────── */
+
+/* `recentLayoff` — candidate was let go in a layoff / RIF / company
+ * shutdown. Common 2024-2026 pattern (Byju's, Unacademy, Vedantu,
+ * crypto-winter, generic edtech/startup shutdowns). Distinguished
+ * from "I quit" — fires on involuntary separation cause language. */
+const RECENT_LAYOFF_PATTERNS: RegExp[] = [
+  /\b(?:i\s+was|got|i\s+got|been|recently)\s+(?:laid[-\s]?off|let\s+go|made\s+redundant|impacted|affected)\b/i,
+  /\b(?:layoff|lay[-\s]?off|layoffs|riff?|reduction\s+in\s+force|mass\s+layoff|workforce\s+reduction)\b/i,
+  /\b(?:part\s+of\s+(?:the\s+)?(?:layoffs?|riff?|cuts?|reduction)|in\s+(?:the\s+)?(?:layoffs?|riff?))\b/i,
+  /\b(?:company|startup|byju'?s?|unacademy|vedantu|udaan|cars24|ola|paytm)\s+(?:shut\s+down|shutdown|wound\s+down|went\s+under|filed\s+for\s+bankruptcy|closed\s+(?:down|operations))\b/i,
+  /\b(?:my\s+)?(?:role|position|team|division|business\s+unit)\s+(?:was|got)\s+(?:eliminated|cut|shut\s+down|wound\s+down|dissolved)\b/i,
+];
+
+function detectRecentLayoff(text: string): boolean {
+  return RECENT_LAYOFF_PATTERNS.some((p) => p.test(text));
+}
+
+/* `hotDomainPremium` — candidate's role / specialty is in a hot
+ * 2026 bucket commanding 30-50% premium over std SWE: AI/ML/GenAI/
+ * LLM/applied-ML, Security/AppSec/InfoSec/cybersec, Quant/HFT.
+ * Conservative: requires an explicit specialty mention in a
+ * comp / role / experience context. The kernel's domain classifier
+ * is independent — this fires when the CANDIDATE invokes the
+ * specialty as a comp-justification signal. */
+const HOT_DOMAIN_PREMIUM_PATTERNS: RegExp[] = [
+  /\b(?:gen[-\s]?ai|generative\s+ai|llm\s+(?:engineer|engineering|ops|infra|training|fine[-\s]?tuning)|prompt\s+engineer|foundation\s+model|rag\s+(?:engineer|pipeline)|agentic\s+(?:ai|systems?))\b/i,
+  /\b(?:applied\s+ml|ml\s+(?:engineer|infra|platform|ops|research|scientist)|machine\s+learning\s+(?:engineer|scientist|infrastructure)|ai\s+(?:engineer|scientist|researcher))\b/i,
+  /\b(?:appsec|app[-\s]?sec|application\s+security|security\s+engineer|infosec|cybersecurity|cyber\s+security|red\s+team|offensive\s+security|pen[-\s]?test(?:er|ing)?|cloud\s+security)\b/i,
+  /\b(?:quant(?:itative)?\s+(?:researcher|developer|trader|analyst)|hft|high[-\s]?frequency\s+trading|low[-\s]?latency\s+trading|trading\s+systems)\b/i,
+  /\b(?:premium\s+for|market\s+premium|skill\s+premium|domain\s+premium|specialist\s+premium)\s+(?:ai|ml|gen[-\s]?ai|security|llm|quant)\b/i,
+];
+
+function detectHotDomainPremium(text: string): boolean {
+  return HOT_DOMAIN_PREMIUM_PATTERNS.some((p) => p.test(text));
+}
+
+/* `pipDisclosed` — candidate volunteered that they are on / were on a
+ * Performance Improvement Plan, or were forced out / asked to leave
+ * for performance reasons. HIGH-RISK oversharing — the AI should
+ * NOT pile on, should coach against further disclosure, and should
+ * NOT use it to anchor down. Conservative: only fires on explicit
+ * PIP / forced-exit language. */
+const PIP_DISCLOSED_PATTERNS: RegExp[] = [
+  /\b(?:pip|p\.?i\.?p\.?|performance\s+improvement\s+plan)\b/i,
+  /\b(?:on\s+a\s+pip|put\s+on\s+a?\s*pip|placed\s+on\s+a?\s*pip)\b/i,
+  /\b(?:asked\s+to\s+leave|forced\s+(?:to\s+)?(?:resign|leave|exit)|forced\s+out|managed\s+out|pushed\s+out)\b/i,
+  /\b(?:performance\s+(?:issues?|concerns?|reasons?|exit|termination))\b/i,
+  /\b(?:terminated\s+for\s+performance|fired\s+for\s+performance|let\s+go\s+for\s+performance)\b/i,
+];
+
+function detectPipDisclosed(text: string): boolean {
+  return PIP_DISCLOSED_PATTERNS.some((p) => p.test(text));
+}
+
+/* `verbalOnlyOffer` — candidate states the offer is verbal / no
+ * written offer letter / waiting on offer letter / promised
+ * verbally. Recruiter should commit to a written-offer date and
+ * spell out the terms. */
+const VERBAL_ONLY_OFFER_PATTERNS: RegExp[] = [
+  /\b(?:verbal\s+(?:offer|commitment|agreement|confirmation)|offered\s+verbally|told\s+verbally|verbally\s+(?:offered|confirmed|told|promised|committed))\b/i,
+  /\b(?:no\s+(?:offer\s+letter|written\s+offer|ol\b)\s+(?:yet|so\s+far)|still\s+(?:waiting|awaiting)\s+(?:for\s+)?(?:the\s+)?(?:offer\s+letter|written\s+offer|ol\b))\b/i,
+  /\b(?:offer\s+letter\s+(?:is\s+)?(?:pending|not\s+(?:yet\s+)?(?:received|received\s+yet|issued)|delayed))\b/i,
+  /\b(?:nothing\s+in\s+writing|haven'?t\s+(?:received|gotten|got)\s+(?:the\s+)?(?:written\s+)?(?:offer|ol\b)|need\s+(?:it|the\s+offer)\s+in\s+writing)\b/i,
+];
+
+function detectVerbalOnlyOffer(text: string): boolean {
+  return VERBAL_ONLY_OFFER_PATTERNS.some((p) => p.test(text));
+}
+
+/* `culturalJoiningConstraint` — Indian-specific joining-date
+ * constraint rooted in a cultural / family event. Muhurat (auspicious
+ * date), wedding, Diwali / Holi / Eid / Karva Chauth, sibling
+ * wedding, family function, gruhapravesham (housewarming). The
+ * recruiter should accommodate, not push back. */
+const CULTURAL_JOINING_PATTERNS: RegExp[] = [
+  /\b(?:muhurat|muhurtham|muhurath|auspicious\s+(?:date|day|time))\b/i,
+  /\b(?:after|post|before)\s+(?:my\s+|the\s+|sister'?s?\s+|brother'?s?\s+)?(?:wedding|marriage|engagement|reception)\b/i,
+  /\b(?:my\s+|sister'?s?\s+|brother'?s?\s+|cousin'?s?\s+)?wedding\s+(?:is\s+)?(?:in|on|scheduled|coming\s+up|happening|planned)\b/i,
+  /\b(?:after|post|before|around|during)\s+(?:diwali|holi|eid|onam|pongal|navratri|ganesh\s+chaturthi|durga\s+puja|christmas|new\s+year)\b/i,
+  /\b(?:family\s+(?:function|event|wedding|ceremony|obligation|commitment)|gruhapravesham|housewarming|griha\s+pravesh|naming\s+ceremony)\b/i,
+  /\b(?:can(?:not|'t)\s+join|unable\s+to\s+join|need\s+to\s+delay\s+joining)\s+(?:before|until|till)\s+(?:diwali|wedding|muhurat|after\s+the\s+festival)\b/i,
+];
+
+function detectCulturalJoiningConstraint(text: string): boolean {
+  return CULTURAL_JOINING_PATTERNS.some((p) => p.test(text));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -635,6 +765,12 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const serviceCompanyBackground = detectServiceCompanyBackground(text);
   /* Mid-level flow (2026-05-14f) — comp-literacy signal. */
   const compBreakupUnknown = detectCompBreakupUnknown(text);
+  /* Real-world Indian extensions (2026-05-14g). */
+  const recentLayoff = detectRecentLayoff(text);
+  const hotDomainPremium = detectHotDomainPremium(text);
+  const pipDisclosed = detectPipDisclosed(text);
+  const verbalOnlyOffer = detectVerbalOnlyOffer(text);
+  const culturalJoiningConstraint = detectCulturalJoiningConstraint(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -652,7 +788,12 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     lowCtcAlert ||
     priorInternshipNonConversion ||
     serviceCompanyBackground ||
-    compBreakupUnknown;
+    compBreakupUnknown ||
+    recentLayoff ||
+    hotDomainPremium ||
+    pipDisclosed ||
+    verbalOnlyOffer ||
+    culturalJoiningConstraint;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -670,6 +811,11 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     priorInternshipNonConversion,
     serviceCompanyBackground,
     compBreakupUnknown,
+    recentLayoff,
+    hotDomainPremium,
+    pipDisclosed,
+    verbalOnlyOffer,
+    culturalJoiningConstraint,
     hasAny,
   };
 }
@@ -937,6 +1083,13 @@ export function mergeCandidateProfile(
     priorInternshipNonConversion: p.priorInternshipNonConversion || next.priorInternshipNonConversion,
     serviceCompanyBackground: p.serviceCompanyBackground || next.serviceCompanyBackground,
     compBreakupUnknown: p.compBreakupUnknown || next.compBreakupUnknown,
+    /* Real-world Indian extensions (2026-05-14g) — all monotone-up.
+     * Once disclosed, the recruiter would remember through the session. */
+    recentLayoff: p.recentLayoff || next.recentLayoff,
+    hotDomainPremium: p.hotDomainPremium || next.hotDomainPremium,
+    pipDisclosed: p.pipDisclosed || next.pipDisclosed,
+    verbalOnlyOffer: p.verbalOnlyOffer || next.verbalOnlyOffer,
+    culturalJoiningConstraint: p.culturalJoiningConstraint || next.culturalJoiningConstraint,
     hasAny: false,
   };
   merged.hasAny =
@@ -955,6 +1108,11 @@ export function mergeCandidateProfile(
     merged.lowCtcAlert ||
     merged.priorInternshipNonConversion ||
     merged.serviceCompanyBackground ||
-    merged.compBreakupUnknown;
+    merged.compBreakupUnknown ||
+    merged.recentLayoff ||
+    merged.hotDomainPremium ||
+    merged.pipDisclosed ||
+    merged.verbalOnlyOffer ||
+    merged.culturalJoiningConstraint;
   return merged;
 }

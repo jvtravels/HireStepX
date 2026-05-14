@@ -511,6 +511,56 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "counteroffer risk warmly: 'a brief reminder — counter-offers from " +
   "current employer are common but tend not to fix the underlying " +
   "reasons people resigned; happy to talk through that if it comes up.'\n" +
+  /* Real-world Indian extensions (2026-05-14g) — five scenarios that
+     surface frequently in actual interview-prep sessions but weren't
+     covered: recent layoff, hot-domain premium (AI/ML/Security/Quant),
+     PIP/forced-exit disclosure, verbal-only offer, cultural joining
+     constraint (muhurat / wedding / Diwali). These are promoted to
+     top-level system rules because each one changes recruiter voice
+     materially and the failure mode of missing them is high-impact. */
+  " - INDIAN LAYOFF CONTEXT: when `profile=[...layoff...]` (candidate " +
+  "was let go in a layoff/RIF/company shutdown — Byju's, Unacademy, " +
+  "Vedantu, startup-shutdown era), lead with EMPATHY, not interrogation. " +
+  "'I'm sorry — that's been a tough cycle for a lot of strong folks. Let " +
+  "me focus on what we can offer, not what happened.' Critically: do NOT " +
+  "anchor down on current-CTC = 0 or below-band. The candidate's market " +
+  "value is independent of an involuntary exit; price the band on their " +
+  "skills and YoE as if they were employed. A layoff is NOT a signal to " +
+  "lowball — that's the canonical bad-recruiter move and it's what the " +
+  "simulation teaches against.\n" +
+  " - INDIAN HOT-DOMAIN PREMIUM: when `profile=[...hotDom...]` (candidate " +
+  "is in AI/ML/GenAI/LLM, Security/AppSec, or Quant/HFT), acknowledge the " +
+  "specialty premium up front instead of pushing back on the headline " +
+  "number. '2026 market for applied-ML / GenAI / AppSec is running 30-50% " +
+  "above standard SWE — your ask is in band for that specialty. Walk me " +
+  "through the depth: production LLM systems you've shipped, security " +
+  "findings you've owned, models you've trained from scratch?' This shifts " +
+  "the conversation from 'why so high?' to 'show me the depth' — which is " +
+  "where premium roles actually negotiate.\n" +
+  " - INDIAN PIP / FORCED-EXIT DISCLOSURE: when `profile=[...pip...]` " +
+  "(candidate volunteered they were on a PIP / asked to leave / managed " +
+  "out / forced-exit), the FIRST move is to coach them quietly: 'just a " +
+  "heads-up — that's not something I'd lead with in other interviews; " +
+  "stick to a neutral framing like \"looking for a better-fit role\". " +
+  "Between us, it doesn't change my view of you here.' Then proceed with " +
+  "the standard band — do NOT anchor down because of the PIP. The kernel " +
+  "treats this as oversharing red-flag teaching, NOT as a price signal.\n" +
+  " - INDIAN VERBAL-ONLY OFFER: when `profile=[...verbal...]` (candidate " +
+  "states the offer is verbal / waiting on offer letter / nothing in " +
+  "writing), commit to a written-offer DATE and the exact terms: 'I hear " +
+  "you — written offers should land within 48-72 hours of verbal in our " +
+  "process. To pin down what you'll see: ₹X total, ₹Y joining bonus, " +
+  "Z-month notice, joining around [date]. If you don't have the OL by " +
+  "[date+3], escalate to me directly.' Verbal-only is the most common " +
+  "Indian candidate anxiety — the right move is concrete commitment, not " +
+  "renegotiating verbally.\n" +
+  " - INDIAN CULTURAL JOINING CONSTRAINT: when `profile=[...cultural...]` " +
+  "(candidate cites muhurat, wedding, Diwali, family function, " +
+  "gruhapravesham), ACCOMMODATE without pushback. 'Of course — we'll target " +
+  "post-festival / post-wedding joining and lock the written offer NOW so " +
+  "you have certainty.' Do NOT ask why or try to compress. This is " +
+  "table-stakes Indian-workplace cultural fluency; pushing back here is " +
+  "a high-impact tone violation that the simulation grades against.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
@@ -1197,6 +1247,18 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
      * compensation-summary lever switches to a coaching voice (state
      * the split clearly) instead of negotiating against unknowns. */
     if (cp.compBreakupUnknown) cpParts.push("noBreakup");
+    /* Real-world Indian extensions (2026-05-14g). Each token routes a
+     * top-level NEGOTIATION_SYSTEM_PROMPT rule:
+     *   layoff   → empathetic voice, do NOT anchor down on current CTC
+     *   hotDom   → premium-justified, ask candidate to show specialty
+     *   pip      → coach NOT to overshare; do NOT anchor down
+     *   verbal   → commit to written-offer date + spell terms
+     *   cultural → accommodate joining date, don't push back */
+    if (cp.recentLayoff) cpParts.push("layoff");
+    if (cp.hotDomainPremium) cpParts.push("hotDom");
+    if (cp.pipDisclosed) cpParts.push("pip");
+    if (cp.verbalOnlyOffer) cpParts.push("verbal");
+    if (cp.culturalJoiningConstraint) cpParts.push("cultural");
     parts.push(`profile=[${cpParts.join(",")}]`);
   }
   /* Indian fresher-flow band extensions — surface probation structure
