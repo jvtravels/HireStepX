@@ -27,6 +27,11 @@ import {
 import { summarizeTranscriptIfLong, type TranscriptTurn } from "./_transcript-summarizer";
 import { detectRoleLabelMismatch } from "./_role-mismatch";
 import { detectResumeRoleMismatch } from "./_resume-role-match";
+import { classifyRoleFamily } from "./_company-band-tiers";
+import {
+  getNextDiscoveryQuestion,
+  isDiscoveryComplete,
+} from "./_discovery-stage";
 import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
 import { detectRedFlags } from "./_red-flags";
@@ -1887,6 +1892,33 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     parts.push(
       `[OPEN PROMISES TO HONOR THIS TURN — deliver substantive answers, don't restate the promise: ${list}]`,
     );
+  }
+  /* PDF #17 architectural fix follow-up (2026-05-15) — discovery-stage
+   * brief injection. Surfaces the active discovery stage and (when
+   * relevant) the next open discovery question as bracketed lines, the
+   * same shape OPEN PROMISES uses. The LLM treats these as hard cues
+   * for the current turn; without them, the discovery preference picked
+   * by the kernel was reaching the prose layer only through `rationale`
+   * (which the LLM occasionally rewrote). Pure: derives the next-action
+   * via the same role-family classifier the kernel uses. Both lines are
+   * optional and only emit when the session has discovery tracking
+   * wired (back-compat for in-flight pre-PDF-#17 sessions). */
+  if (state.discoveryStage) {
+    parts.push(`[CURRENT STAGE: ${state.discoveryStage}]`);
+    if (
+      state.discoveryStage === "discovery" &&
+      state.discoveryChecklist != null
+    ) {
+      const roleFamily = classifyRoleFamily(state.role);
+      if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
+        const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+        if (next) {
+          parts.push(
+            `[NEXT REQUIRED ACTION: ask the candidate — ${next.prompt}]`,
+          );
+        }
+      }
+    }
   }
   parts.push(`lever=${move.lever}`);
   if (move.newTotalLpa != null) parts.push(`newTotalLpa=${move.newTotalLpa}`);

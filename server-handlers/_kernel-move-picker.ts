@@ -41,6 +41,11 @@ import {
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
+import { classifyRoleFamily } from "./_company-band-tiers";
+import {
+  getNextDiscoveryQuestion,
+  isDiscoveryComplete,
+} from "./_discovery-stage";
 
 /** Pick the AI's move for this turn from state alone. Pure. */
 export function pickAiMove(state: NegotiationState): AiMove {
@@ -143,6 +148,27 @@ export function pickAiMove(state: NegotiationState): AiMove {
       newTotalLpa: accLpa,
       joiningBonusAmount: jb != null ? jb : undefined,
       rationale: `Candidate counter ₹${state.lastCandidateCounterLpa}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (floor = highest offer).`,
+    };
+  }
+
+  /* PDF #17 architectural fix (2026-05-15) — probe-mismatch stage
+   * routing. When the orchestrator has explicitly set discoveryStage =
+   * "probe-mismatch" (resume↔role hard mismatch on the first turn),
+   * route the FIRST substantive move into a domain-switch probe rather
+   * than the default open-with-offer / probe sequence. Fires before
+   * the opening branch so the probe lands before any anchor disclosure.
+   * Soft: only active when discoveryStage is explicitly set; legacy
+   * sessions (discoveryStage undefined) keep the original opening
+   * behavior. */
+  if (
+    state.discoveryStage === "probe-mismatch" &&
+    !isTerminalPhase(state.phase)
+  ) {
+    return {
+      lever: "probe",
+      newTotalLpa: null,
+      rationale:
+        "Discovery stage = probe-mismatch: probe the resume↔role domain switch BEFORE anchoring or discussing comp.",
     };
   }
 
@@ -307,8 +333,53 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
+  /* PDF #17 architectural fix (2026-05-15) — discovery-first active gating.
+   *
+   * Two soft preferences layered on top of the legacy phase machine,
+   * both gated to keep behavior identical for legacy / un-tracked
+   * sessions (no discoveryStage / no discoveryChecklist → skip both):
+   *
+   *   (a) probe-mismatch stage — when the orchestrator has explicitly
+   *       moved the session into "probe-mismatch" (resume↔role hard
+   *       mismatch on turn 0), the FIRST substantive turn must probe
+   *       the domain switch instead of producing the default offer/
+   *       probe sequence.
+   *
+   *   (b) discovery stage — when the kernel is still in the "discovery"
+   *       stage and isDiscoveryComplete() returns false for the
+   *       derived role family, the move-picker MUST prefer the next
+   *       open discovery question over any non-anchor probe. The lever
+   *       stays `probe` (so existing prose plumbing, validators and
+   *       test assertions keep working) — only the rationale carries
+   *       the specific discovery item so compactTurnBrief / response
+   *       hints can surface "NEXT REQUIRED ACTION: <question>" to the
+   *       LLM. Soft: only fires in the phases where a probe was
+   *       already the default choice (offer-presented / probe-
+   *       expectations), and only when discovery tracking is wired
+   *       (discoveryChecklist + discoveryStage both present). */
   /* No candidate anchor yet → probe. */
   if (state.phase === "offer-presented" || state.phase === "probe-expectations") {
+    /* Discovery-stage preference: when discovery is incomplete, the
+     * probe rationale carries the NEXT open discovery item so the
+     * brief can surface a concrete [NEXT REQUIRED ACTION]. Falls
+     * through to the legacy generic probe when discovery is already
+     * complete or when the session predates discovery tracking. */
+    if (
+      state.discoveryStage === "discovery" &&
+      state.discoveryChecklist != null
+    ) {
+      const roleFamily = classifyRoleFamily(state.role);
+      if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
+        const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+        if (next != null) {
+          return {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale: `Discovery incomplete (next: ${next.item}) — ask: ${next.prompt}`,
+          };
+        }
+      }
+    }
     return {
       lever: "probe",
       newTotalLpa: null,
