@@ -601,6 +601,13 @@ export interface NegotiationState {
   /** Fix 7 (2026-05-15) — the locked anchor value (LPA) for this
    *  session. Set when anchorLocked transitions false → true. */
   lockedAnchorLpa?: number | null;
+
+  /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard.
+   * Real session ended after ~6 turns with "View Result" button, no
+   * resolution. Block ANY transition to a terminal phase before this
+   * turn count unless the candidate explicitly declined OR
+   * MAX_TURNS_PER_SESSION is hit. Default 8. */
+  minTurnsBeforeClose?: number;
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
@@ -620,6 +627,41 @@ export function effectiveAnchorLpa(state: NegotiationState): number {
 export function lockAnchor(state: NegotiationState, anchorLpa: number): NegotiationState {
   if (state.anchorLocked) return state;
   return { ...state, anchorLocked: true, lockedAnchorLpa: anchorLpa };
+}
+
+/* ─── Fix 1 (2026-05-15) — Anchor clamp against candidate ask ──────
+ *
+ * Real-session bug (PDF #17 re-analysis): candidate asked ₹16L,
+ * recruiter anchored ₹24L — volunteering money the candidate never
+ * requested. Real recruiters never anchor higher than the candidate's
+ * stated target; if the candidate undershoots the band, they accept
+ * quickly with a small step-up rather than padding the offer.
+ *
+ * clampAnchorAgainstCandidateAsk:
+ *   - candidateAskLpa == null     → return originalAnchor unchanged
+ *   - candidateAskLpa < bandFloor → return bandFloor (recruiter can't
+ *                                     go below their own walkAway)
+ *   - candidateAskLpa < anchor    → min(anchor, ask * 1.05) — leaves
+ *                                     a tiny step-up but never pads
+ *   - candidateAskLpa >= anchor   → return originalAnchor unchanged
+ *
+ * Applied at session-init AND on each turn before re-anchor (anchor
+ * is locked per Fix 7, so this only fires at init for the locked
+ * value). Pure. */
+export function clampAnchorAgainstCandidateAsk(
+  originalAnchor: number,
+  candidateAskLpa: number | null,
+  bandFloor: number,
+): number {
+  if (candidateAskLpa == null) return originalAnchor;
+  if (!Number.isFinite(candidateAskLpa) || candidateAskLpa <= 0) return originalAnchor;
+  if (candidateAskLpa < bandFloor) return bandFloor;
+  if (candidateAskLpa < originalAnchor) {
+    /* candidate undershooting — anchor at ask + 5% (still leaves a
+     * tiny step-up so the recruiter has room to land). */
+    return Math.min(originalAnchor, candidateAskLpa * 1.05);
+  }
+  return originalAnchor;
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -795,6 +837,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       dietaryReligiousNeed: false,
       oldEmployerDocsIssue: false,
       equityRefreshCadenceAsk: false,
+      equityVestingScheduleAsk: false,
+      equityCliffPeriodAsk: false,
+      equityExerciseTermsAsk: false,
+      equityBuybackLiquidityAsk: false,
       signOnClawback: false,
       variableTrackRecord: false,
       wfhEquipmentStipend: false,
@@ -863,7 +909,107 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     lastBotReply: null,
     anchorLocked: false,
     lockedAnchorLpa: null,
+    minTurnsBeforeClose: 8,
   };
+}
+
+/* ─── Fix 3 (PDF #17 follow-up, 2026-05-15) — Explicit decline + dead-end ──
+ *
+ * Real-session bug: bot ended a 6-turn conversation with "View Result"
+ * and no resolution. The terminal-state invariant below tightens
+ * transitions: terminal phases (accepted / walked-away / stalemate)
+ * may only fire when ONE of the following is true:
+ *
+ *   1. detectExplicitAcceptance(answer).accepted === true AND
+ *      highestOfferMade > 0
+ *   2. Candidate explicitly declined ("I'm passing", "I'll decline",
+ *      "not interested")
+ *   3. turnIndex >= MAX_TURNS_PER_SESSION (hard cap)
+ *   4. Three consecutive "I don't know" / "I'm not sure" candidate
+ *      turns (genuine dead-end)
+ *
+ * The minTurnsBeforeClose guard blocks (1) and (4) before the floor
+ * turn count. (2) and (3) always pass. Pure. */
+
+const EXPLICIT_DECLINE_PATTERNS: RegExp[] = [
+  /\b(?:i'?m\s+passing|i\s+am\s+passing|i\s+will\s+pass|i'?ll\s+pass)\b/i,
+  /\b(?:i\s+(?:will\s+)?decline|i'?ll\s+decline|i\s+have\s+to\s+decline|i\s+must\s+decline)\b/i,
+  /\b(?:not\s+interested|no(?:'?t|t)\s+interested|i'?m\s+not\s+interested)\b/i,
+  /\b(?:withdraw(?:ing)?\s+(?:my\s+)?(?:candidacy|application)|stepping\s+out\s+of\s+(?:this\s+)?process)\b/i,
+  /\b(?:i'?ll\s+(?:go|move)\s+with\s+(?:the\s+)?other(?:s)?|going\s+with\s+another\s+offer)\b/i,
+];
+
+export function detectExplicitDecline(answer: string | null | undefined): boolean {
+  if (!answer || typeof answer !== "string") return false;
+  return EXPLICIT_DECLINE_PATTERNS.some((p) => p.test(answer));
+}
+
+const DEAD_END_PATTERNS: RegExp[] = [
+  /\b(?:i\s+don'?t\s+know|i\s+do\s+not\s+know|not\s+sure|i'?m\s+not\s+sure|no\s+idea|dunno|idk)\b/i,
+  /\b(?:can'?t\s+say|cannot\s+say|hard\s+to\s+say|tough\s+to\s+say)\b/i,
+];
+
+/** Returns true when the last 3 candidate turns in conversationLog are
+ *  all "I don't know" / "I'm not sure" / similar dead-end signals.
+ *  Genuine dead-end → terminal close is acceptable. Pure. */
+export function detectConsecutiveDeadEnd(state: NegotiationState): boolean {
+  const log = state.conversationLog ?? [];
+  let candidateCount = 0;
+  let deadEnds = 0;
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (!e || e.speaker !== "candidate") continue;
+    candidateCount += 1;
+    const t = e.text || "";
+    if (DEAD_END_PATTERNS.some((p) => p.test(t))) {
+      deadEnds += 1;
+    } else {
+      return false;
+    }
+    if (candidateCount >= 3) break;
+  }
+  return candidateCount >= 3 && deadEnds >= 3;
+}
+
+/** Premature-close guard. Returns true when the kernel is permitted to
+ *  transition into a terminal phase given the current state. The
+ *  caller passes the candidate answer (for explicit-decline detection)
+ *  and a reason describing the path:
+ *
+ *    - "accept"         — strict explicit acceptance (e.g. "I accept",
+ *                          "please send the offer letter"). Always
+ *                          passes — explicit accept is one of the four
+ *                          permitted close conditions.
+ *    - "soft-accept"    — implicit / soft-acceptance proxy (3+
+ *                          trailing non-counter candidate turns). Blocked
+ *                          before minTurnsBeforeClose so the bot can't
+ *                          flip to terminal too early.
+ *    - "decline"        — candidate explicitly declined. Always passes.
+ *    - "max-turns"      — MAX_TURNS_PER_SESSION reached. Always passes.
+ *    - "dead-end"       — 3+ consecutive "I don't know" candidate turns.
+ *                          Blocked before minTurnsBeforeClose. */
+export function canCloseSession(
+  state: NegotiationState,
+  answer: string | null | undefined,
+  reason: "accept" | "soft-accept" | "decline" | "max-turns" | "dead-end",
+): boolean {
+  /* Hard-cap always wins. */
+  if (reason === "max-turns") return true;
+  /* Explicit decline always passes the guard. */
+  if (reason === "decline") return true;
+  /* Strict explicit accept is one of the four canonical valid-close
+   * conditions — always passes. */
+  if (reason === "accept") return true;
+  const min = state.minTurnsBeforeClose ?? 8;
+  /* Hard system cap (60) always passes regardless of min. */
+  if (state.turnIndex >= 60) return true;
+  /* Before the min-turns floor, block soft-accept and dead-ends unless
+   * the candidate has explicitly declined this turn. */
+  if (state.turnIndex < min) {
+    if (detectExplicitDecline(answer)) return true;
+    return false;
+  }
+  return true;
 }
 
 /* ─── Candidate answer → parsed signals ──────────────────────────── */
@@ -1201,7 +1347,7 @@ export function parseCandidateAnswer(
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
-      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, peopleManagementClaimed: false, crossBorderAnchor: false, unvestedEquityLossClaim: false, explodingOfferPressure: false, postAcceptanceRenege: false, quotaAttainmentClaimed: false, gardenLeaveDisclosed: false, nonCompeteFlagged: false, relocationBonusAsked: false, parentInsuranceAsked: false, inHandTakehomeFocus: false, rtoPushback: false, returnshipMaternity: false, payBandAsked: false, taxStructureAsked: false, bgvAnxiety: false, esopSophisticationProbe: false, spouseJobConstraint: false, agingParentCare: false, moonlightingDisclosed: false, mentalHealthDisclosed: false, payParityAsked: false, preemptiveCounterReceived: false, acceptanceTimeRequest: false, cryptoTokenComp: false, gccArbitrageAnchor: false, benchTimeDisclosed: false, founderSecondInnings: false, latecareerAgeBias: false, titlePrecisionAsk: false, currentCtcRefusal: false, pregnancyDisclosed: false, boomerangRehire: false, referralReceived: false, hometownReturnPreference: false, pwdDisability: false, gratuityVestingNear: false, acquisitionContextAsk: false, lgbtqDisclosure: false, chronicIllnessDisclosed: false, noticeBuyoutAsk: false, bfsiClawbackContext: false, bigFourGradeStep: false, securityClearanceNeeded: false, missionDrivenComp: false, edtechReputationCheck: false, acquiHireContext: false, cabinParkingAsk: false, spanOfControlAsk: false, preResignationStealth: false, reverseAnchorAsk: false, dietaryReligiousNeed: false, oldEmployerDocsIssue: false, equityRefreshCadenceAsk: false, signOnClawback: false, variableTrackRecord: false, wfhEquipmentStipend: false, salaryReviewCadenceAsk: false, multipleOffersJuggling: false, recruitmentAgencyMediation: false, internalTransferContext: false, offerRescindedHistory: false, internationalDegreePremium: false, domesticTopMbaAnchor: false, toxicManagerContext: false, visaSponsorshipNeed: false, casteReservationContext: false, veteranTransition: false, singleParentConstraint: false, jointFamilyFinancialResp: false, paternityLeaveAsk: false, menstrualLeavePolicy: false, esopExerciseLoanAsk: false, preIpoSecondaryAsk: false, accelerationTriggerAsk: false, esopPerquisiteTaxAsk: false, tenderOfferCycleAsk: false, probationaryDurationAsk: false, offerLetterTurnaroundDemand: false, contractToHireAsk: false, headcountApprovalCheck: false, ipAssignmentClauseAsk: false, healthcarePharmaContext: false, manufacturingCoreContext: false, quickCommerceContext: false, d2cConsumerEquity: false, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, earlySwitcher: false, lowCtcAlert: false, priorInternshipNonConversion: false, serviceCompanyBackground: false, compBreakupUnknown: false, recentLayoff: false, hotDomainPremium: false, pipDisclosed: false, verbalOnlyOffer: false, culturalJoiningConstraint: false, peopleManagementClaimed: false, crossBorderAnchor: false, unvestedEquityLossClaim: false, explodingOfferPressure: false, postAcceptanceRenege: false, quotaAttainmentClaimed: false, gardenLeaveDisclosed: false, nonCompeteFlagged: false, relocationBonusAsked: false, parentInsuranceAsked: false, inHandTakehomeFocus: false, rtoPushback: false, returnshipMaternity: false, payBandAsked: false, taxStructureAsked: false, bgvAnxiety: false, esopSophisticationProbe: false, spouseJobConstraint: false, agingParentCare: false, moonlightingDisclosed: false, mentalHealthDisclosed: false, payParityAsked: false, preemptiveCounterReceived: false, acceptanceTimeRequest: false, cryptoTokenComp: false, gccArbitrageAnchor: false, benchTimeDisclosed: false, founderSecondInnings: false, latecareerAgeBias: false, titlePrecisionAsk: false, currentCtcRefusal: false, pregnancyDisclosed: false, boomerangRehire: false, referralReceived: false, hometownReturnPreference: false, pwdDisability: false, gratuityVestingNear: false, acquisitionContextAsk: false, lgbtqDisclosure: false, chronicIllnessDisclosed: false, noticeBuyoutAsk: false, bfsiClawbackContext: false, bigFourGradeStep: false, securityClearanceNeeded: false, missionDrivenComp: false, edtechReputationCheck: false, acquiHireContext: false, cabinParkingAsk: false, spanOfControlAsk: false, preResignationStealth: false, reverseAnchorAsk: false, dietaryReligiousNeed: false, oldEmployerDocsIssue: false, equityRefreshCadenceAsk: false, equityVestingScheduleAsk: false, equityCliffPeriodAsk: false, equityExerciseTermsAsk: false, equityBuybackLiquidityAsk: false, signOnClawback: false, variableTrackRecord: false, wfhEquipmentStipend: false, salaryReviewCadenceAsk: false, multipleOffersJuggling: false, recruitmentAgencyMediation: false, internalTransferContext: false, offerRescindedHistory: false, internationalDegreePremium: false, domesticTopMbaAnchor: false, toxicManagerContext: false, visaSponsorshipNeed: false, casteReservationContext: false, veteranTransition: false, singleParentConstraint: false, jointFamilyFinancialResp: false, paternityLeaveAsk: false, menstrualLeavePolicy: false, esopExerciseLoanAsk: false, preIpoSecondaryAsk: false, accelerationTriggerAsk: false, esopPerquisiteTaxAsk: false, tenderOfferCycleAsk: false, probationaryDurationAsk: false, offerLetterTurnaroundDemand: false, contractToHireAsk: false, headcountApprovalCheck: false, ipAssignmentClauseAsk: false, healthcarePharmaContext: false, manufacturingCoreContext: false, quickCommerceContext: false, d2cConsumerEquity: false, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
       retentionCounter: { ...EMPTY_RETENTION_COUNTER },
@@ -1673,9 +1819,14 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   if (!parsed.signalsAcceptance) {
     const strictBoost = detectExplicitAcceptance(answer);
     if (strictBoost.accepted && state.highestOfferMade > 0 && !isTerminalPhase(next.phase)) {
-      next.phase = "accepted";
-      next.acceptedAtTurn = state.turnIndex;
-      return next;
+      /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard.
+       * Block accepts before minTurnsBeforeClose unless the candidate
+       * explicitly declined. */
+      if (canCloseSession(next, answer, "accept")) {
+        next.phase = "accepted";
+        next.acceptedAtTurn = state.turnIndex;
+        return next;
+      }
     }
   }
 
@@ -1722,11 +1873,21 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
         return next;
       }
     }
+    /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard.
+     * Strict-accepted path passes; soft-accept (trailing-non-counter)
+     * path is blocked before minTurnsBeforeClose. */
+    const closeReason: "accept" | "soft-accept" = strict.accepted ? "accept" : "soft-accept";
+    if (!canCloseSession(next, answer, closeReason)) {
+      next.phase = derivePhase(next);
+      return next;
+    }
     next.phase = "accepted";
     next.acceptedAtTurn = state.turnIndex;
     return next;
   }
   if (parsed.signalsWalkAway) {
+    /* Fix 3 (PDF #17 follow-up, 2026-05-15) — explicit walk-away always
+     * passes; this is the candidate declining outright. */
     next.phase = "walked-away";
     next.walkedAwayAtTurn = state.turnIndex;
     return next;
@@ -2388,6 +2549,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
   ) {
     throw new Error("state.lockedAnchorLpa");
   }
+  /* Fix 3 (PDF #17 follow-up, 2026-05-15) — minTurnsBeforeClose optional number. */
+  if (
+    s.minTurnsBeforeClose !== undefined &&
+    (typeof s.minTurnsBeforeClose !== "number" || !Number.isFinite(s.minTurnsBeforeClose) || s.minTurnsBeforeClose < 0)
+  ) {
+    throw new Error("state.minTurnsBeforeClose");
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -2461,6 +2629,8 @@ export function deserializeState(json: string): NegotiationState {
     lastBotReply: (s.lastBotReply as string | null | undefined) ?? null,
     anchorLocked: (s.anchorLocked as boolean | undefined) ?? false,
     lockedAnchorLpa: (s.lockedAnchorLpa as number | null | undefined) ?? null,
+    /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard. */
+    minTurnsBeforeClose: (s.minTurnsBeforeClose as number | undefined) ?? 8,
     /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
      * Optional for back-compat; defaults to null (treat in-flight
      * sessions as if no fresh counter has been parsed). */
@@ -2564,6 +2734,10 @@ function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
     dietaryReligiousNeed: v?.dietaryReligiousNeed ?? false,
     oldEmployerDocsIssue: v?.oldEmployerDocsIssue ?? false,
     equityRefreshCadenceAsk: v?.equityRefreshCadenceAsk ?? false,
+    equityVestingScheduleAsk: v?.equityVestingScheduleAsk ?? false,
+    equityCliffPeriodAsk: v?.equityCliffPeriodAsk ?? false,
+    equityExerciseTermsAsk: v?.equityExerciseTermsAsk ?? false,
+    equityBuybackLiquidityAsk: v?.equityBuybackLiquidityAsk ?? false,
     signOnClawback: v?.signOnClawback ?? false,
     variableTrackRecord: v?.variableTrackRecord ?? false,
     wfhEquipmentStipend: v?.wfhEquipmentStipend ?? false,

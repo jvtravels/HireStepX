@@ -320,6 +320,28 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "'gentleman', or any honorific. Indian HR addresses peers by first " +
   "name. This overrides the older POLITENESS CAPS rule below — the " +
   "register may be formal but the honorific is still banned.\n\n" +
+  /* Fix 1 (PDF #17 follow-up, 2026-05-15) — budget discipline. Real
+   * bug: candidate asked ₹16L, recruiter anchored ₹24L. */
+  "BUDGET DISCIPLINE — Never volunteer compensation above what the " +
+  "candidate asked for. If the candidate's stated target is below your " +
+  "band, accept quickly with a small step-up (anchor at ask + ~5%); do " +
+  "NOT pad the offer with money the candidate didn't request. Real " +
+  "recruiters do not give candidates money they never asked for — that " +
+  "is a critique-failure mode. When the candidate undershoots, the " +
+  "right move is fast acceptance with a tiny stretch, not an unsolicited " +
+  "raise.\n\n" +
+  /* Fix 2 (PDF #17 follow-up, 2026-05-15) — concession discipline. Real
+   * bug: recruiter volunteered an equity grant unprompted. */
+  "CONCESSION DISCIPLINE — Do NOT proactively offer equity, sign-on " +
+  "bonus, joining bonus, ESOP grants, performance bonuses, or any " +
+  "compensation sweetener that the candidate has not explicitly asked " +
+  "for or that you are not being pressed on. Real recruiters never " +
+  "volunteer money. Offers come ONLY in response to candidate pressure " +
+  "or as a direct counter to a candidate's specific ask. Adding " +
+  "sweeteners unprompted is a critique-failure mode. If the candidate " +
+  "has not said the words 'equity' / 'ESOP' / 'RSU' / 'joining bonus' / " +
+  "'sign-on' / 'grant' / 'bonus' in their most recent turn, do NOT " +
+  "introduce them yourself.\n\n" +
   /* Bug 7 (2026-05-14) — anti-repetition. */
   "ANTI-REPETITION — Do not re-state benefits, perks, or compensation " +
   "structure points the candidate already heard. Each turn must add NEW " +
@@ -2055,6 +2077,11 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cp.dietaryReligiousNeed) cpParts.push("dietary");
     if (cp.oldEmployerDocsIssue) cpParts.push("oldEmpDocs");
     if (cp.equityRefreshCadenceAsk) cpParts.push("equityRefresh");
+    /* Wave-3D (PDF #17 follow-up, 2026-05-15) — equity-instrument depth. */
+    if (cp.equityVestingScheduleAsk) cpParts.push("vestSched");
+    if (cp.equityCliffPeriodAsk) cpParts.push("cliff");
+    if (cp.equityExerciseTermsAsk) cpParts.push("exerTerms");
+    if (cp.equityBuybackLiquidityAsk) cpParts.push("buyback");
     /* Wave-4 (2026-05-14k) — 32 new tokens across 5 thematic blocks. Each
      * routes a top-level NEGOTIATION_SYSTEM_PROMPT rule. */
     if (cp.signOnClawback) cpParts.push("signClaw");

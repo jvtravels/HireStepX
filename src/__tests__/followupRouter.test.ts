@@ -214,6 +214,10 @@ describe("recommendFollowups — gap-readiness", () => {
         healthcarePharmaContext: false,
         manufacturingCoreContext: false,
         quickCommerceContext: false,
+        equityVestingScheduleAsk: false,
+        equityCliffPeriodAsk: false,
+        equityExerciseTermsAsk: false,
+        equityBuybackLiquidityAsk: false,
         d2cConsumerEquity: false,
  hasAny: true },
     });
@@ -307,6 +311,10 @@ describe("recommendFollowups — gap-readiness", () => {
         healthcarePharmaContext: false,
         manufacturingCoreContext: false,
         quickCommerceContext: false,
+        equityVestingScheduleAsk: false,
+        equityCliffPeriodAsk: false,
+        equityExerciseTermsAsk: false,
+        equityBuybackLiquidityAsk: false,
         d2cConsumerEquity: false,
  hasAny: true },
     });

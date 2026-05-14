@@ -68,6 +68,9 @@ const WAVE_3_FLAGS: ReadonlyArray<string> = [
   "cabinParkingAsk", "spanOfControlAsk", "preResignationStealth",
   "reverseAnchorAsk", "dietaryReligiousNeed", "oldEmployerDocsIssue",
   "equityRefreshCadenceAsk",
+  /* Wave-3D (PDF #17 follow-up, 2026-05-15) — equity-instrument depth. */
+  "equityVestingScheduleAsk", "equityCliffPeriodAsk",
+  "equityExerciseTermsAsk", "equityBuybackLiquidityAsk",
 ];
 
 /** Wave-4 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_4=1. */
@@ -164,7 +167,9 @@ function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResu
       r.missionDrivenComp || r.edtechReputationCheck || r.acquiHireContext ||
       r.cabinParkingAsk || r.spanOfControlAsk || r.preResignationStealth ||
       r.reverseAnchorAsk || r.dietaryReligiousNeed || r.oldEmployerDocsIssue ||
-      r.equityRefreshCadenceAsk
+      r.equityRefreshCadenceAsk ||
+      r.equityVestingScheduleAsk || r.equityCliffPeriodAsk ||
+      r.equityExerciseTermsAsk || r.equityBuybackLiquidityAsk
     )) ||
     (!w4 && (
       r.signOnClawback || r.variableTrackRecord || r.wfhEquipmentStipend ||
@@ -624,6 +629,28 @@ export interface CandidateProfileResult {
    *  esopSophisticationProbe (which is initial-grant mechanics).
    *  Routes to refresh-cadence voice. Monotone-up. */
   equityRefreshCadenceAsk: boolean;
+  /** Wave-3D (PDF #17 follow-up, 2026-05-15) — candidate asks about
+   *  equity vesting schedule / cadence ("vesting schedule", "vesting
+   *  cadence", "how does vesting work", "vesting period"). Distinct
+   *  from equityRefreshCadenceAsk (refresh grants) and
+   *  equityCliffPeriodAsk (initial cliff). Monotone-up. */
+  equityVestingScheduleAsk: boolean;
+  /** Wave-3D (PDF #17 follow-up, 2026-05-15) — candidate asks about
+   *  the equity cliff period ("cliff period", "1-year cliff",
+   *  "vesting cliff"). Monotone-up. */
+  equityCliffPeriodAsk: boolean;
+  /** Wave-3D (PDF #17 follow-up, 2026-05-15) — candidate asks about
+   *  exercise terms / window / price ("exercise terms", "exercise
+   *  window", "exercise price", "strike price", "exercise period").
+   *  Monotone-up. */
+  equityExerciseTermsAsk: boolean;
+  /** Wave-3D (PDF #17 follow-up, 2026-05-15) — candidate asks about
+   *  buyback / liquidity events ("buyback", "liquidity event",
+   *  "secondary sale", "tender offer", "liquidity history"). Distinct
+   *  from preIpoSecondaryAsk (broader pre-IPO context) and
+   *  tenderOfferCycleAsk (cadence of buybacks); this flag captures the
+   *  general liquidity-mechanism ask. Monotone-up. */
+  equityBuybackLiquidityAsk: boolean;
   /* ─── Wave-4 (2026-05-14k) — 32 new flags spanning high-frequency comp /
    * process gaps (12), sensitive identity / DEI (6), equity depth (5),
    * contract / timing (5), and vertical context (4). */
@@ -928,6 +955,11 @@ const EMPTY: CandidateProfileResult = {
   dietaryReligiousNeed: false,
   oldEmployerDocsIssue: false,
   equityRefreshCadenceAsk: false,
+  /* Wave-3D (PDF #17 follow-up, 2026-05-15) — equity-instrument depth. */
+  equityVestingScheduleAsk: false,
+  equityCliffPeriodAsk: false,
+  equityExerciseTermsAsk: false,
+  equityBuybackLiquidityAsk: false,
   /* Wave-4 (2026-05-14k) — 32 new flags. */
   signOnClawback: false,
   variableTrackRecord: false,
@@ -2082,6 +2114,37 @@ function detectEquityRefreshCadenceAsk(t: string): boolean {
   return EQUITY_REFRESH_PATTERNS.some((p) => p.test(t));
 }
 
+/* Wave-3D (PDF #17 follow-up, 2026-05-15) — equity-instrument depth.
+ * Four distinct asks: vesting schedule, cliff period, exercise terms,
+ * buyback / liquidity. Each routes a different recruiter voice. */
+const EQUITY_VESTING_SCHEDULE_PATTERNS: RegExp[] = [
+  /\b(vesting\s+schedule|vest(?:ing)?\s+cadence|how\s+(?:does\s+)?vesting\s+work|vesting\s+period)\b/i,
+];
+function detectEquityVestingScheduleAsk(t: string): boolean {
+  return EQUITY_VESTING_SCHEDULE_PATTERNS.some((p) => p.test(t));
+}
+
+const EQUITY_CLIFF_PERIOD_PATTERNS: RegExp[] = [
+  /\b(cliff\s+period|1[-\s]?year\s+cliff|vesting\s+cliff)\b/i,
+];
+function detectEquityCliffPeriodAsk(t: string): boolean {
+  return EQUITY_CLIFF_PERIOD_PATTERNS.some((p) => p.test(t));
+}
+
+const EQUITY_EXERCISE_TERMS_PATTERNS: RegExp[] = [
+  /\b(exercise\s+terms|exercise\s+window|exercise\s+price|exercise\s+period|strike\s+price)\b/i,
+];
+function detectEquityExerciseTermsAsk(t: string): boolean {
+  return EQUITY_EXERCISE_TERMS_PATTERNS.some((p) => p.test(t));
+}
+
+const EQUITY_BUYBACK_LIQUIDITY_PATTERNS: RegExp[] = [
+  /\b(buyback|liquidity\s+event|secondary\s+sale|tender\s+offer|liquidity\s+history)\b/i,
+];
+function detectEquityBuybackLiquidityAsk(t: string): boolean {
+  return EQUITY_BUYBACK_LIQUIDITY_PATTERNS.some((p) => p.test(t));
+}
+
 /* ─── Wave-4 (2026-05-14k) — 32 new flags ──────────────────────────── */
 
 /* Wave-4A — signOnClawback: sign-on / joining bonus clawback tail. */
@@ -2611,6 +2674,11 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const dietaryReligiousNeed = detectDietaryReligiousNeed(text);
   const oldEmployerDocsIssue = detectOldEmployerDocsIssue(text);
   const equityRefreshCadenceAsk = detectEquityRefreshCadenceAsk(text);
+  /* Wave-3D (PDF #17 follow-up, 2026-05-15) — equity-instrument depth. */
+  const equityVestingScheduleAsk = detectEquityVestingScheduleAsk(text);
+  const equityCliffPeriodAsk = detectEquityCliffPeriodAsk(text);
+  const equityExerciseTermsAsk = detectEquityExerciseTermsAsk(text);
+  const equityBuybackLiquidityAsk = detectEquityBuybackLiquidityAsk(text);
   /* Wave-4 (2026-05-14k) — 32 new signals. */
   const signOnClawback = detectSignOnClawback(text);
   const variableTrackRecord = detectVariableTrackRecord(text);
@@ -2721,6 +2789,10 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     dietaryReligiousNeed ||
     oldEmployerDocsIssue ||
     equityRefreshCadenceAsk ||
+    equityVestingScheduleAsk ||
+    equityCliffPeriodAsk ||
+    equityExerciseTermsAsk ||
+    equityBuybackLiquidityAsk ||
     signOnClawback ||
     variableTrackRecord ||
     wfhEquipmentStipend ||
@@ -2829,6 +2901,10 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     dietaryReligiousNeed,
     oldEmployerDocsIssue,
     equityRefreshCadenceAsk,
+    equityVestingScheduleAsk,
+    equityCliffPeriodAsk,
+    equityExerciseTermsAsk,
+    equityBuybackLiquidityAsk,
     signOnClawback,
     variableTrackRecord,
     wfhEquipmentStipend,
@@ -3192,6 +3268,11 @@ export function mergeCandidateProfile(
     dietaryReligiousNeed: p.dietaryReligiousNeed || next.dietaryReligiousNeed,
     oldEmployerDocsIssue: p.oldEmployerDocsIssue || next.oldEmployerDocsIssue,
     equityRefreshCadenceAsk: p.equityRefreshCadenceAsk || next.equityRefreshCadenceAsk,
+    /* Wave-3D (PDF #17 follow-up, 2026-05-15) — equity-instrument depth. */
+    equityVestingScheduleAsk: p.equityVestingScheduleAsk || next.equityVestingScheduleAsk,
+    equityCliffPeriodAsk: p.equityCliffPeriodAsk || next.equityCliffPeriodAsk,
+    equityExerciseTermsAsk: p.equityExerciseTermsAsk || next.equityExerciseTermsAsk,
+    equityBuybackLiquidityAsk: p.equityBuybackLiquidityAsk || next.equityBuybackLiquidityAsk,
     /* Wave-4 (2026-05-14k) — all monotone-up. */
     signOnClawback: p.signOnClawback || next.signOnClawback,
     variableTrackRecord: p.variableTrackRecord || next.variableTrackRecord,
@@ -3303,6 +3384,10 @@ export function mergeCandidateProfile(
     merged.dietaryReligiousNeed ||
     merged.oldEmployerDocsIssue ||
     merged.equityRefreshCadenceAsk ||
+    merged.equityVestingScheduleAsk ||
+    merged.equityCliffPeriodAsk ||
+    merged.equityExerciseTermsAsk ||
+    merged.equityBuybackLiquidityAsk ||
     merged.signOnClawback ||
     merged.variableTrackRecord ||
     merged.wfhEquipmentStipend ||

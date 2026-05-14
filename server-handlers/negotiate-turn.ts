@@ -62,6 +62,8 @@ import {
   detectDocumentRequest,
   stripDocumentRequest,
   stripHonorifics,
+  detectUnpromptedSweetener,
+  stripUnpromptedSweetener,
 } from "./_adversarial-detector";
 import {
   clampInput,
@@ -628,6 +630,20 @@ export default async function handler(
         text = stripDocumentRequest(text);
         void captureServerEvent("kernel_pii_document_request", distinctId, {
           phrases: docReq.phrases.slice(0, 5).join(",") || null,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+      /* Fix 2 (PDF #17 follow-up, 2026-05-15) — strip unprompted
+       * sweeteners ("we can add equity", "we can offer a sign-on
+       * bonus") when the candidate's last turn did not contain a
+       * matching ask. Real recruiters never volunteer comp the
+       * candidate did not ask for. */
+      const sweetener = detectUnpromptedSweetener(text, sanitizedAnswer);
+      if (sweetener.violated) {
+        text = stripUnpromptedSweetener(text, sanitizedAnswer);
+        void captureServerEvent("kernel_unprompted_sweetener", distinctId, {
+          sweeteners: sweetener.sweeteners.slice(0, 5).join(",") || null,
           turn_index: state.turnIndex,
           phase: state.phase,
         }, req);

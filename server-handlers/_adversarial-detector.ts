@@ -608,6 +608,81 @@ export interface StripHonorificsResult {
   applied: boolean;
 }
 
+/* ─── Fix 2 (PDF #17 follow-up, 2026-05-15) — Unprompted sweetener strip ──
+ *
+ * Real-session bug: recruiter said "We can add an equity grant vesting
+ * over four years on top of the ₹24 LPA base. Interested?" — candidate
+ * never asked for equity. Real recruiters never volunteer comp
+ * sweeteners; concessions come ONLY in response to candidate pressure
+ * or as a counter to a specific ask. Adding sweeteners unprompted is a
+ * critique-failure mode.
+ *
+ * detectUnpromptedSweetener:
+ *   - Scans bot reply for sweetener phrases (equity / sign-on /
+ *     joining bonus / ESOP grant / additional grants).
+ *   - violated = sweetener found AND last candidate turn did NOT
+ *     contain a matching ask keyword.
+ *   - phrases lists the sweetener fragments matched.
+ *
+ * stripUnpromptedSweetener:
+ *   - When violated, removes sentences containing a sweetener phrase
+ *     and replaces with a generic redirect. */
+
+const SWEETENER_PATTERNS: RegExp[] = [
+  /\b(?:we\s+can|i\s+can|let\s+me)\s+add\s+(?:an?\s+)?equity(?:\s+grant)?\b/i,
+  /\b(?:we\s+can|i\s+can)\s+offer\s+(?:a\s+)?(?:sign[-\s]?on|signing|joining)\s+bonus\b/i,
+  /\b(?:we\s+can|i\s+can)\s+sweeten\b/i,
+  /\b(?:we\s+can|i\s+can)\s+throw\s+in\b/i,
+  /\b(?:additional|extra)\s+(?:esop|rsu|equity\s+grant|grants?)\b/i,
+  /\bon\s+top\s+of\s+the\s+base\s+(?:we|i)\s+can\s+add\b/i,
+  /\b(?:we\s+can|i\s+can)\s+include\s+(?:an?\s+)?(?:equity|esop|rsu)\s+grant\b/i,
+  /\b(?:we'?ll|i'?ll)\s+add\s+(?:an?\s+)?(?:equity|esop|rsu|joining\s+bonus|sign[-\s]?on)\b/i,
+];
+
+const CANDIDATE_ASK_KEYWORDS = /\b(equity|esop|rsu|stock|sign[-\s]?on|signing\s+bonus|joining\s+bonus|grant|sweet(?:en|ener)|bonus|extra)\b/i;
+
+export interface UnpromptedSweetenerResult {
+  violated: boolean;
+  sweeteners: string[];
+}
+
+export function detectUnpromptedSweetener(
+  botReply: string | null | undefined,
+  lastCandidateTurn: string | null | undefined,
+): UnpromptedSweetenerResult {
+  if (!botReply || typeof botReply !== "string") return { violated: false, sweeteners: [] };
+  const hits: string[] = [];
+  for (const p of SWEETENER_PATTERNS) {
+    const m = botReply.match(p);
+    if (m) hits.push(m[0]);
+  }
+  if (hits.length === 0) return { violated: false, sweeteners: [] };
+  /* If the candidate's last turn contains a matching ask keyword, the
+   * sweetener is a legitimate response, not unprompted. */
+  const lastTurn = typeof lastCandidateTurn === "string" ? lastCandidateTurn : "";
+  if (lastTurn && CANDIDATE_ASK_KEYWORDS.test(lastTurn)) {
+    return { violated: false, sweeteners: hits };
+  }
+  return { violated: true, sweeteners: hits };
+}
+
+/** Strip sentences from `botReply` that contain unprompted-sweetener
+ *  phrases. Returns the cleaned reply (or a generic redirect if
+ *  everything was stripped). Pure. */
+export function stripUnpromptedSweetener(
+  botReply: string,
+  lastCandidateTurn: string | null | undefined,
+): string {
+  const detection = detectUnpromptedSweetener(botReply, lastCandidateTurn);
+  if (!detection.violated) return botReply;
+  const sentences = botReply.split(/(?<=[.!?])\s+|\n+/);
+  const kept = sentences.filter((s) => {
+    return !SWEETENER_PATTERNS.some((p) => p.test(s));
+  });
+  const cleaned = kept.join(" ").trim();
+  return cleaned || "Let me know if there are specific aspects of the package you'd like to discuss.";
+}
+
 export function stripHonorifics(botReply: string): StripHonorificsResult {
   if (!botReply || typeof botReply !== "string") return { text: botReply ?? "", applied: false };
   let out = botReply;
