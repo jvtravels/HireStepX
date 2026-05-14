@@ -11,11 +11,11 @@ import type { CandidateProfileResult } from "../../server-handlers/_candidate-pr
 function makeAllTrueProfile(): CandidateProfileResult {
   /* Start from an empty extraction (everything off) and flip booleans on. */
   const base = extractCandidateProfile("");
-  const r = { ...base } as Record<string, unknown>;
+  const r = { ...base } as unknown as Record<string, unknown>;
   for (const k of Object.keys(r)) {
     if (typeof r[k] === "boolean") r[k] = true;
   }
-  return r as CandidateProfileResult;
+  return r as unknown as CandidateProfileResult;
 }
 
 describe("SPECIAL_PERSONAL_DATA_FLAGS — DPDP classification", () => {
@@ -86,7 +86,7 @@ describe("redactCandidateProfileForLogs", () => {
   });
 
   it("preserves non-boolean fields (collegeTier, careerGapMonths, etc.)", () => {
-    const base = extractCandidateProfile("") as Record<string, unknown>;
+    const base = extractCandidateProfile("") as unknown as Record<string, unknown>;
     base.careerGapMonths = 12;
     base.collegeTier = "tier-1";
     base.tenureSignal = "frequent";
