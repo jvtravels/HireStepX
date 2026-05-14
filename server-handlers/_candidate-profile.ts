@@ -463,6 +463,136 @@ export interface CandidateProfileResult {
    *  esopSophisticationProbe (which is initial-grant mechanics).
    *  Routes to refresh-cadence voice. Monotone-up. */
   equityRefreshCadenceAsk: boolean;
+  /* ─── Wave-4 (2026-05-14k) — 32 new flags spanning high-frequency comp /
+   * process gaps (12), sensitive identity / DEI (6), equity depth (5),
+   * contract / timing (5), and vertical context (4). */
+  /** Wave-4A — candidate raises sign-on / joining bonus clawback if they
+   *  leave before X months. Distinct from JB-ask in noticeJoining.
+   *  Routes to "we will document the clawback waiver" voice. Monotone-up. */
+  signOnClawback: boolean;
+  /** Wave-4A — candidate claims consistent variable / bonus track record
+   *  ("always hit 100% variable", "maxed bonus"). Engineering/PM variant
+   *  of sales' quotaAttainmentClaimed. Routes to validate + price-the-
+   *  level voice. Monotone-up. */
+  variableTrackRecord: boolean;
+  /** Wave-4A — candidate asks about WFH / setup stipend (desk, chair,
+   *  internet, laptop reimbursement, one-time WFH allowance). Routes to
+   *  concrete-stipend-amount disclosure voice. Monotone-up. */
+  wfhEquipmentStipend: boolean;
+  /** Wave-4A — candidate asks about salary review cadence ("annual or
+   *  semi-annual?", "next appraisal?", "mid-year correction policy?").
+   *  Routes to review-cycle disclosure voice. Monotone-up. */
+  salaryReviewCadenceAsk: boolean;
+  /** Wave-4A — candidate juggling multiple offers / 3+ active processes.
+   *  Distinct from explodingOfferPressure (one tight deadline) and
+   *  competingOffer (single rival). Routes to "let's get to apples-to-
+   *  apples comparison" voice. Monotone-up. */
+  multipleOffersJuggling: boolean;
+  /** Wave-4A — candidate is sourced through an external recruiter /
+   *  placement agency / RMS / consultancy. Materially distorts offer
+   *  mechanics (agency margin, BGV, joining timeline). Monotone-up. */
+  recruitmentAgencyMediation: boolean;
+  /** Wave-4A — candidate is an internal transfer / IJP candidate.
+   *  Routes to internal-band / current-grade-step voice. Monotone-up. */
+  internalTransferContext: boolean;
+  /** Wave-4A — candidate has a prior offer-rescinded history ("Cars24
+   *  pulled my offer", "joining was cancelled"). Routes to extra-
+   *  reassurance / written-offer-quickly voice. Monotone-up. */
+  offerRescindedHistory: boolean;
+  /** Wave-4A — candidate signals international degree premium (Stanford,
+   *  MIT, Oxford, Ivy League MBA, INSEAD / LBS / Wharton). Distinct from
+   *  crossBorderAnchor (overseas TC). Routes to "premium acknowledged
+   *  but India-priced" voice. Monotone-up. */
+  internationalDegreePremium: boolean;
+  /** Wave-4A — candidate is fresh from top-tier domestic MBA (IIM-A/B/C,
+   *  ISB, XLRI, FMS, MDI). Distinct from collegeTier=tier-1 (undergrad).
+   *  Routes to MBA-fresher-band voice. Monotone-up. */
+  domesticTopMbaAnchor: boolean;
+  /** Wave-4A — candidate cites toxic manager / bad leadership as primary
+   *  exit reason. Distinct from generic badmouthing. Routes to
+   *  "validate without anchoring down" voice. Monotone-up. */
+  toxicManagerContext: boolean;
+  /** Wave-4A — candidate needs visa sponsorship (H1B, OPT expiry, STEM
+   *  extension, green card sponsorship, visa transfer). Routes to
+   *  sponsorship-eligibility / timeline voice. Monotone-up. */
+  visaSponsorshipNeed: boolean;
+  /** Wave-4B — candidate discloses caste / reservation category (SC/ST/
+   *  OBC) in PSU/govt context. SENSITIVE — respect category disclosure;
+   *  do not anchor on it. Monotone-up. */
+  casteReservationContext: boolean;
+  /** Wave-4B — candidate is transitioning from armed forces (Army/Navy/
+   *  Air Force, ex-defence, military lateral). Routes to veteran-
+   *  lateral comp / civil-equivalent voice. Monotone-up. */
+  veteranTransition: boolean;
+  /** Wave-4B — candidate is a single parent (sole custody, no co-
+   *  parent). Drives schedule-flex / location constraints. SENSITIVE —
+   *  schedule flex voice; do not anchor down. Monotone-up. */
+  singleParentConstraint: boolean;
+  /** Wave-4B — candidate is sole earner / joint-family financial
+   *  responsibility (supporting parents, siblings' education). SENSITIVE
+   *  — do not anchor down. Monotone-up. */
+  jointFamilyFinancialResp: boolean;
+  /** Wave-4B — candidate asks about paternity-leave policy. Distinct
+   *  from returnshipMaternity. Routes to policy-disclosure voice.
+   *  Monotone-up. */
+  paternityLeaveAsk: boolean;
+  /** Wave-4B — candidate asks about menstrual / period leave policy
+   *  (Zomato-style). Routes to policy-disclosure voice. Monotone-up. */
+  menstrualLeavePolicy: boolean;
+  /** Wave-4C — candidate asks about ESOP exercise loan / cashless
+   *  exercise / company-funded exercise. Routes to exercise-loan
+   *  mechanics voice. Monotone-up. */
+  esopExerciseLoanAsk: boolean;
+  /** Wave-4C — candidate asks about pre-IPO secondary sale / tender
+   *  for early employees. Routes to secondary-cycle voice. Monotone-up. */
+  preIpoSecondaryAsk: boolean;
+  /** Wave-4C — candidate asks directly about acceleration trigger
+   *  (single-trigger / double-trigger on change of control). Distinct
+   *  from esopSophisticationProbe. Routes to double-trigger voice.
+   *  Monotone-up. */
+  accelerationTriggerAsk: boolean;
+  /** Wave-4C — candidate asks about ESOP perquisite-tax treatment
+   *  (Section 17(2), TDS on exercise). Routes to perquisite-tax voice.
+   *  Monotone-up. */
+  esopPerquisiteTaxAsk: boolean;
+  /** Wave-4C — candidate asks about tender-offer / annual buyback
+   *  cycle. Routes to buyback-cadence voice. Monotone-up. */
+  tenderOfferCycleAsk: boolean;
+  /** Wave-4D — candidate asks about probationary duration (3-mo vs
+   *  6-mo). Distinct from probationCompMentioned. Routes to probation-
+   *  length voice. Monotone-up. */
+  probationaryDurationAsk: boolean;
+  /** Wave-4D — candidate demands fast offer-letter turnaround
+   *  ("48 hours", "when will I get the OL?"). Routes to OL-turnaround
+   *  voice. Monotone-up. */
+  offerLetterTurnaroundDemand: boolean;
+  /** Wave-4D — candidate asks if role is contract-to-hire / when it
+   *  converts to permanent. Routes to contract-to-hire mechanics
+   *  voice. Monotone-up. */
+  contractToHireAsk: boolean;
+  /** Wave-4D — candidate explicitly checks headcount approval / HC
+   *  budgeted ("seen offers fall through on HC"). Routes to
+   *  headcount-approval voice. Monotone-up. */
+  headcountApprovalCheck: boolean;
+  /** Wave-4D — candidate raises IP assignment / moonlighting / side-
+   *  project ownership concern. GenAI-era anxiety. Routes to IP-scope
+   *  voice. Monotone-up. */
+  ipAssignmentClauseAsk: boolean;
+  /** Wave-4E — candidate from pharma R&D / API / clinical / regulatory
+   *  (Sun Pharma, Dr Reddy's, Cipla). Routes to pharma-band voice.
+   *  Monotone-up. */
+  healthcarePharmaContext: boolean;
+  /** Wave-4E — candidate from core mechanical / electrical / auto /
+   *  steel (Tata Motors, Mahindra, L&T, Maruti, Bajaj Auto). Routes
+   *  to core-engineering-band voice. Monotone-up. */
+  manufacturingCoreContext: boolean;
+  /** Wave-4E — candidate from quick commerce (Zepto, Blinkit, Swiggy-
+   *  Instamart, BB-Now). Routes to quick-commerce equity voice.
+   *  Monotone-up. */
+  quickCommerceContext: boolean;
+  /** Wave-4E — candidate from D2C founder-era brand (Boat, Mamaearth,
+   *  Sugar, Wakefit, Licious). Routes to D2C-brand voice. Monotone-up. */
+  d2cConsumerEquity: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -544,6 +674,39 @@ const EMPTY: CandidateProfileResult = {
   dietaryReligiousNeed: false,
   oldEmployerDocsIssue: false,
   equityRefreshCadenceAsk: false,
+  /* Wave-4 (2026-05-14k) — 32 new flags. */
+  signOnClawback: false,
+  variableTrackRecord: false,
+  wfhEquipmentStipend: false,
+  salaryReviewCadenceAsk: false,
+  multipleOffersJuggling: false,
+  recruitmentAgencyMediation: false,
+  internalTransferContext: false,
+  offerRescindedHistory: false,
+  internationalDegreePremium: false,
+  domesticTopMbaAnchor: false,
+  toxicManagerContext: false,
+  visaSponsorshipNeed: false,
+  casteReservationContext: false,
+  veteranTransition: false,
+  singleParentConstraint: false,
+  jointFamilyFinancialResp: false,
+  paternityLeaveAsk: false,
+  menstrualLeavePolicy: false,
+  esopExerciseLoanAsk: false,
+  preIpoSecondaryAsk: false,
+  accelerationTriggerAsk: false,
+  esopPerquisiteTaxAsk: false,
+  tenderOfferCycleAsk: false,
+  probationaryDurationAsk: false,
+  offerLetterTurnaroundDemand: false,
+  contractToHireAsk: false,
+  headcountApprovalCheck: false,
+  ipAssignmentClauseAsk: false,
+  healthcarePharmaContext: false,
+  manufacturingCoreContext: false,
+  quickCommerceContext: false,
+  d2cConsumerEquity: false,
   hasAny: false,
 };
 
@@ -1665,6 +1828,393 @@ function detectEquityRefreshCadenceAsk(t: string): boolean {
   return EQUITY_REFRESH_PATTERNS.some((p) => p.test(t));
 }
 
+/* ─── Wave-4 (2026-05-14k) — 32 new flags ──────────────────────────── */
+
+/* Wave-4A — signOnClawback: sign-on / joining bonus clawback tail. */
+const SIGN_ON_CLAWBACK_PATTERNS: RegExp[] = [
+  /\b(?:joining\s+bonus|sign[-\s]?on(?:\s+bonus)?|signing\s+bonus|jb)\s+(?:has\s+)?(?:an?\s+)?(?:\d+[-\s]?(?:month|year)s?\s+)?(?:clawback|recovery|tail|repayment|return)\b/i,
+  /\b(?:clawback|recovery|return|repay)\s+(?:if\s+i\s+leave|on\s+(?:my\s+)?(?:joining|sign[-\s]?on|signing)\s+bonus)\b/i,
+  /\b(?:\d{1,2}[-\s]?(?:month|year)s?\s+(?:clawback|tail|recovery)\s+(?:clause|period|window)?)\b/i,
+  /\b(?:jb\s+recovery|joining[-\s]?bonus\s+recovery|sign[-\s]?on\s+(?:tail|clawback)\s+(?:clause)?)\b/i,
+  /\b(?:if\s+i\s+leave\s+(?:before|under|within)\s+\d{1,2}\s+(?:months?|years?))\b.{0,80}\b(?:joining|sign[-\s]?on|signing|jb)/i,
+];
+function detectSignOnClawback(t: string): boolean {
+  return SIGN_ON_CLAWBACK_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — variableTrackRecord: PM/eng consistent variable history. */
+const VARIABLE_TRACK_RECORD_PATTERNS: RegExp[] = [
+  /\b(?:always\s+(?:hit|hits|hitting|maxed|max(?:ing|imised))|consistently\s+(?:hit|max(?:ed|ing)?|deliver(?:ed|ing)?))\b.{0,60}\b(?:variable|bonus|payout|target)/i,
+  /\b(?:100\s*%|full)\s+(?:variable|bonus|payout)\s+(?:every\s+(?:year|cycle)|history|track[-\s]?record)?\b/i,
+  /\b(?:perfect|spotless|clean|flawless)\s+(?:variable|bonus|payout|variable\s+payout|bonus\s+payout)\s+(?:history|track[-\s]?record|record)\b/i,
+  /\b(?:my\s+)?variable\s+(?:has\s+been|payout\s+has\s+been)\s+(?:100|max|full|at\s+target)\b/i,
+  /\b(?:never\s+missed|always\s+at\s+(?:or\s+above\s+)?target)\b.{0,40}\b(?:variable|bonus|payout)/i,
+];
+function detectVariableTrackRecord(t: string): boolean {
+  return VARIABLE_TRACK_RECORD_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — wfhEquipmentStipend: desk / chair / internet / WFH setup. */
+const WFH_STIPEND_PATTERNS: RegExp[] = [
+  /\b(?:wfh|work[-\s]?from[-\s]?home|home[-\s]?office)\s+(?:setup|stipend|allowance|equipment|kit)\b/i,
+  /\b(?:desk|chair|monitor|ergonomic)\s+(?:stipend|allowance|reimbursement|setup)\b/i,
+  /\b(?:internet|broadband|wifi)\s+(?:reimbursement|allowance|stipend|cover)\b/i,
+  /\b(?:laptop|equipment)\s+(?:reimbursement|stipend|allowance|policy)\b/i,
+  /\b(?:one[-\s]?time\s+(?:wfh|home[-\s]?office|setup)\s+(?:allowance|stipend|grant|amount))\b/i,
+];
+function detectWfhEquipmentStipend(t: string): boolean {
+  return WFH_STIPEND_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — salaryReviewCadenceAsk: review cycle / appraisal cadence. */
+const REVIEW_CADENCE_PATTERNS: RegExp[] = [
+  /\b(?:annual|semi[-\s]?annual|half[-\s]?yearly|quarterly|yearly)\s+(?:review|appraisal|salary\s+review)\b/i,
+  /\b(?:when'?s?|when\s+is)\s+(?:the\s+)?(?:next\s+)?(?:appraisal|salary\s+review|review\s+cycle|comp\s+cycle)\b/i,
+  /\b(?:mid[-\s]?year\s+correction|off[-\s]?cycle\s+(?:correction|adjustment|raise))\b/i,
+  /\b(?:review|appraisal|comp)\s+(?:cycle|cadence|frequency|policy)\b/i,
+  /\b(?:how\s+often|when\s+do\s+you)\s+(?:do|run|hold)\s+(?:salary\s+)?(?:reviews?|appraisals?)\b/i,
+];
+function detectSalaryReviewCadenceAsk(t: string): boolean {
+  return REVIEW_CADENCE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — multipleOffersJuggling: 3+ active processes / multiple offers. */
+const MULTIPLE_OFFERS_PATTERNS: RegExp[] = [
+  /\b(?:i\s+have|have)\s+(?:3|three|4|four|5|five|multiple|several)\s+(?:active\s+)?(?:offers?|processes?|interviews?|opportunities)\b/i,
+  /\b(?:comparing|juggling|evaluating)\s+(?:3|three|4|four|5|five|multiple|several)\s+(?:offers?|companies|opportunities|options)\b/i,
+  /\b(?:final\s+rounds?\s+with\s+(?:two|three|four|multiple|several|other)\s+(?:other\s+)?companies)\b/i,
+  /\b(?:in\s+(?:talks|discussions|process)\s+with\s+(?:multiple|several|3|three|4|four)\s+(?:other\s+)?(?:companies|firms))\b/i,
+  /\b(?:multiple\s+offers?\s+(?:in\s+hand|on\s+the\s+table|active))\b/i,
+];
+function detectMultipleOffersJuggling(t: string): boolean {
+  return MULTIPLE_OFFERS_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — recruitmentAgencyMediation: external recruiter / agency. */
+const AGENCY_PATTERNS: RegExp[] = [
+  /\b(?:through|via)\s+(?:abc\s+)?(?:consultants?|consultancy|placement\s+agency|recruitment\s+(?:agency|firm)|staffing\s+(?:agency|firm))\b/i,
+  /\b(?:placement\s+(?:agency|consultant)|external\s+recruiter|third[-\s]?party\s+recruiter|agency\s+recruiter)\b/i,
+  /\b(?:naukri\s+rms|naukri\s+(?:recruiter|consultant)|rms\s+(?:reached|contacted))\b/i,
+  /\b(?:i'?m\s+through|i\s+came\s+through)\s+(?:a\s+)?(?:consultant|consultancy|agency)\b/i,
+  /\b(?:my\s+(?:agency|consultant|placement)\s+(?:rep|contact|recruiter))\b/i,
+];
+function detectRecruitmentAgencyMediation(t: string): boolean {
+  return AGENCY_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — internalTransferContext: IJP / internal candidate. */
+const INTERNAL_TRANSFER_PATTERNS: RegExp[] = [
+  /\b(?:internal\s+(?:candidate|transfer|move|switch|job\s+posting)|i'?m\s+an\s+internal\s+candidate)\b/i,
+  /\bijp\b/i,
+  /\b(?:internal\s+job\s+posting|cross[-\s]?functional\s+(?:move|transfer)\s+(?:within|inside))\b/i,
+  /\b(?:transferring|moving)\s+(?:within|inside|internally)\s+(?:the\s+)?(?:co(?:mpany)?|firm|org(?:anization)?)\b/i,
+  /\b(?:lateral\s+(?:move|transfer)\s+within|internal\s+lateral)\b/i,
+];
+function detectInternalTransferContext(t: string): boolean {
+  return INTERNAL_TRANSFER_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — offerRescindedHistory: prior offer was pulled / cancelled. */
+const OFFER_RESCINDED_PATTERNS: RegExp[] = [
+  /\b(?:my\s+(?:last|previous|prior)\s+offer\s+(?:was|got)\s+(?:rescinded|revoked|pulled|cancelled|withdrawn))\b/i,
+  /\b(?:offer\s+(?:was\s+)?(?:rescinded|revoked|pulled|cancelled|withdrawn))\b/i,
+  /\b(?:cars24|byju'?s|unacademy|ola)\s+(?:pulled|rescinded|cancelled|revoked)\s+(?:my\s+)?offer\b/i,
+  /\b(?:joining\s+(?:was|got)\s+(?:cancelled|called\s+off|deferred\s+indefinitely)|joining\s+date\s+(?:cancelled|pulled))\b/i,
+  /\b(?:offer\s+rescinded\s+(?:at\s+the\s+last\s+minute|just\s+before\s+joining))\b/i,
+];
+function detectOfferRescindedHistory(t: string): boolean {
+  return OFFER_RESCINDED_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — internationalDegreePremium: Stanford/MIT/Oxford/Ivy MBA. */
+const INTERNATIONAL_DEGREE_PATTERNS: RegExp[] = [
+  /\b(?:stanford|mit|harvard|princeton|yale|oxford|cambridge|berkeley|caltech|cmu|carnegie\s+mellon|columbia|cornell|dartmouth|upenn|penn|brown)\b/i,
+  /\b(?:ivy\s+league|insead|lbs|london\s+business\s+school|wharton|kellogg|booth|sloan|stern|haas|tuck|fuqua|johnson)\b/i,
+  /\b(?:masters?|ms|mba|phd)\s+(?:at|from|degree\s+from)\s+(?:stanford|mit|harvard|oxford|cambridge|insead|lbs|wharton|kellogg)\b/i,
+  /\b(?:overseas|abroad|us|uk|european)\s+(?:masters?|mba|phd|degree)\b/i,
+  /\b(?:i\s+did\s+my\s+(?:masters?|mba|phd)\s+(?:at|in)\s+(?:the\s+)?(?:us|uk|states|abroad|overseas))\b/i,
+];
+function detectInternationalDegreePremium(t: string): boolean {
+  return INTERNATIONAL_DEGREE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — domesticTopMbaAnchor: IIM-A/B/C, ISB, XLRI, FMS, MDI. */
+const DOMESTIC_TOP_MBA_PATTERNS: RegExp[] = [
+  /\b(?:iim[-\s]?(?:a|b|c|ahmedabad|bangalore|calcutta|kozhikode|lucknow|indore))\b/i,
+  /\bisb\b|\bindian\s+school\s+of\s+business\b/i,
+  /\b(?:xlri|fms|mdi|spjimr|sp\s+jain|jbims|nitie|iift)\b/i,
+  /\b(?:fresh\s+(?:out\s+of|from)|just\s+graduated\s+from)\s+(?:iim|isb|xlri|fms|mdi)\b/i,
+  /\b(?:iim|isb)\s+(?:grad(?:uate)?|fresher|alumni|alum)\b/i,
+];
+function detectDomesticTopMbaAnchor(t: string): boolean {
+  return DOMESTIC_TOP_MBA_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — toxicManagerContext: toxic boss / bad leadership exit. */
+const TOXIC_MANAGER_PATTERNS: RegExp[] = [
+  /\b(?:toxic\s+(?:manager|boss|leadership|environment|workplace|culture))\b/i,
+  /\b(?:my\s+manager\s+is\s+(?:the\s+reason|why)\s+i'?m\s+leaving)\b/i,
+  /\b(?:bad|terrible|awful|horrible|abusive)\s+(?:manager|boss|leadership|leader)\b/i,
+  /\b(?:leadership\s+is\s+the\s+(?:problem|issue|reason)|manager\s+issues?|management\s+issues?)\b/i,
+  /\b(?:micromanag(?:er|ing|ement)|gaslighting\s+manager|hostile\s+manager)\b/i,
+];
+function detectToxicManagerContext(t: string): boolean {
+  return TOXIC_MANAGER_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4A — visaSponsorshipNeed: H1B / OPT / STEM / GC sponsorship. */
+const VISA_SPONSORSHIP_PATTERNS: RegExp[] = [
+  /\b(?:h1[-\s]?b|h[-\s]?1[-\s]?b)\s+(?:sponsorship|transfer|visa)?\b/i,
+  /\bopt\s+(?:runs?\s+out|expir(?:es|ing|y)|extension)\b/i,
+  /\b(?:stem\s+(?:extension|opt)|stem[-\s]?opt)\b/i,
+  /\b(?:visa\s+(?:sponsorship|transfer|status|required))\b/i,
+  /\b(?:green\s+card|gc)\s+sponsorship\b/i,
+  /\b(?:need\s+(?:visa\s+)?sponsorship|sponsor\s+(?:my\s+)?(?:visa|h1b|green\s+card|gc))\b/i,
+];
+function detectVisaSponsorshipNeed(t: string): boolean {
+  return VISA_SPONSORSHIP_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4B — casteReservationContext: SC/ST/OBC reservation in PSU/govt. */
+const CASTE_RESERVATION_PATTERNS: RegExp[] = [
+  /\b(?:sc|st|obc|ews)\s+(?:category|reservation|quota|candidate)\b/i,
+  /\b(?:reservation|quota)\s+(?:category|seat|under\s+(?:sc|st|obc|ews))\b/i,
+  /\b(?:scheduled\s+(?:caste|tribe)|other\s+backward\s+class)\b/i,
+  /\b(?:caste\s+(?:certificate|category|reservation))\b/i,
+  /\b(?:psu|govt|government|public[-\s]?sector)\s+(?:reservation|quota|category)\b/i,
+];
+function detectCasteReservationContext(t: string): boolean {
+  return CASTE_RESERVATION_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4B — veteranTransition: ex-defence / armed-forces lateral. */
+const VETERAN_PATTERNS: RegExp[] = [
+  /\b(?:ex[-\s]?(?:defence|defense|army|navy|air\s+force|military|servicemen|serviceman))\b/i,
+  /\b(?:armed\s+forces?\s+(?:lateral|transition|veteran))\b/i,
+  /\b(?:transitioning|moving)\s+from\s+the\s+(?:army|navy|air\s+force|military|defence|defense|forces?)\b/i,
+  /\b(?:served\s+in\s+the\s+(?:army|navy|air\s+force|military|forces?)|veteran\s+(?:status|hire|transition))\b/i,
+  /\b(?:retired\s+(?:army|navy|air\s+force|colonel|major|lieutenant|captain|commander))\b/i,
+];
+function detectVeteranTransition(t: string): boolean {
+  return VETERAN_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4B — singleParentConstraint: sole custody / single mom / dad. */
+const SINGLE_PARENT_PATTERNS: RegExp[] = [
+  /\b(?:single\s+(?:parent|mom|mother|dad|father))\b/i,
+  /\b(?:sole\s+(?:custody|guardian|parent|caregiver))\b/i,
+  /\b(?:no\s+co[-\s]?parent|raising\s+(?:my\s+)?(?:kids?|child(?:ren)?)\s+alone)\b/i,
+  /\b(?:divorced\s+(?:single\s+)?(?:mom|dad|parent)|widowed\s+(?:parent|mom|dad))\b/i,
+  /\b(?:sole\s+(?:guardian|parent)\s+of\s+(?:my\s+)?(?:kid|child|children))\b/i,
+];
+function detectSingleParentConstraint(t: string): boolean {
+  return SINGLE_PARENT_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4B — jointFamilyFinancialResp: sole earner / extended family. */
+const JOINT_FAMILY_FIN_PATTERNS: RegExp[] = [
+  /\b(?:sole\s+earner|only\s+earner|primary\s+earner)\b/i,
+  /\b(?:supporting\s+(?:my\s+)?(?:parents|family|siblings)\s+financially)\b/i,
+  /\b(?:responsibility\s+for\s+(?:my\s+)?siblings?'?\s+(?:education|college|fees))\b/i,
+  /\b(?:household\s+runs\s+on\s+my\s+salary|family\s+depends\s+on\s+my\s+income)\b/i,
+  /\b(?:joint\s+family\s+(?:responsibility|expenses)|extended\s+family\s+(?:support|dependents))\b/i,
+];
+function detectJointFamilyFinancialResp(t: string): boolean {
+  return JOINT_FAMILY_FIN_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4B — paternityLeaveAsk: paternity policy / new-father benefits. */
+const PATERNITY_LEAVE_PATTERNS: RegExp[] = [
+  /\b(?:paternity\s+(?:leave|policy|benefits?|duration))\b/i,
+  /\b(?:new[-\s]?father\s+(?:benefits?|leave|policy))\b/i,
+  /\b(?:what'?s?\s+(?:your|the)\s+paternity)\b/i,
+  /\b(?:dad\s+leave|father\s+leave|partner\s+leave\s+(?:for\s+new\s+(?:dads|fathers)))\b/i,
+  /\b(?:paternity\s+(?:leave\s+)?(?:weeks|days|duration|length))\b/i,
+];
+function detectPaternityLeaveAsk(t: string): boolean {
+  return PATERNITY_LEAVE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4B — menstrualLeavePolicy: period leave / Zomato-style. */
+const MENSTRUAL_LEAVE_PATTERNS: RegExp[] = [
+  /\b(?:menstrual\s+(?:leave|policy|days))\b/i,
+  /\b(?:period\s+leave|periods?\s+(?:leave|policy|days?\s+off))\b/i,
+  /\b(?:zomato[-\s]?style\s+(?:menstrual|period)\s+leave)\b/i,
+  /\b(?:female[-\s]?specific\s+leave|monthly\s+leave\s+for\s+women)\b/i,
+  /\b(?:do\s+you\s+(?:have|offer)\s+(?:menstrual|period)\s+leave)\b/i,
+];
+function detectMenstrualLeavePolicy(t: string): boolean {
+  return MENSTRUAL_LEAVE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4C — esopExerciseLoanAsk: ESOP loan / cashless exercise. */
+const ESOP_LOAN_PATTERNS: RegExp[] = [
+  /\b(?:esop\s+(?:exercise\s+)?loan|exercise\s+loan|loan\s+to\s+exercise)\b/i,
+  /\b(?:cashless\s+exercise|cashless\s+(?:esop|option))\b/i,
+  /\b(?:company[-\s]?funded\s+exercise|company\s+(?:funds?|pays?\s+for)\s+(?:my\s+)?(?:esop\s+)?exercise)\b/i,
+  /\b(?:do\s+you\s+offer\s+(?:an?\s+)?(?:esop\s+)?exercise\s+loan|loan[-\s]?backed\s+exercise)\b/i,
+  /\b(?:net[-\s]?settle|net[-\s]?settlement)\s+(?:on\s+exercise|esop)\b/i,
+];
+function detectEsopExerciseLoanAsk(t: string): boolean {
+  return ESOP_LOAN_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4C — preIpoSecondaryAsk: secondary sale / tender opportunity. */
+const PRE_IPO_SECONDARY_PATTERNS: RegExp[] = [
+  /\b(?:secondary\s+(?:sale|opportunity|transaction|market))\b/i,
+  /\b(?:pre[-\s]?ipo\s+secondary|secondary\s+pre[-\s]?ipo)\b/i,
+  /\b(?:tender\s+(?:offer|for\s+(?:early\s+)?employees?))\b/i,
+  /\b(?:can\s+i\s+sell|sell\s+(?:some\s+)?(?:of\s+)?my\s+(?:vested\s+)?(?:esops?|shares?|equity))\b.{0,60}\b(?:secondary|pre[-\s]?ipo|tender)/i,
+  /\b(?:liquidity\s+event\s+(?:before|pre)\s+ipo|early[-\s]?employee\s+liquidity)\b/i,
+];
+function detectPreIpoSecondaryAsk(t: string): boolean {
+  return PRE_IPO_SECONDARY_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4C — accelerationTriggerAsk: single/double-trigger acceleration. */
+const ACCELERATION_TRIGGER_PATTERNS: RegExp[] = [
+  /\b(?:single[-\s]?trigger|double[-\s]?trigger)\s+(?:acceleration|vesting)?\b/i,
+  /\b(?:acceleration\s+(?:trigger|clause|provision|on\s+change\s+of\s+control))\b/i,
+  /\b(?:change\s+of\s+control\s+acceleration|coc\s+acceleration)\b/i,
+  /\b(?:what'?s?\s+the\s+acceleration\s+(?:clause|policy|trigger))\b/i,
+  /\b(?:accelerated\s+vesting\s+on\s+(?:acquisition|change|coc|termination))\b/i,
+];
+function detectAccelerationTriggerAsk(t: string): boolean {
+  return ACCELERATION_TRIGGER_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4C — esopPerquisiteTaxAsk: Section 17(2) / TDS on exercise. */
+const ESOP_PERQ_TAX_PATTERNS: RegExp[] = [
+  /\b(?:section\s+17\s*\(\s*2\s*\)|sec\s+17[-\s]?2)/i,
+  /\b(?:perquisite\s+tax|perq\s+tax)\s+(?:on\s+(?:exercise|esop|stock|rsu))?\b/i,
+  /\b(?:tds\s+on\s+(?:esop\s+)?exercise|tds\s+(?:on\s+)?(?:rsu|vesting|exercise))\b/i,
+  /\b(?:esop\s+(?:taxation|tax\s+treatment|tax\s+on\s+exercise))\b/i,
+  /\b(?:fair\s+market\s+value\s+(?:on|at)\s+exercise|fmv\s+at\s+exercise)\b/i,
+];
+function detectEsopPerquisiteTaxAsk(t: string): boolean {
+  return ESOP_PERQ_TAX_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4C — tenderOfferCycleAsk: annual buyback / tender cycle. */
+const TENDER_CYCLE_PATTERNS: RegExp[] = [
+  /\b(?:tender\s+offer\s+cycle|next\s+tender\s+offer)\b/i,
+  /\b(?:annual\s+buy[-\s]?back|esop\s+buy[-\s]?back\s+(?:cadence|cycle|frequency))\b/i,
+  /\b(?:buy[-\s]?back\s+(?:cycle|cadence|frequency|policy))\b/i,
+  /\b(?:when'?s?\s+the\s+next\s+(?:buyback|tender|liquidity\s+event))\b/i,
+  /\b(?:periodic\s+(?:buyback|tender)|quarterly\s+(?:buyback|tender))\b/i,
+];
+function detectTenderOfferCycleAsk(t: string): boolean {
+  return TENDER_CYCLE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4D — probationaryDurationAsk: probation length. */
+const PROBATION_DURATION_PATTERNS: RegExp[] = [
+  /\b(?:how\s+long\s+is\s+(?:the\s+)?probation|probation\s+(?:duration|length|period\s+length))\b/i,
+  /\b(?:3[-\s]?month|6[-\s]?month|three[-\s]?month|six[-\s]?month)\s+probation\b/i,
+  /\b(?:probation(?:ary)?\s+(?:duration|months?|period))\b/i,
+  /\b(?:probation\s+(?:is\s+)?(?:3|6|three|six|nine)\s+months?)\b/i,
+  /\b(?:6[-\s]?month\s+vs\s+3[-\s]?month\s+probation|probation\s+vs)\b/i,
+];
+function detectProbationaryDurationAsk(t: string): boolean {
+  return PROBATION_DURATION_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4D — offerLetterTurnaroundDemand: fast OL turnaround. */
+const OL_TURNAROUND_PATTERNS: RegExp[] = [
+  /\b(?:offer\s+letter|ol)\s+(?:in\s+|within\s+)?(?:24|48|72)\s+hours?\b/i,
+  /\b(?:when\s+(?:will|do)\s+i\s+(?:get|receive)\s+(?:the\s+)?(?:written\s+)?offer(?:\s+letter)?)\b/i,
+  /\b(?:offer[-\s]?letter\s+(?:deadline|turnaround|timeline))\b/i,
+  /\b(?:need\s+the\s+ol|need\s+the\s+offer\s+letter)\s+(?:in|by|within)\b/i,
+  /\b(?:can\s+you\s+send\s+(?:me\s+)?(?:the\s+)?(?:written\s+)?offer\s+(?:by|in|within))\b/i,
+];
+function detectOfferLetterTurnaroundDemand(t: string): boolean {
+  return OL_TURNAROUND_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4D — contractToHireAsk: contract-to-hire / temp-to-perm. */
+const CONTRACT_TO_HIRE_PATTERNS: RegExp[] = [
+  /\b(?:contract[-\s]?to[-\s]?hire|c2h)\b/i,
+  /\b(?:temp[-\s]?to[-\s]?perm|temporary[-\s]?to[-\s]?permanent)\b/i,
+  /\b(?:is\s+this\s+(?:a\s+)?(?:contract|fixed[-\s]?term|temp(?:orary)?)\s+(?:role|position))\b/i,
+  /\b(?:when\s+(?:does|will)\s+it\s+convert\s+to\s+(?:permanent|fte|full[-\s]?time))\b/i,
+  /\b(?:conversion\s+to\s+permanent|converting\s+to\s+fte)\b/i,
+];
+function detectContractToHireAsk(t: string): boolean {
+  return CONTRACT_TO_HIRE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4D — headcountApprovalCheck: HC budgeted / approved? */
+const HEADCOUNT_APPROVAL_PATTERNS: RegExp[] = [
+  /\b(?:is\s+the\s+)?(?:headcount|hc)\s+(?:approved|budgeted|signed[-\s]?off|allocated)\b/i,
+  /\b(?:headcount\s+approval|hc\s+approval|backfill\s+(?:approved|budgeted))\b/i,
+  /\b(?:offers?\s+fall\s+through\s+on\s+(?:hc|headcount))\b/i,
+  /\b(?:has\s+the\s+(?:role|position)\s+been\s+(?:approved|budgeted))\b/i,
+  /\b(?:budgeted\s+(?:role|position|headcount)|approved\s+(?:requisition|req))\b/i,
+];
+function detectHeadcountApprovalCheck(t: string): boolean {
+  return HEADCOUNT_APPROVAL_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4D — ipAssignmentClauseAsk: IP scope / side-project ownership. */
+const IP_CLAUSE_PATTERNS: RegExp[] = [
+  /\b(?:ip\s+assignment|ip\s+clause|intellectual\s+property\s+(?:clause|assignment|scope))\b/i,
+  /\b(?:do\s+i\s+own\s+(?:my\s+)?(?:side\s+projects?|personal\s+projects?|github|open[-\s]?source))\b/i,
+  /\b(?:moonlighting\s+(?:clause|policy|ip)|side[-\s]?project\s+(?:ip|ownership))\b/i,
+  /\b(?:invention\s+assignment|prior\s+inventions?\s+(?:carve[-\s]?out|clause))\b/i,
+  /\b(?:can\s+i\s+(?:keep|own)\s+(?:my\s+)?(?:side|personal|open[-\s]?source)\s+(?:work|code|projects?))\b/i,
+];
+function detectIpAssignmentClauseAsk(t: string): boolean {
+  return IP_CLAUSE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4E — healthcarePharmaContext: pharma R&D / API / clinical. */
+const PHARMA_PATTERNS: RegExp[] = [
+  /\b(?:sun\s+pharma|dr\.?\s+reddy'?s|cipla|lupin|aurobindo|biocon|glenmark|torrent\s+pharma|cadila|zydus|alkem|piramal)\b/i,
+  /\b(?:pharma\s+(?:r\s*&\s*d|rnd|r&d|industry|sector|background))\b/i,
+  /\b(?:api\s+manufacturing|active\s+pharmaceutical\s+ingredient)\b/i,
+  /\b(?:clinical\s+(?:trials?|research|operations?)|cro\b|clinical\s+regulatory)\b/i,
+  /\b(?:pharmaceutical\s+(?:industry|company|r&d|formulation)|drug\s+(?:discovery|development))\b/i,
+];
+function detectHealthcarePharmaContext(t: string): boolean {
+  return PHARMA_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4E — manufacturingCoreContext: core mech/elec/auto/steel. */
+const MFG_CORE_PATTERNS: RegExp[] = [
+  /\b(?:tata\s+(?:motors|steel)|mahindra|l\s*&\s*t|larsen|maruti|bajaj\s+auto|hero\s+motocorp|ashok\s+leyland|tvs\s+motor|royal\s+enfield)\b/i,
+  /\b(?:auto\s+oem|automotive\s+oem|automobile\s+(?:industry|sector|manufacturer))\b/i,
+  /\b(?:manufacturing\s+plant|shop\s+floor|production\s+line|assembly\s+line)\b/i,
+  /\b(?:core\s+(?:mechanical|electrical|engineering|industry)|mech(?:anical)?\s+engineering\s+(?:role|background))\b/i,
+  /\b(?:steel\s+(?:plant|industry)|jsw|sail\b|vedanta|hindalco|nalco)\b/i,
+];
+function detectManufacturingCoreContext(t: string): boolean {
+  return MFG_CORE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4E — quickCommerceContext: Zepto/Blinkit/Instamart/BB-Now. */
+const QCOM_PATTERNS: RegExp[] = [
+  /\b(?:zepto|blinkit|grofers|swiggy[-\s]?instamart|instamart|bb[-\s]?now|bigbasket\s+now|dunzo\s+daily)\b/i,
+  /\b(?:quick[-\s]?commerce|q[-\s]?commerce)\b/i,
+  /\b(?:10[-\s]?minute\s+delivery|10[-\s]?min\s+delivery|quick\s+delivery)\b/i,
+  /\b(?:dark\s+stores?|micro[-\s]?warehouses?)\b/i,
+  /\b(?:ultra[-\s]?fast\s+delivery|hyperlocal\s+delivery)\b/i,
+];
+function detectQuickCommerceContext(t: string): boolean {
+  return QCOM_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-4E — d2cConsumerEquity: D2C founder-era brand. */
+const D2C_PATTERNS: RegExp[] = [
+  /\b(?:boat|mamaearth|the\s+man\s+company|sugar\s+cosmetics|wakefit|licious|fresh\s+to\s+home|country\s+delight|epigamia|paper\s+boat|bombay\s+shaving)\b/i,
+  /\b(?:d2c|dtc)\s+(?:brand|company|startup|e[-\s]?commerce)?\b/i,
+  /\b(?:direct[-\s]?to[-\s]?consumer\s+(?:brand|company))\b/i,
+  /\b(?:consumer[-\s]?tech\s+(?:startup|brand|company))\b/i,
+  /\b(?:dtc\s+e[-\s]?commerce|d2c\s+e[-\s]?commerce)\b/i,
+];
+function detectD2cConsumerEquity(t: string): boolean {
+  return D2C_PATTERNS.some((p) => p.test(t));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -1807,6 +2357,39 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const dietaryReligiousNeed = detectDietaryReligiousNeed(text);
   const oldEmployerDocsIssue = detectOldEmployerDocsIssue(text);
   const equityRefreshCadenceAsk = detectEquityRefreshCadenceAsk(text);
+  /* Wave-4 (2026-05-14k) — 32 new signals. */
+  const signOnClawback = detectSignOnClawback(text);
+  const variableTrackRecord = detectVariableTrackRecord(text);
+  const wfhEquipmentStipend = detectWfhEquipmentStipend(text);
+  const salaryReviewCadenceAsk = detectSalaryReviewCadenceAsk(text);
+  const multipleOffersJuggling = detectMultipleOffersJuggling(text);
+  const recruitmentAgencyMediation = detectRecruitmentAgencyMediation(text);
+  const internalTransferContext = detectInternalTransferContext(text);
+  const offerRescindedHistory = detectOfferRescindedHistory(text);
+  const internationalDegreePremium = detectInternationalDegreePremium(text);
+  const domesticTopMbaAnchor = detectDomesticTopMbaAnchor(text);
+  const toxicManagerContext = detectToxicManagerContext(text);
+  const visaSponsorshipNeed = detectVisaSponsorshipNeed(text);
+  const casteReservationContext = detectCasteReservationContext(text);
+  const veteranTransition = detectVeteranTransition(text);
+  const singleParentConstraint = detectSingleParentConstraint(text);
+  const jointFamilyFinancialResp = detectJointFamilyFinancialResp(text);
+  const paternityLeaveAsk = detectPaternityLeaveAsk(text);
+  const menstrualLeavePolicy = detectMenstrualLeavePolicy(text);
+  const esopExerciseLoanAsk = detectEsopExerciseLoanAsk(text);
+  const preIpoSecondaryAsk = detectPreIpoSecondaryAsk(text);
+  const accelerationTriggerAsk = detectAccelerationTriggerAsk(text);
+  const esopPerquisiteTaxAsk = detectEsopPerquisiteTaxAsk(text);
+  const tenderOfferCycleAsk = detectTenderOfferCycleAsk(text);
+  const probationaryDurationAsk = detectProbationaryDurationAsk(text);
+  const offerLetterTurnaroundDemand = detectOfferLetterTurnaroundDemand(text);
+  const contractToHireAsk = detectContractToHireAsk(text);
+  const headcountApprovalCheck = detectHeadcountApprovalCheck(text);
+  const ipAssignmentClauseAsk = detectIpAssignmentClauseAsk(text);
+  const healthcarePharmaContext = detectHealthcarePharmaContext(text);
+  const manufacturingCoreContext = detectManufacturingCoreContext(text);
+  const quickCommerceContext = detectQuickCommerceContext(text);
+  const d2cConsumerEquity = detectD2cConsumerEquity(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -1883,7 +2466,39 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     reverseAnchorAsk ||
     dietaryReligiousNeed ||
     oldEmployerDocsIssue ||
-    equityRefreshCadenceAsk;
+    equityRefreshCadenceAsk ||
+    signOnClawback ||
+    variableTrackRecord ||
+    wfhEquipmentStipend ||
+    salaryReviewCadenceAsk ||
+    multipleOffersJuggling ||
+    recruitmentAgencyMediation ||
+    internalTransferContext ||
+    offerRescindedHistory ||
+    internationalDegreePremium ||
+    domesticTopMbaAnchor ||
+    toxicManagerContext ||
+    visaSponsorshipNeed ||
+    casteReservationContext ||
+    veteranTransition ||
+    singleParentConstraint ||
+    jointFamilyFinancialResp ||
+    paternityLeaveAsk ||
+    menstrualLeavePolicy ||
+    esopExerciseLoanAsk ||
+    preIpoSecondaryAsk ||
+    accelerationTriggerAsk ||
+    esopPerquisiteTaxAsk ||
+    tenderOfferCycleAsk ||
+    probationaryDurationAsk ||
+    offerLetterTurnaroundDemand ||
+    contractToHireAsk ||
+    headcountApprovalCheck ||
+    ipAssignmentClauseAsk ||
+    healthcarePharmaContext ||
+    manufacturingCoreContext ||
+    quickCommerceContext ||
+    d2cConsumerEquity;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -1960,6 +2575,38 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     dietaryReligiousNeed,
     oldEmployerDocsIssue,
     equityRefreshCadenceAsk,
+    signOnClawback,
+    variableTrackRecord,
+    wfhEquipmentStipend,
+    salaryReviewCadenceAsk,
+    multipleOffersJuggling,
+    recruitmentAgencyMediation,
+    internalTransferContext,
+    offerRescindedHistory,
+    internationalDegreePremium,
+    domesticTopMbaAnchor,
+    toxicManagerContext,
+    visaSponsorshipNeed,
+    casteReservationContext,
+    veteranTransition,
+    singleParentConstraint,
+    jointFamilyFinancialResp,
+    paternityLeaveAsk,
+    menstrualLeavePolicy,
+    esopExerciseLoanAsk,
+    preIpoSecondaryAsk,
+    accelerationTriggerAsk,
+    esopPerquisiteTaxAsk,
+    tenderOfferCycleAsk,
+    probationaryDurationAsk,
+    offerLetterTurnaroundDemand,
+    contractToHireAsk,
+    headcountApprovalCheck,
+    ipAssignmentClauseAsk,
+    healthcarePharmaContext,
+    manufacturingCoreContext,
+    quickCommerceContext,
+    d2cConsumerEquity,
     hasAny,
   };
 }
@@ -2291,6 +2938,39 @@ export function mergeCandidateProfile(
     dietaryReligiousNeed: p.dietaryReligiousNeed || next.dietaryReligiousNeed,
     oldEmployerDocsIssue: p.oldEmployerDocsIssue || next.oldEmployerDocsIssue,
     equityRefreshCadenceAsk: p.equityRefreshCadenceAsk || next.equityRefreshCadenceAsk,
+    /* Wave-4 (2026-05-14k) — all monotone-up. */
+    signOnClawback: p.signOnClawback || next.signOnClawback,
+    variableTrackRecord: p.variableTrackRecord || next.variableTrackRecord,
+    wfhEquipmentStipend: p.wfhEquipmentStipend || next.wfhEquipmentStipend,
+    salaryReviewCadenceAsk: p.salaryReviewCadenceAsk || next.salaryReviewCadenceAsk,
+    multipleOffersJuggling: p.multipleOffersJuggling || next.multipleOffersJuggling,
+    recruitmentAgencyMediation: p.recruitmentAgencyMediation || next.recruitmentAgencyMediation,
+    internalTransferContext: p.internalTransferContext || next.internalTransferContext,
+    offerRescindedHistory: p.offerRescindedHistory || next.offerRescindedHistory,
+    internationalDegreePremium: p.internationalDegreePremium || next.internationalDegreePremium,
+    domesticTopMbaAnchor: p.domesticTopMbaAnchor || next.domesticTopMbaAnchor,
+    toxicManagerContext: p.toxicManagerContext || next.toxicManagerContext,
+    visaSponsorshipNeed: p.visaSponsorshipNeed || next.visaSponsorshipNeed,
+    casteReservationContext: p.casteReservationContext || next.casteReservationContext,
+    veteranTransition: p.veteranTransition || next.veteranTransition,
+    singleParentConstraint: p.singleParentConstraint || next.singleParentConstraint,
+    jointFamilyFinancialResp: p.jointFamilyFinancialResp || next.jointFamilyFinancialResp,
+    paternityLeaveAsk: p.paternityLeaveAsk || next.paternityLeaveAsk,
+    menstrualLeavePolicy: p.menstrualLeavePolicy || next.menstrualLeavePolicy,
+    esopExerciseLoanAsk: p.esopExerciseLoanAsk || next.esopExerciseLoanAsk,
+    preIpoSecondaryAsk: p.preIpoSecondaryAsk || next.preIpoSecondaryAsk,
+    accelerationTriggerAsk: p.accelerationTriggerAsk || next.accelerationTriggerAsk,
+    esopPerquisiteTaxAsk: p.esopPerquisiteTaxAsk || next.esopPerquisiteTaxAsk,
+    tenderOfferCycleAsk: p.tenderOfferCycleAsk || next.tenderOfferCycleAsk,
+    probationaryDurationAsk: p.probationaryDurationAsk || next.probationaryDurationAsk,
+    offerLetterTurnaroundDemand: p.offerLetterTurnaroundDemand || next.offerLetterTurnaroundDemand,
+    contractToHireAsk: p.contractToHireAsk || next.contractToHireAsk,
+    headcountApprovalCheck: p.headcountApprovalCheck || next.headcountApprovalCheck,
+    ipAssignmentClauseAsk: p.ipAssignmentClauseAsk || next.ipAssignmentClauseAsk,
+    healthcarePharmaContext: p.healthcarePharmaContext || next.healthcarePharmaContext,
+    manufacturingCoreContext: p.manufacturingCoreContext || next.manufacturingCoreContext,
+    quickCommerceContext: p.quickCommerceContext || next.quickCommerceContext,
+    d2cConsumerEquity: p.d2cConsumerEquity || next.d2cConsumerEquity,
     hasAny: false,
   };
   merged.hasAny =
@@ -2368,6 +3048,38 @@ export function mergeCandidateProfile(
     merged.reverseAnchorAsk ||
     merged.dietaryReligiousNeed ||
     merged.oldEmployerDocsIssue ||
-    merged.equityRefreshCadenceAsk;
+    merged.equityRefreshCadenceAsk ||
+    merged.signOnClawback ||
+    merged.variableTrackRecord ||
+    merged.wfhEquipmentStipend ||
+    merged.salaryReviewCadenceAsk ||
+    merged.multipleOffersJuggling ||
+    merged.recruitmentAgencyMediation ||
+    merged.internalTransferContext ||
+    merged.offerRescindedHistory ||
+    merged.internationalDegreePremium ||
+    merged.domesticTopMbaAnchor ||
+    merged.toxicManagerContext ||
+    merged.visaSponsorshipNeed ||
+    merged.casteReservationContext ||
+    merged.veteranTransition ||
+    merged.singleParentConstraint ||
+    merged.jointFamilyFinancialResp ||
+    merged.paternityLeaveAsk ||
+    merged.menstrualLeavePolicy ||
+    merged.esopExerciseLoanAsk ||
+    merged.preIpoSecondaryAsk ||
+    merged.accelerationTriggerAsk ||
+    merged.esopPerquisiteTaxAsk ||
+    merged.tenderOfferCycleAsk ||
+    merged.probationaryDurationAsk ||
+    merged.offerLetterTurnaroundDemand ||
+    merged.contractToHireAsk ||
+    merged.headcountApprovalCheck ||
+    merged.ipAssignmentClauseAsk ||
+    merged.healthcarePharmaContext ||
+    merged.manufacturingCoreContext ||
+    merged.quickCommerceContext ||
+    merged.d2cConsumerEquity;
   return merged;
 }

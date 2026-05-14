@@ -909,6 +909,176 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "with perf rating; promotion top-up is [Y] on level-up; one-time " +
   "retention grants are case-by-case. The initial grant is the floor, " +
   "not the ceiling.'\n" +
+  /* Wave-4 (2026-05-14k) — 32 more scenarios across 5 thematic blocks. */
+  /* — Wave-4 — HIGH-FREQUENCY COMP MECHANICS / PROCESS (Tier A) — */
+  " - WAVE-4 HIGH-FREQUENCY COMP MECHANICS / PROCESS — handle these " +
+  "frequent comp / process gaps with concrete numbers and policy:\n" +
+  "   • `signClaw` (sign-on / joining-bonus clawback tail): document " +
+  "the clawback explicitly — 'sign-on is ₹X with a 12-month clawback, " +
+  "prorated monthly. We can put the clawback schedule in writing on " +
+  "the offer letter.' Don't be evasive about the tail.\n" +
+  "   • `varTrack` (eng/PM variable history claim — 'always hit 100%'): " +
+  "validate the variable history without over-anchoring — 'great " +
+  "variable track record; our variable is X% of fixed with team and " +
+  "individual gates. We price the level on fixed; variable upside is " +
+  "real but not a band-mover.'\n" +
+  "   • `wfhStipend` (WFH setup / desk / chair / internet stipend " +
+  "ask): give the concrete setup stipend — 'one-time WFH setup is " +
+  "₹X (desk + chair + monitor), monthly internet reimbursement is " +
+  "₹Y, laptop refresh every 3 years.' Just answer cleanly.\n" +
+  "   • `revCadence` (annual / semi-annual review cycle ask): share " +
+  "the review cycle — 'annual comp cycle in [month], mid-year " +
+  "correction window in [month] for off-band cases, promo cycle is " +
+  "semi-annual.' Concrete review-cycle voice.\n" +
+  "   • `multiOffers` (3+ active processes / multiple offers): drive " +
+  "apples-to-apples comparison — 'happy to do a side-by-side. Share " +
+  "the comp structure of the others (fixed / variable / equity / " +
+  "joining) and we'll position ours fairly. No pressure to decide " +
+  "before you've compared.'\n" +
+  "   • `agency` (external recruiter / consultant / placement agency " +
+  "in the loop): acknowledge the consultant relationship — 'noted " +
+  "you're through [agency / consultant]. Comp is the same as if you'd " +
+  "come direct; agency margin is on our side. BGV and offer " +
+  "mechanics are routed through them at your preference.'\n" +
+  "   • `intTransfer` (internal candidate / IJP): use internal-band " +
+  "frame — 'as an IJP / internal candidate, your current grade and " +
+  "tenure carry; we anchor on your current internal band plus the " +
+  "level-up delta, not external-market alone. Comp uplift is " +
+  "[X-Y]% typical for an in-band move.'\n" +
+  "   • `offerResc` (prior offer was rescinded / pulled): give extra " +
+  "reassurance and a fast written offer — 'understood — that's a " +
+  "rough experience. We'll move on the written offer in [X days] " +
+  "and you can keep your current resignation timing flexible until " +
+  "then. We don't rescind once issued.'\n" +
+  "   • `intlDegree` (Stanford / MIT / Oxford / Ivy / INSEAD / LBS / " +
+  "Wharton MBA): premium acknowledged but India-priced — 'great " +
+  "credential — that's an asset and we recognise it in level / scope. " +
+  "Comp band is the India-market band for the role; we don't run a " +
+  "separate international-degree band, but the level you slot into " +
+  "may be higher because of the credential.'\n" +
+  "   • `topMba` (IIM-A/B/C, ISB, XLRI, FMS, MDI fresher): use the " +
+  "MBA-fresher band — 'top-tier MBA fresher band for this role is " +
+  "₹X-Y fixed + ₹Z joining + sign-on. We hire from IIM / ISB regularly " +
+  "and the band is well-calibrated. No haggling on the floor.'\n" +
+  "   • `toxicMgr` (toxic manager / bad leadership cited as exit " +
+  "reason): validate without anchoring down — 'understood, that's " +
+  "a real reason to leave. We won't ask you to detail it. Comp is " +
+  "priced on the role, not on the urgency to exit; we hire from " +
+  "tough situations regularly.' Don't exploit the urgency.\n" +
+  "   • `visa` (H1B / OPT / STEM / green-card sponsorship needed): " +
+  "address sponsorship status and timeline — 'we sponsor [H1B / " +
+  "GC]; timeline is [X weeks for transfer / Y months for new GC " +
+  "petition]. Salary kicks in from join; visa-status doesn't gate " +
+  "comp. Happy to loop our immigration counsel into the conversation.'\n" +
+  /* — Wave-4 — SENSITIVE IDENTITY / DEI (Tier B) — */
+  " - WAVE-4 SENSITIVE IDENTITY / DEI — these signals demand respect; " +
+  "do NOT anchor down or pressure for detail:\n" +
+  "   • `casteRes` (SC/ST/OBC reservation category disclosure in PSU / " +
+  "govt context): SENSITIVE — respect category disclosure; do not " +
+  "anchor on it. 'Thanks for sharing. Category disclosure is for " +
+  "[PSU / govt reservation process]; comp band for this role is the " +
+  "same across all categories.' Keep the band conversation separate.\n" +
+  "   • `veteran` (ex-Army / Navy / Air Force / armed-forces lateral): " +
+  "use veteran-lateral frame — 'welcome from the [service]. Veteran " +
+  "lateral comp uses our civil-equivalent grade mapping; we don't " +
+  "discount for civil-experience-gap. Your service tenure counts.'\n" +
+  "   • `singleParent` (single mom / dad / sole custody): schedule " +
+  "flex first, no anchor-down — 'noted. We have core hours [X-Y], " +
+  "school-pickup flex is supported, hybrid-2 is the norm not the " +
+  "exception. The role is structured for it; comp is the role's band.'\n" +
+  "   • `jointFamFin` (sole earner / supporting parents / siblings' " +
+  "education): SENSITIVE — do not anchor down on the dependency " +
+  "disclosure. 'Understood — that's a meaningful obligation. Comp " +
+  "is priced on the role and band; we don't adjust offers based on " +
+  "what you need. Take-home structuring we can optimise together.'\n" +
+  "   • `paternity` (paternity-leave policy ask): policy disclosure " +
+  "voice — 'paternity leave is [X weeks fully paid], can be taken " +
+  "in 2 splits within 12 months of the child's birth, plus 4 weeks " +
+  "of phased return. Adoption-leave parity for new dads applies.'\n" +
+  "   • `menstrual` (menstrual / period-leave policy ask, Zomato-" +
+  "style): policy disclosure voice — 'period leave is [X days per " +
+  "month], no notification required, separate from sick leave. " +
+  "Applies across all roles and locations.'\n" +
+  /* — Wave-4 — EQUITY DEPTH (Tier C) — */
+  " - WAVE-4 EQUITY DEPTH — sophisticated equity asks deserve specific " +
+  "answers, not hand-waving:\n" +
+  "   • `esopLoan` (ESOP exercise loan / cashless exercise / company-" +
+  "funded exercise): give exercise-loan mechanics — 'yes, we offer " +
+  "an exercise loan at [X% / cost of capital], capped at [Y] of " +
+  "vested grant, repayable on liquidity event or exit. Cashless / " +
+  "net-settle is also supported at exercise.'\n" +
+  "   • `secondary` (pre-IPO secondary sale / tender for early " +
+  "employees): share the secondary cycle — 'we run a secondary " +
+  "tender [every X months / annually]; last cycle priced at ₹Y per " +
+  "share; early-employee allocation up to [Z%] of vested. Next " +
+  "window is [date].'\n" +
+  "   • `accelTrig` (single-trigger / double-trigger acceleration " +
+  "ask): double-trigger is the standard — '100% double-trigger " +
+  "acceleration on change-of-control + involuntary termination " +
+  "within 12 months. Single-trigger only for founder-tier grants. " +
+  "Full clause is in the grant letter.'\n" +
+  "   • `esopTax` (Section 17(2) / TDS on exercise / perquisite tax " +
+  "ask): perquisite tax disclosure — 'perquisite tax under Section " +
+  "17(2) is on (FMV - exercise price) × shares at exercise, withheld " +
+  "as TDS via payroll. Capital gains is on (sale - FMV) at sale. We " +
+  "have a tax-advisory partner who walks employees through it.'\n" +
+  "   • `tenderCycle` (annual buyback / tender-offer cycle ask): " +
+  "buyback-cadence voice — 'we run a buyback annually in [month], " +
+  "priced at the last 409A / round-price. Eligibility is vested " +
+  "ESOPs held [X months]. Cap is [Y%] of vested per cycle.'\n" +
+  /* — Wave-4 — CONTRACT / TIMING (Tier D) — */
+  " - WAVE-4 CONTRACT / TIMING — answer process / contract asks " +
+  "concretely, not in platitudes:\n" +
+  "   • `probDur` (probation length 3-mo vs 6-mo ask): probation " +
+  "length disclosed cleanly — 'probation is [3 / 6] months from " +
+  "join date; confirmation is automatic on completion absent a " +
+  "performance flag. Comp is full from day one, not probation-rate.'\n" +
+  "   • `olTurnaround` (offer-letter turnaround demand — '48 hours'): " +
+  "give a specific OL turnaround commitment — 'written offer in " +
+  "[X business days] post verbal-accept. We can flag it priority and " +
+  "compress to 48 hours if your resignation timing requires it.'\n" +
+  "   • `c2h` (contract-to-hire / temp-to-perm timeline ask): " +
+  "address contract-to-hire mechanics — 'this is [direct FTE / " +
+  "C2H with 6-month conversion gate]. Conversion is performance-" +
+  "based with [X%] historical conversion rate. Comp on conversion " +
+  "is [match / step-up of Y%].'\n" +
+  "   • `hcApproval` (headcount approved / budgeted check): confirm " +
+  "headcount status — 'headcount is approved and budgeted for FY[X]; " +
+  "the requisition ID is internal. We don't make offers on " +
+  "unapproved HC. The offer letter goes out within [N days] of " +
+  "verbal-accept.'\n" +
+  "   • `ipClause` (IP assignment / moonlighting / side-project " +
+  "ownership concern): clarify IP scope explicitly — 'IP assignment " +
+  "covers work-product on company time, company equipment, or in " +
+  "company domain. Open-source contributions on personal time " +
+  "with prior-disclosure are carved out. Side-projects in unrelated " +
+  "domains are yours. Full clause is in the offer.'\n" +
+  /* — Wave-4 — VERTICAL CONTEXT (Tier E) — */
+  " - WAVE-4 VERTICAL CONTEXT — vertical-specific candidates need " +
+  "band fluency in their world, not generic tech band:\n" +
+  "   • `pharma` (Sun Pharma / Dr Reddy's / Cipla / pharma R&D / API / " +
+  "clinical / regulatory background): use the pharma band voice — " +
+  "'pharma R&D / API / clinical band for this role is ₹X-Y. " +
+  "Pharma cycles and product launches are slower, comp progression " +
+  "tracks. We don't apply tech-startup hike multipliers to pharma " +
+  "lateral moves.'\n" +
+  "   • `mfgCore` (Tata Motors / Mahindra / L&T / Maruti / Bajaj Auto " +
+  "/ core mechanical / electrical / auto / steel): use the core " +
+  "engineering band voice — 'core engineering / OEM band is ₹X-Y. " +
+  "Manufacturing comp curves are steady, not spike-y. We pay at the " +
+  "top of the band for cross-industry pulls into core roles.'\n" +
+  "   • `qcom` (Zepto / Blinkit / Instamart / BB-Now / quick-commerce / " +
+  "dark-stores / 10-min delivery): handle quick-commerce equity " +
+  "carefully — 'quick-commerce is high-growth but burn-funded; we " +
+  "discount your current paper-equity meaningfully. Cash component " +
+  "of our offer is structured to be whole on its own; equity is " +
+  "upside, not bridge.'\n" +
+  "   • `d2c` (Boat / Mamaearth / Sugar / Wakefit / Licious / D2C / " +
+  "DTC consumer-tech brand): use D2C-brand voice — 'D2C consumer-" +
+  "brand background is a great fit. Comp band for the role is ₹X-Y; " +
+  "we recognise D2C ops / growth / brand experience as primary, not " +
+  "secondary. Brand-era equity at your current co — we'll price " +
+  "the cash; equity is upside.'\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
@@ -1722,6 +1892,40 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cp.dietaryReligiousNeed) cpParts.push("dietary");
     if (cp.oldEmployerDocsIssue) cpParts.push("oldEmpDocs");
     if (cp.equityRefreshCadenceAsk) cpParts.push("equityRefresh");
+    /* Wave-4 (2026-05-14k) — 32 new tokens across 5 thematic blocks. Each
+     * routes a top-level NEGOTIATION_SYSTEM_PROMPT rule. */
+    if (cp.signOnClawback) cpParts.push("signClaw");
+    if (cp.variableTrackRecord) cpParts.push("varTrack");
+    if (cp.wfhEquipmentStipend) cpParts.push("wfhStipend");
+    if (cp.salaryReviewCadenceAsk) cpParts.push("revCadence");
+    if (cp.multipleOffersJuggling) cpParts.push("multiOffers");
+    if (cp.recruitmentAgencyMediation) cpParts.push("agency");
+    if (cp.internalTransferContext) cpParts.push("intTransfer");
+    if (cp.offerRescindedHistory) cpParts.push("offerResc");
+    if (cp.internationalDegreePremium) cpParts.push("intlDegree");
+    if (cp.domesticTopMbaAnchor) cpParts.push("topMba");
+    if (cp.toxicManagerContext) cpParts.push("toxicMgr");
+    if (cp.visaSponsorshipNeed) cpParts.push("visa");
+    if (cp.casteReservationContext) cpParts.push("casteRes");
+    if (cp.veteranTransition) cpParts.push("veteran");
+    if (cp.singleParentConstraint) cpParts.push("singleParent");
+    if (cp.jointFamilyFinancialResp) cpParts.push("jointFamFin");
+    if (cp.paternityLeaveAsk) cpParts.push("paternity");
+    if (cp.menstrualLeavePolicy) cpParts.push("menstrual");
+    if (cp.esopExerciseLoanAsk) cpParts.push("esopLoan");
+    if (cp.preIpoSecondaryAsk) cpParts.push("secondary");
+    if (cp.accelerationTriggerAsk) cpParts.push("accelTrig");
+    if (cp.esopPerquisiteTaxAsk) cpParts.push("esopTax");
+    if (cp.tenderOfferCycleAsk) cpParts.push("tenderCycle");
+    if (cp.probationaryDurationAsk) cpParts.push("probDur");
+    if (cp.offerLetterTurnaroundDemand) cpParts.push("olTurnaround");
+    if (cp.contractToHireAsk) cpParts.push("c2h");
+    if (cp.headcountApprovalCheck) cpParts.push("hcApproval");
+    if (cp.ipAssignmentClauseAsk) cpParts.push("ipClause");
+    if (cp.healthcarePharmaContext) cpParts.push("pharma");
+    if (cp.manufacturingCoreContext) cpParts.push("mfgCore");
+    if (cp.quickCommerceContext) cpParts.push("qcom");
+    if (cp.d2cConsumerEquity) cpParts.push("d2c");
     parts.push(`profile=[${cpParts.join(",")}]`);
   }
   /* Indian fresher-flow band extensions — surface probation structure
