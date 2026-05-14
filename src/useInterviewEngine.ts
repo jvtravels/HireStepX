@@ -2083,6 +2083,42 @@ export function useInterviewEngine() {
                   primaryDomain: primaryDomainFromResume,
                   targetRole: sessionRole,
                 });
+                /* Bug-report 14 follow-up (2026-05-14) — observability for
+                 * the structural fix that treats unknown-domain as pivot.
+                 * When BOTH sides fail to classify, the kernel falls back
+                 * to applicableYoe=0 (entry tier) — which is the right
+                 * conservative default but tells us nothing about how
+                 * often the safety net fires. Emit a track event so we
+                 * can monitor frequency: if this fires a lot, the domain
+                 * graph needs more keywords; if rarely, the fix is doing
+                 * its job invisibly and we can leave the graph alone.
+                 * Distinct from semantic pivots (Backend → HR) where at
+                 * least one side classified. */
+                if (
+                  yoeResult.relation === "pivot" &&
+                  yoeResult.candidateDomainKey == null &&
+                  yoeResult.targetDomainKey == null
+                ) {
+                  track("salary_neg_domain_classification_failed", {
+                    primaryDomain: primaryDomainFromResume || "(none)",
+                    targetRole: sessionRole,
+                    totalYoe: totalYoeFromResume ?? -1,
+                  });
+                } else if (
+                  yoeResult.relation === "pivot" &&
+                  (yoeResult.candidateDomainKey == null ||
+                    yoeResult.targetDomainKey == null)
+                ) {
+                  /* One side classified, the other didn't. Distinct from
+                   * the full-fallback above and from a true semantic
+                   * pivot (both classified, different buckets). */
+                  track("salary_neg_domain_classification_partial", {
+                    primaryDomain: primaryDomainFromResume || "(none)",
+                    targetRole: sessionRole,
+                    candidateDomainKey: yoeResult.candidateDomainKey || "(null)",
+                    targetDomainKey: yoeResult.targetDomainKey || "(null)",
+                  });
+                }
                 const initRes = await negotiationKernelInit({
                   sessionId: crypto.randomUUID(),
                   role: sessionRole,
