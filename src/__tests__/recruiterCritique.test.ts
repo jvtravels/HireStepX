@@ -106,6 +106,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       lowCtcAlert: false,
       priorInternshipNonConversion: false,
       serviceCompanyBackground: false,
+      compBreakupUnknown: false,
       hasAny: false,
     },
     miscSignals: {

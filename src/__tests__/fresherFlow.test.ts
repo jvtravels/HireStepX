@@ -201,6 +201,7 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         lowCtcAlert: false,
         priorInternshipNonConversion: false,
         serviceCompanyBackground: false,
+        compBreakupUnknown: false,
         hasAny: true,
       },
     });
@@ -230,6 +231,7 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         lowCtcAlert: false,
         priorInternshipNonConversion: false,
         serviceCompanyBackground: false,
+        compBreakupUnknown: false,
         hasAny: true,
       },
     });
@@ -267,6 +269,7 @@ describe("fresher-flow — PPO conversion silences hike-% noise", () => {
       lowCtcAlert: false,
       priorInternshipNonConversion: false,
       serviceCompanyBackground: false,
+      compBreakupUnknown: false,
       hasAny: internshipConversion,
     };
   }

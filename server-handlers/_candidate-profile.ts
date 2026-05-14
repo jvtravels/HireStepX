@@ -146,6 +146,14 @@ export interface CandidateProfileResult {
    *  ops), so the band anchors on entry/mid for product even at 2-3
    *  YoE service. Monotone-up. */
   serviceCompanyBackground: boolean;
+  /** Mid-level extension (2026-05-14f). Candidate self-states they
+   *  don't know their current fixed/variable / base-variable / CTC
+   *  breakup — common at 3-6 YoE in IT-services where the candidate
+   *  knows the headline number but not the structure. Routes the
+   *  recruiter to a "comp-literacy coaching" voice on compensation-
+   *  summary instead of negotiating against unknown numbers.
+   *  Monotone-up. */
+  compBreakupUnknown: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -166,6 +174,7 @@ const EMPTY: CandidateProfileResult = {
   lowCtcAlert: false,
   priorInternshipNonConversion: false,
   serviceCompanyBackground: false,
+  compBreakupUnknown: false,
   hasAny: false,
 };
 
@@ -531,6 +540,22 @@ function detectServiceCompanyBackground(text: string): boolean {
   return SERVICE_COMPANY_PATTERNS.some((p) => p.test(text));
 }
 
+/* `compBreakupUnknown` — candidate self-states they don't know their
+ * fixed/variable/CTC breakup. Common at 3-6 YoE in IT-services where
+ * the offer letter shows a headline number and the structure is
+ * opaque to the candidate. The recruiter should coach (state the
+ * structure they would offer) rather than negotiate against unknowns. */
+const COMP_BREAKUP_UNKNOWN_PATTERNS: RegExp[] = [
+  /\b(?:i\s+(?:don'?t|do\s+not)\s+know|not\s+sure(?:\s+of)?|haven'?t\s+checked|haven'?t\s+seen|need\s+to\s+(?:check|confirm|verify))\s+(?:(?:my|the|exact|exactly)\s+){0,3}(?:base|fixed|variable|breakup|break[-\s]?up|split|structure|component|breakdown|fixed[-\s\/]+variable)\b/i,
+  /\b(?:my\s+)?(?:base|fixed|variable|breakup|break[-\s]?up|split|structure)\s+(?:is\s+)?(?:not\s+clear|unclear|something\s+i\s+(?:would\s+)?need\s+to\s+check)\b/i,
+  /\b(?:i\s+only\s+know|i\s+(?:just\s+)?know)\s+(?:the\s+)?(?:total\s+ctc|headline\s+(?:number|figure|ctc)|ctc\s+number)\b/i,
+  /\b(?:don'?t|do\s+not)\s+(?:remember|recall)\s+(?:the\s+)?(?:exact\s+)?(?:base|fixed|variable|breakup|split|structure|breakdown)\b/i,
+];
+
+function detectCompBreakupUnknown(text: string): boolean {
+  return COMP_BREAKUP_UNKNOWN_PATTERNS.some((p) => p.test(text));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -608,6 +633,8 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const lowCtcAlert = detectLowCtcAlert(text);
   const priorInternshipNonConversion = detectPriorInternshipNonConversion(text, internshipConversion);
   const serviceCompanyBackground = detectServiceCompanyBackground(text);
+  /* Mid-level flow (2026-05-14f) — comp-literacy signal. */
+  const compBreakupUnknown = detectCompBreakupUnknown(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -624,7 +651,8 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     earlySwitcher ||
     lowCtcAlert ||
     priorInternshipNonConversion ||
-    serviceCompanyBackground;
+    serviceCompanyBackground ||
+    compBreakupUnknown;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -641,6 +669,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     lowCtcAlert,
     priorInternshipNonConversion,
     serviceCompanyBackground,
+    compBreakupUnknown,
     hasAny,
   };
 }
@@ -907,6 +936,7 @@ export function mergeCandidateProfile(
     lowCtcAlert: p.lowCtcAlert || next.lowCtcAlert,
     priorInternshipNonConversion: p.priorInternshipNonConversion || next.priorInternshipNonConversion,
     serviceCompanyBackground: p.serviceCompanyBackground || next.serviceCompanyBackground,
+    compBreakupUnknown: p.compBreakupUnknown || next.compBreakupUnknown,
     hasAny: false,
   };
   merged.hasAny =
@@ -924,6 +954,7 @@ export function mergeCandidateProfile(
     merged.earlySwitcher ||
     merged.lowCtcAlert ||
     merged.priorInternshipNonConversion ||
-    merged.serviceCompanyBackground;
+    merged.serviceCompanyBackground ||
+    merged.compBreakupUnknown;
   return merged;
 }
