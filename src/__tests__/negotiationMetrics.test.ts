@@ -96,6 +96,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       serviceBondAccepted: false,
       probationCompMentioned: false,
     internshipConversion: false,
+    collegeTier: null,
       hasAny: false,
     },
     miscSignals: {

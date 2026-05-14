@@ -18,7 +18,37 @@
 import { generateNegotiationBand } from "../data/salary-lookup";
 import { getCompanyTier } from "../data/company-tiers";
 import { experienceLevelFromYoe } from "./_candidate-profile";
+import type { CollegeTier } from "./_candidate-profile";
 import type { NegotiationBand } from "./_negotiation-kernel";
+
+/** Fresher-flow extension (2026-05-14c). Per-college-tier multiplier
+ *  applied to the entry-level band. Calibrated to Indian campus hiring
+ *  norms — IIT-B SWE entry routinely lands ₹18-25L vs the ₹3.5-5L
+ *  IT-services standard; a 25% lift on the resolved band captures the
+ *  shape without compounding with the company-tier resolution.
+ *  Only fires at entry level (the signal is irrelevant for laterals). */
+const COLLEGE_TIER_BAND_MULTIPLIER: Record<CollegeTier, number> = {
+  "tier-1": 1.25,
+  "tier-2": 1.0,
+  "tier-3": 0.85,
+};
+
+/** Fresher-flow extension (2026-05-14c). When a candidate is converting
+ *  an internship to full-time (PPO), the recruiter typically anchors at
+ *  the high end of the entry band (~P60 vs the default P35 opener) —
+ *  the candidate already has demonstrated fit and 6 months of
+ *  performance data. Lift by 15% on the entry band. */
+const PPO_ANCHOR_LIFT = 1.15;
+
+/** Options bag for fresher-flow extensions surfaced from
+ *  state.candidateProfile. Threaded through the callers (init at
+ *  negotiate-turn.ts and mid-session rebase in _negotiation-kernel.ts)
+ *  so the band-resolver can apply college-tier and PPO adjustments
+ *  without depending on the full kernel state shape. */
+export interface ResolveBandOptions {
+  collegeTier?: CollegeTier | null;
+  internshipConversion?: boolean;
+}
 
 /** Indian fresher-flow extension (2026-05-14, expanded 2026-05-14b).
  *  Per-tier probation gate. Tiers known to run a probation-vs-confirmed
@@ -107,6 +137,7 @@ export function resolveServerBand(
   company: string,
   experienceLevel?: string,
   applicableYoe?: number | null,
+  opts?: ResolveBandOptions,
 ): NegotiationBand {
   if (!role) return DEFAULT_BAND;
   try {
@@ -169,6 +200,41 @@ export function resolveServerBand(
        * for the program duration, not a confirmation event. */
       delete band.probationOffer;
       delete band.probationMonths;
+    }
+
+    /* Fresher-flow extension 3 (2026-05-14c): college-tier multiplier.
+     * Applies ONLY at entry level — once the candidate has work
+     * experience, the resume signal dominates and college tier becomes
+     * noise. Multiplier is applied to the core band numbers (and to
+     * probationOffer when set) but NOT to internship stipends — those
+     * are already calibrated by per-tier ratios. */
+    if (opts?.collegeTier && expForBand === "entry" && !band.isInternshipStipend) {
+      const mult = COLLEGE_TIER_BAND_MULTIPLIER[opts.collegeTier];
+      band.initialOffer = Math.round(band.initialOffer * mult * 10) / 10;
+      band.maxStretch = Math.round(band.maxStretch * mult * 10) / 10;
+      band.walkAway = Math.round(band.walkAway * mult * 10) / 10;
+      if (band.probationOffer != null) {
+        band.probationOffer = Math.round(band.probationOffer * mult * 10) / 10;
+      }
+    }
+
+    /* Fresher-flow extension 4 (2026-05-14c): PPO anchoring. A
+     * converting intern has demonstrated fit + 6 months of performance
+     * data — the recruiter typically opens at the high end of the entry
+     * band, not the median. Lift the opening anchor (initialOffer) but
+     * not the ceiling (maxStretch) — the band's upper bound is set by
+     * what the company will pay for the role, regardless of conversion
+     * history. walkAway nudges up slightly to keep the floor coherent. */
+    if (opts?.internshipConversion && expForBand === "entry" && !band.isInternshipStipend) {
+      const lifted = Math.round(band.initialOffer * PPO_ANCHOR_LIFT * 10) / 10;
+      band.initialOffer = Math.min(lifted, band.maxStretch);
+      band.walkAway = Math.min(
+        Math.round(band.walkAway * 1.1 * 10) / 10,
+        Math.round(band.initialOffer * 0.95 * 10) / 10,
+      );
+      if (band.probationOffer != null) {
+        band.probationOffer = Math.round(band.initialOffer * 0.9 * 10) / 10;
+      }
     }
 
     return band;

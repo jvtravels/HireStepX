@@ -678,6 +678,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       serviceBondAccepted: false,
       probationCompMentioned: false,
     internshipConversion: false,
+    collegeTier: null,
       hasAny: false,
     },
     miscSignals: {
@@ -984,7 +985,7 @@ export function parseCandidateAnswer(
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
-      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
       retentionCounter: { ...EMPTY_RETENTION_COUNTER },
@@ -1338,7 +1339,14 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
      * has already opened at ₹40L and only now learns the candidate is
      * pre-grad, the ceiling pins to the prior offer rather than
      * collapsing the floor underneath an active negotiation. */
-    const rebased = resolveServerBand(state.role, state.company, "entry", 0);
+    /* Fresher-flow extension (2026-05-14c): thread collegeTier +
+     * internshipConversion from the (merged) candidate profile into the
+     * rebase. Both are monotone-up, so reading from `next` (the about-to-
+     * commit state) captures any disclosure made on this turn. */
+    const rebased = resolveServerBand(state.role, state.company, "entry", 0, {
+      collegeTier: next.candidateProfile?.collegeTier ?? null,
+      internshipConversion: next.candidateProfile?.internshipConversion ?? false,
+    });
     const floor = Math.max(state.highestOfferMade ?? 0, rebased.initialOffer);
     /* `band` is `readonly` on NegotiationState — by design it's an
      * init-time field. Phase 30 is the one explicit case where we
@@ -2147,6 +2155,7 @@ function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
     serviceBondAccepted: v?.serviceBondAccepted ?? false,
     probationCompMentioned: v?.probationCompMentioned ?? false,
     internshipConversion: v?.internshipConversion ?? false,
+    collegeTier: v?.collegeTier ?? null,
     hasAny: v?.hasAny ?? false,
   };
 }

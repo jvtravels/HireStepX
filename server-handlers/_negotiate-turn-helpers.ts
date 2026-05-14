@@ -168,7 +168,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "hike-context-summary":
     "Frame the hike% this offer represents. Use the HIKE CALCULATION block below for the computed delta (or the market-norms guidance if current CTC is unknown). Do NOT propose a new total CTC, do NOT push for acceptance — this is an info turn.",
   "hold-firm":
-    "State respectfully that this is final. Acknowledge their position. Invite them to think it over. Indian phrasings that fit: 'This is the maximum I can do without going to leadership', 'That itself is at the top of the band for this role', 'Do take your time and revert', 'Let me know how you'd like to proceed'. Tone is warm but settled — no apologies, no further movement implied.",
+    "State respectfully that this is final. Acknowledge their position. Invite them to think it over. Indian phrasings that fit: 'This is the maximum I can do without going to leadership', 'That itself is at the top of the band for this role', 'Do take your time and revert', 'Let me know how you'd like to proceed'. Tone is warm but settled — no apologies, no further movement implied. INDIAN FRESHER CAMPUS-HIRE MODE: when the brief carries `bandExt=[probOff=...]` (IT-services / Big-4 / BFSI entry) AND `profile=[...]` shows no senior-YOE signals, the cash is genuinely campus-standard — say so explicitly. Pivot the close to non-cash flexibility: 'the cash component is set by our campus standard, but we have room on joining-date, location preference, and project assignment — what matters most to you on those?' Real campus HR doesn't pretend the salary is up for negotiation when it isn't.",
     "close-acceptance":
     "Congratulate them ('welcome aboard' / 'wonderful, looking forward to having you on the team'). Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion). REQUIRED: ask the candidate to share their basic onboarding documents — Aadhaar card, PAN card, and recent payslips / relieving letter — so the offer letter and BGV can proceed. Indian framing for the doc ask: 'do share your Aadhaar, PAN, and recent payslips' / 'we'll need your relieving letter from your current employer for the BGV'. Keep the ask warm and matter-of-fact, not bureaucratic. INDIAN FRESHER-FLOW: when the brief carries `profile=[...bondAck...]` (service bond accepted), restate the bond clause explicitly so the candidate has it in writing before signing — 'the offer letter will include the service-bond clause, please review duration and clawback'. When `bandExt=[probOff=...]` is set, re-state the probation-vs-confirmed split alongside the agreed CTC. When `profile=[...ppo...]` is set, frame the close as a PPO conversion: 'great to have you back full-time'.",
   "close-walkaway":
@@ -1070,6 +1070,7 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cp.serviceBondAccepted) cpParts.push("bondAck");
     if (cp.probationCompMentioned) cpParts.push("probationQ");
     if (cp.internshipConversion) cpParts.push("ppo");
+    if (cp.collegeTier) cpParts.push(`college=${cp.collegeTier}`);
     parts.push(`profile=[${cpParts.join(",")}]`);
   }
   /* Indian fresher-flow band extensions — surface probation structure
@@ -1542,8 +1543,16 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       }
       return `Happy to walk through that — what's your current package so I can frame the hike concretely? Typical switch-job hikes land at 15-30%, more for hot skills.`;
     }
-    case "hold-firm":
+    case "hold-firm": {
+      /* Fresher-flow extension (2026-05-14c): for IT-services / Big-4 /
+       * BFSI freshers (signal: probationOffer set on band) the cash
+       * really IS campus-standard. Pivot to non-cash flexibility instead
+       * of pretending negotiation is open. */
+      if (state.band.probationOffer != null) {
+        return `₹${state.highestOfferMade} LPA is our campus-standard package for this role — the cash component itself is set across the cohort. What we can flex is joining date, location preference, and project assignment. Which of those matters most to you?`;
+      }
       return `₹${state.highestOfferMade} LPA is the maximum we can do for this role. Do take your time and revert.`;
+    }
     case "close-acceptance": {
       /* Bug-report 14 follow-up (2026-05-14) — on acceptance, recruiters
        * in India routinely collect basic onboarding documents (Aadhaar,

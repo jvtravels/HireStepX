@@ -60,6 +60,20 @@ export type CompensationHistoryIssue =
   /** Salary was withheld entirely / partial months unpaid. */
   | "unpaid";
 
+/** Fresher-flow extension (2026-05-14c). Indian campus hiring anchors
+ *  differently by college tier:
+ *    tier-1 — IIT / IISc / NIT / IIIT-H / BITS Pilani / top IIM.
+ *      Real recruiters quote ~25% above the standard fresher band.
+ *    tier-2 — VIT / SRM / Manipal / DTU / NSUT / state engineering
+ *      colleges with consistent placement records. Standard band.
+ *    tier-3 — private engineering colleges without consistent
+ *      placement tie-ups. Often offered below the standard band
+ *      (~80%) when there's no campus-deal floor.
+ *  Detection is conservative — only fires when the candidate names
+ *  the college explicitly or uses an unambiguous tier label.
+ *  See `data/college-tiers.ts` for the canonical list. */
+export type CollegeTier = "tier-1" | "tier-2" | "tier-3";
+
 export interface CandidateProfileResult {
   /** Stated career-gap duration in months. Range 1–60 (5 years max).
    *  Null when unstated. */
@@ -98,6 +112,11 @@ export interface CandidateProfileResult {
    *  the recruiter typically anchors near (not at) the fresher entry
    *  band and JB sizing differs from a cold full-time hire. */
   internshipConversion: boolean;
+  /** Fresher-flow extension (2026-05-14c). College tier disclosed by the
+   *  candidate. Null when unstated or unrecognized. Routes into the
+   *  band-resolver to shift the entry band ±20-25% — tier-1 anchors
+   *  above the standard fresher rate, tier-3 below. */
+  collegeTier: CollegeTier | null;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -113,6 +132,7 @@ const EMPTY: CandidateProfileResult = {
   serviceBondAccepted: false,
   probationCompMentioned: false,
   internshipConversion: false,
+  collegeTier: null,
   hasAny: false,
 };
 
@@ -353,6 +373,50 @@ function detectInternshipConversion(text: string): boolean {
   return INTERNSHIP_CONVERSION_PATTERNS.some((p) => p.test(text));
 }
 
+/* ─── Fresher-flow extension (2026-05-14c) — college-tier detection ──
+ *
+ * Indian campus hiring outcomes correlate strongly with college tier.
+ * Three patterns recognized:
+ *
+ *   tier-1 — explicit IIT/IISc/NIT/IIIT-H/BITS Pilani/IIM mentions,
+ *     plus generic "tier-1 college", "top-tier institute", "premier
+ *     institute" labels.
+ *   tier-2 — VIT/SRM/Manipal/DTU/NSUT/COEP/PEC/Thapar mentions, plus
+ *     "tier-2 college" label.
+ *   tier-3 — explicit "tier-3 college" / "non-tier-1" label; we do NOT
+ *     try to enumerate private colleges by name (too many, too noisy).
+ *
+ * Conservative: only fires on clear name match or unambiguous tier
+ * label. Returns null when the candidate just says "engineering
+ * college" or "did my B.Tech" without naming it. */
+const COLLEGE_TIER_1_PATTERNS: RegExp[] = [
+  /\biit\s*[-(\s]?(?:bombay|delhi|madras|kanpur|kharagpur|roorkee|guwahati|hyderabad|bhilai|gandhinagar|indore|jodhpur|mandi|patna|ropar|tirupati|varanasi|bhubaneswar|dhanbad|goa|palakkad|jammu|dharwad)?[)\s]/i,
+  /\b(?:iit|iisc|iiit[-\s]?(?:h|hyderabad|delhi|bangalore))\b/i,
+  /\bnit\s*(?:trichy|warangal|surathkal|calicut|rourkela|allahabad|kurukshetra|nagpur)?\b/i,
+  /\bbits\s+(?:pilani|hyderabad|goa|dubai)?\b/i,
+  /\biim\s+(?:ahmedabad|bangalore|calcutta|kozhikode|lucknow|indore)\b/i,
+  /\b(?:tier[-\s]?1|tier[-\s]?one)\s+(?:college|institute|school)\b/i,
+  /\b(?:top[-\s]?tier|premier)\s+(?:college|institute|engineering\s+college)\b/i,
+];
+const COLLEGE_TIER_2_PATTERNS: RegExp[] = [
+  /\b(?:vit|srm|manipal|dtu|nsut|coep|pec\s+chandigarh|thapar|amity|christ|symbiosis)\b/i,
+  /\b(?:tier[-\s]?2|tier[-\s]?two)\s+(?:college|institute|school)\b/i,
+];
+const COLLEGE_TIER_3_PATTERNS: RegExp[] = [
+  /\b(?:tier[-\s]?3|tier[-\s]?three)\s+(?:college|institute|school)\b/i,
+  /\b(?:non[-\s]?tier[-\s]?1|non[-\s]?premier)\s+(?:college|institute)\b/i,
+];
+
+export function detectCollegeTier(text: string): CollegeTier | null {
+  if (!text) return null;
+  /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
+   * is read as tier-1 because their best signal dominates anchoring. */
+  if (COLLEGE_TIER_1_PATTERNS.some((p) => p.test(text))) return "tier-1";
+  if (COLLEGE_TIER_2_PATTERNS.some((p) => p.test(text))) return "tier-2";
+  if (COLLEGE_TIER_3_PATTERNS.some((p) => p.test(text))) return "tier-3";
+  return null;
+}
+
 /* ─── Bug-report 11 (2026-05-14) — Fresh-grad disclosure ─────────────
  *
  * A candidate may disclose mid-session that they are actually a pre-
@@ -414,6 +478,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const serviceBondAccepted = detectServiceBond(text);
   const probationCompMentioned = detectProbationComp(text);
   const internshipConversion = detectInternshipConversion(text);
+  const collegeTier = detectCollegeTier(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -425,7 +490,8 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     compensationHistoryIssue != null ||
     serviceBondAccepted ||
     probationCompMentioned ||
-    internshipConversion;
+    internshipConversion ||
+    collegeTier != null;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -437,6 +503,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     serviceBondAccepted,
     probationCompMentioned,
     internshipConversion,
+    collegeTier,
     hasAny,
   };
 }
@@ -692,6 +759,9 @@ export function mergeCandidateProfile(
     /* internshipConversion is monotone-up — once the candidate disclosed
      * "I was your intern" or "convert my PPO", the recruiter remembers. */
     internshipConversion: p.internshipConversion || next.internshipConversion,
+    /* collegeTier — last-stated wins (recruiter would update mental
+     * model on disclosure), but never demoted from null. */
+    collegeTier: next.collegeTier ?? p.collegeTier,
     hasAny: false,
   };
   merged.hasAny =
@@ -704,6 +774,7 @@ export function mergeCandidateProfile(
     merged.compensationHistoryIssue != null ||
     merged.serviceBondAccepted ||
     merged.probationCompMentioned ||
-    merged.internshipConversion;
+    merged.internshipConversion ||
+    merged.collegeTier != null;
   return merged;
 }

@@ -363,6 +363,7 @@ describe("parseCandidateAnswer", () => {
         serviceBondAccepted: false,
         probationCompMentioned: false,
     internshipConversion: false,
+    collegeTier: null,
         hasAny: false,
       },
       miscSignals: {

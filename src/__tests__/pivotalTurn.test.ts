@@ -71,7 +71,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
     candidateProfile: {
       careerGapMonths: null, careerGapActivity: null, tenureSignal: null,
       levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false,
-      compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, hasAny: false,
+      compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, collegeTier: null, hasAny: false,
     },
     miscSignals: {
       candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null,

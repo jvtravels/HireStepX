@@ -108,6 +108,11 @@ interface InitRequest {
   totalYoe?: number | null;
   applicableYoe?: number | null;
   primaryDomain?: string | null;
+  /** Fresher-flow extension (2026-05-14c). Optional onboarding signal —
+   *  client may pass collegeTier from resume parsing or a self-select
+   *  field. Routes into resolveServerBand as a ±20-25% multiplier on
+   *  the entry band. Server-validated to the known enum before use. */
+  collegeTier?: string;
 }
 
 interface TurnRequest {
@@ -273,7 +278,19 @@ export default async function handler(
       const primaryDomain = typeof body.primaryDomain === "string" && body.primaryDomain
         ? body.primaryDomain
         : null;
-      const resolvedBand = resolveServerBand(role, company, body.experienceLevel, applicableYoe);
+      /* Fresher-flow extension (2026-05-14c): collegeTier may arrive in
+       * the onboarding body (resume-derived or self-selected). PPO flag
+       * is candidate-utterance-derived so it won't be set at init —
+       * mid-session rebase handles the late-disclosure case. Accept a
+       * conservative subset of CollegeTier strings; anything else
+       * passes through as null and falls back to the standard band. */
+      const onboardingCollegeTier =
+        body.collegeTier === "tier-1" || body.collegeTier === "tier-2" || body.collegeTier === "tier-3"
+          ? body.collegeTier
+          : null;
+      const resolvedBand = resolveServerBand(role, company, body.experienceLevel, applicableYoe, {
+        collegeTier: onboardingCollegeTier,
+      });
       const companyTier = getCompanyTier(company);
 
       /* Wipro UI/UX session (May 2026) revealed the failure mode that

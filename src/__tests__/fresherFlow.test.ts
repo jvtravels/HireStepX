@@ -196,6 +196,7 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         serviceBondAccepted: true,
         probationCompMentioned: false,
         internshipConversion: false,
+    collegeTier: null,
         hasAny: true,
       },
     });
@@ -220,6 +221,7 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
         serviceBondAccepted: false,
         probationCompMentioned: false,
         internshipConversion: true,
+    collegeTier: null,
         hasAny: true,
       },
     });
@@ -252,6 +254,7 @@ describe("fresher-flow — PPO conversion silences hike-% noise", () => {
       serviceBondAccepted: false,
       probationCompMentioned: false,
       internshipConversion,
+      collegeTier: null,
       hasAny: internshipConversion,
     };
   }
@@ -303,6 +306,119 @@ describe("fresher-flow — PPO conversion silences hike-% noise", () => {
     expect(text).toMatch(/7 LPA/);
     expect(text.toLowerCase()).toMatch(/probation/);
     expect(text.toLowerCase()).toMatch(/confirmation/);
+  });
+});
+
+/* ─── 7. College-tier signal + PPO anchor + cash-locked framing ─── */
+
+describe("fresher-flow — college tier detection", () => {
+  it("detects IIT-B as tier-1", () => {
+    expect(extractCandidateProfile("I'm from IIT Bombay, B.Tech CSE.").collegeTier).toBe("tier-1");
+  });
+  it("detects NIT Trichy as tier-1", () => {
+    expect(extractCandidateProfile("Did my undergrad at NIT Trichy.").collegeTier).toBe("tier-1");
+  });
+  it("detects BITS Pilani as tier-1", () => {
+    expect(extractCandidateProfile("BITS Pilani, 2024 batch.").collegeTier).toBe("tier-1");
+  });
+  it("detects VIT as tier-2", () => {
+    expect(extractCandidateProfile("I'm from VIT, computer science.").collegeTier).toBe("tier-2");
+  });
+  it("detects 'tier-3 college' label as tier-3", () => {
+    expect(extractCandidateProfile("I'm from a tier-3 college in my hometown.").collegeTier).toBe("tier-3");
+  });
+  it("returns null when no tier signal", () => {
+    expect(extractCandidateProfile("I did my B.Tech somewhere.").collegeTier).toBeNull();
+  });
+  it("merge keeps last-stated tier (recruiter updates mental model)", () => {
+    const a = extractCandidateProfile("I'm from a tier-3 college.");
+    const b = extractCandidateProfile("Actually I'm from IIT Bombay, sorry.");
+    const merged = mergeCandidateProfile(a, b);
+    expect(merged.collegeTier).toBe("tier-1");
+  });
+});
+
+describe("fresher-flow — college tier band multiplier", () => {
+  it("tier-1 lifts the entry band ~25% above standard", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    const t1 = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-1" });
+    const lift = t1.initialOffer / std.initialOffer;
+    expect(lift).toBeGreaterThan(1.2);
+    expect(lift).toBeLessThan(1.3);
+  });
+  it("tier-3 cuts the entry band ~15% below standard", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    const t3 = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-3" });
+    const cut = t3.initialOffer / std.initialOffer;
+    expect(cut).toBeGreaterThan(0.8);
+    expect(cut).toBeLessThan(0.9);
+  });
+  it("tier-2 is the standard band (no change)", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    const t2 = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-2" });
+    expect(t2.initialOffer).toBeCloseTo(std.initialOffer, 1);
+  });
+  it("college tier multiplier does NOT apply to senior level (signal irrelevant)", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "senior", 6);
+    const t1 = resolveServerBand("software-engineer", "TCS", "senior", 6, { collegeTier: "tier-1" });
+    expect(t1.initialOffer).toBeCloseTo(std.initialOffer, 1);
+  });
+  it("college tier multiplier also lifts probationOffer when probation gate is on", () => {
+    const t1 = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-1" });
+    expect(t1.probationOffer).toBeDefined();
+    const ratio = t1.probationOffer! / t1.initialOffer;
+    /* Still ~90% relative to the lifted initialOffer. */
+    expect(ratio).toBeGreaterThan(0.85);
+    expect(ratio).toBeLessThan(0.95);
+  });
+  it("college tier does NOT apply to intern stipend bands", () => {
+    const std = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0);
+    const t1 = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0, { collegeTier: "tier-1" });
+    expect(t1.initialOffer).toBeCloseTo(std.initialOffer, 1);
+  });
+});
+
+describe("fresher-flow — PPO anchor lift", () => {
+  it("PPO conversion lifts initialOffer ~15% but never above maxStretch", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    const ppo = resolveServerBand("software-engineer", "TCS", "entry", 0, { internshipConversion: true });
+    expect(ppo.initialOffer).toBeGreaterThan(std.initialOffer);
+    expect(ppo.initialOffer).toBeLessThanOrEqual(std.maxStretch);
+  });
+  it("PPO anchor does NOT apply to senior level", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "senior", 6);
+    const ppo = resolveServerBand("software-engineer", "TCS", "senior", 6, { internshipConversion: true });
+    expect(ppo.initialOffer).toBeCloseTo(std.initialOffer, 1);
+  });
+  it("tier-1 + PPO compose — band lifted by both signals", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    const both = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-1", internshipConversion: true });
+    expect(both.initialOffer).toBeGreaterThan(std.initialOffer * 1.3);
+  });
+});
+
+describe("fresher-flow — cash-locked framing for campus tiers", () => {
+  it("hold-firm fallback pivots to non-cash flex for IT-services entry (probation gate present)", () => {
+    const state = makeState({
+      company: "TCS",
+      highestOfferMade: 4.5,
+      band: { initialOffer: 4.5, maxStretch: 5.5, walkAway: 3.8, hasEquity: false, probationOffer: 4.05, probationMonths: 6 },
+    });
+    const move: AiMove = { lever: "hold-firm", newTotalLpa: null, rationale: "firm" };
+    const text = deterministicFallbackText(state, move);
+    expect(text.toLowerCase()).toMatch(/campus-standard|joining date|location|project/);
+    /* Must NOT bluff that further negotiation is possible. */
+    expect(text.toLowerCase()).not.toMatch(/take your time and revert/);
+  });
+  it("hold-firm fallback for non-probation tier keeps legacy phrasing", () => {
+    const state = makeState({
+      company: "Flipkart",
+      highestOfferMade: 22,
+      band: { initialOffer: 22, maxStretch: 28, walkAway: 18, hasEquity: false },
+    });
+    const move: AiMove = { lever: "hold-firm", newTotalLpa: null, rationale: "firm" };
+    const text = deterministicFallbackText(state, move);
+    expect(text.toLowerCase()).toMatch(/maximum we can do/);
   });
 });
 
