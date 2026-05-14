@@ -1911,25 +1911,16 @@ export function pickAiMove(state: NegotiationState): AiMove {
     if (split > 0.95) split = 0.95;
     const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
 
-    /* Phase 12b (2026-05-13) — band-component cap enforcement. When
-     * the band declares baseStretch + (optional) variableMax, the
-     * counter MUST respect the structural envelope. Total CTC =
-     * base + variable, so the max defensible total is
-     *   baseStretch + (variableMax ?? 0).
-     * If the headline split crossed that, clamp the total down AND
-     * route to lever-explore: the cash ceiling has been hit on
-     * structure, not on band — non-cash levers remain the path
-     * forward. Without this, the AI is implicitly promising base it
-     * can't deliver. */
-    if (state.band.baseStretch != null) {
-      const componentCap = state.band.baseStretch + (state.band.variableMax ?? 0);
-      if (newTotal > componentCap + 0.01) {
-        /* Clamp kicked in: the headline split would have promised
-         * base the structure can't deliver. Route to lever-explore;
-         * non-cash levers (JB / equity / notice-buyout) remain the
-         * only honest path forward. */
-        return pickLeverExploreMove(state);
-      }
+    /* Phase 31 (2026-05-14) — centralised component-constraint check.
+     * The kernel now validates both directions: above the component
+     * cap (baseStretch + variableMax — Phase 12b ceiling) AND below
+     * baseFloor (newly enforced; previously baseFloor was declared on
+     * the band type but never read). Either failure routes to
+     * lever-explore: cash levers are exhausted, non-cash levers (JB /
+     * equity / notice-buyout) remain. */
+    const constraint = validateComponentConstraints(state.band, newTotal);
+    if (!constraint.ok) {
+      return pickLeverExploreMove(state);
     }
     return {
       lever: "counter-base",
@@ -2105,6 +2096,57 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
  *  crore→LPA (×100). Without crore matching, the LLM could write
  *  "₹2 crore total" and bypass the validator entirely — a real risk
  *  since the upstream parser now accepts crore inputs from candidates. */
+/** Phase 31 (2026-05-14) — centralised component-constraint validator.
+ *
+ *  Before this helper, `pickAiMove` had an inline check (Phase 12b,
+ *  ~line 1924) that compared the proposed counter against
+ *  `baseStretch + variableMax` but never against `baseFloor`. The audit
+ *  flagged this: a band can declare baseFloor as the structural minimum
+ *  base the company will quote, yet the kernel completely ignored it,
+ *  so a counter below baseFloor could leave the picker.
+ *
+ *  Semantics:
+ *    A total-CTC value T is structurally valid iff there EXISTS a
+ *    (base, variable) decomposition with
+ *      baseFloor   ≤ base    ≤ baseStretch
+ *      0           ≤ variable ≤ variableMax
+ *      base + variable = T
+ *
+ *    Therefore T must satisfy:
+ *      baseFloor                       ≤ T   (else base would have to be < baseFloor)
+ *      T ≤ baseStretch + variableMax        (else base would have to exceed baseStretch)
+ *
+ *  Returns { ok, reason }. Reason discriminates the two failure modes
+ *  so the move-picker can react differently — below-floor offers
+ *  shouldn't happen and indicate a band-resolution bug; above-cap
+ *  offers route to non-cash levers.
+ *
+ *  Fields are all optional. When a field is absent, the corresponding
+ *  half of the constraint is unenforced (treated as ±∞). Legacy bands
+ *  without any component metadata always validate as ok. */
+export type ComponentConstraintReason = "below-base-floor" | "above-component-cap";
+
+export interface ComponentConstraintResult {
+  ok: boolean;
+  reason?: ComponentConstraintReason;
+}
+
+export function validateComponentConstraints(
+  band: NegotiationBand,
+  proposedTotalLpa: number,
+): ComponentConstraintResult {
+  if (band.baseFloor != null && proposedTotalLpa + 0.01 < band.baseFloor) {
+    return { ok: false, reason: "below-base-floor" };
+  }
+  if (band.baseStretch != null) {
+    const componentCap = band.baseStretch + (band.variableMax ?? 0);
+    if (proposedTotalLpa > componentCap + 0.01) {
+      return { ok: false, reason: "above-component-cap" };
+    }
+  }
+  return { ok: true };
+}
+
 export function findOutOfBandNumber(text: string, band: NegotiationBand): number | null {
   /* Currency prefix accepts ₹, Rs., Rs, INR so an LLM switching
      notation can't sneak past validation. Now ALSO accepts a bare
