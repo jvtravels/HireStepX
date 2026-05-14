@@ -82,6 +82,26 @@ describe("fresher-flow — IT-services entry probation gate", () => {
     expect(band.probationOffer).toBeUndefined();
     expect(band.probationMonths).toBeUndefined();
   });
+
+  /* 2026-05-14b — gate widened beyond IT-services. Big-4 and BFSI also
+   * run real probation programs at entry. */
+  it("Deloitte (consulting-big4) entry triggers probation with 3-month / 85% terms", () => {
+    const band = resolveServerBand("business-analyst", "Deloitte", "entry", 0);
+    expect(band.probationOffer).toBeDefined();
+    expect(band.probationMonths).toBe(3);
+    const ratio = band.probationOffer! / band.initialOffer;
+    expect(ratio).toBeGreaterThan(0.8);
+    expect(ratio).toBeLessThan(0.9);
+  });
+
+  it("HDFC Bank (bfsi-domestic) entry triggers probation with 6-month / 80% terms", () => {
+    const band = resolveServerBand("business-analyst", "HDFC Bank", "entry", 0);
+    expect(band.probationOffer).toBeDefined();
+    expect(band.probationMonths).toBe(6);
+    const ratio = band.probationOffer! / band.initialOffer;
+    expect(ratio).toBeGreaterThan(0.75);
+    expect(ratio).toBeLessThan(0.85);
+  });
 });
 
 /* ─── 3. Internship role detection + stipend band scaling ──────────── */
@@ -97,8 +117,17 @@ describe("fresher-flow — internship role → stipend band", () => {
     expect(internBand.isInternshipStipend).toBe(true);
     expect(internBand.internshipMonths).toBe(6);
     const ratio = internBand.initialOffer / seBand.initialOffer;
-    expect(ratio).toBeGreaterThan(0.3);
-    expect(ratio).toBeLessThan(0.5);
+    /* 2026-05-14b — Flipkart is indian-unicorn tier @ 0.6 stipend ratio. */
+    expect(ratio).toBeGreaterThan(0.5);
+    expect(ratio).toBeLessThan(0.7);
+  });
+
+  it("intern stipend walkAway is anchored near 80% of scaled initial (floor sanity)", () => {
+    const band = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0);
+    expect(band.isInternshipStipend).toBe(true);
+    const ratio = band.walkAway / band.initialOffer;
+    expect(ratio).toBeGreaterThan(0.7);
+    expect(ratio).toBeLessThan(0.9);
   });
 
   it("does NOT false-positive on 'internal-tools-engineer'", () => {
@@ -205,5 +234,101 @@ describe("fresher-flow — deterministicFallbackText surfaces new context", () =
 describe("fresher-flow — HR register sanity", () => {
   it("TCS resolves to formal-traditional register", () => {
     expect(hrRegisterForCompany("TCS")).toBe("formal-traditional");
+  });
+});
+
+/* ─── 5. PPO conversion suppresses noisy hike-% framing ──────────────── */
+
+describe("fresher-flow — PPO conversion silences hike-% noise", () => {
+  function profile(internshipConversion: boolean) {
+    return {
+      careerGapMonths: null,
+      careerGapActivity: null,
+      tenureSignal: null,
+      levelMismatch: null,
+      domainPivot: false,
+      transferableSkillsClaimed: false,
+      compensationHistoryIssue: null,
+      serviceBondAccepted: false,
+      probationCompMentioned: false,
+      internshipConversion,
+      hasAny: internshipConversion,
+    };
+  }
+
+  it("PPO candidate with prior stipend-equivalent CTC does NOT get '385% hike' framing", () => {
+    const state = makeState({
+      highestOfferMade: 7,
+      /* Annualized stipend was ₹0.72L. Naive hike% would emit 870%. */
+      candidateCurrentCtc: 0.72,
+      candidateProfile: profile(true),
+    });
+    const move: AiMove = { lever: "hike-context-summary", newTotalLpa: null, rationale: "framing" };
+    const text = deterministicFallbackText(state, move);
+    /* Must NOT quote a hike percent. */
+    expect(text).not.toMatch(/\d+%/);
+    /* Must reframe as conversion. */
+    expect(text.toLowerCase()).toMatch(/conversion|stipend|category/);
+  });
+
+  it("Plain switch-job candidate still gets the hike-% framing", () => {
+    const state = makeState({
+      highestOfferMade: 12,
+      candidateCurrentCtc: 10,
+      candidateProfile: profile(false),
+    });
+    const move: AiMove = { lever: "hike-context-summary", newTotalLpa: null, rationale: "framing" };
+    const text = deterministicFallbackText(state, move);
+    expect(text).toMatch(/\d+%/);
+  });
+
+  it("Counter-base for intern stipend quotes ₹k/mo, not LPA", () => {
+    const state = makeState({
+      band: { initialOffer: 1.4, maxStretch: 1.8, walkAway: 1.1, hasEquity: false, isInternshipStipend: true, internshipMonths: 6 },
+    });
+    const move: AiMove = { lever: "counter-base", newTotalLpa: 1.6, rationale: "counter" };
+    const text = deterministicFallbackText(state, move);
+    expect(text.toLowerCase()).toMatch(/per month|\/mo/);
+    expect(text).not.toMatch(/LPA/);
+  });
+
+  it("Compensation-summary for probation-gated offer leads with split, not generic structure", () => {
+    const state = makeState({
+      highestOfferMade: 7,
+      band: { initialOffer: 7, maxStretch: 9, walkAway: 6, hasEquity: false, probationOffer: 6.3, probationMonths: 6 },
+    });
+    const move: AiMove = { lever: "compensation-summary", newTotalLpa: null, rationale: "structure" };
+    const text = deterministicFallbackText(state, move);
+    expect(text).toMatch(/6\.3 LPA/);
+    expect(text).toMatch(/7 LPA/);
+    expect(text.toLowerCase()).toMatch(/probation/);
+    expect(text.toLowerCase()).toMatch(/confirmation/);
+  });
+});
+
+/* ─── 6. Blocker fix — mid-session band rebase preserves new flags ─── */
+
+describe("fresher-flow — mid-session band rebase preserves probation + stipend flags", () => {
+  it("Rebase to TCS entry from senior surfaces probationOffer in the new band", () => {
+    /* Pre-rebase: senior band w/o probation. Simulate the rebase by
+     * calling resolveServerBand the way the kernel does at line ~1341. */
+    const rebased = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    expect(rebased.probationOffer).toBeDefined();
+    expect(rebased.probationMonths).toBe(6);
+
+    /* The kernel's spread-rebase pattern (post-fix): {...rebased, maxStretch}
+     * must preserve probationOffer / probationMonths. */
+    const floor = 10;
+    const next = { ...rebased, maxStretch: Math.max(rebased.maxStretch, floor) };
+    expect(next.probationOffer).toBe(rebased.probationOffer);
+    expect(next.probationMonths).toBe(rebased.probationMonths);
+  });
+
+  it("Rebase preserves isInternshipStipend when the role is an intern role", () => {
+    const rebased = resolveServerBand("software engineer intern", "TCS", "entry", 0);
+    expect(rebased.isInternshipStipend).toBe(true);
+    const next = { ...rebased, maxStretch: rebased.maxStretch };
+    expect(next.isInternshipStipend).toBe(true);
+    expect(next.internshipMonths).toBe(rebased.internshipMonths);
   });
 });

@@ -1445,6 +1445,13 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
        *   variable = T − base                     (clamped at variableMax)
        * Falls back to the legacy headline-only text when no component
        * metadata exists (older bands). */
+      /* Fresher-flow extension (2026-05-14): for intern stipends, quote
+       * the counter in ₹k/month, not LPA — the candidate is comparing to
+       * other stipends. */
+      if (n != null && state.band.isInternshipStipend) {
+        const monthlyK = Math.round((n * 100) / 12);
+        return `We can stretch the stipend to ₹${monthlyK}k per month for the ${state.band.internshipMonths ?? 6}-month program. Does that work?`;
+      }
       const baseStretch = state.band.baseStretch;
       const variableMax = state.band.variableMax;
       if (n != null && baseStretch != null && variableMax != null) {
@@ -1453,7 +1460,13 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
         const baseRounded = Math.round(base * 10) / 10;
         const jb = state.lastJoiningBonusOffered;
         const jbSuffix = jb != null ? ` (plus the one-time ₹${jb}L joining bonus we already discussed)` : "";
-        return `We can stretch to ₹${n} LPA total — that's ₹${baseRounded}L base + ₹${variable}L variable${jbSuffix}. Does that work for you?`;
+        /* Fresher-flow extension: when probation structure applies, also
+         * restate the probation-vs-confirmed split on the counter. */
+        const probSuffix =
+          n != null && state.band.probationOffer != null
+            ? ` During the ${state.band.probationMonths ?? 6}-month probation that lands at ~₹${Math.round(n * 0.9 * 10) / 10} LPA.`
+            : "";
+        return `We can stretch to ₹${n} LPA total — that's ₹${baseRounded}L base + ₹${variable}L variable${jbSuffix}.${probSuffix} Does that work for you?`;
       }
       return `We can stretch to ₹${n} LPA total. Does that work for you?`;
     }
@@ -1480,6 +1493,20 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       const baseStretch = state.band.baseStretch;
       const variableMax = state.band.variableMax;
       const jb = state.lastJoiningBonusOffered;
+      /* Fresher-flow extension (2026-05-14): intern stipend has no
+       * base/variable split — it's a flat monthly figure. Stop quoting
+       * "75-85% base" structure that doesn't apply. */
+      if (state.band.isInternshipStipend && offer > 0) {
+        const monthlyK = Math.round((offer * 100) / 12);
+        return `Stipend: ₹${monthlyK}k per month for the ${state.band.internshipMonths ?? 6}-month program, flat — no base/variable split. PPO conversion lands you on the fresher CTC band after the program.`;
+      }
+      /* Fresher-flow extension: when probation structure applies, lead
+       * with the probation-vs-confirmed split alongside the usual
+       * base/variable breakdown. */
+      if (state.band.probationOffer != null && offer > 0) {
+        const probMo = state.band.probationMonths ?? 6;
+        return `Current offer: ₹${state.band.probationOffer} LPA during the ${probMo}-month probation, stepping up to ₹${offer} LPA on confirmation. Structure is base ~75-85% of CTC, the rest as performance variable.`;
+      }
       if (offer > 0 && baseStretch != null && variableMax != null) {
         const base = Math.round(Math.min(baseStretch, offer) * 10) / 10;
         const variable = Math.round(Math.max(0, Math.min(variableMax, offer - base)) * 10) / 10;
@@ -1498,6 +1525,17 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
     case "hike-context-summary": {
       const cur = state.candidateCurrentCtc;
       const off = state.highestOfferMade;
+      /* Fresher-flow extension (2026-05-14): suppress hike-% framing when
+       * this is a PPO conversion or an active internship. Intern stipend
+       * → FTE is a category change, not a switch — quoting "385% hike"
+       * is structurally misleading. Reframe as comp-progression vs
+       * stipend-equivalent. */
+      const isPpoOrIntern =
+        state.candidateProfile?.internshipConversion === true ||
+        state.band.isInternshipStipend === true;
+      if (isPpoOrIntern && off > 0) {
+        return `Since this is a conversion from an internship stipend to a full-time CTC, normal hike-% framing doesn't apply — the ₹${off} LPA reflects the standard fresher band for the role, not a multiplier on the stipend. Happy to walk through how it compares to peer offers if that helps.`;
+      }
       if (cur != null && cur > 0 && off > 0) {
         const pct = Math.round(((off - cur) / cur) * 100);
         return `That works out to roughly a ${pct}% hike over your current ₹${cur} LPA — in the 15-30% range that's typical for switch moves in the Indian market.`;

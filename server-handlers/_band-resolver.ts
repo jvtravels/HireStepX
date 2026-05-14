@@ -20,20 +20,46 @@ import { getCompanyTier } from "../data/company-tiers";
 import { experienceLevelFromYoe } from "./_candidate-profile";
 import type { NegotiationBand } from "./_negotiation-kernel";
 
-/** Indian fresher-flow extension (2026-05-14).
- *  IT-services majors (TCS / Infosys / Wipro / HCL / Tech Mahindra / LTI
- *  / Mindtree / Capgemini India / Cognizant India / Mphasis) pay a
- *  reduced rate during the 6-month probation period before stepping up
- *  to confirmed-CTC. ~90% is the industry-standard split. */
-const PROBATION_RATIO = 0.9;
-const PROBATION_MONTHS = 6;
+/** Indian fresher-flow extension (2026-05-14, expanded 2026-05-14b).
+ *  Per-tier probation gate. Tiers known to run a probation-vs-confirmed
+ *  comp split at entry level:
+ *    - it-services: 6-month probation @ 90% — TCS/Infosys/Wipro standard
+ *    - consulting-big4: 3-month probation @ 85% — Deloitte/EY/KPMG/PwC
+ *    - bfsi-domestic: 6-month trainee program @ 80% — HDFC/ICICI/Axis
+ *    - bfsi-global: 6-month probation @ 90% — JPM/GS India arms
+ *  Other tiers (faang, big-tech, indian-unicorn, startups, etc) either
+ *  pay flat from day-one or use a separate joining-grant structure and
+ *  are excluded from this gate. */
+const PROBATION_TABLE: Record<string, { ratio: number; months: number }> = {
+  "it-services": { ratio: 0.9, months: 6 },
+  "consulting-big4": { ratio: 0.85, months: 3 },
+  "bfsi-domestic": { ratio: 0.8, months: 6 },
+  "bfsi-global": { ratio: 0.9, months: 6 },
+};
 
-/** Stipend band for active interns. Indian internship stipends typically
- *  run ~35-45% of the same company's entry-level confirmed CTC, with
- *  6-month default duration. We scale the resolved entry band by 0.4 and
- *  flag isInternshipStipend so downstream framing switches to
- *  stipend/PPO mode rather than CTC mode. */
-const INTERN_STIPEND_RATIO = 0.4;
+/** Stipend band for active interns. Indian internship stipends vary
+ *  sharply by tier — IT-services ₹15-25k/mo (~0.5× entry CTC),
+ *  Indian-unicorn / big-tech / FAANG India ₹25-80k/mo (~0.55-0.7×).
+ *  Per-tier ratio reflects market reality rather than a flat 0.4 that
+ *  undershoots TCS by 20-40%. Fallback 0.45 when tier is unknown. */
+const STIPEND_RATIO_BY_TIER: Record<string, number> = {
+  "it-services": 0.5,
+  "consulting-big4": 0.5,
+  "bfsi-domestic": 0.45,
+  "bfsi-global": 0.55,
+  "consulting-mbb": 0.65,
+  "indian-unicorn": 0.6,
+  "big-tech": 0.65,
+  "faang": 0.7,
+  "saas-product": 0.55,
+  "startup-growth": 0.55,
+  "startup-early": 0.5,
+  "gcc": 0.6,
+  "edtech": 0.5,
+  "fmcg-mnc": 0.55,
+  "government-psu": 0.45,
+};
+const INTERN_STIPEND_RATIO_DEFAULT = 0.45;
 const INTERN_DEFAULT_MONTHS = 6;
 
 /** True when the original role string mentions intern/internship.
@@ -110,24 +136,33 @@ export function resolveServerBand(
       hasEquity: Boolean(b.hasEquity),
     };
 
-    /* Fresher-flow extension 1: IT-services entry → probation structure.
-     * Only set probationOffer for IT-services tier at entry level — the
-     * other tiers (product-tech, banks, etc) don't have the same
-     * confirmed-CTC vs probation split as a default policy. */
+    /* Fresher-flow extension 1: per-tier probation structure at entry.
+     * Tiers that empirically run a confirmation-event comp split (see
+     * PROBATION_TABLE above). Other tiers pay flat day-one. */
     const tier = company ? getCompanyTier(company) : null;
-    if (tier === "it-services" && expForBand === "entry") {
-      band.probationOffer = Math.round(band.initialOffer * PROBATION_RATIO * 10) / 10;
-      band.probationMonths = PROBATION_MONTHS;
+    const probationCfg = tier && expForBand === "entry" ? PROBATION_TABLE[tier] : undefined;
+    if (probationCfg) {
+      band.probationOffer = Math.round(band.initialOffer * probationCfg.ratio * 10) / 10;
+      band.probationMonths = probationCfg.months;
     }
 
     /* Fresher-flow extension 2: internship role → scale band to stipend
      * range and flag isInternshipStipend. Detection must happen on the
      * ORIGINAL role string before alias resolution (salary-lookup
-     * collapses "intern" → "software-engineer"). */
+     * collapses "intern" → "software-engineer"). Per-tier ratio reflects
+     * Indian market reality — flat 0.4 was undershooting IT-services by
+     * 20-40% and unicorns by even more. */
     if (isInternshipRole(role)) {
-      band.initialOffer = Math.round(band.initialOffer * INTERN_STIPEND_RATIO * 10) / 10;
-      band.maxStretch = Math.round(band.maxStretch * INTERN_STIPEND_RATIO * 10) / 10;
-      band.walkAway = Math.round(band.walkAway * INTERN_STIPEND_RATIO * 10) / 10;
+      const stipendRatio = (tier && STIPEND_RATIO_BY_TIER[tier]) || INTERN_STIPEND_RATIO_DEFAULT;
+      band.initialOffer = Math.round(band.initialOffer * stipendRatio * 10) / 10;
+      band.maxStretch = Math.round(band.maxStretch * stipendRatio * 10) / 10;
+      /* Floor sanity (audit concern 5): post-scale walkAway shouldn't
+       * compress to a value that trips findOutOfBandNumber on legitimate
+       * stipend counters. Use 80% of scaled initialOffer as the floor —
+       * tighter than the salary-lookup minOffer (which was sized for the
+       * full-CTC band) but loose enough to admit realistic candidate
+       * asks like "₹20k vs ₹15k stipend". */
+      band.walkAway = Math.round(band.initialOffer * 0.8 * 10) / 10;
       band.isInternshipStipend = true;
       band.internshipMonths = INTERN_DEFAULT_MONTHS;
       /* Probation doesn't apply to interns — they have a fixed stipend

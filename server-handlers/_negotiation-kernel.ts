@@ -1344,11 +1344,18 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
      * init-time field. Phase 30 is the one explicit case where we
      * rebase, so we narrow the cast to this assignment rather than
      * dropping the readonly contract everywhere. */
+    /* Fresher-flow extension (2026-05-14): preserve ALL fields from the
+     * rebased band — including probationOffer / probationMonths /
+     * isInternshipStipend / internshipMonths / baseStretch / variableMax
+     * / minOffer. Previously this assignment listed only the 4 core
+     * fields, silently dropping probation + stipend flags when a
+     * mid-session rebase happened (e.g. senior PD → discloses pre-grad
+     * at TCS). The candidate would see one framing pre-rebase and a
+     * different one post-rebase. Spread first, then patch maxStretch
+     * for the floor-protection invariant. */
     (next as { band: NegotiationBand }).band = {
-      initialOffer: rebased.initialOffer,
+      ...rebased,
       maxStretch: Math.max(rebased.maxStretch, floor),
-      walkAway: rebased.walkAway,
-      hasEquity: rebased.hasEquity,
     };
   }
   if (parsed.miscSignals.hasAny) {
