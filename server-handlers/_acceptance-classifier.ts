@@ -411,3 +411,80 @@ export function classifyAcceptance(
 
   return { accepted: false, confidence: "none", reasons: ["no-match"] };
 }
+
+/* ─── Bug 2 (2026-05-14) — STRICT explicit-acceptance gate ────────
+ *
+ * The user-test session surfaced a premature offer-letter close: the
+ * candidate said "I'd be comfortable moving forward if you can do X"
+ * and the bot transitioned into offer-letter / acceptance drafting.
+ * That's a hedged conditional, not acceptance.
+ *
+ * `classifyAcceptance` above accepts "medium" confidence on idioms +
+ * offer-reference, which is the right semantics for KERNEL phase
+ * transitions (where the structural phase gate adds another layer).
+ * But the offer-letter / closing UI path needs a STRICTER detector:
+ * unambiguous performative-verb acceptance ONLY. This function is the
+ * dedicated whitelist.
+ *
+ * Hedged signals that MUST NOT accept:
+ *   - "sounds good", "thank you for clarifying", "I appreciate"
+ *   - "I'd be comfortable moving forward IF / WHEN / SO LONG AS"
+ *   - "let me think about it", "I'll get back to you"
+ *   - any conditional with "if" / "as long as" / "provided that"
+ */
+const STRICT_ACCEPTANCE_PATTERNS: RegExp[] = [
+  /\bi\s+accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b/i,
+  /\bi\s+am\s+accepting\b/i,
+  /\bi'?m\s+accepting\b/i,
+  /\bi\s+(?:do\s+)?accept(?:\s+(?:this|the|your)\s+offer|\s+it)?\b/i,
+  /\byes,?\s+i'?m\s+accepting\b/i,
+  /\byes,?\s+i\s+accept\b/i,
+  /\bplease\s+send\s+(?:me\s+)?the\s+offer\s+letter\b/i,
+  /\bsend\s+(?:me\s+)?the\s+offer\s+letter\b/i,
+  /\bi'?m\s+in\b/i,
+  /\blet'?s\s+move\s+forward\s+with\s+this\s+number\b/i,
+  /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+offer\b/i,
+  /\bi'?ll\s+take\s+(?:it|the\s+offer)\b/i,
+  /\bi'?m\s+signing\s+(?:today|now|tonight)\b/i,
+];
+
+/** Hedged-language vetoes — when ANY of these fire, accepted=false
+ *  regardless of any pattern above. */
+const HEDGE_VETO_PATTERNS: RegExp[] = [
+  /\bif\s+you\s+can\b/i,
+  /\bif\s+we\s+can\b/i,
+  /\bif\s+the\b/i,
+  /\bonly\s+if\b/i,
+  /\bas\s+long\s+as\b/i,
+  /\bprovided\s+that\b/i,
+  /\bsubject\s+to\b/i,
+  /\bcomfortable\s+moving\s+forward\s+if\b/i,
+  /\bcomfortable\s+moving\s+forward\s+so\s+long\s+as\b/i,
+  /\blet\s+me\s+think\b/i,
+  /\bi'?ll\s+get\s+back\b/i,
+  /\bi\s+(?:will|need to|have to)\s+(?:think|consider|sleep on)\b/i,
+  /\bi\s+appreciate\b/i,
+  /\bthank\s+you\s+for\s+clarifying\b/i,
+];
+
+export interface ExplicitAcceptanceResult {
+  accepted: boolean;
+  confidence: number;
+}
+
+/** Strict acceptance gate used for offer-letter / closing UI. Only
+ *  returns accepted=true on unambiguous performative-verb acceptance
+ *  WITHOUT any hedge. Returns confidence ∈ [0, 1]. */
+export function detectExplicitAcceptance(text: string | null | undefined): ExplicitAcceptanceResult {
+  if (!text || typeof text !== "string") return { accepted: false, confidence: 0 };
+  const t = text.trim();
+  if (!t) return { accepted: false, confidence: 0 };
+  /* Veto on hedge. */
+  for (const p of HEDGE_VETO_PATTERNS) {
+    if (p.test(t)) return { accepted: false, confidence: 0 };
+  }
+  for (const p of STRICT_ACCEPTANCE_PATTERNS) {
+    if (p.test(t)) return { accepted: true, confidence: 0.95 };
+  }
+  return { accepted: false, confidence: 0 };
+}

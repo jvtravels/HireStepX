@@ -59,6 +59,9 @@ import {
   detectMultiTurnInjection,
   detectTokenLeak,
   redactLeakedTokens,
+  detectDocumentRequest,
+  stripDocumentRequest,
+  stripHonorifics,
 } from "./_adversarial-detector";
 import {
   clampInput,
@@ -588,6 +591,28 @@ export default async function handler(
         void captureServerEvent("kernel_token_leak", distinctId, {
           tokens: leak.tokens.slice(0, 5).join(",") || null,
           token_count: leak.tokens.length,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+      /* Bug 3 (2026-05-14) — PII/document-request post-processor. The
+       * practice-session bot must never request Aadhaar / PAN / payslips
+       * / BGV documents. Strip violating sentences and log. */
+      const docReq = detectDocumentRequest(text);
+      if (docReq.violated) {
+        text = stripDocumentRequest(text);
+        void captureServerEvent("kernel_pii_document_request", distinctId, {
+          phrases: docReq.phrases.slice(0, 5).join(",") || null,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+      /* Bug 6 (2026-05-14) — strip honorifics ("sir" / "ma'am" / "Mr.")
+       * from bot output. Indian HR addresses peers by first name. */
+      const honor = stripHonorifics(text);
+      if (honor.applied) {
+        text = honor.text;
+        void captureServerEvent("kernel_honorific_stripped", distinctId, {
           turn_index: state.turnIndex,
           phase: state.phase,
         }, req);

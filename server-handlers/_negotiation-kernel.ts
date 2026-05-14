@@ -36,7 +36,8 @@
  */
 
 import type { NegotiationFacts } from "../src/interviewEvaluation";
-import { classifyAcceptance } from "./_acceptance-classifier";
+import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
+import { extractRecruiterFacts } from "./_recruiter-facts";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -568,6 +569,12 @@ export interface NegotiationState {
    * (Phase 30, 2026-05-14) — clamped so the new ceiling is never below
    * highestOfferMade, preserving the close-floor invariant. Sticky once set. */
   freshGradDisclosed: boolean;
+
+  /* Bug 7 (2026-05-14) — anti-repetition of recruiter benefits. Tracks
+   * the set of RecruiterFactToken values that the bot has already
+   * surfaced in this session. Fed back into compactTurnBrief so the
+   * LLM knows not to restate them verbatim. */
+  recruiterFactsAlreadySaid: string[];
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -806,6 +813,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateApplicableYoe: input.candidateApplicableYoe ?? null,
     candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
     freshGradDisclosed: false,
+    recruiterFactsAlreadySaid: [],
   };
 }
 
@@ -1608,6 +1616,20 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     next.postVerbalRenegotiationCount = state.postVerbalRenegotiationCount + 1;
   }
 
+  /* Bug 2 (2026-05-14) — escalation path: explicit acceptance forms
+   * like "please send the offer letter" / "let's move forward with this
+   * number" don't trip the legacy `classifyAcceptance` performative
+   * bank (they're commitment language, not "I accept" verb). Promote
+   * them to terminal `accepted` here so the closing path fires. */
+  if (!parsed.signalsAcceptance) {
+    const strictBoost = detectExplicitAcceptance(answer);
+    if (strictBoost.accepted && state.highestOfferMade > 0 && !isTerminalPhase(next.phase)) {
+      next.phase = "accepted";
+      next.acceptedAtTurn = state.turnIndex;
+      return next;
+    }
+  }
+
   /* Terminal transitions. */
   if (parsed.signalsAcceptance) {
     /* Conditional accept ("yes if X") set verbalAcceptanceTurn instead
@@ -1618,6 +1640,38 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       next.verbalAcceptanceTurn = state.turnIndex;
       next.phase = derivePhase(next);
       return next;
+    }
+    /* Bug 2 (2026-05-14) — STAGE GATING. Terminal `accepted` requires
+     * an unambiguous explicit acceptance OR three consecutive non-
+     * counter, non-info-asking turns from the candidate (proxy for
+     * "they're done negotiating"). The `classifyAcceptance` medium-
+     * confidence path is too permissive for closing into offer-letter:
+     * "sounds good" / "I'd be comfortable moving forward if X" was
+     * tripping a premature close. */
+    const strict = detectExplicitAcceptance(answer);
+    const hasOffer = state.highestOfferMade > 0;
+    if (!strict.accepted) {
+      /* Soft-acceptance fallback: 3+ consecutive non-counter, non-info
+       * candidate turns means the candidate has stopped negotiating —
+       * acceptable as an implicit-accept proxy. */
+      const log = next.conversationLog;
+      let trailingNonCounter = 0;
+      for (let i = log.length - 1; i >= 0; i--) {
+        const e = log[i];
+        if (!e || e.speaker !== "candidate") continue;
+        const t = e.text || "";
+        const isCounter = /(?:\d+\s*(?:lpa|lakh|l\b|cr|crore|k\b)|expecting|target|want\s+\d|asking)/i.test(t);
+        const isInfoAsk = /\?|how\s+much|what\s+is|tell\s+me|can\s+you/i.test(t);
+        if (isCounter || isInfoAsk) break;
+        trailingNonCounter += 1;
+        if (trailingNonCounter >= 3) break;
+      }
+      if (!hasOffer || trailingNonCounter < 3) {
+        /* Not strict-accepted and no implicit-accept proxy: hold the
+         * phase instead of closing. Derive phase normally. */
+        next.phase = derivePhase(next);
+        return next;
+      }
     }
     next.phase = "accepted";
     next.acceptedAtTurn = state.turnIndex;
@@ -1862,6 +1916,17 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
+  }
+  /* Bug 7 (2026-05-14) — extract recruiter-fact tokens mentioned in this
+   * AI turn and union into recruiterFactsAlreadySaid. Surfaced back via
+   * compactTurnBrief so the LLM doesn't restate the same benefits. */
+  if (aiText) {
+    const newFacts = extractRecruiterFacts(aiText);
+    if (newFacts.length > 0) {
+      const merged = new Set<string>(state.recruiterFactsAlreadySaid || []);
+      for (const f of newFacts) merged.add(f);
+      next.recruiterFactsAlreadySaid = Array.from(merged);
+    }
   }
   /* Phase 28 — record the kernel-computed JB amount when a JB lever
      fires so close-acceptance can include it in the recap. Sticky:
@@ -2224,6 +2289,12 @@ export function validateState(state: unknown): asserts state is NegotiationState
       if (cs[k] !== undefined && typeof cs[k] !== "boolean") throw new Error(`state.candidateStance.${k}`);
     }
   }
+  /* Bug 7 — recruiter-facts-already-said. Optional + string array. */
+  if (s.recruiterFactsAlreadySaid !== undefined) {
+    if (!Array.isArray(s.recruiterFactsAlreadySaid) || !s.recruiterFactsAlreadySaid.every((v) => typeof v === "string")) {
+      throw new Error("state.recruiterFactsAlreadySaid");
+    }
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -2292,6 +2363,7 @@ export function deserializeState(json: string): NegotiationState {
     candidateApplicableYoe: (s.candidateApplicableYoe as number | null | undefined) ?? null,
     candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
     freshGradDisclosed: (s.freshGradDisclosed as boolean | undefined) ?? false,
+    recruiterFactsAlreadySaid: (s.recruiterFactsAlreadySaid as string[] | undefined) ?? [],
     /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
      * Optional for back-compat; defaults to null (treat in-flight
      * sessions as if no fresh counter has been parsed). */

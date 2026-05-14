@@ -20,6 +20,10 @@ import { getCompanyTier } from "../data/company-tiers";
 import { experienceLevelFromYoe } from "./_candidate-profile";
 import type { CollegeTier } from "./_candidate-profile";
 import type { NegotiationBand } from "./_negotiation-kernel";
+import {
+  classifyCompanyTier as classifyBandTier,
+  getBandForRole as getBandTierRoleBand,
+} from "./_company-band-tiers";
 
 /** Fresher-flow extension (2026-05-14c). Per-college-tier multiplier
  *  applied to the entry-level band. Calibrated to Indian campus hiring
@@ -185,6 +189,25 @@ export function resolveServerBand(
       walkAway: kernelWalkAway,
       hasEquity: Boolean(b.hasEquity),
     };
+
+    /* Bug 1 (2026-05-14) — company-band-tier override. The legacy salary
+     * lookup pipeline produces SWE-family bands that are mis-calibrated
+     * for tier mismatches (Infosys React Dev was getting a ₹22L opener
+     * against a ₹8-14L IT-services market). Our 10-tier band table is
+     * the canonical Indian-market source; when the tier resolves AND
+     * the lookup band sits materially above the tier ceiling, rebase
+     * to the tier-table band. This is a one-way ratchet — we only
+     * compress overshoots, never widen. Internship/PPO/college overrides
+     * below still apply on top of the rebased band. */
+    if (company && !isInternshipRole(role)) {
+      const bandTier = classifyBandTier(company);
+      const tierBand = getBandTierRoleBand(bandTier, role, applicableYoe ?? null);
+      if (band.initialOffer > tierBand.ceil * 1.2 || band.maxStretch > tierBand.ceil * 1.4) {
+        band.initialOffer = tierBand.target;
+        band.maxStretch = tierBand.ceil;
+        band.walkAway = Math.max(1, Math.round(tierBand.floor * 0.95 * 10) / 10);
+      }
+    }
 
     /* Fresher-flow extension 1: per-tier probation structure at entry.
      * Tiers that empirically run a confirmation-event comp split (see

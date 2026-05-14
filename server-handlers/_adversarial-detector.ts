@@ -528,3 +528,101 @@ export function redactLeakedTokens(botReply: string): string {
   }
   return out;
 }
+
+/* ─── Bug 3 (2026-05-14) — PII / document-request post-processor ────
+ *
+ * Real-session failure mode: bot replied "To kick off onboarding,
+ * please share your Aadhaar card, PAN card, and your recent payslips
+ * or relieving letter..." inside a PRACTICE session. We are not
+ * actually onboarding the candidate — collecting PII is a hard
+ * boundary violation.
+ *
+ * `detectDocumentRequest` scans bot output for document-collection
+ * phrases. The caller (negotiate-turn.ts post-LLM) strips matched
+ * sentences and logs the violation. Pure detector; the redaction
+ * helper below does the strip. */
+
+const DOCUMENT_REQUEST_PHRASES = [
+  "aadhaar", "aadhar",
+  "pan card", "pan number", "pan details",
+  "payslip", "pay slip", "salary slip",
+  "bank statement", "bank statements",
+  "passport", "voter id", "voter card",
+  "marksheet", "mark sheet", "degree certificate",
+  "offer letter from previous", "offer letter from your previous",
+  "previous offer letter",
+  "bgv documents", "bgv docs",
+  "background verification", "background-verification",
+  "relieving letter",
+  "experience letter",
+  "form 16",
+];
+
+export interface DocumentRequestResult {
+  violated: boolean;
+  phrases: string[];
+}
+
+/** True when `botReply` requests one or more PII / onboarding
+ *  documents that should not be collected during a practice session. */
+export function detectDocumentRequest(botReply: string | null | undefined): DocumentRequestResult {
+  if (!botReply || typeof botReply !== "string") return { violated: false, phrases: [] };
+  const lower = botReply.toLowerCase();
+  const hits: string[] = [];
+  for (const p of DOCUMENT_REQUEST_PHRASES) {
+    if (lower.includes(p)) hits.push(p);
+  }
+  /* Veto: pure educational reference like "in a real flow HR would
+   * conduct BGV" is fine — only treat as a violation when the bot is
+   * actually ASKING for documents (imperatives + please / share / send /
+   * provide / submit / kindly). */
+  if (hits.length === 0) return { violated: false, phrases: [] };
+  const asks = /\b(please\s+(?:share|send|submit|provide|attach|upload)|kindly\s+(?:share|send|submit|provide|attach|upload)|share\s+(?:your|the)|send\s+(?:over\s+)?your|submit\s+your|provide\s+(?:your|the)|upload\s+your|attach\s+your|need\s+(?:your|the)|require\s+your|forward\s+(?:your|the)|i'?ll\s+need\s+your)\b/i;
+  if (!asks.test(botReply)) return { violated: false, phrases: hits };
+  return { violated: true, phrases: hits };
+}
+
+/** Strip sentences from `botReply` that contain document-request
+ *  phrases. Returns the cleaned reply (or the original when no
+ *  violation). Sentence boundary: `.`, `!`, `?`, or newline. */
+export function stripDocumentRequest(botReply: string): string {
+  const detection = detectDocumentRequest(botReply);
+  if (!detection.violated) return botReply;
+  const phrases = detection.phrases;
+  const sentences = botReply.split(/(?<=[.!?])\s+|\n+/);
+  const kept = sentences.filter((s) => {
+    const low = s.toLowerCase();
+    return !phrases.some((p) => low.includes(p));
+  });
+  const cleaned = kept.join(" ").trim();
+  return cleaned || "Let's stay focused on the offer terms — what compensation question can I answer?";
+}
+
+/* ─── Bug 6 (2026-05-14) — Honorific stripper ───────────────────────
+ *
+ * Real-session failure: bot addressed candidate as "sir" repeatedly.
+ * Indian HR addresses peers by first name. Strip honorifics from bot
+ * output post-LLM. */
+export interface StripHonorificsResult {
+  text: string;
+  applied: boolean;
+}
+
+export function stripHonorifics(botReply: string): StripHonorificsResult {
+  if (!botReply || typeof botReply !== "string") return { text: botReply ?? "", applied: false };
+  let out = botReply;
+  let applied = false;
+  const before = out;
+  /* "Mr. Smith" / "Ms. Smith" / "Mrs. Smith" — keep the name. */
+  out = out.replace(/\b(Mr|Mrs|Ms|Miss)\.?\s+([A-Z][a-z]+)/g, "$2");
+  /* Leading "Sir," / "Sir." / "Sir " ... */
+  out = out.replace(/(^|[\n.!?]\s*)(sir|ma'am|madam|gentleman)([,.!?]?)\s*/gi, "$1");
+  /* Trailing ", sir" / ", ma'am" / etc. — including period or comma. */
+  out = out.replace(/[,]?\s+(sir|ma'?am|madam|gentleman)\b([.,!?]?)/gi, "$2");
+  /* Standalone " sir " mid-sentence. */
+  out = out.replace(/\s+(sir|ma'?am|madam|gentleman)\s+/gi, " ");
+  /* Cleanup: double spaces, leading punctuation. */
+  out = out.replace(/\s{2,}/g, " ").replace(/^[\s,]+/, "").trim();
+  if (out !== before) applied = true;
+  return { text: out, applied };
+}

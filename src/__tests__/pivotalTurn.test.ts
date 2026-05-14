@@ -177,6 +177,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       dayRate: null, monthlyRetainer: null, utilizationPct: null,
       dayRateAsAnnualConfusion: false, hasAny: false,
     },
+    recruiterFactsAlreadySaid: [],
     ...over,
   };
 }
