@@ -52,13 +52,21 @@ import {
 import { enforceRoleLabel } from "./_role-label";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
-import { detectAdversarialInput, JAILBREAK_DEFLECTION_TEXT } from "./_adversarial-detector";
+import {
+  detectAdversarialInput,
+  JAILBREAK_DEFLECTION_TEXT,
+  detectPromptInjection,
+  detectMultiTurnInjection,
+  detectTokenLeak,
+  redactLeakedTokens,
+} from "./_adversarial-detector";
 import {
   clampInput,
   checkSessionTurnLimit,
   checkUserDailyLimit,
   logTurnUsage,
 } from "./_session-limits";
+import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -441,10 +449,11 @@ export default async function handler(
           { status: 429, headers },
         );
       }
-      /* Daily per-user cap. The backing-store for turnsToday is TBD
-         (KV / Redis counter keyed on userId + ymd). Until that lands
-         we feed 0 so the check is a no-op but the call site is wired. */
-      const turnsToday = 0; // TODO: read from per-user daily counter store
+      /* Daily per-user cap. Backing store is in-memory with date-rollover
+         (see _daily-cap-store). REDIS_URL hooks up a no-op stub today; a
+         future revision can swap in a real Redis client without touching
+         this call site. */
+      const turnsToday = await getTurnsToday(auth.userId ?? null);
       const dailyCheck = checkUserDailyLimit(turnsToday);
       if (!dailyCheck.allowed) {
         return new Response(
@@ -486,7 +495,42 @@ export default async function handler(
        * return a canned deflection — this both prevents prompt
        * disclosure and saves token cost. Telemetry is emitted for every
        * non-"none" classification so we can see attack rate in prod. */
-      const adversarial = detectAdversarialInput(safeAnswer, { turnIndex: state.turnIndex });
+      /* Prompt-injection check (2026-05-14) — runs alongside the
+       * adversarial classifier. When the input is flagged we sanitize
+       * (replace the matched span with [redacted]) and continue;
+       * critically we do NOT short-circuit, because the candidate may
+       * still be making a legitimate negotiation point around it. The
+       * turn-usage log captures `injectionDetected:true` for telemetry. */
+      const injection = detectPromptInjection(safeAnswer);
+      let injectionDetected = injection.detected;
+      let sanitizedAnswer = safeAnswer;
+      if (injection.detected) {
+        sanitizedAnswer = "[redacted]";
+        void captureServerEvent("kernel_prompt_injection", distinctId, {
+          reasons: injection.reasons.join(",") || null,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+      /* Multi-turn injection: inspect the last 5 conversation entries
+       * plus the current candidate utterance. We map conversationLog
+       * speakers ('ai' / 'candidate') onto the detector's role tags. */
+      const recentForMt = state.conversationLog.slice(-5).map((e) => ({
+        role: (e.speaker === "candidate" ? "user" : "bot") as "user" | "bot",
+        text: e.text,
+      }));
+      recentForMt.push({ role: "user", text: safeAnswer });
+      const mt = detectMultiTurnInjection(recentForMt);
+      if (mt.injected) {
+        injectionDetected = true;
+        void captureServerEvent("kernel_multi_turn_injection", distinctId, {
+          reason: mt.reason ?? null,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
+      }
+
+      const adversarial = detectAdversarialInput(sanitizedAnswer, { turnIndex: state.turnIndex });
       if (adversarial.kind !== "none") {
         void captureServerEvent("kernel_adversarial_input", distinctId, {
           kind: adversarial.kind,
@@ -499,7 +543,7 @@ export default async function handler(
         }, req);
       }
 
-      state = applyCandidateAnswer(state, safeAnswer);
+      state = applyCandidateAnswer(state, sanitizedAnswer);
       const move = pickAiMove(state);
 
       let text: string;
@@ -516,11 +560,25 @@ export default async function handler(
         failureKinds = [];
         envelopeMissingAttempts = 0;
       } else {
-        const gen = await generateAiText(state, move, safeAnswer, llm, auth.userId);
+        const gen = await generateAiText(state, move, sanitizedAnswer, llm, auth.userId);
         text = gen.text;
         source = gen.source;
         failureKinds = gen.failureKinds;
         envelopeMissingAttempts = gen.envelopeMissingAttempts;
+      }
+      /* LLM-output token-leak guard (2026-05-14). Scrub any internal
+       * kernel tokens / system-prompt fragments before applying to
+       * state and returning. Caught leaks fire telemetry so we can
+       * trace which prompt regressed. */
+      const leak = detectTokenLeak(text);
+      if (leak.leaked) {
+        text = redactLeakedTokens(text);
+        void captureServerEvent("kernel_token_leak", distinctId, {
+          tokens: leak.tokens.slice(0, 5).join(",") || null,
+          token_count: leak.tokens.length,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+        }, req);
       }
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
@@ -617,8 +675,15 @@ export default async function handler(
         sessionId: state.sessionId,
         userId: auth.userId,
         inputChars: safeAnswer.length,
+        inputText: sanitizedAnswer,
+        outputText: text,
         latencyMs: Date.now() - turnStartedAt,
+        injectionDetected,
       });
+      /* Bump the per-user daily counter AFTER a successful turn. We
+       * deliberately do this in fire-and-forget mode — a counter miss
+       * means at most one extra free turn, never a hard block. */
+      void incrementTurnsToday(auth.userId ?? null);
       return new Response(JSON.stringify(responseBody), { status: 200, headers });
     }
 

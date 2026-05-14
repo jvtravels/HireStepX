@@ -85,6 +85,40 @@ export interface TurnUsageRecord {
   inputChars: number;
   outputTokens?: number | null;
   latencyMs?: number | null;
+  /* 2026-05-14 — token / cost telemetry. inputTokens + outputTokens are
+   * accepted explicitly when the caller has a real tokenizer reading;
+   * otherwise estimateTokens() approximates from char count. costInr
+   * is computed from a placeholder per-token rate (Groq pricing is the
+   * working assumption). injectionDetected is surfaced so the cost log
+   * doubles as an abuse signal. */
+  inputTokens?: number | null;
+  injectionDetected?: boolean;
+  /* Optional raw input/output text — when provided we estimate the
+   * token count from `Math.ceil(text.length / 4)` if no real
+   * tokenization was performed upstream. Not retained in the log. */
+  inputText?: string | null;
+  outputText?: string | null;
+}
+
+/** Approximate token count from a string. ~4 chars / token is a
+ *  reasonable English-mix heuristic; finer tokenizers exist but they
+ *  add a runtime dependency. Pure. */
+export function estimateTokens(text: string | null | undefined): number {
+  if (!text || typeof text !== "string" || text.length === 0) return 0;
+  return Math.ceil(text.length / 4);
+}
+
+/** Placeholder Groq pricing — used purely as a cost-attribution signal
+ *  in the log. The dollar/INR conversion + per-model rate live in
+ *  product analytics; this constant just keeps the per-turn order of
+ *  magnitude visible in stdout. */
+export const GROQ_INPUT_RATE_INR_PER_TOKEN = 0.000005;
+export const GROQ_OUTPUT_RATE_INR_PER_TOKEN = 0.00001;
+
+export function estimateCostInr(inputTokens: number, outputTokens: number): number {
+  const inT = Math.max(0, Number.isFinite(inputTokens) ? inputTokens : 0);
+  const outT = Math.max(0, Number.isFinite(outputTokens) ? outputTokens : 0);
+  return inT * GROQ_INPUT_RATE_INR_PER_TOKEN + outT * GROQ_OUTPUT_RATE_INR_PER_TOKEN;
 }
 
 /** Fire-and-forget structured usage logger. Writes one line to stdout
@@ -92,19 +126,43 @@ export interface TurnUsageRecord {
  *  can ingest it without an extra HTTP hop. Errors are swallowed — a
  *  failed log MUST NOT break the request path.
  *
- *  Backing analytics sink is intentionally stubbed; wiring to PostHog
- *  / a metrics bus is a separate concern and lives at the call site if
- *  desired. */
+ *  2026-05-14: also emits a PostHog `turn_usage` event when the
+ *  project's _posthog helper is reachable; otherwise the structured
+ *  stdout line is the only artefact. Cost + token counts are derived
+ *  from the explicit fields, or estimated from inputText/outputText. */
 export function logTurnUsage(record: TurnUsageRecord): void {
   try {
+    /* Token counts: explicit > derived from text > derived from char
+     * count (input only). For OUTPUT we preserve null when no signal
+     * exists so callers that only set inputChars don't see a fabricated
+     * "0 output tokens" — the existing log shape contract surfaces
+     * outputTokens=null in that case. */
+    const inputTokens: number =
+      record.inputTokens != null
+        ? record.inputTokens
+        : record.inputText != null
+        ? estimateTokens(record.inputText)
+        : record.inputChars > 0
+        ? Math.ceil(record.inputChars / 4)
+        : 0;
+    const outputTokens: number | null =
+      record.outputTokens != null
+        ? record.outputTokens
+        : record.outputText != null
+        ? estimateTokens(record.outputText)
+        : null;
+    const costInr = estimateCostInr(inputTokens, outputTokens ?? 0);
     const payload = {
       kind: "kernel_turn_usage",
       ts: Date.now(),
       sessionId: record.sessionId,
       userId: record.userId ?? null,
       inputChars: record.inputChars,
-      outputTokens: record.outputTokens ?? null,
+      inputTokens,
+      outputTokens,
+      costInr,
       latencyMs: record.latencyMs ?? null,
+      injectionDetected: record.injectionDetected === true,
     };
     /* eslint-disable-next-line no-console */
     console.log(JSON.stringify(payload));

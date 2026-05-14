@@ -813,6 +813,44 @@ export function redactCandidateProfileForLogs(
   return out;
 }
 
+/**
+ * Generic deep-redaction helper for any payload destined for an
+ * analytics / log sink. Walks the object (arrays + plain objects)
+ * and forces any key that matches a SPECIAL_PERSONAL_DATA_FLAGS name
+ * to `false`. Non-matching keys pass through unchanged.
+ *
+ * Use this as a defence-in-depth wrap at every analytics write site
+ * where the payload MAY contain a candidate-profile snapshot
+ * (PostHog events, structured stdout logs, retention writes).
+ *
+ * Pure — does not mutate the input. Cycles in the input cause it to
+ * fall back to returning the value unchanged for that subtree
+ * (analytics payloads should not be cyclic).
+ */
+export function redactForAnalytics(payload: unknown): unknown {
+  const sensitive = new Set<string>(
+    SPECIAL_PERSONAL_DATA_FLAGS.map((k) => String(k)),
+  );
+  const seen = new WeakSet<object>();
+  function walk(v: unknown): unknown {
+    if (v === null || typeof v !== "object") return v;
+    if (seen.has(v as object)) return v;
+    seen.add(v as object);
+    if (Array.isArray(v)) return v.map((x) => walk(x));
+    const src = v as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(src)) {
+      if (sensitive.has(k)) {
+        out[k] = false;
+      } else {
+        out[k] = walk(src[k]);
+      }
+    }
+    return out;
+  }
+  return walk(payload);
+}
+
 const EMPTY: CandidateProfileResult = {
   careerGapMonths: null,
   careerGapActivity: null,

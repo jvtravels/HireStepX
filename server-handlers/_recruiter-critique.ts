@@ -74,6 +74,35 @@ export interface RecruiterCritiqueInput {
   moves: ReadonlyArray<KernelTurnSummary>;
 }
 
+/** A verbatim candidate quote tied to a specific critique issue. The
+ *  text is sliced from `state.conversationLog` and MUST be a substring
+ *  of an actual candidate utterance — no synthesis. */
+export interface RecruiterCritiqueQuote {
+  turn: number;
+  text: string;
+  issue: string;
+}
+
+/** A coach's "A+ rewrite" of the weakest candidate turn — synthesised
+ *  in the recruiter-side critique because the recruiter-AI's mistakes
+ *  often stem from a candidate prompt that left room. We expose the
+ *  weakest turn (by heuristic: longest candidate utterance immediately
+ *  preceding the highest-severity critique item) so coaches can show
+ *  the learner how a top-tier negotiator would have shaped the same
+ *  moment. */
+export interface APlusRewrite {
+  weakestTurn: number;
+  originalText: string;
+  rewrittenText: string;
+  why: string;
+}
+
+export interface RecruiterCritiqueResult {
+  items: RecruiterCritiqueItem[];
+  quotes: RecruiterCritiqueQuote[];
+  aPlusRewrite: APlusRewrite | null;
+}
+
 /* ── Helpers ─────────────────────────────────────────────────────── */
 
 function bandMidpoint(state: NegotiationState): number {
@@ -309,4 +338,167 @@ export function critiqueRecruiterStrategy(
   }
 
   return out;
+}
+
+/* ─── A+ rewrite + quote extraction (2026-05-14) ───────────────────
+ *
+ * Companion entrypoint to critiqueRecruiterStrategy that surfaces:
+ *   - `quotes`: for each issue with a turnIndex, slice the candidate's
+ *     verbatim utterance at that turn from the conversation log.
+ *   - `aPlusRewrite`: identify the weakest candidate turn and produce
+ *     a coach's rewrite showing how a top-tier negotiator would have
+ *     said it.
+ *
+ * Pure — no LLM call. The rewrite is template-driven from the kernel
+ * signal so the output is deterministic and testable. */
+
+const SEVERITY_RANK: Record<RecruiterCritiqueSeverity, number> = {
+  info: 1,
+  concern: 2,
+  blocker: 3,
+};
+
+/** Build a top-tier rewrite for a candidate turn given an associated
+ *  critique-issue code. The phrasing is intentionally India-context
+ *  natural (Naveen "you'd want to anchor first" voice). Templates are
+ *  short by design — they're a coaching nudge, not a script. */
+function rewriteForIssue(
+  code: RecruiterCritiqueCode,
+  originalText: string,
+): { rewrittenText: string; why: string } {
+  const trimmed = (originalText || "").trim();
+  switch (code) {
+    case "ceiling-without-anchor":
+      return {
+        rewrittenText:
+          "Before I share a number, can you tell me what range you have budgeted for this role? I want to make sure we're calibrated.",
+        why: "Top negotiators flip the anchor — they make the recruiter say a number first.",
+      };
+    case "no-probe":
+      return {
+        rewrittenText:
+          "Got it. To frame my ask precisely, what does the typical band look like at this level — base, variable, and ESOPs?",
+        why: "Probing the band before countering anchors you on data instead of guesswork.",
+      };
+    case "concession-without-ask":
+      return {
+        rewrittenText:
+          "Thanks for sharing — given the scope and the alternatives I'm considering, I'd be looking at ₹X in total cash, plus a clear ESOP-vest. Where can we land?",
+        why: "Tie every move to a concrete reason and a range — never a single number.",
+      };
+    case "hold-firm-then-concede":
+      return {
+        rewrittenText:
+          "I hear you on the band ceiling. If base is fixed, can we look at a sign-on bonus or accelerated equity vest to bridge the gap?",
+        why: "Don't fight the same lever — pivot to an adjacent one when the recruiter holds firm.",
+      };
+    case "open-too-high":
+      return {
+        rewrittenText:
+          "Before I take this any further, I'd want clarity on the full structure — base, variable trigger, ESOP grant value, and refresh cycle.",
+        why: "When the open is already strong, redirect to structure instead of pushing the cash number.",
+      };
+    case "closed-without-breakup":
+      return {
+        rewrittenText:
+          "I'm aligned in principle — could you share the component breakdown in writing (base/variable/equity/joining) before I confirm? I want to avoid surprises in the offer letter.",
+        why: "Always lock the split before saying 'yes' — verbal closes turn into letter disputes.",
+      };
+    case "walkaway-without-warning":
+      return {
+        rewrittenText:
+          "I appreciate the offer, but at this number I'd need to pass. If there's any room to revisit base or joining, I'm open — otherwise I'll have to step away with respect.",
+        why: "Even when walking, signal twice — one final concrete ask preserves the relationship and the door.",
+      };
+    case "premature-ceiling":
+      return {
+        rewrittenText:
+          "That's a strong opening number — let me think about the wider package. What does the variable trigger look like, and is there a sign-on component on top?",
+        why: "When the recruiter rushes to the ceiling, slow down and harvest the structure they've already conceded on.",
+      };
+    case "lever-fatigue":
+      return {
+        rewrittenText:
+          "Let's pause and structure this. Can we tackle one lever at a time — base first, then joining, then equity — so neither of us loses the thread?",
+        why: "Pacing one lever per turn prevents the recruiter from burning all concessions at once.",
+      };
+    default:
+      return {
+        rewrittenText: trimmed
+          ? `Restating that more clearly: I'd want to anchor on the full package — base, variable, ESOPs, and timeline — before we converge on a number.`
+          : `Before we anchor on a number, what does the full package look like — base, variable, ESOPs?`,
+        why: "Top-tier negotiators reset the frame to structure when the conversation drifts.",
+      };
+  }
+}
+
+/**
+ * Produce the structured critique bundle: items + verbatim candidate
+ * quotes per issue + a single A+ rewrite of the weakest candidate
+ * turn. Pure — no IO. The rewrite is template-driven so the output is
+ * deterministic across runs.
+ */
+export function critiqueRecruiterWithQuotes(
+  input: RecruiterCritiqueInput,
+): RecruiterCritiqueResult {
+  const items = critiqueRecruiterStrategy(input);
+  const log = input.finalState.conversationLog ?? [];
+
+  const quotes: RecruiterCritiqueQuote[] = [];
+  for (const item of items) {
+    if (item.turnIndex == null) continue;
+    /* Find the candidate utterance closest to (and at most) the
+     * issue's turnIndex. The conversationLog interleaves AI + candidate
+     * entries; walk back from the issue turn until we hit the most
+     * recent candidate line. */
+    let candidateLine: { idx: number; text: string } | null = null;
+    for (let i = Math.min(item.turnIndex, log.length - 1); i >= 0; i--) {
+      const e = log[i];
+      if (e && e.speaker === "candidate" && typeof e.text === "string" && e.text.trim().length > 0) {
+        candidateLine = { idx: i, text: e.text };
+        break;
+      }
+    }
+    if (candidateLine) {
+      quotes.push({
+        turn: candidateLine.idx,
+        text: candidateLine.text,
+        issue: item.code,
+      });
+    }
+  }
+
+  /* Weakest turn = the candidate utterance tied to the highest-severity
+   * critique item. Ties broken by issue order (first-fired wins). */
+  let aPlus: APlusRewrite | null = null;
+  if (items.length > 0) {
+    const ranked = [...items].sort(
+      (a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity],
+    );
+    for (const top of ranked) {
+      let candidateLine: { idx: number; text: string } | null = null;
+      const anchor =
+        top.turnIndex != null && Number.isFinite(top.turnIndex)
+          ? top.turnIndex
+          : log.length - 1;
+      for (let i = Math.min(anchor, log.length - 1); i >= 0; i--) {
+        const e = log[i];
+        if (e && e.speaker === "candidate" && typeof e.text === "string" && e.text.trim().length > 0) {
+          candidateLine = { idx: i, text: e.text };
+          break;
+        }
+      }
+      if (!candidateLine) continue;
+      const { rewrittenText, why } = rewriteForIssue(top.code, candidateLine.text);
+      aPlus = {
+        weakestTurn: candidateLine.idx,
+        originalText: candidateLine.text,
+        rewrittenText,
+        why,
+      };
+      break;
+    }
+  }
+
+  return { items, quotes, aPlusRewrite: aPlus };
 }

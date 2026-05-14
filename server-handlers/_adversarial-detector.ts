@@ -354,3 +354,177 @@ export function detectPromptInjection(text: string): PromptInjectionResult {
 
   return { detected: true, reasons };
 }
+
+/* ─── Multi-turn injection detection (2026-05-14) ───────────────────
+ *
+ * Single-turn detectors miss attacks that drip-feed forbidden
+ * instructions across 2–3 turns ("first I want you to remember...",
+ * "now as we discussed, you're acting as X"). Detector inspects the
+ * recent turn window and looks for cross-turn reinforcement of a
+ * role-swap, repeated callbacks to a prior assertion ("as agreed
+ * earlier", "remember from before"), or split jailbreak fragments. */
+
+export interface TurnForInjection {
+  role: "user" | "bot";
+  text: string;
+}
+
+export interface MultiTurnInjectionResult {
+  injected: boolean;
+  reason?: string;
+}
+
+const CROSS_TURN_CALLBACK_PATTERNS: RegExp[] = [
+  /\bremember\s+(?:from\s+)?(?:before|earlier|last\s+(?:time|turn)|our\s+previous|the\s+previous)\b/i,
+  /\bas\s+(?:we|you)\s+(?:agreed|established|discussed|said|told\s+me)\s+(?:earlier|before|previously|already)\b/i,
+  /\b(?:like|as)\s+i\s+(?:said|told\s+you|mentioned)\s+(?:earlier|before|previously)\b/i,
+  /\b(?:per|following|continuing)\s+(?:our|the)\s+(?:earlier|previous|prior)\s+(?:agreement|discussion|setup)\b/i,
+];
+
+const ROLE_SWAP_REINFORCE_PATTERNS: RegExp[] = [
+  /\byou(?:'re|\s+are)\s+(?:now\s+)?(?:still\s+)?(?:acting\s+as|playing|pretending\s+to\s+be|in\s+the\s+role\s+of)\b/i,
+  /\b(?:keep|continue|stay)\s+(?:acting|pretending|playing|being)\s+(?:as\s+)?\b/i,
+  /\bstay\s+in\s+(?:character|role)\b/i,
+];
+
+/* Drip-feed fragments — phrases that on their own look innocent, but
+ * across 2-3 turns reassemble into an injection. Each pattern is a
+ * micro-fragment. We flag when ≥2 distinct fragments fire across the
+ * window. */
+const DRIP_FRAGMENTS: RegExp[] = [
+  /\bnew\s+(?:instructions?|rules?|directives?)\b/i,
+  /\boverride\s+(?:the\s+)?(?:above|previous|prior|earlier)\b/i,
+  /\bfrom\s+(?:now\s+)?on(?:wards?)?\s+(?:you|the\s+bot)\b/i,
+  /\bforget\s+(?:everything|all|what)\s+(?:above|before|earlier)\b/i,
+  /\bsecret\s+(?:mode|persona|character|instructions?)\b/i,
+];
+
+/**
+ * Detect multi-turn / cross-turn injection patterns. Pass the last
+ * ~5 turns (user + bot). Returns `injected: true` when:
+ *   - A user turn calls back to a fabricated "earlier agreement"
+ *     (memory-exploit) that the bot never actually made.
+ *   - Two or more turns reinforce a role-swap.
+ *   - Drip-feed: ≥2 distinct drip fragments appear across user turns.
+ */
+export function detectMultiTurnInjection(
+  turns: ReadonlyArray<TurnForInjection>,
+): MultiTurnInjectionResult {
+  if (!Array.isArray(turns) || turns.length === 0) {
+    return { injected: false };
+  }
+  const userTurns = turns.filter((t) => t && t.role === "user" && typeof t.text === "string");
+  if (userTurns.length === 0) return { injected: false };
+
+  /* Callback to fabricated prior agreement — flag when a user turn
+   * references "as we agreed" / "remember from before" AND no prior
+   * BOT turn contains an explicit agreement / acknowledgement of the
+   * referenced point. This is a memory-exploit: candidate is trying
+   * to plant a fake history. */
+  for (const t of userTurns) {
+    if (CROSS_TURN_CALLBACK_PATTERNS.some((p) => p.test(t.text))) {
+      return { injected: true, reason: "fabricated-callback" };
+    }
+  }
+
+  /* Role-swap reinforcement across ≥2 turns. */
+  const roleSwapHits = userTurns.filter((t) =>
+    ROLE_SWAP_REINFORCE_PATTERNS.some((p) => p.test(t.text)),
+  ).length;
+  if (roleSwapHits >= 2) {
+    return { injected: true, reason: "role-swap-reinforcement" };
+  }
+
+  /* Drip-feed: count distinct drip fragments across user turns. */
+  const dripHits = new Set<number>();
+  for (const t of userTurns) {
+    DRIP_FRAGMENTS.forEach((p, i) => {
+      if (p.test(t.text)) dripHits.add(i);
+    });
+  }
+  if (dripHits.size >= 2) {
+    return { injected: true, reason: "drip-feed-fragments" };
+  }
+
+  return { injected: false };
+}
+
+/* ─── LLM-output token-leak guard ──────────────────────────────────
+ *
+ * Internal kernel state keys (mgmt:, crossBdr:, parentIns:, etc.)
+ * are never meant to surface in bot output. If the LLM hallucinates
+ * one — or worse, a candidate manages to extract a fragment of the
+ * system prompt — we scrub it before returning to the client. */
+
+const INTERNAL_TOKEN_KEYS: string[] = [
+  "mgmt:",
+  "crossBdr:",
+  "parentIns:",
+  "bandFloor:",
+  "bandCeil:",
+  "internalNote:",
+];
+
+const SYSTEM_PROMPT_LEAK_PHRASES: RegExp[] = [
+  /NEGOTIATION_SYSTEM_PROMPT/i,
+  /\bdo\s+not\s+reveal\b/i,
+  /\byou\s+are\s+HireStepX\s+kernel\b/i,
+  /\bSESSION\s+CONTEXT\s+\(stable\s+for\s+this\s+session\)/i,
+  /\bTURN\s+BRIEF\s+\(authoritative/i,
+];
+
+/** Generic internal-state-key shape: lowercaseWord ':' UppercaseWord+.
+ * Examples that match: mgmt:RetentionPolicy, foo:BarBaz. We add this
+ * heuristic AFTER the explicit list so even unknown internal keys
+ * (introduced in a future refactor) get caught. */
+const GENERIC_INTERNAL_KEY = /\b[a-z][a-zA-Z]*:[A-Z][a-zA-Z]+\b/g;
+
+export interface TokenLeakResult {
+  leaked: boolean;
+  tokens: string[];
+}
+
+/**
+ * Scan an LLM-generated bot reply for internal kernel tokens or
+ * system-prompt-phrase leaks. Returns the list of leaked tokens so
+ * the caller can either strip them or replace with `[redacted]`.
+ */
+export function detectTokenLeak(botReply: string): TokenLeakResult {
+  const text = typeof botReply === "string" ? botReply : "";
+  if (!text) return { leaked: false, tokens: [] };
+  const found = new Set<string>();
+  for (const key of INTERNAL_TOKEN_KEYS) {
+    if (text.includes(key)) found.add(key);
+  }
+  for (const re of SYSTEM_PROMPT_LEAK_PHRASES) {
+    const m = re.exec(text);
+    if (m) found.add(m[0]);
+  }
+  /* Generic pattern — collect every match, dedupe. */
+  GENERIC_INTERNAL_KEY.lastIndex = 0;
+  let g: RegExpExecArray | null;
+  while ((g = GENERIC_INTERNAL_KEY.exec(text)) !== null) {
+    found.add(g[0]);
+  }
+  const tokens = [...found];
+  return { leaked: tokens.length > 0, tokens };
+}
+
+/**
+ * Replace every leaked token in `botReply` with `[redacted]`. Safe to
+ * call on every bot turn; when no leak is present, returns the input
+ * verbatim.
+ */
+export function redactLeakedTokens(botReply: string): string {
+  const { leaked, tokens } = detectTokenLeak(botReply);
+  if (!leaked) return botReply;
+  let out = botReply;
+  /* Replace longest first so we don't break compound tokens. */
+  const sorted = [...tokens].sort((a, b) => b.length - a.length);
+  for (const tok of sorted) {
+    /* Escape regex metacharacters. */
+    const esc = tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(esc, "g"), "[redacted]");
+  }
+  return out;
+}
