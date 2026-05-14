@@ -71,6 +71,7 @@ import {
 } from "./_session-limits";
 import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
+import { detectBotReplyRepetition, BOT_REPLY_REPETITION_THRESHOLD } from "./_recruiter-facts";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -237,7 +238,31 @@ export async function generateAiText(
     return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds: [a1.error], envelopeMissingAttempts };
   }
   if (!a1.envelopeOk) envelopeMissingAttempts++;
-  if (a1.failures.length === 0) return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
+  if (a1.failures.length === 0) {
+    /* Fix 4 (2026-05-15) — Full-message-repetition detector. Reroll once
+     * if the validated text near-duplicates the prior bot reply. */
+    const rep = detectBotReplyRepetition(a1.text, state.lastBotReply ?? null);
+    if (!rep.repeated) {
+      return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
+    }
+    console.warn(`[negotiate-turn] bot reply repetition detected (sim=${rep.similarity.toFixed(2)}); rerolling`);
+    const rerollUser =
+      user +
+      `\n\nNOTE — DO NOT REPEAT THE PREVIOUS REPLY (Jaccard similarity ${rep.similarity.toFixed(2)} ≥ ${BOT_REPLY_REPETITION_THRESHOLD}). Generate a new substantive answer that advances the negotiation, not a paraphrase of your last turn.`;
+    const a1b = await attempt(rerollUser);
+    if (!("error" in a1b)) {
+      if (!a1b.envelopeOk) envelopeMissingAttempts++;
+      if (a1b.failures.length === 0) {
+        const rep2 = detectBotReplyRepetition(a1b.text, state.lastBotReply ?? null);
+        if (!rep2.repeated) {
+          return { text: enforceRoleLabel(a1b.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
+        }
+        console.warn(`[negotiate-turn] bot reply repetition persisted after reroll (sim=${rep2.similarity.toFixed(2)}); returning original`);
+      }
+    }
+    /* Reroll attempt failed or still repeated — return the original. */
+    return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
+  }
   failureKinds.push(...a1.failures);
 
   /* Retry with explicit failure feedback in the prompt. */

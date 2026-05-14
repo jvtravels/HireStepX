@@ -98,6 +98,37 @@ export interface DetectResumeRoleMismatchInput {
   targetRole: string | null | undefined;
 }
 
+/* Fix 1 (2026-05-15) — Role-source priority.
+ *
+ * Real session: user selected target role "Customer Success Manager at
+ * Freshworks", resume showed "Senior Product Designer". The kernel
+ * anchored "Senior Product Designer position" — resume title leaked
+ * into the bot's address of the role. The fix: session-config-selected
+ * role MUST take priority over resume title; resume title is only a
+ * fallback when session config didn't supply one.
+ *
+ * Pure precedence helper:
+ *   sessionConfig.targetRole > resume.title > defaultRole
+ */
+export interface SelectTargetRoleInput {
+  sessionTargetRole?: string | null | undefined;
+  resumeTitle?: string | null | undefined;
+  defaultRole?: string | null | undefined;
+}
+
+function isUsefulString(v: string | null | undefined): v is string {
+  return typeof v === "string" && v.trim().length > 0;
+}
+
+/** Choose the authoritative target role.
+ *  Precedence: session config > resume title > default > "Software Engineer". */
+export function selectTargetRole(input: SelectTargetRoleInput): string {
+  if (isUsefulString(input.sessionTargetRole)) return input.sessionTargetRole.trim();
+  if (isUsefulString(input.resumeTitle)) return input.resumeTitle.trim();
+  if (isUsefulString(input.defaultRole)) return input.defaultRole.trim();
+  return "Software Engineer";
+}
+
 export function detectResumeRoleMismatch(
   input: DetectResumeRoleMismatchInput,
 ): ResumeRoleMismatchResult {
@@ -121,4 +152,26 @@ export function detectResumeRoleMismatch(
     severity: "hard",
     reason: `${input.resumeTitle} → ${input.targetRole}: cross-domain pivot (${fa} → ${fb}).`,
   };
+}
+
+/* Fix 5 (2026-05-15) — Resume↔role mismatch probe-stage.
+ *
+ * Real session: resume domain "Senior Product Designer", target role
+ * "Customer Success Manager". detectResumeRoleMismatch fired "hard" but
+ * the brief block was informational only — the bot ignored it and
+ * jumped straight into salary discussion.
+ *
+ * shouldEnterProbeMismatch returns true when the kernel should route
+ * the FIRST substantive turn into a domain-switch probe rather than
+ * the anchor turn. Pre-condition: a hard mismatch AND the recruiter
+ * hasn't completed its first substantive turn yet.
+ *
+ * Pure. */
+export function shouldEnterProbeMismatch(
+  mismatch: ResumeRoleMismatchResult,
+  turnsCompleted: number,
+): boolean {
+  if (!mismatch.mismatch) return false;
+  if (mismatch.severity !== "hard") return false;
+  return turnsCompleted < 1;
 }

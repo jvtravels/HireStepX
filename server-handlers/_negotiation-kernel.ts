@@ -37,7 +37,7 @@
 
 import type { NegotiationFacts } from "../src/interviewEvaluation";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
-import { extractRecruiterFacts } from "./_recruiter-facts";
+import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -575,6 +575,51 @@ export interface NegotiationState {
    * surfaced in this session. Fed back into compactTurnBrief so the
    * LLM knows not to restate them verbatim. */
   recruiterFactsAlreadySaid: string[];
+
+  /* Fix 3 (2026-05-15) — Promise-keeping enforcement. Open promises the
+   * bot has made but not yet delivered ("we can discuss X", "let me share
+   * Y"). Subjects are short normalised strings; promises that get
+   * fulfilled on a turn are removed. compactTurnBrief surfaces these so
+   * the LLM is forced to deliver on outstanding promises. */
+  pendingPromises?: string[];
+
+  /* Fix 4 (2026-05-15) — Full-message-repetition detector. The verbatim
+   * AI text the bot produced on the most recent successful turn. Word-
+   * shingle Jaccard against this drives the reroll path in negotiate-
+   * turn.ts. Null on init; set in applyAiMove. */
+  lastBotReply?: string | null;
+
+  /* Fix 7 (2026-05-15) — Anchor recomputation suppression. In a real
+   * session the initial anchor jumped from ₹34L on turn 1 to ₹24L on
+   * turn 2 with no candidate action — band.initialOffer was being
+   * re-derived per turn. Once the recruiter discloses the opening
+   * anchor, this flag locks band.initialOffer for the remainder of
+   * the session: subsequent rebases may move maxStretch / walkAway
+   * but never reset initialOffer downward. Default false; toggled to
+   * true on the first turn that reveals a comp number. */
+  anchorLocked?: boolean;
+  /** Fix 7 (2026-05-15) — the locked anchor value (LPA) for this
+   *  session. Set when anchorLocked transitions false → true. */
+  lockedAnchorLpa?: number | null;
+}
+
+/* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
+
+/** Return the locked anchor LPA if the session already locked one;
+ *  otherwise fall back to band.initialOffer. Pure. */
+export function effectiveAnchorLpa(state: NegotiationState): number {
+  if (state.anchorLocked && state.lockedAnchorLpa != null) {
+    return state.lockedAnchorLpa;
+  }
+  return state.band.initialOffer;
+}
+
+/** Lock the session's anchor. Idempotent — once locked, subsequent
+ *  calls are no-ops (the original anchor never changes within a
+ *  session). Returns a new state. Pure. */
+export function lockAnchor(state: NegotiationState, anchorLpa: number): NegotiationState {
+  if (state.anchorLocked) return state;
+  return { ...state, anchorLocked: true, lockedAnchorLpa: anchorLpa };
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -814,6 +859,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
     freshGradDisclosed: false,
     recruiterFactsAlreadySaid: [],
+    pendingPromises: [],
+    lastBotReply: null,
+    anchorLocked: false,
+    lockedAnchorLpa: null,
   };
 }
 
@@ -1928,6 +1977,29 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.recruiterFactsAlreadySaid = Array.from(merged);
     }
   }
+
+  /* Fix 4 (2026-05-15) — remember last bot reply for repetition detection. */
+  next.lastBotReply = aiText || null;
+
+  /* Fix 3 (2026-05-15) — promise-keeping: consume any pending promises
+   * the current turn fulfilled, then add any new promises this turn made. */
+  if (aiText) {
+    const pending = state.pendingPromises ?? [];
+    const fulfilled = extractPromisesFulfilled(pending, aiText);
+    let remaining = pending;
+    if (fulfilled.length > 0) {
+      const consumed = new Set(fulfilled);
+      remaining = pending.filter(p => !consumed.has(p));
+    }
+    const newPromises = extractRecruiterPromises(aiText);
+    if (newPromises.length > 0) {
+      const merged = new Set<string>(remaining);
+      for (const p of newPromises) merged.add(p);
+      next.pendingPromises = Array.from(merged);
+    } else if (fulfilled.length > 0) {
+      next.pendingPromises = remaining;
+    }
+  }
   /* Phase 28 — record the kernel-computed JB amount when a JB lever
      fires so close-acceptance can include it in the recap. Sticky:
      once set, only an upward replacement clobbers it (a subsequent JB
@@ -2295,6 +2367,27 @@ export function validateState(state: unknown): asserts state is NegotiationState
       throw new Error("state.recruiterFactsAlreadySaid");
     }
   }
+  /* Fix 3 (2026-05-15) — pendingPromises optional + string array. */
+  if (s.pendingPromises !== undefined) {
+    if (!Array.isArray(s.pendingPromises) || !s.pendingPromises.every((v) => typeof v === "string")) {
+      throw new Error("state.pendingPromises");
+    }
+  }
+  /* Fix 4 (2026-05-15) — lastBotReply optional + string-or-null. */
+  if (s.lastBotReply !== undefined && s.lastBotReply !== null && typeof s.lastBotReply !== "string") {
+    throw new Error("state.lastBotReply");
+  }
+  /* Fix 7 (2026-05-15) — anchorLocked optional boolean, lockedAnchorLpa optional number-or-null. */
+  if (s.anchorLocked !== undefined && typeof s.anchorLocked !== "boolean") {
+    throw new Error("state.anchorLocked");
+  }
+  if (
+    s.lockedAnchorLpa !== undefined &&
+    s.lockedAnchorLpa !== null &&
+    (typeof s.lockedAnchorLpa !== "number" || !Number.isFinite(s.lockedAnchorLpa))
+  ) {
+    throw new Error("state.lockedAnchorLpa");
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -2364,6 +2457,10 @@ export function deserializeState(json: string): NegotiationState {
     candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
     freshGradDisclosed: (s.freshGradDisclosed as boolean | undefined) ?? false,
     recruiterFactsAlreadySaid: (s.recruiterFactsAlreadySaid as string[] | undefined) ?? [],
+    pendingPromises: (s.pendingPromises as string[] | undefined) ?? [],
+    lastBotReply: (s.lastBotReply as string | null | undefined) ?? null,
+    anchorLocked: (s.anchorLocked as boolean | undefined) ?? false,
+    lockedAnchorLpa: (s.lockedAnchorLpa as number | null | undefined) ?? null,
     /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
      * Optional for back-compat; defaults to null (treat in-flight
      * sessions as if no fresh counter has been parsed). */

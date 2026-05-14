@@ -1148,6 +1148,40 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "we recognise D2C ops / growth / brand experience as primary, not " +
   "secondary. Brand-era equity at your current co — we'll price " +
   "the cash; equity is upside.'\n" +
+  /* Fix 3 (2026-05-15) — PROMISE DELIVERY rule. The TURN BRIEF surfaces
+   * `[OPEN PROMISES TO HONOR THIS TURN — …]` when the previous bot turn
+   * said "we can discuss X" / "let me share Y" without delivering. The
+   * current turn MUST follow through with concrete numbers / structure;
+   * restating the promise is a critique-failure mode. */
+  " - PROMISE DELIVERY: if the previous bot turn said 'we can discuss X' " +
+  "or 'let me share Y' (look for an `OPEN PROMISES` block in the TURN " +
+  "BRIEF), the CURRENT turn MUST deliver X/Y with concrete numbers or " +
+  "structure. Restating the promise without delivering ('as I mentioned, " +
+  "we can talk about that') is a critique-failure mode. If you genuinely " +
+  "cannot answer (no kernel data), say so explicitly: 'I'll need to come " +
+  "back to you on that by EOD — flagging it now so it doesn't fall " +
+  "through.' Vague 'we can discuss further' loops are banned.\n" +
+  /* Fix 6 (2026-05-15) — EQUITY DISCLOSURE rule. Real session: candidate
+   * asked vesting / cliff / FMV / buyback, bot answered none. */
+  " - EQUITY DISCLOSURE: when the candidate asks about equity vesting " +
+  "schedule, cliff period, exercise terms, FMV / strike price, or buyback " +
+  "history, answer with concrete structure — 'vesting is 4-year with a " +
+  "1-year cliff, monthly thereafter', 'FMV updated quarterly by the " +
+  "board', 'last ESOP buyback was 2024 at ₹X / share'. If the company " +
+  "hasn't had a buyback, say that plainly ('we haven't done a buyback " +
+  "yet; the next liquidity event would be IPO or secondary'). Vague " +
+  "answers ('the vesting is standard' / 'we'll share details later') " +
+  "are a critique-failure mode.\n" +
+  /* Fix 5 (2026-05-15) — DOMAIN-SWITCH PROBE rule. When the resume domain
+   * doesn't match the target role, the FIRST substantive turn must probe
+   * the switch instead of disclosing comp. */
+  " - DOMAIN-SWITCH PROBE: when the TURN BRIEF carries a " +
+  "`[CANDIDATE BACKGROUND MISMATCH: ...]` block AND it is the recruiter's " +
+  "FIRST substantive turn, your turn MUST probe the switch — ask why the " +
+  "candidate is moving from their prior domain to the target role, what " +
+  "makes them confident, and what projects / experience bridges the gap. " +
+  "Do NOT disclose compensation in this turn. Only after the candidate " +
+  "answers does the conversation move into anchor.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
@@ -1765,6 +1799,15 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
         `[CANDIDATE BACKGROUND MISMATCH: resume shows ${state.candidatePrimaryDomain}, target is ${state.role}. The recruiter MUST probe this gap early — ask the candidate why they're switching domains.]`,
       );
     }
+  }
+  /* Fix 3 (2026-05-15) — open-promises injector. When the previous bot
+   * turn made a promise ("we can discuss X") that hasn't been delivered
+   * yet, surface the open list so the current turn MUST honour it. */
+  if (Array.isArray(state.pendingPromises) && state.pendingPromises.length > 0) {
+    const list = state.pendingPromises.slice(0, 4).join("; ");
+    parts.push(
+      `[OPEN PROMISES TO HONOR THIS TURN — deliver substantive answers, don't restate the promise: ${list}]`,
+    );
   }
   parts.push(`lever=${move.lever}`);
   if (move.newTotalLpa != null) parts.push(`newTotalLpa=${move.newTotalLpa}`);

@@ -98,3 +98,138 @@ export function containsRupeeAmount(text: string | null | undefined): boolean {
   if (/\d{1,3}(?:,\d{3})+/.test(text)) return true;
   return false;
 }
+
+/* Fix 3 (2026-05-15) — Promise-keeping enforcement.
+ *
+ * Real session: bot said "we can discuss the variable payout structure"
+ * across 3 turns and never delivered the numbers. extractRecruiterPromises
+ * parses bot turns for open promises; extractPromisesFulfilled checks
+ * whether the latest reply delivered substantive (numerical or factual)
+ * content for a pending promise.
+ *
+ * Returned promises are short normalized subject strings (the captured
+ * group after the cue verb, lowercased, trimmed, sentence-terminator
+ * stripped). */
+const PROMISE_PATTERNS: RegExp[] = [
+  /\bwe\s+can\s+(?:definitely\s+|certainly\s+|surely\s+)?(?:discuss|share|dive\s+into|walk\s+you\s+through|explain|break\s+down|cover|talk\s+about|get\s+into)\s+([^.,;!?\n]{1,80})/gi,
+  /\blet\s+me\s+(?:share|walk\s+you\s+through|explain|break\s+down|get\s+back\s+(?:to\s+you\s+)?(?:on|with))\s+([^.,;!?\n]{1,80})/gi,
+  /\bi(?:'|'|\s+wi)ll\s+(?:share|send|provide|get\s+back\s+to\s+you\s+(?:on|with)|loop\s+back\s+(?:on|with)|circle\s+back\s+(?:on|with))\s+([^.,;!?\n]{1,80})/gi,
+  /\bwe(?:'|'|\s+wi)ll\s+(?:share|send|provide|cover|walk\s+through|dive\s+into|get\s+to)\s+([^.,;!?\n]{1,80})/gi,
+  /\b(?:happy\s+to|glad\s+to)\s+(?:share|walk\s+through|dive\s+into|explain|cover)\s+([^.,;!?\n]{1,80})/gi,
+];
+
+function normalizePromiseSubject(s: string): string {
+  return s.toLowerCase().replace(/[.,;:!?]$/g, "").replace(/\s+/g, " ").trim();
+}
+
+/** Extract open promises from a bot turn. Returned values are short
+ *  normalised subject strings. Pure. */
+export function extractRecruiterPromises(botReply: string | null | undefined): string[] {
+  if (!botReply || typeof botReply !== "string") return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const re of PROMISE_PATTERNS) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(botReply)) !== null) {
+      const subj = normalizePromiseSubject(m[1] || "");
+      if (subj.length < 3) continue;
+      if (seen.has(subj)) continue;
+      seen.add(subj);
+      out.push(subj);
+    }
+  }
+  return out;
+}
+
+/** Given a list of pending promises and a fresh bot reply, return the
+ *  subset that are FULFILLED — the subject's keyword appears in the
+ *  reply alongside substantive (numerical OR factual-noun) content.
+ *  Substantive = a digit, a percent sign, an LPA/₹ figure, OR a
+ *  factual noun pattern. The bar is intentionally low — any one of
+ *  those signals is enough to consider the promise honoured. */
+const SUBSTANTIVE_FACT_PATTERNS: RegExp[] = [
+  /\d/,
+  /\b\d{1,3}\s*%/,
+  /\b(monthly|quarterly|annually|yearly|four[-\s]year|three[-\s]year|six[-\s]month|twelve[-\s]month)\b/i,
+];
+
+function hasSubstantiveContent(text: string): boolean {
+  if (containsRupeeAmount(text)) return true;
+  for (const p of SUBSTANTIVE_FACT_PATTERNS) if (p.test(text)) return true;
+  return false;
+}
+
+function tokenize(s: string): string[] {
+  return s.toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length >= 3);
+}
+
+/** Return the subset of `pendingPromises` that the current reply
+ *  substantively addresses. Pure. */
+export function extractPromisesFulfilled(
+  pendingPromises: string[] | null | undefined,
+  botReply: string | null | undefined,
+): string[] {
+  if (!pendingPromises || pendingPromises.length === 0) return [];
+  if (!botReply || typeof botReply !== "string") return [];
+  if (!hasSubstantiveContent(botReply)) return [];
+  const replyTokens = new Set(tokenize(botReply));
+  const out: string[] = [];
+  for (const promise of pendingPromises) {
+    const ptokens = tokenize(promise);
+    if (ptokens.length === 0) continue;
+    /* Require at least one informative subject token to appear in the
+     * reply. Stopword-like fragments (e.g. "the", "of") are already
+     * filtered by the length>=3 cut. */
+    const hit = ptokens.some(t => replyTokens.has(t));
+    if (hit) out.push(promise);
+  }
+  return out;
+}
+
+/* Fix 4 (2026-05-15) — Full-message-repetition detector.
+ *
+ * Anti-repetition only tracked benefit tokens; in a real session the bot
+ * sent the IDENTICAL reply two turns in a row. Word-shingle Jaccard at
+ * 5-word shingles, threshold 0.65.
+ *
+ * Pure. */
+function shingles(text: string, k = 5): Set<string> {
+  const tokens = (text || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean);
+  const out = new Set<string>();
+  if (tokens.length < k) {
+    out.add(tokens.join(" "));
+    return out;
+  }
+  for (let i = 0; i <= tokens.length - k; i++) {
+    out.add(tokens.slice(i, i + k).join(" "));
+  }
+  return out;
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 && b.size === 0) return 1;
+  if (a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const union = a.size + b.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+export interface BotReplyRepetitionResult {
+  repeated: boolean;
+  similarity: number;
+}
+
+export const BOT_REPLY_REPETITION_THRESHOLD = 0.65;
+
+export function detectBotReplyRepetition(
+  currentReply: string,
+  lastReply: string | null,
+): BotReplyRepetitionResult {
+  if (!lastReply || !currentReply) return { repeated: false, similarity: 0 };
+  const a = shingles(currentReply);
+  const b = shingles(lastReply);
+  const sim = jaccard(a, b);
+  return { repeated: sim >= BOT_REPLY_REPETITION_THRESHOLD, similarity: sim };
+}

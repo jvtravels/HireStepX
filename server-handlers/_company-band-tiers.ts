@@ -226,23 +226,150 @@ export function classifyCompanyTier(companyName: string | null | undefined): Com
 
 export interface RoleBand { floor: number; ceil: number; target: number }
 
-/** Reference table: React Dev 5yr (= mid-level engineering, lateral).
- *  Other roles scale relative to this — for now we treat all engineering
- *  / data / design roles as one mid-level row. Sales/PM use a uniform
- *  +10% modifier (PM premium) or +0% (sales = base table).
- *  The key insight is the tier multipliers — a 5-yr SWE at Infosys vs
- *  Google vs Walmart Labs is ~₹11L / ₹48L / ₹28L, not flat. */
-const REFERENCE_5YR: Record<CompanyTier, RoleBand> = {
-  "it-services":    { floor:  8, ceil: 14, target: 11 },
-  "product-india":  { floor: 18, ceil: 32, target: 24 },
-  "gcc":            { floor: 22, ceil: 38, target: 28 },
-  "unicorn":        { floor: 20, ceil: 40, target: 28 },
-  "big-tech":       { floor: 35, ceil: 65, target: 48 },
-  "bfsi":           { floor: 12, ceil: 22, target: 16 },
-  "consulting":     { floor: 15, ceil: 28, target: 20 },
-  "startup":        { floor: 12, ceil: 25, target: 18 },
-  "sme":            { floor:  6, ceil: 12, target:  9 },
-  "pharma":         { floor: 10, ceil: 18, target: 14 },
+/* Fix 2 (2026-05-15) — Role-family × tier band matrix.
+ *
+ * Real session: target = Customer Success Manager at Freshworks (product-
+ * india tier), 5+ yrs. The legacy single-row engineering reference
+ * anchored ₹34L; the actual Indian CSM market for that tier × YOE is
+ * ₹12-17L. Reason: every role hit the same REFERENCE_5YR row regardless
+ * of family.
+ *
+ * Eight role families with distinct 5-yr Indian-market anchors per tier.
+ * Engineering retains the legacy numbers as the reference row; product
+ * is slight premium; design / csm-cs / sales / data / marketing / ops
+ * are calibrated against 2026 Indian-market data from offer scrapes. */
+export type RoleFamily =
+  | "engineering"
+  | "product"
+  | "design"
+  | "csm-cs"
+  | "sales"
+  | "marketing"
+  | "data"
+  | "ops";
+
+/** Classify a free-form role title into one of 8 families. Keyword-
+ *  based; conservative; falls back to "engineering" for unknown
+ *  technical titles. Pure. */
+export function classifyRoleFamily(role: string | null | undefined): RoleFamily {
+  const r = (role || "").toLowerCase().trim();
+  if (!r) return "engineering";
+  if (/\b(customer\s+success|cs\s+manager|csm|customer\s+experience|account\s+management|account\s+manager|client\s+success|client\s+partner|support\s+manager|technical\s+account\s+manager|tam)\b/.test(r)) return "csm-cs";
+  if (/\b(product\s+manager|product\s+owner|pm\b|po\b|product\s+lead|head\s+of\s+product|group\s+product|tpm\b|program\s+manager|technical\s+program|chief\s+product)\b/.test(r)) return "product";
+  if (/\b(ux\s+designer|ui\s+designer|product\s+designer|interaction\s+designer|visual\s+designer|graphic\s+designer|design\s+lead|design\s+manager|head\s+of\s+design|brand\s+designer|motion\s+designer|illustrator|ux\s+researcher|design\s+researcher)\b/.test(r)) return "design";
+  if (/\b(sales|account\s+executive|ae\b|bdr|sdr|bdm|business\s+development|inside\s+sales|enterprise\s+sales|relationship\s+manager|sales\s+manager|sales\s+lead|sales\s+director|head\s+of\s+sales|chief\s+revenue|cro\b|territory\s+manager|key\s+account)\b/.test(r)) return "sales";
+  if (/\b(marketing|growth|seo|sem|content\s+marketing|digital\s+marketing|brand\s+manager|product\s+marketing|pmm|marketing\s+manager|head\s+of\s+marketing|cmo\b|chief\s+marketing|community\s+manager|social\s+media\s+manager|demand\s+gen|email\s+marketing)\b/.test(r)) return "marketing";
+  if (/\b(data\s+scientist|data\s+analyst|business\s+analyst|ba\b|analytics|machine\s+learning|ml\s+engineer|ai\s+engineer|data\s+engineer|nlp|research\s+scientist|quant|quantitative|statistician)\b/.test(r)) return "data";
+  if (/\b(operations\s+manager|ops\s+manager|operations\s+lead|coo\b|chief\s+operating|supply\s+chain|logistics|fulfilment|fulfillment|warehouse\s+manager|city\s+manager|category\s+manager|head\s+of\s+operations|business\s+operations|biz\s+ops|biz-ops)\b/.test(r)) return "ops";
+  /* Default to engineering for software / dev / SDE / SWE / java / react /
+   * etc — the historical reference family. */
+  return "engineering";
+}
+
+/** Reference table: 5-yr role-family × tier in INR LPA (Indian market 2026).
+ *  Read it as: 8 families × 10 tiers = 80 cells. Engineering retains the
+ *  legacy anchors (compatible with pre-Fix-2 tests). All other families
+ *  calibrated against offer-scrape medians.
+ *
+ *  Freshworks (product-india) × csm-cs × 5yr → target ₹15L, floor ₹12L,
+ *  ceil ₹20L (matches the real Indian-market spread). */
+const FAMILY_TIER_REFERENCE_5YR: Record<RoleFamily, Record<CompanyTier, RoleBand>> = {
+  engineering: {
+    "it-services":    { floor:  8, ceil: 14, target: 11 },
+    "product-india":  { floor: 18, ceil: 32, target: 24 },
+    "gcc":            { floor: 22, ceil: 38, target: 28 },
+    "unicorn":        { floor: 20, ceil: 40, target: 28 },
+    "big-tech":       { floor: 35, ceil: 65, target: 48 },
+    "bfsi":           { floor: 12, ceil: 22, target: 16 },
+    "consulting":     { floor: 15, ceil: 28, target: 20 },
+    "startup":        { floor: 12, ceil: 25, target: 18 },
+    "sme":            { floor:  6, ceil: 12, target:  9 },
+    "pharma":         { floor: 10, ceil: 18, target: 14 },
+  },
+  product: {
+    "it-services":    { floor: 12, ceil: 20, target: 16 },
+    "product-india":  { floor: 22, ceil: 38, target: 28 },
+    "gcc":            { floor: 25, ceil: 42, target: 32 },
+    "unicorn":        { floor: 24, ceil: 45, target: 32 },
+    "big-tech":       { floor: 40, ceil: 75, target: 55 },
+    "bfsi":           { floor: 16, ceil: 28, target: 21 },
+    "consulting":     { floor: 18, ceil: 32, target: 24 },
+    "startup":        { floor: 16, ceil: 30, target: 22 },
+    "sme":            { floor:  8, ceil: 16, target: 12 },
+    "pharma":         { floor: 14, ceil: 24, target: 18 },
+  },
+  design: {
+    "it-services":    { floor:  6, ceil: 12, target:  9 },
+    "product-india":  { floor: 14, ceil: 26, target: 19 },
+    "gcc":            { floor: 16, ceil: 28, target: 21 },
+    "unicorn":        { floor: 14, ceil: 28, target: 20 },
+    "big-tech":       { floor: 25, ceil: 50, target: 36 },
+    "bfsi":           { floor:  9, ceil: 18, target: 13 },
+    "consulting":     { floor: 10, ceil: 20, target: 14 },
+    "startup":        { floor:  9, ceil: 20, target: 14 },
+    "sme":            { floor:  5, ceil: 10, target:  7 },
+    "pharma":         { floor:  7, ceil: 14, target: 10 },
+  },
+  "csm-cs": {
+    "it-services":    { floor:  6, ceil: 11, target:  8 },
+    "product-india":  { floor: 12, ceil: 20, target: 15 },
+    "gcc":            { floor: 14, ceil: 24, target: 18 },
+    "unicorn":        { floor: 12, ceil: 22, target: 16 },
+    "big-tech":       { floor: 20, ceil: 38, target: 28 },
+    "bfsi":           { floor:  9, ceil: 16, target: 12 },
+    "consulting":     { floor: 10, ceil: 18, target: 13 },
+    "startup":        { floor:  9, ceil: 18, target: 13 },
+    "sme":            { floor:  5, ceil:  9, target:  7 },
+    "pharma":         { floor:  7, ceil: 13, target: 10 },
+  },
+  sales: {
+    "it-services":    { floor:  8, ceil: 18, target: 12 },
+    "product-india":  { floor: 16, ceil: 32, target: 22 },
+    "gcc":            { floor: 18, ceil: 34, target: 24 },
+    "unicorn":        { floor: 16, ceil: 36, target: 24 },
+    "big-tech":       { floor: 28, ceil: 60, target: 40 },
+    "bfsi":           { floor: 10, ceil: 22, target: 15 },
+    "consulting":     { floor: 14, ceil: 28, target: 20 },
+    "startup":        { floor: 12, ceil: 26, target: 18 },
+    "sme":            { floor:  6, ceil: 14, target:  9 },
+    "pharma":         { floor:  9, ceil: 18, target: 13 },
+  },
+  marketing: {
+    "it-services":    { floor:  7, ceil: 13, target: 10 },
+    "product-india":  { floor: 14, ceil: 26, target: 19 },
+    "gcc":            { floor: 15, ceil: 28, target: 20 },
+    "unicorn":        { floor: 13, ceil: 26, target: 19 },
+    "big-tech":       { floor: 22, ceil: 45, target: 32 },
+    "bfsi":           { floor:  9, ceil: 17, target: 13 },
+    "consulting":     { floor: 11, ceil: 22, target: 16 },
+    "startup":        { floor:  9, ceil: 20, target: 14 },
+    "sme":            { floor:  5, ceil: 10, target:  7 },
+    "pharma":         { floor:  8, ceil: 15, target: 11 },
+  },
+  data: {
+    "it-services":    { floor:  9, ceil: 16, target: 12 },
+    "product-india":  { floor: 18, ceil: 32, target: 24 },
+    "gcc":            { floor: 20, ceil: 36, target: 27 },
+    "unicorn":        { floor: 18, ceil: 36, target: 26 },
+    "big-tech":       { floor: 32, ceil: 60, target: 44 },
+    "bfsi":           { floor: 12, ceil: 22, target: 16 },
+    "consulting":     { floor: 14, ceil: 26, target: 19 },
+    "startup":        { floor: 11, ceil: 22, target: 16 },
+    "sme":            { floor:  6, ceil: 12, target:  9 },
+    "pharma":         { floor:  9, ceil: 16, target: 12 },
+  },
+  ops: {
+    "it-services":    { floor:  6, ceil: 12, target:  9 },
+    "product-india":  { floor: 12, ceil: 22, target: 16 },
+    "gcc":            { floor: 13, ceil: 24, target: 18 },
+    "unicorn":        { floor: 12, ceil: 24, target: 17 },
+    "big-tech":       { floor: 18, ceil: 36, target: 26 },
+    "bfsi":           { floor:  9, ceil: 17, target: 12 },
+    "consulting":     { floor: 10, ceil: 20, target: 14 },
+    "startup":        { floor:  9, ceil: 18, target: 13 },
+    "sme":            { floor:  5, ceil: 10, target:  7 },
+    "pharma":         { floor:  7, ceil: 13, target: 10 },
+  },
 };
 
 function yoeScale(yoe: number | null | undefined): number {
@@ -256,20 +383,21 @@ function yoeScale(yoe: number | null | undefined): number {
 
 function roleModifier(role: string): number {
   const r = (role || "").toLowerCase();
-  if (/\b(product manager|pm|program manager|tpm)\b/.test(r)) return 1.1;
   if (/\b(staff|principal|architect)\b/.test(r)) return 1.3;
   if (/\b(senior|sr\.|lead)\b/.test(r)) return 1.15;
   if (/\b(intern|trainee)\b/.test(r)) return 0.35;
   return 1.0;
 }
 
-/** Compute (floor, ceil, target) LPA band for a (tier, role, yoe) tuple. */
+/** Compute (floor, ceil, target) LPA band for a (tier, role, yoe) tuple.
+ *  Uses the role family × tier matrix (Fix 2, 2026-05-15). */
 export function getBandForRole(
   tier: CompanyTier,
   role: string,
   yoe: number | null | undefined,
 ): RoleBand {
-  const base = REFERENCE_5YR[tier];
+  const family = classifyRoleFamily(role);
+  const base = FAMILY_TIER_REFERENCE_5YR[family][tier];
   const m = yoeScale(yoe) * roleModifier(role);
   return {
     floor: Math.round(base.floor * m * 10) / 10,
