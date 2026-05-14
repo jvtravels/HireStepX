@@ -186,6 +186,25 @@ export interface NegotiationBand {
   baseFloor?: number;
   baseStretch?: number;
   variableMax?: number;
+  /** Fresher-flow extension (2026-05-14). Set ONLY for IT-services tier
+   *  entry-level offers — real recruiters at TCS / Infosys / Wipro pay a
+   *  reduced rate during the 6-month probation period (typically ~90%
+   *  of confirmed CTC), then step up to `initialOffer` on confirmation.
+   *  Surfacing this on the band lets the opener explicitly break the
+   *  number into "₹X during 6-month probation → ₹Y on confirmation"
+   *  instead of quoting a single flat figure the candidate is then
+   *  surprised by on joining. Unset for all other tiers. */
+  probationOffer?: number;
+  probationMonths?: number;
+  /** Fresher-flow extension (2026-05-14). True when the candidate is
+   *  applying for an INTERNSHIP (not a full-time fresher role). Tagged
+   *  on the band by `_band-resolver` after detecting "intern" /
+   *  "internship" in the original role string. When set, the band
+   *  numbers represent monthly stipend × 12 (annualized stipend), NOT
+   *  full-time CTC — the LLM must frame the offer accordingly
+   *  ("₹X/month stipend over a 6-month internship"). */
+  isInternshipStipend?: boolean;
+  internshipMonths?: number;
 }
 
 /* ─── Canonical State ────────────────────────────────────────────── */
@@ -658,6 +677,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       compensationHistoryIssue: null,
       serviceBondAccepted: false,
       probationCompMentioned: false,
+    internshipConversion: false,
       hasAny: false,
     },
     miscSignals: {
@@ -964,7 +984,7 @@ export function parseCandidateAnswer(
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
-      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, hasAny: false },
+      candidateProfile: { careerGapMonths: null, careerGapActivity: null, tenureSignal: null, levelMismatch: null, domainPivot: false, transferableSkillsClaimed: false, compensationHistoryIssue: null, serviceBondAccepted: false, probationCompMentioned: false, internshipConversion: false, hasAny: false },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
       candidateStance: { flexibilityPosture: null, marketReferenceVague: false, salaryOnlyFactor: false, badmouthsCurrent: false, confidentialOvershare: false, soundsDesperate: false, treatsEquityAsCash: false, avoidsAnchor: false, personalExpenseJustification: false, offerShoppingDemand: false, dismissesVariableRisk: false, overpromisesJoining: false, hasAny: false },
       retentionCounter: { ...EMPTY_RETENTION_COUNTER },
@@ -2119,6 +2139,7 @@ function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
     compensationHistoryIssue: v?.compensationHistoryIssue ?? null,
     serviceBondAccepted: v?.serviceBondAccepted ?? false,
     probationCompMentioned: v?.probationCompMentioned ?? false,
+    internshipConversion: v?.internshipConversion ?? false,
     hasAny: v?.hasAny ?? false,
   };
 }

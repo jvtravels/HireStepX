@@ -146,7 +146,7 @@ export function formatRegisterGuidance(register: HrRegister): string {
  *  in the system prompt so the LLM has a shape to fill. */
 const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "open-with-offer":
-    "Present the offer cleanly. State the total CTC number ('₹X LPA total CTC' or 'a CTC of ₹X LPA'), mention base + variable composition briefly, and invite the candidate's reaction ('how does the number land?' / 'what's your reaction?' / 'where are you on that?'). Indian register — use 'CTC' and 'LPA' explicitly; don't say 'compensation package' or 'k' / 'lakh rupees'.",
+    "Present the offer cleanly. State the total CTC number ('₹X LPA total CTC' or 'a CTC of ₹X LPA'), mention base + variable composition briefly, and invite the candidate's reaction ('how does the number land?' / 'what's your reaction?' / 'where are you on that?'). Indian register — use 'CTC' and 'LPA' explicitly; don't say 'compensation package' or 'k' / 'lakh rupees'. INDIAN FRESHER-FLOW: when the brief carries `bandExt=[probOff=...]` (IT-services entry probation structure), state BOTH numbers — '₹X LPA total on confirmation, ₹Y LPA during the 6-month probation, standard IT-services practice'. When `bandExt=[stipend,internMo=...]` (internship), quote in ₹k/month not LPA, name it a 'stipend', and mention PPO eligibility. When the brief carries `profile=[...ppo...]` (candidate is converting an internship), open warmly — 'good to have you back as a full-timer, here's what we're putting on the table for the converted role'.",
   "probe":
     "Ask the candidate what they're looking for. Do NOT propose a new number — you want their anchor first.",
   "probe-justification":
@@ -170,7 +170,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "hold-firm":
     "State respectfully that this is final. Acknowledge their position. Invite them to think it over. Indian phrasings that fit: 'This is the maximum I can do without going to leadership', 'That itself is at the top of the band for this role', 'Do take your time and revert', 'Let me know how you'd like to proceed'. Tone is warm but settled — no apologies, no further movement implied.",
     "close-acceptance":
-    "Congratulate them ('welcome aboard' / 'wonderful, looking forward to having you on the team'). Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion). REQUIRED: ask the candidate to share their basic onboarding documents — Aadhaar card, PAN card, and recent payslips / relieving letter — so the offer letter and BGV can proceed. Indian framing for the doc ask: 'do share your Aadhaar, PAN, and recent payslips' / 'we'll need your relieving letter from your current employer for the BGV'. Keep the ask warm and matter-of-fact, not bureaucratic.",
+    "Congratulate them ('welcome aboard' / 'wonderful, looking forward to having you on the team'). Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion). REQUIRED: ask the candidate to share their basic onboarding documents — Aadhaar card, PAN card, and recent payslips / relieving letter — so the offer letter and BGV can proceed. Indian framing for the doc ask: 'do share your Aadhaar, PAN, and recent payslips' / 'we'll need your relieving letter from your current employer for the BGV'. Keep the ask warm and matter-of-fact, not bureaucratic. INDIAN FRESHER-FLOW: when the brief carries `profile=[...bondAck...]` (service bond accepted), restate the bond clause explicitly so the candidate has it in writing before signing — 'the offer letter will include the service-bond clause, please review duration and clawback'. When `bandExt=[probOff=...]` is set, re-state the probation-vs-confirmed split alongside the agreed CTC. When `profile=[...ppo...]` is set, frame the close as a PPO conversion: 'great to have you back full-time'.",
   "close-walkaway":
     "Acknowledge respectfully that this isn't going to work. Keep the door open for future roles. Brief, warm.",
   "close-stalemate":
@@ -1063,7 +1063,26 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (cp.careerGapActivity) cpParts.push(`gapAct=${cp.careerGapActivity}`);
     if (cp.tenureSignal) cpParts.push(`tenure=${cp.tenureSignal}`);
     if (cp.levelMismatch) cpParts.push(`level=${cp.levelMismatch}`);
+    /* Indian fresher-flow signals (2026-05-14). Surfacing bond / probation
+     * / PPO into the brief so the LLM (or fallback) can frame the close
+     * accurately — bond clauses change acceptance language, PPO unlocks
+     * "as we discussed during your internship" rapport. */
+    if (cp.serviceBondAccepted) cpParts.push("bondAck");
+    if (cp.probationCompMentioned) cpParts.push("probationQ");
+    if (cp.internshipConversion) cpParts.push("ppo");
     parts.push(`profile=[${cpParts.join(",")}]`);
+  }
+  /* Indian fresher-flow band extensions — surface probation structure
+   * and internship-stipend flags so register guidance knows whether to
+   * frame in confirmed-CTC vs probation-CTC vs stipend mode. */
+  const bandExt = state.band;
+  if (bandExt) {
+    const bExtParts: string[] = [];
+    if (bandExt.probationOffer != null) bExtParts.push(`probOff=${bandExt.probationOffer}L`);
+    if (bandExt.probationMonths != null) bExtParts.push(`probMo=${bandExt.probationMonths}`);
+    if (bandExt.isInternshipStipend) bExtParts.push("stipend");
+    if (bandExt.internshipMonths != null) bExtParts.push(`internMo=${bandExt.internshipMonths}`);
+    if (bExtParts.length > 0) parts.push(`bandExt=[${bExtParts.join(",")}]`);
   }
   /* Phase 17F — floor + review-cycle + proof + counter-risk scalars. */
   const ms = state.miscSignals;
@@ -1381,13 +1400,30 @@ export function validateStructuredFields(
 export function deterministicFallbackText(state: NegotiationState, move: AiMove): string {
   const n = move.newTotalLpa;
   switch (move.lever) {
-    case "open-with-offer":
+    case "open-with-offer": {
       /* Bug-report 11 fix: pin the role label to the SESSION target
        * (state.role), never any resume-derived role. When state.role
        * is unset we deliberately stay generic ('this role'). */
+      /* Indian fresher-flow extension (2026-05-14):
+       *   - IT-services entry → emit the probation-CTC vs confirmed-CTC
+       *     split so the candidate isn't surprised after confirmation.
+       *   - Internship stipend → reframe as monthly stipend with program
+       *     duration; LPA is misleading for a 6-month commitment. */
+      const roleLabel = state.role ? `the ${state.role} position` : "this role";
+      if (state.band.isInternshipStipend && n != null) {
+        const months = state.band.internshipMonths ?? 6;
+        /* Stipend in ₹k/month: n is annual-equivalent ₹L → ÷12 × 100 = ₹k/mo. */
+        const monthlyK = Math.round((n * 100) / 12);
+        return `Our stipend for ${roleLabel} is ₹${monthlyK}k per month for a ${months}-month internship, with a pre-placement offer (PPO) on the table for strong performers. How does that sound?`;
+      }
+      if (state.band.probationOffer != null && n != null) {
+        const probMo = state.band.probationMonths ?? 6;
+        return `Our offer for ${roleLabel} is ₹${n} LPA total CTC on confirmation, with ₹${state.band.probationOffer} LPA during the ${probMo}-month probation period — standard practice across IT-services. What's your reaction?`;
+      }
       return state.role
         ? `Our offer for the ${state.role} position is ₹${n} LPA total CTC. What's your reaction?`
         : `Our offer for this role is ₹${n} LPA total CTC. What's your reaction?`;
+    }
     case "probe":
       return `Before we go further — what range were you expecting for this role?`;
     case "probe-justification":
@@ -1480,7 +1516,28 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
         typeof move.joiningBonusAmount === "number"
           ? `Welcome aboard! Your offer: ₹${move.newTotalLpa ?? state.highestOfferMade} LPA fixed base + ₹${move.joiningBonusAmount}L one-time joining bonus.`
           : `Wonderful — we'll send the offer letter for ₹${state.highestOfferMade} LPA shortly. Welcome aboard.`;
-      return `${head} To kick off onboarding, please share your Aadhaar card, PAN card, and your recent payslips or relieving letter — we'll send the formal offer letter alongside.`;
+      /* Indian fresher-flow extension (2026-05-14):
+       *   - serviceBondAccepted → echo the bond terms back so the
+       *     candidate has them in writing before paperwork.
+       *   - probationOffer set → restate the probation-vs-confirmed split.
+       *   - internshipConversion → close in PPO-conversion voice. */
+      const tailParts: string[] = [];
+      if (state.candidateProfile?.serviceBondAccepted) {
+        tailParts.push(
+          "As discussed, the offer letter will include the service-bond clause — please review the duration and clawback before signing.",
+        );
+      }
+      if (state.band.probationOffer != null) {
+        const probMo = state.band.probationMonths ?? 6;
+        tailParts.push(
+          `Reminder: ₹${state.band.probationOffer} LPA during the ${probMo}-month probation, full ₹${state.highestOfferMade} LPA on confirmation.`,
+        );
+      }
+      if (state.candidateProfile?.internshipConversion) {
+        tailParts.push("Glad to have you back full-time — your PPO conversion is now formal.");
+      }
+      const docsAsk = "To kick off onboarding, please share your Aadhaar card, PAN card, and your recent payslips or relieving letter — we'll send the formal offer letter alongside.";
+      return [head, ...tailParts, docsAsk].join(" ");
     }
     case "close-walkaway":
       return `I understand. Thanks for the conversation — we'd love to stay in touch for future roles.`;

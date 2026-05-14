@@ -16,8 +16,32 @@
  * transition functions per the kernel's purity contract (design rule 2). */
 
 import { generateNegotiationBand } from "../data/salary-lookup";
+import { getCompanyTier } from "../data/company-tiers";
 import { experienceLevelFromYoe } from "./_candidate-profile";
 import type { NegotiationBand } from "./_negotiation-kernel";
+
+/** Indian fresher-flow extension (2026-05-14).
+ *  IT-services majors (TCS / Infosys / Wipro / HCL / Tech Mahindra / LTI
+ *  / Mindtree / Capgemini India / Cognizant India / Mphasis) pay a
+ *  reduced rate during the 6-month probation period before stepping up
+ *  to confirmed-CTC. ~90% is the industry-standard split. */
+const PROBATION_RATIO = 0.9;
+const PROBATION_MONTHS = 6;
+
+/** Stipend band for active interns. Indian internship stipends typically
+ *  run ~35-45% of the same company's entry-level confirmed CTC, with
+ *  6-month default duration. We scale the resolved entry band by 0.4 and
+ *  flag isInternshipStipend so downstream framing switches to
+ *  stipend/PPO mode rather than CTC mode. */
+const INTERN_STIPEND_RATIO = 0.4;
+const INTERN_DEFAULT_MONTHS = 6;
+
+/** True when the original role string mentions intern/internship.
+ *  Guards against false-positives like "internal-tools-engineer". */
+function isInternshipRole(role: string): boolean {
+  if (!role) return false;
+  return /\b(intern|internship|intern[- ]?ship|summer intern|industrial trainee)\b/i.test(role);
+}
 
 /** Last-resort band when (role, company) can't resolve. Conservative
  *  mid-market numbers; chosen so a missing-data session still produces
@@ -79,12 +103,40 @@ export function resolveServerBand(
        legitimate offer was being flagged out-of-band, the LLM retried
        endlessly, and we shipped the deterministic fallback unfiltered. */
     const kernelWalkAway = typeof b.minOffer === "number" && b.minOffer > 0 ? b.minOffer : Math.max(1, b.initialOffer * 0.75);
-    return {
+    const band: NegotiationBand = {
       initialOffer: b.initialOffer,
       maxStretch: b.maxStretch,
       walkAway: kernelWalkAway,
       hasEquity: Boolean(b.hasEquity),
     };
+
+    /* Fresher-flow extension 1: IT-services entry → probation structure.
+     * Only set probationOffer for IT-services tier at entry level — the
+     * other tiers (product-tech, banks, etc) don't have the same
+     * confirmed-CTC vs probation split as a default policy. */
+    const tier = company ? getCompanyTier(company) : null;
+    if (tier === "it-services" && expForBand === "entry") {
+      band.probationOffer = Math.round(band.initialOffer * PROBATION_RATIO * 10) / 10;
+      band.probationMonths = PROBATION_MONTHS;
+    }
+
+    /* Fresher-flow extension 2: internship role → scale band to stipend
+     * range and flag isInternshipStipend. Detection must happen on the
+     * ORIGINAL role string before alias resolution (salary-lookup
+     * collapses "intern" → "software-engineer"). */
+    if (isInternshipRole(role)) {
+      band.initialOffer = Math.round(band.initialOffer * INTERN_STIPEND_RATIO * 10) / 10;
+      band.maxStretch = Math.round(band.maxStretch * INTERN_STIPEND_RATIO * 10) / 10;
+      band.walkAway = Math.round(band.walkAway * INTERN_STIPEND_RATIO * 10) / 10;
+      band.isInternshipStipend = true;
+      band.internshipMonths = INTERN_DEFAULT_MONTHS;
+      /* Probation doesn't apply to interns — they have a fixed stipend
+       * for the program duration, not a confirmation event. */
+      delete band.probationOffer;
+      delete band.probationMonths;
+    }
+
+    return band;
   } catch {
     return DEFAULT_BAND;
   }

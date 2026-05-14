@@ -90,6 +90,14 @@ export interface CandidateProfileResult {
    *  in dialogue. True when probation is mentioned in a comp context
    *  (i.e. probation salary may differ from post-confirmation salary). */
   probationCompMentioned: boolean;
+  /** Fresher-flow extension (2026-05-14). True when the candidate
+   *  signals an intern-to-fulltime conversion: phrases like "PPO",
+   *  "pre-placement offer", "convert my internship", "I interned with
+   *  you". Routes the negotiation to a PPO-aware framing — the
+   *  candidate already has demonstrated fit and a recent stipend, so
+   *  the recruiter typically anchors near (not at) the fresher entry
+   *  band and JB sizing differs from a cold full-time hire. */
+  internshipConversion: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -104,6 +112,7 @@ const EMPTY: CandidateProfileResult = {
   compensationHistoryIssue: null,
   serviceBondAccepted: false,
   probationCompMentioned: false,
+  internshipConversion: false,
   hasAny: false,
 };
 
@@ -320,6 +329,30 @@ function detectProbationComp(text: string): boolean {
   return PROBATION_COMP_PATTERNS.some((p) => p.test(text));
 }
 
+/* Fresher-flow extension (2026-05-14). Intern-to-fulltime conversion
+ * detection. Fires when the candidate signals that the current
+ * negotiation is for converting a prior or current internship into
+ * a full-time role — a "PPO" (pre-placement offer) in Indian campus
+ * recruiting parlance. Common phrasings:
+ *   - "PPO", "pre-placement offer", "pre placement offer"
+ *   - "convert my internship", "convert the internship", "internship to full-time"
+ *   - "I interned with you", "I interned here", "I was your intern"
+ *   - "intern conversion"
+ * Pure. */
+const INTERNSHIP_CONVERSION_PATTERNS: RegExp[] = [
+  /\bppo\b/i,
+  /\bpre[-\s]?placement\s+offer\b/i,
+  /\bconvert(?:ing|ed)?\s+(?:my\s+|the\s+)?internship\b/i,
+  /\binternship\s+(?:to|into)\s+full[-\s]?time\b/i,
+  /\bintern(?:ed|ing)?\s+(?:with|at|for)\s+you\b/i,
+  /\bi\s+(?:was|am)\s+(?:your|the)\s+intern\b/i,
+  /\bintern\s+conversion\b/i,
+];
+
+function detectInternshipConversion(text: string): boolean {
+  return INTERNSHIP_CONVERSION_PATTERNS.some((p) => p.test(text));
+}
+
 /* ─── Bug-report 11 (2026-05-14) — Fresh-grad disclosure ─────────────
  *
  * A candidate may disclose mid-session that they are actually a pre-
@@ -380,6 +413,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const compensationHistoryIssue = detectCompensationHistoryIssue(text);
   const serviceBondAccepted = detectServiceBond(text);
   const probationCompMentioned = detectProbationComp(text);
+  const internshipConversion = detectInternshipConversion(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -390,7 +424,8 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     transferableSkillsClaimed ||
     compensationHistoryIssue != null ||
     serviceBondAccepted ||
-    probationCompMentioned;
+    probationCompMentioned ||
+    internshipConversion;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -401,6 +436,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     compensationHistoryIssue,
     serviceBondAccepted,
     probationCompMentioned,
+    internshipConversion,
     hasAny,
   };
 }
@@ -653,6 +689,9 @@ export function mergeCandidateProfile(
      * recruiter would remember through the rest of the session. */
     serviceBondAccepted: p.serviceBondAccepted || next.serviceBondAccepted,
     probationCompMentioned: p.probationCompMentioned || next.probationCompMentioned,
+    /* internshipConversion is monotone-up — once the candidate disclosed
+     * "I was your intern" or "convert my PPO", the recruiter remembers. */
+    internshipConversion: p.internshipConversion || next.internshipConversion,
     hasAny: false,
   };
   merged.hasAny =
@@ -664,6 +703,7 @@ export function mergeCandidateProfile(
     merged.transferableSkillsClaimed ||
     merged.compensationHistoryIssue != null ||
     merged.serviceBondAccepted ||
-    merged.probationCompMentioned;
+    merged.probationCompMentioned ||
+    merged.internshipConversion;
   return merged;
 }

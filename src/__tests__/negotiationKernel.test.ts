@@ -362,6 +362,7 @@ describe("parseCandidateAnswer", () => {
         compensationHistoryIssue: null,
         serviceBondAccepted: false,
         probationCompMentioned: false,
+    internshipConversion: false,
         hasAny: false,
       },
       miscSignals: {

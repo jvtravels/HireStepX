@@ -100,6 +100,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       compensationHistoryIssue: null,
       serviceBondAccepted: false,
       probationCompMentioned: false,
+    internshipConversion: false,
       hasAny: false,
     },
     miscSignals: {
