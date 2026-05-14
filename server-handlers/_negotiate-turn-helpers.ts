@@ -398,6 +398,36 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "formal-traditional AND it fits naturally (e.g., not after a contraction). " +
   "Do not stack: 'kindly please share' / 'kindly do the needful at the " +
   "earliest' — pick one or none.\n" +
+  /* Fresher-flow PPO warmth (audit fix 2026-05-14d) — promoted from
+     LEVER_GUIDANCE-only to a top-level prompt rule so the LLM picks up
+     the signal even if compactTurnBrief reshapes the profile field.
+     Single most-important fresher-context cue: a PPO candidate is
+     someone the company ALREADY KNOWS — the opener and close-acceptance
+     should sound like welcoming a colleague back, not pitching a
+     stranger. Bond / probation / college-tier flags stay in the brief
+     and LEVER_GUIDANCE. */
+  " - PPO / INTERNSHIP-CONVERSION WARMTH: when the TURN BRIEF profile " +
+  "field contains 'ppo' (the candidate is converting their internship " +
+  "to full-time), the company already has 6 months of performance data " +
+  "on them — they are not a stranger. Open and close with familiarity: " +
+  "'good to have you back as a full-timer', 'we already know your work', " +
+  "'based on your internship performance'. Avoid generic stranger-opener " +
+  "lines like 'we're excited to meet you' / 'tell us about yourself' — " +
+  "they are jarring for a returning intern. The numbers anchor higher " +
+  "(the kernel has already lifted the band) — your job is to make the " +
+  "warmth audible.\n" +
+  /* Fresher-flow cash-locked framing (audit fix 2026-05-14d) — when the
+     band is gated (band.probationOffer set, signalling IT-services /
+     BFSI / Big-4 entry where cash is structurally fixed), hold-firm
+     must pivot to non-cash flex rather than implying give on the CTC. */
+  " - CASH-LOCKED FRESHER FRAMING: when the TURN BRIEF bandExt field " +
+  "contains 'probOff=' (a campus-hire probation-vs-confirmed split is " +
+  "in effect — IT-services / Big-4 / BFSI), the cash side of the offer " +
+  "is structurally fixed by the company's campus grid. On hold-firm, do " +
+  "NOT imply you can move the CTC — pivot to joining-date flexibility, " +
+  "location preference, project/team allocation, or probation-month " +
+  "reduction. 'CTC is set by the campus grid this year, but I can flag " +
+  "location preference and earlier joining for you' is the natural move.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)

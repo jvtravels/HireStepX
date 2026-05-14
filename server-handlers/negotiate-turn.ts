@@ -113,6 +113,11 @@ interface InitRequest {
    *  field. Routes into resolveServerBand as a ±20-25% multiplier on
    *  the entry band. Server-validated to the known enum before use. */
   collegeTier?: string;
+  /** Fresher-flow extension (2026-05-14d). Optional override of the
+   *  default 6-month internship duration when the role is an intern
+   *  role. Sent by the onboarding flow when the user selects a 12-week
+   *  summer / 3-month winter program. Clamped server-side to [1,12]. */
+  internshipMonths?: number;
 }
 
 interface TurnRequest {
@@ -288,8 +293,13 @@ export default async function handler(
         body.collegeTier === "tier-1" || body.collegeTier === "tier-2" || body.collegeTier === "tier-3"
           ? body.collegeTier
           : null;
+      const onboardingInternshipMonths =
+        typeof body.internshipMonths === "number" && Number.isFinite(body.internshipMonths)
+          ? body.internshipMonths
+          : undefined;
       const resolvedBand = resolveServerBand(role, company, body.experienceLevel, applicableYoe, {
         collegeTier: onboardingCollegeTier,
+        internshipMonths: onboardingInternshipMonths,
       });
       const companyTier = getCompanyTier(company);
 

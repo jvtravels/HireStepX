@@ -48,7 +48,26 @@ const PPO_ANCHOR_LIFT = 1.15;
 export interface ResolveBandOptions {
   collegeTier?: CollegeTier | null;
   internshipConversion?: boolean;
+  /** Override the default 6-month internship duration. Used for
+   *  12-week summer programs (3 months), winter internships (2-3
+   *  months), or 12-month industrial trainee placements. Clamped to
+   *  [1, 12] to guard against bad client input. When undefined, falls
+   *  back to INTERN_DEFAULT_MONTHS. Only consumed when isInternshipRole
+   *  fires (no effect on full-time bands). */
+  internshipMonths?: number;
 }
+
+/** Light college-tier multiplier applied to intern stipends. Tier-1
+ *  IIT/NIT interns at IT-services / GCC commonly land 20-30% above
+ *  the median stipend (₹20-25k/mo vs the standard ₹15-18k/mo). The
+ *  effect is smaller than at full-time entry (where the multiplier
+ *  is 1.25) because stipend bands are tighter and per-tier ratios
+ *  already capture most of the company-side variance. */
+const COLLEGE_TIER_STIPEND_MULTIPLIER: Record<CollegeTier, number> = {
+  "tier-1": 1.2,
+  "tier-2": 1.0,
+  "tier-3": 0.9,
+};
 
 /** Indian fresher-flow extension (2026-05-14, expanded 2026-05-14b).
  *  Per-tier probation gate. Tiers known to run a probation-vs-confirmed
@@ -185,8 +204,13 @@ export function resolveServerBand(
      * 20-40% and unicorns by even more. */
     if (isInternshipRole(role)) {
       const stipendRatio = (tier && STIPEND_RATIO_BY_TIER[tier]) || INTERN_STIPEND_RATIO_DEFAULT;
-      band.initialOffer = Math.round(band.initialOffer * stipendRatio * 10) / 10;
-      band.maxStretch = Math.round(band.maxStretch * stipendRatio * 10) / 10;
+      /* Compose with college-tier stipend multiplier (audit fix
+       * 2026-05-14d): IIT/NIT interns at IT-services routinely land
+       * ₹20-25k/mo vs ₹15-18k/mo standard. Tier-1 +20%, tier-3 -10%. */
+      const collegeStipendMult =
+        opts?.collegeTier ? COLLEGE_TIER_STIPEND_MULTIPLIER[opts.collegeTier] : 1.0;
+      band.initialOffer = Math.round(band.initialOffer * stipendRatio * collegeStipendMult * 10) / 10;
+      band.maxStretch = Math.round(band.maxStretch * stipendRatio * collegeStipendMult * 10) / 10;
       /* Floor sanity (audit concern 5): post-scale walkAway shouldn't
        * compress to a value that trips findOutOfBandNumber on legitimate
        * stipend counters. Use 80% of scaled initialOffer as the floor —
@@ -195,7 +219,14 @@ export function resolveServerBand(
        * asks like "₹20k vs ₹15k stipend". */
       band.walkAway = Math.round(band.initialOffer * 0.8 * 10) / 10;
       band.isInternshipStipend = true;
-      band.internshipMonths = INTERN_DEFAULT_MONTHS;
+      /* Variable internship duration (audit fix 2026-05-14d). Clamp
+       * to [1, 12] — anything outside this range is bad client input
+       * (e.g., negative months, 50-month "internship"). */
+      const requestedMonths = opts?.internshipMonths;
+      band.internshipMonths =
+        typeof requestedMonths === "number" && Number.isFinite(requestedMonths)
+          ? Math.max(1, Math.min(12, Math.round(requestedMonths)))
+          : INTERN_DEFAULT_MONTHS;
       /* Probation doesn't apply to interns — they have a fixed stipend
        * for the program duration, not a confirmation event. */
       delete band.probationOffer;

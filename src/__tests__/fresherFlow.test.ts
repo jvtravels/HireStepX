@@ -371,10 +371,45 @@ describe("fresher-flow — college tier band multiplier", () => {
     expect(ratio).toBeGreaterThan(0.85);
     expect(ratio).toBeLessThan(0.95);
   });
-  it("college tier does NOT apply to intern stipend bands", () => {
+  /* Audit fix (2026-05-14d): college tier NOW composes with intern
+   * stipends — tier-1 IIT intern at TCS should land above standard. */
+  it("tier-1 lifts intern stipend (audit fix 2026-05-14d)", () => {
     const std = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0);
     const t1 = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0, { collegeTier: "tier-1" });
-    expect(t1.initialOffer).toBeCloseTo(std.initialOffer, 1);
+    expect(t1.initialOffer).toBeGreaterThan(std.initialOffer);
+    /* Stipend multiplier is +20% — softer than full-time +25%. */
+    expect(t1.initialOffer).toBeCloseTo(std.initialOffer * 1.2, 1);
+  });
+  it("tier-3 cuts intern stipend (audit fix 2026-05-14d)", () => {
+    const std = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0);
+    const t3 = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0, { collegeTier: "tier-3" });
+    expect(t3.initialOffer).toBeLessThan(std.initialOffer);
+    expect(t3.initialOffer).toBeCloseTo(std.initialOffer * 0.9, 1);
+  });
+});
+
+describe("fresher-flow — variable internship duration (audit fix 2026-05-14d)", () => {
+  it("default internship duration is 6 months", () => {
+    const b = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0);
+    expect(b.internshipMonths).toBe(6);
+  });
+  it("12-week summer override → 3 months", () => {
+    const b = resolveServerBand("Software Engineer Intern", "Google", "entry", 0, { internshipMonths: 3 });
+    expect(b.internshipMonths).toBe(3);
+  });
+  it("12-month industrial trainee override → clamped to 12", () => {
+    const b = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0, { internshipMonths: 12 });
+    expect(b.internshipMonths).toBe(12);
+  });
+  it("bad client input (negative / 50 months) clamps to [1,12]", () => {
+    const b1 = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0, { internshipMonths: -3 });
+    const b50 = resolveServerBand("Software Engineer Intern", "TCS", "entry", 0, { internshipMonths: 50 });
+    expect(b1.internshipMonths).toBe(1);
+    expect(b50.internshipMonths).toBe(12);
+  });
+  it("internshipMonths is ignored for non-intern roles", () => {
+    const b = resolveServerBand("Software Engineer", "TCS", "entry", 0, { internshipMonths: 3 });
+    expect(b.internshipMonths).toBeUndefined();
   });
 });
 
@@ -394,6 +429,18 @@ describe("fresher-flow — PPO anchor lift", () => {
     const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
     const both = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-1", internshipConversion: true });
     expect(both.initialOffer).toBeGreaterThan(std.initialOffer * 1.3);
+  });
+  /* Audit fix coverage (2026-05-14d): tier-2 + tier-3 + PPO composition. */
+  it("tier-2 + PPO compose — neutral college × +15% PPO ≈ +15% lift", () => {
+    const std = resolveServerBand("software-engineer", "TCS", "entry", 0);
+    const both = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-2", internshipConversion: true });
+    expect(both.initialOffer).toBeGreaterThan(std.initialOffer);
+    expect(both.initialOffer).toBeLessThanOrEqual(std.maxStretch);
+  });
+  it("tier-3 + PPO compose — depressed base × +15% PPO is still above tier-3 alone", () => {
+    const t3only = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-3" });
+    const both = resolveServerBand("software-engineer", "TCS", "entry", 0, { collegeTier: "tier-3", internshipConversion: true });
+    expect(both.initialOffer).toBeGreaterThan(t3only.initialOffer);
   });
 });
 
