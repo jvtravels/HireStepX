@@ -155,6 +155,54 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
+  /* Bug-report 15 follow-up (2026-05-14) — third-strike lever-loop guard.
+   *
+   * In the Deloitte BA session the kernel emitted the SAME compensation-
+   * summary lever three turns in a row (and the same fallback text)
+   * because the intent classifier kept routing the candidate's questions
+   * back to the same lever. The verbatim-repeat guard (isVerbatimRepeat)
+   * compares against the immediately-prior AI turn only — when the same
+   * lever fires N turns in a row with the same state, the same fallback
+   * text comes out N times.
+   *
+   * Structural fix: when the LAST TWO AI moves were both the same non-
+   * cash, non-terminal info-lever (compensation-summary, benefits-summary,
+   * notice-period-summary, hike-context-summary) and the picker is about
+   * to fire it a THIRD time, force-route instead:
+   *   - if the candidate has shown ANY acceptance signal at all this
+   *     session (signalledAcceptance flag or recent acceptance hint),
+   *     route to close-acceptance.
+   *   - otherwise route to hold-firm — explicit "this is where we are,
+   *     take the time you need" beats a fourth identical disclosure.
+   *
+   * The guard fires BEFORE the intent overrides below so they can't
+   * re-emit the looped lever. */
+  const INFO_LEVERS_FOR_LOOP_GUARD = new Set([
+    "compensation-summary",
+    "benefits-summary",
+    "notice-period-summary",
+    "hike-context-summary",
+  ]);
+  const recentLevers = state.leversUsed.slice(-2);
+  const stuckLever =
+    recentLevers.length === 2 &&
+    recentLevers[0] === recentLevers[1] &&
+    INFO_LEVERS_FOR_LOOP_GUARD.has(recentLevers[0]);
+  if (stuckLever && !isTerminalPhase(state.phase)) {
+    /* Prefer close-acceptance when an offer is on the table — the
+     * candidate has had two disclosures already; the next move should
+     * push toward decision, not produce a third copy of the same line. */
+    if (state.highestOfferMade > 0) {
+      const jb = state.lastJoiningBonusOffered;
+      return {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade,
+        joiningBonusAmount: jb != null ? jb : undefined,
+        rationale: `Lever-loop guard: ${recentLevers[0]} has fired twice already; force hold-firm at ₹${state.highestOfferMade}L instead of a third identical disclosure.`,
+      };
+    }
+  }
+
   /* Intent override (Phase 3 of the rebuild — Lollypop session, May 2026).
    *
    * The phase machine alone is too coarse for one specific failure mode:

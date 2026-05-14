@@ -164,6 +164,78 @@ describe("Bug-report 15 — Fix D2 — compensation-summary leads with actual nu
   });
 });
 
+/* ─── Fix #2 (follow-up) — lever-loop guard ─────────────────────────── */
+
+import { pickAiMove } from "../../server-handlers/_kernel-move-picker";
+
+describe("Bug-report 15 follow-up — lever-loop guard breaks 3rd-strike repeats", () => {
+  it("third compensation-summary in a row force-routes to hold-firm", () => {
+    const state = makeState({
+      phase: "lever-explore" as NegotiationState["phase"],
+      highestOfferMade: 15.7,
+      leversUsed: ["open-with-offer", "counter-base", "compensation-summary", "compensation-summary"],
+      infoAsked: ["compensation-breakdown"],
+    });
+    const move = pickAiMove(state);
+    expect(move.lever).toBe("hold-firm");
+    expect(move.newTotalLpa).toBe(15.7);
+  });
+
+  it("third benefits-summary in a row also force-routes to hold-firm", () => {
+    const state = makeState({
+      phase: "lever-explore" as NegotiationState["phase"],
+      highestOfferMade: 15,
+      leversUsed: ["open-with-offer", "benefits-summary", "benefits-summary"],
+      infoAsked: ["benefits-overview"],
+    });
+    const move = pickAiMove(state);
+    expect(move.lever).toBe("hold-firm");
+  });
+
+  it("only TWO consecutive info-lever fires does NOT trigger the guard", () => {
+    /* Two-in-a-row is fine; the guard kicks in only on the 3rd-strike
+     * (i.e. last two leversUsed are the same info lever AND we're about
+     * to fire it again). */
+    const state = makeState({
+      phase: "lever-explore" as NegotiationState["phase"],
+      highestOfferMade: 15,
+      leversUsed: ["open-with-offer", "compensation-summary"],
+      infoAsked: ["compensation-breakdown"],
+    });
+    const move = pickAiMove(state);
+    expect(move.lever).toBe("compensation-summary");
+  });
+
+  it("two non-info lever repeats (e.g. counter-base twice) does NOT trip the guard", () => {
+    /* The guard targets info-disclosure levers that produce identical
+     * boilerplate; counter-base has built-in variation via the split
+     * schedule, so a counter-base repeat is legitimate kernel behavior. */
+    const state = makeState({
+      phase: "counter-offer" as NegotiationState["phase"],
+      highestOfferMade: 16,
+      candidateTarget: 20,
+      leversUsed: ["open-with-offer", "probe-justification", "counter-base", "counter-base"],
+    });
+    const move = pickAiMove(state);
+    /* Should still be counter-base (or lever-explore if no headroom) —
+     * NOT hold-firm-by-guard. */
+    expect(move.lever).not.toBe("hold-firm");
+  });
+
+  it("guard does NOT fire in terminal phases (preserves close-acceptance, etc.)", () => {
+    const state = makeState({
+      phase: "accepted" as NegotiationState["phase"],
+      highestOfferMade: 16,
+      acceptedAtTurn: 5,
+      turnIndex: 5,
+      leversUsed: ["open-with-offer", "counter-base", "compensation-summary", "compensation-summary"],
+    });
+    const move = pickAiMove(state);
+    /* Terminal path runs first; guard never sees this state. */
+    expect(move.lever).toBe("close-acceptance");
+  });
+});
+
 /* ─── Fix B — probe-justification fallback shape ────────────────────── */
 
 describe("Bug-report 15 — Fix B — probe-justification fallback asks 'why?'", () => {

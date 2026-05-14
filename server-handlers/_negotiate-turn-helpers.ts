@@ -48,8 +48,8 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Ask the candidate what they're looking for. Do NOT propose a new number — you want their anchor first.",
   "probe-justification":
     "The candidate has stated a target materially above the initial offer but has not justified it. Acknowledge their number warmly, then ask ONE direct question about what's driving it — benchmarking (Levels.fyi, Glassdoor), a competing offer, hike math against current package, or specific role complexity. Do NOT propose a new number, do NOT concede yet — you need their reasoning before you move money. One short sentence of acknowledgement + one question.",
-  "counter-base":
-    "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response. CRITICAL — when the turn brief includes a COMPONENT BREAKDOWN block (base / variable splits), restate the new total AS the split: '₹{total} LPA = ₹{base}L base + ₹{variable}L variable'. Candidates routinely ask for this breakdown two turns later; surfacing it on the counter itself prevents the repeat-ask loop. If a one-time joining bonus is already on the table from a prior turn, also restate it explicitly.",
+    "counter-base":
+    "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response. CRITICAL — when the turn brief includes a COMPONENT BREAKDOWN block (base / variable splits), restate the new total AS the split: '₹{total} LPA = ₹{base}L base + ₹{variable}L variable'. Candidates routinely ask for this breakdown two turns later; surfacing it on the counter itself prevents the repeat-ask loop. If a one-time joining bonus is already on the table from a prior turn, also restate it explicitly. BANNED — do NOT reference 'the existing split', 'the previous breakdown', 'keeping the structure intact', or any phrase implying a prior split was disclosed unless a base/variable breakdown was actually quoted in an earlier AI turn (check RECENT DIALOGUE). The opener typically discloses a HEADLINE number only, not a split — referencing a phantom prior breakdown confuses the candidate. State the new split fresh; do not pretend they've already seen one.",
   "joining-bonus":
     "Acknowledge cash base is at its ceiling. Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total.",
   "equity-grant":
@@ -195,6 +195,24 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   " - Do NOT repeat your previous turn verbatim. If the kernel " +
   "picked the same lever twice, vary the wording substantially.\n" +
   " - 1–3 sentences. No filler openers ('Great question…').\n" +
+  /* Bug-report 15 follow-up (2026-05-14) — counter-base output in the
+     Deloitte BA session read like a press release: "We're considering
+     your request and moving the total CTC for the Business Analyst
+     position at Deloitte to ₹15.7 LPA…". Real Indian HR says: "We can
+     stretch to ₹15.7L — that's ₹13L base + ₹2.7L variable. Does that
+     work?" Same banned-phrases discipline already enforced in the
+     opener prompt (generate-questions.ts:803), now mirrored here. */
+  " - VOICE: write the way an Indian recruiter SPEAKS, not the way an " +
+  "LLM writes. Contractions ('we can', 'that's'), short clauses, plain " +
+  "verbs. BANNED phrases (use the plain alternative): 'considering your " +
+  "request', 'moving the total CTC', 'we are pleased to', 'as discussed', " +
+  "'in light of', 'with respect to', 'leverage', 'utilize', 'facilitate', " +
+  "'ensure', 'navigate', 'circle back', 'reach out', 'touch base'. Do NOT " +
+  "restate the role-name + company every turn ('for the Business Analyst " +
+  "position at Deloitte') — once the conversation is rolling, 'for this " +
+  "role' / 'here' / no qualifier at all is the correct register. The " +
+  "opener already named the role and company; subsequent turns don't " +
+  "need to.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
