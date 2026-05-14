@@ -210,6 +210,14 @@ git push origin main    # Vercel auto-deploys from main
 
 Preview deploys happen per PR. `/api/uptime-check` is the health probe.
 
+**DO NOT run `vercel deploy --prod` from the CLI.** The Vercel GitHub
+integration is enabled on this repo — every push to `main` triggers a
+production build automatically. Running the CLI on top creates 2–3
+redundant deployments for the same commit and wastes build minutes.
+The only deploy step you need is `git push`. Watch the build status
+on the Vercel dashboard or via `gh pr checks` / `vercel inspect <url>`
+if you need to confirm readiness — do not re-trigger.
+
 ## If you are an AI agent
 
 - Prefer editing existing files to creating new ones. New files have
