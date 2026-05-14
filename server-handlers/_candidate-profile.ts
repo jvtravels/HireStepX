@@ -240,6 +240,99 @@ export interface CandidateProfileResult {
    *  Bangalore↔Hyderabad↔Pune↔Gurgaon etc). Routes recruiter to
    *  surface the standard relo package proactively. Monotone-up. */
   relocationBonusAsked: boolean;
+  /* ─── Wave-2 (2026-05-14i) ──────────────────────────────────────── */
+  /** Wave-2A — candidate asks about parent / family insurance cover.
+   *  THE #1 unmet Indian benefit ask. Routes recruiter to surface the
+   *  parent-floater details proactively. Monotone-up. */
+  parentInsuranceAsked: boolean;
+  /** Wave-2A — candidate frames comp in in-hand / take-home / monthly
+   *  net terms instead of CTC. Routes recruiter to walk through the
+   *  CTC → in-hand bridge (PF/gratuity/tax) explicitly. Monotone-up. */
+  inHandTakehomeFocus: boolean;
+  /** Wave-2A — candidate pushes back on Return-to-Office / mandatory
+   *  hybrid days. 2024-2026 Infosys/TCS/Wipro mass-attrition driver.
+   *  Routes recruiter to clarify our specific WFO policy + flex.
+   *  Monotone-up. */
+  rtoPushback: boolean;
+  /** Wave-2A — candidate is returning from a maternity break (distinct
+   *  from generic careerGap — needs returnship voice + no anchor-down
+   *  on stale CTC). Monotone-up. */
+  returnshipMaternity: boolean;
+  /** Wave-2A — candidate asks for the official pay-band / level-range
+   *  / "what's the top of the band". Transparent-comp probe. Routes
+   *  recruiter to honest band disclosure within policy. Monotone-up. */
+  payBandAsked: boolean;
+  /** Wave-2B — candidate asks for tax-optimal CTC structuring (HRA /
+   *  LTA / FBP / meal-card / 80C / NPS). Routes to "yes, we can
+   *  restructure within these caps" voice. Monotone-up. */
+  taxStructureAsked: boolean;
+  /** Wave-2B — candidate volunteers anxiety about background-
+   *  verification (degree gap, employment gap, comp-inflation, weak
+   *  college, "don't call my current manager"). Routes recruiter to
+   *  a measured "tell me what you're worried about" voice — and to
+   *  the red-flag layer. Monotone-up. */
+  bgvAnxiety: boolean;
+  /** Wave-2B — candidate probes ESOP sophistication: 409A / FMV /
+   *  strike-price / vesting / exercise-window / liquidity-history /
+   *  acceleration. Sophisticated-candidate signal — routes recruiter
+   *  to data-rich detail mode. Monotone-up. */
+  esopSophisticationProbe: boolean;
+  /** Wave-2B — candidate cites spouse's job as location/move
+   *  constraint ("wife works in Pune"). Common dual-career India
+   *  pattern. Routes recruiter to location-flex voice. Monotone-up. */
+  spouseJobConstraint: boolean;
+  /** Wave-2B — candidate cites aging-parent care as relocation /
+   *  travel / WFH constraint. Routes recruiter to WFH-flex + medical-
+   *  cover-extending-to-parents voice. Monotone-up. */
+  agingParentCare: boolean;
+  /** Wave-2C — candidate discloses they intend to / already do
+   *  moonlight / side-hustle / second job. Post-Wipro-2022 sensitive
+   *  topic — routes recruiter to surface our written moonlighting
+   *  policy without surprise. Monotone-up. */
+  moonlightingDisclosed: boolean;
+  /** Wave-2C — candidate discloses a mental-health / burnout / therapy
+   *  history affecting work. SENSITIVE — recruiter must NOT anchor
+   *  down; routes to empathetic, "our benefits include EAP / therapy
+   *  reimbursement" voice. Monotone-up. */
+  mentalHealthDisclosed: boolean;
+  /** Wave-2C — candidate asks about gender pay-parity / DEI / pay
+   *  audit results. Routes recruiter to honest disclosure of policy
+   *  (don't deflect). Monotone-up. */
+  payParityAsked: boolean;
+  /** Wave-2C — candidate's current employer pre-emptively counter-
+   *  offered (raise / promotion / WFH) before resignation. Routes
+   *  recruiter to "we know the counter pattern — let's price for the
+   *  market, not against the panicked counter" voice. Monotone-up. */
+  preemptiveCounterReceived: boolean;
+  /** Wave-2C — candidate explicitly asks for an acceptance-grace
+   *  period ("can I have 1-2 weeks to decide?"). Routes recruiter to
+   *  "yes, here's the offer-validity window; how can I help you
+   *  decide?" voice. Monotone-up. */
+  acceptanceTimeRequest: boolean;
+  /** Wave-2D — candidate frames comp in crypto / token / USDT /
+   *  stablecoin terms. Routes recruiter to legal/tax-clarification
+   *  voice (RBI tax 30%+TDS for VDAs). Monotone-up. */
+  cryptoTokenComp: boolean;
+  /** Wave-2D — candidate is at / coming from a Global Capability
+   *  Center (GCC / captive) and may anchor on India-arbitrage parent-
+   *  comp. Routes recruiter to "we price India-market, not parent-co
+   *  arbitrage" voice. Monotone-up. */
+  gccArbitrageAnchor: boolean;
+  /** Wave-2D — candidate discloses bench-time at their current
+   *  services-company (unallocated to a project). Common at TCS/
+   *  Infosys/Wipro. Routes recruiter to "bench is structural, not
+   *  performance" reframe — do NOT anchor down. Monotone-up. */
+  benchTimeDisclosed: boolean;
+  /** Wave-2D — candidate is a second-innings ex-founder / ex-CEO
+   *  whose last salary was ₹0 / stipend / equity-only. Routes
+   *  recruiter to "previous package is non-signal — we price the
+   *  role" voice. Monotone-up. */
+  founderSecondInnings: boolean;
+  /** Wave-2D — candidate is 45+ and signals age-bias concern ("am I
+   *  too senior?", "fit with younger team?"). Routes recruiter to
+   *  warm-affirming voice + frame seniority as asset, not liability.
+   *  Monotone-up. */
+  latecareerAgeBias: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -275,6 +368,26 @@ const EMPTY: CandidateProfileResult = {
   gardenLeaveDisclosed: false,
   nonCompeteFlagged: false,
   relocationBonusAsked: false,
+  parentInsuranceAsked: false,
+  inHandTakehomeFocus: false,
+  rtoPushback: false,
+  returnshipMaternity: false,
+  payBandAsked: false,
+  taxStructureAsked: false,
+  bgvAnxiety: false,
+  esopSophisticationProbe: false,
+  spouseJobConstraint: false,
+  agingParentCare: false,
+  moonlightingDisclosed: false,
+  mentalHealthDisclosed: false,
+  payParityAsked: false,
+  preemptiveCounterReceived: false,
+  acceptanceTimeRequest: false,
+  cryptoTokenComp: false,
+  gccArbitrageAnchor: false,
+  benchTimeDisclosed: false,
+  founderSecondInnings: false,
+  latecareerAgeBias: false,
   hasAny: false,
 };
 
@@ -848,6 +961,235 @@ function detectRelocationBonusAsked(text: string): boolean {
   return RELOCATION_PATTERNS.some((p) => p.test(text));
 }
 
+/* ─── Wave-2 (2026-05-14i) — 20 deeper Indian-market signals ──────── */
+
+/* Wave-2A — parent / family insurance ask. */
+const PARENT_INSURANCE_PATTERNS: RegExp[] = [
+  /\b(?:parents?|family|in[-\s]?laws?|spouse|dependents?)\s+(?:insurance|medical|mediclaim|health\s+cover|coverage|floater)\b/i,
+  /\b(?:medical|insurance|mediclaim|health\s+cover|floater)\s+(?:for|cover(?:ing|s)?|include[ds]?)\s+(?:my\s+)?(?:parents?|family|in[-\s]?laws?|spouse|dependents?)\b/i,
+  /\b(?:does\s+(?:the\s+)?(?:medical|insurance|mediclaim|cover)|insurance\s+sum\s+insured|sum\s+insured|family\s+floater\s+amount)\b/i,
+  /\b(?:opd|out[-\s]?patient)\s+(?:cover(?:age)?|benefit|reimbursement)\b/i,
+  /\b(?:cover|covering|include|including)\s+(?:my\s+)?(?:parents?|in[-\s]?laws?|family|dependents?)\s+(?:in|under|on)\s+(?:the\s+)?(?:medical|insurance|mediclaim|floater|policy)\b/i,
+  /\b(?:cover|covering|include|including)\s+(?:my\s+)?(?:parents?|in[-\s]?laws?|dependents?)\b/i,
+];
+function detectParentInsuranceAsked(t: string): boolean {
+  return PARENT_INSURANCE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2A — in-hand / take-home / monthly net focus. */
+const INHAND_TAKEHOME_PATTERNS: RegExp[] = [
+  /\b(?:in[-\s]?hand|take[-\s]?home|net\s+(?:salary|pay|monthly|in[-\s]?hand))\b/i,
+  /\b(?:monthly\s+(?:in[-\s]?hand|net|take[-\s]?home|salary|deposit|credit)|per[-\s]?month\s+(?:in[-\s]?hand|net|take[-\s]?home))\b/i,
+  /\b(?:what\s+(?:will|would|do)\s+(?:i|my)\s+(?:get|receive|see|take\s+home))\s+(?:in[-\s]?hand|monthly|per[-\s]?month|net)\b/i,
+  /\b(?:gross\s+(?:vs\.?|versus)\s+net|ctc\s+(?:vs\.?|versus)\s+(?:in[-\s]?hand|take[-\s]?home|net))\b/i,
+];
+function detectInHandTakehomeFocus(t: string): boolean {
+  return INHAND_TAKEHOME_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2A — Return-to-Office pushback. */
+const RTO_PUSHBACK_PATTERNS: RegExp[] = [
+  /\b(?:rto|return[-\s]?to[-\s]?office|return\s+to\s+office)\s+(?:mandate|policy|requirement|push|order)?\b/i,
+  /\b(?:was\s+promised|told|sold)\s+(?:wfh|remote|work[-\s]?from[-\s]?home|hybrid)\b/i,
+  /\b(?:forced|mandated|required|asked)\s+(?:to\s+)?(?:come\s+(?:in|back)|return\s+to\s+(?:the\s+)?office)\b/i,
+  /\b(?:hybrid|3[-\s]days?\s+(?:in[-\s]?office|wfo)|office\s+\d+\s+days?)\s+(?:is|becoming|dealbreaker)\b/i,
+  /\b(?:full[-\s]?time\s+(?:wfo|in[-\s]?office)|5\s+days?\s+in\s+(?:the\s+)?office)\b/i,
+];
+function detectRtoPushback(t: string): boolean {
+  return RTO_PUSHBACK_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2A — returnship from maternity. */
+const RETURNSHIP_MATERNITY_PATTERNS: RegExp[] = [
+  /\b(?:returning|coming\s+back|getting\s+back)\s+(?:to\s+work\s+)?(?:after|from|post)\s+(?:my\s+)?(?:maternity|parental|child\s+care|baby)\b/i,
+  /\b(?:maternity|parental)\s+(?:break|gap|leave|hiatus)\s+(?:of\s+|for\s+)?(\d+\s+)?(?:months?|years?)?\b/i,
+  /\b(?:returnship|return[-\s]ship|return\s+to\s+work)\s+(?:program|track|cohort)?\b/i,
+  /\b(?:on\s+a\s+|took\s+a\s+|had\s+a\s+)?(?:maternity|parental)\s+(?:break|sabbatical)\b/i,
+];
+function detectReturnshipMaternity(t: string): boolean {
+  return RETURNSHIP_MATERNITY_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2A — pay-band / level-range / transparency probe. */
+const PAY_BAND_PATTERNS: RegExp[] = [
+  /\b(?:pay\s+band|salary\s+band|comp(?:ensation)?\s+band|band\s+(?:for\s+this\s+)?(?:level|role|grade)|level\s+(?:range|band))\b/i,
+  /\b(?:top|max(?:imum)?|upper|highest)\s+(?:of\s+)?(?:the\s+)?(?:band|range|tier|level)\b/i,
+  /\b(?:what'?s?\s+the\s+(?:band|range|spread|max|maximum)\s+(?:for|on)\s+(?:this|the)\s+(?:role|level|grade))\b/i,
+  /\b(?:internal\s+(?:band|range|equity|parity)|pay\s+equity|outlier\s+hire|out[-\s]?of[-\s]?band)\b/i,
+  /\b(?:levels\.fyi|ambitionbox|glassdoor|levels)\s+(?:data|range|estimate|says)\b/i,
+];
+function detectPayBandAsked(t: string): boolean {
+  return PAY_BAND_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2B — tax-optimal CTC restructuring ask. */
+const TAX_STRUCTURE_PATTERNS: RegExp[] = [
+  /\b(?:hra|house\s+rent\s+allowance|lta|leave\s+travel\s+allowance|fbp|flexi(?:ble)?\s+benefit\s+plan|flexible\s+benefit)\b/i,
+  /\b(?:80c|80d|80ccd|nps|section\s+80|tax[-\s]?saving|tax[-\s]?optim(?:al|ization|ize|izing))\s+(?:structure|component|allocation)?\b/i,
+  /\b(?:meal\s+card|sodexo|telephone\s+allowance|fuel\s+allowance|driver\s+salary)\s+(?:component|reimbursement)?\b/i,
+  /\b(?:old\s+regime|new\s+regime|tax\s+regime)\b/i,
+  /\b(?:structure\s+(?:my\s+|the\s+)?ctc|restructure\s+(?:ctc|comp|package)|ctc\s+(?:break(?:up|down)|component\s+split))\s+(?:for\s+)?(?:tax|hra|optim)/i,
+];
+function detectTaxStructureAsked(t: string): boolean {
+  return TAX_STRUCTURE_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2B — background-verification anxiety. */
+const BGV_ANXIETY_PATTERNS: RegExp[] = [
+  /\b(?:background\s+(?:check|verification|investigation)|bgv|employment\s+verification|degree\s+verification)\s+(?:concern|issue|risk|worry|anxiety|process)?\b/i,
+  /\b(?:don'?t|do\s+not|please\s+don'?t)\s+(?:call|contact|reach\s+out\s+to)\s+(?:my\s+)?(?:current\s+)?(?:manager|employer|company|hr)\b/i,
+  /\b(?:worried|concerned|nervous)\s+about\s+(?:the\s+)?(?:bgv|background|verification)\b/i,
+  /\b(?:my\s+)?(?:degree|education|college)\s+(?:might|may|could)\s+(?:not\s+verify|fail|be\s+a\s+problem)\b/i,
+  /\b(?:correspondence\s+degree|degree\s+is\s+correspondence|distance\s+education|distance[-\s]learning|fake\s+experience|inflated\s+ctc|exaggerated\s+comp)\b/i,
+];
+function detectBgvAnxiety(t: string): boolean {
+  return BGV_ANXIETY_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2B — ESOP sophistication. */
+const ESOP_SOPHISTICATION_PATTERNS: RegExp[] = [
+  /\b(?:409a|four[-\s]?o[-\s]?nine[-\s]?a|fmv|fair\s+market\s+value)\b/i,
+  /\b(?:strike\s+price|exercise\s+price|exercise\s+window|post[-\s]?termination\s+exercise|pte\s+window)\b/i,
+  /\b(?:single[-\s]?trigger|double[-\s]?trigger|acceleration\s+(?:on\s+(?:acquisition|change\s+of\s+control)|clause))\b/i,
+  /\b(?:cliff(?:\s+period)?|vesting\s+(?:schedule|cliff|cadence)|4[-\s]?year\s+vesting|monthly\s+vest)\b/i,
+  /\b(?:liquidity\s+(?:event|history|program)|esop\s+buy[-\s]?back|secondary\s+(?:sale|transaction))\b/i,
+  /\b(?:phantom\s+(?:stock|shares?|equity)|sar\b|stock\s+appreciation\s+rights?)\b/i,
+];
+function detectEsopSophisticationProbe(t: string): boolean {
+  return ESOP_SOPHISTICATION_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2B — spouse-job constraint. */
+const SPOUSE_JOB_PATTERNS: RegExp[] = [
+  /\b(?:wife|husband|spouse|partner)\s+(?:works?|is\s+(?:working|based|employed))\s+(?:in|at|out\s+of|from)\s+\w+/i,
+  /\b(?:my\s+)?(?:wife'?s?|husband'?s?|spouse'?s?|partner'?s?)\s+(?:job|work|role|company|posting|office)\b/i,
+  /\b(?:dual[-\s]?career|two[-\s]?career|both\s+(?:of\s+us|working)|spouse\s+(?:can'?t|cannot)\s+(?:move|relocate))\b/i,
+  /\b(?:can'?t\s+relocate|cannot\s+relocate|cant\s+move)\s+(?:because|since|as)\s+(?:my\s+)?(?:wife|husband|spouse|partner)\b/i,
+];
+function detectSpouseJobConstraint(t: string): boolean {
+  return SPOUSE_JOB_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2B — aging-parent care. */
+const AGING_PARENT_PATTERNS: RegExp[] = [
+  /\b(?:aging|elderly|old(?:er)?|senior|ill|sick|unwell)\s+parents?\b/i,
+  /\b(?:taking\s+care\s+of|caring\s+for|looking\s+after|need\s+to\s+be\s+near|stay\s+near)\s+(?:my\s+)?(?:parents?|mother|father|mom|dad|in[-\s]?laws?)\b/i,
+  /\b(?:parents?\s+(?:are\s+)?(?:in|live\s+in|staying\s+in|based\s+in)|parents?\s+(?:health|medical|illness))\b.{0,80}\b(?:can'?t|cannot|need|stay|relocate|move|wfh|remote)/i,
+  /\b(?:medical\s+emergency\s+at\s+home|family\s+health\s+(?:situation|emergency)|parent'?s?\s+surgery)\b/i,
+];
+function detectAgingParentCare(t: string): boolean {
+  return AGING_PARENT_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2C — moonlighting disclosure. */
+const MOONLIGHTING_PATTERNS: RegExp[] = [
+  /\b(?:moonlight(?:ing)?|dual\s+employment|second\s+job|side\s+job|side\s+income)\b/i,
+  /\b(?:youtube\s+channel|content\s+creation|teaching\s+(?:on\s+the\s+side|online)|freelance\s+(?:on\s+side|side\s+work)|consulting\s+(?:on\s+side|on\s+the\s+side))\b/i,
+  /\b(?:can\s+i\s+(?:keep|continue)|allowed\s+to\s+(?:keep|continue|work\s+on))\s+(?:my\s+)?(?:side[-\s]?(?:project|hustle|gig|business)|other\s+(?:work|job))\b/i,
+  /\b(?:do\s+you\s+allow|policy\s+on)\s+(?:moonlight(?:ing)?|side[-\s]?(?:gigs?|hustle|work)|dual\s+employment)\b/i,
+];
+function detectMoonlightingDisclosed(t: string): boolean {
+  return MOONLIGHTING_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2C — mental-health / burnout disclosure. */
+const MENTAL_HEALTH_PATTERNS: RegExp[] = [
+  /\b(?:mental\s+health|burnout|burn[-\s]?out|anxiety|depression|panic\s+(?:attacks?|disorder))\b/i,
+  /\b(?:therapy|therapist|counsell?or|counsell?ing|psychiatrist|psychologist)\s+(?:sessions?|reimbursement|cover|benefit)?\b/i,
+  /\b(?:eap|employee\s+assistance\s+program|mental\s+wellness|wellness\s+leave|mental\s+health\s+day)\b/i,
+  /\b(?:taking\s+(?:a\s+)?(?:break|time\s+off|leave)\s+for\s+mental\s+health|on\s+leave\s+for\s+(?:burnout|mental\s+health))\b/i,
+];
+function detectMentalHealthDisclosed(t: string): boolean {
+  return MENTAL_HEALTH_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2C — pay-parity / DEI ask. */
+const PAY_PARITY_PATTERNS: RegExp[] = [
+  /\b(?:pay\s+(?:parity|equity|gap|audit|transparency)|gender\s+pay\s+(?:gap|parity)|equal\s+pay)\b/i,
+  /\b(?:diversity\s+(?:and\s+inclusion|equity)|dei\s+(?:policy|report|metrics?)|women\s+at\s+(?:the\s+)?(?:co|company|leadership))\b/i,
+  /\b(?:how\s+do\s+(?:my\s+)?(?:peers?|comparable\s+(?:men|women|hires?)|same[-\s]?level)\s+(?:get\s+paid|earn|compare))\b/i,
+  /\b(?:gender\s+(?:ratio|representation|breakdown)|female\s+leadership|women\s+in\s+(?:tech|engineering|leadership))\b/i,
+];
+function detectPayParityAsked(t: string): boolean {
+  return PAY_PARITY_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2C — preemptive counter received. */
+const PREEMPTIVE_COUNTER_PATTERNS: RegExp[] = [
+  /\b(?:my\s+(?:current\s+)?(?:company|employer|manager|boss|hr))\s+(?:just\s+|already\s+|recently\s+)?(?:gave|offered|made|put|matched)\s+(?:me\s+)?(?:a\s+)?(?:counter|counter[-\s]?offer|raise|hike|promotion|match)/i,
+  /\b(?:counter[-\s]?offered\s+by|got\s+a\s+counter|been\s+counter[-\s]?offered)\s+(?:already|before\s+(?:resigning|leaving)|preemptively)\b/i,
+  /\b(?:got\s+(?:a\s+)?promotion|got\s+(?:a\s+)?raise|salary\s+(?:was|got)\s+(?:bumped|increased|hiked))\s+(?:just|recently|last\s+(?:week|month)|to\s+keep\s+me)\b/i,
+  /\b(?:they|current\s+(?:co|employer))\s+(?:are\s+)?(?:trying|attempting)\s+to\s+(?:retain|keep|hold\s+on\s+to)\s+me\b/i,
+];
+function detectPreemptiveCounterReceived(t: string): boolean {
+  return PREEMPTIVE_COUNTER_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2C — acceptance-time / decision-window request. */
+const ACCEPTANCE_TIME_PATTERNS: RegExp[] = [
+  /\b(?:can\s+i\s+(?:have|get|take)|need|i'?d\s+like|give\s+me)\s+(?:about\s+|around\s+|roughly\s+)?(?:a\s+(?:few|couple)\s+(?:of\s+)?|a\s+|\d+\s+)?(?:days?|weeks?)\s+to\s+(?:decide|think|respond|consider|review)\b/i,
+  /\b(?:offer\s+validity|offer\s+expir(?:y|ation)|decision\s+(?:window|timeline|deadline))\s+(?:of|is|to\s+be)\b/i,
+  /\b(?:more\s+time\s+to\s+decide|some\s+time\s+to\s+(?:think|review|consider)|grace\s+period)\b/i,
+  /\b(?:before\s+i\s+(?:can\s+)?(?:commit|accept|sign|respond)|need\s+(?:to|some)\s+time)\b/i,
+];
+function detectAcceptanceTimeRequest(t: string): boolean {
+  return ACCEPTANCE_TIME_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2D — crypto / token comp. */
+const CRYPTO_TOKEN_PATTERNS: RegExp[] = [
+  /\b(?:crypto|bitcoin|btc|ethereum|eth|usdt|usdc|stablecoin|web3\s+token)\s+(?:comp(?:ensation)?|salary|pay(?:roll|out)?|portion|allocation|component)\b/i,
+  /\b(?:token\s+(?:allocation|grant|vesting|comp)|token[-\s]?based\s+(?:comp|compensation|pay))\b/i,
+  /\b(?:paid\s+in\s+(?:crypto|btc|eth|usdt|usdc|stable(?:coin)?s?|tokens?)|partial\s+(?:crypto|token)\s+payment)\b/i,
+  /\b(?:vda|virtual\s+digital\s+asset|web3\s+native\s+co(?:mpany|mp)?)\b/i,
+];
+function detectCryptoTokenComp(t: string): boolean {
+  return CRYPTO_TOKEN_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2D — GCC / captive India-arbitrage anchor. */
+const GCC_PATTERNS: RegExp[] = [
+  /\b(?:gcc|global\s+capability\s+cent(?:re|er)|captive\s+(?:center|centre|unit)|india\s+(?:gcc|captive))\b/i,
+  /\b(?:parent\s+(?:co|company))\s+(?:is\s+)?(?:in|out\s+of|based\s+in|headquartered\s+in)\s+(?:the\s+)?(?:us|usa|uk|europe|germany|japan)\b.{0,120}\b(?:salary|comp|tc|package|parity|arbitrage|pay)\b/i,
+  /\b(?:india\s+(?:cost\s+)?arbitrage|cost[-\s]?center\s+model|offshore[-\s]?onsite\s+pay\s+gap)\b/i,
+  /\b(?:headquarters?\s+in\s+(?:us|usa|uk|europe))\b.{0,80}\b(?:india\s+(?:office|office\s+pays?|comp|salaries?))\b/i,
+];
+function detectGccArbitrageAnchor(t: string): boolean {
+  return GCC_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2D — bench-time disclosure (services). */
+const BENCH_TIME_PATTERNS: RegExp[] = [
+  /\b(?:on\s+(?:the\s+)?bench|bench\s+(?:time|period|duration|for\s+\d+))\b/i,
+  /\b(?:unallocated|between\s+projects|not\s+(?:yet\s+)?allocated)\s+(?:for\s+|to\s+a\s+)?(?:\d+\s+)?(?:months?|weeks?)?\b/i,
+  /\b(?:bench\s+strength|reserves?\s+pool|talent\s+pool)\b/i,
+];
+function detectBenchTimeDisclosed(t: string): boolean {
+  return BENCH_TIME_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2D — founder / second-innings. */
+const FOUNDER_SECOND_INNINGS_PATTERNS: RegExp[] = [
+  /\b(?:was|been|i'?m\s+(?:a\s+)?)\s+(?:a\s+)?(?:founder|co[-\s]?founder|ceo|chief\s+executive)\b/i,
+  /\b(?:my\s+)?(?:start[-\s]?up|venture|company)\s+(?:didn'?t\s+work\s+out|shut\s+down|failed|wound\s+down|sold|exited)\b/i,
+  /\b(?:i\s+took\s+|drew\s+)(?:no\s+salary|zero\s+salary|a\s+stipend|equity[-\s]?only|founder'?s?\s+salary)\b/i,
+  /\b(?:second\s+innings|returning\s+to\s+(?:full[-\s]?time|fte|corporate)|leaving\s+the\s+founder\s+life)\b/i,
+];
+function detectFounderSecondInnings(t: string): boolean {
+  return FOUNDER_SECOND_INNINGS_PATTERNS.some((p) => p.test(t));
+}
+
+/* Wave-2D — late-career age-bias concern. */
+const LATECAREER_AGE_BIAS_PATTERNS: RegExp[] = [
+  /\b(?:am\s+i\s+too\s+(?:old|senior)|too\s+senior\s+for\s+(?:this|the\s+role|the\s+team)|age\s+(?:bias|discrimination|concern))\b/i,
+  /\b(?:fit\s+(?:in\s+)?with\s+(?:a\s+)?young(?:er)?\s+team|culture\s+fit\s+(?:with|in)\s+a\s+young(?:er)?\s+(?:team|culture))\b/i,
+  /\b(?:i'?m\s+\d{2,3}\s+(?:years\s+old)?|over\s+\d{2,3}|(?:45|50|55|60)\+)\b.{0,80}\b(?:concern|worry|bias|too\s+old|too\s+senior)/i,
+  /\b(?:experience\s+being\s+a\s+(?:liability|negative)|over[-\s]qualified\s+(?:age|tenure)|seniority\s+working\s+against)\b/i,
+];
+function detectLatecareerAgeBias(t: string): boolean {
+  return LATECAREER_AGE_BIAS_PATTERNS.some((p) => p.test(t));
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -943,6 +1285,27 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const gardenLeaveDisclosed = detectGardenLeaveDisclosed(text);
   const nonCompeteFlagged = detectNonCompeteFlagged(text);
   const relocationBonusAsked = detectRelocationBonusAsked(text);
+  /* Wave-2 (2026-05-14i) — 20 deeper signals. */
+  const parentInsuranceAsked = detectParentInsuranceAsked(text);
+  const inHandTakehomeFocus = detectInHandTakehomeFocus(text);
+  const rtoPushback = detectRtoPushback(text);
+  const returnshipMaternity = detectReturnshipMaternity(text);
+  const payBandAsked = detectPayBandAsked(text);
+  const taxStructureAsked = detectTaxStructureAsked(text);
+  const bgvAnxiety = detectBgvAnxiety(text);
+  const esopSophisticationProbe = detectEsopSophisticationProbe(text);
+  const spouseJobConstraint = detectSpouseJobConstraint(text);
+  const agingParentCare = detectAgingParentCare(text);
+  const moonlightingDisclosed = detectMoonlightingDisclosed(text);
+  const mentalHealthDisclosed = detectMentalHealthDisclosed(text);
+  const payParityAsked = detectPayParityAsked(text);
+  const preemptiveCounterReceived = detectPreemptiveCounterReceived(text);
+  const acceptanceTimeRequest = detectAcceptanceTimeRequest(text);
+  const cryptoTokenComp = detectCryptoTokenComp(text);
+  const gccArbitrageAnchor = detectGccArbitrageAnchor(text);
+  const benchTimeDisclosed = detectBenchTimeDisclosed(text);
+  const founderSecondInnings = detectFounderSecondInnings(text);
+  const latecareerAgeBias = detectLatecareerAgeBias(text);
 
   const hasAny =
     careerGapMonths != null ||
@@ -974,7 +1337,27 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     quotaAttainmentClaimed ||
     gardenLeaveDisclosed ||
     nonCompeteFlagged ||
-    relocationBonusAsked;
+    relocationBonusAsked ||
+    parentInsuranceAsked ||
+    inHandTakehomeFocus ||
+    rtoPushback ||
+    returnshipMaternity ||
+    payBandAsked ||
+    taxStructureAsked ||
+    bgvAnxiety ||
+    esopSophisticationProbe ||
+    spouseJobConstraint ||
+    agingParentCare ||
+    moonlightingDisclosed ||
+    mentalHealthDisclosed ||
+    payParityAsked ||
+    preemptiveCounterReceived ||
+    acceptanceTimeRequest ||
+    cryptoTokenComp ||
+    gccArbitrageAnchor ||
+    benchTimeDisclosed ||
+    founderSecondInnings ||
+    latecareerAgeBias;
   return {
     careerGapMonths,
     careerGapActivity,
@@ -1006,6 +1389,26 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     gardenLeaveDisclosed,
     nonCompeteFlagged,
     relocationBonusAsked,
+    parentInsuranceAsked,
+    inHandTakehomeFocus,
+    rtoPushback,
+    returnshipMaternity,
+    payBandAsked,
+    taxStructureAsked,
+    bgvAnxiety,
+    esopSophisticationProbe,
+    spouseJobConstraint,
+    agingParentCare,
+    moonlightingDisclosed,
+    mentalHealthDisclosed,
+    payParityAsked,
+    preemptiveCounterReceived,
+    acceptanceTimeRequest,
+    cryptoTokenComp,
+    gccArbitrageAnchor,
+    benchTimeDisclosed,
+    founderSecondInnings,
+    latecareerAgeBias,
     hasAny,
   };
 }
@@ -1290,6 +1693,27 @@ export function mergeCandidateProfile(
     gardenLeaveDisclosed: p.gardenLeaveDisclosed || next.gardenLeaveDisclosed,
     nonCompeteFlagged: p.nonCompeteFlagged || next.nonCompeteFlagged,
     relocationBonusAsked: p.relocationBonusAsked || next.relocationBonusAsked,
+    /* Wave-2 (2026-05-14i) — all monotone-up. */
+    parentInsuranceAsked: p.parentInsuranceAsked || next.parentInsuranceAsked,
+    inHandTakehomeFocus: p.inHandTakehomeFocus || next.inHandTakehomeFocus,
+    rtoPushback: p.rtoPushback || next.rtoPushback,
+    returnshipMaternity: p.returnshipMaternity || next.returnshipMaternity,
+    payBandAsked: p.payBandAsked || next.payBandAsked,
+    taxStructureAsked: p.taxStructureAsked || next.taxStructureAsked,
+    bgvAnxiety: p.bgvAnxiety || next.bgvAnxiety,
+    esopSophisticationProbe: p.esopSophisticationProbe || next.esopSophisticationProbe,
+    spouseJobConstraint: p.spouseJobConstraint || next.spouseJobConstraint,
+    agingParentCare: p.agingParentCare || next.agingParentCare,
+    moonlightingDisclosed: p.moonlightingDisclosed || next.moonlightingDisclosed,
+    mentalHealthDisclosed: p.mentalHealthDisclosed || next.mentalHealthDisclosed,
+    payParityAsked: p.payParityAsked || next.payParityAsked,
+    preemptiveCounterReceived: p.preemptiveCounterReceived || next.preemptiveCounterReceived,
+    acceptanceTimeRequest: p.acceptanceTimeRequest || next.acceptanceTimeRequest,
+    cryptoTokenComp: p.cryptoTokenComp || next.cryptoTokenComp,
+    gccArbitrageAnchor: p.gccArbitrageAnchor || next.gccArbitrageAnchor,
+    benchTimeDisclosed: p.benchTimeDisclosed || next.benchTimeDisclosed,
+    founderSecondInnings: p.founderSecondInnings || next.founderSecondInnings,
+    latecareerAgeBias: p.latecareerAgeBias || next.latecareerAgeBias,
     hasAny: false,
   };
   merged.hasAny =
@@ -1322,6 +1746,26 @@ export function mergeCandidateProfile(
     merged.quotaAttainmentClaimed ||
     merged.gardenLeaveDisclosed ||
     merged.nonCompeteFlagged ||
-    merged.relocationBonusAsked;
+    merged.relocationBonusAsked ||
+    merged.parentInsuranceAsked ||
+    merged.inHandTakehomeFocus ||
+    merged.rtoPushback ||
+    merged.returnshipMaternity ||
+    merged.payBandAsked ||
+    merged.taxStructureAsked ||
+    merged.bgvAnxiety ||
+    merged.esopSophisticationProbe ||
+    merged.spouseJobConstraint ||
+    merged.agingParentCare ||
+    merged.moonlightingDisclosed ||
+    merged.mentalHealthDisclosed ||
+    merged.payParityAsked ||
+    merged.preemptiveCounterReceived ||
+    merged.acceptanceTimeRequest ||
+    merged.cryptoTokenComp ||
+    merged.gccArbitrageAnchor ||
+    merged.benchTimeDisclosed ||
+    merged.founderSecondInnings ||
+    merged.latecareerAgeBias;
   return merged;
 }
