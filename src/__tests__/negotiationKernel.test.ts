@@ -583,15 +583,24 @@ describe("pickAiMove", () => {
   });
 
   it("counter-offer splits floor → aspiration", () => {
-    /* floor=20, target=26, ceiling=28 → split = 20 + (26-20)*0.5 = 23 */
-    const m = pickAiMove(init({ phase: "counter-offer", highestOfferMade: 20, candidateTarget: 26 }));
+    /* floor=20, target=26, ceiling=28 → split = 20 + (26-20)*0.5 = 23.
+     * Bug-report 15 (2026-05-14) — probe-justification fires once before
+     * the first counter, so seed leversUsed with it to isolate the
+     * counter-base math here. */
+    const m = pickAiMove(init({
+      phase: "counter-offer", highestOfferMade: 20, candidateTarget: 26,
+      leversUsed: ["probe-justification"],
+    }));
     expect(m.lever).toBe("counter-base");
     expect(m.newTotalLpa).toBe(23);
   });
 
   it("counter-offer caps at maxStretch when target above ceiling", () => {
     /* target=40, ceiling=28 → aspiration=28, split = 20 + (28-20)*0.5 = 24 */
-    const m = pickAiMove(init({ phase: "counter-offer", highestOfferMade: 20, candidateTarget: 40 }));
+    const m = pickAiMove(init({
+      phase: "counter-offer", highestOfferMade: 20, candidateTarget: 40,
+      leversUsed: ["probe-justification"],
+    }));
     expect(m.newTotalLpa).toBe(24);
   });
 
@@ -602,7 +611,7 @@ describe("pickAiMove", () => {
        rather than reaching maxStretch in 2 turns. */
     const base = { phase: "counter-offer" as const, highestOfferMade: 20, candidateTarget: 40 };
 
-    const t1 = pickAiMove(init({ ...base, leversUsed: [] }));
+    const t1 = pickAiMove(init({ ...base, leversUsed: ["probe-justification"] }));
     expect(t1.newTotalLpa).toBe(24); // 20 + 8 * 0.5
 
     const t2 = pickAiMove(init({ ...base, leversUsed: ["counter-base"] }));
@@ -622,6 +631,7 @@ describe("pickAiMove", () => {
        leads when the band supports it. */
     const m = pickAiMove(init({
       phase: "counter-offer", highestOfferMade: 28, candidateTarget: 30,
+      leversUsed: ["probe-justification"],
     }));
     expect(m.lever).toBe("equity-grant");
   });
@@ -933,11 +943,12 @@ describe("applyCandidateAnswer — tactics", () => {
 
 describe("pickAiMove tactic boosts", () => {
   it("boosts counter for calibrated+range vs naked counter", () => {
-    const base = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20 });
+    const base = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, leversUsed: ["probe-justification"] });
     const boosted = init({
       phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20,
       candidateAskedAsRange: true,
       vossTacticsUsed: ["calibrated", "label"],
+      leversUsed: ["probe-justification"],
     });
     const m1 = pickAiMove(base);
     const m2 = pickAiMove(boosted);
@@ -954,22 +965,23 @@ describe("pickAiMove tactic boosts", () => {
     const s = init({
       phase: "counter-offer", candidateTarget: 30, highestOfferMade: 22,
       verbalAcceptanceTurn: 3,
+      leversUsed: ["probe-justification"],
     });
     const m = pickAiMove(s);
     expect(m.lever).toBe("hold-firm");
   });
 
   it("soft market reduces concession vs hot market", () => {
-    const soft = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, marketMode: "soft" });
-    const hot = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, marketMode: "hot" });
+    const soft = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, marketMode: "soft", leversUsed: ["probe-justification"] });
+    const hot = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, marketMode: "hot", leversUsed: ["probe-justification"] });
     const ms = pickAiMove(soft);
     const mh = pickAiMove(hot);
     expect(mh.newTotalLpa).toBeGreaterThan(ms.newTotalLpa ?? 0);
   });
 
   it("walkAwayReturned halves concession curve", () => {
-    const normal = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20 });
-    const returned = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, walkAwayReturned: true });
+    const normal = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, leversUsed: ["probe-justification"] });
+    const returned = init({ phase: "counter-offer", candidateTarget: 30, highestOfferMade: 20, walkAwayReturned: true, leversUsed: ["probe-justification"] });
     const mn = pickAiMove(normal);
     const mr = pickAiMove(returned);
     expect(mr.newTotalLpa).toBeLessThan(mn.newTotalLpa ?? Infinity);
@@ -1049,7 +1061,19 @@ describe("integration: full arc", () => {
     expect(state.candidateTarget).toBe(26);
     expect(state.phase).toBe("counter-offer");
 
-    /* T2: AI counters. */
+    /* T2: AI probes justification (Bug-report 15) before moving money.
+     * The picker now requires the candidate to justify a target that's
+     * materially above the initial offer with no current-CTC / competing
+     * context. The probe is a one-shot — leversUsed records it so the
+     * next turn proceeds with counter-base. */
+    move = pickAiMove(state);
+    expect(move.lever).toBe("probe-justification");
+    state = applyAiMove(state, move, `Got it. What's driving the ₹26L ask?`);
+
+    /* Candidate: hand-waves on justification but holds the target. */
+    state = applyCandidateAnswer(state, "It's based on market benchmarks I've seen.");
+
+    /* T3: AI counters. */
     move = pickAiMove(state);
     expect(move.lever).toBe("counter-base");
     expect(move.newTotalLpa).toBe(23);
@@ -1060,7 +1084,7 @@ describe("integration: full arc", () => {
     state = applyCandidateAnswer(state, "OK, I accept.");
     expect(state.phase).toBe("accepted");
 
-    /* T3: AI closes. */
+    /* T4: AI closes. */
     move = pickAiMove(state);
     expect(move.lever).toBe("close-acceptance");
     expect(isTerminalPhase(state.phase)).toBe(true);

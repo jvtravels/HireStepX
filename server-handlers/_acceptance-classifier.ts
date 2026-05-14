@@ -81,6 +81,14 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   /\bi\s+would\s+(?:like\s+to|love\s+to)\s+accept\b/i,
   /\bi'?d\s+(?:like\s+to|love\s+to)\s+accept\b/i,
   /\bi\s+want\s+to\s+accept\b/i,
+  /* Bug-report 15 (2026-05-14) — voice transcription routinely drops
+   * the leading "I" ("Would like to accept this offer.", "Want to
+   * accept the package."). Anchor on the verb phrase itself so the
+   * subject is optional but the speech act is unambiguous. Anchored
+   * to the start of a sentence (^ or after .?!) to avoid matching
+   * "if you'd ever want to accept" type embedded phrases. */
+  /(?:^|[.!?]\s*)(?:would|want)\s+to\s+accept\b/i,
+  /(?:^|[.!?]\s*)(?:would\s+)?like\s+to\s+accept\b/i,
   /\bi\s*(?:'ve|have)\s+(?:already\s+)?accepted\b/i,
   /\bi(?:\s+have)?\s+already\s+accepted\b/i,
   /\baccept(?:ing|ed)\s+(?:this|the|your)\s+offer\b/i,

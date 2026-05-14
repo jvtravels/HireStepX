@@ -46,8 +46,10 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Present the offer cleanly. State the total CTC number, mention base + variable composition briefly, and invite the candidate's reaction.",
   "probe":
     "Ask the candidate what they're looking for. Do NOT propose a new number — you want their anchor first.",
+  "probe-justification":
+    "The candidate has stated a target materially above the initial offer but has not justified it. Acknowledge their number warmly, then ask ONE direct question about what's driving it — benchmarking (Levels.fyi, Glassdoor), a competing offer, hike math against current package, or specific role complexity. Do NOT propose a new number, do NOT concede yet — you need their reasoning before you move money. One short sentence of acknowledgement + one question.",
   "counter-base":
-    "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response.",
+    "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response. CRITICAL — when the turn brief includes a COMPONENT BREAKDOWN block (base / variable splits), restate the new total AS the split: '₹{total} LPA = ₹{base}L base + ₹{variable}L variable'. Candidates routinely ask for this breakdown two turns later; surfacing it on the counter itself prevents the repeat-ask loop. If a one-time joining bonus is already on the table from a prior turn, also restate it explicitly.",
   "joining-bonus":
     "Acknowledge cash base is at its ceiling. Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total.",
   "equity-grant":
@@ -1174,8 +1176,37 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
         : `Our offer for this role is ₹${n} LPA total CTC. What's your reaction?`;
     case "probe":
       return `Before we go further — what range were you expecting for this role?`;
-    case "counter-base":
+    case "probe-justification":
+      /* Bug-report 15 (2026-05-14) — probe-justification fallback.
+       * Mirrors the LLM guidance: warm acknowledgement + one direct
+       * question about what's driving the number. No new number, no
+       * concession yet. */
+      return state.candidateTarget != null
+        ? `Got it — ₹${state.candidateTarget} LPA. Before I come back with a number, help me understand what's driving that — is it a benchmark you've seen (Levels.fyi / Glassdoor), a competing offer, or hike math against your current package?`
+        : `Got it. Before I come back with a number, can you walk me through what's driving your ask — a benchmark, a competing offer, or hike math against your current package?`;
+    case "counter-base": {
+      /* Bug-report 15 (2026-05-14) — surface base/variable split on the
+       * counter itself. The previous fallback emitted a headline number
+       * only ("We can stretch to ₹X LPA"), forcing the candidate to ask
+       * for the breakdown one or two turns later — which then routed to
+       * compensation-summary and back to a 3-turn-loop. When the band
+       * carries component metadata, derive the split here:
+       *   base     = min(baseStretch ?? T, T)
+       *   variable = T − base                     (clamped at variableMax)
+       * Falls back to the legacy headline-only text when no component
+       * metadata exists (older bands). */
+      const baseStretch = state.band.baseStretch;
+      const variableMax = state.band.variableMax;
+      if (n != null && baseStretch != null && variableMax != null) {
+        const base = Math.min(baseStretch, n);
+        const variable = Math.max(0, Math.min(variableMax, Math.round((n - base) * 10) / 10));
+        const baseRounded = Math.round(base * 10) / 10;
+        const jb = state.lastJoiningBonusOffered;
+        const jbSuffix = jb != null ? ` (plus the one-time ₹${jb}L joining bonus we already discussed)` : "";
+        return `We can move to ₹${n} LPA total — that's ₹${baseRounded}L base + ₹${variable}L variable${jbSuffix}. Does that work for you?`;
+      }
       return `We can stretch the base to ₹${n} LPA total. Does that work for you?`;
+    }
     case "joining-bonus":
       return typeof move.joiningBonusAmount === "number"
         ? `We're at the ceiling on base, but we can add a one-time joining bonus of ₹${move.joiningBonusAmount}L on top. Would that bridge the gap?`
@@ -1186,8 +1217,32 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       return `We can also buy out your notice period if that helps. Would that change things?`;
     case "benefits-summary":
       return `Beyond cash, the package includes health cover, learning budget, and flexible hybrid. Worth factoring in.`;
-    case "compensation-summary":
+    case "compensation-summary": {
+      /* Bug-report 15 (2026-05-14) — when an offer is on the table,
+       * always lead with the ACTUAL numbers (base / variable / JB) for
+       * THIS offer before describing the company's generic structure.
+       * Previously this fallback emitted a generic "75-85% base, rest
+       * variable" tutorial regardless of context, which triggered a
+       * verbatim 3-turn-loop when the candidate kept asking "but what
+       * is the total / base?" — same string, same lever, never the
+       * numbers they wanted. */
+      const offer = state.highestOfferMade;
+      const baseStretch = state.band.baseStretch;
+      const variableMax = state.band.variableMax;
+      const jb = state.lastJoiningBonusOffered;
+      if (offer > 0 && baseStretch != null && variableMax != null) {
+        const base = Math.round(Math.min(baseStretch, offer) * 10) / 10;
+        const variable = Math.round(Math.max(0, Math.min(variableMax, offer - base)) * 10) / 10;
+        const jbLine = jb != null ? ` + ₹${jb}L one-time joining bonus` : "";
+        const yearOne = jb != null ? ` (₹${Math.round((offer + jb) * 10) / 10}L year-one cash including the JB)` : "";
+        return `Current offer: ₹${base}L base + ₹${variable}L variable = ₹${offer} LPA${jbLine}${yearOne}. Typical structure here is base ~75-85% of CTC, the rest as performance variable.`;
+      }
+      if (offer > 0) {
+        const jbLine = jb != null ? ` + ₹${jb}L one-time joining bonus` : "";
+        return `Current offer is ₹${offer} LPA total CTC${jbLine}. Typical structure here is base around 75-85% of CTC, the rest as performance variable, with equity for senior roles.`;
+      }
       return `Typical structure here is base around 75-85% of CTC, the rest as performance variable, with equity for senior roles. Happy to dig into any specific component.`;
+    }
     case "notice-period-summary":
       return `Standard joining window is 60-90 days; we can discuss buyout if needed. What's the earliest start date that works for you?`;
     case "hike-context-summary": {

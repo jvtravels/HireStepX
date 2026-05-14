@@ -141,6 +141,13 @@ export const isTerminalPhase = (p: NegotiationPhase): boolean => TERMINAL_PHASES
 export type NegotiationLever =
   | "open-with-offer"   // initial offer presentation
   | "probe"             // ask what they want
+  /* Bug-report 15 (2026-05-14) — fire ONCE before the first counter-base
+   * when the candidate has anchored materially above initialOffer. Real
+   * HR never moves money without first asking what's driving the number
+   * (benchmark? competing offer? current-package hike math?). The probe
+   * is a one-shot: kernel records it in leversUsed so the next turn
+   * proceeds with counter-base regardless of the candidate's follow-up. */
+  | "probe-justification"
   | "counter-base"      // bump base
   | "joining-bonus"     // one-time
   | "equity-grant"      // RSU/ESOP top-up

@@ -268,6 +268,35 @@ export function pickAiMove(state: NegotiationState): AiMove {
     };
   }
 
+  /* Bug-report 15 (2026-05-14) — probe-justification before first
+   * counter-base. Real HR never moves money without first asking what's
+   * driving the candidate's number. Without this gate, kernel jumped
+   * from initialOffer ₹15L straight to counter ₹15.7L the moment the
+   * candidate said "I was looking at ₹18L", which feels robotic and
+   * skips a high-leverage tactical turn.
+   *
+   * Fires ONCE per session — leversUsed tracks the firing. Threshold
+   * (target > initialOffer × 1.05) avoids probing on trivial deltas
+   * where there's nothing meaningful to justify (₹15 vs ₹15.3 is just
+   * noise). Skipped entirely when the candidate has already volunteered
+   * justification context (current CTC, competing offer detail, hike
+   * rationale) — the probe would be redundant. */
+  const shouldProbeJustification =
+    state.phase === "counter-offer" &&
+    state.candidateTarget != null &&
+    state.candidateTarget > state.band.initialOffer * 1.05 &&
+    !state.leversUsed.includes("probe-justification") &&
+    !state.leversUsed.includes("counter-base") &&
+    state.candidateCurrentCtc == null &&
+    !state.competingOfferDetail.hasAny;
+  if (shouldProbeJustification) {
+    return {
+      lever: "probe-justification",
+      newTotalLpa: null,
+      rationale: `Candidate target ₹${state.candidateTarget}L exceeds initial ₹${state.band.initialOffer}L by >5% with no justification on the table; probe before countering.`,
+    };
+  }
+
   /* Counter-offer: split toward target, capped at maxStretch.
 
      Stiffening: the split factor decays as we repeat counter-base.
