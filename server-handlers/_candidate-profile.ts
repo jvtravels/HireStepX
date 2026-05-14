@@ -781,6 +781,32 @@ export interface CandidateProfileResult {
   /** Wave-4E — candidate from D2C founder-era brand (Boat, Mamaearth,
    *  Sugar, Wakefit, Licious). Routes to D2C-brand voice. Monotone-up. */
   d2cConsumerEquity: boolean;
+  /* ─── PDF #17 architectural fix (2026-05-15) — discovery-first
+   * detectors. The recruiter MUST collect these signals before
+   * disclosing an anchor band. All six are optional for back-compat
+   * with serialized state from in-flight sessions; the merge helper
+   * is monotone-up. */
+  /** Candidate disclosed their current CTC (phrases like "my current
+   *  CTC is", "I'm earning", "current package is" + a ₹ amount). */
+  currentCtcDisclosed?: boolean;
+  /** Candidate disclosed the fixed/variable split of their current
+   *  package ("X fixed Y variable", "70-30 split", etc). */
+  fixedVariableSplitDisclosed?: boolean;
+  /** Candidate disclosed their in-hand / take-home amount ("in-hand is
+   *  ₹X", "monthly net ₹X"). */
+  inHandSalaryDisclosed?: boolean;
+  /** Candidate disclosed their notice period ("X days/weeks/months
+   *  notice", "notice period is X"). */
+  noticePeriodDisclosed?: boolean;
+  /** Candidate disclosed competing-offer status, either positively
+   *  ("I have another offer", "in process with X") or negatively
+   *  ("no other offers"). */
+  competingOffersDisclosed?: boolean;
+  /** Candidate provided role-specific value proof: ARR/book size for
+   *  CSM, quota/attainment for sales, complex system shipped for
+   *  engineering, product launches + metrics for product, portfolio
+   *  depth for design. */
+  valueProofProvided?: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -2713,6 +2739,16 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const quickCommerceContext = detectQuickCommerceContext(text);
   const d2cConsumerEquity = detectD2cConsumerEquity(text);
 
+  /* PDF #17 architectural fix (2026-05-15) — six discovery-flag
+   * detectors. The recruiter MUST collect these before disclosing an
+   * anchor band. */
+  const currentCtcDisclosed = detectCurrentCtcDisclosed(text);
+  const fixedVariableSplitDisclosed = detectFixedVariableSplitDisclosed(text);
+  const inHandSalaryDisclosed = detectInHandSalaryDisclosed(text);
+  const noticePeriodDisclosed = detectNoticePeriodDisclosed(text);
+  const competingOffersDisclosed = detectCompetingOffersDisclosed(text);
+  const valueProofProvided = detectValueProofProvided(text);
+
   const hasAny =
     careerGapMonths != null ||
     careerGapActivity != null ||
@@ -2824,7 +2860,13 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     healthcarePharmaContext ||
     manufacturingCoreContext ||
     quickCommerceContext ||
-    d2cConsumerEquity;
+    d2cConsumerEquity ||
+    currentCtcDisclosed ||
+    fixedVariableSplitDisclosed ||
+    inHandSalaryDisclosed ||
+    noticePeriodDisclosed ||
+    competingOffersDisclosed ||
+    valueProofProvided;
   return applyWaveDisables({
     careerGapMonths,
     careerGapActivity,
@@ -2937,8 +2979,100 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     manufacturingCoreContext,
     quickCommerceContext,
     d2cConsumerEquity,
+    currentCtcDisclosed,
+    fixedVariableSplitDisclosed,
+    inHandSalaryDisclosed,
+    noticePeriodDisclosed,
+    competingOffersDisclosed,
+    valueProofProvided,
     hasAny,
   });
+}
+
+/* ─── PDF #17 architectural fix (2026-05-15) — discovery-flag detectors ──
+ *
+ * Six pure detector functions for the discovery-first state machine.
+ * Each returns a single boolean indicating whether the candidate's
+ * utterance contains the relevant disclosure signal. The recruiter
+ * MUST collect these signals (via getNextDiscoveryQuestion + the
+ * isDiscoveryComplete gate) BEFORE disclosing an anchor band. */
+
+/** Detect candidate disclosing current CTC. Looks for an explicit
+ *  reference to current package + a ₹ / lakh number. Pure. */
+export function detectCurrentCtcDisclosed(text: string): boolean {
+  if (!text) return false;
+  /* Must mention current/present compensation context AND a number/
+   * range. We're conservative: a bare number without "current"/"earn"/
+   * "package" context isn't a CTC disclosure (could be a target). */
+  const ctcContext =
+    /\b(?:my\s+current\s+(?:ctc|salary|package|comp|cost\s+to\s+company)|i'?m\s+earning|i\s+earn|i\s+make|current\s+package(?:\s+is)?|presently\s+(?:earning|getting)|today\s+i\s+(?:earn|make|get))\b/i.test(text) ||
+    /\b(?:currently|right\s+now)\s+(?:at|on|earning|making|getting)\b/i.test(text);
+  if (!ctcContext) return false;
+  return /(?:₹|rs\.?|inr|\d+\s*(?:lpa|lakh|l\b|k\b|cr\b|crore))/i.test(text);
+}
+
+/** Detect candidate disclosing fixed/variable split. Pure. */
+export function detectFixedVariableSplitDisclosed(text: string): boolean {
+  if (!text) return false;
+  if (/\b\d+\s*[-\s]*\d+\s*split\b/i.test(text)) return true;
+  if (/\b(?:fixed\s+is|fixed\s+component|fixed\s+portion|fixed\s+pay)\b.{0,40}(?:₹|rs\.?|\d)/i.test(text)) return true;
+  if (/\b(?:variable\s+is|variable\s+component|variable\s+portion|variable\s+pay)\b.{0,40}(?:₹|rs\.?|\d|%)/i.test(text)) return true;
+  if (/\b\d+\s*(?:fixed|fix)\s+(?:and|plus|\+|,)\s*\d+\s*(?:variable|var)\b/i.test(text)) return true;
+  if (/\bsplit\s+is\s+(?:about\s+|around\s+)?\d+/i.test(text)) return true;
+  return false;
+}
+
+/** Detect candidate disclosing in-hand / take-home salary. Pure. */
+export function detectInHandSalaryDisclosed(text: string): boolean {
+  if (!text) return false;
+  if (/\b(?:in\s*-?\s*hand|take\s*-?\s*home|monthly\s+net|net\s+per\s+month|net\s+(?:salary|in\s+hand))\b.{0,50}(?:₹|rs\.?|inr|\d)/i.test(text)) return true;
+  if (/(?:₹|rs\.?|inr)\s*[\d.,]+\s*(?:in\s*-?\s*hand|take\s*-?\s*home|net|per\s+month)\b/i.test(text)) return true;
+  return false;
+}
+
+/** Detect candidate disclosing notice period or earliest joining date.
+ *  Pure. */
+export function detectNoticePeriodDisclosed(text: string): boolean {
+  if (!text) return false;
+  if (/\b\d+\s*(?:day|days|week|weeks|month|months)\s*(?:of\s+)?notice\b/i.test(text)) return true;
+  if (/\bnotice\s+(?:period\s+)?(?:is|of)\s+\d+\s*(?:day|week|month)/i.test(text)) return true;
+  if (/\b(?:i\s+can\s+join|i'?ll\s+be\s+able\s+to\s+join|can\s+join)\s+(?:in\s+)?\d+\s*(?:day|week|month)/i.test(text)) return true;
+  if (/\bserving\s+(?:my\s+)?notice\b/i.test(text)) return true;
+  if (/\b(?:90|60|30|45|15)\s*[-\s]*day\s+notice\b/i.test(text)) return true;
+  return false;
+}
+
+/** Detect candidate disclosing competing offer status (positive or
+ *  negative). Pure. */
+export function detectCompetingOffersDisclosed(text: string): boolean {
+  if (!text) return false;
+  if (/\b(?:i\s+have\s+(?:another|other|a\s+competing)\s+offer|i'?ve\s+got\s+another\s+offer|other\s+offers?\s+in\s+hand|active\s+offer)\b/i.test(text)) return true;
+  if (/\b(?:in\s+process\s+with|interviewing\s+(?:at|with)|in\s+the\s+(?:final|last)\s+round\s+(?:at|with))\b/i.test(text)) return true;
+  if (/\bcompeting\s+offers?\b/i.test(text)) return true;
+  if (/\b(?:no\s+other\s+offers|i\s+don'?t\s+have\s+(?:any\s+)?other\s+offers|not\s+(?:in\s+process|interviewing)\s+(?:anywhere|with\s+anyone))\b/i.test(text)) return true;
+  if (/\bonly\s+(?:offer|company)\s+(?:i'?m|i\s+am)\s+(?:talking\s+to|in\s+process\s+with)\b/i.test(text)) return true;
+  return false;
+}
+
+/** Detect role-specific value proof. Pure — generic across role
+ *  families. Captures ARR / book size / quota / team / product / scale
+ *  numbers in a value-claim context. */
+export function detectValueProofProvided(text: string): boolean {
+  if (!text) return false;
+  /* CSM/CS: ARR / book / retention */
+  if (/\b(?:arr|annual\s+recurring|gross\s+retention|net\s+retention|gdr|ndr|gross\s+renewal|book\s+of\s+business|book\s+size)\b/i.test(text)) return true;
+  /* Sales: quota / attainment / deal size */
+  if (/\b(?:quota\s+(?:of|attainment)|hit\s+\d+%\s+of\s+quota|attained\s+\d+%|deal\s+size|acv|tcv|pipeline\s+of)\b/i.test(text)) return true;
+  /* Engineering: scale numbers / systems shipped */
+  if (/\b(?:architected|built|scaled|designed)\s+(?:a\s+)?(?:system|platform|service|pipeline)\b.{0,80}(?:million|billion|rps|qps|requests|users|transactions)/i.test(text)) return true;
+  if (/\b(?:handling|serving|processing)\s+\d+(?:k|m|mn|bn|million|billion)\s+(?:requests|users|events|transactions|rps|qps)/i.test(text)) return true;
+  /* Product: launched + metrics */
+  if (/\b(?:launched|shipped|owned|drove)\b.{0,80}(?:metric|dau|mau|gmv|conversion|retention\s+by|revenue\s+by|grew\s+by|up\s+\d+%)/i.test(text)) return true;
+  /* Design: portfolio depth */
+  if (/\b(?:my\s+portfolio|case\s+study|case\s+studies|design\s+system|design\s+system\s+i\s+(?:built|owned))\b/i.test(text)) return true;
+  /* People mgmt scope */
+  if (/\b(?:i\s+(?:lead|manage|managed|led|run)\s+(?:a\s+)?team\s+of\s+\d+|team\s+of\s+\d+\s+(?:engineers|designers|pms|reports))\b/i.test(text)) return true;
+  return false;
 }
 
 /* ─── Phase 29 (2026-05-14) — Role-applicable YOE ────────────────────
@@ -3306,6 +3440,21 @@ export function mergeCandidateProfile(
     manufacturingCoreContext: p.manufacturingCoreContext || next.manufacturingCoreContext,
     quickCommerceContext: p.quickCommerceContext || next.quickCommerceContext,
     d2cConsumerEquity: p.d2cConsumerEquity || next.d2cConsumerEquity,
+    /* PDF #17 architectural fix (2026-05-15) — six discovery-flag
+     * detectors. All monotone-up: once the candidate has disclosed
+     * the signal, the recruiter would remember through the session. */
+    currentCtcDisclosed:
+      (p.currentCtcDisclosed ?? false) || (next.currentCtcDisclosed ?? false),
+    fixedVariableSplitDisclosed:
+      (p.fixedVariableSplitDisclosed ?? false) || (next.fixedVariableSplitDisclosed ?? false),
+    inHandSalaryDisclosed:
+      (p.inHandSalaryDisclosed ?? false) || (next.inHandSalaryDisclosed ?? false),
+    noticePeriodDisclosed:
+      (p.noticePeriodDisclosed ?? false) || (next.noticePeriodDisclosed ?? false),
+    competingOffersDisclosed:
+      (p.competingOffersDisclosed ?? false) || (next.competingOffersDisclosed ?? false),
+    valueProofProvided:
+      (p.valueProofProvided ?? false) || (next.valueProofProvided ?? false),
     hasAny: false,
   };
   merged.hasAny =
@@ -3419,6 +3568,12 @@ export function mergeCandidateProfile(
     merged.healthcarePharmaContext ||
     merged.manufacturingCoreContext ||
     merged.quickCommerceContext ||
-    merged.d2cConsumerEquity;
+    merged.d2cConsumerEquity ||
+    (merged.currentCtcDisclosed ?? false) ||
+    (merged.fixedVariableSplitDisclosed ?? false) ||
+    (merged.inHandSalaryDisclosed ?? false) ||
+    (merged.noticePeriodDisclosed ?? false) ||
+    (merged.competingOffersDisclosed ?? false) ||
+    (merged.valueProofProvided ?? false);
   return merged;
 }

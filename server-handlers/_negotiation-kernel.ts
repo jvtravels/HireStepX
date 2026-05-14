@@ -107,6 +107,13 @@ import {
   EMPTY_RETENTION_COUNTER,
   type RetentionCounterResult,
 } from "./_retention-counter";
+import {
+  EMPTY_DISCOVERY_CHECKLIST,
+  backfillDiscoveryChecklist,
+  isValidDiscoveryStage,
+  type DiscoveryChecklist,
+  type DiscoveryStage,
+} from "./_discovery-stage";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -608,6 +615,22 @@ export interface NegotiationState {
    * turn count unless the candidate explicitly declined OR
    * MAX_TURNS_PER_SESSION is hit. Default 8. */
   minTurnsBeforeClose?: number;
+
+  /* PDF #17 architectural fix (2026-05-15) — discovery-first state
+   * machine. The recruiter MUST collect a minimum bar of discovery
+   * items (current CTC, fixed/variable split, notice period,
+   * competing offers, role-specific value proof, target CTC) BEFORE
+   * disclosing an anchor band. The checklist tracks ask/answer pairs
+   * per item. Optional for back-compat with in-flight sessions;
+   * deserializeState backfills via backfillDiscoveryChecklist. */
+  discoveryChecklist?: import("./_discovery-stage").DiscoveryChecklist;
+
+  /* PDF #17 architectural fix (2026-05-15) — explicit discovery-first
+   * stage machine layered on top of the existing phase machine. The
+   * legacy `phase` field remains the authoritative kernel state; this
+   * `discoveryStage` runs in parallel as an informational signal for
+   * compactTurnBrief and the move-picker. Optional for back-compat. */
+  discoveryStage?: import("./_discovery-stage").DiscoveryStage;
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
@@ -910,6 +933,12 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     anchorLocked: false,
     lockedAnchorLpa: null,
     minTurnsBeforeClose: 8,
+    /* PDF #17 architectural fix (2026-05-15) — initial checklist all
+     * false; initial stage "discovery". Probe-mismatch stage is set
+     * only when caller has detected a resume↔role mismatch via the
+     * existing mismatch-probe path; default to "discovery" here. */
+    discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
+    discoveryStage: "discovery",
   };
 }
 
@@ -2556,6 +2585,29 @@ export function validateState(state: unknown): asserts state is NegotiationState
   ) {
     throw new Error("state.minTurnsBeforeClose");
   }
+  /* PDF #17 architectural fix (2026-05-15) — discoveryChecklist
+   * optional; when present every key must be boolean. */
+  if (s.discoveryChecklist !== undefined) {
+    const dc = s.discoveryChecklist as Record<string, unknown>;
+    if (!dc || typeof dc !== "object") throw new Error("state.discoveryChecklist");
+    const keys: (keyof DiscoveryChecklist)[] = [
+      "currentCtcAsked", "currentCtcAnswered",
+      "fixedVariableSplitAsked", "fixedVariableSplitAnswered",
+      "noticePeriodAsked", "noticePeriodAnswered",
+      "competingOffersAsked", "competingOffersAnswered",
+      "valueProofAsked", "valueProofAnswered",
+      "targetAsked", "targetAnswered",
+      "variableComfortTested", "commitmentValidationAsked",
+    ];
+    for (const k of keys) {
+      if (dc[k] !== undefined && typeof dc[k] !== "boolean") {
+        throw new Error(`state.discoveryChecklist.${k}`);
+      }
+    }
+  }
+  if (s.discoveryStage !== undefined && !isValidDiscoveryStage(s.discoveryStage)) {
+    throw new Error("state.discoveryStage");
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -2631,6 +2683,10 @@ export function deserializeState(json: string): NegotiationState {
     lockedAnchorLpa: (s.lockedAnchorLpa as number | null | undefined) ?? null,
     /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard. */
     minTurnsBeforeClose: (s.minTurnsBeforeClose as number | undefined) ?? 8,
+    /* PDF #17 architectural fix (2026-05-15) — discovery-first state
+     * machine fields. Optional for back-compat with in-flight sessions. */
+    discoveryChecklist: backfillDiscoveryChecklist(s.discoveryChecklist),
+    discoveryStage: (s.discoveryStage as DiscoveryStage | undefined) ?? "discovery",
     /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
      * Optional for back-compat; defaults to null (treat in-flight
      * sessions as if no fresh counter has been parsed). */
