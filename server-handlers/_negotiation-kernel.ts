@@ -78,6 +78,7 @@ import {
   detectFreshGradDisclosure,
   type CandidateProfileResult,
 } from "./_candidate-profile";
+import { resolveServerBand } from "./_band-resolver";
 import {
   extractMiscSignals,
   mergeMiscSignals,
@@ -537,9 +538,9 @@ export interface NegotiationState {
   /* Bug-report 11 (2026-05-14) — mid-session fresh-grad disclosure. The
    * candidate told us mid-conversation that they're pre-graduate / a
    * fresh grad / still in college. When true, candidateApplicableYoe is
-   * forced to 0 and the AI MUST acknowledge the disclosure in the next
-   * turn (band stays as-resolved at init for now; the brief surfaces
-   * a hint so the recruiter prose downshifts). Sticky once set. */
+   * forced to 0 AND the band rebases to entry-tier via resolveServerBand
+   * (Phase 30, 2026-05-14) — clamped so the new ceiling is never below
+   * highestOfferMade, preserving the close-floor invariant. Sticky once set. */
   freshGradDisclosed: boolean;
 }
 
@@ -1296,6 +1297,32 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   if (!state.freshGradDisclosed && detectFreshGradDisclosure(answer)) {
     next.freshGradDisclosed = true;
     next.candidateApplicableYoe = 0;
+    /* Phase 30 (2026-05-14) — mid-session band rebase.
+     *
+     * Before this block we only zeroed candidateApplicableYoe, but the
+     * band stored on state was already resolved at init from the
+     * onboarding-time applicableYoe (e.g. resume said "5 yrs" → senior
+     * band locked at ₹35-65L). With the disclosure, the AI should
+     * anchor entry-tier numbers from the very next move.
+     *
+     * Re-resolve the band with applicableYoe=0 → "entry" tier. But never
+     * lower the ceiling below what has ALREADY been offered: the close-
+     * floor invariant says we cannot claw back commitments. If the AI
+     * has already opened at ₹40L and only now learns the candidate is
+     * pre-grad, the ceiling pins to the prior offer rather than
+     * collapsing the floor underneath an active negotiation. */
+    const rebased = resolveServerBand(state.role, state.company, "entry", 0);
+    const floor = Math.max(state.highestOfferMade ?? 0, rebased.initialOffer);
+    /* `band` is `readonly` on NegotiationState — by design it's an
+     * init-time field. Phase 30 is the one explicit case where we
+     * rebase, so we narrow the cast to this assignment rather than
+     * dropping the readonly contract everywhere. */
+    (next as { band: NegotiationBand }).band = {
+      initialOffer: rebased.initialOffer,
+      maxStretch: Math.max(rebased.maxStretch, floor),
+      walkAway: rebased.walkAway,
+      hasEquity: rebased.hasEquity,
+    };
   }
   if (parsed.miscSignals.hasAny) {
     next.miscSignals = mergeMiscSignals(state.miscSignals, parsed.miscSignals);
