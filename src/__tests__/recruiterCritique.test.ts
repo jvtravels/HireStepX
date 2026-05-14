@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   critiqueRecruiterStrategy,
+  recommendWalkAway,
   type RecruiterCritiqueCode,
 } from "../../server-handlers/_recruiter-critique";
 import {
@@ -484,5 +485,71 @@ describe("computeNegotiationMetrics — recruiterCritique field", () => {
     ];
     const out = computeNegotiationMetrics({ finalState: state, moves });
     expect(out.recruiterCritique).toEqual([]);
+  });
+});
+
+describe("recommendWalkAway — Wave-7 disengagement signal", () => {
+  it("no walk on a vanilla state", () => {
+    const r = recommendWalkAway(makeState());
+    expect(r.walk).toBe(false);
+    expect(r.reason).toBe("");
+  });
+
+  it("walks when target is >20% above maxStretch after 3+ turns", () => {
+    /* band ceiling 30; target 40 = 33% above. */
+    const r = recommendWalkAway(makeState({ candidateTarget: 40, turnIndex: 5 }));
+    expect(r.walk).toBe(true);
+    expect(r.reason).toMatch(/above band ceiling/);
+  });
+
+  it("does NOT walk on >20% target when turn < 3 (still early)", () => {
+    const r = recommendWalkAway(makeState({ candidateTarget: 40, turnIndex: 1 }));
+    expect(r.walk).toBe(false);
+  });
+
+  it("walks when final-offer asserted 3+ times without resolution", () => {
+    const r = recommendWalkAway(makeState({ finalOfferAssertedCount: 3 }));
+    expect(r.walk).toBe(true);
+    expect(r.reason).toMatch(/Final-offer asserted/);
+  });
+
+  it("does NOT walk when finalOfferAssertedCount is high but candidate already walked", () => {
+    const r = recommendWalkAway(
+      makeState({ finalOfferAssertedCount: 4, walkAwayReturned: true }),
+    );
+    /* candidate already gone; recruiter walk-recommendation is moot. */
+    expect(r.walk).toBe(false);
+  });
+
+  it("walks on stacked renege + bgvAnxiety", () => {
+    const base = makeState();
+    base.candidateProfile.postAcceptanceRenege = true;
+    base.candidateProfile.bgvAnxiety = true;
+    const r = recommendWalkAway(base);
+    expect(r.walk).toBe(true);
+    expect(r.reason).toMatch(/risk signals/);
+  });
+
+  it("walks on PIP + prior offer rescinded", () => {
+    const base = makeState();
+    base.candidateProfile.pipDisclosed = true;
+    base.candidateProfile.offerRescindedHistory = true;
+    const r = recommendWalkAway(base);
+    expect(r.walk).toBe(true);
+  });
+
+  it("walks when at ceiling and turn > 8 (conversation dragged)", () => {
+    const r = recommendWalkAway(
+      makeState({ highestOfferMade: 30, turnIndex: 9 }),
+    );
+    expect(r.walk).toBe(true);
+    expect(r.reason).toMatch(/At ceiling/);
+  });
+
+  it("does NOT walk at ceiling when turn <= 8", () => {
+    const r = recommendWalkAway(
+      makeState({ highestOfferMade: 30, turnIndex: 6 }),
+    );
+    expect(r.walk).toBe(false);
   });
 });

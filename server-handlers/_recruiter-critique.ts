@@ -502,3 +502,83 @@ export function critiqueRecruiterWithQuotes(
 
   return { items, quotes, aPlusRewrite: aPlus };
 }
+
+/* ─── recommendWalkAway (Wave-7, 2026-05-15) ────────────────────────────
+ *
+ * A recruiter-side coaching signal that says: "this candidate is not
+ * worth closing — disengage." Distinct from the candidate-side walkAway
+ * detector in the kernel (that one fires when the candidate declines).
+ *
+ * Fires when ANY of:
+ *   1. candidate target is > 1.2× maxStretch AND they've refused to move
+ *      from it across ≥3 turns (no flexibility, gap too wide).
+ *   2. ≥3 turns asserted final-offer with the candidate still demanding
+ *      more (no convergence, credibility burned).
+ *   3. Multiple high-severity red-flag signals stack: postAcceptanceRenege
+ *      + bgvAnxiety + currentCtcRefusal, or pipDisclosed + offerRescindedHistory.
+ *   4. Candidate is at maxStretch AND turnIndex > 8 (negotiation has run
+ *      too long without a close — opportunity cost).
+ *
+ * Returns {walk: false, reason: ""} when no exit signal is present. */
+export function recommendWalkAway(state: NegotiationState): {
+  walk: boolean;
+  reason: string;
+} {
+  const band = state.band;
+  const target = state.candidateTarget;
+  const turn = state.turnIndex ?? 0;
+  const profile = state.candidateProfile;
+
+  /* (1) target far above ceiling with no flex (3+ stale turns). */
+  if (
+    target != null &&
+    band &&
+    typeof band.maxStretch === "number" &&
+    target > band.maxStretch * 1.2 &&
+    turn >= 3
+  ) {
+    return {
+      walk: true,
+      reason: `Candidate target ₹${target}L is >20% above band ceiling ₹${band.maxStretch}L after ${turn} turns. Gap too wide to close.`,
+    };
+  }
+
+  /* (2) final-offer asserted thrice, candidate still hasn't moved. */
+  if ((state.finalOfferAssertedCount ?? 0) >= 3 && !state.walkAwayReturned) {
+    return {
+      walk: true,
+      reason: `Final-offer asserted ${state.finalOfferAssertedCount} times without convergence. Continuing erodes credibility.`,
+    };
+  }
+
+  /* (3) stacked bad-actor signals — too risky to onboard. */
+  if (profile) {
+    const renegeRisk =
+      profile.postAcceptanceRenege &&
+      (profile.bgvAnxiety || profile.currentCtcRefusal);
+    const ofRiscindRisk =
+      profile.pipDisclosed && profile.offerRescindedHistory;
+    if (renegeRisk || ofRiscindRisk) {
+      return {
+        walk: true,
+        reason:
+          "Stacked risk signals (renege history + BGV anxiety / CTC refusal, or PIP + prior offer rescinded). Walk to protect the requisition.",
+      };
+    }
+  }
+
+  /* (4) at ceiling, conversation has dragged. */
+  if (
+    band &&
+    typeof band.maxStretch === "number" &&
+    state.highestOfferMade >= band.maxStretch - 0.01 &&
+    turn >= 8
+  ) {
+    return {
+      walk: true,
+      reason: `At ceiling ₹${band.maxStretch}L after ${turn} turns. Close-or-walk window has closed.`,
+    };
+  }
+
+  return { walk: false, reason: "" };
+}

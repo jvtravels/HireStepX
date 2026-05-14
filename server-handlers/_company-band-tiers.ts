@@ -31,10 +31,19 @@ const IT_SERVICES = [
   "tech mahindra", "capgemini", "ltimindtree", "lti", "mphasis",
   "accenture", "persistent", "mindtree", "hexaware", "coforge",
   "dxc", "ibm india", "ibm", "genpact", "birlasoft",
+  /* Wave-7 expansion. */
+  "ltts", "l t technology", "kpit", "cyient", "sonata", "nseit",
+  "happiest minds", "zensar", "tata elxsi", "tata technologies",
+  "nagarro", "globant", "epam", "thoughtworks", "infogain",
+  "marlabs", "virtusa", "incedo", "mastek", "syntel",
 ];
 const BIG_TECH = [
   "google", "microsoft", "amazon", "meta", "facebook", "apple",
   "netflix", "uber", "adobe", "linkedin",
+  /* Wave-7. */
+  "salesforce", "oracle", "intuit", "atlassian", "stripe",
+  "snowflake", "databricks", "nvidia", "intel", "qualcomm",
+  "samsung r&d", "samsung india", "vmware",
 ];
 const GCC = [
   "walmart labs", "walmart", "target", "lowe's", "lowes",
@@ -42,28 +51,63 @@ const GCC = [
   "morgan stanley", "ms gcc", "goldman sachs", "wells fargo",
   "citi", "barclays", "hsbc", "shell", "bp", "chevron",
   "honeywell", "ge", "ge india", "philips",
+  /* Wave-7 — expanded captive / GCC roster. */
+  "tesco", "lowes india", "macys", "macy's", "kroger",
+  "bank of america", "bofa", "rbs", "natwest", "ubs",
+  "credit suisse", "nomura", "society generale", "socgen",
+  "standard chartered", "anz", "fidelity", "blackrock",
+  "boeing india", "airbus india", "rolls royce india",
+  "schlumberger", "halliburton", "exxonmobil", "totalenergies",
+  "siemens healthineers", "abb india", "bosch", "continental",
+  "sap labs", "sap india", "dell india", "hp india", "cisco india",
 ];
 const UNICORN = [
   "flipkart", "swiggy", "zomato", "ola", "paytm", "phonepe",
   "razorpay", "cred", "urban company", "urbanclap", "meesho",
   "dream11", "byju", "byju's", "unacademy", "nykaa", "policybazaar",
   "lenskart", "delhivery", "groww", "upstox",
+  /* Wave-7. */
+  "rapido", "porter", "shiprocket", "boat", "mamaearth",
+  "purplle", "myntra", "ixigo", "yatra", "redbus",
+  "snapdeal", "khatabook", "okcredit", "vedantu",
+  "physicswallah", "leetcode india", "scaler", "interview kickstart",
+  "zerodha", "coindcx", "coinswitch", "wazirx", "polygon",
 ];
 const PRODUCT_INDIA = [
   "zoho", "freshworks", "postman", "hasura", "browserstack",
   "chargebee", "darwinbox", "moengage", "icertis",
+  /* Wave-7. */
+  "fivetran india", "rippling india", "highspot", "amagi",
+  "innovaccer", "mindtickle", "clevertap",
+  "whatfix", "uniphore", "yellow.ai", "haptik",
 ];
 const CONSULTING = [
   "mckinsey", "bcg", "bain", "deloitte", "ey", "ernst & young",
   "kpmg", "pwc", "pricewaterhousecoopers", "accenture strategy",
+  /* Wave-7. */
+  "kearney", "at kearney", "oliver wyman", "roland berger",
+  "mercer", "willis towers watson", "korn ferry", "aon",
+  "zs associates", "zs", "parthenon", "alvarez marsal",
 ];
 const BFSI = [
   "hdfc", "icici", "sbi", "axis", "kotak", "idfc",
   "yes bank", "bandhan", "indusind", "federal bank", "rbl",
+  /* Wave-7 — expanded BFSI. */
+  "pnb", "punjab national", "boi", "bank of india", "union bank",
+  "canara bank", "iob", "indian overseas", "central bank of india",
+  "lic", "life insurance corporation", "gic", "bajaj finserv",
+  "bajaj allianz", "sbi life", "max life", "tata aig",
+  "icici prudential", "hdfc life", "reliance general",
+  "muthoot", "manappuram", "shriram finance", "cholamandalam",
 ];
 const PHARMA = [
   "sun pharma", "dr reddy", "dr reddy's", "cipla", "lupin",
   "biocon", "aurobindo", "torrent pharma", "glenmark",
+  /* Wave-7. */
+  "zydus", "cadila", "alkem", "piramal", "intas", "mankind",
+  "abbott india", "pfizer india", "gsk india", "novartis india",
+  "sanofi india", "roche india", "merck india", "astrazeneca india",
+  "syngene", "biocon biologics", "wockhardt", "ipca",
 ];
 
 function normalize(s: string): string {
@@ -74,6 +118,93 @@ function normalize(s: string): string {
 function any(n: string, list: string[]): boolean {
   for (const t of list) if ((" " + n + " ").includes(" " + t + " ")) return true;
   return false;
+}
+
+/* ─── Wave-7 (2026-05-15) — sector classifier ──────────────────────────
+ *
+ * Independent of the comp tier, the SECTOR string surfaces a richer
+ * vertical context the recruiter prompt can route on (edtech voice,
+ * EV voice, space-tech band, etc.). This is a separate classifier from
+ * `classifyCompanyTier` because the tier is about comp anchoring and
+ * the sector is about voice / domain-specific levers. Pure. */
+export type CompanySector =
+  | "edtech"
+  | "ev-mobility"
+  | "space-tech"
+  | "defence"
+  | "web3-crypto"
+  | "psu-defence-aero"
+  | "fintech-lending"
+  | "fintech-payments"
+  | "fintech-wealth"
+  | "fintech-neobank"
+  | "fintech-insurtech"
+  | "core-engineering"
+  | "quick-commerce"
+  | null;
+
+const EDTECH = [
+  "byju", "byjus", "vedantu", "unacademy", "extramarks", "whitehat",
+  "toppr", "simplilearn", "upgrad", "cuemath", "doubtnut",
+  "physicswallah", "scaler", "interview kickstart", "great learning",
+];
+const EV_MOBILITY = [
+  "ather", "ola electric", "ultraviolette", "exponent energy",
+  "battery smart", "log9", "euler motors", "tork motors",
+  "ampere", "revolt", "okinawa", "hero electric",
+];
+const SPACE_TECH = [
+  "skyroot", "agnikul", "pixxel", "dhruva space",
+  "bellatrix", "satellize", "kawa space", "digantara",
+];
+const DEFENCE = [
+  "tonbo", "ideaforge", "newspace", "alpha design",
+  "optimized electrotech", "paras defence", "bharat forge defence",
+];
+const WEB3 = [
+  "polygon labs", "polygon", "coindcx", "wazirx", "coinswitch",
+  "crypto offshore", "dubai web3", "singapore web3",
+];
+const PSU = [
+  "indian oil", "ongc", "bhel", "bel", "hal", "drdo",
+  "sail", "gail", "coal india", "ntpc", "nhpc", "powergrid",
+  "ircon", "nbcc", "rites", "dmrc",
+];
+const FINTECH_LENDING = ["lendingkart", "kissht", "kreditbee", "moneyview", "navi", "indiagold"];
+const FINTECH_PAYMENTS = ["razorpay", "paytm", "phonepe", "billdesk", "pine labs", "mswipe"];
+const FINTECH_WEALTH = ["groww", "upstox", "zerodha", "smallcase", "indmoney", "kuvera"];
+const FINTECH_NEOBANK = ["jupiter", "fi money", "niyo", "open money", "freo"];
+const FINTECH_INSURTECH = ["acko", "digit insurance", "policybazaar", "turtlemint", "renewbuy"];
+const CORE_ENG = [
+  "l t", "larsen", "siemens india", "abb india", "thermax",
+  "cummins india", "kirloskar", "bhel", "tata steel", "jsw steel",
+];
+const QCOM = [
+  "zepto", "instamart", "blinkit", "swiggy instamart",
+  "dunzo daily", "getfresh", "fraazo", "bb now", "bigbasket now",
+];
+
+/** Classify a company name into a vertical-sector bucket (or null). */
+export function classifyCompanySector(
+  companyName: string | null | undefined,
+): CompanySector {
+  if (!companyName) return null;
+  const n = normalize(companyName);
+  if (!n) return null;
+  if (any(n, EDTECH)) return "edtech";
+  if (any(n, EV_MOBILITY)) return "ev-mobility";
+  if (any(n, SPACE_TECH)) return "space-tech";
+  if (any(n, DEFENCE)) return "defence";
+  if (any(n, WEB3)) return "web3-crypto";
+  if (any(n, PSU)) return "psu-defence-aero";
+  if (any(n, FINTECH_LENDING)) return "fintech-lending";
+  if (any(n, FINTECH_PAYMENTS)) return "fintech-payments";
+  if (any(n, FINTECH_WEALTH)) return "fintech-wealth";
+  if (any(n, FINTECH_NEOBANK)) return "fintech-neobank";
+  if (any(n, FINTECH_INSURTECH)) return "fintech-insurtech";
+  if (any(n, QCOM)) return "quick-commerce";
+  if (any(n, CORE_ENG)) return "core-engineering";
+  return null;
 }
 
 /** Classify a company name into one of 10 band tiers. */
