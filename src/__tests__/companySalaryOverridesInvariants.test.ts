@@ -71,10 +71,11 @@ describe("company-salary-overrides — data integrity invariants", () => {
     for (const [company, roles] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
       for (const [role, levels] of Object.entries(roles ?? {})) {
         if (!levels) continue;
-        const present = TIERS.filter((t) => (levels as any)[t]);
+        const lv = levels as Partial<Record<ExperienceLevel, CompanyBandOverride>>;
+        const present = TIERS.filter((t) => lv[t]);
         for (let i = 0; i < present.length - 1; i++) {
-          const a = (levels as any)[present[i]] as CompanyBandOverride;
-          const n = (levels as any)[present[i + 1]] as CompanyBandOverride;
+          const a = lv[present[i]] as CompanyBandOverride;
+          const n = lv[present[i + 1]] as CompanyBandOverride;
           if (n.totalMax + 0.01 < a.totalMax || n.totalMin + 0.01 < a.totalMin) {
             violations.push(
               `${company}/${role}: ${present[i]}(${a.totalMin}-${a.totalMax}) → ${present[i + 1]}(${n.totalMin}-${n.totalMax})`,
@@ -114,7 +115,8 @@ describe("company-salary-overrides — data integrity invariants", () => {
     for (const [company, roles] of Object.entries(COMPANY_SALARY_OVERRIDES)) {
       for (const [role, levels] of Object.entries(roles ?? {})) {
         if (!levels) continue;
-        const missing = required.filter((t) => !(levels as any)[t]);
+        const lv = levels as Partial<Record<ExperienceLevel, CompanyBandOverride>>;
+        const missing = required.filter((t) => !lv[t]);
         if (missing.length > 0) missingByTuple.push({ co: company, role, missing });
       }
     }

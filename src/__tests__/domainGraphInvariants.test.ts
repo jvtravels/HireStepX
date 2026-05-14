@@ -63,7 +63,7 @@ describe("domain graph invariants", () => {
   });
 
   it("[D4] computeApplicableYoe returns only {match, adjacent, pivot, unknown}", () => {
-    const ALLOWED = new Set(["match", "adjacent", "pivot", "unknown"] as const);
+    const ALLOWED: ReadonlySet<string> = new Set(["match", "adjacent", "pivot", "unknown"]);
     /* Sample a handful of representative (candidate, target) cross-
      * sections. The set of relations actually emitted across this
      * sample must be a subset of ALLOWED. */
@@ -78,7 +78,7 @@ describe("domain graph invariants", () => {
     ];
     for (const s of samples) {
       const r = computeApplicableYoe(s);
-      expect(ALLOWED.has(r.relation as any)).toBe(true);
+      expect(ALLOWED.has(r.relation)).toBe(true);
     }
   });
 
