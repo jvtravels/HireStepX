@@ -481,15 +481,21 @@ function computeJoiningBonusAmount(state: NegotiationState): number {
   const target = state.candidateTarget;
   const refTop = target != null ? target : state.band.maxStretch;
   const gap = Math.max(0, refTop - state.highestOfferMade);
-  const baseJB = Math.min(6.0, Math.max(1.0, gap * 0.4));
+  /* Bug-report 15 follow-up (2026-05-14) — calibration: a JB of ₹1L on
+   * a ₹3L target-vs-offer gap (33% bridge) reads as a token gesture, not
+   * a real sweetener. Bumped the bridge ratio 0.4 → 0.5 (covers 50% of
+   * the gap, the rule-of-thumb most Indian recruiters use) and the floor
+   * 1.0 → 1.5 so even a zero-gap JB lands as a meaningful number. Cap
+   * stays at ₹6L (above this it's a relocation grant, not a JB). */
+  const baseJB = Math.min(6.0, Math.max(1.5, gap * 0.5));
   const multiplier =
     state.marketMode === "hot" ? 1.5 :
     state.marketMode === "soft" ? 0.7 : 1.0;
   let final = Math.round(baseJB * multiplier * 10) / 10;
-  const bandSpreadCap = Math.max(1.0, state.band.maxStretch - state.band.initialOffer);
+  const bandSpreadCap = Math.max(1.5, state.band.maxStretch - state.band.initialOffer);
   if (final > bandSpreadCap) final = Math.round(bandSpreadCap * 10) / 10;
   /* Guard against NaN / Infinity from a degenerate band. */
-  if (!Number.isFinite(final) || final <= 0) return 1.0;
+  if (!Number.isFinite(final) || final <= 0) return 1.5;
   return final;
 }
 

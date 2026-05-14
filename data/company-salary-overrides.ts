@@ -1985,6 +1985,20 @@ export const COMPANY_SALARY_OVERRIDES: Record<
       senior: { totalMin: 23.9, totalMax: 32, equityType: "none", source: "UpGrad (Deloitte Senior Consultant ₹23.9-26.4L for 3-13 yr exp)", lastVerified: "2026-05-07", notes: "Deloitte holds edge over EY (₹18.5-20.5L) and KPMG (₹17.4-19.2L) at Senior Consultant level." },
       lead: { totalMin: 35, totalMax: 60, equityType: "none", source: "Glassdoor (Deloitte Manager / Senior Manager)", lastVerified: "2026-05-07" },
     },
+    /* Bug-report 15 follow-up (2026-05-14): real Deloitte BA session
+     * was falling through to tier-default consulting-big4 bands, which
+     * are wider than the Deloitte-specific analyst-track numbers. At
+     * Deloitte India, "Business Analyst" sits on the same analyst →
+     * consultant → senior consultant → manager ladder as the generic
+     * consultant role; the rupee numbers line up tightly with the
+     * consultant track above. Pinning a BA-specific entry here so the
+     * band the simulation uses matches the role label on screen. */
+    "business-analyst": {
+      entry: { totalMin: 6, totalMax: 11, equityType: "none", source: "Glassdoor + AmbitionBox (Deloitte India Business Analyst, 0-2 yr)", lastVerified: "2026-05-14", notes: "BA-Analyst track at Deloitte mirrors the Consultant entry band (analyst-pool model)." },
+      mid: { totalMin: 11, totalMax: 20, equityType: "none", source: "Glassdoor (Deloitte India Business Analyst, 2-5 yr)", lastVerified: "2026-05-14", notes: "BA-Consultant equivalent. ₹15L is the typical first-mid offer." },
+      senior: { totalMin: 20, totalMax: 30, equityType: "none", source: "AmbitionBox + UpGrad (Deloitte Senior BA / BA-Senior Consultant)", lastVerified: "2026-05-14" },
+      lead: { totalMin: 32, totalMax: 55, equityType: "none", source: "Glassdoor (Deloitte BA Manager)", lastVerified: "2026-05-14" },
+    },
   },
   ey: {
     consultant: {

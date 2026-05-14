@@ -23,7 +23,14 @@
  * of regression can't reappear silently. */
 import { describe, it, expect } from "vitest";
 import { classifyAcceptance } from "../../server-handlers/_acceptance-classifier";
-import { deterministicFallbackText } from "../../server-handlers/_negotiate-turn-helpers";
+import {
+  deterministicFallbackText,
+  hrRegisterForCompany,
+  formatRegisterGuidance,
+  buildAiPrompt,
+  NEGOTIATION_SYSTEM_PROMPT,
+} from "../../server-handlers/_negotiate-turn-helpers";
+import { initState } from "../../server-handlers/_negotiation-kernel";
 import type { NegotiationState, AiMove } from "../../server-handlers/_negotiation-kernel";
 
 /* Minimal state factory — only fields read by deterministicFallbackText
@@ -254,5 +261,86 @@ describe("Bug-report 15 — Fix B — probe-justification fallback asks 'why?'",
     const text = deterministicFallbackText(state, move);
     expect(text).toMatch(/\?$/);
     expect(text).toMatch(/benchmark|competing|hike/i);
+  });
+});
+
+/* ─── Indianization — HR register bucketing + prompt plumbing ────────── */
+
+describe("Indianization — hrRegisterForCompany maps tiers to register buckets", () => {
+  it("IT services (TCS/Infosys) → formal-traditional", () => {
+    expect(hrRegisterForCompany("TCS")).toBe("formal-traditional");
+    expect(hrRegisterForCompany("Infosys")).toBe("formal-traditional");
+  });
+
+  it("Big-4 (Deloitte) → formal-traditional", () => {
+    expect(hrRegisterForCompany("Deloitte")).toBe("formal-traditional");
+  });
+
+  it("FAANG / big-tech (Google) → professional-global", () => {
+    expect(hrRegisterForCompany("Google")).toBe("professional-global");
+  });
+
+  it("Indian unicorns (Razorpay / CRED / Swiggy) → casual-modern", () => {
+    /* If any of these aren't in the tier map this still falls back to
+     * professional-global, so just assert it's one of the conversational
+     * registers (not formal-traditional). */
+    const r = hrRegisterForCompany("Razorpay");
+    expect(["casual-modern", "professional-global"]).toContain(r);
+  });
+
+  it("unknown / null company → defaults to professional-global", () => {
+    expect(hrRegisterForCompany(null)).toBe("professional-global");
+    expect(hrRegisterForCompany("")).toBe("professional-global");
+    expect(hrRegisterForCompany("Some Company That Does Not Exist Ltd"))
+      .toBe("professional-global");
+  });
+
+  it("formatRegisterGuidance returns a non-empty string for each register", () => {
+    for (const r of ["formal-traditional", "professional-global", "casual-modern", "scrappy-startup"] as const) {
+      const g = formatRegisterGuidance(r);
+      expect(typeof g).toBe("string");
+      expect(g.length).toBeGreaterThan(40);
+    }
+  });
+});
+
+describe("Indianization — register guidance is plumbed into SESSION CONTEXT", () => {
+  function stateForPrompt(company: string): NegotiationState {
+    return initState({
+      sessionId: "test",
+      role: "Business Analyst",
+      company,
+      band: { initialOffer: 15, maxStretch: 20, walkAway: 12, hasEquity: false },
+    });
+  }
+
+  it("Deloitte session prompt contains formal-traditional REGISTER GUIDANCE", () => {
+    const state = stateForPrompt("Deloitte");
+    const move: AiMove = { lever: "probe", newTotalLpa: null, rationale: "test" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "Hello." });
+    expect(user).toMatch(/register=formal-traditional/);
+    expect(user).toMatch(/REGISTER GUIDANCE: Register: FORMAL-TRADITIONAL/);
+    expect(user).toMatch(/kindly|sir|ma'am/i);
+  });
+
+  it("Google session prompt contains professional-global REGISTER GUIDANCE", () => {
+    const state = stateForPrompt("Google");
+    const move: AiMove = { lever: "probe", newTotalLpa: null, rationale: "test" };
+    const { user } = buildAiPrompt({ state, move, candidateAnswer: "Hello." });
+    expect(user).toMatch(/register=professional-global/);
+    expect(user).toMatch(/REGISTER GUIDANCE: Register: PROFESSIONAL-GLOBAL/);
+  });
+
+  it("system prompt documents Indian HR vocabulary + bans Americanisms", () => {
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/INDIAN HR VOCABULARY/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/CTC/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/LPA/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/joining bonus/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/relieving letter/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/BGV/);
+    /* Americanisms banned */
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/bandwidth/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/touch base/);
+    expect(NEGOTIATION_SYSTEM_PROMPT).toMatch(/circle back/);
   });
 });

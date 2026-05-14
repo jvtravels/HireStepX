@@ -36,6 +36,97 @@ import {
   lookupCompanyNoticeNorm,
   formatNoticeNormForPrompt,
 } from "../data/company-facts";
+import { getCompanyTier, type CompanyTier } from "../data/company-tiers";
+
+/* ─── Indian HR voice register ─────────────────────────────────────────
+ *
+ * Real Indian recruiters speak a specific blend of Indian English with
+ * mild corporate-Hindi inflection. The prior voice rules ("don't use
+ * leverage/utilize/circle back") were necessary but insufficient — the
+ * LLM still defaulted to neutral global-American business prose because
+ * nothing in the prompt anchored it to the Indian register specifically.
+ *
+ * This module collapses the 15 company tiers into 4 register buckets,
+ * each with its own (a) tone descriptor, (b) sample phrasings the LLM
+ * can pattern-match against, (c) banned register-mismatches. The bucket
+ * is pinned into SESSION CONTEXT so the LLM modulates formality based
+ * on whether the candidate is talking to a TCS HR partner (formal,
+ * "kindly share your last drawn salary, sir") or a CRED PM-of-talent
+ * (casual, first-name, "let's just lock this in, what do you say?").
+ *
+ * Pure: derives register from company name only; no state mutation. */
+
+export type HrRegister =
+  | "formal-traditional" // it-services, bfsi-domestic, government-psu, consulting-big4
+  | "professional-global" // faang, big-tech, gcc, bfsi-global, consulting-mbb, fmcg-mnc
+  | "casual-modern" // indian-unicorn, saas-product, edtech
+  | "scrappy-startup"; // startup-early, startup-growth
+
+const TIER_REGISTER: Record<CompanyTier, HrRegister> = {
+  "it-services": "formal-traditional",
+  "bfsi-domestic": "formal-traditional",
+  "government-psu": "formal-traditional",
+  "consulting-big4": "formal-traditional",
+  "faang": "professional-global",
+  "big-tech": "professional-global",
+  "gcc": "professional-global",
+  "bfsi-global": "professional-global",
+  "consulting-mbb": "professional-global",
+  "fmcg-mnc": "professional-global",
+  "indian-unicorn": "casual-modern",
+  "saas-product": "casual-modern",
+  "edtech": "casual-modern",
+  "startup-early": "scrappy-startup",
+  "startup-growth": "scrappy-startup",
+};
+
+export function hrRegisterForCompany(company: string | null | undefined): HrRegister {
+  if (!company) return "professional-global";
+  const tier = getCompanyTier(company);
+  if (!tier) return "professional-global";
+  return TIER_REGISTER[tier];
+}
+
+/** Voice-register guidance the LLM consumes. Each block is a short
+ *  briefing on tone + sample phrasings + things to avoid for that
+ *  register bucket. Kept compact so it fits inside the per-turn user
+ *  prompt without blowing past Groq's context budget. */
+const REGISTER_GUIDANCE: Record<HrRegister, string> = {
+  "formal-traditional":
+    "Register: FORMAL-TRADITIONAL (IT services / domestic BFSI / PSU / Big-4). " +
+    "Use 'sir' / 'ma'am' sparingly but naturally. 'Kindly', 'please', " +
+    "'we are looking at', 'as per our policy', 'we follow standard hike norms'. " +
+    "Sentences slightly longer; less use of contractions. " +
+    "Phrases that fit: 'I'll check with the leadership and revert', 'Let me confirm with the team', " +
+    "'We can certainly look into it', 'Hope this works for you'. " +
+    "Avoid: 'awesome', 'totally', 'super excited', startup slang.",
+  "professional-global":
+    "Register: PROFESSIONAL-GLOBAL (FAANG / big-tech / GCC / global BFSI / MBB / FMCG-MNC). " +
+    "Clean Indian English. First-name basis. Contractions OK ('we can', 'that's'). " +
+    "'Let me see what I can do', 'We can stretch to', 'Here's where we land', " +
+    "'Happy to walk you through'. Numbers-forward, decisive, polite. " +
+    "Mild 'actually' / 'basically' as fillers is fine, used sparingly. " +
+    "Avoid: 'kindly' (too formal), 'sir/ma'am' (out of register), 'yaar' (too casual).",
+  "casual-modern":
+    "Register: CASUAL-MODERN (Indian unicorn / SaaS / edtech). " +
+    "First-name, conversational, direct. 'So', 'okay', 'cool', 'let me see' " +
+    "fillers natural. Contractions throughout. 'Actually' / 'basically' " +
+    "natural. Phrases that fit: 'Let me check internally', 'We can " +
+    "definitely look at this', 'What's working for you?', 'Where would you " +
+    "like to land?'. Numbers up-front, brief, friendly. " +
+    "Avoid: 'kindly', 'sir/ma'am', 'as per company policy'. Stay warm but professional.",
+  "scrappy-startup":
+    "Register: SCRAPPY-STARTUP (seed / Series A-B). " +
+    "Direct, peer-to-peer. 'Hey', 'cool', 'let me just', 'do one thing'. " +
+    "Talk like a founder or early-stage HR partner — no corporate boilerplate. " +
+    "Phrases that fit: 'Honestly, here's what we can do', 'Let me be straight " +
+    "with you', 'We're tight on cash but generous on equity', 'What say?'. " +
+    "Avoid: anything that sounds like a Fortune-500 form letter.",
+};
+
+export function formatRegisterGuidance(register: HrRegister): string {
+  return REGISTER_GUIDANCE[register];
+}
 
 /* ─── Prompt construction ─────────────────────────────────────────── */
 
@@ -43,7 +134,7 @@ import {
  *  in the system prompt so the LLM has a shape to fill. */
 const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "open-with-offer":
-    "Present the offer cleanly. State the total CTC number, mention base + variable composition briefly, and invite the candidate's reaction.",
+    "Present the offer cleanly. State the total CTC number ('₹X LPA total CTC' or 'a CTC of ₹X LPA'), mention base + variable composition briefly, and invite the candidate's reaction ('how does the number land?' / 'what's your reaction?' / 'where are you on that?'). Indian register — use 'CTC' and 'LPA' explicitly; don't say 'compensation package' or 'k' / 'lakh rupees'.",
   "probe":
     "Ask the candidate what they're looking for. Do NOT propose a new number — you want their anchor first.",
   "probe-justification":
@@ -51,7 +142,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "counter-base":
     "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response. CRITICAL — when the turn brief includes a COMPONENT BREAKDOWN block (base / variable splits), restate the new total AS the split: '₹{total} LPA = ₹{base}L base + ₹{variable}L variable'. Candidates routinely ask for this breakdown two turns later; surfacing it on the counter itself prevents the repeat-ask loop. If a one-time joining bonus is already on the table from a prior turn, also restate it explicitly. BANNED — do NOT reference 'the existing split', 'the previous breakdown', 'keeping the structure intact', or any phrase implying a prior split was disclosed unless a base/variable breakdown was actually quoted in an earlier AI turn (check RECENT DIALOGUE). The opener typically discloses a HEADLINE number only, not a split — referencing a phantom prior breakdown confuses the candidate. State the new split fresh; do not pretend they've already seen one.",
   "joining-bonus":
-    "Acknowledge cash base is at its ceiling. Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total.",
+    "Acknowledge cash base is at its ceiling ('we're at the ceiling on fixed' / 'I can't move on base any further'). Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Use 'joining bonus' (Indian register) — NEVER 'signing bonus' (American register). Frame as a sweetener that bridges year-one cash without changing the recurring CTC: 'one-time joining bonus' / 'paid out on joining' / 'doesn't change the recurring CTC'. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total.",
   "equity-grant":
     "Add an equity / RSU grant. Note the vesting shape ('25% per year over 4 years' or similar) and frame it as upside.",
   "notice-buyout":
@@ -65,9 +156,9 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "hike-context-summary":
     "Frame the hike% this offer represents. Use the HIKE CALCULATION block below for the computed delta (or the market-norms guidance if current CTC is unknown). Do NOT propose a new total CTC, do NOT push for acceptance — this is an info turn.",
   "hold-firm":
-    "State respectfully that this is final. Acknowledge their position. Invite them to think it over.",
-  "close-acceptance":
-    "Congratulate them. Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion). REQUIRED: ask the candidate to share their basic onboarding documents — Aadhaar card, PAN card, and recent payslips / relieving letter — so the offer letter and BGV can proceed. Keep the ask warm and matter-of-fact, not bureaucratic.",
+    "State respectfully that this is final. Acknowledge their position. Invite them to think it over. Indian phrasings that fit: 'This is the maximum I can do without going to leadership', 'That itself is at the top of the band for this role', 'Do take your time and revert', 'Let me know how you'd like to proceed'. Tone is warm but settled — no apologies, no further movement implied.",
+    "close-acceptance":
+    "Congratulate them ('welcome aboard' / 'wonderful, looking forward to having you on the team'). Restate the agreed total CTC. If joiningBonusAmount is present in the turn brief, ALSO list it explicitly as a separate one-time joining bonus on top of the base — both numbers must appear in the recap. Mention next steps (offer letter, start date discussion). REQUIRED: ask the candidate to share their basic onboarding documents — Aadhaar card, PAN card, and recent payslips / relieving letter — so the offer letter and BGV can proceed. Indian framing for the doc ask: 'do share your Aadhaar, PAN, and recent payslips' / 'we'll need your relieving letter from your current employer for the BGV'. Keep the ask warm and matter-of-fact, not bureaucratic.",
   "close-walkaway":
     "Acknowledge respectfully that this isn't going to work. Keep the door open for future roles. Brief, warm.",
   "close-stalemate":
@@ -207,12 +298,41 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "verbs. BANNED phrases (use the plain alternative): 'considering your " +
   "request', 'moving the total CTC', 'we are pleased to', 'as discussed', " +
   "'in light of', 'with respect to', 'leverage', 'utilize', 'facilitate', " +
-  "'ensure', 'navigate', 'circle back', 'reach out', 'touch base'. Do NOT " +
+  "'ensure', 'navigate', 'circle back', 'reach out', 'touch base', " +
+  "'bandwidth', 'synergy', 'going forward', 'at this juncture', " +
+  "'in due course', 'apropos', 'henceforth'. Do NOT " +
   "restate the role-name + company every turn ('for the Business Analyst " +
   "position at Deloitte') — once the conversation is rolling, 'for this " +
   "role' / 'here' / no qualifier at all is the correct register. The " +
   "opener already named the role and company; subsequent turns don't " +
   "need to.\n" +
+  /* Indian HR vocabulary — the natural register Indian recruiters use
+     on Zoom / phone calls. These are NOT mandatory ("force-quote" the
+     LLM into broken English), they're PREFERRED phrasings the LLM
+     should reach for when the equivalent global-American phrase would
+     otherwise show up. Pair this rule with the per-session REGISTER
+     GUIDANCE block in SESSION CONTEXT — register narrows which of
+     these phrasings fit (formal-traditional uses 'kindly' / 'revert',
+     scrappy-startup uses 'do one thing' / 'honestly', etc.). */
+  " - INDIAN HR VOCABULARY (preferred phrasings — pick the ones that " +
+  "fit the per-session REGISTER GUIDANCE in SESSION CONTEXT): " +
+  "'CTC' (not 'total compensation'), 'LPA' / 'lakhs' (not 'k' or 'lakh " +
+  "rupees'), 'in-hand' (for take-home), 'hike' (not 'raise' or 'bump'), " +
+  "'fixed' (for base), 'variable' (for bonus / performance pay), " +
+  "'joining bonus' / 'one-time joining bonus' (not 'signing bonus'), " +
+  "'notice period' / 'buy-out' (not 'two-weeks notice'), 'BGV' " +
+  "(background verification), 'relieving letter', 'last drawn salary', " +
+  "'expected CTC', 'offer letter' (not 'offer doc' / 'paperwork'). " +
+  "Soft connectives: 'do one thing', 'actually', 'basically', 'only' " +
+  "as emphatic ('that itself is the max'), 'let me check and revert', " +
+  "'I'll get back to you'. AVOID over-using 'kindly' / 'sir' / 'ma'am' " +
+  "unless the register is formal-traditional. Numbers go BEFORE the " +
+  "qualifier ('₹15.7 LPA fixed' not 'a fixed compensation of ₹15.7 LPA').\n" +
+  " - REGISTER: the SESSION CONTEXT block contains a 'REGISTER " +
+  "GUIDANCE:' line keyed off the company tier. Match that register " +
+  "exactly — a TCS HR partner and a CRED talent partner do not sound " +
+  "the same, and a global-American business voice fits neither. Read " +
+  "the register block before writing.\n" +
   "\nLEVER GUIDANCE GLOSSARY (look up the lever value from the turn brief):\n" +
   (Object.entries(LEVER_GUIDANCE) as Array<[NegotiationLever, string]>)
     .map(([k, v]) => `  ${k}: ${v}`)
@@ -255,6 +375,17 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
   sessionContextParts.push(
     `band=[init:${state.band.initialOffer}/stretch:${state.band.maxStretch}/walk:${state.band.walkAway}/equity:${state.band.hasEquity ? "y" : "n"}]`,
   );
+  /* Indian HR voice register — derived from company tier. Pinned into
+   * SESSION CONTEXT (byte-stable for a session) so the LLM modulates
+   * formality to match what a real recruiter at this kind of company
+   * would actually sound like. A TCS HR partner ("kindly", "sir/ma'am",
+   * "we follow standard hike norms") and a CRED talent partner
+   * ("let me just lock this in, what do you say?") are not the same
+   * register — uniform global-American business prose feels generic for
+   * both. */
+  const register = hrRegisterForCompany(state.company);
+  sessionContextParts.push(`register=${register}`);
+  sessionContextParts.push(`REGISTER GUIDANCE: ${formatRegisterGuidance(register)}`);
   const sessionContext = sessionContextParts.join("\n") + "\n\n";
 
   /* TURN BRIEF — per-turn dynamic key=value line. Drops role/company/band
@@ -1221,9 +1352,9 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
         const baseRounded = Math.round(base * 10) / 10;
         const jb = state.lastJoiningBonusOffered;
         const jbSuffix = jb != null ? ` (plus the one-time ₹${jb}L joining bonus we already discussed)` : "";
-        return `We can move to ₹${n} LPA total — that's ₹${baseRounded}L base + ₹${variable}L variable${jbSuffix}. Does that work for you?`;
+        return `We can stretch to ₹${n} LPA total — that's ₹${baseRounded}L base + ₹${variable}L variable${jbSuffix}. Does that work for you?`;
       }
-      return `We can stretch the base to ₹${n} LPA total. Does that work for you?`;
+      return `We can stretch to ₹${n} LPA total. Does that work for you?`;
     }
     case "joining-bonus":
       return typeof move.joiningBonusAmount === "number"
@@ -1273,7 +1404,7 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
       return `Happy to walk through that — what's your current package so I can frame the hike concretely? Typical switch-job hikes land at 15-30%, more for hot skills.`;
     }
     case "hold-firm":
-      return `₹${state.highestOfferMade} LPA is what we can do for this role. Take your time and let us know.`;
+      return `₹${state.highestOfferMade} LPA is the maximum we can do for this role. Do take your time and revert.`;
     case "close-acceptance": {
       /* Bug-report 14 follow-up (2026-05-14) — on acceptance, recruiters
        * in India routinely collect basic onboarding documents (Aadhaar,

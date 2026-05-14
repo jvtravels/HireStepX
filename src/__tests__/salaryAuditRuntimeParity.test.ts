@@ -91,6 +91,11 @@ describe("salary audit ↔ runtime parity", () => {
     "bajaj finance/software-engineer/mid",
     "capgemini/project-manager/senior",
     "delhivery/software-engineer/entry",
+    /* Bug-report 15 follow-up: Deloitte BA-Senior pinned to curated
+     * Glassdoor/UpGrad numbers (₹20-30L, midpoint 25). Imported scrape
+     * tracks generic Big-4 senior-consultant which is wider; keep
+     * curator. */
+    "deloitte/business-analyst/senior",
     "hcl/project-manager/senior",
     "hdfc bank/business-analyst/mid",
     "hdfc bank/business-analyst/senior",
