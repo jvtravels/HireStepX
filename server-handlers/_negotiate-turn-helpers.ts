@@ -2831,8 +2831,25 @@ export function deterministicFallbackText(state: NegotiationState, move: AiMove)
         ? `Our offer for the ${state.role} position is ₹${n} LPA total CTC. What's your reaction?`
         : `Our offer for this role is ₹${n} LPA total CTC. What's your reaction?`;
     }
-    case "probe":
+    case "probe": {
+      /* F7 follow-up (2026-05-16) — deterministicFallbackText for `probe`
+       * used to return a hardcoded "what range were you expecting" string,
+       * which the user saw repeated verbatim 3 turns in a row when the LLM
+       * kept failing on a discovery flow. The planner had already advanced
+       * the next discovery item but the deterministic path ignored it.
+       * Root fix: consult state.plannedNextAction.ask first so each
+       * deterministic-fallback turn renders the CURRENT discovery probe
+       * the planner picked. Falls back to the legacy string only when
+       * no planner action is present (e.g. orphaned probe). */
+      const planned = state.plannedNextAction as
+        | { kind?: string; ask?: string }
+        | null
+        | undefined;
+      if (planned?.ask && typeof planned.ask === "string") {
+        return planned.ask;
+      }
       return `Before we go further — what range were you expecting for this role?`;
+    }
     case "probe-justification":
       /* Bug-report 15 (2026-05-14) — probe-justification fallback.
        * Mirrors the LLM guidance: warm acknowledgement + one direct
