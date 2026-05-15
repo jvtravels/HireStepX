@@ -1950,11 +1950,35 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   ]);
   if (state.discoveryStage && !isTerminalPhase(state.phase)) {
     parts.push(`[CURRENT STAGE: ${state.discoveryStage}]`);
+    /* Commit 3 (2026-05-15) — read [NEXT REQUIRED ACTION] from the cached
+     * plannedNextAction instead of independently calling
+     * getNextDiscoveryQuestion. Before this fix the brief and the
+     * move-picker rationale could name two different "next" items on the
+     * same turn (move-picker used the ORDERED helper; the brief used the
+     * NON-ORDERED one). Now both read the SAME planner output. The phase
+     * gate (NEXT_ACTION_PHASES) is preserved so the brief still suppresses
+     * the directive in counter-offer / lever-explore. */
+    const planned = (state.plannedNextAction ?? null) as
+      | { kind: string; ask?: string; item?: string }
+      | null;
     if (
-      state.discoveryStage === "discovery" &&
-      state.discoveryChecklist != null &&
+      planned &&
+      planned.kind === "discovery-probe" &&
+      planned.ask &&
       NEXT_ACTION_PHASES.has(state.phase)
     ) {
+      parts.push(
+        `[NEXT REQUIRED ACTION: ask the candidate — ${planned.ask}]`,
+      );
+    } else if (
+      state.discoveryStage === "discovery" &&
+      state.discoveryChecklist != null &&
+      NEXT_ACTION_PHASES.has(state.phase) &&
+      !planned
+    ) {
+      /* Back-compat: sessions serialized before commit 3 have no
+       * plannedNextAction. Fall back to the legacy non-ordered helper so
+       * in-flight sessions don't lose the brief tag. */
       const roleFamily = classifyRoleFamily(state.role);
       if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
         const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);

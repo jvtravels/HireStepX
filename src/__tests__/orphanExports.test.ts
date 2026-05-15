@@ -33,6 +33,13 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["CONVERSATION_LOG_CAP", "kernel-public log cap; documentation constant"],
   ["detectCurrentEmployer", "internally called inside _negotiation-kernel.ts (rg excludes the defining file)"],
   ["computeTurnDelta", "internally called inside _negotiation-kernel.ts by applyCandidateAnswer's finalize() (rg excludes the defining file); exported for unit-testability of the diff logic"],
+  /* FIX (commit 3, 2026-05-15) — before the planNextAction extraction, a
+   * comment in _kernel-move-picker.ts mentioned derivePhase by name, which
+   * the word-boundary detector accepted as a referent. The thin-shell
+   * move-picker no longer carries that comment. derivePhase is genuinely
+   * a kernel-internal helper (called 5x inside _negotiation-kernel.ts);
+   * allow on the same "rg excludes defining file" basis. */
+  ["derivePhase", "internally called inside _negotiation-kernel.ts by applyCandidateAnswer + applyAiMove (rg excludes the defining file); exported for unit-testability"],
 
   /* ── Kernel public API exposed for direct external consumers ───────── */
   ["applyPersonaToBand", "public kernel API; persona-derived band shaping is opt-in for consumers"],

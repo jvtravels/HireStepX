@@ -126,6 +126,41 @@ import {
 } from "./_discovery-stage";
 import { classifyRoleFamily } from "./_company-band-tiers";
 
+/* ─── Commit 3 (2026-05-15) — planner registration shim ───────────────
+ * The planner module (_next-action-planner.ts) imports value bindings
+ * from this kernel, so a static import the other way would create a
+ * load-order cycle. The planner instead registers itself here at module
+ * load (side-effect at bottom of _next-action-planner.ts);
+ * applyCandidateAnswer's finalize() reads through this pointer to stamp
+ * state.plannedNextAction.
+ *
+ * MUST be declared at the very top of the kernel module body (above any
+ * other state) because `export { pickAiMove } from "./_kernel-move-picker"`
+ * below is a hoisted re-export: the move-picker (and through it the
+ * planner) is loaded BEFORE the rest of this module's body executes. If
+ * setNextActionPlanner runs during that early load while `_nextActionPlanner`
+ * is still in the TDZ, the assignment throws ReferenceError. Declaring
+ * it here ensures the binding is initialized before the planner's setter
+ * call lands. */
+// Use a global symbol on globalThis to sidestep ESM TDZ during circular
+// load — re-exports are hoisted and the planner's side-effect setter
+// fires during this module's import phase, before any `let` declaration
+// would be initialized. globalThis assignment has no TDZ.
+declare global {
+
+  var __hr_nextActionPlanner: ((s: unknown) => unknown) | null | undefined;
+}
+if (typeof globalThis.__hr_nextActionPlanner === "undefined") {
+  globalThis.__hr_nextActionPlanner = null;
+}
+export function setNextActionPlanner(fn: (s: unknown) => unknown): void {
+  globalThis.__hr_nextActionPlanner = fn;
+}
+function _callNextActionPlanner(s: unknown): unknown {
+  const fn = globalThis.__hr_nextActionPlanner;
+  return fn ? fn(s) : null;
+}
+
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
 export type NegotiationPhase =
@@ -749,6 +784,19 @@ export interface NegotiationState {
    * back-compat — older serialized sessions deserialize without it and
    * any consumer must null-check. */
   lastTurnDelta?: TurnDelta | null;
+
+  /* Negotiation-flow redesign commit 3 (2026-05-15) — cached NextAction.
+   * planNextAction is stamped onto state at the END of applyCandidateAnswer
+   * (after phase derivation) and cleared (null) by applyAiMove. Both the
+   * move-picker and compactTurnBrief read from this single field, so the
+   * brief's [NEXT REQUIRED ACTION] line and the rationale on move.lever
+   * cannot diverge — they're produced by the SAME planner call. Optional
+   * + nullable for back-compat with sessions serialized before commit 3:
+   * pickAiMoveCore replays planNextAction when the field is absent. The
+   * declared type is `unknown` so this module doesn't take a runtime
+   * dependency on _next-action-planner.ts (which depends on this module
+   * for state types); consumers cast to NextAction. */
+  plannedNextAction?: unknown | null;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -2009,6 +2057,11 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
    * symmetric. Pure — mutates the draft `n` in place. */
   const finalize = (n: NegotiationState): NegotiationState => {
     n.lastTurnDelta = computeTurnDelta(pre, n, parsed, answer);
+    /* Commit 3 (2026-05-15) — stamp planNextAction so the brief and the
+     * move-picker read the SAME action without recomputing. The planner
+     * registers itself via setNextActionPlanner at module load (see
+     * _next-action-planner.ts bottom) to avoid an import cycle. */
+    n.plannedNextAction = _callNextActionPlanner(n);
     return n;
   };
 
@@ -2756,6 +2809,11 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * per-candidate-turn signal. Clear it on the AI turn so a stale delta
      * cannot bleed into the next candidate turn's reactive routing. */
     lastTurnDelta: null,
+    /* Negotiation-flow redesign commit 3 (2026-05-15) — plannedNextAction
+     * is a per-candidate-turn signal too. Clear after the AI consumes it;
+     * the next applyCandidateAnswer call repopulates from the post-derive
+     * state. */
+    plannedNextAction: null,
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;

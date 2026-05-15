@@ -252,32 +252,53 @@ const NEXT_ACTION_OVERLAP_THRESHOLD = 0.4;
  *  meaningfully with the action prompt, the bot drifted off task.
  *
  *  Scope-down (commit 5, awaiting commit 3 planNextAction): we re-
- *  compute the next discovery question deterministically from
- *  state.discoveryChecklist (the same call compactTurnBrief makes).
- *  When that lookup returns null (discovery complete / not in a
- *  discovery-eligible phase), the validator no-ops — the audit's
- *  fragility caveat for this validator applies until commit 3 lands
- *  the centralised plan. */
+ *  read the required ask directly off state.plannedNextAction (commit 3
+ *  registered the planner so applyCandidateAnswer stamps the planned
+ *  action onto state before the brief / validator stage). When the
+ *  planned action is not a discovery-probe — or, for back-compat with
+ *  pre-commit-3 serialized sessions, when plannedNextAction is absent —
+ *  fall back to the legacy getNextDiscoveryQuestion lookup so in-flight
+ *  validation behavior is preserved. */
 export function validateNextActionEmitted(
   reply: string,
   state: NegotiationState,
 ): ValidatorResult {
   const tags = state.lastBriefTags ?? [];
   if (!tags.includes(NEXT_ACTION_TAG)) return { ok: true };
-  if (!state.discoveryChecklist) return { ok: true };
-  const roleFamily = classifyRoleFamily(state.role);
-  if (isDiscoveryComplete(state.discoveryChecklist, roleFamily)) return { ok: true };
-  const nextQ = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
-  if (!nextQ) return { ok: true };
+
+  /* Commit 3 (2026-05-15) — preferred path: consume the planner's
+   * cached NextAction so the validator and the brief read THE SAME
+   * "next ask" string. Eliminates the prior fragility where the
+   * brief and the validator could disagree on which item to require. */
+  const planned = (state.plannedNextAction ?? null) as
+    | { kind: string; ask?: string; item?: string }
+    | null;
+  let requiredAsk: string | null = null;
+  let requiredItem: string | null = null;
+  if (planned && planned.kind === "discovery-probe" && planned.ask) {
+    requiredAsk = planned.ask;
+    requiredItem = planned.item ?? null;
+  } else if (!planned) {
+    /* Back-compat fallback for sessions deserialized before commit 3. */
+    if (!state.discoveryChecklist) return { ok: true };
+    const roleFamily = classifyRoleFamily(state.role);
+    if (isDiscoveryComplete(state.discoveryChecklist, roleFamily)) return { ok: true };
+    const nextQ = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+    if (!nextQ) return { ok: true };
+    requiredAsk = nextQ.prompt;
+    requiredItem = nextQ.item;
+  }
+  if (!requiredAsk) return { ok: true };
+
   /* Permissive pass conditions: either the reply asks a question OR
    * shares enough content-token overlap with the required prompt. */
   if (/\?/.test(reply)) return { ok: true };
-  const overlap = tokenOverlap(contentTokens(reply), contentTokens(nextQ.prompt));
+  const overlap = tokenOverlap(contentTokens(reply), contentTokens(requiredAsk));
   if (overlap >= NEXT_ACTION_OVERLAP_THRESHOLD) return { ok: true };
   return {
     ok: false,
-    reason: `NEXT ACTION — reply must ask the required discovery question (overlap ${(overlap * 100).toFixed(0)}% < ${(NEXT_ACTION_OVERLAP_THRESHOLD * 100).toFixed(0)}% AND no question mark): ${nextQ.prompt}`,
-    violations: [nextQ.item],
+    reason: `NEXT ACTION — reply must ask the required discovery question (overlap ${(overlap * 100).toFixed(0)}% < ${(NEXT_ACTION_OVERLAP_THRESHOLD * 100).toFixed(0)}% AND no question mark): ${requiredAsk}`,
+    violations: requiredItem ? [requiredItem] : [],
   };
 }
 

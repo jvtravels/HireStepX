@@ -81,8 +81,11 @@ describe("F7 — hike-cap clamped to band.maxStretch × 1.10", () => {
   });
 
   it("F7 comment is present in source as the load-bearing invariant marker", () => {
+    /* FIX (commit 3, 2026-05-15) — counter-offer ceiling math moved from
+     * _kernel-move-picker.ts to _next-action-planner.ts. Source-of-truth
+     * for the F7 invariant comment follows the code. */
     const src = readFileSync(
-      join(__dirname, "..", "..", "server-handlers", "_kernel-move-picker.ts"),
+      join(__dirname, "..", "..", "server-handlers", "_next-action-planner.ts"),
       "utf-8",
     );
     expect(src).toMatch(/F7 \(2026-05-15\) — clamp hike-cap to band\.maxStretch \* 1\.10/);
