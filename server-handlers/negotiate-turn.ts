@@ -41,14 +41,6 @@ import {
   type AiMove,
 } from "./_negotiation-kernel";
 import { resolveServerBand } from "./_band-resolver";
-import {
-  buildAiPrompt,
-  validateAiText,
-  validateStructuredFields,
-  parseStructuredAiResponse,
-  deterministicFallbackText,
-  stripMarkdown,
-} from "./_negotiate-turn-helpers";
 import { enforceRoleLabel } from "./_role-label";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
@@ -72,22 +64,8 @@ import {
   logTurnUsage,
 } from "./_session-limits";
 import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
-import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
+import { selectPromptVariant, type PromptVariant } from "./_prompt-variants";
 import { inferCompanyMode } from "./_market-mode";
-import { detectBotReplyRepetition, BOT_REPLY_REPETITION_THRESHOLD } from "./_recruiter-facts";
-import { assessTurnCoherence } from "./_turn-coherence";
-import {
-  validateNumberDiscipline,
-  validateBudgetDiscipline,
-  validateRangeDiscipline,
-  validateAcknowledgement,
-  validateNextActionEmitted,
-  validateHikeProbe,
-  validateNoFabricatedFacts,
-  validateCloseVocabularyMatchesLever,
-  validateNoSpecificNumberInOpening,
-} from "./_response-validators";
-import { renderActionFallbackProse, type NextAction } from "./_next-action-planner";
 import { generateBotReply, type GenerateAiTextFn } from "./_response-pipeline";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -100,29 +78,21 @@ declare const process: { env: Record<string, string | undefined> };
  * exists only as an emergency stop if something regresses in prod. */
 const ENABLED = process.env.NEGOTIATION_KERNEL_ENABLED !== "0";
 
-/* 2026-05-16 — KERNEL-FIRST PIPELINE FLAG.
+/* 2026-05-16 — KERNEL-FIRST PIPELINE.
  *
- * When true (the default), turn generation runs through the new
- * kernel-first pipeline (_response-pipeline.ts):
+ * Turn generation runs through the single kernel-first pipeline
+ * (_response-pipeline.ts):
  *
  *   planNextAction → renderCanonicalProse → LLM restyles → validate
  *   restyle preserves semantics → ship restyle OR fall back to
  *   canonical verbatim.
  *
  * The LLM authors NOTHING from scratch. Bugs structurally impossible
- * under this flag: turn-0 anchors, repeated probes, hallucinated facts.
- *
- * When false, the legacy LLM-first reroll loop below runs (preserved
- * here as the emergency rollback path). After 1 session of green
- * production we'll delete the legacy block.
- *
- * Default: true everywhere. Set USE_KERNEL_FIRST_PIPELINE=0 to disable.
- *
- * Read as a function (not a module-level const) so tests can flip the
- * env var via beforeAll/afterAll without needing module-cache hacks. */
-function useKernelFirstPipeline(): boolean {
-  return process.env.USE_KERNEL_FIRST_PIPELINE !== "0";
-}
+ * under this design: turn-0 anchors, repeated probes, hallucinated
+ * facts. The legacy LLM-first reroll loop (with its validator chain,
+ * F2 substitution, and deterministic fallback) was removed on
+ * 2026-05-16 — it had been dead code behind the
+ * USE_KERNEL_FIRST_PIPELINE flag, which is now also gone. */
 
 /** Hard cap on the candidate's free-text answer per turn. STT mishears
  *  and copy-paste accidents can push payloads to tens of KB, which both
@@ -234,327 +204,48 @@ export async function generateAiText(
      called out post-Phase-2. */
   envelopeMissingAttempts: number;
 }> {
-  const built = buildAiPrompt({ state, move, candidateAnswer });
-  /* A/B prompt-variant transform — applied at the leaf so the kernel
-   * brief / user message stays cache-stable. The variant is selected
-   * once per session by `selectPromptVariant`; we accept it as a param
-   * so the handler can log it via PostHog without re-selecting. */
-  const variant: PromptVariant = promptVariant ?? "control";
-  const system = getSystemPrompt(variant, built.system);
-  const user = built.user;
-  const failureKinds: string[] = [];
-  let envelopeMissingAttempts = 0;
-
-  /* 2026-05-16 — KERNEL-FIRST PIPELINE. When enabled, route through the
-   * new single-path generator and adapt its result to this function's
-   * legacy return shape. The legacy LLM-first reroll loop below stays
-   * as the flag-off fallback (emergency rollback). */
-  if (useKernelFirstPipeline()) {
-    const pipelineLlm: GenerateAiTextFn = async (sys, usr) => {
-      return llm(sys, usr, { userId });
-    };
-    const result = await generateBotReply(state, pipelineLlm, candidateAnswer);
-    /* Telemetry — decisionLog picker reflects the pipeline source. */
-    if (!state.decisionLog) state.decisionLog = [];
-    state.decisionLog.push({
-      turn: state.turnIndex,
-      picker: `kernel-first:${result.source}`,
-      rationale: result.rejectReason ?? `kind=${result.action.kind}`,
-      phase: state.phase,
-    });
-    const adaptedSource: "llm" | "llm-retry" | "fallback" =
-      result.source === "restyle" || result.source === "answer-restyle"
-        ? "llm"
-        : "fallback";
-    return {
-      text: enforceRoleLabel(result.text, state.role || ""),
-      source: adaptedSource,
-      failureKinds: result.rejectReason ? [result.rejectReason] : [],
-      envelopeMissingAttempts: 0,
-    };
-  }
-
-  /* One attempt = call LLM → parse JSON envelope → run text + structured
-     validators. The structured envelope is Phase 2 of the rebuild
-     (forcing the LLM to emit roleMentioned / totalLpaMentioned /
-     leverExecuted alongside the prose). When jsonMode produces a
-     malformed envelope, we fall through to the text-only path on the
-     raw output — same validators still run on .text, so this is
-     strictly additive vs the pre-Phase-2 behaviour. */
-  async function attempt(promptUser: string): Promise<{ text: string; failures: string[]; envelopeOk: boolean } | { error: string }> {
-    let raw: string;
-    try {
-      raw = await llm(system, promptUser, { userId });
-    } catch {
-      return { error: "llm-throw" };
-    }
-    /* parseStructuredAiResponse tolerates fences, preambles, and trailing
-       prose. When it returns null the LLM either ignored JSON-mode or
-       emitted something unparseable; fall through to text-only validation
-       on the raw output (pre-Phase-2 behaviour). The structured-field
-       checks add coverage when present but don't gate when absent —
-       that way Phase 2 is purely additive, no regression in the path
-       where the upstream LLM provider quietly disables jsonMode. */
-    const parsed = parseStructuredAiResponse(raw);
-    const text = stripMarkdown(parsed ? parsed.text : raw);
-    const v = validateAiText(text, state, move);
-    const structured = parsed ? validateStructuredFields(parsed, state, move) : [];
-    const allFailures = [...v.failures, ...structured];
-    return { text, failures: allFailures.map(f => f.kind), envelopeOk: parsed !== null };
-  }
-
-  const a1 = await attempt(user);
-  if ("error" in a1) {
-    return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds: [a1.error], envelopeMissingAttempts };
-  }
-  if (!a1.envelopeOk) envelopeMissingAttempts++;
-  if (a1.failures.length === 0) {
-    /* Fix 4 (2026-05-15) — Full-message-repetition detector. Reroll once
-     * if the validated text near-duplicates the prior bot reply. */
-    const rep = detectBotReplyRepetition(a1.text, state.lastBotReply ?? null);
-    /* Sprint C.1 (2026-05-15) — turn-coherence detector. If the candidate
-     * asked a real question or a breakdown ask and the bot reply doesn't
-     * address it, reroll once with an explicit answer-the-question note.
-     * Mirrors the repetition reroll pattern. */
-    const coh = assessTurnCoherence(candidateAnswer, a1.text);
-    /* Architectural bug-prevention (2026-05-15) — promote NUMBER DISCIPLINE
-     * and BUDGET DISCIPLINE to post-generation state validators. The
-     * prompt still carries the rules; these are the enforcement layer. */
-    const numDisc = validateNumberDiscipline(a1.text, state);
-    const budDisc = validateBudgetDiscipline(a1.text, state);
-    /* Negotiation-flow redesign commit 5 (2026-05-15) — 4 more validators. */
-    const rangeDisc = validateRangeDiscipline(a1.text, state);
-    const ackDisc = validateAcknowledgement(a1.text, state);
-    const nextActDisc = validateNextActionEmitted(a1.text, state);
-    const hikeDisc = validateHikeProbe(a1.text, state);
-    /* F3 (PDF#19 2026-05-15) — fabricated-facts validator. Critical. */
-    const fabDisc = validateNoFabricatedFacts(a1.text, state);
-    /* F4 (PDF#19 2026-05-15) — close-vocab matches lever. Critical. */
-    const closeVocabDisc = validateCloseVocabularyMatchesLever(a1.text, state, move);
-    /* F6 (PDF#20 2026-05-15) — opening-phase anchor guard. Critical. */
-    const openAnchorDisc = validateNoSpecificNumberInOpening(a1.text, state);
-    if (
-      !rep.repeated &&
-      coh.coherent &&
-      numDisc.ok &&
-      budDisc.ok &&
-      rangeDisc.ok &&
-      ackDisc.ok &&
-      nextActDisc.ok &&
-      hikeDisc.ok &&
-      fabDisc.ok &&
-      closeVocabDisc.ok &&
-      openAnchorDisc.valid
-    ) {
-      return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
-    }
-    /* F3 (2026-05-15) — reroll cap. We allow at most ONE reroll across
-     * coherence + duplicate-reply combined. If a1 triggers both flags
-     * we attach BOTH notes to a single reroll prompt rather than stacking
-     * two sequential rerolls (which would burn 3 LLM calls and double
-     * the latency). After the single reroll attempt, return whichever
-     * draft is least bad — never fire a third call. The combined-notes
-     * design also guarantees a 4-failure-mode session caps at 2 calls. */
-    let rerollAttempts = 0;
-    const rerollNotes: string[] = [];
-    if (rep.repeated) {
-      console.warn(`[negotiate-turn] bot reply repetition detected (sim=${rep.similarity.toFixed(2)}); rerolling`);
-      rerollNotes.push(
-        `DO NOT REPEAT THE PREVIOUS REPLY (Jaccard similarity ${rep.similarity.toFixed(2)} ≥ ${BOT_REPLY_REPETITION_THRESHOLD}). Generate a new substantive answer that advances the negotiation, not a paraphrase of your last turn.`,
-      );
-    }
-    if (!coh.coherent) {
-      console.warn(`[negotiate-turn] turn-incoherence detected (${coh.reason ?? ""}); rerolling`);
-      rerollNotes.push(
-        `ANSWER THE CANDIDATE'S LAST UTTERANCE DIRECTLY. ${coh.reason ?? ""} Either give a specific number or an explicit deferral ("I'll come back to that"), and keep content overlap with the candidate's question.`,
-      );
-    }
-    if (!numDisc.ok) {
-      console.warn(`[negotiate-turn] number-discipline violation (${numDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${numDisc.reason}]`);
-    }
-    if (!budDisc.ok) {
-      console.warn(`[negotiate-turn] budget-discipline violation (${budDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${budDisc.reason}]`);
-    }
-    if (!rangeDisc.ok) {
-      console.warn(`[negotiate-turn] range-discipline violation (${rangeDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${rangeDisc.reason}]`);
-    }
-    if (!ackDisc.ok) {
-      console.warn(`[negotiate-turn] acknowledgement violation (${ackDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${ackDisc.reason}]`);
-    }
-    if (!nextActDisc.ok) {
-      console.warn(`[negotiate-turn] next-action violation (${nextActDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${nextActDisc.reason}]`);
-    }
-    if (!hikeDisc.ok) {
-      console.warn(`[negotiate-turn] hike-probe violation (${hikeDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${hikeDisc.reason}]`);
-    }
-    if (!fabDisc.ok) {
-      /* F3 (PDF#19 2026-05-15) — fabricated-facts critical. */
-      console.warn(`[negotiate-turn] fabricated-facts violation (${fabDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${fabDisc.reason}]`);
-    }
-    if (!closeVocabDisc.ok) {
-      /* F4 (PDF#19 2026-05-15) — close-vocab critical. */
-      console.warn(`[negotiate-turn] close-vocab violation (${closeVocabDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${closeVocabDisc.reason}]`);
-    }
-    if (!openAnchorDisc.valid) {
-      /* F6 (PDF#20 2026-05-15) — opening-phase anchor critical. */
-      console.warn(`[negotiate-turn] opening-anchor violation (${openAnchorDisc.reason}); rerolling`);
-      rerollNotes.push(`[VALIDATOR REJECTION: ${openAnchorDisc.reason}]`);
-    }
-    const rerollUser = user + `\n\nNOTE — ${rerollNotes.join(" ")}`;
-    rerollAttempts++;
-    const a1b = await attempt(rerollUser);
-    if (!("error" in a1b)) {
-      if (!a1b.envelopeOk) envelopeMissingAttempts++;
-      if (a1b.failures.length === 0) {
-        const rep2 = detectBotReplyRepetition(a1b.text, state.lastBotReply ?? null);
-        const coh2 = assessTurnCoherence(candidateAnswer, a1b.text);
-        const numDisc2 = validateNumberDiscipline(a1b.text, state);
-        const budDisc2 = validateBudgetDiscipline(a1b.text, state);
-        const rangeDisc2 = validateRangeDiscipline(a1b.text, state);
-        const ackDisc2 = validateAcknowledgement(a1b.text, state);
-        const nextActDisc2 = validateNextActionEmitted(a1b.text, state);
-        const hikeDisc2 = validateHikeProbe(a1b.text, state);
-        /* F3 (PDF#19 2026-05-15) — fabricated-facts validator. */
-        const fabDisc2 = validateNoFabricatedFacts(a1b.text, state);
-        /* F4 (PDF#19 2026-05-15) — close-vocab matches lever. */
-        const closeVocabDisc2 = validateCloseVocabularyMatchesLever(a1b.text, state, move);
-        /* F6 (PDF#20 2026-05-15) — opening-phase anchor guard. Critical. */
-        const openAnchorDisc2 = validateNoSpecificNumberInOpening(a1b.text, state);
-        if (
-          !rep2.repeated &&
-          coh2.coherent &&
-          numDisc2.ok &&
-          budDisc2.ok &&
-          rangeDisc2.ok &&
-          ackDisc2.ok &&
-          nextActDisc2.ok &&
-          hikeDisc2.ok &&
-          fabDisc2.ok &&
-          closeVocabDisc2.ok &&
-          openAnchorDisc2.valid
-        ) {
-          return { text: enforceRoleLabel(a1b.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
-        }
-        if (rep2.repeated) {
-          console.warn(`[negotiate-turn] bot reply repetition persisted after reroll (sim=${rep2.similarity.toFixed(2)}); returning original`);
-        }
-        if (!coh2.coherent) {
-          console.warn(`[negotiate-turn] turn-incoherence persisted after reroll (${coh2.reason ?? ""}); returning original`);
-        }
-        /* F2 (PDF#19 2026-05-15) — kernel-authored prose substitution.
-         * Previously this site logged a `validator-reject-fallthrough`
-         * decisionLog entry and SHIPPED THE BAD LLM TEXT to the user.
-         * That is the meta-defect: prompt-rule "advisory" violations
-         * escaped validator enforcement. Now: when ANY critical
-         * discipline persists past the reroll cap, substitute
-         * deterministic prose anchored on state.plannedNextAction. */
-        const criticalFailed =
-          !numDisc2.ok ||
-          !budDisc2.ok ||
-          !rangeDisc2.ok ||
-          !nextActDisc2.ok ||
-          !fabDisc2.ok ||
-          !closeVocabDisc2.ok ||
-          !openAnchorDisc2.valid;
-        const advisoryFailed = !ackDisc2.ok || !hikeDisc2.ok;
-        if (criticalFailed) {
-          const reasons = [
-            !numDisc2.ok ? `number-discipline: ${numDisc2.reason}` : null,
-            !budDisc2.ok ? `budget-discipline: ${budDisc2.reason}` : null,
-            !rangeDisc2.ok ? `range-discipline: ${rangeDisc2.reason}` : null,
-            !nextActDisc2.ok ? `next-action-emitted: ${nextActDisc2.reason}` : null,
-            !fabDisc2.ok ? `fabricated-facts: ${fabDisc2.reason}` : null,
-            !closeVocabDisc2.ok ? `close-vocab: ${closeVocabDisc2.reason}` : null,
-            !openAnchorDisc2.valid ? `opening-anchor: ${openAnchorDisc2.reason}` : null,
-          ].filter((r): r is string => !!r);
-          console.warn(`[negotiate-turn] critical validator fallthrough → substituting kernel prose: ${reasons.join(" | ")}`);
-          if (!state.decisionLog) state.decisionLog = [];
-          state.decisionLog.push({
-            turn: state.turnIndex,
-            picker: "kernel-prose-substitution",
-            rationale: reasons.join(" | "),
-            phase: state.phase,
-          });
-          const planned = (state.plannedNextAction ?? null) as NextAction | null;
-          const substituted = renderActionFallbackProse(planned, state);
-          return { text: enforceRoleLabel(substituted, state.role || ""), source: "fallback", failureKinds, envelopeMissingAttempts };
-        }
-        if (advisoryFailed) {
-          const reasons = [
-            !ackDisc2.ok ? `acknowledgement: ${ackDisc2.reason}` : null,
-            !hikeDisc2.ok ? `hike-probe: ${hikeDisc2.reason}` : null,
-          ].filter((r): r is string => !!r);
-          console.warn(`[negotiate-turn] advisory validator fallthrough (returning original): ${reasons.join(" | ")}`);
-          if (!state.decisionLog) state.decisionLog = [];
-          state.decisionLog.push({
-            turn: state.turnIndex,
-            picker: "validator-advisory-fallthrough",
-            rationale: reasons.join(" | "),
-            phase: state.phase,
-          });
-        }
-      }
-    }
-    /* F3 reroll-cap enforcement: rerollAttempts === 1 here. We do NOT
-     * fire a second reroll regardless of which flag persisted — return
-     * the original draft as the "least bad" choice (it at least passed
-     * the legality + structured-envelope validators). */
-    void rerollAttempts; // documented invariant; cap = 1
-    /* F2 (PDF#19) — ALSO substitute on a1's critical-failure path when
-     * a1b didn't recover. If a1 had a critical failure and a1b is in
-     * `error` state OR a1b.failures.length > 0, we still reach here
-     * holding a1.text — that's the bad text. Substitute on critical. */
-    const a1Crit =
-      !numDisc.ok || !budDisc.ok || !rangeDisc.ok || !nextActDisc.ok || !fabDisc.ok || !closeVocabDisc.ok || !openAnchorDisc.valid;
-    if (a1Crit) {
-      const reasons = [
-        !numDisc.ok ? `number-discipline: ${numDisc.reason}` : null,
-        !budDisc.ok ? `budget-discipline: ${budDisc.reason}` : null,
-        !rangeDisc.ok ? `range-discipline: ${rangeDisc.reason}` : null,
-        !nextActDisc.ok ? `next-action-emitted: ${nextActDisc.reason}` : null,
-        !fabDisc.ok ? `fabricated-facts: ${fabDisc.reason}` : null,
-        !closeVocabDisc.ok ? `close-vocab: ${closeVocabDisc.reason}` : null,
-        !openAnchorDisc.valid ? `opening-anchor: ${openAnchorDisc.reason}` : null,
-      ].filter((r): r is string => !!r);
-      console.warn(`[negotiate-turn] critical validator fallthrough (a1 path) → substituting kernel prose: ${reasons.join(" | ")}`);
-      if (!state.decisionLog) state.decisionLog = [];
-      state.decisionLog.push({
-        turn: state.turnIndex,
-        picker: "kernel-prose-substitution",
-        rationale: reasons.join(" | "),
-        phase: state.phase,
-      });
-      const planned = (state.plannedNextAction ?? null) as NextAction | null;
-      const substituted = renderActionFallbackProse(planned, state);
-      return { text: enforceRoleLabel(substituted, state.role || ""), source: "fallback", failureKinds, envelopeMissingAttempts };
-    }
-    return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
-  }
-  failureKinds.push(...a1.failures);
-
-  /* Retry with explicit failure feedback in the prompt. */
-  const retryUser =
-    user +
-    `\n\nNOTE — your previous draft failed validation (kinds: ${a1.failures.join(", ")}). ` +
-    `Try again. Stick to the kernel brief exactly and ensure the JSON envelope fields agree with the prose.`;
-  const a2 = await attempt(retryUser);
-  if ("error" in a2) {
-    return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds: [...failureKinds, a2.error], envelopeMissingAttempts };
-  }
-  if (!a2.envelopeOk) envelopeMissingAttempts++;
-  if (a2.failures.length === 0) return { text: enforceRoleLabel(a2.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
-  failureKinds.push(...a2.failures);
-
-  return { text: enforceRoleLabel(deterministicFallbackText(state, move), state.role || ""), source: "fallback", failureKinds, envelopeMissingAttempts };
+  /* 2026-05-16 — KERNEL-FIRST PIPELINE (single path). The legacy
+   * LLM-first reroll loop + validator chain + F2 substitution was
+   * deleted in the cleanup pass; this function is now a thin adapter
+   * around generateBotReply so the handler / DI test surface stays
+   * stable. promptVariant is accepted for caller compat but no
+   * longer used inside (variant selection happens upstream for
+   * telemetry only — the kernel brief is the same for all variants). */
+  void promptVariant;
+  const pipelineLlm: GenerateAiTextFn = async (sys, usr) => {
+    return llm(sys, usr, { userId });
+  };
+  const result = await generateBotReply(state, pipelineLlm, candidateAnswer);
+  /* Telemetry — decisionLog picker reflects the pipeline source. */
+  if (!state.decisionLog) state.decisionLog = [];
+  state.decisionLog.push({
+    turn: state.turnIndex,
+    picker: `kernel-first:${result.source}`,
+    rationale: result.rejectReason ?? `kind=${result.action.kind}`,
+    phase: state.phase,
+  });
+  const adaptedSource: "llm" | "llm-retry" | "fallback" =
+    result.source === "restyle" || result.source === "answer-restyle"
+      ? "llm"
+      : "fallback";
+  return {
+    text: enforceRoleLabel(result.text, state.role || ""),
+    source: adaptedSource,
+    failureKinds: result.rejectReason ? [result.rejectReason] : [],
+    envelopeMissingAttempts: 0,
+  };
 }
+
+/* ─── (legacy reroll loop deleted 2026-05-16) ─────────────────────── */
+
+/* Removed: ~280 LoC of LLM-first reroll loop, validator chain,
+ * F2 kernel-prose substitution, and deterministic fallback path.
+ * The kernel-first pipeline (planNextAction → renderCanonicalProse →
+ * LLM restyle → validateRestyle) is now the sole generation path.
+ *
+ * Historical reference: commit 8d79554 (pre-cleanup) for the
+ * removed validator-stack behaviour. */
+
 
 /* ─── Handler ─────────────────────────────────────────────────────── */
 

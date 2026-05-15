@@ -52,6 +52,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["clampGapMonths", "public kernel clamp; used by intake validators outside this repo's call graph"],
   ["foldFactsIntoState", "public kernel ingestor; alternate path for non-LLM fact extraction tooling"],
   ["validateState", "public kernel asserter; called by deserializeState which IS wired; rg's word-boundary misses the property-form call"],
+  ["isVerbatimRepeat", "kernel-public verbatim-repeat detector kept post kernel-first-cleanup (2026-05-16); covered by unit tests and reserved for the next-tier restyle guard"],
 
   /* ── Discovery helpers exported for replay / audit tooling ─────────── */
   ["getRequiredDiscoveryItems", "audit-tool public API; used by scripts/audit-* (not always tsconfig-tracked)"],

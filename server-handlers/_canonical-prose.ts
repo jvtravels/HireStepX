@@ -19,11 +19,10 @@
  *     planner has already established);
  *   - NEVER drifts off-topic from the planned action.
  *
- * `renderActionFallbackProse` in _next-action-planner.ts is the
- * predecessor of this module — it stayed there because it was used
- * inside the OLD validator-fallback path. The new canonical strings
- * here are richer and more user-facing (real recruiter cadence) but
- * the structure is the same: switch on action.kind, return one line.
+ * Predecessor: a thinner `renderActionFallbackProse` once lived in
+ * _next-action-planner.ts behind the legacy validator-fallback path.
+ * Deleted in the kernel-first cleanup (2026-05-16); this module is
+ * now the sole deterministic-fallback surface.
  *
  * Pure. No clock, no IO, no LLM.
  */

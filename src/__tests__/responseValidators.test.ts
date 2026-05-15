@@ -1,20 +1,12 @@
-/* Response-validator tests — architectural bug-prevention (2026-05-15).
+/* Response-validator tests — kernel-first survivors (2026-05-16).
  *
- * NUMBER DISCIPLINE + BUDGET DISCIPLINE moved from prompt-only rules to
- * post-generation validators. These tests exercise the validators
- * directly with hand-crafted state shapes — the integration is wired in
- * negotiate-turn.ts's reroll path.
+ * Most of the original validator stack policed an LLM authorship surface
+ * that no longer exists. Only NUMBER DISCIPLINE survives because restyle
+ * is still capable of introducing a stray number. validateNoFabricated-
+ * Facts has its own test file (fabricatedFactsValidator.test.ts).
  */
 import { describe, it, expect } from "vitest";
-import {
-  validateNumberDiscipline,
-  validateBudgetDiscipline,
-  validateRangeDiscipline,
-  validateAcknowledgement,
-  validateNextActionEmitted,
-  validateHikeProbe,
-} from "../../server-handlers/_response-validators";
-import { EMPTY_DISCOVERY_CHECKLIST } from "../../server-handlers/_discovery-stage";
+import { validateNumberDiscipline } from "../../server-handlers/_response-validators";
 import type {
   NegotiationState,
   NegotiationBand,
@@ -126,124 +118,3 @@ describe("validateNumberDiscipline", () => {
   });
 });
 
-describe("validateBudgetDiscipline", () => {
-  it("emits number above hike-cap → reject (budget)", () => {
-    /* Infosys hike cap = 30%; currentCtc = 12 → budget ceiling = 15.6L.
-     * Emitting ₹18L blows past that. */
-    const r = validateBudgetDiscipline("₹18L total for you.", mkState());
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.reason).toMatch(/hike-cap/);
-    }
-  });
-
-  it("emits number within hike-cap → ok", () => {
-    /* Infosys hike cap = 30%; currentCtc = 12 → budget ceiling = 15.6L.
-     * ₹15L stays under. */
-    const r = validateBudgetDiscipline("₹15L is our number.", mkState());
-    expect(r.ok).toBe(true);
-  });
-
-  it("no current CTC known → ok (cannot evaluate budget)", () => {
-    const r = validateBudgetDiscipline("₹50L is on offer.", mkState({ candidateCurrentCtc: null }));
-    expect(r.ok).toBe(true);
-  });
-});
-
-/* ─── Commit 5 validators (2026-05-15) ─────────────────────────────── */
-
-describe("validateRangeDiscipline", () => {
-  it("phase=range-disclosure + reply emits a band → ok", () => {
-    const r = validateRangeDiscipline(
-      "We're looking at the ₹18-22L band for this role.",
-      mkState({ phase: "range-disclosure" }),
-    );
-    expect(r.ok).toBe(true);
-  });
-
-  it("phase=range-disclosure + reply emits a specific number → reject", () => {
-    const r = validateRangeDiscipline(
-      "We can do ₹20L for you.",
-      mkState({ phase: "range-disclosure" }),
-    );
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toMatch(/RANGE DISCIPLINE/);
-  });
-});
-
-describe("validateAcknowledgement", () => {
-  it("no pending acks → ok", () => {
-    const r = validateAcknowledgement(
-      "Anything specific you'd like to discuss?",
-      mkState({ pendingCandidateAcks: [] }),
-    );
-    expect(r.ok).toBe(true);
-  });
-
-  it("pending notice-period ack not addressed → reject", () => {
-    const r = validateAcknowledgement(
-      "Let me check our package for that role.",
-      mkState({
-        pendingCandidateAcks: [
-          { kind: "notice-period", label: "notice period 90 days" },
-        ],
-      }),
-    );
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toMatch(/notice period/i);
-  });
-});
-
-describe("validateNextActionEmitted", () => {
-  it("[NEXT REQUIRED ACTION] tag set + reply asks a '?' → ok", () => {
-    const r = validateNextActionEmitted(
-      "Can you share your current CTC?",
-      mkState({
-        lastBriefTags: ["NEXT REQUIRED ACTION"],
-        discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
-        phase: "opening",
-      }),
-    );
-    expect(r.ok).toBe(true);
-  });
-
-  it("[NEXT REQUIRED ACTION] tag set + reply has no '?' and no overlap → reject", () => {
-    const r = validateNextActionEmitted(
-      "Got it. Let me come back to you on that with our team.",
-      mkState({
-        lastBriefTags: ["NEXT REQUIRED ACTION"],
-        discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
-        phase: "opening",
-      }),
-    );
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toMatch(/NEXT ACTION/);
-  });
-});
-
-describe("validateHikeProbe", () => {
-  it("HIKE JUSTIFICATION tag set + reply lands probe vocab → ok", () => {
-    const r = validateHikeProbe(
-      "That's a big jump. What justifies it — the impact and metrics you've shipped?",
-      mkState({
-        lastBriefTags: ["HIKE JUSTIFICATION REQUIRED"],
-        candidateCurrentCtc: 12,
-        candidateTarget: 24,
-      }),
-    );
-    expect(r.ok).toBe(true);
-  });
-
-  it("HIKE JUSTIFICATION tag set + reply lacks probe vocab → reject", () => {
-    const r = validateHikeProbe(
-      "Sounds good — let me get back to you.",
-      mkState({
-        lastBriefTags: ["HIKE JUSTIFICATION REQUIRED"],
-        candidateCurrentCtc: 12,
-        candidateTarget: 24,
-      }),
-    );
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toMatch(/HIKE PROBE/);
-  });
-});

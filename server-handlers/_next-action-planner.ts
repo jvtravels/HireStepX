@@ -1154,82 +1154,13 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
   return null;
 }
 
-/* F2 (PDF#19 2026-05-15) — kernel-authored fallback prose. When a
- * CRITICAL validator (number-discipline, range-discipline, budget-
- * discipline, next-action-emitted, role-label, close-vocab, fabricated-
- * facts) rejects the LLM draft past the reroll cap, the handler
- * substitutes this deterministic prose instead of shipping the bad
- * draft. Anchored on the planner's already-stamped `state.plannedNextAction`
- * so the user sees the question/move the kernel actually decided on,
- * not whatever the LLM hallucinated.
- *
- * Pure. No side-effects. Never reads non-state fields.
+/* F2 fallback prose was removed in the kernel-first cleanup
+ * (2026-05-16). The kernel-first pipeline (planNextAction →
+ * renderCanonicalProse → LLM restyle) shipped the canonical line
+ * directly on restyle failure, so the F2 substitution layer became
+ * unreachable. `renderCanonicalProse` (in _canonical-prose.ts) is the
+ * sole deterministic fallback now.
  */
-export function renderActionFallbackProse(
-  action: NextAction | null | undefined,
-  state: NegotiationState,
-): string {
-  if (!action) {
-    /* No planned action stamped — defensive default that names the
-     * role but emits no number. */
-    return "Let me check on that and come back to you in a moment.";
-  }
-  switch (action.kind) {
-    case "discovery-probe":
-      return action.ask || "Could you tell me a bit more about what you're looking for?";
-    case "reactive-followup":
-      return action.ask || "Could you say a little more about that?";
-    case "range-disclosure": {
-      const lo = state.band.initialOffer;
-      const hi = state.band.maxStretch;
-      return `The band we're working within is ₹${lo}-${hi}L. How does that land against what you had in mind?`;
-    }
-    case "open-with-offer":
-      return "Before we name a number — what range were you targeting?";
-    case "probe-expectations":
-      return "What range were you targeting for this role?";
-    case "probe-justification":
-      return "Help me understand the rationale behind that number — what's it anchored on?";
-    case "probe-mismatch":
-      return "Before we dig into comp, can you walk me through how your current work maps to this role?";
-    case "info-disclosure":
-      return "Let me come back to you with the structured breakdown in a moment.";
-    case "counter-offer":
-      return state.highestOfferMade > 0
-        ? `We're holding on the current offer of ₹${state.highestOfferMade}L. What would move this forward for you?`
-        : "What number would land for you?";
-    case "hold-firm":
-      return state.highestOfferMade > 0
-        ? `We're going to hold at ₹${state.highestOfferMade}L. Take some time to think it over.`
-        : "We're going to hold here. Take some time to think it over.";
-    case "lever-explore":
-      return "Let me see what else we can put together on the package side.";
-    case "lever-loop-guard":
-      return "Take a moment to think it over and let me know where you land.";
-    case "live-walk-away":
-      return action.mode === "walk"
-        ? "It sounds like this may not be the right fit — I appreciate the conversation."
-        : state.highestOfferMade > 0
-          ? `We're going to hold at ₹${state.highestOfferMade}L for now.`
-          : "Let me think about how to move this forward.";
-    case "close":
-      return action.mode === "accept"
-        ? "Glad we landed on this. I'll follow up with the formal paperwork shortly."
-        : action.mode === "walkaway"
-          ? "Understood — I appreciate the time. Wishing you well."
-          : "Let's pause here. Take some time and come back to me when you're ready.";
-    case "auto-accept":
-      return "We can move forward at the current package. I'll follow up with the formal paperwork shortly.";
-    case "terminal-restate":
-      return state.highestOfferMade > 0
-        ? `The offer stands at ₹${state.highestOfferMade}L.`
-        : "We've covered the relevant ground here.";
-    case "rescission":
-      return "Given how this has gone, we're going to step back from the offer.";
-    default:
-      return "Let me come back to you in a moment.";
-  }
-}
 
 /* Commit 4 (2026-05-15) — register with the planner-registry so the
  * kernel's applyCandidateAnswer can stamp state.plannedNextAction
