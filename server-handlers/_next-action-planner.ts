@@ -915,6 +915,54 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     }
   }
 
+  /* Rule: competing-leverage-ack — candidate actively used their competing
+   * offer as leverage (not just mentioned). Fires BEFORE competing-credibility
+   * because leveraging is a stronger signal: we first acknowledge the leverage
+   * before probing credibility in the next turn. */
+  if (
+    state.candidateProfile?.invokedCompetingOffer &&
+    !hasFired("competing-leverage-ack")
+  ) {
+    return {
+      kind: "reactive-followup",
+      ask: "That's useful context — is the competing offer at a similar stage, or further along?",
+      trigger: "invokedCompetingOffer",
+      topic: "competing-leverage-ack",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: "Candidate invoked competing offer as leverage — probe stage and credibility before adjusting counter strategy.",
+        actionKind: "reactive-followup",
+        askedTopic: "competing-leverage-ack",
+      },
+    };
+  }
+
+  /* Rule: number-clarification — candidate gave inconsistent CTC numbers
+   * across turns. Fires BEFORE hike-justification so we get clean numbers
+   * before any hike math. */
+  if (
+    state.candidateProfile?.gaveInconsistentNumbers &&
+    !hasFired("number-clarification")
+  ) {
+    const ctcRef = state.candidateCurrentCtc != null
+      ? `₹${state.candidateCurrentCtc}L`
+      : "the number you mentioned";
+    return {
+      kind: "reactive-followup",
+      ask: `Just to make sure I have the right picture — can you confirm your current CTC is ${ctcRef}?`,
+      trigger: "gaveInconsistentNumbers",
+      topic: "number-clarification",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: "Candidate gave inconsistent CTC numbers — confirm correct current CTC before continuing.",
+        actionKind: "reactive-followup",
+        askedTopic: "number-clarification",
+      },
+    };
+  }
+
   /* Rule: competing-credibility — candidate disclosed a competing offer
    * that's vague (no named company, no letter). Real recruiters probe
    * for company + written-offer status before pricing against it. */
@@ -1015,6 +1063,32 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
    * runs from those flags). We intentionally do NOT emit a reactive-
    * followup ask here — the existing path is the source of truth and
    * a duplicate planner emission would shadow it. */
+
+  /* Wave-7 reactive rules: competing-leverage-ack and number-clarification
+   * were hoisted to higher-priority positions above competing-credibility
+   * and hike-justification respectively (see earlier in this function). */
+
+  /* Rule: ctc-gentle-push — candidate was evasive about current CTC and we're
+   * at turn 3+ already. One gentle push before accepting the refusal. */
+  if (
+    state.candidateProfile?.evasiveOnCurrentCtc &&
+    state.turnIndex >= 3 &&
+    !hasFired("ctc-gentle-push")
+  ) {
+    return {
+      kind: "reactive-followup",
+      ask: "I want to make sure I can go to bat for you internally — having a sense of your current package really helps. Are you comfortable sharing?",
+      trigger: "evasiveOnCurrentCtc",
+      topic: "ctc-gentle-push",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: "Candidate has been evasive on current CTC (turn >= 3) — one gentle push before accepting refusal.",
+        actionKind: "reactive-followup",
+        askedTopic: "ctc-gentle-push",
+      },
+    };
+  }
 
   /* F9 (PDF#20 2026-05-15) — directional expectation → value-proof routing.
    *

@@ -45,6 +45,10 @@ declare const process: { env: Record<string, string | undefined> };
 const DISABLE_WAVE_2 = process.env.HSX_DISABLE_WAVE_2 === "1";
 const DISABLE_WAVE_3 = process.env.HSX_DISABLE_WAVE_3 === "1";
 const DISABLE_WAVE_4 = process.env.HSX_DISABLE_WAVE_4 === "1";
+const DISABLE_WAVE_6 = process.env.HSX_DISABLE_WAVE_6 === "1";
+const DISABLE_WAVE_7 = process.env.HSX_DISABLE_WAVE_7 === "1";
+const DISABLE_WAVE_8 = process.env.HSX_DISABLE_WAVE_8 === "1";
+const DISABLE_WAVE_9 = process.env.HSX_DISABLE_WAVE_9 === "1";
 
 /** Wave-2 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_2=1. */
 const WAVE_2_FLAGS: ReadonlyArray<string> = [
@@ -73,6 +77,67 @@ const WAVE_3_FLAGS: ReadonlyArray<string> = [
   "equityExerciseTermsAsk", "equityBuybackLiquidityAsk",
 ];
 
+/** Wave-6 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_6=1. */
+const WAVE_6_FLAGS: ReadonlyArray<string> = [
+  "currentHasBonus", "currentHasEsop", "currentEsopVested",
+  "currentHasRetentionBonus", "currentHasGratuity", "currentHasNps",
+  "wantsHigherBase", "wantsHigherBonus", "wantsJoiningBonus",
+  "wantsRelocationAllowance", "wantsFlexibleWork", "wantsLearningBudget",
+  "wantsEquityRefresh", "wantsProfessionalTitle",
+  "hasSeenOffer", "offerDeadlineMentioned",
+  "negotiatingMultipleOffers", "prefersCashOverPerks", "perksImportant",
+];
+
+/** Wave-7 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_7=1. */
+const WAVE_7_FLAGS: ReadonlyArray<string> = [
+  "anchoredFirst", "anchorWasHighball", "retreatedFromAnchor",
+  "acceptedCounterQuickly", "respondedToBudgetCeiling",
+  "pushedBackOnCeiling", "invokedCompetingOffer", "expressedUrgency",
+  "expressedHesitation", "usedRecruiterName", "saidThankYou",
+  "askedAboutTeam", "askedAboutGrowthPath", "askedAboutWorkLifeBalance",
+  "gaveInconsistentNumbers", "evasiveOnCurrentCtc", "dramaticAnchorJump",
+  "mentionedCounterOffer", "mentionedLayoffRisk", "seemsRushed",
+];
+
+/** Wave-8 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_8=1.
+ * Offer-response behavior + financial specifics + role clarity + competing-offer
+ * specifics (the flags the task session calls "Wave-6 expansion"). */
+const WAVE_8_FLAGS: ReadonlyArray<string> = [
+  /* Offer-response behavior */
+  "explicitlyRejectedOffer", "askedForTimeToDecide",
+  "mentionedSpouseFamily", "mentionedRelocation",
+  /* Financial specifics */
+  "mentionedPf", "mentionedGratuity", "mentionedForm16",
+  "mentionedVariablePayout", "mentionedSigningBonus",
+  "mentionedRetentionBonus", "mentionedJoiningBonus",
+  /* Role clarity */
+  "askedAboutReporting", "askedAboutTeamSize",
+  "askedAboutPerformanceCycle", "mentionedTargetRole",
+  /* Competing-offer specifics */
+  "competingOfferIsVerbal",
+];
+
+/** Wave-9 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_9=1.
+ * Psychological/behavioral + Indian doc/process + seniority/career stage +
+ * negotiation strategy signals (the flags the task session calls "Wave-7 expansion"). */
+const WAVE_9_FLAGS: ReadonlyArray<string> = [
+  /* Psychological/behavioral */
+  "showedFrustration", "showedExcitement", "usedSilence",
+  "backtrackedOnExpectation", "escalatedDemand",
+  /* Indian-specific doc/process */
+  "mentionedBgvConcern", "mentionedRelievingLetterRisk",
+  "mentionedNoticeWaiver", "mentionedNoticeBuyout",
+  "mentionedMoonlighting",
+  /* Seniority/career stage */
+  "isFirstJobChange", "hasManagementExperience",
+  "mentionedStartupExperience", "mentionedMncExperience",
+  "hasPhdOrMba",
+  /* Negotiation strategy signals */
+  "usedAnchorFirst", "gaveRangeNotPoint", "deflectedOnRange",
+  "referencedMarketData", "mentionedCostOfLiving",
+  "mentionedTaxImplication",
+];
+
 /** Wave-4 flag names — boolean fields zeroed when HSX_DISABLE_WAVE_4=1. */
 const WAVE_4_FLAGS: ReadonlyArray<string> = [
   "signOnClawback", "variableTrackRecord", "wfhEquipmentStipend",
@@ -95,25 +160,37 @@ export const __WAVE_FLAGS_INTERNAL = {
   wave2: WAVE_2_FLAGS,
   wave3: WAVE_3_FLAGS,
   wave4: WAVE_4_FLAGS,
+  wave6: WAVE_6_FLAGS,
+  wave7: WAVE_7_FLAGS,
+  wave8: WAVE_8_FLAGS,
+  wave9: WAVE_9_FLAGS,
 };
 
 /** Read the kill-switch env vars at call time (not module-load) so
  *  tests can flip env between runs without resetModules. */
-function readWaveDisables(): { w2: boolean; w3: boolean; w4: boolean } {
+function readWaveDisables(): { w2: boolean; w3: boolean; w4: boolean; w6: boolean; w7: boolean; w8: boolean; w9: boolean } {
   return {
     w2: process.env.HSX_DISABLE_WAVE_2 === "1" || DISABLE_WAVE_2,
     w3: process.env.HSX_DISABLE_WAVE_3 === "1" || DISABLE_WAVE_3,
     w4: process.env.HSX_DISABLE_WAVE_4 === "1" || DISABLE_WAVE_4,
+    w6: process.env.HSX_DISABLE_WAVE_6 === "1" || DISABLE_WAVE_6,
+    w7: process.env.HSX_DISABLE_WAVE_7 === "1" || DISABLE_WAVE_7,
+    w8: process.env.HSX_DISABLE_WAVE_8 === "1" || DISABLE_WAVE_8,
+    w9: process.env.HSX_DISABLE_WAVE_9 === "1" || DISABLE_WAVE_9,
   };
 }
 
 function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResult {
-  const { w2, w3, w4 } = readWaveDisables();
-  if (!w2 && !w3 && !w4) return result;
+  const { w2, w3, w4, w6, w7, w8, w9 } = readWaveDisables();
+  if (!w2 && !w3 && !w4 && !w6 && !w7 && !w8 && !w9) return result;
   const out = result as unknown as Record<string, unknown>;
   if (w2) for (const k of WAVE_2_FLAGS) out[k] = false;
   if (w3) for (const k of WAVE_3_FLAGS) out[k] = false;
   if (w4) for (const k of WAVE_4_FLAGS) out[k] = false;
+  if (w6) for (const k of WAVE_6_FLAGS) out[k] = false;
+  if (w7) for (const k of WAVE_7_FLAGS) out[k] = false;
+  if (w8) for (const k of WAVE_8_FLAGS) out[k] = false;
+  if (w9) for (const k of WAVE_9_FLAGS) out[k] = false;
   /* Recompute hasAny against the zeroed flags so downstream code sees
    * consistent state. We check a small union — any non-null/true value
    * across the remaining surface. */
@@ -185,6 +262,45 @@ function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResu
       r.contractToHireAsk || r.headcountApprovalCheck || r.ipAssignmentClauseAsk ||
       r.healthcarePharmaContext || r.manufacturingCoreContext ||
       r.quickCommerceContext || r.d2cConsumerEquity
+    )) ||
+    (!w6 && (
+      r.currentHasBonus || r.currentBonusPct != null || r.currentHasEsop ||
+      r.currentEsopVested || r.currentHasRetentionBonus || r.currentHasGratuity ||
+      r.currentHasNps || r.wantsHigherBase || r.wantsHigherBonus ||
+      r.wantsJoiningBonus || r.wantsRelocationAllowance || r.wantsFlexibleWork ||
+      r.wantsLearningBudget || r.wantsEquityRefresh || r.wantsProfessionalTitle ||
+      r.hasSeenOffer || r.offerDeadlineMentioned || r.negotiatingMultipleOffers ||
+      r.prefersCashOverPerks || r.perksImportant
+    )) ||
+    (!w7 && (
+      r.anchoredFirst || r.anchorWasHighball || r.retreatedFromAnchor ||
+      r.acceptedCounterQuickly || r.respondedToBudgetCeiling ||
+      r.pushedBackOnCeiling || r.invokedCompetingOffer || r.expressedUrgency ||
+      r.expressedHesitation || r.usedRecruiterName || r.saidThankYou ||
+      r.askedAboutTeam || r.askedAboutGrowthPath || r.askedAboutWorkLifeBalance ||
+      r.gaveInconsistentNumbers || r.evasiveOnCurrentCtc || r.dramaticAnchorJump ||
+      r.mentionedCounterOffer || r.mentionedLayoffRisk || r.seemsRushed
+    )) ||
+    (!w8 && (
+      r.firstOfferReaction != null || r.explicitlyRejectedOffer ||
+      r.askedForTimeToDecide || r.mentionedSpouseFamily || r.mentionedRelocation ||
+      r.mentionedPf || r.mentionedGratuity || r.mentionedForm16 ||
+      r.mentionedVariablePayout || r.mentionedSigningBonus ||
+      r.mentionedRetentionBonus || r.mentionedJoiningBonus ||
+      r.askedAboutReporting || r.askedAboutTeamSize || r.askedAboutGrowthPath8 ||
+      r.askedAboutPerformanceCycle || r.mentionedTargetRole ||
+      r.competingOfferIsVerbal || r.competingOfferCompany != null ||
+      r.competingOfferAmount != null || r.competingOfferDeadline != null
+    )) ||
+    (!w9 && (
+      r.showedFrustration || r.showedExcitement || r.usedSilence ||
+      r.backtrackedOnExpectation || r.escalatedDemand ||
+      r.mentionedBgvConcern || r.mentionedRelievingLetterRisk ||
+      r.mentionedNoticeWaiver || r.mentionedNoticeBuyout || r.mentionedMoonlighting ||
+      r.isFirstJobChange || r.hasManagementExperience ||
+      r.mentionedStartupExperience || r.mentionedMncExperience || r.hasPhdOrMba ||
+      r.usedAnchorFirst || r.gaveRangeNotPoint || r.deflectedOnRange ||
+      r.referencedMarketData || r.mentionedCostOfLiving || r.mentionedTaxImplication
     ));
   return r;
 }
@@ -913,6 +1029,295 @@ export interface CandidateProfileResult {
    *  signal — routes to retention-risk framing. Monotone-up. */
   multipleCompaniesInTwoYears: boolean;
 
+  /* ─── Wave-6 (2026-05-15) — Compensation structure flags (~21 flags). ── */
+
+  /* Current compensation breakdown */
+  /** Candidate mentioned annual / performance bonus at current employer. Monotone-up. */
+  currentHasBonus: boolean;
+  /** Extracted bonus % of CTC ("15% variable" → 15). Null when unstated. Takes max across turns. */
+  currentBonusPct: number | null;
+  /** Candidate has ESOPs in current role. Monotone-up. */
+  currentHasEsop: boolean;
+  /** Candidate mentioned vested ESOPs at current employer. Monotone-up. */
+  currentEsopVested: boolean;
+  /** Candidate mentioned retention bonus / joining bonus at current employer. Monotone-up. */
+  currentHasRetentionBonus: boolean;
+  /** Candidate mentioned gratuity (signals 5yr+ tenure). Monotone-up. */
+  currentHasGratuity: boolean;
+  /** Candidate mentioned NPS / 80CCD(2) component. Monotone-up. */
+  currentHasNps: boolean;
+
+  /* Expected compensation preferences */
+  /** Candidate explicitly asked for higher fixed/base. Monotone-up. */
+  wantsHigherBase: boolean;
+  /** Candidate asked about performance bonus structure. Monotone-up. */
+  wantsHigherBonus: boolean;
+  /** Candidate asked about or mentioned joining bonus. Monotone-up. */
+  wantsJoiningBonus: boolean;
+  /** Candidate asked about relocation support/allowance. Monotone-up. */
+  wantsRelocationAllowance: boolean;
+  /** Candidate asked about remote/hybrid as part of the offer. Monotone-up. */
+  wantsFlexibleWork: boolean;
+  /** Candidate mentioned L&D budget, certifications, upskilling allowance. Monotone-up. */
+  wantsLearningBudget: boolean;
+  /** Candidate asked about equity refresh grants. Monotone-up. */
+  wantsEquityRefresh: boolean;
+  /** Candidate mentioned title upgrade as part of expectation. Monotone-up. */
+  wantsProfessionalTitle: boolean;
+
+  /* Offer evaluation signals */
+  /** Candidate has received the offer letter / verbal offer. Monotone-up. */
+  hasSeenOffer: boolean;
+  /** Candidate mentioned offer expiry / time pressure. Monotone-up. */
+  offerDeadlineMentioned: boolean;
+  /** Extracted deadline date/timeframe if mentioned ("by Friday", "3 days"). Null when unstated. */
+  offerDeadlineText: string | null;
+  /** Candidate is juggling 2+ active offers simultaneously. Monotone-up. */
+  negotiatingMultipleOffers: boolean;
+  /** Candidate explicitly said they care more about the number than perks. Monotone-up. */
+  prefersCashOverPerks: boolean;
+  /** Health insurance, food coupons, cab mentioned as important. Monotone-up. */
+  perksImportant: boolean;
+
+  /* ─── Wave-7 (2026-05-15) — Behavioral and psychological negotiation flags (~21 flags). ── */
+
+  /* Anchoring behavior */
+  /** Candidate stated a number before being asked. Monotone-up. */
+  anchoredFirst: boolean;
+  /** Candidate's first anchor was > 50% above current CTC. Monotone-up. */
+  anchorWasHighball: boolean;
+  /** Candidate walked back their initial ask. Monotone-up. */
+  retreatedFromAnchor: boolean;
+  /** Candidate accepted counter-offer in < 2 turns. Monotone-up. */
+  acceptedCounterQuickly: boolean;
+
+  /* Pressure response */
+  /** Candidate acknowledged when told budget ceiling. Monotone-up. */
+  respondedToBudgetCeiling: boolean;
+  /** Candidate explicitly challenged the stated ceiling. Monotone-up. */
+  pushedBackOnCeiling: boolean;
+  /** Candidate used competing offer as leverage (not just mentioned). Monotone-up. */
+  invokedCompetingOffer: boolean;
+  /** Candidate said things like "I need to decide by...". Monotone-up. */
+  expressedUrgency: boolean;
+  /** Candidate expressed hesitation ("I'm not sure", "need to think about it"). Monotone-up. */
+  expressedHesitation: boolean;
+
+  /* Rapport signals */
+  /** Candidate addressed recruiter by name. Monotone-up. */
+  usedRecruiterName: boolean;
+  /** Candidate expressed gratitude during negotiation. Monotone-up. */
+  saidThankYou: boolean;
+  /** Candidate showed interest in team/manager/culture. Monotone-up. */
+  askedAboutTeam: boolean;
+  /** Candidate asked about career progression explicitly. Monotone-up. */
+  askedAboutGrowthPath: boolean;
+  /** Candidate raised WLB as a concern. Monotone-up. */
+  askedAboutWorkLifeBalance: boolean;
+
+  /* Red flags */
+  /** CTC numbers contradicted each other across turns. Monotone-up. */
+  gaveInconsistentNumbers: boolean;
+  /** Candidate deflected or refused to disclose current CTC. Monotone-up. */
+  evasiveOnCurrentCtc: boolean;
+  /** Expected CTC jumped > 30% across turns (changed ask). Monotone-up. */
+  dramaticAnchorJump: boolean;
+  /** Current employer made or might make counter-offer. Monotone-up. */
+  mentionedCounterOffer: boolean;
+  /** Candidate hinted at job insecurity as reason for looking. Monotone-up. */
+  mentionedLayoffRisk: boolean;
+  /** Multiple signals of time pressure / urgency. Monotone-up. */
+  seemsRushed: boolean;
+
+  /* ─── Wave-8 (2026-05-16) — Offer-response behavior + financial specifics +
+   * role clarity + competing-offer specifics (~21 flags). */
+
+  /* Offer-response behavior */
+  /** Candidate reacted positively, negatively, or neutrally to the offer.
+   *  Null when not yet stated. */
+  firstOfferReaction: "positive" | "negative" | "neutral" | null;
+  /** Candidate explicitly rejected the offer ("I can't accept this",
+   *  "this doesn't work for me"). Monotone-up. */
+  explicitlyRejectedOffer: boolean;
+  /** Candidate asked for time to decide ("can I have a day?", "I need
+   *  to think overnight"). Monotone-up. */
+  askedForTimeToDecide: boolean;
+  /** Candidate mentioned spouse / family discussion as reason for delay
+   *  ("need to discuss with my wife", "family decision"). Monotone-up. */
+  mentionedSpouseFamily: boolean;
+  /** Candidate mentioned relocation in the context of this offer
+   *  ("I'd need to relocate", "is relocation covered?"). Distinct from
+   *  relocationBonusAsked (money) and openToRelocation (willingness).
+   *  Monotone-up. */
+  mentionedRelocation: boolean;
+
+  /* Financial specifics */
+  /** Candidate asked about PF contribution / UAN transfer / employer PF
+   *  ("what's the PF breakup?", "does the company contribute 12%?",
+   *  "PF UAN transfer"). Monotone-up. */
+  mentionedPf: boolean;
+  /** Candidate mentioned gratuity in an offer-evaluation context
+   *  ("is gratuity included?", "5-year gratuity"). Distinct from
+   *  currentHasGratuity (existing employer) and gratuityVestingNear
+   *  (near-vesting signal). Monotone-up. */
+  mentionedGratuity: boolean;
+  /** Candidate asked about Form-16 / tax certificate from new employer
+   *  ("will I get Form 16?", "Form 16 issuance date"). Monotone-up. */
+  mentionedForm16: boolean;
+  /** Candidate asked when / how variable component gets paid ("when is
+   *  variable paid?", "is variable quarterly or annual?", "what's the
+   *  variable payout track record?"). Monotone-up. */
+  mentionedVariablePayout: boolean;
+  /** Candidate asked about or mentioned signing bonus
+   *  ("is there a signing bonus?", "sign-on?"). Distinct from
+   *  wantsJoiningBonus (preference) — this is a mention/ask signal.
+   *  Monotone-up. */
+  mentionedSigningBonus: boolean;
+  /** Candidate asked about retention bonus
+   *  ("retention bonus?", "is there a stay bonus?"). Monotone-up. */
+  mentionedRetentionBonus: boolean;
+  /** Candidate asked about joining bonus explicitly
+   *  ("joining bonus", "JB", "onboarding bonus"). Distinct from
+   *  wantsJoiningBonus (preference weight); this is a raw mention/ask.
+   *  Monotone-up. */
+  mentionedJoiningBonus: boolean;
+
+  /* Role clarity flags */
+  /** Candidate asked who they report to ("who's my manager?",
+   *  "reporting line", "who does this role report to?"). Monotone-up. */
+  askedAboutReporting: boolean;
+  /** Candidate asked about team size ("how big is the team?",
+   *  "how many people on the team?"). Distinct from spanOfControlAsk
+   *  (management span). Monotone-up. */
+  askedAboutTeamSize: boolean;
+  /** Candidate asked about growth path ("what's the career path?",
+   *  "how quickly do people grow here?"). Already covered by
+   *  askedAboutGrowthPath in Wave-7; this is the Wave-8 parallel
+   *  intended to capture it via a different detection path. Monotone-up. */
+  askedAboutGrowthPath8: boolean;
+  /** Candidate asked about performance review cycle ("annual review?",
+   *  "performance cycle", "how often is performance assessed?").
+   *  Monotone-up. */
+  askedAboutPerformanceCycle: boolean;
+  /** Candidate stated a target role / future aspiration ("I want to be
+   *  a Staff Engineer in 3 years", "VP in 5 years"). Monotone-up. */
+  mentionedTargetRole: boolean;
+
+  /* Competing-offer specifics */
+  /** Candidate's competing offer is verbal / not yet written
+   *  ("I have a verbal offer", "not written yet", "informal offer").
+   *  Monotone-up. */
+  competingOfferIsVerbal: boolean;
+  /** Company name of the competing offer, if mentioned. Null when not
+   *  stated. Takes last non-null value across turns. */
+  competingOfferCompany: string | null;
+  /** Stated amount of the competing offer in LPA. Null when not stated.
+   *  Takes max across turns. */
+  competingOfferAmount: number | null;
+  /** Deadline associated with the competing offer, if mentioned
+   *  ("they want an answer by Friday"). Null when not stated. Takes
+   *  last non-null value. */
+  competingOfferDeadline: string | null;
+
+  /* ─── Wave-9 (2026-05-16) — Psychological/behavioral + Indian doc/process +
+   * seniority/career stage + negotiation strategy signals (~21 flags). */
+
+  /* Psychological/behavioral */
+  /** Candidate expressed frustration or impatience ("this is taking too
+   *  long", "I'm getting frustrated", "it's been weeks"). Monotone-up. */
+  showedFrustration: boolean;
+  /** Candidate expressed genuine excitement about the role ("I'm really
+   *  excited about this", "this is exactly what I've been looking for").
+   *  Monotone-up. */
+  showedExcitement: boolean;
+  /** Candidate explicitly paused / asked for a moment to think ("give
+   *  me a moment", "let me think about that", "can I have a minute?").
+   *  Monotone-up. */
+  usedSilence: boolean;
+  /** Candidate walked back a previously stated number ("actually, I can
+   *  work with less", "forget what I said — let's talk about X").
+   *  Distinct from retreatedFromAnchor (which tracks first-anchor walk-
+   *  back). This covers mid-session backtracking. Monotone-up. */
+  backtrackedOnExpectation: boolean;
+  /** Candidate escalated their demand AFTER partial agreement ("you
+   *  agreed on X, can we also add Y?", "one more thing — I also need Z").
+   *  Classic salami tactic. Monotone-up. */
+  escalatedDemand: boolean;
+
+  /* Indian-specific doc/process flags */
+  /** Candidate raised a background-verification concern ("BGV", "my
+   *  degree has a gap year", "previous employer won't verify", "what
+   *  does the BGV cover?"). Distinct from bgvAnxiety (Wave-2, general
+   *  anxiety). Monotone-up. */
+  mentionedBgvConcern: boolean;
+  /** Candidate raised risk of not getting a relieving letter / experience
+   *  letter from current employer ("my company may not give relieving
+   *  letter", "absconding risk", "I left without proper exit").
+   *  Monotone-up. */
+  mentionedRelievingLetterRisk: boolean;
+  /** Company is willing to waive notice period ("we'll waive notice",
+   *  "no notice needed", "immediate joining OK"). Monotone-up. */
+  mentionedNoticeWaiver: boolean;
+  /** Candidate willing to buy out notice ("I'll pay the notice buyout",
+   *  "I can cover the shortfall"). Distinct from noticeBuyoutAsk (asking
+   *  whether WE pay). Monotone-up. */
+  mentionedNoticeBuyout: boolean;
+  /** Candidate disclosed or asked about moonlighting policy
+   *  ("moonlighting", "second job", "side project IP"). Distinct from
+   *  moonlightingDisclosed (Wave-2, personal disclosure). This flag
+   *  captures any moonlighting mention including policy questions.
+   *  Monotone-up. */
+  mentionedMoonlighting: boolean;
+
+  /* Seniority/career stage */
+  /** Candidate signals this is their first job change ("first company",
+   *  "been here since college", "only employer", "never changed jobs").
+   *  Monotone-up. */
+  isFirstJobChange: boolean;
+  /** Candidate has or claims management experience ("I've managed a
+   *  team", "managed 5 people", "team lead"). Distinct from
+   *  peopleManagementClaimed (current scope) and hasLeadershipExperience
+   *  (broader leadership claim). This targets explicit "I managed"
+   *  language. Monotone-up. */
+  hasManagementExperience: boolean;
+  /** Candidate mentions startup experience as a credential ("I've worked
+   *  at a startup", "startup background", "Series A company").
+   *  Monotone-up. */
+  mentionedStartupExperience: boolean;
+  /** Candidate mentions MNC experience ("I've worked at an MNC",
+   *  "Fortune 500 background", "large corp experience"). Monotone-up. */
+  mentionedMncExperience: boolean;
+  /** Candidate mentions a PhD or MBA degree ("I have a PhD", "MBA from
+   *  IIM", "doctoral degree", "post-grad"). Distinct from
+   *  domesticTopMbaAnchor (top-tier MBA band) and
+   *  internationalDegreePremium (overseas degree). Monotone-up. */
+  hasPhdOrMba: boolean;
+
+  /* Negotiation strategy signals */
+  /** Candidate stated their number BEFORE being asked — proactive anchor.
+   *  Distinct from anchoredFirst (Wave-7 which tracks first-number timing
+   *  more broadly). This specifically flags unprompted anchoring.
+   *  Monotone-up. */
+  usedAnchorFirst: boolean;
+  /** Candidate gave a salary range instead of a point number ("30 to 35
+   *  LPA", "somewhere between X and Y"). Signals lower precision /
+   *  willingness to converge. Monotone-up. */
+  gaveRangeNotPoint: boolean;
+  /** Candidate deflected when asked for a number ("I'm flexible",
+   *  "you tell me", "whatever the market says", "I'm open"). Classic
+   *  negotiation defensive move. Monotone-up. */
+  deflectedOnRange: boolean;
+  /** Candidate cited external market data ("Glassdoor says", "levels.fyi
+   *  data", "AmbitionBox shows", "market research suggests"). Monotone-up. */
+  referencedMarketData: boolean;
+  /** Candidate mentioned cost-of-living as a factor ("cost of living in
+   *  Bangalore", "Mumbai is expensive", "higher CoL city"). Monotone-up. */
+  mentionedCostOfLiving: boolean;
+  /** Candidate mentioned tax implications as a factor ("new tax regime",
+   *  "Section 87A", "old vs new regime", "TDS planning", "my effective
+   *  tax rate"). Monotone-up. */
+  mentionedTaxImplication: boolean;
+
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -1147,6 +1552,96 @@ const EMPTY: CandidateProfileResult = {
   hasLeadershipExperience: false,
   domainSpecialist: false,
   multipleCompaniesInTwoYears: false,
+  /* Wave-6 (2026-05-15) — compensation structure flags. */
+  currentHasBonus: false,
+  currentBonusPct: null,
+  currentHasEsop: false,
+  currentEsopVested: false,
+  currentHasRetentionBonus: false,
+  currentHasGratuity: false,
+  currentHasNps: false,
+  wantsHigherBase: false,
+  wantsHigherBonus: false,
+  wantsJoiningBonus: false,
+  wantsRelocationAllowance: false,
+  wantsFlexibleWork: false,
+  wantsLearningBudget: false,
+  wantsEquityRefresh: false,
+  wantsProfessionalTitle: false,
+  hasSeenOffer: false,
+  offerDeadlineMentioned: false,
+  offerDeadlineText: null,
+  negotiatingMultipleOffers: false,
+  prefersCashOverPerks: false,
+  perksImportant: false,
+  /* Wave-7 (2026-05-15) — behavioral/psychological negotiation flags. */
+  anchoredFirst: false,
+  anchorWasHighball: false,
+  retreatedFromAnchor: false,
+  acceptedCounterQuickly: false,
+  respondedToBudgetCeiling: false,
+  pushedBackOnCeiling: false,
+  invokedCompetingOffer: false,
+  expressedUrgency: false,
+  expressedHesitation: false,
+  usedRecruiterName: false,
+  saidThankYou: false,
+  askedAboutTeam: false,
+  askedAboutGrowthPath: false,
+  askedAboutWorkLifeBalance: false,
+  gaveInconsistentNumbers: false,
+  evasiveOnCurrentCtc: false,
+  dramaticAnchorJump: false,
+  mentionedCounterOffer: false,
+  mentionedLayoffRisk: false,
+  seemsRushed: false,
+
+  /* Wave-8 (2026-05-16) defaults */
+  firstOfferReaction: null,
+  explicitlyRejectedOffer: false,
+  askedForTimeToDecide: false,
+  mentionedSpouseFamily: false,
+  mentionedRelocation: false,
+  mentionedPf: false,
+  mentionedGratuity: false,
+  mentionedForm16: false,
+  mentionedVariablePayout: false,
+  mentionedSigningBonus: false,
+  mentionedRetentionBonus: false,
+  mentionedJoiningBonus: false,
+  askedAboutReporting: false,
+  askedAboutTeamSize: false,
+  askedAboutGrowthPath8: false,
+  askedAboutPerformanceCycle: false,
+  mentionedTargetRole: false,
+  competingOfferIsVerbal: false,
+  competingOfferCompany: null,
+  competingOfferAmount: null,
+  competingOfferDeadline: null,
+
+  /* Wave-9 (2026-05-16) defaults */
+  showedFrustration: false,
+  showedExcitement: false,
+  usedSilence: false,
+  backtrackedOnExpectation: false,
+  escalatedDemand: false,
+  mentionedBgvConcern: false,
+  mentionedRelievingLetterRisk: false,
+  mentionedNoticeWaiver: false,
+  mentionedNoticeBuyout: false,
+  mentionedMoonlighting: false,
+  isFirstJobChange: false,
+  hasManagementExperience: false,
+  mentionedStartupExperience: false,
+  mentionedMncExperience: false,
+  hasPhdOrMba: false,
+  usedAnchorFirst: false,
+  gaveRangeNotPoint: false,
+  deflectedOnRange: false,
+  referencedMarketData: false,
+  mentionedCostOfLiving: false,
+  mentionedTaxImplication: false,
+
   hasAny: false,
 };
 
@@ -2906,6 +3401,608 @@ export function detectFreshGradDisclosure(text: string): boolean {
   return FRESH_GRAD_PATTERNS.some((p) => p.test(text));
 }
 
+/* ─── Wave-6 (2026-05-15) — Compensation structure detectors ─────────── */
+
+/* `currentHasBonus` — candidate mentions annual / performance bonus at
+ * current employer. Conservative: requires explicit bonus language. */
+function detectCurrentHasBonus(t: string): boolean {
+  return /\b(?:annual|performance|yearly|quarterly|year[-\s]?end)\s+bonus\b/i.test(t) ||
+    /\b(?:variable|performance[-\s]?linked)\s+(?:pay|component|portion|payout)\b/i.test(t) ||
+    /\b(?:my\s+(?:current\s+)?(?:package|ctc)\s+includes?\s+(?:a\s+)?(?:bonus|variable))\b/i.test(t) ||
+    /\b(?:i\s+get|i\s+receive|i\s+earn)\s+(?:an?\s+)?(?:annual|performance|yearly)\s+bonus\b/i.test(t);
+}
+
+/* `currentBonusPct` — extract bonus % from utterance. Returns null when
+ * no clear bonus-pct pattern found. */
+function detectCurrentBonusPct(t: string): number | null {
+  /* "15% variable", "20% performance bonus", "bonus is 10%" */
+  const m1 = /\b(\d{1,3})\s*%\s+(?:variable|performance\s+bonus|annual\s+bonus|bonus)\b/i.exec(t) ||
+    /\b(?:variable|performance\s+bonus|annual\s+bonus|bonus)\s+(?:of|is|at|:)\s*(\d{1,3})\s*%/i.exec(t);
+  if (m1) {
+    const n = parseInt(m1[1], 10);
+    if (Number.isFinite(n) && n > 0 && n <= 100) return n;
+  }
+  return null;
+}
+
+/* `currentHasEsop` — candidate has ESOPs / RSUs / options in current role. */
+function detectCurrentHasEsop(t: string): boolean {
+  return /\b(?:my\s+current\s+(?:company|employer|package|ctc)\s+(?:has|includes?|gives?\s+me|gave\s+me))\s+(?:esop|rsu|stock\s+options?|options?)\b/i.test(t) ||
+    /\b(?:i\s+have|i\s+hold|i\s+was\s+granted)\s+(?:esop|rsu|stock\s+options?)\s+(?:at|from)\s+(?:my\s+)?(?:current|present)\b/i.test(t) ||
+    /\b(?:current\s+(?:company|employer)\s+offers?\s+(?:esop|rsu|stock\s+options?|equity))\b/i.test(t);
+}
+
+/* `currentEsopVested` — candidate mentions vested ESOPs. */
+function detectCurrentEsopVested(t: string): boolean {
+  return /\b(?:i\s+have|i\s+hold|i\s+own)\s+(?:\d+\s+)?vested\s+(?:esop|rsu|options?|shares?|equity)\b/i.test(t) ||
+    /\b(?:already\s+vested|partially\s+vested|some\s+(?:esop|rsu|options?)\s+(?:have\s+)?vested)\b/i.test(t) ||
+    /\b(?:my\s+(?:esop|rsu|options?)\s+(?:are\s+|have\s+)?(?:vested|partially\s+vested))\b/i.test(t);
+}
+
+/* `currentHasRetentionBonus` — candidate mentions retention/joining bonus
+ * from current employer. */
+function detectCurrentHasRetentionBonus(t: string): boolean {
+  return /\b(?:retention\s+bonus\s+(?:from|at|with)\s+(?:my\s+)?(?:current|present)\s+(?:company|employer))\b/i.test(t) ||
+    /\b(?:my\s+current\s+(?:company|employer)\s+(?:gave|gave\s+me|offered\s+me)\s+(?:a\s+)?(?:retention|joining)\s+bonus)\b/i.test(t) ||
+    /\b(?:i\s+received\s+(?:a\s+)?(?:retention|joining)\s+bonus\s+(?:when\s+i\s+joined|last\s+year))\b/i.test(t);
+}
+
+/* `currentHasGratuity` — candidate mentions gratuity (signals 5yr+ tenure). */
+function detectCurrentHasGratuity(t: string): boolean {
+  return /\b(?:gratuity|gratuity\s+(?:eligibility|payout|component|vesting|entitlement))\b/i.test(t) &&
+    !/\b(?:near|almost|lose|forfeit|close\s+to|few\s+months\s+to)\b/i.test(t); /* exclude gratuityVestingNear */
+}
+
+/* `currentHasNps` — candidate mentions NPS / 80CCD(2). */
+function detectCurrentHasNps(t: string): boolean {
+  return /\b(?:nps|national\s+pension\s+(?:scheme|system)|80\s*ccd\s*(?:\(2\))?|employer\s+nps\s+contribution)\b/i.test(t);
+}
+
+/* `wantsHigherBase` — candidate explicitly asked for higher fixed/base. */
+function detectWantsHigherBase(t: string): boolean {
+  return /\b(?:higher\s+(?:fixed|base|basic)\s+(?:salary|pay|component))\b/i.test(t) ||
+    /\b(?:want\s+(?:a\s+)?(?:better|higher|more)\s+(?:fixed|base)\b)/i.test(t) ||
+    /\b(?:increase\s+(?:the\s+)?(?:fixed|base)\s+(?:salary|component|pay))\b/i.test(t) ||
+    /\b(?:more\s+(?:in\s+)?(?:fixed|base|guaranteed)\s+(?:comp|salary|pay))\b/i.test(t);
+}
+
+/* `wantsHigherBonus` — candidate asked about performance bonus structure. */
+function detectWantsHigherBonus(t: string): boolean {
+  return /\b(?:what(?:'s|\s+is)\s+(?:the\s+)?(?:variable|bonus|performance\s+bonus)\s+(?:structure|percentage|potential|cap))\b/i.test(t) ||
+    /\b(?:want\s+(?:a\s+)?(?:higher|better|more\s+generous)\s+(?:bonus|variable|performance\s+bonus))\b/i.test(t) ||
+    /\b(?:is\s+(?:the\s+)?(?:bonus|variable)\s+(?:guaranteed|capped|uncapped|linked\s+to\s+performance))\b/i.test(t);
+}
+
+/* `wantsJoiningBonus` — candidate asked about or mentioned joining bonus. */
+function detectWantsJoiningBonus(t: string): boolean {
+  return /\b(?:joining\s+bonus|sign[-\s]?on\s+bonus|sign[-\s]?on\s+(?:payment|component))\b/i.test(t) ||
+    /\b(?:can\s+(?:you|the\s+company)\s+(?:offer|provide|give)\s+(?:a\s+)?(?:joining|sign[-\s]?on)\s+bonus)\b/i.test(t) ||
+    /\b(?:is\s+there\s+(?:a\s+)?(?:joining|sign[-\s]?on)\s+bonus)\b/i.test(t);
+}
+
+/* `wantsRelocationAllowance` — candidate asked about relocation support. */
+function detectWantsRelocationAllowance(t: string): boolean {
+  return /\b(?:relocation\s+(?:allowance|support|assistance|expenses?|package))\b/i.test(t) ||
+    /\b(?:can\s+(?:you|the\s+company)\s+(?:cover|help\s+with|support)\s+(?:my\s+)?(?:relocation|moving\s+costs?))\b/i.test(t) ||
+    /\b(?:moving\s+(?:allowance|support|assistance|expenses?))\b/i.test(t);
+}
+
+/* `wantsFlexibleWork` — candidate asked about remote/hybrid as part of offer. */
+function detectWantsFlexibleWork(t: string): boolean {
+  return /\b(?:remote\s+(?:work\s+)?(?:option|possibility|flexibility|arrangement))\b/i.test(t) ||
+    /\b(?:hybrid\s+(?:work\s+)?(?:arrangement|option|schedule|model)\s+(?:as\s+part\s+of|included\s+in)\s+(?:the\s+)?(?:offer|package))\b/i.test(t) ||
+    /\b(?:work[-\s]?from[-\s]?home\s+(?:days?|policy|option)\s+(?:in\s+the\s+offer|as\s+part))\b/i.test(t) ||
+    /\b(?:flexible\s+(?:work\s+)?(?:arrangement|hours|schedule)\s+(?:as\s+part\s+of|included))\b/i.test(t);
+}
+
+/* `wantsLearningBudget` — candidate mentioned L&D / certifications / upskilling. */
+function detectWantsLearningBudget(t: string): boolean {
+  return /\b(?:learning\s+(?:and\s+development|&\s+development|budget|allowance)|l&d\s+budget|l\s+&\s+d)\b/i.test(t) ||
+    /\b(?:certification\s+(?:budget|allowance|reimbursement|support)|training\s+budget)\b/i.test(t) ||
+    /\b(?:upskilling\s+(?:budget|allowance|support)|continuing\s+education\s+(?:budget|reimbursement))\b/i.test(t) ||
+    /\b(?:conference\s+(?:budget|allowance|attendance)|course\s+reimbursement)\b/i.test(t);
+}
+
+/* `wantsEquityRefresh` — candidate asked about equity refresh grants. */
+function detectWantsEquityRefresh(t: string): boolean {
+  return /\b(?:equity\s+refresh\s+(?:grant|policy|cadence|program))\b/i.test(t) ||
+    /\b(?:refresh\s+(?:grant|equity|rsu|esop|stock\s+options?)\s+(?:after|every|at))\b/i.test(t) ||
+    /\b(?:annual\s+equity\s+(?:refresh|top[-\s]?up)|promo(?:tion)?\s+equity\s+(?:grant|refresh))\b/i.test(t);
+}
+
+/* `wantsProfessionalTitle` — candidate mentioned title upgrade. */
+function detectWantsProfessionalTitle(t: string): boolean {
+  return /\b(?:title\s+(?:upgrade|bump|improvement|change|should\s+be))\b/i.test(t) ||
+    /\b(?:(?:senior|staff|principal|lead|director)\s+(?:title|designation|role))\s+(?:as\s+part\s+of|included\s+in|alongside)\b/i.test(t) ||
+    /\b(?:want\s+(?:a\s+)?(?:better|senior|higher)\s+(?:title|designation))\b/i.test(t) ||
+    /\b(?:title\s+matters?\s+(?:to\s+me|for\s+my\s+resume|for\s+career))\b/i.test(t);
+}
+
+/* `hasSeenOffer` — candidate received the offer letter / verbal offer. */
+function detectHasSeenOffer(t: string): boolean {
+  return /\b(?:i\s+(?:have|received|got)\s+(?:the\s+)?(?:offer\s+letter|written\s+offer|offer\s+document))\b/i.test(t) ||
+    /\b(?:the\s+offer\s+(?:letter\s+)?(?:says?|mentions?|states?|shows?))\b/i.test(t) ||
+    /\b(?:per\s+the\s+offer|as\s+per\s+(?:the\s+)?offer\s+letter|offer\s+letter\s+shows?)\b/i.test(t) ||
+    /\b(?:i(?:'ve|\s+have)\s+(?:already\s+)?(?:received|seen|got)\s+(?:your|the|a)\s+offer)\b/i.test(t);
+}
+
+/* `offerDeadlineMentioned` + `offerDeadlineText` — candidate mentioned
+ * offer expiry / time pressure. */
+function detectOfferDeadline(t: string): { mentioned: boolean; text: string | null } {
+  const BY_PATTERNS = [
+    /\b(?:offer\s+(?:expires?|is\s+valid|deadline)\s+(?:by|on|until|till))\s+(.{3,30})\b/i,
+    /\b(?:need\s+to\s+(?:decide|respond|accept)\s+by)\s+(.{3,30})\b/i,
+    /\b(?:decide\s+(?:by|before))\s+((?:(?:end\s+of\s+)?(?:this\s+week|the\s+week|friday|monday|tuesday|wednesday|thursday|sunday|saturday)|\d+\s+days?|tomorrow|next\s+week|eod|eow)[,.]?)/i,
+  ];
+  for (const re of BY_PATTERNS) {
+    const m = re.exec(t);
+    if (m) return { mentioned: true, text: m[1].trim().substring(0, 40) };
+  }
+  if (/\b(?:offer\s+(?:expires?|valid\s+for\s+only|valid\s+till|deadline)|by\s+(?:friday|end\s+of\s+week|end\s+of\s+day|eod|eow|\d+\s+days?))\b/i.test(t)) {
+    return { mentioned: true, text: null };
+  }
+  return { mentioned: false, text: null };
+}
+
+/* `negotiatingMultipleOffers` — juggling 2+ active offers. */
+function detectNegotiatingMultipleOffers(t: string): boolean {
+  return /\b(?:multiple\s+offers?|2\s+offers?|two\s+offers?|3\s+offers?|three\s+offers?|several\s+offers?)\b/i.test(t) ||
+    /\b(?:comparing\s+offers?|juggling\s+(?:multiple\s+)?offers?|weighing\s+(?:multiple\s+)?offers?)\b/i.test(t) ||
+    /\b(?:i\s+have\s+(?:two|2|three|3|multiple|several|other)\s+(?:competing\s+)?offers?\s+(?:in\s+hand|on\s+the\s+table))\b/i.test(t);
+}
+
+/* `prefersCashOverPerks` — candidate said they care more about number. */
+function detectPrefersCashOverPerks(t: string): boolean {
+  return /\b(?:care\s+(?:more\s+about|mostly\s+about)\s+(?:the\s+)?(?:number|cash|base|salary)\s+than\s+perks?)\b/i.test(t) ||
+    /\b(?:prefer\s+(?:cash|money|higher\s+(?:base|salary))\s+over\s+perks?)\b/i.test(t) ||
+    /\b(?:perks?\s+(?:don'?t\s+matter|aren'?t\s+(?:important|priority)|secondary\s+to\s+(?:the\s+)?(?:number|cash|base)))\b/i.test(t) ||
+    /\b(?:it'?s?\s+all\s+about\s+(?:the\s+)?(?:number|cash|base|salary))\b/i.test(t);
+}
+
+/* `perksImportant` — health insurance, food coupons, cab mentioned as
+ * important factors. */
+function detectPerksImportant(t: string): boolean {
+  return /\b(?:health\s+insurance\s+(?:is|matters?|important)\b|food\s+(?:coupons?|vouchers?|allowance)\s+(?:is|matter|important))\b/i.test(t) ||
+    /\b(?:cab\s+(?:facility|service|allowance)\s+(?:is|matters?|important|nice\s+to\s+have))\b/i.test(t) ||
+    /\b(?:the\s+(?:perks?|benefits?)\s+(?:matter|are\s+important|are\s+a\s+big\s+factor))\b/i.test(t) ||
+    /\b(?:perks?\s+(?:are|matter|important|factor|consideration))\b/i.test(t);
+}
+
+/* ─── Wave-7 (2026-05-15) — Behavioral and psychological detectors ─────── */
+
+/* `anchoredFirst` — candidate stated a number before being asked. */
+function detectAnchoredFirst(t: string): boolean {
+  return /\b(?:i(?:'m|\s+am)\s+(?:looking\s+for|targeting|expecting|asking\s+for|hoping\s+for))\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)\b/i.test(t) ||
+    /\b(?:my\s+expected\s+(?:ctc|salary|package)\s+is\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs))\b/i.test(t);
+}
+
+/* `anchorWasHighball` — first anchor > 50% above current CTC. */
+function detectAnchorWasHighball(t: string): boolean {
+  const currentMatch = /\b(?:current(?:ly)?(?:\s+(?:ctc|package|salary|comp(?:ensation)?))?\s+(?:is|at|:)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\b/i.exec(t) ||
+    /\b(?:i(?:'m|\s+am)\s+(?:currently\s+)?(?:at|earning|drawing|making)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\b/i.exec(t);
+  const targetMatch = /\b(?:(?:looking\s+for|expect(?:ing)?|want(?:ing)?|targeting|hoping\s+for)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\b/i.exec(t);
+  if (!currentMatch || !targetMatch) return false;
+  const current = parseFloat(currentMatch[1]);
+  const target = parseFloat(targetMatch[1]);
+  if (!Number.isFinite(current) || !Number.isFinite(target) || current <= 0) return false;
+  return target / current > 1.5;
+}
+
+/* `retreatedFromAnchor` — candidate walked back their initial ask. */
+function detectRetreatedFromAnchor(t: string): boolean {
+  return /\b(?:i\s+(?:can|could)\s+(?:be\s+flexible|come\s+down|settle\s+for|accept\s+less|go\s+lower))\b/i.test(t) ||
+    /\b(?:i'?m\s+(?:open\s+to|flexible\s+on|willing\s+to\s+(?:negotiate|come\s+down))\s+(?:the\s+)?(?:number|salary|ask))\b/i.test(t) ||
+    /\b(?:i\s+(?:said|asked\s+for|mentioned)\s+(?:₹\s*)?(\d+)\s+(?:but|however)\s+(?:i\s+can|i'm\s+open))\b/i.test(t);
+}
+
+/* `acceptedCounterQuickly` — candidate accepted counter very quickly. */
+function detectAcceptedCounterQuickly(t: string): boolean {
+  /* This is a behavioral flag set by the kernel when counter is accepted in
+   * < 2 turns — text detection is a secondary signal for when candidate
+   * says "that works for me" / "I'll take it" immediately after a counter. */
+  return /\b(?:(?:that|this)\s+(?:works?\s+for\s+me|sounds?\s+(?:good|great|fair|reasonable)|is\s+(?:acceptable|fine\s+by\s+me)))\b/i.test(t) ||
+    /\b(?:i(?:'ll|\s+will)\s+(?:accept|take)\s+(?:that|this|the\s+offer))\b/i.test(t);
+}
+
+/* `respondedToBudgetCeiling` — acknowledged when told budget ceiling. */
+function detectRespondedToBudgetCeiling(t: string): boolean {
+  return /\b(?:i\s+understand\s+(?:the\s+)?(?:budget|ceiling|cap|limit)|understood(?:\s+(?:about\s+)?the\s+(?:budget|ceiling|cap)))\b/i.test(t) ||
+    /\b(?:(?:ok|okay|alright)\s+(?:if|so|given)\s+(?:that'?s?\s+(?:the\s+)?(?:budget|ceiling|max|limit|cap)))\b/i.test(t) ||
+    /\b(?:if\s+(?:that'?s?\s+)?(?:the\s+)?(?:budget|ceiling|max|limit)\s+(?:then|i\s+get\s+it))\b/i.test(t);
+}
+
+/* `pushedBackOnCeiling` — explicitly challenged the stated ceiling. */
+function detectPushedBackOnCeiling(t: string): boolean {
+  return /\b(?:(?:but|however|still),?\s+(?:the\s+)?(?:market|glassdoor|levels\.fyi|data)\s+(?:shows?|says?|suggests?))\b/i.test(t) ||
+    /\b(?:(?:but|however|still),?\s+i\s+know\s+(?:the\s+)?(?:band|market|range)\s+(?:is|goes?|can\s+go)\s+(?:higher|up\s+to))\b/i.test(t) ||
+    /\b(?:(?:the\s+)?ceiling\s+(?:seems?\s+)?(?:low|below\s+market|not\s+competitive|out\s+of\s+sync))\b/i.test(t) ||
+    /\b(?:can\s+(?:we|you)\s+(?:revisit|reconsider|re[-\s]?examine)\s+(?:the\s+)?(?:budget|ceiling|cap|band))\b/i.test(t);
+}
+
+/* `invokedCompetingOffer` — used competing offer as leverage. Distinct from
+ * just mentioning it — requires explicit leverage language. */
+function detectInvokedCompetingOffer(t: string): boolean {
+  return /\b(?:(?:because\s+of|given|considering)\s+(?:my\s+)?(?:other|competing|rival)\s+offer)\b/i.test(t) ||
+    /\b(?:(?:other|competing)\s+offer\s+(?:is\s+paying|pays?|has\s+already)\s+(?:more|higher|₹\s*\d+))\b/i.test(t) ||
+    /\b(?:(?:match|beat|better)\s+(?:my|the|that)\s+(?:other|competing|rival)\s+offer)\b/i.test(t) ||
+    /\b(?:need\s+(?:you\s+to\s+)?(?:match|beat|top)\s+(?:my|the)\s+(?:other|competing)\s+offer)\b/i.test(t);
+}
+
+/* `expressedUrgency` — "I need to decide by...". */
+function detectExpressedUrgency(t: string): boolean {
+  return /\b(?:i\s+need\s+to\s+(?:decide|respond|give\s+(?:them|an)\s+answer)\s+(?:by|before|within|in\s+the\s+next))\b/i.test(t) ||
+    /\b(?:i\s+(?:have|'ve\s+got)\s+(?:to\s+decide|a\s+deadline)\s+(?:by|on|before|of))\b/i.test(t) ||
+    /\b(?:they(?:'re|\s+are)\s+waiting\s+for\s+(?:my\s+)?(?:answer|response|decision))\b/i.test(t);
+}
+
+/* `expressedHesitation` — "I'm not sure", "need to think about it". */
+function detectExpressedHesitation(t: string): boolean {
+  return /\b(?:i(?:'m|\s+am)\s+not\s+(?:sure|certain|convinced|100%\s+sure)|let\s+me\s+(?:think|check|confirm)|need\s+to\s+think\s+about\s+(?:it|this))\b/i.test(t) ||
+    /\b(?:i\s+(?:want\s+to\s+)?(?:think\s+(?:about\s+it|it\s+over)|mull\s+it\s+over|sleep\s+on\s+it))\b/i.test(t) ||
+    /\b(?:not\s+sure\s+(?:about|if|whether)\s+(?:this|the\s+(?:offer|package|number)))\b/i.test(t);
+}
+
+/* `usedRecruiterName` — candidate addressed recruiter by name. Conservative:
+ * requires a name-like token at sentence start or after "hi/hey/thanks". */
+function detectUsedRecruiterName(t: string): boolean {
+  return /\b(?:hi|hey|thanks?|thank\s+you)\s+[A-Z][a-z]{2,}\b/.test(t) ||
+    /^[A-Z][a-z]{2,},\s/.test(t);
+}
+
+/* `saidThankYou` — expressed gratitude during negotiation. */
+function detectSaidThankYou(t: string): boolean {
+  return /\b(?:thank(?:s|\s+you)|thanks\s+(?:a\s+lot|so\s+much|for\s+your\s+time|for\s+considering|for\s+the\s+offer)|appreciate\s+(?:it|the\s+offer|your\s+time|the\s+transparency))\b/i.test(t);
+}
+
+/* `askedAboutTeam` — showed interest in team/manager/culture. */
+function detectAskedAboutTeam(t: string): boolean {
+  return /\b(?:who\s+(?:would\s+i|will\s+i)\s+(?:report\s+to|work\s+(?:with|under|alongside))|tell\s+me\s+about\s+(?:the\s+)?team)\b/i.test(t) ||
+    /\b(?:what'?s?\s+(?:the\s+)?(?:team\s+(?:culture|dynamics|size)|manager\s+like|management\s+style))\b/i.test(t) ||
+    /\b(?:(?:size|culture|vibe)\s+of\s+(?:the\s+)?team|team\s+(?:setup|structure|org))\b/i.test(t);
+}
+
+/* `askedAboutGrowthPath` — asked about career progression explicitly. */
+function detectAskedAboutGrowthPath(t: string): boolean {
+  return /\b(?:what(?:'s|\s+is)\s+(?:the\s+)?(?:career|growth|promotion|progression)\s+(?:path|track|trajectory|ladder|opportunity))\b/i.test(t) ||
+    /\b(?:how\s+(?:fast|quickly|soon)\s+(?:do\s+people|can\s+i)\s+(?:get\s+promoted|grow|advance))\b/i.test(t) ||
+    /\b(?:growth\s+(?:path|opportunity|track|potential)\s+(?:in|at|for\s+this)\s+(?:role|company|position))\b/i.test(t);
+}
+
+/* `askedAboutWorkLifeBalance` — raised WLB as a concern. */
+function detectAskedAboutWorkLifeBalance(t: string): boolean {
+  return /\b(?:work[-\s]?(?:life\s+)?balance\b)/i.test(t) ||
+    /\b(?:wlb\b|on[-\s]?call\s+(?:expectations?|hours?|frequency)|typical\s+(?:working\s+)?hours?|how\s+(?:many|much)\s+hours?\s+(?:do\s+people\s+work|is\s+expected))\b/i.test(t) ||
+    /\b(?:burnout\s+(?:culture|risk)\s+at\s+(?:this|the)\s+company|crunch\s+(?:culture|time)\b)\b/i.test(t);
+}
+
+/* `gaveInconsistentNumbers` — CTC numbers contradicted each other. This is
+ * primarily a kernel-set flag but text detection catches within-utterance
+ * contradictions for early warning. */
+function detectGaveInconsistentNumbers(t: string): boolean {
+  /* Look for two different LPA numbers in the same utterance claimed as
+   * "current" salary — conservative: requires "current" context + two numbers. */
+  const nums: number[] = [];
+  const re = /\b(?:current(?:ly)?(?:\s+(?:ctc|salary|package))?\s+(?:is|at|:)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(t)) !== null) {
+    const n = parseFloat(m[1]);
+    if (Number.isFinite(n) && n > 0) nums.push(n);
+  }
+  if (nums.length >= 2) {
+    const spread = Math.abs(nums[0] - nums[1]) / Math.min(nums[0], nums[1]);
+    return spread > 0.1; /* > 10% difference in same utterance = inconsistent */
+  }
+  return false;
+}
+
+/* `evasiveOnCurrentCtc` — deflected or refused to disclose. Complementary
+ * to currentCtcRefusal but captures softer evasion. */
+function detectEvasiveOnCurrentCtc(t: string): boolean {
+  return /\b(?:(?:rather\s+|prefer\s+)?not\s+(?:discuss|get\s+into|share|disclose)\s+(?:my\s+)?(?:current\s+)?(?:ctc|salary|package))\b/i.test(t) ||
+    /\b(?:it'?s?\s+(?:complicated|not\s+straightforward|hard\s+to\s+say)\s+(?:because|as)\s+(?:of\s+)?(?:the\s+)?(?:components?|structure|split))\b/i.test(t) ||
+    /\b(?:i'?d\s+(?:prefer\s+to\s+)?(?:not|rather\s+not)\s+(?:anchor|lead)\s+with\s+(?:my\s+)?(?:current|present)\s+(?:ctc|number))\b/i.test(t);
+}
+
+/* `dramaticAnchorJump` — expected CTC jumped > 30% across turns. Primarily
+ * kernel-set; text detection catches single-utterance revision language. */
+function detectDramaticAnchorJump(t: string): boolean {
+  return /\b(?:actually\s+(?:i\s+(?:meant|want|need|expect|was\s+thinking)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh)))\b/i.test(t) ||
+    /\b(?:(?:let\s+me\s+(?:revise|correct|update)\s+(?:my|the)\s+(?:ask|number|expectation))\s+(?:to\s+)?(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh))\b/i.test(t);
+}
+
+/* `mentionedCounterOffer` — current employer may counter-offer. */
+function detectMentionedCounterOffer(t: string): boolean {
+  return /\b(?:(?:my\s+)?(?:current\s+)?(?:company|employer|manager|boss)\s+(?:might|may|will|is\s+likely\s+to|could)\s+(?:make\s+(?:me\s+)?)?(?:a\s+)?counter(?:[-\s]?offer)?)\b/i.test(t) ||
+    /\b(?:counter[-\s]?offer\s+(?:from\s+my\s+current\s+employer|from\s+(?:my\s+)?(?:current\s+)?company))\b/i.test(t) ||
+    /\b(?:i\s+(?:might|may)\s+get\s+(?:a\s+)?counter[-\s]?offer|they\s+(?:might|may)\s+(?:try\s+to\s+)?(?:counter|retain\s+me))\b/i.test(t);
+}
+
+/* `mentionedLayoffRisk` — hinted at job insecurity as reason for looking. */
+function detectMentionedLayoffRisk(t: string): boolean {
+  return /\b(?:(?:my\s+)?(?:role|position|team|job)\s+(?:might|may|could)\s+(?:be\s+)?(?:at\s+risk|eliminated|cut|redundant))\b/i.test(t) ||
+    /\b(?:not\s+sure\s+(?:how\s+long|if\s+my\s+(?:role|position|job)\s+is\s+safe))\b/i.test(t) ||
+    /\b(?:(?:layoffs?|rif|redundanc(?:y|ies))\s+(?:are\s+)?(?:coming|expected|on\s+the\s+horizon|rumoured\s+at))\s+(?:my\s+|the\s+)?(?:current\s+)?company\b/i.test(t) ||
+    /\b(?:looking\s+(?:because|as)\s+(?:job|role|position)\s+(?:security|stability)\s+(?:is|seems|looks)\s+(?:uncertain|shaky|not\s+great))\b/i.test(t);
+}
+
+/* `seemsRushed` — multiple signals of time pressure / urgency. Broader than
+ * expressedUrgency — captures phrasing like "really need to wrap this up". */
+function detectSeemsRushed(t: string): boolean {
+  return /\b(?:really\s+need\s+to\s+(?:wrap\s+(?:this\s+)?up|close\s+this|decide\s+soon|move\s+quickly))\b/i.test(t) ||
+    /\b(?:time\s+(?:is\s+)?(?:of\s+the\s+essence|running\s+out|is\s+limited|is\s+critical))\b/i.test(t) ||
+    /\b(?:can\s+(?:we|you)\s+(?:speed\s+(?:this\s+)?up|expedite|move\s+(?:this\s+)?faster|fast[-\s]?track))\b/i.test(t) ||
+    /\b(?:(?:need|have)\s+to\s+(?:make\s+a\s+decision|give\s+(?:an?\s+)?answer)\s+(?:asap|today|tomorrow|very\s+soon|right\s+away))\b/i.test(t);
+}
+
+/* ─── Wave-8 (2026-05-16) — Offer-response + financial specifics + role
+ * clarity + competing-offer specifics detectors ─────────────────────── */
+
+/* `firstOfferReaction` — positive / negative / neutral reaction to the offer. */
+function detectFirstOfferReaction(t: string): "positive" | "negative" | "neutral" | null {
+  if (/\b(?:that(?:'s|\s+is)\s+(?:really\s+)?(?:great|fantastic|wonderful|exactly\s+what\s+i\s+(?:was\s+)?looking\s+for)|love\s+(?:it|the\s+offer)|very\s+(?:happy|excited|pleased)\s+(?:with\s+)?(?:this|the)\s+offer)\b/i.test(t)) return "positive";
+  if (/\b(?:that(?:'s|\s+is)\s+(?:lower|less|below)\s+(?:than|my)|can(?:'t|\s+not)\s+accept|doesn'?t\s+work\s+for\s+me|not\s+what\s+i\s+(?:was\s+)?(?:expecting|looking\s+for)|this\s+is\s+(?:too\s+low|disappointing|not\s+competitive))\b/i.test(t)) return "negative";
+  if (/\b(?:(?:let\s+me\s+)?(?:think|consider)\s+(?:about\s+)?(?:it|this)|not\s+(?:sure|certain)\s+yet|(?:seems?|looks?)\s+(?:ok|okay|alright|reasonable|fair\s+enough))\b/i.test(t)) return "neutral";
+  return null;
+}
+
+/* `explicitlyRejectedOffer` — candidate explicitly rejected the offer. */
+function detectExplicitlyRejectedOffer(t: string): boolean {
+  return /\b(?:i\s+(?:can(?:'t|\s+not)\s+accept|am\s+(?:unable|not\s+able)\s+to\s+accept|(?:must\s+)?reject|decline|turn\s+down)\s+(?:this|the)\s+offer)\b/i.test(t) ||
+    /\b(?:this\s+(?:offer\s+)?doesn'?t\s+work\s+for\s+me|this\s+is\s+not\s+(?:for|for\s+me|acceptable)|i\s+(?:won'?t|cannot)\s+be\s+joining)\b/i.test(t);
+}
+
+/* `askedForTimeToDecide` — candidate requested time to decide. */
+function detectAskedForTimeToDecide(t: string): boolean {
+  return /\b(?:can\s+i\s+(?:have|get)\s+(?:a\s+(?:day|few\s+days?|week|couple\s+of\s+days?)|some\s+time)\s+to\s+(?:decide|think|consider))\b/i.test(t) ||
+    /\b(?:i\s+(?:need|would\s+like)\s+(?:a\s+(?:day|few\s+days?|week|some\s+time))\s+to\s+(?:decide|think|evaluate|discuss\s+at\s+home))\b/i.test(t) ||
+    /\b(?:give\s+me\s+(?:a\s+(?:day|few\s+days?|week|couple\s+of\s+days?)|some\s+time)\s+(?:to\s+think|before\s+i\s+(?:decide|respond)))\b/i.test(t);
+}
+
+/* `mentionedSpouseFamily` — mentioned spouse / family discussion. */
+function detectMentionedSpouseFamily(t: string): boolean {
+  return /\b(?:(?:need|want)\s+to\s+(?:discuss|talk|check)\s+(?:with|to)\s+(?:my\s+)?(?:wife|husband|spouse|family|partner|parents))\b/i.test(t) ||
+    /\b(?:(?:family|spouse|wife|husband|partner)\s+(?:decision|discussion|input|approval|needs?\s+to\s+know))\b/i.test(t) ||
+    /\b(?:let\s+me\s+(?:discuss|check|talk)\s+(?:at\s+home|with\s+my\s+(?:family|wife|husband|spouse)))\b/i.test(t);
+}
+
+/* `mentionedRelocation` — mentioned relocation in offer context. */
+function detectMentionedRelocation(t: string): boolean {
+  return /\b(?:(?:i'?d?\s+need|would\s+(?:have|need))\s+to\s+relocate|relocation\s+(?:is\s+required|needed|involved|package|support|allowance|bonus))\b/i.test(t) ||
+    /\b(?:is\s+(?:relocation|moving)\s+(?:covered|supported|provided|included\s+in\s+the\s+offer))\b/i.test(t);
+}
+
+/* `mentionedPf` — mentioned PF / UAN / employer PF contribution. */
+function detectMentionedPf(t: string): boolean {
+  return /\b(?:pf\b|provident\s+fund|pf\s+(?:breakup|contribution|uan|transfer)|employer\s+pf|epf\b|uan\s+transfer)\b/i.test(t);
+}
+
+/* `mentionedGratuity` — mentioned gratuity in offer-evaluation context. */
+function detectMentionedGratuity(t: string): boolean {
+  return /\b(?:gratuity\s+(?:included|in\s+ctc|calculation|eligible|benefit|payout)|is\s+gratuity\s+(?:part\s+of|included|extra)|gratuity\s+component)\b/i.test(t);
+}
+
+/* `mentionedForm16` — mentioned Form-16 / tax certificate from new employer. */
+function detectMentionedForm16(t: string): boolean {
+  return /\b(?:form\s*[-\s]?16\b|form\s+16\s+(?:issuance|date|from\s+(?:new|your)\s+company)|will\s+(?:you|the\s+company)\s+give\s+(?:me\s+)?form\s*16)\b/i.test(t);
+}
+
+/* `mentionedVariablePayout` — asked when/how variable gets paid. */
+function detectMentionedVariablePayout(t: string): boolean {
+  return /\b(?:(?:when|how)\s+(?:is|does)\s+(?:the\s+)?variable\s+(?:component\s+)?(?:get\s+paid|paid\s+out|disbursed|credited)|variable\s+(?:component\s+)?(?:payout|paid)\s+(?:schedule|cycle|frequency|track\s+record|date))\b/i.test(t) ||
+    /\b(?:variable\s+(?:quarterly|annual|biannual|semi[-\s]?annual)|payout\s+(?:cycle|frequency)\s+for\s+(?:the\s+)?variable)\b/i.test(t);
+}
+
+/* `mentionedSigningBonus` — asked about signing bonus. */
+function detectMentionedSigningBonus(t: string): boolean {
+  return /\b(?:sign(?:ing)?[-\s]?(?:bonus|payment)|sign[-\s]?on\s+bonus|is\s+there\s+a\s+signing\s+bonus|signing\s+bonus\s+(?:of|available|offered|included))\b/i.test(t);
+}
+
+/* `mentionedRetentionBonus` — asked about retention bonus. */
+function detectMentionedRetentionBonus(t: string): boolean {
+  return /\b(?:retention\s+bonus|stay\s+bonus|retention\s+(?:incentive|award|component)|is\s+there\s+(?:a\s+)?retention\s+(?:bonus|incentive))\b/i.test(t);
+}
+
+/* `mentionedJoiningBonus` — mentioned joining bonus (raw ask/mention). */
+function detectMentionedJoiningBonus(t: string): boolean {
+  return /\b(?:joining\s+bonus\b|jb\b|onboarding\s+bonus|joining\s+(?:incentive|payment|award)|is\s+there\s+a\s+joining\s+bonus)\b/i.test(t);
+}
+
+/* `askedAboutReporting` — asked who they report to. */
+function detectAskedAboutReporting(t: string): boolean {
+  return /\b(?:who\s+(?:would|will|do)\s+i\s+(?:report\s+to|report\s+directly\s+to)|(?:reporting\s+(?:line|structure|relationship)|who\s+is\s+(?:my|the)\s+(?:manager|direct\s+manager|reporting\s+manager))\b)\b/i.test(t) ||
+    /\b(?:who\s+does\s+this\s+role\s+report\s+to|who\s+would\s+be\s+my\s+(?:manager|boss|supervisor|lead))\b/i.test(t);
+}
+
+/* `askedAboutTeamSize` — asked about team size (not span-of-control). */
+function detectAskedAboutTeamSize(t: string): boolean {
+  return /\b(?:how\s+(?:big|large|many\s+people)\s+is\s+the\s+team|team\s+(?:size|headcount|strength)|how\s+many\s+(?:people|members?|engineers?)\s+(?:are\s+)?(?:on|in)\s+(?:the\s+)?team)\b/i.test(t);
+}
+
+/* `askedAboutGrowthPath8` — Wave-8 growth-path detector (distinct pattern from Wave-7). */
+function detectAskedAboutGrowthPath8(t: string): boolean {
+  return /\b(?:what(?:'s|\s+is)\s+(?:the\s+)?(?:career\s+trajectory|growth\s+opportunity|advancement\s+path|upward\s+mobility)|room\s+for\s+(?:growth|advancement)\s+in\s+(?:this\s+)?(?:role|position|company|team))\b/i.test(t) ||
+    /\b(?:(?:fast|quick)\s+track(?:ed)?\s+(?:growth|promotion|advancement)|internal\s+mobility\s+(?:options?|opportunities?|path))\b/i.test(t);
+}
+
+/* `askedAboutPerformanceCycle` — asked about performance review cadence. */
+function detectAskedAboutPerformanceCycle(t: string): boolean {
+  return /\b(?:(?:annual|semi[-\s]?annual|quarterly|bi[-\s]?annual)\s+(?:review|appraisal|performance\s+(?:cycle|review))|performance\s+(?:cycle|review\s+cycle|cadence|schedule|calendar|timeline)|how\s+(?:often|frequently)\s+(?:is\s+)?(?:performance|appraisal)\s+(?:assessed|reviewed|evaluated))\b/i.test(t);
+}
+
+/* `mentionedTargetRole` — stated target role / aspiration in years. */
+function detectMentionedTargetRole(t: string): boolean {
+  return /\b(?:i\s+(?:want|plan|aspire|hope|aim)\s+to\s+(?:be|become|move\s+to)\s+(?:a\s+)?(?:[A-Z][a-z]+\s*){1,4}(?:in\s+(?:\d+|a\s+few|two|three|four|five)\s+years?))\b/i.test(t) ||
+    /\b(?:my\s+(?:goal|aspiration|target)\s+is\s+to\s+(?:be|become|reach|get\s+to)\s+(?:(?:a\s+)?(?:VP|Director|Principal|Staff|Senior\s+\w+|Head\s+of)))\b/i.test(t);
+}
+
+/* `competingOfferIsVerbal` — competing offer is verbal / not written. */
+function detectCompetingOfferIsVerbal(t: string): boolean {
+  return /\b(?:verbal\s+(?:offer|commitment|confirmation)|(?:not|haven'?t)\s+(?:yet\s+)?(?:received|got|gotten)\s+(?:the\s+)?(?:written|formal)\s+offer|(?:informal|unwritten|just\s+verbal)\s+offer)\b/i.test(t) ||
+    /\b(?:they\s+(?:said|told\s+me|communicated)\s+(?:verbally|informally)\s+but\s+no\s+(?:written|formal|paper)\s+offer)\b/i.test(t);
+}
+
+/* `competingOfferCompany` — company name of the competing offer. Conservative: only
+ * well-known company name patterns or explicit "from X" framing. Returns null when
+ * not detected (not worth false-positives with arbitrary NER). */
+function detectCompetingOfferCompany(t: string): string | null {
+  const m = /\b(?:offer\s+(?:from|at|with)|competing\s+offer\s+(?:from|at|with)|other\s+offer\s+(?:from|at|with))\s+([A-Z][a-zA-Z0-9&.\-\s]{2,30}?)(?=[\s,.]|\s+is|\s+for|\s+of|\s+paying|\s+has\b)/i.exec(t);
+  if (m) {
+    const name = m[1].trim();
+    if (name.length >= 2 && name.length <= 40) return name;
+  }
+  return null;
+}
+
+/* `competingOfferAmount` — stated amount of competing offer in LPA. */
+function detectCompetingOfferAmount(t: string): number | null {
+  const m = /(?:other|competing|rival)\s+offer\s+(?:is\s+)?(?:paying|offering|worth|at|of)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l\b|lakh|lakhs)\b/i.exec(t) ||
+    /\b(?:they(?:'re|\s+are)\s+(?:offering|paying)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l\b|lakh|lakhs)\b/i.exec(t);
+  if (m) {
+    const n = parseFloat(m[1]);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  return null;
+}
+
+/* `competingOfferDeadline` — deadline for the competing offer, if stated. */
+function detectCompetingOfferDeadline(t: string): string | null {
+  const m = /\b(?:they\s+(?:need|want|require)\s+(?:an?\s+)?(?:answer|response|decision)\s+by\s+([^,.]+)(?=[,.]|$))\b/i.exec(t) ||
+    /\b(?:competing\s+offer\s+(?:expires?|deadline)\s+(?:is\s+)?([^,.]+)(?=[,.]|$))\b/i.exec(t);
+  if (m) {
+    const deadline = m[1].trim();
+    if (deadline.length <= 40) return deadline;
+  }
+  return null;
+}
+
+/* ─── Wave-9 (2026-05-16) — Psychological/behavioral + Indian doc/process +
+ * seniority/career stage + negotiation strategy detectors ──────────── */
+
+/* `showedFrustration` — candidate expressed frustration or impatience. */
+function detectShowedFrustration(t: string): boolean {
+  return /\b(?:(?:i(?:'m|\s+am)\s+(?:getting\s+)?(?:frustrated|fed\s+up|losing\s+patience|tired\s+of)|this\s+(?:is|has\s+been)\s+(?:really\s+)?(?:frustrating|dragging|taking\s+too\s+long)))\b/i.test(t) ||
+    /\b(?:(?:it'?s?\s+been|this\s+has\s+been)\s+(?:\d+\s+)?(?:weeks?|days?|months?)\s+(?:already|now|and\s+no\s+(?:answer|response|update)))\b/i.test(t) ||
+    /\b(?:i\s+don'?t\s+understand\s+why\s+this\s+(?:is\s+)?taking\s+so\s+(?:long|much\s+time))\b/i.test(t);
+}
+
+/* `showedExcitement` — candidate expressed genuine excitement. */
+function detectShowedExcitement(t: string): boolean {
+  return /\b(?:i(?:'m|\s+am)\s+(?:really|genuinely|truly|very)\s+(?:excited|thrilled|pumped|stoked|enthusiastic)\s+(?:about\s+)?(?:this\s+)?(?:role|opportunity|position|company))\b/i.test(t) ||
+    /\b(?:this\s+(?:is\s+)?(?:exactly\s+)?what\s+i(?:'ve|\s+have)\s+been\s+(?:looking\s+for|waiting\s+for|dreaming\s+of))\b/i.test(t) ||
+    /\b(?:can'?t\s+wait\s+to\s+(?:join|start|be\s+part\s+of)|really\s+(?:want|hope)\s+to\s+make\s+this\s+work)\b/i.test(t);
+}
+
+/* `usedSilence` — candidate explicitly paused / asked for moment to think. */
+function detectUsedSilence(t: string): boolean {
+  return /\b(?:give\s+me\s+(?:a\s+)?(?:moment|minute|second)\s+(?:to\s+think|please))\b/i.test(t) ||
+    /\b(?:let\s+me\s+(?:pause|take\s+a\s+moment|think\s+for\s+a\s+(?:second|moment|minute))|can\s+i\s+(?:take\s+a\s+moment|pause\s+for\s+a\s+second))\b/i.test(t);
+}
+
+/* `backtrackedOnExpectation` — walked back a previously stated number. */
+function detectBacktrackedOnExpectation(t: string): boolean {
+  return /\b(?:actually\s+i\s+(?:can\s+be|am)\s+(?:ok|fine|alright)\s+with\s+(?:less|lower|less\s+than)|forget\s+what\s+i\s+said\s+(?:earlier|before))\b/i.test(t) ||
+    /\b(?:i\s+(?:can\s+)?(?:reconsider|revise\s+(?:down)?|come\s+down\s+(?:on\s+the\s+number|from\s+that))|that\s+was\s+(?:aspirational|a\s+stretch|more\s+of\s+a\s+stretch\s+goal))\b/i.test(t);
+}
+
+/* `escalatedDemand` — asked for more after partial agreement (salami). */
+function detectEscalatedDemand(t: string): boolean {
+  return /\b(?:you\s+agreed\s+(?:on|to)\s+(?:the\s+)?(?:base|salary|number)\s*[,;]\s+can\s+(?:we|i)\s+(?:also|now)\s+(?:discuss|add|include|talk\s+about))\b/i.test(t) ||
+    /\b(?:one\s+more\s+thing\s*[—\-:,]\s+i\s+(?:also\s+need|was\s+hoping\s+for|wanted\s+to\s+ask\s+about))\b/i.test(t) ||
+    /\b(?:now\s+that\s+(?:we(?:'ve|\s+have)\s+agreed|you(?:'ve|\s+have)\s+(?:committed|confirmed))\s+(?:on|to).*?,\s*can\s+(?:we|i))\b/i.test(t);
+}
+
+/* `mentionedBgvConcern` — raised a background-verification concern. */
+function detectMentionedBgvConcern(t: string): boolean {
+  return /\b(?:bgv\b|background\s+(?:verification|check|screening)|what\s+does\s+(?:the\s+)?bgv\s+cover|my\s+(?:degree|employment|gap)\s+(?:might|may|could)\s+(?:not\s+pass|fail|be\s+an?\s+issue\s+in)\s+(?:bgv|background\s+check))\b/i.test(t);
+}
+
+/* `mentionedRelievingLetterRisk` — raised risk of not getting relieving letter. */
+function detectMentionedRelievingLetterRisk(t: string): boolean {
+  return /\b(?:relieving\s+letter|(?:my\s+)?(?:company|employer)\s+(?:might\s+not|may\s+not|won'?t)\s+give\s+(?:a\s+)?relieving|experience\s+letter\s+(?:issue|problem|concern|risk)|absconding|left\s+without\s+(?:proper\s+)?exit\s+formalities)\b/i.test(t);
+}
+
+/* `mentionedNoticeWaiver` — company willing to waive notice period. */
+function detectMentionedNoticeWaiver(t: string): boolean {
+  return /\b(?:(?:we(?:'ll|\s+will)|company)\s+(?:waive|wave)\s+(?:the\s+)?notice(?:\s+period)?|notice\s+(?:period\s+)?(?:waived|waiver)|immediate\s+(?:joining|start)\s+(?:is\s+)?(?:ok|okay|fine|possible|allowed))\b/i.test(t);
+}
+
+/* `mentionedNoticeBuyout` — candidate willing to buy out notice. */
+function detectMentionedNoticeBuyout(t: string): boolean {
+  return /\b(?:i(?:'ll|\s+will|\s+can)\s+(?:pay|cover|do)\s+(?:the\s+)?notice\s+(?:period\s+)?buyout|i'?m\s+(?:willing|ready|ok)\s+to\s+(?:buy\s+out|pay\s+for)\s+(?:my\s+)?notice|notice\s+buyout\s+(?:from\s+my\s+side|by\s+me|myself))\b/i.test(t);
+}
+
+/* `mentionedMoonlighting` — mentioned moonlighting / second job / side-project policy. */
+function detectMentionedMoonlighting(t: string): boolean {
+  return /\b(?:moonlight(?:ing)?\b|second\s+job\b|side\s+(?:hustle|project|job|gig|work)\b|parallel\s+(?:employment|work|job)|consulting\s+on\s+the\s+side)\b/i.test(t) ||
+    /\b(?:what(?:'s|\s+is)\s+(?:your|the)\s+(?:moonlighting|dual\s+employment|second\s+job)\s+policy)\b/i.test(t);
+}
+
+/* `isFirstJobChange` — signals this is their first job change. */
+function detectIsFirstJobChange(t: string): boolean {
+  return /\b(?:(?:this\s+(?:is|would\s+be)\s+(?:my\s+)?first\s+(?:job\s+change|company\s+change|switch))|first\s+time\s+(?:changing|switching|looking\s+outside)|i(?:'ve|\s+have)\s+(?:only|never)\s+(?:ever\s+)?(?:worked\s+(?:at|for)\s+one|been\s+with\s+one\s+company))\b/i.test(t) ||
+    /\b(?:been\s+(?:here|with\s+this\s+company|at\s+this\s+(?:company|org))\s+since\s+(?:college|graduation|campus|i\s+joined\s+as\s+a\s+fresher))\b/i.test(t) ||
+    /\b(?:only\s+(?:employer|company)\s+i(?:'ve|\s+have)\s+(?:ever\s+)?(?:worked\s+(?:at|for)|been\s+with))\b/i.test(t);
+}
+
+/* `hasManagementExperience` — candidate explicitly says they've managed people. */
+function detectHasManagementExperience(t: string): boolean {
+  return /\b(?:i(?:'ve|\s+have)\s+managed\s+(?:a\s+team\s+of\s+)?(?:\d+|\w+)\s+(?:people|engineers?|members?|reports?)|i\s+(?:led|lead)\s+(?:a\s+)?team(?:\s+of\s+(?:\d+|\w+))?|i(?:'m|\s+am)\s+a\s+(?:team\s+lead|tech\s+lead|engineering\s+manager|people\s+manager))\b/i.test(t) ||
+    /\b(?:management\s+experience\s+(?:of\s+(?:\d+|\w+)\s+(?:years?|yrs?)|spanning|across)|direct\s+reports?\s+(?:under\s+me|reporting\s+to\s+me))\b/i.test(t);
+}
+
+/* `mentionedStartupExperience` — mentioned startup background as credential. */
+function detectMentionedStartupExperience(t: string): boolean {
+  return /\b(?:(?:i(?:'ve|\s+have)\s+(?:worked|been)\s+(?:at|in|with)\s+(?:a\s+)?startup|startup\s+(?:background|experience|culture|environment))|(?:series\s+[abc]|seed\s+stage|early[-\s]?stage|pre[-\s]?series\s+[abc])\s+(?:company|startup|firm))\b/i.test(t);
+}
+
+/* `mentionedMncExperience` — mentioned MNC / large-corp background. */
+function detectMentionedMncExperience(t: string): boolean {
+  return /\b(?:(?:i(?:'ve|\s+have)\s+(?:worked|been)\s+(?:at|in|with|for))\s+(?:an?\s+)?mnc|mnc\s+(?:background|experience|culture|environment)|large\s+(?:corp(?:orate)?|company|organisation|organization)\s+(?:background|experience)|fortune\s+500\s+(?:experience|background|company))\b/i.test(t);
+}
+
+/* `hasPhdOrMba` — mentioned PhD or MBA as credential. */
+function detectHasPhdOrMba(t: string): boolean {
+  return /\b(?:ph\.?d\.?\b|doctorate|doctoral\s+(?:degree|thesis)|post[-\s]?doctoral)\b/i.test(t) ||
+    /\b(?:mba\b|m\.b\.a\.?|post[-\s]?graduate\s+(?:business\s+)?degree|business\s+school\s+(?:grad|degree))\b/i.test(t);
+}
+
+/* `usedAnchorFirst` — candidate stated their number BEFORE being asked. */
+function detectUsedAnchorFirst(t: string): boolean {
+  return /\b(?:just\s+so\s+you\s+know|to\s+be\s+upfront|i(?:'ll|\s+will)\s+say\s+upfront|(?:my\s+)?expectation\s+is\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh))\b/i.test(t) ||
+    /\b(?:(?:before\s+(?:you|we)\s+(?:ask|begin|start))\s*[,:]?\s*(?:my\s+)?(?:expected|target|desired)\s+(?:ctc|salary|package)\s+is)\b/i.test(t);
+}
+
+/* `gaveRangeNotPoint` — candidate gave a range instead of point number. */
+function detectGaveRangeNotPoint(t: string): boolean {
+  return /\b(?:somewhere\s+(?:between|in\s+the\s+range\s+of)|(?:between|from)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\s+(?:and|to|–|-)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)?\b)\b/i.test(t) ||
+    /\b(?:(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)\s+(?:to|–|-|and)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs))\b/i.test(t);
+}
+
+/* `deflectedOnRange` — candidate deflected when asked for a number. */
+function detectDeflectedOnRange(t: string): boolean {
+  return /\b(?:i(?:'m|\s+am)\s+(?:quite\s+)?flexible\s+(?:on\s+the\s+(?:number|salary|range)|about\s+(?:this|the\s+(?:number|package)))|you\s+(?:tell\s+me|can\s+decide|know\s+best)\s+(?:the\s+)?(?:number|salary|package))\b/i.test(t) ||
+    /\b(?:(?:whatever\s+|you\s+tell\s+me\s+)?(?:the\s+)?market\s+(?:rate|says|dictates)|(?:open\s+to\s+discussion|happy\s+with\s+the\s+market\s+rate))\b/i.test(t) ||
+    /\b(?:i\s+(?:don'?t|do\s+not)\s+have\s+a\s+(?:specific\s+)?(?:number\s+in\s+mind|fixed\s+expectation))\b/i.test(t);
+}
+
+/* `referencedMarketData` — cited Glassdoor / levels.fyi / AmbitionBox. */
+function detectReferencedMarketData(t: string): boolean {
+  return /\b(?:glassdoor|levels\.fyi|ambitionbox|naukri\s+salary|payscale|linkedin\s+salary|comparably|blind\s+(?:app|salaries?))\b/i.test(t) ||
+    /\b(?:according\s+to\s+(?:market\s+(?:data|research|survey)|salary\s+(?:data|survey|report))|market\s+(?:data|research)\s+(?:shows?|suggests?|indicates?))\b/i.test(t);
+}
+
+/* `mentionedCostOfLiving` — mentioned cost of living as a comp factor. */
+function detectMentionedCostOfLiving(t: string): boolean {
+  return /\b(?:cost\s+of\s+(?:living|life)\s+(?:in\s+(?:bangalore|mumbai|delhi|gurgaon|hyderabad|pune|chennai)|(?:is\s+)?(?:higher|lower|expensive|cheap))|(?:bangalore|mumbai|delhi)\s+is\s+(?:expensive|costly|pricey))\b/i.test(t) ||
+    /\b(?:col\b|cost[-\s]?of[-\s]?living\b)\s+(?:adjustment|factor|difference|premium)/i.test(t);
+}
+
+/* `mentionedTaxImplication` — mentioned tax implications as a comp factor. */
+function detectMentionedTaxImplication(t: string): boolean {
+  return /\b(?:new\s+tax\s+regime|old\s+(?:vs\.?\s+new\s+)?tax\s+regime|section\s+87\s*a\b|tax\s+(?:slab|bracket|planning|implication|saving|efficiency)|80\s*c\b|tds\s+(?:rate|deduction|planning)|effective\s+tax\s+rate)\b/i.test(t) ||
+    /\b(?:post[-\s]?tax\s+(?:take[-\s]?home|in[-\s]?hand)|in[-\s]?hand\s+after\s+(?:tax|tds)|take[-\s]?home\s+after\s+(?:all\s+)?(?:deductions?|tax(?:es)?))\b/i.test(t);
+}
+
 export function extractCandidateProfile(text: string): CandidateProfileResult {
   if (!text) return EMPTY;
 
@@ -3077,6 +4174,96 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const domainSpecialist = detectDomainSpecialist(text);
   const multipleCompaniesInTwoYears = detectMultipleCompaniesInTwoYears(text);
 
+  /* Wave-6 (2026-05-15) — compensation structure flags. */
+  const currentHasBonus = detectCurrentHasBonus(text);
+  const currentBonusPct = detectCurrentBonusPct(text);
+  const currentHasEsop = detectCurrentHasEsop(text);
+  const currentEsopVested = detectCurrentEsopVested(text);
+  const currentHasRetentionBonus = detectCurrentHasRetentionBonus(text);
+  const currentHasGratuity = detectCurrentHasGratuity(text);
+  const currentHasNps = detectCurrentHasNps(text);
+  const wantsHigherBase = detectWantsHigherBase(text);
+  const wantsHigherBonus = detectWantsHigherBonus(text);
+  const wantsJoiningBonus = detectWantsJoiningBonus(text);
+  const wantsRelocationAllowance = detectWantsRelocationAllowance(text);
+  const wantsFlexibleWork = detectWantsFlexibleWork(text);
+  const wantsLearningBudget = detectWantsLearningBudget(text);
+  const wantsEquityRefresh = detectWantsEquityRefresh(text);
+  const wantsProfessionalTitle = detectWantsProfessionalTitle(text);
+  const hasSeenOffer = detectHasSeenOffer(text);
+  const { mentioned: offerDeadlineMentioned, text: offerDeadlineText } = detectOfferDeadline(text);
+  const negotiatingMultipleOffers = detectNegotiatingMultipleOffers(text);
+  const prefersCashOverPerks = detectPrefersCashOverPerks(text);
+  const perksImportant = detectPerksImportant(text);
+
+  /* Wave-7 (2026-05-15) — behavioral / psychological flags. */
+  const anchoredFirst = detectAnchoredFirst(text);
+  const anchorWasHighball = detectAnchorWasHighball(text);
+  const retreatedFromAnchor = detectRetreatedFromAnchor(text);
+  const acceptedCounterQuickly = detectAcceptedCounterQuickly(text);
+  const respondedToBudgetCeiling = detectRespondedToBudgetCeiling(text);
+  const pushedBackOnCeiling = detectPushedBackOnCeiling(text);
+  const invokedCompetingOffer = detectInvokedCompetingOffer(text);
+  const expressedUrgency = detectExpressedUrgency(text);
+  const expressedHesitation = detectExpressedHesitation(text);
+  const usedRecruiterName = detectUsedRecruiterName(text);
+  const saidThankYou = detectSaidThankYou(text);
+  const askedAboutTeam = detectAskedAboutTeam(text);
+  const askedAboutGrowthPath = detectAskedAboutGrowthPath(text);
+  const askedAboutWorkLifeBalance = detectAskedAboutWorkLifeBalance(text);
+  const gaveInconsistentNumbers = detectGaveInconsistentNumbers(text);
+  const evasiveOnCurrentCtc = detectEvasiveOnCurrentCtc(text);
+  const dramaticAnchorJump = detectDramaticAnchorJump(text);
+  const mentionedCounterOffer = detectMentionedCounterOffer(text);
+  const mentionedLayoffRisk = detectMentionedLayoffRisk(text);
+  const seemsRushed = detectSeemsRushed(text);
+
+  /* Wave-8 (2026-05-16) — offer-response + financial + role clarity + competing-offer. */
+  const firstOfferReaction = detectFirstOfferReaction(text);
+  const explicitlyRejectedOffer = detectExplicitlyRejectedOffer(text);
+  const askedForTimeToDecide = detectAskedForTimeToDecide(text);
+  const mentionedSpouseFamily = detectMentionedSpouseFamily(text);
+  const mentionedRelocation = detectMentionedRelocation(text);
+  const mentionedPf = detectMentionedPf(text);
+  const mentionedGratuity = detectMentionedGratuity(text);
+  const mentionedForm16 = detectMentionedForm16(text);
+  const mentionedVariablePayout = detectMentionedVariablePayout(text);
+  const mentionedSigningBonus = detectMentionedSigningBonus(text);
+  const mentionedRetentionBonus = detectMentionedRetentionBonus(text);
+  const mentionedJoiningBonus = detectMentionedJoiningBonus(text);
+  const askedAboutReporting = detectAskedAboutReporting(text);
+  const askedAboutTeamSize = detectAskedAboutTeamSize(text);
+  const askedAboutGrowthPath8 = detectAskedAboutGrowthPath8(text);
+  const askedAboutPerformanceCycle = detectAskedAboutPerformanceCycle(text);
+  const mentionedTargetRole = detectMentionedTargetRole(text);
+  const competingOfferIsVerbal = detectCompetingOfferIsVerbal(text);
+  const competingOfferCompany = detectCompetingOfferCompany(text);
+  const competingOfferAmount = detectCompetingOfferAmount(text);
+  const competingOfferDeadline = detectCompetingOfferDeadline(text);
+
+  /* Wave-9 (2026-05-16) — psychological + Indian doc + seniority + strategy. */
+  const showedFrustration = detectShowedFrustration(text);
+  const showedExcitement = detectShowedExcitement(text);
+  const usedSilence = detectUsedSilence(text);
+  const backtrackedOnExpectation = detectBacktrackedOnExpectation(text);
+  const escalatedDemand = detectEscalatedDemand(text);
+  const mentionedBgvConcern = detectMentionedBgvConcern(text);
+  const mentionedRelievingLetterRisk = detectMentionedRelievingLetterRisk(text);
+  const mentionedNoticeWaiver = detectMentionedNoticeWaiver(text);
+  const mentionedNoticeBuyout = detectMentionedNoticeBuyout(text);
+  const mentionedMoonlighting = detectMentionedMoonlighting(text);
+  const isFirstJobChange = detectIsFirstJobChange(text);
+  const hasManagementExperience = detectHasManagementExperience(text);
+  const mentionedStartupExperience = detectMentionedStartupExperience(text);
+  const mentionedMncExperience = detectMentionedMncExperience(text);
+  const hasPhdOrMba = detectHasPhdOrMba(text);
+  const usedAnchorFirst = detectUsedAnchorFirst(text);
+  const gaveRangeNotPoint = detectGaveRangeNotPoint(text);
+  const deflectedOnRange = detectDeflectedOnRange(text);
+  const referencedMarketData = detectReferencedMarketData(text);
+  const mentionedCostOfLiving = detectMentionedCostOfLiving(text);
+  const mentionedTaxImplication = detectMentionedTaxImplication(text);
+
   const hasAny =
     careerGapMonths != null ||
     careerGapActivity != null ||
@@ -3216,7 +4403,93 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     isIcToManager ||
     hasLeadershipExperience ||
     domainSpecialist ||
-    multipleCompaniesInTwoYears;
+    multipleCompaniesInTwoYears ||
+    /* Wave-6 (2026-05-15) */
+    currentHasBonus ||
+    currentBonusPct != null ||
+    currentHasEsop ||
+    currentEsopVested ||
+    currentHasRetentionBonus ||
+    currentHasGratuity ||
+    currentHasNps ||
+    wantsHigherBase ||
+    wantsHigherBonus ||
+    wantsJoiningBonus ||
+    wantsRelocationAllowance ||
+    wantsFlexibleWork ||
+    wantsLearningBudget ||
+    wantsEquityRefresh ||
+    wantsProfessionalTitle ||
+    hasSeenOffer ||
+    offerDeadlineMentioned ||
+    negotiatingMultipleOffers ||
+    prefersCashOverPerks ||
+    perksImportant ||
+    /* Wave-7 (2026-05-15) */
+    anchoredFirst ||
+    anchorWasHighball ||
+    retreatedFromAnchor ||
+    acceptedCounterQuickly ||
+    respondedToBudgetCeiling ||
+    pushedBackOnCeiling ||
+    invokedCompetingOffer ||
+    expressedUrgency ||
+    expressedHesitation ||
+    usedRecruiterName ||
+    saidThankYou ||
+    askedAboutTeam ||
+    askedAboutGrowthPath ||
+    askedAboutWorkLifeBalance ||
+    gaveInconsistentNumbers ||
+    evasiveOnCurrentCtc ||
+    dramaticAnchorJump ||
+    mentionedCounterOffer ||
+    mentionedLayoffRisk ||
+    seemsRushed ||
+    /* Wave-8 (2026-05-16) */
+    firstOfferReaction != null ||
+    explicitlyRejectedOffer ||
+    askedForTimeToDecide ||
+    mentionedSpouseFamily ||
+    mentionedRelocation ||
+    mentionedPf ||
+    mentionedGratuity ||
+    mentionedForm16 ||
+    mentionedVariablePayout ||
+    mentionedSigningBonus ||
+    mentionedRetentionBonus ||
+    mentionedJoiningBonus ||
+    askedAboutReporting ||
+    askedAboutTeamSize ||
+    askedAboutGrowthPath8 ||
+    askedAboutPerformanceCycle ||
+    mentionedTargetRole ||
+    competingOfferIsVerbal ||
+    competingOfferCompany != null ||
+    competingOfferAmount != null ||
+    competingOfferDeadline != null ||
+    /* Wave-9 (2026-05-16) */
+    showedFrustration ||
+    showedExcitement ||
+    usedSilence ||
+    backtrackedOnExpectation ||
+    escalatedDemand ||
+    mentionedBgvConcern ||
+    mentionedRelievingLetterRisk ||
+    mentionedNoticeWaiver ||
+    mentionedNoticeBuyout ||
+    mentionedMoonlighting ||
+    isFirstJobChange ||
+    hasManagementExperience ||
+    mentionedStartupExperience ||
+    mentionedMncExperience ||
+    hasPhdOrMba ||
+    usedAnchorFirst ||
+    gaveRangeNotPoint ||
+    deflectedOnRange ||
+    referencedMarketData ||
+    mentionedCostOfLiving ||
+    mentionedTaxImplication;
   return applyWaveDisables({
     careerGapMonths,
     careerGapActivity,
@@ -3357,6 +4630,93 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     hasLeadershipExperience,
     domainSpecialist,
     multipleCompaniesInTwoYears,
+    /* Wave-6 (2026-05-15) */
+    currentHasBonus,
+    currentBonusPct,
+    currentHasEsop,
+    currentEsopVested,
+    currentHasRetentionBonus,
+    currentHasGratuity,
+    currentHasNps,
+    wantsHigherBase,
+    wantsHigherBonus,
+    wantsJoiningBonus,
+    wantsRelocationAllowance,
+    wantsFlexibleWork,
+    wantsLearningBudget,
+    wantsEquityRefresh,
+    wantsProfessionalTitle,
+    hasSeenOffer,
+    offerDeadlineMentioned,
+    offerDeadlineText,
+    negotiatingMultipleOffers,
+    prefersCashOverPerks,
+    perksImportant,
+    /* Wave-7 (2026-05-15) */
+    anchoredFirst,
+    anchorWasHighball,
+    retreatedFromAnchor,
+    acceptedCounterQuickly,
+    respondedToBudgetCeiling,
+    pushedBackOnCeiling,
+    invokedCompetingOffer,
+    expressedUrgency,
+    expressedHesitation,
+    usedRecruiterName,
+    saidThankYou,
+    askedAboutTeam,
+    askedAboutGrowthPath,
+    askedAboutWorkLifeBalance,
+    gaveInconsistentNumbers,
+    evasiveOnCurrentCtc,
+    dramaticAnchorJump,
+    mentionedCounterOffer,
+    mentionedLayoffRisk,
+    seemsRushed,
+    /* Wave-8 (2026-05-16) */
+    firstOfferReaction,
+    explicitlyRejectedOffer,
+    askedForTimeToDecide,
+    mentionedSpouseFamily,
+    mentionedRelocation,
+    mentionedPf,
+    mentionedGratuity,
+    mentionedForm16,
+    mentionedVariablePayout,
+    mentionedSigningBonus,
+    mentionedRetentionBonus,
+    mentionedJoiningBonus,
+    askedAboutReporting,
+    askedAboutTeamSize,
+    askedAboutGrowthPath8,
+    askedAboutPerformanceCycle,
+    mentionedTargetRole,
+    competingOfferIsVerbal,
+    competingOfferCompany,
+    competingOfferAmount,
+    competingOfferDeadline,
+    /* Wave-9 (2026-05-16) */
+    showedFrustration,
+    showedExcitement,
+    usedSilence,
+    backtrackedOnExpectation,
+    escalatedDemand,
+    mentionedBgvConcern,
+    mentionedRelievingLetterRisk,
+    mentionedNoticeWaiver,
+    mentionedNoticeBuyout,
+    mentionedMoonlighting,
+    isFirstJobChange,
+    hasManagementExperience,
+    mentionedStartupExperience,
+    mentionedMncExperience,
+    hasPhdOrMba,
+    usedAnchorFirst,
+    gaveRangeNotPoint,
+    deflectedOnRange,
+    referencedMarketData,
+    mentionedCostOfLiving,
+    mentionedTaxImplication,
     hasAny,
   });
 }
@@ -3849,6 +5209,98 @@ export function mergeCandidateProfile(
     hasLeadershipExperience: p.hasLeadershipExperience || next.hasLeadershipExperience,
     domainSpecialist: p.domainSpecialist || next.domainSpecialist,
     multipleCompaniesInTwoYears: p.multipleCompaniesInTwoYears || next.multipleCompaniesInTwoYears,
+    /* Wave-6 (2026-05-15) — all monotone-up except nullable numerics. */
+    currentHasBonus: p.currentHasBonus || next.currentHasBonus,
+    /* currentBonusPct — take the max of the two (caller stated a higher %
+     * later → update to latest non-null). */
+    currentBonusPct: (p.currentBonusPct != null && next.currentBonusPct != null)
+      ? Math.max(p.currentBonusPct, next.currentBonusPct)
+      : (next.currentBonusPct ?? p.currentBonusPct),
+    currentHasEsop: p.currentHasEsop || next.currentHasEsop,
+    currentEsopVested: p.currentEsopVested || next.currentEsopVested,
+    currentHasRetentionBonus: p.currentHasRetentionBonus || next.currentHasRetentionBonus,
+    currentHasGratuity: p.currentHasGratuity || next.currentHasGratuity,
+    currentHasNps: p.currentHasNps || next.currentHasNps,
+    wantsHigherBase: p.wantsHigherBase || next.wantsHigherBase,
+    wantsHigherBonus: p.wantsHigherBonus || next.wantsHigherBonus,
+    wantsJoiningBonus: p.wantsJoiningBonus || next.wantsJoiningBonus,
+    wantsRelocationAllowance: p.wantsRelocationAllowance || next.wantsRelocationAllowance,
+    wantsFlexibleWork: p.wantsFlexibleWork || next.wantsFlexibleWork,
+    wantsLearningBudget: p.wantsLearningBudget || next.wantsLearningBudget,
+    wantsEquityRefresh: p.wantsEquityRefresh || next.wantsEquityRefresh,
+    wantsProfessionalTitle: p.wantsProfessionalTitle || next.wantsProfessionalTitle,
+    hasSeenOffer: p.hasSeenOffer || next.hasSeenOffer,
+    offerDeadlineMentioned: p.offerDeadlineMentioned || next.offerDeadlineMentioned,
+    /* offerDeadlineText — latest non-null wins. */
+    offerDeadlineText: next.offerDeadlineText ?? p.offerDeadlineText,
+    negotiatingMultipleOffers: p.negotiatingMultipleOffers || next.negotiatingMultipleOffers,
+    prefersCashOverPerks: p.prefersCashOverPerks || next.prefersCashOverPerks,
+    perksImportant: p.perksImportant || next.perksImportant,
+    /* Wave-7 (2026-05-15) — all monotone-up. */
+    anchoredFirst: p.anchoredFirst || next.anchoredFirst,
+    anchorWasHighball: p.anchorWasHighball || next.anchorWasHighball,
+    retreatedFromAnchor: p.retreatedFromAnchor || next.retreatedFromAnchor,
+    acceptedCounterQuickly: p.acceptedCounterQuickly || next.acceptedCounterQuickly,
+    respondedToBudgetCeiling: p.respondedToBudgetCeiling || next.respondedToBudgetCeiling,
+    pushedBackOnCeiling: p.pushedBackOnCeiling || next.pushedBackOnCeiling,
+    invokedCompetingOffer: p.invokedCompetingOffer || next.invokedCompetingOffer,
+    expressedUrgency: p.expressedUrgency || next.expressedUrgency,
+    expressedHesitation: p.expressedHesitation || next.expressedHesitation,
+    usedRecruiterName: p.usedRecruiterName || next.usedRecruiterName,
+    saidThankYou: p.saidThankYou || next.saidThankYou,
+    askedAboutTeam: p.askedAboutTeam || next.askedAboutTeam,
+    askedAboutGrowthPath: p.askedAboutGrowthPath || next.askedAboutGrowthPath,
+    askedAboutWorkLifeBalance: p.askedAboutWorkLifeBalance || next.askedAboutWorkLifeBalance,
+    gaveInconsistentNumbers: p.gaveInconsistentNumbers || next.gaveInconsistentNumbers,
+    evasiveOnCurrentCtc: p.evasiveOnCurrentCtc || next.evasiveOnCurrentCtc,
+    dramaticAnchorJump: p.dramaticAnchorJump || next.dramaticAnchorJump,
+    mentionedCounterOffer: p.mentionedCounterOffer || next.mentionedCounterOffer,
+    mentionedLayoffRisk: p.mentionedLayoffRisk || next.mentionedLayoffRisk,
+    seemsRushed: p.seemsRushed || next.seemsRushed,
+    /* Wave-8 (2026-05-16) — monotone-up booleans; nullable fields take last non-null. */
+    firstOfferReaction: next.firstOfferReaction ?? p.firstOfferReaction,
+    explicitlyRejectedOffer: p.explicitlyRejectedOffer || next.explicitlyRejectedOffer,
+    askedForTimeToDecide: p.askedForTimeToDecide || next.askedForTimeToDecide,
+    mentionedSpouseFamily: p.mentionedSpouseFamily || next.mentionedSpouseFamily,
+    mentionedRelocation: p.mentionedRelocation || next.mentionedRelocation,
+    mentionedPf: p.mentionedPf || next.mentionedPf,
+    mentionedGratuity: p.mentionedGratuity || next.mentionedGratuity,
+    mentionedForm16: p.mentionedForm16 || next.mentionedForm16,
+    mentionedVariablePayout: p.mentionedVariablePayout || next.mentionedVariablePayout,
+    mentionedSigningBonus: p.mentionedSigningBonus || next.mentionedSigningBonus,
+    mentionedRetentionBonus: p.mentionedRetentionBonus || next.mentionedRetentionBonus,
+    mentionedJoiningBonus: p.mentionedJoiningBonus || next.mentionedJoiningBonus,
+    askedAboutReporting: p.askedAboutReporting || next.askedAboutReporting,
+    askedAboutTeamSize: p.askedAboutTeamSize || next.askedAboutTeamSize,
+    askedAboutGrowthPath8: p.askedAboutGrowthPath8 || next.askedAboutGrowthPath8,
+    askedAboutPerformanceCycle: p.askedAboutPerformanceCycle || next.askedAboutPerformanceCycle,
+    mentionedTargetRole: p.mentionedTargetRole || next.mentionedTargetRole,
+    competingOfferIsVerbal: p.competingOfferIsVerbal || next.competingOfferIsVerbal,
+    competingOfferCompany: next.competingOfferCompany ?? p.competingOfferCompany,
+    competingOfferAmount: Math.max(p.competingOfferAmount ?? 0, next.competingOfferAmount ?? 0) || null,
+    competingOfferDeadline: next.competingOfferDeadline ?? p.competingOfferDeadline,
+    /* Wave-9 (2026-05-16) — all monotone-up. */
+    showedFrustration: p.showedFrustration || next.showedFrustration,
+    showedExcitement: p.showedExcitement || next.showedExcitement,
+    usedSilence: p.usedSilence || next.usedSilence,
+    backtrackedOnExpectation: p.backtrackedOnExpectation || next.backtrackedOnExpectation,
+    escalatedDemand: p.escalatedDemand || next.escalatedDemand,
+    mentionedBgvConcern: p.mentionedBgvConcern || next.mentionedBgvConcern,
+    mentionedRelievingLetterRisk: p.mentionedRelievingLetterRisk || next.mentionedRelievingLetterRisk,
+    mentionedNoticeWaiver: p.mentionedNoticeWaiver || next.mentionedNoticeWaiver,
+    mentionedNoticeBuyout: p.mentionedNoticeBuyout || next.mentionedNoticeBuyout,
+    mentionedMoonlighting: p.mentionedMoonlighting || next.mentionedMoonlighting,
+    isFirstJobChange: p.isFirstJobChange || next.isFirstJobChange,
+    hasManagementExperience: p.hasManagementExperience || next.hasManagementExperience,
+    mentionedStartupExperience: p.mentionedStartupExperience || next.mentionedStartupExperience,
+    mentionedMncExperience: p.mentionedMncExperience || next.mentionedMncExperience,
+    hasPhdOrMba: p.hasPhdOrMba || next.hasPhdOrMba,
+    usedAnchorFirst: p.usedAnchorFirst || next.usedAnchorFirst,
+    gaveRangeNotPoint: p.gaveRangeNotPoint || next.gaveRangeNotPoint,
+    deflectedOnRange: p.deflectedOnRange || next.deflectedOnRange,
+    referencedMarketData: p.referencedMarketData || next.referencedMarketData,
+    mentionedCostOfLiving: p.mentionedCostOfLiving || next.mentionedCostOfLiving,
+    mentionedTaxImplication: p.mentionedTaxImplication || next.mentionedTaxImplication,
     hasAny: false,
   };
   merged.hasAny =
@@ -3990,6 +5442,92 @@ export function mergeCandidateProfile(
     merged.isIcToManager ||
     merged.hasLeadershipExperience ||
     merged.domainSpecialist ||
-    merged.multipleCompaniesInTwoYears;
+    merged.multipleCompaniesInTwoYears ||
+    /* Wave-6 (2026-05-15) */
+    merged.currentHasBonus ||
+    merged.currentBonusPct != null ||
+    merged.currentHasEsop ||
+    merged.currentEsopVested ||
+    merged.currentHasRetentionBonus ||
+    merged.currentHasGratuity ||
+    merged.currentHasNps ||
+    merged.wantsHigherBase ||
+    merged.wantsHigherBonus ||
+    merged.wantsJoiningBonus ||
+    merged.wantsRelocationAllowance ||
+    merged.wantsFlexibleWork ||
+    merged.wantsLearningBudget ||
+    merged.wantsEquityRefresh ||
+    merged.wantsProfessionalTitle ||
+    merged.hasSeenOffer ||
+    merged.offerDeadlineMentioned ||
+    merged.negotiatingMultipleOffers ||
+    merged.prefersCashOverPerks ||
+    merged.perksImportant ||
+    /* Wave-7 (2026-05-15) */
+    merged.anchoredFirst ||
+    merged.anchorWasHighball ||
+    merged.retreatedFromAnchor ||
+    merged.acceptedCounterQuickly ||
+    merged.respondedToBudgetCeiling ||
+    merged.pushedBackOnCeiling ||
+    merged.invokedCompetingOffer ||
+    merged.expressedUrgency ||
+    merged.expressedHesitation ||
+    merged.usedRecruiterName ||
+    merged.saidThankYou ||
+    merged.askedAboutTeam ||
+    merged.askedAboutGrowthPath ||
+    merged.askedAboutWorkLifeBalance ||
+    merged.gaveInconsistentNumbers ||
+    merged.evasiveOnCurrentCtc ||
+    merged.dramaticAnchorJump ||
+    merged.mentionedCounterOffer ||
+    merged.mentionedLayoffRisk ||
+    merged.seemsRushed ||
+    /* Wave-8 (2026-05-16) */
+    merged.firstOfferReaction != null ||
+    merged.explicitlyRejectedOffer ||
+    merged.askedForTimeToDecide ||
+    merged.mentionedSpouseFamily ||
+    merged.mentionedRelocation ||
+    merged.mentionedPf ||
+    merged.mentionedGratuity ||
+    merged.mentionedForm16 ||
+    merged.mentionedVariablePayout ||
+    merged.mentionedSigningBonus ||
+    merged.mentionedRetentionBonus ||
+    merged.mentionedJoiningBonus ||
+    merged.askedAboutReporting ||
+    merged.askedAboutTeamSize ||
+    merged.askedAboutGrowthPath8 ||
+    merged.askedAboutPerformanceCycle ||
+    merged.mentionedTargetRole ||
+    merged.competingOfferIsVerbal ||
+    merged.competingOfferCompany != null ||
+    merged.competingOfferAmount != null ||
+    merged.competingOfferDeadline != null ||
+    /* Wave-9 (2026-05-16) */
+    merged.showedFrustration ||
+    merged.showedExcitement ||
+    merged.usedSilence ||
+    merged.backtrackedOnExpectation ||
+    merged.escalatedDemand ||
+    merged.mentionedBgvConcern ||
+    merged.mentionedRelievingLetterRisk ||
+    merged.mentionedNoticeWaiver ||
+    merged.mentionedNoticeBuyout ||
+    merged.mentionedMoonlighting ||
+    merged.isFirstJobChange ||
+    merged.hasManagementExperience ||
+    merged.mentionedStartupExperience ||
+    merged.mentionedMncExperience ||
+    merged.hasPhdOrMba ||
+    merged.usedAnchorFirst ||
+    merged.gaveRangeNotPoint ||
+    merged.deflectedOnRange ||
+    merged.referencedMarketData ||
+    merged.mentionedCostOfLiving ||
+    merged.mentionedTaxImplication;
   return merged;
 }
