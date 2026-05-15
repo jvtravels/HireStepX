@@ -75,7 +75,14 @@ import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
 import { detectBotReplyRepetition, BOT_REPLY_REPETITION_THRESHOLD } from "./_recruiter-facts";
 import { assessTurnCoherence } from "./_turn-coherence";
-import { validateNumberDiscipline, validateBudgetDiscipline } from "./_response-validators";
+import {
+  validateNumberDiscipline,
+  validateBudgetDiscipline,
+  validateRangeDiscipline,
+  validateAcknowledgement,
+  validateNextActionEmitted,
+  validateHikeProbe,
+} from "./_response-validators";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -256,7 +263,21 @@ export async function generateAiText(
      * prompt still carries the rules; these are the enforcement layer. */
     const numDisc = validateNumberDiscipline(a1.text, state);
     const budDisc = validateBudgetDiscipline(a1.text, state);
-    if (!rep.repeated && coh.coherent && numDisc.ok && budDisc.ok) {
+    /* Negotiation-flow redesign commit 5 (2026-05-15) — 4 more validators. */
+    const rangeDisc = validateRangeDiscipline(a1.text, state);
+    const ackDisc = validateAcknowledgement(a1.text, state);
+    const nextActDisc = validateNextActionEmitted(a1.text, state);
+    const hikeDisc = validateHikeProbe(a1.text, state);
+    if (
+      !rep.repeated &&
+      coh.coherent &&
+      numDisc.ok &&
+      budDisc.ok &&
+      rangeDisc.ok &&
+      ackDisc.ok &&
+      nextActDisc.ok &&
+      hikeDisc.ok
+    ) {
       return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
     }
     /* F3 (2026-05-15) — reroll cap. We allow at most ONE reroll across
@@ -288,6 +309,22 @@ export async function generateAiText(
       console.warn(`[negotiate-turn] budget-discipline violation (${budDisc.reason}); rerolling`);
       rerollNotes.push(`[VALIDATOR REJECTION: ${budDisc.reason}]`);
     }
+    if (!rangeDisc.ok) {
+      console.warn(`[negotiate-turn] range-discipline violation (${rangeDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${rangeDisc.reason}]`);
+    }
+    if (!ackDisc.ok) {
+      console.warn(`[negotiate-turn] acknowledgement violation (${ackDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${ackDisc.reason}]`);
+    }
+    if (!nextActDisc.ok) {
+      console.warn(`[negotiate-turn] next-action violation (${nextActDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${nextActDisc.reason}]`);
+    }
+    if (!hikeDisc.ok) {
+      console.warn(`[negotiate-turn] hike-probe violation (${hikeDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${hikeDisc.reason}]`);
+    }
     const rerollUser = user + `\n\nNOTE — ${rerollNotes.join(" ")}`;
     rerollAttempts++;
     const a1b = await attempt(rerollUser);
@@ -298,7 +335,20 @@ export async function generateAiText(
         const coh2 = assessTurnCoherence(candidateAnswer, a1b.text);
         const numDisc2 = validateNumberDiscipline(a1b.text, state);
         const budDisc2 = validateBudgetDiscipline(a1b.text, state);
-        if (!rep2.repeated && coh2.coherent && numDisc2.ok && budDisc2.ok) {
+        const rangeDisc2 = validateRangeDiscipline(a1b.text, state);
+        const ackDisc2 = validateAcknowledgement(a1b.text, state);
+        const nextActDisc2 = validateNextActionEmitted(a1b.text, state);
+        const hikeDisc2 = validateHikeProbe(a1b.text, state);
+        if (
+          !rep2.repeated &&
+          coh2.coherent &&
+          numDisc2.ok &&
+          budDisc2.ok &&
+          rangeDisc2.ok &&
+          ackDisc2.ok &&
+          nextActDisc2.ok &&
+          hikeDisc2.ok
+        ) {
           return { text: enforceRoleLabel(a1b.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
         }
         if (rep2.repeated) {
@@ -312,10 +362,21 @@ export async function generateAiText(
          * exactly which discipline persisted past the reroll cap. We do
          * not hard-fail user-facing: the response goes out, but the trail
          * is recorded. */
-        if (!numDisc2.ok || !budDisc2.ok) {
+        if (
+          !numDisc2.ok ||
+          !budDisc2.ok ||
+          !rangeDisc2.ok ||
+          !ackDisc2.ok ||
+          !nextActDisc2.ok ||
+          !hikeDisc2.ok
+        ) {
           const reasons = [
             !numDisc2.ok ? numDisc2.reason : null,
             !budDisc2.ok ? budDisc2.reason : null,
+            !rangeDisc2.ok ? rangeDisc2.reason : null,
+            !ackDisc2.ok ? ackDisc2.reason : null,
+            !nextActDisc2.ok ? nextActDisc2.reason : null,
+            !hikeDisc2.ok ? hikeDisc2.reason : null,
           ].filter((r): r is string => !!r);
           console.warn(`[negotiate-turn] validator fallthrough: ${reasons.join(" | ")}`);
           if (!state.decisionLog) state.decisionLog = [];

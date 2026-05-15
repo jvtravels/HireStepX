@@ -16,7 +16,13 @@
  * a circuit breaker).
  */
 import type { NegotiationState } from "./_negotiation-kernel";
-import { getCompanyHikeCap } from "./_company-band-tiers";
+import { getCompanyHikeCap, classifyRoleFamily } from "./_company-band-tiers";
+import {
+  getNextDiscoveryQuestion,
+  isDiscoveryComplete,
+} from "./_discovery-stage";
+import { pruneAcknowledged } from "./_candidate-disclosure-tracker";
+import { shouldProbeHikeJustification } from "./_hike-justification-probe";
 
 /** Anchor deviation tolerance — 5% of locked anchor. */
 const ANCHOR_DEVIATION_TOLERANCE = 0.05;
@@ -134,5 +140,203 @@ export function validateBudgetDiscipline(
     ok: false,
     reason: `BUDGET DISCIPLINE — hike-cap exceeded: ${violations.join("; ")}`,
     violations,
+  };
+}
+
+/* ─── Negotiation-flow redesign commit 5 (2026-05-15) — 4 more validators ─
+ *
+ * Per audit section E row 5: promote four more prompt-only rules to
+ * deterministic post-generation validators.
+ *
+ *   validateRangeDiscipline    — phase=range-disclosure but reply emits
+ *                                a specific number (audit D3 table row).
+ *   validateAcknowledgement    — pendingCandidateAcks were live on state
+ *                                pre-generation and the reply doesn't
+ *                                acknowledge them all (audit D3 row 4).
+ *   validateNextActionEmitted  — [NEXT REQUIRED ACTION] tag was on the
+ *                                brief AND the reply lacks both the
+ *                                action prompt content and any "?".
+ *   validateHikeProbe          — hike-justification probe was required
+ *                                AND reply lacks any probe vocabulary.
+ *
+ * All four follow the same shape as validateNumberDiscipline /
+ * validateBudgetDiscipline so the negotiate-turn reroll path can call
+ * them uniformly. Pure.
+ */
+
+/** Matches a specific salary number in any unit: "18 LPA", "18.5L",
+ *  "18 lakh", "1.5 crore". Does NOT match ranges like "18-22 LPA" — a
+ *  range is the intended emission during the range-disclosure phase.
+ *  We strip range patterns first so a draft like "₹18-22L band" passes. */
+const SPECIFIC_NUMBER_RE = /(\d+(?:\.\d+)?)\s*(LPA|L|lakhs?|crores?|cr)\b/gi;
+const RANGE_RE = /(\d+(?:\.\d+)?)\s*[-–to]+\s*(\d+(?:\.\d+)?)\s*(LPA|L|lakhs?|crores?|cr)\b/gi;
+
+function hasSpecificNumberOutsideRange(reply: string): boolean {
+  if (!reply) return false;
+  /* Strip every detected range first so leftover specific-number
+   * matches genuinely indicate a non-range anchor. */
+  const stripped = reply.replace(RANGE_RE, " <RANGE> ");
+  return SPECIFIC_NUMBER_RE.test(stripped);
+}
+
+/** RANGE DISCIPLINE: when the kernel is in `range-disclosure` phase,
+ *  the bot MUST emit a range, not a specific number. Prompt rule
+ *  `[PHASE RULE: disclose RANGE]` previously enforced this only as an
+ *  advisory; the validator rejects drafts that name a single number
+ *  during this phase. */
+export function validateRangeDiscipline(
+  reply: string,
+  state: NegotiationState,
+): ValidatorResult {
+  if (state.phase !== "range-disclosure") return { ok: true };
+  if (!hasSpecificNumberOutsideRange(reply)) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      "RANGE DISCIPLINE — phase=range-disclosure requires a band emission (e.g. ₹18–22L), not a specific anchor",
+    violations: ["specific-number-in-range-phase"],
+  };
+}
+
+/** ACKNOWLEDGEMENT: candidate disclosures (notice / current CTC /
+ *  competing offer / joining date) pending pre-generation must be
+ *  addressed by the reply. We simulate pruneAcknowledged against the
+ *  draft text and fail if anything pre-existing remains unaddressed.
+ *
+ *  Scope note: the audit spec called for an "age > 1 turn" check, but
+ *  CandidateDisclosureEntry doesn't carry an atTurn field — adding one
+ *  is a structural shift. The validator therefore reads the post-state
+ *  pre-generation acks (which are themselves carried from prior turns
+ *  via applyCandidateAnswer) and fails on any unaddressed entry. */
+export function validateAcknowledgement(
+  reply: string,
+  state: NegotiationState,
+): ValidatorResult {
+  const pending = state.pendingCandidateAcks;
+  if (!pending || pending.length === 0) return { ok: true };
+  const remaining = pruneAcknowledged(pending, reply);
+  if (remaining.length === 0) return { ok: true };
+  const labels = remaining.map((e) => e.label).join("; ");
+  return {
+    ok: false,
+    reason: `ACKNOWLEDGEMENT — reply must acknowledge candidate disclosure(s): ${labels}`,
+    violations: remaining.map((e) => e.kind),
+  };
+}
+
+/** Tokenise content words for overlap computation. Strips punctuation,
+ *  lowercases, drops < 3-char filler tokens. */
+function contentTokens(s: string): Set<string> {
+  if (!s) return new Set();
+  const out = new Set<string>();
+  for (const raw of s.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (raw.length >= 4) out.add(raw);
+  }
+  return out;
+}
+
+/** Jaccard overlap between two content-token sets. */
+function tokenOverlap(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const t of a) if (b.has(t)) inter++;
+  const union = a.size + b.size - inter;
+  return union > 0 ? inter / union : 0;
+}
+
+const NEXT_ACTION_TAG = "NEXT REQUIRED ACTION";
+const NEXT_ACTION_OVERLAP_THRESHOLD = 0.4;
+
+/** NEXT ACTION EMITTED: when [NEXT REQUIRED ACTION] was on the brief
+ *  this turn AND the reply neither contains a `?` nor overlaps
+ *  meaningfully with the action prompt, the bot drifted off task.
+ *
+ *  Scope-down (commit 5, awaiting commit 3 planNextAction): we re-
+ *  compute the next discovery question deterministically from
+ *  state.discoveryChecklist (the same call compactTurnBrief makes).
+ *  When that lookup returns null (discovery complete / not in a
+ *  discovery-eligible phase), the validator no-ops — the audit's
+ *  fragility caveat for this validator applies until commit 3 lands
+ *  the centralised plan. */
+export function validateNextActionEmitted(
+  reply: string,
+  state: NegotiationState,
+): ValidatorResult {
+  const tags = state.lastBriefTags ?? [];
+  if (!tags.includes(NEXT_ACTION_TAG)) return { ok: true };
+  if (!state.discoveryChecklist) return { ok: true };
+  const roleFamily = classifyRoleFamily(state.role);
+  if (isDiscoveryComplete(state.discoveryChecklist, roleFamily)) return { ok: true };
+  const nextQ = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+  if (!nextQ) return { ok: true };
+  /* Permissive pass conditions: either the reply asks a question OR
+   * shares enough content-token overlap with the required prompt. */
+  if (/\?/.test(reply)) return { ok: true };
+  const overlap = tokenOverlap(contentTokens(reply), contentTokens(nextQ.prompt));
+  if (overlap >= NEXT_ACTION_OVERLAP_THRESHOLD) return { ok: true };
+  return {
+    ok: false,
+    reason: `NEXT ACTION — reply must ask the required discovery question (overlap ${(overlap * 100).toFixed(0)}% < ${(NEXT_ACTION_OVERLAP_THRESHOLD * 100).toFixed(0)}% AND no question mark): ${nextQ.prompt}`,
+    violations: [nextQ.item],
+  };
+}
+
+const HIKE_TAG = "HIKE JUSTIFICATION REQUIRED";
+/** Probe-vocabulary tokens that signal the LLM actually asked the
+ *  justification question (vs. drifting to small talk). Conservative
+ *  match — any of these counts; the LLM only needs to land one. */
+const HIKE_PROBE_VOCAB = [
+  "justif",
+  "impact",
+  "metric",
+  "scope",
+  "quota",
+  "attainment",
+  "ownership",
+  "retention",
+  "shipped",
+  "delivered",
+  "portfolio",
+  "complex",
+  "system design",
+  "scale",
+  "deal size",
+  "growth",
+];
+
+/** HIKE PROBE: when the kernel set the [HIKE JUSTIFICATION REQUIRED]
+ *  brief tag for this turn, the reply MUST land at least one
+ *  justification-probe token. Prompt-only rule was being ignored on
+ *  ~10% of generations.
+ *
+ *  Belt-and-suspenders: we also check the underlying shouldProbeHike-
+ *  Justification predicate so a brief-tag absence (e.g. validator
+ *  reroll on a turn where the brief wasn't rebuilt) still catches the
+ *  rule when its precondition is satisfied. */
+export function validateHikeProbe(
+  reply: string,
+  state: NegotiationState,
+): ValidatorResult {
+  const tagSet = state.lastBriefTags ?? [];
+  const tagWasOn = tagSet.includes(HIKE_TAG);
+  if (!tagWasOn) {
+    /* Underlying predicate fallback. If the tag wasn't on the brief,
+     * the rule doesn't fire (we only enforce when the kernel asked the
+     * LLM to probe). */
+    const wouldFire = shouldProbeHikeJustification({
+      currentCtcLpa: state.candidateCurrentCtc,
+      expectedCtcLpa: state.candidateTarget,
+      valueProofProvided: state.candidateProfile?.valueProofProvided === true,
+    });
+    if (!wouldFire) return { ok: true };
+  }
+  const lower = (reply || "").toLowerCase();
+  const found = HIKE_PROBE_VOCAB.some((tok) => lower.includes(tok));
+  if (found) return { ok: true };
+  return {
+    ok: false,
+    reason:
+      "HIKE PROBE — hike-justification brief tag was set but reply lacks probe vocabulary (justif/impact/metrics/scope/ownership/...)",
+    violations: ["no-probe-vocab"],
   };
 }

@@ -84,7 +84,29 @@ describe("F3 — reroll cap invariant", () => {
        * lastBotReply null → repetition can't fire. Plain text. */
       return "Got it — let me note that down and circle back next turn.";
     });
-    const s = makeState({ turnIndex: 1, lastBotReply: null });
+    /* FIX (commit 5, 2026-05-15): mark discovery complete so the new
+     * validateNextActionEmitted state validator no-ops. The test's
+     * intent is "a1 passes both checks → 1 call"; the new validator
+     * would otherwise fire because turn-1 opening + incomplete
+     * checklist → brief auto-emits [NEXT REQUIRED ACTION] and the
+     * stub reply lacks both '?' and prompt-overlap. Marking discovery
+     * complete preserves the original semantic (no validator gates
+     * apply to the stub reply). */
+    const s = makeState({
+      turnIndex: 1,
+      lastBotReply: null,
+      discoveryChecklist: {
+        currentCtcAsked: true, currentCtcAnswered: true,
+        fixedVariableSplitAsked: true, fixedVariableSplitAnswered: true,
+        noticePeriodAsked: true, noticePeriodAnswered: true,
+        competingOffersAsked: true, competingOffersAnswered: true,
+        valueProofAsked: true, valueProofAnswered: true,
+        targetAsked: true, targetAnswered: true,
+        variableComfortTested: false, commitmentValidationAsked: false,
+        currentCtcFixedVariableSplitDisclosed: true,
+        expectedCtcFixedVariableSplitDisclosed: true,
+      },
+    });
     await generateAiText(s, PROBE_MOVE, "Thanks, that's helpful.", llm, "user");
     expect(calls).toBe(1);
   });
@@ -100,7 +122,26 @@ describe("F3 — reroll cap invariant", () => {
       /* second call: coherent (deferral phrase) */
       return "I'll come back to that after we discuss your target.";
     });
-    const s = makeState({ turnIndex: 1, lastBotReply: null });
+    /* FIX (commit 5, 2026-05-15): mark discovery complete — same reason
+     * as the previous test. Otherwise validateNextActionEmitted would
+     * additionally reject a1b (no '?' / no overlap) and the test would
+     * see the original a1 returned per the reroll-cap fallthrough
+     * instead of the rerolled "come back" text. */
+    const s = makeState({
+      turnIndex: 1,
+      lastBotReply: null,
+      discoveryChecklist: {
+        currentCtcAsked: true, currentCtcAnswered: true,
+        fixedVariableSplitAsked: true, fixedVariableSplitAnswered: true,
+        noticePeriodAsked: true, noticePeriodAnswered: true,
+        competingOffersAsked: true, competingOffersAnswered: true,
+        valueProofAsked: true, valueProofAnswered: true,
+        targetAsked: true, targetAnswered: true,
+        variableComfortTested: false, commitmentValidationAsked: false,
+        currentCtcFixedVariableSplitDisclosed: true,
+        expectedCtcFixedVariableSplitDisclosed: true,
+      },
+    });
     const res = await generateAiText(s, PROBE_MOVE, "What's the fixed?", llm, "user");
     expect(calls).toBe(2);
     expect(res.text).toContain("come back");
