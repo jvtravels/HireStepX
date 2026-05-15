@@ -73,6 +73,7 @@ import {
 } from "./_session-limits";
 import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
+import { inferCompanyMode } from "./_market-mode";
 import { detectBotReplyRepetition, BOT_REPLY_REPETITION_THRESHOLD } from "./_recruiter-facts";
 import { assessTurnCoherence } from "./_turn-coherence";
 import {
@@ -631,6 +632,21 @@ export default async function handler(
         }, req);
         console.warn(`[negotiate-turn] band sanity warnings for role="${role}" company="${company}":`, bandWarnings);
       }
+      /* ITEM 2 (2026-05-15) — auto-infer marketMode from role + company when
+       * not explicitly set. Maps CompanyMode → MarketMode:
+       *   GCC → neutral (global pricing, competitive but not hot)
+       *   BFSI → soft (conservative hike norms, variable-heavy)
+       *   STARTUP → hot (equity-upside framing, aggressive hike expectations)
+       *   MNC → neutral (competitive but band-governed)
+       *   IT_SERVICES → soft (service-pricing compression 2025-26)
+       */
+      const companyMode = inferCompanyMode(role, company);
+      const inferredMarketMode = (
+        companyMode === "STARTUP" ? "hot" :
+        companyMode === "BFSI" || companyMode === "IT_SERVICES" ? "soft" :
+        "neutral"
+      ) as import("./_negotiation-kernel").MarketMode;
+
       let state = initState({
         sessionId: body.sessionId || crypto.randomUUID(),
         role,
@@ -640,6 +656,7 @@ export default async function handler(
         candidateTotalYoe: totalYoe,
         candidateApplicableYoe: applicableYoe,
         candidatePrimaryDomain: primaryDomain,
+        marketMode: inferredMarketMode,
       });
       const move = pickAiMove(state);
       const promptVariant = selectPromptVariant(state.sessionId);

@@ -3,6 +3,8 @@ import {
   getConcessionMultiplier,
   getWalkAwayThresholdMultiplier,
   inferMarketMode,
+  inferCompanyMode,
+  type CompanyMode,
 } from "../../server-handlers/_market-mode";
 
 describe("_market-mode — concession multiplier", () => {
@@ -64,5 +66,40 @@ describe("_market-mode — inferMarketMode", () => {
 
   it("yearMonth is accepted but does not break defaults", () => {
     expect(inferMarketMode({ yearMonth: "2026-05" })).toBe("neutral");
+  });
+});
+
+describe("_market-mode — inferCompanyMode (ITEM 2)", () => {
+  /* Five companies covering each mode bucket. */
+  it("HDFC Bank → BFSI", () => {
+    expect(inferCompanyMode("swe", "HDFC Bank")).toBe<CompanyMode>("BFSI");
+  });
+
+  it("JP Morgan GCC → GCC", () => {
+    expect(inferCompanyMode("software engineer", "JPMorgan")).toBe<CompanyMode>("GCC");
+  });
+
+  it("Razorpay (Indian startup) → STARTUP", () => {
+    expect(inferCompanyMode("backend engineer", "Razorpay")).toBe<CompanyMode>("STARTUP");
+  });
+
+  it("Google → MNC", () => {
+    expect(inferCompanyMode("swe", "Google")).toBe<CompanyMode>("MNC");
+  });
+
+  it("Infosys → IT_SERVICES", () => {
+    expect(inferCompanyMode("java developer", "Infosys")).toBe<CompanyMode>("IT_SERVICES");
+  });
+
+  it("unknown company defaults to IT_SERVICES", () => {
+    expect(inferCompanyMode("developer", "AcmeCorp Unknown Ltd")).toBe<CompanyMode>("IT_SERVICES");
+  });
+
+  it("Wells Fargo India (GCC) → GCC", () => {
+    expect(inferCompanyMode("data analyst", "Wells Fargo")).toBe<CompanyMode>("GCC");
+  });
+
+  it("role with 'series b' → STARTUP regardless of company name", () => {
+    expect(inferCompanyMode("series b startup engineer", "Unknown Startup")).toBe<CompanyMode>("STARTUP");
   });
 });
