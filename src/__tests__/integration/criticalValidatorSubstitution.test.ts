@@ -69,4 +69,30 @@ describe("F2 — kernel-authored prose substitution on critical validator failur
     const lastEntry = log[log.length - 1];
     expect(lastEntry?.picker).toBe("kernel-prose-substitution");
   });
+
+  it("substitutes kernel prose when LLM fabricates a competing offer (F3 critical → F2 substitutes)", async () => {
+    /* No competing offer in state, but LLM emits "you mentioned another
+     * offer". F3 validator rejects on both attempts → F2 substitutes. */
+    const state: NegotiationState = {
+      ...initState({ sessionId: "s-f3-int", role: "Software Engineer", company: "Acme", band: BAND }),
+      turnIndex: 2,
+      phase: "counter-offer",
+      candidateTarget: 32,
+      plannedNextAction: {
+        kind: "probe-expectations",
+        ask: "What range were you targeting for this role?",
+      },
+    };
+    expect(state.competingOffer).toBeNull();
+
+    const llm: LlmCaller = vi.fn(
+      async () => "Since you mentioned another offer, how does that compare?",
+    );
+
+    const result = await generateAiText(state, PROBE_MOVE, "", llm, "user");
+
+    expect(result.text).not.toMatch(/you\s+mentioned/i);
+    const log = state.decisionLog ?? [];
+    expect(log.some((e) => e.picker === "kernel-prose-substitution")).toBe(true);
+  });
 });

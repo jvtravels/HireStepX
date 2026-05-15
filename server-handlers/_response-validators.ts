@@ -361,3 +361,70 @@ export function validateHikeProbe(
     violations: ["no-probe-vocab"],
   };
 }
+
+/* ─── F3 (PDF#19 2026-05-15) — fabricated-facts validator ────────────
+ *
+ * Catches the LLM hallucinating candidate-side context that was never
+ * disclosed. Conservative claim patterns; the validator only rejects
+ * when the corresponding kernel state field is empty. Design bar:
+ *   - False-negatives OK (extend the pattern set as new cases surface).
+ *   - ZERO false-positives — a legitimate reply MUST NEVER reject.
+ *
+ * Tagged as critical at the negotiate-turn.ts call site so F2 substitutes
+ * deterministic prose on a failure.
+ */
+
+/** Pattern → state-field claim table. Each pattern asserts a candidate-
+ *  side fact; if the kernel state proves the candidate did NOT disclose
+ *  it, the validator rejects. */
+const FABRICATED_FACT_PATTERNS: Array<{
+  re: RegExp;
+  fact: string;
+  hasFact: (s: NegotiationState) => boolean;
+}> = [
+  {
+    /* "you mentioned another offer", "your competing offer", "the other
+     * offer you mentioned" — all imply a disclosed competing offer. */
+    re: /\b(you\s+mentioned|your\s+competing|the\s+other\s+offer|another\s+offer\s+you|competing\s+offer\s+you)\b/i,
+    fact: "competing-offer",
+    hasFact: (s) =>
+      s.competingOffer != null || !!s.competingOfferDetail?.hasAny,
+  },
+  {
+    /* "given your current CTC", "your current package of", "based on
+     * your current salary" — implies a disclosed current CTC. */
+    re: /\b(given\s+your\s+current\s+(ctc|salary|package)|your\s+current\s+(ctc|salary|package)\s+of|based\s+on\s+your\s+current\s+(ctc|salary|package))\b/i,
+    fact: "current-ctc",
+    hasFact: (s) => s.candidateCurrentCtc != null && s.candidateCurrentCtc > 0,
+  },
+  {
+    /* "your N-day notice period", "given your notice period" — implies
+     * a disclosed notice period. */
+    re: /\b(your\s+\d+\s*(day|month|week)\s*notice|given\s+your\s+notice\s+period|with\s+your\s+notice\s+period)\b/i,
+    fact: "notice-period",
+    hasFact: (s) => (s.noticeJoining?.noticePeriodDays ?? null) != null,
+  },
+];
+
+/** FABRICATED FACTS: rejects bot replies that claim the candidate
+ *  disclosed something the kernel state has no record of. */
+export function validateNoFabricatedFacts(
+  reply: string,
+  state: NegotiationState,
+): ValidatorResult {
+  if (!reply) return { ok: true };
+  const violations: string[] = [];
+  const reasons: string[] = [];
+  for (const { re, fact, hasFact } of FABRICATED_FACT_PATTERNS) {
+    if (re.test(reply) && !hasFact(state)) {
+      violations.push(fact);
+      reasons.push(`reply claims ${fact} but kernel state has no record`);
+    }
+  }
+  if (violations.length === 0) return { ok: true };
+  return {
+    ok: false,
+    reason: `FABRICATED FACTS — ${reasons.join("; ")}`,
+    violations,
+  };
+}
