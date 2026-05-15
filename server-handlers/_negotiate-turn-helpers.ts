@@ -2282,6 +2282,17 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   if (state.recruiterFactsAlreadySaid && state.recruiterFactsAlreadySaid.length > 0) {
     parts.push(`[ALREADY-STATED FACTS (do NOT repeat verbatim): ${state.recruiterFactsAlreadySaid.join(",")}]`);
   }
+  /* Tier-2 ship (2026-05-15) — non-salary constraints advisory. Single
+   * optional field on state; emits one bracketed line when any constraint
+   * fires. Detection happens upstream in candidate-answer ingestion. */
+  if (state.nonSalaryConstraints) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+      const { formatNonSalaryConstraintsBrief } = require("./_non-salary-constraints") as typeof import("./_non-salary-constraints");
+      const line = formatNonSalaryConstraintsBrief(state.nonSalaryConstraints);
+      if (line) parts.push(line);
+    } catch { /* defensive */ }
+  }
   /* Tier-1 ship (2026-05-15) — counter-offer-at-current risk advisory. The
    * detector only fires high when the candidate's currentCtc + target +
    * tenure-shape line up with the "just enough to beat" retention pattern;

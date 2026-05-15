@@ -631,6 +631,13 @@ export interface NegotiationState {
    * `discoveryStage` runs in parallel as an informational signal for
    * compactTurnBrief and the move-picker. Optional for back-compat. */
   discoveryStage?: import("./_discovery-stage").DiscoveryStage;
+
+  /* Tier-2 ship (2026-05-15) — non-salary constraints. Hard, non-comp asks
+   * that materially change the recruiter's playbook (WFH days, parent-care
+   * location lock, specific office). Captured as a single optional object
+   * to avoid the 9-site fanout pattern: new constraint fields land as keys
+   * here, not as new top-level state fields. */
+  nonSalaryConstraints?: import("./_non-salary-constraints").NonSalaryConstraints;
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
