@@ -74,6 +74,7 @@ import {
 import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
 import { detectBotReplyRepetition, BOT_REPLY_REPETITION_THRESHOLD } from "./_recruiter-facts";
+import { assessTurnCoherence } from "./_turn-coherence";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -244,25 +245,46 @@ export async function generateAiText(
     /* Fix 4 (2026-05-15) — Full-message-repetition detector. Reroll once
      * if the validated text near-duplicates the prior bot reply. */
     const rep = detectBotReplyRepetition(a1.text, state.lastBotReply ?? null);
-    if (!rep.repeated) {
+    /* Sprint C.1 (2026-05-15) — turn-coherence detector. If the candidate
+     * asked a real question or a breakdown ask and the bot reply doesn't
+     * address it, reroll once with an explicit answer-the-question note.
+     * Mirrors the repetition reroll pattern. */
+    const coh = assessTurnCoherence(candidateAnswer, a1.text);
+    if (!rep.repeated && coh.coherent) {
       return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
     }
-    console.warn(`[negotiate-turn] bot reply repetition detected (sim=${rep.similarity.toFixed(2)}); rerolling`);
-    const rerollUser =
-      user +
-      `\n\nNOTE — DO NOT REPEAT THE PREVIOUS REPLY (Jaccard similarity ${rep.similarity.toFixed(2)} ≥ ${BOT_REPLY_REPETITION_THRESHOLD}). Generate a new substantive answer that advances the negotiation, not a paraphrase of your last turn.`;
+    const rerollNotes: string[] = [];
+    if (rep.repeated) {
+      console.warn(`[negotiate-turn] bot reply repetition detected (sim=${rep.similarity.toFixed(2)}); rerolling`);
+      rerollNotes.push(
+        `DO NOT REPEAT THE PREVIOUS REPLY (Jaccard similarity ${rep.similarity.toFixed(2)} ≥ ${BOT_REPLY_REPETITION_THRESHOLD}). Generate a new substantive answer that advances the negotiation, not a paraphrase of your last turn.`,
+      );
+    }
+    if (!coh.coherent) {
+      console.warn(`[negotiate-turn] turn-incoherence detected (${coh.reason ?? ""}); rerolling`);
+      rerollNotes.push(
+        `ANSWER THE CANDIDATE'S LAST UTTERANCE DIRECTLY. ${coh.reason ?? ""} Either give a specific number or an explicit deferral ("I'll come back to that"), and keep content overlap with the candidate's question.`,
+      );
+    }
+    const rerollUser = user + `\n\nNOTE — ${rerollNotes.join(" ")}`;
     const a1b = await attempt(rerollUser);
     if (!("error" in a1b)) {
       if (!a1b.envelopeOk) envelopeMissingAttempts++;
       if (a1b.failures.length === 0) {
         const rep2 = detectBotReplyRepetition(a1b.text, state.lastBotReply ?? null);
-        if (!rep2.repeated) {
+        const coh2 = assessTurnCoherence(candidateAnswer, a1b.text);
+        if (!rep2.repeated && coh2.coherent) {
           return { text: enforceRoleLabel(a1b.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
         }
-        console.warn(`[negotiate-turn] bot reply repetition persisted after reroll (sim=${rep2.similarity.toFixed(2)}); returning original`);
+        if (rep2.repeated) {
+          console.warn(`[negotiate-turn] bot reply repetition persisted after reroll (sim=${rep2.similarity.toFixed(2)}); returning original`);
+        }
+        if (!coh2.coherent) {
+          console.warn(`[negotiate-turn] turn-incoherence persisted after reroll (${coh2.reason ?? ""}); returning original`);
+        }
       }
     }
-    /* Reroll attempt failed or still repeated — return the original. */
+    /* Reroll attempt failed or still flagged — return the original. */
     return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
   }
   failureKinds.push(...a1.failures);
