@@ -24,6 +24,17 @@ import {
 import { pruneAcknowledged } from "./_candidate-disclosure-tracker";
 import { shouldProbeHikeJustification } from "./_hike-justification-probe";
 
+/* ─── F6 (PDF#20 2026-05-15) — ValidationResult (valid-keyed) ───────
+ * Separate from ValidatorResult (ok-keyed) so the opening-phase anchor
+ * validator can carry the `critical` flag inline without touching the
+ * existing validator shape. negotiate-turn.ts maps valid→ok at the
+ * call site. */
+export interface ValidationResult {
+  valid: boolean;
+  critical?: boolean;
+  reason?: string;
+}
+
 /** Anchor deviation tolerance — 5% of locked anchor. */
 const ANCHOR_DEVIATION_TOLERANCE = 0.05;
 /** Above-ceiling tolerance — allow a 1% rounding fudge so "₹24.0L" against
@@ -470,5 +481,46 @@ export function validateNoFabricatedFacts(
     ok: false,
     reason: `FABRICATED FACTS — ${reasons.join("; ")}`,
     violations,
+  };
+}
+
+/* ─── F6 (PDF#20 2026-05-15) — opening-phase anchor guard ───────────
+ *
+ * Even after F1 removed the turnIndex >= 1 gate in planNextAction, if the
+ * LLM still emits a specific salary number during the opening phase (before
+ * discovery is complete), no critical validator fires — the bad text ships.
+ * PDF#20 showed the bot opening with "₹27 LPA" anchor on turn 0.
+ *
+ * This validator catches that case and is tagged critical:true so F2
+ * substitution engages (deterministic prose replaces the bad draft).
+ */
+
+/** Matches a specific salary number in common Indian formats:
+ *  "₹27 LPA", "₹27", "18 LPA", "18.5L", "20 lakh", "20 lacs",
+ *  "18,500" etc. Does NOT fire on pure ranges (handled by validateRangeDiscipline).
+ *  Two patterns: ₹-prefixed (any trailing unit or bare), and bare digit + unit. */
+const OPENING_ANCHOR_RE =
+  /₹\s*\d[\d,.]*\s*(L|LPA|lakh|lakhs?|lac|lacs|K|k)?|\b\d[\d,.]*\s*(LPA|L\b|lakh|lakhs?|lac|lacs)/i;
+
+/** OPENING-PHASE ANCHOR GUARD: when phase=opening AND discovery is not yet
+ *  complete, the bot MUST NOT emit a specific salary number. Any such
+ *  emission is an anchor before the recruiter has collected the facts
+ *  needed to size the offer appropriately. Tagged critical:true so the F2
+ *  fallback prose substitution fires immediately. */
+export function validateNoSpecificNumberInOpening(
+  reply: string,
+  state: NegotiationState,
+): ValidationResult {
+  if (state.phase !== "opening") return { valid: true };
+  /* Discovery complete → bot is about to anchor intentionally; allow. */
+  if (state.discoveryChecklist != null) {
+    const roleFamily = classifyRoleFamily(state.role);
+    if (isDiscoveryComplete(state.discoveryChecklist, roleFamily)) return { valid: true };
+  }
+  if (!OPENING_ANCHOR_RE.test(reply)) return { valid: true };
+  return {
+    valid: false,
+    critical: true,
+    reason: `Opening-phase anchor: specific number emitted before discovery (phase=${state.phase})`,
   };
 }
