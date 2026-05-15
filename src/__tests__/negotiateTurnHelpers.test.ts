@@ -86,6 +86,36 @@ describe("buildAiPrompt", () => {
     const s2 = buildAiPrompt({ state: baseState({ candidateTarget: 30 }), move: { lever: "probe", newTotalLpa: null, rationale: "" }, candidateAnswer: "different" });
     expect(s1.system).toBe(s2.system);
   });
+
+  it("system prompt contains ## INVARIANTS section regardless of phase (Commit 7)", () => {
+    /* ITEM 1 — The INVARIANTS section must be present in EVERY prompt call
+     * so the LLM never forgets role-flip / anchor-drift / premature-close
+     * rules mid-session. Checked across four representative phases. */
+    const phases = ["opening", "counter-offer", "probe-expectations", "negotiation"] as const;
+    for (const phase of phases) {
+      const state = baseState({ phase: phase as NegotiationState["phase"] });
+      const move: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
+      const { system } = buildAiPrompt({ state, move, candidateAnswer: "" });
+      expect(system).toContain("## INVARIANTS");
+    }
+  });
+
+  it("system prompt contains ## PERSONA section (Commit 7)", () => {
+    const state = baseState();
+    const move: AiMove = { lever: "open-with-offer", newTotalLpa: 20, rationale: "" };
+    const { system } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(system).toContain("## PERSONA");
+  });
+
+  it("INVARIANTS section lists the six key invariant rules (Commit 7)", () => {
+    const state = baseState();
+    const move: AiMove = { lever: "probe", newTotalLpa: null, rationale: "" };
+    const { system } = buildAiPrompt({ state, move, candidateAnswer: "" });
+    expect(system).toContain("Never reveal the hiring budget ceiling");
+    expect(system).toContain("Never anchor a specific number before candidate discloses current CTC");
+    expect(system).toContain("Never use closing language");
+    expect(system).toContain("Never skip discovery");
+  });
 });
 
 describe("validateAiText", () => {
