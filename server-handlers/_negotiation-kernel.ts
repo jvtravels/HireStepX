@@ -700,6 +700,11 @@ export interface NegotiationState {
    * item has been refused enough times. Optional. */
   discoveryRefusedItems?: Record<string, boolean>;
 
+  /* P4 (2026-05-15) — the discovery sequence item the bot just asked
+   * about (set in applyAiMove from move.rationale). Used by
+   * applyCandidateAnswer to attribute refusals to the correct item. */
+  lastDiscoveryItemAsked?: string | null;
+
   /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
    * true, candidateTarget is in-hand (not CTC). The CTC-equivalent is
    * stored separately so downstream consumers can switch frames. Optional. */
@@ -1824,6 +1829,34 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       state.candidateComponentBreakdown,
       parsed.componentBreakdown,
     );
+
+    /* PDF#18 follow-up P3 (2026-05-15) — current-vs-expected fixed/
+     * variable split disambiguation. When the candidate's utterance
+     * carries a fixed+variable breakdown AND the bot's previous
+     * question was tagged with `lastDisclosureSubject`, route the
+     * split to the right flag:
+     *   subject='current'  → currentCtcFixedVariableSplitDisclosed=true
+     *   subject='expected' → expectedCtcFixedVariableSplitDisclosed=true
+     * The legacy umbrella `fixedVariableSplitAnswered` flag is also
+     * monotone-true so legacy checklists clear. Monotone-up. */
+    const splitHasBoth =
+      parsed.componentBreakdown.base != null &&
+      parsed.componentBreakdown.variable != null;
+    if (splitHasBoth && state.discoveryChecklist != null) {
+      const subject = state.lastDisclosureSubject ?? null;
+      const checklist = { ...state.discoveryChecklist };
+      checklist.fixedVariableSplitAnswered = true;
+      if (subject === "current") {
+        checklist.currentCtcFixedVariableSplitDisclosed = true;
+      } else if (subject === "expected") {
+        checklist.expectedCtcFixedVariableSplitDisclosed = true;
+      } else {
+        /* No subject tag (legacy session / split offered unprompted):
+         * fall back to the legacy umbrella flag only. Conservative —
+         * doesn't accidentally tag a split against the wrong CTC. */
+      }
+      next.discoveryChecklist = checklist;
+    }
   }
 
   /* Phase 12c (2026-05-13) — structural hard-band-cap detection. If
@@ -1979,6 +2012,22 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     /i'?d prefer not|not comfortable sharing|let'?s come back|prefer to keep that|won'?t disclose|skip that|pass on that|rather not say|that's personal/i.test(answer)
   ) {
     next.probeRefusalCount = (state.probeRefusalCount ?? 0) + 1;
+
+    /* P4 (2026-05-15) — refusal-fallback wiring. When the candidate
+     * has refused the same discovery item twice (probeRefusalCount
+     * ≥ 2 with the same lastDiscoveryItemAsked), mark the item in
+     * discoveryRefusedItems so getNextOrderedDiscoveryItem skips it
+     * and moves to the next item in sequence. Threshold = 2 gives
+     * the candidate one "soft probe" and one "structural probe"
+     * before the kernel respects the boundary. */
+    const askedItem = state.lastDiscoveryItemAsked;
+    if (
+      askedItem &&
+      (next.probeRefusalCount ?? 0) >= 2
+    ) {
+      const prior = state.discoveryRefusedItems ?? {};
+      next.discoveryRefusedItems = { ...prior, [askedItem]: true };
+    }
   }
 
   /* Tier-2 ship wiring (2026-05-15) — non-salary constraints extraction.
@@ -2509,6 +2558,15 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.lastDisclosureSubject = "current";
     } else if (move.rationale.includes("expectedCtcFixedVariableSplitDisclosed")) {
       next.lastDisclosureSubject = "expected";
+    }
+
+    /* P4 (2026-05-15) — capture the discovery item the bot just asked
+     * about so applyCandidateAnswer can attribute refusals to the
+     * correct sequence item. The move-picker rationale follows the
+     * convention `Discovery incomplete (next: <ITEM>) — ask: ...`. */
+    const m = move.rationale.match(/Discovery incomplete \(next:\s*([a-zA-Z]+)\)/);
+    if (m) {
+      next.lastDiscoveryItemAsked = m[1];
     }
   }
 

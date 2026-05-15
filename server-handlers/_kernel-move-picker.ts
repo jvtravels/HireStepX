@@ -46,6 +46,8 @@ import {
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
 import {
   getNextDiscoveryQuestion,
+  getNextOrderedDiscoveryItem,
+  getNextOrderedDiscoveryQuestion,
   isDiscoveryComplete,
 } from "./_discovery-stage";
 import { recommendWalkAway } from "./_recruiter-critique";
@@ -271,6 +273,39 @@ export function pickAiMove(state: NegotiationState): AiMove {
     ) {
       const roleFamily = classifyRoleFamily(state.role);
       if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
+        /* P3 (2026-05-15) — prefer the strict-ordered variant so the
+         * rationale carries the precise sequence item (e.g.
+         * currentCtcFixedVariableSplitDisclosed vs
+         * expectedCtcFixedVariableSplitDisclosed). applyAiMove reads
+         * that token to set state.lastDisclosureSubject which gates
+         * the next candidate's split utterance to the right CTC. */
+        const refused = state.discoveryRefusedItems ?? null;
+        const orderedItem = getNextOrderedDiscoveryItem(
+          state.discoveryChecklist,
+          roleFamily,
+          refused,
+        );
+        const ordered = getNextOrderedDiscoveryQuestion(
+          state.discoveryChecklist,
+          roleFamily,
+          refused,
+        );
+        if (ordered != null && orderedItem != null) {
+          /* P4 (2026-05-15) — surface "skipped" context in the rationale
+           * when an item was bypassed due to refusals. The brief layer
+           * surfaces this to the LLM so it acknowledges the skip naturally
+           * rather than re-asking. */
+          const skippedHint = refused != null && Object.keys(refused).length > 0
+            ? ` [ITEM REFUSED — SKIPPED: ${Object.keys(refused).join(", ")}; proceeding to ${orderedItem}]`
+            : "";
+          return {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale:
+              `Discovery incomplete (next: ${orderedItem}) — ask: ${ordered.prompt}${skippedHint}`,
+          };
+        }
+        /* Fallback to the legacy priority cascade for back-compat. */
         const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
         if (next != null) {
           return {

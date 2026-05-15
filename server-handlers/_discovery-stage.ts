@@ -379,28 +379,42 @@ function isSequenceItemSatisfied(
  *  satisfied for the given checklist + role family. Role-family
  *  conditional items (currently only `valueProofAnswered`) are skipped
  *  for families that don't require them. Returns null when all
- *  required items in the sequence are satisfied. Pure. */
+ *  required items in the sequence are satisfied. Pure.
+ *
+ *  P4 (2026-05-15) — refusal-fallback. Optional `refused` set carries
+ *  per-item refusal flags; items in this set are skipped (treated as
+ *  satisfied for ordering purposes) so the bot moves to the next
+ *  incomplete item rather than re-asking what the candidate already
+ *  declined to share. The refusal-detector in applyCandidateAnswer
+ *  populates this map after the candidate's probeRefusalCount crosses
+ *  2 for the currently-asked item. */
 export function getNextOrderedDiscoveryItem(
   c: DiscoveryChecklist,
   roleFamily: RoleFamily,
+  refused?: Record<string, boolean> | null,
 ): DiscoverySequenceItem | null {
   const requiresValueProof = getRequiredDiscoveryItems(roleFamily).includes(
     "valueProofAnswered",
   );
   for (const item of DISCOVERY_SEQUENCE) {
     if (item === "valueProofAnswered" && !requiresValueProof) continue;
+    if (refused && refused[item] === true) continue;
     if (!isSequenceItemSatisfied(c, item)) return item;
   }
   return null;
 }
 
 /** Strict-sequence variant of `getNextDiscoveryQuestion`. Returns the
- *  prompt for the first un-satisfied item in DISCOVERY_SEQUENCE. */
+ *  prompt for the first un-satisfied item in DISCOVERY_SEQUENCE.
+ *
+ *  P4 (2026-05-15) — propagates the optional refused-items map so the
+ *  caller (move-picker) can skip items the candidate has refused. */
 export function getNextOrderedDiscoveryQuestion(
   c: DiscoveryChecklist,
   roleFamily: RoleFamily,
+  refused?: Record<string, boolean> | null,
 ): DiscoveryQuestion | null {
-  const item = getNextOrderedDiscoveryItem(c, roleFamily);
+  const item = getNextOrderedDiscoveryItem(c, roleFamily, refused);
   if (item == null) return null;
   switch (item) {
     case "currentCtcAnswered":

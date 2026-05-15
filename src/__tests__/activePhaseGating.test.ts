@@ -205,10 +205,13 @@ describe("pickAiMove opening branch — active phase gating", () => {
   });
 
   it("turn 2 + opening + partially complete checklist → probe with NEXT discovery item", () => {
-    /* currentCtc and fixedVariableSplit already answered; next required
-     * discovery item is notice-period. The probe rationale must surface
-     * the notice-period prompt so compactTurnBrief / [NEXT REQUIRED
-     * ACTION] picks it up. */
+    /* currentCtc and fixedVariableSplit already answered; per the
+     * PDF#18 ordered DISCOVERY_SEQUENCE the next required item is
+     * targetAnswered (target/expected CTC comes before notice). The
+     * probe rationale must surface the target prompt so compactTurnBrief
+     * / [NEXT REQUIRED ACTION] picks it up. (Prior assertion expected
+     * /notice/i — that was the legacy priority-cascade behaviour; the
+     * ordered variant places target before notice.) */
     const partial: DiscoveryChecklist = {
       ...EMPTY_DISCOVERY_CHECKLIST,
       currentCtcAsked: true,
@@ -225,7 +228,7 @@ describe("pickAiMove opening branch — active phase gating", () => {
       }),
     );
     expect(m.lever).toBe("probe");
-    expect(m.rationale).toMatch(/notice/i);
+    expect(m.rationale).toMatch(/target/i);
   });
 
   it("turn 1 + opening + probe-mismatch stage → does NOT trigger discovery branch", () => {
