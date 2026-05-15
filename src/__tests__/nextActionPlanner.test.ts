@@ -26,10 +26,15 @@ const init = (overrides: Partial<NegotiationState> = {}): NegotiationState => ({
 });
 
 describe("planNextAction — kind reachability", () => {
-  it("opening turn 0 → open-with-offer", () => {
+  it("opening turn 0 → discovery-probe (F1)", () => {
+    // FIX (F1, PDF#19 2026-05-15) — turn 0 used to anchor immediately
+    // via open-with-offer. Real recruiters open with a discovery
+    // question; F1 removes the `turnIndex >= 1` gate so turn 0 plans
+    // ordered-discovery. open-with-offer is now reachable only after
+    // discovery completes.
     const s = init();
     const action = planNextAction(s);
-    expect(action.kind).toBe("open-with-offer");
+    expect(action.kind).toBe("discovery-probe");
   });
 
   it("phase=accepted → close{accept}", () => {

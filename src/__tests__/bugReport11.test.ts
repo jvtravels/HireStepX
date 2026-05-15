@@ -27,27 +27,39 @@ const BAND: NegotiationBand = { initialOffer: 7, maxStretch: 11, walkAway: 5, ha
 
 describe("bug-report 11 — Bug A: opening role pinned to session target", () => {
   it("deterministic fallback opener mentions state.role verbatim", () => {
+    // FIX (F1, PDF#19 2026-05-15) — turn 0 now routes through discovery,
+    // not open-with-offer. The invariant under test is that the
+    // deterministic open-with-offer fallback pins the role label; we
+    // drive it directly with an open-with-offer move (the lever name
+    // the fallback dispatches on).
     const state = initState({
       sessionId: "s1",
       role: "Business Analyst",
       company: "accenture",
       band: BAND,
     });
-    const move = pickAiMove(state);
-    const text = deterministicFallbackText(state, move);
+    const text = deterministicFallbackText(state, {
+      lever: "open-with-offer",
+      newTotalLpa: state.band.initialOffer,
+      rationale: "",
+    });
     expect(text).toMatch(/Business Analyst/);
     expect(text).not.toMatch(/Senior Product Designer/i);
   });
 
   it("deterministic fallback opener stays generic when state.role is empty", () => {
+    // FIX (F1, PDF#19 2026-05-15) — see note above.
     const state = initState({
       sessionId: "s1",
       role: "",
       company: "accenture",
       band: BAND,
     });
-    const move = pickAiMove(state);
-    const text = deterministicFallbackText(state, move);
+    const text = deterministicFallbackText(state, {
+      lever: "open-with-offer",
+      newTotalLpa: state.band.initialOffer,
+      rationale: "",
+    });
     expect(text).toMatch(/this role/);
   });
 });

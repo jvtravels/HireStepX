@@ -154,7 +154,10 @@ describe("derivePhase — active phase gating (narrow trigger)", () => {
 });
 
 describe("pickAiMove opening branch — active phase gating", () => {
-  it("turn 0 + opening + empty checklist → open-with-offer (legacy preserved)", () => {
+  it("turn 0 + opening + empty checklist → discovery probe (F1)", () => {
+    // FIX (F1, PDF#19 2026-05-15) — turn 0 used to anchor immediately.
+    // Now turn 0 plans a discovery probe; open-with-offer is reachable
+    // only after the discovery checklist has been satisfied.
     const m = pickAiMove(
       init({
         phase: "opening",
@@ -162,8 +165,8 @@ describe("pickAiMove opening branch — active phase gating", () => {
         discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
       }),
     );
-    expect(m.lever).toBe("open-with-offer");
-    expect(m.newTotalLpa).toBe(BAND.initialOffer);
+    expect(m.lever).toBe("probe");
+    expect(m.newTotalLpa).toBeNull();
   });
 
   it("turn 1 + opening + discovery incomplete → discovery probe (NOT open-with-offer)", () => {

@@ -22,7 +22,6 @@ import {
 } from "../../server-handlers/_candidate-profile";
 import {
   initState,
-  pickAiMove,
   type NegotiationBand,
 } from "../../server-handlers/_negotiation-kernel";
 import { deterministicFallbackText } from "../../server-handlers/_negotiate-turn-helpers";
@@ -165,15 +164,21 @@ describe("bug-report 13 — end-to-end: Ops Mgr @ Zepto with applicableYoe=0", (
       candidateApplicableYoe: 0,
       candidatePrimaryDomain: "Product Design",
     });
-    const move = pickAiMove(state);
-    const rawText = deterministicFallbackText(state, move);
+    // FIX (F1, PDF#19 2026-05-15) — turn 0 now routes through discovery,
+    // not open-with-offer. The role-label invariant under test still
+    // applies to the open-with-offer fallback; we drive that lever
+    // directly to keep the assertion focused.
+    const openingMove = {
+      lever: "open-with-offer" as const,
+      newTotalLpa: state.band.initialOffer,
+      rationale: "",
+    };
+    const rawText = deterministicFallbackText(state, openingMove);
     const cleaned = enforceRoleLabel(rawText, state.role);
     expect(cleaned).toMatch(/Operations Manager/);
     expect(cleaned).not.toMatch(/Senior Operations Manager/i);
-    /* Move's newTotalLpa is the opening figure surfaced to the user. */
-    if (typeof move.newTotalLpa === "number") {
-      expect(move.newTotalLpa).toBeLessThanOrEqual(6);
-    }
+    /* Opening figure surfaced to the user is band.initialOffer. */
+    expect(state.band.initialOffer).toBeLessThanOrEqual(6);
     expect(band.initialOffer).toBeLessThanOrEqual(6);
   });
 });

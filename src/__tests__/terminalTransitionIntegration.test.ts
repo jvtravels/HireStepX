@@ -36,7 +36,14 @@ import {
 const BAND: NegotiationBand = { initialOffer: 40, maxStretch: 55, walkAway: 30, hasEquity: true };
 
 function newState(): NegotiationState {
-  return initState({ sessionId: "term-int", role: "swe", company: "acme", band: BAND });
+  // FIX (F1, PDF#19 2026-05-15) — turn 0 now routes through discovery
+  // first. This test exercises terminal-phase stickiness, not the
+  // discovery branch; force discoveryStage to "complete" so the
+  // opening lever stays open-with-offer.
+  return {
+    ...initState({ sessionId: "term-int", role: "swe", company: "acme", band: BAND }),
+    discoveryStage: "anchor",
+  };
 }
 
 describe("terminal-phase sticky integration — multi-turn post-acceptance sequence", () => {

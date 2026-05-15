@@ -631,10 +631,13 @@ describe("derivePhase", () => {
 /* ─── pickAiMove ──────────────────────────────────────────────── */
 
 describe("pickAiMove", () => {
-  it("opening → open-with-offer at band initial", () => {
+  it("opening → discovery probe on turn 0 (F1)", () => {
+    // FIX (F1, PDF#19 2026-05-15) — turn 0 used to anchor at band
+    // initial. Now turn 0 plans a discovery probe; open-with-offer is
+    // reachable only after discovery completes.
     const m = pickAiMove(init());
-    expect(m.lever).toBe("open-with-offer");
-    expect(m.newTotalLpa).toBe(20);
+    expect(m.lever).toBe("probe");
+    expect(m.newTotalLpa).toBeNull();
   });
 
   it("offer-presented (no target) → probe", () => {
@@ -671,12 +674,17 @@ describe("pickAiMove", () => {
   });
 
   it("intent override does NOT fire before an offer has been made", () => {
+    // FIX (F1, PDF#19 2026-05-15) — opening turn 0 now routes through
+    // discovery (lever: "probe") rather than open-with-offer. The
+    // invariant under test — that the breakdown intent override does
+    // not preempt the opening — is still asserted; the expected lever
+    // shifted from open-with-offer to probe.
     const m = pickAiMove(init({
       phase: "opening",
       highestOfferMade: 0,
       infoAsked: ["package-breakdown"],
     }));
-    expect(m.lever).toBe("open-with-offer");
+    expect(m.lever).toBe("probe");
   });
 
   it("fixed-vs-variable intent also routes to benefits-summary override", () => {
@@ -1156,7 +1164,12 @@ describe("isVerbatimRepeat", () => {
 
 describe("integration: full arc", () => {
   it("opening → offer → probe → counter → accept", () => {
-    let state = init();
+    // FIX (F1, PDF#19 2026-05-15) — turn 0 now routes through discovery.
+    // The full arc still includes opening → offer → counter → accept,
+    // but the bot first probes discovery before anchoring. Force
+    // discoveryStage off so this test stays focused on the counter/
+    // accept arc (the discovery branch has its own dedicated coverage).
+    let state = init({ discoveryStage: "anchor" });
 
     /* T1: AI opens. */
     let move = pickAiMove(state);

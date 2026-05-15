@@ -300,10 +300,15 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
-  /* Opening: discovery-incomplete probe, then anchor. */
+  /* Opening: discovery-incomplete probe, then anchor.
+   *
+   * F1 (PDF#19 2026-05-15) — removed the `turnIndex >= 1` gate that
+   * forced turn 0 to skip discovery and go straight to open-with-offer
+   * (a specific number anchor). Real recruiters open with a discovery
+   * question, not an anchor; F2 substitutes if the LLM tries to anchor
+   * anyway. */
   if (state.phase === "opening") {
     if (
-      state.turnIndex >= 1 &&
       state.discoveryStage === "discovery" &&
       state.discoveryChecklist != null
     ) {
