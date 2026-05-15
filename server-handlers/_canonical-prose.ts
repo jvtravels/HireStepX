@@ -31,15 +31,21 @@
 import type { NegotiationState } from "./_negotiation-kernel";
 import type { NextAction } from "./_next-action-planner";
 
-/** Best-effort first-name extraction. The kernel doesn't carry the
- *  candidate's name as a first-class field, so we look at the most
- *  recent candidate utterance for a "Hi, I'm X" / "My name is X" /
- *  trailing "I'm X" signature. Returns null when no name is detected —
- *  caller substitutes a generic fallback. */
+/** Best-effort first-name extraction. Prefers the typed
+ *  `state.candidateName` field (threaded from intake) and falls back
+ *  to scanning the conversation log for an "I'm X" / "my name is X"
+ *  signature when no name was passed in. Returns null when neither
+ *  source yields a name — caller substitutes a generic fallback. */
 function getCandidateFirstName(state: NegotiationState): string | null {
-  /* Most templated negotiation flows hand the bot a name at intake; we
-   * don't have a dedicated state slot for it. Scan the conversation log
-   * for an "I'm X" / "my name is X" signature, capped at 30 chars. */
+  /* Preferred: typed init field from intake. Kernel-first cleanup
+   * (2026-05-16). */
+  if (state.candidateName && state.candidateName.trim().length > 0) {
+    const first = state.candidateName.trim().split(/\s+/)[0];
+    if (first && first.length <= 20) return first;
+  }
+  /* Fallback: scan conversation log. Some sessions deserialize without a
+   * candidateName (legacy state) or the candidate introduces themselves
+   * mid-flow. */
   const log = state.conversationLog ?? [];
   for (let i = log.length - 1; i >= 0; i--) {
     const e = log[i];
@@ -209,11 +215,11 @@ export function renderCanonicalProse(
       return "Help me understand the rationale behind that number — what's it anchored on?";
 
     case "counter-offer": {
-      /* The planner pre-computes the counter total in action._move.
-       * Canonical prose for a counter ALWAYS includes the number so the
-       * restyle validator can verify it survives. */
-      const carried = action as NextAction & { _move?: { newTotalLpa?: number | null } };
-      const total = carried._move?.newTotalLpa;
+      /* The planner pre-computes the counter total + optional fixed /
+       * variable split on the typed action (kernel-first cleanup
+       * 2026-05-16). Canonical prose for a counter ALWAYS includes the
+       * number so the restyle validator can verify it survives. */
+      const total = action.counterTotalLpa;
       if (total != null && total > 0) {
         return `Hearing you out — let me see what I can put together. We can move to ₹${total}L total. What would that look like on your side?`;
       }

@@ -880,6 +880,21 @@ export interface NegotiationState {
    * Optional for back-compat with sessions serialized before ITEM 3. */
   candidateSignaledClose?: boolean;
   closeFired?: boolean;
+
+  /* Kernel-first cleanup (2026-05-16) — first-class role facts. Previously
+   * read via loose extension shape in _fact-pack.ts and _canonical-prose.ts.
+   * Threaded through InitStateInput and copied to state at init (defaults
+   * null). All optional / nullable — absent → fact pack omits them and the
+   * LLM is instructed to defer. */
+  workMode?: "remote" | "hybrid" | "office" | null;
+  teamSize?: number | null;
+  reportingTo?: string | null;
+  joiningWindow?: string | null;
+  /** Kernel-first cleanup (2026-05-16) — candidate first name. Threaded
+   *  from intake so _canonical-prose.ts doesn't have to scan the
+   *  conversation log to greet by name. Log-scan stays as a fallback for
+   *  legacy sessions or self-introductions mid-flow. */
+  candidateName?: string | null;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -1133,6 +1148,13 @@ export interface InitStateInput {
   company: string;
   band: NegotiationBand;
   maxTurns?: number;
+  /* Kernel-first cleanup (2026-05-16) — role facts and candidate name
+   * surfaced as typed init inputs. All optional / nullable. */
+  workMode?: "remote" | "hybrid" | "office" | null;
+  teamSize?: number | null;
+  reportingTo?: string | null;
+  joiningWindow?: string | null;
+  candidateName?: string | null;
 }
 
 export interface InitStateExtras {
@@ -1268,6 +1290,13 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * de-dupe ledger. Empty at session start; each reactive-followup
      * emission pushes its topic. */
     reactiveFollowupsFired: [],
+    /* Kernel-first cleanup (2026-05-16) — first-class role facts and
+     * candidate name. Default null when caller doesn't supply. */
+    workMode: input.workMode ?? null,
+    teamSize: input.teamSize ?? null,
+    reportingTo: input.reportingTo ?? null,
+    joiningWindow: input.joiningWindow ?? null,
+    candidateName: input.candidateName ?? null,
   };
 }
 

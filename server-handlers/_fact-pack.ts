@@ -79,20 +79,13 @@ export function buildFactPack(
     };
   }
 
-  /* Role-specific facts: read OPTIONAL extension fields if present.
-   * The kernel state interface doesn't carry these as first-class
-   * fields, so we read them off a loose extension shape. Absent →
-   * factPack simply doesn't include them and the LLM defers. */
-  const ext = state as NegotiationState & {
-    workMode?: "remote" | "hybrid" | "office";
-    joiningWindow?: string;
-    reportingTo?: string;
-    teamSize?: number;
-  };
-  if (ext.workMode) pack.workMode = ext.workMode;
-  if (ext.joiningWindow) pack.joiningWindow = ext.joiningWindow;
-  if (ext.reportingTo) pack.reportingTo = ext.reportingTo;
-  if (typeof ext.teamSize === "number") pack.teamSize = ext.teamSize;
+  /* Role-specific facts: first-class typed fields on NegotiationState
+   * (kernel-first cleanup 2026-05-16). Absent (null) → factPack omits
+   * them and the LLM is instructed to defer. */
+  if (state.workMode) pack.workMode = state.workMode;
+  if (state.joiningWindow) pack.joiningWindow = state.joiningWindow;
+  if (state.reportingTo) pack.reportingTo = state.reportingTo;
+  if (typeof state.teamSize === "number") pack.teamSize = state.teamSize;
 
   return pack;
 }

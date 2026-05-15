@@ -86,7 +86,18 @@ export type NextAction =
   | { kind: "info-disclosure"; topic: "breakdown" | "benefits" | "comp-structure" | "notice" | "hike-pct" }
   | { kind: "probe-expectations" }
   | { kind: "probe-justification" }
-  | { kind: "counter-offer" }
+  | {
+      kind: "counter-offer";
+      /* Kernel-first cleanup (2026-05-16) — typed counter-offer payload.
+       * Canonical prose reads these directly instead of casting to
+       * `(action as any)._move.newTotalLpa`. The same numbers live on
+       * `_move.newTotalLpa` for actionToLever; carrying them on the
+       * action discriminator means downstream consumers don't have to
+       * touch the private `_move` field. */
+      counterTotalLpa: number;
+      counterFixedLpa?: number;
+      counterVariableLpa?: number;
+    }
   | { kind: "lever-explore"; from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default" }
   | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
   | { kind: "rescission" };
@@ -736,8 +747,28 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (!constraint.ok) {
       return wrapLeverExplore(pickLeverExploreMove(state), "constraint-violation");
     }
+    /* Kernel-first cleanup (2026-05-16) — populate typed counter-offer
+     * fields from band component metadata when present, so canonical
+     * prose / restyle validator can read them without casting.
+     *   base     = min(baseStretch, newTotal)
+     *   variable = max(0, min(variableMax, newTotal - base))
+     * Falls back to undefined for the split when the band lacks
+     * component metadata; the total is always set. */
+    const baseStretch = state.band.baseStretch;
+    const variableMax = state.band.variableMax;
+    let counterFixedLpa: number | undefined;
+    let counterVariableLpa: number | undefined;
+    if (baseStretch != null && variableMax != null) {
+      const base = Math.min(baseStretch, newTotal);
+      counterFixedLpa = Math.round(base * 10) / 10;
+      counterVariableLpa =
+        Math.round(Math.max(0, Math.min(variableMax, newTotal - base)) * 10) / 10;
+    }
     return {
       kind: "counter-offer",
+      counterTotalLpa: newTotal,
+      counterFixedLpa,
+      counterVariableLpa,
       _move: {
         lever: "counter-base",
         newTotalLpa: newTotal,
