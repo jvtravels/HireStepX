@@ -718,6 +718,26 @@ export interface NegotiationState {
    * applyAiMove when the bot reply addresses it. Surfaced via the
    * brief as [CANDIDATE DISCLOSED — ACKNOWLEDGE THIS TURN: ...]. */
   pendingCandidateAcks?: import("./_candidate-disclosure-tracker").CandidateDisclosureEntry[];
+
+  /* Architectural bug-prevention (2026-05-15) — decision log. Append-only
+   * record of every move the kernel picked, with rationale, phase at pick
+   * time, and the bracket tags injected into the brief this turn. Lets us
+   * reconstruct *why* the kernel moved as it did from final state alone,
+   * which is the prerequisite for the replay harness. Optional for
+   * back-compat. */
+  decisionLog?: Array<{
+    turn: number;
+    picker: string;        // e.g. "probe-mismatch", "discovery-next", "range-disclosure", "anchor", "concession"
+    rationale: string;     // short human-readable reason
+    phase: NegotiationPhase;
+    briefTags?: string[];  // which bracketed tags were injected this turn
+  }>;
+
+  /* Architectural bug-prevention (2026-05-15) — last-turn brief tags. Set
+   * by compactTurnBrief, read by the move-picker so the decision log can
+   * record which bracket-tagged directives were in front of the LLM on
+   * the turn the move was chosen. One-shot per turn; cleared in applyAiMove. */
+  lastBriefTags?: string[];
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
@@ -2495,6 +2515,9 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * target can't keep firing the auto-accept gate on subsequent
      * turns where the candidate didn't actually re-counter. */
     lastCandidateCounterLpa: null,
+    /* Architectural bug-prevention (2026-05-15) — clear one-shot brief
+     * tag attribution so next turn starts fresh. */
+    lastBriefTags: undefined,
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;

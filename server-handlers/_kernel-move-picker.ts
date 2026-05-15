@@ -53,8 +53,54 @@ import {
 import { recommendWalkAway } from "./_recruiter-critique";
 import { estimateCounterOfferRisk } from "./_counter-offer-risk";
 
-/** Pick the AI's move for this turn from state alone. Pure. */
+/** Architectural bug-prevention (2026-05-15) — classify the picker branch
+ *  from the move + state. Read off move.lever and rationale fragments the
+ *  branches above already produce; lets the decision log carry a stable
+ *  picker name independent of internal branching. Pure. */
+function classifyPicker(state: NegotiationState, move: AiMove): string {
+  const r = (move.rationale || "").toLowerCase();
+  if (move.lever === "terminal-restate") return "terminal-restate";
+  if (move.lever === "close-acceptance") return r.includes("guaranteed-accept") ? "guaranteed-accept" : "close-acceptance";
+  if (move.lever === "close-walkaway") return r.includes("rescission") ? "rescission" : "close-walkaway";
+  if (move.lever === "close-stalemate") return "close-stalemate";
+  if (r.includes("probe-mismatch")) return "probe-mismatch";
+  if (r.includes("range-disclosure")) return "range-disclosure";
+  if (r.includes("discovery incomplete")) return "discovery-next";
+  if (move.lever === "open-with-offer") return "anchor";
+  if (move.lever === "probe-justification") return "probe-justification";
+  if (move.lever === "counter-base") return "concession";
+  if (move.lever === "hold-firm") return "hold-firm";
+  if (move.lever === "benefits-summary" || move.lever === "compensation-summary" ||
+      move.lever === "notice-period-summary" || move.lever === "hike-context-summary") return "info-disclosure";
+  if (move.lever === "equity-grant" || move.lever === "joining-bonus" ||
+      move.lever === "notice-buyout") return "lever-explore";
+  return move.lever;
+}
+
+/** Pick the AI's move for this turn from state alone. Mutates
+ *  `state.decisionLog` (appends one entry) and clears `state.lastBriefTags`
+ *  so brief-tag attribution stays one-shot per turn. The decision-pick
+ *  logic itself remains pure — the wrapper around `pickAiMoveCore` only
+ *  bookkeeps. */
 export function pickAiMove(state: NegotiationState): AiMove {
+  const move = pickAiMoveCore(state);
+  /* Architectural bug-prevention (2026-05-15) — append to decision log. */
+  if (!state.decisionLog) state.decisionLog = [];
+  /* lastBriefTags is filled in by compactTurnBrief which runs AFTER
+   * pickAiMove (in buildAiPrompt). applyAiMove backfills the just-pushed
+   * entry's briefTags from state.lastBriefTags so the log captures the
+   * tags that were actually in front of the LLM on this turn. */
+  state.decisionLog.push({
+    turn: state.turnIndex,
+    picker: classifyPicker(state, move),
+    rationale: move.rationale || "",
+    phase: state.phase,
+  });
+  return move;
+}
+
+/** Inner picker — branches that decide the AiMove. Pure. */
+function pickAiMoveCore(state: NegotiationState): AiMove {
   /* Terminal stickiness guard (session 13 bug, 2026-05-14): when the
    * candidate keeps talking AFTER a terminal phase was already reached
    * on a prior turn, do NOT re-run the close-* / move-picking logic —

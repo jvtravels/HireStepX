@@ -2458,6 +2458,30 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     /* Defensive: if the module fails to load, do not break the brief. */
   }
   parts.push(`rationale=${move.rationale}`);
+  /* Architectural bug-prevention (2026-05-15) — extract bracket-tag names
+   * from the emitted parts and store on state for the decision log. The
+   * convention here is "[<TAG NAME>: ...]" — we read the substring up to
+   * the first ":". applyAiMove backfills the just-pushed decisionLog
+   * entry with these tags so we can reconstruct which directives were
+   * actively in front of the LLM each turn. Mutating state mid-build is
+   * acceptable: this is the same state instance used by the next
+   * applyAiMove call, and the field is one-shot (cleared in applyAiMove). */
+  const tagNames: string[] = [];
+  for (const p of parts) {
+    const m = p.match(/^\[([^:\]]+?)(?::|\])/);
+    if (m) tagNames.push(m[1].trim());
+  }
+  if (tagNames.length > 0) {
+    (state as { lastBriefTags?: string[] }).lastBriefTags = tagNames;
+  } else {
+    (state as { lastBriefTags?: string[] }).lastBriefTags = undefined;
+  }
+  /* Backfill the last decisionLog entry's briefTags. */
+  const log = (state as { decisionLog?: Array<{ briefTags?: string[] }> }).decisionLog;
+  if (log && log.length > 0) {
+    const last = log[log.length - 1];
+    if (tagNames.length > 0) last.briefTags = [...tagNames];
+  }
   return parts.join(" | ");
 }
 
