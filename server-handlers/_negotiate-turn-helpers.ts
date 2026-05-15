@@ -24,6 +24,7 @@ import {
   findOutOfBandNumber,
   isVerbatimRepeat,
   canDiscloseSpecificNumber,
+  isTerminalPhase,
 } from "./_negotiation-kernel";
 import { summarizeTranscriptIfLong, type TranscriptTurn } from "./_transcript-summarizer";
 import { detectRoleLabelMismatch } from "./_role-mismatch";
@@ -1918,11 +1919,27 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
    * via the same role-family classifier the kernel uses. Both lines are
    * optional and only emit when the session has discovery tracking
    * wired (back-compat for in-flight pre-PDF-#17 sessions). */
-  if (state.discoveryStage) {
+  /* PDF #18 root-cause (2026-05-15) — discovery gate must NOT fire in
+   * terminal phases. Real session: bot kept asking discovery questions
+   * AFTER the candidate accepted the offer. Root cause: this brief
+   * block fired purely off discoveryStage, never gated on phase. Now
+   * suppressed when state.phase is terminal (accepted / walked-away /
+   * stalemate). Non-terminal pre-close phases (counter-offer,
+   * closing-push, etc.) keep the [CURRENT STAGE: discovery] banner —
+   * that block is harmless and preserves existing test behavior — but
+   * [NEXT REQUIRED ACTION] is additionally gated to discovery-eligible
+   * phases so the bot doesn't reopen discovery prompts mid-counter. */
+  const NEXT_ACTION_PHASES = new Set([
+    "opening",
+    "offer-presented",
+    "probe-expectations",
+  ]);
+  if (state.discoveryStage && !isTerminalPhase(state.phase)) {
     parts.push(`[CURRENT STAGE: ${state.discoveryStage}]`);
     if (
       state.discoveryStage === "discovery" &&
-      state.discoveryChecklist != null
+      state.discoveryChecklist != null &&
+      NEXT_ACTION_PHASES.has(state.phase)
     ) {
       const roleFamily = classifyRoleFamily(state.role);
       if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {

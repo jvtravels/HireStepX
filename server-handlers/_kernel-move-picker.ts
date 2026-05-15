@@ -39,6 +39,7 @@ import {
   clampToCloseFloor,
   validateComponentConstraints,
   canCloseSession,
+  clampAnchorAgainstCandidateAsk,
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
@@ -259,10 +260,25 @@ export function pickAiMove(state: NegotiationState): AiMove {
         }
       }
     }
+    /* PDF #18 root-cause wiring (2026-05-15) — anchor clamp against
+     * candidate ask. clampAnchorAgainstCandidateAsk was exported but
+     * never called outside its tests (confirmed via full-codebase grep
+     * before wiring). Fire it here, at the SINGLE first-anchor site,
+     * so a candidate who has already disclosed their target (rare on
+     * turn 0 but real on turn 1+) caps the recruiter's volunteered
+     * anchor. The locked anchor (Fix 7) then prevents subsequent
+     * recomputation. */
+    const clampedOpener = clampAnchorAgainstCandidateAsk(
+      state.band.initialOffer,
+      state.candidateTarget,
+      state.band.walkAway,
+    );
     return {
       lever: "open-with-offer",
-      newTotalLpa: state.band.initialOffer,
-      rationale: `Open with band initial ₹${state.band.initialOffer} LPA.`,
+      newTotalLpa: clampedOpener,
+      rationale: clampedOpener < state.band.initialOffer
+        ? `Open with anchor ₹${clampedOpener} LPA (clamped from band initial ₹${state.band.initialOffer} against candidate ask ₹${state.candidateTarget}).`
+        : `Open with band initial ₹${state.band.initialOffer} LPA.`,
     };
   }
 

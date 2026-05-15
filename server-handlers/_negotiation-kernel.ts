@@ -697,13 +697,14 @@ export function lockAnchor(state: NegotiationState, anchorLpa: number): Negotiat
  * stated target; if the candidate undershoots the band, they accept
  * quickly with a small step-up rather than padding the offer.
  *
+ * PDF #18 audit (2026-05-15): tightened unified rule. The cleanest
+ * recruiter behavior is: NEVER offer above max(candidateAsk × 1.10,
+ * bandFloor). Below-floor asks are handled by the same expression
+ * (max picks the floor); above-anchor asks are no-ops (clamp ≥ anchor).
+ *
  * clampAnchorAgainstCandidateAsk:
- *   - candidateAskLpa == null     → return originalAnchor unchanged
- *   - candidateAskLpa < bandFloor → return bandFloor (recruiter can't
- *                                     go below their own walkAway)
- *   - candidateAskLpa < anchor    → min(anchor, ask * 1.05) — leaves
- *                                     a tiny step-up but never pads
- *   - candidateAskLpa >= anchor   → return originalAnchor unchanged
+ *   - candidateAskLpa == null/invalid → return originalAnchor unchanged
+ *   - else → min(originalAnchor, max(candidateAsk × 1.10, bandFloor))
  *
  * Applied at session-init AND on each turn before re-anchor (anchor
  * is locked per Fix 7, so this only fires at init for the locked
@@ -715,13 +716,8 @@ export function clampAnchorAgainstCandidateAsk(
 ): number {
   if (candidateAskLpa == null) return originalAnchor;
   if (!Number.isFinite(candidateAskLpa) || candidateAskLpa <= 0) return originalAnchor;
-  if (candidateAskLpa < bandFloor) return bandFloor;
-  if (candidateAskLpa < originalAnchor) {
-    /* candidate undershooting — anchor at ask + 5% (still leaves a
-     * tiny step-up so the recruiter has room to land). */
-    return Math.min(originalAnchor, candidateAskLpa * 1.05);
-  }
-  return originalAnchor;
+  const cap = Math.max(candidateAskLpa * 1.10, bandFloor);
+  return Math.min(originalAnchor, cap);
 }
 
 /* Sprint A.3 (2026-05-15) — attach the post-acceptance onboarding
@@ -2338,6 +2334,23 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
+  }
+  /* PDF #18 root-cause wiring (2026-05-15) — anchor lock on first numeric
+   * disclosure. Before this wire, lockAnchor / effectiveAnchorLpa were
+   * exported but never called anywhere (orphan helpers — confirmed via
+   * full-codebase grep). The PDF #18 real session showed the anchor
+   * jumping 54 → 28 LPA mid-flight; band.initialOffer was being
+   * recomputed each turn with no immutable lock. We now fire lockAnchor
+   * here, at the SINGLE site where the kernel commits an AI move with
+   * a number on it. Idempotent — subsequent disclosures don't relock. */
+  if (
+    move.newTotalLpa != null &&
+    Number.isFinite(move.newTotalLpa) &&
+    move.newTotalLpa > 0 &&
+    !next.anchorLocked
+  ) {
+    next.anchorLocked = true;
+    next.lockedAnchorLpa = move.newTotalLpa;
   }
   /* Bug 7 (2026-05-14) — extract recruiter-fact tokens mentioned in this
    * AI turn and union into recruiterFactsAlreadySaid. Surfaced back via
