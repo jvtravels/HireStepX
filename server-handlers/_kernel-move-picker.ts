@@ -38,6 +38,7 @@ import {
   isTerminalPhase,
   clampToCloseFloor,
   validateComponentConstraints,
+  canCloseSession,
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
@@ -47,6 +48,7 @@ import {
   isDiscoveryComplete,
 } from "./_discovery-stage";
 import { recommendWalkAway } from "./_recruiter-critique";
+import { estimateCounterOfferRisk } from "./_counter-offer-risk";
 
 /** Pick the AI's move for this turn from state alone. Pure. */
 export function pickAiMove(state: NegotiationState): AiMove {
@@ -184,10 +186,47 @@ export function pickAiMove(state: NegotiationState): AiMove {
   if (!isTerminalPhase(state.phase) && state.phase !== "opening") {
     const wa = recommendWalkAway(state);
     if (wa.walk) {
+      /* F1 (2026-05-15) — turn-gate the recruiter walk-away. Walking
+       * away before minTurnsBeforeClose feels abrupt and burns the
+       * requisition unless the candidate explicitly declined this
+       * turn (in which case canCloseSession("decline") passes and we
+       * honor the walk regardless of turnIndex). When the floor isn't
+       * met and there's no explicit decline, downgrade to a probe /
+       * hold-firm rather than walking — keeps the loop alive long
+       * enough for a real signal. */
+      const minTurns = state.minTurnsBeforeClose ?? 8;
+      const lastCandidateText = (() => {
+        const log = state.conversationLog ?? [];
+        for (let i = log.length - 1; i >= 0; i--) {
+          const e = log[i];
+          if (e && e.speaker === "candidate") return e.text || "";
+        }
+        return "";
+      })();
+      const declineAllowed = canCloseSession(state, lastCandidateText, "decline");
+      const explicitDecline =
+        declineAllowed &&
+        /\b(walk away|walking away|not interested|withdraw|decline|won.?t work|isn.?t going to work|move on|no thanks|pass on this|not the right fit|nahi\s+(?:chahiye|karna|banega))\b/i.test(lastCandidateText);
+      if (state.turnIndex >= minTurns || explicitDecline) {
+        return {
+          lever: "close-walkaway",
+          newTotalLpa: null,
+          rationale: `Live walk-away: ${wa.reason}`,
+        };
+      }
+      /* Turn-min not met, no explicit decline → downgrade. Prefer
+       * hold-firm when an offer is on the table, otherwise probe. */
+      if (state.highestOfferMade > 0) {
+        return {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          rationale: `Walk-away signal (${wa.reason}) suppressed: turn ${state.turnIndex} < minTurnsBeforeClose ${minTurns}; hold-firm instead.`,
+        };
+      }
       return {
-        lever: "close-walkaway",
+        lever: "probe",
         newTotalLpa: null,
-        rationale: `Live walk-away: ${wa.reason}`,
+        rationale: `Walk-away signal (${wa.reason}) suppressed: turn ${state.turnIndex} < minTurnsBeforeClose ${minTurns}; probe instead.`,
       };
     }
   }
@@ -528,6 +567,43 @@ export function pickAiMove(state: NegotiationState): AiMove {
     if (state.recentRecoveryActive) boost += 0.05;
     if (boost > 2) boost = 2;
     split = Math.min(split * boost, 0.6);
+
+    /* F4 (2026-05-15) — couple counter-offer-risk to concession curve.
+     * When the candidate's profile suggests the current employer will
+     * deploy a retention counter (short tenure × well-funded current
+     * × hike-in-sweet-spot × vague competing offer), every rupee we
+     * concede has elevated renege risk. Tighten the curve before market-
+     * mode modulation: high → ×0.8, medium → ×0.9, low → unchanged.
+     * The market-mode multiplier composes ON TOP so a hot market with
+     * a high-risk candidate still concedes less than a hot market with
+     * a low-risk candidate. */
+    const tenureSignal = state.candidateProfile?.tenureSignal ?? null;
+    const tenureMonths = (() => {
+      if (typeof tenureSignal !== "string") return null;
+      const m = tenureSignal.match(/(\d+)\s*(?:mo|month|months)/i);
+      if (m) return parseInt(m[1], 10);
+      const y = tenureSignal.match(/(\d+)\s*(?:yr|year|years)/i);
+      if (y) return parseInt(y[1], 10) * 12;
+      return null;
+    })();
+    const competingCredibility: "vague" | "named" | "letter-in-hand" | null =
+      state.competingOfferDetail?.letterShareOffered
+        ? "letter-in-hand"
+        : state.competingOfferDetail?.company
+          ? "named"
+          : state.competingOffer != null
+            ? "vague"
+            : null;
+    const counterOfferRisk = estimateCounterOfferRisk({
+      currentCtcLpa: state.candidateCurrentCtc ?? null,
+      targetLpa: state.candidateTarget ?? null,
+      tenureMonths,
+      currentEmployer: state.currentEmployer ?? null,
+      competingOfferCredibility: competingCredibility,
+    }).risk;
+    if (counterOfferRisk === "high") split *= 0.8;
+    else if (counterOfferRisk === "medium") split *= 0.9;
+    /* low → unchanged */
 
     /* Market mode modulator. Soft markets squeeze candidates; hot
        markets reward them. */

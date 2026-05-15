@@ -32,23 +32,23 @@ describe("Sprint B.1 — live walk-away routing", () => {
     expect(move.lever).not.toBe("close-walkaway");
   });
 
-  it("target >20% above ceiling after 3+ turns fires walk-away", () => {
+  it("target >20% above ceiling after 3+ turns fires walk-away (past min-turns floor)", () => {
     const s = makeState({
       phase: "counter-offer",
       highestOfferMade: 20,
       candidateTarget: 30, // ceiling 22 × 1.2 = 26.4; 30 > 26.4
-      turnIndex: 4,
+      turnIndex: 9, // past minTurnsBeforeClose=8 (F1 turn-gate)
     });
     const move = pickAiMove(s);
     expect(move.lever).toBe("close-walkaway");
   });
 
-  it("final-offer asserted 3x without convergence fires walk-away", () => {
+  it("final-offer asserted 3x without convergence fires walk-away (past min-turns floor)", () => {
     const s = makeState({
       phase: "counter-offer",
       highestOfferMade: 20,
       finalOfferAssertedCount: 3,
-      turnIndex: 5,
+      turnIndex: 9, // past minTurnsBeforeClose=8 (F1 turn-gate)
     });
     const move = pickAiMove(s);
     expect(move.lever).toBe("close-walkaway");
@@ -69,7 +69,7 @@ describe("Sprint B.1 — live walk-away routing", () => {
       phase: "counter-offer",
       highestOfferMade: 20,
       candidateTarget: 30,
-      turnIndex: 4,
+      turnIndex: 9, // past minTurnsBeforeClose=8 (F1 turn-gate)
     });
     const move = pickAiMove(s);
     expect(move.lever).toBe("close-walkaway");

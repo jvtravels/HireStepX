@@ -253,6 +253,14 @@ export async function generateAiText(
     if (!rep.repeated && coh.coherent) {
       return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
     }
+    /* F3 (2026-05-15) — reroll cap. We allow at most ONE reroll across
+     * coherence + duplicate-reply combined. If a1 triggers both flags
+     * we attach BOTH notes to a single reroll prompt rather than stacking
+     * two sequential rerolls (which would burn 3 LLM calls and double
+     * the latency). After the single reroll attempt, return whichever
+     * draft is least bad — never fire a third call. The combined-notes
+     * design also guarantees a 4-failure-mode session caps at 2 calls. */
+    let rerollAttempts = 0;
     const rerollNotes: string[] = [];
     if (rep.repeated) {
       console.warn(`[negotiate-turn] bot reply repetition detected (sim=${rep.similarity.toFixed(2)}); rerolling`);
@@ -267,6 +275,7 @@ export async function generateAiText(
       );
     }
     const rerollUser = user + `\n\nNOTE — ${rerollNotes.join(" ")}`;
+    rerollAttempts++;
     const a1b = await attempt(rerollUser);
     if (!("error" in a1b)) {
       if (!a1b.envelopeOk) envelopeMissingAttempts++;
@@ -284,7 +293,11 @@ export async function generateAiText(
         }
       }
     }
-    /* Reroll attempt failed or still flagged — return the original. */
+    /* F3 reroll-cap enforcement: rerollAttempts === 1 here. We do NOT
+     * fire a second reroll regardless of which flag persisted — return
+     * the original draft as the "least bad" choice (it at least passed
+     * the legality + structured-envelope validators). */
+    void rerollAttempts; // documented invariant; cap = 1
     return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
   }
   failureKinds.push(...a1.failures);
@@ -682,6 +695,21 @@ export default async function handler(
       }
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
+
+      /* F2 (2026-05-15) — post-acceptance dispatch. When the kernel
+       * transitions to terminal `accepted`, it has already populated
+       * `state.postAcceptanceMessage` (PF UAN / Form 16 / BGV / relieving-
+       * letter / joining-date checklist) via attachPostAcceptanceMessage.
+       * We append that structured message to the LLM reply so the
+       * candidate ACTUALLY receives it. The LLM is told not to improvise
+       * onboarding language; this is the deterministic-truth scaffold.
+       * Idempotent — appending the same message twice cannot happen
+       * because the kernel only attaches it once. */
+      if (state.phase === "accepted" && state.postAcceptanceMessage) {
+        if (!text.includes(state.postAcceptanceMessage)) {
+          text = (text.trim() ? text.trim() + "\n\n" : "") + state.postAcceptanceMessage;
+        }
+      }
 
       if (failureKinds.length > 0) {
         void captureServerEvent("kernel_validate_fail", distinctId, {
