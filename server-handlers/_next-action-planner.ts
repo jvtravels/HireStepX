@@ -954,6 +954,49 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
    * followup ask here — the existing path is the source of truth and
    * a duplicate planner emission would shadow it. */
 
+  /* F9 (PDF#20 2026-05-15) — directional expectation → value-proof routing.
+   *
+   * When the candidate's last reply contains directional value keywords
+   * (growth, ownership, upside, learning, culture, trajectory, impact,
+   * equity, meaningful, long-term) WITHOUT a specific number, and expectedCtc
+   * is still unanswered, the planner should probe what would make the
+   * opportunity worthwhile instead of re-asking the range.
+   *
+   * Priority: lower than hike-justification (fires only when no other
+   * reactive trigger has matched). Guards: !hasFired so it fires once per
+   * session; candidateTarget must be null (range still unanswered). */
+  if (state.candidateTarget == null && !hasFired("value-proof")) {
+    const lastCandidateText = (() => {
+      const log = state.conversationLog ?? [];
+      for (let i = log.length - 1; i >= 0; i--) {
+        const e = log[i];
+        if (e && e.speaker === "candidate") return e.text || "";
+      }
+      return "";
+    })();
+    const DIRECTIONAL_RE = /\b(growth|ownership|upside|learning|culture|trajectory|impact|equity|meaningful|long.?term)\b/i;
+    const HAS_SPECIFIC_NUMBER_RE = /\d+(?:\.\d+)?\s*(?:LPA|L\b|lakh|lakhs?|lac|lacs)/i;
+    if (
+      lastCandidateText &&
+      DIRECTIONAL_RE.test(lastCandidateText) &&
+      !HAS_SPECIFIC_NUMBER_RE.test(lastCandidateText)
+    ) {
+      return {
+        kind: "reactive-followup",
+        ask: "It sounds like the role's growth trajectory matters as much as the number — what would make the opportunity feel genuinely worth the move for you?",
+        trigger: "directional-expectation",
+        topic: "value-proof",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: "Candidate expressed directional value (growth/ownership/culture) without naming a number — probe what would make the move worthwhile.",
+          actionKind: "reactive-followup",
+          askedTopic: "value-proof",
+        },
+      };
+    }
+  }
+
   return null;
 }
 
