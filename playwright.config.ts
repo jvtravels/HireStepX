@@ -42,9 +42,13 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run dev",
+    // CI: serve a real production build for determinism + speed (avoids
+    // dev-mode HMR overhead and route compilation during the first test).
+    // The build step itself runs as a separate workflow step so this just
+    // boots `next start`. Local: keep dev for fast iteration.
+    command: process.env.CI ? "npm run start" : "npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    timeout: 120_000,
   },
 });
