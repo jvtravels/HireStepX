@@ -1961,8 +1961,13 @@ export function parseCandidateAnswer(
   const targetAsRange = rangeAnyPat.test(a) && target != null;
 
   /* Competing-without-number: candidate has signaled competing exists
-     but refuses or omits to share magnitude. */
-  const competingMentionPat = /\b(competing\s+offer|another\s+offer|other\s+offers?|offer\s+in\s+hand|other\s+companies|elsewhere|other\s+conversations|in\s+the\s+market)\b/i;
+     but refuses or omits to share magnitude.
+     F8 (PDF#20 2026-05-15) — expanded pattern set.  Added:
+       "another opportunity", "another offer", "evaluating other roles/
+       companies/options", "in process with", "in talks with",
+       "interviewing with/at/elsewhere", "offer on the table",
+       "multiple offers". */
+  const competingMentionPat = /\b(competing\s+offer|another\s+offer|another\s+opportunity|other\s+offers?|offer\s+in\s+hand|offer\s+on\s+the\s+table|other\s+companies|other\s+roles?|other\s+options?|other\s+conversations|elsewhere|in\s+the\s+market|evaluating\s+other|in\s+process\s+with|in\s+talks\s+with|interviewing\s+with|interviewing\s+at|interviewing\s+elsewhere|multiple\s+offers?)\b/i;
   const hedgePat = /\b(can.?t\s+share|prefer\s+not|nda|confidential|not\s+at\s+liberty|won.?t\s+disclose|details\s+(?:are\s+)?confidential)\b/i;
   const signalsCompetingExistsWithoutNumber =
     competing == null && competingMentionPat.test(a) && (hedgePat.test(a) || !/[\d]/.test(a));
