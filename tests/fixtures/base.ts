@@ -17,6 +17,9 @@ export const test = base.extend<Fixtures>({
     }
     const ok = await loginAsTestUser(page);
     if (!ok) test.skip(true, "login failed — check test-user provisioning");
+    // `use` is Playwright's fixture-provide API, not a React Hook —
+    // the rule can't tell them apart inside test files.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });
