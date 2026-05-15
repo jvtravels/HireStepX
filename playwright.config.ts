@@ -41,14 +41,17 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    // CI: serve a real production build for determinism + speed (avoids
-    // dev-mode HMR overhead and route compilation during the first test).
-    // The build step itself runs as a separate workflow step so this just
-    // boots `next start`. Local: keep dev for fast iteration.
-    command: process.env.CI ? "npm run start" : "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  // webServer is omitted when PLAYWRIGHT_SKIP_WEBSERVER=1 — set by the
+  // e2e.yml workflow that runs against a live Vercel preview URL. Locally
+  // we boot `next dev`; nothing else needs to start a server.
+  ...(process.env.PLAYWRIGHT_SKIP_WEBSERVER
+    ? {}
+    : {
+        webServer: {
+          command: "npm run dev",
+          url: "http://localhost:3000",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120_000,
+        },
+      }),
 });
