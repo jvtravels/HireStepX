@@ -855,6 +855,15 @@ export interface NegotiationState {
    * twice in the same session. Optional + nullable for back-compat
    * with sessions serialized before commit 4. */
   reactiveFollowupsFired?: string[];
+
+  /* F7 (PDF#20 2026-05-15) — askedTopics repetition guard.
+   * Ordered history of discovery topics the bot has asked, with the
+   * turnIndex at which each ask was emitted. applyAiMove pushes here
+   * whenever a move carries an askedTopic marker. planNextAction
+   * consults this ledger: if the same topic appears within the last 3
+   * turns, the planner skips it and advances to the next checklist item.
+   * Optional for back-compat with pre-F7 serialized sessions. */
+  askedTopics?: { topic: string; atTurn: number }[];
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -2875,6 +2884,22 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.reactiveFollowupsFired = [...fired, move.askedTopic];
     } else {
       next.reactiveFollowupsFired = fired;
+    }
+  }
+  /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
+   * ledger so planNextAction can skip same-topic probes within 3 turns.
+   * Use move.askedTopic if set (reactive-followups), otherwise fall back
+   * to move.lever (discovery probes carry the lever key "probe" which is
+   * less specific, but move.actionKind carries the item string for
+   * discovery-probe moves). Use the most-specific available key. */
+  {
+    const topicKey =
+      move.askedTopic ??
+      (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
+      move.lever;
+    if (topicKey) {
+      const prior = state.askedTopics ?? [];
+      next.askedTopics = [...prior, { topic: topicKey, atTurn: next.turnIndex }];
     }
   }
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {

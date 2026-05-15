@@ -113,6 +113,37 @@ export function actionToLever(action: NextAction, _state: NegotiationState): AiM
   return planNextActionInternal(_state)._move;
 }
 
+/** F7 (PDF#20 2026-05-15) — askedTopics repetition guard.
+ *  Returns true when `topic` appears in state.askedTopics within the
+ *  last `withinTurns` turns (default 3). Pure. */
+function wasTopicAskedRecently(
+  state: NegotiationState,
+  topic: string,
+  withinTurns = 3,
+): boolean {
+  const topics = state.askedTopics ?? [];
+  const cutoff = state.turnIndex - withinTurns;
+  return topics.some((t) => t.topic === topic && t.atTurn > cutoff);
+}
+
+/** F7 (PDF#20 2026-05-15) — build a merged "skip" record that combines
+ *  discoveryRefusedItems with any topics that were asked in the last
+ *  withinTurns turns so getNextOrderedDiscoveryItem skips them both. */
+function buildSkipRecord(
+  state: NegotiationState,
+  withinTurns = 3,
+): Record<string, boolean> | null {
+  const refused = state.discoveryRefusedItems ?? null;
+  const topics = state.askedTopics ?? [];
+  const cutoff = state.turnIndex - withinTurns;
+  const recentlyAsked: Record<string, boolean> = {};
+  for (const t of topics) {
+    if (t.atTurn > cutoff) recentlyAsked[t.topic] = true;
+  }
+  if (refused == null && Object.keys(recentlyAsked).length === 0) return null;
+  return { ...(refused ?? {}), ...recentlyAsked };
+}
+
 function planNextActionInternal(state: NegotiationState): PlannedAction {
   /* Terminal stickiness guard (session 13 bug, 2026-05-14): see notes in
    * the original move-picker. */
@@ -314,18 +345,22 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     ) {
       const roleFamily = classifyRoleFamily(state.role);
       if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
-        const refused = state.discoveryRefusedItems ?? null;
+        /* F7 (PDF#20 2026-05-15) — merge recently-asked topics into the
+         * skip record so getNextOrderedDiscoveryItem advances past topics
+         * that were asked within the last 3 turns. */
+        const skipRecord = buildSkipRecord(state);
         const orderedItem = getNextOrderedDiscoveryItem(
           state.discoveryChecklist,
           roleFamily,
-          refused,
+          skipRecord,
         );
         const ordered = getNextOrderedDiscoveryQuestion(
           state.discoveryChecklist,
           roleFamily,
-          refused,
+          skipRecord,
         );
         if (ordered != null && orderedItem != null) {
+          const refused = state.discoveryRefusedItems ?? null;
           const skippedHint = refused != null && Object.keys(refused).length > 0
             ? ` [ITEM REFUSED — SKIPPED: ${Object.keys(refused).join(", ")}; proceeding to ${orderedItem}]`
             : "";
@@ -338,6 +373,9 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
               newTotalLpa: null,
               rationale:
                 `Discovery incomplete (next: ${orderedItem}) — ask: ${ordered.prompt}${skippedHint}`,
+              /* F7 — carry the item key so applyAiMove can push it
+               * onto askedTopics for the repetition guard. */
+              askedTopic: orderedItem,
             },
           };
         }
@@ -351,6 +389,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
               lever: "probe",
               newTotalLpa: null,
               rationale: `Discovery incomplete (next: ${next.item}) — ask: ${next.prompt}`,
+              askedTopic: next.item,
             },
           };
         }
@@ -488,7 +527,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     ) {
       const roleFamily = classifyRoleFamily(state.role);
       if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
-        const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+        /* F7 — apply same repetition-guard merge here. */
+        const skipRecord = buildSkipRecord(state);
+        const next = skipRecord != null
+          ? (() => {
+              const item = getNextOrderedDiscoveryItem(state.discoveryChecklist!, roleFamily, skipRecord);
+              return item != null ? getNextDiscoveryQuestion(state.discoveryChecklist!, roleFamily) : null;
+            })()
+          : getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
         if (next != null) {
           return {
             kind: "discovery-probe",
@@ -498,6 +544,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
               lever: "probe",
               newTotalLpa: null,
               rationale: `Discovery incomplete (next: ${next.item}) — ask: ${next.prompt}`,
+              askedTopic: next.item,
             },
           };
         }
