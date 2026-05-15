@@ -40,6 +40,7 @@ import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-clas
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
 import { buildPostAcceptanceMessage } from "./_post-acceptance";
+import { detectInHandFraming, backComputeCtcFromInHand } from "./_in-hand-vs-ctc";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -113,9 +114,11 @@ import {
   EMPTY_DISCOVERY_CHECKLIST,
   backfillDiscoveryChecklist,
   isValidDiscoveryStage,
+  isDiscoveryComplete,
   type DiscoveryChecklist,
   type DiscoveryStage,
 } from "./_discovery-stage";
+import { classifyRoleFamily } from "./_company-band-tiers";
 
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
@@ -1022,6 +1025,31 @@ export function detectExplicitDecline(answer: string | null | undefined): boolea
   return EXPLICIT_DECLINE_PATTERNS.some((p) => p.test(answer));
 }
 
+/* Sprint B.2 (2026-05-15) — number-discipline gate.
+ *
+ * Recruiter-anchors-first is the #1 reason new recruiters give away money:
+ * the candidate dodges "what are you targeting?" and the recruiter
+ * volunteers a number. Real recruiters never disclose a specific number
+ * until either:
+ *   (a) the candidate has anchored (candidateTargetLpa is set), OR
+ *   (b) discovery is complete AND the candidate has refused the
+ *       expectation probe at least twice (probeRefusalCount ≥ 2).
+ *
+ * Returns true when it's safe to disclose a specific number. Pure. */
+export function canDiscloseSpecificNumber(state: NegotiationState): boolean {
+  if (state.candidateTarget != null) return true;
+  const refusals = state.probeRefusalCount ?? 0;
+  if (refusals >= 2) {
+    /* Discovery-complete check is only meaningful when the checklist is
+     * tracked; otherwise treat refusal-count alone as sufficient. */
+    const checklist = state.discoveryChecklist;
+    if (checklist == null) return true;
+    const fam = classifyRoleFamily(state.role);
+    return isDiscoveryComplete(checklist, fam);
+  }
+  return false;
+}
+
 /* Sprint A.4 (2026-05-15) — current-employer free-form extractor.
  * Patterns: "currently at X" / "working at X" / "I'm with X" / "I work
  * at X" / "right now at X" / "presently at/with X". Returns the proper-
@@ -1732,6 +1760,17 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     }
     next.candidateTarget = parsed.target;
     if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
+    /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation. If the
+     * candidate's anchor utterance frames the number as in-hand /
+     * take-home, flag it and back-compute a CTC-equivalent so downstream
+     * consumers can switch frames. Pure derived; the original target
+     * stays as candidateTarget (still in candidate's units) so existing
+     * counter math doesn't silently shift frame. */
+    if (detectInHandFraming(answer)) {
+      next.candidateTargetIsInHand = true;
+      const ctcEq = backComputeCtcFromInHand(parsed.target);
+      if (ctcEq != null) next.candidateTargetCtcEquivalentLpa = ctcEq;
+    }
   }
   if (parsed.currentCtc != null) next.candidateCurrentCtc = parsed.currentCtc;
   if (parsed.competing != null) next.competingOffer = parsed.competing;

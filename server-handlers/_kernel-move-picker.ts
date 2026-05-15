@@ -46,6 +46,7 @@ import {
   getNextDiscoveryQuestion,
   isDiscoveryComplete,
 } from "./_discovery-stage";
+import { recommendWalkAway } from "./_recruiter-critique";
 
 /** Pick the AI's move for this turn from state alone. Pure. */
 export function pickAiMove(state: NegotiationState): AiMove {
@@ -170,6 +171,25 @@ export function pickAiMove(state: NegotiationState): AiMove {
       rationale:
         "Discovery stage = probe-mismatch: probe the resume↔role domain switch BEFORE anchoring or discussing comp.",
     };
+  }
+
+  /* Sprint B.1 (2026-05-15) — live recruiter walk-away. Conservative
+   * detector in _recruiter-critique fires only on (target ≫ ceiling
+   * after ≥3 turns), (final-offer asserted 3×), (stacked bad-actor
+   * signals), or (at ceiling after ≥8 turns). When it fires, route to
+   * close-walkaway to terminate cleanly rather than continue eroding
+   * credibility. Sits after probe-mismatch (which must run first on
+   * mismatch sessions) and before the opening branch so a fresh
+   * session never hits walk-away on turn 0. */
+  if (!isTerminalPhase(state.phase) && state.phase !== "opening") {
+    const wa = recommendWalkAway(state);
+    if (wa.walk) {
+      return {
+        lever: "close-walkaway",
+        newTotalLpa: null,
+        rationale: `Live walk-away: ${wa.reason}`,
+      };
+    }
   }
 
   /* Opening: put the initial offer on the table. */

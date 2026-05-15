@@ -23,6 +23,7 @@ import type {
 import {
   findOutOfBandNumber,
   isVerbatimRepeat,
+  canDiscloseSpecificNumber,
 } from "./_negotiation-kernel";
 import { summarizeTranscriptIfLong, type TranscriptTurn } from "./_transcript-summarizer";
 import { detectRoleLabelMismatch } from "./_role-mismatch";
@@ -2296,6 +2297,36 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   if (state.recruiterFactsAlreadySaid && state.recruiterFactsAlreadySaid.length > 0) {
     parts.push(`[ALREADY-STATED FACTS (do NOT repeat verbatim): ${state.recruiterFactsAlreadySaid.join(",")}]`);
   }
+  /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
+   * the candidate has framed their target as in-hand, surface the CTC
+   * equivalent so the LLM can confirm the frame before responding. */
+  if (state.candidateTargetIsInHand && state.candidateTarget != null) {
+    const ctcEq = state.candidateTargetCtcEquivalentLpa;
+    if (ctcEq != null) {
+      parts.push(
+        `[CANDIDATE ANCHOR: in-hand ₹${state.candidateTarget}L → CTC equiv ≈ ₹${ctcEq}L — confirm before responding]`,
+      );
+    }
+  }
+
+  /* Sprint B.2 (2026-05-15) — number-discipline advisory. When the
+   * recruiter cannot yet disclose a specific number (no candidate
+   * anchor + discovery not closed-out via refusals), surface the gate
+   * so the LLM doesn't volunteer a number it shouldn't. Soft: emits the
+   * advisory only when the kernel hasn't already moved into a
+   * counter-offer (which by definition has the candidate's anchor). */
+  if (
+    !canDiscloseSpecificNumber(state) &&
+    state.phase !== "counter-offer" &&
+    state.phase !== "accepted" &&
+    state.phase !== "walked-away" &&
+    state.phase !== "stalemate"
+  ) {
+    parts.push(
+      "[NUMBER DISCIPLINE: do not disclose specific number yet — ask candidate's expectation first]",
+    );
+  }
+
   /* Tier-2 ship (2026-05-15) — non-salary constraints advisory. Single
    * optional field on state; emits one bracketed line when any constraint
    * fires. Detection happens upstream in candidate-answer ingestion. */
