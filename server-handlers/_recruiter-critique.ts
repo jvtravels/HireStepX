@@ -41,6 +41,7 @@
 
 import type { NegotiationState } from "./_negotiation-kernel";
 import type { KernelTurnSummary } from "./_negotiation-metrics";
+import { getWalkAwayThresholdMultiplier } from "./_market-mode";
 
 export type RecruiterCritiqueCode =
   | "open-too-high"
@@ -529,17 +530,25 @@ export function recommendWalkAway(state: NegotiationState): {
   const turn = state.turnIndex ?? 0;
   const profile = state.candidateProfile;
 
+  /* F5 (2026-05-15) — market-mode-coupled walk-away threshold. The
+   * "target > 1.2× maxStretch" gate is the structural walk-away trigger;
+   * couple it to market mode so soft markets fire EARLIER (less tolerance
+   * for over-band asks) and hot markets fire LATER (more flexibility on
+   * candidate stretch). Multiplier: soft 1.05× (tolerate less), hot
+   * 0.95× (tolerate more), neutral 1.0× (legacy behaviour). */
+  const walkMult = getWalkAwayThresholdMultiplier(state.marketMode ?? "neutral");
+
   /* (1) target far above ceiling with no flex (3+ stale turns). */
   if (
     target != null &&
     band &&
     typeof band.maxStretch === "number" &&
-    target > band.maxStretch * 1.2 &&
+    target > band.maxStretch * 1.2 * walkMult &&
     turn >= 3
   ) {
     return {
       walk: true,
-      reason: `Candidate target ₹${target}L is >20% above band ceiling ₹${band.maxStretch}L after ${turn} turns. Gap too wide to close.`,
+      reason: `Candidate target ₹${target}L is >${(20 * walkMult).toFixed(0)}% above band ceiling ₹${band.maxStretch}L after ${turn} turns. Gap too wide to close.`,
     };
   }
 

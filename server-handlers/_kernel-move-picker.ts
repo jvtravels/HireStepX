@@ -527,6 +527,15 @@ export function pickAiMove(state: NegotiationState): AiMove {
       if (cap != null) {
         const capped = state.candidateCurrentCtc * (1 + cap / 100);
         if (capped < ceiling) ceiling = Math.max(capped, floor);
+        // F7 (2026-05-15) — clamp hike-cap to band.maxStretch * 1.10.
+        // Company hike cap may exceed band.maxStretch by up to 10% —
+        // company-specific reality overrides generic band, but not
+        // unboundedly. Without this clamp a permissive company cap
+        // (e.g. 80% hike) paired with a high currentCtc could drift
+        // the ceiling far above any reasonable band, defeating the
+        // structural walk-away protections.
+        const hardCap = state.band.maxStretch * 1.10;
+        if (ceiling > hardCap) ceiling = Math.max(hardCap, floor);
       }
     }
     const aspiration = Math.min(target, ceiling);

@@ -1926,6 +1926,20 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     if (emp) next.currentEmployer = emp;
   }
 
+  /* F6 (2026-05-15) — probe-refusal counter. The move-picker's number-
+   * discipline gate watches probeRefusalCount to escalate from "soft
+   * probe" → "structural probe" → "close-walkaway" when the candidate
+   * keeps dodging the expectation question. Without this counter the
+   * gate is dead code — the move-picker can't see that the candidate
+   * refused. Increment monotonically when the candidate utterance is a
+   * recognisable refusal-of-disclosure. Pattern is intentionally narrow
+   * (false positives here would burn the requisition). */
+  if (
+    /i'?d prefer not|not comfortable sharing|let'?s come back|prefer to keep that|won'?t disclose|skip that|pass on that|rather not say|that's personal/i.test(answer)
+  ) {
+    next.probeRefusalCount = (state.probeRefusalCount ?? 0) + 1;
+  }
+
   /* Tier-2 ship wiring (2026-05-15) — non-salary constraints extraction.
    * Detector is already shipped and the brief-injection site already
    * reads `state.nonSalaryConstraints`; the only missing piece was the
