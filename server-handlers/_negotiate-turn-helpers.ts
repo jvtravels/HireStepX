@@ -34,6 +34,7 @@ import {
   getNextDiscoveryQuestion,
   isDiscoveryComplete,
 } from "./_discovery-stage";
+import { buildHikeJustificationBrief } from "./_hike-justification-probe";
 import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
 import { detectRedFlags } from "./_red-flags";
@@ -1962,6 +1963,25 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
         }
       }
     }
+  }
+  /* PDF #18 follow-up (2026-05-15) — hike-justification auto-probe.
+   * When the candidate's expected/current delta > 30% AND no role-
+   * specific value proof has been recorded, surface a bracketed probe
+   * directive so the LLM asks the right impact question this turn.
+   * Independent of stage so it can also surface during counter-offer /
+   * lever-explore. Suppressed in terminal phases. */
+  if (!isTerminalPhase(state.phase)) {
+    const valueProofProvided =
+      state.candidateProfile?.valueProofProvided === true;
+    const hikeBrief = buildHikeJustificationBrief(
+      {
+        currentCtcLpa: state.candidateCurrentCtc,
+        expectedCtcLpa: state.candidateTarget,
+        valueProofProvided,
+      },
+      classifyRoleFamily(state.role),
+    );
+    if (hikeBrief) parts.push(hikeBrief);
   }
   parts.push(`lever=${move.lever}`);
   if (move.newTotalLpa != null) parts.push(`newTotalLpa=${move.newTotalLpa}`);

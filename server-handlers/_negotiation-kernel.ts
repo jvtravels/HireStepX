@@ -2851,6 +2851,8 @@ export function validateState(state: unknown): asserts state is NegotiationState
       "valueProofAsked", "valueProofAnswered",
       "targetAsked", "targetAnswered",
       "variableComfortTested", "commitmentValidationAsked",
+      "currentCtcFixedVariableSplitDisclosed",
+      "expectedCtcFixedVariableSplitDisclosed",
     ];
     for (const k of keys) {
       if (dc[k] !== undefined && typeof dc[k] !== "boolean") {
