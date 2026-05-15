@@ -21,5 +21,14 @@ note inline when shipped — don't delete the line). Sweep monthly.
 - [2026-05-15 | cb1aa75] Dedicated `[ITEM REFUSED — SKIPPED]` brief-injection test — covered transitively in `refusalFallback.test.ts`; no standalone brief test.
 - [2026-05-15] ~6 pre-existing flaky tests (verifyAuth retry + e2e-flows localStorage timing + wave3/wave4 system-prompt regex timeouts) — env flakes, unrelated to recent ships. Show up in some `vitest run` invocations and not others.
 
+## Negotiation-flow redesign (2026-05-15 session — commits 3, 4, 6, 7, 8)
+- [2026-05-15] Commit 3 — `planNextAction(state) → NextAction` central planner that owns the "what should the recruiter do this turn" decision (currently distributed across move-picker + brief + system-prompt + discovery-sequence). Cut: would require an audit pass over all 4 producers to make sure the planner doesn't drift from current behavior; one-shot risk too high for this session. `validateNextActionEmitted` (commit 5) was scope-cut to re-use `getNextDiscoveryQuestion` instead of consuming `planNextAction` output.
+- [2026-05-15] Commit 4 — `lastBriefTags` → `briefDecisionLog: BriefDecisionEntry[]` ring buffer (last 5 turns of {tag, turnIndex, reason, accepted}). Cut: state-shape extension touches every reducer call site; without commit 3's planner the entries would be redundant with existing decisionLog.
+- [2026-05-15] Commit 6 — Discovery-sequence rewrite from imperative `getNextDiscoveryQuestion` switch-table to declarative `DISCOVERY_SEQUENCE: Question[]` array with `nextUnanswered(checklist, sequence)` reducer. Cut: cosmetic refactor under hot-path; defer until commit 3's planner consumes it.
+- [2026-05-15] Commit 7 — Voss-tactics scheduler — make labels/mirrors/calibrated-questions fire by a scheduler (turn-cadence + state-trigger) instead of opportunistic in-brief prompt injection. Cut: needs the briefDecisionLog from commit 4 to avoid stacking tactics on the same draft.
+- [2026-05-15] Commit 8 — Decision-log surfacing in the post-session coach view — render the (still-deferred) briefDecisionLog as "why the recruiter did X on turn N" timeline. Cut: depends on commits 3+4 landing; surface-only ship.
+
+Each of commits 3-8 still makes sense and would compound nicely on the 1+2+5 foundation that landed: commit 3 (planner) is the keystone — commits 4, 6, 7, 8 all read cleaner once a single function owns "what's the next move." Recommend commits in order 3 → 6 → 4 → 7 → 8 next session.
+
 ## Orphan-detector scope
 - [2026-05-15 | 4482f87] `src/__tests__/orphanExports.test.ts` scopes to kernel + negotiation core files. Razorpay/CORS/subscription helpers in `server-handlers/_*.ts` carry ~140 additional "test-only exported" symbols; out of scope for the dead-wiring threat model (they're public API surfaces by design). Widening scope is its own triage ship.
