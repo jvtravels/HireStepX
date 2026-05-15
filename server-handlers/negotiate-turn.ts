@@ -75,6 +75,7 @@ import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, getSystemPrompt, type PromptVariant } from "./_prompt-variants";
 import { detectBotReplyRepetition, BOT_REPLY_REPETITION_THRESHOLD } from "./_recruiter-facts";
 import { assessTurnCoherence } from "./_turn-coherence";
+import { validateNumberDiscipline, validateBudgetDiscipline } from "./_response-validators";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -250,7 +251,12 @@ export async function generateAiText(
      * address it, reroll once with an explicit answer-the-question note.
      * Mirrors the repetition reroll pattern. */
     const coh = assessTurnCoherence(candidateAnswer, a1.text);
-    if (!rep.repeated && coh.coherent) {
+    /* Architectural bug-prevention (2026-05-15) — promote NUMBER DISCIPLINE
+     * and BUDGET DISCIPLINE to post-generation state validators. The
+     * prompt still carries the rules; these are the enforcement layer. */
+    const numDisc = validateNumberDiscipline(a1.text, state);
+    const budDisc = validateBudgetDiscipline(a1.text, state);
+    if (!rep.repeated && coh.coherent && numDisc.ok && budDisc.ok) {
       return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
     }
     /* F3 (2026-05-15) — reroll cap. We allow at most ONE reroll across
@@ -274,6 +280,14 @@ export async function generateAiText(
         `ANSWER THE CANDIDATE'S LAST UTTERANCE DIRECTLY. ${coh.reason ?? ""} Either give a specific number or an explicit deferral ("I'll come back to that"), and keep content overlap with the candidate's question.`,
       );
     }
+    if (!numDisc.ok) {
+      console.warn(`[negotiate-turn] number-discipline violation (${numDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${numDisc.reason}]`);
+    }
+    if (!budDisc.ok) {
+      console.warn(`[negotiate-turn] budget-discipline violation (${budDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${budDisc.reason}]`);
+    }
     const rerollUser = user + `\n\nNOTE — ${rerollNotes.join(" ")}`;
     rerollAttempts++;
     const a1b = await attempt(rerollUser);
@@ -282,7 +296,9 @@ export async function generateAiText(
       if (a1b.failures.length === 0) {
         const rep2 = detectBotReplyRepetition(a1b.text, state.lastBotReply ?? null);
         const coh2 = assessTurnCoherence(candidateAnswer, a1b.text);
-        if (!rep2.repeated && coh2.coherent) {
+        const numDisc2 = validateNumberDiscipline(a1b.text, state);
+        const budDisc2 = validateBudgetDiscipline(a1b.text, state);
+        if (!rep2.repeated && coh2.coherent && numDisc2.ok && budDisc2.ok) {
           return { text: enforceRoleLabel(a1b.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
         }
         if (rep2.repeated) {
@@ -290,6 +306,25 @@ export async function generateAiText(
         }
         if (!coh2.coherent) {
           console.warn(`[negotiate-turn] turn-incoherence persisted after reroll (${coh2.reason ?? ""}); returning original`);
+        }
+        /* Architectural bug-prevention (2026-05-15) — validator fallthrough.
+         * Log the rejection to the decision log so post-hoc replay sees
+         * exactly which discipline persisted past the reroll cap. We do
+         * not hard-fail user-facing: the response goes out, but the trail
+         * is recorded. */
+        if (!numDisc2.ok || !budDisc2.ok) {
+          const reasons = [
+            !numDisc2.ok ? numDisc2.reason : null,
+            !budDisc2.ok ? budDisc2.reason : null,
+          ].filter((r): r is string => !!r);
+          console.warn(`[negotiate-turn] validator fallthrough: ${reasons.join(" | ")}`);
+          if (!state.decisionLog) state.decisionLog = [];
+          state.decisionLog.push({
+            turn: state.turnIndex,
+            picker: "validator-reject-fallthrough",
+            rationale: reasons.join(" | "),
+            phase: state.phase,
+          });
         }
       }
     }
