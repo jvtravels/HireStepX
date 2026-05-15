@@ -933,6 +933,12 @@ export interface TurnDelta {
   disclosedFixedVariableSplit: boolean;
   /** Candidate disclosed notice period or notice-related signal (buyout / LWD). */
   disclosedNoticePeriod: boolean;
+  /** Candidate confirmed buyout availability THIS turn (pre.buyoutRequested
+   *  false → post true). Distinct from disclosedNoticePeriod which also
+   *  fires on bare notice-day disclosures. Used by the reactive-rule
+   *  layer to acknowledge buyout before advancing discovery. (Fix 6,
+   *  2026-05-16) */
+  noticeBuyoutConfirmed: boolean;
   /** Candidate disclosed a competing offer (number OR named-vague signal). */
   disclosedCompetingOffer: boolean;
   /** Candidate disclosed a joining-date / early-join signal. */
@@ -958,6 +964,7 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
   disclosedExpectedCtc: false,
   disclosedFixedVariableSplit: false,
   disclosedNoticePeriod: false,
+  noticeBuyoutConfirmed: false,
   disclosedCompetingOffer: false,
   disclosedJoiningDate: false,
   disclosedValueProof: false,
@@ -1012,6 +1019,12 @@ export function computeTurnDelta(
       (nn.lastWorkingDayText != null && nn.lastWorkingDayText !== pn.lastWorkingDayText)
     ) {
       d.disclosedNoticePeriod = true;
+    }
+    /* Buyout confirmation flip (Fix 6, 2026-05-16). Distinguished from
+     * disclosedNoticePeriod so the reactive-rule layer can acknowledge
+     * the buyout disclosure before advancing ordered discovery. */
+    if (nn.buyoutRequested && !pn.buyoutRequested) {
+      d.noticeBuyoutConfirmed = true;
     }
     if (
       (nn.earlyJoinPreferred && !pn.earlyJoinPreferred) ||

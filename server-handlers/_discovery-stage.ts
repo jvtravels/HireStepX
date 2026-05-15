@@ -299,36 +299,46 @@ function getValueProofPrompt(roleFamily: RoleFamily): string {
       );
     case "product":
       return (
-        "What's the biggest product or feature you've shipped, and " +
-        "what metrics did it move?"
+        "Tell me about one project from your current role you're most " +
+        "proud of — something with metrics concrete enough to bring up " +
+        "in a comp discussion."
       );
     case "engineering":
       return (
-        "Walk me through the most complex system you've architected. " +
-        "Scale numbers?"
+        "Tell me about one project from your current role you're most " +
+        "proud of — something where your impact is concrete enough to " +
+        "bring up in a comp discussion."
       );
     case "design":
       return (
-        "Walk me through the depth of your portfolio — what are the " +
-        "two pieces you're proudest of and what was the impact?"
+        "Tell me about one piece of work from your current role you're " +
+        "most proud of — something where the impact is concrete enough " +
+        "to bring up in a comp discussion."
       );
     case "marketing":
       return (
-        "What's the biggest campaign or growth lever you've owned, " +
-        "and what metrics moved?"
+        "Tell me about one campaign or growth initiative from your " +
+        "current role you're most proud of — something with impact " +
+        "concrete enough to bring up in a comp discussion."
       );
     case "data":
       return (
-        "Walk me through the most impactful model or analysis you've " +
-        "shipped — what decision did it drive?"
+        "Tell me about one piece of work from your current role you're " +
+        "most proud of — something where the business impact is " +
+        "concrete enough to bring up in a comp discussion."
       );
     case "ops":
       return (
-        "What's the most material process or system you've owned, " +
-        "and what efficiency / cost metrics moved?"
+        "Tell me about one initiative from your current role you're " +
+        "most proud of — something with efficiency or cost impact " +
+        "concrete enough to bring up in a comp discussion."
       );
     default:
-      return "Walk me through your most impactful work and the metrics it moved.";
+      return (
+        "Tell me about one thing from your current role you're most " +
+        "proud of — something with impact concrete enough to bring up " +
+        "in a comp discussion."
+      );
   }
 }
 
@@ -571,36 +581,46 @@ function getOrderedValueProofPrompt(roleFamily: RoleFamily): string {
       );
     case "product":
       return (
-        "What's the biggest product or feature you've shipped, and " +
-        "what metrics did it move?"
+        "Tell me about one project from your current role you're most " +
+        "proud of — something with metrics concrete enough to bring up " +
+        "in a comp discussion."
       );
     case "engineering":
       return (
-        "Walk me through the most complex system you've architected. " +
-        "Scale numbers?"
+        "Tell me about one project from your current role you're most " +
+        "proud of — something where your impact is concrete enough to " +
+        "bring up in a comp discussion."
       );
     case "design":
       return (
-        "Walk me through the depth of your portfolio — what are the " +
-        "two pieces you're proudest of and what was the impact?"
+        "Tell me about one piece of work from your current role you're " +
+        "most proud of — something where the impact is concrete enough " +
+        "to bring up in a comp discussion."
       );
     case "marketing":
       return (
-        "What's the biggest campaign or growth lever you've owned, " +
-        "and what metrics moved?"
+        "Tell me about one campaign or growth initiative from your " +
+        "current role you're most proud of — something with impact " +
+        "concrete enough to bring up in a comp discussion."
       );
     case "data":
       return (
-        "Walk me through the most impactful model or analysis you've " +
-        "shipped — what decision did it drive?"
+        "Tell me about one piece of work from your current role you're " +
+        "most proud of — something where the business impact is " +
+        "concrete enough to bring up in a comp discussion."
       );
     case "ops":
       return (
-        "What's the most material process or system you've owned, " +
-        "and what efficiency / cost metrics moved?"
+        "Tell me about one initiative from your current role you're " +
+        "most proud of — something with efficiency or cost impact " +
+        "concrete enough to bring up in a comp discussion."
       );
     default:
-      return "Walk me through your most impactful work and the metrics it moved.";
+      return (
+        "Tell me about one thing from your current role you're most " +
+        "proud of — something with impact concrete enough to bring up " +
+        "in a comp discussion."
+      );
   }
 }
 

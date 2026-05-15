@@ -161,17 +161,23 @@ type RequestBody = InitRequest | TurnRequest;
 /* ─── LLM glue (injectable for tests) ─────────────────────────────── */
 
 export interface LlmCaller {
-  (system: string, user: string, opts: { userId?: string }): Promise<string>;
+  (
+    system: string,
+    user: string,
+    opts: { userId?: string; jsonMode?: boolean },
+  ): Promise<string>;
 }
 
 const defaultLlmCaller: LlmCaller = async (system, user, opts) => {
-  /* jsonMode: true forces Groq / Gemini / Cerebras into structured
-     response mode. The prompt asks for a 4-field envelope (text,
-     roleMentioned, totalLpaMentioned, leverExecuted) — see
-     buildAiPrompt. maxTokens bumped from 220 to 320 to make room for
-     the JSON envelope keys; the actual prose stays 1–3 sentences. */
+  /* jsonMode is now caller-opt-in (Fix 5, 2026-05-16). The kernel-first
+   * restyle prompt produces plain prose ("OUTPUT: just the restyled
+   * line, no preamble") — forcing Groq into structured mode wraps the
+   * line in `{"text":"..."}` which the downstream restyle validator
+   * cannot decode. Pass jsonMode: true only when the caller's prompt
+   * explicitly asks for a JSON envelope. Default false. */
+  const jsonMode = opts.jsonMode === true;
   const result = await callLLM(
-    { prompt: `${system}\n\n${user}`, temperature: 0.7, maxTokens: 320, fast: true, jsonMode: true },
+    { prompt: `${system}\n\n${user}`, temperature: 0.7, maxTokens: 320, fast: true, jsonMode },
     8000,
     { userId: opts.userId, endpoint: "negotiate-turn" },
   );

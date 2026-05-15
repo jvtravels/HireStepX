@@ -138,14 +138,22 @@ export function renderCanonicalProse(
     }
 
     case "discovery-probe": {
-      const item = action.item;
+      /* Planner emits item keys with the `*Answered` suffix (mirroring
+       * DiscoveryItemKey from _discovery-stage). Strip the suffix once
+       * so the switch arms accept either form — previously every key
+       * fell through to `action.ask`, which is the engineering "complex
+       * system" tech-interview prompt etc. (Fix 3, 2026-05-16). */
+      const rawItem = action.item;
+      const item = rawItem.endsWith("Answered")
+        ? rawItem.slice(0, -"Answered".length)
+        : rawItem;
       if (item === "currentCtc") {
         return "Let's start with where you are today — what's your current total CTC?";
       }
-      if (item === "currentCtcFixedVariableSplit") {
+      if (item === "fixedVariableSplit" || item === "currentCtcFixedVariableSplit") {
         return "And how does that break down between fixed and variable?";
       }
-      if (item === "expectedCtc") {
+      if (item === "expectedCtc" || item === "target") {
         return "What were you expecting for this move — in numbers, what range are you targeting?";
       }
       if (item === "expectedCtcFixedVariableSplit") {
@@ -158,7 +166,7 @@ export function renderCanonicalProse(
         return "Are you actively in process with any other companies?";
       }
       if (item === "valueProof") {
-        return "Walk me through one thing in your current role you're genuinely proud of — something that shows the impact you can bring here.";
+        return "Tell me about one project from your current role you're most proud of — something where your impact is concrete enough to bring up in a comp discussion.";
       }
       /* Discovery-probe for any other checklist item — defer to the
        * planner-supplied prompt (already kernel-authored, never an LLM

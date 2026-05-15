@@ -1007,6 +1007,29 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     }
   }
 
+  /* Rule: notice-buyout-confirm — candidate JUST confirmed buyout
+   * availability this turn ("there is an option to buy out", "they
+   * allow buyout", etc.). Without this rule the kernel silently
+   * advances to the next ordered discovery item, ignoring the
+   * disclosure. Acknowledge before moving on. (Fix 6, 2026-05-16) */
+  if (delta.noticeBuyoutConfirmed && !hasFired("notice-buyout-confirm")) {
+    return {
+      kind: "reactive-followup",
+      ask:
+        "Got it — buyout is on the table. That helps us move faster on the timeline if we get to that stage.",
+      trigger: "buyout-confirmed",
+      topic: "notice-buyout-confirm",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale:
+          "Candidate confirmed buyout availability — acknowledge before advancing ordered discovery.",
+        actionKind: "reactive-followup",
+        askedTopic: "notice-buyout-confirm",
+      },
+    };
+  }
+
   /* Rule: notice-buyout — candidate disclosed >= 60d notice. Buyout
    * conversation is the standard recruiter response on long runways. */
   if (delta.disclosedNoticePeriod && !hasFired("notice-buyout")) {

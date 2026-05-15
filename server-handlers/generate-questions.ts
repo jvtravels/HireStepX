@@ -17,7 +17,8 @@ import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { getCompanyTier } from "../data/company-tiers";
-import { detectRoleLabelMismatch } from "./_role-mismatch";
+import { renderCanonicalProse } from "./_canonical-prose";
+import { initState as initNegotiationState } from "./_negotiation-kernel";
 import {
   fetchLiveAggregate,
   formatLiveAggregateBlock,
@@ -894,115 +895,56 @@ Requirements:
     // inject a fallback offer using the negotiation band so the candidate
     // actually sees a number to negotiate against.
     if (isSalaryType && negotiationBandData) {
-      const hasRupee = (text: string): boolean => /(?:₹|inr\s*)?\d{1,3}(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crores?)/i.test(text);
-      const q1Text = (questions[1] as { question?: string; text?: string })?.question || (questions[1] as { question?: string; text?: string })?.text || "";
-      const q0Text = (questions[0] as { question?: string; text?: string })?.question || (questions[0] as { question?: string; text?: string })?.text || "";
-      if (!hasRupee(q1Text) && !hasRupee(q0Text)) {
-        // Clamp the injected initial offer to the manager's authority
-        // ceiling. If a buggy generateNegotiationBand ever produced an
-        // initialOffer above walkAway, the fallback would silently
-        // present an offer the LLM later claims is impossible — kills
-        // realism. This clamp is defensive but cheap.
-        const safeInitial = Math.min(
-          Math.round(negotiationBandData.initialOffer),
-          Math.round(negotiationBandData.walkAway),
+      /* Kernel-first turn 0 (Fix 1, 2026-05-16). Previously this block
+       * injected `"we'd like to extend an offer at ₹X LPA total CTC"`
+       * as q[1] whenever the LLM's opener lacked a rupee number — and
+       * separately validated/rewrote LLM-authored openers that DID
+       * contain numbers. Both paths violated the kernel-first
+       * architecture: the bot's first line is supposed to be the
+       * kernel canonical opening-greeting (a discovery probe with NO
+       * number), and the LLM should only ever restyle that line on
+       * subsequent turns via /api/negotiate-turn.
+       *
+       * We now ALWAYS replace q[1] (the bot's opener slot) with the
+       * canonical kernel opening line for salary-negotiation. The LLM
+       * never sees the chance to anchor in turn 0; tech-interview
+       * style probes never reach the candidate. */
+      try {
+        const kernelState = initNegotiationState({
+          sessionId: "generate-questions-opener",
+          role: role || "this role",
+          company: company || "this company",
+          band: {
+            initialOffer: Math.round(negotiationBandData.initialOffer),
+            maxStretch: Math.round(negotiationBandData.maxStretch),
+            walkAway: Math.round(negotiationBandData.walkAway),
+          } as unknown as Parameters<typeof initNegotiationState>[0]["band"],
+          marketMode: (negotiationBandData as { marketMode?: "hot" | "neutral" | "soft" }).marketMode ?? "neutral",
+        });
+        const opener = renderCanonicalProse(
+          { kind: "open-with-offer" } as Parameters<typeof renderCanonicalProse>[0],
+          kernelState,
         );
-        const initial = safeInitial;
-        // Indian-HR convention: headline first, breakdown only on request.
-        // The earlier "base + variable + benefits + gratuity" template
-        // gave away the breakdown on turn 1, which never happens in real
-        // Indian negotiations. Now we present the total CTC as a single
-        // number and invite the candidate to ask for the structure if
-        // they want it.
-        const fallbackOffer = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${initial} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
-        // Replace question 1 (initial offer) with the fallback. If the array
-        // is shorter, push it.
         if (questions.length >= 2) {
-          (questions[1] as { question?: string; text?: string }).question = fallbackOffer;
-          (questions[1] as { question?: string; text?: string }).text = fallbackOffer;
+          (questions[1] as { question?: string; text?: string }).question = opener;
+          (questions[1] as { question?: string; text?: string }).text = opener;
         }
-        console.warn(`[generate-questions] salary-neg initial offer was vague — injected fallback ₹${initial} LPA opener for ${company || "company"}`);
-      } else {
-        /* Validate EVERY salary-negotiation script question, not just q[1].
-           Previously only the opener (q[1]) got band/role/dangling-unit
-           checks. The Lollypop "Senior UX Designer" session (2026-05-13)
-           shipped:
-             - q[2] hallucinating "Senior Product Designer" position
-             - q[3] proposing "₹43.6 LPA" against a maxStretch of ~22.5
-           Both q[2] and q[3] were never validated. The kernel takes
-           over on subsequent turns, but the engine can fall back to
-           the static script when kernel turns drop on timeout / stale
-           step / network blip — and those drops happen often enough
-           that letting q[2..N] ship un-validated is an unbounded risk.
-           Same checks, same single rewrite path, applied to every q. */
-        const ceiling = negotiationBandData.maxStretch;
-        const floor = negotiationBandData.initialOffer * 0.9;
-        const safeOpener = Math.round(negotiationBandData.initialOffer);
-        const safeRewrite = `So, for the ${role || "role"} position, we'd like to extend an offer at ₹${safeOpener} LPA total CTC. Happy to walk you through the structure if you'd like — but first, how does the number land for you?`;
-        const numRe = /(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:LPA|lpa|lakhs?|cr|crore)/gi;
-        const unitRe = /(?:^|[^0-9.])(?:LPA|lpa|lakhs?|crore)\b/g;
-
-        for (let qi = 1; qi < questions.length; qi++) {
-          const qObj = questions[qi] as { question?: string; text?: string };
-          const body = qObj?.question || qObj?.text || "";
-          if (!body) continue;
-
-          const hits: number[] = [];
-          let nm: RegExpExecArray | null;
-          numRe.lastIndex = 0;
-          while ((nm = numRe.exec(body)) !== null) {
-            const v = parseFloat(nm[1]);
-            const isCr = /cr|crore/i.test(nm[0]);
-            hits.push(isCr ? v * 100 : v);
-          }
-          const headline = hits.length > 0 ? Math.max(...hits) : null;
-          const aboveBand = headline !== null && headline > ceiling * 1.05;
-          /* Below-band only applies to q[1] (opener) — later turns may
-             reference the candidate's lower current CTC etc. */
-          const belowBand = qi === 1 && headline !== null && headline < floor;
-          const roleMismatch = detectRoleLabelMismatch(body, role || "");
-          const danglingUnit = (() => {
-            const m = Array.from(body.matchAll(unitRe));
-            for (const mm of m) {
-              const idx = mm.index ?? 0;
-              const unitStart = idx + (mm[0][0] && /[^A-Za-z]/.test(mm[0][0]) ? 1 : 0);
-              const lookback = body.slice(Math.max(0, unitStart - 8), unitStart);
-              if (!/\d/.test(lookback)) return true;
-            }
-            return false;
-          })();
-
-          const reasons: string[] = [];
-          if (aboveBand) reasons.push("above-band");
-          if (belowBand) reasons.push("below-band");
-          if (roleMismatch) reasons.push("role-mismatch");
-          if (danglingUnit) reasons.push("dangling-unit");
-          if (reasons.length === 0) continue;
-
-          /* Two rewrite templates: opener (q[1]) vs later turns. Later
-             turns can't reuse the opener template — pasting "we'd like
-             to extend an offer at ₹X" into q[3] would re-open. Instead
-             use a neutral "let me reset" line that hands control back
-             to the kernel on the next user response without committing
-             to a specific number or claim. */
-          const replacement = qi === 1
-            ? safeRewrite
-            : `Let me pause and reset on this. Based on where we are, the position we're discussing is ${role || "this role"}, and the offer on the table is ₹${safeOpener} LPA total CTC. What would you like to focus on from here?`;
-          qObj.question = replacement;
-          qObj.text = replacement;
-
-          console.warn(`[generate-questions] salary-neg q[${qi}] failed validation (${reasons.join(",")}) — rewrote for ${company || "company"} (role=${role || "?"}, band=₹${safeOpener}/${ceiling}L, headline=${headline ?? "none"})`);
-          void captureServerEvent("opener_rewrite_triggered", distinctIdFrom(req, auth.userId), {
-            reasons: reasons.join(","),
-            q_index: qi,
-            role: role || null,
-            company: (company || "").slice(0, 80),
-            headline: headline ?? null,
-            band_initial: negotiationBandData.initialOffer,
-            band_max: ceiling,
-          }, req);
+        console.warn(`[generate-questions] salary-neg q[1] replaced with kernel canonical opener (no anchor) for ${company || "company"}`);
+      } catch (kernelErr) {
+        console.warn(`[generate-questions] salary-neg kernel opener failed; falling back to safe greeting: ${(kernelErr as Error).message}`);
+        const safeOpener = `Thanks for taking the time today. Let's get into it — to start, can you walk me through your current compensation structure?`;
+        if (questions.length >= 2) {
+          (questions[1] as { question?: string; text?: string }).question = safeOpener;
+          (questions[1] as { question?: string; text?: string }).text = safeOpener;
         }
       }
+      /* Fix 2 (2026-05-16): legacy q[2..N] anchor-validation block has been
+       * removed. With salary-negotiation routed through /api/negotiate-turn
+       * for every turn, the static-script q[2..N] is never consumed by the
+       * UI — validating it here was either misleading telemetry or, worse,
+       * shipping an anchor-bearing "Let me pause and reset…₹X LPA" line if
+       * the kernel route ever fell back to the script. The kernel canonical
+       * prose is the sole source for all bot turns now. */
     }
 
     // Validate each question has required fields
