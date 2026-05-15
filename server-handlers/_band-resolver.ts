@@ -24,6 +24,7 @@ import {
   classifyCompanyTier as classifyBandTier,
   getBandForRole as getBandTierRoleBand,
 } from "./_company-band-tiers";
+import { clampBandToTargetRoleMarket } from "./_band-target-clamp";
 
 /** Fresher-flow extension (2026-05-14c). Per-college-tier multiplier
  *  applied to the entry-level band. Calibrated to Indian campus hiring
@@ -291,7 +292,15 @@ export function resolveServerBand(
       }
     }
 
-    return band;
+    /* PDF #18 root-cause (2026-05-15) — target-role band clamp. QA-
+     * testing / support roles inherit the engineering reference table
+     * (classifyRoleFamily defaults unknown technical titles to
+     * "engineering"), but their market is structurally lower. Apply
+     * the target-role compressor here, AFTER all other resolver
+     * passes, so internship / college-tier / probation transforms run
+     * against the right starting band first. One-way: only compresses. */
+    const clamped = clampBandToTargetRoleMarket(band, role);
+    return clamped.band;
   } catch {
     return DEFAULT_BAND;
   }

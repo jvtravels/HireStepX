@@ -1909,6 +1909,17 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
       `[OPEN PROMISES TO HONOR THIS TURN — deliver substantive answers, don't restate the promise: ${list}]`,
     );
   }
+  /* PDF #18 root-cause (2026-05-15) — candidate-disclosure acknowledgement.
+   * Symmetric counterpart to OPEN PROMISES. When the candidate disclosed
+   * a fact (notice period, current CTC, competing offer, joining date)
+   * that the bot hasn't acknowledged yet, surface it here so the next
+   * turn MUST address it. */
+  if (Array.isArray(state.pendingCandidateAcks) && state.pendingCandidateAcks.length > 0) {
+    const list = state.pendingCandidateAcks.slice(0, 4).map((e) => e.label).join("; ");
+    parts.push(
+      `[CANDIDATE DISCLOSED — ACKNOWLEDGE THIS TURN: ${list}]`,
+    );
+  }
   /* PDF #17 architectural fix follow-up (2026-05-15) — discovery-stage
    * brief injection. Surfaces the active discovery stage and (when
    * relevant) the next open discovery question as bracketed lines, the

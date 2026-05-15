@@ -84,3 +84,59 @@ describe("Sprint C.1 — non-question statement", () => {
     expect(r.coherent).toBe(true);
   });
 });
+
+describe("PDF #18 — breakdown-ask strengthening", () => {
+  it("'split it down' + benefits-only reply (no number) → incoherent", () => {
+    const r = assessTurnCoherence(
+      "Can you split it down for me?",
+      "We offer medical insurance, PF, and a great learning platform.",
+    );
+    expect(r.coherent).toBe(false);
+    expect(r.reason).toMatch(/breakdown/);
+  });
+
+  it("'show me the variable split' + number-flagged reply → coherent", () => {
+    const r = assessTurnCoherence(
+      "Show me the variable split.",
+      "Fixed is 24 LPA, variable is 4 LPA on target.",
+    );
+    expect(r.coherent).toBe(true);
+  });
+
+  it("'fixed and variable breakdown' + benefits-only reply → incoherent", () => {
+    const r = assessTurnCoherence(
+      "Give me a fixed and variable breakdown.",
+      "We have hybrid work and excellent leave policy.",
+    );
+    expect(r.coherent).toBe(false);
+  });
+
+  it("'comp breakdown' + multi-number split (no unit) → coherent", () => {
+    /* Two distinct numeric tokens count as a coherent split — common
+     * Indian recruiter phrasing "fixed 18, variable 4". */
+    const r = assessTurnCoherence(
+      "Can I see the comp breakdown?",
+      "Fixed 18, variable 4, total CTC adds up.",
+    );
+    expect(r.coherent).toBe(true);
+  });
+
+  it("breakdown ask + reply with a single bare digit (no LPA unit) → incoherent", () => {
+    /* The strengthened detector requires either an LPA-flagged figure
+     * OR ≥2 numeric tokens. A single bare digit no longer satisfies a
+     * breakdown ask. */
+    const r = assessTurnCoherence(
+      "What's the salary breakdown?",
+      "We are happy to share more in round 2.",
+    );
+    expect(r.coherent).toBe(false);
+  });
+
+  it("breakdown ask + deferral → coherent", () => {
+    const r = assessTurnCoherence(
+      "Give me the fixed and variable breakdown.",
+      "Let me check with finance and confirm tomorrow.",
+    );
+    expect(r.coherent).toBe(true);
+  });
+});

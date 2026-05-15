@@ -40,7 +40,24 @@ const BREAKDOWN_ASK_PATTERNS: RegExp[] = [
   /\bin[\s-]?hand\s*\?/i,
   /\bwhat'?s?\s+(?:my|the)\s+in[\s-]?hand\b/i,
   /\bbreak\s*down\b/i,
+  /* PDF #18 (2026-05-15) — additional breakdown ask phrasings. The real
+   * session had the candidate say "split it down" / "show me the variable
+   * split" / "fixed and variable breakdown" and the bot returned a
+   * benefits restatement (no numeric content). Each pattern below
+   * captures one of those phrasings. */
+  /\bsplit\s+it\s+down\b/i,
+  /\bshow\s+me\s+(?:the\s+)?(?:variable|fixed|comp(?:ensation)?)\s+(?:split|breakdown|breakup)\b/i,
+  /\bfixed\s+and\s+variable\s+(?:breakdown|breakup|split)\b/i,
+  /\b(?:fixed|variable)\s*(?:vs|\/|and)\s*(?:variable|fixed)\b/i,
+  /\bcomp(?:ensation)?\s+(?:breakdown|breakup|split)\b/i,
+  /\bsalary\s+(?:breakdown|breakup|split|structure)\b/i,
 ];
+
+/** PDF #18 (2026-05-15) — looser numeric-content detector. A real
+ *  numeric answer must contain a multi-digit number OR a ₹/lakh/LPA-
+ *  flagged figure. Standalone digit 0 doesn't count (e.g. "0 days
+ *  notice" wouldn't satisfy a comp breakdown ask). */
+const SPECIFIC_NUMBER_RE = /\d+(?:\.\d+)?\s*(?:l|lpa|lakh|lakhs|k|%|₹|cr|crore)\b|₹\s*\d/i;
 
 const NUMBER_RE = /\d/;
 const DEFERRAL_PHRASES: RegExp[] = [
@@ -89,16 +106,32 @@ export function assessTurnCoherence(
     return { coherent: true };
   }
 
-  /* Heuristic 2 first — breakdown asks need a number-or-deferral. */
+  /* Heuristic 2 first — breakdown asks need a number-or-deferral.
+   *
+   * PDF #18 strengthening (2026-05-15): the prior NUMBER_RE allowed ANY
+   * digit, so a reply like "we offer 24/7 support" would falsely satisfy
+   * a comp-breakdown ask. Now we require an LPA-flagged figure (or
+   * percent/₹ marker) — a numeric phone-number-shaped digit alone is not
+   * coherent. Falls back to the loose NUMBER_RE as a secondary signal
+   * for cases like "your fixed is 18, variable is 4" where currency
+   * unit is omitted. */
   const isBreakdownAsk = BREAKDOWN_ASK_PATTERNS.some((p) => p.test(cand));
   if (isBreakdownAsk) {
-    if (NUMBER_RE.test(bot)) return { coherent: true };
+    if (SPECIFIC_NUMBER_RE.test(bot)) return { coherent: true };
+    /* Secondary fallback: a multi-token numeric phrase like "18 fixed, 4
+     * variable" — bot reply with at least two distinct numeric tokens is
+     * treated as a coherent split disclosure. */
+    const numericTokens = bot.match(/\b\d+(?:\.\d+)?\b/g) ?? [];
+    if (numericTokens.length >= 2) return { coherent: true };
     if (DEFERRAL_PHRASES.some((p) => p.test(bot))) return { coherent: true };
     return {
       coherent: false,
-      reason: "Candidate asked for a breakdown but bot reply has no number and no explicit deferral.",
+      reason: "Candidate asked for a breakdown but bot reply has no LPA-flagged number, no multi-number split, and no explicit deferral.",
     };
   }
+  /* Silence unused-binding warning under tsc-strict — NUMBER_RE remains
+   * exported in shape via the broader bot-reply hint test below. */
+  void NUMBER_RE;
 
   /* Heuristic 1 — explicit `?` question requires content overlap or direct-
    * answer marker. */

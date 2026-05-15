@@ -84,6 +84,10 @@ import {
 } from "./_candidate-profile";
 import { resolveServerBand } from "./_band-resolver";
 import {
+  detectCandidateDisclosures,
+  pruneAcknowledged,
+} from "./_candidate-disclosure-tracker";
+import {
   extractMiscSignals,
   mergeMiscSignals,
   type MiscSignalsResult,
@@ -668,6 +672,14 @@ export interface NegotiationState {
    * stored separately so downstream consumers can switch frames. Optional. */
   candidateTargetIsInHand?: boolean;
   candidateTargetCtcEquivalentLpa?: number;
+
+  /* PDF #18 root-cause (2026-05-15) — candidate-disclosure acks. Tracks
+   * candidate-disclosed facts (notice period, current CTC, competing
+   * offer, joining date) the bot has NOT yet acknowledged. Pushed in
+   * applyCandidateAnswer when a disclosure is detected; pruned in
+   * applyAiMove when the bot reply addresses it. Surfaced via the
+   * brief as [CANDIDATE DISCLOSED — ACKNOWLEDGE THIS TURN: ...]. */
+  pendingCandidateAcks?: import("./_candidate-disclosure-tracker").CandidateDisclosureEntry[];
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
@@ -1963,6 +1975,31 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     next.contractRate = mergeContractRate(state.contractRate, freshContract);
   }
 
+  /* PDF #18 root-cause (2026-05-15) — candidate-disclosure ack tracker.
+   * Detect notice-period / current-CTC / competing-offer / joining-date
+   * disclosures in the utterance and append to pendingCandidateAcks.
+   * The next bot turn MUST acknowledge them (enforced via brief
+   * injection + pruneAcknowledged in applyAiMove). De-dupe by kind so
+   * a candidate restating the same disclosure across multiple turns
+   * doesn't multiply pending entries. */
+  {
+    const fresh = detectCandidateDisclosures(answer);
+    if (fresh.length > 0) {
+      const existing = state.pendingCandidateAcks ?? [];
+      const merged: typeof existing = [...existing];
+      const seen = new Set(existing.map((e) => e.kind));
+      for (const entry of fresh) {
+        if (!seen.has(entry.kind)) {
+          merged.push(entry);
+          seen.add(entry.kind);
+        }
+      }
+      if (merged.length !== existing.length) {
+        next.pendingCandidateAcks = merged;
+      }
+    }
+  }
+
   /* Merge tactic + info sets — sticky, never cleared. */
   for (const t of parsed.vossTactics) {
     if (!next.vossTacticsUsed.includes(t)) next.vossTacticsUsed.push(t);
@@ -2367,6 +2404,17 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   /* Fix 4 (2026-05-15) — remember last bot reply for repetition detection. */
   next.lastBotReply = aiText || null;
 
+  /* PDF #18 root-cause (2026-05-15) — prune pendingCandidateAcks that
+   * this bot turn addressed. Mirror of the pendingPromises fulfillment
+   * path. Entries not addressed remain pending and resurface in the
+   * next turn brief. */
+  if (state.pendingCandidateAcks && state.pendingCandidateAcks.length > 0) {
+    const remaining = pruneAcknowledged(state.pendingCandidateAcks, aiText);
+    if (remaining.length !== state.pendingCandidateAcks.length) {
+      next.pendingCandidateAcks = remaining;
+    }
+  }
+
   /* Fix 3 (2026-05-15) — promise-keeping: consume any pending promises
    * the current turn fulfilled, then add any new promises this turn made. */
   if (aiText) {
@@ -2620,6 +2668,15 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.postVerbalRenegotiationCount !== undefined && !isFiniteNonNegInt(s.postVerbalRenegotiationCount)) throw new Error("state.postVerbalRenegotiationCount");
   if (s.recentRecoveryActive !== undefined && typeof s.recentRecoveryActive !== "boolean") throw new Error("state.recentRecoveryActive");
   if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
+  if (s.pendingCandidateAcks !== undefined) {
+    if (!Array.isArray(s.pendingCandidateAcks)) throw new Error("state.pendingCandidateAcks");
+    for (const entry of s.pendingCandidateAcks) {
+      if (!entry || typeof entry !== "object") throw new Error("state.pendingCandidateAcks[].shape");
+      const e = entry as Record<string, unknown>;
+      if (typeof e.kind !== "string") throw new Error("state.pendingCandidateAcks[].kind");
+      if (typeof e.label !== "string") throw new Error("state.pendingCandidateAcks[].label");
+    }
+  }
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
   if (
@@ -2887,6 +2944,9 @@ export function deserializeState(json: string): NegotiationState {
      * Optional for back-compat; defaults to null (treat in-flight
      * sessions as if no fresh counter has been parsed). */
     lastCandidateCounterLpa: (s.lastCandidateCounterLpa as number | null | undefined) ?? null,
+    /* PDF #18 (2026-05-15) — candidate-disclosure acks. Optional; omit
+     * when empty to keep serialized wire size small. */
+    pendingCandidateAcks: (s.pendingCandidateAcks as NegotiationState["pendingCandidateAcks"]) ?? undefined,
   };
 }
 
