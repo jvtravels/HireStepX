@@ -133,6 +133,101 @@ export function isDiscoveryComplete(
   return required.every((k) => checklist[k] === true);
 }
 
+/* Negotiation-flow redesign commit 2 (2026-05-15) — sync parsed facts → checklist.
+ *
+ * Audit D5: parsed-facts → checklist-flag writes were asymmetric across
+ * discovery items. `currentCtcFixedVariableSplitDisclosed` was wired
+ * cleanly, but `currentCtcAnswered` / `targetAnswered` / `noticePeriodAnswered`
+ * / `competingOffersAnswered` / `valueProofAnswered` were ONLY written
+ * via the legacy `foldFactsIntoState` whole-transcript path. The kernel-
+ * managed checklist and the parsed facts had diverged. Symptom: the
+ * bot re-asked notice period after the candidate volunteered "90 days
+ * notice" on turn 1.
+ *
+ * Fix: a single function that maps parsed.* non-null fields → *Answered
+ * flags. Called inside applyCandidateAnswer immediately after fact
+ * binding, before phase derivation. Pure. Monotone-up — once a flag is
+ * true it stays true (never blanks out a prior disclosure). Returns a
+ * new checklist; original is not mutated.
+ */
+export interface SyncFactsInput {
+  /** Parsed target value (LPA) — null = not stated this turn. */
+  target: number | null;
+  /** Parsed current-CTC value (LPA) — null = not stated this turn. */
+  currentCtc: number | null;
+  /** Parsed competing-offer value (LPA) — null = no numeric competing offer. */
+  competing: number | null;
+  /** Vague competing-offer signal ("I have other offers but can't share"). */
+  signalsCompetingExistsWithoutNumber: boolean;
+  /** Parsed competing-offer detail object — non-empty `hasAny` means
+   *  the candidate disclosed structural details (company / status /
+   *  stage / letter / on-hold). */
+  competingOfferDetailHasAny: boolean;
+  /** Parsed notice / joining signal — any of notice days, buyout,
+   *  early-join, LWD text, joining-bonus-ask. */
+  noticeJoiningHasAny: boolean;
+  /** Parsed component breakdown carrying BOTH base and variable for
+   *  the fixed/variable split flag. */
+  fixedVariableSplitHasBoth: boolean;
+  /** Role-specific value-proof signal — sales OTE / contract rate /
+   *  profile fields (quotaAttainmentClaimed / peopleManagementClaimed /
+   *  transferableSkillsClaimed / variableTrackRecord). */
+  valueProofSignal: boolean;
+}
+
+export function syncChecklistFromParsedFacts(
+  checklist: DiscoveryChecklist,
+  facts: SyncFactsInput,
+): DiscoveryChecklist {
+  /* Monotone-up: only flip false → true; once true, stays true.
+   * Identity-preserving when nothing changes (returns the same object
+   * reference) so applyCandidateAnswer can skip a needless assignment. */
+  let changed = false;
+  const next: DiscoveryChecklist = { ...checklist };
+
+  /* currentCtcAnswered ← parsed.currentCtc != null */
+  if (facts.currentCtc != null && !next.currentCtcAnswered) {
+    next.currentCtcAnswered = true;
+    changed = true;
+  }
+  /* targetAnswered ← parsed.target != null */
+  if (facts.target != null && !next.targetAnswered) {
+    next.targetAnswered = true;
+    changed = true;
+  }
+  /* noticePeriodAnswered ← any notice / joining signal */
+  if (facts.noticeJoiningHasAny && !next.noticePeriodAnswered) {
+    next.noticePeriodAnswered = true;
+    changed = true;
+  }
+  /* competingOffersAnswered ← numeric competing OR vague-exists OR
+   * structural competing-offer detail. The audit calls out that vague
+   * signals ("I have other offers") legitimately satisfy the discovery
+   * item — the recruiter has the leverage information they need; further
+   * probing comes through the *follow-up* path, not the checklist gate. */
+  if (
+    (facts.competing != null ||
+      facts.signalsCompetingExistsWithoutNumber ||
+      facts.competingOfferDetailHasAny) &&
+    !next.competingOffersAnswered
+  ) {
+    next.competingOffersAnswered = true;
+    changed = true;
+  }
+  /* fixedVariableSplitAnswered ← parsed breakdown carries both base+variable */
+  if (facts.fixedVariableSplitHasBoth && !next.fixedVariableSplitAnswered) {
+    next.fixedVariableSplitAnswered = true;
+    changed = true;
+  }
+  /* valueProofAnswered ← role-specific signal fired this turn. */
+  if (facts.valueProofSignal && !next.valueProofAnswered) {
+    next.valueProofAnswered = true;
+    changed = true;
+  }
+
+  return changed ? next : checklist;
+}
+
 export interface DiscoveryQuestion {
   item: keyof DiscoveryChecklist;
   prompt: string;

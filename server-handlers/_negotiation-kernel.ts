@@ -120,6 +120,7 @@ import {
   backfillDiscoveryChecklist,
   isValidDiscoveryStage,
   isDiscoveryComplete,
+  syncChecklistFromParsedFacts,
   type DiscoveryChecklist,
   type DiscoveryStage,
 } from "./_discovery-stage";
@@ -2309,6 +2310,38 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
   }
   for (const i of parsed.infoAsked) {
     if (!next.infoAsked.includes(i)) next.infoAsked.push(i);
+  }
+
+  /* Negotiation-flow redesign commit 2 (2026-05-15) — sync discovery
+   * checklist from parsed facts (audit D5 fix). Parsed-facts → *Answered
+   * flag writes were asymmetric: currentCtcAnswered / targetAnswered /
+   * noticePeriodAnswered / competingOffersAnswered / valueProofAnswered
+   * were written only by the legacy whole-transcript foldFactsIntoState
+   * path, so a candidate volunteering "90 days notice" on turn 1 would
+   * be acknowledged but the bot would still re-ask notice on turn 2.
+   * Runs after fact binding (parsed → next), before phase derivation
+   * (terminal-accept / walk-away / derivePhase). Monotone-up. */
+  if (next.discoveryChecklist != null) {
+    const cb = next.candidateComponentBreakdown;
+    const fixedVariableSplitHasBoth = cb.base != null && cb.variable != null;
+    const valueProofSignal =
+      (next.salesOTE?.hasAny ?? false) ||
+      (next.contractRate?.hasAny ?? false) ||
+      (parsed.candidateProfile.hasAny &&
+        (parsed.candidateProfile.quotaAttainmentClaimed ||
+          parsed.candidateProfile.peopleManagementClaimed ||
+          parsed.candidateProfile.transferableSkillsClaimed ||
+          parsed.candidateProfile.variableTrackRecord));
+    next.discoveryChecklist = syncChecklistFromParsedFacts(next.discoveryChecklist, {
+      target: parsed.target,
+      currentCtc: parsed.currentCtc,
+      competing: parsed.competing,
+      signalsCompetingExistsWithoutNumber: parsed.signalsCompetingExistsWithoutNumber,
+      competingOfferDetailHasAny: parsed.competingOfferDetail.hasAny,
+      noticeJoiningHasAny: parsed.noticeJoining.hasAny,
+      fixedVariableSplitHasBoth,
+      valueProofSignal,
+    });
   }
 
   /* Verbal-acceptance lock — if the candidate previously said yes but
