@@ -2134,6 +2134,33 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
   if (isTerminalPhase(state.phase)) return state.phase;
   if (state.turnIndex >= state.maxTurns) return "stalemate";
 
+  /* C2 — active phase gating (2026-05-15). Narrow trigger: when the
+   * session is still in the opening phase, no offer has gone out yet,
+   * the candidate has spoken at least once (turnIndex >= 1 — so there
+   * is utterance to extract discovery facts from), discoveryStage is
+   * "discovery" and the checklist is incomplete, HOLD the phase at
+   * "opening". Without this gate the kernel would advance into the
+   * offer/probe phases the moment any prior offer-ish artefact (e.g.,
+   * a synthetic test seed) appears, even though discovery hasn't been
+   * collected. The companion gate in the move-picker re-routes the
+   * opening branch from `open-with-offer` to a discovery probe when
+   * this condition holds, so the bot asks instead of anchoring.
+   *
+   * turnIndex >= 1 keeps every turn-0 opening-flow test green (turn 0
+   * still routes through open-with-offer as before). highestOfferMade
+   * === 0 keeps the gate from regressing once an anchor is on the
+   * table (the existing post-offer advancement is unchanged). */
+  if (
+    state.phase === "opening" &&
+    state.highestOfferMade === 0 &&
+    state.turnIndex >= 1 &&
+    state.discoveryStage === "discovery" &&
+    state.discoveryChecklist != null &&
+    !isDiscoveryComplete(state.discoveryChecklist, classifyRoleFamily(state.role))
+  ) {
+    return "opening";
+  }
+
   /* Phase 25e (2026-05-13) — closing-push runway. The previous machine
    * jumped straight from counter-offer / lever-explore to stalemate the
    * instant turn budget elapsed, denying the AI a final framed close.

@@ -233,6 +233,32 @@ export function pickAiMove(state: NegotiationState): AiMove {
 
   /* Opening: put the initial offer on the table. */
   if (state.phase === "opening") {
+    /* C2 — active phase gating (2026-05-15). Narrow trigger: when the
+     * candidate has already spoken at least once (turnIndex >= 1),
+     * discoveryStage is "discovery" and the checklist is incomplete,
+     * defer the anchor and run a discovery probe instead. This is the
+     * companion gate to derivePhase's opening-hold; together they
+     * keep the kernel from anchoring before the minimum discovery bar
+     * has been cleared. Turn-0 sessions (every existing opening-flow
+     * test) and legacy sessions without discoveryStage continue to
+     * fire `open-with-offer` unchanged. */
+    if (
+      state.turnIndex >= 1 &&
+      state.discoveryStage === "discovery" &&
+      state.discoveryChecklist != null
+    ) {
+      const roleFamily = classifyRoleFamily(state.role);
+      if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
+        const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+        if (next != null) {
+          return {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale: `Discovery incomplete (next: ${next.item}) — ask: ${next.prompt}`,
+          };
+        }
+      }
+    }
     return {
       lever: "open-with-offer",
       newTotalLpa: state.band.initialOffer,
