@@ -26,7 +26,7 @@ import {
 } from "./_negotiation-kernel";
 import { summarizeTranscriptIfLong, type TranscriptTurn } from "./_transcript-summarizer";
 import { detectRoleLabelMismatch } from "./_role-mismatch";
-import { detectResumeRoleMismatch } from "./_resume-role-match";
+import { detectResumeRoleMismatch, shouldEnterProbeMismatch } from "./_resume-role-match";
 import { classifyRoleFamily } from "./_company-band-tiers";
 import {
   getNextDiscoveryQuestion,
@@ -1883,6 +1883,20 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
         `[CANDIDATE BACKGROUND MISMATCH: resume shows ${state.candidatePrimaryDomain}, target is ${state.role}. The recruiter MUST probe this gap early — ask the candidate why they're switching domains.]`,
       );
     }
+    /* Sprint A.5 (2026-05-15) — surface the resume↔target mismatch
+     * advisory whenever the orchestrator has explicitly routed the
+     * session into `probe-mismatch`, OR when shouldEnterProbeMismatch
+     * would route there given current state. Distinct line from the
+     * BACKGROUND MISMATCH banner so the LLM sees both the structural
+     * gap and the routing imperative. */
+    const shouldProbe =
+      state.discoveryStage === "probe-mismatch" ||
+      shouldEnterProbeMismatch(mm, state.turnIndex ?? 0);
+    if (shouldProbe) {
+      parts.push(
+        `[RESUME-TARGET MISMATCH: resume=${state.candidatePrimaryDomain}, target=${state.role} — probe motivation before negotiation]`,
+      );
+    }
   }
   /* Fix 3 (2026-05-15) — open-promises injector. When the previous bot
    * turn made a promise ("we can discuss X") that hasn't been delivered
@@ -2317,11 +2331,10 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
       currentCtcLpa: state.candidateCurrentCtc,
       targetLpa: state.candidateTarget,
       tenureMonths,
-      /* Kernel state doesn't carry a typed `currentEmployer` field today;
-       * the well-funded-employer signal therefore won't fire until that's
-       * threaded through (deferred — separate change). Risk still fires
-       * on hike-band + tenure-shape signals. */
-      currentEmployer: null,
+      /* Sprint A.4 (2026-05-15) — threaded. The well-funded-employer
+       * signal now fires when the candidate self-discloses their current
+       * employer via "I'm currently at X" / "working at X" patterns. */
+      currentEmployer: state.currentEmployer ?? null,
       competingOfferCredibility: credibility,
     });
     if (risk.risk === "high") {

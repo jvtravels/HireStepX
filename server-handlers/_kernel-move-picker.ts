@@ -41,7 +41,7 @@ import {
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
-import { classifyRoleFamily } from "./_company-band-tiers";
+import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
 import {
   getNextDiscoveryQuestion,
   isDiscoveryComplete,
@@ -457,7 +457,19 @@ export function pickAiMove(state: NegotiationState): AiMove {
 
     const target = state.candidateTarget ?? state.band.maxStretch;
     const floor = Math.max(state.highestOfferMade, state.band.initialOffer);
-    const ceiling = state.band.maxStretch;
+    /* Tier-3 ship wiring (2026-05-15) — per-company hike cap. Large
+     * Indian employers cap the % hike they'll authorize over current CTC
+     * regardless of band. When known + currentCtc is stated, clamp the
+     * effective ceiling to currentCtc × (1 + cap/100). Never below the
+     * floor (the recruiter can't claw back what's already on the table). */
+    let ceiling = state.band.maxStretch;
+    if (state.candidateCurrentCtc != null && state.candidateCurrentCtc > 0) {
+      const cap = getCompanyHikeCap(state.company);
+      if (cap != null) {
+        const capped = state.candidateCurrentCtc * (1 + cap / 100);
+        if (capped < ceiling) ceiling = Math.max(capped, floor);
+      }
+    }
     const aspiration = Math.min(target, ceiling);
 
     /* No headroom → switch to lever-explore. */

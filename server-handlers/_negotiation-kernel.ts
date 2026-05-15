@@ -38,6 +38,8 @@
 import type { NegotiationFacts } from "../src/interviewEvaluation";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
+import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
+import { buildPostAcceptanceMessage } from "./_post-acceptance";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -638,6 +640,31 @@ export interface NegotiationState {
    * to avoid the 9-site fanout pattern: new constraint fields land as keys
    * here, not as new top-level state fields. */
   nonSalaryConstraints?: import("./_non-salary-constraints").NonSalaryConstraints;
+
+  /* Tier-? ship (2026-05-15) — post-acceptance onboarding message. Built
+   * once when the kernel transitions to `accepted` (or soft-accept), so
+   * the response layer can concatenate it onto the close turn rather than
+   * have the LLM improvise onboarding language. Pure derived; sticky once
+   * set so a follow-up terminal restate still surfaces it. Optional for
+   * back-compat. */
+  postAcceptanceMessage?: string;
+
+  /* Sprint A.4 (2026-05-15) — current employer (free-form, normalized
+   * downstream). Detected from utterances; threaded into the
+   * counter-offer-risk detector so the well-funded-employer signal can
+   * fire. Optional for back-compat. */
+  currentEmployer?: string;
+
+  /* Sprint B.2 (2026-05-15) — refusal-count tracker for the number
+   * discipline gate. Increments when the candidate dodges a probe for
+   * their expectation. Optional. */
+  probeRefusalCount?: number;
+
+  /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
+   * true, candidateTarget is in-hand (not CTC). The CTC-equivalent is
+   * stored separately so downstream consumers can switch frames. Optional. */
+  candidateTargetIsInHand?: boolean;
+  candidateTargetCtcEquivalentLpa?: number;
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
@@ -692,6 +719,21 @@ export function clampAnchorAgainstCandidateAsk(
     return Math.min(originalAnchor, candidateAskLpa * 1.05);
   }
   return originalAnchor;
+}
+
+/* Sprint A.3 (2026-05-15) — attach the post-acceptance onboarding
+ * message to state at the moment the kernel transitions to `accepted`.
+ * Builds once and stores on state so the response layer can concatenate
+ * it onto the close turn without the LLM improvising onboarding
+ * language. Idempotent — re-attach is a no-op once set. Mutates `next`
+ * in place (callers pass a fresh draft just before returning).
+ *
+ * Dynamic require kept because `_post-acceptance` imports the
+ * NegotiationState type from this file and a static import would lock
+ * the load order. */
+function attachPostAcceptanceMessage(next: NegotiationState): void {
+  if (next.postAcceptanceMessage) return;
+  next.postAcceptanceMessage = buildPostAcceptanceMessage(next);
 }
 
 /* ─── Factory ────────────────────────────────────────────────────── */
@@ -978,6 +1020,32 @@ const EXPLICIT_DECLINE_PATTERNS: RegExp[] = [
 export function detectExplicitDecline(answer: string | null | undefined): boolean {
   if (!answer || typeof answer !== "string") return false;
   return EXPLICIT_DECLINE_PATTERNS.some((p) => p.test(answer));
+}
+
+/* Sprint A.4 (2026-05-15) — current-employer free-form extractor.
+ * Patterns: "currently at X" / "working at X" / "I'm with X" / "I work
+ * at X" / "right now at X" / "presently at/with X". Returns the proper-
+ * noun phrase (1-3 capitalized tokens) or null. Conservative on stop-
+ * words ("a", "the", "my") to avoid false positives. Pure. */
+const CURRENT_EMPLOYER_PATTERNS: RegExp[] = [
+  /\b(?:currently|presently|right\s+now)\s+(?:at|with|working\s+(?:at|for))\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})/,
+  /\bI(?:'?m|\s+am)\s+(?:at|with|working\s+(?:at|for))\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})/,
+  /\bI\s+work\s+(?:at|for|with)\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})/,
+  /\bworking\s+(?:at|for|with)\s+([A-Z][A-Za-z0-9&.-]*(?:\s+[A-Z][A-Za-z0-9&.-]*){0,2})/,
+];
+export function detectCurrentEmployer(answer: string | null | undefined): string | null {
+  if (!answer || typeof answer !== "string") return null;
+  for (const re of CURRENT_EMPLOYER_PATTERNS) {
+    const m = answer.match(re);
+    if (m && m[1]) {
+      const candidate = m[1].trim();
+      // Reject filler-only matches like "A", "The", "My".
+      if (candidate.length < 2) continue;
+      if (/^(?:The|My|Our|An?|This|That)$/i.test(candidate)) continue;
+      return candidate;
+    }
+  }
+  return null;
 }
 
 const DEAD_END_PATTERNS: RegExp[] = [
@@ -1809,6 +1877,31 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
    * Reset to false in applyAiMove so the bonus is one-shot, not sticky. */
   next.recentRecoveryActive = hasRecovery;
 
+  /* Sprint A.4 (2026-05-15) — current-employer detection. Free-form
+   * extraction from "currently at X", "working at X", "I'm with X",
+   * "I work at X". Threaded into the counter-offer-risk detector so the
+   * well-funded-employer signal can fire. Last-stated-wins; never
+   * cleared by an utterance that doesn't mention an employer. */
+  if (!next.currentEmployer) {
+    const emp = detectCurrentEmployer(answer);
+    if (emp) next.currentEmployer = emp;
+  }
+
+  /* Tier-2 ship wiring (2026-05-15) — non-salary constraints extraction.
+   * Detector is already shipped and the brief-injection site already
+   * reads `state.nonSalaryConstraints`; the only missing piece was the
+   * extractor call. Merge monotone-up so a constraint disclosed earlier
+   * survives a later turn that doesn't restate it. */
+  {
+    const fresh = extractNonSalaryConstraints(answer);
+    if (Object.keys(fresh).length > 0) {
+      next.nonSalaryConstraints = mergeNonSalaryConstraints(
+        state.nonSalaryConstraints,
+        fresh,
+      );
+    }
+  }
+
   /* Phase 24c — merge sales / contract comp-structure detectors.
    * Only merge when the new utterance carried a signal; otherwise
    * leave prior state intact (we never blank out earlier disclosure). */
@@ -1861,6 +1954,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       if (canCloseSession(next, answer, "accept")) {
         next.phase = "accepted";
         next.acceptedAtTurn = state.turnIndex;
+        attachPostAcceptanceMessage(next);
         return next;
       }
     }
@@ -1919,6 +2013,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     }
     next.phase = "accepted";
     next.acceptedAtTurn = state.turnIndex;
+    attachPostAcceptanceMessage(next);
     return next;
   }
   if (parsed.signalsWalkAway) {
@@ -1963,6 +2058,7 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
   if (facts.acceptedImmediately) {
     next.phase = "accepted";
     next.acceptedAtTurn = state.turnIndex;
+    attachPostAcceptanceMessage(next);
     return next;
   }
   if (facts.rejectedOutright) {
