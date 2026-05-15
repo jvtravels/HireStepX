@@ -17,7 +17,6 @@ import { describe, it, expect } from "vitest";
 import {
   initState,
   applyCandidateAnswer,
-  applyAiMove,
   type NegotiationBand,
   type NegotiationState,
 } from "../../../server-handlers/_negotiation-kernel";

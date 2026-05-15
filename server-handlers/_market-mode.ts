@@ -116,9 +116,6 @@ const STARTUP_RE_ROLE =
 const MNC_RE =
   /(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i;
 
-const IT_SERVICES_RE =
-  /(infosys|tcs|tata\s+consultancy|wipro|cognizant|hcl|tech\s+mahindra|capgemini|ltimindtree|lti\b|mphasis|accenture|mindtree|hexaware|coforge|dxc|genpact|birlasoft)/i;
-
 /** Infer the company-type market segment from (role, company) strings.
  *  Pure. Call during session init if marketMode is not explicitly set. */
 export function inferCompanyMode(role: string, company: string): CompanyMode {

@@ -1415,7 +1415,7 @@ export function redactForAnalytics(payload: unknown): unknown {
   return walk(payload);
 }
 
-const EMPTY: CandidateProfileResult = {
+export const EMPTY_CANDIDATE_PROFILE: CandidateProfileResult = {
   careerGapMonths: null,
   careerGapActivity: null,
   tenureSignal: null,
@@ -4004,7 +4004,7 @@ function detectMentionedTaxImplication(t: string): boolean {
 }
 
 export function extractCandidateProfile(text: string): CandidateProfileResult {
-  if (!text) return EMPTY;
+  if (!text) return EMPTY_CANDIDATE_PROFILE;
 
   const careerGapMonths = extractGapMonths(text);
   /* Activity only counted when there's a gap context OR the activity
@@ -5031,7 +5031,7 @@ export function mergeCandidateProfile(
   prior: CandidateProfileResult | null | undefined,
   next: CandidateProfileResult,
 ): CandidateProfileResult {
-  const p = prior ?? EMPTY;
+  const p = prior ?? EMPTY_CANDIDATE_PROFILE;
   const merged: CandidateProfileResult = {
     careerGapMonths: next.careerGapMonths ?? p.careerGapMonths,
     careerGapActivity: next.careerGapActivity ?? p.careerGapActivity,

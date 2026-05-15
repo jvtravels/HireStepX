@@ -19,7 +19,10 @@ import {
   mergeCandidateProfile,
 } from "../../server-handlers/_candidate-profile";
 import { planNextAction } from "../../server-handlers/_next-action-planner";
-import type { NegotiationState } from "../../server-handlers/_negotiation-kernel";
+import {
+  EMPTY_TURN_DELTA,
+  type NegotiationState,
+} from "../../server-handlers/_negotiation-kernel";
 
 /* ─── Helper: build a minimal NegotiationState for planner tests ─────── */
 function minState(overrides: Partial<NegotiationState> = {}): NegotiationState {
@@ -315,13 +318,7 @@ describe("Planner — Wave-7 reactive rule: competing-leverage-ack", () => {
         hasAny: true,
       },
       reactiveFollowupsFired: [],
-      lastTurnDelta: {
-        disclosedCurrentCtc: false,
-        disclosedExpectedCtc: false,
-        disclosedCompetingOffer: true,
-        disclosedNoticePeriod: false,
-        askedQuestion: false,
-      },
+      lastTurnDelta: { ...EMPTY_TURN_DELTA, disclosedCompetingOffer: true },
     });
     const action = planNextAction(state);
     expect(action.kind).toBe("reactive-followup");
@@ -339,13 +336,7 @@ describe("Planner — Wave-7 reactive rule: competing-leverage-ack", () => {
         hasAny: true,
       },
       reactiveFollowupsFired: ["competing-leverage-ack"],
-      lastTurnDelta: {
-        disclosedCurrentCtc: false,
-        disclosedExpectedCtc: false,
-        disclosedCompetingOffer: true,
-        disclosedNoticePeriod: false,
-        askedQuestion: false,
-      },
+      lastTurnDelta: { ...EMPTY_TURN_DELTA, disclosedCompetingOffer: true },
     });
     const action = planNextAction(state);
     /* Should fall through to a different action kind */
@@ -364,13 +355,7 @@ describe("Planner — Wave-7 reactive rule: number-clarification", () => {
         hasAny: true,
       },
       reactiveFollowupsFired: [],
-      lastTurnDelta: {
-        disclosedCurrentCtc: true,
-        disclosedExpectedCtc: false,
-        disclosedCompetingOffer: false,
-        disclosedNoticePeriod: false,
-        askedQuestion: false,
-      },
+      lastTurnDelta: { ...EMPTY_TURN_DELTA, disclosedCurrentCtc: true },
     });
     const action = planNextAction(state);
     expect(action.kind).toBe("reactive-followup");
@@ -391,13 +376,7 @@ describe("Planner — Wave-7 reactive rule: ctc-gentle-push", () => {
         hasAny: true,
       },
       reactiveFollowupsFired: [],
-      lastTurnDelta: {
-        disclosedCurrentCtc: false,
-        disclosedExpectedCtc: false,
-        disclosedCompetingOffer: false,
-        disclosedNoticePeriod: false,
-        askedQuestion: false,
-      },
+      lastTurnDelta: { ...EMPTY_TURN_DELTA },
     });
     const action = planNextAction(state);
     expect(action.kind).toBe("reactive-followup");
@@ -416,13 +395,7 @@ describe("Planner — Wave-7 reactive rule: ctc-gentle-push", () => {
         hasAny: true,
       },
       reactiveFollowupsFired: [],
-      lastTurnDelta: {
-        disclosedCurrentCtc: false,
-        disclosedExpectedCtc: false,
-        disclosedCompetingOffer: false,
-        disclosedNoticePeriod: false,
-        askedQuestion: false,
-      },
+      lastTurnDelta: { ...EMPTY_TURN_DELTA },
     });
     const action = planNextAction(state);
     if (action.kind === "reactive-followup") {

@@ -114,19 +114,6 @@ export function actionToLever(action: NextAction, _state: NegotiationState): AiM
   return planNextActionInternal(_state)._move;
 }
 
-/** F7 (PDF#20 2026-05-15) — askedTopics repetition guard.
- *  Returns true when `topic` appears in state.askedTopics within the
- *  last `withinTurns` turns (default 3). Pure. */
-function wasTopicAskedRecently(
-  state: NegotiationState,
-  topic: string,
-  withinTurns = 3,
-): boolean {
-  const topics = state.askedTopics ?? [];
-  const cutoff = state.turnIndex - withinTurns;
-  return topics.some((t) => t.topic === topic && t.atTurn > cutoff);
-}
-
 /** F7 (PDF#20 2026-05-15) — build a merged "skip" record that combines
  *  discoveryRefusedItems with any topics that were asked in the last
  *  withinTurns turns so getNextOrderedDiscoveryItem skips them both. */

@@ -33,6 +33,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["CONVERSATION_LOG_CAP", "kernel-public log cap; documentation constant"],
   ["detectCurrentEmployer", "internally called inside _negotiation-kernel.ts (rg excludes the defining file)"],
   ["computeTurnDelta", "internally called inside _negotiation-kernel.ts by applyCandidateAnswer's finalize() (rg excludes the defining file); exported for unit-testability of the diff logic"],
+  ["EMPTY_TURN_DELTA", "zero-value TurnDelta constant exported for test fixtures to spread over; prevents tests from becoming stale when new fields are added to TurnDelta"],
   /* FIX (commit 3, 2026-05-15) — before the planNextAction extraction, a
    * comment in _kernel-move-picker.ts mentioned derivePhase by name, which
    * the word-boundary detector accepted as a referent. The thin-shell
