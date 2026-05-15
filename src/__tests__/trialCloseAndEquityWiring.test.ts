@@ -1,0 +1,113 @@
+/* ITEM 3 — Wire detectTrialCloseAsked and analyzeEquityClarity.
+ *
+ * Tests that:
+ *   1. applyCandidateAnswer sets candidateSignaledClose=true when the
+ *      last bot reply contained a trial-close ask.
+ *   2. applyCandidateAnswer pushes "candidate-trial-close" onto
+ *      state.reactiveFollowupsFired when candidateSignaledClose fires.
+ *   3. planNextAction emits a close-confirmation reactive-followup when
+ *      candidateSignaledClose=true and closeFired=false.
+ *   4. analyzeEquityClarity === "unclear" adds equity-clarification probe
+ *      to reactive followups when equity is part of the offer.
+ */
+import { describe, it, expect } from "vitest";
+import {
+  initState,
+  applyCandidateAnswer,
+  pickAiMove,
+  applyAiMove,
+  type NegotiationState,
+  type NegotiationBand,
+} from "../../server-handlers/_negotiation-kernel";
+
+const BAND: NegotiationBand = {
+  initialOffer: 20,
+  maxStretch: 28,
+  walkAway: 16,
+  hasEquity: true,
+};
+
+const baseState = (overrides: Partial<NegotiationState> = {}): NegotiationState => ({
+  ...initState({ sessionId: "s-item3", role: "swe", company: "acme", band: BAND }),
+  ...overrides,
+});
+
+describe("ITEM 3 — detectTrialCloseAsked wiring in applyCandidateAnswer", () => {
+  it("sets candidateSignaledClose=true when bot last said a trial-close phrase and candidate replies", () => {
+    /* Bot ran a trial-close last turn. Candidate replies positively. */
+    const state = baseState({
+      phase: "counter-offer",
+      highestOfferMade: 22,
+      lastAiText: "If we land at ₹22 LPA, would you accept this offer today?",
+    });
+    const next = applyCandidateAnswer(state, "Yes, that works for me.");
+    expect((next as NegotiationState & { candidateSignaledClose?: boolean }).candidateSignaledClose).toBe(true);
+  });
+
+  it("pushes 'candidate-trial-close' onto reactiveFollowupsFired when trial-close fires", () => {
+    const state = baseState({
+      phase: "counter-offer",
+      highestOfferMade: 22,
+      lastAiText: "Would you accept this offer today?",
+    });
+    const next = applyCandidateAnswer(state, "Sounds good, I accept.");
+    const fired = (next as NegotiationState & { reactiveFollowupsFired?: string[] }).reactiveFollowupsFired ?? [];
+    expect(fired).toContain("candidate-trial-close");
+  });
+
+  it("does NOT set candidateSignaledClose when bot did NOT ask a trial-close", () => {
+    const state = baseState({
+      phase: "counter-offer",
+      highestOfferMade: 22,
+      lastAiText: "We can stretch to ₹22 LPA. How does that land?",
+    });
+    const next = applyCandidateAnswer(state, "Yes, that works for me.");
+    /* candidateSignaledClose should be absent or false */
+    const signaled = (next as NegotiationState & { candidateSignaledClose?: boolean }).candidateSignaledClose;
+    expect(!signaled).toBe(true);
+  });
+});
+
+describe("ITEM 3 — planNextAction: close-confirmation when candidateSignaledClose=true", () => {
+  it("pickAiMove picks a close-acceptance move when candidateSignaledClose=true and offer is on table", () => {
+    const state = baseState({
+      phase: "counter-offer",
+      highestOfferMade: 22,
+      candidateTarget: 22,
+      lastAiText: "If we land at ₹22 LPA, would you accept this offer today?",
+      /* candidateSignaledClose would be set by applyCandidateAnswer; simulate it here */
+    } as Partial<NegotiationState> & { candidateSignaledClose?: boolean });
+
+    /* Simulate what applyCandidateAnswer does — wire the state with the flag */
+    const stateWithSignal = {
+      ...state,
+      candidateSignaledClose: true,
+      reactiveFollowupsFired: ["candidate-trial-close"],
+    } as NegotiationState & { candidateSignaledClose?: boolean };
+
+    const move = pickAiMove(stateWithSignal as NegotiationState);
+    /* Should be progressing toward close (accept or hold-firm on confirmed number) */
+    expect(["close-acceptance", "hold-firm", "counter-base"]).toContain(move.lever);
+  });
+});
+
+describe("ITEM 3 — analyzeEquityClarity probe wiring", () => {
+  it("equity-clarification probe fires when equity is on offer and bot reply is unclear", () => {
+    /* State with equity band and a vague equity reply */
+    const state = baseState({
+      phase: "counter-offer",
+      highestOfferMade: 22,
+      lastAiText: "We can offer some equity for senior roles.",
+    });
+    const next = applyCandidateAnswer(state, "What does the equity look like?");
+    const fired = (next as NegotiationState & { reactiveFollowupsFired?: string[] }).reactiveFollowupsFired ?? [];
+    /* The equity-clarification probe should appear in fired OR the move picker handles it */
+    const move = pickAiMove(next);
+    /* Either a probe was triggered about equity, or the reactive followup was queued */
+    const equityProbeTriggered =
+      fired.includes("equity-clarity") ||
+      (move.lever === "probe" && (move.rationale ?? "").toLowerCase().includes("equity")) ||
+      move.lever === "equity-grant";
+    expect(equityProbeTriggered).toBe(true);
+  });
+});

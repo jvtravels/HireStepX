@@ -41,7 +41,7 @@ import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfill
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
 import { buildPostAcceptanceMessage } from "./_post-acceptance";
 import { detectInHandFraming, backComputeCtcFromInHand } from "./_in-hand-vs-ctc";
-import { detectRangeDisclosure } from "./_trial-close-detector";
+import { detectRangeDisclosure, detectTrialCloseAsked } from "./_trial-close-detector";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -864,6 +864,21 @@ export interface NegotiationState {
    * turns, the planner skips it and advances to the next checklist item.
    * Optional for back-compat with pre-F7 serialized sessions. */
   askedTopics?: { topic: string; atTurn: number }[];
+
+  /* ITEM 3 (2026-05-15) — Trial-close signaling.
+   *
+   * candidateSignaledClose: set true by applyCandidateAnswer when the
+   *   bot's PREVIOUS turn contained a trial-close ask (detectTrialCloseAsked)
+   *   and the candidate replied on this turn. Sticky once true. Triggers
+   *   the close-confirmation reactive rule in planNextAction.
+   *
+   * closeFired: set true by applyAiMove when a close-acceptance or
+   *   close-walkaway move is applied. Guards the reactive rule so it
+   *   only fires once.
+   *
+   * Optional for back-compat with sessions serialized before ITEM 3. */
+  candidateSignaledClose?: boolean;
+  closeFired?: boolean;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -2434,6 +2449,21 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     }
   }
 
+  /* ITEM 3 (2026-05-15) — trial-close detector wiring.
+   * If the bot's PREVIOUS turn contained a trial-close ask (e.g.
+   * "if we land at ₹X, would you accept today?") AND the candidate is
+   * replying now, set candidateSignaledClose sticky-true and push
+   * "candidate-trial-close" onto reactiveFollowupsFired so the planner
+   * can emit a close-confirmation move. Monotone-up: once signaled,
+   * stays signaled for the rest of the session. */
+  if (!next.candidateSignaledClose && detectTrialCloseAsked(state.lastAiText ?? null)) {
+    next.candidateSignaledClose = true;
+    const priorFired = next.reactiveFollowupsFired ?? [];
+    if (!priorFired.includes("candidate-trial-close")) {
+      next.reactiveFollowupsFired = [...priorFired, "candidate-trial-close"];
+    }
+  }
+
   /* Merge tactic + info sets — sticky, never cleared. */
   for (const t of parsed.vossTactics) {
     if (!next.vossTacticsUsed.includes(t)) next.vossTacticsUsed.push(t);
@@ -3011,6 +3041,13 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.pendingPromises = remaining;
     }
   }
+  /* ITEM 3 (2026-05-15) — closeFired: set true when the AI emits a
+   * close-acceptance or close-walkaway move so the reactive close-
+   * confirmation rule does not re-fire after the session is closing. */
+  if (move.lever === "close-acceptance" || move.lever === "close-walkaway") {
+    next.closeFired = true;
+  }
+
   /* Phase 28 — record the kernel-computed JB amount when a JB lever
      fires so close-acceptance can include it in the recap. Sticky:
      once set, only an upward replacement clobbers it (a subsequent JB

@@ -59,6 +59,7 @@ import {
   getHikeJustificationProbe,
   shouldProbeHikeJustification,
 } from "./_hike-justification-probe";
+import { analyzeEquityClarity } from "./_trial-close-detector";
 
 /** Discriminated union of every action the planner can emit. The kind
  *  taxonomy collapses the prior 15 sequential `if return` branches into
@@ -242,6 +243,67 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    *   - state.* (detail fields the delta booleans reference)
    *
    * Each rule consults `fired` so the same topic doesn't re-emit. */
+  /* ITEM 3 (2026-05-15) — close-confirmation: fires whether or not lastTurnDelta
+   * is set. When the candidate has signaled readiness to close (candidateSignaledClose=true,
+   * set by applyCandidateAnswer when detectTrialCloseAsked fired on the prior bot turn)
+   * AND the session hasn't already closed, emit a close-confirmation move. Placed outside
+   * planReactiveFollowup so it fires even when lastTurnDelta is null (e.g. simulated states).
+   * Priority: above reactive followups so close-readiness always gets a close move. */
+  if (!isTerminalPhase(state.phase)) {
+    const extState = state as NegotiationState & { candidateSignaledClose?: boolean; closeFired?: boolean };
+    const closeFiredAlready = (state.reactiveFollowupsFired ?? []).includes("close-confirmation");
+    if (
+      extState.candidateSignaledClose &&
+      !extState.closeFired &&
+      !closeFiredAlready &&
+      state.highestOfferMade > 0
+    ) {
+      const jb = state.lastJoiningBonusOffered;
+      return {
+        kind: "close",
+        mode: "accept",
+        _move: {
+          lever: "close-acceptance",
+          newTotalLpa: clampToCloseFloor(state, state.highestOfferMade),
+          joiningBonusAmount: jb != null ? jb : undefined,
+          rationale: `Candidate signaled close readiness (trial-close detected on prior turn); emit close-confirmation.`,
+          askedTopic: "close-confirmation",
+        },
+      };
+    }
+  }
+
+  /* ITEM 3 (2026-05-15) — equity-clarity probe: fires when band has equity,
+   * the last bot reply contained equity language but did not cover all four
+   * clarity pillars, and the equity-clarity probe hasn't been fired yet.
+   * Placed above planReactiveFollowup so it fires even when lastTurnDelta is
+   * null (e.g. when candidate asks "what does the equity look like?"). */
+  if (!isTerminalPhase(state.phase) && state.band.hasEquity) {
+    const equityFired = (state.reactiveFollowupsFired ?? []).includes("equity-clarity");
+    if (!equityFired) {
+      const lastBotReply = state.lastAiText ?? "";
+      const hasEquityLanguage = /\b(equity|esop|rsu|stock|options?|vesting|cliff)\b/i.test(lastBotReply);
+      if (hasEquityLanguage) {
+        const clarity = analyzeEquityClarity(lastBotReply);
+        if (!clarity.allFourCovered) {
+          return {
+            kind: "reactive-followup",
+            ask: "Clarify equity terms (vesting, strike/FMV, buyback history, included-vs-additional) before discussing comp.",
+            trigger: "equityUnclear",
+            topic: "equity-clarity",
+            _move: {
+              lever: "probe",
+              newTotalLpa: null,
+              rationale: "equity: last bot reply mentioned equity but did not cover all four clarity pillars — probe equity terms.",
+              actionKind: "reactive-followup",
+              askedTopic: "equity-clarity",
+            },
+          };
+        }
+      }
+    }
+  }
+
   if (!isTerminalPhase(state.phase)) {
     const reactive = planReactiveFollowup(state);
     if (reactive) return reactive;
