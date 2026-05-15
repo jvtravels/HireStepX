@@ -807,6 +807,112 @@ export interface CandidateProfileResult {
    *  engineering, product launches + metrics for product, portfolio
    *  depth for design. */
   valueProofProvided?: boolean;
+  /* ─── Wave-5 (ITEM 4, 2026-05-15) — 21 preference / behaviour flags.
+   * These are additive; back-compat optional fields would break EMPTY type,
+   * so they are required booleans / nullable unions defaulting to false/null
+   * in EMPTY and populated by the Wave-5 detectors below. */
+
+  /* Equity/Wealth flags */
+  /** Candidate explicitly prefers equity over a higher cash component
+   *  ("I'd rather have equity", "more stock than salary", "equity matters
+   *  more to me than base"). Routes recruiter to equity-first framing.
+   *  Monotone-up. */
+  prefersEquityOverCash: boolean;
+  /** Candidate mentions existing unvested equity / cliff they'd be leaving
+   *  ("I have a 1-year cliff coming up", "unvested RSUs worth X"). Distinct
+   *  from unvestedEquityLossClaim (loss framing); this is existence signal.
+   *  Monotone-up. */
+  hasVestingCliff: boolean;
+  /** Candidate demonstrates RSU/ESOP vesting mechanics awareness ("4-year
+   *  vesting with 1-year cliff", "monthly vesting after cliff", "standard
+   *  4/1 schedule"). Sophisticated-candidate signal. Monotone-up. */
+  rsuVestingAware: boolean;
+  /** Candidate self-identifies as an ESOP/stock holder at current employer
+   *  ("I hold ESOPs", "I have unvested options", "my current package
+   *  includes ESOPs"). Distinct from esopSophisticationProbe (questions
+   *  mechanics) — this is an ownership-existence signal. Monotone-up. */
+  esopHolder: boolean;
+
+  /* Risk/Stability flags */
+  /** Candidate signals preference for fixed over variable comp ("I prefer
+   *  stable fixed salary", "not comfortable with variable", "I'd rather
+   *  have less variable"). Routes recruiter to fixed-heavy structuring.
+   *  Monotone-up. */
+  riskAverse: boolean;
+  /** Candidate signals preference for an MNC / established company over a
+   *  startup ("I want the stability of an MNC", "prefer large company",
+   *  "not comfortable with startup risk"). Monotone-up. */
+  prefersMnc: boolean;
+  /** Candidate signals preference for a startup / high-growth environment
+   *  ("I want to join a startup", "looking for a fast-paced startup",
+   *  "equity is important — startup stage"). Monotone-up. */
+  prefersStartup: boolean;
+  /** Candidate explicitly states willingness to relocate ("I'm open to
+   *  relocating", "happy to move cities", "can relocate for the right
+   *  role"). Distinct from relocationBonusAsked (money ask). Monotone-up. */
+  openToRelocation: boolean;
+  /** Candidate's stated work-mode preference. Null when not stated. */
+  remotePref: "remote" | "hybrid" | "office" | null;
+
+  /* Negotiation behaviour flags */
+  /** Candidate signals they will or are likely to counter any offer
+   *  ("I'll need to think about it and come back", "I'll be negotiating",
+   *  "I always negotiate", "I have a number in mind"). Monotone-up. */
+  likelyToCounter: boolean;
+  /** Candidate volunteered they accepted a first offer in the past
+   *  ("I usually accept the first offer", "I took the first number they
+   *  gave me", "I don't like to negotiate"). Anti-signal for counter risk.
+   *  Monotone-up. */
+  acceptedFirstOffer: boolean;
+  /** Set true when a walk-away phase is triggered in the session (i.e.,
+   *  the negotiation ended with close-walkaway). Set by applyAiMove or
+   *  the phase-derivation path, not by parseCandidateAnswer. */
+  hasWalkedAway: boolean;
+  /** Candidate's expected CTC is > 40% above their stated current CTC
+   *  ("I'm at 20L and want 30L"). High-anchor signal — routes recruiter
+   *  to "show your work" probe. Populated when both numbers are parseable.
+   *  Monotone-up. */
+  anchorsHigh: boolean;
+  /** Candidate gave a salary range with a spread of ≥ ₹20 LPA ("between
+   *  28 and 50 LPA" or similar). Signals low precision / willingness to
+   *  anchor at the low end. Monotone-up. */
+  softOnRange: boolean;
+
+  /* Notice/Timing flags */
+  /** Candidate indicated their notice period can be shortened via buyout
+   *  or early exit ("my notice can be bought out", "they can waive it",
+   *  "I can join earlier if you cover the notice"). Distinct from
+   *  noticeBuyoutAsk (asking whether WE pay). Monotone-up. */
+  noticePeriodFlexible: boolean;
+  /** Candidate's joining urgency. Null when not stated. */
+  joiningUrgency: "immediate" | "standard" | "delayed" | null;
+  /** Estimate of how likely the candidate's current employer will counter.
+   *  "high" when candidate mentions prior counter or current manager knows
+   *  they're looking. "medium" when tenure/specialisation is high. Null
+   *  when not inferable. */
+  counterOfferRisk: "high" | "medium" | "low" | null;
+
+  /* Domain/Seniority flags */
+  /** Candidate is transitioning from Individual Contributor to People
+   *  Manager ("I want to move into management", "looking for a team lead
+   *  / EM / manager role", "ready for the IC→manager transition").
+   *  Distinct from peopleManagementClaimed (already managing). Monotone-up. */
+  isIcToManager: boolean;
+  /** Candidate claims prior leadership / management experience ("I've
+   *  led teams", "ex-engineering-manager", "director level"). Broader
+   *  than peopleManagementClaimed — includes non-current experience.
+   *  Monotone-up. */
+  hasLeadershipExperience: boolean;
+  /** Candidate mentions a niche domain specialisation that commands a
+   *  premium (fintech, healthtech, deep-tech, space-tech, climate-tech,
+   *  embedded, VLSI, quantitative finance). Routes to premium-band voice.
+   *  Monotone-up. */
+  domainSpecialist: boolean;
+  /** Candidate has been at 3+ companies in the last 2 years (distinct from
+   *  tenureSignal="frequent" which is 3+ in 5 years). Extreme job-hopper
+   *  signal — routes to retention-risk framing. Monotone-up. */
+  multipleCompaniesInTwoYears: boolean;
+
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -1019,6 +1125,28 @@ const EMPTY: CandidateProfileResult = {
   manufacturingCoreContext: false,
   quickCommerceContext: false,
   d2cConsumerEquity: false,
+  /* Wave-5 (ITEM 4, 2026-05-15) — 21 preference / behaviour flags. */
+  prefersEquityOverCash: false,
+  hasVestingCliff: false,
+  rsuVestingAware: false,
+  esopHolder: false,
+  riskAverse: false,
+  prefersMnc: false,
+  prefersStartup: false,
+  openToRelocation: false,
+  remotePref: null,
+  likelyToCounter: false,
+  acceptedFirstOffer: false,
+  hasWalkedAway: false,
+  anchorsHigh: false,
+  softOnRange: false,
+  noticePeriodFlexible: false,
+  joiningUrgency: null,
+  counterOfferRisk: null,
+  isIcToManager: false,
+  hasLeadershipExperience: false,
+  domainSpecialist: false,
+  multipleCompaniesInTwoYears: false,
   hasAny: false,
 };
 
@@ -2558,6 +2686,183 @@ function detectD2cConsumerEquity(t: string): boolean {
   return D2C_PATTERNS.some((p) => p.test(t));
 }
 
+/* ─── Wave-5 (ITEM 4, 2026-05-15) — 21 preference / behaviour detectors ──
+ *
+ * Conservative parsers — false positive cost is silently teaching the
+ * kernel an incorrect candidate background. Each detector matches only
+ * on explicit candidate-stated signals; implicit inference is avoided.
+ * All are pure functions on the candidate utterance string. */
+
+function detectPrefersEquityOverCash(t: string): boolean {
+  return /\b(prefer(?:s|ring|red)?\s+(?:more\s+)?(?:equity|stock|esop|rsu)\s+(?:over|to|vs\.?|rather\s+than)\s+(?:a?\s+higher\s+)?(?:cash|base|salary|fixed))\b/i.test(t) ||
+    /\b((?:more\s+)?equity\s+(?:matters?\s+more|is\s+more\s+important|over\s+cash|over\s+base|over\s+salary))\b/i.test(t) ||
+    /\b(rather\s+have\s+(?:more\s+)?(?:equity|stock|esop|rsu)(?:\s+than|\s+over)\s+(?:higher\s+)?(?:cash|base|salary|fixed))\b/i.test(t) ||
+    /\b(equity[\s-]+first\s+(?:comp|compensation|package))\b/i.test(t);
+}
+
+function detectHasVestingCliff(t: string): boolean {
+  /* Candidate mentions their own existing unvested equity / cliff at current co. */
+  return /\b(i\s+have\s+(?:a\s+)?(?:vesting\s+cliff|unvested\s+(?:equity|rsu|esop|stock)))\b/i.test(t) ||
+    /\b(my\s+(?:vesting\s+cliff|unvested|vesting\s+schedule|cliff\s+period)\s+(?:is|at|comes?\s+up|in|after))\b/i.test(t) ||
+    /\b(cliff\s+(?:is\s+)?coming\s+up|approaching\s+my\s+cliff|near\s+(?:my\s+)?cliff)\b/i.test(t);
+}
+
+function detectRsuVestingAware(t: string): boolean {
+  /* Candidate demonstrates 4yr/1yr cliff RSU mechanics knowledge. */
+  return /\b(4[\s-]year\s+vesting|four[\s-]year\s+vesting)\b/i.test(t) ||
+    /\b(1[\s-]year\s+cliff|one[\s-]year\s+cliff|standard\s+cliff)\b/i.test(t) ||
+    /\b(vesting\s+(?:schedule|cadence|cliff|period)\s+(?:of\s+)?4[\s-]?(?:year|yr))/i.test(t) ||
+    /\b(monthly\s+vesting\s+after\s+(?:the\s+)?cliff|quarterly\s+vesting)\b/i.test(t);
+}
+
+function detectEsopHolder(t: string): boolean {
+  /* Candidate self-states they currently hold ESOPs / options / RSUs. */
+  return /\b(i\s+(?:currently\s+)?hold\s+(?:esop|options?|rsu|stock\s+options?))\b/i.test(t) ||
+    /\b(i\s+have\s+(?:esop|unvested\s+options?|vested\s+options?|rsu\s+grant))\b/i.test(t) ||
+    /\b(my\s+current\s+package\s+includes?\s+(?:esop|rsu|stock\s+options?|options?))\b/i.test(t) ||
+    /\b(esop\s+holder|i\s+was\s+granted\s+(?:esop|rsu|options?))\b/i.test(t);
+}
+
+function detectRiskAverse(t: string): boolean {
+  return /\b(prefer\s+(?:fixed|stable|guaranteed|base)\s+(?:salary|comp|compensation|income))\b/i.test(t) ||
+    /\b(not\s+comfortable\s+with\s+(?:variable|risk|bonus[-\s]?heavy|performance[-\s]?linked))\b/i.test(t) ||
+    /\b(would\s+rather\s+have\s+(?:a\s+)?(?:stable|fixed|guaranteed|lower\s+variable))\b/i.test(t) ||
+    /\b(prefer\s+(?:less|lower|minimal)\s+variable)\b/i.test(t);
+}
+
+function detectPrefersMnc(t: string): boolean {
+  return /\b(prefer(?:s|ring|red)?\s+(?:an?\s+)?mnc|want\s+(?:the\s+)?stability\s+of\s+(?:an?\s+)?(?:mnc|large\s+company|established\s+company))\b/i.test(t) ||
+    /\b(looking\s+for\s+(?:a\s+)?(?:large|established|stable)\s+(?:company|employer|organization|organisation))\b/i.test(t) ||
+    /\b(not\s+(?:comfortable|ready)\s+(?:with|for)\s+(?:a\s+)?startup\s+(?:risk|environment|culture))\b/i.test(t);
+}
+
+function detectPrefersStartup(t: string): boolean {
+  return /\b(want(?:s|ing|ed)?\s+to\s+(?:join\s+)?(?:a\s+)?startup)\b/i.test(t) ||
+    /\b(looking\s+for\s+(?:a\s+)?(?:fast[-\s]?paced\s+startup|startup\s+environment|high[-\s]?growth\s+startup))\b/i.test(t) ||
+    /\b(excited\s+(?:about|by)\s+(?:the\s+)?startup\s+(?:culture|risk|equity|stage|journey))\b/i.test(t) ||
+    /\b(startup\s+is\s+(?:important|a\s+priority|what\s+i\s+want))\b/i.test(t);
+}
+
+function detectOpenToRelocation(t: string): boolean {
+  return /\b(open\s+to\s+relocat(?:ing|ion)|happy\s+to\s+(?:move|relocate)|willing\s+to\s+relocat(?:e|ion))\b/i.test(t) ||
+    /\b(can\s+relocate|relocation\s+is\s+not\s+an?\s+issue|fine\s+with\s+relocat(?:ing|ion))\b/i.test(t) ||
+    /\b(ready\s+to\s+(?:move|shift)\s+(?:cities?|to\s+(?:a\s+new\s+city|another\s+city)))\b/i.test(t);
+}
+
+function detectRemotePref(t: string): "remote" | "hybrid" | "office" | null {
+  const lower = t.toLowerCase();
+  /* remote-first signals */
+  if (/\b(prefer(?:s|ring|red)?\s+(?:remote|work\s+from\s+home|wfh)|remote[-\s]?first|fully\s+remote|100%\s+remote|remote\s+(?:only|position|role|work))\b/.test(lower))
+    return "remote";
+  /* office / on-site signals */
+  if (/\b(prefer(?:s|ring|red)?\s+(?:office|on[-\s]?site|in[-\s]?person)|office[-\s]?first|happy\s+to\s+come\s+in|prefer\s+going\s+to\s+(?:the\s+)?office)\b/.test(lower))
+    return "office";
+  /* hybrid signals — check after remote/office so "hybrid with mostly remote"
+   * doesn't mis-fire on "mostly remote" if that comes first in text. */
+  if (/\b(hybrid\s+(?:work|model|setup|schedule|role|preference)|prefer(?:s|ring|red)?\s+hybrid|open\s+to\s+hybrid|2[\s-]3\s+days?\s+(?:in\s+)?(?:office|wfo)|flexible\s+(?:on\s+)?(?:remote|wfh|office))\b/.test(lower))
+    return "hybrid";
+  return null;
+}
+
+function detectLikelyToCounter(t: string): boolean {
+  return /\b(i(?:'ll|'d|\s+will|\s+would)\s+(?:need\s+to\s+)?(?:negotiate|counter|come\s+back\s+(?:to\s+you\s+)?with\s+a\s+number))\b/i.test(t) ||
+    /\b(always\s+negotiate|i\s+negotiate\s+(?:every|all)\s+offer|i\s+have\s+a\s+(?:specific\s+)?number\s+in\s+mind)\b/i.test(t) ||
+    /\b(let\s+me\s+think\s+about\s+(?:the\s+)?number|i\s+want\s+to\s+come\s+back\s+(?:on\s+the\s+)?(number|comp))\b/i.test(t);
+}
+
+function detectAcceptedFirstOffer(t: string): boolean {
+  return /\b(usually\s+accept\s+(?:the\s+)?first\s+offer|took\s+the\s+first\s+(?:number|offer)|don(?:'t|not)\s+(?:like\s+to|usually)\s+negotiate)\b/i.test(t) ||
+    /\b(i\s+(?:typically|generally|usually|always)\s+accept\s+what(?:'s|\s+is)\s+offered)\b/i.test(t);
+}
+
+function detectHasWalkedAway(_t: string): boolean {
+  /* This flag is set by applyAiMove when close-walkaway fires, not by
+   * parseCandidateAnswer. Return false here; the kernel sets it directly. */
+  return false;
+}
+
+/** True when candidate states current CTC X and target Y and Y/X > 1.4. */
+function detectAnchorsHigh(t: string): boolean {
+  /* Pattern: "current CTC is X" AND "looking for / expect Y" in same utterance. */
+  const currentMatch = /\b(?:current(?:ly)?(?:\s+(?:ctc|package|salary|comp(?:ensation)?))?\s+(?:is|at|:)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs|l\s*p\s*a)?\b/i.exec(t) ||
+    /\b(?:i(?:'m|\s+am)\s+(?:currently\s+)?(?:at|earning|drawing|making)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs|l\s*p\s*a)?\b/i.exec(t);
+  const targetMatch = /\b(?:(?:looking\s+for|expect(?:ing)?|want(?:ing)?|targeting|hoping\s+for|need)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs|l\s*p\s*a)?\b/i.exec(t) ||
+    /\b(?:(?:my\s+)?(?:target|expected|desired)\s+(?:ctc|salary|package|comp(?:ensation)?)\s+(?:is|:)\s*)(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs|l\s*p\s*a)?\b/i.exec(t);
+  if (!currentMatch || !targetMatch) return false;
+  const current = parseFloat(currentMatch[1]);
+  const target = parseFloat(targetMatch[1]);
+  if (!Number.isFinite(current) || !Number.isFinite(target) || current <= 0) return false;
+  return target / current > 1.4;
+}
+
+function detectSoftOnRange(t: string): boolean {
+  /* Candidate gave a salary range with spread ≥ 20 LPA. */
+  const rangeMatch = /\b(?:between|from|range(?:\s+of)?|anywhere\s+between)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs|l\s*p\s*a)?\s*(?:to|-|and|–)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs|l\s*p\s*a)?\b/i.exec(t);
+  if (!rangeMatch) return false;
+  const lo = parseFloat(rangeMatch[1]);
+  const hi = parseFloat(rangeMatch[2]);
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return false;
+  return (hi - lo) >= 20;
+}
+
+function detectNoticePeriodFlexible(t: string): boolean {
+  return /\b(?:notice|np)\s+(?:can\s+be\s+|could\s+be\s+)?(?:bought\s+out|waived|shortened|reduced|negotiated|cut\s+short)\b/i.test(t) ||
+    /\b(?:can\s+(?:join|start)\s+(?:in|within|by)\s+\d+\s+days?\s+if\s+(?:you|they)\s+(?:cover|pay|buy)\s+(?:the\s+)?notice)\b/i.test(t) ||
+    /\b(?:early\s+exit\s+(?:is\s+)?possible|buyout\s+(?:the\s+)?notice|willing\s+to\s+(?:buy\s+out|negotiate)\s+(?:my\s+)?notice)\b/i.test(t) ||
+    /\b(?:they\s+can\s+(?:waive|buy\s+out|shorten)\s+(?:my\s+)?notice|notice\s+is\s+flexible)\b/i.test(t) ||
+    /* "they can buy it out" — pronoun-referent pattern common in Indian English */
+    /\b(?:they\s+can\s+buy\s+it\s+out|can\s+buy\s+(?:it|notice|np)\s+out|join\s+in\s+\d+\s+days?\s+if\s+needed)\b/i.test(t);
+}
+
+function detectJoiningUrgency(t: string): "immediate" | "standard" | "delayed" | null {
+  /* immediate — candidate can join within 15 days */
+  if (/\b(?:can\s+join\s+(?:immediately|right\s+away|asap|today|tomorrow)|available\s+immediately|notice(?:less)?\s+(?:or\s+)?zero\s+days?|serving\s+notice(?:\s+already)?|no\s+notice\s+period|already\s+resigned)\b/i.test(t))
+    return "immediate";
+  /* delayed — joining > 90 days away */
+  if (/\b(?:(?:notice\s+period\s+(?:is|of)\s+)?(?:3\s+months?|90\s+days?|6\s+months?|180\s+days?)(?:\s+notice)?|joining\s+(?:only\s+)?after\s+(?:3|6)\s+months?|can(?:not|'t)\s+join\s+(?:for|in\s+the\s+next)\s+(?:3|4|5|6)\s+months?)\b/i.test(t))
+    return "delayed";
+  /* standard — notice 15-90 days */
+  if (/\b(?:(?:notice\s+period\s+(?:is|of)\s+)?(?:1\s+month|30\s+days?|45\s+days?|2\s+months?|60\s+days?)(?:\s+notice)?|standard\s+notice|usual\s+notice)\b/i.test(t))
+    return "standard";
+  return null;
+}
+
+function detectCounterOfferRisk(t: string): "high" | "medium" | "low" | null {
+  /* high — candidate mentions prior counter or manager already knows */
+  if (/\b(?:(?:my\s+)?(?:current\s+)?(?:employer|manager|company|boss)\s+(?:already\s+)?knows?\s+(?:i'm|i\s+am)\s+(?:looking|interviewing|exploring))\b/i.test(t) ||
+    /\b(?:they(?:'ve|\s+have)\s+already\s+(?:counter(?:ed)?|retained|tried\s+to\s+retain)|got\s+a\s+(?:counter|retention)\s+(?:offer|bonus))\b/i.test(t))
+    return "high";
+  /* low — candidate signals resignation letter ready / finalised */
+  if (/\b(?:resignation\s+(?:letter\s+)?(?:is\s+)?(?:ready|submitted|drafted)|already\s+(?:resigned|put\s+in\s+(?:my\s+)?papers?))\b/i.test(t))
+    return "low";
+  return null;
+}
+
+function detectIsIcToManager(t: string): boolean {
+  return /\b(?:want(?:s|ing|ed)?\s+to\s+(?:move\s+into|transition\s+to|switch\s+to)\s+(?:management|people\s+management|em|engineering\s+manager))\b/i.test(t) ||
+    /\b(?:looking\s+for\s+(?:a\s+)?(?:team\s+lead|tech\s+lead|engineering\s+manager|em)\s+(?:role|position|opportunity))\b/i.test(t) ||
+    /\b(?:ready\s+for\s+(?:the\s+)?(?:ic[-\s]?to[-\s]?manager|individual\s+contributor\s+to\s+management)\s+(?:transition|move|switch))\b/i.test(t);
+}
+
+function detectHasLeadershipExperience(t: string): boolean {
+  return /\b(?:i(?:'ve|\s+have)\s+(?:led|managed|headed)\s+(?:a\s+)?team(?:s)?\s+(?:of|with)?\s*\d+)\b/i.test(t) ||
+    /\b(?:ex(?:\s+|-)?(?:engineering\s+manager|em|director|vp\s+of\s+engineering|cto))\b/i.test(t) ||
+    /\b(?:prior\s+(?:management|leadership|people\s+management)\s+experience)\b/i.test(t) ||
+    /\b(?:i\s+was\s+(?:a\s+)?(?:manager|director|vp|head\s+of\s+engineering)\s+at\s+)\b/i.test(t);
+}
+
+function detectDomainSpecialist(t: string): boolean {
+  return /\b(?:fintech|healthtech|health[-\s]?tech|insurtech|edtech|climate[\s-]?tech|space[\s-]?tech|deep[\s-]?tech|bio[\s-]?tech|med[\s-]?tech)\b/i.test(t) ||
+    /\b(?:embedded\s+systems?|vlsi|fpga|rtl\s+design|quant(?:itative)?\s+(?:finance|trading)|hft|high[-\s]?frequency\s+trading)\b/i.test(t) ||
+    /\b(?:niche\s+(?:expertise|domain|specialisation|specialization)|domain\s+(?:specialist|expert|niche))\b/i.test(t);
+}
+
+function detectMultipleCompaniesInTwoYears(t: string): boolean {
+  /* 3+ companies in last 2 years. Look for explicit statements. */
+  return /\b(?:(?:3|three|4|four|5|five)\s+(?:companies?|employers?|jobs?)\s+in\s+(?:the\s+)?(?:last\s+)?2\s+years?)\b/i.test(t) ||
+    /\b(?:i(?:'ve|\s+have)\s+(?:switched|changed|hopped)\s+(?:3|three|4|four|5|five)\s+(?:times|jobs?|companies?)\s+in\s+(?:the\s+)?(?:last\s+)?2\s+years?)\b/i.test(t);
+}
+
 export function detectCollegeTier(text: string): CollegeTier | null {
   if (!text) return null;
   /* tier-1 wins on tie — a candidate from "IIT-B and a tier-3 backup"
@@ -2749,6 +3054,29 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const competingOffersDisclosed = detectCompetingOffersDisclosed(text);
   const valueProofProvided = detectValueProofProvided(text);
 
+  /* Wave-5 (ITEM 4, 2026-05-15) — 21 preference / behaviour flags. */
+  const prefersEquityOverCash = detectPrefersEquityOverCash(text);
+  const hasVestingCliff = detectHasVestingCliff(text);
+  const rsuVestingAware = detectRsuVestingAware(text);
+  const esopHolder = detectEsopHolder(text);
+  const riskAverse = detectRiskAverse(text);
+  const prefersMnc = detectPrefersMnc(text);
+  const prefersStartup = detectPrefersStartup(text);
+  const openToRelocation = detectOpenToRelocation(text);
+  const remotePref = detectRemotePref(text);
+  const likelyToCounter = detectLikelyToCounter(text);
+  const acceptedFirstOffer = detectAcceptedFirstOffer(text);
+  const hasWalkedAway = detectHasWalkedAway(text);
+  const anchorsHigh = detectAnchorsHigh(text);
+  const softOnRange = detectSoftOnRange(text);
+  const noticePeriodFlexible = detectNoticePeriodFlexible(text);
+  const joiningUrgency = detectJoiningUrgency(text);
+  const counterOfferRisk = detectCounterOfferRisk(text);
+  const isIcToManager = detectIsIcToManager(text);
+  const hasLeadershipExperience = detectHasLeadershipExperience(text);
+  const domainSpecialist = detectDomainSpecialist(text);
+  const multipleCompaniesInTwoYears = detectMultipleCompaniesInTwoYears(text);
+
   const hasAny =
     careerGapMonths != null ||
     careerGapActivity != null ||
@@ -2866,7 +3194,29 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     inHandSalaryDisclosed ||
     noticePeriodDisclosed ||
     competingOffersDisclosed ||
-    valueProofProvided;
+    valueProofProvided ||
+    /* Wave-5 (ITEM 4, 2026-05-15) */
+    prefersEquityOverCash ||
+    hasVestingCliff ||
+    rsuVestingAware ||
+    esopHolder ||
+    riskAverse ||
+    prefersMnc ||
+    prefersStartup ||
+    openToRelocation ||
+    remotePref != null ||
+    likelyToCounter ||
+    acceptedFirstOffer ||
+    hasWalkedAway ||
+    anchorsHigh ||
+    softOnRange ||
+    noticePeriodFlexible ||
+    joiningUrgency != null ||
+    counterOfferRisk != null ||
+    isIcToManager ||
+    hasLeadershipExperience ||
+    domainSpecialist ||
+    multipleCompaniesInTwoYears;
   return applyWaveDisables({
     careerGapMonths,
     careerGapActivity,
@@ -2985,6 +3335,28 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     noticePeriodDisclosed,
     competingOffersDisclosed,
     valueProofProvided,
+    /* Wave-5 (ITEM 4, 2026-05-15) */
+    prefersEquityOverCash,
+    hasVestingCliff,
+    rsuVestingAware,
+    esopHolder,
+    riskAverse,
+    prefersMnc,
+    prefersStartup,
+    openToRelocation,
+    remotePref,
+    likelyToCounter,
+    acceptedFirstOffer,
+    hasWalkedAway,
+    anchorsHigh,
+    softOnRange,
+    noticePeriodFlexible,
+    joiningUrgency,
+    counterOfferRisk,
+    isIcToManager,
+    hasLeadershipExperience,
+    domainSpecialist,
+    multipleCompaniesInTwoYears,
     hasAny,
   });
 }
@@ -3455,6 +3827,28 @@ export function mergeCandidateProfile(
       (p.competingOffersDisclosed ?? false) || (next.competingOffersDisclosed ?? false),
     valueProofProvided:
       (p.valueProofProvided ?? false) || (next.valueProofProvided ?? false),
+    /* Wave-5 (ITEM 4, 2026-05-15) — all monotone-up except nullable unions. */
+    prefersEquityOverCash: p.prefersEquityOverCash || next.prefersEquityOverCash,
+    hasVestingCliff: p.hasVestingCliff || next.hasVestingCliff,
+    rsuVestingAware: p.rsuVestingAware || next.rsuVestingAware,
+    esopHolder: p.esopHolder || next.esopHolder,
+    riskAverse: p.riskAverse || next.riskAverse,
+    prefersMnc: p.prefersMnc || next.prefersMnc,
+    prefersStartup: p.prefersStartup || next.prefersStartup,
+    openToRelocation: p.openToRelocation || next.openToRelocation,
+    remotePref: next.remotePref ?? p.remotePref,
+    likelyToCounter: p.likelyToCounter || next.likelyToCounter,
+    acceptedFirstOffer: p.acceptedFirstOffer || next.acceptedFirstOffer,
+    hasWalkedAway: p.hasWalkedAway || next.hasWalkedAway,
+    anchorsHigh: p.anchorsHigh || next.anchorsHigh,
+    softOnRange: p.softOnRange || next.softOnRange,
+    noticePeriodFlexible: p.noticePeriodFlexible || next.noticePeriodFlexible,
+    joiningUrgency: next.joiningUrgency ?? p.joiningUrgency,
+    counterOfferRisk: next.counterOfferRisk ?? p.counterOfferRisk,
+    isIcToManager: p.isIcToManager || next.isIcToManager,
+    hasLeadershipExperience: p.hasLeadershipExperience || next.hasLeadershipExperience,
+    domainSpecialist: p.domainSpecialist || next.domainSpecialist,
+    multipleCompaniesInTwoYears: p.multipleCompaniesInTwoYears || next.multipleCompaniesInTwoYears,
     hasAny: false,
   };
   merged.hasAny =
@@ -3574,6 +3968,28 @@ export function mergeCandidateProfile(
     (merged.inHandSalaryDisclosed ?? false) ||
     (merged.noticePeriodDisclosed ?? false) ||
     (merged.competingOffersDisclosed ?? false) ||
-    (merged.valueProofProvided ?? false);
+    (merged.valueProofProvided ?? false) ||
+    /* Wave-5 (ITEM 4, 2026-05-15) */
+    merged.prefersEquityOverCash ||
+    merged.hasVestingCliff ||
+    merged.rsuVestingAware ||
+    merged.esopHolder ||
+    merged.riskAverse ||
+    merged.prefersMnc ||
+    merged.prefersStartup ||
+    merged.openToRelocation ||
+    merged.remotePref != null ||
+    merged.likelyToCounter ||
+    merged.acceptedFirstOffer ||
+    merged.hasWalkedAway ||
+    merged.anchorsHigh ||
+    merged.softOnRange ||
+    merged.noticePeriodFlexible ||
+    merged.joiningUrgency != null ||
+    merged.counterOfferRisk != null ||
+    merged.isIcToManager ||
+    merged.hasLeadershipExperience ||
+    merged.domainSpecialist ||
+    merged.multipleCompaniesInTwoYears;
   return merged;
 }
