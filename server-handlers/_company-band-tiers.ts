@@ -405,3 +405,67 @@ export function getBandForRole(
     target: Math.round(base.target * m * 10) / 10,
   };
 }
+
+/* ─── Counter-offer risk: well-funded employers ─────────────────────
+ *
+ * Tier-1 ship (2026-05-15): when a candidate currently works at one of these
+ * well-funded employers AND meets the other counter-offer-risk heuristics
+ * (short tenure, target hike in the "just enough to beat" band, vague
+ * competing offer), the recruiter should expect a retention counter from
+ * the current employer to land within 2-3 weeks of resignation. The
+ * negotiation move-picker uses this to choose firmer close-pressure and to
+ * surface a written-offer commitment ask earlier. */
+export const COUNTER_OFFER_RISK_EMPLOYERS: ReadonlySet<string> = new Set([
+  "infosys", "tcs", "tata consultancy", "wipro", "hcl", "cognizant",
+  "flipkart", "swiggy", "zomato", "phonepe", "razorpay", "paytm",
+  "amazon", "microsoft", "google", "adobe", "salesforce",
+  "walmart labs", "walmart", "jpmc", "jpmorgan", "goldman sachs", "wells fargo",
+  "freshworks", "zoho",
+]);
+
+/** Returns true if companyName matches any well-funded employer known to
+ *  actively counter-offer. Conservative substring match on normalized name. */
+export function isCounterOfferRiskEmployer(companyName: string | null | undefined): boolean {
+  if (!companyName) return false;
+  const n = normalize(companyName);
+  if (!n) return false;
+  for (const e of COUNTER_OFFER_RISK_EMPLOYERS) {
+    if (n.includes(e)) return true;
+  }
+  return false;
+}
+
+/* ─── Per-company hike caps ─────────────────────────────────────────
+ *
+ * Tier-3 ship (2026-05-15): in-house TA policy at large Indian employers
+ * caps the % hike they'll authorize over current CTC, regardless of band.
+ * Values are observed 2026 ceilings from offer-scrape data; null = unknown.
+ * The kernel concession ceiling clamps to (currentCtc × (1 + cap/100))
+ * when a cap is known and currentCtc is stated. */
+export const COMPANY_HIKE_CAP_PCT: ReadonlyMap<string, number> = new Map([
+  ["infosys", 30], ["tcs", 30], ["tata consultancy", 30], ["wipro", 30],
+  ["hcl", 30], ["cognizant", 30], ["capgemini", 30],
+  ["jpmc", 35], ["jpmorgan", 35], ["goldman sachs", 35], ["wells fargo", 30],
+  ["citi", 35], ["walmart labs", 40],
+  ["flipkart", 50], ["swiggy", 50], ["zomato", 50], ["phonepe", 50],
+  ["razorpay", 50], ["freshworks", 35], ["zoho", 25],
+  ["google", 40], ["microsoft", 40], ["amazon", 40], ["adobe", 35],
+  ["salesforce", 35],
+  ["mckinsey", 25], ["bain", 25],
+  ["deloitte", 30], ["ey", 30], ["pwc", 30], ["kpmg", 30],
+]);
+
+/** Returns the per-company % hike cap if known, else null. Substring match
+ *  on normalized name; longest-match wins to disambiguate "ge" vs "google". */
+export function getCompanyHikeCap(companyName: string | null | undefined): number | null {
+  if (!companyName) return null;
+  const n = normalize(companyName);
+  if (!n) return null;
+  let best: { key: string; cap: number } | null = null;
+  for (const [key, cap] of COMPANY_HIKE_CAP_PCT) {
+    if (n.includes(key) && (best == null || key.length > best.key.length)) {
+      best = { key, cap };
+    }
+  }
+  return best?.cap ?? null;
+}

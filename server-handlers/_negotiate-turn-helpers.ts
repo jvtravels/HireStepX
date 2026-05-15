@@ -2282,6 +2282,43 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   if (state.recruiterFactsAlreadySaid && state.recruiterFactsAlreadySaid.length > 0) {
     parts.push(`[ALREADY-STATED FACTS (do NOT repeat verbatim): ${state.recruiterFactsAlreadySaid.join(",")}]`);
   }
+  /* Tier-1 ship (2026-05-15) — counter-offer-at-current risk advisory. The
+   * detector only fires high when the candidate's currentCtc + target +
+   * tenure-shape line up with the "just enough to beat" retention pattern;
+   * surfaces as an advisory line so the prompt can stiffen the close. */
+  try {
+    /* Dynamic require so the helper stays leaf-level (no kernel cycle). */
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+    const { estimateCounterOfferRisk } = require("./_counter-offer-risk") as typeof import("./_counter-offer-risk");
+    const cpForRisk = state.candidateProfile;
+    /* Derive a coarse tenureMonths proxy from tenureSignal: short=18, average=42, long=72. Null otherwise. */
+    let tenureMonths: number | null = null;
+    const ts = cpForRisk?.tenureSignal as string | null | undefined;
+    if (ts === "short") tenureMonths = 18;
+    else if (ts === "average") tenureMonths = 42;
+    else if (ts === "long") tenureMonths = 72;
+    const credibility =
+      state.competingOfferDetail?.letterShareOffered === true ? "letter-in-hand" :
+      state.competingOfferDetail?.company ? "named" :
+      state.competingOffer != null ? "vague" : null;
+    const risk = estimateCounterOfferRisk({
+      candidateProfile: cpForRisk ? { tenureSignal: cpForRisk.tenureSignal } : null,
+      currentCtcLpa: state.candidateCurrentCtc,
+      targetLpa: state.candidateTarget,
+      tenureMonths,
+      /* Kernel state doesn't carry a typed `currentEmployer` field today;
+       * the well-funded-employer signal therefore won't fire until that's
+       * threaded through (deferred — separate change). Risk still fires
+       * on hike-band + tenure-shape signals. */
+      currentEmployer: null,
+      competingOfferCredibility: credibility,
+    });
+    if (risk.risk === "high") {
+      parts.push(`[COUNTER-OFFER RISK: high — reasons: ${risk.reasons.join("; ")}]`);
+    }
+  } catch {
+    /* Defensive: if the module fails to load, do not break the brief. */
+  }
   parts.push(`rationale=${move.rationale}`);
   return parts.join(" | ");
 }
