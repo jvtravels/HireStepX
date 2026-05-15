@@ -738,6 +738,194 @@ export interface NegotiationState {
    * record which bracket-tagged directives were in front of the LLM on
    * the turn the move was chosen. One-shot per turn; cleared in applyAiMove. */
   lastBriefTags?: string[];
+
+  /* Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta.
+   * Captures WHAT CHANGED on the most recent candidate turn (folded by
+   * applyCandidateAnswer) so downstream consumers can route reactively
+   * ("candidate just disclosed competing offer — probe credibility")
+   * instead of from accumulated state ("competing offer is set, but who
+   * knows when it was set"). Cleared (null) by applyAiMove. Optional for
+   * back-compat — older serialized sessions deserialize without it and
+   * any consumer must null-check. */
+  lastTurnDelta?: TurnDelta | null;
+}
+
+/* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
+ *
+ * Diff between pre- and post-state for a single candidate utterance.
+ * Populated by `computeTurnDelta(pre, post, parsed)` inside
+ * `applyCandidateAnswer` and stored on `state.lastTurnDelta`. Cleared
+ * by `applyAiMove`. Each field is a boolean "this kind of thing just
+ * happened this turn" signal — consumers that need the actual value
+ * read it from the post-state.
+ *
+ * Eleven disclosure categories spec'd by the negotiation-flow audit
+ * (E row 1):
+ *   currentCtc / expectedCtc          — comp facts (new values, not restates)
+ *   fixedVariableSplit                — base+variable breakdown disclosed
+ *   noticePeriod                      — notice days OR buyout signal
+ *   competingOffer                    — competing-offer presence (number or vague)
+ *   joiningDate                       — early-join / last-working-day signal
+ *   valueProof                        — quota / portfolio / depth signal (sales/contract/profile)
+ *   askedQuestion                     — candidate's utterance contains a "?" question
+ *   refusedItem                       — probeRefusalCount incremented this turn
+ *   freshGrad                         — first-time fresh-grad disclosure
+ *   retentionCounter                  — current-employer retention counter disclosed
+ */
+export interface TurnDelta {
+  /** Candidate disclosed a NEW currentCtc value this turn (not a restate). */
+  disclosedCurrentCtc: boolean;
+  /** Candidate disclosed a NEW expected/target value this turn. */
+  disclosedExpectedCtc: boolean;
+  /** Candidate disclosed a fixed/variable breakdown for either CTC. */
+  disclosedFixedVariableSplit: boolean;
+  /** Candidate disclosed notice period or notice-related signal (buyout / LWD). */
+  disclosedNoticePeriod: boolean;
+  /** Candidate disclosed a competing offer (number OR named-vague signal). */
+  disclosedCompetingOffer: boolean;
+  /** Candidate disclosed a joining-date / early-join signal. */
+  disclosedJoiningDate: boolean;
+  /** Candidate disclosed role-specific value proof (quota / ARR / portfolio / shipped systems). */
+  disclosedValueProof: boolean;
+  /** Candidate utterance contained a direct question ("?"). */
+  askedQuestion: boolean;
+  /** Candidate refused a probe this turn (probeRefusalCount incremented). */
+  refusedItem: boolean;
+  /** Candidate first-disclosed fresh-grad status this turn. */
+  freshGradDisclosed: boolean;
+  /** Candidate disclosed a retention counter from their current employer this turn. */
+  retentionCounterDisclosed: boolean;
+}
+
+const EMPTY_TURN_DELTA: TurnDelta = {
+  disclosedCurrentCtc: false,
+  disclosedExpectedCtc: false,
+  disclosedFixedVariableSplit: false,
+  disclosedNoticePeriod: false,
+  disclosedCompetingOffer: false,
+  disclosedJoiningDate: false,
+  disclosedValueProof: false,
+  askedQuestion: false,
+  refusedItem: false,
+  freshGradDisclosed: false,
+  retentionCounterDisclosed: false,
+};
+
+/** Compute the per-turn delta between pre-state and post-state given
+ *  the parsed candidate answer. Pure. Called at every return point of
+ *  applyCandidateAnswer so terminal / soft-accept / walk-away paths all
+ *  carry an accurate delta for downstream consumers. */
+export function computeTurnDelta(
+  pre: NegotiationState,
+  post: NegotiationState,
+  parsed: ParsedAnswer,
+  rawAnswer: string,
+): TurnDelta {
+  const d: TurnDelta = { ...EMPTY_TURN_DELTA };
+
+  /* Comp facts — disclosed iff the post value is different from the pre
+   * value (covers null→number AND value-changed cases). Re-stating the
+   * same number does NOT count as a fresh disclosure. */
+  if (post.candidateCurrentCtc != null && post.candidateCurrentCtc !== pre.candidateCurrentCtc) {
+    d.disclosedCurrentCtc = true;
+  }
+  if (post.candidateTarget != null && post.candidateTarget !== pre.candidateTarget) {
+    d.disclosedExpectedCtc = true;
+  }
+
+  /* Fixed/variable split — fired when this turn's parsed breakdown
+   * carried BOTH base and variable. Captures both "split disclosed for
+   * current CTC" and "split disclosed for expected CTC" — consumers
+   * disambiguate via state.lastDisclosureSubject if they care. */
+  if (
+    parsed.componentBreakdown.hasAny &&
+    parsed.componentBreakdown.base != null &&
+    parsed.componentBreakdown.variable != null
+  ) {
+    d.disclosedFixedVariableSplit = true;
+  }
+
+  /* Notice period — covers both notice-days AND buyout/LWD signals. */
+  if (parsed.noticeJoining.hasAny) {
+    const pn = pre.noticeJoining;
+    const nn = post.noticeJoining;
+    if (
+      (nn.noticePeriodDays != null && nn.noticePeriodDays !== pn.noticePeriodDays) ||
+      (nn.buyoutRequested && !pn.buyoutRequested) ||
+      (nn.lastWorkingDayText != null && nn.lastWorkingDayText !== pn.lastWorkingDayText)
+    ) {
+      d.disclosedNoticePeriod = true;
+    }
+    if (
+      (nn.earlyJoinPreferred && !pn.earlyJoinPreferred) ||
+      (nn.lastWorkingDayText != null && nn.lastWorkingDayText !== pn.lastWorkingDayText)
+    ) {
+      d.disclosedJoiningDate = true;
+    }
+  }
+
+  /* Competing offer — either numeric or named-vague signal. */
+  if (
+    (post.competingOffer != null && post.competingOffer !== pre.competingOffer) ||
+    parsed.signalsCompetingExistsWithoutNumber ||
+    (parsed.competingOfferDetail.hasAny &&
+      (parsed.competingOfferDetail.company != null ||
+        parsed.competingOfferDetail.status != null ||
+        parsed.competingOfferDetail.stage != null ||
+        parsed.competingOfferDetail.letterShareOffered ||
+        parsed.competingOfferDetail.onHold))
+  ) {
+    d.disclosedCompetingOffer = true;
+  }
+
+  /* Value proof — sales OTE / contract rate / profile signals that
+   * speak to role-specific value. Sales/contract aren't in ParsedAnswer;
+   * detect via post-state diff against pre-state (extractSalesOTE /
+   * extractContractRate are folded into post inside applyCandidateAnswer). */
+  if (
+    (post.salesOTE.hasAny && !pre.salesOTE.hasAny) ||
+    (post.contractRate.hasAny && !pre.contractRate.hasAny)
+  ) {
+    d.disclosedValueProof = true;
+  }
+  if (
+    parsed.candidateProfile.hasAny &&
+    (parsed.candidateProfile.quotaAttainmentClaimed ||
+      parsed.candidateProfile.peopleManagementClaimed ||
+      parsed.candidateProfile.transferableSkillsClaimed ||
+      parsed.candidateProfile.variableTrackRecord)
+  ) {
+    d.disclosedValueProof = true;
+  }
+
+  /* Asked-question — direct question in the candidate's utterance. */
+  if (typeof rawAnswer === "string" && /\?/.test(rawAnswer)) {
+    d.askedQuestion = true;
+  }
+
+  /* Refused-item — probeRefusalCount incremented this turn. */
+  if ((post.probeRefusalCount ?? 0) > (pre.probeRefusalCount ?? 0)) {
+    d.refusedItem = true;
+  }
+
+  /* Fresh-grad — first-time disclosure (pre=false, post=true). */
+  if (!pre.freshGradDisclosed && post.freshGradDisclosed) {
+    d.freshGradDisclosed = true;
+  }
+
+  /* Retention counter — current employer counter disclosed. */
+  if (parsed.retentionCounter.hasAny) {
+    const pr = pre.retentionCounter;
+    const nr = post.retentionCounter;
+    if (
+      (nr.amountLpa != null && nr.amountLpa !== pr.amountLpa) ||
+      (nr.hasAny && !pr.hasAny)
+    ) {
+      d.retentionCounterDisclosed = true;
+    }
+  }
+
+  return d;
 }
 
 /* ─── Fix 7 (2026-05-15) — Anchor-lock helpers ───────────────────── */
@@ -1778,6 +1966,11 @@ function extractUsdAmount(text: string, patterns: RegExp[]): number | null {
  *  mutates the input. Terminal phases are sticky: if state.phase is
  *  already terminal, returns state unchanged. */
 export function applyCandidateAnswer(state: NegotiationState, answer: string): NegotiationState {
+  /* Negotiation-flow redesign commit 1 (2026-05-15): capture pre-state
+   * snapshot for TurnDelta computation. The single pre/post diff is
+   * recomputed at every return point via finalize() below to keep
+   * the 8+ return branches consistent. */
+  const pre = state;
   /* Walk-away-and-return: if state is terminal `walked-away` but the
      candidate sends a non-empty engagement, re-open the conversation
      with a penalty flag. This is the only path out of a terminal phase
@@ -1808,6 +2001,14 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     vossTacticsUsed: [...state.vossTacticsUsed],
     infoAsked: [...state.infoAsked],
     conversationLog: appendConversation(state.conversationLog, "candidate", answer),
+  };
+  /* Commit 1 (2026-05-15): finalize() stamps state.lastTurnDelta from the
+   * pre-state snapshot before every return. Keeps the 8+ return branches
+   * (terminal-accept / soft-accept / walk-away / regular / phase-only)
+   * symmetric. Pure — mutates the draft `n` in place. */
+  const finalize = (n: NegotiationState): NegotiationState => {
+    n.lastTurnDelta = computeTurnDelta(pre, n, parsed, answer);
+    return n;
   };
 
   /* Bind newly-stated facts. Last-stated wins (the candidate may
@@ -2143,7 +2344,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
         next.phase = "accepted";
         next.acceptedAtTurn = state.turnIndex;
         attachPostAcceptanceMessage(next);
-        return next;
+        return finalize(next);
       }
     }
   }
@@ -2157,7 +2358,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     if (parsed.vossTactics.includes("sign-today-bundle")) {
       next.verbalAcceptanceTurn = state.turnIndex;
       next.phase = derivePhase(next);
-      return next;
+      return finalize(next);
     }
     /* Bug 2 (2026-05-14) — STAGE GATING. Terminal `accepted` requires
      * an unambiguous explicit acceptance OR three consecutive non-
@@ -2188,7 +2389,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
         /* Not strict-accepted and no implicit-accept proxy: hold the
          * phase instead of closing. Derive phase normally. */
         next.phase = derivePhase(next);
-        return next;
+        return finalize(next);
       }
     }
     /* Fix 3 (PDF #17 follow-up, 2026-05-15) — premature-close guard.
@@ -2197,24 +2398,24 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     const closeReason: "accept" | "soft-accept" = strict.accepted ? "accept" : "soft-accept";
     if (!canCloseSession(next, answer, closeReason)) {
       next.phase = derivePhase(next);
-      return next;
+      return finalize(next);
     }
     next.phase = "accepted";
     next.acceptedAtTurn = state.turnIndex;
     attachPostAcceptanceMessage(next);
-    return next;
+    return finalize(next);
   }
   if (parsed.signalsWalkAway) {
     /* Fix 3 (PDF #17 follow-up, 2026-05-15) — explicit walk-away always
      * passes; this is the candidate declining outright. */
     next.phase = "walked-away";
     next.walkedAwayAtTurn = state.turnIndex;
-    return next;
+    return finalize(next);
   }
 
   /* Non-terminal: re-derive phase from updated state. */
   next.phase = derivePhase(next);
-  return next;
+  return finalize(next);
 }
 
 /** Fold an externally-computed NegotiationFacts (from the legacy
@@ -2518,6 +2719,10 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     /* Architectural bug-prevention (2026-05-15) — clear one-shot brief
      * tag attribution so next turn starts fresh. */
     lastBriefTags: undefined,
+    /* Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta is a
+     * per-candidate-turn signal. Clear it on the AI turn so a stale delta
+     * cannot bleed into the next candidate turn's reactive routing. */
+    lastTurnDelta: null,
   };
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;

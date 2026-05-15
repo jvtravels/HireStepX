@@ -32,6 +32,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["MAX_GAP_MONTHS", "kernel-public clamp constant; documentation surface for downstream validators"],
   ["CONVERSATION_LOG_CAP", "kernel-public log cap; documentation constant"],
   ["detectCurrentEmployer", "internally called inside _negotiation-kernel.ts (rg excludes the defining file)"],
+  ["computeTurnDelta", "internally called inside _negotiation-kernel.ts by applyCandidateAnswer's finalize() (rg excludes the defining file); exported for unit-testability of the diff logic"],
 
   /* ── Kernel public API exposed for direct external consumers ───────── */
   ["applyPersonaToBand", "public kernel API; persona-derived band shaping is opt-in for consumers"],
