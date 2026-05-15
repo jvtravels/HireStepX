@@ -83,6 +83,7 @@ import {
   validateNextActionEmitted,
   validateHikeProbe,
   validateNoFabricatedFacts,
+  validateCloseVocabularyMatchesLever,
 } from "./_response-validators";
 import { renderActionFallbackProse, type NextAction } from "./_next-action-planner";
 
@@ -272,6 +273,8 @@ export async function generateAiText(
     const hikeDisc = validateHikeProbe(a1.text, state);
     /* F3 (PDF#19 2026-05-15) — fabricated-facts validator. Critical. */
     const fabDisc = validateNoFabricatedFacts(a1.text, state);
+    /* F4 (PDF#19 2026-05-15) — close-vocab matches lever. Critical. */
+    const closeVocabDisc = validateCloseVocabularyMatchesLever(a1.text, state, move);
     if (
       !rep.repeated &&
       coh.coherent &&
@@ -281,7 +284,8 @@ export async function generateAiText(
       ackDisc.ok &&
       nextActDisc.ok &&
       hikeDisc.ok &&
-      fabDisc.ok
+      fabDisc.ok &&
+      closeVocabDisc.ok
     ) {
       return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
     }
@@ -335,6 +339,11 @@ export async function generateAiText(
       console.warn(`[negotiate-turn] fabricated-facts violation (${fabDisc.reason}); rerolling`);
       rerollNotes.push(`[VALIDATOR REJECTION: ${fabDisc.reason}]`);
     }
+    if (!closeVocabDisc.ok) {
+      /* F4 (PDF#19 2026-05-15) — close-vocab critical. */
+      console.warn(`[negotiate-turn] close-vocab violation (${closeVocabDisc.reason}); rerolling`);
+      rerollNotes.push(`[VALIDATOR REJECTION: ${closeVocabDisc.reason}]`);
+    }
     const rerollUser = user + `\n\nNOTE — ${rerollNotes.join(" ")}`;
     rerollAttempts++;
     const a1b = await attempt(rerollUser);
@@ -351,6 +360,8 @@ export async function generateAiText(
         const hikeDisc2 = validateHikeProbe(a1b.text, state);
         /* F3 (PDF#19 2026-05-15) — fabricated-facts validator. */
         const fabDisc2 = validateNoFabricatedFacts(a1b.text, state);
+        /* F4 (PDF#19 2026-05-15) — close-vocab matches lever. */
+        const closeVocabDisc2 = validateCloseVocabularyMatchesLever(a1b.text, state, move);
         if (
           !rep2.repeated &&
           coh2.coherent &&
@@ -360,7 +371,8 @@ export async function generateAiText(
           ackDisc2.ok &&
           nextActDisc2.ok &&
           hikeDisc2.ok &&
-          fabDisc2.ok
+          fabDisc2.ok &&
+          closeVocabDisc2.ok
         ) {
           return { text: enforceRoleLabel(a1b.text, state.role || ""), source: "llm-retry", failureKinds, envelopeMissingAttempts };
         }
@@ -382,7 +394,8 @@ export async function generateAiText(
           !budDisc2.ok ||
           !rangeDisc2.ok ||
           !nextActDisc2.ok ||
-          !fabDisc2.ok;
+          !fabDisc2.ok ||
+          !closeVocabDisc2.ok;
         const advisoryFailed = !ackDisc2.ok || !hikeDisc2.ok;
         if (criticalFailed) {
           const reasons = [
@@ -391,6 +404,7 @@ export async function generateAiText(
             !rangeDisc2.ok ? `range-discipline: ${rangeDisc2.reason}` : null,
             !nextActDisc2.ok ? `next-action-emitted: ${nextActDisc2.reason}` : null,
             !fabDisc2.ok ? `fabricated-facts: ${fabDisc2.reason}` : null,
+            !closeVocabDisc2.ok ? `close-vocab: ${closeVocabDisc2.reason}` : null,
           ].filter((r): r is string => !!r);
           console.warn(`[negotiate-turn] critical validator fallthrough → substituting kernel prose: ${reasons.join(" | ")}`);
           if (!state.decisionLog) state.decisionLog = [];
@@ -430,7 +444,7 @@ export async function generateAiText(
      * `error` state OR a1b.failures.length > 0, we still reach here
      * holding a1.text — that's the bad text. Substitute on critical. */
     const a1Crit =
-      !numDisc.ok || !budDisc.ok || !rangeDisc.ok || !nextActDisc.ok || !fabDisc.ok;
+      !numDisc.ok || !budDisc.ok || !rangeDisc.ok || !nextActDisc.ok || !fabDisc.ok || !closeVocabDisc.ok;
     if (a1Crit) {
       const reasons = [
         !numDisc.ok ? `number-discipline: ${numDisc.reason}` : null,
@@ -438,6 +452,7 @@ export async function generateAiText(
         !rangeDisc.ok ? `range-discipline: ${rangeDisc.reason}` : null,
         !nextActDisc.ok ? `next-action-emitted: ${nextActDisc.reason}` : null,
         !fabDisc.ok ? `fabricated-facts: ${fabDisc.reason}` : null,
+        !closeVocabDisc.ok ? `close-vocab: ${closeVocabDisc.reason}` : null,
       ].filter((r): r is string => !!r);
       console.warn(`[negotiate-turn] critical validator fallthrough (a1 path) → substituting kernel prose: ${reasons.join(" | ")}`);
       if (!state.decisionLog) state.decisionLog = [];

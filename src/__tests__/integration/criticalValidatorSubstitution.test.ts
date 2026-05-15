@@ -95,4 +95,29 @@ describe("F2 — kernel-authored prose substitution on critical validator failur
     const log = state.decisionLog ?? [];
     expect(log.some((e) => e.picker === "kernel-prose-substitution")).toBe(true);
   });
+
+  it("substitutes kernel prose when LLM uses close vocab on a non-close action (F4 critical → F2 substitutes)", async () => {
+    /* Move is a discovery probe; LLM emits "Congratulations, on board!"
+     * F4 rejects on both attempts → F2 substitutes. */
+    const state: NegotiationState = {
+      ...initState({ sessionId: "s-f4-int", role: "Software Engineer", company: "Acme", band: BAND }),
+      turnIndex: 1,
+      phase: "opening",
+      plannedNextAction: {
+        kind: "discovery-probe",
+        item: "currentCtc",
+        ask: "Before we go further, can you share your current CTC?",
+      },
+    };
+
+    const llm: LlmCaller = vi.fn(
+      async () => "Congratulations, we're excited to have you on board!",
+    );
+
+    const result = await generateAiText(state, PROBE_MOVE, "", llm, "user");
+
+    expect(result.text).not.toMatch(/congratulations|on board|welcome to the team/i);
+    const log = state.decisionLog ?? [];
+    expect(log.some((e) => e.picker === "kernel-prose-substitution")).toBe(true);
+  });
 });

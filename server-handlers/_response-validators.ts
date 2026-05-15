@@ -15,7 +15,7 @@
  * (no user-facing hard fail — coverage is best-effort enforcement, not
  * a circuit breaker).
  */
-import type { NegotiationState } from "./_negotiation-kernel";
+import type { NegotiationState, AiMove } from "./_negotiation-kernel";
 import { getCompanyHikeCap, classifyRoleFamily } from "./_company-band-tiers";
 import {
   getNextDiscoveryQuestion,
@@ -359,6 +359,50 @@ export function validateHikeProbe(
     reason:
       "HIKE PROBE — hike-justification brief tag was set but reply lacks probe vocabulary (justif/impact/metrics/scope/ownership/...)",
     violations: ["no-probe-vocab"],
+  };
+}
+
+/* ─── F4 (PDF#19 2026-05-15) — close-vocabulary-matches-lever ────────
+ *
+ * Real session output: "Congratulations, we're excited to have you on
+ * board!" on a discovery-probe turn (no close, no accept). The bot
+ * hallucinated an outcome that the kernel never decided on. The kernel
+ * is the source of truth for whether the session is closing; the
+ * reply MUST NOT use closing vocabulary unless the picked move is
+ * close-acceptance.
+ *
+ * Tagged as critical at the negotiate-turn.ts call site so F2
+ * substitutes deterministic prose on a failure.
+ */
+const CLOSE_VOCAB_PATTERNS: RegExp[] = [
+  /\bcongratulations\b[^.!?]*\bon board\b/i,
+  /\bwelcome to the team\b/i,
+  /\bwe['’]?re excited to have you\b/i,
+  /\boffer letter (?:will be|is being|has been) (?:prepared|sent|issued)\b/i,
+  /\blet['’]?s get you onboarded\b/i,
+];
+
+/** CLOSE VOCABULARY MATCHES LEVER: a reply may use closing vocabulary
+ *  only when the picked move is close-acceptance. Any other lever
+ *  (probe / counter-base / open-with-offer / lever-explore / hold-firm
+ *  / benefits-summary / etc.) with close vocabulary is a hallucinated
+ *  outcome. */
+export function validateCloseVocabularyMatchesLever(
+  reply: string,
+  _state: NegotiationState,
+  move: AiMove,
+): ValidatorResult {
+  if (!reply) return { ok: true };
+  if (move.lever === "close-acceptance") return { ok: true };
+  const violations: string[] = [];
+  for (const re of CLOSE_VOCAB_PATTERNS) {
+    if (re.test(reply)) violations.push(re.source);
+  }
+  if (violations.length === 0) return { ok: true };
+  return {
+    ok: false,
+    reason: `CLOSE VOCABULARY — reply uses closing vocabulary but move.lever is "${move.lever}", not close-acceptance`,
+    violations,
   };
 }
 
