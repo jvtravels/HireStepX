@@ -41,6 +41,7 @@ import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfill
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
 import { buildPostAcceptanceMessage } from "./_post-acceptance";
 import { detectInHandFraming, backComputeCtcFromInHand } from "./_in-hand-vs-ctc";
+import { detectRangeDisclosure } from "./_trial-close-detector";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -129,6 +130,13 @@ import { classifyRoleFamily } from "./_company-band-tiers";
 export type NegotiationPhase =
   /* Pre-offer — AI hasn't put a number on the table yet. */
   | "opening"
+  /* Ordered discovery is complete but no specific anchor has been
+   * disclosed yet — the AI must volunteer a salary RANGE (e.g.
+   * "₹X-Y band") before converging to a single number. PDF#18
+   * follow-up (2026-05-15): promoted from a soft brief-only directive
+   * into a real phase enum value so the state-machine + move-picker
+   * + validator enforce it. */
+  | "range-disclosure"
   /* AI has presented the initial offer; candidate is reacting. */
   | "offer-presented"
   /* AI is probing candidate's target / reasoning. */
@@ -666,6 +674,31 @@ export interface NegotiationState {
    * discipline gate. Increments when the candidate dodges a probe for
    * their expectation. Optional. */
   probeRefusalCount?: number;
+
+  /* PDF#18 follow-up (2026-05-15) — range-disclosure phase enum.
+   * Records the turnIndex at which the bot first emitted a salary
+   * RANGE (e.g. "₹18-22L band"). Set in applyAiMove when
+   * detectRangeDisclosure fires on the bot text. derivePhase uses this
+   * to transition out of the new "range-disclosure" phase once the
+   * candidate has reacted (one turn later). Optional for back-compat. */
+  rangeDisclosedAtTurn?: number | null;
+
+  /* PDF#18 follow-up (2026-05-15) — current-vs-expected split
+   * disambiguation. Records the subject of the LAST discovery question
+   * the bot asked, so when the candidate then provides a "fixed +
+   * variable" split utterance, the detector knows whether to flag it
+   * against currentCtcFixedVariableSplitDisclosed (subject='current')
+   * or expectedCtcFixedVariableSplitDisclosed (subject='expected').
+   * Set in applyAiMove from move.rationale (which carries the next
+   * ordered-discovery item key). Optional. */
+  lastDisclosureSubject?: "current" | "expected" | null;
+
+  /* P4 (2026-05-15) — per-item refusal tracking for the refusal-fallback
+   * path in getNextOrderedDiscoveryItem. When the candidate refuses an
+   * item ≥2 times, the kernel skips it and moves to the next ordered
+   * item. Keys are DiscoverySequenceItem values; values true once the
+   * item has been refused enough times. Optional. */
+  discoveryRefusedItems?: Record<string, boolean>;
 
   /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
    * true, candidateTarget is in-hand (not CTC). The CTC-equivalent is
@@ -2194,6 +2227,51 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
     return "opening";
   }
 
+  /* PDF#18 follow-up (2026-05-15) — range-disclosure phase transitions.
+   *
+   * ENTRY: when in `opening` AND ordered discovery is complete AND no
+   * specific anchor disclosed yet (highestOfferMade === 0) AND the
+   * session is past turn 0 (so we have something to react to), promote
+   * to `range-disclosure`. The companion gate in the move-picker
+   * forces a range-emitting move when this phase is active.
+   *
+   * EXIT: once a range has been disclosed (rangeDisclosedAtTurn set)
+   * AND at least one AI turn has elapsed since (turnIndex >
+   * rangeDisclosedAtTurn), advance to negotiation territory. We use
+   * the post-range "negotiation" semantically = offer-presented when
+   * no candidate target has been parsed yet, counter-offer when one
+   * has — same routing the rest of derivePhase already uses. */
+  if (
+    state.phase === "opening" &&
+    state.highestOfferMade === 0 &&
+    state.turnIndex >= 1 &&
+    state.discoveryChecklist != null &&
+    isDiscoveryComplete(state.discoveryChecklist, classifyRoleFamily(state.role)) &&
+    (state.rangeDisclosedAtTurn == null)
+  ) {
+    return "range-disclosure";
+  }
+  if (state.phase === "range-disclosure") {
+    /* Still pre-anchor: if a specific number hasn't been put on the
+     * table, stay in range-disclosure until the bot has actually
+     * disclosed a range AND at least one further turn has elapsed
+     * (allowing the candidate to react). */
+    if (state.highestOfferMade > 0) {
+      /* A specific anchor has been put on the table — promote. */
+      if (state.candidateTarget != null) return "counter-offer";
+      return "offer-presented";
+    }
+    if (
+      state.rangeDisclosedAtTurn != null &&
+      state.turnIndex > state.rangeDisclosedAtTurn
+    ) {
+      /* Candidate has had a turn to react — advance to negotiation. */
+      if (state.candidateTarget != null) return "probe-expectations";
+      return "offer-presented";
+    }
+    return "range-disclosure";
+  }
+
   /* Phase 25e (2026-05-13) — closing-push runway. The previous machine
    * jumped straight from counter-offer / lever-explore to stalemate the
    * instant turn budget elapsed, denying the AI a final framed close.
@@ -2404,6 +2482,36 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   /* Fix 4 (2026-05-15) — remember last bot reply for repetition detection. */
   next.lastBotReply = aiText || null;
 
+  /* PDF#18 follow-up (2026-05-15) — range-disclosure phase enum.
+   * When the bot text emits a salary RANGE (detected by the existing
+   * detectRangeDisclosure helper), record the turnIndex so derivePhase
+   * can transition out of "range-disclosure" once the candidate has
+   * reacted. Sticky: once set, do not overwrite (the first range
+   * disclosure is the phase marker). */
+  if (
+    aiText &&
+    next.rangeDisclosedAtTurn == null &&
+    detectRangeDisclosure(aiText)
+  ) {
+    next.rangeDisclosedAtTurn = next.turnIndex;
+  }
+
+  /* PDF#18 follow-up (2026-05-15) — split-disambiguation subject tag.
+   * The move-picker tags the rationale with the next ordered-discovery
+   * item the bot is asking about. If that item is the current-CTC
+   * fixed/variable split, set lastDisclosureSubject='current'; if it's
+   * the expected-CTC split, set 'expected'. The next applyCandidateAnswer
+   * call uses this to route the candidate's split utterance to the
+   * correct flag (currentCtcFixedVariableSplitDisclosed vs
+   * expectedCtcFixedVariableSplitDisclosed). */
+  if (typeof move.rationale === "string") {
+    if (move.rationale.includes("currentCtcFixedVariableSplitDisclosed")) {
+      next.lastDisclosureSubject = "current";
+    } else if (move.rationale.includes("expectedCtcFixedVariableSplitDisclosed")) {
+      next.lastDisclosureSubject = "expected";
+    }
+  }
+
   /* PDF #18 root-cause (2026-05-15) — prune pendingCandidateAcks that
    * this bot turn addressed. Mirror of the pendingPromises fulfillment
    * path. Entries not addressed remain pending and resurface in the
@@ -2587,6 +2695,7 @@ export function serializeState(state: NegotiationState): string {
 
 const VALID_PHASES: ReadonlySet<NegotiationPhase> = new Set<NegotiationPhase>([
   "opening",
+  "range-disclosure",
   "offer-presented",
   "probe-expectations",
   "counter-offer",

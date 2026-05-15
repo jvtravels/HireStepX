@@ -92,12 +92,14 @@ describe("derivePhase — active phase gating (narrow trigger)", () => {
     expect(derivePhase(s)).toBe("opening");
   });
 
-  it("turn 2 + discovery + COMPLETE checklist + no offer → advances normally", () => {
-    /* Gate clears once the discovery bar is met. With no offer made
-     * and an empty target field, derivePhase falls through to "opening"
-     * anyway — the discriminating outcome is captured in the offer
-     * variant of this scenario below. Here we just verify the gate
-     * itself doesn't latch when the checklist is complete. */
+  it("turn 2 + discovery + COMPLETE checklist + no offer → advances to range-disclosure", () => {
+    /* Gate clears once the discovery bar is met. PDF#18 follow-up
+     * (2026-05-15): once discovery is complete and no specific anchor
+     * has been disclosed, derivePhase now promotes to "range-disclosure"
+     * (the bot must volunteer a salary RANGE before converging to a
+     * single number). Prior assertion expected "opening" — that was the
+     * pre-enum behaviour where the range-disclosure rule lived only in
+     * the brief layer. */
     const s = init({
       phase: "opening",
       turnIndex: 2,
@@ -105,7 +107,7 @@ describe("derivePhase — active phase gating (narrow trigger)", () => {
       discoveryStage: "discovery",
       discoveryChecklist: COMPLETE_CHECKLIST,
     });
-    expect(derivePhase(s)).toBe("opening");
+    expect(derivePhase(s)).toBe("range-disclosure");
   });
 
   it("turn 2 + discovery + incomplete + offer ALREADY made → advances (discovery override past)", () => {

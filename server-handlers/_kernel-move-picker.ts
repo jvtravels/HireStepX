@@ -232,6 +232,27 @@ export function pickAiMove(state: NegotiationState): AiMove {
     }
   }
 
+  /* PDF#18 follow-up (2026-05-15) — range-disclosure phase override.
+   * When the kernel has promoted to `range-disclosure`, the bot must
+   * volunteer a salary RANGE (e.g. "we're in the ₹X-Y band") instead
+   * of a specific number. We route to the existing `probe` lever (no
+   * lever-enum churn) but the rationale carries the explicit range-
+   * disclosure directive so the brief / response-hint layer can surface
+   * a [PHASE RULE: disclose RANGE not specific] line. The turn-coherence
+   * reroll catches LLM emissions of specific numbers in this phase. */
+  if (state.phase === "range-disclosure" && !isTerminalPhase(state.phase)) {
+    const floor = state.band.initialOffer;
+    const ceiling = state.band.maxStretch;
+    return {
+      lever: "probe",
+      newTotalLpa: null,
+      rationale:
+        `Range-disclosure phase: bot MUST disclose the salary RANGE ` +
+        `(₹${floor}-${ceiling}L band) and NOT a specific number. ` +
+        `Wait for candidate reaction before converging to a single anchor.`,
+    };
+  }
+
   /* Opening: put the initial offer on the table. */
   if (state.phase === "opening") {
     /* C2 — active phase gating (2026-05-15). Narrow trigger: when the
