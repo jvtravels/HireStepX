@@ -15,8 +15,20 @@
  * LLM mock emitting bad text on both attempts, and asserts the reply
  * never reaches the user.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import { generateAiText, type LlmCaller } from "../../../server-handlers/negotiate-turn";
+
+/* 2026-05-16 — this suite exercises the LEGACY LLM-first reroll path
+ * that the kernel-first pipeline (USE_KERNEL_FIRST_PIPELINE=true)
+ * bypasses. Flip the flag off for these tests so the legacy code is
+ * actually reached. The kernel-first guarantees are covered by
+ * kernelFirstHdfcRm.test.ts. */
+const PRIOR_FLAG = process.env.USE_KERNEL_FIRST_PIPELINE;
+beforeAll(() => { process.env.USE_KERNEL_FIRST_PIPELINE = "0"; });
+afterAll(() => {
+  if (PRIOR_FLAG === undefined) delete process.env.USE_KERNEL_FIRST_PIPELINE;
+  else process.env.USE_KERNEL_FIRST_PIPELINE = PRIOR_FLAG;
+});
 import {
   initState,
   type AiMove,

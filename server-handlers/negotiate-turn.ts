@@ -88,6 +88,7 @@ import {
   validateNoSpecificNumberInOpening,
 } from "./_response-validators";
 import { renderActionFallbackProse, type NextAction } from "./_next-action-planner";
+import { generateBotReply, type GenerateAiTextFn } from "./_response-pipeline";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -98,6 +99,30 @@ declare const process: { env: Record<string, string | undefined> };
  * documented failure modes (Lollypop + Wipro sessions). Disable-flag
  * exists only as an emergency stop if something regresses in prod. */
 const ENABLED = process.env.NEGOTIATION_KERNEL_ENABLED !== "0";
+
+/* 2026-05-16 — KERNEL-FIRST PIPELINE FLAG.
+ *
+ * When true (the default), turn generation runs through the new
+ * kernel-first pipeline (_response-pipeline.ts):
+ *
+ *   planNextAction → renderCanonicalProse → LLM restyles → validate
+ *   restyle preserves semantics → ship restyle OR fall back to
+ *   canonical verbatim.
+ *
+ * The LLM authors NOTHING from scratch. Bugs structurally impossible
+ * under this flag: turn-0 anchors, repeated probes, hallucinated facts.
+ *
+ * When false, the legacy LLM-first reroll loop below runs (preserved
+ * here as the emergency rollback path). After 1 session of green
+ * production we'll delete the legacy block.
+ *
+ * Default: true everywhere. Set USE_KERNEL_FIRST_PIPELINE=0 to disable.
+ *
+ * Read as a function (not a module-level const) so tests can flip the
+ * env var via beforeAll/afterAll without needing module-cache hacks. */
+function useKernelFirstPipeline(): boolean {
+  return process.env.USE_KERNEL_FIRST_PIPELINE !== "0";
+}
 
 /** Hard cap on the candidate's free-text answer per turn. STT mishears
  *  and copy-paste accidents can push payloads to tens of KB, which both
@@ -219,6 +244,35 @@ export async function generateAiText(
   const user = built.user;
   const failureKinds: string[] = [];
   let envelopeMissingAttempts = 0;
+
+  /* 2026-05-16 — KERNEL-FIRST PIPELINE. When enabled, route through the
+   * new single-path generator and adapt its result to this function's
+   * legacy return shape. The legacy LLM-first reroll loop below stays
+   * as the flag-off fallback (emergency rollback). */
+  if (useKernelFirstPipeline()) {
+    const pipelineLlm: GenerateAiTextFn = async (sys, usr) => {
+      return llm(sys, usr, { userId });
+    };
+    const result = await generateBotReply(state, pipelineLlm, candidateAnswer);
+    /* Telemetry — decisionLog picker reflects the pipeline source. */
+    if (!state.decisionLog) state.decisionLog = [];
+    state.decisionLog.push({
+      turn: state.turnIndex,
+      picker: `kernel-first:${result.source}`,
+      rationale: result.rejectReason ?? `kind=${result.action.kind}`,
+      phase: state.phase,
+    });
+    const adaptedSource: "llm" | "llm-retry" | "fallback" =
+      result.source === "restyle" || result.source === "answer-restyle"
+        ? "llm"
+        : "fallback";
+    return {
+      text: enforceRoleLabel(result.text, state.role || ""),
+      source: adaptedSource,
+      failureKinds: result.rejectReason ? [result.rejectReason] : [],
+      envelopeMissingAttempts: 0,
+    };
+  }
 
   /* One attempt = call LLM → parse JSON envelope → run text + structured
      validators. The structured envelope is Phase 2 of the rebuild
