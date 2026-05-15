@@ -42,10 +42,10 @@ import {
   canCloseSession,
   clampAnchorAgainstCandidateAsk,
   effectiveAnchorLpa,
-  setNextActionPlanner,
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
+import { registerNextActionPlanner } from "./_planner-registry";
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
 import {
   getNextDiscoveryQuestion,
@@ -55,6 +55,10 @@ import {
 } from "./_discovery-stage";
 import { recommendWalkAway } from "./_recruiter-critique";
 import { estimateCounterOfferRisk } from "./_counter-offer-risk";
+import {
+  getHikeJustificationProbe,
+  shouldProbeHikeJustification,
+} from "./_hike-justification-probe";
 
 /** Discriminated union of every action the planner can emit. The kind
  *  taxonomy collapses the prior 15 sequential `if return` branches into
@@ -64,6 +68,14 @@ export type NextAction =
   | { kind: "terminal-restate" }
   | { kind: "close"; mode: "accept" | "walkaway" | "stalemate" }
   | { kind: "auto-accept" }
+  /* Commit 4 (2026-05-15) — reactive follow-up emitted when the
+   * candidate's CURRENT TURN disclosure created a higher-leverage
+   * probe target than the next checklist item. Priority-gated above
+   * probe-mismatch and discovery-probe so the bot reacts to what the
+   * candidate just said before sequencing through the ordered checklist.
+   * The topic is recorded in state.reactiveFollowupsFired via the
+   * move.askedTopic plumbing so the same probe doesn't re-fire. */
+  | { kind: "reactive-followup"; ask: string; trigger: string; topic: string }
   | { kind: "probe-mismatch" }
   | { kind: "live-walk-away"; mode: "walk" | "hold-firm" | "probe" }
   | { kind: "range-disclosure" }
@@ -182,6 +194,26 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         rationale: `Candidate counter ₹${state.lastCandidateCounterLpa}L ≤ current offer ₹${state.highestOfferMade}L — guaranteed-accept signal; close at ₹${accLpa}L (floor = highest offer).`,
       },
     };
+  }
+
+  /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive followup
+   * rules. Per audit section C.2: candidate volunteers info out-of-order
+   * (variable share, vague competing offer, long notice, big hike with
+   * no proof, direct question, repeated refusal). The bot must react
+   * to what was just disclosed BEFORE advancing the checklist. Inserted
+   * here (above probe-mismatch) per session-2 agent's plan: only the
+   * three precedence-1 gates (terminal restate, terminal close, auto-
+   * accept) outrank reactive routing.
+   *
+   * Sources of truth:
+   *   - delta = state.lastTurnDelta (commit 1; what changed this turn)
+   *   - fired = state.reactiveFollowupsFired (sticky session ledger)
+   *   - state.* (detail fields the delta booleans reference)
+   *
+   * Each rule consults `fired` so the same topic doesn't re-emit. */
+  if (!isTerminalPhase(state.phase)) {
+    const reactive = planReactiveFollowup(state);
+    if (reactive) return reactive;
   }
 
   /* PDF #17 — probe-mismatch routing. */
@@ -690,7 +722,196 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
   };
 }
 
-/* Commit 3 (2026-05-15) — register the planner with the kernel so
- * applyCandidateAnswer can stamp state.plannedNextAction without an
- * import cycle. Side-effect at module load; idempotent. */
-setNextActionPlanner((s) => planNextAction(s as NegotiationState));
+/* Negotiation-flow redesign commit 4 (2026-05-15) — reactive followup
+ * rule table. Returns a PlannedAction when a reactive trigger fires
+ * (and hasn't been fired in this session before), null otherwise.
+ *
+ * Rule order = priority. First-match wins. Each rule consults
+ * state.reactiveFollowupsFired before emitting; once a topic has fired,
+ * it's permanently skipped for this session (the candidate has been
+ * probed on it).
+ *
+ * Triggers all read state.lastTurnDelta — the per-turn diff populated
+ * by applyCandidateAnswer. State-only triggers (no delta) would be
+ * indistinguishable from a stale signal and re-fire spuriously, so
+ * we always anchor on "what changed THIS turn".
+ *
+ * Pure. */
+function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
+  const delta = state.lastTurnDelta;
+  if (!delta) return null;
+  const fired = state.reactiveFollowupsFired ?? [];
+  const hasFired = (topic: string): boolean => fired.includes(topic);
+
+  /* Rule: answer-direct — candidate ended the turn on a direct question.
+   * Highest priority among reactive rules: ignoring a candidate question
+   * to push the next checklist item is the canonical procedural-by-default
+   * failure mode. Topic key includes the turn so the same question
+   * acknowledgement doesn't blanket-suppress future questions. */
+  if (delta.askedQuestion) {
+    const topic = `answer-direct@${state.turnIndex}`;
+    if (!hasFired(topic)) {
+      return {
+        kind: "reactive-followup",
+        ask: "Answer the candidate's question first; checklist advance pauses until the question is addressed.",
+        trigger: "askedQuestion",
+        topic: "answer-direct",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: "Candidate asked a direct question this turn — answer before advancing.",
+          actionKind: "reactive-followup",
+          askedTopic: topic,
+        },
+      };
+    }
+  }
+
+  /* Rule: variable-comfort — candidate disclosed current CTC AND the
+   * variable share is meaningful (>25%). Real recruiters probe whether
+   * the candidate has been hitting payouts in full before treating
+   * variable as banked. */
+  if (delta.disclosedCurrentCtc && !hasFired("variable-comfort")) {
+    const breakdown = state.candidateComponentBreakdown;
+    const total =
+      breakdown && breakdown.base != null && breakdown.variable != null
+        ? breakdown.base + breakdown.variable
+        : null;
+    const variableSharePct =
+      total != null && total > 0 && breakdown.variable != null
+        ? (breakdown.variable / total) * 100
+        : 0;
+    if (variableSharePct > 25) {
+      const pctRounded = Math.round(variableSharePct);
+      return {
+        kind: "reactive-followup",
+        ask:
+          `${pctRounded}% variable is significant — what's your comfort with that share, ` +
+          "and have you been hitting payouts in full?",
+        trigger: "variable-share-high",
+        topic: "variable-comfort",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: `Candidate disclosed ${pctRounded}% variable share — probe comfort + payout history before banking it.`,
+          actionKind: "reactive-followup",
+          askedTopic: "variable-comfort",
+        },
+      };
+    }
+  }
+
+  /* Rule: competing-credibility — candidate disclosed a competing offer
+   * that's vague (no named company, no letter). Real recruiters probe
+   * for company + written-offer status before pricing against it. */
+  if (delta.disclosedCompetingOffer && !hasFired("competing-credibility")) {
+    const detail = state.competingOfferDetail;
+    const vague =
+      !detail ||
+      (detail.company == null && !detail.letterShareOffered);
+    if (vague) {
+      return {
+        kind: "reactive-followup",
+        ask:
+          "Got it — which company is that with, and do you have the written offer or just verbal at this stage?",
+        trigger: "competing-offer-vague",
+        topic: "competing-credibility",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: "Candidate disclosed competing offer without named company/letter — probe credibility before pricing against it.",
+          actionKind: "reactive-followup",
+          askedTopic: "competing-credibility",
+        },
+      };
+    }
+  }
+
+  /* Rule: notice-buyout — candidate disclosed >= 60d notice. Buyout
+   * conversation is the standard recruiter response on long runways. */
+  if (delta.disclosedNoticePeriod && !hasFired("notice-buyout")) {
+    const days = state.noticeJoining?.noticePeriodDays;
+    if (days != null && days >= 60) {
+      return {
+        kind: "reactive-followup",
+        ask:
+          `${days} days is a long runway — would your current employer entertain a buyout, ` +
+          "or are you locked in?",
+        trigger: "notice-period-long",
+        topic: "notice-buyout",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: `Candidate disclosed ${days}-day notice — probe buyout vs lock-in before continuing.`,
+          actionKind: "reactive-followup",
+          askedTopic: "notice-buyout",
+        },
+      };
+    }
+  }
+
+  /* Rule: hike-justification — candidate disclosed expected CTC and the
+   * hike vs current is > 30% with no value proof yet. Reuses the
+   * canonical _hike-justification-probe helper for the role-specific
+   * ask. Triggered by delta on EITHER current or expected CTC so a
+   * mid-session disclosure of either side fires the probe. */
+  if (
+    (delta.disclosedExpectedCtc || delta.disclosedCurrentCtc) &&
+    !hasFired("hike-justification")
+  ) {
+    const valueProofProvided = state.candidateProfile?.valueProofProvided === true;
+    const should = shouldProbeHikeJustification({
+      currentCtcLpa: state.candidateCurrentCtc,
+      expectedCtcLpa: state.candidateTarget,
+      valueProofProvided,
+    });
+    if (should) {
+      const roleFamily = classifyRoleFamily(state.role);
+      const ask = getHikeJustificationProbe(roleFamily);
+      return {
+        kind: "reactive-followup",
+        ask,
+        trigger: "hike-above-threshold",
+        topic: "hike-justification",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: `Expected CTC > 30% over current with no value proof — role-specific impact probe (${roleFamily}).`,
+          actionKind: "reactive-followup",
+          askedTopic: "hike-justification",
+        },
+      };
+    }
+  }
+
+  /* refused-advance: the kernel ALREADY marks discoveryRefusedItems
+   * when probeRefusalCount hits 2 inside applyCandidateAnswer. The
+   * audit table specifies a "bypass — emits a synthetic write + falls
+   * through" — i.e. NO planned action; the next-checklist-item logic
+   * (getNextOrderedDiscoveryItem / getNextDiscoveryQuestion) consults
+   * discoveryRefusedItems and skips refused items naturally. Adding
+   * a planned action here would shadow the legitimate advance to the
+   * next checklist item. We intentionally do NOTHING — the side-effect
+   * already ran in applyCandidateAnswer; reactive layer falls through
+   * to discovery-probe. */
+
+  /* fresh-grad-rebase: kernel already handles this end-to-end (sets
+   * candidateApplicableYoe=0 and freshGradDisclosed=true inside
+   * applyCandidateAnswer; downstream band rebase + entry-tier framing
+   * runs from those flags). We intentionally do NOT emit a reactive-
+   * followup ask here — the existing path is the source of truth and
+   * a duplicate planner emission would shadow it. */
+
+  return null;
+}
+
+/* Commit 4 (2026-05-15) — register with the planner-registry so the
+ * kernel's applyCandidateAnswer can stamp state.plannedNextAction
+ * without an import cycle. The registry breaks the kernel↔planner
+ * load-order cycle (kernel and planner both depend on the registry;
+ * registry depends on neither). Replaces the prior commit 3 globalThis
+ * workaround. Side-effect at module load; idempotent. */
+registerNextActionPlanner(
+  (s) => planNextAction(s as NegotiationState),
+  (a, s) => actionToLever(a as NextAction, s as NegotiationState),
+);

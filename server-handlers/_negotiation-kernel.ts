@@ -125,39 +125,27 @@ import {
   type DiscoveryStage,
 } from "./_discovery-stage";
 import { classifyRoleFamily } from "./_company-band-tiers";
+import { getNextActionPlanner } from "./_planner-registry";
 
-/* ─── Commit 3 (2026-05-15) — planner registration shim ───────────────
+/* ─── Commit 4 (2026-05-15) — planner-registry refactor ───────────────
  * The planner module (_next-action-planner.ts) imports value bindings
- * from this kernel, so a static import the other way would create a
- * load-order cycle. The planner instead registers itself here at module
- * load (side-effect at bottom of _next-action-planner.ts);
- * applyCandidateAnswer's finalize() reads through this pointer to stamp
- * state.plannedNextAction.
+ * from this kernel; a static import the other way would create a
+ * load-order cycle. We break the cycle through a third module
+ * (_planner-registry.ts) that has no imports of either side. The kernel
+ * READS through `getNextActionPlanner()` and the planner REGISTERS via
+ * `registerNextActionPlanner(...)` at module-bottom.
  *
- * MUST be declared at the very top of the kernel module body (above any
- * other state) because `export { pickAiMove } from "./_kernel-move-picker"`
- * below is a hoisted re-export: the move-picker (and through it the
- * planner) is loaded BEFORE the rest of this module's body executes. If
- * setNextActionPlanner runs during that early load while `_nextActionPlanner`
- * is still in the TDZ, the assignment throws ReferenceError. Declaring
- * it here ensures the binding is initialized before the planner's setter
- * call lands. */
-// Use a global symbol on globalThis to sidestep ESM TDZ during circular
-// load — re-exports are hoisted and the planner's side-effect setter
-// fires during this module's import phase, before any `let` declaration
-// would be initialized. globalThis assignment has no TDZ.
-declare global {
-
-  var __hr_nextActionPlanner: ((s: unknown) => unknown) | null | undefined;
-}
-if (typeof globalThis.__hr_nextActionPlanner === "undefined") {
-  globalThis.__hr_nextActionPlanner = null;
-}
-export function setNextActionPlanner(fn: (s: unknown) => unknown): void {
-  globalThis.__hr_nextActionPlanner = fn;
-}
+ * Replaces the prior commit 3 globalThis workaround (load-order kludge
+ * that buried the dependency in a runtime side-effect on globalThis).
+ * Same call-graph shape, properly typed module edges:
+ *
+ *   kernel ──▶ planner-registry ◀── planner
+ *
+ * The registry's getter returns null while the planner module hasn't
+ * loaded yet — callers (applyCandidateAnswer's finalize()) tolerate
+ * null gracefully (state.plannedNextAction stays null on that turn). */
 function _callNextActionPlanner(s: unknown): unknown {
-  const fn = globalThis.__hr_nextActionPlanner;
+  const fn = getNextActionPlanner();
   return fn ? fn(s) : null;
 }
 
@@ -857,6 +845,16 @@ export interface NegotiationState {
    * dependency on _next-action-planner.ts (which depends on this module
    * for state types); consumers cast to NextAction. */
   plannedNextAction?: unknown | null;
+
+  /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive-followup
+   * de-dupe ledger. Each reactive trigger (variable-comfort,
+   * competing-credibility, notice-buyout, hike-justification,
+   * answer-direct, refused-advance, fresh-grad-rebase) pushes its topic
+   * here when the planner emits a reactive-followup action. Consulted
+   * by the planner before re-emitting so the same probe doesn't fire
+   * twice in the same session. Optional + nullable for back-compat
+   * with sessions serialized before commit 4. */
+  reactiveFollowupsFired?: string[];
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -1354,6 +1352,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * existing mismatch-probe path; default to "discovery" here. */
     discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
     discoveryStage: "discovery",
+    /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive-followup
+     * de-dupe ledger. Empty at session start; each reactive-followup
+     * emission pushes its topic. */
+    reactiveFollowupsFired: [],
   };
 }
 
@@ -2119,8 +2121,9 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
     n.lastTurnDelta = computeTurnDelta(pre, n, parsed, answer);
     /* Commit 3 (2026-05-15) — stamp planNextAction so the brief and the
      * move-picker read the SAME action without recomputing. The planner
-     * registers itself via setNextActionPlanner at module load (see
-     * _next-action-planner.ts bottom) to avoid an import cycle. */
+     * registers itself via _planner-registry at module load (see commit
+     * 4 — registerNextActionPlanner at the bottom of
+     * _next-action-planner.ts) to avoid an import cycle. */
     n.plannedNextAction = _callNextActionPlanner(n);
     return n;
   };
@@ -2771,6 +2774,14 @@ export interface AiMove {
    *  LLM offered "joining bonus" three times without ever naming an
    *  amount (May 2026 session). */
   joiningBonusAmount?: number;
+  /** Commit 4 (2026-05-15) — reactive-followup topic marker. Set when
+   *  the planner emits a `reactive-followup` NextAction so applyAiMove
+   *  can push the topic into state.reactiveFollowupsFired (sticky
+   *  de-dupe ledger). Unset on every other lever class. */
+  askedTopic?: string;
+  /** Commit 4 (2026-05-15) — NextAction kind discriminator carried on
+   *  the move for telemetry / decisionLog inspection. Optional. */
+  actionKind?: string;
 }
 
 /** Bug-report 12 (2026-05-14) — close-floor invariant. Every
@@ -2854,6 +2865,18 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * state. */
     plannedNextAction: null,
   };
+  /* Negotiation-flow redesign commit 4 (2026-05-15) — record the
+   * reactive-followup topic the planner emitted this turn. Sticky:
+   * future planNextAction calls consult this ledger before re-emitting
+   * the same trigger. Never cleared on AI turns. */
+  if (move.askedTopic) {
+    const fired = state.reactiveFollowupsFired ?? [];
+    if (!fired.includes(move.askedTopic)) {
+      next.reactiveFollowupsFired = [...fired, move.askedTopic];
+    } else {
+      next.reactiveFollowupsFired = fired;
+    }
+  }
   if (move.newTotalLpa != null && move.newTotalLpa > state.highestOfferMade) {
     next.highestOfferMade = move.newTotalLpa;
   }
@@ -3202,6 +3225,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
       if (typeof e.label !== "string") throw new Error("state.pendingCandidateAcks[].label");
     }
   }
+  /* Negotiation-flow redesign commit 4 (2026-05-15) — reactiveFollowupsFired
+   * is optional + sticky. Reject only malformed shape. */
+  if (s.reactiveFollowupsFired !== undefined) {
+    if (!Array.isArray(s.reactiveFollowupsFired) || !s.reactiveFollowupsFired.every((v) => typeof v === "string")) {
+      throw new Error("state.reactiveFollowupsFired");
+    }
+  }
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
   if (
@@ -3474,6 +3504,10 @@ export function deserializeState(json: string): NegotiationState {
     /* PDF #18 (2026-05-15) — candidate-disclosure acks. Optional; omit
      * when empty to keep serialized wire size small. */
     pendingCandidateAcks: (s.pendingCandidateAcks as NegotiationState["pendingCandidateAcks"]) ?? undefined,
+    /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive-followup
+     * ledger. Sticky across the session (never cleared by applyAiMove).
+     * Optional for back-compat with sessions serialized before commit 4. */
+    reactiveFollowupsFired: (s.reactiveFollowupsFired as string[] | undefined) ?? [],
   };
 }
 

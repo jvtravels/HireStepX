@@ -1959,9 +1959,25 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
      * gate (NEXT_ACTION_PHASES) is preserved so the brief still suppresses
      * the directive in counter-offer / lever-explore. */
     const planned = (state.plannedNextAction ?? null) as
-      | { kind: string; ask?: string; item?: string }
+      | { kind: string; ask?: string; item?: string; topic?: string; trigger?: string }
       | null;
+    /* Commit 4 (2026-05-15) — reactive-followup directive. Surfaces
+     * BEFORE checklist-derived discovery probes; the planner has already
+     * priority-gated reactive triggers above discovery-probe, so reaching
+     * here with kind="reactive-followup" means the brief should print
+     * the reactive ask verbatim. Suppressed in counter-offer / lever-
+     * explore via the same NEXT_ACTION_PHASES gate (reactive followups
+     * fire on candidate disclosures during the pre-counter phases). */
     if (
+      planned &&
+      planned.kind === "reactive-followup" &&
+      planned.ask &&
+      NEXT_ACTION_PHASES.has(state.phase)
+    ) {
+      parts.push(
+        `[NEXT REQUIRED ACTION: ask the candidate — ${planned.ask}]`,
+      );
+    } else if (
       planned &&
       planned.kind === "discovery-probe" &&
       planned.ask &&
