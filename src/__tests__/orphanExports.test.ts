@@ -40,6 +40,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
    * a kernel-internal helper (called 5x inside _negotiation-kernel.ts);
    * allow on the same "rg excludes defining file" basis. */
   ["derivePhase", "internally called inside _negotiation-kernel.ts by applyCandidateAnswer + applyAiMove (rg excludes the defining file); exported for unit-testability"],
+  ["canTransitionPhase", "internally called inside _negotiation-kernel.ts by derivePhase (rg excludes the defining file); exported for monotonicity-contract unit tests (commit 6, 2026-05-15)"],
 
   /* ── Kernel public API exposed for direct external consumers ───────── */
   ["applyPersonaToBand", "public kernel API; persona-derived band shaping is opt-in for consumers"],

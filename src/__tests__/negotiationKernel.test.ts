@@ -607,18 +607,24 @@ describe("derivePhase", () => {
     expect(derivePhase(s)).toBe("lever-explore");
   });
 
-  it("if already probed AND candidate engaged, goes to counter-offer not probe", () => {
-    /* Once probe has fired AND the candidate revealed ANY signal
-       (current CTC, competing offer, asked a question, used a tactic),
-       further turns belong in counter-offer territory — re-probing
-       would be circular. */
+  it("if already probed AND candidate engaged (no target), stays in probe-expectations", () => {
+    /* FIX (commit 6, 2026-05-15): with the monotonicity matrix replacing
+       the prior `alreadyProbed && candidateEngagedAtAll` patchwork, a
+       candidate who has engaged but never stated a target is correctly
+       described by phase=probe-expectations. counter-offer requires a
+       stated target per the C.4 exit-criteria contract. Once the
+       phase reaches counter-offer (target known), monotonicity prevents
+       regression to probe-expectations — which is the actual MakeMyTrip
+       regression the old sticky clause was patching. The starting state
+       here begins at default `opening`, so the cascade reaches probe-
+       expectations on its own and is allowed to (forward transition). */
     const s = init({
       highestOfferMade: 20,
       candidateTarget: null,
       leversUsed: ["open-with-offer", "probe"],
       infoAsked: ["fixed-vs-variable"],
     });
-    expect(derivePhase(s)).toBe("counter-offer");
+    expect(derivePhase(s)).toBe("probe-expectations");
   });
 });
 

@@ -197,6 +197,66 @@ const TERMINAL_PHASES = new Set<NegotiationPhase>([
 ]);
 export const isTerminalPhase = (p: NegotiationPhase): boolean => TERMINAL_PHASES.has(p);
 
+/* Negotiation-flow redesign commit 6 (2026-05-15) — phase-transition
+ * monotonicity matrix (kills D6 from /tmp/negotiation-flow-audit.md).
+ *
+ * Phases form a one-way ratchet. Higher rank can only go higher (or stay
+ * the same). Backward transitions are blocked structurally, except for
+ * two LEGITIMATE re-open paths:
+ *   1. walk-away-reopen — terminal `walked-away` → `counter-offer` when
+ *      the candidate re-engages (the `walkAwayReturned` flag is set in
+ *      applyCandidateAnswer). This is the only path out of any terminal
+ *      phase and is a one-shot re-entry.
+ *   2. verbal-renege — `verbalAcceptanceTurn` is set (candidate said yes
+ *      and then re-opened). Only the move-picker stiffens; phase wants
+ *      to stay in `counter-offer` while the bot stiffens, and any
+ *      derivation that would otherwise compute a "lower" target phase
+ *      should be allowed to land on counter-offer.
+ *
+ * Terminal phases share rank so they never transition between each
+ * other except via the walk-away-reopen exception. The two non-walk-away
+ * terminals (accepted / stalemate) are absorbing under normal flow.
+ *
+ * Removes the prior ad-hoc sticky clauses (POST_PROBE_PHASES /
+ * isPostProbe / alreadyProbed) inside derivePhase — once monotonicity
+ * is structural, those one-off `if` clauses become unnecessary. */
+const PHASE_RANK: Record<NegotiationPhase, number> = {
+  "opening": 0,
+  "range-disclosure": 1,
+  "offer-presented": 2,
+  "probe-expectations": 3,
+  "counter-offer": 4,
+  "lever-explore": 5,
+  "closing-push": 6,
+  "accepted": 7,
+  "walked-away": 7,
+  "stalemate": 7,
+};
+
+export function canTransitionPhase(
+  from: NegotiationPhase,
+  to: NegotiationPhase,
+  state: NegotiationState,
+): boolean {
+  if (PHASE_RANK[to] >= PHASE_RANK[from]) return true;
+  /* Exception 1: walk-away reopen — `walkAwayReturned` is set inside
+   * applyCandidateAnswer when a candidate re-engages after `walked-away`.
+   * The reopen path explicitly hops phase to `counter-offer`; subsequent
+   * derivations that produce `counter-offer` (or higher) are fine via
+   * the rank check above, but any derivation that produces a LOWER
+   * phase (e.g. `probe-expectations`) while reopened should still be
+   * allowed to clamp into `counter-offer` rather than getting stuck. */
+  if (state.walkAwayReturned && to === "counter-offer") return true;
+  /* Exception 2: verbal-renege — `verbalAcceptanceTurn` is set when the
+   * candidate previously said yes but is now asking for more. The state-
+   * machine intentionally keeps us in `counter-offer` while the move-
+   * picker stiffens. If derivation produces `counter-offer` and we're
+   * sitting in a higher phase like `lever-explore` or `closing-push`,
+   * permit the regression so the stiffening path runs cleanly. */
+  if (state.verbalAcceptanceTurn != null && to === "counter-offer") return true;
+  return false;
+}
+
 /* ─── Levers ─────────────────────────────────────────────────────── */
 
 export type NegotiationLever =
@@ -2553,6 +2613,15 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
  *  IS state, and we just compute the next bucket from already-folded
  *  facts. */
 export function derivePhase(state: NegotiationState): NegotiationPhase {
+  const derived = derivePhaseInner(state);
+  /* Negotiation-flow redesign commit 6 (2026-05-15) — clamp the result
+   * through the monotonicity matrix. If derivation produced a backward
+   * transition that isn't an authorized exception (walk-away-reopen,
+   * verbal-renege), hold the prior phase instead of regressing. */
+  return canTransitionPhase(state.phase, derived, state) ? derived : state.phase;
+}
+
+function derivePhaseInner(state: NegotiationState): NegotiationPhase {
   if (isTerminalPhase(state.phase)) return state.phase;
   if (state.turnIndex >= state.maxTurns) return "stalemate";
 
@@ -2642,35 +2711,13 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
   }
 
   const target = state.candidateTarget;
-  /* Phase stickiness — the MakeMyTrip UX session regression:
-     once the conversation has progressed past probe (the candidate
-     has anchored, OR we've already entered counter-offer / lever-
-     explore / closing-pressure / closing), it MUST NOT regress to
-     probe-expectations just because a subsequent turn didn't restate
-     a target number. The candidate saying "do it, tell me more" on
-     turn 3 doesn't erase the target they stated on turn 2. The post-
-     offer phases form a one-way ratchet (except for the explicit
-     verbal-acceptance-then-renegotiate path, which is handled via
-     `verbalAcceptanceTurn` and never touches phase). */
-  const POST_PROBE_PHASES: NegotiationPhase[] = [
-    "counter-offer", "lever-explore", "closing-push",
-  ];
-  const isPostProbe = POST_PROBE_PHASES.includes(state.phase);
-  /* "Already probed" sticky-floor: once the AI has run a probe lever
-     and the candidate engaged (asked about breakdown, mentioned current
-     comp / competing, or used a Voss tactic), do not re-probe even if
-     the candidate's next utterance lacks an explicit target. The
-     MakeMyTrip session showed the AI asking "what are you hoping to
-     achieve" THREE turns after the candidate had engaged with the
-     offer, because no explicit target was ever parsed. We treat the
-     conversation as having moved on from discovery. */
-  const alreadyProbed = state.leversUsed.includes("probe");
-  const candidateEngagedAtAll =
-    state.candidateTarget != null ||
-    state.candidateCurrentCtc != null ||
-    state.competingOffer != null ||
-    state.vossTacticsUsed.length > 0 ||
-    state.infoAsked.length > 0;
+  /* Negotiation-flow redesign commit 6 (2026-05-15) — sticky-floor
+   * clauses (POST_PROBE_PHASES / isPostProbe / alreadyProbed /
+   * candidateEngagedAtAll) removed. Monotonicity is now enforced
+   * structurally by the canTransitionPhase clamp wrapping this function.
+   * Backward transitions (e.g. counter-offer → probe-expectations) are
+   * rejected by the matrix; legitimate verbal-renege keeps the phase
+   * sticky via the verbal-renege exception in canTransitionPhase. */
 
   /* Target above max stretch + ≥2 levers tried → lever-explore. Only
      non-cash bridges remain. */
@@ -2683,19 +2730,11 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
     return "counter-offer";
   }
 
-  /* Offered, no target. If the candidate has revealed anything (current
-     CTC, competing offer) or we've already probed, we're in probe
-     territory; otherwise we're awaiting their first reaction.
-
-     BUT: if we're already in a post-probe phase, hold there (don't
-     ratchet backwards). The conversation is past discovery. */
+  /* Offered, no target — distinguish between "candidate has engaged"
+     (probe-expectations) and "awaiting first reaction" (offer-presented).
+     Backward regressions from higher phases are blocked by the
+     monotonicity matrix above. */
   if (state.highestOfferMade > 0) {
-    if (isPostProbe) return state.phase;
-    /* If we've already probed AND the candidate has revealed anything,
-       further turns belong in counter-offer (treat candidateTarget=null
-       as "candidate didn't restate but has engaged" — pickAiMove will
-       fall to lever-explore on no headroom). Better than re-probing. */
-    if (alreadyProbed && candidateEngagedAtAll) return "counter-offer";
     const candidateEngaged =
       state.candidateCurrentCtc != null ||
       state.competingOffer != null ||
