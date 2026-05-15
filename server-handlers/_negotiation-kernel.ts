@@ -890,6 +890,11 @@ export interface NegotiationState {
   teamSize?: number | null;
   reportingTo?: string | null;
   joiningWindow?: string | null;
+  /** Additional first-class role facts surfaced alongside workMode et al.
+   *  perfCycle: text describing the perf-review cadence (e.g. "annual").
+   *  equityStructure: text describing equity grant shape (RSU / ESOP / none). */
+  perfCycle?: string | null;
+  equityStructure?: string | null;
   /** Kernel-first cleanup (2026-05-16) — candidate first name. Threaded
    *  from intake so _canonical-prose.ts doesn't have to scan the
    *  conversation log to greet by name. Log-scan stays as a fallback for
@@ -936,6 +941,10 @@ export interface TurnDelta {
   disclosedValueProof: boolean;
   /** Candidate utterance contained a direct question ("?"). */
   askedQuestion: boolean;
+  /** Structured form of the candidate question. Carries the (trimmed) raw
+   *  text and a coarse intent tag so the response pipeline can decide
+   *  whether to answer vs. defer without re-detecting the question. */
+  candidateAskedQuestion?: { raw: string; intent?: string } | null;
   /** Candidate refused a probe this turn (probeRefusalCount incremented). */
   refusedItem: boolean;
   /** Candidate first-disclosed fresh-grad status this turn. */
@@ -953,6 +962,7 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
   disclosedJoiningDate: false,
   disclosedValueProof: false,
   askedQuestion: false,
+  candidateAskedQuestion: null,
   refusedItem: false,
   freshGradDisclosed: false,
   retentionCounterDisclosed: false,
@@ -1045,9 +1055,47 @@ export function computeTurnDelta(
     d.disclosedValueProof = true;
   }
 
-  /* Asked-question — direct question in the candidate's utterance. */
-  if (typeof rawAnswer === "string" && /\?/.test(rawAnswer)) {
-    d.askedQuestion = true;
+  /* Asked-question — direct question in the candidate's utterance.
+   *
+   * Populates two fields:
+   *   askedQuestion             — back-compat boolean
+   *   candidateAskedQuestion    — structured {raw, intent} that the
+   *                                response pipeline prefers over a
+   *                                fresh re-detection at request time.
+   *
+   * Detection mirrors _fact-pack.ts:detectCandidateAskedQuestion. It is
+   * duplicated here to keep _negotiation-kernel.ts free of a circular
+   * import to _fact-pack.ts. If the heuristic ever drifts, fix both.
+   */
+  if (typeof rawAnswer === "string" && rawAnswer.trim()) {
+    const trimmed = rawAnswer.trim();
+    const Q_LEAD_RE =
+      /^\s*(?:what|how|when|where|who|why|can you|could you|do you|is the|are you|tell me about)\b/i;
+    const RHETORICAL_BEFORE_RE =
+      /\b(thinking|wondering|wonder|guess|suppose|imagine|just|maybe)\b[^.?!]*?\b(what|how|when|where|who|why)\b/i;
+    const trailingQ = /\?\s*$/.test(trimmed);
+    const leadingQ = Q_LEAD_RE.test(trimmed);
+    const rhetorical = RHETORICAL_BEFORE_RE.test(trimmed) && !trailingQ;
+    if (!rhetorical && (trailingQ || leadingQ)) {
+      d.askedQuestion = true;
+      const lower = trimmed.toLowerCase();
+      let intent: string | undefined;
+      if (/wfh|work.from.home|remote|hybrid|office/.test(lower)) intent = "wfh";
+      else if (/team.size|how many|team structure|how big/.test(lower)) intent = "team";
+      else if (/report|manager|reporting to|hierarchy/.test(lower)) intent = "reporting";
+      else if (/growth|career path|progression/.test(lower)) intent = "growth-path";
+      else if (/perf.*cycle|review.*cycle|appraisal|hike.*cycle/.test(lower)) intent = "perf-cycle";
+      else if (/esop|equity|rsu|stock|vesting/.test(lower)) intent = "equity";
+      else if (/joining|notice|start.*date|when.*join|buyout|last working day/.test(lower)) intent = "joining";
+      else if (/perk|benefit|insurance|gratuity|pf|epf|leave|wellness/.test(lower)) intent = "perks";
+      else if (/process|interview|next.*round/.test(lower)) intent = "process";
+      else if (/tax|87a|deduction|new.regime|old.regime|rebate/.test(lower)) intent = "tax";
+      else if (/bgv|background.*verif|relieving|form.16|payslip|document/.test(lower)) intent = "documents";
+      d.candidateAskedQuestion = {
+        raw: trimmed.slice(0, 240),
+        ...(intent ? { intent } : {}),
+      };
+    }
   }
 
   /* Refused-item — probeRefusalCount incremented this turn. */
@@ -1154,6 +1202,8 @@ export interface InitStateInput {
   teamSize?: number | null;
   reportingTo?: string | null;
   joiningWindow?: string | null;
+  perfCycle?: string | null;
+  equityStructure?: string | null;
   candidateName?: string | null;
 }
 
@@ -1296,6 +1346,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     teamSize: input.teamSize ?? null,
     reportingTo: input.reportingTo ?? null,
     joiningWindow: input.joiningWindow ?? null,
+    perfCycle: input.perfCycle ?? null,
+    equityStructure: input.equityStructure ?? null,
     candidateName: input.candidateName ?? null,
   };
 }

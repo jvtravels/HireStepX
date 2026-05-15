@@ -142,6 +142,29 @@ export function detectCandidateAskedQuestion(reply: string): {
   return { asked: true, raw: trimmed.slice(0, 240), intent };
 }
 
+/** Coarse intent classifier for a candidate question. Returns one of
+ *  the documented buckets ("wfh" | "team" | "reporting" | "growth-path"
+ *  | "perf-cycle" | "equity" | "joining" | "perks" | "process" | "tax"
+ *  | "documents") or null. Pure regex match — caller decides what to do
+ *  with the bucket. Used both by `detectCandidateAskedQuestion` (above)
+ *  and by `_negotiation-kernel.ts:computeTurnDelta` to tag the
+ *  structured `candidateAskedQuestion` field on TurnDelta. */
+export function classifyQuestionIntent(question: string): string | null {
+  const q = (question || "").toLowerCase();
+  if (/wfh|work.from.home|remote|hybrid|office/.test(q)) return "wfh";
+  if (/team.size|how many|team structure|how big/.test(q)) return "team";
+  if (/report|manager|who.*report|reporting to|hierarchy/.test(q)) return "reporting";
+  if (/growth|career path|progression/.test(q)) return "growth-path";
+  if (/perf.*cycle|review.*cycle|appraisal|hike.*cycle/.test(q)) return "perf-cycle";
+  if (/esop|equity|rsu|stock|vesting/.test(q)) return "equity";
+  if (/joining|notice|start.*date|when.*join|buyout|last working day/.test(q)) return "joining";
+  if (/perk|benefit|insurance|gratuity|pf|epf|leave|wellness/.test(q)) return "perks";
+  if (/process|interview|next.*round/.test(q)) return "process";
+  if (/tax|87a|deduction|new.regime|old.regime|rebate/.test(q)) return "tax";
+  if (/bgv|background.*verif|relieving|form.16|payslip|document/.test(q)) return "documents";
+  return null;
+}
+
 /** Inspect the question + fact-pack and return which factPack keys are
  *  needed to answer. Returns canAnswer=true if all required keys are
  *  present, false if at least one is missing. The `missing` array
