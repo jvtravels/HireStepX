@@ -40,6 +40,7 @@ import {
   validateComponentConstraints,
   canCloseSession,
   clampAnchorAgainstCandidateAsk,
+  effectiveAnchorLpa,
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
@@ -659,7 +660,12 @@ function pickAiMoveCore(state: NegotiationState): AiMove {
     }
 
     const target = state.candidateTarget ?? state.band.maxStretch;
-    const floor = Math.max(state.highestOfferMade, state.band.initialOffer);
+    /* Architectural bug-prevention (2026-05-15) — read the LOCKED anchor
+     * (when set) instead of band.initialOffer. effectiveAnchorLpa was
+     * previously a test-only export; wiring it here makes the counter
+     * floor respect any prior anchor lock, so a mid-session band rebase
+     * cannot pull the floor back below where we already committed. */
+    const floor = Math.max(state.highestOfferMade, effectiveAnchorLpa(state));
     /* Tier-3 ship wiring (2026-05-15) — per-company hike cap. Large
      * Indian employers cap the % hike they'll authorize over current CTC
      * regardless of band. When known + currentCtc is stated, clamp the
