@@ -148,7 +148,7 @@ describe("F3 — reroll cap invariant", () => {
     expect(res.source).toBe("llm-retry");
   });
 
-  it("a1 + a1b both incoherent → 2 calls, returns the original a1 text", async () => {
+  it("a1 + a1b both incoherent → 2 calls, kernel-prose substitution kicks in (F2)", async () => {
     let calls = 0;
     const stubA1 = "Generic platitude about the role.";
     const stubA1b = "Another generic platitude with no answer.";
@@ -158,10 +158,14 @@ describe("F3 — reroll cap invariant", () => {
     });
     const s = makeState({ turnIndex: 1, lastBotReply: null });
     const res = await generateAiText(s, PROBE_MOVE, "What's the fixed?", llm, "user");
+    // FIX (F2, PDF#19 2026-05-15) — when the LLM fails a CRITICAL validator
+    // (here: NEXT-ACTION-EMITTED — bot ignored the required discovery probe)
+    // past the reroll cap, the kernel now substitutes deterministic prose
+    // instead of shipping the bad generic platitude. The reroll cap of 2
+    // LLM calls still holds; only the user-facing reply changes.
     expect(calls).toBe(2);
-    /* Reroll cap: when the reroll attempt also fails the detectors, the
-     * original a1 text is returned — never a third call. */
-    expect(res.text).toContain("Generic platitude");
+    expect(res.text).not.toContain("Generic platitude");
+    expect(res.source).toBe("fallback");
   });
 
   it("rerollAttempts variable is bounded to 1 in source (no second-reroll path exists)", () => {

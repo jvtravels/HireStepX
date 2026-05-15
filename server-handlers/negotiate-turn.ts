@@ -83,6 +83,7 @@ import {
   validateNextActionEmitted,
   validateHikeProbe,
 } from "./_response-validators";
+import { renderActionFallbackProse, type NextAction } from "./_next-action-planner";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -357,32 +358,48 @@ export async function generateAiText(
         if (!coh2.coherent) {
           console.warn(`[negotiate-turn] turn-incoherence persisted after reroll (${coh2.reason ?? ""}); returning original`);
         }
-        /* Architectural bug-prevention (2026-05-15) — validator fallthrough.
-         * Log the rejection to the decision log so post-hoc replay sees
-         * exactly which discipline persisted past the reroll cap. We do
-         * not hard-fail user-facing: the response goes out, but the trail
-         * is recorded. */
-        if (
+        /* F2 (PDF#19 2026-05-15) — kernel-authored prose substitution.
+         * Previously this site logged a `validator-reject-fallthrough`
+         * decisionLog entry and SHIPPED THE BAD LLM TEXT to the user.
+         * That is the meta-defect: prompt-rule "advisory" violations
+         * escaped validator enforcement. Now: when ANY critical
+         * discipline persists past the reroll cap, substitute
+         * deterministic prose anchored on state.plannedNextAction. */
+        const criticalFailed =
           !numDisc2.ok ||
           !budDisc2.ok ||
           !rangeDisc2.ok ||
-          !ackDisc2.ok ||
-          !nextActDisc2.ok ||
-          !hikeDisc2.ok
-        ) {
+          !nextActDisc2.ok;
+        const advisoryFailed = !ackDisc2.ok || !hikeDisc2.ok;
+        if (criticalFailed) {
           const reasons = [
-            !numDisc2.ok ? numDisc2.reason : null,
-            !budDisc2.ok ? budDisc2.reason : null,
-            !rangeDisc2.ok ? rangeDisc2.reason : null,
-            !ackDisc2.ok ? ackDisc2.reason : null,
-            !nextActDisc2.ok ? nextActDisc2.reason : null,
-            !hikeDisc2.ok ? hikeDisc2.reason : null,
+            !numDisc2.ok ? `number-discipline: ${numDisc2.reason}` : null,
+            !budDisc2.ok ? `budget-discipline: ${budDisc2.reason}` : null,
+            !rangeDisc2.ok ? `range-discipline: ${rangeDisc2.reason}` : null,
+            !nextActDisc2.ok ? `next-action-emitted: ${nextActDisc2.reason}` : null,
           ].filter((r): r is string => !!r);
-          console.warn(`[negotiate-turn] validator fallthrough: ${reasons.join(" | ")}`);
+          console.warn(`[negotiate-turn] critical validator fallthrough → substituting kernel prose: ${reasons.join(" | ")}`);
           if (!state.decisionLog) state.decisionLog = [];
           state.decisionLog.push({
             turn: state.turnIndex,
-            picker: "validator-reject-fallthrough",
+            picker: "kernel-prose-substitution",
+            rationale: reasons.join(" | "),
+            phase: state.phase,
+          });
+          const planned = (state.plannedNextAction ?? null) as NextAction | null;
+          const substituted = renderActionFallbackProse(planned, state);
+          return { text: enforceRoleLabel(substituted, state.role || ""), source: "fallback", failureKinds, envelopeMissingAttempts };
+        }
+        if (advisoryFailed) {
+          const reasons = [
+            !ackDisc2.ok ? `acknowledgement: ${ackDisc2.reason}` : null,
+            !hikeDisc2.ok ? `hike-probe: ${hikeDisc2.reason}` : null,
+          ].filter((r): r is string => !!r);
+          console.warn(`[negotiate-turn] advisory validator fallthrough (returning original): ${reasons.join(" | ")}`);
+          if (!state.decisionLog) state.decisionLog = [];
+          state.decisionLog.push({
+            turn: state.turnIndex,
+            picker: "validator-advisory-fallthrough",
             rationale: reasons.join(" | "),
             phase: state.phase,
           });
@@ -394,6 +411,31 @@ export async function generateAiText(
      * the original draft as the "least bad" choice (it at least passed
      * the legality + structured-envelope validators). */
     void rerollAttempts; // documented invariant; cap = 1
+    /* F2 (PDF#19) — ALSO substitute on a1's critical-failure path when
+     * a1b didn't recover. If a1 had a critical failure and a1b is in
+     * `error` state OR a1b.failures.length > 0, we still reach here
+     * holding a1.text — that's the bad text. Substitute on critical. */
+    const a1Crit =
+      !numDisc.ok || !budDisc.ok || !rangeDisc.ok || !nextActDisc.ok;
+    if (a1Crit) {
+      const reasons = [
+        !numDisc.ok ? `number-discipline: ${numDisc.reason}` : null,
+        !budDisc.ok ? `budget-discipline: ${budDisc.reason}` : null,
+        !rangeDisc.ok ? `range-discipline: ${rangeDisc.reason}` : null,
+        !nextActDisc.ok ? `next-action-emitted: ${nextActDisc.reason}` : null,
+      ].filter((r): r is string => !!r);
+      console.warn(`[negotiate-turn] critical validator fallthrough (a1 path) → substituting kernel prose: ${reasons.join(" | ")}`);
+      if (!state.decisionLog) state.decisionLog = [];
+      state.decisionLog.push({
+        turn: state.turnIndex,
+        picker: "kernel-prose-substitution",
+        rationale: reasons.join(" | "),
+        phase: state.phase,
+      });
+      const planned = (state.plannedNextAction ?? null) as NextAction | null;
+      const substituted = renderActionFallbackProse(planned, state);
+      return { text: enforceRoleLabel(substituted, state.role || ""), source: "fallback", failureKinds, envelopeMissingAttempts };
+    }
     return { text: enforceRoleLabel(a1.text, state.role || ""), source: "llm", failureKinds, envelopeMissingAttempts };
   }
   failureKinds.push(...a1.failures);
