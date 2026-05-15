@@ -35,6 +35,8 @@ import {
   isDiscoveryComplete,
 } from "./_discovery-stage";
 import { buildHikeJustificationBrief } from "./_hike-justification-probe";
+import { buildRangeDisclosureBrief } from "./_range-disclosure-phase";
+import { detectRangeDisclosure } from "./_trial-close-detector";
 import type { CandidateStanceResult } from "./_candidate-stance";
 import { recommendFollowups } from "./_followup-router";
 import { detectRedFlags } from "./_red-flags";
@@ -1982,6 +1984,39 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
       classifyRoleFamily(state.role),
     );
     if (hikeBrief) parts.push(hikeBrief);
+  }
+  /* PDF #18 follow-up (2026-05-15) — range-disclosure phase rule.
+   * Computed (not stored): when discovery is complete AND the bot has
+   * not yet disclosed a specific number AND has not yet disclosed a
+   * range on the immediately-prior turn, surface a PHASE RULE
+   * directing the next move to disclose a RANGE rather than a
+   * specific anchor. Modeled as a derived predicate (not a new
+   * NegotiationPhase enum value) so we don't fan out across the
+   * phase machine / serializers / exhaustiveness checks. */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.discoveryChecklist != null &&
+    state.discoveryStage === "discovery"
+  ) {
+    const roleFamily = classifyRoleFamily(state.role);
+    const discoveryDone = isDiscoveryComplete(
+      state.discoveryChecklist,
+      roleFamily,
+    );
+    const specificAnchored =
+      (state.highestOfferMade ?? 0) > 0 ||
+      state.leversUsed.includes("open-with-offer") ||
+      state.leversUsed.includes("counter-base");
+    const lastBot =
+      typeof state.lastBotReply === "string" ? state.lastBotReply : null;
+    const rangeAlreadyDisclosed =
+      lastBot != null && detectRangeDisclosure(lastBot);
+    const rangeBrief = buildRangeDisclosureBrief({
+      discoveryComplete: discoveryDone,
+      specificAnchorDisclosed: specificAnchored,
+      rangeAlreadyDisclosed,
+    });
+    if (rangeBrief) parts.push(rangeBrief);
   }
   parts.push(`lever=${move.lever}`);
   if (move.newTotalLpa != null) parts.push(`newTotalLpa=${move.newTotalLpa}`);
