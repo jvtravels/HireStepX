@@ -251,9 +251,30 @@ export function normalizeStoredResumeForAnalyzer(parsed: unknown): ResumeForAnal
   if (p._type === "ai" || p.experiences) {
     result.experiences = normalizeExperiences(p.experiences);
     result.topSkills = asStringArray(p.topSkills);
-    // AI variant doesn't carry structured education today; degree+school
-    // surface inside `summary` or `headline` text — leave undefined and
-    // let the analyzer fall back to transcript inference.
+    /* Wave-8: best-effort extraction of degree / school / gradYear from
+     * the AI variant's `headline` + `summary` free-text. The AI
+     * profile doesn't carry structured education today, so the
+     * analyzer's grad-year / college cross-checks would never fire on
+     * AI-parsed resumes. These regexes are intentionally permissive
+     * (loose alternation, case-insensitive) — false-positives are
+     * cheap because the downstream cross-check has its own evidence
+     * requirement (transcript signal). Misses are also fine: the
+     * cross-check silently skips when the field is undefined. */
+    const eduText = [
+      typeof p.headline === "string" ? p.headline : "",
+      typeof p.summary === "string" ? p.summary : "",
+    ].join(" | ");
+    const degreeMatch = eduText.match(/\b(?:b\.?\s*tech|bachelor of technology|m\.?\s*tech|master of technology|b\.?\s*e\.?|bachelor of engineering|b\.?\s*sc\.?|m\.?\s*sc\.?|b\.?\s*c\.?\s*a\.?|m\.?\s*c\.?\s*a\.?|mba|ph\.?\s*d\.?)[^,;\n|]{0,80}/i);
+    if (degreeMatch) result.degree = degreeMatch[0].trim();
+    const yearMatch = eduText.match(/\b(?:graduat(?:ed|ing|ion)\s+(?:in\s+)?|class of\s+|batch\s+(?:of\s+)?)(20\d{2})\b/i)
+      || eduText.match(/\b(20[12]\d)\s*(?:passout|pass[- ]out|batch|grad)/i)
+      || eduText.match(/\b(20[12]\d)\s*[-–]\s*(20[12]\d)\b/);
+    if (yearMatch) result.gradYear = yearMatch[yearMatch.length === 3 ? 2 : 1];
+    const schoolMatch = eduText.match(/\b(?:iit|nit|iiit|bits|iisc|vit|srm|manipal|thapar|dtu|nsit|coep|psg|pes university|pesu|bms college|rvce|ramaiah|amrita|jadavpur|anna university|jntu|nitk|nitt|nita)\b[^,;\n|]{0,60}/i)
+      || eduText.match(/\b(?:from|at)\s+([A-Z][A-Za-z& ]{3,40}(?:\sUniversity|\sCollege|\sInstitute))/);
+    if (schoolMatch) result.school = (schoolMatch[1] || schoolMatch[0]).trim();
+    const linkText = [typeof p.headline === "string" ? p.headline : "", typeof p.summary === "string" ? p.summary : ""].join(" ");
+    result.links = extractLinks(linkText);
     return result;
   }
 

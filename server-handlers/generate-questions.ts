@@ -1114,6 +1114,61 @@ Requirements:
         else groundingMissing++;
       }
     }
+    /* Wave-8 anchor-validator (telemetry only, no retry).
+     *
+     * When the caller supplied `resumeExperiences`, Wave-7's prompt
+     * block told the LLM "at least one stem must reference a listed
+     * company / project". Here we verify whether the LLM actually did
+     * — scan every aiText for any company name or 4+ char bullet word
+     * from the supplied experiences. Telemetry only for now: a
+     * second LLM round-trip on miss would 2x cost; first measure
+     * miss-rate, then decide whether the retry is worth it. The flag
+     * lights up the `gq_no_resume_anchor` event on PostHog for the
+     * dashboard. */
+    let anchorChecked = false;
+    let anchorHit = false;
+    if (Array.isArray(resumeExperiences) && resumeExperiences.length > 0 && Array.isArray(questions)) {
+      anchorChecked = true;
+      const anchorTokens = new Set<string>();
+      for (const e of resumeExperiences.slice(0, 6) as Array<Record<string, unknown>>) {
+        if (typeof e?.company === "string" && e.company.length >= 3) {
+          anchorTokens.add(e.company.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim());
+        }
+        if (typeof e?.title === "string" && e.title.length >= 4) {
+          anchorTokens.add(e.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim());
+        }
+        if (Array.isArray(e?.bullets)) {
+          for (const b of (e.bullets as unknown[]).slice(0, 4)) {
+            if (typeof b !== "string") continue;
+            // Pick the most distinctive 4+ char nouns from each bullet
+            // — cheap proxy for "the LLM referenced this bullet".
+            for (const w of b.toLowerCase().match(/\b[a-z][a-z0-9\-]{3,}\b/g) || []) {
+              if (!/^(the|and|for|with|that|this|from|have|been|were|will|when|what|where|which|while|after|before|about|their|there|these|those|because|across|using|built|made|using|into)$/.test(w)) {
+                anchorTokens.add(w);
+              }
+            }
+          }
+        }
+      }
+      for (const q of questions as Array<Record<string, unknown>>) {
+        const text = typeof q?.aiText === "string" ? q.aiText.toLowerCase() : "";
+        if (!text) continue;
+        for (const tok of anchorTokens) {
+          if (tok && text.includes(tok)) { anchorHit = true; break; }
+        }
+        if (anchorHit) break;
+      }
+      if (!anchorHit) {
+        void captureServerEvent("gq_no_resume_anchor", distinctIdFrom(req, auth.userId), {
+          focus: requestFocus,
+          type: requestType,
+          experience_count: resumeExperiences.length,
+          anchor_token_count: anchorTokens.size,
+          question_count: questions.length,
+        }, req);
+      }
+    }
+
     await captureServerEvent("interview_started", distinctIdFrom(req, auth.userId), {
       question_count: Array.isArray(responseBody?.questions) ? responseBody.questions.length : undefined,
       grounding_verified: groundingVerified,
@@ -1122,6 +1177,8 @@ Requirements:
       grounding_missing: groundingMissing,
       has_company_facts: !!(companyName && knownFacts),
       retrieval_tier: retrievalResult.tier,
+      anchor_checked: anchorChecked,
+      anchor_hit: anchorHit,
     }, req);
 
     // Best-effort: cache the successful response for ~5 min so retries /

@@ -1065,7 +1065,77 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         }
       }
 
-      // 3) Portfolio satisfied by resume.
+      // 3) Grad-year mismatch with resume.
+      // Resume.gradYear is the BGV-checked source of truth. If the
+      // candidate states a different year in the transcript ("I'll
+      // graduate in 2025" but resume says 2024), that's a credibility
+      // hit. We tolerate ±1 (legitimate spillover semester) before
+      // flagging.
+      if (resume.gradYear && /^20\d{2}$/.test(resume.gradYear)) {
+        const resumeYear = parseInt(resume.gradYear, 10);
+        const spokenYears = new Set<number>();
+        const yearRe = /\b(?:graduat(?:e|ing|ed|ion)|passing|passout|pass[- ]out|batch|class of)\b[^.?!]{0,40}\b(20\d{2})\b|\b(20\d{2})\s*(?:batch|passout|pass[- ]out|grad)/gi;
+        let ym: RegExpExecArray | null;
+        while ((ym = yearRe.exec(userText)) !== null) {
+          const y = parseInt(ym[1] || ym[2], 10);
+          if (y >= 2015 && y <= 2030) spokenYears.add(y);
+        }
+        const driftedYears = Array.from(spokenYears).filter((y) => Math.abs(y - resumeYear) > 1);
+        if (driftedYears.length > 0) {
+          flags.add("grad_year_mismatch_with_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: `The graduation year you stated (${driftedYears.join(", ")}) should match what's on your resume (${resumeYear}). BGV pulls the resume — a verbal year drift > 1 year reads as fabrication and disqualifies in service-tier rounds.`,
+            observed: `Resume lists graduation year ${resumeYear}, but candidate mentioned ${driftedYears.join(", ")} in the transcript.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 4) College mismatch with resume.
+      // Resume.school is the source of truth. Tolerate aliases (IIT
+      // Bombay vs IITB, VIT vs VIT Vellore) by canonicalising both
+      // sides via classifyCollegeTier — if both sides land on the
+      // same tier-1/tier-2 bucket OR the normalized substring matches
+      // either way, we treat as same college. Otherwise flag.
+      if (resume.school && resume.school.length >= 3) {
+        const resumeSchoolNorm = resume.school.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const resumeTier = classifyCollegeTier(resume.school);
+        // Detect college mentions in transcript — accept loose
+        // patterns (any "college" / "university" / "institute" noun
+        // following "from", "at", "studied at", or as standalone).
+        const collegeMentionRe = /\b(?:from|at|studied at|graduated from|i'?m at|i'?m in|i'?m from)\s+([A-Za-z][A-Za-z& .'-]{4,60}(?:university|college|institute|iit|nit|iiit|bits)[A-Za-z &.,'-]{0,40})/gi;
+        const mentions: string[] = [];
+        let cm: RegExpExecArray | null;
+        while ((cm = collegeMentionRe.exec(userText)) !== null) {
+          const m = cm[1].trim();
+          if (m.length >= 4) mentions.push(m);
+        }
+        const mismatched: string[] = [];
+        for (const m of mentions) {
+          const mNorm = m.toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (!mNorm) continue;
+          // Same college if normalized strings overlap either way.
+          if (resumeSchoolNorm.includes(mNorm) || mNorm.includes(resumeSchoolNorm)) continue;
+          // Same college if both canonicalise to the same tier-1/tier-2 bucket
+          // AND the bucket isn't "unknown" (otherwise every state college
+          // collides). Tier overlap on tier-1/-2 only.
+          const mTier = classifyCollegeTier(m);
+          if (mTier !== "unknown" && mTier === resumeTier && mTier === classifyCollegeTier(`${resume.school} ${m}`)) continue;
+          mismatched.push(m);
+        }
+        if (mismatched.length > 0) {
+          flags.add("college_mismatch_with_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: `The college you named (${mismatched.slice(0, 2).join(", ")}) should match what's on your resume (${resume.school}). Indian campus BGV pulls the transcript / certificate — a verbal swap reads as fabrication.`,
+            observed: `Resume lists ${resume.school}, but candidate mentioned ${mismatched.slice(0, 2).join(", ")} in the transcript.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 5) Portfolio satisfied by resume.
       // The transcript-only `portfolio_absent_for_claim` rule fires
       // when the user narrates a project without dropping a GitHub
       // link in their answer. If their resume lists a GitHub /
@@ -1129,6 +1199,8 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("degree_branch_inconsistency")) tips.push("Pick the exact branch name on your transcript and stick with it across the whole conversation. If you have a minor / dual-degree, say so once: 'CSE major with an AIML minor.' Drifting between 'I'm in CSE' and 'I'm in AIML' reads as confusion or fabrication.");
     if (flags.has("claimed_internship_not_in_resume")) tips.push("Every company you mention in the interview must already appear on your uploaded resume. BGV uses the resume as ground truth — narrating a role that isn't listed reads as fabrication and is the #1 instant-disqualifier in Indian campus rounds. Update the resume before the next session, or only narrate companies you've already listed.");
     if (flags.has("branch_mismatch_with_resume")) tips.push("Your resume's degree field is the BGV-checked source of truth. If you spoke about a different branch than what's on your resume, frame it explicitly: 'My resume lists Mechanical — I've been doing CS50, Striver SDE Sheet, and projects on the side, which is why I'm targeting SDE roles.' Owning the bridge beats a silent verbal swap.");
+    if (flags.has("grad_year_mismatch_with_resume")) tips.push("Your stated graduation year and the year on your resume must match within a year — BGV pulls the year off your provisional degree / transcript. If you're an extended-semester passout, state it once and stick to it: 'I graduated in 2024 — completed after one supplementary in extended semester.' Drifting between two years in the same interview reads as fabrication.");
+    if (flags.has("college_mismatch_with_resume")) tips.push("Name the exact college on your resume — Indian campus BGV cross-checks the degree certificate, and Tier-1-sounding swaps (e.g. saying 'IIT' when the resume lists 'NIT') are an instant disqualifier. If you transferred, say it once: 'Started at NIT Surat, transferred to NIT Trichy in 2nd year, both reflected on the resume.'");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

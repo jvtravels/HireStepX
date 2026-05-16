@@ -2038,7 +2038,7 @@ export function useInterviewEngine() {
         followUpDepthRef.current = depth;
         const followUpAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
           topSkills?: string[];
-          experiences?: Array<{ company?: string; title?: string; topProjects?: string[] }>;
+          experiences?: Array<{ company?: string; title?: string; period?: string; bullets?: string[]; topProjects?: string[] }>;
         } | undefined;
         /* Flatten top projects from the AI-parsed resume's experience
            timeline. Cap to 5 so we keep the follow-up prompt cache-
@@ -2348,6 +2348,13 @@ export function useInterviewEngine() {
           totalQuestions: isSalaryNegType ? totalQs : undefined,
           resumeTopSkills: followUpAiProfile?.topSkills,
           resumeProjects: followUpResumeProjects.length ? followUpResumeProjects : undefined,
+          // Wave-8: campus-placement-only live BGV cross-check signal.
+          // Engine passes the whole experiences list; follow-up.ts gates
+          // the prompt-block on `type === "campus-placement"` so we
+          // don't bloat behavioural / salary-neg prompts.
+          resumeExperiences: interviewType === "campus-placement" && Array.isArray(followUpAiProfile?.experiences)
+            ? (followUpAiProfile!.experiences as Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>)
+            : undefined,
           initialOfferText,
           negotiationFacts,
           negotiationStyle: negotiationStyle || undefined,

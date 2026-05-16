@@ -130,6 +130,8 @@ const DICT: Record<string, FriendlyFlag> = {
   internship_unsubstantiated: { label: "Internship claimed but not substantiated", description: "Internship mentioned without naming company / deliverable / mentor / outcome when probed.", category: "user_skipped_step" },
   claimed_internship_not_in_resume: { label: "Company mentioned in interview isn't on resume", description: "Candidate referenced a company not present in the uploaded resume — BGV uses the resume as source of truth; volunteering a role that isn't listed reads as fabrication.", category: "user_skipped_step" },
   branch_mismatch_with_resume: { label: "Spoken branch differs from resume", description: "Resume lists one branch but the candidate identified as a different branch without a dual-degree / minor framing — BGV will surface this.", category: "user_skipped_step" },
+  grad_year_mismatch_with_resume: { label: "Spoken graduation year differs from resume", description: "Candidate's stated graduation / passout year doesn't match the resume — BGV uses the resume / college transcript as ground truth; a > 1-year drift reads as fabrication.", category: "user_skipped_step" },
+  college_mismatch_with_resume: { label: "Spoken college differs from resume", description: "Candidate named a different college than the one on the resume — Indian campus BGV cross-checks the degree certificate; a verbal swap is an instant disqualifier.", category: "user_skipped_step" },
 
   // Management
   answered_as_ic_not_manager: { label: "Answered as IC, not as manager", description: "Stories used 'I built / I shipped' — should be 'my team / my report'.", category: "user_skipped_step" },

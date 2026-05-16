@@ -639,6 +639,10 @@ export async function fetchFollowUp(params: {
       probes in the candidate's actual past work ("walk me through the
       X project you mentioned") instead of generic STAR prompts. */
   resumeProjects?: string[];
+  /** Wave-8: per-role experience timeline (campus-placement only).
+      Lets the follow-up LLM push back live when the candidate mentions
+      a company that isn't on the resume. */
+  resumeExperiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>;
   initialOfferText?: string;
   negotiationFacts?: {
     acceptedImmediately: boolean;
