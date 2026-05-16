@@ -167,6 +167,15 @@ export interface InterviewResultData {
   /** Perception-optimizer findings — bias-pattern aggregates across the
    *  whole session. Empty / undefined = panel doesn't render. */
   biasFindings?: BiasFinding[];
+  /** Closing-turn reverse-interview classification — populated when the
+   *  interviewer asked "any questions for us?" and we got a reply.
+   *  Drives a dedicated coaching card in the behavioural report. Other
+   *  interview types leave this undefined. */
+  reverseInterview?: {
+    verdict: "strong" | "neutral" | "weak" | "red_flag";
+    counts: { green: number; yellow: number; red: number };
+    classifications: Array<{ bucket: "green" | "yellow" | "red"; reason: string }>;
+  };
   /** Set only for salary-negotiation sessions. Contains the offer
    *  trajectory across turns + the deal outcome. Drives the
    *  NegotiationOutcomeSection in the report (offer-progression

@@ -135,6 +135,13 @@ export function sessionReportToInterviewResult(
       ? `~${report.readiness.estimatedHours} hours over ~${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band — ${report.readiness.confidence} confidence. ${report.readiness.rationale}`
       : undefined,
     biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
+    reverseInterview: report.reverseInterview
+      ? {
+          verdict: report.reverseInterview.verdict,
+          counts: report.reverseInterview.counts,
+          classifications: report.reverseInterview.classifications,
+        }
+      : undefined,
     negotiationOutcome: isNegotiation ? buildNegotiationOutcome(report) : undefined,
     kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
   };
