@@ -440,3 +440,95 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
     expect(canTransitionPhase("accepted", "counter-offer", acceptedNoVerbal)).toBe(false);
   });
 });
+
+/* ─── ResumeFactPack track — Step 7 (2026-05-16) ────────────────────
+ *
+ * Three smoke scenarios that exercise the resume-aware paths end-to-end:
+ *   (a) resume confirms candidate's stated company → credibility-probe
+ *       suppressed, normal discovery proceeds.
+ *   (b) resume + stated company conflict → credibility-probe fires
+ *       before the planner advances to counter math, canonical prose
+ *       references the resume, and no salary number leaks.
+ *   (c) candidate withholds currentCtc but resume implies a strong
+ *       prior package → counter math uses impliedPriorCtcFromResume
+ *       as floor, rationale carries the priorCtcFloor breadcrumb.
+ */
+import type { ResumeFactPack } from "../../../server-handlers/_resume-fact-pack";
+
+function makeResumePack(latestCompany: string, tier: "unicorn" | "faang" | "service" = "unicorn"): ResumeFactPack {
+  return {
+    priorCompanies: [{ name: latestCompany, tier, tenureMonths: 36 }],
+    stackTags: ["react", "node"],
+    tenurePattern: "stable",
+    mbaTier: null,
+    leadershipClaimed: false,
+    gapMonths: null,
+    latestRole: { title: "SDE-2", companyName: latestCompany, companyTier: tier },
+  };
+}
+
+function freshStateWithPack(pack: ResumeFactPack | null, extras: Partial<Parameters<typeof initState>[0]> = {}): NegotiationState {
+  return initState({
+    sessionId: "s-e2e-resume",
+    role: "Senior Product Designer",
+    company: "Meesho",
+    band: BAND,
+    resumeFactPack: pack,
+    ...extras,
+  } as Parameters<typeof initState>[0]);
+}
+
+describe("E2E smoke — ResumeFactPack track", () => {
+  it("(a) resume confirms stated company → no credibility-probe fires", () => {
+    let state = freshStateWithPack(makeResumePack("Flipkart"));
+    state = applyCandidateAnswer(state, "I'm at Flipkart, looking for a switch.");
+    expect(state.candidateStatedCurrentCompany).toBe("Flipkart");
+    expect(state.credibilityProbeAvoidedAt).not.toBeNull();
+    /* Walk several bot turns; credibility-probe must never appear. */
+    for (let i = 0; i < 4; i++) {
+      const t = botTurn(state);
+      expect(t.action.kind).not.toBe("credibility-probe");
+      state = t.state;
+    }
+  });
+
+  it("(b) resume vs stated company conflict → credibility-probe fires; canonical references resume; no salary number leaks", () => {
+    let state = freshStateWithPack(makeResumePack("Cognizant", "service"));
+    state = applyCandidateAnswer(state, "I'm at Google now, hoping for a senior IC role.");
+    expect(state.candidateStatedCurrentCompany).toBe("Google");
+    const turn = botTurn(state);
+    expect(turn.action.kind).toBe("credibility-probe");
+    /* Canonical prose references the resume word (per the contract). */
+    expect(turn.canonical.toLowerCase()).toMatch(/\bresume\b/);
+    /* No salary-shaped number in the credibility-probe text. */
+    expect(turn.canonical).not.toMatch(SALARY_NUM_RE);
+    state = turn.state;
+    /* Single-fire: re-planning after the move must not re-issue
+     * credibility-probe. */
+    const turn2 = botTurn(state);
+    expect(turn2.action.kind).not.toBe("credibility-probe");
+  });
+
+  it("(c) candidate withholds currentCtc, resume implies prior package → counter rationale carries priorCtcFloor", () => {
+    const pack = makeResumePack("Flipkart", "unicorn");
+    /* Seed a counter-offer state directly: currentCtc withheld, target
+     * disclosed, and an implied prior CTC pinned for determinism. */
+    const base = freshStateWithPack(pack);
+    const state: NegotiationState = {
+      ...base,
+      phase: "counter-offer",
+      turnIndex: 3,
+      highestOfferMade: 32,
+      candidateTarget: 40,
+      candidateCurrentCtc: null,
+      impliedPriorCtcFromResume: 36,
+      leversUsed: ["probe-justification"],
+    };
+    const turn = botTurn(state);
+    expect(turn.action.kind).toBe("counter-offer");
+    if (turn.action.kind === "counter-offer") {
+      expect(turn.action._move.rationale).toMatch(/priorCtcFloor ₹36/);
+      expect(turn.action.counterTotalLpa).toBeGreaterThanOrEqual(36);
+    }
+  });
+});
