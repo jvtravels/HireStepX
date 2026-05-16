@@ -26,6 +26,7 @@ import {
   initState,
   applyAiMove,
   applyCandidateAnswer,
+  canTransitionPhase,
   type NegotiationBand,
   type NegotiationState,
 } from "../../../server-handlers/_negotiation-kernel";
@@ -276,26 +277,33 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
      * with all four mandatory tokens. We may need an additional bot
      * turn before the recap action is emitted; loop up to 3.
      *
-     * Finding (c): the strict-boost accept path
-     * (_negotiation-kernel.ts:2742, "Bug 2 2026-05-14") transitions
-     * straight to phase="accepted" WITHOUT setting
-     * `verbalAcceptanceTurn`. The close-recap-formal gate in
-     * _next-action-planner.ts:356 requires
-     * `verbalAcceptanceTurn != null`, so this path never emits the
-     * formal recap; the planner falls through to terminal-restate
-     * once `acceptedAtTurn < turnIndex`. Documented as a separate
-     * finding; the smoke harness force-stamps `verbalAcceptanceTurn`
-     * to model the recruiter's "yes, I accept" being recognised as
-     * verbal acceptance for the recap step. */
+     * History: Finding (c) in the original audit noted that the
+     * strict-boost accept path at `_negotiation-kernel.ts:2742`
+     * transitioned to phase="accepted" WITHOUT setting
+     * `verbalAcceptanceTurn`, so close-recap-formal never fired and
+     * terminal-restate won. This harness used to force-stamp
+     * `verbalAcceptanceTurn` to simulate the corrected behaviour.
+     *
+     * Audit Pass 2 Fix C (commit 7620380, 2026-05-16) installed
+     * `markAccepted(next, state)` which stamps the field tuple on all
+     * three accept paths. The force-stamp workaround below is now
+     * redundant — the kernel itself stamps `verbalAcceptanceTurn`
+     * on the strict-boost path. Removed the workaround and replaced
+     * it with an explicit assertion proving Fix C took (acceptance
+     * → field stamped, no harness intervention required).
+     *
+     * `acceptedAtTurn` is still pinned to `turnIndex` here so the
+     * terminal-stickiness guard at `_next-action-planner.ts:332`
+     * (which requires `acceptedAtTurn < turnIndex`) doesn't preempt
+     * the recap step on this same logical turn. */
     state = applyCandidateAnswer(
       state,
       "Yes, I accept the offer. Please send the offer letter.",
     );
-    if (state.verbalAcceptanceTurn == null) {
-      state = { ...state, verbalAcceptanceTurn: state.turnIndex };
-    }
-    /* Clear acceptedAtTurn so the terminal-restate guard doesn't fire
-     * before the close-recap step on this same logical turn. */
+    /* Fix C coherence assertion — strict-boost path must stamp
+     * verbalAcceptanceTurn. */
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+    expect(state.phase).toBe("accepted");
     state = { ...state, acceptedAtTurn: state.turnIndex };
 
     let sawRecap = false;
@@ -366,5 +374,69 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
     const result = validateRestyle(canonical, restyledMissingBgv, state, action);
     expect(result.valid).toBe(false);
     expect(result.reason).toBe("close-recap-incomplete");
+  });
+
+  /* Audit Pass 2 Fix E (2026-05-16) — verbal-renege coherence post-Fix-C.
+   *
+   * Pre-Fix-C, only the conditional sign-today-bundle accept path
+   * stamped `verbalAcceptanceTurn`. Strict-boost / soft-accept /
+   * fold-facts paths did not — so the phase-transition matrix at
+   * `_negotiation-kernel.ts:245` (which allows `accepted → counter-
+   * offer` regression ONLY when `verbalAcceptanceTurn != null`) never
+   * permitted verbal-renege after those paths.
+   *
+   * Post-Fix-C all accept paths stamp the field, so the matrix
+   * permission is uniform. But the `accepted` phase is terminal:
+   * `applyCandidateAnswer` short-circuits at the top via
+   * `isTerminalPhase(state.phase)` before the phase-transition matrix
+   * is consulted. So a candidate who is in `accepted` cannot in fact
+   * loop back through the kernel — the only verbal-renege path
+   * remains the conditional sign-today-bundle case at
+   * `_negotiation-kernel.ts:2799`, which never enters terminal in the
+   * first place. No close-recap → counter → recap-again loop is
+   * possible.
+   *
+   * These tests pin that invariant so a future change that removes
+   * the terminal-phase short-circuit at applyCandidateAnswer:2316 (or
+   * adds a back-door out of `accepted`) trips them. */
+  it("Fix E — strict-boost accept stamps verbalAcceptanceTurn AND is terminal-sticky", () => {
+    let state = freshState();
+    state = { ...state, phase: "counter-offer", highestOfferMade: 36 };
+    state = applyCandidateAnswer(
+      state,
+      "Yes, I accept the offer. Please send the offer letter.",
+    );
+    expect(state.phase).toBe("accepted");
+    expect(state.verbalAcceptanceTurn).not.toBeNull();
+    expect(state.acceptedAtTurn).not.toBeNull();
+
+    /* Candidate now tries to re-open with a counter — terminal-phase
+     * short-circuit at applyCandidateAnswer:2316 must hold this in
+     * `accepted`, NOT roll back to `counter-offer`. */
+    const turnIdxBefore = state.turnIndex;
+    state = applyCandidateAnswer(state, "Actually I want 40 LPA instead.");
+    expect(state.phase).toBe("accepted");
+    expect(state.turnIndex).toBe(turnIdxBefore);
+  });
+
+  it("Fix E — phase-transition matrix permits accepted → counter-offer ONLY when verbalAcceptanceTurn set", () => {
+    /* Direct unit-test of `canTransitionPhase` exception 2 at
+     * `_negotiation-kernel.ts:245`. Pre-Fix-C, this exception was
+     * unreachable from strict-boost / soft-accept paths because they
+     * never stamped `verbalAcceptanceTurn`. Post-Fix-C the matrix
+     * permission is uniform across all accept paths, which is the
+     * invariant Fix E asserts. */
+    const accepted: NegotiationState = {
+      ...freshState(),
+      phase: "accepted",
+      verbalAcceptanceTurn: 5,
+    };
+    expect(canTransitionPhase("accepted", "counter-offer", accepted)).toBe(true);
+    const acceptedNoVerbal: NegotiationState = {
+      ...freshState(),
+      phase: "accepted",
+      verbalAcceptanceTurn: null,
+    };
+    expect(canTransitionPhase("accepted", "counter-offer", acceptedNoVerbal)).toBe(false);
   });
 });
