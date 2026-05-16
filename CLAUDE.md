@@ -21,8 +21,9 @@ Stack:
 - **DB**: Supabase (Postgres + Auth + Storage) with RLS on every user-scoped
   table (see `supabase-schema.sql`)
 - **LLM**: Groq (primary) + Gemini (fallback) via `server-handlers/_llm.ts`
-- **Voice**: Cartesia WebSocket (primary) + Azure TTS (fallback); Deepgram
-  (primary) + Sarvam (fallback) + Web Speech API (last resort) for STT
+- **Voice**: Sarvam Bulbul (primary TTS) + Cartesia WebSocket (2nd) +
+  Azure TTS (3rd) + Web Speech API (last resort); Deepgram (primary) +
+  Sarvam (fallback) + Web Speech API (last resort) for STT
 - **Payments**: Razorpay (INR, UPI-first)
 - **Cache / rate-limiting**: Upstash Redis
 - **Email**: Resend
