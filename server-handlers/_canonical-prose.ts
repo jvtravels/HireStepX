@@ -56,6 +56,64 @@ export const PREFERRED_RECRUITER_IDIOM = [
   "as per the band for this grade",
 ] as const;
 
+/** Bug 1 fix (PDF#25, 2026-05-16) — Indian-recruiter idioms are
+ *  individually flavourful but stacking 2+ in a single utterance reads
+ *  as parody. Session #25 produced lines like:
+ *    "Right, on the expected fitment — Let me check as per the band for
+ *     this grade, but broadly aligned, what's the total CTC at present?"
+ *  Four idioms ("fitment", "as per the band for this grade", "broadly
+ *  aligned", and the redundant "as per …" tautology) crammed into one
+ *  sentence. Cap is enforced by the restyle validator; canonical prose
+ *  is curated and already obeys the cap. */
+export const IDIOM_PER_UTTERANCE_CAP = 1;
+
+/** Case-insensitive regex union over PREFERRED_RECRUITER_IDIOM tokens.
+ *  Used by the validator to count idiom occurrences in a restyle. */
+export const PREFERRED_RECRUITER_IDIOM_RE = new RegExp(
+  "\\b(" +
+    PREFERRED_RECRUITER_IDIOM
+      .map((p) => p.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"))
+      .join("|") +
+    ")\\b",
+  "gi",
+);
+
+/** Count distinct idiom-token occurrences in a string. We deliberately
+ *  count occurrences (not unique types) so "as per the band for this
+ *  grade … as per band" is rejected — a real recruiter would pick one.
+ *  Returns 0 for null/empty. */
+export function countPreferredIdioms(s: string | null | undefined): number {
+  if (!s) return 0;
+  const matches = s.match(PREFERRED_RECRUITER_IDIOM_RE);
+  return matches ? matches.length : 0;
+}
+
+/** Bug 1 (PDF#25, 2026-05-16) — discovery-probe opener rotation set.
+ *  Previously every probe was prefaced by the same "Right, on X —"
+ *  template, regardless of how many probes had fired. Real recruiters
+ *  vary their openers. Selection is DETERMINISTIC by turn index so
+ *  each candidate sees the same variety in the same order — tests
+ *  remain stable, no Math.random needed.
+ *
+ *  Empty-string entry = no opener prefix (sometimes the cleanest path
+ *  is to ask the question directly). */
+export const DISCOVERY_PROBE_OPENERS = [
+  "So,",
+  "Quick one —",
+  "Got it.",
+  "",
+  "Coming to",
+] as const;
+
+/** Deterministic opener pick from turnIndex. Lower-case helper retains
+ *  the rotation contract across the canonical-prose surface and the
+ *  validator's no-two-consecutive-identical assertion. */
+export function pickDiscoveryProbeOpener(turnIndex: number): string {
+  const n = DISCOVERY_PROBE_OPENERS.length;
+  const idx = ((turnIndex % n) + n) % n;
+  return DISCOVERY_PROBE_OPENERS[idx];
+}
+
 /** Range-separator alternation: matches ASCII hyphen `-`, en-dash
  *  `\u2013`, em-dash `\u2014`, or the literal word "to". Use this
  *  inside number-range detectors so canonical prose (which emits
@@ -633,7 +691,10 @@ export function buildRestylePrompt(
     `- BANNED phrases (do NOT use, ever): ${BANNED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "rounding out the package", "we're aligned", "package" (as a comp noun).\n` +
     `- PREFERRED phrasing (Indian recruiter cadence): ${PREFERRED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "looking at the structure" (not "rounding out the package").\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
-    `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Right, on the X side —", "Thanks for that, on X —", "Fair enough on X —") but do not strip it.\n` +
+    `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Thanks for that —", "Fair enough —") but do not strip it. Do NOT use the formulaic "Right, on X —" template; vary the lead.\n` +
+    `- IDIOM CAP: use AT MOST ONE Indian-recruiter idiom from the preferred list per utterance. Stacking two or more (e.g. "fitment" + "as per the band" + "broadly aligned") reads as parody.\n` +
+    `- DO NOT pad with tautologies like "the total CTC as per your current band" — the candidate's current CTC is already band-anchored; "what's your current CTC?" suffices.\n` +
+    `- GRAMMAR: a sentence that begins with a declarative connective ("Fair enough,", "Got it,", "Sure,", "Right,") must end with "." not "?". If you want a question, build it as a clean interrogative without the declarative lead.\n` +
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
     `- You MUST NOT add any facts (company policy, team size, perks, benefits) not in the canonical line.\n` +
     `- You MUST NOT change the meaning or the question being asked.\n` +

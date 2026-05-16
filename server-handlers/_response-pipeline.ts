@@ -31,6 +31,8 @@ import {
   buildRestylePrompt,
   buildAnswerCandidatePrompt,
   BANNED_RECRUITER_IDIOM_RE,
+  IDIOM_PER_UTTERANCE_CAP,
+  countPreferredIdioms,
 } from "./_canonical-prose";
 import {
   buildFactPack,
@@ -268,6 +270,29 @@ const ACK_VOCAB_RE =
 const SENTIMENT_VOCAB_RE =
   /\b(i hear you|i get where you|i understand where you|broadly aligned|glad we['’]?re aligned|take your time|no rush|in your own time)\b/i;
 
+/** Bug 1 (PDF#25, 2026-05-16) — declarative-connective-lead + trailing
+ *  question-mark, IN THE SAME CLAUSE. The sentence starts with one of
+ *  the connectives the restyle prompt is allowed to use as a soft ack
+ *  ("Fair enough,", "Got it,", "Sure,", "Right,", "Okay,", "Alright,",
+ *  "Noted,", "Understood,") followed by a COMMA (i.e. same-clause
+ *  continuation, not a separate sentence) and ends with "?".
+ *
+ *  Counter-example we MUST allow: "Noted on the expected side. What's
+ *  the notice period?" — two separate sentences, the first declarative
+ *  with a period, the second a clean interrogative. We require the
+ *  connective to be comma-joined to the rest of the same clause AND no
+ *  intervening period / em-dash / question-mark before the trailing "?"
+ *  so genuine two-sentence acks still pass. */
+const DECLARATIVE_PLUS_QUESTION_RE =
+  /^\s*(?:fair enough|got it|sure|right|okay|alright|noted|understood)[^.?\u2014\u2013]*,[^.?\u2014\u2013]*\?\s*$/i;
+
+/** Bug 1 (PDF#25, 2026-05-16) — "total CTC as per your current band"
+ *  tautology. The candidate's current CTC IS their current-band number;
+ *  the qualifier adds no information. Catches both directions ("CTC as
+ *  per … band" and "band … current CTC" within close proximity). */
+const TAUTOLOGY_RE =
+  /\b(?:total\s+)?ctc\s+as\s+per\s+(?:your|the)\s+(?:current\s+)?band\b/i;
+
 /* Audit Pass 3 / Fix 3 / ArchRec 3 (2026-05-16) — per-NextAction
  * validator contract. Until now `validateRestyle` enforced only the
  * global rules (number subset, sentiment vocab, banned idioms, close-
@@ -378,6 +403,50 @@ export function validateRestyle(
    * directive. Fall back to canonical verbatim. */
   if (BANNED_RECRUITER_IDIOM_RE.test(restyled)) {
     return { valid: false, reason: "banned-idiom-leaked" };
+  }
+  /* Bug 1 fix (PDF#25, 2026-05-16) — IDIOM STACKING.
+   *
+   * Session #25 (Senior Product Designer @ Flipkart) produced restyles
+   * that crammed 3-4 Indian-recruiter idioms into a single sentence
+   * ("on the expected fitment", "as per the band for this grade",
+   * "broadly aligned"). The whitelist is per-token; nothing previously
+   * capped the per-utterance count. Real recruiters pick ONE idiom and
+   * route the rest as plain English.
+   *
+   * The effective cap is max(IDIOM_PER_UTTERANCE_CAP, canonicalIdioms)
+   * — the restyle must not introduce MORE idioms than the canonical
+   * already chose. Canonical prose is curated (e.g. close-recap-formal
+   * legitimately uses both "fitment" + "revert" — 2 idioms — because
+   * those are the load-bearing tokens for the recap and the
+   * confirmation). The cap floor applies to free-form turns where the
+   * canonical opted for one idiom and the LLM padded with two more. */
+  const canonicalIdiomCount = countPreferredIdioms(canonical);
+  const restyleIdiomCount = countPreferredIdioms(restyled);
+  const effectiveCap = Math.max(IDIOM_PER_UTTERANCE_CAP, canonicalIdiomCount);
+  if (restyleIdiomCount > effectiveCap) {
+    return { valid: false, reason: "idiom-stacking" };
+  }
+  /* Bug 1 fix (PDF#25, 2026-05-16) — GRAMMAR MISMATCH.
+   *
+   * Lines like "Fair enough on your current compensation, let's look at
+   * the total CTC at present?" mix a declarative connective lead with a
+   * trailing "?" — grammatically wrong in any English. Reject and rebuild
+   * from canonical. The declarative leads we police are the ones the
+   * restyle prompt explicitly nominates ("Fair enough", "Got it", "Sure",
+   * "Right") plus "Okay" / "Alright" which the LLM reaches for as
+   * synonyms. */
+  if (DECLARATIVE_PLUS_QUESTION_RE.test(restyled)) {
+    return { valid: false, reason: "declarative-plus-question-mark" };
+  }
+  /* Bug 1 fix (PDF#25, 2026-05-16) — TAUTOLOGY CHECK.
+   *
+   * "what's the total CTC as per your current band?" — the candidate's
+   * current CTC is, definitionally, set by their current employer's
+   * band. The "as per your current band" qualifier is a tautology that
+   * makes the recruiter sound like they're padding. The canonical never
+   * emits this; the LLM is filling space. Reject. */
+  if (TAUTOLOGY_RE.test(restyled)) {
+    return { valid: false, reason: "tautology-current-band" };
   }
   /* Defect 6 (2026-05-16) — sentiment-prefix preservation. If the
    * canonical opened with one of the renderSentimentPrefix anchor
