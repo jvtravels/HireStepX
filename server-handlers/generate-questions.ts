@@ -958,17 +958,37 @@ Requirements:
           { kind: "open-with-offer" } as Parameters<typeof renderCanonicalProse>[0],
           kernelState,
         );
+        /* BUG-1 ROOT CAUSE FIX (PDF#24, 2026-05-16):
+         *
+         * Prior code wrote `.question` and `.text` fields. Both are dead —
+         * the script consumer (src/useInterviewEngine.ts:411) reads
+         * `aiText` (and `aiTextDisplay` for the captions). The LLM-authored
+         * `aiText` containing "we'd like to extend an offer at ₹37 LPA"
+         * sailed through untouched, so turn 1 was an anchor even though
+         * we thought we'd replaced it with the kernel canonical.
+         *
+         * Write the fields the consumer actually reads. */
         if (questions.length >= 2) {
-          (questions[1] as { question?: string; text?: string }).question = opener;
-          (questions[1] as { question?: string; text?: string }).text = opener;
+          const target = questions[1] as { aiText?: string; aiTextDisplay?: string; question?: string; text?: string };
+          target.aiText = opener;
+          target.aiTextDisplay = opener;
+          /* Keep the legacy field writes as well — any downstream
+           * telemetry / cache reader that still keys on `.question` or
+           * `.text` (older live-session tracking, IDB drafts) stays in
+           * sync with the visible turn. */
+          target.question = opener;
+          target.text = opener;
         }
         console.warn(`[generate-questions] salary-neg q[1] replaced with kernel canonical opener (no anchor) for ${company || "company"}`);
       } catch (kernelErr) {
         console.warn(`[generate-questions] salary-neg kernel opener failed; falling back to safe greeting: ${(kernelErr as Error).message}`);
         const safeOpener = `Thanks for taking the time today. Let's get into it — to start, can you walk me through your current compensation structure?`;
         if (questions.length >= 2) {
-          (questions[1] as { question?: string; text?: string }).question = safeOpener;
-          (questions[1] as { question?: string; text?: string }).text = safeOpener;
+          const target = questions[1] as { aiText?: string; aiTextDisplay?: string; question?: string; text?: string };
+          target.aiText = safeOpener;
+          target.aiTextDisplay = safeOpener;
+          target.question = safeOpener;
+          target.text = safeOpener;
         }
       }
       /* Fix 2 (2026-05-16): legacy q[2..N] anchor-validation block has been
