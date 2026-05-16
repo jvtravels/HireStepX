@@ -318,7 +318,16 @@ export const TOPIC_KEYWORD_MAP: Record<string, RegExp> = {
  *  gate respects canonical content — if the canonical itself carries
  *  the hedge phrase, the restyle is allowed to mirror it. */
 export const HEDGE_FILLER_RE =
-  /\b(?:let\s+me\s+check|broadly\s+aligned|just\s+to\s+confirm|hmm,?\s+let\s+me)\b/i;
+  /\b(?:let\s+me\s+check|broadly\s+aligned|just\s+to\s+confirm|hmm,?\s+let\s+me|we'?re\s+aligned|from\s+our\s+side|on\s+our\s+side)\b/i;
+
+/** PDF#27 Fix 4 (2026-05-17) — EVASIVE DEFLECTION.
+ *
+ *  T3 fixture: "I'd be happy to share / clarify ..." — the LLM stalling
+ *  with a politeness-filler when the real recruiter move is either an
+ *  honest defer or a band-anchor. Reject so the canonical-fallback
+ *  prose ships. */
+const EVASIVE_DEFLECTION_RE =
+  /I'?d\s+(?:be\s+)?(?:happy\s+to|like\s+to)\s+(?:share|clarify|walk\s+you\s+through)/i;
 
 /** Bug 1 (PDF#25, 2026-05-16) — "total CTC as per your current band"
  *  tautology. The candidate's current CTC IS their current-band number;
@@ -617,6 +626,12 @@ export function validateRestyle(
    * Reject. */
   if (HEDGE_FILLER_RE.test(restyled) && !HEDGE_FILLER_RE.test(canonical)) {
     return { valid: false, reason: "internal-hedge-leak" };
+  }
+  /* PDF#27 Fix 4 (2026-05-17) — evasive-deflection. Politeness-filler
+   * stalling like "I'd be happy to share..." in place of either an
+   * honest defer or a band-anchor. Reject; canonical-fallback ships. */
+  if (EVASIVE_DEFLECTION_RE.test(restyled) && !EVASIVE_DEFLECTION_RE.test(canonical)) {
+    return { valid: false, reason: "evasive-deflection" };
   }
   /* Defect 6 (2026-05-16) — sentiment-prefix preservation. If the
    * canonical opened with one of the renderSentimentPrefix anchor

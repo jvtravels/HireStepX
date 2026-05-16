@@ -45,6 +45,11 @@ export const BANNED_RECRUITER_IDIOM = [
   "synergy",
   "on board",
   "reach out",
+  /* PDF#27 Fix 4 (2026-05-17) — "remuneration" reads as legalese and
+   * is not Indian-recruiter idiom. Real recruiters say "package" or
+   * "compensation". The canonical prose surface never emits this token,
+   * so any restyle occurrence is the LLM padding. */
+  "remuneration",
 ] as const;
 
 export const PREFERRED_RECRUITER_IDIOM = [
