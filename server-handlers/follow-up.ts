@@ -15,6 +15,7 @@ import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor
 import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
 import { summarizeReverseInterview } from "../src/_reverse-interview";
 import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-register";
+import { getPanelPersona, panelPersonaPromptFragment } from "../src/_indian-panel-personas";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -875,7 +876,21 @@ Choose based on what's most relevant to their answer:
 Be genuinely curious, not interrogative. 2-3 sentences max.`;
     }
 
-    const panelContext = persona ? `\nYou are the "${sanitizeForLLM(persona, 30)}" panelist in a panel interview. Your follow-up should reflect your role's perspective.` : "";
+    /* Indian-panel persona enrichment (behavioural focus). When a panel
+       interview rotates HR Partner / Hiring Manager / Tech Lead, each
+       persona has a distinct Indian-register profile (HR rewards
+       deferential gratitude; HM rewards hedged disagreement; TL
+       redirects pedigree-recital toward STAR Action). We layer the
+       persona's full register-aware fragment ONLY when this is a
+       behavioural turn — other focus types keep the lean generic
+       panelContext to avoid bleeding behavioural directives into
+       salary-neg / technical / case-study flows. */
+    const indianPanelPersona = type === "behavioral" ? getPanelPersona(persona) : null;
+    const panelContext = indianPanelPersona
+      ? `\n${panelPersonaPromptFragment(indianPanelPersona)}`
+      : persona
+        ? `\nYou are the "${sanitizeForLLM(persona, 30)}" panelist in a panel interview. Your follow-up should reflect your role's perspective.`
+        : "";
 
     /* Behavioural-mode guard — reciprocal of the salary-neg SCOPE FENCE
        below. Without this, an LLM in a behavioural session can drift into
