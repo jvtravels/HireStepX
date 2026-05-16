@@ -37,6 +37,18 @@ vi.mock("../tts", () => ({
 const mockFetch = vi.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({}) }));
 vi.stubGlobal("fetch", mockFetch);
 
+/* Step B (2026-05-17) — root-fix the jsdom AggregateError flake.
+ * useInterviewEngine dynamic-imports ./apiClient on mount to call
+ * /api/record-session-start. apiClient uses raw XMLHttpRequest (so
+ * browser-extension fetch wrappers don't stall it in prod), which in
+ * jsdom triggers a real HTTP request that fails with AggregateError
+ * during cold runs (when the dynamic import resolves only after the
+ * test rendered + asserted). Mock the whole module so no XHR is ever
+ * constructed. */
+vi.mock("../apiClient", () => ({
+  apiFetch: vi.fn(() => Promise.resolve({ ok: true, status: 200, data: null, error: null, headers: {} })),
+}));
+
 // Mock SpeechRecognition
 vi.stubGlobal("SpeechRecognition", undefined);
 vi.stubGlobal("webkitSpeechRecognition", undefined);

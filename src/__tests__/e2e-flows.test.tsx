@@ -64,6 +64,15 @@ const mockFetch = vi.fn(() =>
 );
 vi.stubGlobal("fetch", mockFetch);
 
+/* Step B (2026-05-17) — root-fix the jsdom AggregateError flake.
+ * useInterviewEngine dynamic-imports ./apiClient on mount to call
+ * /api/record-session-start via raw XMLHttpRequest; jsdom turns that
+ * into a real HTTP request that fails with AggregateError on cold
+ * runs. Mock the whole module so no XHR is ever constructed. */
+vi.mock("../apiClient", () => ({
+  apiFetch: vi.fn(() => Promise.resolve({ ok: true, status: 200, data: null, error: null, headers: {} })),
+}));
+
 // Mock browser APIs not available in jsdom
 vi.stubGlobal("SpeechRecognition", undefined);
 vi.stubGlobal("webkitSpeechRecognition", undefined);
