@@ -903,10 +903,21 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     !(state.reactiveFollowupsFired ?? []).includes("close-recap-formal")
   ) {
     const roleFamily = classifyRoleFamily(state.role);
+    /* askedTopics carries item-key strings using the
+     * `<topic>Asked` / `<topic>Answered` naming scheme (e.g.
+     * `targetAsked`, `targetAnswered`) — NOT the bare `expectedCtc`
+     * string. Defect 5 (2026-05-16): the prior check
+     * `t.topic === "expectedCtc"` could never match because no
+     * push-site emits that literal; the proxy was permanently false
+     * and the firm-urgency close-recap path silently dropped through.
+     * Use the canonical `targetAsked` / `targetAnswered` keys here so
+     * the proxy actually fires when the checklist is missing. */
     const discoveryDone =
       state.discoveryChecklist != null
         ? isDiscoveryComplete(state.discoveryChecklist, roleFamily)
-        : (state.askedTopics ?? []).some((t) => t.topic === "expectedCtc");
+        : (state.askedTopics ?? []).some(
+            (t) => t.topic === "targetAsked" || t.topic === "targetAnswered",
+          );
     if (discoveryDone) {
       return buildCloseRecapFormal(state);
     }
