@@ -292,7 +292,35 @@ export function actionToLever(action: NextAction, _state: NegotiationState): AiM
 function isAskedTopicAnswered(
   checklist: NegotiationState["discoveryChecklist"],
   topic: DiscoveryTopic,
+  state?: NegotiationState,
 ): boolean {
+  /* Session #25 root-fix (2026-05-16) — state-derived satisfaction signal.
+   * The discovery checklist normally tracks satisfaction, but if
+   * syncChecklistFromParsedFacts desyncs (legacy session, parser miss
+   * later corrected by foldFactsIntoState, etc.) the planner could
+   * re-fire a topic whose fact is already in NegotiationState. Read the
+   * fact fields directly as an OR-satisfaction signal — either the
+   * checklist OR the bound fact satisfies the topic. */
+  if (state != null) {
+    if (
+      (topic === "currentCtcAnswered" || topic === "currentCtcAsked") &&
+      state.candidateCurrentCtc != null
+    ) {
+      return true;
+    }
+    if (
+      (topic === "targetAnswered" || topic === "targetAsked") &&
+      state.candidateTarget != null
+    ) {
+      return true;
+    }
+    if (
+      (topic === "competingOffersAnswered" || topic === "competingOffersAsked") &&
+      (state.competingOffer != null || state.competingOfferDetail?.hasAny)
+    ) {
+      return true;
+    }
+  }
   if (checklist == null) return false;
   /* The askedTopic key the planner pushes mirrors the DISCOVERY_SEQUENCE
    * key for discovery probes (currentCtcAnswered, targetAnswered, etc.),
@@ -328,7 +356,7 @@ function buildSkipRecord(
     /* Only mark as "skip" if the topic was both asked AND answered
      * within the window. Asked-but-unanswered topics stay re-askable
      * so the discovery cascade can backfill the gap. */
-    if (!isAskedTopicAnswered(state.discoveryChecklist, t.topic)) continue;
+    if (!isAskedTopicAnswered(state.discoveryChecklist, t.topic, state)) continue;
     recentlyAsked[t.topic] = true;
   }
   /* Session #25 root-fix (2026-05-16) — 3-strike consecutive-topic cap.
