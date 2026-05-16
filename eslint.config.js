@@ -72,5 +72,30 @@ export default tseslint.config(
       "max-lines": "off",
     },
   },
+  // E2E-only bans: `page.waitForTimeout` and `waitForLoadState('networkidle')`
+  // are flake factories. Wait for explicit state instead. Scoped to
+  // tests/e2e/** so unit tests are unaffected. See tests/.test-plan.md.
+  {
+    files: ["tests/e2e/**/*.{ts,tsx}"],
+    rules: {
+      // Starts as warn so the existing 16 violations don't block CI;
+      // ratchet to error once they're cleaned up (see .test-plan.md
+      // "Upgrades needed").
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message:
+            "Do not use page.waitForTimeout — wait for an explicit condition (toBeVisible / waitForResponse / waitForFunction). See tests/.test-plan.md.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='waitForLoadState'][arguments.0.value='networkidle']",
+          message:
+            "Do not use waitForLoadState('networkidle') — it's flake-prone. Wait for a specific element or response instead.",
+        },
+      ],
+    },
+  },
   eslintConfigPrettier,
 );

@@ -82,24 +82,8 @@ jobs:
             echo "::warning::vendor-react bundle exceeds ${MAX_VENDOR_KB}KB"
           fi
 
-  e2e-tests:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium webkit
-      - name: Run Playwright tests
-        run: npx playwright test
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
+  # NOTE: E2E moved to .github/workflows/e2e.yml — it now runs against the
+  # Vercel preview deploy URL (deployment_status trigger), so the runtime
+  # env (Supabase, Razorpay, LLM keys) doesn't have to be duplicated as
+  # Actions secrets. The job here is intentionally removed; do not add it
+  # back to CI unless you also remove it from e2e.yml.

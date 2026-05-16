@@ -1,0 +1,93 @@
+name: E2E (Vercel Preview)
+
+# Run Playwright against the Vercel preview URL once Vercel signals the
+# deployment is live. This avoids duplicating runtime env (Supabase,
+# Razorpay, LLM keys) as GitHub Actions secrets and tests the exact
+# deployed bundle reviewers see.
+#
+# Branch protection: mark "E2E (Vercel Preview) / Playwright" as a
+# required status check on `main` so merges block on this run.
+
+on:
+  deployment_status:
+
+concurrency:
+  # Cancel stale runs when a new deployment for the same ref comes in.
+  group: e2e-${{ github.event.deployment.ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    name: Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only run when:
+    #   - the deployment finished successfully, AND
+    #   - it's a Vercel preview (not production), AND
+    #   - the deployer is Vercel (skip non-Vercel deploys / GitHub Pages / etc.)
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment != 'Production' &&
+      (startsWith(github.event.deployment_status.target_url, 'https://') ||
+       startsWith(github.event.deployment_status.environment_url, 'https://'))
+    env:
+      # Vercel sets target_url on the deployment_status; some integrations
+      # use environment_url. Prefer target_url, fall back.
+      BASE_URL: ${{ github.event.deployment_status.target_url || github.event.deployment_status.environment_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Check out the ref the deployment was built from so the specs
+          # match the deployed code.
+          ref: ${{ github.event.deployment.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: Install Playwright browsers (full)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium webkit
+      - name: Install Playwright system deps (cache hit)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
+      - name: Wait for preview URL to respond
+        run: |
+          echo "Pinging $BASE_URL"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS -o /dev/null -m 10 "$BASE_URL"; then
+              echo "Preview is live."
+              exit 0
+            fi
+            echo "Not ready yet ($i/10), sleeping 6s…"
+            sleep 6
+          done
+          echo "::error::Preview URL never responded: $BASE_URL"
+          exit 1
+      - name: Run Playwright tests
+        env:
+          # Tell playwright.config.ts to skip the local webServer — we're
+          # hitting the live preview, not booting an app on the runner.
+          PLAYWRIGHT_SKIP_WEBSERVER: "1"
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 14
