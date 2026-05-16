@@ -250,7 +250,17 @@ export type NextAction =
    * component already populated on state.candidateComponentBreakdown.
    * Single-fire per (session, component) via the askedTopics ledger
    * (topic = "currentCtcBase" | "currentCtcVariable" | "currentCtcEsop"). */
-  | { kind: "component-probe"; component: "base" | "variable" | "esop" };
+  | { kind: "component-probe"; component: "base" | "variable" | "esop" }
+  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor. After
+   * currentCtc is satisfied and (for senior profiles) the component
+   * probes are done, anchor the company band as a range and invite the
+   * candidate's fitment number. Single-fire per session via
+   * leversUsed. `lo` / `hi` mirror band.initialOffer / band.maxStretch
+   * at the time the action is planned (so downstream prose / validator
+   * sees the same numbers the planner authored). `bandIncomplete`
+   * is true when the band is unusable (lo >= hi or missing) and the
+   * lever is firing as an honest defer instead. */
+  | { kind: "anchor-with-band"; lo: number; hi: number; bandIncomplete: boolean };
 
 /** Internal carrier: the planner builds the move alongside the action so
  *  actionToLever is bit-identical to the prior pickAiMoveCore. The
@@ -839,6 +849,70 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           },
         };
       }
+    }
+    /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — anchor-with-band lever.
+     *
+     * Senior path: fires AFTER all applicable component probes are
+     * complete (nextComponentProbe returns null OR the profile isn't
+     * senior). Junior path: fires immediately after currentCtc is
+     * disclosed since no components are needed.
+     *
+     * Single-fire per session via leversUsed.includes("anchor-with-
+     * band"). Band-completeness gate: lo (initialOffer) < hi
+     * (maxStretch) and both numeric. When the band is incomplete the
+     * lever still fires but in honest-defer mode (bandIncomplete=true)
+     * — NEVER falls back to "missing from fact pack"-style language. */
+    const seniorComponentsRemain =
+      isSeniorCompProfile(state) && nextComponentProbe(state) != null;
+    /* Single-fire marker. The kernel's applyAiMove pushes the askedTopic
+     * onto state.askedTopics; subsequent planner calls see the entry
+     * and skip the lever. Test fixtures simulate this by injecting an
+     * askedTopics entry (since the kernel mutation lives downstream of
+     * planNextAction in the pipeline). */
+    const bandAnchorFired = (state.askedTopics ?? []).some(
+      (t) => t.topic === "band-anchor-with-rationale" || (t.topic as string) === "anchor-with-band",
+    );
+    if (
+      !seniorComponentsRemain &&
+      !bandAnchorFired
+    ) {
+      const lo = state.band?.initialOffer;
+      const hi = state.band?.maxStretch;
+      const bandComplete =
+        typeof lo === "number" && typeof hi === "number" && lo < hi;
+      if (bandComplete) {
+        return {
+          kind: "anchor-with-band",
+          lo,
+          hi,
+          bandIncomplete: false,
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale:
+              `AP3-F3 band-disclosure: currentCtc satisfied, senior-component probes ` +
+              `${isSeniorCompProfile(state) ? "complete" : "n/a"}, target pending — anchor band [${lo},${hi}] and invite fitment.`,
+            askedTopic: "band-anchor-with-rationale",
+            actionKind: "range-disclosure",
+          },
+        };
+      }
+      /* Honest defer path — band is unusable; still fire the lever
+       * with bandIncomplete=true so the canonical-prose surface emits
+       * the panel-signoff defer + fitment invitation. */
+      return {
+        kind: "anchor-with-band",
+        lo: typeof lo === "number" ? lo : 0,
+        hi: typeof hi === "number" ? hi : 0,
+        bandIncomplete: true,
+        _move: {
+          lever: "anchor-with-band",
+          newTotalLpa: null,
+          rationale: `AP3-F3 band-disclosure: band incomplete (lo=${lo}, hi=${hi}); honest-defer with fitment invitation.`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "range-disclosure",
+        },
+      };
     }
   }
 

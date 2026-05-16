@@ -401,6 +401,19 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
    * regex applied at validation time is selected by inspecting the
    * NextAction.component field via the lookup helper below. */
   "component-probe": { numberPolicy: "optional" },
+  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — anchor-with-band. Numbers are
+   * required (lo + hi) when the band is complete; the validator below
+   * relaxes numberPolicy when action.bandIncomplete is true (honest-
+   * defer path). Required tokens: range-dash (matches RANGE_DASH_RE),
+   * "LPA", "fitment". */
+  "anchor-with-band": {
+    numberPolicy: "required",
+    requiredTokens: [
+      /(?:[-\u2013\u2014]|\bto\b)/,
+      /\bLPA\b/i,
+      /\bfitment\b/i,
+    ],
+  },
 };
 
 /** AP3-F2 (2026-05-17) — component-probe requiredTokens are
@@ -646,6 +659,18 @@ export function validateRestyle(
    * applies numberPolicy + requiredTokens + bannedTokens on top of the
    * global checks above. Unknown kinds fall through (no implicit deny).*/
   if (action != null) {
+    /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — anchor-with-band honest-defer
+     * override. When the band is incomplete the canonical emits a
+     * panel-signoff defer (no range, no "LPA"); the static contract
+     * would mis-reject it. Skip the contract block for the defer path
+     * and require only "fitment" (the invitation token) which keeps
+     * the line tied to its purpose. */
+    if (action.kind === "anchor-with-band" && action.bandIncomplete) {
+      if (!/\bfitment\b/i.test(restyled)) {
+        return { valid: false, reason: "contract-required-token-missing:anchor-with-band-defer:fitment" };
+      }
+      return { valid: true };
+    }
     const contract = NEXT_ACTION_CONTRACT[action.kind];
     if (contract != null) {
       if (contract.numberPolicy === "forbidden" && restyleNums.length > 0) {

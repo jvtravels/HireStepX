@@ -173,11 +173,7 @@ describe("AP3-F2 — component-aware discovery for senior profiles", () => {
   });
 });
 
-/* AP3-F3 anchor-with-band lever is implemented in a subsequent commit
- * (Fix 5 of PDF#27); these specs assert the as-designed behaviour and
- * are skipped until the lever lands so that AP3-F2 component-probe can
- * compile and run green standalone. */
-describe.skip("AP3-F3 — band-disclosure lever", () => {
+describe("AP3-F3 — band-disclosure lever", () => {
   it("currentCtc disclosed + no components needed (junior) + band complete → anchor-with-band", () => {
     const s = initJunior({
       phase: "opening",
@@ -209,7 +205,11 @@ describe.skip("AP3-F3 — band-disclosure lever", () => {
     expect(prose).toMatch(/\bfitment\b/i);
   });
 
-  it("incomplete band (hi <= lo) → does NOT fire anchor-with-band", () => {
+  it("incomplete band (hi <= lo) → fires anchor-with-band in honest-defer mode (bandIncomplete=true)", () => {
+    /* PDF#27 Fix 5 design: NEVER fall back to internal-leak language
+     * like "missing from fact pack". When the band is unusable, the
+     * lever still fires but with bandIncomplete=true so the prose
+     * surface emits a panel-signoff defer + fitment invitation. */
     const badBand: NegotiationBand = {
       initialOffer: 30,
       maxStretch: 30, // not strictly greater than lo
@@ -226,7 +226,14 @@ describe.skip("AP3-F3 — band-disclosure lever", () => {
       band: badBand,
     };
     const action = planNextAction(s);
-    expect(action.kind).not.toBe("anchor-with-band");
+    expect(action.kind).toBe("anchor-with-band");
+    if (action.kind === "anchor-with-band") {
+      expect(action.bandIncomplete).toBe(true);
+      /* Defer prose carries the "fitment" token but no range / "LPA". */
+      const prose = renderCanonicalProse(action, s);
+      expect(prose).toMatch(/\bfitment\b/i);
+      expect(prose).not.toMatch(/missing from/i);
+    }
   });
 
   it("anchor-with-band fires at most ONCE per session", () => {
@@ -244,7 +251,7 @@ describe.skip("AP3-F3 — band-disclosure lever", () => {
       ...s,
       askedTopics: [
         ...(s.askedTopics ?? []),
-        { topic: "anchor-with-band", atTurn: s.turnIndex },
+        { topic: "band-anchor-with-rationale", atTurn: s.turnIndex },
       ],
     };
     const second = planNextAction(s);
@@ -276,7 +283,7 @@ describe.skip("AP3-F3 — band-disclosure lever", () => {
           ...s,
           askedTopics: [
             ...(s.askedTopics ?? []),
-            { topic: "anchor-with-band", atTurn: s.turnIndex + i },
+            { topic: "band-anchor-with-rationale", atTurn: s.turnIndex + i },
           ],
         };
         continue;

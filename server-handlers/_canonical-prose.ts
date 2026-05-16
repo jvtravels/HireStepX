@@ -769,6 +769,19 @@ function renderCanonicalProseBody(
       return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
     }
 
+    case "anchor-with-band": {
+      /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor.
+       * Combined band-as-range + fitment invitation. NEVER says
+       * "missing from fact pack" — honest defer when band is
+       * incomplete. en-dash range matches RANGE_DASH_RE; "fitment" +
+       * "LPA" are the contract's required tokens. */
+      if (action.bandIncomplete) {
+        return "I'll have a firmer number once the panel signs off — meanwhile, what's the fitment you were targeting?";
+      }
+      const companyLabel = state.company || "us";
+      return `For this level at ${companyLabel}, our band sits around \u20B9${action.lo}\u2013\u20B9${action.hi} LPA — what's the fitment you were looking at?`;
+    }
+
     case "component-probe": {
       /* AP3-F2 (2026-05-17) — component-aware discovery prose. The bot
        * has the candidate's total currentCtc but needs the per-component
