@@ -1,0 +1,14 @@
+{
+  "name": "Candidate drifts between CSE and AIML branches without naming a minor",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "HCL",
+    "transcript": [
+      { "speaker": "ai", "text": "Which branch are you from?", "time": "" },
+      { "speaker": "user", "text": "I'm in CSE, final year. I picked computer science because I enjoyed problem solving from school.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your final-year project.", "time": "" },
+      { "speaker": "user", "text": "It's a deep-learning vision pipeline — fits well with my AIML branch since most of our coursework in the AIML program covers it. The AIML curriculum here has a strong DL track.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["degree_branch_inconsistency"], "must_not_include": ["empty_transcript"] }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Candidate confuses CTC with in-hand monthly pay",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Any questions for us about the offer structure?", "time": "" },
+      { "speaker": "user", "text": "Yes sir — the offer letter said 6.5 LPA CTC but isn't CTC the same as in-hand monthly? So I'll take home 6.5 LPA, right? I thought CTC was the monthly pay I would actually receive.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["inhand_vs_ctc_confusion"], "must_not_include": ["empty_transcript"] }
+}

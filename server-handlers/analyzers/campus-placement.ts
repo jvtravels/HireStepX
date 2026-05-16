@@ -208,9 +208,50 @@ const STIPEND_PROBE = /\b(?:what\s+was\s+(?:your|the)\s+stipend|how\s+much\s+(?:
 const STIPEND_DODGE = /\b(?:don'?t\s+(?:remember|recall)|prefer\s+not|it\s+was\s+unpaid\s+but|not\s+(?:disclosed|comfortable)|confidential|nda|can'?t\s+share|small\s+amount|something\s+(?:small|minimal|nominal)|not\s+much|barely\s+anything|just\s+(?:travel|conveyance)|i\s+wasn'?t\s+(?:keeping\s+track|paying\s+attention))\b/i;
 const STIPEND_CONCRETE = /\b(?:\d{1,2},?\d{3}\s*(?:per\s+month|\/month|monthly|pm\b)|₹\s*\d{1,2},?\d{3}|\d{1,2}\s*(?:k|thousand)\s*(?:per\s+month|\/month|monthly|pm\b)|inr\s+\d{1,2},?\d{3}|stipend\s+(?:was|of)\s+(?:₹|rs\.?)?\s*\d|i\s+was\s+paid\s+\d|got\s+(?:₹|rs\.?)?\s*\d{1,2},?\d{3})\b/i;
 
+/* ── Wave-5 patterns — softer-signal Indian campus realism ────────── */
+
+/* Memorized self-intro — verbatim YouTube-template openers. Fires when
+ * the candidate's response to TMAY contains 2+ canonical template phrases. */
+const MEMORIZED_TEMPLATE = /\b(?:good\s+(?:morning|afternoon|evening)\s+(?:sir|ma'?am|mam|sir\s*\/\s*ma'?am)|first\s+of\s+all\s+(?:i'?d\s+like\s+to\s+)?thank\s+you\s+for\s+(?:this\s+(?:wonderful\s+)?opportunity|giving\s+me\s+this\s+(?:wonderful\s+)?opportunity)|coming\s+to\s+my\s+(?:introduction|family\s+background)|i\s+would\s+like\s+to\s+(?:introduce\s+myself|begin\s+(?:with|by))|talking\s+about\s+my\s+(?:family|hobbies|strengths)|on\s+a\s+concluding\s+note|that'?s\s+all\s+(?:about|from)\s+me|this\s+is\s+all\s+about\s+(?:me|myself)|myself\s+\w+\s+\w+(?:,|\s+and\s+i\s+am))/i;
+
+/* Aptitude / on-spot puzzle refusal — AI asks a live aptitude / DSA /
+ * estimation question; user refuses or stalls. */
+const APTITUDE_LIVE_PROBE = /\b(?:quick\s+(?:one|question|puzzle)|solve\s+(?:this|the\s+following)|how\s+would\s+you\s+(?:approach|solve)|let'?s\s+do\s+(?:a\s+)?(?:quick\s+)?(?:puzzle|brainteaser|estimation)|find\s+the\s+(?:second|3rd|nth)\s+(?:highest|largest)|reverse\s+(?:a\s+)?(?:linked\s+list|string|array)|estimate\s+the\s+number\s+of|fermi\s+(?:question|estimate))\b/i;
+const APTITUDE_REFUSAL = /\b(?:can'?t\s+(?:think|solve|do)\s+(?:on\s+the\s+spot|right\s+now|under\s+pressure)|i'?m\s+not\s+good\s+(?:at|with)\s+(?:puzzles|aptitude|dsa|on[- ]?spot)|need\s+(?:to\s+see|a)\s+(?:ide|laptop|computer|keyboard|paper)|i\s+don'?t\s+do\s+(?:puzzles|aptitude|brainteasers)|skip\s+(?:this|that)|pass\s+(?:on\s+)?(?:this|that)|not\s+comfortable\s+(?:with|doing)\s+(?:this|puzzles|aptitude))\b/i;
+
+/* Onsite / foreign-opportunity premature ask — fresher brings up US /
+ * UK / onsite within the first 3 user turns, before role discussion. */
+const ONSITE_QUERY = /\b(?:onsite\s+(?:opportunit|chance|posting|assignment|deputation)|when\s+(?:will|can|do)\s+i\s+go\s+(?:onsite|abroad|to\s+(?:us|usa|uk|canada|australia|germany))|foreign\s+(?:posting|opportunity|travel|deputation)|us\s+(?:client|posting|travel|opportunity|onsite|deputation)|sent\s+to\s+(?:us|usa|uk|onsite)|client\s+location\s+(?:travel|visit|posting))\b/i;
+
+/* Nepotism reference — mentions relative / family-friend at the company.
+ * Red flag at most Indian firms; some PSUs explicitly forbid it. */
+const NEPOTISM_MENTION = /\b(?:my\s+(?:uncle|aunt|father|mother|dad|mom|cousin|brother|sister|relative|chacha|mama|mausi|bhai|behen|bhaiya|didi)\s+(?:works?|is\s+(?:working|an?\s+\w+))\s+(?:at|in|for|with)\s+(?:your\s+)?(?:company|organi[zs]ation|firm|here|this\s+company)|my\s+(?:family\s+friend|relative|cousin)\s+(?:works?|is)\s+(?:at|in|for|with)\s+(?:your|this)\s+(?:company|organi[zs]ation|firm)|referred\s+by\s+my\s+(?:uncle|aunt|father|mother|cousin|relative)|family\s+contact\s+(?:at|in)\s+(?:your|this)\s+company)\b/i;
+
+/* In-hand vs CTC confusion — explicit signal of misunderstanding Indian
+ * fresher comp structure. Often combined with disappointed-tone phrasing. */
+const INHAND_CTC_CONFUSION = /\b(?:but\s+(?:my\s+)?in[- ]?hand\s+(?:should\s+be|will\s+be|is)\s+\d|in[- ]?hand\s+(?:salary\s+)?(?:will\s+be|kitna|kya|how\s+much)|i\s+(?:thought|assumed|expected)\s+(?:the\s+)?ctc\s+(?:was|is)\s+(?:the\s+)?(?:in[- ]?hand|monthly\s+pay)|isn'?t\s+ctc\s+the\s+same\s+as\s+(?:in[- ]?hand|monthly|take[- ]?home)|so\s+i'?ll\s+(?:take\s+home|get)\s+\d+\s*lpa)\b/i;
+
+/* Code-on-paper / whiteboard freeze — AI asks for pseudocode / logic
+ * walkthrough, user says they can only code in IDE. */
+const CODE_WRITE_PROBE = /\b(?:write\s+(?:the\s+)?(?:pseudo[- ]?code|code|logic|algorithm)|walk\s+me\s+through\s+the\s+(?:code|logic|algorithm)|how\s+would\s+you\s+code\s+(?:this|it)|on\s+(?:paper|whiteboard|notepad|chat)|share\s+your\s+screen\s+and\s+code|type\s+out\s+the\s+logic|sketch\s+(?:the\s+)?(?:code|algorithm)|explain\s+(?:the\s+)?logic\s+(?:line\s+by\s+line|step\s+by\s+step))\b/i;
+const CODE_WRITE_REFUSAL = /\b(?:i\s+can\s+only\s+code\s+in\s+(?:an?\s+)?ide|i\s+need\s+(?:an?\s+)?ide|can'?t\s+(?:code|write)\s+(?:without|on\s+paper|here|in\s+chat|in\s+the\s+chat)|i\s+don'?t\s+write\s+(?:code\s+)?(?:on\s+paper|by\s+hand)|let\s+me\s+(?:open|grab)\s+(?:my\s+)?(?:laptop|ide|vs\s*code)|i'?m\s+not\s+good\s+(?:without|outside)\s+(?:an?\s+)?ide)\b/i;
+
+/* Resume date inconsistency — overlapping internship windows in same text.
+ * Detects two date ranges that clearly overlap (e.g. "May 2024 to August 2024"
+ * AND "June 2024 to October 2024"). Conservative — only fires when at least
+ * two month-year ranges are mentioned and obviously overlap. */
+const MONTH_YEAR_RANGE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{4})\s+(?:to|till|until|-|–|—)\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{4})/gi;
+
+/* Degree / branch inconsistency — candidate names two different branches
+ * across the transcript. Common confusion sources: CSE, IT, AIML, AIDS,
+ * ECE, EEE, Mech, Civil, Chem. Fires if two distinct branch names appear
+ * in user text without an explicit minor / dual-degree connector. */
+const BRANCH_NAME = /\b(?:c\s*s\s*e\b|computer\s+science(?:\s+and\s+engineering)?|cs\s+engineering|i\s*t\b|information\s+technology|i\s*s\b|information\s+science|electronics\s+and\s+communication\s+engineering|ece\b|e\s*c\s*e\b|electrical\s+and\s+electronics|eee\b|e\s*e\s*e\b|mechanical(?:\s+engineering)?|mech\b|civil(?:\s+engineering)?|chemical(?:\s+engineering)?|chem\s+engg|biotech(?:nology)?|a\s*i\s*\/?\s*m\s*l\b|a\s*i\s*m\s*l|aiml|artificial\s+intelligence\s+(?:and|&)\s+machine\s+learning|a\s*i\s*d\s*s\b|aids\b|artificial\s+intelligence\s+(?:and|&)\s+data\s+science|data\s+science\s+(?:engineering|branch))\b/i;
+const DUAL_DEGREE_CONNECTOR = /\b(?:minor\s+in|dual[- ]?degree|integrated\s+(?:m\s*tech|b\s*tech|m[- ]?s)|with\s+a\s+specialization\s+in|core\s+(?:branch|major)\s+is|primary\s+branch|specializ\w+\s+in|i'?m\s+from\s+\w+\s+but\s+(?:my\s+)?(?:minor|focus|elective)|switched\s+(?:from|branch|streams))\b/i;
+
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v4.0",
+  version: "campus-placement-v5.0",
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -741,6 +782,168 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
+    /* ── Wave-5 detection: softer-signal Indian campus realism ──────── */
+
+    // Memorized self-intro — multiple template phrases in the TMAY reply.
+    if (TMAY_PROBE.test(aiText)) {
+      const tmayIdx = transcript.findIndex((t) => isAi(t) && TMAY_PROBE.test(t.text || ""));
+      const r = tmayIdx >= 0 ? transcript.slice(tmayIdx + 1, tmayIdx + 3).find(isUser) : undefined;
+      if (r && r.text) {
+        const reText = new RegExp(MEMORIZED_TEMPLATE.source, "gi");
+        const matches = r.text.match(reText) || [];
+        if (matches.length >= 2) {
+          flags.add("memorized_self_intro");
+          gaps.push({
+            dimension: "specificity",
+            expected: "Rewrite the self-intro in your own voice with one concrete project + outcome. Verbatim 'first of all I'd like to thank you for this opportunity, coming to my introduction' reads as cassette-tape.",
+            observed: "Self-intro reply hit multiple memorized-template phrases (e.g. 'first of all thank you', 'coming to my introduction', 'talking about my family') — Indian recruiters now flag this template as no-thought signal.",
+            severity: "medium",
+          });
+        }
+      }
+    }
+
+    // Aptitude / on-spot puzzle refusal.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && APTITUDE_LIVE_PROBE.test(t.text || "")) {
+        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        if (reply && reply.text && APTITUDE_REFUSAL.test(reply.text)) {
+          flags.add("aptitude_puzzle_refusal");
+          gaps.push({
+            dimension: "preparation",
+            expected: "Even if stuck, narrate your thinking aloud — 'Let me think out loud: 8 balls, two weighings, so each weighing has to split into 3 buckets...' Interviewers grade approach, not perfection. Flat refusal loses 100% of marks.",
+            observed: "Candidate refused or stalled on a live puzzle / DSA / estimation question — reads as inflexible or unprepared.",
+            severity: "high",
+          });
+          break;
+        }
+      }
+    }
+
+    // Onsite / foreign opportunity premature — fresher asks within first 3 turns.
+    {
+      const userTurnIdxs: number[] = [];
+      transcript.forEach((t, idx) => { if (isUser(t)) userTurnIdxs.push(idx); });
+      const earlyTurns = userTurnIdxs.slice(0, 3);
+      if (earlyTurns.some((idx) => ONSITE_QUERY.test(transcript[idx].text || ""))) {
+        flags.add("onsite_opportunity_premature");
+        gaps.push({
+          dimension: "framing",
+          expected: "Don't bring up onsite / US deputation in early turns — service-tier recruiters read this as offer-shopping. Hold it for HR / post-offer conversations; phrase as: 'I'd love to understand how growth and global rotations work over the first 2-3 years — but happy to discuss when we get there.'",
+          observed: "Candidate asked about onsite / foreign deputation in the first 3 user turns — wrong round for this question.",
+          severity: companyTier === "service" ? "high" : "medium",
+        });
+      }
+    }
+
+    // Nepotism reference — relative working at the company.
+    if (NEPOTISM_MENTION.test(userText)) {
+      flags.add("nepotism_reference");
+      gaps.push({
+        dimension: "professionalism",
+        expected: "Never mention a relative / family-friend at the company unsolicited — even as small-talk. It activates explicit anti-nepotism filters at most Indian firms and is forbidden outright at PSU / consulting / Big-4. If discovered through BGV that's fine; volunteering it isn't.",
+        observed: "Candidate volunteered that a relative / family-friend works at the company — recruiters log this as a nepotism signal.",
+        severity: "medium",
+      });
+    }
+
+    // In-hand vs CTC confusion.
+    if (INHAND_CTC_CONFUSION.test(userText)) {
+      flags.add("inhand_vs_ctc_confusion");
+      gaps.push({
+        dimension: "preparation",
+        expected: "Know the Indian fresher CTC structure before the interview: CTC = fixed + variable + joining bonus + RSU/ESOP + benefits + (sometimes) retentions. In-hand is roughly 70-78% of fixed after taxes, EPF, and professional tax. Asking 'isn't CTC the same as in-hand' tells recruiters you didn't prepare.",
+        observed: "Candidate showed explicit CTC vs in-hand confusion — reads as financial-literacy gap and unprofessional in an offer-conversation.",
+        severity: "low",
+      });
+    }
+
+    // Code-on-paper / whiteboard freeze.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && CODE_WRITE_PROBE.test(t.text || "")) {
+        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        if (reply && reply.text && CODE_WRITE_REFUSAL.test(reply.text)) {
+          flags.add("code_on_paper_freeze");
+          gaps.push({
+            dimension: "preparation",
+            expected: "Practice writing 20-line solutions on paper / chat / whiteboard during prep. 'I can only code in an IDE' tells the interviewer you've memorized templates without internalizing logic.",
+            observed: "Candidate refused to write code without an IDE — interviewers grade this as superficial DSA prep.",
+            severity: "high",
+          });
+          break;
+        }
+      }
+    }
+
+    // Resume date inconsistency — overlapping month-year ranges.
+    {
+      const monthMap: Record<string, number> = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+      const ranges: Array<{ start: number; end: number }> = [];
+      const reAll = new RegExp(MONTH_YEAR_RANGE.source, "gi");
+      let m: RegExpExecArray | null;
+      while ((m = reAll.exec(userText)) !== null) {
+        const sMonth = monthMap[m[1].slice(0, 3).toLowerCase()];
+        const sYear = Number(m[2]);
+        const eMonth = monthMap[m[3].slice(0, 3).toLowerCase()];
+        const eYear = Number(m[4]);
+        if (sMonth && eMonth) {
+          ranges.push({ start: sYear * 12 + sMonth, end: eYear * 12 + eMonth });
+        }
+      }
+      let overlap = false;
+      for (let i = 0; i < ranges.length && !overlap; i++) {
+        for (let j = i + 1; j < ranges.length && !overlap; j++) {
+          const a = ranges[i], b = ranges[j];
+          if (a.start <= b.end && b.start <= a.end && !(a.start === b.start && a.end === b.end)) overlap = true;
+        }
+      }
+      if (overlap) {
+        flags.add("resume_date_inconsistency");
+        gaps.push({
+          dimension: "credibility",
+          expected: "Internship / project dates must not overlap (unless explicitly part-time + disclosed). Two overlapping full-time windows trip BGV instantly and read as resume fabrication.",
+          observed: "Two month-year ranges in the candidate's narration overlap — interviewers will probe and BGV will surface this.",
+          severity: "high",
+        });
+      }
+    }
+
+    // Degree / branch inconsistency — two different branch names in user text.
+    {
+      const seen = new Set<string>();
+      const reBranch = new RegExp(BRANCH_NAME.source, "gi");
+      let bm: RegExpExecArray | null;
+      while ((bm = reBranch.exec(userText)) !== null) {
+        const key = bm[0].toLowerCase().replace(/\s+/g, "").replace(/[^a-z]/g, "");
+        // Canonicalize close-matches so cse / computerscience / computerscienceandengineering all map together.
+        let canon = key;
+        if (/^c(omputer)?s(cience)?(?:andengineering)?$/.test(key) || key === "cse") canon = "cse";
+        else if (/^i(nformation)?t(echnology)?$/.test(key) || key === "it") canon = "it";
+        else if (/^i(nformation)?s(cience)?$/.test(key) || key === "is") canon = "is";
+        else if (/^e(lectronics)?c(ommunication)?e?$/.test(key) || key === "ece") canon = "ece";
+        else if (/^e(lectrical)?e(lectronics)?e?$/.test(key) || key === "eee") canon = "eee";
+        else if (/^mech(anical)?(engineering)?$/.test(key)) canon = "mech";
+        else if (/^civil(engineering)?$/.test(key)) canon = "civil";
+        else if (/^chem(ical|engg)?(engineering)?$/.test(key)) canon = "chem";
+        else if (/^biotech(nology)?$/.test(key)) canon = "biotech";
+        else if (/^aiml$|^a(rtificial)?i(ntelligence)?m(achine)?l(earning)?$/.test(key)) canon = "aiml";
+        else if (/^aids$|^a(rtificial)?i(ntelligence)?d(ata)?s(cience)?$/.test(key)) canon = "aids";
+        else if (/^datascience(engineering|branch)?$/.test(key)) canon = "datascience";
+        seen.add(canon);
+      }
+      if (seen.size >= 2 && !DUAL_DEGREE_CONNECTOR.test(userText)) {
+        flags.add("degree_branch_inconsistency");
+        gaps.push({
+          dimension: "credibility",
+          expected: "Be precise about your branch — pick the exact name on your transcript and stick with it. If you have a minor or dual-degree, say so explicitly: 'CSE major with an AIML minor'. Drifting between 'I'm in CSE' and 'I'm in AIML' reads as either confusion or fabrication.",
+          observed: `Candidate referenced multiple branches across the transcript (${Array.from(seen).join(", ")}) without a minor / dual-degree explanation.`,
+          severity: "medium",
+        });
+      }
+    }
+
     const tips: string[] = [];
     if (flags.has("no_academic_project_discussed")) tips.push("As a fresher, lead with your capstone or final-year project — it's your strongest evidence.");
     if (flags.has("generic_passion_no_substance")) tips.push("Replace 'I'm passionate about tech' with 'I built X using Y, here's what I learned.'");
@@ -778,6 +981,14 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("tier_3_overcompensation")) tips.push("Calibrate achievement claims to verifiable detail. 'Top 5 in my college hackathon (40 teams, 36 hours, built X)' lands; 'national hackathon winner' invites a one-question verification drill you can't pass. Specificity beats grandiosity.");
     if (flags.has("fyp_solo_claim_vs_team")) tips.push("Be precise on individual contribution in team projects. 'In our 4-person FYP, I owned the backend (FastAPI + Postgres); teammates handled the React frontend and the ML model.' Mixing 'I built' with 'we presented' invites a 'who did what' drill.");
     if (flags.has("stipend_dodge")) tips.push("Stipend is a routine probe — state numbers cleanly even if small. '₹25K/month at the startup; unpaid academic internship at the lab under Prof. X.' Hedging reads as fabrication, even when the internship was real.");
+    if (flags.has("memorized_self_intro")) tips.push("'Good morning sir, first of all thank you for this wonderful opportunity, coming to my introduction' is the YouTube template every panel has heard 500 times. Open with one sentence on who you are + one strong project line + why this role. Verbatim templates flag as no-thought.");
+    if (flags.has("aptitude_puzzle_refusal")) tips.push("Never refuse a live puzzle / DSA / estimation flat. Narrate: 'Let me think out loud — I'll start with the brute force, then optimize.' Interviewers grade approach more than the final answer; saying 'I can't think under pressure' kills the rest of the round.");
+    if (flags.has("onsite_opportunity_premature")) tips.push("Don't bring up onsite / US deputation in the first 2-3 turns — service-tier recruiters read it as offer-shopping. Save it for HR / post-offer. If genuinely curious, phrase as 'I'd love to understand how growth and global rotation work over the first 2-3 years.'");
+    if (flags.has("nepotism_reference")) tips.push("Never volunteer that a relative / family-friend works at the company — even as small-talk. It activates explicit anti-nepotism filters at Indian firms and is forbidden at PSU / consulting / Big-4. If BGV surfaces it later, that's fine; mentioning it unsolicited isn't.");
+    if (flags.has("inhand_vs_ctc_confusion")) tips.push("Learn the CTC ladder before the interview: CTC = fixed + variable + joining bonus + RSU + benefits. In-hand ≈ 70-78% of fixed after tax + EPF + professional tax. Asking 'isn't CTC the in-hand' tells recruiters you didn't prepare for the offer conversation.");
+    if (flags.has("code_on_paper_freeze")) tips.push("Practice writing 15-20 line solutions on paper / chat / a doc during prep — at least 10 problems before any campus drive. 'I can only code in an IDE' tells the interviewer you've memorized templates, not internalized logic. Even rough pseudocode beats refusal.");
+    if (flags.has("resume_date_inconsistency")) tips.push("Internship / project windows must not overlap unless explicitly part-time and disclosed. Two full-time ranges that overlap trip BGV instantly and read as fabrication. Pull the resume, fix the months, and rehearse the corrected timeline in one breath.");
+    if (flags.has("degree_branch_inconsistency")) tips.push("Pick the exact branch name on your transcript and stick with it across the whole conversation. If you have a minor / dual-degree, say so once: 'CSE major with an AIML minor.' Drifting between 'I'm in CSE' and 'I'm in AIML' reads as confusion or fabrication.");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

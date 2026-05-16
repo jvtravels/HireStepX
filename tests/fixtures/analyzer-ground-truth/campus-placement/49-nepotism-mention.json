@@ -1,0 +1,12 @@
+{
+  "name": "Candidate volunteers that an uncle works at the company — nepotism red flag",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "Why Wipro specifically?", "time": "" },
+      { "speaker": "user", "text": "Honestly sir, my uncle works at your company in Bangalore as a senior manager, and he's told me a lot about the culture. That's part of why I applied — plus the Turbo program looks strong for freshers and I've followed the recent BFSI client wins.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["nepotism_reference"], "must_not_include": ["empty_transcript"] }
+}

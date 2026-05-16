@@ -1,0 +1,12 @@
+{
+  "name": "Candidate recites the YouTube self-intro template verbatim — Indian campus tell",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Good morning sir, first of all I'd like to thank you for this wonderful opportunity. Coming to my introduction, myself Rahul Kumar and I am a final-year CSE student. Talking about my family, my father is a government employee and my mother is a homemaker. On a concluding note, that's all about me, thank you sir.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["memorized_self_intro"], "must_not_include": ["empty_transcript"] }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Candidate refuses to write code without an IDE",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Cognizant",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through the code for reversing a linked list — you can write it out on paper or just sketch the logic.", "time": "" },
+      { "speaker": "user", "text": "Sir, honestly I can only code in an IDE — I need VS Code with autocomplete to think properly. Can't write on paper or in chat like this. Let me grab my laptop and I'll share my screen?", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["code_on_paper_freeze"], "must_not_include": ["empty_transcript"] }
+}

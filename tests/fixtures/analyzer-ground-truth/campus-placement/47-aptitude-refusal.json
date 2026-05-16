@@ -1,0 +1,12 @@
+{
+  "name": "AI poses a live puzzle, candidate flat-refuses on-spot thinking",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Quick one — how would you approach finding the second highest element in an unsorted array? Walk me through it.", "time": "" },
+      { "speaker": "user", "text": "Honestly, I'm not good at puzzles or on-spot DSA. I can't think under pressure like this — can we skip this one and move on to projects?", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["aptitude_puzzle_refusal"], "must_not_include": ["empty_transcript"] }
+}

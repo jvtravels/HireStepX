@@ -1,0 +1,14 @@
+{
+  "name": "Fresher asks about US onsite deputation in the first user turn — wrong round",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Welcome. Let's start — tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Hi sir, I'm Karthik, final-year CSE at NIT Trichy. Before we start, I had one question — when will I go onsite to the US? Is there a foreign posting opportunity for freshers in the first year itself?", "time": "" },
+      { "speaker": "ai", "text": "Let's focus on the role first. Walk me through a recent project.", "time": "" },
+      { "speaker": "user", "text": "Sure. I built a campus-event booking app using Spring Boot and Postgres, deployed on Render. The interesting part was handling concurrent seat reservations — I used optimistic locking.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["onsite_opportunity_premature"], "must_not_include": ["empty_transcript"] }
+}

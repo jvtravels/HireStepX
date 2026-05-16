@@ -1,0 +1,12 @@
+{
+  "name": "Candidate narrates two overlapping full-time internship windows — BGV tell",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Accenture",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your internships.", "time": "" },
+      { "speaker": "user", "text": "Sure. I did my first internship at a Bangalore fintech from May 2024 to August 2024 — full-time, built a notification microservice in Node.js. Then my second internship was at an EdTech startup from June 2024 to October 2024, where I worked on the React dashboard. Both were full-time roles and I learned a lot from each.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["resume_date_inconsistency"], "must_not_include": ["empty_transcript"] }
+}
