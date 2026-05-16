@@ -1046,7 +1046,7 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
  *  → frustrated wins because frustration drives the prefix decision).
  *  Default is "neutral". Downstream renderSentimentPrefix suppresses
  *  the prefix for decisive + neutral. */
-export function detectCandidateSentiment(
+function detectCandidateSentiment(
   rawCandidateText: string,
 ): TurnDelta["candidateSentiment"] {
   if (typeof rawCandidateText !== "string" || !rawCandidateText.trim()) {
@@ -1081,7 +1081,7 @@ export function detectCandidateSentiment(
  *  Why "firm" outranks "soft": a candidate who says both "looking to
  *  move quickly AND I have to revert by Friday" is firm — the deadline
  *  is the binding constraint, the directional framing is incidental. */
-export function detectUrgencySignal(
+function detectUrgencySignal(
   rawCandidateText: string,
 ): TurnDelta["urgencySignal"] {
   if (typeof rawCandidateText !== "string" || !rawCandidateText.trim()) {
@@ -1099,7 +1099,7 @@ export function detectUrgencySignal(
 
 /** Perfect 3 (2026-05-16) — sticky upgrade for cumulativeUrgency. Firm
  *  overrides soft overrides none; never downgrades. Pure. */
-export function mergeCumulativeUrgency(
+function mergeCumulativeUrgency(
   prior: NegotiationState["cumulativeUrgency"],
   fresh: TurnDelta["urgencySignal"],
 ): "none" | "soft" | "firm" {

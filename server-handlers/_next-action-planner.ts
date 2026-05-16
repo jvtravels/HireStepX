@@ -984,15 +984,19 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * counterRound = number of counter-base moves already shipped this
      * session. Apply a diminishing-concessions multiplier to the
      * gap-fraction on each subsequent counter so the conversation
-     * tapers naturally instead of letting the existing rotation counter
-     * carry the entire signal:
-     *   round 0 → 60% of the gap (first counter, lead with movement)
-     *   round 1 → 40% of the gap (we've moved once)
-     *   round 2 → 20% of the gap (stretching the band)
+     * tapers naturally. The existing splitSchedule/boost stack is
+     * already tuned for the first counter (round 0 → ~50% of gap), so
+     * the multiplier table is [1.0, 0.66, 0.33]:
+     *   round 0 → full tuned base (no taper; lead with movement)
+     *   round 1 → 2/3 of the tuned base (we've moved once)
+     *   round 2 → 1/3 of the tuned base (stretching the band)
      *   round 3+ → 0 (hold firm; pivot to structural levers)
-     * This multiplier composes with the existing splitSchedule /
-     * boost stack (applies BEFORE the band-cap component clamp on
-     * newTotal). */
+     * Composes multiplicatively with splitSchedule/boost AND applies
+     * BEFORE the band-cap component clamp on newTotal. Tuned this way
+     * (rather than [0.6, 0.4, 0.2]) so the first-counter behaviour the
+     * rest of the system is calibrated against is preserved end-to-end;
+     * the diminishing-concessions intent lives strictly on subsequent
+     * rounds, which is where real negotiation feels stiffer anyway. */
     const spiralRound = state.counterRound;
     if (spiralRound >= 3) {
       return {
@@ -1005,7 +1009,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
-    const SPIRAL_MULTIPLIERS = [0.6, 0.4, 0.2];
+    const SPIRAL_MULTIPLIERS = [1.0, 0.66, 0.33];
     const spiralMultiplier = SPIRAL_MULTIPLIERS[spiralRound] ?? 0;
     const counterCount = state.leversUsed.filter(l => l === "counter-base").length;
     const splitSchedule = [0.5, 0.35, 0.22, 0.12, 0.06];
