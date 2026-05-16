@@ -164,4 +164,54 @@ describe("F7 — askedTopics repetition guard", () => {
     expect(topics.some((t) => t.topic === "currentCtcAnswered")).toBe(true);
     expect(topics.some((t) => t.topic === "noticePeriodAnswered")).toBe(true);
   });
+
+  /* Session #25 root-fix (2026-05-16) — opener marks currentCtc, and the
+   * 3-strike consecutive-topic cap prevents the planner from firing the
+   * same discovery topic four turns in a row when the candidate dodges. */
+  describe("Session #25 — opener convergence + 3-strike cap", () => {
+    it("turn-0 open-with-offer carries askedTopic=currentCtcAnswered", () => {
+      const state = fresh();
+      // Force the open-with-offer path by clearing the checklist so the
+      // discovery-probe branch in the opening guard falls through. We just
+      // need the planner to land on open-with-offer for turn-0 verification.
+      const action = planNextAction({ ...state, discoveryChecklist: undefined });
+      expect(action.kind).toBe("open-with-offer");
+      if (action.kind === "open-with-offer") {
+        const move = action._move;
+        expect(move.askedTopic).toBe("currentCtcAnswered");
+      }
+    });
+
+    it("turn-0 opener + planner pipeline writes currentCtcAnswered into askedTopics", () => {
+      let state = { ...fresh(), discoveryChecklist: undefined };
+      const action = planNextAction(state);
+      if (action.kind === "open-with-offer") {
+        state = applyAiMove(state, action._move, "Walk me through your current compensation structure.");
+      }
+      const topics = state.askedTopics ?? [];
+      expect(topics.some((t) => t.topic === "currentCtcAnswered")).toBe(true);
+      expect(topics.some((t) => t.topic === "open-with-offer")).toBe(false);
+    });
+
+    it("3-strike cap: same discovery topic asked twice in a row → planner advances on the third", () => {
+      // Simulate the bug session: currentCtc asked on turns 0 and 1
+      // (candidate dodged both), and we're now planning turn 2. The cap
+      // must force-skip currentCtcAnswered even though the BUG-2 gate
+      // would normally keep it re-askable.
+      let state = fresh();
+      state = {
+        ...state,
+        askedTopics: [
+          { topic: "currentCtcAnswered", atTurn: 0 },
+          { topic: "currentCtcAnswered", atTurn: 1 },
+        ],
+        turnIndex: 2,
+        // checklist NOT marking currentCtcAnswered — candidate dodged.
+      };
+      const action = planNextAction(state);
+      if (action.kind === "discovery-probe") {
+        expect(action.item).not.toBe("currentCtcAnswered");
+      }
+    });
+  });
 });

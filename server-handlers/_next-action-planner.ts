@@ -331,6 +331,26 @@ function buildSkipRecord(
     if (!isAskedTopicAnswered(state.discoveryChecklist, t.topic)) continue;
     recentlyAsked[t.topic] = true;
   }
+  /* Session #25 root-fix (2026-05-16) — 3-strike consecutive-topic cap.
+   * Even when the candidate has dodged a discovery item across multiple
+   * turns (and the BUG-2 gate would otherwise keep re-asking it), don't
+   * fire the SAME discovery topic three turns in a row. After two
+   * consecutive unanswered asks, force-advance so the cascade can move
+   * on to the next item. In dev we throw to surface regressions; in
+   * prod we silently force-skip and rely on the defensive log
+   * downstream. */
+  const tail = topics.slice(-2);
+  if (tail.length === 2 && tail[0].topic === tail[1].topic) {
+    const stuckTopic = tail[0].topic;
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[planner] discovery topic "${stuckTopic}" has fired twice in a row at turns ` +
+          `${tail[0].atTurn},${tail[1].atTurn}; force-advancing past it on turn ${state.turnIndex}.`,
+      );
+    }
+    recentlyAsked[stuckTopic] = true;
+  }
   if (refused == null && Object.keys(recentlyAsked).length === 0) return null;
   return { ...(refused ?? {}), ...recentlyAsked };
 }
