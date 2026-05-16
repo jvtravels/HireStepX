@@ -106,6 +106,31 @@ describe("extractComponentBreakdown — combined", () => {
     expect(b.equity).toBe(null);
   });
 
+  /* BUG-3 (PDF#24, 2026-05-16) — percentage-shaped split must NOT be
+   * misparsed as absolute LPA values. */
+  it("does not bind base/variable from '80% fixed, 20% variable'", () => {
+    const b = extractComponentBreakdown("currently 80% fixed, 20% variable");
+    expect(b.base).toBe(null);
+    expect(b.variable).toBe(null);
+    expect(b.basePercent).toBe(80);
+    expect(b.variablePercent).toBe(20);
+    expect(b.hasAny).toBe(true);
+  });
+
+  it("handles 'fixed 80% and variable 20%' shape", () => {
+    const b = extractComponentBreakdown("fixed 80% and variable 20%");
+    expect(b.base).toBe(null);
+    expect(b.variable).toBe(null);
+    expect(b.basePercent).toBe(80);
+    expect(b.variablePercent).toBe(20);
+  });
+
+  it("handles '70/30 split' ratio shape", () => {
+    const b = extractComponentBreakdown("the split is 70/30 fixed-variable");
+    expect(b.basePercent).toBe(70);
+    expect(b.variablePercent).toBe(30);
+  });
+
   it("returns all-null when no component cues are present", () => {
     const b = extractComponentBreakdown("I'm looking for around 35 LPA total");
     expect(b.hasAny).toBe(false);

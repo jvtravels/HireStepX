@@ -1140,9 +1140,13 @@ export function computeTurnDelta(
    * disambiguate via state.lastDisclosureSubject if they care. */
   if (
     parsed.componentBreakdown.hasAny &&
-    parsed.componentBreakdown.base != null &&
-    parsed.componentBreakdown.variable != null
+    ((parsed.componentBreakdown.base != null && parsed.componentBreakdown.variable != null) ||
+      (parsed.componentBreakdown.basePercent != null && parsed.componentBreakdown.variablePercent != null))
   ) {
+    /* BUG-3 (PDF#24, 2026-05-16): a percentage-shaped split
+     * ("80% fixed, 20% variable") is also a valid disclosure of the
+     * fitment split — we just don't know the absolute LPA values
+     * without a total. Either form flips this flag. */
     d.disclosedFixedVariableSplit = true;
   }
 
@@ -2631,7 +2635,13 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
    * (terminal-accept / walk-away / derivePhase). Monotone-up. */
   if (next.discoveryChecklist != null) {
     const cb = next.candidateComponentBreakdown;
-    const fixedVariableSplitHasBoth = cb.base != null && cb.variable != null;
+    /* BUG-3 (PDF#24, 2026-05-16): treat a percentage-shaped split
+     * ("80% fixed, 20% variable") as a valid disclosure for checklist
+     * purposes — the candidate stated the split, just not in absolute
+     * LPA terms. */
+    const fixedVariableSplitHasBoth =
+      (cb.base != null && cb.variable != null) ||
+      (cb.basePercent != null && cb.variablePercent != null);
     const valueProofSignal =
       (next.salesOTE?.hasAny ?? false) ||
       (next.contractRate?.hasAny ?? false) ||

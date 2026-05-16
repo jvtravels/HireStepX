@@ -79,7 +79,7 @@ describe("F7 — askedTopics repetition guard", () => {
       turnIndex: 1,
       discoveryChecklist: state.discoveryChecklist
         ? { ...state.discoveryChecklist, currentCtcAnswered: true }
-        : null,
+        : undefined,
     };
 
     const action = planNextAction(state);
