@@ -243,6 +243,17 @@ function extractNumbers(s: string): string[] {
 const CLOSE_VOCAB_RE =
   /\b(welcome to the team|congratulations[^.!?]*on board|we['’]?re excited to have you|offer letter (?:will be|is being|has been) (?:prepared|sent|issued)|let['’]?s get you onboarded)\b/i;
 
+/** Discovery-probe ack-prefix vocab. buildDiscoveryAck emits one of
+ *  six phrases ("Noted on …", "Got it on …", "Understood on …",
+ *  "Appreciate the colour …"). When the kernel canonical opens with
+ *  any of these, the restyle MUST keep the acknowledgement gesture so
+ *  the bot doesn't sound transactional. We don't require verbatim
+ *  reproduction — Indian recruiter idiom has several broadly-aligned
+ *  near-equivalents ("right, on the X side …", "thanks for that —")
+ *  so we accept any of an extended vocab set. */
+const ACK_VOCAB_RE =
+  /\b(noted|got it|understood|appreciate|right[,\s—]+on|thanks for that|fair enough|fine,?\s+so|okay,?\s+on|alright,?\s+on)\b/i;
+
 /** Validate the LLM restyle against the canonical line. Rejection
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
@@ -273,6 +284,17 @@ export function validateRestyle(
   const inClosePhase = state.phase === "accepted" || state.phase === "walked-away" || state.phase === "stalemate";
   if (!canonicalHasClose && !inClosePhase && CLOSE_VOCAB_RE.test(restyled)) {
     return { valid: false, reason: "new-close-vocab-outside-close-phase" };
+  }
+  /* PDF#24 follow-up (2026-05-16) — ack-prefix preservation. When the
+   * kernel canonical was authored with a discovery-probe acknowledgement
+   * prefix (buildDiscoveryAck), the restyle MUST preserve some form of
+   * acknowledgement. The restyle prompt explicitly permits opening-phrase
+   * changes, so without this rule the LLM can fully strip the ack and
+   * regress to the transactional cadence the prefix was meant to fix.
+   * The vocab set is broad — any of "noted", "got it", "understood",
+   * "appreciate", "right on …", "thanks for that", "fair enough" is fine. */
+  if (ACK_VOCAB_RE.test(canonical) && !ACK_VOCAB_RE.test(restyled)) {
+    return { valid: false, reason: "ack-prefix-stripped" };
   }
   return { valid: true };
 }

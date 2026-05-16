@@ -573,6 +573,7 @@ export function buildRestylePrompt(
     `- BANNED phrases (do not use): "circle back", "on board", "reach out", "touch base", "synergy", "rounding out the package", "we're aligned", "package" (as a comp noun).\n` +
     `- PREFERRED phrasing (Indian recruiter cadence): "let me check with leadership", "let me run this past leadership and revert", "fitment" (not "package"), "revert" (instead of "circle back" / "get back"), "as per our band" / "as per our band for this grade", "broadly aligned" (not "we're aligned"), "looking at the structure" (not "rounding out the package").\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
+    `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Right, on the X side —", "Thanks for that, on X —", "Fair enough on X —") but do not strip it.\n` +
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
     `- You MUST NOT add any facts (company policy, team size, perks, benefits) not in the canonical line.\n` +
     `- You MUST NOT change the meaning or the question being asked.\n` +
