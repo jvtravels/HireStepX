@@ -117,7 +117,7 @@ async function generateRestyledCanonical(
   }
   restyled = (restyled || "").trim();
 
-  const validation = validateRestyle(canonical, restyled, state);
+  const validation = validateRestyle(canonical, restyled, state, action);
   if (!validation.valid) {
     return {
       text: canonical,
@@ -255,6 +255,19 @@ const CLOSE_VOCAB_RE =
 const ACK_VOCAB_RE =
   /\b(noted|got it|understood|appreciate|right[,\s—]+on|thanks for that|fair enough|fine,?\s+so|okay,?\s+on|alright,?\s+on)\b/i;
 
+/** Defect 6 (2026-05-16) — sentiment-prefix anchor phrases.
+ *  `renderSentimentPrefix` (in _canonical-prose.ts) prepends one of
+ *  three fixed phrases ("I hear you …", "Glad we're broadly aligned —",
+ *  "Take your time on this —") in front of the canonical body when the
+ *  candidate sentiment is frustrated / excited / hesitant. The restyle
+ *  prompt explicitly permits opening-phrase changes, so without a
+ *  preservation rule the LLM can fully strip the empathy lead and the
+ *  bot regresses to flat-affect cadence. Accept any of an extended
+ *  anchor set so Indian-recruiter rephrasings ("I get where you're
+ *  coming from", "good that we're broadly aligned", "no rush") pass. */
+const SENTIMENT_VOCAB_RE =
+  /\b(i hear you|i get where you|i understand where you|broadly aligned|glad we['’]?re aligned|take your time|no rush|in your own time)\b/i;
+
 /** Validate the LLM restyle against the canonical line. Rejection
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
@@ -263,6 +276,7 @@ export function validateRestyle(
   canonical: string,
   restyled: string,
   state: NegotiationState,
+  action?: NextAction,
 ): { valid: boolean; reason?: string } {
   if (!restyled || !restyled.trim()) {
     return { valid: false, reason: "empty-restyle" };
@@ -305,6 +319,31 @@ export function validateRestyle(
    * directive. Fall back to canonical verbatim. */
   if (BANNED_RECRUITER_IDIOM_RE.test(restyled)) {
     return { valid: false, reason: "banned-idiom-leaked" };
+  }
+  /* Defect 6 (2026-05-16) — sentiment-prefix preservation. If the
+   * canonical opened with one of the renderSentimentPrefix anchor
+   * phrases, the restyle MUST keep at least one anchor phrase (broad
+   * vocab — see SENTIMENT_VOCAB_RE). Without this rule a frustrated /
+   * excited / hesitant cue gets stripped to flat-affect cadence. */
+  if (SENTIMENT_VOCAB_RE.test(canonical) && !SENTIMENT_VOCAB_RE.test(restyled)) {
+    return { valid: false, reason: "sentiment-prefix-stripped" };
+  }
+  /* Defect 6 (2026-05-16) — close-recap-formal field completeness.
+   * The formal recap canonical enumerates Fixed | Variable | (JB) |
+   * Notice | BGV | OL ETA, and the candidate is asked to confirm
+   * against that list. The LLM has historically smoothed over the
+   * recap into a single-sentence summary that drops "fixed",
+   * "variable", "notice", or "BGV" — a recap that's missing any of
+   * those four is unfit to ship because the candidate's "yes" no
+   * longer binds them to the structured terms. */
+  if (action != null && action.kind === "close-recap-formal") {
+    const lc = restyled.toLowerCase();
+    const required = ["fixed", "variable", "notice", "bgv"] as const;
+    for (const term of required) {
+      if (!lc.includes(term)) {
+        return { valid: false, reason: "close-recap-incomplete" };
+      }
+    }
   }
   return { valid: true };
 }

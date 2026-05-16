@@ -12,6 +12,7 @@ import type {
   NegotiationState,
   NegotiationBand,
 } from "../../server-handlers/_negotiation-kernel";
+import type { NextAction } from "../../server-handlers/_next-action-planner";
 
 const BAND: NegotiationBand = {
   initialOffer: 18,
@@ -139,5 +140,103 @@ describe("validateRestyle — ack-prefix preservation (PDF#24 follow-up)", () =>
       mkState(),
     );
     expect(r2.valid).toBe(true);
+  });
+});
+
+describe("validateRestyle — sentiment-prefix preservation (defect 6)", () => {
+  /* Canonical lines that begin with a renderSentimentPrefix anchor.
+   * The probe body is intentionally vocab-free so the rejection is
+   * unambiguously the sentiment strip and not a stripped ack. */
+  it("strips 'I hear you' empathy lead → reject with sentiment-prefix-stripped", () => {
+    const canonical =
+      "I hear you — and I want to be straight with you here. Let's stay on the structure side; what's the notice period right now?";
+    const r = validateRestyle(
+      canonical,
+      "Let's stay on the structure side; what's the notice period right now?",
+      mkState(),
+    );
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.reason).toBe("sentiment-prefix-stripped");
+  });
+
+  it("rephrases to 'I get where you're coming from' near-equivalent → valid", () => {
+    const canonical =
+      "I hear you — and I want to be straight with you here. Let's stay on the structure side; what's the notice period right now?";
+    const r = validateRestyle(
+      canonical,
+      "I get where you're coming from. Let's stay on the structure side; what's the notice period right now?",
+      mkState(),
+    );
+    expect(r.valid).toBe(true);
+  });
+
+  it("'Take your time' hesitant-sentiment lead is preserved with 'no rush' → valid", () => {
+    const canonical =
+      "Take your time on this — let's go back to the fitment side. What's the proposed joining date you're working towards?";
+    const r = validateRestyle(
+      canonical,
+      "No rush. Let's go back to the fitment side. What's the proposed joining date you're working towards?",
+      mkState(),
+    );
+    expect(r.valid).toBe(true);
+  });
+});
+
+describe("validateRestyle — close-recap-formal completeness (defect 6)", () => {
+  const recapCanonical =
+    "Let me recap the fitment before I revert internally — Fixed ₹18L, variable target ₹3L, notice 8 weeks, BGV starts on offer letter signature, offer letter in 5 business days. Sounds good?";
+  const recapAction: NextAction = {
+    kind: "close-recap-formal",
+    fixedLpa: 18,
+    variableLpa: 3,
+    noticePeriodWeeks: 8,
+    bgvStartTrigger: "on offer letter signature",
+    offerLetterEta: "5 business days",
+  } as NextAction;
+
+  it("restyle missing 'BGV' → reject with close-recap-incomplete", () => {
+    const r = validateRestyle(
+      recapCanonical,
+      "Let me recap the fitment before I revert internally — Fixed ₹18L, variable target ₹3L, notice 8 weeks, offer letter in 5 business days. Sounds good?",
+      mkState(),
+      recapAction,
+    );
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.reason).toBe("close-recap-incomplete");
+  });
+
+  it("restyle missing 'variable' → reject with close-recap-incomplete", () => {
+    const r = validateRestyle(
+      recapCanonical,
+      "Recap — Fixed ₹18L plus a target component of ₹3L, notice 8 weeks, BGV starts on offer letter signature, offer letter in 5 business days. Sounds good?",
+      mkState(),
+      recapAction,
+    );
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.reason).toBe("close-recap-incomplete");
+  });
+
+  it("restyle preserves all four required terms → valid", () => {
+    const r = validateRestyle(
+      recapCanonical,
+      "Let me recap before I revert — Fixed ₹18L, variable target ₹3L, notice 8 weeks, BGV starts on offer-letter signature, offer letter in 5 business days. Sounds good?",
+      mkState(),
+      recapAction,
+    );
+    expect(r.valid).toBe(true);
+  });
+});
+
+describe("validateRestyle — banned-idiom rejection (defect 2 verification)", () => {
+  it("'circle back' leakage → reject with banned-idiom-leaked", () => {
+    const canonical =
+      "Noted on the expected fitment — what's the notice period at your current company? Any scope for buyout there?";
+    const r = validateRestyle(
+      canonical,
+      "Noted on the expected side — let me circle back on notice period once I check with my team.",
+      mkState(),
+    );
+    expect(r.valid).toBe(false);
+    if (!r.valid) expect(r.reason).toBe("banned-idiom-leaked");
   });
 });
