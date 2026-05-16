@@ -119,6 +119,52 @@ export function pickDiscoveryProbeOpener(turnIndex: number): string {
   return DISCOVERY_PROBE_OPENERS[idx];
 }
 
+/** LN1 / Audit Pass 4 (PDF#27, 2026-05-17) — opener rotation set without
+ *  ACK-shaped tokens. The full DISCOVERY_PROBE_OPENERS list includes
+ *  "Got it." which collides with the FL2 bridge regex
+ *  (CANONICAL_OPENS_WITH_ACK_RE) — using it as a decorative opener would
+ *  suppress the FL2 bridge spuriously. This subset is safe to prepend
+ *  on any probe-kind body without interfering with the ACK pipeline. */
+const NON_ACK_PROBE_OPENERS = ["So,", "Quick one —", "", "Coming to"] as const;
+
+/** LN1 — kinds that the universal probe-opener rotation applies to.
+ *  Identical to PROBE_KINDS_NEEDING_BRIDGE (defined later in file) by
+ *  contract — defined early so pickProbeOpener can reference it. The
+ *  two sets MUST stay synchronized; an assertion below in module init
+ *  catches drift between them. */
+const PROBE_OPENER_KINDS = new Set<string>([
+  "discovery-probe",
+  "component-probe",
+  "anchor-with-band",
+  "range-disclosure",
+  "probe-expectations",
+  "probe-justification",
+  "probe-mismatch",
+  "reactive-followup",
+]);
+
+/** LN1 — universal probe opener pick. Returns a deterministic decorative
+ *  opener for probe-kinds when:
+ *    - turn > 0 (turn 0 carries its own opener cadence),
+ *    - the kind is a probe-shaped action,
+ *    - no FL2 bridge will be prepended (i.e., the prior candidate
+ *      utterance was trivial OR no candidate utterance exists).
+ *  Returns "" otherwise so the caller doesn't have to branch. */
+export function pickProbeOpener(
+  state: NegotiationState,
+  kind: NextAction["kind"],
+): string {
+  if (state.turnIndex === 0) return "";
+  if (!PROBE_OPENER_KINDS.has(kind)) return "";
+  /* Defer to FL2 bridge when a non-trivial utterance is present; the
+   * bridge picker handles that case with the ACK-shaped opener set. */
+  const lastUtt = lastCandidateUtterance(state);
+  if (isNonTrivialUtterance(lastUtt)) return "";
+  const n = NON_ACK_PROBE_OPENERS.length;
+  const idx = ((state.turnIndex % n) + n) % n;
+  return NON_ACK_PROBE_OPENERS[idx];
+}
+
 /** FL2 / Audit Pass 4 (PDF#27, 2026-05-17) — neutral ACK bridge.
  *
  * When the candidate's prior utterance was non-trivial (>=3 words OR a
@@ -559,6 +605,15 @@ export function renderCanonicalProse(
     if (isNonTrivialUtterance(lastUtt)) {
       const bridge = pickNeutralBridgeAck(state.turnIndex);
       body = `${bridge} ${body}`;
+    } else {
+      /* LN1 / Audit Pass 4 (PDF#27, 2026-05-17) — decorative opener
+       * rotation when the FL2 bridge doesn't fire (trivial or absent
+       * candidate utterance). Provides variety across consecutive
+       * probes ("So, …", "Quick one — …", "Coming to …") so the bot
+       * doesn't sound rote. Empty-string opener is intentional — some
+       * turns the cleanest path is no opener at all. */
+      const opener = pickProbeOpener(state, action.kind);
+      if (opener) body = `${opener} ${body}`;
     }
   }
   return sentimentPrefix ? `${sentimentPrefix} ${body}` : body;
