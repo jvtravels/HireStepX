@@ -43,6 +43,37 @@ import {
   type RawQuestion,
 } from "./_generate-questions-helpers";
 import { fetchRecentQuestions } from "./_question-dedup";
+// sampleBehavioralQuestions is exported by the bank but not used here —
+// the canonical-phrasing rule below is built from BEHAVIORAL_50 directly
+// (one example per competency, deterministic, module-scoped).
+import { BEHAVIORAL_50 } from "../data/behavioral-question-bank";
+import { PROBE_TEXTS } from "./_behavioral-followup-bank";
+
+/* Module-level static rules for the behavioural generator. Built ONCE so
+   the text is byte-identical across every per-request call — Groq's
+   prefix cache keys on the longest shared prefix, so any per-call
+   variance here defeats the cache and triples per-call cost. Per-call
+   dynamic content (transcript, role, tier) MUST be appended AFTER these
+   constants. See CLAUDE.md > LLM prompt caching. */
+const BEHAVIOURAL_CANONICAL_PHRASING_RULE = (() => {
+  // Pick one canonical example per competency, highest-frequencyPct first,
+  // for a stable static block that gets prefix-cached by Groq.
+  const byCompetency = new Map<string, typeof BEHAVIORAL_50[number]>();
+  for (const q of [...BEHAVIORAL_50].sort((a, b) => b.frequencyPct - a.frequencyPct)) {
+    if (!byCompetency.has(q.competency)) byCompetency.set(q.competency, q);
+  }
+  const examples = Array.from(byCompetency.values()).map(q => `- "${q.text}"`).join("\n");
+  return `BEHAVIOURAL-PHRASING RULE (only for behavioural interviews):
+Every main question MUST start with the literal opener "Tell me about a time" (no variants like "Walk me through a time", "Describe a situation", or "Tell me about a project"). This is the canonical real-interviewer opener and we normalise on it.
+Canonical examples — match this phrasing shape:
+${examples}`;
+})();
+
+const BEHAVIOURAL_ONE_BEAT_RULE = `BEHAVIOURAL-ONE-BEAT RULE (only for behavioural interviews):
+Each main question asks ONE thing only. NEVER stack a closer ("what did you learn?", "what would you do differently?", "what feedback did you receive?", "what was the measurable impact?") into the main question. Closers belong in the follow-up coach's bank — the main question must leave them on the table so the follow-up has somewhere to go.
+Bad (stacked): "Tell me about a time you handled a design critique. How did you respond, and what did you learn?"
+Good (one beat): "Tell me about a time you handled a design critique."
+Reserved closer phrasings (DO NOT use these in main questions): ${PROBE_TEXTS.map(p => `"${p}"`).join(", ")}.`;
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -240,7 +271,8 @@ export default async function handler(req: Request): Promise<Response> {
        and measurable impact) — which downstream lets the live STAR-gap
        follow-up directive actually have something to probe. */
     const behavioralShapeGuide = interviewType === "behavioral"
-      ? `\nBEHAVIOURAL QUESTION SHAPING:
+      ? `\n${BEHAVIOURAL_CANONICAL_PHRASING_RULE}\n\n${BEHAVIOURAL_ONE_BEAT_RULE}\n
+BEHAVIOURAL QUESTION SHAPING:
 - Every stem MUST naturally pull a STAR-shaped story: Situation (when/where) → Task (the goal/problem) → Action (what *they* specifically did) → Result (measurable outcome).
 - Reward ownership: prefer "Tell me about a time you OWNED a difficult call" over "Tell me about a project". The verb forces first-person Action.
 - Reward measurement: prefer "...how did you measure success?" or "...what was the impact?" baked into the stem, so candidates can't ship STA-without-R.
@@ -1168,6 +1200,59 @@ Requirements:
         }, req);
       }
     }
+
+    /* Behavioural phrasing-drift telemetry. Measures how often the live
+       LLM path drifts off the canonical "Tell me about a time" opener
+       and how often it compound-stacks closer probes into a main
+       question. Wrapped in try/catch — telemetry must never break a
+       real request. */
+    try {
+      if (requestType === "behavioral" || requestType === "behavioural") {
+        const CANONICAL_OPENER = /^\s*tell me about a time\b/i;
+        const CLOSER_FRAGMENTS = [
+          "what did you learn",
+          "what would you do differently",
+          "what feedback did you receive",
+          "what was the measurable impact",
+          "how did the team react",
+        ];
+        let behaviouralQuestionCount = 0;
+        let behaviouralCanonicalOpenerCount = 0;
+        let behaviouralDriftCount = 0;
+        let behaviouralCompoundCount = 0;
+        if (Array.isArray(questions)) {
+          for (const q of questions as Array<Record<string, unknown>>) {
+            const qType = typeof q?.type === "string" ? q.type : "";
+            if (qType === "intro" || qType === "closing") continue;
+            const text = typeof q?.aiText === "string"
+              ? q.aiText
+              : (typeof q?.text === "string" ? q.text : "");
+            if (!text) continue;
+            behaviouralQuestionCount++;
+            if (CANONICAL_OPENER.test(text)) {
+              behaviouralCanonicalOpenerCount++;
+            } else {
+              behaviouralDriftCount++;
+            }
+            const lower = text.toLowerCase();
+            let closerHits = 0;
+            for (const frag of CLOSER_FRAGMENTS) {
+              if (lower.includes(frag)) closerHits++;
+            }
+            if (closerHits >= 2) behaviouralCompoundCount++;
+          }
+        }
+        void captureServerEvent("gq_behavioural_phrasing_drift", distinctIdFrom(req, auth.userId), {
+          focus: requestFocus,
+          type: requestType,
+          role: typeof targetRole === "string" ? targetRole : "",
+          behavioural_question_count: behaviouralQuestionCount,
+          behavioural_canonical_opener_count: behaviouralCanonicalOpenerCount,
+          behavioural_drift_count: behaviouralDriftCount,
+          behavioural_compound_count: behaviouralCompoundCount,
+        }, req);
+      }
+    } catch { /* telemetry must never break a real request */ }
 
     await captureServerEvent("interview_started", distinctIdFrom(req, auth.userId), {
       question_count: Array.isArray(responseBody?.questions) ? responseBody.questions.length : undefined,
