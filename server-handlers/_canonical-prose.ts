@@ -246,6 +246,33 @@ export function renderCanonicalProse(
     case "rescission":
       return "Given how this discussion has gone, we'll have to step back from the offer.";
 
+    case "lever-grade-upgrade":
+      return "On the structure side — let me check with leadership if there's scope to position you a grade higher. That moves the band and the fitment in one shot.";
+
+    case "lever-retention-bonus":
+      return "Looking at the structure — we can layer a retention bonus split across the first 12-18 months over and above the fitment. Let me run the exact split past leadership and revert.";
+
+    case "lever-rsu-refresh":
+      return "On the RSU side — there's an annual refresh grant that lands at the appraisal cycle in addition to the initial vest. Let me walk you through how the refresh cadence works for this grade.";
+
+    case "lever-relocation":
+      return "On the relocation side — we have a standard relocation allowance plus temporary accommodation support for the first few weeks. Let me confirm the exact amount with leadership and revert.";
+
+    case "lever-perf-bonus-cadence":
+      return "Looking at the structure — the performance bonus cadence is anchored to the March appraisal cycle, with a mid-year correction window for top performers. Let me walk you through how that plays out at this grade.";
+
+    case "lever-joining-bonus-explained": {
+      const jb = state.lastJoiningBonusOffered;
+      const jbPart = jb != null && jb > 0 ? `₹${jb}L ` : "";
+      return `On the joining bonus — the ${jbPart}is one-time, paid with the first month's payroll, and carries the standard 12-month clawback (prorated thereafter). Let me know if you want the exact wording before I revert internally.`;
+    }
+
+    case "band-anchor-with-rationale": {
+      const lo = state.band.initialOffer;
+      const hi = state.band.maxStretch;
+      return `Just to anchor the discussion — as per our band for this grade, the fitment range is ₹${lo}-${hi} LPA. That's set against the role's scope and our internal parity for the level, not on a single benchmark.`;
+    }
+
     case "close-recap-formal": {
       /* Fix 4 (2026-05-16) — formal close recap. Enumerates Fixed |
        * Variable target | JB (optional) | Retention (optional) | Notice |

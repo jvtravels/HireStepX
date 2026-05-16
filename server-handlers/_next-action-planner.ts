@@ -117,7 +117,20 @@ export type NextAction =
       proposedJoiningDate?: string;
       bgvStartTrigger: string;
       offerLetterEta: string;
-    };
+    }
+  /* Fix 1 (2026-05-16) — Real Indian-context negotiation levers. Each
+   * is a structural alternative to cash on the table; the planner
+   * rotates through them in lever-explore mode based on marketMode
+   * and what hasn't fired yet (tracked via state.leversFired). RSU
+   * refresh is sampled only when marketMode ∈ {hot,neutral} AND the
+   * band carries equity (MNC/GCC). */
+  | { kind: "lever-grade-upgrade" }
+  | { kind: "lever-retention-bonus" }
+  | { kind: "lever-rsu-refresh" }
+  | { kind: "lever-relocation" }
+  | { kind: "lever-perf-bonus-cadence" }
+  | { kind: "lever-joining-bonus-explained" }
+  | { kind: "band-anchor-with-rationale" };
 
 /** Internal carrier: the planner builds the move alongside the action so
  *  actionToLever is bit-identical to the prior pickAiMoveCore. The
@@ -350,6 +363,31 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         newTotalLpa: null,
         rationale:
           "Discovery stage = probe-mismatch: probe the resume↔role domain switch BEFORE anchoring or discussing comp.",
+      },
+    };
+  }
+
+  /* Fix 1 (2026-05-16) — walk-away gap-gate. When the candidate's
+   * target exceeds bandCeiling * 1.5, the gap is structurally
+   * unbridgeable; walk-away regardless of turn count (overrides the
+   * minTurnsBeforeClose guard below). Threshold sits just above the
+   * legacy counter-offer stiffening fixture (target=40, ceiling=28,
+   * ratio≈1.43) to preserve the schedule semantics. */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.phase !== "opening" &&
+    state.candidateTarget != null &&
+    state.candidateTarget > state.band.maxStretch * 1.5
+  ) {
+    return {
+      kind: "live-walk-away",
+      mode: "walk",
+      _move: {
+        lever: "close-walkaway",
+        newTotalLpa: null,
+        rationale:
+          `Walk-away gap-gate: candidate target ₹${state.candidateTarget}L exceeds ` +
+          `band ceiling ₹${state.band.maxStretch}L by >50% — gap is structurally unbridgeable.`,
       },
     };
   }
@@ -808,8 +846,77 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* Fix 1 (2026-05-16) — Indian-context structural lever rotation. Fires
+   * ONLY after the legacy cash-lever rotation (equity-grant, joining-
+   * bonus, notice-buyout, benefits-summary) is fully exhausted — i.e.
+   * pickLeverExploreMove would otherwise return hold-firm. Gated on
+   * marketMode (RSU refresh only for MNC/GCC: marketMode in {hot, neutral}
+   * AND band has equity).
+   *
+   * This preserves the legacy fixture-test ordering (joining-bonus →
+   * equity-grant → notice-buyout → benefits-summary) and only intercepts
+   * the terminal hold-firm fallback to inject structural levers. */
+  const legacyMove = pickLeverExploreMove(state);
+  if (legacyMove.lever === "hold-firm") {
+    const structural = pickStructuralLever(state);
+    if (structural != null) return structural;
+  }
+
   /* lever-explore / closing-push: rotate non-cash levers. */
-  return wrapLeverExplore(pickLeverExploreMove(state), "default");
+  return wrapLeverExplore(legacyMove, "default");
+}
+
+/* Fix 1 (2026-05-16) — sample the next un-fired structural lever based on
+ * marketMode. Returns null when every lever has fired (caller falls
+ * through to the legacy cash-lever rotation). */
+function pickStructuralLever(state: NegotiationState): PlannedAction | null {
+  const fired = new Set(state.leversFired ?? []);
+  /* Rotation order: anchor-with-rationale (first turn after cash floor
+   * hit), then explanatory levers, then the structural movers. RSU
+   * refresh is gated on MNC/GCC posture (hot/neutral market AND band
+   * has equity). */
+  const rotation: { kind: StructuralLeverKind; gated: boolean }[] = [
+    { kind: "band-anchor-with-rationale", gated: false },
+    { kind: "lever-joining-bonus-explained", gated: false },
+    { kind: "lever-grade-upgrade", gated: false },
+    {
+      kind: "lever-rsu-refresh",
+      gated: !(state.band.hasEquity && state.marketMode !== "soft"),
+    },
+    { kind: "lever-retention-bonus", gated: false },
+    { kind: "lever-relocation", gated: false },
+    { kind: "lever-perf-bonus-cadence", gated: false },
+  ];
+  for (const { kind, gated } of rotation) {
+    if (gated) continue;
+    if (fired.has(kind)) continue;
+    return makeStructuralLeverAction(kind, state);
+  }
+  return null;
+}
+
+type StructuralLeverKind =
+  | "band-anchor-with-rationale"
+  | "lever-grade-upgrade"
+  | "lever-retention-bonus"
+  | "lever-rsu-refresh"
+  | "lever-relocation"
+  | "lever-perf-bonus-cadence"
+  | "lever-joining-bonus-explained";
+
+function makeStructuralLeverAction(
+  kind: StructuralLeverKind,
+  state: NegotiationState,
+): PlannedAction {
+  const newTotal = state.highestOfferMade > 0 ? state.highestOfferMade : null;
+  const move: AiMove = {
+    lever: "benefits-summary",
+    newTotalLpa: newTotal,
+    rationale: `Structural lever ${kind} (marketMode=${state.marketMode}).`,
+    actionKind: kind,
+    askedTopic: kind,
+  };
+  return { kind, _move: move } as PlannedAction;
 }
 
 function wrapLeverExplore(

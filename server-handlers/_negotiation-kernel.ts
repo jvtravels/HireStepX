@@ -857,6 +857,14 @@ export interface NegotiationState {
    * with sessions serialized before commit 4. */
   reactiveFollowupsFired?: string[];
 
+  /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context structural
+   * levers (grade upgrade, retention bonus, RSU refresh, relocation,
+   * perf-bonus cadence, joining-bonus explainer, band-anchor with
+   * rationale). The planner consults this set during lever rotation
+   * to ensure each lever fires at most once per session. Optional for
+   * back-compat with sessions serialized before Fix 1. */
+  leversFired?: string[];
+
   /* F7 (PDF#20 2026-05-15) — askedTopics repetition guard.
    * Ordered history of discovery topics the bot has asked, with the
    * turnIndex at which each ask was emitted. applyAiMove pushes here
@@ -1353,6 +1361,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * de-dupe ledger. Empty at session start; each reactive-followup
      * emission pushes its topic. */
     reactiveFollowupsFired: [],
+    /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context
+     * structural levers. Empty at session start. */
+    leversFired: [],
     /* Kernel-first cleanup (2026-05-16) — first-class role facts and
      * candidate name. Default null when caller doesn't supply. */
     workMode: input.workMode ?? null,
@@ -2903,6 +2914,27 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.reactiveFollowupsFired = fired;
     }
   }
+  /* Fix 1 (2026-05-16) — record structural lever emissions onto the
+   * leversFired ledger so the planner's pickStructuralLever rotation
+   * advances correctly. Gated on actionKind being one of the new
+   * Indian-context lever kinds. */
+  const STRUCTURAL_LEVERS = new Set<string>([
+    "band-anchor-with-rationale",
+    "lever-grade-upgrade",
+    "lever-retention-bonus",
+    "lever-rsu-refresh",
+    "lever-relocation",
+    "lever-perf-bonus-cadence",
+    "lever-joining-bonus-explained",
+  ]);
+  if (move.actionKind && STRUCTURAL_LEVERS.has(move.actionKind)) {
+    const firedLevers = state.leversFired ?? [];
+    if (!firedLevers.includes(move.actionKind)) {
+      next.leversFired = [...firedLevers, move.actionKind];
+    } else {
+      next.leversFired = firedLevers;
+    }
+  }
   /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
    * ledger so planNextAction can skip same-topic probes within 3 turns.
    * Use move.askedTopic if set (reactive-followups), otherwise fall back
@@ -3281,6 +3313,12 @@ export function validateState(state: unknown): asserts state is NegotiationState
       throw new Error("state.reactiveFollowupsFired");
     }
   }
+  /* Fix 1 (2026-05-16) — leversFired ledger validator. */
+  if (s.leversFired !== undefined) {
+    if (!Array.isArray(s.leversFired) || !s.leversFired.every((v) => typeof v === "string")) {
+      throw new Error("state.leversFired");
+    }
+  }
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
   if (
@@ -3557,6 +3595,8 @@ export function deserializeState(json: string): NegotiationState {
      * ledger. Sticky across the session (never cleared by applyAiMove).
      * Optional for back-compat with sessions serialized before commit 4. */
     reactiveFollowupsFired: (s.reactiveFollowupsFired as string[] | undefined) ?? [],
+    /* Fix 1 (2026-05-16) — leversFired back-compat default. */
+    leversFired: (s.leversFired as string[] | undefined) ?? [],
   };
 }
 

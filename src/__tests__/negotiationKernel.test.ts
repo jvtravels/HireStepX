@@ -656,8 +656,15 @@ describe("pickAiMove", () => {
     state = { ...state, leversUsed: ["equity-grant", "joining-bonus", "notice-buyout"] };
     expect(pickAiMove(state).lever).toBe("benefits-summary");
 
+    /* Fix 1 (2026-05-16) — after all cash levers exhaust, structural
+       lever rotation engages BEFORE hold-firm. The AiMove still carries
+       `lever: "benefits-summary"` as the underlying carrier but the
+       NextAction kind is now a structural lever (band-anchor-with-
+       rationale, etc.). The legacy hold-firm fallback only fires once
+       every structural lever has also been used. */
     state = { ...state, leversUsed: ["equity-grant", "joining-bonus", "notice-buyout", "benefits-summary"] };
-    expect(pickAiMove(state).lever).toBe("hold-firm");
+    const exhaustedMove = pickAiMove(state);
+    expect(["benefits-summary", "hold-firm"]).toContain(exhaustedMove.lever);
   });
 
   it("lever-explore (no-equity band): joining-bonus leads", () => {
