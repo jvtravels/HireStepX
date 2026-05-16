@@ -61,6 +61,50 @@ import {
 } from "./_hike-justification-probe";
 import { analyzeEquityClarity } from "./_trial-close-detector";
 
+/** Polish 2 (2026-05-16) — refireable-topic policy table.
+ *
+ * Most reactive topics single-fire (the planner consults
+ * state.reactiveFollowupsFired before emitting and skips on a match).
+ * Sticky topics that real Indian candidates revisit across a call
+ * — tax planning, notice-period anxiety, narrowing a stated range —
+ * are listed here with a per-topic max fire count and a per-topic
+ * minimum turn gap between fires. Consulted by `canRefire`.
+ *
+ * Tuning rationale:
+ *   - tax-implication (max 3, gap 4): candidates re-raise tax after
+ *     each fitment movement; gap 4 keeps it from spamming.
+ *   - notice-buyout    (max 2, gap 5): a second pass after a structural
+ *     lever lands is realistic; more becomes nagging.
+ *   - range-to-point   (max 3, gap 3): candidates often soften the
+ *     range under different framings as the discussion progresses. */
+export const REFIREABLE_TOPICS: Record<string, { max: number; gap: number }> = {
+  "tax-implication": { max: 3, gap: 4 },
+  "notice-buyout": { max: 2, gap: 5 },
+  "range-to-point": { max: 3, gap: 3 },
+};
+
+/** Polish 2 (2026-05-16) — decide whether a topic can fire (again) this
+ *  turn given the per-topic policy. For refireable topics: checks both
+ *  the per-topic max count and the per-topic minimum turn-gap since
+ *  last fire. For everything else: single-fire (matches legacy
+ *  hasFired semantics against state.reactiveFollowupsFired). Pure. */
+export function canRefire(topic: string, state: NegotiationState): boolean {
+  const policy = REFIREABLE_TOPICS[topic];
+  if (!policy) {
+    /* Non-refireable: fires once. The reactiveFollowupsFired ledger is
+     * the source of truth for single-fire topics. */
+    const fired = state.reactiveFollowupsFired ?? [];
+    return !fired.includes(topic);
+  }
+  const log = state.reactiveFollowupsFireLog ?? {};
+  const turns = log[topic] ?? [];
+  if (turns.length >= policy.max) return false;
+  if (turns.length === 0) return true;
+  const lastTurn = turns[turns.length - 1];
+  const gap = state.turnIndex - lastTurn;
+  return gap >= policy.gap;
+}
+
 /** Discriminated union of every action the planner can emit. The kind
  *  taxonomy collapses the prior 15 sequential `if return` branches into
  *  a single declarative space external consumers can switch on without
@@ -1174,8 +1218,11 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
   }
 
   /* Rule: notice-buyout — candidate disclosed >= 60d notice. Buyout
-   * conversation is the standard recruiter response on long runways. */
-  if (delta.disclosedNoticePeriod && !hasFired("notice-buyout")) {
+   * conversation is the standard recruiter response on long runways.
+   * Polish 2: refireable up to 2 fires with a 5-turn gap (real
+   * candidates revisit the buyout question after a structural lever
+   * has been put on the table). */
+  if (delta.disclosedNoticePeriod && canRefire("notice-buyout", state)) {
     const days = state.noticeJoining?.noticePeriodDays;
     if (days != null && days >= 60) {
       return {
@@ -1328,8 +1375,12 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
 function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null {
   const profile = state.candidateProfile;
   if (!profile) return null;
-  const fired = state.reactiveFollowupsFired ?? [];
-  const hasFired = (topic: string): boolean => fired.includes(topic);
+  /* Polish 2 (2026-05-16) — eligibility now flows through canRefire so
+   * refireable topics (tax-implication, range-to-point) can revisit
+   * subject to per-topic max + turn-gap policy. Non-refireable topics
+   * fall back to the single-fire semantics canRefire applies via the
+   * legacy reactiveFollowupsFired ledger. */
+  const canFire = (topic: string): boolean => canRefire(topic, state);
   type WiredRule = {
     flag: boolean | undefined;
     topic: string;
@@ -1417,7 +1468,7 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       },
   ];
   for (const rule of wired) {
-    if (rule.flag && !hasFired(rule.topic)) {
+    if (rule.flag && canFire(rule.topic)) {
       return {
         kind: "reactive-followup",
         ask: rule.ask,

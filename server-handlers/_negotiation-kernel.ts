@@ -857,6 +857,17 @@ export interface NegotiationState {
    * with sessions serialized before commit 4. */
   reactiveFollowupsFired?: string[];
 
+  /* Polish 2 (2026-05-16) — per-topic fire-history (turn indices at
+   * which each topic was fired). The legacy `reactiveFollowupsFired`
+   * is single-fire dedup; this parallel ledger lets refireable topics
+   * (tax-implication, notice-buyout, range-to-point) revisit 2-3
+   * times across a session subject to a per-topic max-count + minimum
+   * turn-gap, more accurately modelling how Indian candidates revisit
+   * sticky topics. Consulted by canRefire() in _next-action-planner.
+   * Optional + nullable for back-compat with pre-Polish-2 serialized
+   * sessions. */
+  reactiveFollowupsFireLog?: Record<string, number[]>;
+
   /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context structural
    * levers (grade upgrade, retention bonus, RSU refresh, relocation,
    * perf-bonus cadence, joining-bonus explainer, band-anchor with
@@ -1361,6 +1372,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * de-dupe ledger. Empty at session start; each reactive-followup
      * emission pushes its topic. */
     reactiveFollowupsFired: [],
+    /* Polish 2 (2026-05-16) — per-topic fire-history. Empty at start. */
+    reactiveFollowupsFireLog: {},
     /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context
      * structural levers. Empty at session start. */
     leversFired: [],
@@ -2913,6 +2926,17 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     } else {
       next.reactiveFollowupsFired = fired;
     }
+    /* Polish 2 (2026-05-16) — append the AI turn index to the per-topic
+     * fire-log so canRefire can compute counts + turn gaps for sticky
+     * topics (tax-implication, notice-buyout, range-to-point). The
+     * legacy `reactiveFollowupsFired` array stays as a dedup ledger for
+     * single-fire topics. */
+    const priorLog = state.reactiveFollowupsFireLog ?? {};
+    const priorTurns = priorLog[move.askedTopic] ?? [];
+    next.reactiveFollowupsFireLog = {
+      ...priorLog,
+      [move.askedTopic]: [...priorTurns, state.turnIndex],
+    };
   }
   /* Fix 1 (2026-05-16) — record structural lever emissions onto the
    * leversFired ledger so the planner's pickStructuralLever rotation
@@ -3313,6 +3337,22 @@ export function validateState(state: unknown): asserts state is NegotiationState
       throw new Error("state.reactiveFollowupsFired");
     }
   }
+  /* Polish 2 (2026-05-16) — reactiveFollowupsFireLog validator. */
+  if (s.reactiveFollowupsFireLog !== undefined) {
+    if (
+      s.reactiveFollowupsFireLog === null ||
+      typeof s.reactiveFollowupsFireLog !== "object" ||
+      Array.isArray(s.reactiveFollowupsFireLog)
+    ) {
+      throw new Error("state.reactiveFollowupsFireLog");
+    }
+    for (const [k, v] of Object.entries(s.reactiveFollowupsFireLog)) {
+      if (typeof k !== "string") throw new Error("state.reactiveFollowupsFireLog.key");
+      if (!Array.isArray(v) || !v.every((n) => typeof n === "number" && Number.isFinite(n))) {
+        throw new Error("state.reactiveFollowupsFireLog.value");
+      }
+    }
+  }
   /* Fix 1 (2026-05-16) — leversFired ledger validator. */
   if (s.leversFired !== undefined) {
     if (!Array.isArray(s.leversFired) || !s.leversFired.every((v) => typeof v === "string")) {
@@ -3595,6 +3635,10 @@ export function deserializeState(json: string): NegotiationState {
      * ledger. Sticky across the session (never cleared by applyAiMove).
      * Optional for back-compat with sessions serialized before commit 4. */
     reactiveFollowupsFired: (s.reactiveFollowupsFired as string[] | undefined) ?? [],
+    /* Polish 2 (2026-05-16) — per-topic fire-history. Back-compat
+     * default = empty record. */
+    reactiveFollowupsFireLog:
+      (s.reactiveFollowupsFireLog as Record<string, number[]> | undefined) ?? {},
     /* Fix 1 (2026-05-16) — leversFired back-compat default. */
     leversFired: (s.leversFired as string[] | undefined) ?? [],
   };

@@ -11,7 +11,10 @@ import {
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
 import { EMPTY_CANDIDATE_PROFILE } from "../../server-handlers/_candidate-profile";
-import { planNextAction } from "../../server-handlers/_next-action-planner";
+import {
+  planNextAction,
+  REFIREABLE_TOPICS,
+} from "../../server-handlers/_next-action-planner";
 
 const BAND: NegotiationBand = { initialOffer: 20, maxStretch: 28, walkAway: 16, hasEquity: true };
 
@@ -55,9 +58,22 @@ describe("Fix 5 — wired candidate-profile flags drive reactive followups", () 
     });
 
     it(`profile.${String(flag)} suppressed once topic=${topic} has fired`, () => {
+      /* Polish 2 (2026-05-16) — for refireable topics the suppression
+       * condition is "max-count hit", not "fired once". Seed the
+       * fire-log with `max` entries spaced enough that even the gap
+       * check would otherwise pass. */
+      const policy = REFIREABLE_TOPICS[topic];
+      const fireLog: Record<string, number[]> =
+        policy != null
+          ? { [topic]: Array.from({ length: policy.max }, (_, i) => i + 1) }
+          : {};
       const s = init(
         { [flag]: true } as Partial<typeof EMPTY_CANDIDATE_PROFILE>,
-        { reactiveFollowupsFired: [topic] },
+        {
+          reactiveFollowupsFired: [topic],
+          reactiveFollowupsFireLog: fireLog,
+          turnIndex: 1000, // guarantee gap large enough; max gates first
+        },
       );
       const action = planNextAction(s);
       if (action.kind === "reactive-followup") {
