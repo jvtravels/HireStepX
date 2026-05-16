@@ -228,8 +228,22 @@ export function syncChecklistFromParsedFacts(
   return changed ? next : checklist;
 }
 
+/** ArchRec 2 (2026-05-16) — the public `item` value the planner pushes
+ *  onto state.askedTopics. Tightened from `keyof DiscoveryChecklist` to
+ *  the actual set of values getNextDiscoveryQuestion / getNextOrdered
+ *  DiscoveryQuestion ever return (all `*Asked` literals) so the planner
+ *  can route it through the typed DiscoveryTopic ledger without a
+ *  widening cast. */
+export type DiscoveryQuestionItem =
+  | "currentCtcAsked"
+  | "fixedVariableSplitAsked"
+  | "noticePeriodAsked"
+  | "competingOffersAsked"
+  | "valueProofAsked"
+  | "targetAsked";
+
 export interface DiscoveryQuestion {
-  item: keyof DiscoveryChecklist;
+  item: DiscoveryQuestionItem;
   prompt: string;
 }
 

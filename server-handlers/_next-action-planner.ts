@@ -44,6 +44,7 @@ import {
   effectiveAnchorLpa,
   type NegotiationState,
   type AiMove,
+  type DiscoveryTopic,
 } from "./_negotiation-kernel";
 import { registerNextActionPlanner } from "./_planner-registry";
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
@@ -119,7 +120,7 @@ function buildMarketDataReferenceAsk(sources: string[]): string {
  *   - competing-credibility (max 2, gap 5): when the candidate keeps
  *     dropping a competing-offer hint, recruiters legitimately probe
  *     twice — once for written/verbal, once for the actual number. */
-export const REFIREABLE_TOPICS: Record<string, { max: number; gap: number }> = {
+export const REFIREABLE_TOPICS: Partial<Record<DiscoveryTopic, { max: number; gap: number }>> = {
   "tax-implication": { max: 3, gap: 4 },
   "notice-buyout": { max: 2, gap: 5 },
   "range-to-point": { max: 3, gap: 3 },
@@ -133,7 +134,7 @@ export const REFIREABLE_TOPICS: Record<string, { max: number; gap: number }> = {
  *  the per-topic max count and the per-topic minimum turn-gap since
  *  last fire. For everything else: single-fire (matches legacy
  *  hasFired semantics against state.reactiveFollowupsFired). Pure. */
-export function canRefire(topic: string, state: NegotiationState): boolean {
+export function canRefire(topic: DiscoveryTopic, state: NegotiationState): boolean {
   const policy = REFIREABLE_TOPICS[topic];
   if (!policy) {
     /* Non-refireable: fires once. The reactiveFollowupsFired ledger is
@@ -165,7 +166,7 @@ export type NextAction =
    * candidate just said before sequencing through the ordered checklist.
    * The topic is recorded in state.reactiveFollowupsFired via the
    * move.askedTopic plumbing so the same probe doesn't re-fire. */
-  | { kind: "reactive-followup"; ask: string; trigger: string; topic: string }
+  | { kind: "reactive-followup"; ask: string; trigger: string; topic: DiscoveryTopic }
   /* ResumeFactPack track Step 4 (2026-05-16) — credibility-probe. Fires
    * when the candidate states a current-company affiliation and the
    * ResumeFactPack does NOT confirm it (no fuzzy match against latestRole
@@ -290,7 +291,7 @@ export function actionToLever(action: NextAction, _state: NegotiationState): AiM
  *  gap. */
 function isAskedTopicAnswered(
   checklist: NegotiationState["discoveryChecklist"],
-  topic: string,
+  topic: DiscoveryTopic,
 ): boolean {
   if (checklist == null) return false;
   /* The askedTopic key the planner pushes mirrors the DISCOVERY_SEQUENCE
@@ -317,11 +318,11 @@ function isAskedTopicAnswered(
 function buildSkipRecord(
   state: NegotiationState,
   withinTurns = 3,
-): Record<string, boolean> | null {
+): Partial<Record<DiscoveryTopic, boolean>> | null {
   const refused = state.discoveryRefusedItems ?? null;
   const topics = state.askedTopics ?? [];
   const cutoff = state.turnIndex - withinTurns;
-  const recentlyAsked: Record<string, boolean> = {};
+  const recentlyAsked: Partial<Record<DiscoveryTopic, boolean>> = {};
   for (const t of topics) {
     if (t.atTurn <= cutoff) continue;
     /* Only mark as "skip" if the topic was both asked AND answered
@@ -1434,7 +1435,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
   const delta = state.lastTurnDelta;
   if (!delta) return null;
   const fired = state.reactiveFollowupsFired ?? [];
-  const hasFired = (topic: string): boolean => fired.includes(topic);
+  const hasFired = (topic: DiscoveryTopic): boolean => fired.includes(topic);
 
   /* Rule: answer-direct — candidate ended the turn on a direct question.
    * Highest priority among reactive rules: ignoring a candidate question
@@ -1442,8 +1443,13 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
    * failure mode. Topic key includes the turn so the same question
    * acknowledgement doesn't blanket-suppress future questions. */
   if (delta.askedQuestion) {
-    const topic = `answer-direct@${state.turnIndex}`;
-    if (!hasFired(topic)) {
+    /* ArchRec 2 (2026-05-16) — was `answer-direct@${turnIndex}`. The
+     * per-turn suffix made hasFired() always pass (every turn produced
+     * a fresh string), so the "single-fire" intent was actually dead.
+     * Use the canonical literal topic; dedup against
+     * reactiveFollowupsFired works as documented now that the key
+     * matches across turns. */
+    if (!hasFired("answer-direct")) {
       return {
         kind: "reactive-followup",
         ask: "Answer the candidate's question first; checklist advance pauses until the question is addressed.",
@@ -1454,7 +1460,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
           newTotalLpa: null,
           rationale: "Candidate asked a direct question this turn — answer before advancing.",
           actionKind: "reactive-followup",
-          askedTopic: topic,
+          askedTopic: "answer-direct",
         },
       };
     }
@@ -1754,10 +1760,10 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
    * subject to per-topic max + turn-gap policy. Non-refireable topics
    * fall back to the single-fire semantics canRefire applies via the
    * legacy reactiveFollowupsFired ledger. */
-  const canFire = (topic: string): boolean => canRefire(topic, state);
+  const canFire = (topic: DiscoveryTopic): boolean => canRefire(topic, state);
   type WiredRule = {
     flag: boolean | undefined;
-    topic: string;
+    topic: DiscoveryTopic;
     ask: string;
     rationale: string;
   };

@@ -9,6 +9,7 @@ import {
   initState,
   type NegotiationBand,
   type NegotiationState,
+  type DiscoveryTopic,
 } from "../../server-handlers/_negotiation-kernel";
 import { EMPTY_CANDIDATE_PROFILE } from "../../server-handlers/_candidate-profile";
 import {
@@ -30,7 +31,7 @@ const init = (
   candidateProfile: { ...EMPTY_CANDIDATE_PROFILE, hasAny: true, ...profileOverrides },
 });
 
-const CASES: { flag: keyof typeof EMPTY_CANDIDATE_PROFILE; topic: string }[] = [
+const CASES: { flag: keyof typeof EMPTY_CANDIDATE_PROFILE; topic: DiscoveryTopic }[] = [
   { flag: "wantsHigherBase", topic: "wants-higher-base" },
   { flag: "wantsJoiningBonus", topic: "wants-joining-bonus" },
   { flag: "wantsRelocationAllowance", topic: "wants-relocation-allowance" },
@@ -63,7 +64,7 @@ describe("Fix 5 — wired candidate-profile flags drive reactive followups", () 
        * fire-log with `max` entries spaced enough that even the gap
        * check would otherwise pass. */
       const policy = REFIREABLE_TOPICS[topic];
-      const fireLog: Record<string, number[]> =
+      const fireLog: Partial<Record<DiscoveryTopic, number[]>> =
         policy != null
           ? { [topic]: Array.from({ length: policy.max }, (_, i) => i + 1) }
           : {};

@@ -158,6 +158,157 @@ function _callNextActionPlanner(s: unknown): unknown {
   return fn ? fn(s) : null;
 }
 
+/* ─── Discovery topics (ArchRec 2 typed enum, 2026-05-16) ─────────────
+ *
+ * The `askedTopic` field on AiMove flows into three different ledgers:
+ *   - state.askedTopics[].topic   (F7 repetition guard)
+ *   - state.reactiveFollowupsFired (single-fire reactive dedup)
+ *   - state.reactiveFollowupsFireLog keys (refireable per-topic budget)
+ * and is the lookup key for REFIREABLE_TOPICS in _next-action-planner.
+ *
+ * Before this commit the field was typed `string`, which let typos
+ * silently break dedup (`"variable-confort"` would route past
+ * canRefire as a fresh topic). This union enumerates every observed
+ * topic literal across the three planner sites + the discovery
+ * cascade + the wired-profile rules table. Three classes:
+ *
+ *   1. Discovery checklist keys (both *Asked + *Answered forms — the
+ *      cascade emits *Asked as the public item, the ordered variant
+ *      uses *Answered as the internal sentinel, and the F7 guard
+ *      compares against whichever the planner pushed).
+ *   2. Reactive-followup topic names (kebab-case, paired with prose
+ *      branches in _canonical-prose.ts).
+ *   3. Structural lever / actionKind markers that flow into the F7
+ *      ledger via the `move.lever`/`move.actionKind` fallback in
+ *      applyAiMove (see the fallback chain below).
+ *
+ * The fallback in applyAiMove still widens to string at the cast site
+ * because `move.lever` is a NegotiationLever (a different union); the
+ * dev-mode assertion at that one site catches additions to the lever
+ * vocabulary that aren't also registered here. */
+export type DiscoveryTopic =
+  /* Discovery checklist — *Asked keys (emitted by getNextDiscoveryQuestion
+   * and getNextOrderedDiscoveryQuestion as the public `item` value). */
+  | "currentCtcAsked"
+  | "fixedVariableSplitAsked"
+  | "noticePeriodAsked"
+  | "competingOffersAsked"
+  | "valueProofAsked"
+  | "targetAsked"
+  /* Discovery checklist — *Answered keys (returned by
+   * getNextOrderedDiscoveryItem and observed in F7 repetition-guard
+   * test fixtures and applyAiMove fallback paths). */
+  | "currentCtcAnswered"
+  | "fixedVariableSplitAnswered"
+  | "noticePeriodAnswered"
+  | "competingOffersAnswered"
+  | "valueProofAnswered"
+  | "targetAnswered"
+  | "currentCtcFixedVariableSplitDisclosed"
+  | "expectedCtcFixedVariableSplitDisclosed"
+  /* Reactive-followup topics (planReactiveFollowup + planWiredProfileFollowup). */
+  | "variable-comfort"
+  | "equity-clarity"
+  | "competing-credibility"
+  | "competing-leverage-ack"
+  | "credibility-probe"
+  | "ctc-gentle-push"
+  | "hike-justification"
+  | "notice-buyout"
+  | "notice-buyout-confirm"
+  | "number-clarification"
+  | "value-proof"
+  | "answer-direct"
+  | "wants-higher-base"
+  | "wants-joining-bonus"
+  | "wants-relocation-allowance"
+  | "spouse-family-context"
+  | "reporting-structure"
+  | "growth-path"
+  | "team-size"
+  | "tax-implication"
+  | "bgv-concern"
+  | "moonlighting-policy"
+  | "range-to-point"
+  | "range-deflection"
+  | "market-data-reference"
+  /* Single-fire markers pushed through applyAiMove. */
+  | "close-confirmation"
+  | "close-recap-formal"
+  | "candidate-trial-close"
+  | "comparative-anchoring"
+  | "internal-equity-defense"
+  /* Structural-lever actionKinds — pushed onto askedTopic by
+   * makeStructuralLeverAction so applyAiMove can route them through
+   * the F7 ledger uniformly. */
+  | "band-anchor-with-rationale"
+  | "lever-grade-upgrade"
+  | "lever-retention-bonus"
+  | "lever-rsu-refresh"
+  | "lever-relocation"
+  | "lever-perf-bonus-cadence"
+  | "lever-joining-bonus-explained"
+  /* NegotiationLever values (move.lever fallback in applyAiMove pushes
+   * these onto state.askedTopics when no askedTopic/actionKind is set).
+   * Mirrors the NegotiationLever union below so the fallback is
+   * exhaustively covered by the type. */
+  | "open-with-offer"
+  | "probe"
+  | "probe-justification"
+  | "counter-base"
+  | "joining-bonus"
+  | "equity-grant"
+  | "benefits-summary"
+  | "compensation-summary"
+  | "notice-period-summary"
+  | "hike-context-summary"
+  | "hold-firm"
+  | "close-acceptance"
+  | "close-walkaway"
+  | "close-stalemate"
+  | "terminal-restate";
+
+/** Exhaustiveness helper. Used in topic switches so adding a new
+ *  DiscoveryTopic literal lights up at every consumer site that hasn't
+ *  been updated. */
+export function assertNever(x: never): never {
+  throw new Error(`Unhandled discriminant: ${String(x)}`);
+}
+
+/** Dev-only guard against silent additions of unknown topic strings
+ *  pushed through the `move.lever`/`move.actionKind` fallback in
+ *  applyAiMove. In production we let unknown strings pass (back-compat
+ *  with sessions serialized before this commit). In dev we throw so
+ *  the test suite forces every new lever/actionKind that flows into
+ *  the F7 ledger to be registered as a DiscoveryTopic. */
+const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
+  "currentCtcAsked", "fixedVariableSplitAsked", "noticePeriodAsked",
+  "competingOffersAsked", "valueProofAsked", "targetAsked",
+  "currentCtcAnswered", "fixedVariableSplitAnswered", "noticePeriodAnswered",
+  "competingOffersAnswered", "valueProofAnswered", "targetAnswered",
+  "currentCtcFixedVariableSplitDisclosed", "expectedCtcFixedVariableSplitDisclosed",
+  "variable-comfort", "equity-clarity", "competing-credibility",
+  "competing-leverage-ack", "credibility-probe", "ctc-gentle-push",
+  "hike-justification", "notice-buyout", "notice-buyout-confirm",
+  "number-clarification", "value-proof", "answer-direct",
+  "wants-higher-base", "wants-joining-bonus", "wants-relocation-allowance",
+  "spouse-family-context", "reporting-structure", "growth-path", "team-size",
+  "tax-implication", "bgv-concern", "moonlighting-policy",
+  "range-to-point", "range-deflection", "market-data-reference",
+  "close-confirmation", "close-recap-formal", "candidate-trial-close",
+  "comparative-anchoring", "internal-equity-defense", "band-anchor-with-rationale",
+  "lever-grade-upgrade", "lever-retention-bonus", "lever-rsu-refresh",
+  "lever-relocation", "lever-perf-bonus-cadence", "lever-joining-bonus-explained",
+  "open-with-offer", "probe", "probe-justification", "counter-base",
+  "joining-bonus", "equity-grant", "benefits-summary", "compensation-summary",
+  "notice-period-summary", "hike-context-summary", "hold-firm",
+  "close-acceptance", "close-walkaway", "close-stalemate", "terminal-restate",
+]);
+
+export function isDiscoveryTopic(s: string): s is DiscoveryTopic {
+  return KNOWN_TOPICS.has(s);
+}
+
 /* ─── Phases ──────────────────────────────────────────────────────── */
 
 export type NegotiationPhase =
@@ -885,7 +1036,7 @@ export interface NegotiationState {
    * by the planner before re-emitting so the same probe doesn't fire
    * twice in the same session. Optional + nullable for back-compat
    * with sessions serialized before commit 4. */
-  reactiveFollowupsFired?: string[];
+  reactiveFollowupsFired?: DiscoveryTopic[];
 
   /* Polish 2 (2026-05-16) — per-topic fire-history (turn indices at
    * which each topic was fired). The legacy `reactiveFollowupsFired`
@@ -896,7 +1047,7 @@ export interface NegotiationState {
    * sticky topics. Consulted by canRefire() in _next-action-planner.
    * Optional + nullable for back-compat with pre-Polish-2 serialized
    * sessions. */
-  reactiveFollowupsFireLog?: Record<string, number[]>;
+  reactiveFollowupsFireLog?: Partial<Record<DiscoveryTopic, number[]>>;
 
   /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context structural
    * levers (grade upgrade, retention bonus, RSU refresh, relocation,
@@ -913,7 +1064,7 @@ export interface NegotiationState {
    * consults this ledger: if the same topic appears within the last 3
    * turns, the planner skips it and advances to the next checklist item.
    * Optional for back-compat with pre-F7 serialized sessions. */
-  askedTopics?: { topic: string; atTurn: number }[];
+  askedTopics?: { topic: DiscoveryTopic; atTurn: number }[];
 
   /* ITEM 3 (2026-05-15) — Trial-close signaling.
    *
@@ -3232,8 +3383,11 @@ export interface AiMove {
   /** Commit 4 (2026-05-15) — reactive-followup topic marker. Set when
    *  the planner emits a `reactive-followup` NextAction so applyAiMove
    *  can push the topic into state.reactiveFollowupsFired (sticky
-   *  de-dupe ledger). Unset on every other lever class. */
-  askedTopic?: string;
+   *  de-dupe ledger). Unset on every other lever class.
+   *
+   *  ArchRec 2 (2026-05-16) — typed as DiscoveryTopic so typos at push
+   *  sites become compile errors instead of silent dedup misses. */
+  askedTopic?: DiscoveryTopic;
   /** Commit 4 (2026-05-15) — NextAction kind discriminator carried on
    *  the move for telemetry / decisionLog inspection. Optional. */
   actionKind?: string;
@@ -3377,10 +3531,26 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
    * less specific, but move.actionKind carries the item string for
    * discovery-probe moves). Use the most-specific available key. */
   {
-    const topicKey =
-      move.askedTopic ??
+    /* ArchRec 2 (2026-05-16) — narrow the fallback chain to DiscoveryTopic.
+     * move.askedTopic is already typed; the actionKind/lever fallback is
+     * validated against KNOWN_TOPICS (dev throws on unknown; prod widens
+     * via cast for back-compat with pre-typing serialized sessions). */
+    const fallbackRaw =
       (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
       move.lever;
+    let topicKey: DiscoveryTopic | null = move.askedTopic ?? null;
+    if (topicKey == null && fallbackRaw) {
+      if (isDiscoveryTopic(fallbackRaw)) {
+        topicKey = fallbackRaw;
+      } else if (process.env.NODE_ENV !== "production") {
+        throw new Error(
+          `applyAiMove: fallback topic '${fallbackRaw}' is not a registered DiscoveryTopic. ` +
+            `Add it to the DiscoveryTopic union + KNOWN_TOPICS in _negotiation-kernel.ts.`,
+        );
+      } else {
+        topicKey = fallbackRaw as DiscoveryTopic;
+      }
+    }
     if (topicKey) {
       const prior = state.askedTopics ?? [];
       next.askedTopics = [...prior, { topic: topicKey, atTurn: next.turnIndex }];
@@ -4066,11 +4236,12 @@ export function deserializeState(json: string): NegotiationState {
     /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive-followup
      * ledger. Sticky across the session (never cleared by applyAiMove).
      * Optional for back-compat with sessions serialized before commit 4. */
-    reactiveFollowupsFired: (s.reactiveFollowupsFired as string[] | undefined) ?? [],
+    reactiveFollowupsFired:
+      (s.reactiveFollowupsFired as DiscoveryTopic[] | undefined) ?? [],
     /* Polish 2 (2026-05-16) — per-topic fire-history. Back-compat
      * default = empty record. */
     reactiveFollowupsFireLog:
-      (s.reactiveFollowupsFireLog as Record<string, number[]> | undefined) ?? {},
+      (s.reactiveFollowupsFireLog as Partial<Record<DiscoveryTopic, number[]>> | undefined) ?? {},
     /* Fix 1 (2026-05-16) — leversFired back-compat default. */
     leversFired: (s.leversFired as string[] | undefined) ?? [],
     /* ResumeFactPack track (2026-05-16) — back-compat default. Existing
