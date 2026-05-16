@@ -1138,6 +1138,13 @@ export interface NegotiationState {
    *  on the very next turn rather than after the discovery cascade. */
   offerAskedAtTurn?: number | null;
 
+  /** FL5 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-index at which the
+   *  candidate's reply was hedged ("not sure", "around 30", "I think",
+   *  "approximately", "don't remember"). Set by applyCandidateAnswer;
+   *  read by the planner so the next move offers a range / escape
+   *  hatch on the same topic instead of grinding on an exact value. */
+  lastAnswerUncertainAt?: number | null;
+
   /** ResumeFactPack track (2026-05-16) — structured resume-derived facts
    *  built once at session-init and stored frozen on state. Replaces the
    *  earlier path that reduced the parsed resume to ~6 scalars and threw
@@ -2649,6 +2656,17 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   const offerAskedAtTurn = OFFER_ASK_RE.test(answer)
     ? state.turnIndex
     : (state.offerAskedAtTurn ?? null);
+  /* FL5 / Audit Pass 4 (PDF#27, 2026-05-17) — uncertainty detection.
+   * When the candidate hedges on the value ("not sure", "around 30",
+   * "I think", "approximately", "don't remember"), the planner should
+   * offer a range / escape hatch on the NEXT turn instead of
+   * grinding on an exact number. Stamp the turn index; the planner
+   * consults state.lastAnswerUncertainAt to route off-script. */
+  const UNCERTAINTY_RE =
+    /\b(?:not\s+sure|don'?t\s+remember|don'?t\s+know|approximat(?:e|ely)?|around|roughly|i\s+think|maybe|forget|forgot)\b/i;
+  const lastAnswerUncertainAt = UNCERTAINTY_RE.test(answer)
+    ? state.turnIndex
+    : (state.lastAnswerUncertainAt ?? null);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
@@ -2657,6 +2675,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     conversationLog: appendConversation(state.conversationLog, "candidate", answer),
     repetitionComplaintAtTurn,
     offerAskedAtTurn,
+    lastAnswerUncertainAt,
   };
   /* Commit 1 (2026-05-15): finalize() stamps state.lastTurnDelta from the
    * pre-state snapshot before every return. Keeps the 8+ return branches

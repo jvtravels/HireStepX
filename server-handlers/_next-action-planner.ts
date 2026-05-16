@@ -472,6 +472,72 @@ function nextComponentProbe(
   return null;
 }
 
+/** FL5 / Audit Pass 4 (PDF#27, 2026-05-17) — uncertainty escape hatch.
+ *
+ * Called when the planner is about to fire a discovery-probe for
+ * `pendingItem`. If the candidate's PRIOR turn was uncertain
+ * (state.lastAnswerUncertainAt === state.turnIndex - 1) AND the most-
+ * recently-asked topic matches the item we're about to re-ask, the
+ * planner picks deterministically between:
+ *
+ *   - `advance:true` — skip this item on this turn and let the cascade
+ *     move on. The caller re-runs getNextOrderedDiscoveryItem with the
+ *     stuck topic injected into the skip record.
+ *
+ *   - `rangeAsk:"<prose>"` — keep the item but swap the canonical
+ *     question for a range-shaped one ("rough range — under 30, 30-40,
+ *     40+ LPA?") so the candidate can answer without precision.
+ *
+ * Deterministic by state.turnIndex % 2 — keeps test surfaces stable;
+ * the same session always sees the same cadence.
+ *
+ * Returns `{advance:false, rangeAsk:null}` when uncertainty doesn't
+ * apply — caller should ship the default ordered ask. Pure. */
+function applyUncertaintyEscapeHatch(
+  state: NegotiationState,
+  pendingItem: DiscoveryTopic,
+  _defaultAsk: string,
+): { advance: boolean; rangeAsk: string | null } {
+  const NO_OP = { advance: false, rangeAsk: null } as const;
+  const uncertainAt = state.lastAnswerUncertainAt ?? null;
+  if (uncertainAt == null) return NO_OP;
+  if (uncertainAt !== state.turnIndex - 1) return NO_OP;
+  /* The escape hatch is only triggered when we're about to re-ASK
+   * the same topic that triggered the uncertain reply. Looking at
+   * state.askedTopics tail tells us the topic the candidate was
+   * hedging about — if the cascade has already moved on to a fresh
+   * topic, no escape hatch is needed. */
+  const tail = (state.askedTopics ?? []).slice(-1)[0]?.topic ?? null;
+  if (tail == null) return NO_OP;
+  /* Strip the *Answered/*Disclosed suffix so the comparison normalises
+   * across the asked-topic ledger and the planner's checklist keys. */
+  const tailRoot = (tail as string).replace(/(?:Answered|Disclosed|Asked)$/, "");
+  const pendingRoot = (pendingItem as string).replace(/(?:Answered|Disclosed|Asked)$/, "");
+  if (tailRoot !== pendingRoot) return NO_OP;
+  const advance = state.turnIndex % 2 === 1;
+  if (advance) return { advance: true, rangeAsk: null };
+  /* Range-ask: pick a topic-appropriate range template. The default
+   * is a CTC-shaped range — covers currentCtc / target / expected
+   * which are the topics where range framing is sensible. */
+  const rangeAsk = buildUncertaintyRangeAsk(pendingRoot);
+  return { advance: false, rangeAsk };
+}
+
+function buildUncertaintyRangeAsk(itemRoot: string): string {
+  if (/^currentCtc/i.test(itemRoot)) {
+    return "Rough range is fine — under 15, 15-25, 25-40, or 40+ LPA?";
+  }
+  if (/^(?:expectedCtc|target)/i.test(itemRoot)) {
+    return "Rough range works too — under 20, 20-30, 30-45, or 45+ LPA?";
+  }
+  if (/^noticePeriod/i.test(itemRoot)) {
+    return "Rough range is fine — under 30 days, 30-60, 60-90, or 90+?";
+  }
+  /* Fallback for any other discovery topic — just acknowledge the
+   * uncertainty and reframe as approximate. */
+  return "Rough range or ballpark is fine — no need for an exact number.";
+}
+
 function planNextActionInternal(state: NegotiationState): PlannedAction {
   /* Terminal stickiness guard (session 13 bug, 2026-05-14): see notes in
    * the original move-picker. */
@@ -960,15 +1026,61 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           const skippedHint = refused != null && Object.keys(refused).length > 0
             ? ` [ITEM REFUSED — SKIPPED: ${Object.keys(refused).join(", ")}; proceeding to ${orderedItem}]`
             : "";
+          /* FL5 / Audit Pass 4 (PDF#27, 2026-05-17) — uncertainty
+           * escape hatch. When the candidate's PRIOR turn was hedged
+           * AND we're about to re-ask the same item, deterministically
+           * pick between (a) offering a range and (b) advancing past
+           * the item. Grinding on an exact number after an uncertain
+           * reply is the pattern flagged by the audit. */
+          const uncertaintyEscape = applyUncertaintyEscapeHatch(
+            state,
+            orderedItem,
+            ordered.prompt,
+          );
+          if (uncertaintyEscape.advance) {
+            /* Re-run the ordered cascade with the stuck item explicitly
+             * marked as skipped this turn. */
+            const advancedSkip: Partial<Record<DiscoveryTopic, boolean>> = {
+              ...(skipRecord ?? {}),
+              [orderedItem]: true,
+            };
+            const advItem = getNextOrderedDiscoveryItem(
+              state.discoveryChecklist,
+              roleFamily,
+              advancedSkip,
+            );
+            const advAsk = getNextOrderedDiscoveryQuestion(
+              state.discoveryChecklist,
+              roleFamily,
+              advancedSkip,
+            );
+            if (advItem != null && advAsk != null) {
+              return {
+                kind: "discovery-probe",
+                item: advItem,
+                ask: advAsk.prompt,
+                _move: {
+                  lever: "probe",
+                  newTotalLpa: null,
+                  rationale:
+                    `Discovery incomplete (FL5 uncertainty escape — advancing past "${orderedItem}" to "${advItem}").`,
+                  askedTopic: advItem,
+                },
+              };
+            }
+            /* No advance target available → fall through to the
+             * range-ask path so the bot still doesn't grind. */
+          }
+          const finalAsk = uncertaintyEscape.rangeAsk ?? ordered.prompt;
           return {
             kind: "discovery-probe",
             item: orderedItem,
-            ask: ordered.prompt,
+            ask: finalAsk,
             _move: {
               lever: "probe",
               newTotalLpa: null,
               rationale:
-                `Discovery incomplete (next: ${orderedItem}) — ask: ${ordered.prompt}${skippedHint}`,
+                `Discovery incomplete (next: ${orderedItem}) — ask: ${finalAsk}${skippedHint}`,
               /* F7 — carry the item key so applyAiMove can push it
                * onto askedTopics for the repetition guard. */
               askedTopic: orderedItem,
