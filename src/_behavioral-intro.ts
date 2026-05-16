@@ -38,6 +38,24 @@ export interface BuildBehavioralIntroOpts {
   company?: string;
 }
 
+/* Indian IT-services companies. At these firms the academic-pedigree
+   opener ("walk me through 10th, 12th, B.Tech, any backlogs") is a
+   real ritual — present even for 8-year-experienced laterals. Swapping
+   the rapport hook to a pedigree variant makes the intro feel genuinely
+   services-track. Conservative list — only the firms where this ritual
+   is unambiguous. Product-cos (Razorpay, Flipkart) and MNC-IN (Google
+   India, Microsoft India) keep the default rapport hook. */
+const SERVICES_TRACK_COMPANIES = [
+  "tcs", "tata consultancy", "infosys", "wipro", "cognizant",
+  "accenture", "capgemini", "tech mahindra", "hcl", "hcltech",
+  "ltimindtree", "lti", "mindtree", "mphasis", "persistent",
+  "ibm india", "dxc", "birlasoft",
+];
+function isServicesTrack(company: string): boolean {
+  const c = company.toLowerCase();
+  return SERVICES_TRACK_COMPANIES.some(name => c.includes(name));
+}
+
 /** Returns a 2-3 sentence personalised intro. Single-line, no markdown,
  *  TTS-safe (no brackets, no markup). */
 export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
@@ -66,9 +84,20 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
   /* Rapport hook. Anchored on role/company when available so the
      candidate's first response is contextual, not generic. Always
      ends with a "feel free to take your time" beat — the Indian
-     equivalent of "no pressure, this is a conversation." */
+     equivalent of "no pressure, this is a conversation."
+
+     Services-track variant: at TCS / Infosys / Wipro etc., interviewers
+     genuinely open with an academic-background walkthrough — even for
+     experienced laterals. Mirroring that ritual makes the intro feel
+     authentic; the candidate is also primed to deliver pedigreeRecital
+     content which the cultural-register detector will recognise as a
+     non-penalty signal. */
   let rapportHook: string;
-  if (role && company) {
+  if (company && isServicesTrack(company)) {
+    rapportHook = role
+      ? `Before we get into the structured questions — just briefly, walk me through your background a bit, your academics and what you've been doing currently. And what's drawing you to ${role} at ${company}?`
+      : `Before we get into the structured questions — just briefly, walk me through your background a bit, your academics and what you've been doing currently. And what brings you to ${company}?`;
+  } else if (role && company) {
     rapportHook = `Before we dive into the structured questions — just briefly, where are you joining from today, and what's drawing you to ${role} at ${company}?`;
   } else if (role) {
     rapportHook = `Before we dive in — just briefly, where are you joining from today, and what's drawing you to ${role}?`;

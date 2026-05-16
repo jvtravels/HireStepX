@@ -77,4 +77,38 @@ describe("buildBehavioralIntro", () => {
     expect(out1).not.toMatch(/undefined/);
     expect(out2).not.toMatch(/undefined/);
   });
+
+  /* Services-track pedigree opener — TCS / Infosys / Wipro etc. open with
+     an academic-background walkthrough, even for laterals. The variant
+     swaps the rapport hook to mirror that ritual. */
+  it("swaps to pedigree opener for Indian services-track companies (TCS, Infosys, Wipro, etc.)", () => {
+    const tcs = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "TCS" });
+    expect(tcs.toLowerCase()).toContain("walk me through your background");
+    expect(tcs.toLowerCase()).toContain("academics");
+
+    const infy = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Infosys" });
+    expect(infy.toLowerCase()).toContain("walk me through your background");
+
+    const wipro = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Wipro" });
+    expect(wipro.toLowerCase()).toContain("walk me through your background");
+  });
+
+  it("does NOT swap to pedigree opener for product / MNC-India companies", () => {
+    const razorpay = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "PM", company: "Razorpay" });
+    expect(razorpay.toLowerCase()).not.toContain("walk me through your background");
+
+    const googleIN = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "SWE", company: "Google India" });
+    expect(googleIN.toLowerCase()).not.toContain("walk me through your background");
+  });
+
+  it("services-track intro stays within an extended TTS budget (≤ ~70 words)", () => {
+    const out = buildBehavioralIntro({
+      interviewerName: "Suresh Iyer",
+      candidateName: "Anjali Verma",
+      role: "Senior Engineer",
+      company: "Infosys",
+    });
+    const words = out.trim().split(/\s+/).length;
+    expect(words).toBeLessThanOrEqual(70);
+  });
 });

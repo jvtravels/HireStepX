@@ -49,6 +49,15 @@ export interface CulturalRegister {
   /** Festival / quarter-end / calendar references that anchor the
    *  Situation in real Indian operational context. */
   calendarAnchored: boolean;
+  /** "Thank you so much for this opportunity, sir" / "I really
+   *  appreciate you taking the time" — explicit gratitude / deference
+   *  phrases that Western low-confidence-marker detection would
+   *  misfire on. Counts as professional courtesy, NOT weakness. */
+  deferentialGratitude: boolean;
+  /** "I scored 92% in 10th, CGPA 8.4" — voluntary recital of board
+   *  percentages or CGPA. Standard ritual at Indian services firms
+   *  (TCS / Infosys / Wipro etc.), NOT padding or insecurity. */
+  pedigreeRecital: boolean;
 }
 
 /* Hedged disagreement — must contain BOTH a deference marker
@@ -74,6 +83,21 @@ const RELATIONAL_FRAMING_RE = /\b(?:kept|maintained|preserved|built|earned|resto
    anecdotal filler. Conservative: only well-known anchors. */
 const CALENDAR_ANCHOR_RE = /\b(?:diwali|holi|navratri|dussehra|onam|pongal|sankranti|raksha\s+bandhan|janmashtami|ganesh\s+chaturthi|durga\s+puja|christmas)\b|\b(?:big\s+billion\s+days?|bbd|big\s+saving\s+days?|bsd|monsoon\s+sale|republic\s+day\s+sale|independence\s+day\s+sale)\b|\b(?:quarter[\s-]?end|year[\s-]?end|q[1-4]\s+close|fy\s+close|financial\s+year\s+end|march\s+31|march\s+closing)\b/i;
 
+/* Deferential gratitude — explicit thank-you / appreciation aimed at
+   the interviewer. Indian-context professional courtesy. Conservative:
+   requires a gratitude marker within 60 chars of an interviewer-direction
+   token ("for this opportunity" / "for taking the time" / "sir" / "ma'am"
+   / "for having me"). Bare "thanks" inside a STAR Action doesn't qualify
+   ("I thanked the team and moved on" must NOT fire). Also matches the
+   "it's an honour / privilege to..." opener. */
+const DEFERENTIAL_GRATITUDE_RE = /\b(?:thank\s+you(?:\s+(?:so\s+much|very\s+much|very\s+kindly))?|thanks\s+(?:a\s+lot|so\s+much|very\s+much)|i\s+(?:really\s+|truly\s+|sincerely\s+)?appreciate(?:\s+you)?|i'?m\s+(?:really\s+|truly\s+)?grateful|i'?d\s+like\s+to\s+thank\s+you)\b[\s\S]{0,60}\b(?:(?:for\s+)?(?:this\s+opportunity|having\s+me|taking\s+(?:the\s+)?time|the\s+(?:chance|opportunity))|sir|ma'?am|for\s+(?:your|the)\s+time)\b|\bit'?s\s+(?:an\s+|a\s+real\s+)?(?:honour|honor|privilege)\s+to\s+(?:be\s+here|interview|speak\s+with\s+you)\b/i;
+
+/* Pedigree recital — voluntary mention of 10th/12th board percentages
+   or CGPA. Strict shape: "<verb> <number>% in 10th/12th/boards" OR
+   "10th/12th marks were <number>" OR "CGPA <number>" / "<number> CGPA".
+   "I scored well in school" doesn't qualify; "I got 92% in 10th" does. */
+const PEDIGREE_RECITAL_RE = /\b(?:scored|got|secured|achieved|attained)\s+(?:about\s+|around\s+|nearly\s+)?\d{2,3}(?:\.\d+)?\s*(?:%|percent|percentage)\s+in\s+(?:my\s+)?(?:10th|12th|tenth|twelfth|class\s+(?:10|12|x|xii)|board(?:s)?|hsc|ssc|cbse|icse)\b|\b(?:my\s+)?(?:10th|12th|tenth|twelfth|class\s+(?:10|12|x|xii)|board(?:s)?|hsc|ssc)\s+(?:marks|percentage|score|result)s?\s+(?:was|were)\s+\d{2,3}(?:\.\d+)?\s*(?:%|percent)?\b|\bcgpa\s+(?:of\s+|was\s+|is\s+)?\d(?:\.\d+)?(?:\s*\/\s*10)?\b|\b\d(?:\.\d+)?\s*cgpa\b/i;
+
 export function detectCulturalRegister(text: string): CulturalRegister {
   const t = text || "";
   return {
@@ -81,6 +105,8 @@ export function detectCulturalRegister(text: string): CulturalRegister {
     indirectFailureFraming: INDIRECT_FAILURE_RE.test(t),
     relationalFraming: RELATIONAL_FRAMING_RE.test(t),
     calendarAnchored: CALENDAR_ANCHOR_RE.test(t),
+    deferentialGratitude: DEFERENTIAL_GRATITUDE_RE.test(t),
+    pedigreeRecital: PEDIGREE_RECITAL_RE.test(t),
   };
 }
 
@@ -90,5 +116,10 @@ export function detectCulturalRegister(text: string): CulturalRegister {
  *  register; mirror it lightly") instead of forcing it on every
  *  behavioural turn. */
 export function hasAnyIndianRegister(reg: CulturalRegister): boolean {
-  return reg.hedgedDisagreement || reg.indirectFailureFraming || reg.relationalFraming || reg.calendarAnchored;
+  return reg.hedgedDisagreement
+    || reg.indirectFailureFraming
+    || reg.relationalFraming
+    || reg.calendarAnchored
+    || reg.deferentialGratitude
+    || reg.pedigreeRecital;
 }

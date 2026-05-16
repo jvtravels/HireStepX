@@ -142,6 +142,22 @@ const miniQuestionsByType: Record<string, QuestionBank[]> = {
     { q: "Tell me about a time you pushed back on a CXO or founder's call in a flat-org setting where there was no formal hierarchy to hide behind. How did you frame it, and what happened?", qResume: "In your role as {title}, walk me through pushing back on a CXO or founder's call without formal hierarchy as cover. How did you frame it?", scoreNote: "Conviction under hierarchical exposure, framing, post-decision relationship management" },
     { q: "Describe a tier-2 / vernacular / low-bandwidth user problem you specifically solved — not in theory, in shipped product. What was the constraint, and what's the one thing you changed?", qResume: "From your work as {title}, tell me about a tier-2 or vernacular user problem you actually shipped a fix for. What was the constraint and the change?", scoreNote: "India-specific user empathy, ship discipline, constraint-driven design" },
     { q: "Tell me about navigating a services-to-product transition — either in your own career, or inside your team. What broke first, and what did you do about it?", qResume: "As {title}, walk me through a services-to-product transition you navigated. What broke first, and what did you do?", scoreNote: "Career-arc self-awareness, ownership shift, structural problem-solving" },
+    /* Client-facing IT-services behavioural sub-stems (B6). These are
+       first-class behavioural questions in services interviews (TCS,
+       Infosys, Wipro, Cognizant, Accenture, Capgemini) and rarely
+       appear in Western behavioural rubrics. They sit alongside the
+       generic offshore-onsite stem above and probe a different beat:
+       client-side aggression + timezone burnout + escalation pressure. */
+    { q: "It's Friday 11 PM IST. Your US client jumps on the bridge and says scope must include a new module by Monday. Your onsite lead is silent. Walk me through what you actually do that night and over the weekend.", qResume: "From your time as {title}, walk me through a Friday-night client scope-creep escalation. What did you actually do that weekend?", scoreNote: "Client management under timezone pressure, calm under aggression, scope discipline, onsite-offshore coordination" },
+    { q: "Tell me about a time the client escalated past your PM directly to your delivery head or you. The offshore team was being blamed. How did you handle it, and what happened to the relationship after?", qResume: "As {title}, describe a client escalation that skipped your PM and landed on you, with the offshore team being blamed. How did you reset it?", scoreNote: "Escalation handling, defending the team upward and outward, relationship recovery" },
+    { q: "Describe a stretch where the timezone overlap with onsite or client was killing your team — late-night standups, weekend release calls, burnout building. What did you change, and what was the trade-off?", qResume: "From your role as {title}, tell me about a timezone-overlap burnout stretch on your team. What did you change?", scoreNote: "Team welfare vs client commitment trade-off, structural change ownership, sustainable-operations thinking" },
+    /* Relocation / shift-commitment behavioural stem (B8). Framed as a
+       situational decision-and-coordination question, NOT an HR gate.
+       Real Indian behavioural beats: how did you frame this at home,
+       how did you negotiate logistics, how did you stay productive
+       during transition. Avoids the "are you willing to relocate"
+       compliance frame. */
+    { q: "Tell me about a time you made a major work-related relocation or shift change — moving cities for a role, or switching to a US/UK shift. Walk me through how you decided, how you set it up with family, and how the first 60 days went.", qResume: "As {title}, walk me through a major relocation or shift change you made — how you decided, set it up at home, and what the first 60 days looked like.", scoreNote: "Decision-making under personal-cost trade-off, family/stakeholder coordination, transition execution, honest reflection on what worked and what didn't" },
   ],
   "hr-round": [
     { q: "Tell me about yourself — your background, what drives you, and why you're interested in this role.", qResume: "Walk me through your journey from {title} to where you are now. What motivates you, and why are you looking at this role?", scoreNote: "Concise narrative, motivation, role alignment" },

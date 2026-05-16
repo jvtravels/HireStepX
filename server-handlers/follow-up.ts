@@ -910,6 +910,8 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
     const indianRegisterBlock = type === "behavioral"
       ? `\nCONVERSATIONAL REGISTER — Indian context:
 - You MAY use light Hinglish discourse markers when the candidate uses them or when the company tone is informal: "achha", "theek hai", "sahi", "haan", "bilkul". One per follow-up at most. Skip entirely if the candidate is speaking polished English — don't force it.
+- Indian-English interviewer ACKNOWLEDGEMENT tics are natural and authentic: "right right right", "okay okay understood", "haan haan, go on", "fair enough", "got it got it", and the question-tag closers "no?" / "isn't it?" / "correct?". Use AT MOST ONE per follow-up. Use ZERO if the candidate is speaking polished US-corporate English — over-use reads as caricature. These belong in your acknowledgement opener, not in the question itself.
+- Indian-English business idioms ("kindly elaborate", "what is your USP", "revert back with your thoughts", "do the needful", "what is the scenario") are acceptable in services-track / BFSI / consulting contexts (TCS, Infosys, Wipro, Cognizant, Capgemini, Accenture, HDFC, ICICI, McKinsey India, etc.). DO NOT use these in product/startup contexts (Razorpay, Flipkart, Swiggy, CRED, Google India) — there they sound dated. Inferable from the role/company already in context.
 - Hedged disagreement ("with respect, I'd suggest..." / "may I push back gently...") is conviction expressed in Indian register, NOT weak conviction. Do NOT probe as if the candidate is uncertain.
 - "Sir" / "ma'am" addressed to the interviewer is professional courtesy in Indian English, NOT sycophancy. Do not comment on it, mock it, or coach against it.
 - Indirect framing of failure ("there were some challenges with the timeline" / "the rollout had some issues") is the Indian register for ownership; treat the same way you would treat "I missed the deadline" in American English. Probe for what they did, not for them to "own it more directly."
@@ -984,14 +986,28 @@ ${safeStarGap === "action"
        answers that don't warrant it. */
     const culturalReg = type === "behavioral"
       ? detectCulturalRegister(answer)
-      : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false };
+      : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false, deferentialGratitude: false, pedigreeRecital: false };
     const culturalRegisterHint = (type === "behavioral" && hasAnyIndianRegister(culturalReg))
       ? `\nINDIAN-REGISTER DETECTED — the candidate's answer contains: ${[
           culturalReg.hedgedDisagreement ? "hedged disagreement (conviction expressed politely)" : null,
           culturalReg.indirectFailureFraming ? "indirect failure framing (ownership expressed via 'some challenges')" : null,
           culturalReg.relationalFraming ? "relational outcome framing ('kept the team aligned' / 'preserved trust')" : null,
           culturalReg.calendarAnchored ? "Indian calendar / festival / fiscal anchor" : null,
+          culturalReg.deferentialGratitude ? "deferential gratitude ('thank you for this opportunity, sir' / 'I appreciate you taking the time') — professional courtesy, NOT low confidence" : null,
+          culturalReg.pedigreeRecital ? "pedigree recital (10th/12th board percentages or CGPA) — standard Indian services ritual, NOT padding" : null,
         ].filter(Boolean).join("; ")}. Mirror lightly if appropriate. Do NOT probe these markers as weakness, deflection, or filler — they are legitimate signal in Indian English.`
+      : "";
+
+    /* Tenure-defence probe (B4) — Indian interviewers aggressively probe
+       short stints ("but you were there only 14 months no?") and re-ask
+       the same question from a different angle to test stability narrative
+       coherence. Western rubrics rarely do this. Conservative trigger: the
+       candidate's answer mentions a short tenure (under 24 months) AND a
+       departure verb. We surface this once per turn — the engine won't let
+       the LLM dogpile because each turn is independent. */
+    const TENURE_SHORT_RE = /\b(?:(?:after\s+)?(?:only\s+|just\s+|barely\s+)?(?:\d{1,2}|a\s+few|six|nine|eight|ten|eleven|twelve|fourteen|fifteen|eighteen|twenty)\s+months?|(?:about\s+|around\s+|nearly\s+|just\s+over\s+)?(?:one|1|a)\s+year(?:\s+and\s+(?:a\s+)?(?:half|few\s+months))?)\b[\s\S]{0,80}\b(?:left|leaving|leave|moved\s+(?:on|out)|quit|resigned|switched|exit(?:ed)?|transitioned)\b|\b(?:left|leaving|quit|resigned|moved\s+on|exited)\b[\s\S]{0,40}\b(?:after\s+(?:only\s+|just\s+|barely\s+)?(?:\d{1,2}\s+months?|(?:one|1|a)\s+year)|in\s+under\s+(?:a\s+|one\s+)?year)\b/i;
+    const tenureProbe = (type === "behavioral" && TENURE_SHORT_RE.test(answer))
+      ? `\nTENURE-DEFENCE PROBE — the candidate mentioned a short tenure (<24 months) followed by a departure. Indian interviewers aggressively probe these. If a follow-up is warranted, your ONE follow-up MAY re-ask the "why did you leave" angle from a DIFFERENT cut than the original question already covered: the manager-fit angle ("how was the working relationship with your manager?"), the growth angle ("what was missing for you to stay another year?"), or the timing angle ("was there a specific incident, or was it building up?"). Do NOT escalate or shame. Do NOT call the tenure "short" or "concerning" — neutral curiosity only. Treat instability framing as a non-penalty narrative-coherence check, not a red flag.`
       : "";
 
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
@@ -1010,7 +1026,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${tenureProbe}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}

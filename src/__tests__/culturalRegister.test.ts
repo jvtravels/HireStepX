@@ -189,6 +189,101 @@ describe("detectCulturalRegister — calendarAnchored", () => {
   });
 });
 
+describe("detectCulturalRegister — deferentialGratitude", () => {
+  it("matches 'thank you so much for this opportunity, sir'", () => {
+    expect(
+      detectCulturalRegister(
+        "Thank you so much for this opportunity, sir.",
+      ).deferentialGratitude,
+    ).toBe(true);
+  });
+
+  it("matches 'I really appreciate you taking the time'", () => {
+    expect(
+      detectCulturalRegister(
+        "I really appreciate you taking the time today.",
+      ).deferentialGratitude,
+    ).toBe(true);
+  });
+
+  it("matches 'thanks so much for having me'", () => {
+    expect(
+      detectCulturalRegister("Thanks so much for having me on this call.")
+        .deferentialGratitude,
+    ).toBe(true);
+  });
+
+  it("matches 'it's a privilege to speak with you'", () => {
+    expect(
+      detectCulturalRegister("It's a real privilege to speak with you today.")
+        .deferentialGratitude,
+    ).toBe(true);
+  });
+
+  it("does NOT match bare 'I thanked the team' inside a STAR Action", () => {
+    expect(
+      detectCulturalRegister("I thanked the team and moved on to the next sprint.")
+        .deferentialGratitude,
+    ).toBe(false);
+  });
+
+  it("does NOT match 'thanks' without interviewer direction", () => {
+    expect(
+      detectCulturalRegister("We sent a thanks-note to QA after the launch.")
+        .deferentialGratitude,
+    ).toBe(false);
+  });
+});
+
+describe("detectCulturalRegister — pedigreeRecital", () => {
+  it("matches 'I scored 92% in 10th'", () => {
+    expect(
+      detectCulturalRegister("I scored 92% in 10th and 88 percent in 12th.")
+        .pedigreeRecital,
+    ).toBe(true);
+  });
+
+  it("matches 'CGPA 8.4'", () => {
+    expect(
+      detectCulturalRegister("Graduated from NIT with a CGPA of 8.4.")
+        .pedigreeRecital,
+    ).toBe(true);
+  });
+
+  it("matches '8.7 CGPA' suffix form", () => {
+    expect(
+      detectCulturalRegister("I had an 8.7 CGPA in B.Tech.").pedigreeRecital,
+    ).toBe(true);
+  });
+
+  it("matches '12th boards were 88%'", () => {
+    expect(
+      detectCulturalRegister("My 12th board marks were 88%.").pedigreeRecital,
+    ).toBe(true);
+  });
+
+  it("matches 'got 95 percent in CBSE boards'", () => {
+    expect(
+      detectCulturalRegister("I got 95 percent in CBSE boards.")
+        .pedigreeRecital,
+    ).toBe(true);
+  });
+
+  it("does NOT match vague 'I scored well in school'", () => {
+    expect(
+      detectCulturalRegister("I scored well in school and was always curious.")
+        .pedigreeRecital,
+    ).toBe(false);
+  });
+
+  it("does NOT match unrelated percentage like 'cut errors by 40%'", () => {
+    expect(
+      detectCulturalRegister("I cut errors by 40% in the next sprint.")
+        .pedigreeRecital,
+    ).toBe(false);
+  });
+});
+
 describe("hasAnyIndianRegister", () => {
   it("returns true when any marker fires", () => {
     expect(
