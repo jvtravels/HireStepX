@@ -1,0 +1,16 @@
+{
+  "name": "Resume lists Mechanical but candidate identifies as CSE in the interview without a dual-degree framing",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Which branch are you from?", "time": "" },
+      { "speaker": "user", "text": "I'm in CSE, final year. I picked computer science because the problem solving really clicked for me early on.", "time": "" }
+    ]
+  },
+  "resume": {
+    "degree": "B.Tech Mechanical Engineering",
+    "school": "VIT Chennai"
+  },
+  "expected": { "must_include": ["branch_mismatch_with_resume"], "must_not_include": ["empty_transcript"] }
+}

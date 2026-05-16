@@ -1,0 +1,22 @@
+{
+  "name": "Candidate narrates a project without dropping a link, but resume already lists GitHub — portfolio_absent_for_claim should be suppressed",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about a project you built recently.", "time": "" },
+      { "speaker": "user", "text": "I built an event-booking platform in my third year using Spring Boot, Postgres, and Redis for caching. I handled concurrent seat reservations with optimistic locking, deployed it on Render, and wrote the full test suite myself.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through one challenge.", "time": "" },
+      { "speaker": "user", "text": "The race condition on overlapping bookings. Fixed it by adding a version column and retrying on conflict, which kept latency under 80ms at 200 RPS.", "time": "" },
+      { "speaker": "ai", "text": "What's your CGPA?", "time": "" },
+      { "speaker": "user", "text": "8.4, zero backlogs.", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Backend Engineering Intern", "company": "Freshworks", "period": "May 2024 - July 2024", "bullets": ["Built event-booking service", "Optimized for 200 RPS"] }
+    ],
+    "links": ["https://github.com/priya/eventflow", "https://linkedin.com/in/priya"]
+  },
+  "expected": { "must_include": [], "must_not_include": ["portfolio_absent_for_claim", "empty_transcript"] }
+}

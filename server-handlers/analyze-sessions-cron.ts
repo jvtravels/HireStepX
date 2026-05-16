@@ -27,6 +27,7 @@ import { callLLM } from "./_llm";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 import { captureServerEvent } from "./_posthog";
 import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
+import { fetchResumeForAnalyzer } from "./_resume-versioning";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -230,7 +231,13 @@ export default async function handler(req: Request): Promise<Response> {
     const turnT0 = Date.now();
     let row: InsightRow;
     try {
-      const result = await analyzer.analyze({ session });
+      // Load resume for the analyzer (best-effort — null on any failure).
+      // Threading the parsed resume in unlocks cross-checks like "claim
+      // doesn't match resume" that pure-transcript analysis can't do.
+      const resume = session.resume_version_id
+        ? await fetchResumeForAnalyzer(SUPABASE_URL, SUPABASE_SERVICE_KEY, session.resume_version_id)
+        : null;
+      const result = await analyzer.analyze({ session, resume });
 
       // Optional LLM rescore — only if budget remains and the focus is supported.
       let rescore: number | null = result.rescore;

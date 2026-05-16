@@ -75,8 +75,45 @@ export interface AnalyzerResult {
   coachingNotes: string;
 }
 
+/**
+ * Slim resume shape passed into analyzers. Intentionally a flattened
+ * subset of `StoredResume` (the frontend discriminated union) so that
+ * edge-runtime analyzer code has zero dependency on `src/`. The cron
+ * loader normalizes both AI and fallback variants into this shape.
+ * All fields optional so analyzers fall back gracefully when resume
+ * data is absent or partial (older cached profiles, fallback misses).
+ */
+export interface ResumeForAnalyzer {
+  /** Spelled-out degree string, e.g. "B.Tech Computer Science Engineering". */
+  degree?: string;
+  /** College / university name, e.g. "PES University". */
+  school?: string;
+  /** Graduation year as string ("2025") — kept loose for fallback parser. */
+  gradYear?: string;
+  /** Per-role timeline. Each entry has the company / title / period the
+   *  user listed on the resume. Bullets included so cross-checks can
+   *  spot project / metric drift between transcript and resume. */
+  experiences?: Array<{
+    title?: string;
+    company?: string;
+    period?: string;
+    bullets?: string[];
+  }>;
+  /** Top skills the user advertised on the resume (chip-style list). */
+  topSkills?: string[];
+  /** Any URL embedded in the resume's contact / portfolio section —
+   *  used to suppress `portfolio_absent_for_claim` when the candidate
+   *  has obviously listed their GitHub / live-demo somewhere even if
+   *  they didn't repeat it in the live answer. */
+  links?: string[];
+}
+
 export interface AnalyzerInput {
   session: SessionRowForAnalysis;
+  /** Optional — populated by the cron when `session.resume_version_id`
+   *  resolves successfully. Analyzers should treat `undefined`,
+   *  `null`, and an empty object as "no resume signal" and not crash. */
+  resume?: ResumeForAnalyzer | null;
 }
 
 export interface FocusAnalyzer {

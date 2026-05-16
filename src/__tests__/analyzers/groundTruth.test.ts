@@ -15,12 +15,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it, expect } from "vitest";
 import { pickAnalyzer, registeredFocuses } from "../../../server-handlers/analyzers/_dispatch";
-import type { SessionRowForAnalysis, TranscriptTurn } from "../../../server-handlers/analyzers/_types";
+import type { SessionRowForAnalysis, TranscriptTurn, ResumeForAnalyzer } from "../../../server-handlers/analyzers/_types";
 
 interface Fixture {
   name: string;
   notes?: string;
   session: { type: string; transcript: TranscriptTurn[]; target_role?: string; target_company?: string; difficulty?: string };
+  /** Optional resume payload — when present, the test runner passes
+   *  it into AnalyzerInput.resume so resume-aware flags can fire. */
+  resume?: ResumeForAnalyzer;
   expected: {
     must_include?: string[];
     must_not_include?: string[];
@@ -113,7 +116,7 @@ for (const focus of registeredFocuses()) {
         const analyzer = pickAnalyzer(fx.session.type);
         expect(analyzer.focus, `dispatch should route ${fx.session.type} to a real analyzer`).not.toBe("unknown");
 
-        const result = await analyzer.analyze({ session: buildSession(fx) });
+        const result = await analyzer.analyze({ session: buildSession(fx), resume: fx.resume ?? null });
         const flagSet = new Set(result.flags);
 
         for (const flag of fx.expected.must_include || []) {

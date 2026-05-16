@@ -182,6 +182,138 @@ export async function findCachedResumeVersion(
   }
 }
 
+/**
+ * Fetch a resume_version row by id and normalize its `parsed_data`
+ * jsonb into the slim `ResumeForAnalyzer` shape the analyzer pipeline
+ * expects. Returns null on any error / missing row / unparseable
+ * payload — analyzers must tolerate null gracefully.
+ *
+ * Why this lives here: it's the read-side complement of
+ * `findCachedResumeVersion()` + `persistResumeVersion()`. Co-locating
+ * the resume-versions table accessors keeps the schema knowledge in
+ * one file.
+ *
+ * Why the shape conversion: `parsed_data` is stored as the frontend
+ * `StoredResume` discriminated union, which transitively imports from
+ * `src/dashboardData.ts`. Edge-runtime analyzer code cannot import
+ * from `src/`, so we flatten on the way out.
+ */
+import type { ResumeForAnalyzer } from "./analyzers/_types";
+
+type LooseStoredResume = {
+  _type?: string;
+  // AI variant (ResumeProfile)
+  topSkills?: unknown;
+  experiences?: unknown;
+  // Fallback variant (ParsedResume)
+  skills?: unknown;
+  experience?: unknown;
+  education?: unknown;
+  linkedin?: unknown;
+  // Common
+  summary?: unknown;
+  headline?: unknown;
+};
+
+function asStringArray(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((x): x is string => typeof x === "string" && x.length > 0);
+}
+
+function normalizeExperiences(v: unknown): ResumeForAnalyzer["experiences"] {
+  if (!Array.isArray(v)) return undefined;
+  const out: NonNullable<ResumeForAnalyzer["experiences"]> = [];
+  for (const e of v) {
+    if (!e || typeof e !== "object") continue;
+    const row = e as Record<string, unknown>;
+    out.push({
+      title: typeof row.title === "string" ? row.title : undefined,
+      company: typeof row.company === "string" ? row.company : undefined,
+      period: typeof row.period === "string" ? row.period : undefined,
+      bullets: asStringArray(row.bullets),
+    });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function extractLinks(text: string | undefined): string[] {
+  if (!text) return [];
+  const re = /\bhttps?:\/\/[^\s)]+|(?:github|gitlab|bitbucket|linkedin|leetcode|kaggle|huggingface)\.com\/[\w.\-/]+/gi;
+  return Array.from(text.matchAll(re)).map((m) => m[0]);
+}
+
+export function normalizeStoredResumeForAnalyzer(parsed: unknown): ResumeForAnalyzer | null {
+  if (!parsed || typeof parsed !== "object") return null;
+  const p = parsed as LooseStoredResume;
+  const result: ResumeForAnalyzer = {};
+
+  // AI variant ----------------------------------------------------------
+  if (p._type === "ai" || p.experiences) {
+    result.experiences = normalizeExperiences(p.experiences);
+    result.topSkills = asStringArray(p.topSkills);
+    // AI variant doesn't carry structured education today; degree+school
+    // surface inside `summary` or `headline` text — leave undefined and
+    // let the analyzer fall back to transcript inference.
+    return result;
+  }
+
+  // Fallback variant (ParsedResume) -------------------------------------
+  result.topSkills = asStringArray(p.skills);
+  const exp = normalizeExperiences(
+    Array.isArray(p.experience)
+      ? p.experience.map((e) => {
+          if (!e || typeof e !== "object") return {};
+          const r = e as Record<string, unknown>;
+          return {
+            title: r.title,
+            company: r.company,
+            period: r.period,
+            bullets: r.bullets,
+          };
+        })
+      : undefined,
+  );
+  result.experiences = exp;
+
+  if (Array.isArray(p.education) && p.education.length > 0) {
+    const ed = p.education[0] as Record<string, unknown>;
+    if (typeof ed.degree === "string") result.degree = ed.degree;
+    if (typeof ed.school === "string") result.school = ed.school;
+    if (typeof ed.year === "string") result.gradYear = ed.year;
+  }
+
+  const linkText = [typeof p.linkedin === "string" ? p.linkedin : "", typeof p.summary === "string" ? p.summary : ""].join(" ");
+  result.links = extractLinks(linkText);
+
+  return result;
+}
+
+/**
+ * Load a resume_version by id and return the analyzer-friendly slim
+ * shape. Best-effort — returns null on any failure so the caller's
+ * analyzer can run on transcript-only data.
+ */
+export async function fetchResumeForAnalyzer(
+  supabaseUrl: string,
+  serviceKey: string,
+  resumeVersionId: string,
+  fetchImpl: typeof fetch = globalThis.fetch,
+): Promise<ResumeForAnalyzer | null> {
+  if (!supabaseUrl || !serviceKey || !resumeVersionId) return null;
+  try {
+    const url = `${supabaseUrl}/rest/v1/resume_versions?id=eq.${encodeURIComponent(resumeVersionId)}&select=parsed_data&limit=1`;
+    const res = await fetchImpl(url, {
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json().catch(() => []);
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return normalizeStoredResumeForAnalyzer(rows[0]?.parsed_data);
+  } catch {
+    return null;
+  }
+}
+
 export interface PersistVersionInput {
   userId: string;
   domain: string;             // 'sde' | 'pm' | 'sales' | 'design' | 'general' | custom
