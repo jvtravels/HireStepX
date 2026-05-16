@@ -308,6 +308,18 @@ export const TOPIC_KEYWORD_MAP: Record<string, RegExp> = {
     /\b(?:value\s+proof|impact|one\s+project)\b/i,
 };
 
+/** F2 / Audit Pass 2 (PDF#25, 2026-05-16) — internal-hedge-filler.
+ *
+ *  Recruiter-internal thought leaking into the dialog ("let me check as
+ *  per the band ... but broadly aligned") is process-narration that
+ *  doesn't belong in the candidate-facing line. Canonical prose never
+ *  emits these patterns except via the sentiment-prefix path (where
+ *  "broadly aligned" is the legitimate excited-sentiment lead). The
+ *  gate respects canonical content — if the canonical itself carries
+ *  the hedge phrase, the restyle is allowed to mirror it. */
+export const HEDGE_FILLER_RE =
+  /\b(?:let\s+me\s+check|broadly\s+aligned|just\s+to\s+confirm|hmm,?\s+let\s+me)\b/i;
+
 /** Bug 1 (PDF#25, 2026-05-16) — "total CTC as per your current band"
  *  tautology. The candidate's current CTC IS their current-band number;
  *  the qualifier adds no information. Catches both directions ("CTC as
@@ -509,6 +521,16 @@ export function validateRestyle(
     if (canonicalHits <= 1) {
       return { valid: false, reason: "multi-topic-utterance" };
     }
+  }
+  /* F2 / Audit Pass 2 (PDF#25, 2026-05-16) — internal-hedge leak.
+   *
+   * Recruiter-internal thought ("let me check as per the band ... but
+   * broadly aligned") is process-narration. Canonical never emits these
+   * patterns outside the legitimate sentiment-prefix path; if the
+   * restyle introduces one the canonical didn't, the LLM is padding.
+   * Reject. */
+  if (HEDGE_FILLER_RE.test(restyled) && !HEDGE_FILLER_RE.test(canonical)) {
+    return { valid: false, reason: "internal-hedge-leak" };
   }
   /* Defect 6 (2026-05-16) — sentiment-prefix preservation. If the
    * canonical opened with one of the renderSentimentPrefix anchor

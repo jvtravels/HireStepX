@@ -526,7 +526,10 @@ function renderCanonicalProseBody(
           : "Just to be sure I noted it correctly — can you confirm the number you mentioned?";
       }
       if (topic === "competing-leverage-ack") {
-        return "Noted on the competing opportunity. Let me make sure we're broadly aligned on what matters most to you on this role before I revert internally.";
+        /* F2 (Audit Pass 2, 2026-05-16) — removed "let me make sure
+         * we're broadly aligned" process-narration; recruiter speaks to
+         * the candidate directly instead of narrating their own thought.*/
+        return "Noted on the competing opportunity. Before I revert internally — walk me through what matters most to you on this role.";
       }
       /* answer-direct, ctc-gentle-push, notice-buyout, etc. all carry a
        * planner-supplied ask string — use it verbatim. */
