@@ -218,6 +218,7 @@ function applyWaveDisables(result: CandidateProfileResult): CandidateProfileResu
     r.verbalOnlyOffer ||
     r.culturalJoiningConstraint ||
     r.peopleManagementClaimed ||
+    r.mncExperience ||
     r.crossBorderAnchor ||
     r.unvestedEquityLossClaim ||
     r.explodingOfferPressure ||
@@ -456,6 +457,15 @@ export interface CandidateProfileResult {
    *  voice: probe scope (IC+management split, comp-decisions owned)
    *  before pricing the band. Monotone-up. */
   peopleManagementClaimed: boolean;
+  /** ResumeFactPack track (2026-05-16) — candidate has experience at an
+   *  MNC / large established product company. Pre-seeded at init from
+   *  resumeFactPack.priorCompanies (any with tier "faang" or
+   *  "indian-product") with provenance="resume". Also settable from a
+   *  stated utterance ("I've worked at Google", "I'm at an MNC") with
+   *  provenance="stated". Resume wins on conflict — monotone-up; never
+   *  downgrade. Promoted to first-class so downstream consumers don't
+   *  leak resume-shape knowledge by reading priorCompanies directly. */
+  mncExperience: boolean;
   /** Senior-flow extension (2026-05-14h) — candidate anchors on a
    *  cross-border / overseas TC ("my Bay Area TC was $250k", "I'm
    *  returning from Singapore / Dubai / London"). Routes recruiter to
@@ -1336,6 +1346,7 @@ export const EMPTY_CANDIDATE_PROFILE: CandidateProfileResult = {
   verbalOnlyOffer: false,
   culturalJoiningConstraint: false,
   peopleManagementClaimed: false,
+  mncExperience: false,
   crossBorderAnchor: false,
   unvestedEquityLossClaim: false,
   explodingOfferPressure: false,
@@ -1938,6 +1949,22 @@ const PEOPLE_MGMT_PATTERNS: RegExp[] = [
 ];
 function detectPeopleManagementClaimed(text: string): boolean {
   return PEOPLE_MGMT_PATTERNS.some((p) => p.test(text));
+}
+
+/* `mncExperience` — candidate states prior/current MNC / big-tech /
+ *  GCC / large-product-company affiliation. Resume-seed wins on
+ *  conflict, but stated utterances can flip the flag true on their own
+ *  when no resume is available. Conservative — requires a named
+ *  company or an explicit MNC/big-tech context phrase. */
+const MNC_EXPERIENCE_PATTERNS: RegExp[] = [
+  /\b(?:i(?:'ve|\s+have)?\s+worked|i\s+work(?:ed)?|i'?m\s+(?:at|with)|i\s+spent|my\s+(?:current|last|previous|prior)\s+(?:role|job|company|employer)\s+(?:is|was)\s+(?:at\s+)?)\s+(?:at\s+|with\s+|@\s*|in\s+)?(?:google|alphabet|microsoft|amazon|meta|facebook|apple|netflix|adobe|salesforce|atlassian|nvidia|uber|airbnb|stripe|databricks|snowflake|servicenow|oracle|sap|ibm|intel|qualcomm|cisco|vmware|paypal|linkedin|twitter|x\s+corp|tiktok|bytedance|samsung|sony|walmart\s+labs?|target\s+tech)\b/i,
+  /\b(?:i(?:'ve|\s+have)?\s+worked|i\s+work(?:ed)?|i'?m\s+(?:at|with))\s+(?:at\s+|with\s+|in\s+)?(?:flipkart|freshworks|zoho|swiggy|zomato|paytm|phonepe|razorpay|cred|byju|nykaa|mphasis|jpmc|jp\s+morgan|goldman\s+sachs|morgan\s+stanley|citi|wells\s+fargo|barclays)\b/i,
+  /\b(?:worked|working|spent\s+\d+\s+(?:years?|yrs?))\s+(?:at|with|in|for)\s+(?:an?\s+)?(?:mnc|multinational|fortune\s*\d+|big[-\s]?tech|big\s+four|big\s+4|gcc|global\s+capability\s+center)\b/i,
+  /\b(?:my\s+)?(?:mnc|multinational|fortune\s*\d+|big[-\s]?tech|gcc)\s+(?:background|experience|tenure|exposure)\b/i,
+];
+function detectMncExperience(text: string): boolean {
+  if (!text) return false;
+  return MNC_EXPERIENCE_PATTERNS.some((p) => p.test(text));
 }
 
 /* `crossBorderAnchor` — candidate cites overseas TC / return-to-India. */
@@ -3291,6 +3318,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const culturalJoiningConstraint = detectCulturalJoiningConstraint(text);
   /* Senior + process + long-tail (2026-05-14h). */
   const peopleManagementClaimed = detectPeopleManagementClaimed(text);
+  const mncExperience = detectMncExperience(text);
   const crossBorderAnchor = detectCrossBorderAnchor(text);
   const unvestedEquityLossClaim = detectUnvestedEquityLossClaim(text);
   const explodingOfferPressure = detectExplodingOfferPressure(text);
@@ -3449,6 +3477,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     verbalOnlyOffer ||
     culturalJoiningConstraint ||
     peopleManagementClaimed ||
+    mncExperience ||
     crossBorderAnchor ||
     unvestedEquityLossClaim ||
     explodingOfferPressure ||
@@ -3592,6 +3621,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     verbalOnlyOffer,
     culturalJoiningConstraint,
     peopleManagementClaimed,
+    mncExperience,
     crossBorderAnchor,
     unvestedEquityLossClaim,
     explodingOfferPressure,
@@ -4075,6 +4105,7 @@ export function mergeCandidateProfile(
     culturalJoiningConstraint: p.culturalJoiningConstraint || next.culturalJoiningConstraint,
     /* Senior + process + long-tail (2026-05-14h) — all monotone-up. */
     peopleManagementClaimed: p.peopleManagementClaimed || next.peopleManagementClaimed,
+    mncExperience: p.mncExperience || next.mncExperience,
     crossBorderAnchor: p.crossBorderAnchor || next.crossBorderAnchor,
     unvestedEquityLossClaim: p.unvestedEquityLossClaim || next.unvestedEquityLossClaim,
     explodingOfferPressure: p.explodingOfferPressure || next.explodingOfferPressure,
@@ -4243,6 +4274,7 @@ export function mergeCandidateProfile(
     merged.verbalOnlyOffer ||
     merged.culturalJoiningConstraint ||
     merged.peopleManagementClaimed ||
+    merged.mncExperience ||
     merged.crossBorderAnchor ||
     merged.unvestedEquityLossClaim ||
     merged.explodingOfferPressure ||

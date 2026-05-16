@@ -1503,11 +1503,13 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     seededProfile.domesticTopMbaAnchor = true;
     flagProvenance.domesticTopMbaAnchor = "resume";
   }
-  /* mncExperience is recorded on flagProvenance only — the
-   * CandidateProfileResult interface does not currently carry an
-   * mncExperience field. Downstream consumers that need this fact
-   * read directly from state.resumeFactPack.priorCompanies. */
+  /* ResumeFactPack track (2026-05-16) — mncExperience is now a
+   * first-class field on CandidateProfileResult. Pre-seed from the
+   * resume pack (faang or indian-product tier in priorCompanies)
+   * with provenance="resume". Resume wins on conflict; mergeCandidateProfile
+   * is monotone-up, so a later stated utterance cannot downgrade. */
   if (seed.mncExperience) {
+    seededProfile.mncExperience = true;
     flagProvenance.mncExperience = "resume";
   }
   /* hasAny derives from any flag being set; recompute. */
@@ -1515,6 +1517,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     EMPTY_CANDIDATE_PROFILE.hasAny ||
     seededProfile.tenureSignal != null ||
     seededProfile.peopleManagementClaimed ||
+    seededProfile.mncExperience ||
     seededProfile.domesticTopMbaAnchor;
 
   return {
@@ -2649,7 +2652,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      * Resume-seeded flags already carry provenance="resume" and are
      * left untouched (merge is monotone-up, so the resume fact stands). */
     const provenance: Record<string, "resume" | "stated"> = { ...(state.flagProvenance ?? {}) };
-    const trackFlag = (key: "tenureSignal" | "peopleManagementClaimed" | "domesticTopMbaAnchor") => {
+    const trackFlag = (key: "tenureSignal" | "peopleManagementClaimed" | "domesticTopMbaAnchor" | "mncExperience") => {
       if (provenance[key]) return; // resume seed wins; stated only confirms.
       const before = (state.candidateProfile as Record<string, unknown>)[key];
       const after = (next.candidateProfile as Record<string, unknown>)[key];
@@ -2658,6 +2661,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     trackFlag("tenureSignal");
     trackFlag("peopleManagementClaimed");
     trackFlag("domesticTopMbaAnchor");
+    trackFlag("mncExperience");
     next.flagProvenance = provenance;
   }
 
