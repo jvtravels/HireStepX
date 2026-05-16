@@ -1353,6 +1353,26 @@ function attachPostAcceptanceMessage(next: NegotiationState): void {
   next.postAcceptanceMessage = buildPostAcceptanceMessage(next);
 }
 
+/** Audit Pass 2 Fix C (2026-05-16) — single helper for the
+ *  "candidate verbally accepted, lock in terminal" state-tuple. Three
+ *  accept paths in `applyCandidateAnswer` (strict-boost explicit accept,
+ *  classifyAcceptance / soft-accept fallthrough, and the strict-acceptance
+ *  terminal write) plus `foldFactsIntoState` were each setting `phase` +
+ *  `acceptedAtTurn` independently, BUT only one of them set
+ *  `verbalAcceptanceTurn`. The next-action planner gates the
+ *  close-recap-formal step on `verbalAcceptanceTurn != null`, so the
+ *  close-recap never fired on those paths — terminal-restate won
+ *  instead. Forcing the field tuple through this helper closes the gap.
+ *
+ *  Call sites must keep their own site-specific extras (e.g.
+ *  `attachPostAcceptanceMessage` or sign-today-bundle attachments) —
+ *  this helper only enforces the field tuple, nothing else. */
+function markAccepted(next: NegotiationState, state: NegotiationState): void {
+  next.phase = "accepted";
+  next.acceptedAtTurn = state.turnIndex;
+  next.verbalAcceptanceTurn = state.turnIndex;
+}
+
 /* ─── Factory ────────────────────────────────────────────────────── */
 
 export interface InitStateInput {
@@ -2746,8 +2766,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
        * Block accepts before minTurnsBeforeClose unless the candidate
        * explicitly declined. */
       if (canCloseSession(next, answer, "accept")) {
-        next.phase = "accepted";
-        next.acceptedAtTurn = state.turnIndex;
+        markAccepted(next, state);
         attachPostAcceptanceMessage(next);
         return finalize(next);
       }
@@ -2805,8 +2824,7 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
       next.phase = derivePhase(next);
       return finalize(next);
     }
-    next.phase = "accepted";
-    next.acceptedAtTurn = state.turnIndex;
+    markAccepted(next, state);
     attachPostAcceptanceMessage(next);
     return finalize(next);
   }
@@ -2849,19 +2867,28 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
   }
   if (c != null) next.candidateCurrentCtc = c;
   if (comp != null) next.competingOffer = comp;
+  /* Audit Pass 2 Fix C (2026-05-16) — finalize() symmetry with
+   * applyCandidateAnswer. There's no candidate turn here (no answer
+   * was parsed), so no lastTurnDelta to stamp. We DO need to re-stamp
+   * plannedNextAction so consumers reading from fold-facts state see
+   * the planner output for the new phase (the prior bug returned
+   * `next` raw, so the planner cascade never ran for fold-facts). */
+  const finalize = (n: NegotiationState): NegotiationState => {
+    n.plannedNextAction = _callNextActionPlanner(n);
+    return n;
+  };
   if (facts.acceptedImmediately) {
-    next.phase = "accepted";
-    next.acceptedAtTurn = state.turnIndex;
+    markAccepted(next, state);
     attachPostAcceptanceMessage(next);
-    return next;
+    return finalize(next);
   }
   if (facts.rejectedOutright) {
     next.phase = "walked-away";
     next.walkedAwayAtTurn = state.turnIndex;
-    return next;
+    return finalize(next);
   }
   next.phase = derivePhase(next);
-  return next;
+  return finalize(next);
 }
 
 /* ─── Phase derivation ───────────────────────────────────────────── */
