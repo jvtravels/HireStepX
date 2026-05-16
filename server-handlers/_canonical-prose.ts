@@ -423,7 +423,16 @@ function renderCanonicalProseBody(
       }
       parts.push(`BGV starts ${action.bgvStartTrigger}`);
       parts.push(`offer letter in ${action.offerLetterEta}`);
-      return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. Sounds good?`;
+      /* Perfect 3 (2026-05-16) — when sticky cumulativeUrgency is firm
+       * (candidate has surfaced an explicit deadline / in-hand offer),
+       * append a fast-track line on the formal recap so the candidate
+       * hears that the OL pipeline is being shortened to match their
+       * timeline. Suppressed on soft / none — informational only. */
+      const urgencyTail =
+        state.cumulativeUrgency === "firm"
+          ? " Given your timeline, we'll fast-track the offer letter — expect it within 24 hours of BGV initiation."
+          : "";
+      return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. Sounds good?${urgencyTail}`;
     }
 
     default: {

@@ -802,6 +802,49 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* Perfect 3 (2026-05-16) — firm-urgency bias toward finalising.
+   *
+   * When the candidate has surfaced a firm deadline (in-hand offer,
+   * "by Friday", etc.) AND discovery is complete AND there's an offer
+   * already on the table AND phase is counter-offer or closing-push,
+   * skip another lever-explore / counter-split round and go straight
+   * to the formal close recap. Real recruiters in firm-urgency
+   * situations stop rotating non-cash levers and pin down the fitment
+   * before the candidate's deadline forces a walk.
+   *
+   * Gated narrowly to avoid disrupting the priority cascade:
+   *   - close-recap-formal already wins on verbalAcceptance above, so
+   *     this only adds coverage for the "no verbal accept but firm
+   *     deadline" branch.
+   *   - Requires an offer on the table (highestOfferMade > 0) — we are
+   *     not authoring a new anchor under urgency, just finalising one
+   *     that already exists.
+   *   - Requires discovery complete (via the discoveryChecklist +
+   *     roleFamily helpers when present, falling back to "expectedCtc"
+   *     askedTopics proxy when the checklist hasn't been initialised
+   *     for the session — matches the gating rule from the compaction
+   *     notes).
+   *   - Suppressed once close-recap-formal has already fired (sticky
+   *     via reactiveFollowupsFired).
+   *   - Soft urgency intentionally NOT acted on here — informational
+   *     only, surfaced via the askedTopic ledger when the formal recap
+   *     does eventually fire. */
+  if (
+    state.cumulativeUrgency === "firm" &&
+    state.highestOfferMade > 0 &&
+    (state.phase === "counter-offer" || state.phase === "closing-push") &&
+    !(state.reactiveFollowupsFired ?? []).includes("close-recap-formal")
+  ) {
+    const roleFamily = classifyRoleFamily(state.role);
+    const discoveryDone =
+      state.discoveryChecklist != null
+        ? isDiscoveryComplete(state.discoveryChecklist, roleFamily)
+        : (state.askedTopics ?? []).some((t) => t.topic === "expectedCtc");
+    if (discoveryDone) {
+      return buildCloseRecapFormal(state);
+    }
+  }
+
   /* counter-offer: split with stiffening / market / risk / boost. */
   if (state.phase === "counter-offer") {
     if (state.hardBandCap) {

@@ -919,6 +919,13 @@ export interface NegotiationState {
    *  conversation log to greet by name. Log-scan stays as a fallback for
    *  legacy sessions or self-introductions mid-flow. */
   candidateName?: string | null;
+
+  /** Perfect 3 (2026-05-16) — sticky session-wide urgency level. Promoted
+   *  from per-turn TurnDelta.urgencySignal via a monotone upgrade rule
+   *  (firm > soft > none, never downgrades). Read by the planner — gated
+   *  on discovery-complete — to bias closing-push toward close-recap-formal
+   *  when the candidate has surfaced a firm deadline. Default "none". */
+  cumulativeUrgency?: "none" | "soft" | "firm";
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -982,6 +989,14 @@ export interface TurnDelta {
    *  hesitant; decisive and neutral suppress the prefix (decisive needs no
    *  emotional softening, neutral needs no acknowledgement). */
   candidateSentiment?: "frustrated" | "excited" | "hesitant" | "decisive" | "neutral";
+  /** Perfect 3 (2026-05-16) — time-pressure signal detected this turn.
+   *  "firm" = explicit deadline ("by Friday", "deadline is Monday",
+   *  "competing offer expires"); "soft" = directional movement framing
+   *  ("looking to move quickly", "in final stages elsewhere"); "none" =
+   *  default. Merged into the sticky state.cumulativeUrgency via
+   *  applyAiMove (sticky upgrade — firm overrides soft overrides none,
+   *  never downgrades within a session). */
+  urgencySignal?: "none" | "soft" | "firm";
 }
 
 export const EMPTY_TURN_DELTA: TurnDelta = {
@@ -999,6 +1014,7 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
   freshGradDisclosed: false,
   retentionCounterDisclosed: false,
   candidateSentiment: "neutral",
+  urgencySignal: "none",
 };
 
 /** Perfect 2 (2026-05-16) — coarse emotional sentiment classifier for
@@ -1036,6 +1052,48 @@ export function detectCandidateSentiment(
     /\b(i['’]?m not sure|need to think|let me get back|discuss with family|let me check|kind of|maybe|i suppose)\b/i;
   if (HESITANT_RE.test(text)) return "hesitant";
   return "neutral";
+}
+
+/** Perfect 3 (2026-05-16) — time-pressure / urgency signal detector.
+ *
+ *  Two-bucket classifier (plus default "none") tuned to how Indian
+ *  candidates surface time pressure: firm signals carry an explicit
+ *  date, named weekday, or "in-hand offer" framing; soft signals are
+ *  directional intent without a hard deadline ("looking to move
+ *  quickly", "in final stages elsewhere").
+ *
+ *  Why "firm" outranks "soft": a candidate who says both "looking to
+ *  move quickly AND I have to revert by Friday" is firm — the deadline
+ *  is the binding constraint, the directional framing is incidental. */
+export function detectUrgencySignal(
+  rawCandidateText: string,
+): TurnDelta["urgencySignal"] {
+  if (typeof rawCandidateText !== "string" || !rawCandidateText.trim()) {
+    return "none";
+  }
+  const text = rawCandidateText.toLowerCase();
+  const FIRM_RE =
+    /\b(have to revert by|deadline is|joining by|by\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|this week|next week|end of (?:the )?week|eow|eod)|have an offer in hand|offer in hand|competing offer expires|need to close this week|close this week)\b/i;
+  if (FIRM_RE.test(text)) return "firm";
+  const SOFT_RE =
+    /\b(soon|looking to move quickly|want to wrap up|in final stages elsewhere|interviewing with others|interviewing elsewhere)\b/i;
+  if (SOFT_RE.test(text)) return "soft";
+  return "none";
+}
+
+/** Perfect 3 (2026-05-16) — sticky upgrade for cumulativeUrgency. Firm
+ *  overrides soft overrides none; never downgrades. Pure. */
+export function mergeCumulativeUrgency(
+  prior: NegotiationState["cumulativeUrgency"],
+  fresh: TurnDelta["urgencySignal"],
+): "none" | "soft" | "firm" {
+  const rank = { none: 0, soft: 1, firm: 2 } as const;
+  const p = rank[prior ?? "none"];
+  const f = rank[fresh ?? "none"];
+  const max = p >= f ? p : f;
+  return (Object.keys(rank) as Array<"none" | "soft" | "firm">).find(
+    (k) => rank[k] === max,
+  ) ?? "none";
 }
 
 /** Compute the per-turn delta between pre-state and post-state given
@@ -1189,6 +1247,11 @@ export function computeTurnDelta(
    * acknowledgement prefix when sentiment ∈ {frustrated, excited,
    * hesitant}; decisive + neutral suppress (no preachy prefix). */
   d.candidateSentiment = detectCandidateSentiment(rawAnswer);
+
+  /* Perfect 3 (2026-05-16) — per-turn urgency signal. The sticky session
+   * field state.cumulativeUrgency is upgraded by finalize() in applyCandidate-
+   * Answer using this value; the delta field stays as the per-turn read. */
+  d.urgencySignal = detectUrgencySignal(rawAnswer);
 
   /* Retention counter — current employer counter disclosed. */
   if (parsed.retentionCounter.hasAny) {
@@ -1427,6 +1490,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     /* Fix 1 (2026-05-16) — leversFired ledger for Indian-context
      * structural levers. Empty at session start. */
     leversFired: [],
+    /* Perfect 3 (2026-05-16) — cumulative urgency sticky upgrade ledger.
+     * "none" at init; computeTurnDelta + finalize() promote to soft / firm
+     * monotonically across the session. */
+    cumulativeUrgency: "none",
     /* Kernel-first cleanup (2026-05-16) — first-class role facts and
      * candidate name. Default null when caller doesn't supply. */
     workMode: input.workMode ?? null,
@@ -2204,6 +2271,14 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
    * symmetric. Pure — mutates the draft `n` in place. */
   const finalize = (n: NegotiationState): NegotiationState => {
     n.lastTurnDelta = computeTurnDelta(pre, n, parsed, answer);
+    /* Perfect 3 (2026-05-16) — promote per-turn urgencySignal to sticky
+     * state.cumulativeUrgency via the monotone upgrade rule. Done BEFORE
+     * planNextAction so the planner's urgency-aware nudges read the
+     * already-merged value, not the prior turn's. */
+    n.cumulativeUrgency = mergeCumulativeUrgency(
+      pre.cumulativeUrgency,
+      n.lastTurnDelta.urgencySignal,
+    );
     /* Commit 3 (2026-05-15) — stamp planNextAction so the brief and the
      * move-picker read the SAME action without recomputing. The planner
      * registers itself via _planner-registry at module load (see commit
