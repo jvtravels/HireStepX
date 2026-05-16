@@ -74,11 +74,29 @@ export function detectTrialCloseResponse(
 /* ─── Number-discipline detector ───────────────────────────────────── */
 
 /** Returns true when the bot reply reveals a range (e.g. "between
- *  ₹X and ₹Y", "X-Y LPA"). Used by NUMBER DISCIPLINE rule checks. */
+ *  ₹X and ₹Y", "X-Y LPA"). Used by NUMBER DISCIPLINE rule checks.
+ *
+ *  Audit Pass 2 Fix A (2026-05-16) — the inline `(?:-|to)` previously
+ *  only matched ASCII hyphen, but canonical prose at
+ *  `_canonical-prose.ts:361` emits an en-dash (U+2013) in the
+ *  `₹{lo}–₹{hi} LPA` band-disclosure template. Result: detector
+ *  silently dropped every band disclosure → `rangeDisclosedAtTurn`
+ *  never stamped → `derivePhase` range-disclosure exit at
+ *  `_negotiation-kernel.ts:2948-2954` permanently blocked. Switched
+ *  to the shared `RANGE_DASH_RE` constant which also matches em-dash
+ *  for parity with the kernel's current-CTC / target range patterns. */
+import { RANGE_DASH_RE } from "./_canonical-prose";
+
+const RANGE_LPA_RE = new RegExp(
+  "(?:₹|rs\\.?|inr\\s+)?[\\d.,]+\\s*" + RANGE_DASH_RE.source +
+    "\\s*(?:₹|rs\\.?|inr\\s+)?[\\d.,]+\\s*(?:lpa|lakh|l\\b)",
+  "i",
+);
+
 export function detectRangeDisclosure(botReply: string | null | undefined): boolean {
   if (!botReply || typeof botReply !== "string") return false;
   if (/\bbetween\s+(?:₹|rs\.?|inr\s+)?[\d.,]+\s*(?:l|lpa|lakh|cr|crore|k)?\s+and\s+(?:₹|rs\.?|inr\s+)?[\d.,]+/i.test(botReply)) return true;
-  if (/(?:₹|rs\.?|inr\s+)?[\d.,]+\s*(?:-|to)\s*(?:₹|rs\.?|inr\s+)?[\d.,]+\s*(?:lpa|lakh|l\b)/i.test(botReply)) return true;
+  if (RANGE_LPA_RE.test(botReply)) return true;
   if (/\b(?:band|range)\s+(?:typically\s+)?(?:sits|lies|falls|is)\s+(?:between|from)\b/i.test(botReply)) return true;
   if (/\btypical\s+range\s+is\b/i.test(botReply)) return true;
   return false;

@@ -56,6 +56,15 @@ export const PREFERRED_RECRUITER_IDIOM = [
   "as per the band for this grade",
 ] as const;
 
+/** Range-separator alternation: matches ASCII hyphen `-`, en-dash
+ *  `\u2013`, em-dash `\u2014`, or the literal word "to". Use this
+ *  inside number-range detectors so canonical prose (which emits
+ *  en-dash via the band-disclosure template at line 361 below) is not
+ *  ignored. Audit Pass 2 Fix A (2026-05-16) — pre-fix, detectors used
+ *  ASCII-hyphen-only `(?:-|to)` and silently dropped en-dash ranges,
+ *  blocking the `rangeDisclosedAtTurn` stamp → derivePhase exit. */
+export const RANGE_DASH_RE = /(?:[-\u2013\u2014]|to)/;
+
 /** Case-insensitive word-boundary regex union of the banned idioms,
  *  for validator use. Allowed surface forms include contractions /
  *  spacing variants (e.g. "circle back", "circle-back"). */
