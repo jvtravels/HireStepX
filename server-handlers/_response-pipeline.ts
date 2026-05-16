@@ -129,6 +129,50 @@ async function generateRestyledCanonical(
   return { text: restyled, source: "restyle", action, move };
 }
 
+/** BUG-4 (PDF#24, 2026-05-16) — every defer path used to ship the
+ *  identical "Let me confirm that with the team and get back to you. In
+ *  the meantime — ..." string. That phrase (a) models the bot as a
+ *  passthrough who has to escalate every question, (b) promises a
+ *  callback that the simulator can't honour, and (c) makes the
+ *  candidate hear the same line three turns running.
+ *
+ *  The honest fix: a defer text that varies by reason and pivots back
+ *  to the planned canonical line without faking a callback. Reasons:
+ *    - "fact-gap"   → unknowable from the session FactPack (workMode,
+ *                     team size, reporting line). Acknowledge openly.
+ *    - "llm-throw"  → LLM error; we can't restyle but the canonical
+ *                     line is already loaded.
+ *    - "empty-llm"  → LLM returned blank; same as above.
+ *    - "validation" → LLM injected a number/fact the factPack didn't
+ *                     authorise. Quietly fall back to the canonical.
+ *
+ *  In all branches we ship the canonical follow-up so the negotiation
+ *  keeps moving — the difference is only the lead-in. */
+function buildDeferLead(reason: "fact-gap" | "llm-throw" | "empty-llm" | "validation", missing: string[]): string {
+  if (reason === "fact-gap") {
+    const topic = missing[0] ?? "";
+    /* Indian-recruiter idiom — honest about what we don't know
+     * without committing to "circle back" / "get back to you". */
+    if (topic === "workMode")     return "On the work mode, I'll keep that one open for now —";
+    if (topic === "joiningWindow") return "On the joining side, that's something we firm up post-offer —";
+    if (topic === "teamSize")     return "Team size is something the HM walks through in the next round —";
+    if (topic === "reportingTo")  return "Reporting line gets confirmed once the band is locked —";
+    return "That detail is one I'd rather not commit to off the cuff —";
+  }
+  /* llm-throw / empty-llm / validation — quietly fall through to the
+   * planned next move; no fake-callback theatre. */
+  return "Coming back to the structure —";
+}
+
+function buildDeferText(
+  reason: "fact-gap" | "llm-throw" | "empty-llm" | "validation",
+  missing: string[],
+  canonicalFollowup: string,
+): string {
+  const lead = buildDeferLead(reason, missing);
+  return `${lead} ${lowercaseFirst(canonicalFollowup)}`;
+}
+
 async function generateAnswerToCandidate(
   state: NegotiationState,
   action: NextAction,
@@ -146,7 +190,7 @@ async function generateAnswerToCandidate(
   /* When a fact is missing → graceful defer + resume planned line.
    * No LLM call needed — the deterministic answer is more reliable. */
   if (!gap.canAnswer) {
-    const defer = `Let me confirm that with the team and get back to you. In the meantime — ${lowercaseFirst(canonicalFollowup)}`;
+    const defer = buildDeferText("fact-gap", gap.missing, canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: `fact-gap: ${gap.missing.join(",")}` };
   }
 
@@ -161,18 +205,18 @@ async function generateAnswerToCandidate(
   try {
     answer = await generateAiText(system, user, { temperature: 0.4 });
   } catch {
-    const defer = `Let me confirm that with the team and get back to you. In the meantime — ${lowercaseFirst(canonicalFollowup)}`;
+    const defer = buildDeferText("llm-throw", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: "llm-throw" };
   }
   answer = (answer || "").trim();
   if (!answer) {
-    const defer = `Let me confirm that with the team and get back to you. In the meantime — ${lowercaseFirst(canonicalFollowup)}`;
+    const defer = buildDeferText("empty-llm", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: "empty-llm" };
   }
   /* Answer-side validation: same number/fact discipline as restyle. */
   const validation = validateAnswer(answer, factPack);
   if (!validation.valid) {
-    const defer = `Let me confirm that with the team and get back to you. In the meantime — ${lowercaseFirst(canonicalFollowup)}`;
+    const defer = buildDeferText("validation", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: validation.reason };
   }
   return { text: answer, source: "answer-restyle", action, move };
