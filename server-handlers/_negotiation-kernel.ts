@@ -128,6 +128,7 @@ import {
 import { classifyRoleFamily, getBandForRole, classifyCompanyTier as classifyBandCompanyTier } from "./_company-band-tiers";
 import {
   buildResumeFactPack,
+  deriveCandidateProfileSeed,
   type ResumeFactPack,
   type ParsedResume,
 } from "./_resume-fact-pack";
@@ -969,6 +970,16 @@ export interface NegotiationState {
    *  uses this as a floor (logged, never silent). Null when the latest
    *  role can't be resolved to a tier band. */
   impliedPriorCtcFromResume?: number | null;
+
+  /** Parallel provenance map for candidateProfile flags. Key = flag
+   *  name (CandidateProfileResult field). Value = "resume" when the
+   *  flag was seeded from ResumeFactPack at init, "stated" when set
+   *  later by a candidate utterance. Candidate utterances confirm
+   *  resume facts via the monotone-up merge in mergeCandidateProfile —
+   *  they never downgrade them. Read by the planner / restyle layer
+   *  when it needs to know "did the candidate actually say this or
+   *  did we infer it from the CV". Optional for back-compat. */
+  flagProvenance?: Record<string, "resume" | "stated">;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -1451,6 +1462,38 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     impliedPriorCtcFromResume = band.target;
   }
 
+  /* Pre-seed candidateProfile flags with provenance="resume". The
+   * mergeCandidateProfile layer is monotone-up (||) so candidate
+   * utterances can later confirm these flags but never downgrade. */
+  const seed = deriveCandidateProfileSeed(resumeFactPack);
+  const seededProfile = { ...EMPTY_CANDIDATE_PROFILE };
+  const flagProvenance: Record<string, "resume" | "stated"> = {};
+  if (seed.tenureSignal) {
+    seededProfile.tenureSignal = seed.tenureSignal;
+    flagProvenance.tenureSignal = "resume";
+  }
+  if (seed.peopleManagementClaimed) {
+    seededProfile.peopleManagementClaimed = true;
+    flagProvenance.peopleManagementClaimed = "resume";
+  }
+  if (seed.domesticTopMbaAnchor) {
+    seededProfile.domesticTopMbaAnchor = true;
+    flagProvenance.domesticTopMbaAnchor = "resume";
+  }
+  /* mncExperience is recorded on flagProvenance only — the
+   * CandidateProfileResult interface does not currently carry an
+   * mncExperience field. Downstream consumers that need this fact
+   * read directly from state.resumeFactPack.priorCompanies. */
+  if (seed.mncExperience) {
+    flagProvenance.mncExperience = "resume";
+  }
+  /* hasAny derives from any flag being set; recompute. */
+  seededProfile.hasAny =
+    EMPTY_CANDIDATE_PROFILE.hasAny ||
+    seededProfile.tenureSignal != null ||
+    seededProfile.peopleManagementClaimed ||
+    seededProfile.domesticTopMbaAnchor;
+
   return {
     sessionId: input.sessionId,
     role: input.role,
@@ -1549,7 +1592,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       conditionalEvidence: null,
       hasAny: false,
     },
-    candidateProfile: { ...EMPTY_CANDIDATE_PROFILE },
+    candidateProfile: seededProfile,
     miscSignals: {
       candidateFloor: null,
       salaryReviewMonths: null,
@@ -1615,6 +1658,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateName: input.candidateName ?? null,
     resumeFactPack,
     impliedPriorCtcFromResume,
+    flagProvenance,
   };
 }
 
@@ -2559,6 +2603,21 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   }
   if (parsed.candidateProfile.hasAny) {
     next.candidateProfile = mergeCandidateProfile(state.candidateProfile, parsed.candidateProfile);
+    /* ResumeFactPack track (2026-05-16) — record provenance="stated"
+     * for any flag transitioning false→true via a candidate utterance.
+     * Resume-seeded flags already carry provenance="resume" and are
+     * left untouched (merge is monotone-up, so the resume fact stands). */
+    const provenance: Record<string, "resume" | "stated"> = { ...(state.flagProvenance ?? {}) };
+    const trackFlag = (key: "tenureSignal" | "peopleManagementClaimed" | "domesticTopMbaAnchor") => {
+      if (provenance[key]) return; // resume seed wins; stated only confirms.
+      const before = (state.candidateProfile as Record<string, unknown>)[key];
+      const after = (next.candidateProfile as Record<string, unknown>)[key];
+      if (!before && after) provenance[key] = "stated";
+    };
+    trackFlag("tenureSignal");
+    trackFlag("peopleManagementClaimed");
+    trackFlag("domesticTopMbaAnchor");
+    next.flagProvenance = provenance;
   }
 
   /* Bug-report 11 (2026-05-14) — fresh-grad disclosure overrides the
@@ -3970,6 +4029,8 @@ export function deserializeState(json: string): NegotiationState {
     resumeFactPack: (s.resumeFactPack as ResumeFactPack | null | undefined) ?? null,
     impliedPriorCtcFromResume:
       (s.impliedPriorCtcFromResume as number | null | undefined) ?? null,
+    flagProvenance:
+      (s.flagProvenance as Record<string, "resume" | "stated"> | undefined) ?? {},
   };
 }
 

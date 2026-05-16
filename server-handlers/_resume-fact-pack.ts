@@ -392,6 +392,55 @@ export function fuzzyCompanyMatch(a: string | null | undefined, b: string | null
   return na.includes(nb) || nb.includes(na);
 }
 
+/* ─── Candidate-profile seeding from ResumeFactPack ──────────────── */
+
+/**
+ * Seed values for a subset of CandidateProfileResult flags from the
+ * ResumeFactPack. Returned as a flat record so the kernel can apply
+ * it as a Partial<CandidateProfileResult> via the existing merge
+ * layer, and so the parallel flagProvenance map can record which
+ * flags were resume-derived.
+ *
+ * Conservative: only flags whose semantics are unambiguously resume-
+ * derivable are seeded. Candidate utterances later confirm via the
+ * monotone-up merge (`||`) — they can never downgrade a resume fact.
+ */
+export interface ResumeProfileSeed {
+  /** tenureSignal — "frequent" / "stable" / null. */
+  tenureSignal: "frequent" | "stable" | null;
+  /** peopleManagementClaimed pre-seed from leadershipClaimed. */
+  peopleManagementClaimed: boolean;
+  /** domesticTopMbaAnchor pre-seed from mbaTier === "top-tier-domestic". */
+  domesticTopMbaAnchor: boolean;
+  /** mncExperience pre-seed — true when any prior company is faang or
+   *  indian-product tier. */
+  mncExperience: boolean;
+}
+
+export function deriveCandidateProfileSeed(pack: ResumeFactPack | null | undefined): ResumeProfileSeed {
+  if (!pack) {
+    return {
+      tenureSignal: null,
+      peopleManagementClaimed: false,
+      domesticTopMbaAnchor: false,
+      mncExperience: false,
+    };
+  }
+  const tenureSignal: "frequent" | "stable" | null =
+    pack.tenurePattern === "frequent-switcher" ? "frequent"
+    : pack.tenurePattern === "stable" ? "stable"
+    : null;
+  const mncExperience = pack.priorCompanies.some(
+    (c) => c.tier === "faang" || c.tier === "indian-product",
+  );
+  return {
+    tenureSignal,
+    peopleManagementClaimed: pack.leadershipClaimed,
+    domesticTopMbaAnchor: pack.mbaTier === "top-tier-domestic",
+    mncExperience,
+  };
+}
+
 /** Does the ResumeFactPack confirm the candidate's stated current company? */
 export function resumeConfirmsCompany(pack: ResumeFactPack | null | undefined, statedCompany: string): boolean {
   if (!pack || !statedCompany) return false;
