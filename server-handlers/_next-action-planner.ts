@@ -269,7 +269,17 @@ export type NextAction =
 type PlannedAction = NextAction & { _move: AiMove };
 
 /** Single declarative source of truth for "what should the bot do next?".
- *  Pure. Order of returns is the priority cascade — first match wins. */
+ *  Pure. Order of returns is the priority cascade — first match wins.
+ *
+ *  AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — the per-phase maxTurns cap
+ *  is enforced upstream of the planner inside derivePhase. When the
+ *  current phase has overstayed its budget, derivePhase rewrites
+ *  state.phase to the next-group entry (discovery → range-disclosure /
+ *  stalemate; anchoring → counter-offer; counter → stalemate). That
+ *  means planNextAction sees the already-advanced phase and emits the
+ *  natural next-group action through the existing cascade — no override
+ *  needed at this layer. The helper `exceededPhaseBudget` remains
+ *  exported on the kernel for tests / decision-log surfaces. */
 export function planNextAction(state: NegotiationState): NextAction {
   return planNextActionInternal(state);
 }

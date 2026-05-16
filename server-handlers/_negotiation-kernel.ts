@@ -1145,6 +1145,12 @@ export interface NegotiationState {
    *  hatch on the same topic instead of grinding on an exact value. */
   lastAnswerUncertainAt?: number | null;
 
+  /** AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-index at which the
+   *  current state.phase was entered. Stamped by derivePhase whenever
+   *  the phase changes. Read by the per-phase maxTurns cap so a phase
+   *  that overstays its budget force-advances instead of looping. */
+  phaseEnteredAtTurn?: number | null;
+
   /** ResumeFactPack track (2026-05-16) — structured resume-derived facts
    *  built once at session-init and stored frozen on state. Replaces the
    *  earlier path that reduced the parsed resume to ~6 scalars and threw
@@ -3279,13 +3285,122 @@ export function foldFactsIntoState(state: NegotiationState, facts: NegotiationFa
  *  was reconstructing state from scratch each render; here the phase
  *  IS state, and we just compute the next bucket from already-folded
  *  facts. */
+/** AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — per-phase maxTurns cap.
+ *
+ * Each phase-group has a hard ceiling on how many turns it can occupy
+ * before the planner force-advances. The cap is the safety net against
+ * discovery-loop / lever-loop pathologies — a normal session lands well
+ * within budget; the cap fires when a probe keeps re-firing on the
+ * same topic or a counter loop fails to converge.
+ *
+ *   - discovery (opening / range-disclosure): 5 turns
+ *   - anchoring (offer-presented / probe-expectations): 3 turns
+ *   - counter   (counter-offer / lever-explore / closing-push): 4 turns
+ *
+ * Plumbed via state.phaseEnteredAtTurn, stamped by derivePhase on every
+ * phase transition. Read by the planner top-level (see _next-action-
+ * planner.ts) which routes to a phase-appropriate force-advance action
+ * rather than re-routing state.phase directly (that path is reserved
+ * for the natural derivePhase cascade). */
+const MAX_TURNS_PER_PHASE = {
+  discovery: 5,
+  anchoring: 3,
+  counter: 4,
+} as const;
+
+const DISCOVERY_PHASES: ReadonlySet<NegotiationPhase> = new Set([
+  "opening",
+  "range-disclosure",
+]);
+const ANCHORING_PHASES: ReadonlySet<NegotiationPhase> = new Set([
+  "offer-presented",
+  "probe-expectations",
+]);
+const COUNTER_PHASES: ReadonlySet<NegotiationPhase> = new Set([
+  "counter-offer",
+  "lever-explore",
+  "closing-push",
+]);
+
+function phaseGroupOf(
+  phase: NegotiationPhase,
+): "discovery" | "anchoring" | "counter" | null {
+  if (DISCOVERY_PHASES.has(phase)) return "discovery";
+  if (ANCHORING_PHASES.has(phase)) return "anchoring";
+  if (COUNTER_PHASES.has(phase)) return "counter";
+  return null;
+}
+
+/** AR3 — phase-group force-advance target. Discovery → range-disclosure
+ *  if a signal (currentCtc OR target) is known else stalemate; anchoring
+ *  → counter-offer; counter → stalemate. Returned phase MUST still pass
+ *  canTransitionPhase at the caller; this helper just names the
+ *  preferred next bucket. */
+function forcedPhaseFor(
+  group: "discovery" | "anchoring" | "counter",
+  state: NegotiationState,
+): NegotiationPhase | null {
+  if (group === "discovery") {
+    const hasSignal =
+      state.candidateCurrentCtc != null || state.candidateTarget != null;
+    if (hasSignal) return "range-disclosure";
+    return "stalemate";
+  }
+  if (group === "anchoring") return "counter-offer";
+  return "stalemate";
+}
+
+/** AR3 — has the current phase exceeded its budget? Pure helper called
+ *  by the planner. Returns null when the phase is non-grouped, terminal,
+ *  or still within budget. */
+function exceededPhaseBudget(state: NegotiationState): "discovery" | "anchoring" | "counter" | null {
+  if (isTerminalPhase(state.phase)) return null;
+  const group = phaseGroupOf(state.phase);
+  if (group == null) return null;
+  const enteredAt = state.phaseEnteredAtTurn;
+  if (enteredAt == null) return null;
+  const cap = MAX_TURNS_PER_PHASE[group];
+  if (state.turnIndex - enteredAt > cap) return group;
+  return null;
+}
+
 export function derivePhase(state: NegotiationState): NegotiationPhase {
   const derived = derivePhaseInner(state);
   /* Negotiation-flow redesign commit 6 (2026-05-15) — clamp the result
    * through the monotonicity matrix. If derivation produced a backward
    * transition that isn't an authorized exception (walk-away-reopen,
    * verbal-renege), hold the prior phase instead of regressing. */
-  const next = canTransitionPhase(state.phase, derived, state) ? derived : state.phase;
+  let next = canTransitionPhase(state.phase, derived, state) ? derived : state.phase;
+  /* AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — per-phase maxTurns cap as
+   * an override on the natural cascade. When the current phase has
+   * overstayed its budget AND derivePhaseInner failed to advance it
+   * (e.g. discovery cascade is stuck because one checklist flag never
+   * flipped), force-advance to the next phase-group's entry. The
+   * override is gated on canTransitionPhase so we never produce an
+   * illegal regression. */
+  if (next === state.phase && state.phaseEnteredAtTurn != null) {
+    const group = phaseGroupOf(state.phase);
+    if (group != null && !isTerminalPhase(state.phase)) {
+      const cap = MAX_TURNS_PER_PHASE[group];
+      if (state.turnIndex - state.phaseEnteredAtTurn > cap) {
+        const forced = forcedPhaseFor(group, state);
+        if (forced != null && canTransitionPhase(state.phase, forced, state)) {
+          next = forced;
+        }
+      }
+    }
+  }
+  /* AR3 — stamp phaseEnteredAtTurn on every phase transition. The
+   * mutation pattern mirrors the stalemateAtTurn stamp below — state is
+   * the caller's mutable `next` workspace by convention. The stamp is
+   * only updated on actual phase change; once set for a phase it stays
+   * until the next transition, giving the planner a stable budget
+   * anchor to measure against. */
+  if (next !== state.phase) {
+    state.phaseEnteredAtTurn = state.turnIndex;
+  } else if (state.phaseEnteredAtTurn == null) {
+    state.phaseEnteredAtTurn = state.turnIndex;
+  }
   /* Audit Pass 3 / Fix 1 (2026-05-16) — symmetric ledger stamp on
    * stalemate entry. Mirrors acceptedAtTurn / walkedAwayAtTurn semantics
    * (set once on first transition into terminal phase, never overwritten
