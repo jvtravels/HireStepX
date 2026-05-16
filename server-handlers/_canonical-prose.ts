@@ -69,72 +69,72 @@ export function renderCanonicalProse(
   switch (action.kind) {
     case "terminal-restate":
       return state.highestOfferMade > 0
-        ? `The offer stands at ₹${state.highestOfferMade}L. Take your time and let me know.`
-        : "We've covered the relevant ground here.";
+        ? `The fitment stands at ₹${state.highestOfferMade}L as per our band for this grade. Take your time and revert.`
+        : "We've broadly covered the relevant points here. Take your time and revert.";
 
     case "close":
       if (action.mode === "accept") {
-        return "Sounds like we're aligned. Let me confirm the final terms with you before we send the formal letter.";
+        return "Broadly aligned, then. Let me run this fitment past leadership once and revert with the formal offer letter.";
       }
       if (action.mode === "walkaway") {
-        return "Honestly, given the gap on expectations, I don't think we're going to be able to find common ground on this one. I appreciate your time.";
+        return "Looking at where your expectations sit versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Appreciate your time.";
       }
-      return "Let's pause here. Take some time and come back to me when you're ready.";
+      return "Let's pause the discussion here. Take your time on it and revert when you're ready.";
 
     case "auto-accept":
-      return "Sounds like we're aligned. Let me confirm the final terms with you before we send the formal letter.";
+      return "Broadly aligned, then. Let me run this fitment past leadership once and revert with the formal offer letter.";
 
     case "reactive-followup": {
       const topic = action.topic;
       if (topic === "variable-comfort") {
         return action.ask
-          || "I noticed your variable share is quite high — how comfortable are you with that structure continuing?";
+          || "Your variable component is on the higher side — what has been your payout history, and are you comfortable with that structure continuing?";
       }
       if (topic === "competing-credibility") {
-        return "When you mention another opportunity — is that a written offer or still in discussion?";
+        return "On the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?";
       }
       if (topic === "value-proof") {
-        return "It sounds like the role's trajectory matters as much as the number — what would make this opportunity feel genuinely worth the move?";
+        return "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?";
       }
       if (topic === "hike-justification") {
         return action.ask
-          || "That's a meaningful jump from your current — what's driving the expectation at that level?";
+          || "That's a meaningful jump on your current fitment — help me understand what's anchoring the expectation at that level.";
       }
       if (topic === "equity-clarity") {
-        return "On the equity piece — let me clarify the structure. Want me to walk through the vesting?";
+        return "On the equity piece — let me walk you through how the vesting and cliff are structured for this grade.";
       }
       if (topic === "number-clarification") {
         const n = state.candidateCurrentCtc ?? state.candidateTarget ?? null;
         return n != null
-          ? `Just to make sure I heard right — that's ₹${n} lakh you mentioned, correct?`
-          : "Just to make sure I heard right — could you confirm the number you mentioned?";
+          ? `Just to be sure I noted it correctly — that's ₹${n} lakh you mentioned, na?`
+          : "Just to be sure I noted it correctly — can you confirm the number you mentioned?";
       }
       if (topic === "competing-leverage-ack") {
-        return "Got it. Given the competing opportunity, let me make sure we're aligned on what matters most to you here.";
+        return "Noted on the competing opportunity. Let me make sure we're broadly aligned on what matters most to you on this role before I revert internally.";
       }
       /* answer-direct, ctc-gentle-push, notice-buyout, etc. all carry a
        * planner-supplied ask string — use it verbatim. */
-      return action.ask || "Could you say a little more about that?";
+      return action.ask || "Can you elaborate on that a little?";
     }
 
     case "probe-mismatch":
-      return "Before we dig into comp, can you walk me through how your current work maps to this role?";
+      return "Before we get into the fitment side, can you walk me through how your current work maps to this role?";
 
     case "live-walk-away":
       if (action.mode === "walk") {
-        return "It sounds like this may not be the right fit — I appreciate the conversation.";
+        return "Looks like this may not be the right fit at this point — appreciate the conversation.";
       }
       if (action.mode === "hold-firm") {
         return state.highestOfferMade > 0
-          ? `We're going to hold at ₹${state.highestOfferMade}L for now.`
-          : "We're going to hold here for now.";
+          ? `We'll hold the fitment at ₹${state.highestOfferMade}L for now as per our band for this grade.`
+          : "We'll hold here for now as per our band for this grade.";
       }
-      return "Let me probe a little further before we move forward.";
+      return "Let me probe a little further before we move ahead.";
 
     case "range-disclosure": {
       const lo = state.band.initialOffer;
       const hi = state.band.maxStretch;
-      return `Based on the role and your experience, we're working with a band of ₹${lo}–₹${hi} LPA total CTC for this position. Where do you see yourself landing within that?`;
+      return `As per our band for this grade, the fitment sits in the ₹${lo}–₹${hi} LPA total CTC range. Where do you see yourself landing within that?`;
     }
 
     case "discovery-probe": {
@@ -148,30 +148,30 @@ export function renderCanonicalProse(
         ? rawItem.slice(0, -"Answered".length)
         : rawItem;
       if (item === "currentCtc") {
-        return "Let's start with where you are today — what's your current total CTC?";
+        return "Let's start with your current side — what's the total CTC at present?";
       }
       if (item === "fixedVariableSplit" || item === "currentCtcFixedVariableSplit") {
-        return "And how does that break down between fixed and variable?";
+        return "And how is that structured between fixed and variable?";
       }
       if (item === "expectedCtc" || item === "target") {
-        return "What were you expecting for this move — in numbers, what range are you targeting?";
+        return "What's the fitment you were looking at for this move — broadly, what range are you anchoring on?";
       }
       if (item === "expectedCtcFixedVariableSplit") {
-        return "And on the structure side — are you flexible on fixed vs variable, or do you have a preference?";
+        return "On the structure side — are you open on the fixed-variable split, or do you have a preference?";
       }
       if (item === "noticePeriod") {
-        return "What's your notice period at your current company? Any flexibility there?";
+        return "What's the notice period at your current company? Any scope for buyout there?";
       }
       if (item === "competingOffers") {
-        return "Are you actively in process with any other companies?";
+        return "Are you actively in process with other companies right now?";
       }
       if (item === "valueProof") {
-        return "Tell me about one project from your current role you're most proud of — something where your impact is concrete enough to bring up in a comp discussion.";
+        return "Walk me through one project from your current role that you'd anchor on in a fitment discussion — something where the impact is concrete.";
       }
       /* Discovery-probe for any other checklist item — defer to the
        * planner-supplied prompt (already kernel-authored, never an LLM
        * string). */
-      return action.ask || "Could you tell me a bit more about what you're looking for?";
+      return action.ask || "Can you tell me a little more about what you're looking at?";
     }
 
     case "open-with-offer":
@@ -186,40 +186,40 @@ export function renderCanonicalProse(
        * anyway, we emit a greeting + discovery probe rather than any
        * number — structurally impossible-to-anchor opening. */
       if (state.turnIndex === 0) {
-        return `Thanks for taking the time today${firstName ? ", " + firstName : ""}. Let's get into it — to start, can you walk me through your current compensation structure?`;
+        return `Thanks for making the time${firstName ? ", " + firstName : ""}. Let's get straight into it — walk me through your current compensation structure first.`;
       }
-      return "Before we name a number — what range were you targeting?";
+      return "Before I put a number out — what fitment were you anchoring on?";
 
     case "lever-loop-guard":
-      return "Take a moment to think it over and let me know where you land.";
+      return "Take some time to think it through and revert with where you'd like to land.";
 
     case "info-disclosure": {
       const topic = action.topic;
       if (topic === "breakdown") {
         return state.highestOfferMade > 0
-          ? `On the ₹${state.highestOfferMade}L package — let me walk you through the fixed, variable, and benefits split.`
-          : "Let me walk you through the package breakdown.";
+          ? `On the ₹${state.highestOfferMade}L fitment — let me walk you through the fixed, variable, and benefits side.`
+          : "Let me walk you through the fitment structure.";
       }
       if (topic === "benefits") {
-        return "On the benefits side — let me walk you through what's included beyond the cash.";
+        return "On the benefits side — let me run you through what's covered beyond the cash component.";
       }
       if (topic === "comp-structure") {
-        return "On the compensation structure — let me walk you through how fixed, variable, and equity work for this role.";
+        return "On the compensation structure — let me walk you through how fixed, variable, and equity sit for this grade.";
       }
       if (topic === "notice") {
-        return "On the joining side — let me walk you through how we handle notice periods and buyout.";
+        return "On the joining side — let me walk you through how we handle notice and buyout for this role.";
       }
       if (topic === "hike-pct") {
-        return "On the hike piece — let me put the offer in context against where you are today.";
+        return "On the hike piece — let me put the fitment in context against your current side.";
       }
-      return "Let me come back to you with the structured breakdown in a moment.";
+      return "Let me revert with the structured breakdown in a moment.";
     }
 
     case "probe-expectations":
-      return "What range were you targeting for this role?";
+      return "What fitment were you anchoring on for this role?";
 
     case "probe-justification":
-      return "Help me understand the rationale behind that number — what's it anchored on?";
+      return "Help me understand what's anchoring that number — where is the expectation coming from?";
 
     case "counter-offer": {
       /* The planner pre-computes the counter total + optional fixed /
@@ -228,23 +228,23 @@ export function renderCanonicalProse(
        * number so the restyle validator can verify it survives. */
       const total = action.counterTotalLpa;
       if (total != null && total > 0) {
-        return `Hearing you out — let me see what I can put together. We can move to ₹${total}L total. What would that look like on your side?`;
+        return `Hearing you out — let me see what I can structure. We can revise the fitment to ₹${total}L total. How does that look from your side?`;
       }
       return state.highestOfferMade > 0
-        ? `We're holding on the current offer of ₹${state.highestOfferMade}L. What would move this forward for you?`
+        ? `We're holding the current fitment at ₹${state.highestOfferMade}L. What would move this forward for you?`
         : "What number would land for you?";
     }
 
     case "lever-explore":
-      return "Let me see what else we can put together on the package side.";
+      return "Let me see what else we can structure on the fitment side.";
 
     case "hold-firm":
       return state.highestOfferMade > 0
-        ? `We're going to hold at ₹${state.highestOfferMade}L. Take some time to think it over.`
-        : "We're going to hold here. Take some time to think it over.";
+        ? `We'll hold the fitment at ₹${state.highestOfferMade}L as per our band for this grade. Take some time on it and revert.`
+        : "We'll hold here as per our band for this grade. Take some time on it and revert.";
 
     case "rescission":
-      return "Given how this has gone, we're going to step back from the offer.";
+      return "Given how this discussion has gone, we'll have to step back from the offer.";
 
     default: {
       /* TypeScript exhaustiveness check. If a new NextAction.kind is
@@ -274,11 +274,13 @@ export function buildRestylePrompt(
   state: NegotiationState,
 ): { system: string; user: string } {
   const system =
-    `You are restyling a recruiter's next line in an Indian salary negotiation.\n\n` +
+    `You are restyling an Indian HR recruiter's next line in a salary negotiation.\n\n` +
     `ROLE: Indian HR recruiter for ${state.role || "this role"} at ${state.company || "this company"}\n` +
     `PHASE: ${state.phase}\n\n` +
     `INSTRUCTIONS (strict):\n` +
-    `- Restyle the canonical line below in a natural, conversational Indian-recruiter tone.\n` +
+    `- Use Indian English cadence. Avoid US-tech-recruiter idiom.\n` +
+    `- BANNED phrases (do not use): "circle back", "on board", "reach out", "touch base", "synergy", "rounding out the package", "we're aligned", "package" (as a comp noun).\n` +
+    `- PREFERRED phrasing (Indian recruiter cadence): "let me check with leadership", "let me run this past leadership and revert", "fitment" (not "package"), "revert" (instead of "circle back" / "get back"), "as per our band" / "as per our band for this grade", "broadly aligned" (not "we're aligned"), "looking at the structure" (not "rounding out the package").\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
     `- You MUST NOT add any facts (company policy, team size, perks, benefits) not in the canonical line.\n` +
