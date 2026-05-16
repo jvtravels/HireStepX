@@ -118,7 +118,14 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
     const candidateScript: Array<{ matches: RegExp; reply: string }> = [
       /* Order matters — first match wins. notice/buyout MUST come before
        * the generic "current" matcher since "current company" appears in
-       * the notice probe canonical. */
+       * the notice probe canonical. AP3-F2 / AP3-F3 (2026-05-17) — the
+       * three new component probes ("base split", "variable", "ESOPs")
+       * and the anchor-with-band lever take precedence over the generic
+       * "current" branch so they bind first. */
+      { matches: /what's the base split|base split\?/i, reply: "Base is around 14 LPA out of the 18 LPA total." },
+      { matches: /\bvariable\b.*(fixed bonus|perf-linked)/i, reply: "Variable is perf-linked, around 4 LPA." },
+      { matches: /esops?.*(vest|cliff|accelerator)|esops?\s+in\s+play/i, reply: "No ESOPs at the current place." },
+      { matches: /our band sits|fitment.*looking at/i, reply: "I'm expecting 38 LPA as target, anchored on market rates." },
       { matches: /\bnotice\b|buyout/i, reply: "My notice period is 60 days. No buyout flexibility on my side." },
       { matches: /other companies|other opportunity|in process|competing/i, reply: "Yes, in final round at one other firm — verbal offer." },
       { matches: /project|anchor.*fitment.*discussion|impact is concrete|value/i, reply: "Led a checkout redesign last year that lifted conversion by 11%." },
@@ -162,7 +169,18 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
         }
       }
 
-      if (turn.action.kind === "discovery-probe" || turn.action.kind === "reactive-followup") {
+      if (
+        turn.action.kind === "discovery-probe" ||
+        turn.action.kind === "reactive-followup" ||
+        /* AP3-F2 / AP3-F3 (2026-05-17) — component-probe and
+         * anchor-with-band are discovery-shaped actions emitted between
+         * currentCtc disclosure and the target probe at senior grades.
+         * The smoke harness threads candidate replies through them so
+         * the cascade reaches the anchor/counter portion of the
+         * session. */
+        turn.action.kind === "component-probe" ||
+        turn.action.kind === "anchor-with-band"
+      ) {
         /* Find a matching candidate reply for this probe. */
         let reply: string | null = null;
         for (const cand of candidateScript) {

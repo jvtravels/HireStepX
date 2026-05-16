@@ -764,6 +764,21 @@ function renderCanonicalProseBody(
       return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
     }
 
+    case "component-probe": {
+      /* AP3-F2 (2026-05-17) — component-aware discovery prose. The bot
+       * has the candidate's total currentCtc but needs the per-component
+       * structure (base / variable / ESOP) before anchoring at senior
+       * grades. Templates use Indian-recruiter idiom; no numbers. */
+      if (action.component === "base") {
+        return "Got it on the total — what's the base split?";
+      }
+      if (action.component === "variable") {
+        return "And the variable — fixed bonus or perf-linked?";
+      }
+      /* esop */
+      return "ESOPs in play? Any vesting cliff or accelerator?";
+    }
+
     case "band-anchor-with-rationale": {
       const lo = state.band.initialOffer;
       const hi = state.band.maxStretch;

@@ -384,6 +384,28 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
    * pins the line to its purpose so the LLM can't restyle away the
    * resume reference. */
   "credibility-probe": { numberPolicy: "forbidden", requiredTokens: [/\bresume\b/i] },
+  /* AP3-F2 (2026-05-17) — component-aware discovery. Per-component
+   * requiredTokens pin the restyle to its topic (the LLM cannot restyle
+   * a "what's the base split?" into a generic compensation probe).
+   * numberPolicy is "optional" — the candidate may quote a number back
+   * but the kernel itself doesn't author one. The actual component
+   * regex applied at validation time is selected by inspecting the
+   * NextAction.component field via the lookup helper below. */
+  "component-probe": { numberPolicy: "optional" },
+};
+
+/** AP3-F2 (2026-05-17) — component-probe requiredTokens are
+ *  per-component, so they cannot be statically baked into the contract
+ *  table. The validator below consults this map when the action kind is
+ *  "component-probe" and layers the matching regex on top of the
+ *  static entry. */
+const COMPONENT_PROBE_REQUIRED_TOKENS: Record<
+  "base" | "variable" | "esop",
+  RegExp
+> = {
+  base: /\bbase\b/i,
+  variable: /\b(?:variable|bonus|perf)\b/i,
+  esop: /\b(?:esop|rsu|equity|vest)\b/i,
 };
 
 /** Validate the LLM restyle against the canonical line. Rejection
@@ -566,6 +588,21 @@ export function validateRestyle(
             return { valid: false, reason: `contract-banned-token-present:${action.kind}:${re.source}` };
           }
         }
+      }
+    }
+    /* AP3-F2 (2026-05-17) — component-probe per-component requiredToken
+     * overlay. The base contract entry for "component-probe" carries no
+     * static requiredTokens because each component (base/variable/esop)
+     * pins a different lexical surface. Layer the per-component regex
+     * on top of the contract's static checks so the restyle for a
+     * "base" probe cannot drift into a "variable" probe or vice-versa. */
+    if (action.kind === "component-probe") {
+      const re = COMPONENT_PROBE_REQUIRED_TOKENS[action.component];
+      if (re != null && !re.test(restyled)) {
+        return {
+          valid: false,
+          reason: `contract-required-token-missing:component-probe:${action.component}:${re.source}`,
+        };
       }
     }
   }

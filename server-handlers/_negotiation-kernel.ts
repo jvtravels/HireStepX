@@ -206,6 +206,18 @@ export type DiscoveryTopic =
   | "targetAnswered"
   | "currentCtcFixedVariableSplitDisclosed"
   | "expectedCtcFixedVariableSplitDisclosed"
+  /* AP3-F2 (2026-05-17) — component-aware discovery probes. Fired by
+   * the planner AFTER currentCtc is satisfied for senior comp
+   * negotiations (applicableYoe >= 4 OR role matches
+   * /senior|lead|principal|staff/i). Each maps to a single component of
+   * the candidate's current package; parsing into
+   * state.candidateComponentBreakdown is handled by the existing
+   * component-breakdown extractor (extractComponentBreakdown +
+   * mergeBreakdown), so satisfaction is observed by reading
+   * `state.candidateComponentBreakdown.{base,variable,equity}`. */
+  | "currentCtcBase"
+  | "currentCtcVariable"
+  | "currentCtcEsop"
   /* Reactive-followup topics (planReactiveFollowup + planWiredProfileFollowup). */
   | "variable-comfort"
   | "equity-clarity"
@@ -287,6 +299,8 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "currentCtcAnswered", "fixedVariableSplitAnswered", "noticePeriodAnswered",
   "competingOffersAnswered", "valueProofAnswered", "targetAnswered",
   "currentCtcFixedVariableSplitDisclosed", "expectedCtcFixedVariableSplitDisclosed",
+  /* AP3-F2 (2026-05-17) — component-aware discovery topics. */
+  "currentCtcBase", "currentCtcVariable", "currentCtcEsop",
   "variable-comfort", "equity-clarity", "competing-credibility",
   "competing-leverage-ack", "credibility-probe", "ctc-gentle-push",
   "hike-justification", "notice-buyout", "notice-buyout-confirm",

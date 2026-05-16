@@ -243,7 +243,14 @@ export type NextAction =
   | {
       kind: "comparative-anchoring";
       quartile: "top" | "median";
-    };
+    }
+  /* AP3-F2 (2026-05-17) — component-aware discovery probe. Fires for
+   * senior comp negotiations AFTER currentCtc is satisfied AND BEFORE
+   * the target probe. Order: base → variable → esop. Skips any
+   * component already populated on state.candidateComponentBreakdown.
+   * Single-fire per (session, component) via the askedTopics ledger
+   * (topic = "currentCtcBase" | "currentCtcVariable" | "currentCtcEsop"). */
+  | { kind: "component-probe"; component: "base" | "variable" | "esop" };
 
 /** Internal carrier: the planner builds the move alongside the action so
  *  actionToLever is bit-identical to the prior pickAiMoveCore. The
@@ -381,6 +388,47 @@ function buildSkipRecord(
   }
   if (refused == null && Object.keys(recentlyAsked).length === 0) return null;
   return { ...(refused ?? {}), ...recentlyAsked };
+}
+
+/** AP3-F2 (2026-05-17) — senior comp-negotiation signal. Real Indian
+ *  recruiters break the current-CTC into base / variable / ESOP only
+ *  when the candidate's profile makes the components material. Two
+ *  signals qualify:
+ *    - applicableYoe >= 4 (the role-applicable YOE — promoted from the
+ *      Phase 29 distinction; total YOE doesn't reliably predict comp-
+ *      structure literacy in domain-switch cases);
+ *    - target role string matches /senior|lead|principal|staff/i — the
+ *      title itself signals the band where components matter.
+ *  Either signal is sufficient. Pure. */
+function isSeniorCompProfile(state: NegotiationState): boolean {
+  const yoe = state.candidateApplicableYoe;
+  if (yoe != null && yoe >= 4) return true;
+  if (state.role && /senior|lead|principal|staff/i.test(state.role)) return true;
+  return false;
+}
+
+/** AP3-F2 (2026-05-17) — pick the next un-probed AND un-satisfied
+ *  component in canonical order (base → variable → esop). Returns null
+ *  when all components are either populated on
+ *  state.candidateComponentBreakdown OR already asked this session
+ *  (recorded in state.askedTopics under the matching `currentCtc*`
+ *  topic key). Pure. */
+function nextComponentProbe(
+  state: NegotiationState,
+): { component: "base" | "variable" | "esop"; topic: DiscoveryTopic } | null {
+  const bd = state.candidateComponentBreakdown;
+  const asked = new Set((state.askedTopics ?? []).map((t) => t.topic));
+  const order: { component: "base" | "variable" | "esop"; topic: DiscoveryTopic; populated: boolean }[] = [
+    { component: "base", topic: "currentCtcBase", populated: bd?.base != null },
+    { component: "variable", topic: "currentCtcVariable", populated: bd?.variable != null },
+    { component: "esop", topic: "currentCtcEsop", populated: bd?.equity != null },
+  ];
+  for (const o of order) {
+    if (o.populated) continue;
+    if (asked.has(o.topic)) continue;
+    return { component: o.component, topic: o.topic };
+  }
+  return null;
 }
 
 function planNextActionInternal(state: NegotiationState): PlannedAction {
@@ -711,6 +759,67 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           `Wait for candidate reaction before converging to a single anchor.`,
       },
     };
+  }
+
+  /* AP3-F2 + AP3-F3 (2026-05-17) — component-aware discovery + band
+   * disclosure gate. After the candidate has disclosed currentCtc but
+   * BEFORE the target probe lands, real Indian recruiters working
+   * senior comp negotiations (i) break the current package into base /
+   * variable / ESOP, then (ii) anchor the band as a range before
+   * inviting the candidate's fitment number. This block sits above all
+   * discovery-cascade branches so it runs uniformly across opening,
+   * offer-presented, and probe-expectations phases.
+   *
+   * Order of operations:
+   *   1. If senior signal + currentCtc != null + target == null + a
+   *      next component remains unprobed → component-probe.
+   *   2. Else if currentCtc != null + target == null + band complete +
+   *      anchor-with-band hasn't fired this session → anchor-with-band.
+   *
+   * Both are single-fire per (session, slot) so a candidate who deflects
+   * lands cleanly on the next item without the planner looping. */
+  /* Gate this gate narrowly: only in discovery-shaped phases (opening,
+   * offer-presented, probe-expectations). counter-offer / closing-push
+   * are past anchor-time; the anchor-with-band lever and component
+   * probes would be incongruous there. Also defer when the candidate
+   * has an outstanding info-ask (package-breakdown / benefits /
+   * compensation-breakdown / notice-period-ask / hike-percentage-ask)
+   * — answering the candidate outranks proactive component discovery. */
+  const PRE_ANCHOR_PHASES = new Set(["opening", "offer-presented", "probe-expectations"]);
+  const hasOutstandingInfoAsk =
+    state.infoAsked.includes("package-breakdown") ||
+    state.infoAsked.includes("fixed-vs-variable") ||
+    state.infoAsked.includes("perks-non-cash") ||
+    state.infoAsked.includes("benefits-overview") ||
+    state.infoAsked.includes("compensation-breakdown") ||
+    state.infoAsked.includes("notice-period-ask") ||
+    state.infoAsked.includes("hike-percentage-ask");
+  if (
+    !isTerminalPhase(state.phase) &&
+    PRE_ANCHOR_PHASES.has(state.phase) &&
+    !hasOutstandingInfoAsk &&
+    state.candidateCurrentCtc != null &&
+    state.candidateTarget == null
+  ) {
+    if (isSeniorCompProfile(state)) {
+      const cp = nextComponentProbe(state);
+      if (cp != null) {
+        return {
+          kind: "component-probe",
+          component: cp.component,
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale:
+              `AP3-F2 component-aware discovery: senior comp profile ` +
+              `(applicableYoe=${state.candidateApplicableYoe ?? "?"}, role="${state.role}"); ` +
+              `currentCtc disclosed, target pending — probe ${cp.component} before anchoring.`,
+            askedTopic: cp.topic,
+            actionKind: "discovery-probe",
+          },
+        };
+      }
+    }
   }
 
   /* Opening: discovery-incomplete probe, then anchor.
