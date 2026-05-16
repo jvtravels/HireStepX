@@ -890,7 +890,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             },
           };
         }
-        const next = getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+        const next = getNextDiscoveryQuestion(
+          state.discoveryChecklist,
+          roleFamily,
+          /* PDF#27 Fix 3 (2026-05-17) — propagate the same skipRecord
+           * the ordered cascade used; the legacy fallback was the route
+           * by which the 3-strike consecutive-topic cap got bypassed. */
+          skipRecord ?? undefined,
+        );
         if (next != null) {
           return {
             kind: "discovery-probe",

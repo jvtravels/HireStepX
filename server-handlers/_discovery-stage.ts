@@ -254,42 +254,62 @@ export interface DiscoveryQuestion {
 export function getNextDiscoveryQuestion(
   checklist: DiscoveryChecklist,
   roleFamily: RoleFamily,
+  /* PDF#27 Fix 3 (2026-05-17) — skipRecord propagation. The legacy
+   * fallback path in planNextActionInternal previously did NOT consult
+   * the same skipRecord as the ordered cascade, so after the 3-strike
+   * consecutive-topic cap marked a topic as recently-over-asked the
+   * fallback would happily re-fire it. Root-fix: optional `skip` arg;
+   * any topic flagged in skip is treated as already-asked here so the
+   * cascade advances past it. Also accept both the legacy `*Asked` and
+   * the canonical `*Answered/*Disclosed` topic identifiers so the cap
+   * matches by DiscoveryTopic enum value uniformly across paths. */
+  skip?: Partial<Record<string, boolean>>,
 ): DiscoveryQuestion | null {
-  if (!checklist.currentCtcAsked) {
+  const skipped = (...keys: string[]) =>
+    skip != null && keys.some((k) => skip[k] === true);
+  if (!checklist.currentCtcAsked && !skipped("currentCtcAsked", "currentCtcAnswered")) {
     return {
       item: "currentCtcAsked",
       prompt:
         "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
     };
   }
-  if (!checklist.fixedVariableSplitAsked) {
+  if (
+    !checklist.fixedVariableSplitAsked &&
+    !skipped(
+      "fixedVariableSplitAsked",
+      "fixedVariableSplitAnswered",
+      "currentCtcFixedVariableSplitDisclosed",
+      "expectedCtcFixedVariableSplitDisclosed",
+    )
+  ) {
     return {
       item: "fixedVariableSplitAsked",
       prompt:
         "How is your current package split between fixed and variable?",
     };
   }
-  if (!checklist.noticePeriodAsked) {
+  if (!checklist.noticePeriodAsked && !skipped("noticePeriodAsked", "noticePeriodAnswered")) {
     return {
       item: "noticePeriodAsked",
       prompt:
         "What's your current notice period and earliest joining date?",
     };
   }
-  if (!checklist.competingOffersAsked) {
+  if (!checklist.competingOffersAsked && !skipped("competingOffersAsked", "competingOffersAnswered")) {
     return {
       item: "competingOffersAsked",
       prompt:
         "Are you in process with other companies, or do you have any active offers?",
     };
   }
-  if (!checklist.valueProofAsked) {
+  if (!checklist.valueProofAsked && !skipped("valueProofAsked", "valueProofAnswered")) {
     return {
       item: "valueProofAsked",
       prompt: getValueProofPrompt(roleFamily),
     };
   }
-  if (!checklist.targetAsked) {
+  if (!checklist.targetAsked && !skipped("targetAsked", "targetAnswered")) {
     return {
       item: "targetAsked",
       prompt: "What's your target CTC for this move?",
