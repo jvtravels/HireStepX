@@ -61,6 +61,7 @@ import {
 } from "./_hike-justification-probe";
 import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
+import { resumeConfirmsCompany } from "./_resume-fact-pack";
 
 /** Polish 3 (2026-05-16) — render the reactive followup for a
  *  candidate who cited external market data. When the candidate named
@@ -165,6 +166,13 @@ export type NextAction =
    * The topic is recorded in state.reactiveFollowupsFired via the
    * move.askedTopic plumbing so the same probe doesn't re-fire. */
   | { kind: "reactive-followup"; ask: string; trigger: string; topic: string }
+  /* ResumeFactPack track Step 4 (2026-05-16) — credibility-probe. Fires
+   * when the candidate states a current-company affiliation and the
+   * ResumeFactPack does NOT confirm it (no fuzzy match against latestRole
+   * or priorCompanies). Single-fire via state.credibilityProbeFired.
+   * resumeCompany is the latestRole.companyName from the pack;
+   * statedCompany is what the candidate said. */
+  | { kind: "credibility-probe"; resumeCompany: string; statedCompany: string }
   | { kind: "probe-mismatch" }
   | { kind: "live-walk-away"; mode: "walk" | "hold-firm" | "probe" }
   | { kind: "range-disclosure" }
@@ -501,6 +509,38 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             },
           };
         }
+      }
+    }
+  }
+
+  /* ResumeFactPack track Step 4 (2026-05-16) — credibility-probe.
+   * Fires when a stated current-company affiliation conflicts with the
+   * resume's latest role / prior companies. Single-fire. Skipped when
+   * the resume confirms (and the avoidance is logged in leversUsed for
+   * visibility — handled at applyAiMove). */
+  if (
+    !isTerminalPhase(state.phase) &&
+    !state.credibilityProbeFired &&
+    state.candidateStatedCurrentCompany &&
+    state.resumeFactPack
+  ) {
+    const stated = state.candidateStatedCurrentCompany;
+    if (!resumeConfirmsCompany(state.resumeFactPack, stated)) {
+      const resumeCompany = state.resumeFactPack.latestRole?.companyName ?? "";
+      if (resumeCompany) {
+        return {
+          kind: "credibility-probe",
+          resumeCompany,
+          statedCompany: stated,
+          _move: {
+            lever: "probe",
+            newTotalLpa: null,
+            rationale:
+              `credibility-probe: candidate stated "${stated}" but resume latest role is ` +
+              `"${resumeCompany}" — surface the alignment gap before counter.`,
+            askedTopic: "credibility-probe",
+          },
+        };
       }
     }
   }

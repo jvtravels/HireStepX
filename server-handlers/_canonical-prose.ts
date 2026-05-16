@@ -353,6 +353,13 @@ function renderCanonicalProseBody(
     case "probe-mismatch":
       return "Before we get into the fitment side, can you walk me through how your current work maps to this role?";
 
+    case "credibility-probe":
+      /* ResumeFactPack track Step 4 (2026-05-16) — Indian-recruiter
+       * idiom. Surfaces the resume↔stated-affiliation gap without
+       * accusation. Tokens "resume" + both company names are required
+       * by the NextActionContract restyle gate. */
+      return `Just to align — your resume reads ${action.resumeCompany}; you're currently at ${action.statedCompany}?`;
+
     case "live-walk-away":
       if (action.mode === "walk") {
         return "Looks like this may not be the right fit at this point — appreciate the conversation.";

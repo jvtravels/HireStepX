@@ -129,6 +129,8 @@ import { classifyRoleFamily, getBandForRole, classifyCompanyTier as classifyBand
 import {
   buildResumeFactPack,
   deriveCandidateProfileSeed,
+  detectStatedCurrentCompany,
+  resumeConfirmsCompany,
   type ResumeFactPack,
   type ParsedResume,
 } from "./_resume-fact-pack";
@@ -971,6 +973,27 @@ export interface NegotiationState {
    *  role can't be resolved to a tier band. */
   impliedPriorCtcFromResume?: number | null;
 
+  /** ResumeFactPack track (2026-05-16) — most-recent candidate-stated
+   *  current-company affiliation, parsed from "I'm at X" / "I work
+   *  at X" / "currently at X" patterns in candidate utterances. Sticky
+   *  last-stated-wins. Read by the credibility-probe lever to compare
+   *  against resumeFactPack.latestRole / priorCompanies. Null when the
+   *  candidate has not stated a current company. */
+  candidateStatedCurrentCompany?: string | null;
+
+  /** ResumeFactPack track (2026-05-16) — credibility-probe ledger.
+   *  True once the credibility-probe has fired this session (single-fire);
+   *  prevents re-asking the same alignment question. */
+  credibilityProbeFired?: boolean;
+
+  /** ResumeFactPack track (2026-05-16) — turn index at which we
+   *  deliberately AVOIDED the credibility-probe because the resume
+   *  confirmed the stated company. Null when not yet evaluated. Read
+   *  by the decision log for visibility — "we saw the affiliation
+   *  match and chose not to probe". Avoids polluting leversUsed
+   *  (which is a real-lever ledger). */
+  credibilityProbeAvoidedAt?: number | null;
+
   /** Parallel provenance map for candidateProfile flags. Key = flag
    *  name (CandidateProfileResult field). Value = "resume" when the
    *  flag was seeded from ResumeFactPack at init, "stated" when set
@@ -1659,6 +1682,9 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     resumeFactPack,
     impliedPriorCtcFromResume,
     flagProvenance,
+    candidateStatedCurrentCompany: null,
+    credibilityProbeFired: false,
+    credibilityProbeAvoidedAt: null,
   };
 }
 
@@ -2601,6 +2627,21 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   if (parsed.decisionDeadline.hasAny) {
     next.decisionDeadline = mergeDecisionDeadline(state.decisionDeadline, parsed.decisionDeadline);
   }
+  /* ResumeFactPack track (2026-05-16) — detect a stated current-company
+   * affiliation from the candidate utterance. Last-stated-wins. The
+   * credibility-probe lever in the planner reads this against
+   * state.resumeFactPack to flag mismatches. */
+  const statedCompany = detectStatedCurrentCompany(answer);
+  if (statedCompany) {
+    next.candidateStatedCurrentCompany = statedCompany;
+    /* When the resume confirms the stated affiliation, log the
+     * avoidance so the decision-log shows the planner consciously
+     * skipped the probe (rather than appearing to have forgotten). */
+    if (next.resumeFactPack && resumeConfirmsCompany(next.resumeFactPack, statedCompany)) {
+      next.credibilityProbeAvoidedAt = next.turnIndex;
+    }
+  }
+
   if (parsed.candidateProfile.hasAny) {
     next.candidateProfile = mergeCandidateProfile(state.candidateProfile, parsed.candidateProfile);
     /* ResumeFactPack track (2026-05-16) — record provenance="stated"
@@ -3285,6 +3326,12 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.reactiveFollowupsFired = [...fired, move.askedTopic];
     } else {
       next.reactiveFollowupsFired = fired;
+    }
+    /* ResumeFactPack track Step 4 (2026-05-16) — distinct ledger field
+     * so consumers don't have to .includes() the string ledger to
+     * check whether the credibility-probe has fired. */
+    if (move.askedTopic === "credibility-probe") {
+      next.credibilityProbeFired = true;
     }
     /* Polish 2 (2026-05-16) — append the AI turn index to the per-topic
      * fire-log so canRefire can compute counts + turn gaps for sticky
@@ -4031,6 +4078,12 @@ export function deserializeState(json: string): NegotiationState {
       (s.impliedPriorCtcFromResume as number | null | undefined) ?? null,
     flagProvenance:
       (s.flagProvenance as Record<string, "resume" | "stated"> | undefined) ?? {},
+    candidateStatedCurrentCompany:
+      (s.candidateStatedCurrentCompany as string | null | undefined) ?? null,
+    credibilityProbeFired:
+      (s.credibilityProbeFired as boolean | undefined) ?? false,
+    credibilityProbeAvoidedAt:
+      (s.credibilityProbeAvoidedAt as number | null | undefined) ?? null,
   };
 }
 

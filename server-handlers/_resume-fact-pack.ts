@@ -441,6 +441,45 @@ export function deriveCandidateProfileSeed(pack: ResumeFactPack | null | undefin
   };
 }
 
+/* ─── Stated-current-company detector ────────────────────────────── */
+
+/** Detect a candidate utterance that names the company they currently
+ *  work at. Returns the matched company token (preserved capitalisation
+ *  from the utterance) or null. Conservative — only fires on explicit
+ *  "I'm at X" / "I work at X" / "currently at X" framings to avoid
+ *  capturing target/competing-company references. */
+/* Trailing context after the company-name capture. Match end-of-input
+ * OR a clear sentence boundary (punctuation, conjunction, common
+ * suffix-clause starter). Kept loose so "I'm at Google now" and "I work
+ * at Flipkart in Bangalore" both terminate at the right token. */
+const STATED_COMPANY_TAIL = "(?=\\s|,|\\.|;|$|!|\\?)";
+/* Body of the company-name capture. Capital-initial token chain that
+ * may include corporate suffixes ("Tata Consultancy Services"). */
+const STATED_COMPANY_NAME = "([A-Z][\\w&.\\-]*(?:\\s+[A-Z][\\w&.\\-]*){0,4})";
+/* Leading anchors are case-insensitive via explicit `[Ii]` brackets;
+ * the company-name capture stays case-SENSITIVE (capital-initial tokens
+ * only) so "I'm at Google now" captures "Google" — not "Google now". */
+const STATED_COMPANY_PATTERNS: RegExp[] = [
+  new RegExp(`\\b[Ii](?:'?[mM]| [aA][mM])\\s+(?:[Cc]urrently\\s+)?(?:[aA][tT]|[wW][iI][tT][hH])\\s+${STATED_COMPANY_NAME}${STATED_COMPANY_TAIL}`),
+  new RegExp(`\\b[Ii]\\s+(?:[Cc]urrently\\s+)?[wW][oO][rR][kK](?:[iI][nN][gG])?\\s+(?:[aA][tT]|[fF][oO][rR]|[wW][iI][tT][hH])\\s+${STATED_COMPANY_NAME}${STATED_COMPANY_TAIL}`),
+  new RegExp(`\\b[Cc]urrently\\s+(?:[aA][tT]|[wW][iI][tT][hH])\\s+${STATED_COMPANY_NAME}${STATED_COMPANY_TAIL}`),
+  new RegExp(`\\b[Mm]y\\s+[Cc]urrent\\s+(?:[Cc]ompany|[Ee]mployer)\\s+is\\s+${STATED_COMPANY_NAME}${STATED_COMPANY_TAIL}`),
+];
+
+export function detectStatedCurrentCompany(utterance: string | null | undefined): string | null {
+  if (!utterance) return null;
+  for (const p of STATED_COMPANY_PATTERNS) {
+    const m = p.exec(utterance);
+    if (m && m[1]) {
+      /* Strip trailing punctuation that the Title-Case token chain
+       * accepted (period in "Cognizant." / comma in "Google,"). */
+      const cleaned = m[1].trim().replace(/[.,;:!?]+$/, "");
+      if (cleaned.length >= 2) return cleaned;
+    }
+  }
+  return null;
+}
+
 /** Does the ResumeFactPack confirm the candidate's stated current company? */
 export function resumeConfirmsCompany(pack: ResumeFactPack | null | undefined, statedCompany: string): boolean {
   if (!pack || !statedCompany) return false;

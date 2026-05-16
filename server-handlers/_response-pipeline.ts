@@ -320,6 +320,11 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
    * contract; the table entry layers in the numeric-content invariant
    * the legacy check did not cover. */
   "close-recap-formal": { numberPolicy: "required" },
+  /* ResumeFactPack track Step 4 (2026-05-16) — credibility-probe. No
+   * numbers (alignment question, not an offer). Required token "resume"
+   * pins the line to its purpose so the LLM can't restyle away the
+   * resume reference. */
+  "credibility-probe": { numberPolicy: "forbidden", requiredTokens: [/\bresume\b/i] },
 };
 
 /** Validate the LLM restyle against the canonical line. Rejection
