@@ -624,11 +624,31 @@ function renderCanonicalProseBody(
        * line names the band, not a single number, so the LLM cannot
        * sneak an anchor in via restyle.
        *
-       * If discovery WAS incomplete and somehow this branch fires
-       * anyway, we emit a greeting + discovery probe rather than any
-       * number — structurally impossible-to-anchor opening. */
+       * F4 / Audit Pass 2 (PDF#25, 2026-05-16) — resume-aware opener.
+       * When state.resumeFactPack is present we prefer an opener that
+       * references latestRole.companyName and (where available) the role
+       * title so the candidate hears that the recruiter has actually
+       * read the resume. We DO NOT fabricate seniority, team size, or
+       * other facts ResumeFactPack doesn't carry; the safe surface is
+       * (title, companyName) which are typed-non-empty on latestRole.
+       *
+       * F6 / Audit Pass 2 (PDF#25, 2026-05-16) — dropped the trailing
+       * "first" from the generic opener because no second probe was
+       * being queued. Honouring "first" would require a next-action
+       * commitment we don't track; removing it is the simpler fix and
+       * leaves no state debt. */
       if (state.turnIndex === 0) {
-        return `Thanks for making the time${firstName ? ", " + firstName : ""}. Let's get straight into it — walk me through your current compensation structure first.`;
+        const rfp = state.resumeFactPack;
+        const latest = rfp?.latestRole ?? null;
+        if (latest && latest.companyName && latest.companyName.trim().length > 0) {
+          const co = latest.companyName.trim();
+          const titleStr =
+            latest.title && latest.title.trim().length > 0
+              ? `I can see you're at ${co} as ${latest.title.trim()} — `
+              : `I can see you're at ${co} — `;
+          return `Thanks for making the time${firstName ? ", " + firstName : ""}. ${titleStr}walk me through your current compensation structure.`;
+        }
+        return `Thanks for making the time${firstName ? ", " + firstName : ""}. Let's get straight into it — walk me through your current compensation structure.`;
       }
       return "Before I put a number out — what fitment were you anchoring on?";
 
