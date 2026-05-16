@@ -59,6 +59,14 @@ export interface PanelPersona {
   /** What the post-session report should weight on this turn. Single
    *  line for prompt-injection. */
   scoringEmphasis: string;
+  /** 2-3 signature Indian-English softeners that give this persona a
+   *  distinct *voice* in intro / interstitial / acknowledgement turns.
+   *  Hard rule: NEVER injected inside a question stem — the
+   *  BEHAVIOURAL-INDIAN-REGISTER rule bans softeners in stems globally.
+   *  This field is additive: it tells the LLM which 1-2 of these to
+   *  sprinkle so HR Partner doesn't sound interchangeable with Tech
+   *  Lead. */
+  softenerPhrases: ReadonlyArray<string>;
 }
 
 const PERSONAS: Record<PanelPersonaId, PanelPersona> = {
@@ -72,6 +80,8 @@ const PERSONAS: Record<PanelPersonaId, PanelPersona> = {
     registerRedirects: [],
     scoringEmphasis:
       "Score this turn on: motivation authenticity, stay-intent credibility, cultural fit signal, deal-closeability. STAR Action depth is secondary here — pedigree / family / relocation framing is legitimate primary signal in an Indian HR turn.",
+    // HR Partner — warm, relational, Delhi-ish register
+    softenerPhrases: ["right?", "yes please", "ya"],
   },
   "hiring-manager": {
     id: "hiring-manager",
@@ -83,6 +93,8 @@ const PERSONAS: Record<PanelPersonaId, PanelPersona> = {
     registerRedirects: ["pedigreeRecital"], // HM doesn't care about board %
     scoringEmphasis:
       "Score this turn on: STAR Action depth, individual ownership clarity, stakeholder-management craft, services-track context awareness. Career-ladder narrative defending short stints is LEGITIMATE — credit smart sequencing, do NOT probe as instability.",
+    // Hiring Manager — collegial PM register, Bangalore-ish
+    softenerPhrases: ["actually", "just briefly", "so"],
   },
   "tech-lead": {
     id: "tech-lead",
@@ -94,6 +106,8 @@ const PERSONAS: Record<PanelPersonaId, PanelPersona> = {
     registerRedirects: ["deferentialGratitude", "pedigreeRecital"], // TL wants STAR Action not pedigree
     scoringEmphasis:
       "Score this turn on: STAR Action technical specificity, individual ownership of the technical decision, trade-off awareness, blast-radius reasoning. Deferential gratitude is neutral on this turn — neither credit nor penalty.",
+    // Tech Lead — more formal, precise, senior register
+    softenerPhrases: ["I see", "got it", "tell me one thing"],
   },
 };
 
@@ -141,11 +155,15 @@ export function panelPersonaPromptFragment(persona: PanelPersona): string {
   const redirectsLine = persona.registerRedirects.length
     ? `Softly redirect (don't punish): ${persona.registerRedirects.join(", ")} — pivot to what this persona actually probes.`
     : "";
+  const softenerLine = persona.softenerPhrases.length
+    ? `Signature softeners (use sparingly — 1-2 across the whole session, ONLY in intro / interstitial / acknowledgement turns, NEVER inside a question stem): ${persona.softenerPhrases.map((p) => `"${p}"`).join(", ")}.`
+    : "";
   return [
     `INDIAN-PANEL PERSONA — ${persona.displayName}.`,
     persona.probeStyle,
     rewardsLine,
     redirectsLine,
+    softenerLine,
     persona.scoringEmphasis,
   ].filter(Boolean).join(" ");
 }

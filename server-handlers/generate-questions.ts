@@ -860,7 +860,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
       : "";
 
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${behavioralShapeGuide}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
@@ -959,8 +959,9 @@ Example bad: stacking multiple questions in step 2.`
 - DO NOT ask "Do you have any questions?" or similar — the system handles that separately
 - DO thank the candidate for their time, mention next steps neutrally, and end professionally
 - Keep it 2-3 sentences max. No flattery, no critique, no fabricated highlights.
-- Example closing: "Thanks for taking the time today. We'll review the conversation and our team will follow up with next steps shortly. Best of luck."
-- Example closing: "That covers what I wanted to discuss. Appreciate you walking through these scenarios with me — we'll be in touch on next steps."
+- INDIAN-ENGLISH REGISTER: the closing must obey the same register rules as the main questions. NO Americanisms — avoid "appreciate your time", "appreciate you walking through", "taking the time", "circle back", "moving forward", "reach out", "touch base", "that's a wrap". Prefer "thanks for your time", "thanks for making the time", "that's all I had", "we'll be in touch".
+- Example closing: "Thanks for your time today. We'll review the conversation and our team will share next steps shortly. All the best."
+- Example closing: "That's all I had for today. Thanks for the conversation — we'll be in touch on next steps."
 
 Example good question: "Walk me through a system you designed that had to handle 10x growth. What were the key architectural trade-offs you made, and how did you validate them?"
 Example bad question: "Tell me about your experience." (too vague, not role-specific)`}
