@@ -3814,14 +3814,53 @@ function backfillCompetingOfferDetail(raw: unknown): CompetingOfferDetail {
 /* Phase 25b — domainPivot / transferableSkillsClaimed / compensationHistoryIssue
  * were added after the wire format first deployed. Legacy in-flight
  * sessions serialized candidateProfile without these keys; backfill them.
- * Uses EMPTY_CANDIDATE_PROFILE spread so new wave flags are always present. */
+ * Uses EMPTY_CANDIDATE_PROFILE spread so new wave flags are always present.
+ *
+ * Backcompat: the following flags were pruned in commit "perfect 6" but
+ * old persisted snapshots may carry them. Silently dropped via the
+ * known-keys filter below (raw entries whose key is not in the current
+ * EMPTY_CANDIDATE_PROFILE shape are discarded):
+ *   prefersEquityOverCash, hasVestingCliff, rsuVestingAware, esopHolder,
+ *   riskAverse, prefersMnc, prefersStartup, openToRelocation, remotePref,
+ *   likelyToCounter, acceptedFirstOffer, hasWalkedAway, anchorsHigh,
+ *   softOnRange, noticePeriodFlexible, joiningUrgency, isIcToManager,
+ *   hasLeadershipExperience, domainSpecialist, multipleCompaniesInTwoYears,
+ *   currentHasBonus, currentBonusPct, currentHasEsop, currentEsopVested,
+ *   currentHasRetentionBonus, currentHasGratuity, currentHasNps,
+ *   wantsHigherBonus, wantsFlexibleWork, wantsLearningBudget,
+ *   wantsEquityRefresh, wantsProfessionalTitle, hasSeenOffer,
+ *   offerDeadlineMentioned, offerDeadlineText, negotiatingMultipleOffers,
+ *   prefersCashOverPerks, perksImportant, anchoredFirst, anchorWasHighball,
+ *   retreatedFromAnchor, acceptedCounterQuickly, respondedToBudgetCeiling,
+ *   pushedBackOnCeiling, expressedUrgency, expressedHesitation,
+ *   usedRecruiterName, saidThankYou, askedAboutTeam, askedAboutWorkLifeBalance,
+ *   dramaticAnchorJump, mentionedCounterOffer, mentionedLayoffRisk,
+ *   seemsRushed, firstOfferReaction, explicitlyRejectedOffer,
+ *   askedForTimeToDecide, mentionedRelocation, mentionedPf, mentionedGratuity,
+ *   mentionedVariablePayout, mentionedSigningBonus, mentionedRetentionBonus,
+ *   mentionedJoiningBonus, askedAboutPerformanceCycle, mentionedTargetRole,
+ *   competingOfferIsVerbal, competingOfferCompany, competingOfferDeadline,
+ *   showedFrustration, showedExcitement, usedSilence,
+ *   backtrackedOnExpectation, escalatedDemand, mentionedRelievingLetterRisk,
+ *   mentionedNoticeWaiver, mentionedNoticeBuyout, isFirstJobChange,
+ *   hasManagementExperience, mentionedStartupExperience,
+ *   mentionedMncExperience, hasPhdOrMba, usedAnchorFirst, mentionedCostOfLiving,
+ *   wantsHigherBase (kept as live), wantsRelocationAllowance (kept as live),
+ *   wantsJoiningBonus (kept as live).
+ */
 function backfillCandidateProfile(raw: unknown): CandidateProfileResult {
   const v = raw as Partial<CandidateProfileResult> | undefined;
   /* Spread EMPTY first so every required field has a default, then overlay
    * whatever the legacy payload carried (undefined values from the partial
-   * are filtered out so they don't overwrite the defaults). */
+   * are filtered out so they don't overwrite the defaults). Pruned-flag
+   * keys present in the raw payload but no longer in EMPTY_CANDIDATE_PROFILE
+   * are silently dropped via the known-keys filter — see backcompat note
+   * above. */
+  const knownKeys = new Set(Object.keys(EMPTY_CANDIDATE_PROFILE));
   const defined = Object.fromEntries(
-    Object.entries(v ?? {}).filter(([, val]) => val !== undefined),
+    Object.entries(v ?? {}).filter(
+      ([k, val]) => val !== undefined && knownKeys.has(k),
+    ),
   ) as Partial<CandidateProfileResult>;
   return { ...EMPTY_CANDIDATE_PROFILE, ...defined };
 }
