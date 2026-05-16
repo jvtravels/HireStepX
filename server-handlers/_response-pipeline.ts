@@ -30,6 +30,7 @@ import {
   renderCanonicalProse,
   buildRestylePrompt,
   buildAnswerCandidatePrompt,
+  BANNED_RECRUITER_IDIOM_RE,
 } from "./_canonical-prose";
 import {
   buildFactPack,
@@ -296,6 +297,15 @@ export function validateRestyle(
   if (ACK_VOCAB_RE.test(canonical) && !ACK_VOCAB_RE.test(restyled)) {
     return { valid: false, reason: "ack-prefix-stripped" };
   }
+  /* Defect 2 (2026-05-16) — banned Indian-recruiter idiom (US-tech
+   * recruiter phrases like "circle back", "touch base", "on board",
+   * "synergy", "reach out") MUST NOT leak into the restyle output.
+   * Canonical never emits these (renderCanonicalProse is curated), so
+   * any occurrence in the restyle is the LLM ignoring the banned-list
+   * directive. Fall back to canonical verbatim. */
+  if (BANNED_RECRUITER_IDIOM_RE.test(restyled)) {
+    return { valid: false, reason: "banned-idiom-leaked" };
+  }
   return { valid: true };
 }
 
@@ -325,6 +335,14 @@ export function validateAnswer(
     if (!allowed.has(n)) {
       return { valid: false, reason: `unfounded-number:${n}` };
     }
+  }
+  /* Defect 2 (2026-05-16) — answer path also enforces the banned-idiom
+   * floor. Off-script answers go through the LLM with a factPack hint,
+   * which historically leaked phrases like "let me get back to you" /
+   * "circle back" on fact-gap defers. Pipeline-built defers use the
+   * deterministic `buildDeferLead` text instead. */
+  if (BANNED_RECRUITER_IDIOM_RE.test(answer)) {
+    return { valid: false, reason: "banned-idiom-leaked" };
   }
   return { valid: true };
 }

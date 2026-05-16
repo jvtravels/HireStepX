@@ -128,12 +128,17 @@ describe("buildRestylePrompt — Indian English cadence", () => {
     const s = baseState();
     const { system } = buildRestylePrompt("Test canonical.", s);
     expect(system).toMatch(/Indian English cadence/i);
+    /* Banned list now sourced from BANNED_RECRUITER_IDIOM constant. */
     expect(system).toMatch(/circle back/i);
     expect(system).toMatch(/touch base/i);
     expect(system).toMatch(/synergy/i);
-    expect(system).toMatch(/run this past leadership/i);
+    expect(system).toMatch(/on board/i);
+    expect(system).toMatch(/reach out/i);
+    /* Preferred list now sourced from PREFERRED_RECRUITER_IDIOM. */
+    expect(system).toMatch(/let me check with leadership/i);
     expect(system).toMatch(/fitment/i);
     expect(system).toMatch(/\brevert\b/i);
-    expect(system).toMatch(/as per our band/i);
+    expect(system).toMatch(/as per the band for this grade/i);
+    expect(system).toMatch(/broadly aligned/i);
   });
 });

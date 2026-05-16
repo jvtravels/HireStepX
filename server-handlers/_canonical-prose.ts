@@ -30,6 +30,44 @@
 import type { NegotiationState } from "./_negotiation-kernel";
 import type { NextAction } from "./_next-action-planner";
 
+/** Single source of truth for Indian-recruiter vocabulary policy.
+ *  Defect 2 + ArchRec 1 (2026-05-16) — previously the BANNED / PREFERRED
+ *  lists were duplicated as ad-hoc strings across `_canonical-prose.ts`,
+ *  `_negotiate-turn-helpers.ts`, and `follow-up.ts`, and several of
+ *  those duplicates contradicted each other (`_negotiate-turn-helpers`
+ *  recommended "circle back" / "on board" / "touch base" / "I'll get
+ *  back to you" — directly in the BANNED list at the restyle prompt).
+ *  Importers MUST consume these constants rather than re-typing
+ *  phrases inline. */
+export const BANNED_RECRUITER_IDIOM = [
+  "circle back",
+  "touch base",
+  "synergy",
+  "on board",
+  "reach out",
+] as const;
+
+export const PREFERRED_RECRUITER_IDIOM = [
+  "fitment",
+  "revert",
+  "broadly aligned",
+  "as per band",
+  "let me check with leadership",
+  "as per the band for this grade",
+] as const;
+
+/** Case-insensitive word-boundary regex union of the banned idioms,
+ *  for validator use. Allowed surface forms include contractions /
+ *  spacing variants (e.g. "circle back", "circle-back"). */
+export const BANNED_RECRUITER_IDIOM_RE = new RegExp(
+  "\\b(" +
+    BANNED_RECRUITER_IDIOM
+      .map((p) => p.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"))
+      .join("|") +
+    ")\\b",
+  "i",
+);
+
 /** Best-effort first-name extraction. Prefers the typed
  *  `state.candidateName` field (threaded from intake) and falls back
  *  to scanning the conversation log for an "I'm X" / "my name is X"
@@ -570,8 +608,8 @@ export function buildRestylePrompt(
     `PHASE: ${state.phase}\n\n` +
     `INSTRUCTIONS (strict):\n` +
     `- Use Indian English cadence. Avoid US-tech-recruiter idiom.\n` +
-    `- BANNED phrases (do not use): "circle back", "on board", "reach out", "touch base", "synergy", "rounding out the package", "we're aligned", "package" (as a comp noun).\n` +
-    `- PREFERRED phrasing (Indian recruiter cadence): "let me check with leadership", "let me run this past leadership and revert", "fitment" (not "package"), "revert" (instead of "circle back" / "get back"), "as per our band" / "as per our band for this grade", "broadly aligned" (not "we're aligned"), "looking at the structure" (not "rounding out the package").\n` +
+    `- BANNED phrases (do NOT use, ever): ${BANNED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "rounding out the package", "we're aligned", "package" (as a comp noun).\n` +
+    `- PREFERRED phrasing (Indian recruiter cadence): ${PREFERRED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "looking at the structure" (not "rounding out the package").\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
     `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Right, on the X side —", "Thanks for that, on X —", "Fair enough on X —") but do not strip it.\n` +
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
@@ -599,7 +637,7 @@ export function buildAnswerCandidatePrompt(
     `PHASE: ${state.phase}\n\n` +
     `INSTRUCTIONS (strict):\n` +
     `- Answer the candidate's question using ONLY the facts in the factPack below.\n` +
-    `- If a fact you need is not present, say "Let me confirm that with the team and get back to you", then redirect with the follow-up line below.\n` +
+    `- If a fact is missing, output the deterministic defer line provided by the pipeline. Do NOT invent a hedge or callback promise; do NOT use any phrase in the BANNED list (${BANNED_RECRUITER_IDIOM.join(", ")}).\n` +
     `- Do NOT invent numbers, policies, perks, dates, or commitments.\n` +
     `- Keep it conversational, 1-3 sentences.\n\n` +
     `OUTPUT: just your answer, no preamble.`;

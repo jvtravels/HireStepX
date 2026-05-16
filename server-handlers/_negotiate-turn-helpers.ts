@@ -46,6 +46,10 @@ import {
   formatNoticeNormForPrompt,
 } from "../data/company-facts";
 import { getCompanyTier, type CompanyTier } from "../data/company-tiers";
+import {
+  BANNED_RECRUITER_IDIOM,
+  PREFERRED_RECRUITER_IDIOM,
+} from "./_canonical-prose";
 
 /* ─── Indian HR voice register ─────────────────────────────────────────
  *
@@ -106,7 +110,7 @@ const REGISTER_GUIDANCE: Record<HrRegister, string> = {
     "Tone: longer compound sentences, formal verbs, 'sir' / 'ma'am' used sparingly but naturally, " +
     "policy-anchored framing. Contractions sparing. 'Kindly' used ONCE per turn max. " +
     "PHRASES THAT FIT: 'we are offering', 'as per company policy', 'we follow standard hike norms', " +
-    "'I will check with the leadership and revert', 'let me confirm with the team', " +
+    "'I will check with the leadership and revert', 'let me check with leadership', " +
     "'we can certainly look into this', 'hope this works for you', 'do let me know', " +
     "'I would request you to', 'as you are aware', 'duly noted'. " +
     "SAMPLE TURN (counter-base): 'We have looked at your number, and we can revise the offer to " +
@@ -119,7 +123,7 @@ const REGISTER_GUIDANCE: Record<HrRegister, string> = {
     "numbers-forward, polite but decisive. Mild 'actually' / 'basically' fillers fine, used sparingly. " +
     "PHRASES THAT FIT: 'let me see what I can do', 'we can stretch to', 'here's where we land', " +
     "'happy to walk you through', 'I'll check internally and confirm', 'just to be clear', " +
-    "'the way it typically works here', 'we'd love to have you on board'. " +
+    "'the way it typically works here', 'broadly aligned on what you're looking for'. " +
     "SAMPLE TURN (counter-base): 'Got it. We can stretch to ₹17 LPA — that's ₹14L fixed + ₹3L " +
     "variable. That's at the top of what I can do without going to my skip. How does that sit with you?' " +
     "AVOID: 'kindly' (too formal), 'sir/ma'am' (out of register), 'yaar' (too casual), 'do the needful'.",
@@ -183,7 +187,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
   "close-walkaway":
     "Acknowledge respectfully that this isn't going to work. Keep the door open for future roles. Brief, warm.",
   "close-stalemate":
-    "Note that you've run out of turns. Suggest they take time and circle back. Brief, neutral.",
+    "Note that you've run out of turns. Suggest they take time and revert. Brief, neutral.",
   "terminal-restate":
     "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. If the prior turn did not yet collect onboarding documents (Aadhaar / PAN / recent payslips), gently re-prompt for them. One or two short sentences only.",
 };
@@ -431,12 +435,14 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
      opener prompt (generate-questions.ts:803), now mirrored here. */
   " - VOICE: write the way an Indian recruiter SPEAKS, not the way an " +
   "LLM writes. Contractions ('we can', 'that's'), short clauses, plain " +
-  "verbs. BANNED phrases (use the plain alternative): 'considering your " +
-  "request', 'moving the total CTC', 'we are pleased to', 'as discussed', " +
-  "'in light of', 'with respect to', 'leverage', 'utilize', 'facilitate', " +
-  "'ensure', 'navigate', 'circle back', 'reach out', 'touch base', " +
-  "'bandwidth', 'synergy', 'going forward', 'at this juncture', " +
-  "'in due course', 'apropos', 'henceforth'. Do NOT " +
+  "verbs. BANNED phrases — do NOT use, ever (sourced from the single " +
+  "source of truth in _canonical-prose.ts so the restyle validator and " +
+  "the upstream LLM brief agree): " +
+  BANNED_RECRUITER_IDIOM.map((p) => `'${p}'`).join(", ") +
+  ", 'considering your request', 'moving the total CTC', 'we are pleased to', " +
+  "'as discussed', 'in light of', 'with respect to', 'leverage', 'utilize', " +
+  "'facilitate', 'ensure', 'navigate', 'bandwidth', 'going forward', " +
+  "'at this juncture', 'in due course', 'apropos', 'henceforth'. Do NOT " +
   "restate the role-name + company every turn ('for the Business Analyst " +
   "position at Deloitte') — once the conversation is rolling, 'for this " +
   "role' / 'here' / no qualifier at all is the correct register. The " +
@@ -460,8 +466,12 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "(background verification), 'relieving letter', 'last drawn salary', " +
   "'expected CTC', 'offer letter' (not 'offer doc' / 'paperwork'). " +
   "Soft connectives: 'do one thing', 'actually', 'basically', 'only' " +
-  "as emphatic ('that itself is the max'), 'let me check and revert', " +
-  "'I'll get back to you'. AVOID over-using 'kindly' / 'sir' / 'ma'am' " +
+  "as emphatic ('that itself is the max'), 'let me check and revert'. " +
+  "PREFERRED Indian recruiter idiom (single source of truth in " +
+  "_canonical-prose.ts — these are the right replacements for the " +
+  "BANNED list above): " +
+  PREFERRED_RECRUITER_IDIOM.map((p) => `'${p}'`).join(", ") +
+  ". AVOID over-using 'kindly' / 'sir' / 'ma'am' " +
   "unless the register is formal-traditional. Numbers go BEFORE the " +
   "qualifier ('₹15.7 LPA fixed' not 'a fixed compensation of ₹15.7 LPA').\n" +
   " - REGISTER: the SESSION CONTEXT block contains a 'REGISTER " +
@@ -1460,7 +1470,7 @@ const PERSONA_HINTS: Record<NonNullable<NegotiationState["recruiterPersona"]>, s
   founder:
     "PERSONA — early-stage founder/CEO. Tone: mission-heavy, time-pressured, direct. Cash is constrained ('we're conservative on base — every rupee comes from runway') but you're generous on equity, title, scope, ownership. Frame the offer in terms of the company's trajectory and the candidate's role in it. Push for fast decisions ('we need to know by Friday — momentum matters').",
   agency:
-    "PERSONA — external agency recruiter on commission. Tone: deal-making, surface-level, optimistic. You don't fully know the band; you're optimising for closure speed and your commission. You'll lightly oversell ('I think we can stretch this' without specifics), push acceptance harder than the band warrants, and avoid technical specifics about equity / clawback / variable. If the candidate goes deep on structure, deflect to 'let me check with the team and circle back'.",
+    "PERSONA — external agency recruiter on commission. Tone: deal-making, surface-level, optimistic. You don't fully know the band; you're optimising for closure speed and your commission. You'll lightly oversell ('I think we can stretch this' without specifics), push acceptance harder than the band warrants, and avoid technical specifics about equity / clawback / variable. If the candidate goes deep on structure, deflect to 'let me check with leadership and revert'.",
 };
 
 function buildResponseHints(state: NegotiationState, move?: AiMove): string {
