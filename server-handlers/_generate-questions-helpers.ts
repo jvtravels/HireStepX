@@ -248,6 +248,7 @@ export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolea
  * generic warmup mix. Always returns at least 5 questions; never throws. */
 
 import { QUESTION_BANK, type FocusArea, type RoleFamily } from "../data/interview-question-bank";
+import { sampleBehavioralQuestions } from "../data/behavioral-question-bank";
 
 export interface FallbackQuestion {
   type: string;
@@ -263,8 +264,32 @@ export function buildStaticFallback(opts: {
   roleFamily?: string;
   count: number;
 }): FallbackQuestion[] {
-  const wantFocus = (opts.focus || "").toLowerCase() as FocusArea;
-  const wantRole = (opts.roleFamily || "general").toLowerCase() as RoleFamily;
+  const focus = (opts.focus || "").toLowerCase();
+  const roleFamily = (opts.roleFamily || "general").toLowerCase();
+  const count = opts.count;
+
+  // Behavioural focus → draw from the curated 50-question bank with
+  // competency-deduped sampling. Anyone running the static fallback for
+  // a behavioural interview gets a real-interviewer-grade set instead of
+  // generic prompts.
+  if (focus === "behavioral" || focus === "behavioural") {
+    const seed = ((count * 31) + (focus.length * 17) + (roleFamily.length)) >>> 0;
+    const sampled = sampleBehavioralQuestions({ count, seed });
+    if (sampled.length > 0) {
+      return [
+        { type: "intro", aiText: "Hi — let's get started. To warm up, tell me a bit about yourself and what brings you to this role." },
+        ...sampled.map((q, i): FallbackQuestion => ({
+          type: i === 0 ? "warmup" : "main",
+          aiText: q.text,
+          scoreNote: `Competency: ${q.competency}; STAR focus: ${q.starFocus}.`,
+        })),
+        { type: "closing", aiText: "That's all I had — what questions do you have for me?" },
+      ];
+    }
+  }
+
+  const wantFocus = focus as FocusArea;
+  const wantRole = roleFamily as RoleFamily;
   // Priority pass: exact role + focus match.
   const tier1 = QUESTION_BANK.filter(q => q.roleFamily === wantRole && q.focus === wantFocus);
   // Fallback pass: same role, any focus (covers when focus="general").

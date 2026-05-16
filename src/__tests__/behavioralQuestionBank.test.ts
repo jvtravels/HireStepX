@@ -1,0 +1,115 @@
+import { describe, it, expect } from "vitest";
+import {
+  BEHAVIORAL_50,
+  BEHAVIORAL_COMPETENCIES,
+  COMPETENCY_LABELS,
+  sampleBehavioralQuestions,
+} from "../../data/behavioral-question-bank";
+
+describe("BEHAVIORAL_50 — shape & coverage", () => {
+  it("has exactly 50 entries", () => {
+    expect(BEHAVIORAL_50).toHaveLength(50);
+  });
+
+  it("every entry has a valid competency", () => {
+    const valid = new Set<string>(BEHAVIORAL_COMPETENCIES);
+    for (const q of BEHAVIORAL_50) {
+      expect(valid.has(q.competency)).toBe(true);
+    }
+  });
+
+  it("every entry has a valid starFocus + difficulty", () => {
+    const validStar = new Set(["action", "result", "situation-task", "action+result"]);
+    const validDiff = new Set(["warmup", "standard", "hard"]);
+    for (const q of BEHAVIORAL_50) {
+      expect(validStar.has(q.starFocus)).toBe(true);
+      expect(validDiff.has(q.difficulty)).toBe(true);
+    }
+  });
+
+  it("frequencyPct lies in [0, 100]", () => {
+    for (const q of BEHAVIORAL_50) {
+      expect(q.frequencyPct).toBeGreaterThanOrEqual(0);
+      expect(q.frequencyPct).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("question text begins with 'Tell me about a time' for the entire bank", () => {
+    // Real interviewer phrasing — guard against drift.
+    for (const q of BEHAVIORAL_50) {
+      expect(q.text.toLowerCase().startsWith("tell me about a time")).toBe(true);
+    }
+  });
+
+  it("covers every competency at least once", () => {
+    const seen = new Set(BEHAVIORAL_50.map(q => q.competency));
+    for (const c of BEHAVIORAL_COMPETENCIES) {
+      expect(seen.has(c)).toBe(true);
+    }
+  });
+
+  it("COMPETENCY_LABELS has a label for every competency", () => {
+    for (const c of BEHAVIORAL_COMPETENCIES) {
+      expect(COMPETENCY_LABELS[c]).toBeTruthy();
+      expect(COMPETENCY_LABELS[c].length).toBeGreaterThan(2);
+    }
+  });
+});
+
+describe("sampleBehavioralQuestions", () => {
+  it("returns exactly N questions when N ≤ competency count", () => {
+    const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
+    expect(out).toHaveLength(5);
+  });
+
+  it("dedupes by competency when N ≤ competency count", () => {
+    const out = sampleBehavioralQuestions({ count: 6, seed: 42 });
+    const competencies = new Set(out.map(q => q.competency));
+    expect(competencies.size).toBe(6);
+  });
+
+  it("is deterministic for the same seed", () => {
+    const a = sampleBehavioralQuestions({ count: 5, seed: 7 });
+    const b = sampleBehavioralQuestions({ count: 5, seed: 7 });
+    expect(a.map(q => q.text)).toEqual(b.map(q => q.text));
+  });
+
+  it("returns different orderings for different seeds", () => {
+    const a = sampleBehavioralQuestions({ count: 6, seed: 1 });
+    const b = sampleBehavioralQuestions({ count: 6, seed: 99 });
+    // At least one position must differ given a meaningful seed delta.
+    const allMatch = a.every((q, i) => q.text === b[i].text);
+    expect(allMatch).toBe(false);
+  });
+
+  it("respects difficulty=warmup (no hard questions)", () => {
+    const out = sampleBehavioralQuestions({ count: 5, seed: 11, difficulty: "warmup" });
+    for (const q of out) {
+      expect(q.difficulty).not.toBe("hard");
+    }
+  });
+
+  it("respects difficulty=hard (no warmup questions)", () => {
+    const out = sampleBehavioralQuestions({ count: 5, seed: 11, difficulty: "hard" });
+    for (const q of out) {
+      expect(q.difficulty).not.toBe("warmup");
+    }
+  });
+
+  it("prioritises requested competencies when prioritise is set", () => {
+    const out = sampleBehavioralQuestions({
+      count: 3,
+      seed: 5,
+      prioritise: ["conflict", "decision-making"],
+    });
+    // At least the first slot should be a prioritised competency.
+    const prioritised = new Set(["conflict", "decision-making"]);
+    expect(prioritised.has(out[0].competency)).toBe(true);
+  });
+
+  it("never throws + always returns ≤ count", () => {
+    expect(() => sampleBehavioralQuestions({ count: 100, seed: 1 })).not.toThrow();
+    const out = sampleBehavioralQuestions({ count: 100, seed: 1 });
+    expect(out.length).toBeLessThanOrEqual(BEHAVIORAL_50.length);
+  });
+});
