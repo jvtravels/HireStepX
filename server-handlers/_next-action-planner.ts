@@ -218,7 +218,23 @@ export type NextAction =
   | { kind: "lever-relocation" }
   | { kind: "lever-perf-bonus-cadence" }
   | { kind: "lever-joining-bonus-explained" }
-  | { kind: "band-anchor-with-rationale" };
+  | { kind: "band-anchor-with-rationale" }
+  /* perfect 5 (2026-05-16) — Indian-recruiter band-defense moves.
+   * internal-equity-defense: surfaces peer-band ranges when the
+   * candidate pushes past counterRound 2 — invokes the comp-team
+   * escalation gate ("would have to be signed off by Comp").
+   * comparative-anchoring: places the candidate's proposed number
+   * relative to the band (top quartile vs median) so the candidate
+   * understands where in the band they're landing. */
+  | {
+      kind: "internal-equity-defense";
+      peerBandTopLpa: number;
+      peerBandMedianLpa: number;
+    }
+  | {
+      kind: "comparative-anchoring";
+      quartile: "top" | "median";
+    };
 
 /** Internal carrier: the planner builds the move alongside the action so
  *  actionToLever is bit-identical to the prior pickAiMoveCore. The
@@ -868,6 +884,73 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           lever: "hold-firm",
           newTotalLpa: state.highestOfferMade,
           rationale: "Candidate verbally accepted; further base asks risk rescission. Hold firm.",
+        },
+      };
+    }
+
+    /* perfect 5 (2026-05-16) — Indian-recruiter band-defense moves.
+     *
+     * These intercept the counter-offer construction with structural
+     * band-anchored framing instead of yet another cash-split. Both
+     * register on the reactiveFollowupsFired ledger so they single-
+     * fire per session (the kernel's applyAiMove plumbing pushes the
+     * askedTopic onto the sticky ledger). */
+    const fired = state.reactiveFollowupsFired ?? [];
+
+    /* comparative-anchoring fires ONCE after the first counter (when
+     * the AI has already shipped a counter-base and the candidate is
+     * pushing for more). Quartile selection: candidate target >=
+     * band-median → "top", else "median". */
+    if (
+      state.counterRound === 1 &&
+      state.candidateTarget != null &&
+      !fired.includes("comparative-anchoring")
+    ) {
+      const peerBandMedian =
+        (state.band.maxStretch + state.band.initialOffer) / 2;
+      const quartile: "top" | "median" =
+        state.candidateTarget >= peerBandMedian ? "top" : "median";
+      return {
+        kind: "comparative-anchoring",
+        quartile,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          rationale: `Comparative-anchoring: candidate target ₹${state.candidateTarget}L vs band-median ₹${peerBandMedian.toFixed(1)}L (quartile=${quartile}).`,
+          askedTopic: "comparative-anchoring",
+          actionKind: "comparative-anchoring",
+        },
+      };
+    }
+
+    /* internal-equity-defense fires when counterRound >= 2 AND there
+     * is a dissatisfaction signal from the candidate this turn (fresh
+     * counter / disclosed expected ctc again / asked a question). Uses
+     * band.maxStretch as the peer-band top, band-median as floor for
+     * the "between X and Y" framing. Single-fire via fired ledger. */
+    const delta = state.lastTurnDelta;
+    const candidatePushedAgain =
+      state.lastCandidateCounterLpa != null ||
+      (delta?.disclosedExpectedCtc ?? false) ||
+      (delta?.askedQuestion ?? false);
+    if (
+      state.counterRound >= 2 &&
+      candidatePushedAgain &&
+      !fired.includes("internal-equity-defense")
+    ) {
+      const peerBandTopLpa = Math.round(state.band.maxStretch * 10) / 10;
+      const peerBandMedianLpa =
+        Math.round(((state.band.maxStretch + state.band.initialOffer) / 2) * 10) / 10;
+      return {
+        kind: "internal-equity-defense",
+        peerBandTopLpa,
+        peerBandMedianLpa,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          rationale: `Internal-equity defense: peer band ₹${peerBandMedianLpa}-${peerBandTopLpa}L; further movement requires Comp sign-off.`,
+          askedTopic: "internal-equity-defense",
+          actionKind: "internal-equity-defense",
         },
       };
     }

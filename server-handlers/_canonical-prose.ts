@@ -56,6 +56,18 @@ function getCandidateFirstName(state: NegotiationState): string | null {
   return null;
 }
 
+/** perfect 5 (2026-05-16) — grade label for band-anchor framing.
+ *
+ *  NegotiationState does not (yet) carry a typed `level` field. Real
+ *  Indian recruiters say "L4 band" / "M2 band" when they have a level;
+ *  in its absence they say "this grade". Defensive fallback keeps the
+ *  prose natural even when no level is threaded through. If/when a
+ *  state.level field lands, swap the lookup here without touching the
+ *  call sites. */
+function gradeLabel(_state: NegotiationState): string {
+  return "this grade";
+}
+
 /** Polish 1 (2026-05-16) — multi-anchor escalation hierarchy.
  *
  * Real Indian recruiters route hedges through different escalation
@@ -408,6 +420,21 @@ function renderCanonicalProseBody(
       const jb = state.lastJoiningBonusOffered;
       const jbPart = jb != null && jb > 0 ? `₹${jb}L ` : "";
       return `On the joining bonus — the ${jbPart}is one-time, paid with the first month's payroll, and carries the standard 12-month clawback (prorated thereafter). Let me know if you want the exact wording before I revert internally.`;
+    }
+
+    case "internal-equity-defense": {
+      const median = action.peerBandMedianLpa;
+      const top = action.peerBandTopLpa;
+      return `Here's something I have to be upfront about — your peers at ${gradeLabel(state)} in our team are sitting between ₹${median} and ₹${top} LPA fixed. Moving you above that creates an internal-equity issue I'd have to get signed off by Comp, and frankly the bar for that is a documented critical-skill premium. The band we're discussing is already at the upper end of where I can land you without that escalation.`;
+    }
+
+    case "comparative-anchoring": {
+      const target = state.candidateTarget;
+      const targetStr = target != null && target > 0 ? `₹${target} LPA` : "where you're anchoring";
+      if (action.quartile === "top") {
+        return `Just to frame this — at ${targetStr}, you'd be sitting at the top quartile of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
+      }
+      return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
     }
 
     case "band-anchor-with-rationale": {
