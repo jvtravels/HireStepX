@@ -729,7 +729,21 @@ export interface NegotiationKernelResponse {
   ok: true;
   /** Serialized state — opaque to the client; pass back on next turn. */
   state: string;
+  /** Legacy text field — preserved for telemetry / IDB drafts / cached
+   *  idempotency readers. New consumers MUST use `aiText` /
+   *  `aiTextDisplay` so the typewriter consumes from one canonical pair
+   *  (matches the `generate-questions` envelope; see Bug 2 PDF#25). */
   text: string;
+  /** TTS-ready text. Same value as `text` here because canonical prose
+   *  is curated and carries no prosody markup; included so the client
+   *  reads from the same field shape as `generate-questions` returns
+   *  for static script steps. */
+  aiText: string;
+  /** Display-ready text. Same as `aiText` for kernel responses — the
+   *  canonical prose surface emits no [pause:long] / *foo* markers.
+   *  Populated so `step.aiTextDisplay ?? step.aiText` resolves the same
+   *  way for kernel-authored turns as for `generate-questions` turns. */
+  aiTextDisplay: string;
   move: NegotiationKernelMove;
   source: "llm" | "llm-retry" | "fallback";
   terminal?: boolean;

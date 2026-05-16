@@ -460,8 +460,33 @@ export default async function handler(
       if (source === "fallback") {
         void captureServerEvent("kernel_fallback", distinctId, { lever: move.lever, phase: state.phase, where: "init" }, req);
       }
+      /* Bug 2 fix (PDF#25, 2026-05-16) — typewriter animation.
+       *
+       * The client-side typewriter (LiveCaptions in InterviewComponents)
+       * keys off step.aiTextDisplay ?? step.aiText. Previously this
+       * handler returned only `text`; the client had to re-map it into
+       * aiText/aiTextDisplay before passing to the step renderer. That
+       * adapter was the field-shape seam where the animation could
+       * race ahead (the typewriter saw a fresh cleanText, but the
+       * downstream component was also reading the legacy `.text` field
+       * for transcript bubble reveal — they fired in different ticks
+       * and the visible question rendered all-at-once on some turns).
+       *
+       * Fix: emit aiText + aiTextDisplay alongside `text` so any
+       * consumer reads from a single canonical pair. The legacy `text`
+       * field is preserved for backward compatibility (telemetry, IDB
+       * draft writers, idempotency cache readers). */
       return new Response(
-        JSON.stringify({ ok: true, state: serializeState(state), text, move, source, terminal }),
+        JSON.stringify({
+          ok: true,
+          state: serializeState(state),
+          text,
+          aiText: text,
+          aiTextDisplay: text,
+          move,
+          source,
+          terminal,
+        }),
         { status: 200, headers },
       );
     }
@@ -744,10 +769,14 @@ export default async function handler(
         }, req);
       }
 
+      /* Bug 2 fix (PDF#25, 2026-05-16) — single canonical field pair for
+       * the typewriter consumer (see init-branch comment above). */
       const responseBody = {
         ok: true,
         state: serializeState(state),
         text,
+        aiText: text,
+        aiTextDisplay: text,
         move,
         source,
         terminal,

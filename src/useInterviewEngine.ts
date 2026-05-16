@@ -2232,7 +2232,9 @@ export function useInterviewEngine() {
                 });
                 return {
                   needsFollowUp: true,
-                  followUpText: turnRes.text,
+                  /* Same canonical-pair read as the non-replay branch
+                   * below — see Bug 2 PDF#25 comment. */
+                  followUpText: turnRes.aiTextDisplay ?? turnRes.aiText ?? turnRes.text,
                   followUpType: "negotiation",
                   conversationDone: turnRes.terminal,
                 };
@@ -2282,9 +2284,16 @@ export function useInterviewEngine() {
                  handler which strips intermediate anchor questions,
                  so the kernel's "Done — ₹X locked in" plays as the
                  single closing turn. */
+              /* Bug 2 fix (PDF#25, 2026-05-16) — the typewriter consumes
+               * from step.aiTextDisplay ?? step.aiText. The kernel now
+               * emits the canonical pair directly so we read from
+               * `aiTextDisplay` here and let the downstream followUpStep
+               * constructor copy it through verbatim. `turnRes.text` is
+               * still present (legacy) but is no longer the field the
+               * animation hook synchronises with. */
               return {
                 needsFollowUp: true,
-                followUpText: turnRes.text,
+                followUpText: turnRes.aiTextDisplay ?? turnRes.aiText ?? turnRes.text,
                 followUpType: "negotiation",
                 conversationDone: turnRes.terminal,
               };
