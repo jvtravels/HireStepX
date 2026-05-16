@@ -1,0 +1,19 @@
+{
+  "name": "Buzzword soup — 6 trendy areas listed with no concrete tech stack",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Tech Mahindra",
+    "transcript": [
+      { "speaker": "ai", "text": "What areas interest you?", "time": "" },
+      { "speaker": "user", "text": "I am very interested in AI, ML, blockchain, IoT, cyber security, and data science. These fields are the future of technology and I want to grow in all of them.", "time": "" },
+      { "speaker": "ai", "text": "Have you built anything in any of these?", "time": "" },
+      { "speaker": "user", "text": "I have explored some courses on these topics and I am very passionate about all of them.", "time": "" },
+      { "speaker": "ai", "text": "What about Generative AI specifically?", "time": "" },
+      { "speaker": "user", "text": "Yes, generative AI and LLMs and NLP are also very exciting fields for me.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["buzzword_soup"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

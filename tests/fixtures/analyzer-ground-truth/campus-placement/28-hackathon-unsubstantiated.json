@@ -1,0 +1,19 @@
+{
+  "name": "Hackathon mentioned with no theme / rank / team detail",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Capgemini",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Final-year CSE student. I have done some hackathons including SIH and a coding contest. Source on my github.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through one project.", "time": "" },
+      { "speaker": "user", "text": "There's a React Native expense tracker with Firebase on github.com/me/tracker, also did some hackathons.", "time": "" },
+      { "speaker": "ai", "text": "What languages are you strongest in?", "time": "" },
+      { "speaker": "user", "text": "Python and JavaScript primarily. I have used them across most of my college projects and small side experiments.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["hackathon_unsubstantiated"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

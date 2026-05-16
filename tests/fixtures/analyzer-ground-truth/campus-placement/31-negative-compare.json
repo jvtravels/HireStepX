@@ -1,0 +1,17 @@
+{
+  "name": "User disparages a competitor company in interview",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "Why Wipro over TCS or Infosys?", "time": "" },
+      { "speaker": "user", "text": "Honestly TCS is worse than Wipro in training quality. TCS doesn't pay well compared to Wipro and the bond is also longer.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "Built a Java Spring inventory tool on github.com/me/inventory.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["negative_company_compare"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

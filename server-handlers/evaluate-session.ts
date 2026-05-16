@@ -8,6 +8,11 @@ import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { formatScoringRubric } from "../data/focus-question-recipes";
 import { detectStarPresence } from "../src/_star-detection";
+import { detectCulturalRegister } from "../src/_cultural-register";
+import {
+  summarizeReverseInterview,
+  type ReverseInterviewSummary,
+} from "../src/_reverse-interview";
 import {
   GROUNDING_DIRECTIVE,
   FAIRNESS_DIRECTIVE,
@@ -201,6 +206,22 @@ interface PerQuestionReport {
   verdict: "strong" | "complete" | "partial" | "weak" | "skipped";
   score: number;
   starPresence: { S: boolean; T: boolean; A: boolean; R: boolean };
+  /**
+   * Indian-context cultural-register markers detected deterministically
+   * on the candidate's answer (see src/_cultural-register.ts). The live
+   * coach already runs these detectors during follow-up; surfacing them
+   * on the report ensures voice continuity — the candidate sees the
+   * same markers in the post-session view that the live coach treated
+   * as non-penalty signals. Independent of the LLM's interpretation.
+   */
+  culturalRegister?: {
+    hedgedDisagreement: boolean;
+    indirectFailureFraming: boolean;
+    relationalFraming: boolean;
+    calendarAnchored: boolean;
+    deferentialGratitude: boolean;
+    pedigreeRecital: boolean;
+  };
   /** Interviewer's likely follow-up — adaptive-thinking training. */
   likelyFollowUp: FollowUpQuestion | null;
   /** Answer-length analysis against an interviewer's attention window. */
@@ -318,6 +339,14 @@ interface SessionReport {
   storyReuseFindings: StoryReuseFinding[];
   blindSpots: BlindSpot[];
   readiness: ReadinessForecast | null;
+  /**
+   * Closing-turn reverse-interview classification — pinned deterministically
+   * (see src/_reverse-interview.ts). When the interviewer asked "any
+   * questions for us?" and the transcript captured the candidate's reply,
+   * this surfaces a green/yellow/red breakdown + verdict. `null` when no
+   * reverse-interview turn is present in the transcript.
+   */
+  reverseInterview: ReverseInterviewSummary | null;
   model: string;
 }
 
@@ -475,7 +504,12 @@ CRITICAL RULES:
     * "Sir" / "Ma'am" addressed to the interviewer is professional courtesy, NOT sycophancy.
     * Indirect failure framing ("there were some challenges with the timeline" / "the rollout had some issues") is the Indian register for ownership; treat the same way you'd treat "I missed the deadline" in American English.
     * Relational outcome markers ("kept the team aligned" / "preserved trust with stakeholders" / "brought everyone along") are legitimate Result content, NOT soft-skill filler. Count them toward STAR-R.
-    * Festival / fiscal anchors (Diwali, BBD, Big Billion Days, Navratri, quarter-end, FY close, March closing) are real operational context, NOT anecdotal padding. They strengthen Situation framing.
+    * Festival / fiscal anchors (Diwali, BBD, Big Billion Days, Navratri, Eid, EOSS, quarter-end, FY close, March closing) are real operational context, NOT anecdotal padding. They strengthen Situation framing. When the candidate's Situation is anchored on a festival or quarter-end trade-off (festival-rush vs release, Diwali leave vs go-live, quarter-end revenue push vs team welfare), evaluate the answer on FOUR specific axes — these are the dimensions an Indian hiring manager actually weighs in this scenario family:
+       (i) Team morale / leave fairness — did the candidate name how they protected team welfare or distributed the cost?
+       (ii) Client / customer-trust impact — did they own the commitment vs renegotiate it transparently?
+       (iii) Fairness across team members — was the load distributed or did one or two people shoulder it all?
+       (iv) Personal credibility / promise-keeping — did the candidate honour what they themselves committed to upstream?
+       Score the answer strong only when at least 3 of 4 axes are addressed. A pure "we worked through the weekend" answer that misses (i) (iii) (iv) is a WEAK festival-trade-off answer, even if outcomes look good.
     * Deferential gratitude ("thank you so much for this opportunity, sir" / "I really appreciate you taking the time" / "it's a privilege to speak with you") is Indian-context professional courtesy, NOT a low-confidence marker. Do NOT score "openings with thanks" as weak. Coach on substance, not on whether they thanked the interviewer.
     * Pedigree recital (10th/12th board percentages, CGPA, "I scored 92% in 12th") is a standard ritual in Indian services interviews (TCS, Infosys, Wipro, Cognizant, Accenture, Capgemini). Do NOT flag as padding, irrelevance, or insecurity — even for experienced lateral candidates, it's culturally expected in the academic-background opener. Score neutrally; coach toward weaving impact stories around it rather than away from it.
 - MEMORISED-STAR-IS-REWARDED RULE (cultural inversion vs Western rubric): Indian interview culture POSITIVELY values structured, clearly-rehearsed STAR delivery — clean S→T→A→R beats, visible preparation, and rote-clean transitions are signs of seriousness, not "canned-ness". Western coaching frameworks (Amazon LP, McKinsey PEI) penalise "sounds rehearsed"; that inheritance is WRONG for this audience. Do NOT:
@@ -514,7 +548,7 @@ Duration (s): ${durationSec}${
       // pin topPerformerAnswer/restructured prose to the same voice the
       // candidate just heard. Without this, the live coach sounds warm
       // and the post-session report sounds like a different LLM persona.
-      (meta?.interviewerName || meta?.interviewerPersonality)
+      (meta?.interviewerName?.trim() || meta?.interviewerPersonality?.trim())
         ? `\nLive interviewer: ${sanitizeForLLM(meta?.interviewerName || "Coach", 60)}${meta?.interviewerPersonality ? ` (${sanitizeForLLM(meta.interviewerPersonality, 60)})` : ""} — model exemplar/restructured prose to match this voice.`
         : ""
     }
@@ -724,6 +758,15 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
                  both surfaces to one detector keeps the story coherent. */
               const det = detectStarPresence(pq.answerText || "");
               const starPresence = { S: det.situation, T: det.task, A: det.action, R: det.result };
+              /* Same logic for cultural-register markers: pin the report
+                 to the deterministic detector so the candidate sees the
+                 same non-penalty signals the live coach treated as such.
+                 The LLM's interpretation already factored these into its
+                 prompt-side rules (see INDIAN CONVERSATIONAL REGISTER block
+                 in CRITICAL RULES); we surface the booleans on the report
+                 shape so downstream consumers (UI tooltips, future
+                 rubric-debug view) can render them without re-detecting. */
+              const culturalRegister = detectCulturalRegister(pq.answerText || "");
               return {
                 ...pq,
                 difficulty: diff,
@@ -732,6 +775,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
                 likelyFollowUp,
                 lengthVerdict,
                 starPresence,
+                culturalRegister,
               };
             })
         : [],
@@ -745,6 +789,21 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       storyReuseFindings,
       blindSpots: normalizeBlindSpots((parsed as Record<string, unknown>).blindSpots),
       readiness: normalizeReadiness((parsed as Record<string, unknown>).readiness),
+      /* Reverse-interview classification — find the perQuestion whose
+         interviewer prompt looks like the reverse-interview turn
+         ("any questions for us?" / "questions for me?") and summarise
+         the candidate's reply via the shared regex helper. Pinned
+         deterministically so the report and the live coach agree on
+         whether the closing turn helped or hurt the candidate. */
+      reverseInterview: (() => {
+        const REVERSE_PROMPT_RE = /\b(?:any\s+questions\s+(?:for\s+us|you\s+have)|questions\s+for\s+(?:me|us)|do\s+you\s+have\s+any\s+questions)\b/i;
+        const perQ = Array.isArray((parsed as { perQuestion?: unknown[] }).perQuestion)
+          ? ((parsed as { perQuestion: Array<{ question?: string; answerText?: string }> }).perQuestion)
+          : [];
+        const turn = perQ.find((pq) => typeof pq?.question === "string" && REVERSE_PROMPT_RE.test(pq.question));
+        if (!turn) return null;
+        return summarizeReverseInterview(turn.answerText || "");
+      })(),
       model: result.model,
     };
 

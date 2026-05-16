@@ -1,0 +1,18 @@
+{
+  "name": "Candidate asks 80% hike with no market or scope rationale",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a backend engineer with 5 years at a payments startup. I led the ledger rewrite and on-call rotation.", "time": "" },
+      { "speaker": "ai", "text": "What is your current CTC and expected CTC?", "time": "" },
+      { "speaker": "user", "text": "Current is 22 LPA, expected is 40 LPA.", "time": "" },
+      { "speaker": "ai", "text": "That's nearly an 80% hike. Why are you asking for that jump from your current?", "time": "" },
+      { "speaker": "user", "text": "That's just what I want. I think I deserve it.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["hike_rationale_thin"],
+    "must_not_include": ["empty_transcript", "user_anchor_leaked_salary"]
+  }
+}

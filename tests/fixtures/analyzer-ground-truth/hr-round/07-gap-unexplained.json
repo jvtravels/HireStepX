@@ -1,0 +1,16 @@
+{
+  "name": "Candidate gives a thin, evasive answer to a career-gap probe",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "I see a gap between your last two roles. Can you walk me through what you were doing during that career break?", "time": "" },
+      { "speaker": "user", "text": "Just personal reasons. I took some time off.", "time": "" },
+      { "speaker": "ai", "text": "Okay. What are you looking for in this role?", "time": "" },
+      { "speaker": "user", "text": "Growth and a good team.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["gap_unexplained"],
+    "must_not_include": ["empty_transcript", "user_badmouthing_employer"]
+  }
+}

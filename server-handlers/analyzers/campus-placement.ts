@@ -103,6 +103,69 @@ const BOND_HEALTHY_RESPONSE = /\b(?:comfortable\s+(?:with|signing)|i'?m\s+aware|
 const BOND_REFUSAL = /\b(?:i\s+won'?t\s+sign|absolutely\s+not|no\s+way|refuse|never\s+sign|i\s+don'?t\s+(?:sign|do)\s+bonds?)\b/i;
 const BOND_IGNORANCE = /\b(?:what'?s?\s+(?:a\s+)?bond|i\s+don'?t\s+know\s+(?:about|what)|never\s+heard\s+of|first\s+(?:time\s+)?hearing)\b/i;
 
+/* ── Wave 3: real-life campus edge cases ─────────────────────────────────
+ * Each block below targets a specific failure mode Indian recruiters see
+ * repeatedly. Patterns are intentionally conservative — we'd rather miss
+ * a true positive than fire on a benign answer. */
+
+/* Attrition risk — fresher signaling exit within 1-2 years (MBA / MS / GRE
+ * prep / going abroad). At service-tier this is an immediate red flag
+ * because the company can't recover the 2yr training cost. */
+const ATTRITION_HIGHER_STUDIES = /\b(?:planning\s+(?:to\s+)?(?:do\s+)?(?:my\s+)?(?:mba|ms\b|masters|m\.?tech\s+abroad|gre|gmat|cat\s+exam)|going\s+abroad\s+for\s+(?:my\s+)?(?:mba|ms|masters|higher\s+studies)|prepar(?:e|ing)\s+for\s+(?:gre|gmat|cat\b|ielts|toefl)|after\s+(?:1|2|one|two)\s*years?\s+i\s+(?:want|plan|will)\s+to\s+(?:do|pursue|join)\s+(?:my\s+)?(?:mba|ms|masters)|i\s+want\s+to\s+do\s+(?:my\s+)?(?:mba|ms|masters)\s+(?:in|after|within)\s+(?:1|2|one|two)\s*years?)\b/i;
+
+/* Relocation refusal — flat refusal to leave home city. Dealbreaker at
+ * TCS/Infosys/Wipro/Cognizant where allocation is pan-India. */
+const RELOCATION_REFUSAL = /\b(?:(?:cannot|can'?t|won'?t|will\s+not|unable\s+to)\s+relocate|not\s+willing\s+to\s+relocate|only\s+(?:want\s+to\s+work|prefer\s+to\s+work|join\s+if\s+(?:posting|posted))\s+(?:in|at|near)\s+(?:bangalore|bengaluru|hyderabad|chennai|mumbai|pune|delhi|noida|gurgaon|gurugram|kolkata|my\s+(?:home\s+)?(?:city|town))|(?:can|will)\s+only\s+work\s+(?:in|from)\s+(?:bangalore|bengaluru|hyderabad|chennai|mumbai|pune|delhi|noida|gurgaon|gurugram|kolkata)|relocation\s+is\s+(?:a\s+)?(?:problem|deal[- ]?breaker|not\s+possible))\b/i;
+const RELOCATION_PROBE = /\b(?:relocat|are\s+you\s+(?:open\s+to|willing\s+to)\s+(?:move|relocate)|(?:bangalore|bengaluru|hyderabad|chennai|pune|noida|gurgaon|trivandrum|kochi|kolkata|nagpur|mysore)\s+(?:office|location|allocation|posting|deployment|center)|any\s+(?:of\s+our\s+)?location|pan[- ]?india\s+(?:posting|deployment|allocation))\b/i;
+
+/* Night-shift / on-call refusal — common dealbreaker. */
+const SHIFT_REFUSAL = /\b(?:(?:cannot|can'?t|won'?t|will\s+not|don'?t\s+(?:want|prefer)|not\s+(?:comfortable|okay|ok|willing))\s+(?:to\s+)?(?:do|work|take)\s+(?:night\s+shift|on[- ]?call|rotational\s+shift|graveyard\s+shift|us\s+shift|evening\s+shift)|night\s+shift\s+is\s+(?:a\s+)?(?:problem|deal[- ]?breaker|not\s+possible|issue)|no\s+night\s+(?:shifts?|duty)|on[- ]?call\s+is\s+(?:a\s+)?(?:problem|deal[- ]?breaker|not\s+possible|issue))\b/i;
+const SHIFT_PROBE = /\b(?:night\s+shift|rotational\s+shift|on[- ]?call|24x7|24\s*\/\s*7|us\s+(?:shift|hours|timing)|graveyard|client\s+(?:hours|timing)|shift\s+timing|production\s+support)\b/i;
+
+/* Cliché strength/weakness — "perfectionist", "work too hard". */
+const CLICHE_STRENGTH_WEAKNESS = /\b(?:i'?m\s+a\s+perfectionist|i\s+am\s+(?:a\s+)?perfectionist|my\s+(?:biggest\s+)?weakness\s+is\s+(?:that\s+)?(?:i\s+am\s+a\s+perfectionist|i'?m\s+a\s+perfectionist|i\s+work\s+too\s+(?:hard|much)|i\s+care\s+too\s+much|i\s+am\s+too\s+(?:dedicated|hard[- ]?working|honest))|i\s+work\s+too\s+(?:hard|much)\s+sometimes|i'?m\s+too\s+(?:hard[- ]?working|dedicated|honest)|workaholic)\b/i;
+const STRENGTH_WEAKNESS_PROBE = /\b(?:(?:greatest|biggest|main)\s+(?:strength|weakness)|tell\s+me\s+(?:about\s+)?your\s+(?:strengths?|weakness(?:es)?)|what\s+(?:are|is)\s+your\s+(?:strengths?|weakness(?:es)?)|areas?\s+(?:of\s+improvement|to\s+improve))\b/i;
+
+/* "Tell me about yourself" → resume recital cue. */
+const TMAY_PROBE = /\b(?:tell\s+me\s+about\s+yourself|introduce\s+yourself|walk\s+me\s+through\s+your\s+(?:background|resume|cv|profile)|brief\s+(?:introduction|intro)\s+about\s+yourself)\b/i;
+const RESUME_RECITAL = /\b(?:as\s+(?:per|mentioned\s+in|stated\s+in)\s+my\s+(?:resume|cv)|as\s+(?:you\s+can\s+see\s+)?(?:in|on)\s+my\s+(?:resume|cv)|on\s+(?:the\s+)?top\s+of\s+(?:the\s+)?(?:resume|cv|profile)|listed\s+(?:in|on)\s+my\s+(?:resume|cv)|going\s+through\s+my\s+resume|reading\s+(?:from\s+)?my\s+resume)\b/i;
+
+/* "Where do you see yourself in 5 years?" — career-goal probe.
+ * Specific (tech-lead / SDE-3 / shipping a product) scores;
+ * vague ("successful", "settled", "in a senior position") doesn't. */
+const CAREER_GOAL_PROBE = /\b(?:where\s+do\s+you\s+see\s+yourself|5\s*years?\s+(?:down\s+the\s+line|from\s+now|hence)|long[- ]?term\s+(?:goal|plan|vision|aspiration)|career\s+(?:goal|plan|aspiration|trajectory|graph)|(?:short|long)[- ]?term\s+plan)\b/i;
+const CAREER_GOAL_VAGUE = /\b(?:(?:want\s+to\s+be|see\s+myself|be)\s+(?:successful|big|in\s+a\s+(?:senior|leadership|big|higher|good)\s+(?:position|role|level)|settled|happy|grown\s+(?:in|as)\s+(?:a\s+)?person|at\s+a\s+higher\s+level)|wherever\s+(?:life|the\s+company)\s+takes|grow\s+(?:in|with)\s+the\s+company|don'?t\s+(?:know|have\s+a\s+plan)|haven'?t\s+(?:thought|decided))\b/i;
+const CAREER_GOAL_SPECIFIC = /\b(?:tech\s+lead|senior\s+(?:engineer|developer|sde)|principal\s+(?:engineer|developer)|sde[- ]?[23ii]|engineering\s+manager|staff\s+engineer|specialis[ez]\s+in\s+\w|domain\s+expert|architect\s+(?:for|on)|associate\s+(?:consultant|architect|partner)|product\s+(?:manager|owner)|founding\s+(?:engineer|team)|own(?:ership)?\s+of\s+(?:a|the|my)\s+(?:product|module|service|feature)|shipping\s+(?:my|the)\s+(?:first|own)\s+(?:product|feature|module)|deep\s+expertise\s+in\s+\w|core\s+contributor\s+to\s+\w)\b/i;
+
+/* Hackathon claim — should come with rank/prize/team/duration detail. */
+const HACKATHON_CLAIM = /\b(?:hackathon|hack\s+day|smart\s+india\s+hackathon|sih\b|hackerearth\s+(?:contest|hackathon)|unstop|techgig|codevita|coding\s+contest|programming\s+contest|google\s+hash\s+code|kickstart)\b/i;
+const HACKATHON_DETAIL = /\b(?:won|runner[- ]?up|top\s+\d+|finalist|prize|stipend|leader[- ]?board|team\s+of\s+\d|built\s+\w+\s+in\s+\d+\s+(?:hours?|days?)|(?:24|36|48|72)\s+hours?|theme\s+was|problem\s+statement|judges?|first\s+place|second\s+place|third\s+place|rank\s+\d+|cash\s+prize|certificate)\b/i;
+
+/* Buzzword soup — listing too many trendy areas as "interests" without an
+ * anchor project. Counted across the full user text. */
+const BUZZWORD = /\b(?:ai\b|ml\b|machine\s+learning|deep\s+learning|blockchain|web3\b|iot\b|cloud\s+computing|cyber\s*security|data\s+science|big\s+data|generative\s+ai|gen\s*ai|chatgpt|llm\b|nlp\b|computer\s+vision|robotics|ar\s*\/\s*vr|metaverse|quantum\s+computing|crypto(?:currency)?|nft\b)\b/gi;
+
+/* Family-pressure framing — unprofessional in a job interview context. */
+const FAMILY_PRESSURE = /\b(?:my\s+(?:parents|family|father|mother|dad|mom)\s+(?:want|wants|wanted|told|asked|forced|pushed|insisted|chose)|because\s+of\s+my\s+(?:parents|family)|my\s+(?:parents|family)'?s?\s+(?:wish|dream|expectation|pressure|choice)|forced\s+(?:by|into|to\s+join)\s+(?:my\s+)?(?:parents|family|this\s+field))\b/i;
+
+/* Negative compare to another company. */
+const NEGATIVE_COMPARE = /\b(?:(?:tcs|infosys|wipro|cognizant|hcl|tech\s+mahindra|capgemini|accenture|google|amazon|microsoft|adobe|flipkart|swiggy|zomato)\s+is\s+(?:better|worse|bigger|smaller|cheaper|costlier|worse\s+paying|low[- ]?paying)\s+than|(?:better|worse|cheaper|costlier|smaller|bigger)\s+than\s+(?:tcs|infosys|wipro|cognizant|hcl|google|amazon|microsoft|flipkart|swiggy|zomato)|(?:tcs|infosys|wipro|cognizant|hcl|capgemini|accenture)\s+(?:doesn'?t|does\s+not|never)\s+(?:pay\s+well|train\s+well|give\s+good))\b/i;
+
+/* Salary expectation probe + value extraction. */
+const SALARY_EXPECTATION_PROBE = /\b(?:salary\s+expectation|expected\s+(?:ctc|salary|package|compensation)|what\s+(?:are|is)\s+your\s+(?:salary|ctc|package)\s+expectation|how\s+much\s+(?:are\s+you\s+expecting|do\s+you\s+want|salary)|expected\s+pay)\b/i;
+const SALARY_NUMBER_LPA = /\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa|lakhs?\s*per\s*annum|l\.?p\.?a\.?)\b/i;
+
+/* User raised salary too early — in a technical / introductory round.
+ * We flag if the user mentions CTC/salary before the AI has done so, AND
+ * within the first 4 user turns. */
+const USER_SALARY_RAISED = /\b(?:what\s+(?:is\s+(?:the\s+)?)?(?:ctc|salary|package|pay)|how\s+much\s+do\s+you\s+pay|salary\s+structure|what'?s\s+the\s+(?:pay|ctc|package))\b/i;
+
+/* Portfolio absence claim — user said "I built X" but didn't reference
+ * any github / hosted demo / live link. Only fires on substantial
+ * project narration. */
+const CLAIMED_BUILT = /\b(?:i\s+(?:built|made|developed|coded|implemented|deployed|shipped|trained)\s+(?:a\s+|an\s+|the\s+|my\s+)?\w)/i;
+const PORTFOLIO_LINK = /\b(?:github(?:\.com)?|gitlab|bitbucket|portfolio\s+(?:link|url|site|website)|live\s+(?:demo|link|url|site)|deployed\s+(?:on|at)|hosted\s+(?:on|at)|netlify|vercel|render|heroku|firebase\s+hosting|aws\s+(?:s3|amplify|elastic)|hugging\s*face|kaggle\s+notebook|colab\s+notebook|leetcode\s+profile|codeforces|codechef|hackerrank\s+profile|figma\s+(?:link|file)|notion\s+page|demo\s+video)\b/i;
+
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
   version: "campus-placement-v2",
@@ -339,6 +402,189 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       });
     }
 
+    /* ── Wave 3 detection: real-life campus edge cases ─────────────── */
+
+    // Attrition risk — fresher signaling exit for higher studies within 1-2 yrs.
+    if (ATTRITION_HIGHER_STUDIES.test(userText)) {
+      flags.add("attrition_risk_higher_studies");
+      gaps.push({
+        dimension: "framing",
+        expected: "Service-tier firms (TCS/Infosys/Wipro) won't hire candidates planning MBA/MS within the bond. If higher studies is a real plan, frame as 'I'd like to build a strong foundation here first' — not 'I'm joining for 2 years and then doing MBA'",
+        observed: "User explicitly stated higher-studies plan (MBA/MS/GRE/CAT) within 1-2 years — strong attrition signal at service-tier",
+        severity: companyTier === "service" ? "high" : "medium",
+      });
+    }
+
+    // Relocation refusal — flat refusal to leave home city.
+    const aiAskedRelocation = transcript.some((t) => isAi(t) && RELOCATION_PROBE.test(t.text || ""));
+    if (RELOCATION_REFUSAL.test(userText)) {
+      flags.add("relocation_refusal");
+      gaps.push({
+        dimension: "preparation",
+        expected: "Refusing relocation outright is a dealbreaker at TCS/Infosys/Wipro/Cognizant (pan-India allocation). If you have a genuine constraint, soften: 'I have a strong preference for the South — could you walk me through how allocation works?'",
+        observed: aiAskedRelocation
+          ? "AI probed location flexibility — user refused outright. Pan-India service firms can't accommodate this."
+          : "User volunteered relocation refusal unprompted — reads as unflexible / unaware",
+        severity: companyTier === "service" ? "high" : "medium",
+      });
+    }
+
+    // Night-shift / on-call refusal.
+    const aiAskedShift = transcript.some((t) => isAi(t) && SHIFT_PROBE.test(t.text || ""));
+    if (SHIFT_REFUSAL.test(userText)) {
+      flags.add("shift_oncall_refusal");
+      gaps.push({
+        dimension: "preparation",
+        expected: "Most service-tier and global-product firms have rotational/US-shift roles. Flat refusal closes doors. If you have a constraint (health/family), frame as 'I'd want to understand the rotation cadence' — not a flat no",
+        observed: aiAskedShift
+          ? "AI asked about shift flexibility — user refused outright"
+          : "User volunteered shift refusal unprompted",
+        severity: "medium",
+      });
+    }
+
+    // Cliché strength/weakness — "perfectionist" / "work too hard".
+    // Gate on the interviewer actually asking the probe so we don't fire
+    // on a candidate volunteering the cliché in an unrelated story (rare,
+    // but a real false-positive class without the gate).
+    const aiAskedStrengthWeakness = transcript.some((t) => isAi(t) && STRENGTH_WEAKNESS_PROBE.test(t.text || ""));
+    if (aiAskedStrengthWeakness && CLICHE_STRENGTH_WEAKNESS.test(userText)) {
+      flags.add("cliche_strength_weakness");
+      gaps.push({
+        dimension: "specificity",
+        expected: "Interviewers hear 'perfectionist' / 'work too hard' 5+ times a day. Pick a real, calibrated weakness with a concrete example of how you're working on it",
+        observed: "User used a cliché strength/weakness ('perfectionist', 'work too hard', 'workaholic')",
+        severity: "low",
+      });
+    }
+
+    // "Tell me about yourself" → resume recital cue.
+    const aiAskedTmay = transcript.some((t) => isAi(t) && TMAY_PROBE.test(t.text || ""));
+    if (aiAskedTmay && RESUME_RECITAL.test(userText)) {
+      flags.add("tmay_resume_recital");
+      gaps.push({
+        dimension: "communication clarity",
+        expected: "'Tell me about yourself' is a structure question, not a resume recital. Use the 60-second frame: who-I-am → strongest project → why-this-role. The interviewer already has your resume.",
+        observed: "User said 'as per my resume' / 'as you can see in my resume' — signals they're reading off the page",
+        severity: "medium",
+      });
+    }
+
+    // Career-goal probe answered with vague / non-specific language.
+    const aiAskedCareerGoal = transcript.some((t) => isAi(t) && CAREER_GOAL_PROBE.test(t.text || ""));
+    if (aiAskedCareerGoal && CAREER_GOAL_VAGUE.test(userText) && !CAREER_GOAL_SPECIFIC.test(userText)) {
+      flags.add("career_goal_vague");
+      gaps.push({
+        dimension: "preparation",
+        expected: "Pick a specific role/skill 3-5 years out: 'SDE-2 with deep ownership of a backend service' / 'tech lead in distributed systems' / 'product specialist in fintech'. Vague answers ('successful', 'in a senior position') signal no plan",
+        observed: "AI asked about 5-year goal — user gave vague answer ('successful' / 'in a senior position' / 'wherever life takes me')",
+        severity: "medium",
+      });
+    }
+
+    // Hackathon claim without detail.
+    if (HACKATHON_CLAIM.test(userText) && !HACKATHON_DETAIL.test(userText) && userTurnCount >= 3) {
+      flags.add("hackathon_unsubstantiated");
+      gaps.push({
+        dimension: "credibility",
+        expected: "A hackathon mention should come with: theme, team size, duration, what shipped, and rank/outcome. 'I participated in SIH' alone is resume padding.",
+        observed: "User mentioned a hackathon / coding contest but gave no rank, prize, team size, or what was built",
+        severity: "low",
+      });
+    }
+
+    // Buzzword soup — listing many trendy areas without an anchor project.
+    const buzzwordHits = (userText.match(BUZZWORD) || []);
+    const uniqueBuzzwords = new Set(buzzwordHits.map((s) => s.toLowerCase().replace(/\s+/g, " ").trim()));
+    if (uniqueBuzzwords.size >= 5 && !TECH_STACK.test(userText)) {
+      flags.add("buzzword_soup");
+      gaps.push({
+        dimension: "specificity",
+        expected: "Listing 5+ trendy areas ('AI, ML, blockchain, IoT, cloud, web3') without a single concrete project reads as a buzzword resume. Pick ONE area you've actually built in",
+        observed: `User listed ${uniqueBuzzwords.size} trendy areas (AI/ML/blockchain/IoT/etc.) with no concrete tech stack to back any of them`,
+        severity: "medium",
+      });
+    }
+
+    // Family-pressure framing — unprofessional in interview context.
+    if (FAMILY_PRESSURE.test(userText)) {
+      flags.add("family_pressure_framing");
+      gaps.push({
+        dimension: "professionalism",
+        expected: "Never frame career choice as parent-driven ('my parents wanted me to do engineering'). Own the choice: 'I picked CS because I enjoyed the problem-solving in 12th-grade physics'",
+        observed: "User attributed career choice to parents/family pressure — signals lack of ownership",
+        severity: "medium",
+      });
+    }
+
+    // Negative compare to another company.
+    if (NEGATIVE_COMPARE.test(userText)) {
+      flags.add("negative_company_compare");
+      gaps.push({
+        dimension: "professionalism",
+        expected: "Never disparage other companies in an interview, even competitors. If asked 'why us over X?', name what excites you about THIS company — don't trash the other",
+        observed: "User compared the target company unfavourably to another firm (or vice versa) — reads as immature",
+        severity: "medium",
+      });
+    }
+
+    // Inflated salary expectation for a campus fresher.
+    const aiAskedSalary = transcript.some((t) => isAi(t) && SALARY_EXPECTATION_PROBE.test(t.text || ""));
+    // Service-tier campus fresher band ≈ ₹3.5-4.5L; product-india ≈ ₹6-15L;
+    // product-global ≈ ₹15-30L. Any single-digit fresher quoting >2x is inflated.
+    const salaryInflatedCutoff = companyTier === "product-global" ? 35
+      : companyTier === "product-india" ? 20
+      : companyTier === "service" ? 8
+      : 12;
+    if (aiAskedSalary) {
+      const salaryMatch = userText.match(SALARY_NUMBER_LPA);
+      if (salaryMatch) {
+        const lpa = Number(salaryMatch[1]);
+        if (lpa >= salaryInflatedCutoff) {
+          flags.add("salary_expectation_inflated");
+          gaps.push({
+            dimension: "preparation",
+            expected: `Campus fresher band for this tier sits well below ${salaryInflatedCutoff} LPA. Either anchor to glassdoor/levels.fyi data, or defer politely: 'I'm flexible and trust the standard fresher band — I'd like to learn more about the role'`,
+            observed: `User quoted ${lpa} LPA — well above typical fresher campus offer for ${companyTier === "service" ? "service-tier" : companyTier === "product-india" ? "Indian product" : companyTier === "product-global" ? "global product India" : "this"} firms`,
+            severity: "medium",
+          });
+        }
+      }
+    }
+
+    // User raised salary in the first 4 user turns, before AI did.
+    const aiTurnsRaisingSalary = transcript
+      .map((t, idx) => ({ t, idx }))
+      .filter(({ t }) => isAi(t) && (SALARY_EXPECTATION_PROBE.test(t.text || "") || USER_SALARY_RAISED.test(t.text || "")));
+    const firstAiSalaryIdx = aiTurnsRaisingSalary.length > 0 ? aiTurnsRaisingSalary[0].idx : Number.POSITIVE_INFINITY;
+    const userTurnsWithIdx = transcript
+      .map((t, idx) => ({ t, idx }))
+      .filter(({ t }) => isUser(t));
+    for (let i = 0; i < Math.min(userTurnsWithIdx.length, 4); i += 1) {
+      const { t, idx } = userTurnsWithIdx[i];
+      if (idx < firstAiSalaryIdx && USER_SALARY_RAISED.test(t.text || "")) {
+        flags.add("salary_raised_too_early");
+        gaps.push({
+          dimension: "preparation",
+          expected: "Don't bring up salary in the technical / first round. Wait for HR / final round, or until the interviewer raises it. Asking 'what's the CTC' in turn 2 of a tech round signals wrong priorities",
+          observed: "User asked about salary/CTC in the first 4 turns, before the AI raised compensation — wrong round for this question",
+          severity: "medium",
+        });
+        break;
+      }
+    }
+
+    // Portfolio absence — claimed to build something but no public artifact link.
+    if (CLAIMED_BUILT.test(userText) && !PORTFOLIO_LINK.test(userText) && userTurnCount >= 3 && (PROJECT_NARRATION.test(userText) || INTERNSHIP_CLAIM.test(userText))) {
+      flags.add("portfolio_absent_for_claim");
+      gaps.push({
+        dimension: "credibility",
+        expected: "When narrating a project, drop a github/live-demo/portfolio link in the same turn. 'Source is on my GitHub at /username/repo' or 'live demo at xyz.vercel.app' adds 10x credibility over a verbal claim",
+        observed: "User claimed to have built / shipped a project but never referenced GitHub, a live demo, a hosted URL, or any public artifact",
+        severity: "low",
+      });
+    }
+
     const tips: string[] = [];
     if (flags.has("no_academic_project_discussed")) tips.push("As a fresher, lead with your capstone or final-year project — it's your strongest evidence.");
     if (flags.has("generic_passion_no_substance")) tips.push("Replace 'I'm passionate about tech' with 'I built X using Y, here's what I learned.'");
@@ -355,6 +601,19 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("weak_reverse_questions")) tips.push("'What's the work culture?' isn't a real question — every interviewer hears it 20 times a day. Ask specific: 'What does a typical week look like for an SDE on your Trailhead team?' or 'You mentioned the new ABDM project in the PPT — would freshers rotate through it?'");
     if (flags.has("bond_refusal")) tips.push("Never refuse the bond outright in an on-campus TCS/Infosys/Wipro interview — it's an instant disqualifier. If concerned, ask: 'Could you walk me through the buyout terms and the typical reasons people exercise them?' Sounds informed, not resistant.");
     if (flags.has("bond_unprepared")) tips.push("Know the bond duration for your target company before the interview. Quick reference: TCS 2 years, Infosys 1 year, Wipro 15 months + ₹2L bond, Cognizant 1 year, HCL 1.5 years, Tech Mahindra / Capgemini / Accenture 1 year. Service-tier firms WILL ask.");
+    if (flags.has("attrition_risk_higher_studies")) tips.push("If MBA / MS is a real 2-year plan, don't volunteer it in a service-tier campus interview — bonds recover training cost over 2 years and recruiters discount you immediately. If asked directly, frame as 'I'd like to first build a strong foundation here — higher studies is a future consideration, not a fixed timeline.'");
+    if (flags.has("relocation_refusal")) tips.push("Pan-India service firms allocate across Mysore / Hyderabad / Chennai / Bhubaneswar / Coimbatore — flat refusal of relocation ends the conversation. If you have a genuine constraint, soften: 'I have a preference for Southern locations due to family — could you walk me through how allocation works?' Curiosity, not refusal.");
+    if (flags.has("shift_oncall_refusal")) tips.push("Most service-tier and global-product India roles include rotational / US-shift coverage. Saying 'I can't do night shift' before understanding the cadence (every 8 weeks? Once a quarter? Only during incidents?) reads as inflexible. Ask first, decide later.");
+    if (flags.has("cliche_strength_weakness")) tips.push("Drop 'perfectionist' and 'I work too hard' — every interviewer hears these 5x a day. Real weaknesses: 'I over-engineer when I should ship and iterate. I've started timeboxing my POCs to 2 days.' Specific, calibrated, with a real fix in progress.");
+    if (flags.has("tmay_resume_recital")) tips.push("'Tell me about yourself' is NOT a resume read. Use the 60-second frame: one sentence on who you are → one strong project with a measurable outcome → one sentence on why this role. Skip 'as per my resume' — they already read it.");
+    if (flags.has("career_goal_vague")) tips.push("'I see myself in a senior position' is the laziest possible answer to the 5-year question. Pick a specific role: 'SDE-2 with ownership of a backend service' / 'tech lead on a payments squad' / 'product specialist in fintech infra'. Specific = thoughtful; vague = unprepared.");
+    if (flags.has("hackathon_unsubstantiated")) tips.push("If you mention a hackathon, lead with: theme + team size + duration + what you built + the rank/outcome. 'Smart India Hackathon 2023, 4-person team, built an OCR pipeline for railway tickets, finalist (top 5 of 80)' beats 'I did SIH.'");
+    if (flags.has("buzzword_soup")) tips.push("Listing AI + ML + blockchain + IoT + web3 as interests without a single project reads as resume padding. Pick ONE — say 'I went deep on ML over my final year and built a 3-stage churn-prediction pipeline with XGBoost' — depth beats breadth in fresher interviews.");
+    if (flags.has("family_pressure_framing")) tips.push("Never frame your career as parent-driven ('my parents wanted me to do engineering / join TCS'). Own the choice even if the original push came from family: 'I picked CS because the problem-solving clicked for me in 12th — I've been building projects since.' Recruiters select for ownership.");
+    if (flags.has("negative_company_compare")) tips.push("Never trash another company — even a competitor, even one that rejected you. The interviewer notes 'will say negative things about us in 2 years.' If asked 'why us over X', name what excites you about THIS company, not what's wrong with X.");
+    if (flags.has("salary_expectation_inflated")) tips.push("Campus fresher offers are typically non-negotiable and capped by tier (TCS/Infosys ≈ ₹3.5-4.5L, Indian product ≈ ₹6-15L, global product India ≈ ₹15-30L for fresher SDE). Quoting a number 2-3x above band tells recruiters you didn't do research. Either anchor to levels.fyi data or defer: 'I trust the standard fresher band — I'd like to learn more about the role first.'");
+    if (flags.has("salary_raised_too_early")) tips.push("Don't bring up salary in the technical / first round. Wrong round = wrong priorities signal. Wait for HR / final round, or for the interviewer to raise it. If you genuinely don't know the band, ask after the technical conversation has finished: 'I'd love to understand the comp structure — when's the right time to discuss?'");
+    if (flags.has("portfolio_absent_for_claim")) tips.push("Drop a GitHub link / live demo URL whenever you narrate a project. 'Source is on my GitHub at github.com/username/repo' or 'live demo at xyz.vercel.app' adds 10x credibility versus a verbal claim — recruiters can check it in 30 seconds.");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

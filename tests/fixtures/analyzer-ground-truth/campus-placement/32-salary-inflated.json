@@ -1,0 +1,17 @@
+{
+  "name": "Fresher quotes 12 LPA at TCS — well above service-tier campus band",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "There's a Python Flask sentiment analysis tool on github.com/me/sentiment.", "time": "" },
+      { "speaker": "ai", "text": "What's your expected CTC?", "time": "" },
+      { "speaker": "user", "text": "I am expecting 12 LPA at minimum based on my skills and projects.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["salary_expectation_inflated"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

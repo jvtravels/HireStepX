@@ -1,0 +1,17 @@
+{
+  "name": "User refuses night-shift / on-call at a service-tier firm",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Cognizant",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through a Java project.", "time": "" },
+      { "speaker": "user", "text": "Built a Spring Boot inventory service with Postgres. Source on github.com/me/inventory.", "time": "" },
+      { "speaker": "ai", "text": "Many of our client engagements run on US shift with rotational on-call. Are you comfortable with that?", "time": "" },
+      { "speaker": "user", "text": "Honestly, I cannot do night shift. Night shift is a deal-breaker for me.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["shift_oncall_refusal"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

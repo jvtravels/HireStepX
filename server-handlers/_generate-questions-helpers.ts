@@ -219,13 +219,22 @@ export function isSalaryNegotiationLengthOk(
  * The number of total interview steps to request from the LLM, given the
  * format. Salary-negotiation gets a fixed 3 steps (intro + initial offer +
  * closing) regardless of mini/regular; the kernel fills the middle. Other
- * types: mini → 3 questions, regular → 5 questions. Total = +2 for intro
- * and closing.
+ * types: mini → 3 questions, regular → 5 questions. HR-round → 7 questions
+ * (7-dimension Indian HR gate can't be covered in 5 turns). Total = +2 for
+ * intro and closing.
  */
-export function computeStepCount(opts: { mini: boolean; isSalaryType: boolean }): number {
+export function computeStepCount(opts: { mini: boolean; isSalaryType: boolean; interviewType?: string }): number {
   if (opts.isSalaryType) return 3; // intro + initial-offer + closing
-  const questionCount = opts.mini ? 3 : 5;
-  return questionCount + 2;
+  if (opts.mini) return 3 + 2;
+  if (opts.interviewType === "hr-round") return 7 + 2;
+  return 5 + 2;
+}
+
+export function computeQuestionCount(opts: { mini: boolean; isSalaryType: boolean; interviewType?: string }): number {
+  if (opts.isSalaryType) return opts.mini ? 5 : 5;
+  if (opts.mini) return 3;
+  if (opts.interviewType === "hr-round") return 7;
+  return 5;
 }
 
 /* ─── Static fallback (used when both LLM providers fail) ──────────────

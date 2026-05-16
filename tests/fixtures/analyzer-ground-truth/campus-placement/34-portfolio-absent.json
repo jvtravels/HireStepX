@@ -1,0 +1,19 @@
+{
+  "name": "User narrates built projects but never references GitHub / live demo / hosted link",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Capgemini",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your strongest project.", "time": "" },
+      { "speaker": "user", "text": "I built a sentiment analysis tool using Python and Flask. We used Postgres for storage.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about another project.", "time": "" },
+      { "speaker": "user", "text": "My team and I built a React expense tracker with Firebase auth. It works well for our college users.", "time": "" },
+      { "speaker": "ai", "text": "Have you done any internship?", "time": "" },
+      { "speaker": "user", "text": "I interned at a local startup last summer where I shipped a notification microservice with Node.js and MongoDB. Mentor was the engineering manager.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["portfolio_absent_for_claim"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Candidate surfaces offer-letter-delay anxiety mid-interview instead of at close",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a senior data engineer with 5 years building ETL platforms. Quick thing — when will I get the written offer letter? I have an exploding offer from another company.", "time": "" },
+      { "speaker": "ai", "text": "We'll get to that at close. For now — what are you looking for in this role?", "time": "" },
+      { "speaker": "user", "text": "Honestly, how much time will I have to decide? My other offer expires Friday.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["offer_letter_delay_anxiety"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

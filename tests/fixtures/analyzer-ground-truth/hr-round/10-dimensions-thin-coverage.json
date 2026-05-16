@@ -1,0 +1,22 @@
+{
+  "name": "Long session that only touches motivation, never probing logistics/comp/compliance/commitment/benefits",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a frontend engineer with 6 years of experience, mostly React and design systems.", "time": "" },
+      { "speaker": "ai", "text": "Why are you interested in our company?", "time": "" },
+      { "speaker": "user", "text": "I've followed your design-system blog for a while and the recent component-library launch is exactly the space I want to go deeper in.", "time": "" },
+      { "speaker": "ai", "text": "What kind of team environment do you do your best work in?", "time": "" },
+      { "speaker": "user", "text": "Small teams with strong design partnership and short feedback loops.", "time": "" },
+      { "speaker": "ai", "text": "Where do you see yourself in three to five years?", "time": "" },
+      { "speaker": "user", "text": "Leading a design-systems org and mentoring frontend engineers across product teams.", "time": "" },
+      { "speaker": "ai", "text": "What would you say is your biggest strength?", "time": "" },
+      { "speaker": "user", "text": "I bridge design and engineering well — I can sit in Figma reviews and ship pixel-accurate components.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["dimensions_thin_coverage"],
+    "must_not_include": ["empty_transcript", "user_badmouthing_employer"]
+  }
+}

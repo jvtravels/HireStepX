@@ -1,0 +1,16 @@
+{
+  "name": "Hinglish candidate hedges on notice period — should still be detected",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "What is your notice period — 30, 60, or 90 days?", "time": "" },
+      { "speaker": "user", "text": "Pata nahi exactly, check karke bataunga. Thoda time lagega confirm karne mein.", "time": "" },
+      { "speaker": "ai", "text": "Okay. When would be your earliest LWD?", "time": "" },
+      { "speaker": "user", "text": "Abhi confirm nahi kar sakta, manager se baat karni padegi.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["vague_notice_period"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

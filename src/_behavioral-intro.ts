@@ -50,6 +50,9 @@ const SERVICES_TRACK_COMPANIES = [
   "accenture", "capgemini", "tech mahindra", "hcl", "hcltech",
   "ltimindtree", "lti", "mindtree", "mphasis", "persistent",
   "ibm india", "dxc", "birlasoft",
+  // Tier-2 / specialised Indian services firms surfaced by audit.
+  "sonata", "hexaware", "ntt data", "quest global", "coforge",
+  "kpit", "zensar", "cyient", "happiest minds", "virtusa",
 ];
 function isServicesTrack(company: string): boolean {
   const c = company.toLowerCase();

@@ -1,0 +1,16 @@
+{
+  "name": "User dodges the counter-offer commitment question",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "If we extend you an offer, will you accept and stop interviewing elsewhere?", "time": "" },
+      { "speaker": "user", "text": "I'll see how things go. It depends on a few factors. Maybe.", "time": "" },
+      { "speaker": "ai", "text": "And if your current company comes back with a counter-offer matching ours, what would you do?", "time": "" },
+      { "speaker": "user", "text": "Not sure honestly. Too early to say. Let me think about that when it happens.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["counter_offer_dodge"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

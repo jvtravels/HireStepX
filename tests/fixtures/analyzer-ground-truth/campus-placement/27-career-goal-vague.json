@@ -1,0 +1,17 @@
+{
+  "name": "Vague 5-year career goal — 'I want to be successful'",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "HCL",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "There's a React weather dashboard with OpenWeather API on github.com/me/weather, deployed on Vercel.", "time": "" },
+      { "speaker": "ai", "text": "Where do you see yourself 5 years from now?", "time": "" },
+      { "speaker": "user", "text": "Honestly, I see myself in a senior position, settled, and successful. Wherever life takes me.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["career_goal_vague"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

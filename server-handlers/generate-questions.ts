@@ -716,8 +716,10 @@ The intro persona should be "Hiring Manager". Distribute questions across all th
 CROSS-PERSONA REFERENCE: at least one question (q3 or later) must reference what an earlier panelist asked: e.g. "Building on what Sarah just asked you about scaling — how would you frame that pitch to a non-technical board?" or "Picking up on the conflict story you just told my colleague — what did you learn about your own communication style?". This makes the panel feel like a real conversation, not three separate interviews.`
       : "";
 
-    const questionCount = isMini ? (isSalaryType ? 5 : 3) : 5;
-    const stepCount = computeStepCount({ mini: isMini, isSalaryType }); // intro + questions + closing
+    const questionCount = isMini
+      ? (isSalaryType ? 5 : 3)
+      : (interviewType === "hr-round" ? 7 : 5);
+    const stepCount = computeStepCount({ mini: isMini, isSalaryType, interviewType }); // intro + questions + closing
 
     const safeCandidateName = candidateName ? sanitizeForLLM(candidateName, 60) : "";
     const candidateCtx = safeCandidateName ? `- Candidate's name: ${safeCandidateName}. Address them by first name in the intro. Use the name EXACTLY as provided — do NOT rearrange or abbreviate it.\n` : "";

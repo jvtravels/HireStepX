@@ -1,0 +1,14 @@
+{
+  "name": "User hedges on notice period instead of giving concrete days/LWD",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "What's your notice period and what's the earliest LWD you can commit to?", "time": "" },
+      { "speaker": "user", "text": "Not sure, depends on a few things. I haven't checked with HR yet. Will check and get back.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["vague_notice_period"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

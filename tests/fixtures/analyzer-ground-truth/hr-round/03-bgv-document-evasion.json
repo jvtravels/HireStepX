@@ -1,0 +1,16 @@
+{
+  "name": "User refuses to share payslips and BGV documents",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a backend engineer with 6 years of experience. I led the payments rewrite at my last company and shipped it in 4 months.", "time": "" },
+      { "speaker": "ai", "text": "Great. Our BGV partner will need your last 3 payslips, Form 16, relieving letters from every prior employer, and PAN, Aadhaar, UAN. Are you comfortable sharing those?", "time": "" },
+      { "speaker": "user", "text": "I'm not comfortable sharing payslips. I'd prefer not to share Form 16 either. Can we skip that part?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["bgv_document_evasion"],
+    "must_not_include": ["empty_transcript", "user_badmouthing_employer"]
+  }
+}

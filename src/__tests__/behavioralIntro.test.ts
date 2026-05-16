@@ -93,6 +93,17 @@ describe("buildBehavioralIntro", () => {
     expect(wipro.toLowerCase()).toContain("walk me through your background");
   });
 
+  it("swaps to pedigree opener for tier-2 Indian services firms (Mindtree, Sonata, Hexaware, Coforge, KPIT)", () => {
+    const mindtree = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Mindtree" });
+    expect(mindtree.toLowerCase()).toContain("walk me through your background");
+
+    const coforge = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "Coforge" });
+    expect(coforge.toLowerCase()).toContain("walk me through your background");
+
+    const kpit = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "Senior Engineer", company: "KPIT" });
+    expect(kpit.toLowerCase()).toContain("walk me through your background");
+  });
+
   it("does NOT swap to pedigree opener for product / MNC-India companies", () => {
     const razorpay = buildBehavioralIntro({ interviewerName: "Suresh Iyer", role: "PM", company: "Razorpay" });
     expect(razorpay.toLowerCase()).not.toContain("walk me through your background");

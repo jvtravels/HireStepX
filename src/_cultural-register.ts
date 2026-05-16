@@ -81,7 +81,10 @@ const RELATIONAL_FRAMING_RE = /\b(?:kept|maintained|preserved|built|earned|resto
 /* Calendar anchoring — Indian festival / fiscal-calendar references.
    These ground the Situation in real operational pressure, NOT
    anecdotal filler. Conservative: only well-known anchors. */
-const CALENDAR_ANCHOR_RE = /\b(?:diwali|holi|navratri|dussehra|onam|pongal|sankranti|raksha\s+bandhan|janmashtami|ganesh\s+chaturthi|durga\s+puja|christmas)\b|\b(?:big\s+billion\s+days?|bbd|big\s+saving\s+days?|bsd|monsoon\s+sale|republic\s+day\s+sale|independence\s+day\s+sale)\b|\b(?:quarter[\s-]?end|year[\s-]?end|q[1-4]\s+close|fy\s+close|financial\s+year\s+end|march\s+31|march\s+closing)\b/i;
+/* "christmas" intentionally NOT in the festival list — universally
+   celebrated, fires on "merry christmas, sir" politeness instead of
+   the operational-pressure framing we actually want to detect. */
+const CALENDAR_ANCHOR_RE = /\b(?:diwali|holi|navratri|dussehra|onam|pongal|sankranti|raksha\s+bandhan|janmashtami|ganesh\s+chaturthi|durga\s+puja|eid|karva\s+chauth|baisakhi|lohri)\b|\b(?:big\s+billion\s+days?|bbd|big\s+saving\s+days?|bsd|monsoon\s+sale|republic\s+day\s+sale|independence\s+day\s+sale|end\s+of\s+season\s+sale|eoss)\b|\b(?:quarter[\s-]?end|year[\s-]?end|q[1-4]\s+close|fy\s+close|financial\s+year\s+end|march\s+31|march\s+closing|fy\s*\d{2,4}\s+close)\b/i;
 
 /* Deferential gratitude — explicit thank-you / appreciation aimed at
    the interviewer. Indian-context professional courtesy. Conservative:

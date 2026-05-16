@@ -1,0 +1,16 @@
+{
+  "name": "HR asks for fixed/variable breakup, candidate gives single CTC number",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a backend engineer with 6 years of experience at a fintech, leading the payments platform team.", "time": "" },
+      { "speaker": "ai", "text": "Can you break down your current CTC for me — fixed base, variable percentage, joining bonus, RSU vest?", "time": "" },
+      { "speaker": "user", "text": "My current CTC is 28 LPA.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["salary_breakup_vague"],
+    "must_not_include": ["empty_transcript", "user_anchor_leaked_salary"]
+  }
+}

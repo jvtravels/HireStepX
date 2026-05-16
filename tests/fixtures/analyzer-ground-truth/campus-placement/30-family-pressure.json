@@ -1,0 +1,17 @@
+{
+  "name": "User frames career as parent-driven — unprofessional ownership signal",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Why did you pick computer science?", "time": "" },
+      { "speaker": "user", "text": "Honestly, my parents wanted me to do engineering. My father is an engineer and my family insisted on this path.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "There's a Python data analysis notebook on my GitHub for predicting student grades.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["family_pressure_framing"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

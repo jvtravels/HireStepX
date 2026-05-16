@@ -1,0 +1,17 @@
+{
+  "name": "User volunteers MBA plan within 2 years at TCS — service-tier attrition red flag",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your strongest project.", "time": "" },
+      { "speaker": "user", "text": "There's a sentiment analysis tool in Python and Flask on GitHub at github.com/myuser/sentiment. After 1 year I want to do my MBA in finance.", "time": "" },
+      { "speaker": "ai", "text": "Why TCS specifically?", "time": "" },
+      { "speaker": "user", "text": "Strong training program through the NQT and a chance to learn enterprise systems before I go for higher studies.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["attrition_risk_higher_studies"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

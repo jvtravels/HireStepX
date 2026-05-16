@@ -1,0 +1,17 @@
+{
+  "name": "User reads off the resume in response to 'tell me about yourself'",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Accenture",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "As mentioned in my resume, I am a final-year B.Tech CSE student. As you can see in my resume, I have done two internships and three projects. The skills listed on my resume include Java, Python, and SQL.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through one project in detail.", "time": "" },
+      { "speaker": "user", "text": "There's a Spring Boot project on github.com/myuser/billing with Postgres and a deployed demo on Render.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["tmay_resume_recital"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Candidate refuses to share payslip after explicit ask (without broader BGV evasion language)",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a data engineer with 4 years of experience building Spark pipelines at a fintech.", "time": "" },
+      { "speaker": "ai", "text": "Can you share your latest payslip so we can validate the current CTC you mentioned?", "time": "" },
+      { "speaker": "user", "text": "I'd prefer not to share my payslip. My current CTC is what I told you, you can take my word.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["payslip_refusal"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

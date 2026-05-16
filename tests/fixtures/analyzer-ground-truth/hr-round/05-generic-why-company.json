@@ -1,0 +1,16 @@
+{
+  "name": "User gives a generic 'why this company' answer with no specifics",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Why our company specifically? What do you know about us?", "time": "" },
+      { "speaker": "user", "text": "I think you have a great culture and a great brand. It's a reputed company with good growth opportunities and good work-life balance. I'd love to be part of such a top company.", "time": "" },
+      { "speaker": "ai", "text": "Anything specific that drew you in?", "time": "" },
+      { "speaker": "user", "text": "Just the overall reputation and the nice environment I've heard about.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["generic_why_company"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

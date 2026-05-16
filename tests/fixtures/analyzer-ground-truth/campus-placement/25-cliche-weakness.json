@@ -1,0 +1,17 @@
+{
+  "name": "User gives the classic 'I'm a perfectionist' weakness answer",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through a recent project.", "time": "" },
+      { "speaker": "user", "text": "There's a Node.js REST API on my GitHub for tracking expenses, deployed on Render with Postgres.", "time": "" },
+      { "speaker": "ai", "text": "What's your biggest weakness?", "time": "" },
+      { "speaker": "user", "text": "My biggest weakness is that I am a perfectionist. Sometimes I work too hard on small details.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["cliche_strength_weakness"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

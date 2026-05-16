@@ -187,6 +187,27 @@ describe("detectCulturalRegister — calendarAnchored", () => {
         .calendarAnchored,
     ).toBe(false);
   });
+
+  it("does NOT match bare 'merry christmas' politeness (universal festival)", () => {
+    expect(
+      detectCulturalRegister("Thanks for the call, and merry christmas to you too, sir.")
+        .calendarAnchored,
+    ).toBe(false);
+  });
+
+  it("matches 'Eid' as Indian operational anchor", () => {
+    expect(
+      detectCulturalRegister("Right before Eid the team was thin.")
+        .calendarAnchored,
+    ).toBe(true);
+  });
+
+  it("matches 'end of season sale' / EOSS retail anchor", () => {
+    expect(
+      detectCulturalRegister("EOSS load tests caught a regression.")
+        .calendarAnchored,
+    ).toBe(true);
+  });
 });
 
 describe("detectCulturalRegister — deferentialGratitude", () => {

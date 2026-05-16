@@ -1,0 +1,16 @@
+{
+  "name": "Candidate refuses to provide any professional references",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a product manager with 7 years across consumer and B2B SaaS.", "time": "" },
+      { "speaker": "ai", "text": "We'll need two professional references — preferably ex-managers. Who would you pick?", "time": "" },
+      { "speaker": "user", "text": "I'd rather not share any references. My work speaks for itself.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["reference_refusal"],
+    "must_not_include": ["empty_transcript", "user_badmouthing_employer"]
+  }
+}

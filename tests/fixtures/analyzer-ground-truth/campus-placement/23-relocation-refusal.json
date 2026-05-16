@@ -1,0 +1,17 @@
+{
+  "name": "User refuses pan-India relocation at Infosys",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your final-year project.", "time": "" },
+      { "speaker": "user", "text": "Built a Spring Boot REST API with Postgres for our college library system. Live demo deployed on Render. Source on my GitHub.", "time": "" },
+      { "speaker": "ai", "text": "Infosys allocates pan-India — Mysuru, Hyderabad, Chennai, Pune, Bhubaneswar. Are you open to relocation?", "time": "" },
+      { "speaker": "user", "text": "Honestly, I cannot relocate. I will only work in Hyderabad — my family is here.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["relocation_refusal"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

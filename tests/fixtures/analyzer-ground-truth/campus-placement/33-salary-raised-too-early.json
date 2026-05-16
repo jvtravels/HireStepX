@@ -1,0 +1,17 @@
+{
+  "name": "User raises CTC in turn 2 of a technical round — wrong priorities",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I am Aditya, final year CSE. Before we begin, what is the CTC for this role and the salary structure?", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your strongest project.", "time": "" },
+      { "speaker": "user", "text": "There's a Spring Boot REST API on github.com/me/api.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["salary_raised_too_early"],
+    "must_not_include": ["empty_transcript"]
+  }
+}
