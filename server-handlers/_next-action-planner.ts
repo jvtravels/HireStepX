@@ -386,6 +386,26 @@ function buildSkipRecord(
     }
     recentlyAsked[stuckTopic] = true;
   }
+  /* PDF#27 Fix 2 (2026-05-17) — repetition-complaint force-advance.
+   * When the candidate explicitly complains the bot is repeating, mark
+   * the most-recent-asked topic as skipped so the next probe routes
+   * elsewhere. Sticky for one turn — the complaint applies to the
+   * topic that triggered it, not to all topics for the session. */
+  if (
+    state.repetitionComplaintAtTurn != null &&
+    state.repetitionComplaintAtTurn >= state.turnIndex - 1 &&
+    topics.length > 0
+  ) {
+    const lastAsked = topics[topics.length - 1].topic;
+    recentlyAsked[lastAsked] = true;
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[planner] repetition-complaint at turn ${state.repetitionComplaintAtTurn}; ` +
+          `force-advancing past last-asked topic "${lastAsked}" on turn ${state.turnIndex}.`,
+      );
+    }
+  }
   if (refused == null && Object.keys(recentlyAsked).length === 0) return null;
   return { ...(refused ?? {}), ...recentlyAsked };
 }

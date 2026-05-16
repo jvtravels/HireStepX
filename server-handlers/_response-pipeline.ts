@@ -408,6 +408,17 @@ const COMPONENT_PROBE_REQUIRED_TOKENS: Record<
   esop: /\b(?:esop|rsu|equity|vest)\b/i,
 };
 
+/** PDF#27 Fix 2 (2026-05-17) — FOURTH-WALL BREAK.
+ *
+ *  PDF#27 T4: "No, I'm not repeating the question." The LLM is responding
+ *  to a perceived complaint by stepping out of the recruiter persona and
+ *  meta-commenting on its own conversational behaviour. Real recruiters
+ *  apologise concretely ("Apologies — moving on to …") or just advance
+ *  the topic. They never narrate the fact of asking. Reject so the
+ *  canonical (which advances cleanly) ships. */
+const FOURTH_WALL_BREAK_RE =
+  /\b(?:i'?m\s+not\s+repeating|i\s+am\s+not\s+repeating|as\s+an\s+ai|i'?m\s+an\s+interview|the\s+question\s+(?:i\s+|that\s+i\s+)?asked|i\s+already\s+asked)\b/i;
+
 /** PDF#27 Fix 1 (2026-05-17) — INTERNAL TERMINOLOGY LEAK.
  *
  *  The LLM has been observed surfacing kernel-internal vocabulary in the
@@ -460,7 +471,11 @@ export function validateRestyle(
    * masking under an unrelated downstream check. */
   /* Order matters: market-mode jargon is a SUBSET of the internal-
    * terminology regex, so the more specific reason fires first.
-   * Likewise the defer-leak phrase. */
+   * Likewise the defer-leak phrase. Fourth-wall break runs first
+   * because it's the most candidate-visible scaffold leak. */
+  if (FOURTH_WALL_BREAK_RE.test(restyled)) {
+    return { valid: false, reason: "fourth-wall-break" };
+  }
   if (INVENTED_MARKET_JARGON_RE.test(restyled)) {
     return { valid: false, reason: "invented-market-jargon" };
   }

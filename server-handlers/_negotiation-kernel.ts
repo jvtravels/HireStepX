@@ -1122,6 +1122,22 @@ export interface NegotiationState {
    *  when the candidate has surfaced a firm deadline. Default "none". */
   cumulativeUrgency?: "none" | "soft" | "firm";
 
+  /** PDF#27 Fix 2 (2026-05-17) — turn-index at which the candidate
+   *  expressed a repetition complaint ("you're repeating", "I already
+   *  answered that"). Set by applyCandidateAnswer when it detects the
+   *  pattern; read by planNextAction so the next probe force-advances
+   *  past the topic the candidate is complaining about. Null when no
+   *  complaint registered. Sticky to the turn it landed at — the
+   *  planner consumes-and-clears via the askedTopics ledger. */
+  repetitionComplaintAtTurn?: number | null;
+
+  /** PDF#27 Fix 5 (2026-05-17) — turn-index at which the candidate
+   *  asked for the company's offer ("what's the offer?", "share the
+   *  offer", "what are you offering?"). Set by applyCandidateAnswer;
+   *  read by the anchor-with-band lever so the band-disclosure fires
+   *  on the very next turn rather than after the discovery cascade. */
+  offerAskedAtTurn?: number | null;
+
   /** ResumeFactPack track (2026-05-16) — structured resume-derived facts
    *  built once at session-init and stored frozen on state. Replaces the
    *  earlier path that reduced the parsed resume to ~6 scalars and threw
@@ -2616,12 +2632,31 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      quoted — structural phase gate (Phase 9). */
   const offerOnTable = (state.highestOfferMade ?? 0) > 0;
   const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable);
+  /* PDF#27 Fix 2 (2026-05-17) — repetition-complaint detection. The
+   * candidate flags that the bot is repeating itself ("stop repeating",
+   * "I already answered that", "asked this before"). Stamp the turn so
+   * the planner force-advances past the topic next turn. */
+  const REPETITION_COMPLAINT_RE =
+    /\b(?:repeat(?:ing)?|same\s+question|already\s+(?:answered|asked|told|said)|asked\s+(?:this|that)\s+(?:before|already)|stop\s+repeating|why\s+(?:are\s+you|do\s+you)\s+keep\s+asking)\b/i;
+  const repetitionComplaintAtTurn = REPETITION_COMPLAINT_RE.test(answer)
+    ? state.turnIndex
+    : (state.repetitionComplaintAtTurn ?? null);
+  /* PDF#27 Fix 5 (2026-05-17) — offer-ask detection. Candidate asks
+   * what the company is offering; the band-disclosure lever reads this
+   * to fire on the very next planner call. */
+  const OFFER_ASK_RE =
+    /\b(?:what'?s\s+(?:the\s+)?offer|share\s+(?:the\s+)?offer|initial\s+offer|what\s+are\s+you\s+offering|what'?s\s+on\s+offer)\b/i;
+  const offerAskedAtTurn = OFFER_ASK_RE.test(answer)
+    ? state.turnIndex
+    : (state.offerAskedAtTurn ?? null);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
     vossTacticsUsed: [...state.vossTacticsUsed],
     infoAsked: [...state.infoAsked],
     conversationLog: appendConversation(state.conversationLog, "candidate", answer),
+    repetitionComplaintAtTurn,
+    offerAskedAtTurn,
   };
   /* Commit 1 (2026-05-15): finalize() stamps state.lastTurnDelta from the
    * pre-state snapshot before every return. Keeps the 8+ return branches
