@@ -125,7 +125,12 @@ import {
   type DiscoveryChecklist,
   type DiscoveryStage,
 } from "./_discovery-stage";
-import { classifyRoleFamily } from "./_company-band-tiers";
+import { classifyRoleFamily, getBandForRole, classifyCompanyTier as classifyBandCompanyTier } from "./_company-band-tiers";
+import {
+  buildResumeFactPack,
+  type ResumeFactPack,
+  type ParsedResume,
+} from "./_resume-fact-pack";
 import { getNextActionPlanner } from "./_planner-registry";
 
 /* ─── Commit 4 (2026-05-15) — planner-registry refactor ───────────────
@@ -948,6 +953,22 @@ export interface NegotiationState {
    *  on discovery-complete — to bias closing-push toward close-recap-formal
    *  when the candidate has surfaced a firm deadline. Default "none". */
   cumulativeUrgency?: "none" | "soft" | "firm";
+
+  /** ResumeFactPack track (2026-05-16) — structured resume-derived facts
+   *  built once at session-init and stored frozen on state. Replaces the
+   *  earlier path that reduced the parsed resume to ~6 scalars and threw
+   *  away the rest. Read by the credibility-probe lever, the counter-math
+   *  prior-CTC floor, and the fact-pack restyle layer. Optional for
+   *  back-compat with sessions serialized before this field shipped.
+   *  Frozen at init — never mutated mid-session. */
+  resumeFactPack?: import("./_resume-fact-pack").ResumeFactPack | null;
+
+  /** Resume-derived implied prior CTC (LPA). Derived once at init from
+   *  resumeFactPack.latestRole.companyTier × role-family median band.
+   *  When candidate withholds current CTC, the counter-offer split math
+   *  uses this as a floor (logged, never silent). Null when the latest
+   *  role can't be resolved to a tier band. */
+  impliedPriorCtcFromResume?: number | null;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -1399,9 +1420,37 @@ export interface InitStateExtras {
   candidateTotalYoe?: number | null;
   candidateApplicableYoe?: number | null;
   candidatePrimaryDomain?: string | null;
+  /* ResumeFactPack track (2026-05-16) — caller may pass either a
+   * pre-built fact pack OR a raw parsed-resume shape. When both are
+   * absent the kernel runs with resumeFactPack = null and the
+   * credibility-probe / prior-CTC floor levers are inert (back-compat). */
+  resumeFactPack?: import("./_resume-fact-pack").ResumeFactPack | null;
+  parsedResume?: import("./_resume-fact-pack").ParsedResume | null;
 }
 
 export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
+  /* ResumeFactPack track (2026-05-16) — build once at init and freeze on
+   * state. Caller may supply a pre-built pack OR a raw parsed resume;
+   * when both absent the kernel runs without resume context (back-compat). */
+  const resumeFactPack: ResumeFactPack | null =
+    input.resumeFactPack
+      ?? (input.parsedResume ? buildResumeFactPack(input.parsedResume) : null);
+
+  /* Derive impliedPriorCtcFromResume once at init. Reads the latest
+   * role's company-tier and projects through the role-family × tier
+   * band median. Used as a prior-CTC floor in counter-offer split math
+   * when the candidate later withholds currentCtc. Null when the
+   * latest role can't be resolved to a band tier. */
+  let impliedPriorCtcFromResume: number | null = null;
+  if (resumeFactPack?.latestRole?.companyName) {
+    const band = getBandForRole(
+      classifyBandCompanyTier(resumeFactPack.latestRole.companyName),
+      input.role,
+      input.candidateApplicableYoe ?? input.candidateTotalYoe ?? null,
+    );
+    impliedPriorCtcFromResume = band.target;
+  }
+
   return {
     sessionId: input.sessionId,
     role: input.role,
@@ -1564,6 +1613,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     perfCycle: input.perfCycle ?? null,
     equityStructure: input.equityStructure ?? null,
     candidateName: input.candidateName ?? null,
+    resumeFactPack,
+    impliedPriorCtcFromResume,
   };
 }
 
@@ -3912,6 +3963,13 @@ export function deserializeState(json: string): NegotiationState {
       (s.reactiveFollowupsFireLog as Record<string, number[]> | undefined) ?? {},
     /* Fix 1 (2026-05-16) — leversFired back-compat default. */
     leversFired: (s.leversFired as string[] | undefined) ?? [],
+    /* ResumeFactPack track (2026-05-16) — back-compat default. Existing
+     * in-flight sessions serialized before this field shipped get null,
+     * which the credibility-probe and prior-CTC floor levers treat as
+     * "no resume context" (inert). */
+    resumeFactPack: (s.resumeFactPack as ResumeFactPack | null | undefined) ?? null,
+    impliedPriorCtcFromResume:
+      (s.impliedPriorCtcFromResume as number | null | undefined) ?? null,
   };
 }
 

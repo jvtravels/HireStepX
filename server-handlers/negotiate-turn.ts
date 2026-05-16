@@ -148,6 +148,12 @@ interface InitRequest {
    *  role. Sent by the onboarding flow when the user selects a 12-week
    *  summer / 3-month winter program. Clamped server-side to [1,12]. */
   internshipMonths?: number;
+  /* ResumeFactPack track (2026-05-16) — caller may supply EITHER a
+   * pre-built fact pack OR a raw parsed-resume shape. The kernel builds
+   * the pack once at init and stores it frozen on state. Used by the
+   * credibility-probe lever and the counter-math prior-CTC floor. */
+  resumeFactPack?: import("./_resume-fact-pack").ResumeFactPack | null;
+  parsedResume?: import("./_resume-fact-pack").ParsedResume | null;
 }
 
 interface TurnRequest {
@@ -408,6 +414,8 @@ export default async function handler(
         candidateApplicableYoe: applicableYoe,
         candidatePrimaryDomain: primaryDomain,
         marketMode: inferredMarketMode,
+        resumeFactPack: body.resumeFactPack ?? null,
+        parsedResume: body.parsedResume ?? null,
       });
       const move = pickAiMove(state);
       const promptVariant = selectPromptVariant(state.sessionId);
