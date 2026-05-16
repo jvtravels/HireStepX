@@ -349,6 +349,11 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   if (!isTerminalPhase(state.phase)) {
     const reactive = planReactiveFollowup(state);
     if (reactive) return reactive;
+    /* Fix 5 (2026-05-16) — state-based wired profile-flag rules. These
+     * read candidateProfile booleans directly (not lastTurnDelta), so
+     * they fire even on simulated states without a per-turn delta. */
+    const wired = planWiredProfileFollowup(state);
+    if (wired) return wired;
   }
 
   /* PDF #17 — probe-mismatch routing. */
@@ -1307,6 +1312,123 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
           rationale: "Candidate expressed directional value (growth/ownership/culture) without naming a number — probe what would make the move worthwhile.",
           actionKind: "reactive-followup",
           askedTopic: "value-proof",
+        },
+      };
+    }
+  }
+
+  return null;
+}
+
+/* Fix 5 (2026-05-16) — wire 13 previously-dead candidate-profile flags
+ * to reactive followup rules. Sibling of planReactiveFollowup that
+ * reads candidateProfile booleans directly (not lastTurnDelta), so the
+ * rules fire even on simulated states. Sticky via reactiveFollowupsFired.
+ * Phrasing uses Indian recruiter idiom (fitment, grade, revert, BGV). */
+function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null {
+  const profile = state.candidateProfile;
+  if (!profile) return null;
+  const fired = state.reactiveFollowupsFired ?? [];
+  const hasFired = (topic: string): boolean => fired.includes(topic);
+  type WiredRule = {
+    flag: boolean | undefined;
+    topic: string;
+    ask: string;
+    rationale: string;
+  };
+  const wired: WiredRule[] = [
+      {
+        flag: profile.wantsHigherBase,
+        topic: "wants-higher-base",
+        ask: "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+        rationale: "Candidate signalled preference for higher base — probe motivation (cashflow vs anchor) to size the fixed:variable split.",
+      },
+      {
+        flag: profile.wantsJoiningBonus,
+        topic: "wants-joining-bonus",
+        ask: "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+        rationale: "Candidate asked for JB — probe whether it's notice buyout vs variable bridge to size correctly and surface clawback context.",
+      },
+      {
+        flag: profile.wantsRelocationAllowance,
+        topic: "wants-relocation-allowance",
+        ask: "Relocation is on our standard menu — one-time shift assistance plus a settling-in component. Are we talking intra-city or a base-city change?",
+        rationale: "Candidate mentioned relocation — confirm intra-city vs inter-city to pick the right reimbursement bucket.",
+      },
+      {
+        flag: profile.mentionedSpouseFamily,
+        topic: "spouse-family-context",
+        ask: "Got it — and on the family side, is your spouse also in a similar role search, or is location flex something we should plan around?",
+        rationale: "Candidate referenced spouse/family — surface dual-career and location constraints early so they don't ambush the close.",
+      },
+      {
+        flag: profile.askedAboutReporting,
+        topic: "reporting-structure",
+        ask: "Reporting on this role is into the EM/Director on the platform side; skip-level is the VP. Want me to set up a quick chat with the hiring manager?",
+        rationale: "Candidate asked about reporting — answer with reporting line and offer manager intro to de-risk the close.",
+      },
+      {
+        flag: profile.askedAboutGrowthPath,
+        topic: "growth-path",
+        ask: "On the growth path — standard arc here is two appraisal cycles to the next grade, faster if you land a high-impact charter. We'll align that in the first 30 days.",
+        rationale: "Candidate asked about growth path — give the appraisal-cycle anchor (Indian context: April/March cycle, two cycles to next grade).",
+      },
+      {
+        flag: profile.askedAboutTeamSize,
+        topic: "team-size",
+        ask: "The pod you'd join is about 8 engineers today, splitting into two squads next quarter — so genuine ownership without being lost in headcount.",
+        rationale: "Candidate asked about team size — answer with concrete headcount and trajectory so they can map ownership scope.",
+      },
+      {
+        flag: profile.mentionedTaxImplication,
+        topic: "tax-implication",
+        ask: "On tax — under the new regime, the optimisation point sits around ₹15L; above that the marginal rate is 30% plus surcharge. Want me to share the structured breakup so you can see take-home?",
+        rationale: "Candidate raised tax — offer the structured breakup with new-regime breakpoints (Indian context: ₹7L/₹15L/₹25L slabs).",
+      },
+      {
+        flag: profile.mentionedBgvConcern,
+        topic: "bgv-concern",
+        ask: "On the BGV — we run it through FirstAdvantage post-acceptance, typical TAT is 2-3 weeks. Anything specific you'd want us to flag in advance so it doesn't surprise either side?",
+        rationale: "Candidate raised BGV anxiety — surface vendor + TAT + invite proactive disclosure to de-risk the post-acceptance window.",
+      },
+      {
+        flag: profile.mentionedMoonlighting,
+        topic: "moonlighting-policy",
+        ask: "On the moonlighting question — our policy is the standard one: prior written disclosure for any external paid engagement, no compete-overlap. Was there a specific arrangement you wanted to flag?",
+        rationale: "Candidate mentioned moonlighting — surface policy proactively (Indian context: post-2022 IT-services crackdown made this load-bearing).",
+      },
+      {
+        flag: profile.gaveRangeNotPoint,
+        topic: "range-to-point",
+        ask: "You shared a range — to frame the fitment cleanly, where in that range do you actually see yourself landing? Helps me run a sharper number past leadership.",
+        rationale: "Candidate gave a range instead of a target — pin down the actual point before the lever rotation locks in.",
+      },
+      {
+        flag: profile.deflectedOnRange,
+        topic: "range-deflection",
+        ask: "I understand wanting to hear our number first — fair. As per our band for this grade, the fitment sits in a defined corridor; if you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+        rationale: "Candidate is deflecting on number disclosure — re-anchor with band-grade language and invite mutual disclosure.",
+      },
+      {
+        flag: profile.referencedMarketData,
+        topic: "market-data-reference",
+        ask: "You're referencing market data — useful. Which source are we comparing against (AmbitionBox/Levels.fyi/personal network)? I want to make sure we're benchmarking against comparable companies and stage.",
+        rationale: "Candidate cited market data — probe source so we can either align on benchmarks or flag tier/stage mismatch.",
+      },
+  ];
+  for (const rule of wired) {
+    if (rule.flag && !hasFired(rule.topic)) {
+      return {
+        kind: "reactive-followup",
+        ask: rule.ask,
+        trigger: rule.topic,
+        topic: rule.topic,
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: rule.rationale,
+          actionKind: "reactive-followup",
+          askedTopic: rule.topic,
         },
       };
     }
