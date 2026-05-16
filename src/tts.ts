@@ -4,6 +4,22 @@
    3rd:       Azure TTS      (Indian English neural) via /api/azure-tts
    Last resort: Browser Web Speech API */
 
+/* ─────────────────────────────────────────────────────────────────────
+ * TTS KILL-SWITCH (2026-05-17)
+ *
+ * Temporarily disabled while iterating on the product so we don't burn
+ * Sarvam / Cartesia / Azure tokens during manual QA. When TTS_DISABLED
+ * is true:
+ *   - speak() and speakAs() resolve immediately and call onEnd() so the
+ *     interview state machine advances without waiting for audio.
+ *   - prefetchTTS() is a no-op (no upstream API calls).
+ *   - cancelTTS() / hardMuteTTS() / cleanupTTS() remain safe to call.
+ *
+ * To re-enable: flip TTS_DISABLED to false. No other change needed —
+ * the provider chain (Sarvam → Cartesia → Azure → browser) is intact.
+ * ───────────────────────────────────────────────────────────────────── */
+const TTS_DISABLED = true;
+
 import { safeUUID } from "./utils";
 
 /* Module-level Window augmentation — exposes the Cartesia AudioContext so
@@ -195,6 +211,7 @@ export function clearPrefetchCache(): void {
 /* Pre-fetch TTS audio for a text so it's ready when needed.
    Pass gender so the correct voice (male/female) is cached. */
 export async function prefetchTTS(text: string, gender?: "male" | "female"): Promise<void> {
+  if (TTS_DISABLED) return; // kill-switch: skip upstream prefetch
   if (!text) return;
   // Sanitize first so prefetch keys collide on equivalent text — caller
   // and speak() both apply the same transform.
@@ -1070,6 +1087,15 @@ export async function speakAs(
   onDurationKnown?: (ms: number) => void,
   onAudioStarted?: () => void,
 ): Promise<{ cancel: () => void }> {
+  // Kill-switch: resolve as silent success so panel-mode state machine
+  // advances without waiting for audio. onError is intentionally NOT
+  // called — that would trigger a fallback chain we don't want either.
+  if (TTS_DISABLED) {
+    // Defer one microtask so callers that synchronously wire the cancel
+    // handle don't race with onEnd firing.
+    queueMicrotask(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } });
+    return { cancel: () => {} };
+  }
   text = addBreathCues(sanitizeForTTS(text));
   const settings = loadTTSSettings();
   if (settings.provider === "browser") {
@@ -1368,6 +1394,13 @@ export async function speak(
   onDurationKnown?: (ms: number) => void,
   onAudioStarted?: () => void,
 ): Promise<{ cancel: () => void }> {
+  // Kill-switch: resolve as silent success so the interview state
+  // machine advances without waiting for audio. See top-of-file
+  // TTS_DISABLED comment for the re-enable path.
+  if (TTS_DISABLED) {
+    queueMicrotask(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } });
+    return { cancel: () => {} };
+  }
   text = addBreathCues(sanitizeForTTS(text));
   const settings = loadTTSSettings();
   let handle: { cancel: () => void };
