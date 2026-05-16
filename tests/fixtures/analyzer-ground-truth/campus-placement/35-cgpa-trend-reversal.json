@@ -1,0 +1,17 @@
+{
+  "name": "Tier-1 student frames CGPA dip with recent-semester recovery + cleared case round — not attrition",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Razorpay",
+    "transcript": [
+      { "speaker": "ai", "text": "Your CGPA is on the lower side at 6.8 — walk me through that.", "time": "" },
+      { "speaker": "user", "text": "Fair point. I had a rough first three semesters, but I scored 9.2 in my last three semesters consistently and the trend has gone up. I also cleared the case round at a startup last month, and I have a Kaggle silver medal that shows my actual ability is in applied work, not exam pattern.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project.", "time": "" },
+      { "speaker": "user", "text": "I built a payments reconciliation tool on github.com/me/recon using Postgres and a queue. It cuts manual ops time by 70 percent.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["cgpa_low_no_framing", "empty_transcript"]
+  }
+}

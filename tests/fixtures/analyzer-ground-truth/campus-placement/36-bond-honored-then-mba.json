@@ -1,0 +1,17 @@
+{
+  "name": "Candidate commits to honoring bond first, then MBA — should NOT trigger attrition flag",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "What are your long-term plans?", "time": "" },
+      { "speaker": "user", "text": "I want to first complete my 2-year service commitment here and contribute meaningfully. After completing my bond I may consider an MBA, but my immediate focus is fully on this role and learning on the job.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "There's a Java Spring Boot REST API on github.com/me/api that handles user auth flows.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["attrition_risk_higher_studies", "empty_transcript"]
+  }
+}

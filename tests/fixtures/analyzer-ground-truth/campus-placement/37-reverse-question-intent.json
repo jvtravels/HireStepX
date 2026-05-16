@@ -1,0 +1,17 @@
+{
+  "name": "Reverse question shows intent without keyword — should NOT trigger generic flag",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Razorpay",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "I built a payments reconciliation tool on github.com/me/recon using Postgres and a queue. It cuts manual ops time by 70 percent.", "time": "" },
+      { "speaker": "ai", "text": "Do you have any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Yes — I noticed your engineering blog mentioned a migration off MongoDB last year. Could you walk me through how the team handles decisions like that, and what does a typical first 90 days look like for a new joiner on the platform team?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["reverse_question_generic", "empty_transcript"]
+  }
+}
