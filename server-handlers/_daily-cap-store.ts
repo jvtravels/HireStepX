@@ -85,12 +85,19 @@ async function getRedisClient(): Promise<RedisLike | null> {
     /* Dynamic import — bundlers that can't resolve the module (e.g. edge
      * runtime without ioredis installed) will throw here. We catch and
      * fall back transparently. */
-    /* String-built specifier prevents TS from resolving the dep at
-     * compile time (ioredis is intentionally not in package.json — see
-     * header). At runtime, if the module is installed, dynamic import
-     * resolves it; otherwise the catch falls back to in-memory. */
+    /* Hide the specifier behind `new Function` so neither TS, webpack,
+     * nor Turbopack resolves the dep at build time (ioredis is
+     * intentionally not in package.json — see header). At runtime,
+     * if the module is installed, the eval'd import resolves it;
+     * otherwise the catch falls back to in-memory.
+     *
+     * String-built `import(name)` used to be enough, but Turbopack now
+     * traces dynamic-import string vars through assignments and fails
+     * the build with `Module not found: Can't resolve 'ioredis'`.
+     * `new Function` is opaque to all known bundler static analysis. */
     const ioredisName = "ioredis";
-    const mod = (await (import(ioredisName) as Promise<unknown>).catch(() => null)) as
+    const dynamicImport = new Function("s", "return import(s);") as (s: string) => Promise<unknown>;
+    const mod = (await dynamicImport(ioredisName).catch(() => null)) as
       | { default?: new (url: string) => RedisLike }
       | null;
     const Ctor = mod?.default;
