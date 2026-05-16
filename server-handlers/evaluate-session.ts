@@ -6,7 +6,8 @@ import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
-import { formatScoringRubric } from "../data/focus-question-recipes";
+import { formatScoringRubric, RECIPES } from "../data/focus-question-recipes";
+import { resolveHrRoundRecipe } from "./_hr-round-overlays";
 import { detectStarPresence } from "../src/_star-detection";
 import { detectCulturalRegister } from "../src/_cultural-register";
 import {
@@ -184,6 +185,19 @@ interface EvaluateRequest {
         coach than the one who ran the live session. */
     interviewerName?: string;
     interviewerPersonality?: string;
+    /** Resume context surfaced to the evaluator so the rich report can
+     *  reason about what the candidate actually has on their CV —
+     *  flag missed-opportunity moments ("you never mentioned project X
+     *  even though it's directly relevant to this role"), validate
+     *  claimed experience against resume facts, and ground model-
+     *  answer exemplars in the candidate's own background. Optional
+     *  by design: resumeless practice flow still works. */
+    resumeContext?: {
+      topSkills?: string[];
+      topProjects?: string[];
+      headline?: string;
+      careerTrajectory?: string;
+    };
   };
 }
 
@@ -465,7 +479,23 @@ export default async function handler(req: Request): Promise<Response> {
        The eval LLM uses these as the scoring spine, so a strong
        case-study answer can no longer get a high overall score on
        behavioural-style "STAR completeness" alone. */
-    const focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
+    let focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
+    if (meta?.type === "hr-round") {
+      const base = RECIPES["hr-round"];
+      if (base?.scoringRubric) {
+        const { recipe, context } = resolveHrRoundRecipe(base, {
+          company: meta.targetCompany,
+          expLevel: meta.level,
+        });
+        if (recipe.scoringRubric) {
+          focusRubric = formatScoringRubric("hr-round", {
+            dimensions: recipe.scoringRubric,
+            sector: context.sector,
+            seniority: context.seniority,
+          });
+        }
+      }
+    }
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -552,7 +582,31 @@ Duration (s): ${durationSec}${
       (meta?.interviewerName?.trim() || meta?.interviewerPersonality?.trim())
         ? `\nLive interviewer: ${sanitizeForLLM(meta?.interviewerName || "Coach", 60)}${meta?.interviewerPersonality ? ` (${sanitizeForLLM(meta.interviewerPersonality, 60)})` : ""} — model exemplar/restructured prose to match this voice.`
         : ""
-    }
+    }${(() => {
+      /* Resume-grounded evaluation context. When the engine passes the
+         candidate's actual resume facts, the evaluator can:
+           1. Flag missed opportunities — strong project on the CV that
+              the candidate never surfaced during the interview.
+           2. Validate experience claims against the resume.
+           3. Anchor topPerformerAnswer exemplars in the candidate's
+              real background so the model answer feels like THEIR
+              best version, not a generic ideal.
+         Behavioural focus benefits most; other focuses get the same
+         block but use it lightly. Skipped entirely when no resume. */
+      const rc = meta?.resumeContext;
+      if (!rc) return "";
+      const skills = Array.isArray(rc.topSkills) ? rc.topSkills.slice(0, 8).map(s => sanitizeForLLM(String(s || ""), 50)).filter(Boolean) : [];
+      const projects = Array.isArray(rc.topProjects) ? rc.topProjects.slice(0, 5).map(p => sanitizeForLLM(String(p || ""), 140)).filter(Boolean) : [];
+      const headline = rc.headline ? sanitizeForLLM(String(rc.headline), 120) : "";
+      const trajectory = rc.careerTrajectory ? sanitizeForLLM(String(rc.careerTrajectory), 200) : "";
+      const lines: string[] = [];
+      if (headline) lines.push(`Headline: ${headline}`);
+      if (trajectory) lines.push(`Trajectory: ${trajectory}`);
+      if (skills.length) lines.push(`Top skills: ${skills.join(", ")}`);
+      if (projects.length) lines.push(`Notable projects: ${projects.join(" | ")}`);
+      if (!lines.length) return "";
+      return `\n\nCANDIDATE RESUME CONTEXT (use to flag missed-opportunity moments and ground exemplars in their real background — DO NOT fabricate experience beyond what's listed here):\n${lines.join("\n")}`;
+    })()}
 
 TRANSCRIPT (numbered turns):
 """

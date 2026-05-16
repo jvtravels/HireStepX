@@ -1114,6 +1114,17 @@ export interface EvaluateSessionInput {
         candidate heard during the session. */
     interviewerName?: string;
     interviewerPersonality?: string;
+    /** Resume-grounding context for the evaluator. Threaded from the
+     *  client's stored AI-parsed resume so the rich report can flag
+     *  missed-opportunity moments ("strong project on your CV you
+     *  never mentioned"), validate claims, and ground exemplars in
+     *  the candidate's actual background. Omitted on resumeless flows. */
+    resumeContext?: {
+      topSkills?: string[];
+      topProjects?: string[];
+      headline?: string;
+      careerTrajectory?: string;
+    };
   };
 }
 

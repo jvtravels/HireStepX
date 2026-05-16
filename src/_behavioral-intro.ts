@@ -36,6 +36,15 @@ export interface BuildBehavioralIntroOpts {
   /** Optional company the candidate is targeting. When present, the
    *  rapport hook anchors there ("...what brings you to PM at Razorpay?"). */
   company?: string;
+  /** Optional top-N projects extracted from the resume (one-line
+   *  strings — usually `experiences[].topProjects[]` flattened). When
+   *  available AND the candidate isn't in the services-track ritual,
+   *  the rapport hook references the first project by name so the
+   *  candidate hears "I saw you worked on X — tell me about that".
+   *  That single touch is the difference between "AI bot" and "this
+   *  person actually read my CV". Capped internally to one project —
+   *  surfacing more is awkward at greeting time. */
+  topProjects?: string[];
 }
 
 /* Indian IT-services companies. At these firms the academic-pedigree
@@ -66,6 +75,15 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
   const candidate = (opts.candidateName || "").trim();
   const role = (opts.role || "").trim();
   const company = (opts.company || "").trim();
+  /* First project only — surfacing 2+ at greeting time sounds like
+     a recap, not a rapport beat. Trim aggressively (60 chars) so the
+     spoken line stays under the TTS budget. */
+  const firstProject = (() => {
+    const raw = Array.isArray(opts.topProjects) ? opts.topProjects.find(p => typeof p === "string" && p.trim().length > 0) : null;
+    if (!raw) return "";
+    const cleaned = raw.trim().replace(/\s+/g, " ");
+    return cleaned.length > 60 ? cleaned.slice(0, 57).trimEnd() + "…" : cleaned;
+  })();
 
   // First-name only for the spoken greeting (full name reads stiff
   // and the candidate's report still surfaces the full name).
@@ -100,6 +118,16 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
     rapportHook = role
       ? `Before we get into the structured questions — just briefly, walk me through your background a bit, your academics and what you've been doing currently. And what's drawing you to ${role} at ${company}?`
       : `Before we get into the structured questions — just briefly, walk me through your background a bit, your academics and what you've been doing currently. And what brings you to ${company}?`;
+  } else if (firstProject && role && company) {
+    /* Resume-grounded variant — references a specific project so the
+       candidate hears "you actually read my CV" in the first 8 seconds.
+       Reserved for product-co paths because services-track keeps the
+       pedigree ritual above. */
+    rapportHook = `Before we dive into the structured questions — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role} at ${company}?`;
+  } else if (firstProject && role) {
+    rapportHook = `Before we dive in — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what's drawing you to ${role}?`;
+  } else if (firstProject) {
+    rapportHook = `Before we dive in — I saw on your resume you worked on ${firstProject}. Walk me through that briefly, and what brings you here?`;
   } else if (role && company) {
     rapportHook = `Before we dive into the structured questions — just briefly, where are you joining from today, and what's drawing you to ${role} at ${company}?`;
   } else if (role) {

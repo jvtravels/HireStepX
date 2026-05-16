@@ -45,7 +45,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -53,6 +53,7 @@ export default async function handler(req: Request): Promise<Response> {
       persona?: string; conversationHistory?: string;
       negotiationPhase?: string; questionIndex?: number; totalQuestions?: number;
       resumeTopSkills?: string[];
+      resumeProjects?: string[];
       initialOfferText?: string;
       negotiationFacts?: {
         acceptedImmediately?: boolean;
@@ -198,6 +199,17 @@ export default async function handler(req: Request): Promise<Response> {
     const jdContext = jobDescription ? `The candidate is targeting this role: ${sanitizeForLLM(jobDescription, 500)}. If relevant, probe for skills mentioned in the JD.` : "";
     const resumeSkillsContext = Array.isArray(resumeTopSkills) && resumeTopSkills.length > 0
       ? `Candidate's key skills from resume: ${resumeTopSkills.slice(0, 6).map(s => sanitizeForLLM(s, 50)).filter(Boolean).join(", ")}. If relevant to the current topic, ask them to demonstrate these skills with specific examples.`
+      : "";
+    /* Resume-grounded project anchors — the missing piece that turns
+       follow-ups from generic STAR probes into "walk me through the
+       Razorpay migration you led" type questions. Behavioural-only
+       on purpose: technical / case-study / salary-neg flows don't
+       want project trivia interrupting their own structure. Capped at
+       4 projects, sanitised, kept short so we don't bloat per-call
+       dynamic content (Groq prefix cache breaks if the dynamic tail
+       grows). */
+    const resumeProjectsContext = (type === "behavioral" && Array.isArray(resumeProjects) && resumeProjects.length > 0)
+      ? `\nCandidate's notable projects from resume: ${resumeProjects.slice(0, 4).map(p => sanitizeForLLM(p, 120)).filter(Boolean).join(" | ")}. If the candidate's current answer touches any of these, your follow-up MUST reference the project by name and probe the specific Action they took ("you mentioned X — what did you personally decide there?"). Avoid generic STAR probes when a concrete resume project is available to anchor on.`
       : "";
     const previousContext = previousFollowUps && previousFollowUps.length > 0
       ? `\nPrevious follow-up exchange:\n${previousFollowUps.map(s => sanitizeForLLM(s, 300)).join("\n")}\n\nDO NOT REPEAT phrasing, opening lines, or core content from your previous follow-ups above. The candidate has already heard those words. If your next message would start with the same opener (e.g. "I heard ₹X — that's the absolute top of what I can approve") that you already said, REPHRASE the entire turn or pivot to a different angle (benefits, levers, role scope, decision timeline). Repeating yourself signals you weren't listening.`
@@ -1096,7 +1108,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
     const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${regionalDirective}${tenureProbe}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
-Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}
+Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${resumeProjectsContext}${historyContext}
 
 Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
