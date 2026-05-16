@@ -900,7 +900,7 @@ function InterviewInner() {
     currentTranscript, microFeedback,
     totalQuestions, currentQuestionNum, isCurrentFollowUp,
     timeRemaining, timePercent,
-    displayRole, displayCompany, displayFocus, interviewerName,
+    displayRole, displayCompany, displayFocus, interviewerName, interviewType: focusType,
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
@@ -941,6 +941,7 @@ function InterviewInner() {
     const onUnload = () => {
       if (!interviewEndedRef.current && phase !== "done" && currentStep > 0) {
         captureClientEvent("interview_abandoned", {
+          focus: focusType || null,
           questions_answered: currentStep,
           total_questions: totalQuestions,
           elapsed_seconds: elapsed,
@@ -953,7 +954,7 @@ function InterviewInner() {
       window.removeEventListener("pagehide", onUnload);
       onUnload();
     };
-  }, [phase, currentStep, totalQuestions, elapsed, interviewEndedRef]);
+  }, [phase, currentStep, totalQuestions, elapsed, interviewEndedRef, focusType]);
 
   // Stop video recording when interview ends
   const { isRecording: videoIsRecording, stopRecording: videoStopRecording } = video;

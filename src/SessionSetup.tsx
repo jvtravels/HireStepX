@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { captureClientEvent } from "./posthogClient";
 
 /* Editorial brand surface — same tokens as auth, onboarding, and the
    interview surface. Discipline rule:
@@ -1219,6 +1220,18 @@ export default function SessionSetup() {
     if (targetCompany.trim()) saveUserCompany(targetCompany);
     const focusType = focusToType[interviewFocus[0]] || "behavioral";
     track("session_start", { type: focusType, role: targetRole, sessionLength: SESSION_LENGTH });
+    // PostHog event: per-focus selection signal for the analytics dashboard.
+    // The `focus` property is the canonical internal id (behavioral,
+    // strategic, technical, …) so it groups cleanly in PostHog Insights.
+    // Pair with `interview_session_started` / `interview_session_completed`
+    // for funnel + drop-off-by-focus analysis.
+    captureClientEvent("interview_focus_selected", {
+      focus: focusType,
+      focus_label: interviewFocus[0] || null,
+      role: targetRole || null,
+      company: targetCompany || null,
+      session_minutes: sessionMinutes,
+    });
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);
     setLaunching(true);

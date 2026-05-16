@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { captureClientEvent } from "./posthogClient";
 
 import { useAuth } from "./AuthContext";
 import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS } from "./tts";
@@ -1135,6 +1136,16 @@ export function useInterviewEngine() {
     if (currentStep === 0) {
       introStartedRef.current = step.aiText;
       track("interview_started", { type: interviewType, mode: isMiniMode ? "mini" : "full", isPanel: isPanelInterview });
+      // PostHog: per-focus session-started signal. Same `focus` property
+      // shape as interview_focus_selected / interview_session_completed so
+      // a single PostHog dashboard can build a focus-segmented funnel.
+      captureClientEvent("interview_session_started", {
+        focus: interviewType,
+        mode: isMiniMode ? "mini" : "full",
+        is_panel: isPanelInterview,
+        role: user?.targetRole || null,
+        company: user?.targetCompany || null,
+      });
     }
 
     const gen = ++flowGenerationRef.current;
@@ -2850,6 +2861,21 @@ export function useInterviewEngine() {
       hasFeedback: !!aiFeedback,
     });
     track("interview_completed", { type: interviewType, questionsAnswered: currentStep, duration: elapsed });
+    // PostHog: per-focus completion signal — terminal node of the
+    // selected → started → completed funnel. Score / duration / question
+    // count let the dashboard build "Pro plan engagement by focus" or
+    // "fallback rate by focus" insights without joining elsewhere.
+    captureClientEvent("interview_session_completed", {
+      focus: interviewType,
+      score,
+      difficulty: interviewDifficulty,
+      duration_seconds: elapsed,
+      questions: totalQuestions,
+      questions_answered: currentStep,
+      used_fallback: !!(usedFallbackScore || evalTimedOut),
+      has_skill_scores: !!skillScores,
+      has_feedback: !!aiFeedback,
+    });
 
     try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }
     try { await deleteFromIDB(draftKey); } catch { /* expected: IDB cleanup is non-critical */ }
@@ -3094,6 +3120,12 @@ export function useInterviewEngine() {
     displayRole,
     displayCompany,
     displayFocus,
+    // Raw internal id (behavioral / strategic / technical / case-study /
+    // salary-negotiation / panel / campus-placement / hr-round /
+    // management / government-psu). Exposed so client telemetry
+    // (PostHog) can tag abandonment + retake events with a consistent
+    // `focus` property — see Interview.tsx capture sites.
+    interviewType,
     interviewerName: activeInterviewerName,
     isPanelInterview,
     panelMembers,
