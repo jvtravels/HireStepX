@@ -1188,7 +1188,7 @@ Requirements:
             if (typeof b !== "string") continue;
             // Pick the most distinctive 4+ char nouns from each bullet
             // — cheap proxy for "the LLM referenced this bullet".
-            for (const w of b.toLowerCase().match(/\b[a-z][a-z0-9\-]{3,}\b/g) || []) {
+            for (const w of b.toLowerCase().match(/\b[a-z][a-z0-9-]{3,}\b/g) || []) {
               if (!/^(the|and|for|with|that|this|from|have|been|were|will|when|what|where|which|while|after|before|about|their|there|these|those|because|across|using|built|made|using|into)$/.test(w)) {
                 anchorTokens.add(w);
               }
