@@ -268,6 +268,60 @@ const ACK_VOCAB_RE =
 const SENTIMENT_VOCAB_RE =
   /\b(i hear you|i get where you|i understand where you|broadly aligned|glad we['’]?re aligned|take your time|no rush|in your own time)\b/i;
 
+/* Audit Pass 3 / Fix 3 / ArchRec 3 (2026-05-16) — per-NextAction
+ * validator contract. Until now `validateRestyle` enforced only the
+ * global rules (number subset, sentiment vocab, banned idioms, close-
+ * recap completeness). Different NextAction kinds have different
+ * invariants — a discovery-probe must not introduce numbers at all,
+ * a counter-offer MUST emit at least one number, a close-recap-formal
+ * needs the verbal-acceptance acknowledgement token to bind the recap
+ * to the candidate's prior yes. Hard-coding those into separate branches
+ * spreads the per-kind contract across the validator body and makes it
+ * easy for new NextAction kinds to ship with zero validation.
+ *
+ * The contract table keys NextAction.kind values to:
+ *   - numberPolicy: "forbidden" (no numbers permitted), "required" (at
+ *     least one number must appear), or "optional" (no constraint
+ *     beyond the global subset rule).
+ *   - requiredTokens: regexes that MUST match the restyle.
+ *   - bannedTokens: regexes that MUST NOT match the restyle.
+ *
+ * Seeded with five entries that capture documented invariants. Kinds
+ * without an entry fall through to the global checks — there is no
+ * implicit-deny default to keep the change non-breaking for the long
+ * tail of action kinds. Add entries here as invariants are documented. */
+type NextActionContractEntry = {
+  numberPolicy: "forbidden" | "required" | "optional";
+  requiredTokens?: RegExp[];
+  bannedTokens?: RegExp[];
+};
+
+const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContractEntry>> = {
+  /* Discovery probes ask one structured question; emitting a number
+   * here is almost always the LLM hallucinating a salary anchor before
+   * the recruiter has decided to disclose. Numbers that legitimately
+   * appear in the canonical (e.g. "your 18L current") are echoed via
+   * the global subset rule — restyle output containing numbers that
+   * weren't already in the canonical is blocked there. The forbidden
+   * policy makes the failure mode obvious in the validator log. */
+  "discovery-probe": { numberPolicy: "forbidden" },
+  /* Probe-justification asks "why this number?" without quoting one. */
+  "probe-justification": { numberPolicy: "forbidden" },
+  /* Counter-offers are math turns — the restyle must carry a numeric
+   * offer or the candidate has no anchor to react to. */
+  "counter-offer": { numberPolicy: "required" },
+  /* Open-with-offer is the seed anchor; numbers are mandatory. */
+  "open-with-offer": { numberPolicy: "required" },
+  /* close-recap-formal is the structured confirmation turn — numbers
+   * are mandatory (the recap exists to bind the candidate to the
+   * structured offer). The four band-anchor field tokens (fixed /
+   * variable / notice / bgv) are enforced by the legacy
+   * `close-recap-incomplete` branch below to preserve its named-reason
+   * contract; the table entry layers in the numeric-content invariant
+   * the legacy check did not cover. */
+  "close-recap-formal": { numberPolicy: "required" },
+};
+
 /** Validate the LLM restyle against the canonical line. Rejection
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
@@ -327,6 +381,35 @@ export function validateRestyle(
    * excited / hesitant cue gets stripped to flat-affect cadence. */
   if (SENTIMENT_VOCAB_RE.test(canonical) && !SENTIMENT_VOCAB_RE.test(restyled)) {
     return { valid: false, reason: "sentiment-prefix-stripped" };
+  }
+  /* Audit Pass 3 / Fix 3 (2026-05-16) — per-kind contract enforcement.
+   * Looks up the active NextAction kind in NEXT_ACTION_CONTRACT and
+   * applies numberPolicy + requiredTokens + bannedTokens on top of the
+   * global checks above. Unknown kinds fall through (no implicit deny).*/
+  if (action != null) {
+    const contract = NEXT_ACTION_CONTRACT[action.kind];
+    if (contract != null) {
+      if (contract.numberPolicy === "forbidden" && restyleNums.length > 0) {
+        return { valid: false, reason: `contract-number-forbidden:${action.kind}` };
+      }
+      if (contract.numberPolicy === "required" && restyleNums.length === 0) {
+        return { valid: false, reason: `contract-number-required:${action.kind}` };
+      }
+      if (contract.requiredTokens != null) {
+        for (const re of contract.requiredTokens) {
+          if (!re.test(restyled)) {
+            return { valid: false, reason: `contract-required-token-missing:${action.kind}:${re.source}` };
+          }
+        }
+      }
+      if (contract.bannedTokens != null) {
+        for (const re of contract.bannedTokens) {
+          if (re.test(restyled)) {
+            return { valid: false, reason: `contract-banned-token-present:${action.kind}:${re.source}` };
+          }
+        }
+      }
+    }
   }
   /* Defect 6 (2026-05-16) — close-recap-formal field completeness.
    * The formal recap canonical enumerates Fixed | Variable | (JB) |
