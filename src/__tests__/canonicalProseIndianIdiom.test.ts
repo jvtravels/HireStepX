@@ -121,6 +121,39 @@ describe("canonical prose — Indian idiom rewrite (Fix 2)", () => {
     expect(prose).toMatch(/as per our band/i);
     expect(prose).toMatch(/revert/i);
   });
+
+  it("discovery-probe on currentCtcFixedVariableSplitDisclosed (Disclosed suffix) strips suffix so ack is not self-referential (defect 4)", () => {
+    /* The planner emits this exact `*Disclosed` suffix for the
+     * fixed/variable split slot in DISCOVERY_SEQUENCE. Pre-fix only
+     * the `*Answered` suffix was stripped, so the un-normalised key
+     * never matched the probeItem comparator in buildDiscoveryAck —
+     * the ack fired with "Understood on the fixed/variable structure"
+     * even when the probe itself was the fixed/variable structure. */
+    const s = baseState({
+      highestOfferMade: 22,
+      lastTurnDelta: {
+        candidateSentiment: "neutral",
+        disclosedExpectedCtc: false,
+        disclosedCurrentCtc: false,
+        disclosedFixedVariableSplit: true,
+        disclosedNoticePeriod: false,
+        disclosedCompetingOffer: false,
+        disclosedValueProof: false,
+      } as NegotiationState["lastTurnDelta"],
+    });
+    const prose = renderCanonicalProse(
+      {
+        kind: "discovery-probe",
+        item: "currentCtcFixedVariableSplitDisclosed",
+        ask: "x",
+      } as NextAction,
+      s,
+    );
+    /* The probe BODY (split question) must be present. */
+    expect(prose.toLowerCase()).toMatch(/fixed and variable|fixed.*variable/);
+    /* The ack must NOT have been prepended (self-referential). */
+    expect(prose).not.toMatch(/Understood on the fixed\/variable/i);
+  });
 });
 
 describe("buildRestylePrompt — Indian English cadence", () => {

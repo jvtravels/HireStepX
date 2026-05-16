@@ -363,14 +363,20 @@ function renderCanonicalProseBody(
 
     case "discovery-probe": {
       /* Planner emits item keys with the `*Answered` suffix (mirroring
-       * DiscoveryItemKey from _discovery-stage). Strip the suffix once
-       * so the switch arms accept either form — previously every key
-       * fell through to `action.ask`, which is the engineering "complex
-       * system" tech-interview prompt etc. (Fix 3, 2026-05-16). */
+       * DiscoveryItemKey from _discovery-stage) OR the `*Disclosed`
+       * suffix for items in DISCOVERY_SEQUENCE that gate on a separate
+       * disclosure flag (e.g. `currentCtcFixedVariableSplitDisclosed`).
+       * Strip BOTH suffixes once so the switch arms accept either form.
+       *
+       * Defect 4 (2026-05-16): pre-fix only stripped `Answered`, so
+       * `currentCtcFixedVariableSplitDisclosed` slipped through without
+       * normalisation; the un-stripped key never matched the probeItem
+       * comparator in buildDiscoveryAck and the ack fired self-
+       * referentially on same-topic probes ("Understood on the
+       * fixed/variable structure — and how is your current package
+       * structured between fixed and variable?"). */
       const rawItem = action.item;
-      const item = rawItem.endsWith("Answered")
-        ? rawItem.slice(0, -"Answered".length)
-        : rawItem;
+      const item = rawItem.replace(/(?:Answered|Disclosed)$/, "");
       let probe: string;
       if (item === "currentCtc") {
         probe = "Let's start with your current side — what's the total CTC at present?";
