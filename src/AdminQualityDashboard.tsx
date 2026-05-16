@@ -1145,9 +1145,21 @@ function SessionDetail({ row, onClose, onResolve }: {
         </Section>
       )}
 
-      {row.rubric_gaps && row.rubric_gaps.length > 0 && (
+      {row.rubric_gaps && row.rubric_gaps.filter((g) => g.dimension === "credibility").length > 0 && (
+        <Section title="Claim vs resume (credibility)">
+          {row.rubric_gaps.filter((g) => g.dimension === "credibility").map((g, i) => (
+            <div key={`cred-${i}`} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11, borderLeft: `3px solid ${c.ember}` }}>
+              <div style={{ color: c.ember, fontFamily: font.mono }}>resume cross-check</div>
+              <div style={{ color: c.stone, fontSize: 10 }}>expected: {g.expected}</div>
+              <div style={{ color: c.chalk }}>observed: {g.observed}</div>
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {row.rubric_gaps && row.rubric_gaps.filter((g) => g.dimension !== "credibility").length > 0 && (
         <Section title="Where coaching is needed">
-          {row.rubric_gaps.map((g, i) => (
+          {row.rubric_gaps.filter((g) => g.dimension !== "credibility").map((g, i) => (
             <div key={i} style={{ padding: sp.sm, background: c.onyx, borderRadius: radius.sm, marginBottom: sp.sm, fontSize: 11 }}>
               <div style={{ color: c.gilt, fontFamily: font.mono }}>{g.dimension}</div>
               <div style={{ color: c.stone, fontSize: 10 }}>expected: {g.expected}</div>

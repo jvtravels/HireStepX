@@ -164,7 +164,7 @@ export default async function handler(req: Request): Promise<Response> {
   let requestFocus = "general";
   try {
     const rawBody = await req.json();
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, candidateName, negotiationStyle } = rawBody;
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
@@ -304,6 +304,39 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
       }
       if (Array.isArray(resumeGaps) && resumeGaps.length > 0) {
         parts.push(`RESUME GAPS TO PROBE (important — ask questions that test these weak areas): ${resumeGaps.slice(0, 4).map((s: unknown) => sanitizeForLLM(s, 100)).filter(Boolean).join("; ")}`);
+      }
+      // Per-role timeline from the parsed resume — strongest grounding
+      // signal we have. Caps at 6 entries / 4 bullets each to bound
+      // prompt size; the LLM gets enough surface to anchor real
+      // questions on without dominating the cache prefix.
+      //
+      // Why this matters: without it, the LLM has only `resumeText`
+      // (truncated to 1500 chars and dropped at sentence boundaries —
+      // often loses the experience block) plus `topSkills` chips.
+      // It cannot ask "walk me through the OCR pipeline you built at
+      // Razorpay" because the model never reliably extracts the
+      // company-project pair from the raw text. Passing experiences
+      // as structured data eliminates the extraction step and makes
+      // resume-anchored questions reliable.
+      if (Array.isArray(resumeExperiences) && resumeExperiences.length > 0) {
+        const expLines: string[] = [];
+        for (const e of resumeExperiences.slice(0, 6)) {
+          if (!e || typeof e !== "object") continue;
+          const er = e as Record<string, unknown>;
+          const title = typeof er.title === "string" ? sanitizeForLLM(er.title, 80) : "";
+          const company = typeof er.company === "string" ? sanitizeForLLM(er.company, 80) : "";
+          const period = typeof er.period === "string" ? sanitizeForLLM(er.period, 40) : "";
+          const bullets = Array.isArray(er.bullets)
+            ? er.bullets.slice(0, 4).map((b: unknown) => sanitizeForLLM(b, 160)).filter(Boolean)
+            : [];
+          const header = [title, company, period].filter(Boolean).join(" • ");
+          if (!header && bullets.length === 0) continue;
+          const body = bullets.length > 0 ? `: ${bullets.join("; ")}` : "";
+          expLines.push(`- ${header}${body}`);
+        }
+        if (expLines.length > 0) {
+          parts.push(`RESUME EXPERIENCE TIMELINE (structured — use these company / project anchors when asking questions; never invent companies or projects beyond this list):\n${expLines.join("\n")}\n\nGROUNDING RULE: at least one question stem should explicitly reference a company / project / bullet from above (e.g. "Walk me through the OCR pipeline you built at <company>" or "You mentioned <bullet> — what trade-off forced that choice?"). Do NOT fabricate companies or projects not listed.`);
+        }
       }
       return parts.length > 0 ? parts.join("\n") : "";
     })();
