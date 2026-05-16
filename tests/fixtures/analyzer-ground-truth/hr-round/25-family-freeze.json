@@ -1,0 +1,11 @@
+{
+  "name": "Relocation probe receives a freeze / deflection",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Are you open to relocation to Bangalore?", "time": "" },
+      { "speaker": "user", "text": "Umm, that's personal.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["family_constraint_freeze"], "must_not_include": ["empty_transcript"] }
+}

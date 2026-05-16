@@ -1,0 +1,14 @@
+{
+  "name": "Candidate flat-denies GenAI use during take-home — 2026 red flag",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Did you use ChatGPT or any AI tool during your take-home?", "time": "" },
+      { "speaker": "user", "text": "No, I didn't use it. Never used Copilot either.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["genai_flat_denial"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

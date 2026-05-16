@@ -1,0 +1,11 @@
+{
+  "name": "HR probes UAN/PF, candidate hedges",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Can you confirm your UAN and that there's no overlap in your PF contributions?", "time": "" },
+      { "speaker": "user", "text": "Honestly, not sure. I haven't checked the EPFO portal in a while.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["pf_uan_evasive"], "must_not_include": ["empty_transcript"] }
+}

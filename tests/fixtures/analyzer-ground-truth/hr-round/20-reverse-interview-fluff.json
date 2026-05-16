@@ -1,0 +1,14 @@
+{
+  "name": "Candidate asks no substantive questions at close — low engagement signal",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "We're at the end — do you have any questions for me?", "time": "" },
+      { "speaker": "user", "text": "No, not really, I'm good. Just wanted to know the start date.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["reverse_interview_low_quality"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

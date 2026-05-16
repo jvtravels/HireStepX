@@ -1,0 +1,14 @@
+{
+  "name": "Candidate flat-promises 2-year loyalty — performative",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Can you promise you won't leave us in the first 2 years?", "time": "" },
+      { "speaker": "user", "text": "Yes, I promise. Absolutely, I commit.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["loyalty_overcommit"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

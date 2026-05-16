@@ -1,0 +1,11 @@
+{
+  "name": "Candidate flat-refuses 5-day RTO with no negotiation",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Our WFO policy is 5 days in office. Are you comfortable with that?", "time": "" },
+      { "speaker": "user", "text": "I prefer fully remote. I cannot do WFO.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["rto_flat_refusal"], "must_not_include": ["empty_transcript"] }
+}

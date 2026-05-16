@@ -1,0 +1,11 @@
+{
+  "name": "HR probes a title downgrade, candidate dismisses titles entirely",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Your current designation is Senior Engineer. Why would you accept a lower title here?", "time": "" },
+      { "speaker": "user", "text": "Honestly, titles don't matter to me. I don't care about the title at all.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["designation_downgrade_defensive"], "must_not_include": ["empty_transcript"] }
+}

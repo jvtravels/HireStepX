@@ -1,0 +1,13 @@
+{
+  "name": "Candidate promises 15-day join while admitting 90-day notice",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "It's 90 days at my current org.", "time": "" },
+      { "speaker": "ai", "text": "When can you actually join us?", "time": "" },
+      { "speaker": "user", "text": "I can join in 15 days. I'll figure it out somehow with my current employer.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["joining_date_overpromise"], "must_not_include": ["empty_transcript"] }
+}

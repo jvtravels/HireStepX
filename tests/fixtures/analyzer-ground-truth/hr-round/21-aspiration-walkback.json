@@ -1,0 +1,14 @@
+{
+  "name": "Candidate walks back stated founder aspirations when probed",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "You mentioned wanting to start your own company in a few years — why join us now?", "time": "" },
+      { "speaker": "user", "text": "Actually, I didn't mean that seriously. I was just mentioning it.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["aspiration_walkback"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

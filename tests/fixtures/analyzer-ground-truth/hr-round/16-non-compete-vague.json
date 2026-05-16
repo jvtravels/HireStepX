@@ -1,0 +1,14 @@
+{
+  "name": "Candidate mentions non-compete without quantifying scope",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Anything from your current employer that would restrict what you can work on?", "time": "" },
+      { "speaker": "user", "text": "I have a non-compete from my current company.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["non_compete_unquantified"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

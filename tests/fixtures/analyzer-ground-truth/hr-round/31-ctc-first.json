@@ -1,0 +1,13 @@
+{
+  "name": "Candidate opens with CTC question before role discussion",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Hi, thanks for joining. Let's begin.", "time": "" },
+      { "speaker": "user", "text": "Before we start — what is the CTC for this role and the package range you are offering?", "time": "" },
+      { "speaker": "ai", "text": "We'll get to that. Tell me about your background first.", "time": "" },
+      { "speaker": "user", "text": "Sure. I'm a backend engineer with 4 years across two product companies, mostly Java and Postgres.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["ctc_first_question_user"], "must_not_include": ["empty_transcript"] }
+}

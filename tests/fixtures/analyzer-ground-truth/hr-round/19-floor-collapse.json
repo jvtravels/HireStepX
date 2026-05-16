@@ -1,0 +1,14 @@
+{
+  "name": "Candidate collapses to 'whatever you can offer' on band mismatch",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Your number is about 30% above our band. What's your real floor?", "time": "" },
+      { "speaker": "user", "text": "I'm flexible, happy with whatever you can offer.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["floor_collapse"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

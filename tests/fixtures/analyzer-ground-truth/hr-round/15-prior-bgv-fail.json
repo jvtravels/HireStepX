@@ -1,0 +1,14 @@
+{
+  "name": "Candidate admits prior BGV failure with no date / reason / resolution context",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Have you ever failed a background check at any previous employer?", "time": "" },
+      { "speaker": "user", "text": "Yes, once it happened. But it's fine now.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["prior_bgv_fail_uncontextualised"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

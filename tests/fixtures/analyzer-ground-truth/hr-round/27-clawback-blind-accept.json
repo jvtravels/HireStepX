@@ -1,0 +1,11 @@
+{
+  "name": "HR mentions clawback on joining bonus, candidate accepts without asking terms",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "There's a clawback on the joining bonus if you leave early — are you okay with that?", "time": "" },
+      { "speaker": "user", "text": "Yes, that's fine.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["clawback_blind_accept"], "must_not_include": ["empty_transcript"] }
+}

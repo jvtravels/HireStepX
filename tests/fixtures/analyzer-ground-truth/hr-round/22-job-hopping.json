@@ -1,0 +1,13 @@
+{
+  "name": "Candidate volunteers two short stints with no narrative",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your switches.", "time": "" },
+      { "speaker": "user", "text": "I worked at company A for 10 months and then moved to company B where I spent about 14 months before joining my current org. I've been here a year now.", "time": "" },
+      { "speaker": "ai", "text": "Why so many switches in such a short window?", "time": "" },
+      { "speaker": "user", "text": "Just for better opportunities each time. Nothing specific.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["job_hopping_pattern"], "must_not_include": ["empty_transcript"] }
+}

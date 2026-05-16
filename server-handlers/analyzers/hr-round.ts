@@ -70,6 +70,112 @@ const REFERENCE_REFUSAL = /\b(?:no references|don'?t want to share (?:any )?refe
    candidate to ask cleanly rather than spiral mid-interview. */
 const OFFER_DELAY_ANXIETY = /\b(?:when (?:will|do) i get the (?:written|formal) offer|how long (?:until|till) (?:the )?offer letter|offer letter (?:will|when) (?:come|arrive|be (?:sent|shared))|verbal offer.*written|exploding offer|offer (?:will )?expire|deadline to (?:accept|decide)|how (?:much )?time to (?:accept|decide))\b/i;
 
+/* Prior BGV failure — HR fishes for it; honest admission with context
+   beats discovery during onboarding. Detect when HR asks and the user
+   admits failure without context (date, reason, resolution). */
+const PRIOR_BGV_FAIL_PROMPT = /\b(?:ever fail(?:ed)? (?:a )?(?:background|bgv) check|prior bgv (?:failure|issue)|any bgv (?:fail|issue|discrepancy))\b/i;
+const PRIOR_BGV_FAIL_ADMIT = /\b(?:yes,?\s*(?:i|once|there)|once it (?:did|happened|failed)|i did fail|there was an issue|it got flagged)\b/i;
+const PRIOR_BGV_CONTEXT = /\b(?:in\s+\d{4}|in\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)|because|due to|reason was|resolved|cleared|sorted)\b/i;
+
+/* Non-compete / NDA bind — common in BFSI, consulting, IP-heavy roles.
+   Detect when candidate volunteers a restriction but doesn't quantify
+   it (duration, geography, scope). Vague "I have a non-compete" is a
+   recruiter timebomb. */
+const NONCOMPETE_MENTION = /\b(?:non[- ]?compete|non[- ]?solicit|garden(?:ing)?\s+leave|cooling[- ]?off period|restraint of trade|i\s*p\s+assignment|moonlight(?:ing)?\s+restriction)\b/i;
+const NONCOMPETE_QUANTIFIED = /\b(?:\d+\s*(?:months?|years?|days?)|expires? (?:on|in)|until\s+\d|geography|industry|sector|covers?\s+(?:competitors|clients))\b/i;
+
+/* GenAI usage disclosure — 2026's #1 new HR probe. If asked about
+   ChatGPT/Copilot use during take-home and the candidate dodges or
+   denies flatly, that's the red flag. Honest "yes, for X, verified by Y"
+   is the strong signal. */
+const GENAI_PROMPT = /\b(?:chat\s*gpt|copilot|cursor|claude|gemini|gen\s*ai|ai\s+(?:tool|assist)|llm)\b[\s\S]{0,40}\b(?:use|using|used|help|during)\b|\b(?:use|using|used)\b[\s\S]{0,30}\b(?:chat\s*gpt|copilot|cursor|claude|gemini|gen\s*ai|llm)\b/i;
+const GENAI_DENIAL = /\b(?:no,?\s*(?:i|never|not at all)|i didn'?t use|never used|absolutely not|of course not)\b/i;
+const GENAI_HONEST = /\b(?:yes,?\s*(?:i|for|i used)|i used (?:it|chat|copilot|cursor|claude)|i did use|for (?:boilerplate|syntax|drafts|brainstorm|debugging)|verified (?:by|with)|then i (?:reviewed|verified|tested))\b/i;
+
+/* Loyalty extraction — "promise me you won't leave in 2 years" ritual,
+   especially at services firms. The right answer is calibrated honesty
+   ("I plan for 3+ years but can't promise"), not a flat yes/no. */
+const LOYALTY_PROMPT = /\b(?:promise (?:me )?you (?:won'?t|will not) leave|commit to (?:at least )?\d+ years|stay (?:for|at least) \d+ years|not (?:leaving|switching) (?:for|in) \d+ years)\b/i;
+const LOYALTY_FLAT_YES = /\b(?:yes,?\s*(?:i (?:promise|commit|will|won'?t))|absolutely,?\s*i (?:promise|commit|won'?t)|sure,?\s*i (?:promise|commit|won'?t))\b/i;
+
+/* Aspiration conflict — when candidate mentioned founder/MBA/own-company
+   ambitions earlier and HR probes "why join us then". A dodge or a
+   contradictory walk-back is the failure mode. */
+const ASPIRATION_PROBE = /\b(?:you mentioned (?:starting|wanting to start|founding|own company|mba|business)|why (?:join us|come here) (?:now|then|if))\b[\s\S]{0,80}\b(?:start|founder|own company|mba|business|venture)\b/i;
+const ASPIRATION_WALKBACK = /\b(?:no,?\s*i (?:was|wasn'?t)|actually|i didn'?t mean|that was|i'?ve changed|not really|just (?:said|mentioned) it)\b/i;
+
+/* Salary band mismatch — HR says "you're 30% above our band, what's
+   your floor?" The candidate should hold a floor with rationale, not
+   collapse to "whatever you can offer". */
+const BAND_MISMATCH_PROMPT = /\b(?:(?:above|outside|over) (?:our|the) band|(?:we can'?t|cannot) (?:match|offer) (?:that|your number)|your (?:number|ask) is (?:high|outside)|what(?:'s| is) your (?:real )?floor|tighten (?:your )?ask)\b/i;
+const FLOOR_COLLAPSE = /\b(?:whatever (?:you|the company) (?:can|offer)|i'?m (?:flexible|open to anything)|happy with (?:whatever|anything)|no specific (?:floor|number)|you decide)\b/i;
+
+/* Reverse-interview quality — at close, HR invites questions. The
+   candidate who asks zero or fluff ("what time do I start?") signals
+   low engagement; substantive questions (team structure, success
+   metric, manager style) signal strong fit. */
+const REVERSE_INVITED = /\b(?:do you have (?:any )?questions for me|any questions (?:from your|for) (?:side|me)|anything you'?d like to ask)\b/i;
+const REVERSE_FLUFF = /\b(?:no(?:t really)?,?\s*(?:nothing|no questions|all good|i'?m good)|just (?:wanted to know|curious about) (?:the )?(?:start date|joining date|location|timing))\b/i;
+const REVERSE_SUBSTANTIVE = /\b(?:team structure|reporting (?:line|to)|success (?:metric|criteria|look like)|first (?:30|60|90) days|manager(?:'s)? style|growth path|attrition|tech stack|on[- ]?call|roadmap|investment in|how is success measured)\b/i;
+
+/* ── Wave-2 HR-round flags — real-life Indian HR scenarios ───────────── */
+
+/* Job-hopping pattern — user volunteers 3+ short stints with no narrative.
+   Indian HR treats <18-month tenures stacked together as instability unless
+   the candidate proactively explains. */
+const JOB_HOPPING_PROMPT = /\b(?:multiple (?:jobs|switches|companies)|short (?:stint|tenure)|job[- ]?hop|why so many (?:switches|companies)|tenure pattern|you'?ve switched (?:often|a lot))\b/i;
+const SHORT_STINT_VOLUNTEERED = /\b(?:(?:6|7|8|9|10|11|12|13|14|15|16|17)\s*months?|less than (?:a |one )?year|year and a half|under (?:a )?year|1\.5\s*years?)\b/i;
+const STINT_NARRATIVE = /\b(?:layoff|laid off|restructur|acquir|shut down|founder (?:exit|left)|team disbanded|relocat|family|health|growth|stretch role|learning curve|domain (?:change|shift)|bond complet|after my bond)\b/i;
+
+/* Moonlighting probe — Wipro/Infosys post-2022 ritual. Flat denial of any
+   side activity reads as evasive; honest disclosure with boundaries is strong. */
+const MOONLIGHT_PROMPT = /\b(?:moonlight(?:ing)?|second job|side gig|side project|freelanc|consulting on the side|dual employ|two (?:jobs|companies)|outside work|other (?:income|engagement))\b/i;
+const MOONLIGHT_FLAT_DENIAL = /\b(?:no,?\s*(?:nothing|never|none|absolutely not)|i don'?t|i never|of course not|nahi karta|kabhi nahi)\b/i;
+const MOONLIGHT_HONEST = /\b(?:open[- ]?source|github|writing|blog|teach|tutor|udemy|youtube|side project|disclosed|with permission|on weekends|outside (?:my )?work hours|no client conflict)\b/i;
+
+/* PF/UAN dual-employment — BGV-time discrepancy probe. Honest answer
+   discloses + explains; evasion is the flag. */
+const PF_UAN_PROMPT = /\b(?:uan|pf account|provident fund|epfo|dual (?:pf|uan)|overlapping (?:pf|contribution)|two (?:pf|uan))\b/i;
+const PF_UAN_EVASIVE = /\b(?:not sure|don'?t know|haven'?t checked|let me check|no idea|pata nahi)\b/i;
+
+/* Family-constraint freeze — relocation/marriage probe + freeze or one-word
+   non-answer. Common at Indian service-tier; tests handling without bias. */
+const FAMILY_PROBE = /\b(?:relocat\w*|location preference|marriage plans|married|family situation|spouse|elderly parents|home town|are you planning to (?:marry|settle|relocate))/i;
+const FAMILY_FREEZE = /^(?:uh+|um+|hmm+|i\s+(?:don'?t know|umm|uhh)|that'?s personal|prefer not to (?:answer|discuss)|why are you asking|kyun pooch rahe)/i;
+
+/* Joining-date over-promise — candidate promises <30 days while notice is
+   60+. Indian HR treats this as either (a) lying about notice or (b)
+   planning to ghost current employer. */
+const JOIN_FAST_PROMISE = /\b(?:can join in (?:15|10|7|2)\s*days?|join (?:immediately|right away|next week|within (?:2|two) weeks)|two[- ]?week notice|abhi join|turant join)\b/i;
+const NOTICE_LONG = /\b(?:60\s*days?|90\s*days?|three months?|two months?|teen mahine|do mahine)\b/i;
+
+/* Clawback blind-accept — HR mentions clawback/bond, candidate says yes
+   without asking duration/amount. Recipe for post-joining surprise. */
+const CLAWBACK_PROMPT = /\b(?:clawback|claw[- ]?back|joining bonus.*(?:return|refund|forfeit)|bond.*(?:break|amount)|service agreement (?:terms|duration)|retention bonus.*(?:condition|lock))\b/i;
+const CLAWBACK_BLIND_YES = /^(?:yes|sure|absolutely|no problem|that'?s fine|haan|theek hai|chalega)\b[\s\S]{0,80}$/i;
+const CLAWBACK_INFORMED = /\b(?:what (?:are|is) the (?:terms|duration|amount)|how long|how much|pro[- ]?rate|after how many|prorated)\b/i;
+
+/* RTO / 5-day office flat refusal — service-tier and most product-cos in
+   2026 require WFO. Flat "I prefer WFH" with no negotiation is a dealbreaker. */
+const RTO_PROMPT = /\b(?:5[- ]?day(?:s)? (?:in office|wfo|from office)|return to office|work from office|wfo policy|hybrid policy|in[- ]?office (?:days|policy)|how many days (?:in|from) office)\b/i;
+const RTO_FLAT_REFUSAL = /\b(?:only (?:wfh|remote)|wfh only|cannot (?:come to office|do wfo|do 5 days)|i don'?t do (?:wfo|office)|prefer (?:fully |only )?remote|no office)\b/i;
+const RTO_NEGOTIATED = /\b(?:can do|i can come|fine with|3 days|4 days|hybrid (?:works|is fine)|negotiable|happy to|will adjust|can arrange)\b/i;
+
+/* Designation downgrade — candidate is Senior X applying for X. HR probes;
+   defensive or ego-bruised answer is the flag. */
+const DOWNGRADE_PROMPT = /\b(?:your current (?:title|designation) is (?:senior|lead|principal|staff|sr\.?)|why (?:would you )?accept (?:a )?(?:lower|junior|smaller) (?:title|role|designation)|title (?:downgrade|mismatch)|leveling (?:gap|difference))\b/i;
+const DOWNGRADE_DEFENSIVE = /\b(?:not (?:a |really )?downgrade|that'?s not|title (?:doesn'?t|don'?t) matter to me|i don'?t care about (?:the |my )?title|titles? are (?:just |only )?labels)\b/i;
+
+/* Certification claim gap — user lists AWS/PMP/GCP cert; HR probes when
+   earned / expired / verifiable; user is vague. */
+const CERT_PROBE = /\b(?:when did you (?:get|earn|clear) (?:the |your )?(?:aws|gcp|azure|pmp|csm|scrum|cka|ckad)|cert(?:ificate|ification) (?:date|valid|expir|number)|verify (?:your )?cert|cert(?:ificate)? id)\b/i;
+const CERT_VAGUE = /\b(?:long (?:back|time ago)|few years (?:back|ago)|don'?t remember|some time (?:back|ago)|2 or 3 years|approximately|pata nahi|exact date)\b/i;
+
+/* CTC-first opening — candidate's very first or second turn asks about
+   salary before role/team is even discussed. Indian HR reads this as
+   transactional / unprofessional. */
+const CTC_FIRST_USER = /\b(?:what(?:'s| is) the (?:ctc|package|salary|pay)|how much (?:does|will) (?:this|the role) pay|salary range|ctc range|package (?:offered|kya hai)|what are you offering)\b/i;
+
 const DIMENSIONS = ["logistics", "comp", "stability", "compliance", "commitment", "benefits", "motivation"] as const;
 type Dimension = typeof DIMENSIONS[number];
 const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
@@ -84,7 +190,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v3",
+  version: "hr-round-v4.0",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -240,6 +346,224 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       gaps.push({ dimension: "commitment_signal", expected: "Ask offer-letter timing crisply once near close — not as mid-interview anxiety", observed: "Candidate surfaced offer-letter / deadline anxiety during substantive turns — reads as nervous flight risk", severity: "low" });
     }
 
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && PRIOR_BGV_FAIL_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && PRIOR_BGV_FAIL_ADMIT.test(r.text) && !PRIOR_BGV_CONTEXT.test(r.text)) {
+          flags.add("prior_bgv_fail_uncontextualised");
+          gaps.push({ dimension: "compliance_readiness", expected: "Prior BGV failure owned with date + reason + resolution ('flagged in 2022 for X, cleared after Y')", observed: "Admitted prior BGV failure without context — recruiter will assume worse", severity: "high" });
+          break;
+        }
+      }
+    }
+
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isUser(t) && NONCOMPETE_MENTION.test(t.text || "") && !NONCOMPETE_QUANTIFIED.test(t.text || "")) {
+        flags.add("non_compete_unquantified");
+        gaps.push({ dimension: "compliance_readiness", expected: "Non-compete / NDA stated with duration + geography + scope ('12 months, India, direct competitors only')", observed: "Mentioned a non-compete restriction without quantifying scope — recruiter timebomb", severity: "medium" });
+        break;
+      }
+    }
+
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && GENAI_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text) {
+          if (GENAI_DENIAL.test(r.text) && !GENAI_HONEST.test(r.text)) {
+            flags.add("genai_flat_denial");
+            gaps.push({ dimension: "switch_rationale_honesty", expected: "Honest GenAI disclosure with where + how + verification ('used Copilot for boilerplate, wrote tests by hand')", observed: "Flat denial reads as dishonest — 2026 HR assumes everyone uses AI; the answer is HOW, not IF", severity: "medium" });
+            break;
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && LOYALTY_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && r.text.length < 220 && LOYALTY_FLAT_YES.test(r.text)) {
+          flags.add("loyalty_overcommit");
+          gaps.push({ dimension: "commitment_signal", expected: "Calibrated honesty ('I plan for 3+ years, can't promise — but I'd communicate early if anything changed')", observed: "Flat promise reads as performative — HR knows you can't actually commit to N years", severity: "low" });
+          break;
+        }
+      }
+    }
+
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && ASPIRATION_PROBE.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && ASPIRATION_WALKBACK.test(r.text)) {
+          flags.add("aspiration_walkback");
+          gaps.push({ dimension: "switch_rationale_honesty", expected: "Hold the stated aspiration AND tie it to this role ('founder ambitions in 3+ yrs; this role gives me X experience I need first')", observed: "Walked back a stated aspiration when probed — reads as inconsistent", severity: "medium" });
+          break;
+        }
+      }
+    }
+
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && BAND_MISMATCH_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && FLOOR_COLLAPSE.test(r.text)) {
+          flags.add("floor_collapse");
+          gaps.push({ dimension: "comp_transparency", expected: "Hold a floor with rationale ('my floor is X — anchored on competing offer / current + reasonable hike')", observed: "Collapsed to 'whatever you can offer' — HR will now anchor at the bottom of their band", severity: "high" });
+          break;
+        }
+      }
+    }
+
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && REVERSE_INVITED.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text) {
+          const fluff = REVERSE_FLUFF.test(r.text);
+          const substantive = REVERSE_SUBSTANTIVE.test(r.text);
+          if (fluff && !substantive) {
+            flags.add("reverse_interview_low_quality");
+            gaps.push({ dimension: "motivation_specificity", expected: "Ask 2-3 substantive questions (team structure, success metric, manager style, first-90-day expectations)", observed: "Closed with no questions or only logistics — reads as low engagement", severity: "medium" });
+            break;
+          }
+        }
+      }
+    }
+
+    /* ── Wave-2 detection blocks ─────────────────────────────────────── */
+
+    // Job-hopping pattern — short stint volunteered without narrative.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isUser(t) && SHORT_STINT_VOLUNTEERED.test(t.text || "")) {
+        const segment = t.text || "";
+        const occurrences = (segment.match(SHORT_STINT_VOLUNTEERED) || []).length;
+        // Either repeated short stints in one turn, OR an HR probe + thin narrative.
+        const hrProbed = transcript.some((x) => isAi(x) && JOB_HOPPING_PROMPT.test(x.text || ""));
+        if ((occurrences >= 2 || hrProbed) && !STINT_NARRATIVE.test(segment) && !STINT_NARRATIVE.test(userText)) {
+          flags.add("job_hopping_pattern");
+          gaps.push({ dimension: "switch_rationale_honesty", expected: "Each short stint accompanied by a one-line reason (layoff, founder exit, bond completed, domain change)", observed: "Multiple short stints surfaced without a narrative — Indian HR will assume instability", severity: "medium" });
+          break;
+        }
+      }
+    }
+
+    // Moonlighting flat denial — Wipro/Infosys post-2022 probe.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && MOONLIGHT_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && MOONLIGHT_FLAT_DENIAL.test(r.text) && !MOONLIGHT_HONEST.test(r.text)) {
+          flags.add("moonlighting_flat_denial");
+          gaps.push({ dimension: "switch_rationale_honesty", expected: "Honest disclosure with boundaries ('I contribute to open-source on weekends, no client conflict')", observed: "Flat denial of any side activity reads as evasive — 2026 HR expects disclosure with scope", severity: "medium" });
+          break;
+        }
+      }
+    }
+
+    // PF/UAN dual-employment evasion.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && PF_UAN_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && PF_UAN_EVASIVE.test(r.text)) {
+          flags.add("pf_uan_evasive");
+          gaps.push({ dimension: "compliance_readiness", expected: "Know your UAN, single active PF account, no overlapping contributions — BGV pulls EPFO records", observed: "Hedged on UAN / PF — recruiter assumes hidden parallel employment", severity: "high" });
+          break;
+        }
+      }
+    }
+
+    // Family-constraint freeze — relocation/marriage probe response.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && FAMILY_PROBE.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && r.text.trim().length < 60 && FAMILY_FREEZE.test(r.text.trim())) {
+          flags.add("family_constraint_freeze");
+          gaps.push({ dimension: "logistics_clarity", expected: "Brief, neutral handling — 'I'm open to relocation' or 'I have a hometown preference; happy to discuss'", observed: "Froze or deflected on a family/relocation probe — HR reads as hidden constraint", severity: "low" });
+          break;
+        }
+      }
+    }
+
+    // Joining-date over-promise — fast-join claim with long-notice context.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isUser(t) && JOIN_FAST_PROMISE.test(t.text || "") && NOTICE_LONG.test(allText)) {
+        flags.add("joining_date_overpromise");
+        gaps.push({ dimension: "logistics_clarity", expected: "Match join date to actual notice + buyout reality ('60-day notice, ₹X buyout possible — earliest LWD is Y')", observed: "Promised a fast join while notice in this conversation is 60-90 days — HR will assume you'll ghost current employer", severity: "medium" });
+        break;
+      }
+    }
+
+    // Clawback blind accept.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && CLAWBACK_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && CLAWBACK_BLIND_YES.test(r.text.trim()) && !CLAWBACK_INFORMED.test(r.text)) {
+          flags.add("clawback_blind_accept");
+          gaps.push({ dimension: "comp_transparency", expected: "Acknowledge + ask terms: 'I'm fine in principle — could you share the duration, amount, and pro-rate structure?'", observed: "Blind-accepted a clawback/bond without asking duration or amount — sets up a post-joining surprise", severity: "medium" });
+          break;
+        }
+      }
+    }
+
+    // RTO flat refusal.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && RTO_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && RTO_FLAT_REFUSAL.test(r.text) && !RTO_NEGOTIATED.test(r.text)) {
+          flags.add("rto_flat_refusal");
+          gaps.push({ dimension: "logistics_clarity", expected: "Negotiate with constraints, don't flat-refuse: 'I can do 3 in-office days; can we discuss hybrid?'", observed: "Flat refusal of office days — 2026 RTO is non-negotiable at most service-tier and product-Indian firms", severity: "high" });
+          break;
+        }
+      }
+    }
+
+    // Designation downgrade defensive.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && DOWNGRADE_PROMPT.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && DOWNGRADE_DEFENSIVE.test(r.text)) {
+          flags.add("designation_downgrade_defensive");
+          gaps.push({ dimension: "motivation_specificity", expected: "Own the leveling reality + reframe to scope: 'Title is calibrated to your scope/team; I care about the problem space and trajectory'", observed: "Defensive on title downgrade — reads as ego-bruised, not mission-driven", severity: "low" });
+          break;
+        }
+      }
+    }
+
+    // Certification gap evasion.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && CERT_PROBE.test(t.text || "")) {
+        const r = replyTo(transcript, i);
+        if (r && r.text && CERT_VAGUE.test(r.text)) {
+          flags.add("certification_gap_evasion");
+          gaps.push({ dimension: "compliance_readiness", expected: "Know your cert exact date + ID + expiry — HR verifies via Credly/AWS directly during BGV", observed: "Vague on certification date — recruiter will verify and discrepancy reads as resume inflation", severity: "medium" });
+          break;
+        }
+      }
+    }
+
+    // CTC-first user opening — candidate asks about salary in turn 1 or 2.
+    {
+      const userTurns: Array<{ idx: number; text: string }> = [];
+      transcript.forEach((t, idx) => { if (isUser(t)) userTurns.push({ idx, text: t.text || "" }); });
+      const earlyTurns = userTurns.slice(0, 2);
+      const earlyHrAskedSalary = transcript.slice(0, earlyTurns.length > 0 ? earlyTurns[earlyTurns.length - 1].idx + 1 : 0).some((x) => isAi(x) && ASKED_ABOUT_SALARY.test(x.text || ""));
+      if (!earlyHrAskedSalary && earlyTurns.some((u) => CTC_FIRST_USER.test(u.text))) {
+        flags.add("ctc_first_question_user");
+        gaps.push({ dimension: "motivation_specificity", expected: "Lead with role + team fit; surface comp questions after HR signals discovery is done", observed: "Asked about CTC/package before role/team discussion — reads as transactional", severity: "medium" });
+      }
+    }
+
     const covered = DIMENSIONS.filter((d) => DIMENSION_PATTERNS[d].test(allText));
     if (transcript.length > 8 && covered.length < 4) {
       flags.add("dimensions_thin_coverage");
@@ -261,7 +585,31 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("salary_breakup_vague")) tips.push("When HR asks structure, break the CTC down: 'Fixed X, variable Y (paid out Z%), joining bonus A, RSU vest B over 4 years.' Single-number CTC reads as inflated variable.");
     if (flags.has("reference_refusal")) tips.push("Have 2 references ready (ex-managers preferred). Saying 'no references' is a hard BGV blocker — even one current peer + one ex-manager is fine.");
     if (flags.has("offer_letter_delay_anxiety")) tips.push("Hold offer-letter timing questions for the close — asking mid-interview reads as anxious. Phrase it cleanly: 'What's your typical timeline from verbal to written offer?'");
+    if (flags.has("prior_bgv_fail_uncontextualised")) tips.push("Prior BGV failure? Own it with date + reason + resolution in one breath: 'flagged in 2022 for date overlap with my notice, cleared in 30 days.' Recruiters trust honest specifics.");
+    if (flags.has("non_compete_unquantified")) tips.push("Non-compete? State scope crisply: duration + geography + industry coverage. 'Vague non-compete' = recruiter timebomb.");
+    if (flags.has("genai_flat_denial")) tips.push("2026 HR assumes everyone uses AI. Flat denial reads as dishonest. Answer the HOW: 'Used Copilot for boilerplate; wrote tests by hand; verified security-sensitive bits.'");
+    if (flags.has("loyalty_overcommit")) tips.push("Don't promise N years flat. Real answer: 'I plan for 3+ years; I can't promise but I'd communicate early if anything changed.' HR respects calibration.");
+    if (flags.has("aspiration_walkback")) tips.push("Don't walk back stated ambitions when probed. Tie them to the role: 'Founder ambition in 3+ yrs — this role gives me the X experience I need first.'");
+    if (flags.has("floor_collapse")) tips.push("Never collapse to 'whatever you can offer' on band mismatch. Hold a floor with rationale: 'My floor is X — anchored on competing offer / current + reasonable hike.'");
+    if (flags.has("reverse_interview_low_quality")) tips.push("Close with 2-3 substantive questions: team structure, what success looks like in 90 days, manager style. No questions = low engagement signal.");
+    if (flags.has("job_hopping_pattern")) tips.push("Short stints? Pre-empt the probe. One line per move: 'left X after 10 months — founder pivoted away from my domain; left Y after a year — bond completed.' Specifics defuse the instability read.");
+    if (flags.has("moonlighting_flat_denial")) tips.push("Don't flat-deny moonlighting. 2026 HR expects scoped honesty: 'I contribute to open-source on weekends, no client conflict, disclosed in writing.' That answer scores; 'no, never' reads as evasive.");
+    if (flags.has("pf_uan_evasive")) tips.push("Know your UAN cold + confirm no overlapping PF contributions. BGV pulls EPFO; surprises here block onboarding.");
+    if (flags.has("family_constraint_freeze")) tips.push("Family / relocation probes deserve a calm one-liner: 'Open to relocation' or 'I have a hometown preference, happy to discuss.' Freezing reads as a hidden constraint.");
+    if (flags.has("joining_date_overpromise")) tips.push("Don't promise '15-day join' on a 60-day notice. Be honest: 'My notice is 60 days; I can attempt a buyout if there's flexibility — what's typical here?'");
+    if (flags.has("clawback_blind_accept")) tips.push("Never blind-accept a clawback. Ask: 'What's the duration, amount, and pro-rate structure?' Acceptance without terms invites post-joining shock.");
+    if (flags.has("rto_flat_refusal")) tips.push("Flat WFH-only is a 2026 dealbreaker at most Indian firms. Negotiate: 'I can do 3 in-office days; what's the hybrid structure?'");
+    if (flags.has("designation_downgrade_defensive")) tips.push("Don't dismiss the title question. Frame it: 'Titles map to your leveling; I care about the scope and the problem space — happy to align on what your X-level looks like.'");
+    if (flags.has("certification_gap_evasion")) tips.push("Know your cert dates and IDs cold. HR verifies via Credly/AWS directly — vague answers + a discrepancy read as resume inflation.");
+    if (flags.has("ctc_first_question_user")) tips.push("Don't open with salary. Establish role / team / scope first; surface comp once HR signals discovery is wrapping. Asking comp upfront reads as transactional.");
     if (flags.has("dimensions_thin_coverage")) tips.push("Real Indian HR covers 7 dimensions. Re-run with notice/BGV/counter-offer/benefits prompts.");
+
+    const ILLEGAL_PROMPT_RE = /\b(?:caste|religion|mother tongue|marital|married|family.*(?:plan|soon)|are you (?:from|originally)|community)\b/i;
+    const touchedIllegal = transcript.some((t) => isAi(t) && ILLEGAL_PROMPT_RE.test(t.text || ""));
+    if (touchedIllegal) {
+      flags.add("illegal_prompt_used_for_practice");
+      tips.push("Note: this session included prompts (marital, caste, religion, origin, family-planning) that are illegal-in-India under Equal Remuneration Act and constitutional non-discrimination — included ONLY to drill deflection. Tempo does not endorse asking them. If a real interviewer asks, deflect warmly: 'I'd prefer to keep the conversation on the role.'");
+    }
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

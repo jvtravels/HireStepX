@@ -1,0 +1,11 @@
+{
+  "name": "HR probes moonlighting, candidate flat-denies any side activity",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Do you do any moonlighting or freelance work on the side?", "time": "" },
+      { "speaker": "user", "text": "No, never. Absolutely not.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["moonlighting_flat_denial"], "must_not_include": ["empty_transcript"] }
+}

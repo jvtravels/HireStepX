@@ -1,0 +1,11 @@
+{
+  "name": "HR probes AWS cert date, candidate is vague",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "When did you get your AWS certification? What's the cert ID?", "time": "" },
+      { "speaker": "user", "text": "I got it a few years back, don't remember the exact date or the ID.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["certification_gap_evasion"], "must_not_include": ["empty_transcript"] }
+}
