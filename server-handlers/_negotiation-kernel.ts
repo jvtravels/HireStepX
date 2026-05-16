@@ -2379,9 +2379,21 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
      *   subject='expected' → expectedCtcFixedVariableSplitDisclosed=true
      * The legacy umbrella `fixedVariableSplitAnswered` flag is also
      * monotone-true so legacy checklists clear. Monotone-up. */
+    /* BUG-3 follow-up (PDF#24, 2026-05-16): a percentage-shaped split
+     * ("80% fixed, 20% variable") is also a valid disclosure of the
+     * fitment structure — accept either absolute OR percent shape so
+     * the subject-specific flag flips for percent-only candidates too.
+     * Without this, the umbrella `fixedVariableSplitAnswered` was being
+     * set (via syncChecklistFromParsedFacts) but the subject-specific
+     * `currentCtcFixedVariableSplitDisclosed` /
+     * `expectedCtcFixedVariableSplitDisclosed` stayed false, leaving
+     * downstream consumers that key on the subject-specific flag blind
+     * to the percent-only disclosure. Monotone-up. */
     const splitHasBoth =
-      parsed.componentBreakdown.base != null &&
-      parsed.componentBreakdown.variable != null;
+      (parsed.componentBreakdown.base != null &&
+        parsed.componentBreakdown.variable != null) ||
+      (parsed.componentBreakdown.basePercent != null &&
+        parsed.componentBreakdown.variablePercent != null);
     if (splitHasBoth && state.discoveryChecklist != null) {
       const subject = state.lastDisclosureSubject ?? null;
       const checklist = { ...state.discoveryChecklist };
@@ -2405,11 +2417,32 @@ export function applyCandidateAnswer(state: NegotiationState, answer: string): N
    * of total-CTC stretching satisfies the constraint, because base
    * is the binding component. Flip hardBandCap so the move-picker
    * redirects all concession energy to non-cash levers instead of
-   * inching the total toward maxStretch on impossible base. */
+   * inching the total toward maxStretch on impossible base.
+   *
+   * BUG-3 follow-up (PDF#24, 2026-05-16): when the candidate stated
+   * the split as a percentage ("80% fixed, 20% variable") but no
+   * absolute base was parsed, derive base = basePercent% of the
+   * stated current CTC. That lets the cap detection work for
+   * percent-only disclosures, broadly aligned with how a recruiter
+   * would mentally derive the fixed component from a known total
+   * fitment and a stated split. Last-stated wins: absolute base
+   * (when present) is authoritative; the derived value only fires
+   * when the absolute is missing. */
+  let candidateStatedBaseLpa: number | null =
+    next.candidateComponentBreakdown.base ?? null;
   if (
-    next.candidateComponentBreakdown.base != null &&
+    candidateStatedBaseLpa == null &&
+    next.candidateComponentBreakdown.basePercent != null &&
+    next.candidateCurrentCtc != null
+  ) {
+    candidateStatedBaseLpa =
+      (next.candidateComponentBreakdown.basePercent / 100) *
+      next.candidateCurrentCtc;
+  }
+  if (
+    candidateStatedBaseLpa != null &&
     state.band.baseStretch != null &&
-    next.candidateComponentBreakdown.base > state.band.baseStretch
+    candidateStatedBaseLpa > state.band.baseStretch
   ) {
     next.hardBandCap = true;
   }
