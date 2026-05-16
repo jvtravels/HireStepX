@@ -421,18 +421,59 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
   "hr-essentials": {
     key: "hr-essentials",
     label: "HR round essentials (Indian context)",
-    intent: "Standard HR-round battery — softer than managerial, harder than opener. Tests motivation, fit, basic logistics.",
+    intent: "The real Indian HR round — a 7-dimension gate (logistics, stability, compliance, commitment, benefits, fit, motivation). Salary discovery happens here but the negotiation itself is a separate focus. Tests whether the candidate is hireable AND joinable on plausible terms, with documents and consent in order.",
     signals: {
-      strong: "Specific reasons for change, honest about gaps/job-hops, names a real weakness, has a thoughtful 'why us' answer.",
-      weak: "'I want growth' as the only reason; rehearsed weakness ('I'm a perfectionist'); generic 'why us'.",
+      strong: "Crisp on notice period + LWD + buyout stance; honest on reason-for-leaving without bad-mouthing; ready with documents (payslips, Form 16, relieving letters, marksheets, PAN/Aadhaar/UAN); names a real weakness with a real plan; specific 'why us' tied to a product/leader/domain; commits to not taking a counter-offer if accepting; clear-eyed on bond/probation/benefits.",
+      weak: "Vague notice period; inflated current CTC that won't survive BGV; 'looking for growth' as the only reason; rehearsed weakness ('I'm a perfectionist'); generic 'why us'; unwilling to share payslips; dodges counter-offer commitment; surprised by bond/clawback/probation terms.",
     },
     stems: [
+      /* — Reason for leaving / stability — */
       "Why are you leaving your current company? Be specific.",
       "Why is there a gap from {date} to {date}?",
       "Why have you switched jobs every {N} years?",
+      "What would convince you to stay at your current company instead?",
+      /* — Notice period & LWD — */
+      "What's your official notice period — 30, 60, or 90 days?",
+      "Does your current company allow notice buyout? Will you pay or expect us to reimburse?",
+      "What's the earliest possible LWD you can commit to?",
+      "Walk me through your exit plan — have you informed your manager?",
+      /* — Compensation discovery (not negotiation) — */
+      "What's your current CTC — fixed, variable, joining/retention bonus, RSUs, all in?",
+      "What are your salary expectations, and what hike % is that on your current?",
+      "Can you share your last 3 payslips and Form 16 to validate current CTC?",
+      "What's the variable payout history at your current company — has it actually paid out?",
+      /* — Document readiness / BGV — */
+      "We'll run BGV through a third party — are you okay sharing PAN, Aadhaar, UAN, and all relieving letters?",
+      "Are there any prior employers we won't find a relieving letter from? Why?",
+      "Walk me through your education — 10th, 12th, degree. Any gaps or backlogs?",
+      "Two professional references — preferably ex-managers. Who would you pick and why?",
+      /* — Other offers & commitment extraction — */
+      "Are you interviewing elsewhere? At what stages?",
+      "If we make an offer, will you accept and stop interviewing?",
+      "If your current company counter-offers, will you stay or honour ours?",
+      "If a better offer comes 2 weeks after you join us, what would you do?",
+      "We'd need a commitment within {N} days of the offer — can you work to that?",
+      /* — Benefits, bond, probation — */
+      "Joining bonus has a 12-month clawback. Are you comfortable with that?",
+      "Probation here is 6 months with a 15-day notice. Any concerns?",
+      "There's a {N}-month service agreement for training. Will you sign it?",
+      "ESOPs vest over 4 years with a 1-year cliff. How does that factor into your decision?",
+      "Health insurance covers self + spouse + 2 kids + parents up to ₹X lakh — does that work for your family situation?",
+      /* — Logistics: location / shift / relocation — */
+      "This role is WFO from {city} — are you willing to relocate? Family support?",
+      "Shift timings overlap US hours till 11 PM IST. Can you sustain that?",
+      "Are you the sole earner? How does that influence your decision here?",
+      /* — Self-awareness (HR-flavoured) — */
       "What's a real weakness — something a manager has actually given you feedback on?",
+      "What feedback came up in your last performance review?",
+      "What kind of manager helps you do your best work?",
+      /* — Motivation / fit — */
       "What do you actually know about our company and team?",
+      "Why this role, why this company, why now — give me the specific version.",
       "What would make you accept this offer over another?",
+      "Where do you see yourself in 3–5 years?",
+      /* — Health / compliance disclosures — */
+      "Pre-employment medical is part of onboarding — any concerns we should know about?",
     ],
   },
 

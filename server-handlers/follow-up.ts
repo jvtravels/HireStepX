@@ -12,6 +12,7 @@ import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorToken
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
+import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -893,11 +894,34 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
       ? frameworkDirectiveFor(behavioralCategory)
       : "";
 
+    /* INDIAN CONVERSATIONAL REGISTER — permits (but does not require)
+       the LLM to use lexical / pragmatic markers that real Indian
+       interviewers use. Without this block, the LLM defaults to
+       American startup English and the interview feels like a
+       San Francisco zoom call. With it, the LLM can code-switch
+       lightly when the company tone (Razorpay, Flipkart, TCS) and
+       the candidate's own register support it.
+
+       Critically: this is PERMISSION, not mandate. A polished English
+       answer should still get a polished English follow-up. The block
+       also forbids the most common Western mis-grades — hedged
+       disagreement read as weak conviction, "sir/ma'am" mocked as
+       sycophancy, festival/calendar references treated as filler. */
+    const indianRegisterBlock = type === "behavioral"
+      ? `\nCONVERSATIONAL REGISTER — Indian context:
+- You MAY use light Hinglish discourse markers when the candidate uses them or when the company tone is informal: "achha", "theek hai", "sahi", "haan", "bilkul". One per follow-up at most. Skip entirely if the candidate is speaking polished English — don't force it.
+- Hedged disagreement ("with respect, I'd suggest..." / "may I push back gently...") is conviction expressed in Indian register, NOT weak conviction. Do NOT probe as if the candidate is uncertain.
+- "Sir" / "ma'am" addressed to the interviewer is professional courtesy in Indian English, NOT sycophancy. Do not comment on it, mock it, or coach against it.
+- Indirect framing of failure ("there were some challenges with the timeline" / "the rollout had some issues") is the Indian register for ownership; treat the same way you would treat "I missed the deadline" in American English. Probe for what they did, not for them to "own it more directly."
+- Relational framing ("kept the team aligned" / "preserved trust with the stakeholder") is a legitimate outcome marker, not soft-skill filler. Accept it as Result content.
+- Festival / calendar references (Diwali, Holi, quarter-end, BBD, Sankranti, Navratri) are real operational context in Indian companies, not anecdotal filler.`
+      : "";
+
     const behavioralModeGuard = type === "behavioral"
       ? `\nMODE FENCE — THIS IS A BEHAVIOURAL INTERVIEW, NOT A NEGOTIATION OR HR-ROUND CHECK.
 - DO NOT ask about target salary, current compensation, joining timeline, notice period, or location preferences. Those are HR-round / salary-neg probes.
 - DO NOT ask about visa, relocation willingness, or family situation.
-- STAY on examples and stories: situations the candidate has handled, decisions they made, what they did specifically, and what the outcome was.${frameworkOverride ? "" : " STAR shape (Situation → Task → Action → Result) is what you are probing for."}${frameworkOverride ? `\n${frameworkOverride}` : ""}`
+- STAY on examples and stories: situations the candidate has handled, decisions they made, what they did specifically, and what the outcome was.${frameworkOverride ? "" : " STAR shape (Situation → Task → Action → Result) is what you are probing for."}${frameworkOverride ? `\n${frameworkOverride}` : ""}${indianRegisterBlock}`
       : "";
 
     /* Behavioural-only: STAR component-gap hint from the engine. When the
@@ -950,6 +974,26 @@ ${safeStarGap === "action"
 - ONE question, no preamble.`
         : "");
 
+    /* Per-answer Indian-register detection. The block above tells the LLM
+       what to do *if* the candidate is in Indian register. This directive
+       tells the LLM that on THIS specific turn the candidate already used
+       at least one Indian-register marker — so light mirroring is in
+       bounds, and the specific markers detected MUST NOT be scored as
+       weakness. Conservative regexes (see _cultural-register.ts) — false
+       negatives are fine, false positives would over-license Hinglish on
+       answers that don't warrant it. */
+    const culturalReg = type === "behavioral"
+      ? detectCulturalRegister(answer)
+      : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false };
+    const culturalRegisterHint = (type === "behavioral" && hasAnyIndianRegister(culturalReg))
+      ? `\nINDIAN-REGISTER DETECTED — the candidate's answer contains: ${[
+          culturalReg.hedgedDisagreement ? "hedged disagreement (conviction expressed politely)" : null,
+          culturalReg.indirectFailureFraming ? "indirect failure framing (ownership expressed via 'some challenges')" : null,
+          culturalReg.relationalFraming ? "relational outcome framing ('kept the team aligned' / 'preserved trust')" : null,
+          culturalReg.calendarAnchored ? "Indian calendar / festival / fiscal anchor" : null,
+        ].filter(Boolean).join("; ")}. Mirror lightly if appropriate. Do NOT probe these markers as weakness, deflection, or filler — they are legitimate signal in Indian English.`
+      : "";
+
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
     const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")
       ? `\n${lookupSalaryContext({ role, company, currentCity, jobCity })}\nUse ₹ and LPA. Follow-up offers/counters MUST stay within these ranges.
@@ -966,7 +1010,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}
