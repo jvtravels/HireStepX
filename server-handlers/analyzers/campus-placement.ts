@@ -82,14 +82,14 @@ const MTI_PATTERNS: RegExp[] = [
 const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)/i;
 /* Framing context that excuses a low CGPA — must appear in the same user
  * span as the number for the candidate to get credit. */
-const CGPA_FRAMING_CONTEXT = /\b(?:family|health|hospital|surgery|loss|covid|caregiv|financial|part[- ]?time job|supported|recovered|bounced back|after that|since then|the next sem|improved|trended? up|consistent improvement|i (?:worked on|focused on|built|shipped|interned|won|cleared|topped))\b/i;
+const CGPA_FRAMING_CONTEXT = /\b(?:family|health|hospital|surgery|loss|covid|caregiv|financial|part[- ]?time job|supported|recovered|bounced back|after that|since then|the next sem|improved|trended? up|consistent improvement|i (?:worked on|focused on|built|shipped|interned|won|cleared|topped)|(?:9|8|10)\.\d+\s+in\s+(?:my\s+)?(?:last|recent|final)\s+(?:few\s+)?semesters?|last\s+(?:three|four|two|few|3|4|5)\s+semesters?\s+(?:i|i'?ve)|cleared\s+(?:the\s+)?(?:case|coding|final|aptitude)\s+round|placed\s+(?:in|at|with)|offered?\s+by|got\s+(?:an\s+)?offer\s+from|trend(?:ing|ed)?\s+(?:upward|up)|sgpa\s+(?:has\s+)?(?:improved|gone\s+up)|hackathon|kaggle|leetcode|codeforces|open[- ]?source\s+contribut|published)\b/i;
 
 /* Reverse-question grading. Every Indian campus interview closes with
  * "Do you have any questions for us?" — what the candidate asks back
  * is part of the grade. */
 const REVERSE_QUESTION_PROBE = /\b(?:any\s+questions?\s+(?:for\s+(?:us|me|the\s+team))?|do\s+you\s+have\s+(?:any\s+)?questions?|anything\s+you'?d?\s+like\s+to\s+ask|questions?\s+from\s+your\s+(?:side|end))\b/i;
 /* Specific, prepared reverse-questions — these score. */
-const REVERSE_QUESTION_SPECIFIC = /\b(?:training\s+program|onboarding|mentor|on[- ]?call|rotation|tech\s+stack|deployment|production|code\s+review|team\s+structure|growth\s+(?:track|path|plan)|career\s+(?:track|progression|ladder)|appraisal|promotion\s+(?:cycle|timeline)|notice\s+period|bond|service\s+agreement|recent\s+launch|product\s+roadmap|client\s+(?:engagement|project)|new\s+(?:product|launch|hire)|ppt|pre[- ]?placement\s+talk|the\s+(?:speaker|presenter)\s+mentioned)\b/i;
+const REVERSE_QUESTION_SPECIFIC = /\b(?:training\s+program|onboarding|mentor|on[- ]?call|rotation|tech\s+stack|deployment|production|code\s+review|team\s+structure|growth\s+(?:track|path|plan)|career\s+(?:track|progression|ladder)|appraisal|promotion\s+(?:cycle|timeline)|notice\s+period|bond|service\s+agreement|recent\s+launch|product\s+roadmap|client\s+(?:engagement|project)|new\s+(?:product|launch|hire)|ppt|pre[- ]?placement\s+talk|the\s+(?:speaker|presenter)\s+mentioned|(?:i\s+(?:noticed|saw|read|came\s+across)|i'?ve\s+(?:noticed|seen|read)|i\s+was\s+reading)\s+(?:that|about|on|your)|(?:could|can|would)\s+you\s+(?:walk\s+me\s+through|tell\s+me\s+more\s+about|share|elaborate)|how\s+does\s+(?:the\s+team|your\s+team|engineering|the\s+org)\s+(?:handle|approach|decide|measure|review)|what\s+(?:does|do)\s+(?:a\s+)?(?:typical\s+)?(?:first\s+(?:90\s+days|six\s+months|year)|day\s+in\s+the\s+life|new\s+joiner|fresher)|what\s+(?:metrics|kpis?|success\s+criteria)|how\s+(?:are|do)\s+(?:juniors|freshers|new\s+hires)\s+(?:evaluated|mentored|supported)|story\s+behind|engineering\s+(?:culture|blog|values))\b/i;
 /* Generic / lazy reverse-questions — these don't score. */
 const REVERSE_QUESTION_GENERIC = /\b(?:work\s+culture|company\s+culture|good\s+culture|growth\s+opportunit|learning\s+opportunit|work[- ]?life\s+balance|when\s+(?:can|do)\s+i\s+(?:start|join|expect)|how\s+(?:is|are)\s+the\s+(?:team|culture|company))\b/i;
 /* "No, I don't" / declining the offer to ask. */
@@ -233,7 +233,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
 
     // Implausible team-size brag (fresher claiming to have led a 20-person team)
     const teamMatch = userText.match(IMPLAUSIBLE_TEAM);
-    if (teamMatch && Number(teamMatch[1]) >= 15) {
+    if (teamMatch && Number(teamMatch[1]) >= 20) {
       flags.add("implausible_team_size");
       gaps.push({
         dimension: "credibility",
@@ -405,7 +405,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     /* ── Wave 3 detection: real-life campus edge cases ─────────────── */
 
     // Attrition risk — fresher signaling exit for higher studies within 1-2 yrs.
-    if (ATTRITION_HIGHER_STUDIES.test(userText)) {
+    // Exception: if candidate explicitly commits to honoring the bond/service period first,
+    // that signals retention, not attrition.
+    const honorsBond = /\b(?:after\s+(?:completing|finishing|fulfilling|honoring)\s+(?:my\s+)?(?:bond|service|2[- ]?year\s+commitment|two[- ]?year\s+commitment)|once\s+(?:my\s+)?bond\s+(?:is\s+)?(?:done|complete|over)|post[- ]?bond|after\s+the\s+bond)\b/i.test(userText);
+    if (ATTRITION_HIGHER_STUDIES.test(userText) && !honorsBond) {
       flags.add("attrition_risk_higher_studies");
       gaps.push({
         dimension: "framing",

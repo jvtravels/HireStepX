@@ -58,6 +58,15 @@ export interface CulturalRegister {
    *  percentages or CGPA. Standard ritual at Indian services firms
    *  (TCS / Infosys / Wipro etc.), NOT padding or insecurity. */
   pedigreeRecital: boolean;
+  /** "Joined TCS for enterprise fundamentals, moved to a fintech startup
+   *  for product velocity, now looking for scale at..." — deliberate
+   *  career-ladder narrative covering 2-3 stints. Indian candidates
+   *  routinely defend frequent job changes as intentional skill
+   *  acquisition (band-jump path); this is a legitimate stability
+   *  narrative, NOT job-hopping. Counts as a non-penalty signal that
+   *  also licenses the live coach to credit "smart ladder climbing"
+   *  rather than re-probe "why did you leave" adversarially. */
+  careerLadderNarrative: boolean;
 }
 
 /* Hedged disagreement — must contain BOTH a deference marker
@@ -101,6 +110,16 @@ const DEFERENTIAL_GRATITUDE_RE = /\b(?:thank\s+you(?:\s+(?:so\s+much|very\s+much
    "I scored well in school" doesn't qualify; "I got 92% in 10th" does. */
 const PEDIGREE_RECITAL_RE = /\b(?:scored|got|secured|achieved|attained)\s+(?:about\s+|around\s+|nearly\s+)?\d{2,3}(?:\.\d+)?\s*(?:%|percent|percentage)\s+in\s+(?:my\s+)?(?:10th|12th|tenth|twelfth|class\s+(?:10|12|x|xii)|board(?:s)?|hsc|ssc|cbse|icse)\b|\b(?:my\s+)?(?:10th|12th|tenth|twelfth|class\s+(?:10|12|x|xii)|board(?:s)?|hsc|ssc)\s+(?:marks|percentage|score|result)s?\s+(?:was|were)\s+\d{2,3}(?:\.\d+)?\s*(?:%|percent)?\b|\bcgpa\s+(?:of\s+|was\s+|is\s+)?\d(?:\.\d+)?(?:\s*\/\s*10)?\b|\b\d(?:\.\d+)?\s*cgpa\b/i;
 
+/* Career-ladder narrative — deliberate-skill-acquisition framing across
+   2+ stints. Indian candidates with 3-4 short tenures aren't necessarily
+   unstable; the legitimate narrative is "X gave me fundamentals, Y gave
+   me speed, now I want scale." Conservative trigger: a "for/to <noun>"
+   reason marker AT LEAST TWICE in the answer (or one reason marker plus
+   an explicit "deliberate / intentional / on purpose" framing), so a
+   single sentence "I left X for better growth" doesn't fire — only the
+   multi-stint ladder narrative does. */
+const CAREER_LADDER_RE = /\b(?:joined|started\s+(?:out\s+)?at|was\s+at|moved\s+(?:to|on\s+to)|switched\s+to|then\s+(?:joined|moved|went))\b[\s\S]{0,80}\b(?:for|to\s+(?:get|learn|build|gain|pick\s+up|sharpen))\s+(?:the\s+|my\s+)?(?:fundamentals|basics|enterprise|scale|velocity|speed|product\s+sense|exposure|breadth|depth|leadership|ownership|client[\s-]?facing|domain\s+expertise|fintech|saas|consumer)\b[\s\S]{0,300}\b(?:joined|moved|switched|then\s+(?:joined|moved|went)|after\s+that|next\s+(?:was|i\s+(?:joined|moved)))\b[\s\S]{0,80}\b(?:for|to\s+(?:get|learn|build|gain|pick\s+up|sharpen))\b|\b(?:deliberate(?:ly)?|intentional(?:ly)?|by\s+design|on\s+purpose|conscious(?:ly)?)\b[\s\S]{0,80}\b(?:ladder|path|trajectory|sequence|progression|switch(?:es)?|move(?:s)?|stint(?:s)?|jump(?:s)?)\b|\b(?:each\s+(?:role|stint|move|switch)|every\s+(?:role|stint|move))\s+(?:gave|taught|added|brought)\s+me\b/i;
+
 export function detectCulturalRegister(text: string): CulturalRegister {
   const t = text || "";
   return {
@@ -110,6 +129,7 @@ export function detectCulturalRegister(text: string): CulturalRegister {
     calendarAnchored: CALENDAR_ANCHOR_RE.test(t),
     deferentialGratitude: DEFERENTIAL_GRATITUDE_RE.test(t),
     pedigreeRecital: PEDIGREE_RECITAL_RE.test(t),
+    careerLadderNarrative: CAREER_LADDER_RE.test(t),
   };
 }
 
@@ -124,5 +144,6 @@ export function hasAnyIndianRegister(reg: CulturalRegister): boolean {
     || reg.relationalFraming
     || reg.calendarAnchored
     || reg.deferentialGratitude
-    || reg.pedigreeRecital;
+    || reg.pedigreeRecital
+    || reg.careerLadderNarrative;
 }

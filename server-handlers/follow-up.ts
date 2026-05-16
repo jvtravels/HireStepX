@@ -13,6 +13,7 @@ import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
 import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
+import { summarizeReverseInterview } from "../src/_reverse-interview";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -986,7 +987,7 @@ ${safeStarGap === "action"
        answers that don't warrant it. */
     const culturalReg = type === "behavioral"
       ? detectCulturalRegister(answer)
-      : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false, deferentialGratitude: false, pedigreeRecital: false };
+      : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false, deferentialGratitude: false, pedigreeRecital: false, careerLadderNarrative: false };
     const culturalRegisterHint = (type === "behavioral" && hasAnyIndianRegister(culturalReg))
       ? `\nINDIAN-REGISTER DETECTED — the candidate's answer contains: ${[
           culturalReg.hedgedDisagreement ? "hedged disagreement (conviction expressed politely)" : null,
@@ -995,6 +996,7 @@ ${safeStarGap === "action"
           culturalReg.calendarAnchored ? "Indian calendar / festival / fiscal anchor" : null,
           culturalReg.deferentialGratitude ? "deferential gratitude ('thank you for this opportunity, sir' / 'I appreciate you taking the time') — professional courtesy, NOT low confidence" : null,
           culturalReg.pedigreeRecital ? "pedigree recital (10th/12th board percentages or CGPA) — standard Indian services ritual, NOT padding" : null,
+          culturalReg.careerLadderNarrative ? "deliberate career-ladder narrative (e.g. 'X for fundamentals, Y for speed, now want scale') — credit smart sequencing, do NOT re-probe as instability" : null,
         ].filter(Boolean).join("; ")}. Mirror lightly if appropriate. Do NOT probe these markers as weakness, deflection, or filler — they are legitimate signal in Indian English.`
       : "";
 
@@ -1006,6 +1008,28 @@ ${safeStarGap === "action"
        departure verb. We surface this once per turn — the engine won't let
        the LLM dogpile because each turn is independent. */
     const TENURE_SHORT_RE = /\b(?:(?:after\s+)?(?:only\s+|just\s+|barely\s+)?(?:\d{1,2}|a\s+few|six|nine|eight|ten|eleven|twelve|fourteen|fifteen|eighteen|twenty)\s+months?|(?:about\s+|around\s+|nearly\s+|just\s+over\s+)?(?:one|1|a)\s+year(?:\s+and\s+(?:a\s+)?(?:half|few\s+months))?)\b[\s\S]{0,80}\b(?:left|leaving|leave|moved\s+(?:on|out)|quit|resigned|switched|exit(?:ed)?|transitioned)\b|\b(?:left|leaving|quit|resigned|moved\s+on|exited)\b[\s\S]{0,40}\b(?:after\s+(?:only\s+|just\s+|barely\s+)?(?:\d{1,2}\s+months?|(?:one|1|a)\s+year)|in\s+under\s+(?:a\s+|one\s+)?year)\b/i;
+    /* Reverse-interview live coaching (B10 live-flow). When the question
+       being asked is the closing "do you have any questions for me?"
+       turn, classify the candidate's reply via the shared regex helper
+       (src/_reverse-interview.ts) and steer the follow-up:
+         - red verdict → ONE gentle reframe, not interrogation, so the
+           candidate hears the signal before the report
+         - strong verdict → a substantive 1-line answer to their best
+           green question (or graceful "good question, let's wrap")
+         - neutral / weak → a soft invitation to dig deeper before close
+       Same classifier runs post-session in evaluate-session.ts so the
+       live coach and the report agree on the closing-turn verdict. */
+    const REVERSE_PROMPT_RE = /\b(?:any\s+questions\s+(?:for\s+(?:me|us)|you\s+have)|questions\s+for\s+(?:me|us)|do\s+you\s+have\s+any\s+questions)\b/i;
+    const isReverseTurn = type === "behavioral" && REVERSE_PROMPT_RE.test(question);
+    const reverseSummary = isReverseTurn ? summarizeReverseInterview(answer) : null;
+    const reverseInterviewDirective = reverseSummary
+      ? reverseSummary.verdict === "red_flag"
+        ? `\nREVERSE-INTERVIEW CLOSING — RED PATTERN. The candidate asked a high-frequency rejection-trigger question in Indian loops (detected: ${reverseSummary.classifications.filter(c => c.bucket === "red").map(c => c.reason).join(", ")}). Your follow-up must be ONE short, kind reframe — not interrogation, not silent acceptance. Acknowledge the question landed, then surface why it'd hurt them in a real loop and offer the better-shaped version. Example shape: "That's something HR can answer better in round 2 — at this stage, a stronger question would be about [substance: success criteria / team shape / decision-making]." Then close. Do NOT shame, do NOT lecture, do NOT exceed 2 sentences.`
+        : reverseSummary.verdict === "strong"
+          ? `\nREVERSE-INTERVIEW CLOSING — STRONG. The candidate asked a substantive role/team question (detected green: ${reverseSummary.classifications.filter(c => c.bucket === "green").map(c => c.reason).join(", ")}). Give a 1-2 sentence credible in-character answer to their best green question (you may invent realistic specifics — team size, decision cadence — appropriate to the role/company), then close warmly. Do NOT add ANOTHER probing follow-up — this is the wrap.`
+          : `\nREVERSE-INTERVIEW CLOSING — NEUTRAL/WEAK. The candidate asked only generic / no real questions. Gently invite ONE more before close: "Anything specific about the team, the role's first 90 days, or how decisions get made?" — that's the prompt. Do NOT lecture about asking better questions; just open one more door.`
+      : "";
+
     const tenureProbe = (type === "behavioral" && TENURE_SHORT_RE.test(answer))
       ? `\nTENURE-DEFENCE PROBE — the candidate mentioned a short tenure (<24 months) followed by a departure. Indian interviewers aggressively probe these. If a follow-up is warranted, your ONE follow-up MAY re-ask the "why did you leave" angle from a DIFFERENT cut than the original question already covered: the manager-fit angle ("how was the working relationship with your manager?"), the growth angle ("what was missing for you to stay another year?"), or the timing angle ("was there a specific incident, or was it building up?"). Do NOT escalate or shame. Do NOT call the tenure "short" or "concerning" — neutral curiosity only. Treat instability framing as a non-penalty narrative-coherence check, not a red flag.`
       : "";
@@ -1026,7 +1050,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${tenureProbe}
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${tenureProbe}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}

@@ -42,6 +42,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "Great. Tell me about a time you had to make a difficult technical decision that significantly impacted your team's roadmap. What was the situation, and how did you approach it?", thinkingDuration: 600, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: STAR structure, strategic framing, business impact" },
     { type: "question", aiText: "Now, let's talk about scaling. Describe a situation where you had to scale your engineering organization. What challenges did you face, and how did you maintain engineering velocity during that growth?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: scaling strategy, people management, metrics" },
     { type: "question", aiText: "Let's shift to stakeholder management. Tell me about a time when you had to push back on a request from a senior executive. How did you handle it, and what was the outcome?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: stakeholder alignment, communication, courage" },
+    { type: "question", aiText: "Before we wrap up — do you have any questions for me? About the role, the team, how decisions get made, anything you'd like to understand better.", thinkingDuration: 600, speakingDuration: 4500, waitForUser: true, scoreNote: "Focus on: substantive role / team / decision-making questions (green); avoid salary-in-round-1, leave-policy, WFH-aggressive, promotion-timeline (red)." },
     { type: "closing", aiText: "That wraps it up. Thanks for the conversation — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   strategic: [
@@ -393,9 +394,44 @@ export function getScript(type: string | null, difficulty: string | null, user: 
     questionSteps = base.slice(1, -1);
   }
 
+  /* Reverse-interview closing turn — "do you have any questions for me?"
+     In Indian behavioural loops, the closing reverse-interview is heavily
+     weighted: wrong questions (salary in round 1, WFH aggressively,
+     leave policy pre-offer) are instant rejection triggers, while a
+     substantive question ("what does success look like in 90 days?",
+     "how is the team structured?") can save a borderline session.
+     Inserted as a question-type step so the engine captures the
+     candidate's reply for downstream scoring by
+     summarizeReverseInterview() in evaluate-session.ts. Only added for
+     interview types where the closing reverse turn is a real ritual —
+     behavioural-class types. Treat unknown types as behavioural for
+     gating: the question pool already falls back to the behavioral bank,
+     so the closing-turn ritual should match (keeps `getScript(null)`
+     and `getScript("nonexistent")` structurally identical). */
+  const REVERSE_INTERVIEW_TYPES = new Set([
+    "behavioral",
+    "management",
+    "strategic",
+    "hr-round",
+    "campus-placement",
+  ]);
+  const isReverseInterviewType = REVERSE_INTERVIEW_TYPES.has(typeKey)
+    || !scriptsByType[typeKey];
+  const reverseInterviewStep: InterviewStep | null = isReverseInterviewType
+    ? {
+        type: "question",
+        aiText: `Before we wrap up${name ? `, ${name}` : ""} — do you have any questions for me? About the role, the team, how decisions get made, anything you'd like to understand better.`,
+        thinkingDuration: 600,
+        speakingDuration: 4500,
+        waitForUser: true,
+        scoreNote: "Focus on: substantive role / team / decision-making questions (green); avoid salary-in-round-1, leave-policy, WFH-aggressive, promotion-timeline (red).",
+      }
+    : null;
+
   const steps = [
     personalizedIntro,
     ...questionSteps,
+    ...(reverseInterviewStep ? [reverseInterviewStep] : []),
     personalizedClosing,
   ];
 

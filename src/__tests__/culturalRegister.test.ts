@@ -305,6 +305,47 @@ describe("detectCulturalRegister — pedigreeRecital", () => {
   });
 });
 
+describe("detectCulturalRegister — careerLadderNarrative", () => {
+  it("matches a two-stint deliberate ladder narrative", () => {
+    expect(
+      detectCulturalRegister(
+        "I joined TCS for enterprise fundamentals, then moved to a fintech startup for product velocity, and now I want scale.",
+      ).careerLadderNarrative,
+    ).toBe(true);
+  });
+
+  it("matches an explicit 'deliberate ladder' framing", () => {
+    expect(
+      detectCulturalRegister(
+        "These switches were deliberate — each move was a band-jump on the ladder.",
+      ).careerLadderNarrative,
+    ).toBe(true);
+  });
+
+  it("matches 'each role gave me' pattern", () => {
+    expect(
+      detectCulturalRegister(
+        "Each role gave me a different slice — depth at Infosys, ownership at the startup.",
+      ).careerLadderNarrative,
+    ).toBe(true);
+  });
+
+  it("does NOT match a single-stint departure reason", () => {
+    expect(
+      detectCulturalRegister("I left my last job for better growth.")
+        .careerLadderNarrative,
+    ).toBe(false);
+  });
+
+  it("does NOT match a generic resume summary without sequencing", () => {
+    expect(
+      detectCulturalRegister(
+        "I have 6 years of experience across backend and platform engineering.",
+      ).careerLadderNarrative,
+    ).toBe(false);
+  });
+});
+
 describe("hasAnyIndianRegister", () => {
   it("returns true when any marker fires", () => {
     expect(

@@ -518,6 +518,40 @@ export const CATEGORIES: Record<CategoryKey, CategoryDef> = {
       "Are you married? Any plans soon?",
       "Are you planning to start a family in the next year or two?",
       "Where are you from originally? Mother tongue?",
+      "What is your caste / community?",
+      "Which religion do you follow?",
+      /* — Compliance / legal edge cases — */
+      "Have you ever failed a background check at any previous employer?",
+      "Are you bound by a non-compete or non-solicit clause from your current employer?",
+      "Do you have any NDA or IP-assignment restrictions that would affect what you can work on here?",
+      "Were you ever asked to leave a company earlier than your notice — gardening leave or sudden release?",
+      "Are you on a payroll-of-record / vendor / staffing-firm arrangement currently?",
+      "Are any of your degrees correspondence / distance / part-time? Any ATKT or backlogs?",
+      "Has any prior employer marked your exit as 'not eligible for rehire'?",
+      /* — Diversity / identity tracks — */
+      "Are you applying through our women-returner / second-careers track?",
+      "Do you require any workplace accommodation under the PwD Act?",
+      "Are you applying as a lateral entry from the armed forces?",
+      /* — Family / life-stage realities — */
+      "Is your spouse's career mobile? Will the relocation work for both of you?",
+      "Are your parents dependent on you? Will they relocate with you or stay back?",
+      "Do you have eldercare or childcare commitments we should plan around?",
+      "Do you eventually plan to join a family business or take over family responsibilities?",
+      "Was your career break related to health or burnout? How are you doing now?",
+      /* — Visa / mobility / placement nuance — */
+      "Are you returning from a US/UK assignment? What's your visa status?",
+      "Have you been on long-term onsite deputation? How many years cumulatively?",
+      "If this role is via our GCC / captive vs vendor model, are you comfortable with that?",
+      /* — 2025-2026 hot topics — */
+      "Did you use ChatGPT or any GenAI tool during your take-home or coding round?",
+      "Your current company was recently acquired / announced layoffs — what's your status?",
+      "You worked here before and left — what's different this time? Why come back?",
+      "We typically convert contract-to-hire after 6 months — comfortable starting on contract?",
+      /* — Process moments — */
+      "Your number is about 30% above our band for this role — what's your real floor?",
+      "Can you promise you won't leave us in the first 2 years? We invest a lot in ramp-up.",
+      "You mentioned wanting to start your own company in a few years — why join us now?",
+      "Do you have any questions for me? (closing — expect 2-3 substantive questions)",
     ],
   },
 

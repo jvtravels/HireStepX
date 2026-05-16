@@ -107,10 +107,24 @@ describe("interviewScripts", () => {
   describe("getScript", () => {
     it("returns personalized behavioral script by default", () => {
       const script = getScript(null, null, null);
-      // intro + 5 randomized questions + closing = 7
-      expect(script.length).toBe(7);
+      // intro + 5 randomized questions + reverse-interview closing turn + closing = 8
+      expect(script.length).toBe(8);
       expect(script[0].type).toBe("intro");
       expect(script[0].aiText).toContain("behavioral");
+    });
+
+    it("inserts a reverse-interview closing turn before the final closing for behavioural-class scripts", () => {
+      const script = getScript(null, null, null);
+      const penultimate = script[script.length - 2];
+      expect(penultimate.type).toBe("question");
+      expect(penultimate.aiText.toLowerCase()).toMatch(/any questions for me|questions for me\??/);
+      expect(penultimate.waitForUser).toBe(true);
+    });
+
+    it("does NOT insert a reverse-interview turn for salary-negotiation scripts", () => {
+      const script = getScript("salary-negotiation", null, null);
+      const reverseStep = script.find((s) => s.type === "question" && /any questions for me/i.test(s.aiText));
+      expect(reverseStep).toBeUndefined();
     });
 
     it("returns correct type when specified", () => {
