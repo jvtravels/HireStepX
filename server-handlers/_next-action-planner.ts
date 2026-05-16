@@ -839,6 +839,42 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         }
       }
     }
+    /* Audit Pass 2 Fix B (2026-05-16) — probe-expectations → anchor
+     * bridge. From `phase = "probe-expectations"`, the cascade below
+     * (without this branch) only ever returns the generic
+     * `probe-expectations` action, which writes `newTotalLpa: null`.
+     * The only writer of `state.highestOfferMade` from this phase was
+     * the candidate-driven auto-accept path. Result: bot loops on
+     * probes until maxTurns → stalemate.
+     *
+     * Bridge: once discovery is complete AND no offer is on the table
+     * yet, escalate to `band-anchor-with-rationale`. probe-expectations
+     * semantically implies the candidate has already expressed
+     * expectations; the next idiomatic recruiter move is to anchor the
+     * band ("As per the band for this grade, fitment sits in
+     * ₹{lo}–₹{hi} LPA…") rather than probing for a number a second time. */
+    if (
+      state.phase === "probe-expectations" &&
+      state.highestOfferMade === 0 &&
+      (state.discoveryChecklist == null ||
+        isDiscoveryComplete(
+          state.discoveryChecklist,
+          classifyRoleFamily(state.role),
+        ))
+    ) {
+      return {
+        kind: "band-anchor-with-rationale",
+        _move: {
+          lever: "benefits-summary",
+          newTotalLpa: null,
+          rationale:
+            `Discovery complete with no offer on the table; from probe-expectations, anchor the band` +
+            ` (₹${state.band.initialOffer}L–₹${state.band.maxStretch}L) so the candidate has a reference range to react to.`,
+          actionKind: "band-anchor-with-rationale",
+          askedTopic: "band-anchor-with-rationale",
+        },
+      };
+    }
     return {
       kind: "probe-expectations",
       _move: {
