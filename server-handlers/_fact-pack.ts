@@ -78,6 +78,14 @@ export interface FactPack {
   joiningWindow?: string;
   reportingTo?: string;
   teamSize?: number;
+  /* ResumeFactPack track — Step 6 (2026-05-16). Surface resume-derived
+   * facts in the pack so off-script answers ("what does your resume
+   * say?", "how long have you been a PM?") can be grounded without the
+   * LLM reading the raw resume blob. Present only when the kernel was
+   * initialised with a ResumeFactPack. */
+  resumeLatestCompany?: string;
+  resumeLatestRole?: string;
+  resumeYoeRangeText?: string;
 }
 
 /** Build a factPack from current kernel state. Pure. */
@@ -114,6 +122,34 @@ export function buildFactPack(
   if (state.joiningWindow) pack.joiningWindow = state.joiningWindow;
   if (state.reportingTo) pack.reportingTo = state.reportingTo;
   if (typeof state.teamSize === "number") pack.teamSize = state.teamSize;
+
+  /* ResumeFactPack track — Step 6 (2026-05-16). When the kernel carries
+   * a ResumeFactPack, project the latest-role + total-tenure facts into
+   * the FactPack. Keeps the LLM grounded on the resume without ever
+   * needing to read the raw resume blob. */
+  if (state.resumeFactPack) {
+    const rp = state.resumeFactPack;
+    if (rp.latestRole?.companyName) {
+      pack.resumeLatestCompany = rp.latestRole.companyName;
+    }
+    if (rp.latestRole?.title) {
+      pack.resumeLatestRole = rp.latestRole.title;
+    }
+    /* Total tenure across priorCompanies → years range. Conservative:
+     * floor at half-year resolution and present as "X-Y years". When
+     * only one company is known we emit a single value. */
+    const totalMonths = rp.priorCompanies.reduce(
+      (acc, c) => acc + (typeof c.tenureMonths === "number" ? c.tenureMonths : 0),
+      0,
+    );
+    if (totalMonths > 0) {
+      const years = totalMonths / 12;
+      const low = Math.max(0, Math.floor(years * 2) / 2); // 0.5 step
+      const high = Math.ceil(years * 2) / 2;
+      pack.resumeYoeRangeText =
+        low === high ? `${low} years` : `${low}-${high} years`;
+    }
+  }
 
   return pack;
 }
