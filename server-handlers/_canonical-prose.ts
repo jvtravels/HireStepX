@@ -56,6 +56,56 @@ function getCandidateFirstName(state: NegotiationState): string | null {
   return null;
 }
 
+/** Polish 1 (2026-05-16) — multi-anchor escalation hierarchy.
+ *
+ * Real Indian recruiters route hedges through different escalation
+ * points depending on what's being asked: finance owns fitment numbers
+ * and bonus splits, HR ops owns grade/title mapping, the hiring manager
+ * owns notice waivers and joining-date negotiation, the comp team owns
+ * equity grants. Previously every kernel hedge bottomed out at "let me
+ * run this past leadership", which flattened a real org chart. This
+ * helper picks the correct anchor per NextAction kind so the bot's
+ * hedge sounds like a real recruiter coordinating across functions
+ * instead of a single voice deferring to one nebulous "leadership". */
+export function selectEscalationAnchor(
+  action: NextAction,
+  _state: NegotiationState,
+): string {
+  switch (action.kind) {
+    /* Number / fitment hedge — finance signs off on cash totals,
+     * retention split sizes, joining-bonus amounts, and the final
+     * close fitment. */
+    case "counter-offer":
+    case "lever-retention-bonus":
+    case "lever-joining-bonus-explained":
+    case "auto-accept":
+      return "finance for fitment approval";
+    case "close":
+      return action.mode === "accept" ? "finance for fitment approval" : "leadership";
+
+    /* Grade / title hedge — HR ops owns the grade-to-band mapping
+     * and the level rubric. */
+    case "lever-grade-upgrade":
+      return "HR ops on the grade mapping";
+
+    /* Notice waiver / joining date / relocation timing — the hiring
+     * manager owns the start-date side because their team capacity
+     * is the binding constraint, not HR's. */
+    case "lever-relocation":
+      return "the hiring manager";
+    case "info-disclosure":
+      return action.topic === "notice" ? "the hiring manager" : "leadership";
+
+    /* Equity grant — the comp team owns the refresh cadence and the
+     * vesting schedule, not generic leadership. */
+    case "lever-rsu-refresh":
+      return "the comp team";
+
+    default:
+      return "leadership";
+  }
+}
+
 /** Canonical kernel-authored prose for every NextAction kind. The
  *  returned string is the EXACT line the bot would ship if the LLM
  *  restyle is unavailable or rejected. */
@@ -74,15 +124,18 @@ export function renderCanonicalProse(
 
     case "close":
       if (action.mode === "accept") {
-        return "Broadly aligned, then. Let me run this fitment past leadership once and revert with the formal offer letter.";
+        const anchor = selectEscalationAnchor(action, state);
+        return `Broadly aligned, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
       }
       if (action.mode === "walkaway") {
         return "Looking at where your expectations sit versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Appreciate your time.";
       }
       return "Let's pause the discussion here. Take your time on it and revert when you're ready.";
 
-    case "auto-accept":
-      return "Broadly aligned, then. Let me run this fitment past leadership once and revert with the formal offer letter.";
+    case "auto-accept": {
+      const anchor = selectEscalationAnchor(action, state);
+      return `Broadly aligned, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+    }
 
     case "reactive-followup": {
       const topic = action.topic;
@@ -246,17 +299,23 @@ export function renderCanonicalProse(
     case "rescission":
       return "Given how this discussion has gone, we'll have to step back from the offer.";
 
-    case "lever-grade-upgrade":
-      return "On the structure side — let me check with leadership if there's scope to position you a grade higher. That moves the band and the fitment in one shot.";
+    case "lever-grade-upgrade": {
+      const anchor = selectEscalationAnchor(action, state);
+      return `On the structure side — let me check with ${anchor} if there's scope to position you a grade higher. That moves the band and the fitment in one shot.`;
+    }
 
-    case "lever-retention-bonus":
-      return "Looking at the structure — we can layer a retention bonus split across the first 12-18 months over and above the fitment. Let me run the exact split past leadership and revert.";
+    case "lever-retention-bonus": {
+      const anchor = selectEscalationAnchor(action, state);
+      return `Looking at the structure — we can layer a retention bonus split across the first 12-18 months over and above the fitment. Let me run the exact split past ${anchor} and revert.`;
+    }
 
     case "lever-rsu-refresh":
       return "On the RSU side — there's an annual refresh grant that lands at the appraisal cycle in addition to the initial vest. Let me walk you through how the refresh cadence works for this grade.";
 
-    case "lever-relocation":
-      return "On the relocation side — we have a standard relocation allowance plus temporary accommodation support for the first few weeks. Let me confirm the exact amount with leadership and revert.";
+    case "lever-relocation": {
+      const anchor = selectEscalationAnchor(action, state);
+      return `On the relocation side — we have a standard relocation allowance plus temporary accommodation support for the first few weeks. Let me confirm the exact amount with ${anchor} and revert.`;
+    }
 
     case "lever-perf-bonus-cadence":
       return "Looking at the structure — the performance bonus cadence is anchored to the March appraisal cycle, with a mid-year correction window for top performers. Let me walk you through how that plays out at this grade.";
