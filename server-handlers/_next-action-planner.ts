@@ -814,14 +814,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     ) {
       const roleFamily = classifyRoleFamily(state.role);
       if (!isDiscoveryComplete(state.discoveryChecklist, roleFamily)) {
-        /* F7 — apply same repetition-guard merge here. */
+        /* F7 — apply same repetition-guard merge here. Defect 1 fix:
+         * route through getNextOrderedDiscoveryQuestion so skipRecord
+         * is actually consulted (legacy getNextDiscoveryQuestion has
+         * no refused param and silently dropped the skipRecord). */
         const skipRecord = buildSkipRecord(state);
-        const next = skipRecord != null
-          ? (() => {
-              const item = getNextOrderedDiscoveryItem(state.discoveryChecklist!, roleFamily, skipRecord);
-              return item != null ? getNextDiscoveryQuestion(state.discoveryChecklist!, roleFamily) : null;
-            })()
-          : getNextDiscoveryQuestion(state.discoveryChecklist, roleFamily);
+        const next = getNextOrderedDiscoveryQuestion(
+          state.discoveryChecklist,
+          roleFamily,
+          skipRecord,
+        );
         if (next != null) {
           return {
             kind: "discovery-probe",

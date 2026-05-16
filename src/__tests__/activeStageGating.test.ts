@@ -67,8 +67,11 @@ describe("active discovery-stage gating in pickAiMove", () => {
   });
 
   it("offer-presented + discovery incomplete → probe with NEXT discovery item", () => {
-    /* Discovery already asked currentCtc + fixedVariableSplit; the next
-     * required action is notice-period. */
+    /* Discovery already captured currentCtc + currentCtcFixedVariableSplit;
+     * per DISCOVERY_SEQUENCE the next ordered item is targetAnswered
+     * (defect 1 fix — offer-presented branch now routes through
+     * getNextOrderedDiscoveryQuestion, same as the opening branch, so
+     * skipRecord is honoured and ordering matches the rest of the planner). */
     const partial: DiscoveryChecklist = {
       ...EMPTY_DISCOVERY_CHECKLIST,
       currentCtcAsked: true,
@@ -85,7 +88,7 @@ describe("active discovery-stage gating in pickAiMove", () => {
       }),
     );
     expect(m.lever).toBe("probe");
-    expect(m.rationale).toMatch(/notice/i);
+    expect(m.rationale).toMatch(/target/i);
   });
 
   it("probe-expectations + discovery complete → generic probe (no discovery rationale)", () => {
