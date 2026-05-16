@@ -108,11 +108,23 @@ function buildMarketDataReferenceAsk(sources: string[]): string {
  *   - notice-buyout    (max 2, gap 5): a second pass after a structural
  *     lever lands is realistic; more becomes nagging.
  *   - range-to-point   (max 3, gap 3): candidates often soften the
- *     range under different framings as the discussion progresses. */
+ *     range under different framings as the discussion progresses.
+ *   - variable-comfort (max 2, gap 4): post counter, candidates re-poke
+ *     variable-pay risk before committing — classic Indian-mid-career
+ *     reflex after a Wipro/Infy variable-cut memory.
+ *   - equity-clarity   (max 2, gap 4): after lever-rsu-refresh fires
+ *     or a band-anchor moves, candidates re-ask cliff/vest specifics;
+ *     fitment changes invalidate the prior mental model.
+ *   - competing-credibility (max 2, gap 5): when the candidate keeps
+ *     dropping a competing-offer hint, recruiters legitimately probe
+ *     twice — once for written/verbal, once for the actual number. */
 export const REFIREABLE_TOPICS: Record<string, { max: number; gap: number }> = {
   "tax-implication": { max: 3, gap: 4 },
   "notice-buyout": { max: 2, gap: 5 },
   "range-to-point": { max: 3, gap: 3 },
+  "variable-comfort": { max: 2, gap: 4 },
+  "equity-clarity": { max: 2, gap: 4 },
+  "competing-credibility": { max: 2, gap: 5 },
 };
 
 /** Polish 2 (2026-05-16) — decide whether a topic can fire (again) this
