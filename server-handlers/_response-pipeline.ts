@@ -408,6 +408,39 @@ const COMPONENT_PROBE_REQUIRED_TOKENS: Record<
   esop: /\b(?:esop|rsu|equity|vest)\b/i,
 };
 
+/** PDF#27 Fix 1 (2026-05-17) — INTERNAL TERMINOLOGY LEAK.
+ *
+ *  The LLM has been observed surfacing kernel-internal vocabulary in the
+ *  candidate-facing line ("missing from the fact pack", "next-action",
+ *  "state.candidateCurrentCtc", "kernel", "lever", "asked topic"). Real
+ *  recruiters never say these things — they're implementation jargon.
+ *  Any occurrence is the LLM ignoring the persona and exposing the
+ *  scaffold. Reject hard with named reason `internal-terminology-leak`
+ *  so the canonical (which is, by construction, persona-clean) ships. */
+const INTERNAL_TERMINOLOGY_LEAK_RE =
+  /\b(?:fact[\s-]*pack|system[\s-]*prompt|canonical[\s-]*prose|next[\s-]*action|state\.|kernel|fold[\s-]*facts?|response[\s-]*pipeline|lever(?:s|sUsed)?|asked[\s-]*topics?|skip[\s-]*record|discovery[\s-]*topic|turn[\s-]*delta|market[\s-]*mode|nextactioncontract|validate[\s-]*restyle)\b/i;
+
+/** PDF#27 Fix 1 (2026-05-17) — INTERNAL DEFER LEAK.
+ *
+ *  PDF#27 T6: "I cannot provide the total CTC offered as that
+ *  information is missing from the fact pack." This is the response-
+ *  pipeline's defer text leaking its internal reason verbatim. A
+ *  recruiter would say "I'll have a firmer number once the panel signs
+ *  off" — never "fact pack". Reject so `buildDeferText` ships its
+ *  honest, persona-clean copy. */
+const INTERNAL_DEFER_LEAK_RE =
+  /I\s+cannot\s+provide\s+.+\s+as\s+that\s+information\s+is\s+missing|missing\s+from\s+(?:the\s+)?(?:fact\s*pack|context|prompt)/i;
+
+/** PDF#27 Fix 1 (2026-05-17) — INVENTED MARKET JARGON.
+ *
+ *  PDF#27 T5: "...considering the current market mode as hot..." —
+ *  there is no "market mode" anywhere in the kernel; the LLM
+ *  fabricated it. Real recruiters cite specific signals ("benchmarks
+ *  are tight this quarter", "we're seeing 25-30% hikes for this skill")
+ *  — not abstract "mode" labels. Reject. */
+const INVENTED_MARKET_JARGON_RE =
+  /\bmarket\s+mode\b|\bmode\s+as\s+(?:hot|cold|tight|loose)\b/i;
+
 /** Validate the LLM restyle against the canonical line. Rejection
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
@@ -420,6 +453,22 @@ export function validateRestyle(
 ): { valid: boolean; reason?: string } {
   if (!restyled || !restyled.trim()) {
     return { valid: false, reason: "empty-restyle" };
+  }
+  /* PDF#27 Fix 1 (2026-05-17) — INTERNAL TERMINOLOGY LEAK GUARD.
+   * Sits before every other check so the rejection reason names the
+   * primary failure mode (the LLM exposing kernel scaffold) without
+   * masking under an unrelated downstream check. */
+  /* Order matters: market-mode jargon is a SUBSET of the internal-
+   * terminology regex, so the more specific reason fires first.
+   * Likewise the defer-leak phrase. */
+  if (INVENTED_MARKET_JARGON_RE.test(restyled)) {
+    return { valid: false, reason: "invented-market-jargon" };
+  }
+  if (INTERNAL_DEFER_LEAK_RE.test(restyled)) {
+    return { valid: false, reason: "internal-defer-leak" };
+  }
+  if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
+    return { valid: false, reason: "internal-terminology-leak" };
   }
   /* Length check — restyle must not balloon past 2x canonical. */
   if (restyled.length > canonical.length * 2 && restyled.length > 280) {
