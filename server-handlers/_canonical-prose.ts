@@ -642,7 +642,26 @@ function renderCanonicalProseBody(
        * being queued. Honouring "first" would require a next-action
        * commitment we don't track; removing it is the simpler fix and
        * leaves no state debt. */
+      /* FL1 / Audit Pass 4 (PDF#27, 2026-05-17) — concrete opener ask.
+       * "walk me through your current compensation structure" was
+       * ambiguous: candidates reasonably answered with hike rationale,
+       * components, or a refusal — none of which let the planner
+       * stamp candidateCurrentCtc, so the next turn had to re-ask.
+       * Replace the vague verbiage with a single concrete number ask.
+       * Senior candidates (applicableYoe >= 4 OR role matches
+       * /senior|lead|principal|staff/i) get a tighter "total annual"
+       * framing so the answer can't be a monthly take-home or
+       * in-hand figure. Component probes (base/variable/ESOP) fire
+       * AFTER currentCtc is satisfied via the AP3-F2 gate in the
+       * planner — the opener never asks for "structure". */
       if (state.turnIndex === 0) {
+        const yoe = state.candidateApplicableYoe;
+        const senior =
+          (yoe != null && yoe >= 4) ||
+          (state.role != null && /senior|lead|principal|staff/i.test(state.role));
+        const concreteAsk = senior
+          ? "what's your current CTC — total annual?"
+          : "what's your current CTC at the moment?";
         const rfp = state.resumeFactPack;
         const latest = rfp?.latestRole ?? null;
         if (latest && latest.companyName && latest.companyName.trim().length > 0) {
@@ -651,9 +670,9 @@ function renderCanonicalProseBody(
             latest.title && latest.title.trim().length > 0
               ? `I can see you're at ${co} as ${latest.title.trim()} — `
               : `I can see you're at ${co} — `;
-          return `Thanks for making the time${firstName ? ", " + firstName : ""}. ${titleStr}walk me through your current compensation structure.`;
+          return `Thanks for making the time${firstName ? ", " + firstName : ""}. ${titleStr}${concreteAsk}`;
         }
-        return `Thanks for making the time${firstName ? ", " + firstName : ""}. Let's get straight into it — walk me through your current compensation structure.`;
+        return `Thanks for making the time${firstName ? ", " + firstName : ""}. Let's get straight into it — ${concreteAsk}`;
       }
       return "Before I put a number out — what fitment were you anchoring on?";
 

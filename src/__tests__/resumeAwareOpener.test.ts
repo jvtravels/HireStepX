@@ -50,10 +50,15 @@ describe("F4 — resume-aware opener", () => {
   });
 
   it("opener falls back to generic copy when ResumeFactPack absent", () => {
+    /* FL1 (PDF#27, 2026-05-17) — generic opener now ends in a concrete
+     * CTC ask instead of the ambiguous "compensation structure"
+     * phrasing. The "Let's get straight into it" lead-in is retained. */
     const s = mkState({ resumeFactPack: null, turnIndex: 0 });
     const line = renderCanonicalProse(OPEN, s);
     expect(line).not.toMatch(/Flipkart|Razorpay|Infosys/);
-    expect(line).toMatch(/walk me through your current compensation structure/);
+    expect(line).toMatch(/Let's get straight into it/);
+    expect(line).toMatch(/current CTC/i);
+    expect(line).not.toMatch(/compensation structure/i);
   });
 
   it("opener falls back to generic when latestRole.companyName is empty", () => {
@@ -125,12 +130,45 @@ describe("F5 — 'as per your current band' tautology absent from probe template
 
 describe("F6 — opener drops 'first' promise", () => {
   it("turn-0 generic opener does not promise a 'first' probe", () => {
-    const s = mkState({ resumeFactPack: null, turnIndex: 0 });
-    const line = renderCanonicalProse(OPEN, s);
     /* "walk me through your current compensation structure first." was
      * the old line. The "first" promised a second probe we didn't queue.
-     * Dropped — line ends at "structure." */
+     * FL1 (PDF#27) further replaces the "compensation structure" ask
+     * with a concrete CTC ask. The opener line ends at the concrete ask
+     * (a "?"). */
+    const s = mkState({ resumeFactPack: null, turnIndex: 0 });
+    const line = renderCanonicalProse(OPEN, s);
     expect(line).not.toMatch(/structure first/i);
-    expect(line).toMatch(/walk me through your current compensation structure(?:\.|\s|$)/i);
+    expect(line).not.toMatch(/\bfirst\b/i);
+    expect(line).toMatch(/current CTC/i);
+  });
+});
+
+describe("FL1 (PDF#27 Audit Pass 4) — concrete opener ask", () => {
+  it("default (entry/mid) candidate gets the 'at the moment' framing", () => {
+    const s = mkState({ resumeFactPack: null, turnIndex: 0, candidateApplicableYoe: 2 });
+    const line = renderCanonicalProse(OPEN, s);
+    expect(line).toMatch(/current CTC at the moment\?/);
+  });
+
+  it("senior YoE (>=4) candidate gets the 'total annual' framing", () => {
+    const s = mkState({ resumeFactPack: null, turnIndex: 0, candidateApplicableYoe: 6 });
+    const line = renderCanonicalProse(OPEN, s);
+    expect(line).toMatch(/current CTC — total annual\?/);
+  });
+
+  it("role matches /senior|lead|principal|staff/i triggers senior framing", () => {
+    const seniorRoles = ["Senior Engineer", "Tech Lead", "Principal SDE", "Staff Designer"];
+    for (const role of seniorRoles) {
+      const s = mkState({ resumeFactPack: null, turnIndex: 0, role });
+      const line = renderCanonicalProse(OPEN, s);
+      expect(line).toMatch(/current CTC — total annual\?/);
+    }
+  });
+
+  it("opener no longer asks for 'compensation structure' / 'walk me through'", () => {
+    const s = mkState({ resumeFactPack: null, turnIndex: 0 });
+    const line = renderCanonicalProse(OPEN, s);
+    expect(line).not.toMatch(/compensation structure/i);
+    expect(line).not.toMatch(/walk me through your current/i);
   });
 });

@@ -70,9 +70,14 @@ describe("PDF#27 Fix 6 — resume-aware opener is on the active pipeline path", 
   });
 
   it("no ResumeFactPack → canonical opener falls back to generic phrasing", async () => {
+    /* FL1 (PDF#27, 2026-05-17) — opener now ends in a concrete CTC ask
+     * rather than "compensation structure" verbiage. Senior-shaped
+     * role string (mkState's default is "Senior Product Designer")
+     * triggers the "total annual" framing. */
     const state = mkState();
     const result = await generateBotReply(state, llmReturnsEmpty);
-    expect(result.text).toMatch(/compensation structure/i);
+    expect(result.text).toMatch(/current CTC/i);
+    expect(result.text).not.toMatch(/compensation structure/i);
     /* Generic opener does NOT name a specific company beyond
      * state.company; certainly not Flipkart. */
     expect(result.text).not.toMatch(/Flipkart/);
