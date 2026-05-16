@@ -675,7 +675,8 @@ create table if not exists session_insights (
   flags text[] default '{}',
   coaching_notes text default '',
   error text default null,
-  duration_ms integer default 0
+  duration_ms integer default 0,
+  resume_snapshot jsonb
 );
 
 create index if not exists idx_session_insights_user on session_insights(user_id);
@@ -720,6 +721,11 @@ alter table session_insights add column if not exists resolved_by text;
 --   medium — any flag, no hallucinations
 --   low    — no flags (clean session)
 alter table session_insights add column if not exists severity text default 'medium';
+
+-- Resume snapshot threaded into the analyzer at run time (see migration
+-- 0003). NULL when the session had no resume_version_id or the lookup
+-- failed; otherwise a normalized ResumeForAnalyzer shape.
+alter table session_insights add column if not exists resume_snapshot jsonb;
 
 create index if not exists idx_session_insights_status on session_insights(resolution_status);
 create index if not exists idx_session_insights_severity on session_insights(severity);

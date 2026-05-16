@@ -1,0 +1,24 @@
+{
+  "name": "Candidate names an employer (Globex) absent from resume",
+  "notes": "Resume lists Acme Corp + Initech. Candidate verbally claims a stint at Globex — BGV-grade fabrication signal.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your most recent role.", "time": "" },
+      { "speaker": "user", "text": "Sure. I was at Globex for about a year doing backend work on their payments stack. Before that I worked at Acme Corp on internal tooling.", "time": "" },
+      { "speaker": "ai", "text": "Got it. And what's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible — earliest LWD would be early March.", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Software Engineer", "company": "Acme Corp", "period": "Jul 2020 - Dec 2022" },
+      { "title": "Software Engineer", "company": "Initech", "period": "Jan 2023 - present" }
+    ],
+    "topSkills": ["Java", "Postgres"]
+  },
+  "expected": {
+    "must_include": ["resume_transcript_mismatch"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

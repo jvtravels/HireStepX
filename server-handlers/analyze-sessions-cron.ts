@@ -134,6 +134,12 @@ interface InsightRow {
   severity: "high" | "medium" | "low";
   error: string | null;
   duration_ms: number;
+  /* Snapshot of the normalized resume facts we passed into the analyzer.
+   * Stored so the dashboard can render "we cross-checked your transcript
+   * against THIS view of your resume" without re-running the parser, and
+   * so future analyzers can deepen the cross-check without another fetch.
+   * `null` when no resume was available for this session. */
+  resume_snapshot: unknown;
 }
 
 const MAX_RESCORES_PER_RUN = 60;
@@ -288,6 +294,7 @@ export default async function handler(req: Request): Promise<Response> {
         severity,
         error: null,
         duration_ms: Date.now() - turnT0,
+        resume_snapshot: resume ?? null,
       };
     } catch (e) {
       row = {
@@ -305,6 +312,7 @@ export default async function handler(req: Request): Promise<Response> {
         severity: "high",
         error: String((e as Error)?.message || e).slice(0, 500),
         duration_ms: Date.now() - turnT0,
+        resume_snapshot: null,
       };
     }
     insights.push(row);
