@@ -14,6 +14,7 @@ import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTE
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
 import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
 import { summarizeReverseInterview } from "../src/_reverse-interview";
+import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-register";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -1030,6 +1031,29 @@ ${safeStarGap === "action"
           : `\nREVERSE-INTERVIEW CLOSING — NEUTRAL/WEAK. The candidate asked only generic / no real questions. Gently invite ONE more before close: "Anything specific about the team, the role's first 90 days, or how decisions get made?" — that's the prompt. Do NOT lecture about asking better questions; just open one more door.`
       : "";
 
+    /* Regional register hint (B11). Indian behavioural interviews differ
+       sharply by metro: Bangalore tech leans Hinglish-2 with ORR / outage
+       anchors; Delhi NCR leans transactional with smog / Gurgaon-Noida
+       commute anchors; Mumbai/Pune keeps English clean with monsoon /
+       BKC anchors; Hyderabad layers HITEC City formality on services-
+       track register; Chennai keeps a polite OMR-corridor register.
+       Preference order: jobCity > currentCity > unknown (neutral). Only
+       inject the directive when we actually got a region — otherwise
+       stay neutral and don't overspecify the interviewer's voice. */
+    const regional = type === "behavioral"
+      ? (() => {
+          const fromJob = detectRegionFromCity(jobCity);
+          if (hasRegionalSignal(fromJob)) return fromJob;
+          return detectRegionFromCity(currentCity);
+        })()
+      : detectRegionFromCity(null);
+    const regionalDirective = (type === "behavioral" && hasRegionalSignal(regional))
+      ? `\nREGIONAL REGISTER — ${regional.label}. The candidate is likely interviewing in / for this metro. Native discourse tics (${regional.discourseTics.slice(0, 4).join(", ")}) MUST NOT be scored as low-confidence filler. When probing for specificity, you MAY anchor to real operational pressures from this region — ${regional.operationalAnchors.slice(0, 2).join("; ")} — but only if the candidate's situation actually plausibly hits them. Hinglish-density budget for your reply: ${regional.hinglishDensity}/3 (0 = clean English, 3 = heavy code-switching). Do NOT force tics that didn't appear in the candidate's answer; mirror only what they already used.`
+      : "";
+    // Force a touchpoint on `regional` to keep noUnusedLocals quiet when
+    // the directive is empty (we still want the detection telemetry).
+    void regional.region;
+
     const tenureProbe = (type === "behavioral" && TENURE_SHORT_RE.test(answer))
       ? `\nTENURE-DEFENCE PROBE — the candidate mentioned a short tenure (<24 months) followed by a departure. Indian interviewers aggressively probe these. If a follow-up is warranted, your ONE follow-up MAY re-ask the "why did you leave" angle from a DIFFERENT cut than the original question already covered: the manager-fit angle ("how was the working relationship with your manager?"), the growth angle ("what was missing for you to stay another year?"), or the timing angle ("was there a specific incident, or was it building up?"). Do NOT escalate or shame. Do NOT call the tenure "short" or "concerning" — neutral curiosity only. Treat instability framing as a non-penalty narrative-coherence check, not a red flag.`
       : "";
@@ -1050,7 +1074,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${tenureProbe}${reverseInterviewDirective}
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${regionalDirective}${tenureProbe}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
 Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}

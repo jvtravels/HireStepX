@@ -1082,6 +1082,19 @@ export interface SessionReport {
   storyReuseFindings: SessionReportStoryReuse[];
   blindSpots: SessionReportBlindSpot[];
   readiness: SessionReportReadiness | null;
+  /**
+   * Closing-turn reverse-interview classification (`src/_reverse-interview.ts`).
+   * Populated when the interviewer asked "any questions for us?" and the
+   * candidate's reply was captured. `null` when no reverse-interview turn
+   * exists in the transcript. Wire-side shape is identical to the
+   * `ReverseInterviewSummary` type — duplicated here as a structural type so
+   * `dashboardData.ts` stays free of cross-package imports.
+   */
+  reverseInterview: {
+    classifications: Array<{ bucket: "green" | "yellow" | "red"; reason: string }>;
+    counts: { green: number; yellow: number; red: number };
+    verdict: "strong" | "neutral" | "weak" | "red_flag";
+  } | null;
   model: string;
 }
 
