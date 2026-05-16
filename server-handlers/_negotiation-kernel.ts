@@ -989,8 +989,6 @@ export interface TurnDelta {
   noticeBuyoutConfirmed: boolean;
   /** Candidate disclosed a competing offer (number OR named-vague signal). */
   disclosedCompetingOffer: boolean;
-  /** Candidate disclosed a joining-date / early-join signal. */
-  disclosedJoiningDate: boolean;
   /** Candidate disclosed role-specific value proof (quota / ARR / portfolio / shipped systems). */
   disclosedValueProof: boolean;
   /** Candidate utterance contained a direct question ("?"). */
@@ -1003,8 +1001,6 @@ export interface TurnDelta {
   refusedItem: boolean;
   /** Candidate first-disclosed fresh-grad status this turn. */
   freshGradDisclosed: boolean;
-  /** Candidate disclosed a retention counter from their current employer this turn. */
-  retentionCounterDisclosed: boolean;
   /** Perfect 2 (2026-05-16) — coarse emotional sentiment classification of
    *  the candidate's utterance this turn. Drives an Indian-recruiter-idiom
    *  acknowledgement prefix in canonical prose for frustrated / excited /
@@ -1028,13 +1024,11 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
   disclosedNoticePeriod: false,
   noticeBuyoutConfirmed: false,
   disclosedCompetingOffer: false,
-  disclosedJoiningDate: false,
   disclosedValueProof: false,
   askedQuestion: false,
   candidateAskedQuestion: null,
   refusedItem: false,
   freshGradDisclosed: false,
-  retentionCounterDisclosed: false,
   candidateSentiment: "neutral",
   urgencySignal: "none",
 };
@@ -1173,12 +1167,6 @@ export function computeTurnDelta(
     if (nn.buyoutRequested && !pn.buyoutRequested) {
       d.noticeBuyoutConfirmed = true;
     }
-    if (
-      (nn.earlyJoinPreferred && !pn.earlyJoinPreferred) ||
-      (nn.lastWorkingDayText != null && nn.lastWorkingDayText !== pn.lastWorkingDayText)
-    ) {
-      d.disclosedJoiningDate = true;
-    }
   }
 
   /* Competing offer — either numeric or named-vague signal. */
@@ -1278,18 +1266,6 @@ export function computeTurnDelta(
    * field state.cumulativeUrgency is upgraded by finalize() in applyCandidate-
    * Answer using this value; the delta field stays as the per-turn read. */
   d.urgencySignal = detectUrgencySignal(rawAnswer);
-
-  /* Retention counter — current employer counter disclosed. */
-  if (parsed.retentionCounter.hasAny) {
-    const pr = pre.retentionCounter;
-    const nr = post.retentionCounter;
-    if (
-      (nr.amountLpa != null && nr.amountLpa !== pr.amountLpa) ||
-      (nr.hasAny && !pr.hasAny)
-    ) {
-      d.retentionCounterDisclosed = true;
-    }
-  }
 
   return d;
 }
