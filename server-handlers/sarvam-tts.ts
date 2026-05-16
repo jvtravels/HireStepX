@@ -19,6 +19,20 @@ declare const process: { env: Record<string, string | undefined> };
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY || "";
 const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
 
+/* COST GUARDRAIL — pin to bulbul:v2.
+ *
+ * DO NOT change this to bulbul:v3 (or any newer tier) without a
+ * pricing review. v3 is materially more expensive per character and
+ * the v2 audio quality is already production-acceptable for our
+ * Indian-English mock-interview use case. If a future Sarvam model
+ * ships at v2 price parity, update this constant in one place rather
+ * than threading the model string through the request body literal.
+ *
+ * Sentinel: the request payload below uses `SARVAM_TTS_MODEL` instead
+ * of an inline string so a grep for "bulbul:v3" stays clean and PR
+ * review catches any drift. */
+const SARVAM_TTS_MODEL = "bulbul:v2" as const;
+
 /* Sarvam Bulbul voice roster (en-IN). Names map 1:1 to the API's
  * `speaker` field. Picked from Sarvam's published v2 speaker list. */
 const VOICES = {
@@ -127,7 +141,7 @@ export default async function handler(req: Request): Promise<Response> {
         loudness: 1.2,
         speech_sample_rate: 22050,
         enable_preprocessing: true,
-        model: "bulbul:v2",
+        model: SARVAM_TTS_MODEL,
       }),
       signal: controller.signal,
     });
