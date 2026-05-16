@@ -100,7 +100,24 @@ export type NextAction =
     }
   | { kind: "lever-explore"; from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default" }
   | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
-  | { kind: "rescission" };
+  | { kind: "rescission" }
+  /* Fix 4 (2026-05-16) — formal close recap. Fires when phase is
+   * closing-push or accepted AND the candidate has verbally accepted.
+   * Enumerates the structured fitment so the candidate reaffirms the
+   * full picture (numbers + process + dates) before the offer letter
+   * is cut. Canonical prose lists Fixed | Variable | JB | Retention |
+   * Notice | Proposed joining | BGV start trigger | OL ETA. */
+  | {
+      kind: "close-recap-formal";
+      fixedLpa: number;
+      variableLpa: number;
+      joiningBonusLpa?: number;
+      retentionBonusLpa?: number;
+      noticePeriodWeeks: number;
+      proposedJoiningDate?: string;
+      bgvStartTrigger: string;
+      offerLetterEta: string;
+    };
 
 /** Internal carrier: the planner builds the move alongside the action so
  *  actionToLever is bit-identical to the prior pickAiMoveCore. The
@@ -163,6 +180,20 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? "?"}; restate close.`,
       },
     };
+  }
+
+  /* Fix 4 (2026-05-16) — formal close recap. Phase is closing-push (or
+   * accepted in the same turn the candidate verbally accepted). Fires
+   * before the terminal `accepted` close so the candidate gets a full
+   * structured enumeration BEFORE the recap-only terminal-restate path.
+   * Suppressed after first emission via leversUsed sentinel. */
+  if (
+    (state.phase === "closing-push" || state.phase === "accepted") &&
+    state.verbalAcceptanceTurn != null &&
+    state.highestOfferMade > 0 &&
+    !(state.reactiveFollowupsFired ?? []).includes("close-recap-formal")
+  ) {
+    return buildCloseRecapFormal(state);
   }
 
   /* Terminal closings. */
@@ -1175,6 +1206,45 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
   }
 
   return null;
+}
+
+/* Fix 4 (2026-05-16) — build the formal close-recap action with the
+ * structured fitment payload. Pure: derives the recap from current
+ * state (highestOfferMade as total CTC, band components for the
+ * fixed/variable split, lastJoiningBonusOffered for the one-time
+ * piece, noticeJoining for the notice runway). Always uses the
+ * close-acceptance lever underneath so the kernel's terminal-phase
+ * machinery still applies cleanly. */
+function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
+  const total = state.highestOfferMade;
+  const baseStretch = state.band.baseStretch ?? Math.round(total * 0.85 * 10) / 10;
+  const variableMax = state.band.variableMax ?? Math.max(0, Math.round((total - baseStretch) * 10) / 10);
+  const fixedLpa = Math.min(total, baseStretch);
+  const variableLpa = Math.max(0, Math.min(variableMax, Math.round((total - fixedLpa) * 10) / 10));
+  const noticeDays = state.noticeJoining?.noticePeriodDays ?? 60;
+  const noticePeriodWeeks = Math.max(1, Math.round(noticeDays / 7));
+  return {
+    kind: "close-recap-formal",
+    fixedLpa,
+    variableLpa,
+    joiningBonusLpa: state.lastJoiningBonusOffered ?? undefined,
+    retentionBonusLpa: undefined,
+    noticePeriodWeeks,
+    proposedJoiningDate: undefined,
+    bgvStartTrigger: "post-acceptance, on signed offer letter",
+    offerLetterEta: "2-3 business days",
+    _move: {
+      lever: "close-acceptance",
+      newTotalLpa: total,
+      joiningBonusAmount: state.lastJoiningBonusOffered ?? undefined,
+      rationale:
+        `Candidate verbally accepted; emit structured close recap (fixed ₹${fixedLpa}L, variable ₹${variableLpa}L, ` +
+        `JB ${state.lastJoiningBonusOffered != null ? `₹${state.lastJoiningBonusOffered}L` : "none"}, ` +
+        `notice ${noticePeriodWeeks}w, OL ETA 2-3 business days).`,
+      actionKind: "close-recap-formal",
+      askedTopic: "close-recap-formal",
+    },
+  };
 }
 
 /* F2 fallback prose was removed in the kernel-first cleanup

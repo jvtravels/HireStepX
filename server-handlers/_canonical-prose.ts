@@ -246,6 +246,30 @@ export function renderCanonicalProse(
     case "rescission":
       return "Given how this discussion has gone, we'll have to step back from the offer.";
 
+    case "close-recap-formal": {
+      /* Fix 4 (2026-05-16) — formal close recap. Enumerates Fixed |
+       * Variable target | JB (optional) | Retention (optional) | Notice |
+       * Proposed joining (optional) | BGV start trigger | OL ETA, then
+       * asks "Sounds good?" so the candidate explicitly reconfirms the
+       * full structured fitment before the offer letter is cut. */
+      const parts: string[] = [];
+      parts.push(`Fixed ₹${action.fixedLpa}L`);
+      parts.push(`variable target ₹${action.variableLpa}L`);
+      if (action.joiningBonusLpa != null && action.joiningBonusLpa > 0) {
+        parts.push(`joining bonus ₹${action.joiningBonusLpa}L with the standard 12-month clawback`);
+      }
+      if (action.retentionBonusLpa != null && action.retentionBonusLpa > 0) {
+        parts.push(`retention bonus ₹${action.retentionBonusLpa}L split across the retention window`);
+      }
+      parts.push(`notice ${action.noticePeriodWeeks} weeks`);
+      if (action.proposedJoiningDate) {
+        parts.push(`proposed joining ${action.proposedJoiningDate}`);
+      }
+      parts.push(`BGV starts ${action.bgvStartTrigger}`);
+      parts.push(`offer letter in ${action.offerLetterEta}`);
+      return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. Sounds good?`;
+    }
+
     default: {
       /* TypeScript exhaustiveness check. If a new NextAction.kind is
        * added without canonical coverage, the type system flags this
