@@ -358,15 +358,22 @@ export function formatRecipe(focusKey: string): string {
  * Empty string if the focus has no rubric or no recipe — caller falls
  * back to default scoring.
  */
-export function formatScoringRubric(focusKey: string): string {
+export function formatScoringRubric(
+  focusKey: string,
+  overlay?: { dimensions: { dimension: string; weight: number; description: string }[]; sector?: string; seniority?: string },
+): string {
   const recipe = RECIPES[focusKey];
   if (!recipe?.scoringRubric || recipe.scoringRubric.length === 0) return "";
-  const lines = recipe.scoringRubric.map((r, i) =>
+  const dims = overlay?.dimensions ?? recipe.scoringRubric;
+  const lines = dims.map((r, i) =>
     `  ${i + 1}. ${r.dimension} (weight ${(r.weight * 100).toFixed(0)}%): ${r.description}`,
   );
-  const totalWeight = recipe.scoringRubric.reduce((acc, r) => acc + r.weight, 0);
+  const totalWeight = dims.reduce((acc, r) => acc + r.weight, 0);
+  const overlayLine = overlay && (overlay.sector || overlay.seniority)
+    ? `\nContext overlay applied — sector: ${overlay.sector || "n/a"}, seniority: ${overlay.seniority || "n/a"}. Weights are tuned for this context.`
+    : "";
   return [
-    `\n═══ FOCUS-SPECIFIC SCORING RUBRIC — ${recipe.label} ═══`,
+    `\n═══ FOCUS-SPECIFIC SCORING RUBRIC — ${recipe.label} ═══${overlayLine}`,
     `Score the candidate on these dimensions (0-100 each), weighted as shown.`,
     `Overall score = weighted average of the dimensions.`,
     ...lines,
