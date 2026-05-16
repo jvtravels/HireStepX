@@ -60,6 +60,38 @@ import {
   shouldProbeHikeJustification,
 } from "./_hike-justification-probe";
 import { analyzeEquityClarity } from "./_trial-close-detector";
+import { marketDataSources } from "./_candidate-profile";
+
+/** Polish 3 (2026-05-16) — render the reactive followup for a
+ *  candidate who cited external market data. When the candidate named
+ *  specific sources (AmbitionBox, Naukri, Blind, ...), the line cites
+ *  them verbatim using the `marketDataSources` map so the recruiter
+ *  sounds like they actually heard the candidate. When the source
+ *  list is empty (generic "market data" framing), falls back to a
+ *  source-agnostic line. */
+function buildMarketDataReferenceAsk(sources: string[]): string {
+  if (sources.length === 0) {
+    return (
+      "You're referencing market data — useful. Which source are we " +
+      "comparing against? I want to make sure we're benchmarking against " +
+      "comparable companies and stage."
+    );
+  }
+  const names = sources
+    .map((k) => marketDataSources[k])
+    .filter((s): s is string => Boolean(s));
+  /* "A", "A and B", "A, B and C" */
+  let joined: string;
+  if (names.length === 1) joined = names[0];
+  else if (names.length === 2) joined = `${names[0]} and ${names[1]}`;
+  else joined = `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return (
+    `Right — ${joined} numbers are useful as a floor, but they aggregate ` +
+    `across grades and don't always reflect the level rubric. For your ` +
+    `level specifically, our internal band sits on a different basis. Let me ` +
+    `walk you through how we're framing the fitment.`
+  );
+}
 
 /** Polish 2 (2026-05-16) — refireable-topic policy table.
  *
@@ -1463,8 +1495,8 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.referencedMarketData,
         topic: "market-data-reference",
-        ask: "You're referencing market data — useful. Which source are we comparing against (AmbitionBox/Levels.fyi/personal network)? I want to make sure we're benchmarking against comparable companies and stage.",
-        rationale: "Candidate cited market data — probe source so we can either align on benchmarks or flag tier/stage mismatch.",
+        ask: buildMarketDataReferenceAsk(profile.referencedMarketDataSources ?? []),
+        rationale: "Candidate cited market data — name the specific source(s) and flag aggregation/grade limits.",
       },
   ];
   for (const rule of wired) {

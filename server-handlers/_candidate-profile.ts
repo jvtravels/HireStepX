@@ -1310,6 +1310,11 @@ export interface CandidateProfileResult {
   /** Candidate cited external market data ("Glassdoor says", "levels.fyi
    *  data", "AmbitionBox shows", "market research suggests"). Monotone-up. */
   referencedMarketData: boolean;
+  /** Polish 3 (2026-05-16) — the specific source keys the candidate
+   *  named. Lets the reactive followup cite the exact source(s) instead
+   *  of saying "market data" generically. Union-merged across turns
+   *  (monotone-up). Source keys come from `marketDataSources`. */
+  referencedMarketDataSources: string[];
   /** Candidate mentioned cost-of-living as a factor ("cost of living in
    *  Bangalore", "Mumbai is expensive", "higher CoL city"). Monotone-up. */
   mentionedCostOfLiving: boolean;
@@ -1639,6 +1644,7 @@ export const EMPTY_CANDIDATE_PROFILE: CandidateProfileResult = {
   gaveRangeNotPoint: false,
   deflectedOnRange: false,
   referencedMarketData: false,
+  referencedMarketDataSources: [],
   mentionedCostOfLiving: false,
   mentionedTaxImplication: false,
 
@@ -3985,9 +3991,64 @@ function detectDeflectedOnRange(t: string): boolean {
     /\b(?:i\s+(?:don'?t|do\s+not)\s+have\s+a\s+(?:specific\s+)?(?:number\s+in\s+mind|fixed\s+expectation))\b/i.test(t);
 }
 
-/* `referencedMarketData` — cited Glassdoor / levels.fyi / AmbitionBox. */
+/* Polish 3 (2026-05-16) — `referencedMarketData` source detector with
+ * the full Indian-context catalogue. Indian candidates routinely cite
+ * Naukri (separately from Naukri Salary), Blind India / Blind app,
+ * Glassdoor India, IIM Jobs (senior roles), Cutshort, Indeed in
+ * addition to the long-standing AmbitionBox / Levels.fyi / Payscale
+ * trio. Each source has a regex (case-insensitive, word-bounded where
+ * possible) and a canonical key used by `marketDataSources` for the
+ * citation phrasing in the reactive followup line. */
+const MARKET_DATA_SOURCE_PATTERNS: { key: string; re: RegExp }[] = [
+  { key: "ambitionbox", re: /\b(?:ambitionbox|ambition\s+box)\b/i },
+  { key: "levels.fyi", re: /\b(?:levels\.fyi|levels\s+fyi)\b/i },
+  /* Blind: covers "blind", "blind india", "blind app", "blind salaries".
+   * Anchored on the word so it doesn't match the adjective "blind". */
+  { key: "blind", re: /\bblind(?:\s+(?:india|app|salaries?))?\b/i },
+  /* Naukri: covers "naukri" alone AND "naukri salary"/"naukri.com". */
+  { key: "naukri", re: /\bnaukri(?:[.\s]+(?:com|salary|salaries|listings?|jobs?|jobs?\s+(?:listings|data)))?\b/i },
+  /* IIM Jobs: "iim jobs" or "iimjobs" (single token). Senior-role focus. */
+  { key: "iimjobs", re: /\b(?:iim\s*jobs|iimjobs(?:\.com)?)\b/i },
+  { key: "cutshort", re: /\bcutshort(?:\.com)?\b/i },
+  { key: "glassdoor", re: /\bglassdoor(?:\s+india)?\b/i },
+  { key: "payscale", re: /\bpayscale(?:\.com)?\b/i },
+  /* Indeed: word-bounded so it doesn't match the adverb "indeed". A
+   * candidate citing the platform almost always uses "Indeed says/data"
+   * or "indeed.com". */
+  { key: "indeed", re: /\b(?:indeed\.com|indeed\s+(?:says?|data|listings?|range|estimate|shows?))\b/i },
+];
+
+export function detectReferencedMarketDataSources(t: string): string[] {
+  const out: string[] = [];
+  for (const { key, re } of MARKET_DATA_SOURCE_PATTERNS) {
+    if (re.test(t)) out.push(key);
+  }
+  return out;
+}
+
+/** Polish 3 (2026-05-16) — citation phrasing per market-data source.
+ *  The reactive followup line uses these strings verbatim so the
+ *  recruiter names the specific source the candidate referenced
+ *  ("AmbitionBox numbers are useful as a floor", "Naukri listings
+ *  skew towards service-company bands"), not a generic "market data
+ *  estimate". */
+export const marketDataSources: Record<string, string> = {
+  ambitionbox: "AmbitionBox",
+  "levels.fyi": "Levels.fyi",
+  blind: "Blind",
+  naukri: "Naukri",
+  iimjobs: "IIM Jobs",
+  cutshort: "Cutshort",
+  glassdoor: "Glassdoor",
+  payscale: "Payscale",
+  indeed: "Indeed",
+};
+
+/* `referencedMarketData` — cited any of the catalogued sources OR a
+ * generic "market data / market research" framing. */
 function detectReferencedMarketData(t: string): boolean {
-  return /\b(?:glassdoor|levels\.fyi|ambitionbox|naukri\s+salary|payscale|linkedin\s+salary|comparably|blind\s+(?:app|salaries?))\b/i.test(t) ||
+  if (detectReferencedMarketDataSources(t).length > 0) return true;
+  return /\b(?:linkedin\s+salary|comparably)\b/i.test(t) ||
     /\b(?:according\s+to\s+(?:market\s+(?:data|research|survey)|salary\s+(?:data|survey|report))|market\s+(?:data|research)\s+(?:shows?|suggests?|indicates?))\b/i.test(t);
 }
 
@@ -4261,6 +4322,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const gaveRangeNotPoint = detectGaveRangeNotPoint(text);
   const deflectedOnRange = detectDeflectedOnRange(text);
   const referencedMarketData = detectReferencedMarketData(text);
+  const referencedMarketDataSources = detectReferencedMarketDataSources(text);
   const mentionedCostOfLiving = detectMentionedCostOfLiving(text);
   const mentionedTaxImplication = detectMentionedTaxImplication(text);
 
@@ -4715,6 +4777,7 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
     gaveRangeNotPoint,
     deflectedOnRange,
     referencedMarketData,
+    referencedMarketDataSources,
     mentionedCostOfLiving,
     mentionedTaxImplication,
     hasAny,
@@ -5299,6 +5362,15 @@ export function mergeCandidateProfile(
     gaveRangeNotPoint: p.gaveRangeNotPoint || next.gaveRangeNotPoint,
     deflectedOnRange: p.deflectedOnRange || next.deflectedOnRange,
     referencedMarketData: p.referencedMarketData || next.referencedMarketData,
+    /* Polish 3 (2026-05-16) — union-merge per-source citations across
+     * turns so the planner can name everything the candidate has ever
+     * cited in this session. */
+    referencedMarketDataSources: Array.from(
+      new Set([
+        ...(p.referencedMarketDataSources ?? []),
+        ...(next.referencedMarketDataSources ?? []),
+      ]),
+    ),
     mentionedCostOfLiving: p.mentionedCostOfLiving || next.mentionedCostOfLiving,
     mentionedTaxImplication: p.mentionedTaxImplication || next.mentionedTaxImplication,
     hasAny: false,
