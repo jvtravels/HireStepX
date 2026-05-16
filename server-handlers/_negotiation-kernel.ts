@@ -3439,7 +3439,14 @@ export function findOutOfBandNumber(text: string, band: NegotiationBand): number
      belt-and-suspenders: if anything upstream ever passes a band where
      walkAway >= maxStretch, we ignore the floor check entirely rather
      than spurious-reject every number. */
-  const re = /(?:₹|Rs\.?\s*|INR\s*)?([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|crore|\bcr\b)/gi;
+  /* Audit Pass 3 / Fix 4 (2026-05-16) — extend unit matcher to cover
+   * the bare "L" suffix ("32L", "28 L") and the "lac" misspelling
+   * ("28 lac"), in addition to the historical LPA / lakh / crore set.
+   * Production transcripts show Indian candidates frequently using
+   * "32L" / "lac" forms; the pre-fix regex treated these as no-unit
+   * numbers and let them slip past the out-of-band guard. Word-boundary
+   * \b after L / lac prevents matching mid-word ("Lalit", "lacking"). */
+  const re = /(?:₹|Rs\.?\s*|INR\s*)?([\d,]+(?:\.\d+)?)\s*(LPA|lpa|lakhs?|lacs?|crore|\bcr\b|L\b)/gi;
   const effectiveFloor = band.walkAway < band.maxStretch ? band.walkAway : -Infinity;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {

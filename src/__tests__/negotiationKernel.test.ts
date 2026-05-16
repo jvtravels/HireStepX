@@ -815,6 +815,33 @@ describe("findOutOfBandNumber", () => {
     expect(findOutOfBandNumber("That comes to 40 lakhs total.", BAND)).toBe(40);
   });
 
+  it("flags bare 'L' and 'lac' suffix variants (Audit Pass 3 / Fix 4)", () => {
+    /* Indian-English candidates regularly type "32L" instead of
+       "32 LPA" and "lac" instead of "lakh". The pre-fix regex only
+       caught LPA / lakh / crore, so these out-of-band disclosures
+       slipped past validation entirely. The word-boundary on L\b
+       prevents accidental matches inside proper nouns like "Lalit". */
+    /* "I'm at 32L right now" — 32 > 28 maxStretch → flagged. */
+    expect(findOutOfBandNumber("I'm at 32L right now.", BAND)).toBe(32);
+    /* "Got 28 lac offer" — 28 is at the top of BAND (16..28), so the
+       in-band guard correctly returns null. Use a narrower band fixture
+       to assert that the parser-side handles 'lac' the same way it
+       handles 'lakh'. This pins the unit-matcher contract (the audit
+       finding) without conflating it with the in-band tolerance. */
+    expect(
+      findOutOfBandNumber("Got 28 lac offer from a competitor.", {
+        initialOffer: 18,
+        maxStretch: 24,
+        walkAway: 14,
+        hasEquity: false,
+      }),
+    ).toBe(28);
+    /* Mixed case should still match (regex is /i). */
+    expect(findOutOfBandNumber("Already pulling 33l", BAND)).toBe(33);
+    /* Word-boundary guard: an "L"-prefixed proper noun must not match. */
+    expect(findOutOfBandNumber("My recruiter Lalit said no.", BAND)).toBeNull();
+  });
+
   it("does NOT use walkAway as a floor when band is inverted (walkAway > maxStretch)", () => {
     /* The salary-lookup band sometimes ships {init,max,walk} with
        walk > max (walk is recruiter ceiling, max is offer ceiling).
