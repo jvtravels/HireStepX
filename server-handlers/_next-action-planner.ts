@@ -261,7 +261,51 @@ export function actionToLever(action: NextAction, _state: NegotiationState): AiM
 
 /** F7 (PDF#20 2026-05-15) — build a merged "skip" record that combines
  *  discoveryRefusedItems with any topics that were asked in the last
- *  withinTurns turns so getNextOrderedDiscoveryItem skips them both. */
+ *  withinTurns turns so getNextOrderedDiscoveryItem skips them both.
+ *
+ *  BUG-2 ROOT CAUSE FIX (PDF#24, 2026-05-16): the recently-asked branch
+ *  was unconditional — any topic asked in the last 3 turns got skipped,
+ *  even if the candidate never answered it. Real session: turn 0
+ *  canonical opener asked currentCtc; candidate replied with a hike-
+ *  rationale (no number). On the next planner turn, currentCtc was in
+ *  the recently-asked set so the planner SKIPPED it and fell through
+ *  to expected-CTC fitment-split — which was the symptom in PDF#24
+ *  turn 4 (bot skipped currentCtc backfill, jumped to fitment-split
+ *  the moment the candidate volunteered expected CTC).
+ *
+ *  The recency suppression is for "don't immediately re-ask what the
+ *  candidate JUST answered" — it should only fire when the asked-AND-
+ *  answered both hold. We gate the recently-asked block by checking
+ *  the discovery checklist: if the corresponding `*Answered`/`*Disclosed`
+ *  flag is still false, the candidate dodged the ask, and the planner
+ *  must keep the item in the ordered sequence so it can backfill the
+ *  gap. */
+function isAskedTopicAnswered(
+  checklist: NegotiationState["discoveryChecklist"],
+  topic: string,
+): boolean {
+  if (checklist == null) return false;
+  /* The askedTopic key the planner pushes mirrors the DISCOVERY_SEQUENCE
+   * key for discovery probes (currentCtcAnswered, targetAnswered, etc.),
+   * which doubles as the satisfied-flag name on DiscoveryChecklist.
+   * Look it up directly; treat any unrecognised key as "still pending"
+   * so we never accidentally over-skip a topic we can't reason about. */
+  const flag = (checklist as unknown as Record<string, boolean | undefined>)[topic];
+  if (typeof flag === "boolean" && flag) return true;
+  /* Some legacy planner sites use a `*Asked` topic name (e.g.
+   * "currentCtcAsked"). Those are pre-F7 sentinels we treat as
+   * satisfied iff the matching `*Answered`/`*Disclosed` flag is set;
+   * if not, leave them OUT of the skip record so the gap stays
+   * visible to the ordered cascade. */
+  if (topic.endsWith("Asked")) {
+    const root = topic.slice(0, -"Asked".length);
+    const answered = (checklist as unknown as Record<string, boolean | undefined>)[`${root}Answered`];
+    const disclosed = (checklist as unknown as Record<string, boolean | undefined>)[`${root}Disclosed`];
+    return Boolean(answered || disclosed);
+  }
+  return false;
+}
+
 function buildSkipRecord(
   state: NegotiationState,
   withinTurns = 3,
@@ -271,7 +315,12 @@ function buildSkipRecord(
   const cutoff = state.turnIndex - withinTurns;
   const recentlyAsked: Record<string, boolean> = {};
   for (const t of topics) {
-    if (t.atTurn > cutoff) recentlyAsked[t.topic] = true;
+    if (t.atTurn <= cutoff) continue;
+    /* Only mark as "skip" if the topic was both asked AND answered
+     * within the window. Asked-but-unanswered topics stay re-askable
+     * so the discovery cascade can backfill the gap. */
+    if (!isAskedTopicAnswered(state.discoveryChecklist, t.topic)) continue;
+    recentlyAsked[t.topic] = true;
   }
   if (refused == null && Object.keys(recentlyAsked).length === 0) return null;
   return { ...(refused ?? {}), ...recentlyAsked };

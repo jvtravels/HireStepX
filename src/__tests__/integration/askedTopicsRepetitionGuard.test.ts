@@ -61,15 +61,25 @@ describe("F7 — askedTopics repetition guard", () => {
     expect(typeof last.atTurn).toBe("number");
   });
 
-  it("same-topic discovery probe is not re-emitted within 3 turns after first ask", () => {
-    // Build a state where the same topic was asked on turn N and we're now at N+1.
-    // The planner should skip that topic and move to the next discovery item.
+  it("same-topic discovery probe is not re-emitted within 3 turns after first ask AND answer", () => {
+    // Build a state where the same topic was asked AND answered on turn N
+    // and we're now at N+1. The planner should skip that topic and move
+    // to the next discovery item.
+    //
+    // BUG-2 (PDF#24, 2026-05-16) tightened semantics: the recency-skip
+    // applies only when the candidate actually answered. An asked-but-
+    // unanswered topic must stay re-askable so the discovery cascade
+    // can backfill the gap (otherwise the planner skips currentCtc the
+    // moment the candidate dodges turn 0, and falls through to the
+    // wrong subsequent item).
     let state = fresh();
-    // Manually place a recent askedTopics entry for "currentCtcAnswered" on turn 0.
     state = {
       ...state,
       askedTopics: [{ topic: "currentCtcAnswered", atTurn: 0 }],
       turnIndex: 1,
+      discoveryChecklist: state.discoveryChecklist
+        ? { ...state.discoveryChecklist, currentCtcAnswered: true }
+        : null,
     };
 
     const action = planNextAction(state);
@@ -80,6 +90,28 @@ describe("F7 — askedTopics repetition guard", () => {
     } else {
       // Any non-discovery-probe is also acceptable (reactive-followup, open-with-offer, etc.)
       expect(action.kind).not.toBe("discovery-probe");
+    }
+  });
+
+  it("asked-but-UNANSWERED topic stays re-askable (BUG-2 fix, PDF#24)", () => {
+    // currentCtc was asked on turn 0 but the candidate never answered
+    // (e.g. dodged with a hike-rationale story). On turn 1 the planner
+    // MUST keep currentCtc in the ordered cascade so the gap gets
+    // backfilled — otherwise the bot rushes to fitment-split with no
+    // anchor for the current side. This is the structural fix.
+    let state = fresh();
+    state = {
+      ...state,
+      askedTopics: [{ topic: "currentCtcAnswered", atTurn: 0 }],
+      turnIndex: 1,
+      /* checklist intentionally NOT flipping currentCtcAnswered — the
+       * candidate hasn't disclosed yet. */
+    };
+
+    const action = planNextAction(state);
+    expect(action.kind).toBe("discovery-probe");
+    if (action.kind === "discovery-probe") {
+      expect(action.item).toBe("currentCtcAnswered");
     }
   });
 

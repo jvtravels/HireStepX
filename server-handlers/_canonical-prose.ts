@@ -148,6 +148,57 @@ export function renderSentimentPrefix(
   }
 }
 
+/** BUG-2 fix (PDF#24, 2026-05-16) — discovery-probe acknowledgement
+ *  prefix. The planner advances through DISCOVERY_SEQUENCE one item at a
+ *  time; when the candidate's prior utterance volunteered something
+ *  factual (current CTC, expected CTC, notice, competing-offer existence,
+ *  fixed/variable split), the next probe should acknowledge it before
+ *  asking the next question. Without this, the bot reads as transactional
+ *  ("candidate gives expected CTC → bot probes fitment-split with no
+ *  recognition of the number on the table"). Indian-recruiter idiom:
+ *  "Got it" / "Noted" / "Understood".
+ *
+ *  The acknowledgement is suppressed for the SAME-topic case so we don't
+ *  emit "Noted on X — now on X, …" (e.g. candidate just disclosed
+ *  expected, bot's next probe is also expected — acknowledgement is
+ *  redundant).
+ *
+ *  Returns null when no fresh disclosure was made on the prior turn (e.g.
+ *  turn 0 opener) or when the disclosure subject IS the topic the probe
+ *  is about to ask. */
+export function buildDiscoveryAck(
+  delta: import("./_negotiation-kernel").TurnDelta | null | undefined,
+  probeItem: string,
+): string | null {
+  if (delta == null) return null;
+  /* expected-CTC disclosed → ack before asking anything other than
+   * expected-CTC itself. */
+  if (delta.disclosedExpectedCtc && probeItem !== "expectedCtc" && probeItem !== "target") {
+    return "Noted on the expected fitment —";
+  }
+  if (delta.disclosedCurrentCtc && probeItem !== "currentCtc") {
+    return "Got it on the current side —";
+  }
+  if (
+    delta.disclosedFixedVariableSplit &&
+    probeItem !== "fixedVariableSplit" &&
+    probeItem !== "currentCtcFixedVariableSplit" &&
+    probeItem !== "expectedCtcFixedVariableSplit"
+  ) {
+    return "Understood on the fixed/variable structure —";
+  }
+  if (delta.disclosedNoticePeriod && probeItem !== "noticePeriod") {
+    return "Noted on the notice side —";
+  }
+  if (delta.disclosedCompetingOffer && probeItem !== "competingOffers") {
+    return "Got it on the other process —";
+  }
+  if (delta.disclosedValueProof && probeItem !== "valueProof") {
+    return "Appreciate the colour on that —";
+  }
+  return null;
+}
+
 /** Action kinds where the sentiment prefix is suppressed regardless of
  *  the detected sentiment. Openings carry their own greeting cadence;
  *  formal close recaps and walk-aways have their own tone register and
@@ -282,31 +333,41 @@ function renderCanonicalProseBody(
       const item = rawItem.endsWith("Answered")
         ? rawItem.slice(0, -"Answered".length)
         : rawItem;
+      let probe: string;
       if (item === "currentCtc") {
-        return "Let's start with your current side — what's the total CTC at present?";
+        probe = "Let's start with your current side — what's the total CTC at present?";
+      } else if (item === "fixedVariableSplit" || item === "currentCtcFixedVariableSplit") {
+        probe = "And how is your current package structured between fixed and variable?";
+      } else if (item === "expectedCtc" || item === "target") {
+        probe = "What's the fitment you were looking at for this move — broadly, what range are you anchoring on?";
+      } else if (item === "expectedCtcFixedVariableSplit") {
+        probe = "On the expected side — how would you want the split between fixed and variable to land?";
+      } else if (item === "noticePeriod") {
+        probe = "What's the notice period at your current company? Any scope for buyout there?";
+      } else if (item === "competingOffers") {
+        probe = "Are you actively in process with other companies right now?";
+      } else if (item === "valueProof") {
+        probe = "Walk me through one project from your current role that you'd anchor on in a fitment discussion — something where the impact is concrete.";
+      } else {
+        /* Discovery-probe for any other checklist item — defer to the
+         * planner-supplied prompt (already kernel-authored, never an LLM
+         * string). */
+        probe = action.ask || "Can you tell me a little more about what you're looking at?";
       }
-      if (item === "fixedVariableSplit" || item === "currentCtcFixedVariableSplit") {
-        return "And how is that structured between fixed and variable?";
-      }
-      if (item === "expectedCtc" || item === "target") {
-        return "What's the fitment you were looking at for this move — broadly, what range are you anchoring on?";
-      }
-      if (item === "expectedCtcFixedVariableSplit") {
-        return "On the structure side — are you open on the fixed-variable split, or do you have a preference?";
-      }
-      if (item === "noticePeriod") {
-        return "What's the notice period at your current company? Any scope for buyout there?";
-      }
-      if (item === "competingOffers") {
-        return "Are you actively in process with other companies right now?";
-      }
-      if (item === "valueProof") {
-        return "Walk me through one project from your current role that you'd anchor on in a fitment discussion — something where the impact is concrete.";
-      }
-      /* Discovery-probe for any other checklist item — defer to the
-       * planner-supplied prompt (already kernel-authored, never an LLM
-       * string). */
-      return action.ask || "Can you tell me a little more about what you're looking at?";
+      /* BUG-2 ROOT CAUSE FIX (PDF#24, 2026-05-16): preface every
+       * discovery probe with a one-line acknowledgement of the
+       * disclosure the candidate volunteered on the prior turn. Without
+       * it, the bot sounded transactional — candidate said "I'm looking
+       * at ₹12L" and the next bot turn jumped straight to fitment-split
+       * with no recognition of the number that was just put on the
+       * table. Indian-recruiter idiom: "Got it" / "Noted" / "Understood".
+       *
+       * The prefix is suppressed when the prior turn yielded no fresh
+       * disclosure (delta empty) — so the OPENING probe doesn't get an
+       * incongruous "Got it on the X" prepended to it. */
+      const delta = state.lastTurnDelta;
+      const ack = buildDiscoveryAck(delta, item);
+      return ack ? `${ack} ${probe}` : probe;
     }
 
     case "open-with-offer":
