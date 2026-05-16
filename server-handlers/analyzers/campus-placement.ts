@@ -15,6 +15,7 @@
 
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
 import { classifyCompanyTier } from "../_company-tier";
+import { classifyCollegeTier, cgpaCutoffAdjustment } from "../_college-tier";
 
 const isAi = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("a");
 const isUser = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("u");
@@ -235,21 +236,38 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // Tier-1 global firms (Google/MS/Amazon India) typically gate at 7.5;
     // most others gate at 7.0; service-tier (TCS/Infosys/Wipro) at 6.5.
     const companyTier = classifyCompanyTier(session.target_company);
-    const cgpaCutoff = companyTier === "product-global" ? 7.5
+    const collegeTier = classifyCollegeTier(userText);
+    const baseCgpaCutoff = companyTier === "product-global" ? 7.5
       : companyTier === "service" ? 6.5
       : 7.0;
+    // Tier-1 colleges (IIT/NIT/BITS/IIIT/IISc) get -0.5 leniency due to
+    // harder grading curves. Tier-2 + unknown apply the baseline.
+    const cgpaCutoff = baseCgpaCutoff + cgpaCutoffAdjustment(collegeTier);
     const cgpaMatch = userText.match(CGPA_STATED);
     if (cgpaMatch) {
       const cgpa = Number(cgpaMatch[1]);
       if (cgpa > 0 && cgpa < cgpaCutoff && !CGPA_FRAMING_CONTEXT.test(userText)) {
         flags.add("cgpa_low_no_framing");
+        const tierNote = collegeTier === "tier-1"
+          ? ` (already adjusted for ${collegeTier} grading curve)`
+          : "";
         gaps.push({
           dimension: "framing",
-          expected: `CGPA below ${cgpaCutoff.toFixed(1)} for this company tier needs a one-sentence honest reason + evidence of capability (project, internship, ranking improvement, hackathon)`,
-          observed: `User stated CGPA ${cgpa.toFixed(1)} with no framing — below the typical threshold for ${companyTier === "product-global" ? "tier-1 global product firms" : companyTier === "service" ? "Indian IT services" : "this company tier"}`,
+          expected: `CGPA below ${cgpaCutoff.toFixed(1)} for this company tier${tierNote} needs a one-sentence honest reason + evidence of capability (project, internship, ranking improvement, hackathon)`,
+          observed: `User stated CGPA ${cgpa.toFixed(1)} with no framing — below the typical threshold for ${companyTier === "product-global" ? "tier-1 global product firms" : companyTier === "service" ? "Indian IT services" : "this company tier"}${tierNote}`,
           severity: "high",
         });
       }
+    }
+
+    // College-tier signal as a standalone signal — used by the report to
+    // calibrate the rest of the rubric (project depth, project specificity).
+    // We surface a flag so downstream consumers (LLM evaluator, dashboard
+    // chips) can read it without re-running the classifier.
+    if (collegeTier === "tier-1") {
+      flags.add("college_tier_1");
+    } else if (collegeTier === "tier-2") {
+      flags.add("college_tier_2");
     }
 
     // Reverse-questions: AI closed with "any questions for us?" — grade what came back.

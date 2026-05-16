@@ -56,6 +56,8 @@ const DICT: Record<string, FriendlyFlag> = {
   weak_reverse_questions: { label: "Reverse-questions were generic", description: "User asked back with 'How is the work culture?' or 'What are growth opportunities?' — generic. Specific reverse-questions (training program, mentor structure, PPT references) are a real tie-breaker.", category: "user_skipped_step" },
   bond_refusal: { label: "User refused the service bond outright", description: "AI asked about the service agreement, user refused outright — at TCS / Infosys / Wipro / Cognizant this ends the interview on the spot. Bonds are standard; framing concerns as questions about buyout terms is the move.", category: "user_skipped_step" },
   bond_unprepared: { label: "User didn't know about service bonds", description: "AI probed the service agreement, user showed unfamiliarity ('what's a bond?'). Service-tier campus interviews always probe this — every candidate should know their target company's bond duration.", category: "user_skipped_step" },
+  college_tier_1: { label: "College tier-1 (IIT / NIT / BITS / IIIT / IISc)", description: "Detected a tier-1 college mention — analyzer applies a -0.5 CGPA leniency to reflect harder grading curves at these institutions.", category: "system" },
+  college_tier_2: { label: "College tier-2 (VIT / Manipal / SRM / DTU / NSIT / etc.)", description: "Detected a tier-2 college mention — standard CGPA cutoffs apply; competitive admit but no extra leniency.", category: "system" },
 
   // User skipped a key step
   weak_star_structure: { label: "User answers missed STAR structure", description: "Most user answers were missing Situation / Task / Action / Result components.", category: "user_skipped_step" },

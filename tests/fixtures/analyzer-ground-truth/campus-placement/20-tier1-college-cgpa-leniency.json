@@ -1,0 +1,19 @@
+{
+  "name": "Tier-1 college (IIT Bombay) at 7.0 CGPA — leniency adjustment means no cgpa flag",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Google",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm Aditya, a fourth-year CSE student at IIT Bombay. My CGPA is 7.0. I built a distributed key-value store in Go for my systems course and benchmarked it against Redis.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your strongest project.", "time": "" },
+      { "speaker": "user", "text": "I implemented Raft consensus from scratch in Go, ran it across 5 EC2 t3.micro nodes, and measured p99 latency under 50ms for 10k qps writes. Source on my GitHub.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Could you walk me through the on-call rotation for new SDEs in the Search infrastructure team, and what the typical mentor structure looks like in the first six months?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["college_tier_1"],
+    "must_not_include": ["empty_transcript", "cgpa_low_no_framing", "reverse_questions_declined", "weak_reverse_questions"]
+  }
+}
