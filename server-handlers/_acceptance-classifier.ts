@@ -305,12 +305,25 @@ function detectSplitClause(text: string): {
  * benefits from phase is also covered by `offerOnTable`. Kept on the
  * interface so future rules can branch on phase without resignaturing.
  */
+/** Audit Pass 2 Fix D (2026-05-16) — defense-in-depth curly-quote
+ *  normalization. The kernel path already normalizes at
+ *  applyCandidateAnswer entry, but `classifyAcceptance` is also called
+ *  by the legacy whole-transcript facts extractor which does NOT route
+ *  through the kernel. Inlined here (not imported from
+ *  `_negotiation-kernel`) to avoid an import cycle — kernel already
+ *  imports this classifier. Keep the two definitions byte-identical. */
+function normalizeQuotesLocal(s: string): string {
+  return s
+    .replace(/[\u2018\u2019\u02BC\u02BB]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"');
+}
+
 export function classifyAcceptance(
   text: string,
   context: AcceptanceContext = {},
 ): AcceptanceResult {
   const reasons: string[] = [];
-  const a = (text || "").trim();
+  const a = normalizeQuotesLocal(text || "").trim();
   if (!a) return { accepted: false, confidence: "none", reasons: ["empty"] };
 
   /* Step 1: vetoes. Each veto is structural — even if every other

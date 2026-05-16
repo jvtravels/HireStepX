@@ -172,3 +172,26 @@ describe("classifyAcceptance — Accenture regression (Phase 9)", () => {
     expect(classifyAcceptance("It okay. Let's get started.", { offerOnTable: false }).accepted).toBe(false);
   });
 });
+
+describe("classifyAcceptance — Audit Pass 2 Fix D: curly-quote normalization", () => {
+  /* iOS / macOS auto-correct rewrites apostrophes to U+2019 (right
+     single quotation mark) silently. Pre-fix, all acceptance regex
+     banks used ASCII `'` exclusively, so "I'll accept" / "I'm in" /
+     "let's close" pasted from iOS Notes never matched. The
+     normalizeQuotesLocal helper at the entry of classifyAcceptance
+     folds curly variants to ASCII before pattern matching. */
+  it("accepts \u201CI\u2019ll accept\u201D (curly apostrophe + curly quotes)", () => {
+    const r = classifyAcceptance("I\u2019ll accept.", { offerOnTable: true });
+    expect(r.accepted).toBe(true);
+  });
+
+  it("accepts \u201CI\u2019m in\u201D with curly apostrophe", () => {
+    const r = classifyAcceptance("I\u2019m in.", { offerOnTable: true });
+    expect(r.accepted).toBe(true);
+  });
+
+  it("accepts \u201Clet\u2019s lock it in\u201D with curly apostrophe", () => {
+    const r = classifyAcceptance("Let\u2019s lock it in.", { offerOnTable: true });
+    expect(r.accepted).toBe(true);
+  });
+});

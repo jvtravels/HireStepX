@@ -1348,6 +1348,22 @@ export function clampAnchorAgainstCandidateAsk(
  * Dynamic require kept because `_post-acceptance` imports the
  * NegotiationState type from this file and a static import would lock
  * the load order. */
+/** Audit Pass 2 Fix D (2026-05-16) — normalize curly / smart quotes
+ *  to ASCII at the input boundary. iOS / macOS auto-correct silently
+ *  rewrites apostrophes to U+2019 (right single quotation mark) and
+ *  double quotes to U+201C/U+201D, but every regex bank in
+ *  `_acceptance-classifier.ts` (lines 78/80/82/92/101/133/143/146/147/
+ *  198/226/438-465) uses ASCII `'` exclusively. Pre-fix, "I'll accept"
+ *  and "I'm in" pasted from iOS Notes never matched any acceptance
+ *  pattern. Apply at applyCandidateAnswer entry (kernel-side) AND at
+ *  classifyAcceptance entry (defense-in-depth for the legacy
+ *  whole-transcript facts path which doesn't route through the kernel). */
+function normalizeQuotes(s: string): string {
+  return s
+    .replace(/[\u2018\u2019\u02BC\u02BB]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"');
+}
+
 function attachPostAcceptanceMessage(next: NegotiationState): void {
   if (next.postAcceptanceMessage) return;
   next.postAcceptanceMessage = buildPostAcceptanceMessage(next);
@@ -2290,7 +2306,12 @@ function extractUsdAmount(text: string, patterns: RegExp[]): number | null {
 /** Apply a candidate turn to state. Returns a new state — never
  *  mutates the input. Terminal phases are sticky: if state.phase is
  *  already terminal, returns state unchanged. */
-export function applyCandidateAnswer(state: NegotiationState, answer: string): NegotiationState {
+export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: string): NegotiationState {
+  /* Audit Pass 2 Fix D (2026-05-16) — normalize curly/smart quotes at
+   * the input boundary BEFORE anything else reads `answer`. Every
+   * downstream regex bank assumes ASCII `'`/`"`. Single point of fix
+   * for iOS / macOS / smart-typography paste paths. */
+  const answer = normalizeQuotes(rawAnswerInput ?? "");
   /* Negotiation-flow redesign commit 1 (2026-05-15): capture pre-state
    * snapshot for TurnDelta computation. The single pre/post diff is
    * recomputed at every return point via finalize() below to keep
