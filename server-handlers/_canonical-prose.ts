@@ -106,10 +106,80 @@ export function selectEscalationAnchor(
   }
 }
 
+/** Perfect 2 (2026-05-16) — emotional acknowledgement prefix.
+ *
+ *  Indian-recruiter idiom (NOT therapist-speak): a single one-liner the
+ *  recruiter would naturally drop in before getting back to substance.
+ *  Only fires for frustrated / excited / hesitant — decisive needs no
+ *  emotional softening (the candidate is already direct, mirror that),
+ *  and neutral needs no acknowledgement at all. Returns null when no
+ *  prefix should be emitted; caller does NOT prepend anything.
+ *
+ *  Banned: "I understand how you feel", "I hear that this must be
+ *  difficult", "let's circle back" — all US-recruiter / coach-speak. */
+export function renderSentimentPrefix(
+  sentiment: import("./_negotiation-kernel").TurnDelta["candidateSentiment"] | undefined | null,
+): string | null {
+  if (sentiment == null) return null;
+  switch (sentiment) {
+    case "frustrated":
+      return "I hear you — and I want to be straight with you here.";
+    case "excited":
+      return "Glad we're broadly aligned —";
+    case "hesitant":
+      return "Take your time on this —";
+    case "decisive":
+    case "neutral":
+      return null;
+    default:
+      return null;
+  }
+}
+
+/** Action kinds where the sentiment prefix is suppressed regardless of
+ *  the detected sentiment. Openings carry their own greeting cadence;
+ *  formal close recaps and walk-aways have their own tone register and
+ *  an emotional prefix would feel out of place. */
+const SENTIMENT_PREFIX_SUPPRESSED_KINDS = new Set<string>([
+  "open-with-offer",
+  "close-recap-formal",
+  /* walk-away surfaces as either `close` with mode "walkaway" or
+   * `live-walk-away` with mode "walk" — both handled below at the
+   * call site so we can inspect the mode field. */
+]);
+
 /** Canonical kernel-authored prose for every NextAction kind. The
  *  returned string is the EXACT line the bot would ship if the LLM
  *  restyle is unavailable or rejected. */
 export function renderCanonicalProse(
+  action: NextAction,
+  state: NegotiationState,
+): string {
+  /* Perfect 2 (2026-05-16) — sentiment-aware acknowledgement prefix.
+   * Computed once and prepended to the action-specific body for the
+   * three softening sentiments. Decisive / neutral fall through. Some
+   * action kinds (opening, formal close recap, walk-away) suppress the
+   * prefix even when sentiment qualifies, because those flows carry
+   * their own tone register. */
+  const sentiment = state.lastTurnDelta?.candidateSentiment ?? null;
+  let sentimentPrefix: string | null = renderSentimentPrefix(sentiment);
+  if (sentimentPrefix != null) {
+    if (SENTIMENT_PREFIX_SUPPRESSED_KINDS.has(action.kind)) {
+      sentimentPrefix = null;
+    } else if (action.kind === "close" && action.mode === "walkaway") {
+      sentimentPrefix = null;
+    } else if (action.kind === "live-walk-away" && action.mode === "walk") {
+      sentimentPrefix = null;
+    }
+  }
+  const body = renderCanonicalProseBody(action, state);
+  return sentimentPrefix ? `${sentimentPrefix} ${body}` : body;
+}
+
+/** Action-specific body, unprefixed. Split out from renderCanonicalProse
+ *  so the sentiment-prefix wrapper can compute once and prepend once
+ *  rather than wrap every return arm in the switch. */
+function renderCanonicalProseBody(
   action: NextAction,
   state: NegotiationState,
 ): string {

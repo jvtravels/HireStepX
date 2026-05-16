@@ -976,6 +976,12 @@ export interface TurnDelta {
   freshGradDisclosed: boolean;
   /** Candidate disclosed a retention counter from their current employer this turn. */
   retentionCounterDisclosed: boolean;
+  /** Perfect 2 (2026-05-16) — coarse emotional sentiment classification of
+   *  the candidate's utterance this turn. Drives an Indian-recruiter-idiom
+   *  acknowledgement prefix in canonical prose for frustrated / excited /
+   *  hesitant; decisive and neutral suppress the prefix (decisive needs no
+   *  emotional softening, neutral needs no acknowledgement). */
+  candidateSentiment?: "frustrated" | "excited" | "hesitant" | "decisive" | "neutral";
 }
 
 export const EMPTY_TURN_DELTA: TurnDelta = {
@@ -992,7 +998,45 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
   refusedItem: false,
   freshGradDisclosed: false,
   retentionCounterDisclosed: false,
+  candidateSentiment: "neutral",
 };
+
+/** Perfect 2 (2026-05-16) — coarse emotional sentiment classifier for
+ *  the candidate's utterance. Pure regex-based heuristic on raw text.
+ *  Patterns are tuned to Indian-English negotiation idiom (frustrated
+ *  candidates lean on "honestly" / "frankly" hedges; excited candidates
+ *  use "looking forward" / "happy with"; hesitant candidates surface
+ *  family / "let me think" framings; decisive candidates use "final
+ *  number" / "bottom line").
+ *
+ *  Priority order matters: decisive and frustrated outrank excited /
+ *  hesitant when patterns collide ("honestly, this is my final number"
+ *  → frustrated wins because frustration drives the prefix decision).
+ *  Default is "neutral". Downstream renderSentimentPrefix suppresses
+ *  the prefix for decisive + neutral. */
+export function detectCandidateSentiment(
+  rawCandidateText: string,
+): TurnDelta["candidateSentiment"] {
+  if (typeof rawCandidateText !== "string" || !rawCandidateText.trim()) {
+    return "neutral";
+  }
+  const text = rawCandidateText.toLowerCase();
+  /* Multiple exclamation marks anywhere → frustrated signal. */
+  const multiBang = /!\s*!/.test(rawCandidateText);
+  const FRUSTRATED_RE =
+    /\b(honestly|frankly|to be very honest|this is not fair|really disappointed|expected more|i don['’]?t think|lowball|very low)\b/i;
+  if (multiBang || FRUSTRATED_RE.test(text)) return "frustrated";
+  const DECISIVE_RE =
+    /\b(final number|bottom line|non[- ]?negotiable|either way|let me be direct|straight up)\b/i;
+  if (DECISIVE_RE.test(text)) return "decisive";
+  const EXCITED_RE =
+    /\b(looking forward|excited to join|happy with|absolutely|great|let['’]?s go ahead|let['’]?s close)\b/i;
+  if (EXCITED_RE.test(text)) return "excited";
+  const HESITANT_RE =
+    /\b(i['’]?m not sure|need to think|let me get back|discuss with family|let me check|kind of|maybe|i suppose)\b/i;
+  if (HESITANT_RE.test(text)) return "hesitant";
+  return "neutral";
+}
 
 /** Compute the per-turn delta between pre-state and post-state given
  *  the parsed candidate answer. Pure. Called at every return point of
@@ -1139,6 +1183,12 @@ export function computeTurnDelta(
   if (!pre.freshGradDisclosed && post.freshGradDisclosed) {
     d.freshGradDisclosed = true;
   }
+
+  /* Perfect 2 (2026-05-16) — emotional sentiment classification. Pure
+   * regex on the raw candidate utterance. Drives the canonical-prose
+   * acknowledgement prefix when sentiment ∈ {frustrated, excited,
+   * hesitant}; decisive + neutral suppress (no preachy prefix). */
+  d.candidateSentiment = detectCandidateSentiment(rawAnswer);
 
   /* Retention counter — current employer counter disclosed. */
   if (parsed.retentionCounter.hasAny) {
