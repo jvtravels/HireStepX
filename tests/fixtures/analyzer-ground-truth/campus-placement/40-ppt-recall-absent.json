@@ -1,0 +1,18 @@
+{
+  "name": "Long campus interview at Wipro with zero pre-placement-talk reference",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I am Rahul, final year CSE at a mid-tier engineering college, looking to start my career in software services with a stable organisation.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your strongest project.", "time": "" },
+      { "speaker": "user", "text": "I built a Spring Boot inventory service backed by Postgres, deployed on Render. Source is at github.com/me/inventory.", "time": "" },
+      { "speaker": "ai", "text": "Why do you want to join us?", "time": "" },
+      { "speaker": "user", "text": "Your company has a strong training program and global presence, and I want to build my foundation in a structured environment with mentorship.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a teamwork example.", "time": "" },
+      { "speaker": "user", "text": "In our 4-person FYP, I owned the backend while teammates handled frontend and integrations; we coordinated through daily standups and a shared Notion board.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["ppt_recall_absent"], "must_not_include": ["empty_transcript"] }
+}

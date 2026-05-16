@@ -1,0 +1,14 @@
+{
+  "name": "Candidate volunteers GATE prep alongside TCS placement — attrition signal",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "What are your plans for the next year?", "time": "" },
+      { "speaker": "user", "text": "I am simultaneously preparing for GATE this year along with this placement. I want to keep both options open.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "There's a Spring Boot API on github.com/me/api that handles auth flows.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["parallel_exam_prep_disclosed"], "must_not_include": ["empty_transcript"] }
+}

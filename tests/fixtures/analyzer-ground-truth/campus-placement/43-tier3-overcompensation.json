@@ -1,0 +1,14 @@
+{
+  "name": "Unknown-tier college candidate makes grandiose national-winner claim",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Capgemini",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your achievements.", "time": "" },
+      { "speaker": "user", "text": "I am from a small engineering college in my home district. I have single-handedly built a startup that served thousands of users, and I won hackathons nationally across India.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through one of those projects in detail.", "time": "" },
+      { "speaker": "user", "text": "It was a delivery app I built on weekends in my final year.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["tier_3_overcompensation"], "must_not_include": ["empty_transcript"] }
+}

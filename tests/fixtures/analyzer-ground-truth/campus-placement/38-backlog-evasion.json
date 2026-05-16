@@ -1,0 +1,14 @@
+{
+  "name": "TCS asks about backlogs, candidate hedges — service-tier dealbreaker",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Do you have any active backlogs or standing arrears?", "time": "" },
+      { "speaker": "user", "text": "Honestly, not sure. I think a couple are pending, will clear them soon.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a project.", "time": "" },
+      { "speaker": "user", "text": "There's a Spring Boot REST API on github.com/me/api handling user auth.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["active_backlog_evasion"], "must_not_include": ["empty_transcript"] }
+}

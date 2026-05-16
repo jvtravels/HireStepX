@@ -1,0 +1,14 @@
+{
+  "name": "AI probes intern stipend, candidate hedges — fabrication tell",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Accenture",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your internship.", "time": "" },
+      { "speaker": "user", "text": "I interned at a Bangalore startup last summer where I shipped a notification microservice using Node.js. Source on github.com/me/notifier.", "time": "" },
+      { "speaker": "ai", "text": "What was your stipend during that internship?", "time": "" },
+      { "speaker": "user", "text": "Honestly don't remember, it was something small. I wasn't paying attention.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["stipend_dodge"], "must_not_include": ["empty_transcript"] }
+}

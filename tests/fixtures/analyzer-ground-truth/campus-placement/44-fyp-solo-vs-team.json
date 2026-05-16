@@ -1,0 +1,14 @@
+{
+  "name": "Candidate claims to have built FYP solo while elsewhere referencing a 4-person team",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "HCL",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your final-year project.", "time": "" },
+      { "speaker": "user", "text": "I built the final-year project end-to-end. It's a fraud detection pipeline on github.com/me/fraud-detect using Python and a gradient-boosting model.", "time": "" },
+      { "speaker": "ai", "text": "How did you split the work?", "time": "" },
+      { "speaker": "user", "text": "We had a team of 4 — my team helped with the dashboard and data collection while I led the modeling work.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["fyp_solo_claim_vs_team"], "must_not_include": ["empty_transcript"] }
+}

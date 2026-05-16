@@ -1,0 +1,16 @@
+{
+  "name": "Mechanical engineering student applying for SDE role with no learning bridge",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your background.", "time": "" },
+      { "speaker": "user", "text": "I am a final-year mechanical engineering student. I am applying for the software developer / SDE role at your company.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a recent project.", "time": "" },
+      { "speaker": "user", "text": "I worked on a small inventory tracker that uses a simple database and a basic frontend.", "time": "" },
+      { "speaker": "ai", "text": "What makes you a fit for an SDE role?", "time": "" },
+      { "speaker": "user", "text": "I have interest in coding and I want to build a career in software development.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["branch_jump_thin_narrative"], "must_not_include": ["empty_transcript"] }
+}

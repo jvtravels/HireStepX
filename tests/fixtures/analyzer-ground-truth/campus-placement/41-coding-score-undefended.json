@@ -1,0 +1,12 @@
+{
+  "name": "AI raises low coding-round score, candidate has no rationale or recent evidence",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Cognizant",
+    "transcript": [
+      { "speaker": "ai", "text": "Your coding round score was on the lower side. Why was your DSA score so low?", "time": "" },
+      { "speaker": "user", "text": "I am not sure, it just happened. I tried my best but it didn't work out.", "time": "" }
+    ]
+  },
+  "expected": { "must_include": ["coding_round_score_undefended"], "must_not_include": ["empty_transcript"] }
+}

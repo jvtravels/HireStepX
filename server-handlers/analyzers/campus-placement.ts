@@ -166,9 +166,51 @@ const USER_SALARY_RAISED = /\b(?:what\s+(?:is\s+(?:the\s+)?)?(?:ctc|salary|packa
 const CLAIMED_BUILT = /\b(?:i\s+(?:built|made|developed|coded|implemented|deployed|shipped|trained)\s+(?:a\s+|an\s+|the\s+|my\s+)?\w)/i;
 const PORTFOLIO_LINK = /\b(?:github(?:\.com)?|gitlab|bitbucket|portfolio\s+(?:link|url|site|website)|live\s+(?:demo|link|url|site)|deployed\s+(?:on|at)|hosted\s+(?:on|at)|netlify|vercel|render|heroku|firebase\s+hosting|aws\s+(?:s3|amplify|elastic)|hugging\s*face|kaggle\s+notebook|colab\s+notebook|leetcode\s+profile|codeforces|codechef|hackerrank\s+profile|figma\s+(?:link|file)|notion\s+page|demo\s+video)\b/i;
 
+/* ── Wave-4 patterns — deeper Indian campus realism ───────────────── */
+
+/* Active backlog / arrears — TCS/Infosys/Wipro have strict no-active-backlog
+ * rules. AI probes; user evades ("not sure", "few left", "will clear soon"). */
+const BACKLOG_PROBE = /\b(?:any\s+(?:active\s+)?(?:backlogs?|arrears?|kt(?:s)?\b|supplementary)|how\s+many\s+(?:backlogs?|arrears?|kts?)|do\s+you\s+have\s+(?:any\s+)?(?:backlogs?|arrears?|standing\s+arrears?)|standing\s+arrears?|active\s+(?:backlog|arrear)|history\s+of\s+(?:backlogs?|arrears?))\b/i;
+const BACKLOG_EVASIVE = /\b(?:not\s+sure|don'?t\s+remember|few\s+left|couple\s+(?:left|pending)|will\s+clear|going\s+to\s+clear|trying\s+to\s+clear|some\s+(?:are\s+)?pending|haven'?t\s+(?:checked|counted)|i\s+think\s+(?:one|two|three|a\s+few))\b/i;
+const BACKLOG_CLEAN = /\b(?:no\s+(?:active\s+)?(?:backlogs?|arrears?|kts?)|zero\s+(?:backlogs?|arrears?)|all\s+(?:cleared|passed|first\s+attempt)|cleared\s+(?:everything|all\s+(?:papers|subjects))|first[- ]?attempt\s+pass)\b/i;
+
+/* Branch-jump — non-CS branch applying to SDE/SWE. Mech / Civil / EEE / ECE /
+ * Chem / Biotech / IT / MBA all common. Needs learning-narrative when probed. */
+const NONCS_BRANCH = /\b(?:mechanical\s+engineering|civil\s+engineering|chemical\s+engineering|electrical\s+(?:engineering|and\s+electronics)|electronics\s+(?:and\s+communication|engineering|and\s+telecom)|ece\b|eee\b|biotech(?:nology)?|aerospace|metallurgy|automobile\s+engineering|production\s+engineering|industrial\s+engineering|i\s+am\s+(?:from|in)\s+(?:mech|civil|ece|eee|chem|biotech))\b/i;
+const BRANCH_LEARNING_NARRATIVE = /\b(?:self[- ]?taught|self[- ]?study|learnt\s+(?:coding|programming|cs|dsa)|coursera|nptel|udemy|youtube|cs50|harvard\s+cs50|mit\s+ocw|leetcode|hackerrank|gfg|geeks\s*for\s*geeks|striver|love\s+babbar|kunal\s+kushwaha|abdul\s+bari|completed\s+(?:a|the)\s+(?:bootcamp|course|specialization)|minor\s+in\s+(?:cs|computer)|certified\s+in|switched\s+(?:to|domains?)|cross[- ]?domain|transitioned\s+to|moved\s+(?:into|to)\s+(?:software|tech|cs)|built\s+\d+\s+projects?)\b/i;
+
+/* PPT (pre-placement talk) recall — interviewers expect the candidate to
+ * reference something from the PPT (speaker, recent launch, program name).
+ * Fire if substantial transcript + no PPT reference. */
+const PPT_REFERENCE = /\b(?:ppt\b|pre[- ]?placement\s+talk|the\s+(?:speaker|presenter|hr|recruiter)\s+(?:mentioned|talked\s+about|shared)|during\s+(?:your|the)\s+(?:presentation|talk)|you\s+(?:mentioned|talked\s+about|presented)\s+(?:in\s+the\s+ppt|earlier|during)|i\s+(?:saw|attended|was\s+at)\s+(?:your|the)\s+(?:ppt|presentation|pre[- ]?placement)|in\s+(?:your|the)\s+pre[- ]?placement)\b/i;
+
+/* Coding-round score defense — AI mentions low coding/DSA score, user has
+ * no rationale (preparation timeline, time-pressure, learning since). */
+const CODING_SCORE_PROBE = /\b(?:your\s+(?:coding|dsa|online|written|aptitude)\s+(?:round\s+)?score\s+(?:was|is)\s+(?:low|on\s+the\s+lower\s+side|not\s+great|weak)|you\s+(?:only\s+)?cleared\s+(?:\d|one|two)\s+(?:question|problem)s?|coding\s+(?:round|test).+(?:struggle|tough|hard|low)|you\s+(?:missed|didn'?t\s+(?:clear|solve))\s+(?:the\s+)?(?:hard|second|third|last)\s+(?:problem|question)|why\s+(?:was\s+)?your\s+(?:coding|dsa)\s+score\s+(?:so\s+)?low)\b/i;
+const CODING_SCORE_RATIONALE = /\b(?:nerves?|time\s+(?:pressure|management|ran\s+out)|got\s+stuck|over[- ]?thought|first\s+(?:placement\s+)?(?:round|test)|since\s+then|after\s+that\s+i'?ve|i'?ve\s+(?:improved|practi[cs]ed|been\s+solving|done\s+\d+)|leetcode\s+streak|currently\s+at\s+(?:knight|guardian|specialist|expert)|solved\s+\d{2,}\s+problems?|practi[cs]ing\s+(?:daily|every\s+day)|i\s+know\s+where\s+i\s+(?:went\s+wrong|lost\s+marks))\b/i;
+
+/* Parallel exam prep — admits preparing for GATE / CAT / UPSC / GRE alongside
+ * placement. Attrition-adjacent, service-tier red flag. */
+const PARALLEL_EXAM_PREP = /\b(?:(?:also|simultaneously|in\s+parallel|side\s+by\s+side|along\s+with\s+this|alongside)\s+(?:preparing|studying|appearing)\s+for\s+(?:gate|cat|upsc|gre|gmat|ielts|toefl)|i'?m\s+(?:also\s+)?(?:preparing|studying)\s+for\s+(?:gate|cat|upsc|gre|gmat)\s+(?:this\s+year|simultaneously|in\s+parallel)|writing\s+(?:gate|cat|upsc)\s+(?:this|next)\s+(?:year|month)|gate\s+(?:and|plus|alongside)|cat\s+(?:and|plus|alongside))\b/i;
+
+/* Tier-3 overcompensation — non-tier-1 / non-tier-2 college + grandiose
+ * leadership claim. Fires only when collegeTier === "unknown". */
+const GRANDIOSE_CLAIM = /\b(?:nation(?:al|-?wide)?\s+(?:winner|topper|champion|leader)|all\s+india\s+(?:rank|topper|winner)|hackathon\s+(?:winner|champion)\s+(?:nationally|globally)|google\s+gsoc|outreachy|won\s+(?:hackathons?|contests?)\s+(?:multiple\s+times|nationally|globally|across\s+india)|i'?ve\s+led\s+(?:teams?\s+of\s+)?\d{2,}|i'?ve\s+(?:single[- ]?handedly|alone|by\s+myself)\s+(?:built|shipped|launched)\s+(?:a\s+)?(?:startup|product|company)|founder\s+of\s+(?:my\s+own\s+)?(?:startup|company)|generated\s+(?:revenue|\d+\s*(?:lakhs?|crores?))|served?\s+(?:thousands|millions)\s+of\s+(?:users|customers))\b/i;
+
+/* FYP (final-year project) solo claim vs team — user says "I built" but
+ * also references team-of-N. Detect contradiction. */
+const FYP_SOLO_CLAIM = /\b(?:i\s+(?:built|made|developed|coded|shipped|designed|architected)\s+(?:the\s+|a\s+|an\s+|my\s+)?(?:fyp|final[- ]?year\s+project|capstone|major\s+project))\b/i;
+const FYP_TEAM_MENTION = /\b(?:team\s+of\s+(?:3|4|5|6|three|four|five|six)|(?:3|4|5|6|three|four|five|six)[- ]?(?:person|member)\s+team|my\s+team|we\s+(?:built|made|developed|did|shipped|presented)|our\s+(?:team|group)\s+(?:built|made|developed|did)|with\s+(?:my\s+)?(?:teammates|team\s+members|group\s+mates))\b/i;
+
+/* Stipend dodge — AI asks intern stipend, user hedges (could signal
+ * fabricated internship or undisclosed unpaid status). */
+const STIPEND_PROBE = /\b(?:what\s+was\s+(?:your|the)\s+stipend|how\s+much\s+(?:were\s+you\s+paid|did\s+(?:they|you)\s+(?:pay|get))|stipend\s+(?:amount|kitna|details?)|paid\s+internship|monthly\s+(?:stipend|pay|comp))\b/i;
+const STIPEND_DODGE = /\b(?:don'?t\s+(?:remember|recall)|prefer\s+not|it\s+was\s+unpaid\s+but|not\s+(?:disclosed|comfortable)|confidential|nda|can'?t\s+share|small\s+amount|something\s+(?:small|minimal|nominal)|not\s+much|barely\s+anything|just\s+(?:travel|conveyance)|i\s+wasn'?t\s+(?:keeping\s+track|paying\s+attention))\b/i;
+const STIPEND_CONCRETE = /\b(?:\d{1,2},?\d{3}\s*(?:per\s+month|\/month|monthly|pm\b)|₹\s*\d{1,2},?\d{3}|\d{1,2}\s*(?:k|thousand)\s*(?:per\s+month|\/month|monthly|pm\b)|inr\s+\d{1,2},?\d{3}|stipend\s+(?:was|of)\s+(?:₹|rs\.?)?\s*\d|i\s+was\s+paid\s+\d|got\s+(?:₹|rs\.?)?\s*\d{1,2},?\d{3})\b/i;
+
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v2",
+  version: "campus-placement-v4.0",
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -588,6 +630,117 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       });
     }
 
+    /* ── Wave-4 detection: deeper Indian campus realism ───────────────── */
+
+    // Active backlog evasion (service-tier dealbreaker).
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && BACKLOG_PROBE.test(t.text || "")) {
+        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        if (reply && reply.text && BACKLOG_EVASIVE.test(reply.text) && !BACKLOG_CLEAN.test(reply.text)) {
+          flags.add("active_backlog_evasion");
+          gaps.push({
+            dimension: "preparation",
+            expected: "Service-tier firms have a no-active-backlog rule. State your exact standing crisply: 'Zero active backlogs, cleared one supplementary in 2nd year, all subjects passed.'",
+            observed: "Candidate hedged on the backlog probe — recruiters flag this as either active arrears or evasion. Both are dealbreakers at TCS/Infosys/Wipro/Cognizant.",
+            severity: "high",
+          });
+          break;
+        }
+      }
+    }
+
+    // Branch-jump narrative — non-CS branch + SDE role + no learning story.
+    if (NONCS_BRANCH.test(userText) && /\b(?:sde|software\s+(?:dev|engineer)|backend|frontend|full[- ]?stack|developer|swe\b|programmer)\b/i.test(`${userText} ${aiText}`) && !BRANCH_LEARNING_NARRATIVE.test(userText) && userTurnCount >= 3) {
+      flags.add("branch_jump_thin_narrative");
+      gaps.push({
+        dimension: "credibility",
+        expected: "Non-CS branch applying to SDE? Lead with the bridge: a course (CS50 / Striver SDE Sheet / NPTEL), N self-built projects, and what clicked. 'I'm Mech but did CS50, built 4 projects, switched because systems thinking translates.'",
+        observed: "Candidate mentioned a non-CS branch + SDE-track role but never explained the learning bridge (self-study course, projects, certifications) — reads as opportunistic.",
+        severity: "medium",
+      });
+    }
+
+    // PPT recall absent — substantial transcript with no PPT/launch reference.
+    if (userTurnCount >= 4 && !PPT_REFERENCE.test(userText) && (companyTier === "service" || companyTier === "product-india" || companyTier === "product-global")) {
+      flags.add("ppt_recall_absent");
+      gaps.push({
+        dimension: "preparation",
+        expected: "Reference something from the pre-placement talk (a speaker name, a recent launch, the program name like 'Infosys Springboard' or 'Wipro Turbo'). Shows you listened.",
+        observed: "Substantial interview turns but candidate never referenced the PPT, the speaker, or a recent company-specific launch — signals low pre-interview engagement.",
+        severity: "low",
+      });
+    }
+
+    // Coding-round score undefended.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && CODING_SCORE_PROBE.test(t.text || "")) {
+        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        if (reply && reply.text && reply.text.length < 280 && !CODING_SCORE_RATIONALE.test(reply.text)) {
+          flags.add("coding_round_score_undefended");
+          gaps.push({
+            dimension: "credibility",
+            expected: "Own the gap with one honest sentence + one recent-evidence sentence: 'Time pressure on the last problem; since then I've solved 200+ on Leetcode, currently Knight on Codeforces.' Defends without excusing.",
+            observed: "AI probed a low coding round score; candidate had no rationale or recent-evidence answer.",
+            severity: "medium",
+          });
+          break;
+        }
+      }
+    }
+
+    // Parallel exam prep — attrition signal at service-tier.
+    if (PARALLEL_EXAM_PREP.test(userText)) {
+      flags.add("parallel_exam_prep_disclosed");
+      gaps.push({
+        dimension: "framing",
+        expected: "Don't volunteer GATE / CAT / UPSC parallel prep in a service-tier interview. If asked directly, frame as: 'I'd like to first build a strong foundation here; long-term plans are flexible.'",
+        observed: "Candidate disclosed parallel exam prep (GATE/CAT/UPSC/GRE) — recruiters at service-tier discount this as 1-2 year attrition risk.",
+        severity: companyTier === "service" ? "high" : "medium",
+      });
+    }
+
+    // Tier-3 overcompensation — unknown college + grandiose claim.
+    if (collegeTier === "unknown" && GRANDIOSE_CLAIM.test(userText)) {
+      flags.add("tier_3_overcompensation");
+      gaps.push({
+        dimension: "credibility",
+        expected: "Calibrate claims to evidence. 'Top 5 in my college hackathon (40 teams)' beats 'national hackathon winner' if the former is what actually happened. Interviewers verify with one specific drill-down.",
+        observed: "Candidate made a grandiose national/global achievement claim that doesn't match the rest of the context — invites a verification probe the candidate is unlikely to defend.",
+        severity: "medium",
+      });
+    }
+
+    // FYP solo claim vs team mention — contradiction.
+    if (FYP_SOLO_CLAIM.test(userText) && FYP_TEAM_MENTION.test(userText)) {
+      flags.add("fyp_solo_claim_vs_team");
+      gaps.push({
+        dimension: "credibility",
+        expected: "Be precise on contribution: 'In our 4-person FYP team I owned the backend (FastAPI + Postgres); teammates handled the React frontend and the ML model.' Mixing 'I built' with 'we presented' invites a 'who did what exactly' drill.",
+        observed: "Candidate said 'I built' the FYP but elsewhere referenced a team — Indian campus interviewers will probe individual contribution.",
+        severity: "medium",
+      });
+    }
+
+    // Stipend dodge — AI probes intern stipend, user hedges.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (isAi(t) && STIPEND_PROBE.test(t.text || "")) {
+        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        if (reply && reply.text && STIPEND_DODGE.test(reply.text) && !STIPEND_CONCRETE.test(reply.text)) {
+          flags.add("stipend_dodge");
+          gaps.push({
+            dimension: "credibility",
+            expected: "Stipend is a routine probe — state the number cleanly. '₹25,000 / month at the startup, unpaid academic internship at the lab (mentored by Prof. X)'. Hedging here signals fabrication.",
+            observed: "Candidate hedged on a stipend question — recruiters use this as a fabrication tell; even unpaid internships should be stated openly with context.",
+            severity: "medium",
+          });
+          break;
+        }
+      }
+    }
+
     const tips: string[] = [];
     if (flags.has("no_academic_project_discussed")) tips.push("As a fresher, lead with your capstone or final-year project — it's your strongest evidence.");
     if (flags.has("generic_passion_no_substance")) tips.push("Replace 'I'm passionate about tech' with 'I built X using Y, here's what I learned.'");
@@ -617,6 +770,14 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("salary_expectation_inflated")) tips.push("Campus fresher offers are typically non-negotiable and capped by tier (TCS/Infosys ≈ ₹3.5-4.5L, Indian product ≈ ₹6-15L, global product India ≈ ₹15-30L for fresher SDE). Quoting a number 2-3x above band tells recruiters you didn't do research. Either anchor to levels.fyi data or defer: 'I trust the standard fresher band — I'd like to learn more about the role first.'");
     if (flags.has("salary_raised_too_early")) tips.push("Don't bring up salary in the technical / first round. Wrong round = wrong priorities signal. Wait for HR / final round, or for the interviewer to raise it. If you genuinely don't know the band, ask after the technical conversation has finished: 'I'd love to understand the comp structure — when's the right time to discuss?'");
     if (flags.has("portfolio_absent_for_claim")) tips.push("Drop a GitHub link / live demo URL whenever you narrate a project. 'Source is on my GitHub at github.com/username/repo' or 'live demo at xyz.vercel.app' adds 10x credibility versus a verbal claim — recruiters can check it in 30 seconds.");
+    if (flags.has("active_backlog_evasion")) tips.push("Service-tier firms (TCS/Infosys/Wipro/Cognizant) auto-reject anyone with active backlogs — and hedging reads the same as having one. State your exact standing: 'Zero active backlogs; one supplementary cleared in 2nd year.' Crisp facts beat dodging.");
+    if (flags.has("branch_jump_thin_narrative")) tips.push("Non-CS branch into SDE? Build the bridge upfront: a named course (CS50 / Striver / NPTEL), 3-4 self-built projects, and one sentence on what clicked. 'I'm Mech, did CS50 + Striver SDE Sheet, built 4 projects, applied because systems thinking translates.' Owns the switch instead of hiding it.");
+    if (flags.has("ppt_recall_absent")) tips.push("Always reference the pre-placement talk: a speaker name, a recent launch, a program ('Infosys Springboard', 'Wipro Turbo', 'TCS Digital'). Even one mention proves you listened — interviewers heavily weight this on campus.");
+    if (flags.has("coding_round_score_undefended")) tips.push("Defend a low coding score with one honest + one recent-evidence sentence: 'Time pressure on the last problem; since then I've solved 200+ on Leetcode, currently Knight rated.' Owning the gap with proof beats excusing it.");
+    if (flags.has("parallel_exam_prep_disclosed")) tips.push("Don't volunteer GATE / CAT / UPSC parallel prep in service-tier interviews — recruiters discount you as 1-2 year attrition risk. If asked directly, frame as: 'I'd like to first build a strong foundation here; longer-term plans are flexible and not in a fixed window.'");
+    if (flags.has("tier_3_overcompensation")) tips.push("Calibrate achievement claims to verifiable detail. 'Top 5 in my college hackathon (40 teams, 36 hours, built X)' lands; 'national hackathon winner' invites a one-question verification drill you can't pass. Specificity beats grandiosity.");
+    if (flags.has("fyp_solo_claim_vs_team")) tips.push("Be precise on individual contribution in team projects. 'In our 4-person FYP, I owned the backend (FastAPI + Postgres); teammates handled the React frontend and the ML model.' Mixing 'I built' with 'we presented' invites a 'who did what' drill.");
+    if (flags.has("stipend_dodge")) tips.push("Stipend is a routine probe — state numbers cleanly even if small. '₹25K/month at the startup; unpaid academic internship at the lab under Prof. X.' Hedging reads as fabrication, even when the internship was real.");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);
