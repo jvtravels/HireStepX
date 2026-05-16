@@ -75,6 +75,20 @@ Bad (stacked): "Tell me about a time you handled a design critique. How did you 
 Good (one beat): "Tell me about a time you handled a design critique."
 Reserved closer phrasings (DO NOT use these in main questions): ${PROBE_TEXTS.map(p => `"${p}"`).join(", ")}.`;
 
+const BEHAVIOURAL_INDIAN_REGISTER_RULE = `BEHAVIOURAL-INDIAN-REGISTER RULE (only for behavioural interviews):
+You are an Indian product-co interviewer. Match the register Indian engineers / PMs / designers actually hear in real loops at Razorpay, Flipkart, Swiggy, Meesho, CRED, Atlassian-IN, Microsoft IDC.
+
+HARD BAN — American spellings. Always use British/Indian spellings:
+"optimizing" → "optimising"; "organize" → "organise"; "analyze" → "analyse"; "behavior" → "behaviour"; "realize" → "realise"; "prioritize" → "prioritise"; "specialize" → "specialise"; "color" → "colour"; "favor" → "favour"; "labor" → "labour"; "center" → "centre"; "defense" → "defence"; "license" (verb) → "licence"; "program" (non-software) → "programme".
+
+HARD BAN — American business jargon. Never use these phrases anywhere — neither in question stems nor in the persona's intro/interstitials:
+"dive into" / "deep dive" / "circle back" / "reach out" / "take the time" / "what's drawing you to" / "walk me through" (use "tell me about" instead — "walk me through" is reserved for the follow-up coach's bank only) / "moving forward" / "at the end of the day" / "low-hanging fruit" / "touch base".
+
+PREFERRED Indian-English alternatives:
+"get into" or "begin with" instead of "dive into"; "what got you interested in" or "why are you looking at" instead of "what's drawing you to"; "thanks for joining" or "thanks for making the time" instead of "thanks for taking the time"; "actually", "basically", "just briefly", "so", "right" as natural softeners in interstitial / intro text only — NEVER in the question stem itself.
+
+PERSONA DELIVERY: the persona may sprinkle 1-2 Indian-English softeners ("right?", "actually", "just briefly", "so", "yes please") into intro and interstitial lines to feel like a real Indian interviewer, but the main question text stays clean and direct — no softeners inside the question stem.`;
+
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
@@ -271,7 +285,7 @@ export default async function handler(req: Request): Promise<Response> {
        and measurable impact) — which downstream lets the live STAR-gap
        follow-up directive actually have something to probe. */
     const behavioralShapeGuide = interviewType === "behavioral"
-      ? `\n${BEHAVIOURAL_CANONICAL_PHRASING_RULE}\n\n${BEHAVIOURAL_ONE_BEAT_RULE}\n
+      ? `\n${BEHAVIOURAL_CANONICAL_PHRASING_RULE}\n\n${BEHAVIOURAL_ONE_BEAT_RULE}\n\n${BEHAVIOURAL_INDIAN_REGISTER_RULE}\n
 BEHAVIOURAL QUESTION SHAPING:
 - Every stem MUST naturally pull a STAR-shaped story: Situation (when/where) → Task (the goal/problem) → Action (what *they* specifically did) → Result (measurable outcome).
 - Reward ownership: prefer "Tell me about a time you OWNED a difficult call" over "Tell me about a project". The verb forces first-person Action.
@@ -1216,18 +1230,40 @@ Requirements:
           "what was the measurable impact",
           "how did the team react",
         ];
+        const US_SPELLING_RE = /\b(optimiz|organiz|analyz|behavior|realiz|prioritiz|specializ|color|favor|labor|defense)(e|ed|es|ing|ation|ations)?\b/i;
+        const JARGON_PHRASES = [
+          "dive into",
+          "deep dive",
+          "circle back",
+          "reach out",
+          "take the time",
+          "what's drawing you to",
+          "moving forward",
+          "low-hanging fruit",
+          "touch base",
+        ];
         let behaviouralQuestionCount = 0;
         let behaviouralCanonicalOpenerCount = 0;
         let behaviouralDriftCount = 0;
         let behaviouralCompoundCount = 0;
+        let americanSpellingCount = 0;
+        let businessJargonCount = 0;
         if (Array.isArray(questions)) {
           for (const q of questions as Array<Record<string, unknown>>) {
             const qType = typeof q?.type === "string" ? q.type : "";
-            if (qType === "intro" || qType === "closing") continue;
             const text = typeof q?.aiText === "string"
               ? q.aiText
               : (typeof q?.text === "string" ? q.text : "");
             if (!text) continue;
+            // Register/jargon checks apply to ALL behavioural text including
+            // intro/persona/closing — the LLM drifts in interstitials too.
+            const lowerAll = text.toLowerCase();
+            if (US_SPELLING_RE.test(text)) americanSpellingCount++;
+            for (const phrase of JARGON_PHRASES) {
+              if (lowerAll.includes(phrase)) { businessJargonCount++; break; }
+            }
+            // Canonical-opener + compound-stack checks skip intro/closing.
+            if (qType === "intro" || qType === "closing") continue;
             behaviouralQuestionCount++;
             if (CANONICAL_OPENER.test(text)) {
               behaviouralCanonicalOpenerCount++;
@@ -1250,6 +1286,8 @@ Requirements:
           behavioural_canonical_opener_count: behaviouralCanonicalOpenerCount,
           behavioural_drift_count: behaviouralDriftCount,
           behavioural_compound_count: behaviouralCompoundCount,
+          american_spelling_count: americanSpellingCount,
+          business_jargon_count: businessJargonCount,
         }, req);
       }
     } catch { /* telemetry must never break a real request */ }
