@@ -565,6 +565,22 @@ export interface NegotiationState {
    * as a blocker. */
   postVerbalRenegotiationCount: number;
 
+  /* perfect 1 (2026-05-16) — multi-turn negotiation spiral. Counts the
+   * number of counter-offer moves the AI has shipped this session.
+   * Incremented in applyAiMove when move.lever === "counter-base".
+   * Read by the planner's counter-offer construction path to apply a
+   * diminishing-concessions multiplier (60% / 40% / 20% of the gap
+   * for rounds 0/1/2; round 3+ pivots to hold-firm lever-loop). Also
+   * read by canonical prose to emit a "we've already moved once"
+   * acknowledgement on rounds >= 1.
+   *
+   * Distinct from counterCount derived from leversUsed (which the
+   * existing splitSchedule already uses): counterRound is the canonical
+   * authoritative counter for the spiral cadence and prose tells, kept
+   * separate so we don't accidentally double-count rotation-counter and
+   * spiral-counter against each other. */
+  counterRound: number;
+
   /* Phase 21b (2026-05-13) — recovery actualization. True on the AI
    * turn that immediately follows a candidate utterance carrying a
    * recovery signal (desperate / salary-only / avoids-anchor /
@@ -1389,6 +1405,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     infoAsked: [],
     verbalAcceptanceTurn: null,
     postVerbalRenegotiationCount: 0,
+    counterRound: 0,
     recentRecoveryActive: false,
     walkAwayReturned: false,
     hardBandCap: input.hardBandCap ?? false,
@@ -3207,6 +3224,12 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   /* ITEM 3 (2026-05-15) — closeFired: set true when the AI emits a
    * close-acceptance or close-walkaway move so the reactive close-
    * confirmation rule does not re-fire after the session is closing. */
+  /* perfect 1 (2026-05-16) — spiral counter. Increment counterRound
+   * each time the AI ships a counter-base move; the planner reads
+   * this to apply diminishing-concessions on subsequent rounds. */
+  if (move.lever === "counter-base") {
+    next.counterRound = state.counterRound + 1;
+  }
   if (move.lever === "close-acceptance" || move.lever === "close-walkaway") {
     next.closeFired = true;
   }
@@ -3444,6 +3467,9 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.infoAsked !== undefined && !(Array.isArray(s.infoAsked) && s.infoAsked.every((v) => typeof v === "string"))) throw new Error("state.infoAsked");
   if (s.verbalAcceptanceTurn !== undefined && s.verbalAcceptanceTurn !== null && !isFiniteNonNegInt(s.verbalAcceptanceTurn)) throw new Error("state.verbalAcceptanceTurn");
   if (s.postVerbalRenegotiationCount !== undefined && !isFiniteNonNegInt(s.postVerbalRenegotiationCount)) throw new Error("state.postVerbalRenegotiationCount");
+  /* perfect 1 (2026-05-16) — counterRound spiral counter. Optional for
+   * back-compat with sessions serialized before this field shipped. */
+  if (s.counterRound !== undefined && !isFiniteNonNegInt(s.counterRound)) throw new Error("state.counterRound");
   if (s.recentRecoveryActive !== undefined && typeof s.recentRecoveryActive !== "boolean") throw new Error("state.recentRecoveryActive");
   if (s.walkAwayReturned !== undefined && typeof s.walkAwayReturned !== "boolean") throw new Error("state.walkAwayReturned");
   if (s.pendingCandidateAcks !== undefined) {
@@ -3704,6 +3730,7 @@ export function deserializeState(json: string): NegotiationState {
     infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],
     verbalAcceptanceTurn: s.verbalAcceptanceTurn ?? null,
     postVerbalRenegotiationCount: (s.postVerbalRenegotiationCount as number | undefined) ?? 0,
+    counterRound: (s.counterRound as number | undefined) ?? 0,
     recentRecoveryActive: (s.recentRecoveryActive as boolean | undefined) ?? false,
     walkAwayReturned: s.walkAwayReturned ?? false,
     hardBandCap: s.hardBandCap ?? false,

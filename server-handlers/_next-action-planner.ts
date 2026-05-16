@@ -896,6 +896,34 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (aspiration <= floor + 0.1) {
       return wrapLeverExplore(pickLeverExploreMove(state), "no-headroom");
     }
+
+    /* perfect 1 (2026-05-16) — multi-turn negotiation spiral.
+     * counterRound = number of counter-base moves already shipped this
+     * session. Apply a diminishing-concessions multiplier to the
+     * gap-fraction on each subsequent counter so the conversation
+     * tapers naturally instead of letting the existing rotation counter
+     * carry the entire signal:
+     *   round 0 → 60% of the gap (first counter, lead with movement)
+     *   round 1 → 40% of the gap (we've moved once)
+     *   round 2 → 20% of the gap (stretching the band)
+     *   round 3+ → 0 (hold firm; pivot to structural levers)
+     * This multiplier composes with the existing splitSchedule /
+     * boost stack (applies BEFORE the band-cap component clamp on
+     * newTotal). */
+    const spiralRound = state.counterRound;
+    if (spiralRound >= 3) {
+      return {
+        kind: "hold-firm",
+        mode: "lever-loop",
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          rationale: `Counter-spiral exhausted (round ${spiralRound}); pivot to structural levers instead of more cash.`,
+        },
+      };
+    }
+    const SPIRAL_MULTIPLIERS = [0.6, 0.4, 0.2];
+    const spiralMultiplier = SPIRAL_MULTIPLIERS[spiralRound] ?? 0;
     const counterCount = state.leversUsed.filter(l => l === "counter-base").length;
     const splitSchedule = [0.5, 0.35, 0.22, 0.12, 0.06];
     let split = splitSchedule[counterCount] ?? 0.05;
@@ -946,6 +974,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     if (state.walkAwayReturned) split *= 0.5;
 
     if (split > 0.95) split = 0.95;
+    /* perfect 1 (2026-05-16) — apply the spiral multiplier to the
+     * gap-fraction. Composed multiplicatively with the existing
+     * splitSchedule/boost stack so a stiffened rotation still tapers
+     * over multiple counter rounds. Applied BEFORE the component
+     * constraint validator below (band-cap clamp), so the diminishing
+     * concessions take effect first and the band-ceiling still wins
+     * as a hard ceiling when the multiplied gap would overshoot. */
+    split = split * spiralMultiplier;
     const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
 
     const constraint = validateComponentConstraints(state.band, newTotal);

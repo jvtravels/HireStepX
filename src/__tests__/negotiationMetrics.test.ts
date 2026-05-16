@@ -35,6 +35,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
     infoAsked: [],
     verbalAcceptanceTurn: null,
     postVerbalRenegotiationCount: 0,
+    counterRound: 0,
     recentRecoveryActive: false,
     walkAwayReturned: false,
     hardBandCap: false,

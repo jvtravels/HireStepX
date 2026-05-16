@@ -348,10 +348,24 @@ function renderCanonicalProseBody(
       /* The planner pre-computes the counter total + optional fixed /
        * variable split on the typed action (kernel-first cleanup
        * 2026-05-16). Canonical prose for a counter ALWAYS includes the
-       * number so the restyle validator can verify it survives. */
+       * number so the restyle validator can verify it survives.
+       *
+       * perfect 1 (2026-05-16) — spiral prose tells. counterRound is
+       * the number of counter-base moves ALREADY shipped this session
+       * (this turn's counter has not yet been recorded in state — the
+       * applyAiMove that increments it runs after planNextAction).
+       * round >= 1 = at least one prior movement, surface that fact;
+       * round >= 2 = stretching the band, signal we're near the cap. */
       const total = action.counterTotalLpa;
+      const round = state.counterRound;
+      let spiralLead = "Hearing you out — let me see what I can structure.";
+      if (round >= 2) {
+        spiralLead = "I've stretched as far as my band allows on cash —";
+      } else if (round >= 1) {
+        spiralLead = "We've already moved on fitment once — let me see what's possible at this stage:";
+      }
       if (total != null && total > 0) {
-        return `Hearing you out — let me see what I can structure. We can revise the fitment to ₹${total}L total. How does that look from your side?`;
+        return `${spiralLead} We can revise the fitment to ₹${total}L total. How does that look from your side?`;
       }
       return state.highestOfferMade > 0
         ? `We're holding the current fitment at ₹${state.highestOfferMade}L. What would move this forward for you?`
