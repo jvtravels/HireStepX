@@ -499,6 +499,15 @@ const INTERNAL_DEFER_LEAK_RE =
 const INVENTED_MARKET_JARGON_RE =
   /\bmarket\s+mode\b|\bmode\s+as\s+(?:hot|cold|tight|loose)\b/i;
 
+/** LN2 / Audit Pass 4 (PDF#27, 2026-05-17) — non-Indian currency / unit
+ *  vocab. Indian recruiters quote compensation in ₹ + LPA / lakhs;
+ *  any occurrence of USD / EUR / GBP / "annual salary" / "per year" /
+ *  "dollars" / "euros" / "pounds" in the restyle is the LLM regressing
+ *  to US-tech framing. Reject so the canonical fallback (which is
+ *  guaranteed ₹+LPA) ships instead. */
+const NON_INDIAN_CURRENCY_VOCAB_RE =
+  /\b(?:USD|EUR|GBP|annual\s+salary|per\s+year|per\s+annum|dollars?|euros?|pounds?)\b/i;
+
 /** Validate the LLM restyle against the canonical line. Rejection
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
@@ -579,6 +588,19 @@ export function validateRestyle(
    * directive. Fall back to canonical verbatim. */
   if (BANNED_RECRUITER_IDIOM_RE.test(restyled)) {
     return { valid: false, reason: "banned-idiom-leaked" };
+  }
+  /* LN2 / Audit Pass 4 (PDF#27, 2026-05-17) — Indian currency / unit
+   * lock. Indian recruiters quote compensation in ₹ + LPA, never in
+   * USD / EUR / GBP / "annual salary" / "per year" / "dollars" /
+   * "euros". The canonical-prose surface never emits these tokens
+   * (all money-bearing templates are ₹+LPA); any occurrence in the
+   * restyle is the LLM regressing to US-tech-recruiter framing.
+   *
+   * The check is structural (vocab tokens), not semantic — we trust
+   * the canonical to have used the right currency and the validator
+   * to enforce it. */
+  if (NON_INDIAN_CURRENCY_VOCAB_RE.test(restyled)) {
+    return { valid: false, reason: "non-indian-currency-vocab" };
   }
   /* F7 / Audit Pass 2 (PDF#25, 2026-05-16) — ack-without-disclosure.
    *
