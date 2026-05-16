@@ -65,20 +65,43 @@ export const RECIPES: Record<string, FocusRecipe> = {
     ],
   },
 
-  /* ─── HR Round (Indian context) ─── */
+  /* ─── HR Round (Indian context) ───
+     Indian HR round is NOT light screening — it's a final gate after
+     technical clears. It spans 7 dimensions:
+       1. Logistics       — notice period, LWD, buyout, location, shift
+       2. Comp discovery  — current CTC structure, expected hike %,
+                            payslip/Form-16 validation (not negotiation —
+                            that's the salary-negotiation focus)
+       3. Stability       — reason for leaving, gaps, tenure pattern
+       4. Compliance      — BGV consent, documents (PAN/Aadhaar/UAN,
+                            relieving letters, marksheets), references,
+                            medical disclosure
+       5. Commitment      — other offers in hand, counter-offer
+                            protection, joining-date lock, exploding-
+                            offer acceptance
+       6. Benefits/policy — joining bonus clawback, probation, bond /
+                            service agreement, ESOP vesting, insurance,
+                            PF, NPS
+       7. Fit & motivation— "why us / why this role", values, culture
+                            alignment, manager-fit, 3-5 yr plan
+     Recipe enforces that EVERY session touches dimensions 1-5 at minimum;
+     6 and 7 are sampled from optional pool + culture-fit. */
   "hr-round": {
     label: "HR round",
-    mandatory: ["opening-resume", "hr-essentials", "culture-fit", "salary-practical"],
-    optional: ["pressure-resilience", "communication", "adaptability-learning"],
+    mandatory: ["opening-resume", "hr-essentials", "salary-practical", "culture-fit", "self-awareness"],
+    optional: ["hr-essentials", "pressure-resilience", "communication", "adaptability-learning", "trap"],
     trapBudget: 1,
     inviteCandidateQuestions: true,
-    pacingNote: "At least TWO HR-essentials (current/expected CTC, notice period, why leaving, gap explanation, why us). At least ONE culture-fit. The trap question, if used, should target rehearsed answers (fake weakness, generic 'why us').",
+    pacingNote: "Indian HR round — final gate, not screening. Across the session, cover ALL of: (1) notice period + LWD + buyout, (2) current CTC structure + expected hike % with rationale, (3) BGV consent + document readiness (payslips, Form 16, relieving letters, PAN/Aadhaar/UAN, marksheets), (4) other offers + counter-offer commitment + joining-date lock, (5) reason for leaving + gap explanation (no bad-mouthing), (6) at least ONE benefits/policy item (joining bonus clawback, probation, bond, ESOP vesting, insurance), (7) a 'why this company specifically' probe tied to a real product/leader/domain. Tone: warm but transactional. Push back on inflated CTC ('payslips will validate that, right?'), evasive notice answers, and generic 'why us'. The trap question, if used, targets rehearsed answers (fake weakness, '20% less offer?', counter-offer scenarios).",
     scoringRubric: [
-      { dimension: "Motivation specificity", description: "Did 'why this role' / 'why this company' include something specific (a recent product launch, a leader they've followed, a domain they want to go deeper on)? Or was it generic 'great culture'?", weight: 0.25 },
-      { dimension: "Self-awareness", description: "On weaknesses / failures, did they name something real — something a manager has actually given them feedback on — or rehearse a humble-brag (perfectionist, work too hard)?", weight: 0.20 },
-      { dimension: "Practical clarity", description: "On CTC / notice / availability / counter-offers — clear, honest answers with rationale, not evasion. A candidate who can articulate WHY they're asking for a specific number reads as serious.", weight: 0.20 },
-      { dimension: "Switch-rationale honesty", description: "On 'why are you leaving', did they articulate a concrete push (career, scope, manager, market) without bad-mouthing? Or vague 'looking for growth'?", weight: 0.15 },
-      { dimension: "Cultural fit signal", description: "Do their stated non-negotiables and working preferences align plausibly with the target company's known culture?", weight: 0.20 },
+      { dimension: "Logistics clarity", description: "Notice period, LWD, buyout stance, location/shift acceptance — crisp and committed, with realistic dates. Vague or shifting answers = weak.", weight: 0.15 },
+      { dimension: "Comp transparency", description: "Did they share current CTC structure (fixed/variable/bonus/RSUs) honestly, with an expected number anchored on rationale (market data, % hike justified)? Refusal to share payslips or inflated current = strong negative signal — it will fail BGV.", weight: 0.18 },
+      { dimension: "Switch-rationale honesty", description: "On 'why are you leaving': concrete push (scope, manager, domain, comp ceiling) without bad-mouthing. Vague 'looking for growth' = weak. Bad-mouthing current employer = red flag.", weight: 0.12 },
+      { dimension: "Compliance readiness", description: "Comfort with BGV; document trail in order (payslips, Form 16, relieving letters from every prior employer, education marksheets, PAN/Aadhaar/UAN); gaps and short stints explained without defensiveness; references ready.", weight: 0.13 },
+      { dimension: "Commitment signal", description: "On other offers, counter-offer scenarios, joining-date commitment: do they read as someone who'll actually join, or someone using this as a counter-offer lever? Pre-joining drop-out risk is the single biggest HR fear in India — score this honestly.", weight: 0.12 },
+      { dimension: "Benefits/policy literacy", description: "When probed on joining bonus clawback, probation terms, bond / service agreement, ESOP vesting cliff, insurance coverage — did they engage substantively or get blindsided? Senior candidates should ask back; junior candidates should at minimum understand what was said.", weight: 0.08 },
+      { dimension: "Self-awareness", description: "On weaknesses / feedback / manager-fit, named something real with a real plan. Humble-brag ('perfectionist', 'work too hard') or rehearsed-sounding = weak.", weight: 0.10 },
+      { dimension: "Motivation specificity", description: "'Why this role' / 'why this company' tied to a recent product launch, a leader they've followed, a domain bet. Generic 'great culture / great brand' = weak.", weight: 0.12 },
     ],
   },
 

@@ -1,0 +1,19 @@
+{
+  "name": "User refuses the service bond outright — DQ-level red flag",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your final-year project.", "time": "" },
+      { "speaker": "user", "text": "I built a college bus-tracking app in Python and Flask. CGPA 8.0. Team of 4, I owned the backend.", "time": "" },
+      { "speaker": "ai", "text": "TCS has a 2-year service agreement. Are you comfortable signing the bond?", "time": "" },
+      { "speaker": "user", "text": "Honestly, no. I won't sign any bond. That feels restrictive to me.", "time": "" },
+      { "speaker": "ai", "text": "Understood. Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "No, I think I'm clear.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["bond_refusal", "reverse_questions_declined"],
+    "must_not_include": ["empty_transcript", "bond_unprepared"]
+  }
+}

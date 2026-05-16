@@ -38,6 +38,7 @@ import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
 import { detectStarPresence, nextStarGap } from "./_star-detection";
+import { buildBehavioralIntro } from "./_behavioral-intro";
 import { cleanSalarySttArtifacts } from "./_salary-stt-cleanup";
 import { useInterviewTimers } from "./useInterviewTimers";
 import { useInterviewSTT } from "./useInterviewSTT";
@@ -583,6 +584,43 @@ export function useInterviewEngine() {
   const micStreamRef = useRef<MediaStream | null>(null);
   const interviewerName = useMemo(() => getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`), [interviewType, interviewFocus, targetCompany, user?.id]);
   const interviewerGender = useMemo(() => getInterviewerGender(interviewerName), [interviewerName]);
+
+  /* ─── Personalised intro for behavioural sessions ───
+     The static behavioural script opens with anonymous "I'm your AI
+     interviewer today" — fine for an MVP, terrible for "this feels
+     real." Override the intro step's spoken text once per session with
+     a named greeting + a rapport hook. Skipped if:
+       • the candidate is resuming a draft (currentStep > 0) — don't
+         re-introduce yourself mid-session
+       • the interview isn't behavioural (other types have their own
+         intro voice; salary-neg has a different conversational opener)
+       • intro slot already has a non-default opener (e.g. resume flow
+         pre-populated something different — don't trample it)
+     The personalisation is one-shot — guarded by personalizedIntroRef
+     so we don't churn the script on every name re-derivation. */
+  const personalizedIntroRef = useRef(false);
+  useEffect(() => {
+    if (personalizedIntroRef.current) return;
+    if (interviewType !== "behavioral") return;
+    if ((draftRef.current?.currentStep ?? 0) > 0) return;
+    const intro = buildBehavioralIntro({
+      interviewerName,
+      candidateName: user?.name || undefined,
+      role: targetRole || user?.targetRole || undefined,
+      company: targetCompany || user?.targetCompany || undefined,
+    });
+    personalizedIntroRef.current = true;
+    setInterviewScript(prev => {
+      if (!prev[0] || prev[0].type !== "intro") return prev;
+      // Bump speakingDuration slightly — the new intro is ~3 sentences
+      // (greeting + self-intro + rapport hook), needs a touch more TTS
+      // time than the original one-liner.
+      return [
+        { ...prev[0], aiText: intro, aiTextDisplay: intro, speakingDuration: Math.max(prev[0].speakingDuration, 7500) },
+        ...prev.slice(1),
+      ];
+    });
+  }, [interviewType, interviewerName, user?.name, user?.targetRole, user?.targetCompany, targetRole, targetCompany]);
 
   // Panel interview: 3 members with gender-matched voices
   const isPanelInterview = interviewType === "panel";

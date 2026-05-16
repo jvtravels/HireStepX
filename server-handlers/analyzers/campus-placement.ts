@@ -23,7 +23,7 @@ const ACADEMIC_PROJECT = /\b(capstone|final[- ]?year project|btech project|major
 const FRESHER_LEXICON = /\b(fresher|just graduated|final year|recent graduate|college senior|placement|on[- ]campus|btech|b\.?tech|bca|mca|m\.?tech)\b/i;
 const GENERIC_PASSION = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?learn)\b/i;
 const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designed|trained|integrated|published)\s+\w+/i;
-const AVAILABILITY = /\b(available (?:from|after)|join (?:by|in|on|after)|notice|graduation|exam|semester|joining date)\b/i;
+const AVAILABILITY = /\b(available (?:from|after)|join (?:by|in|on|after)|notice|graduation|exam|semester|joining date|relocat)\b/i;
 const COLLEGE_BADMOUTH = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:professors|faculty) (?:are|were) (?:useless|incompetent|terrible)|nothing was taught|wasted (?:my )?time)\b/i;
 
 /* Concrete tech stack — at least one of these must appear when the user
@@ -82,6 +82,25 @@ const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)
 /* Framing context that excuses a low CGPA — must appear in the same user
  * span as the number for the candidate to get credit. */
 const CGPA_FRAMING_CONTEXT = /\b(?:family|health|hospital|surgery|loss|covid|caregiv|financial|part[- ]?time job|supported|recovered|bounced back|after that|since then|the next sem|improved|trended? up|consistent improvement|i (?:worked on|focused on|built|shipped|interned|won|cleared|topped))\b/i;
+
+/* Reverse-question grading. Every Indian campus interview closes with
+ * "Do you have any questions for us?" — what the candidate asks back
+ * is part of the grade. */
+const REVERSE_QUESTION_PROBE = /\b(?:any\s+questions?\s+(?:for\s+(?:us|me|the\s+team))?|do\s+you\s+have\s+(?:any\s+)?questions?|anything\s+you'?d?\s+like\s+to\s+ask|questions?\s+from\s+your\s+(?:side|end))\b/i;
+/* Specific, prepared reverse-questions — these score. */
+const REVERSE_QUESTION_SPECIFIC = /\b(?:training\s+program|onboarding|mentor|on[- ]?call|rotation|tech\s+stack|deployment|production|code\s+review|team\s+structure|growth\s+(?:track|path|plan)|career\s+(?:track|progression|ladder)|appraisal|promotion\s+(?:cycle|timeline)|notice\s+period|bond|service\s+agreement|recent\s+launch|product\s+roadmap|client\s+(?:engagement|project)|new\s+(?:product|launch|hire)|ppt|pre[- ]?placement\s+talk|the\s+(?:speaker|presenter)\s+mentioned)\b/i;
+/* Generic / lazy reverse-questions — these don't score. */
+const REVERSE_QUESTION_GENERIC = /\b(?:work\s+culture|company\s+culture|good\s+culture|growth\s+opportunit|learning\s+opportunit|work[- ]?life\s+balance|when\s+(?:can|do)\s+i\s+(?:start|join|expect)|how\s+(?:is|are)\s+the\s+(?:team|culture|company))\b/i;
+/* "No, I don't" / declining the offer to ask. */
+const REVERSE_QUESTION_DECLINED = /\b(?:no\s*[,.]?\s*(?:i\s+(?:don'?t|do\s+not)|that'?s\s+(?:all|fine|good)|nothing\s+(?:from|for)\s+(?:my|now))|i'?m\s+(?:good|clear|set|fine|done|sorted)|i\s+think\s+i'?m\s+(?:good|clear|set|fine|done|sorted)|i'?ve\s+got\s+everything|all\s+(?:clear|good)|nothing\s+from\s+(?:me|my\s+(?:side|end))|i\s+(?:don'?t|do\s+not)\s+have\s+(?:any|questions))\b/i;
+
+/* Bond / service-agreement probe + readiness signal. Real Indian campus
+ * interviews probe bond comfort directly; freshers who say "I don't know
+ * about bonds" or refuse outright disqualify themselves. */
+const BOND_PROBE = /\b(?:service\s+agreement|service\s+bond|training\s+bond|two[- ]?year\s+bond|2[- ]?year\s+bond|1[- ]?year\s+bond|bond\s+(?:period|duration|amount)|sign\s+(?:the\s+|a\s+)?bond|notice\s+period\s+bond)\b/i;
+const BOND_HEALTHY_RESPONSE = /\b(?:comfortable\s+(?:with|signing)|i'?m\s+aware|i\s+know\s+(?:the|about|of)\s+(?:the\s+)?(?:bond|service\s+agreement|2\s*year|1\s*year)|happy\s+to\s+sign|(?:2|two|1|one|15)\s*(?:[- ]?)(?:month|year)s?|standard\s+practice|fully\s+aware)\b/i;
+const BOND_REFUSAL = /\b(?:i\s+won'?t\s+sign|absolutely\s+not|no\s+way|refuse|never\s+sign|i\s+don'?t\s+(?:sign|do)\s+bonds?)\b/i;
+const BOND_IGNORANCE = /\b(?:what'?s?\s+(?:a\s+)?bond|i\s+don'?t\s+know\s+(?:about|what)|never\s+heard\s+of|first\s+(?:time\s+)?hearing)\b/i;
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
@@ -233,6 +252,64 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
+    // Reverse-questions: AI closed with "any questions for us?" — grade what came back.
+    // We inspect the LAST user turn AFTER the latest reverse-question probe by the AI.
+    let reverseProbeIdx = -1;
+    transcript.forEach((t, idx) => { if (isAi(t) && REVERSE_QUESTION_PROBE.test(t.text || "")) reverseProbeIdx = idx; });
+    if (reverseProbeIdx >= 0) {
+      const afterProbe = transcript.slice(reverseProbeIdx + 1).filter(isUser).map((t) => t.text || "").join(" ");
+      if (afterProbe) {
+        if (REVERSE_QUESTION_DECLINED.test(afterProbe)) {
+          flags.add("reverse_questions_declined");
+          gaps.push({
+            dimension: "preparation",
+            expected: "Always have 2-3 prepared reverse-questions — about training program, tech stack, mentor structure, growth track, or something from the PPT",
+            observed: "User declined the reverse-question slot ('No, I'm good') — reads as unprepared / disinterested",
+            severity: "medium",
+          });
+        } else if (REVERSE_QUESTION_GENERIC.test(afterProbe) && !REVERSE_QUESTION_SPECIFIC.test(afterProbe)) {
+          flags.add("weak_reverse_questions");
+          gaps.push({
+            dimension: "preparation",
+            expected: "Specific reverse-questions score: 'What's the typical TCS-Ignite cohort exit destination after the 2-year bond?' beats 'How is the work culture?'",
+            observed: "User's reverse-questions were generic ('work culture' / 'growth opportunities') — weak tie-breaker signal",
+            severity: "low",
+          });
+        }
+      } else {
+        flags.add("reverse_questions_declined");
+        gaps.push({
+          dimension: "preparation",
+          expected: "Always have 2-3 prepared reverse-questions — silence on the closer is a credibility hit",
+          observed: "AI asked 'any questions for us?' — user gave no response",
+          severity: "medium",
+        });
+      }
+    }
+
+    // Bond / service-agreement probing — service-tier only.
+    const aiBondProbed = transcript.some((t) => isAi(t) && BOND_PROBE.test(t.text || ""));
+    if (aiBondProbed) {
+      const userBondText = transcript.filter(isUser).map((t) => t.text || "").join(" ");
+      if (BOND_REFUSAL.test(userBondText)) {
+        flags.add("bond_refusal");
+        gaps.push({
+          dimension: "preparation",
+          expected: "Refusing the bond outright is an instant DQ at TCS/Infosys/Wipro. If genuinely concerned, frame as 'I'd like to understand the buyout terms' — never 'I won't sign'",
+          observed: "User refused the service agreement outright — at service-tier firms this ends the interview",
+          severity: "high",
+        });
+      } else if (BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText)) {
+        flags.add("bond_unprepared");
+        gaps.push({
+          dimension: "preparation",
+          expected: "Know the bond duration for your target company before the interview: TCS 2yr, Infosys 1yr, Wipro 15mo + ₹2L, Cognizant 1yr, HCL 1.5yr",
+          observed: "User showed unfamiliarity with service-bond concept when asked — reads as unresearched",
+          severity: "medium",
+        });
+      }
+    }
+
     // Internship claimed but no detail given (resume padding signal)
     if (INTERNSHIP_CLAIM.test(userText) && !INTERNSHIP_DETAIL.test(userText) && userTurnCount >= 3) {
       flags.add("internship_unsubstantiated");
@@ -256,6 +333,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("internship_unsubstantiated")) tips.push("If you list an internship, be ready with: company, duration, mentor, what shipped, and a measurable outcome.");
     if (flags.has("mti_pattern_detected")) tips.push("Watch for Mother-Tongue-Influence phrasing: 'I graduated in 2024' (not 'passed out'), 'please reply' (not 'kindly revert back'), 'I have a question' (not 'doubt'), 'I'm Rahul' (not 'Myself Rahul').");
     if (flags.has("cgpa_low_no_framing")) tips.push("If your CGPA is under 7, never state it bare. Use the 3-part frame: one-sentence honest reason → one piece of recent evidence (project / internship / hackathon) → forward-looking intent. Bare numbers below 7 stick in the interviewer's memory.");
+    if (flags.has("reverse_questions_declined")) tips.push("Always have 2-3 reverse-questions ready: training program details, mentor structure, what the first 6 months look like, a specific point from the PPT. Saying 'no' to 'any questions for us?' tells the interviewer you didn't prepare.");
+    if (flags.has("weak_reverse_questions")) tips.push("'What's the work culture?' isn't a real question — every interviewer hears it 20 times a day. Ask specific: 'What does a typical week look like for an SDE on your Trailhead team?' or 'You mentioned the new ABDM project in the PPT — would freshers rotate through it?'");
+    if (flags.has("bond_refusal")) tips.push("Never refuse the bond outright in an on-campus TCS/Infosys/Wipro interview — it's an instant disqualifier. If concerned, ask: 'Could you walk me through the buyout terms and the typical reasons people exercise them?' Sounds informed, not resistant.");
+    if (flags.has("bond_unprepared")) tips.push("Know the bond duration for your target company before the interview. Quick reference: TCS 2 years, Infosys 1 year, Wipro 15 months + ₹2L bond, Cognizant 1 year, HCL 1.5 years, Tech Mahindra / Capgemini / Accenture 1 year. Service-tier firms WILL ask.");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

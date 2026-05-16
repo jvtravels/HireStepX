@@ -1,0 +1,17 @@
+{
+  "name": "User asks specific reverse-questions — no flag should fire",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your strongest project.", "time": "" },
+      { "speaker": "user", "text": "I built a real-time traffic-signal optimizer using Q-learning in Python, simulation on a Raspberry Pi. CGPA 8.2. I was the sole developer, reduced wait time by 18% in the simulation.", "time": "" },
+      { "speaker": "ai", "text": "Wrapping up — do you have any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Yes — could you walk me through the InfyTQ SP track training program and how cohort placements work? Also, the PPT mentioned a new healthcare AI initiative — would freshers get a chance to rotate through it in the first 12 months?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": ["empty_transcript", "weak_reverse_questions", "reverse_questions_declined"]
+  }
+}
