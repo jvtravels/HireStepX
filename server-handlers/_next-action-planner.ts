@@ -442,10 +442,21 @@ function isSeniorCompProfile(state: NegotiationState): boolean {
  *  when all components are either populated on
  *  state.candidateComponentBreakdown OR already asked this session
  *  (recorded in state.askedTopics under the matching `currentCtc*`
- *  topic key). Pure. */
+ *  topic key).
+ *
+ *  FL4 / Audit Pass 4 (PDF#27, 2026-05-17) — hard precondition:
+ *  state.candidateCurrentCtc MUST be non-null. Without the total
+ *  in hand, asking for the base split presupposes a number the
+ *  candidate hasn't disclosed. The outer planner gate already
+ *  enforces this; the local guard makes the invariant local to
+ *  nextComponentProbe so any future caller (or a regression that
+ *  moves the gate) still cannot fire component-probe on YOE signal
+ *  alone. Pure. */
 function nextComponentProbe(
   state: NegotiationState,
 ): { component: "base" | "variable" | "esop"; topic: DiscoveryTopic } | null {
+  /* FL4 root precondition — currentCtc must be in hand. */
+  if (state.candidateCurrentCtc == null) return null;
   const bd = state.candidateComponentBreakdown;
   const asked = new Set((state.askedTopics ?? []).map((t) => t.topic));
   const order: { component: "base" | "variable" | "esop"; topic: DiscoveryTopic; populated: boolean }[] = [

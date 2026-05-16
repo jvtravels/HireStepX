@@ -159,6 +159,32 @@ describe("AP3-F2 — component-aware discovery for senior profiles", () => {
     expect(action.kind).toBe("component-probe");
   });
 
+  it("FL4 (PDF#27) — senior YOE + null currentCtc → component-probe does NOT fire", () => {
+    /* The previous gate could (in principle) emit a component probe
+     * the moment YOE indicated seniority, even before the candidate
+     * disclosed the total — which presupposes a number that hasn't
+     * landed. The hard precondition is state.candidateCurrentCtc !=
+     * null in BOTH the outer planner gate AND inside nextComponentProbe
+     * itself. */
+    const s = init({
+      phase: "opening",
+      candidateCurrentCtc: null,
+      candidateTarget: null,
+      candidateApplicableYoe: 8,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("component-probe");
+    /* Next action should be a currentCtc-shaped probe (either the
+     * open-with-offer opener which asks for currentCtc, or the
+     * discovery-probe path with item=currentCtc once the planner
+     * routes past the opener). */
+    if (action.kind === "discovery-probe") {
+      expect(action.item).toMatch(/currentCtc/i);
+    } else {
+      expect(["open-with-offer", "discovery-probe"]).toContain(action.kind);
+    }
+  });
+
   it("component-probe canonical prose carries the required component token", () => {
     const s = init({
       phase: "opening",
