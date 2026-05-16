@@ -885,7 +885,11 @@ Be genuinely curious, not interrogative. 2-3 sentences max.`;
        behavioural turn — other focus types keep the lean generic
        panelContext to avoid bleeding behavioural directives into
        salary-neg / technical / case-study flows. */
-    const indianPanelPersona = type === "behavioral" ? getPanelPersona(persona) : null;
+    /* Widened to include `panel` because the UI's Panel focus is where
+       persona strings (HR Partner / Hiring Manager / Technical Lead)
+       actually flow through from useInterviewEngine — without this the
+       Indian-persona module is dead code on the user-reachable path. */
+    const indianPanelPersona = (type === "behavioral" || type === "panel") ? getPanelPersona(persona) : null;
     const panelContext = indianPanelPersona
       ? `\n${panelPersonaPromptFragment(indianPanelPersona)}`
       : persona
