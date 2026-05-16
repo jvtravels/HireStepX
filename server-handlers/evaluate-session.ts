@@ -37,7 +37,9 @@ import {
   normalizeStoryReuse,
   normalizeBlindSpots,
   normalizeReadiness,
+  normalizeResumeGrounding,
   normalizeCrossSessionInsights,
+  type ResumeGroundingScore,
   type WinOrFix as WinOrFixH,
   type RedFlag as RedFlagH,
 } from "./_evaluate-session-helpers";
@@ -50,7 +52,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Bump on any schema change to perQuestion/redFlags/etc. Old cached reports
 // with a different version are auto-invalidated on next view.
-const REPORT_VERSION = "mvp-6";
+const REPORT_VERSION = "mvp-7";
 
 /**
  * Try to read a cached report for this session. Returns null on any failure
@@ -329,7 +331,7 @@ interface ReadinessForecast {
 }
 
 interface SessionReport {
-  version: "mvp-6";
+  version: "mvp-7";
   overallScore: number;
   /** LLM-self-reported 0-1 confidence in the overall score. Rendered as ±band. */
   scoreConfidence: number;
@@ -353,6 +355,13 @@ interface SessionReport {
   storyReuseFindings: StoryReuseFinding[];
   blindSpots: BlindSpot[];
   readiness: ReadinessForecast | null;
+  /**
+   * 0-100 sub-score measuring how often the candidate's answers cited
+   * specific resume facts vs. spoke in generic claims. `null` when no
+   * resumeContext was supplied to the evaluator (so the UI can hide the
+   * axis instead of showing a misleading zero).
+   */
+  resumeGrounding: ResumeGroundingScore | null;
   /**
    * Closing-turn reverse-interview classification — pinned deterministically
    * (see src/_reverse-interview.ts). When the interviewer asked "any
@@ -716,6 +725,20 @@ Return a JSON object with EXACTLY this shape:
     "confidence": "<low|medium|high>",
     "rationale": "<one sentence>"
   },
+  "resumeGrounding": ${meta?.resumeContext ? `{
+    // ONLY include this object when CANDIDATE RESUME CONTEXT was provided above.
+    // Score 0-100: how often the candidate ANCHORED answers in resume specifics
+    // (named companies, projects, technologies, metrics that appear on their CV)
+    // vs. spoke in generic claims ("I led initiatives", "I improved performance").
+    // Calibration:
+    //   0-39  = barely references the resume; mostly generic
+    //   40-69 = some grounding but several wasted opportunities (e.g. told a
+    //           generic leadership story when a real on-CV project would have landed harder)
+    //   70-100 = consistently anchors answers in real, on-resume specifics
+    // rationale is one sentence in second person, naming the strongest miss or hit.
+    "score": <0-100 integer>,
+    "rationale": "<one sentence, ≤200 chars>"
+  }` : "null /* no resume context provided */"},
   "crossSessionInsights": [
     // 0-4 items. ONLY populate if PRIOR SESSIONS context is present above —
     // otherwise return []. These are the coaching signals that turn the report
@@ -765,7 +788,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const storyReuseFindings = normalizeStoryReuse((parsed as Record<string, unknown>).storyReuseFindings);
 
     const report: SessionReport = {
-      version: "mvp-6",
+      version: "mvp-7",
       overallScore,
       scoreConfidence,
       band: applyBands(overallScore, bands),
@@ -845,6 +868,13 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       storyReuseFindings,
       blindSpots: normalizeBlindSpots((parsed as Record<string, unknown>).blindSpots),
       readiness: normalizeReadiness((parsed as Record<string, unknown>).readiness),
+      /* Resume-grounding sub-score — only emitted when the engine passed
+         a resumeContext block. Without resume facts in the prompt the LLM
+         has nothing to score against, so we hard-null the axis instead of
+         letting it hallucinate a number. */
+      resumeGrounding: meta?.resumeContext
+        ? normalizeResumeGrounding((parsed as Record<string, unknown>).resumeGrounding)
+        : null,
       /* Reverse-interview classification — find the perQuestion whose
          interviewer prompt looks like the reverse-interview turn
          ("any questions for us?" / "questions for me?") and summarise
