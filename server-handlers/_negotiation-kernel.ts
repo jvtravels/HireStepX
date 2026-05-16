@@ -471,7 +471,7 @@ export interface NegotiationState {
   /* Phase + turn budget */
   phase: NegotiationPhase;
   turnIndex: number;    // number of AI turns produced; incremented in applyAiMove
-  maxTurns: number;     // hard cap before stalemate (default 16)
+  maxTurns: number;     // hard cap before stalemate (default 20)
 
   /* Candidate-stated facts. Folded in via applyCandidateAnswer or
      foldFactsIntoState — set ONCE per turn, never re-derived from
@@ -1391,15 +1391,28 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     band: applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
     phase: "opening",
     turnIndex: 0,
-    /* BUG-5 (PDF#24, 2026-05-16) — default raised from 8 to 16. An 8-
-     * turn cap forced stalemate before the discovery cascade
-     * (currentCtc → fitmentSplit → target → notice → competing →
-     * valueProof = 5-6 turns) plus the open-with-offer + 2-3
-     * counter-rounds could complete. The Meesho 9-turn session in
-     * PDF#24 hit stalemate at turn 9 while the bot was still mid-
-     * discovery. Sixteen gives 5-6 discovery + 3-4 offer rounds + 3-4
-     * buffer before stalemate. */
-    maxTurns: input.maxTurns ?? 16,
+    /* BUG-5 (PDF#24, 2026-05-16) — default raised from 8 to 16, then
+     * raised again to 20 in the follow-up audit. Worst-case turn count
+     * for a fully exercised session:
+     *   - Ordered discovery cascade: currentCtc, currentCtcFixedVariable
+     *     Split, expectedCtc, expectedCtcFixedVariableSplit, noticePeriod,
+     *     competingOffers, valueProof = 7 AI turns
+     *   - Range-disclosure: 1 turn
+     *   - Open-with-offer / first anchor: 1 turn
+     *   - Counter-base spiral, rounds 0..2 with diminishing concessions:
+     *     3 turns
+     *   - Closing-push runway (fires at maxTurns-1 from counter-offer /
+     *     lever-explore): 1 turn
+     *   - Close-recap formal: 1 turn
+     *   Subtotal: 14 turns minimum, zero off-script questions.
+     * Real candidates ask 2-4 off-script questions across a session
+     * (work mode, equity, relocation, etc.) which the response pipeline
+     * routes through the answer-and-pivot branch — each one burns an
+     * AI turn before the planned canonical resumes. Twenty leaves 6
+     * turns of headroom on top of the floor, which fits 4+ off-script
+     * interruptions before stalemate fires. Sixteen left only 2 turns
+     * of headroom, too tight for as-per-band reality. */
+    maxTurns: input.maxTurns ?? 20,
     candidateTarget: null,
     lastCandidateCounterLpa: null,
     firstAnchoredTarget: null,
