@@ -254,9 +254,34 @@ const CLOSE_VOCAB_RE =
  *  the bot doesn't sound transactional. We don't require verbatim
  *  reproduction — Indian recruiter idiom has several broadly-aligned
  *  near-equivalents ("right, on the X side …", "thanks for that —")
- *  so we accept any of an extended vocab set. */
+ *  so we accept any of an extended vocab set.
+ *
+ *  FL2 / Audit Pass 4 (PDF#27, 2026-05-17) — broadened to also cover
+ *  the standalone neutral bridges ("Got it.", "Right.", "Okay.")
+ *  pickNeutralBridgeAck emits in front of non-disclosure probe turns,
+ *  so the validator's bridge-preservation check catches both ack flavors
+ *  through a single regex. */
 const ACK_VOCAB_RE =
-  /\b(noted|got it|understood|appreciate|right[,\s—]+on|thanks for that|fair enough|fine,?\s+so|okay,?\s+on|alright,?\s+on)\b/i;
+  /\b(noted|got it|understood|appreciate|right[,\s—]+on|thanks for that|fair enough|fine,?\s+so|okay,?\s+on|alright,?\s+on)\b|^(?:got it|right|okay|alright)[.\s]/i;
+
+/** FL2 / Audit Pass 4 (PDF#27, 2026-05-17) — probe-kind set that the
+ *  canonical layer prepends with a turn-bridge ACK (disclosure or
+ *  neutral). The validator uses this set to choose between two
+ *  rejection reasons when the restyle strips the lead:
+ *    - probe-kind canonical with bridge → `no-turn-bridge`
+ *    - non-probe canonical with ack    → `ack-prefix-stripped` (legacy)
+ *  Both ship the canonical verbatim; the reason name is the audit
+ *  surface that tells us WHICH protection fired. */
+const PROBE_KINDS_NEEDING_BRIDGE_SET = new Set<string>([
+  "discovery-probe",
+  "component-probe",
+  "anchor-with-band",
+  "range-disclosure",
+  "probe-expectations",
+  "probe-justification",
+  "probe-mismatch",
+  "reactive-followup",
+]);
 
 /** Defect 6 (2026-05-16) — sentiment-prefix anchor phrases.
  *  `renderSentimentPrefix` (in _canonical-prose.ts) prepends one of
@@ -535,7 +560,16 @@ export function validateRestyle(
    * The vocab set is broad — any of "noted", "got it", "understood",
    * "appreciate", "right on …", "thanks for that", "fair enough" is fine. */
   if (ACK_VOCAB_RE.test(canonical) && !ACK_VOCAB_RE.test(restyled)) {
-    return { valid: false, reason: "ack-prefix-stripped" };
+    /* FL2 (PDF#27, 2026-05-17) — when the canonical was a probe-kind
+     * with a turn-bridge prepended, name the rejection `no-turn-bridge`
+     * so the audit surface tells us this fired specifically because
+     * the LLM stripped the FL2 bridge. Non-probe ACK strips retain the
+     * legacy `ack-prefix-stripped` reason. */
+    const reason =
+      action != null && PROBE_KINDS_NEEDING_BRIDGE_SET.has(action.kind)
+        ? "no-turn-bridge"
+        : "ack-prefix-stripped";
+    return { valid: false, reason };
   }
   /* Defect 2 (2026-05-16) — banned Indian-recruiter idiom (US-tech
    * recruiter phrases like "circle back", "touch base", "on board",

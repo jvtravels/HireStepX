@@ -119,6 +119,50 @@ export function pickDiscoveryProbeOpener(turnIndex: number): string {
   return DISCOVERY_PROBE_OPENERS[idx];
 }
 
+/** FL2 / Audit Pass 4 (PDF#27, 2026-05-17) — neutral ACK bridge.
+ *
+ * When the candidate's prior utterance was non-trivial (>=3 words OR a
+ * number) but didn't populate a typed state field that the kernel can
+ * ACK off (buildDiscoveryAck returns null), the bot still needs a
+ * one-token bridge before launching the next probe so it doesn't sound
+ * transactional. These are deterministic (turnIndex % 3) so the test
+ * surface is stable and the same session always sees the same cadence.
+ *
+ * NOTE: deliberately kept distinct from DISCOVERY_PROBE_OPENERS — the
+ * opener rotation is decorative (variety), this set is functional
+ * (turn-bridge under uncertainty). */
+export const NEUTRAL_TURN_BRIDGE_ACKS = ["Got it.", "Right.", "Okay."] as const;
+
+export function pickNeutralBridgeAck(turnIndex: number): string {
+  const n = NEUTRAL_TURN_BRIDGE_ACKS.length;
+  const idx = ((turnIndex % n) + n) % n;
+  return NEUTRAL_TURN_BRIDGE_ACKS[idx];
+}
+
+/** FL2 (PDF#27, 2026-05-17) — non-trivial utterance heuristic. >=3 words
+ *  OR contains a number. Trivial single-word replies ("yes", "okay")
+ *  don't need a bridge; substantive replies do. */
+export function isNonTrivialUtterance(text: string | null | undefined): boolean {
+  if (!text) return false;
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (/\d/.test(trimmed)) return true;
+  const words = trimmed.split(/\s+/).filter((w) => w.length > 0);
+  return words.length >= 3;
+}
+
+/** FL2 (PDF#27, 2026-05-17) — find the candidate's most recent utterance
+ *  in conversationLog. Returns null when the candidate hasn't spoken yet
+ *  (turn 0) or the log is empty. */
+export function lastCandidateUtterance(state: NegotiationState): string | null {
+  const log = state.conversationLog ?? [];
+  for (let i = log.length - 1; i >= 0; i--) {
+    const e = log[i];
+    if (e && e.speaker === "candidate" && e.text) return e.text;
+  }
+  return null;
+}
+
 /** Range-separator alternation: matches ASCII hyphen `-`, en-dash
  *  `\u2013`, em-dash `\u2014`, or the literal word "to". Use this
  *  inside number-range detectors so canonical prose (which emits
@@ -446,6 +490,33 @@ const SENTIMENT_PREFIX_SUPPRESSED_KINDS = new Set<string>([
    * call site so we can inspect the mode field. */
 ]);
 
+/** FL2 / Audit Pass 4 (PDF#27, 2026-05-17) — action kinds that are
+ *  recruiter-side PROBES. When the candidate's prior utterance was
+ *  non-trivial, every one of these must lead with either a
+ *  disclosure-ACK (existing buildDiscoveryAck path) OR a neutral-ACK
+ *  bridge before launching the new question. Without the bridge the
+ *  bot reads as transactional ("nothing landed, but here's another
+ *  question"). open-with-offer is excluded — it IS the turn-0 opener
+ *  and there's no prior candidate utterance to bridge from. */
+const PROBE_KINDS_NEEDING_BRIDGE = new Set<string>([
+  "discovery-probe",
+  "component-probe",
+  "anchor-with-band",
+  "range-disclosure",
+  "probe-expectations",
+  "probe-justification",
+  "probe-mismatch",
+  "reactive-followup",
+]);
+
+/** Regex that matches if a canonical body ALREADY opens with a
+ *  disclosure-ACK or any other acknowledgement gesture. We keep this
+ *  list in sync with ACK_VOCAB_RE in _response-pipeline.ts. When the
+ *  body already opens with an ACK, the FL2 bridge is suppressed
+ *  (otherwise we'd get "Got it. Noted on the current side — …"). */
+const CANONICAL_OPENS_WITH_ACK_RE =
+  /^(?:Noted|Got it|Understood|Appreciate|Right[,\s—]|Thanks for that|Fair enough|Fine,?\s+so|Okay[,.]?\s+on|Alright[,.]?\s+on)\b/i;
+
 /** Canonical kernel-authored prose for every NextAction kind. The
  *  returned string is the EXACT line the bot would ship if the LLM
  *  restyle is unavailable or rejected. */
@@ -470,7 +541,26 @@ export function renderCanonicalProse(
       sentimentPrefix = null;
     }
   }
-  const body = renderCanonicalProseBody(action, state);
+  let body = renderCanonicalProseBody(action, state);
+  /* FL2 (PDF#27, 2026-05-17) — turn-to-turn ACK bridge. When the
+   * candidate's prior utterance was non-trivial and the canonical body
+   * for a probe-kind doesn't already lead with an ACK (the
+   * buildDiscoveryAck path), prepend a deterministic neutral bridge
+   * ("Got it." / "Right." / "Okay.") so the bot doesn't sound
+   * transactional. Suppressed for turn 0 (no prior candidate) and for
+   * non-probe kinds (counter-offer, close-recap, levers — those carry
+   * their own opening cadence). */
+  if (
+    PROBE_KINDS_NEEDING_BRIDGE.has(action.kind) &&
+    state.turnIndex > 0 &&
+    !CANONICAL_OPENS_WITH_ACK_RE.test(body)
+  ) {
+    const lastUtt = lastCandidateUtterance(state);
+    if (isNonTrivialUtterance(lastUtt)) {
+      const bridge = pickNeutralBridgeAck(state.turnIndex);
+      body = `${bridge} ${body}`;
+    }
+  }
   return sentimentPrefix ? `${sentimentPrefix} ${body}` : body;
 }
 
