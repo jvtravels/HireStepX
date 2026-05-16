@@ -734,6 +734,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       state.candidateTarget,
       state.band.walkAway,
     );
+    /* Session #25 root-fix (2026-05-16) — opener-marks-currentCtc.
+     * The turn-0 open-with-offer branch is rendered by canonical-prose as
+     * "walk me through your current compensation structure first" — i.e.
+     * a currentCtc probe, NOT an anchor. The askedTopics ledger must
+     * therefore record `currentCtcAnswered` (same key the discovery-probe
+     * path uses) so that subsequent discovery-probe re-asks of currentCtc
+     * see the topic-already-asked entry and the loop-guard fires correctly.
+     * Without this, applyAiMove fell back to `move.lever = "open-with-offer"`
+     * as the topic key, decoupling the opener probe from the discovery
+     * cascade (failure mode a + d). */
     return {
       kind: "open-with-offer",
       _move: {
@@ -742,6 +752,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         rationale: clampedOpener < state.band.initialOffer
           ? `Open with anchor ₹${clampedOpener} LPA (clamped from band initial ₹${state.band.initialOffer} against candidate ask ₹${state.candidateTarget}).`
           : `Open with band initial ₹${state.band.initialOffer} LPA.`,
+        askedTopic: state.turnIndex === 0 ? "currentCtcAnswered" : undefined,
       },
     };
   }
