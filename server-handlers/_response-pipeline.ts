@@ -287,6 +287,27 @@ const SENTIMENT_VOCAB_RE =
 const DECLARATIVE_PLUS_QUESTION_RE =
   /^\s*(?:fair enough|got it|sure|right|okay|alright|noted|understood)[^.?\u2014\u2013]*,[^.?\u2014\u2013]*\?\s*$/i;
 
+/** F1 / Audit Pass 2 (PDF#25, 2026-05-16) — topic-keyword map.
+ *
+ *  One regex per discovery topic. Used by the multi-topic-utterance
+ *  gate: count how many distinct topics a restyled line mentions and
+ *  reject when >1. Keywords are scoped tightly so generic English words
+ *  ("at present", "structure") don't collide across topics. */
+export const TOPIC_KEYWORD_MAP: Record<string, RegExp> = {
+  currentCtc:
+    /\b(?:current\s+(?:ctc|package|compensation|comp|fitment|side)|at\s+present|right\s+now|today)\b/i,
+  targetCtc:
+    /\b(?:expected|fitment|target|looking\s+at|anchoring|expectation)\b/i,
+  fixedVariable:
+    /\b(?:fixed[\s\/\-]*variable|variable\s+split|fixed\s+and\s+variable|split\s+between\s+fixed|how\s+is\s+(?:your|the)\s+package\s+structured)\b/i,
+  notice:
+    /\b(?:notice\s+period|notice\s+side|buyout)\b/i,
+  competing:
+    /\b(?:competing\s+(?:offer|process|opportunity)|other\s+process|other\s+opportunity|other\s+offer)\b/i,
+  valueProof:
+    /\b(?:value\s+proof|impact|one\s+project)\b/i,
+};
+
 /** Bug 1 (PDF#25, 2026-05-16) — "total CTC as per your current band"
  *  tautology. The candidate's current CTC IS their current-band number;
  *  the qualifier adds no information. Catches both directions ("CTC as
@@ -462,6 +483,32 @@ export function validateRestyle(
    * emits this; the LLM is filling space. Reject. */
   if (TAUTOLOGY_RE.test(restyled)) {
     return { valid: false, reason: "tautology-current-band" };
+  }
+  /* F1 / Audit Pass 2 (PDF#25, 2026-05-16) — multi-topic-per-utterance.
+   *
+   * Session #25 T2 packed two discovery topics into a single bot turn
+   * ("expected fitment ... what's the total CTC at present?"). Canonical
+   * prose is curated to one topic per turn; the LLM restyle must not
+   * collapse two probes into one. Count distinct topic keywords; if >1,
+   * reject so the canonical (single-topic) line ships verbatim. */
+  let topicHits = 0;
+  for (const re of Object.values(TOPIC_KEYWORD_MAP)) {
+    if (re.test(restyled)) topicHits += 1;
+    if (topicHits > 1) break;
+  }
+  if (topicHits > 1) {
+    /* But canonical may legitimately reference two topics (e.g. the
+     * close-recap-formal recap names notice + variable + fixed). Skip
+     * the gate when the canonical itself spans >1 topic — the LLM is
+     * mirroring, not stacking. */
+    let canonicalHits = 0;
+    for (const re of Object.values(TOPIC_KEYWORD_MAP)) {
+      if (re.test(canonical)) canonicalHits += 1;
+      if (canonicalHits > 1) break;
+    }
+    if (canonicalHits <= 1) {
+      return { valid: false, reason: "multi-topic-utterance" };
+    }
   }
   /* Defect 6 (2026-05-16) — sentiment-prefix preservation. If the
    * canonical opened with one of the renderSentimentPrefix anchor
