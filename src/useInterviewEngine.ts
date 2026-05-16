@@ -1981,6 +1981,21 @@ export function useInterviewEngine() {
       : ((currentStepObj?.type === "question" || currentStepObj?.type === "follow-up")
         && !isLastStep && hasRealAnswer);
 
+    /* Conversational continuity — extract noun phrases from EVERY real
+       user response (including the intro/TMAY reply), not just turns
+       that trigger a live follow-up. Real interviewers reference what
+       was said in the opener throughout the loop ("earlier you
+       mentioned the Razorpay project"); without lifting this out of
+       the canFollowUp gate, TMAY mentions never enter the rolling
+       memory and Q2+ probes feel like they're hearing the candidate
+       for the first time. See src/_noun-phrase-memory.ts. */
+    if (hasRealAnswer) {
+      const earlyPhrases = extractNounPhrases(answerText);
+      if (earlyPhrases.length > 0) {
+        mentionsMemoryRef.current = appendToMemory(mentionsMemoryRef.current, earlyPhrases);
+      }
+    }
+
     if (canFollowUp) {
       /* Conversation history + recent follow-ups for the LLM payload —
          see ./_advance-helpers.ts. Both are pure transformations of
@@ -2068,13 +2083,9 @@ export function useInterviewEngine() {
         const userTurns = transcript.filter(m => m.speaker === "user").map(m => m.text);
         const candidateState = deriveCandidateState([...userTurns, answerText]);
 
-        // Conversational continuity — extract noun phrases from this
-        // answer and accumulate into the rolling memory ref. See
-        // src/_noun-phrase-memory.ts.
-        const newPhrases = extractNounPhrases(answerText);
-        if (newPhrases.length > 0) {
-          mentionsMemoryRef.current = appendToMemory(mentionsMemoryRef.current, newPhrases);
-        }
+        /* Noun-phrase memory was already appended above (outside the
+           canFollowUp gate) so it captures TMAY mentions too. Here we
+           just read the rolling buffer for the follow-up payload. */
         const previousMentions = mentionsMemoryRef.current.length > 0
           ? mentionsMemoryRef.current
           : undefined;
