@@ -246,7 +246,12 @@ const MONTH_YEAR_RANGE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|ma
  * across the transcript. Common confusion sources: CSE, IT, AIML, AIDS,
  * ECE, EEE, Mech, Civil, Chem. Fires if two distinct branch names appear
  * in user text without an explicit minor / dual-degree connector. */
-const BRANCH_NAME = /\b(?:c\s*s\s*e\b|computer\s+science(?:\s+and\s+engineering)?|cs\s+engineering|i\s*t\b|information\s+technology|i\s*s\b|information\s+science|electronics\s+and\s+communication\s+engineering|ece\b|e\s*c\s*e\b|electrical\s+and\s+electronics|eee\b|e\s*e\s*e\b|mechanical(?:\s+engineering)?|mech\b|civil(?:\s+engineering)?|chemical(?:\s+engineering)?|chem\s+engg|biotech(?:nology)?|a\s*i\s*\/?\s*m\s*l\b|a\s*i\s*m\s*l|aiml|artificial\s+intelligence\s+(?:and|&)\s+machine\s+learning|a\s*i\s*d\s*s\b|aids\b|artificial\s+intelligence\s+(?:and|&)\s+data\s+science|data\s+science\s+(?:engineering|branch))\b/i;
+// NOTE: bare two-letter forms ("IT", "IS") are intentionally excluded — they
+// false-positive on the English words "it"/"is" inside any transcript. We
+// require the spelled-out forms ("information technology" / "information
+// science"); canonicalization below still maps both into the "it"/"is" keys.
+// Same caution for short forms like "mech": require a branch-context word.
+const BRANCH_NAME = /\b(?:cse\b|c\s*s\s*e\b|computer\s+science(?:\s+and\s+engineering)?|cs\s+engineering|information\s+technology|information\s+science|electronics\s+and\s+communication(?:\s+engineering)?|ece\b|e\s*c\s*e\b|electrical\s+and\s+electronics(?:\s+engineering)?|eee\b|e\s*e\s*e\b|mechanical(?:\s+engineering)?|\bmech\s+(?:branch|engineering|department|stream|major|student)|civil\s+engineering|chemical\s+engineering|chem\s+engg|biotech(?:nology)?|a\s*i\s*\/?\s*m\s*l\b|aiml\b|artificial\s+intelligence\s+(?:and|&)\s+machine\s+learning|\baids\s+(?:branch|department|stream|major|student|engineering)|artificial\s+intelligence\s+(?:and|&)\s+data\s+science|data\s+science\s+(?:engineering|branch))\b/i;
 const DUAL_DEGREE_CONNECTOR = /\b(?:minor\s+in|dual[- ]?degree|integrated\s+(?:m\s*tech|b\s*tech|m[- ]?s)|with\s+a\s+specialization\s+in|core\s+(?:branch|major)\s+is|primary\s+branch|specializ\w+\s+in|i'?m\s+from\s+\w+\s+but\s+(?:my\s+)?(?:minor|focus|elective)|switched\s+(?:from|branch|streams))\b/i;
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {

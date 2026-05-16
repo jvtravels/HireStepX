@@ -1,0 +1,20 @@
+{
+  "name": "SMOKE: clean strong candidate — should produce zero or near-zero flags",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm Priya, final-year CSE at PES University with a 8.4 CGPA. I spent the last year building a campus event-booking platform — Spring Boot, Postgres, deployed on Render. Source is on github.com/priya/eventflow. I'm applying to Infosys because the Springboard program and the recent BFSI work in the PPT aligned well with the systems engineering I want to do.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your final-year project.", "time": "" },
+      { "speaker": "user", "text": "It's a fraud detection pipeline our 4-person team built. I owned the modeling — XGBoost on a class-imbalanced dataset, used SMOTE plus focal loss, got recall to 0.86 at precision 0.71. Teammates handled the React dashboard and data collection. Code at github.com/priya/fraud-detect.", "time": "" },
+      { "speaker": "ai", "text": "How would you approach finding the second highest element in an unsorted array?", "time": "" },
+      { "speaker": "user", "text": "Let me think out loud. Brute force is sort and take index n-2, O(n log n). Better: single pass tracking first and second max — O(n). Edge cases: duplicates of the max, array length below 2. I'd return null for length below 2.", "time": "" },
+      { "speaker": "ai", "text": "What's your CGPA and any backlogs?", "time": "" },
+      { "speaker": "user", "text": "8.4 with zero active and zero history of backlogs.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Two — how does the Springboard rotation work over the first 6 months for systems-track freshers? And the PPT mentioned the new healthcare cloud project — would freshers rotate through that team?", "time": "" }
+    ]
+  },
+  "expected": { "must_include": [], "must_not_include": ["empty_transcript"] }
+}
