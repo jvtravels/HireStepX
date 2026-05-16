@@ -471,7 +471,7 @@ export interface NegotiationState {
   /* Phase + turn budget */
   phase: NegotiationPhase;
   turnIndex: number;    // number of AI turns produced; incremented in applyAiMove
-  maxTurns: number;     // hard cap before stalemate (default 8)
+  maxTurns: number;     // hard cap before stalemate (default 16)
 
   /* Candidate-stated facts. Folded in via applyCandidateAnswer or
      foldFactsIntoState — set ONCE per turn, never re-derived from
@@ -1391,7 +1391,15 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     band: applyPersonaToBand({ ...input.band }, input.recruiterPersona ?? "consultative"),
     phase: "opening",
     turnIndex: 0,
-    maxTurns: input.maxTurns ?? 8,
+    /* BUG-5 (PDF#24, 2026-05-16) — default raised from 8 to 16. An 8-
+     * turn cap forced stalemate before the discovery cascade
+     * (currentCtc → fitmentSplit → target → notice → competing →
+     * valueProof = 5-6 turns) plus the open-with-offer + 2-3
+     * counter-rounds could complete. The Meesho 9-turn session in
+     * PDF#24 hit stalemate at turn 9 while the bot was still mid-
+     * discovery. Sixteen gives 5-6 discovery + 3-4 offer rounds + 3-4
+     * buffer before stalemate. */
+    maxTurns: input.maxTurns ?? 16,
     candidateTarget: null,
     lastCandidateCounterLpa: null,
     firstAnchoredTarget: null,
