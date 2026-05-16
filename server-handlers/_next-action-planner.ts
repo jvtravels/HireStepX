@@ -1100,12 +1100,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
 
     const target = state.candidateTarget ?? state.band.maxStretch;
-    const floor = Math.max(state.highestOfferMade, effectiveAnchorLpa(state));
+    /* Step 5 (2026-05-16, ResumeFactPack track) — when the candidate has
+     * not disclosed their currentCtc, fall back to the resume-implied
+     * prior CTC as a floor signal. The counter math anchors against
+     * max(highestOfferMade, effectiveAnchor, impliedPriorCtc), so a
+     * candidate withholding CTC but with a strong resume (e.g. FAANG
+     * latest role) gets a floor that reflects their plausible prior
+     * package rather than collapsing to the offer/anchor alone. */
+    const priorCtcFloor =
+      state.candidateCurrentCtc == null && state.impliedPriorCtcFromResume != null
+        ? state.impliedPriorCtcFromResume
+        : 0;
+    const floor = Math.max(state.highestOfferMade, effectiveAnchorLpa(state), priorCtcFloor);
     let ceiling = state.band.maxStretch;
-    if (state.candidateCurrentCtc != null && state.candidateCurrentCtc > 0) {
+    /* Hike-cap ceiling: prefer stated currentCtc, but when withheld and a
+     * resume-implied prior CTC exists, use that as the basis. Same hard
+     * clamp (band.maxStretch × 1.10) applies in both branches. */
+    const ctcBasis =
+      state.candidateCurrentCtc != null && state.candidateCurrentCtc > 0
+        ? state.candidateCurrentCtc
+        : (state.candidateCurrentCtc == null && state.impliedPriorCtcFromResume != null
+            ? state.impliedPriorCtcFromResume
+            : null);
+    if (ctcBasis != null && ctcBasis > 0) {
       const cap = getCompanyHikeCap(state.company);
       if (cap != null) {
-        const capped = state.candidateCurrentCtc * (1 + cap / 100);
+        const capped = ctcBasis * (1 + cap / 100);
         if (capped < ceiling) ceiling = Math.max(capped, floor);
         // F7 (2026-05-15) — clamp hike-cap to band.maxStretch * 1.10.
         // Company hike cap may exceed band.maxStretch by up to 10% —
@@ -1244,7 +1264,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       _move: {
         lever: "counter-base",
         newTotalLpa: newTotal,
-        rationale: `Split toward target (stiffening ${splitSchedule[counterCount] ?? 0.05}, effective ${split.toFixed(2)}, boost ${boost.toFixed(2)}, market ${state.marketMode}${state.walkAwayReturned ? ", returned" : ""}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}).`,
+        rationale: `Split toward target (stiffening ${splitSchedule[counterCount] ?? 0.05}, effective ${split.toFixed(2)}, boost ${boost.toFixed(2)}, market ${state.marketMode}${state.walkAwayReturned ? ", returned" : ""}): floor ₹${floor} → ₹${newTotal} (target ₹${target}, ceiling ₹${ceiling}${priorCtcFloor > 0 ? `, priorCtcFloor ₹${priorCtcFloor}` : ""}).`,
       },
     };
   }
