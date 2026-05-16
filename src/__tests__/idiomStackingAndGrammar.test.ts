@@ -20,8 +20,18 @@ import {
 } from "../../server-handlers/_negotiation-kernel";
 
 const BAND: NegotiationBand = { initialOffer: 20, maxStretch: 28, walkAway: 16, hasEquity: false };
-const mkState = (): NegotiationState =>
-  initState({ sessionId: "s-idiom-stack", role: "swe", company: "acme", band: BAND });
+const mkState = (): NegotiationState => {
+  /* F7 (Audit Pass 2, 2026-05-16) — some tests below restyle a canonical
+   * that opens with "Noted on the expected fitment …". The F7 invariant
+   * requires state.candidateTarget != null for any ack-form that names
+   * "expected side / expected fitment" to ship. Seed the state so the
+   * unrelated grammar / tautology / idiom-stacking assertions are not
+   * preempted by ack-without-disclosure. */
+  const s = initState({ sessionId: "s-idiom-stack", role: "swe", company: "acme", band: BAND });
+  s.candidateTarget = 30;
+  s.candidateCurrentCtc = 18;
+  return s;
+};
 
 describe("IDIOM_PER_UTTERANCE_CAP — countPreferredIdioms", () => {
   it("counts each preferred idiom occurrence (not just unique types)", () => {

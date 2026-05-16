@@ -253,36 +253,157 @@ export function renderSentimentPrefix(
   }
 }
 
+/** F7 / Audit Pass 2 (PDF#25, 2026-05-16) — ACK-template ↔ state
+ *  invariant. Every ACK prefix the kernel emits has a corresponding state
+ *  field; if that field is null/empty, the ACK is a hallucination ("Fair
+ *  enough on your current compensation" when state.candidateCurrentCtc is
+ *  null). The table below is the single source of truth: each ACK kind
+ *  maps to (prefix template, state predicate, topic keyword). Both the
+ *  canonical-prose builder (suppress prefix when predicate fails) and the
+ *  restyle validator (reject `ack-without-disclosure` when restyle leaks
+ *  an ACK keyword without state to back it) consume this table. */
+export type AckKind =
+  | "expectedCtc"
+  | "currentCtc"
+  | "fixedVariableSplit"
+  | "noticePeriod"
+  | "competingOffer"
+  | "valueProof";
+
+export interface AckTemplate {
+  kind: AckKind;
+  /** Canonical prefix the kernel emits. */
+  canonical: string;
+  /** State predicate — true iff the disclosure that this ACK refers to is
+   *  actually present on the kernel state. ACK is suppressed when false. */
+  requires: (s: NegotiationState) => boolean;
+  /** Restyle-side keyword regex. If a restyle line matches this regex,
+   *  the corresponding state predicate MUST be true. Used by the
+   *  validator's ack-without-disclosure guard. */
+  restyleKeywordRe: RegExp;
+}
+
+export const ACK_TEMPLATES: readonly AckTemplate[] = [
+  {
+    kind: "expectedCtc",
+    canonical: "Noted on the expected fitment —",
+    requires: (s) =>
+      s.candidateTarget != null ||
+      (s.candidateTargetCtcEquivalentLpa != null && s.candidateTargetCtcEquivalentLpa > 0),
+    /* The ACK must be tightly bound to the topic — match
+     * "<ack-keyword> [optional filler 1-6 words] <topic-noun-phrase>"
+     * so a probe that asks ABOUT the topic later in the sentence does
+     * not false-positive as an ACK of the topic. */
+    restyleKeywordRe:
+      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:expected (?:fitment|side|compensation|ctc|package|range|comp)|expectations?)\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:expected (?:fitment|side|compensation|ctc|package|range|comp)|expectations?)\b/i,
+  },
+  {
+    kind: "currentCtc",
+    canonical: "Got it on the current side —",
+    requires: (s) => s.candidateCurrentCtc != null,
+    restyleKeywordRe:
+      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:current (?:side|compensation|ctc|package|fitment|comp))\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:current (?:side|compensation|ctc|package|fitment|comp))\b/i,
+  },
+  {
+    kind: "fixedVariableSplit",
+    canonical: "Understood on the fixed/variable structure —",
+    requires: (s) => {
+      const b = s.candidateComponentBreakdown as
+        | { fixedLpa?: number | null; variableLpa?: number | null }
+        | null
+        | undefined;
+      if (!b) return false;
+      return (
+        (typeof b.fixedLpa === "number" && b.fixedLpa > 0) ||
+        (typeof b.variableLpa === "number" && b.variableLpa > 0)
+      );
+    },
+    restyleKeywordRe:
+      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:fixed[\s\/\-]*variable|variable\s+split|fixed\s+and\s+variable)\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:fixed[\s\/\-]*variable|variable\s+split|fixed\s+and\s+variable)\b/i,
+  },
+  {
+    kind: "noticePeriod",
+    canonical: "Noted on the notice side —",
+    requires: (s) => {
+      const nj = s.noticeJoining as { noticePeriodDays?: number | null } | null | undefined;
+      return !!(nj && typeof nj.noticePeriodDays === "number" && nj.noticePeriodDays >= 0);
+    },
+    restyleKeywordRe:
+      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+notice\s+(?:side|period))\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+notice\s+(?:side|period))\b/i,
+  },
+  {
+    kind: "competingOffer",
+    canonical: "Got it on the other process —",
+    requires: (s) => {
+      if (s.competingOffer != null) return true;
+      const cod = s.competingOfferDetail as
+        | { status?: unknown; stage?: unknown }
+        | null
+        | undefined;
+      return !!(cod && (cod.status != null || cod.stage != null));
+    },
+    restyleKeywordRe:
+      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:other process|competing (?:offer|process|opportunity)|other opportunity)\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:other process|competing (?:offer|process|opportunity)|other opportunity)\b/i,
+  },
+  {
+    kind: "valueProof",
+    canonical: "Appreciate the colour on that —",
+    requires: (s) => {
+      /* valueProof disclosure is signalled per-turn via lastTurnDelta;
+       * there is no sticky state field. Allow the ACK when the prior
+       * turn surfaced one OR when the candidate's stance has a value-
+       * proof signal recorded. */
+      const stance = s.candidateStance as { hasValueProof?: boolean } | null | undefined;
+      if (stance && stance.hasValueProof) return true;
+      const delta = s.lastTurnDelta;
+      return !!(delta && delta.disclosedValueProof);
+    },
+    restyleKeywordRe:
+      /\bappreciate the colou?r\b/i,
+  },
+] as const;
+
+/** Look up the AckTemplate by kind. */
+export function getAckTemplate(kind: AckKind): AckTemplate {
+  const t = ACK_TEMPLATES.find((x) => x.kind === kind);
+  if (!t) throw new Error(`unknown AckKind: ${kind}`);
+  return t;
+}
+
 /** BUG-2 fix (PDF#24, 2026-05-16) — discovery-probe acknowledgement
  *  prefix. The planner advances through DISCOVERY_SEQUENCE one item at a
  *  time; when the candidate's prior utterance volunteered something
  *  factual (current CTC, expected CTC, notice, competing-offer existence,
  *  fixed/variable split), the next probe should acknowledge it before
- *  asking the next question. Without this, the bot reads as transactional
- *  ("candidate gives expected CTC → bot probes fitment-split with no
- *  recognition of the number on the table"). Indian-recruiter idiom:
- *  "Got it" / "Noted" / "Understood".
+ *  asking the next question.
  *
- *  The acknowledgement is suppressed for the SAME-topic case so we don't
- *  emit "Noted on X — now on X, …" (e.g. candidate just disclosed
- *  expected, bot's next probe is also expected — acknowledgement is
- *  redundant).
+ *  F7 root fix (Audit Pass 2, PDF#25, 2026-05-16): the ACK is ALSO gated
+ *  on the corresponding state field actually carrying a disclosure. Prior
+ *  to F7, the prefix would fire purely on the per-turn delta flag — but
+ *  the delta flag and the persisted state field can diverge (delta flag
+ *  set, parser failed to fold a number into state). When that happens,
+ *  the candidate would hear "Fair enough on your current compensation"
+ *  even though state.candidateCurrentCtc is null. Both signals are now
+ *  required.
  *
- *  Returns null when no fresh disclosure was made on the prior turn (e.g.
- *  turn 0 opener) or when the disclosure subject IS the topic the probe
- *  is about to ask. */
+ *  Returns null when no fresh disclosure was made on the prior turn, the
+ *  probe is about to ask the same topic (so the ack is redundant), OR the
+ *  state field that the ack references is null/empty. */
 export function buildDiscoveryAck(
   delta: import("./_negotiation-kernel").TurnDelta | null | undefined,
   probeItem: string,
+  state?: NegotiationState,
 ): string | null {
   if (delta == null) return null;
   /* expected-CTC disclosed → ack before asking anything other than
    * expected-CTC itself. */
   if (delta.disclosedExpectedCtc && probeItem !== "expectedCtc" && probeItem !== "target") {
-    return "Noted on the expected fitment —";
+    const t = getAckTemplate("expectedCtc");
+    if (!state || t.requires(state)) return t.canonical;
   }
   if (delta.disclosedCurrentCtc && probeItem !== "currentCtc") {
-    return "Got it on the current side —";
+    const t = getAckTemplate("currentCtc");
+    if (!state || t.requires(state)) return t.canonical;
   }
   if (
     delta.disclosedFixedVariableSplit &&
@@ -290,16 +411,20 @@ export function buildDiscoveryAck(
     probeItem !== "currentCtcFixedVariableSplit" &&
     probeItem !== "expectedCtcFixedVariableSplit"
   ) {
-    return "Understood on the fixed/variable structure —";
+    const t = getAckTemplate("fixedVariableSplit");
+    if (!state || t.requires(state)) return t.canonical;
   }
   if (delta.disclosedNoticePeriod && probeItem !== "noticePeriod") {
-    return "Noted on the notice side —";
+    const t = getAckTemplate("noticePeriod");
+    if (!state || t.requires(state)) return t.canonical;
   }
   if (delta.disclosedCompetingOffer && probeItem !== "competingOffers") {
-    return "Got it on the other process —";
+    const t = getAckTemplate("competingOffer");
+    if (!state || t.requires(state)) return t.canonical;
   }
   if (delta.disclosedValueProof && probeItem !== "valueProof") {
-    return "Appreciate the colour on that —";
+    const t = getAckTemplate("valueProof");
+    if (!state || t.requires(state)) return t.canonical;
   }
   return null;
 }
@@ -484,7 +609,7 @@ function renderCanonicalProseBody(
        * disclosure (delta empty) — so the OPENING probe doesn't get an
        * incongruous "Got it on the X" prepended to it. */
       const delta = state.lastTurnDelta;
-      const ack = buildDiscoveryAck(delta, item);
+      const ack = buildDiscoveryAck(delta, item, state);
       return ack ? `${ack} ${probe}` : probe;
     }
 

@@ -33,6 +33,7 @@ import {
   BANNED_RECRUITER_IDIOM_RE,
   IDIOM_PER_UTTERANCE_CAP,
   countPreferredIdioms,
+  ACK_TEMPLATES,
 } from "./_canonical-prose";
 import {
   buildFactPack,
@@ -403,6 +404,20 @@ export function validateRestyle(
    * directive. Fall back to canonical verbatim. */
   if (BANNED_RECRUITER_IDIOM_RE.test(restyled)) {
     return { valid: false, reason: "banned-idiom-leaked" };
+  }
+  /* F7 / Audit Pass 2 (PDF#25, 2026-05-16) — ack-without-disclosure.
+   *
+   * Every ACK_TEMPLATES entry pairs a restyle keyword pattern (e.g.
+   * "Fair enough on your current compensation") with a state predicate
+   * that must hold for that ACK to be honest. If the restyle leaks an
+   * ACK keyword but the corresponding state field is null/empty, the
+   * recruiter is fabricating a disclosure. Reject before any grammar /
+   * idiom-stacking gate so the more fundamental invariant gets the
+   * named rejection reason. */
+  for (const t of ACK_TEMPLATES) {
+    if (t.restyleKeywordRe.test(restyled) && !t.requires(state)) {
+      return { valid: false, reason: "ack-without-disclosure" };
+    }
   }
   /* Bug 1 fix (PDF#25, 2026-05-16) — IDIOM STACKING.
    *

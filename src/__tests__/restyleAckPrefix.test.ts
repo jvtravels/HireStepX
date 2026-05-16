@@ -22,6 +22,12 @@ const BAND: NegotiationBand = {
 };
 
 function mkState(): NegotiationState {
+  /* F7 (Audit Pass 2, 2026-05-16) — canonical lines used in this file
+   * preface a discovery probe with an ack referencing the candidate's
+   * expected fitment ("Noted on the expected fitment …"). Under F7 those
+   * acks REQUIRE state.candidateTarget to be non-null; without that the
+   * restyle's "noted on the expected side" leak is correctly rejected as
+   * ack-without-disclosure. Seed the expected-side state to match. */
   return {
     sessionId: "ack-test",
     role: "Software Engineer",
@@ -30,9 +36,9 @@ function mkState(): NegotiationState {
     phase: "opening",
     turnIndex: 1,
     maxTurns: 16,
-    candidateTarget: null,
+    candidateTarget: 30,
     lastCandidateCounterLpa: null,
-    firstAnchoredTarget: null,
+    firstAnchoredTarget: 30,
     candidateCurrentCtc: null,
     competingOffer: null,
     candidateComponentBreakdown: {} as never,
