@@ -67,19 +67,24 @@ describe("terminal phase stickiness", () => {
   });
 
   it("stalemate first entry routes through close-stalemate; subsequent calls restate", () => {
-    /* First entry: no close-stalemate in leversUsed yet → fresh close. */
+    /* Audit Pass 3 / Fix 1 (2026-05-16) — terminal-restate is now gated
+     * on `stalemateAtTurn < turnIndex` (symmetric with accepted/walked-away)
+     * rather than the `leversUsed.includes("close-stalemate")` proxy.
+     *
+     * First entry: stalemateAtTurn equals turnIndex (the candidate just
+     * crossed the threshold this turn) → fresh close lever. */
     const first = baseState({
       phase: "stalemate",
       turnIndex: 8,
-      leversUsed: [],
+      stalemateAtTurn: 8,
     });
     expect(pickAiMove(first).lever).toBe("close-stalemate");
 
-    /* After close-stalemate has fired once, every re-entry is a restate. */
+    /* After the entry turn, every re-entry restates. */
     const subsequent = baseState({
       phase: "stalemate",
       turnIndex: 9,
-      leversUsed: ["close-stalemate"],
+      stalemateAtTurn: 8,
     });
     expect(pickAiMove(subsequent).lever).toBe("terminal-restate");
   });

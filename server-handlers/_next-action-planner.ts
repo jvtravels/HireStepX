@@ -334,7 +334,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     (
       (state.phase === "accepted" && state.acceptedAtTurn != null && state.acceptedAtTurn < state.turnIndex) ||
       (state.phase === "walked-away" && state.walkedAwayAtTurn != null && state.walkedAwayAtTurn < state.turnIndex) ||
-      (state.phase === "stalemate" && state.leversUsed.includes("close-stalemate"))
+      /* Audit Pass 3 / Fix 1 (2026-05-16) — read the stalemate ledger
+       * directly instead of proxying through the close-stalemate lever
+       * sentinel. The lever conflates "phase became terminal" with "we
+       * already emitted the stalemate close lever this session"; the
+       * ledger captures the entry-turn fact independently and stays
+       * symmetric with the accepted/walked-away predicates above. */
+      (state.phase === "stalemate" && state.stalemateAtTurn != null && state.stalemateAtTurn < state.turnIndex)
     )
   ) {
     return {
@@ -343,7 +349,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         lever: "terminal-restate",
         newTotalLpa: clampToCloseFloor(state, state.highestOfferMade || state.band.initialOffer),
         joiningBonusAmount: state.lastJoiningBonusOffered ?? undefined,
-        rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? "?"}; restate close.`,
+        rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? state.stalemateAtTurn ?? "?"}; restate close.`,
       },
     };
   }

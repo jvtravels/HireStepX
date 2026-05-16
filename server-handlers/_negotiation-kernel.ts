@@ -611,6 +611,12 @@ export interface NegotiationState {
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
   walkedAwayAtTurn: number | null;
+  /* Symmetric ledger entry for stalemate. Stamped once when derivePhase
+   * first returns "stalemate"; cleared symmetrically with the others
+   * when a walk-away-return reopens the session. Lets downstream
+   * planners read state directly instead of proxying through
+   * leversUsed.includes("close-stalemate"). */
+  stalemateAtTurn?: number | null;
 
   /* Phase 11 (2026-05-13) — hike % + candidate-stated rationale.
    * Computed sticky: hikePercent regenerates each turn from
@@ -1474,6 +1480,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     recruiterPersona: input.recruiterPersona ?? "consultative",
     acceptedAtTurn: null,
     walkedAwayAtTurn: null,
+    stalemateAtTurn: null,
     hikePercent: null,
     rationale: null,
     noticeJoining: {
@@ -2331,6 +2338,9 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       phase: "counter-offer",
       walkAwayReturned: true,
       walkedAwayAtTurn: null,
+      /* Audit Pass 3 / Fix 1 (2026-05-16) — clear stalemate ledger
+       * symmetrically with walkedAwayAtTurn when the session reopens. */
+      stalemateAtTurn: null,
     };
     return applyCandidateAnswer(reopened, answer);
   }
@@ -2925,7 +2935,17 @@ export function derivePhase(state: NegotiationState): NegotiationPhase {
    * through the monotonicity matrix. If derivation produced a backward
    * transition that isn't an authorized exception (walk-away-reopen,
    * verbal-renege), hold the prior phase instead of regressing. */
-  return canTransitionPhase(state.phase, derived, state) ? derived : state.phase;
+  const next = canTransitionPhase(state.phase, derived, state) ? derived : state.phase;
+  /* Audit Pass 3 / Fix 1 (2026-05-16) — symmetric ledger stamp on
+   * stalemate entry. Mirrors acceptedAtTurn / walkedAwayAtTurn semantics
+   * (set once on first transition into terminal phase, never overwritten
+   * once set). state is the callers' mutable `next` workspace by
+   * convention; this side effect is the same pattern markAccepted /
+   * the rejectedOutright branch already use. */
+  if (next === "stalemate" && (state.stalemateAtTurn == null)) {
+    state.stalemateAtTurn = state.turnIndex;
+  }
+  return next;
 }
 
 function derivePhaseInner(state: NegotiationState): NegotiationPhase {
@@ -3569,6 +3589,7 @@ export function validateState(state: unknown): asserts state is NegotiationState
   }
   if (s.acceptedAtTurn !== null && !isFiniteNonNegInt(s.acceptedAtTurn)) throw new Error("state.acceptedAtTurn");
   if (s.walkedAwayAtTurn !== null && !isFiniteNonNegInt(s.walkedAwayAtTurn)) throw new Error("state.walkedAwayAtTurn");
+  if (s.stalemateAtTurn !== undefined && s.stalemateAtTurn !== null && !isFiniteNonNegInt(s.stalemateAtTurn)) throw new Error("state.stalemateAtTurn");
   /* Backward-compatible optional fields: tolerate absence (older
      in-flight sessions) but reject malformed values. deserializeState
      backfills defaults so the rest of the kernel sees a fully-shaped
@@ -3833,6 +3854,9 @@ export function deserializeState(json: string): NegotiationState {
   return {
     ...parsed,
     candidateAskedAsRange: s.candidateAskedAsRange ?? false,
+    /* Audit Pass 3 / Fix 1 (2026-05-16) — backfill stalemate ledger
+     * for in-flight sessions serialized before this field shipped. */
+    stalemateAtTurn: (s.stalemateAtTurn as number | null | undefined) ?? null,
     firstAnchoredTarget:
       typeof s.firstAnchoredTarget === "number"
         ? s.firstAnchoredTarget
