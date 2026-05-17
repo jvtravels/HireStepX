@@ -20,6 +20,15 @@
  * ───────────────────────────────────────────────────────────────────── */
 const TTS_DISABLED = true;
 
+/* Estimate how long the question would have taken to speak so the
+ * caption typewriter has a duration to pace against while the kill-
+ * switch is on. ~160 wpm matches our Sarvam/Cartesia delivery pace;
+ * floor at 1800ms so very short prompts still type instead of popping. */
+function syntheticReadDurationMs(text: string): number {
+  const words = (text || "").trim().split(/\s+/).filter(Boolean).length || 1;
+  return Math.max(1800, Math.round((words / 160) * 60_000));
+}
+
 import { safeUUID } from "./utils";
 
 /* Module-level Window augmentation — exposes the Cartesia AudioContext so
@@ -1091,10 +1100,17 @@ export async function speakAs(
   // advances without waiting for audio. onError is intentionally NOT
   // called — that would trigger a fallback chain we don't want either.
   if (TTS_DISABLED) {
-    // Defer one microtask so callers that synchronously wire the cancel
-    // handle don't race with onEnd firing.
-    queueMicrotask(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } });
-    return { cancel: () => {} };
+    // Synthesize the audio lifecycle so the caption typewriter still
+    // reveals + paces. Without onAudioStarted, LiveCaptions stays hidden
+    // behind its 1.2s fallback timer and then pops in un-typed; without
+    // onDurationKnown the typing animation has no target duration.
+    const syntheticMs = syntheticReadDurationMs(text);
+    queueMicrotask(() => {
+      try { onAudioStarted?.(); } catch { /* consumer error must not break TTS */ }
+      try { onDurationKnown?.(syntheticMs); } catch { /* consumer error must not break TTS */ }
+    });
+    const endTimer = setTimeout(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } }, syntheticMs);
+    return { cancel: () => clearTimeout(endTimer) };
   }
   text = addBreathCues(sanitizeForTTS(text));
   const settings = loadTTSSettings();
@@ -1398,8 +1414,16 @@ export async function speak(
   // machine advances without waiting for audio. See top-of-file
   // TTS_DISABLED comment for the re-enable path.
   if (TTS_DISABLED) {
-    queueMicrotask(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } });
-    return { cancel: () => {} };
+    // See speakAs() above for why we synthesize the full lifecycle, not
+    // just onEnd: the caption typewriter needs onAudioStarted to reveal
+    // and onDurationKnown to pace itself.
+    const syntheticMs = syntheticReadDurationMs(text);
+    queueMicrotask(() => {
+      try { onAudioStarted?.(); } catch { /* consumer error must not break TTS */ }
+      try { onDurationKnown?.(syntheticMs); } catch { /* consumer error must not break TTS */ }
+    });
+    const endTimer = setTimeout(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } }, syntheticMs);
+    return { cancel: () => clearTimeout(endTimer) };
   }
   text = addBreathCues(sanitizeForTTS(text));
   const settings = loadTTSSettings();
