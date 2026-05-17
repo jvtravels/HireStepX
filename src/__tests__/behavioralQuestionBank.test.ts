@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   BEHAVIORAL_50,
+  BEHAVIORAL_BANK,
   BEHAVIORAL_COMPETENCIES,
   BEHAVIORAL_ROLES,
   COMPETENCY_LABELS,
@@ -174,5 +175,68 @@ describe("sampleBehavioralQuestions — role/yoe tilt", () => {
       "Tell me about a time you caught a bug or issue in your own work before it shipped.",
       "Tell me about a time you found a creative solution to a constraint.",
     ]);
+  });
+});
+
+describe("BEHAVIORAL_BANK — canonical alias for BEHAVIORAL_50", () => {
+  it("points at the same array reference", () => {
+    /* Same-identity check: any consumer importing the new name gets
+       exactly what the legacy import returns. No dual-source-of-truth
+       drift possible. */
+    expect(BEHAVIORAL_BANK).toBe(BEHAVIORAL_50);
+  });
+});
+
+describe("sampleBehavioralQuestions — weightByFrequency", () => {
+  it("is deterministic for the same seed", () => {
+    const a = sampleBehavioralQuestions({ count: 5, seed: 7, weightByFrequency: true });
+    const b = sampleBehavioralQuestions({ count: 5, seed: 7, weightByFrequency: true });
+    expect(a.map(q => q.text)).toEqual(b.map(q => q.text));
+  });
+
+  it("prefers high-frequency questions across many seeds", () => {
+    /* Statistical guard, not a snapshot. Across 50 seeds, the average
+       frequencyPct of the first slot under weighted sampling should be
+       higher than the bank-wide mean. Catches regressions where a
+       refactor accidentally restores the uniform shuffle. */
+    const N = 50;
+    let topAvg = 0;
+    for (let s = 0; s < N; s++) {
+      const top = sampleBehavioralQuestions({ count: 1, seed: s, weightByFrequency: true })[0];
+      topAvg += top.frequencyPct;
+    }
+    topAvg /= N;
+    const bankAvg = BEHAVIORAL_50.reduce((a, q) => a + q.frequencyPct, 0) / BEHAVIORAL_50.length;
+    expect(topAvg).toBeGreaterThan(bankAvg);
+  });
+
+  it("default (no weightByFrequency) preserves the original uniform shuffle pin", () => {
+    // Re-checks the seed=42 snapshot above to guarantee the new flag
+    // doesn't accidentally leak into the default path.
+    const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
+    expect(out[0].text).toBe(
+      "Tell me about a time you had to make a decision with incomplete data.",
+    );
+  });
+});
+
+describe("COMPETENCY_LABELS — coverage for blindSpots UI", () => {
+  /* The report's blindSpots UI is label-keyed via COMPETENCY_LABELS
+     (see src/sessionReport/SessionReportView.tsx). Adding a new
+     competency to BEHAVIORAL_COMPETENCIES without a label entry would
+     surface as a missing badge in the report. This test was added in
+     2026-05 alongside adaptability + execution-rigor as a regression
+     guard. */
+  it("every competency in the taxonomy has a human-readable label", () => {
+    for (const c of BEHAVIORAL_COMPETENCIES) {
+      expect(COMPETENCY_LABELS[c]).toBeTruthy();
+      expect(COMPETENCY_LABELS[c]).not.toMatch(/^undefined$/i);
+    }
+  });
+
+  it("labels are short enough to fit in a badge chip (< 32 chars)", () => {
+    for (const c of BEHAVIORAL_COMPETENCIES) {
+      expect(COMPETENCY_LABELS[c].length).toBeLessThan(32);
+    }
   });
 });

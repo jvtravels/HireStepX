@@ -430,12 +430,14 @@ function adaptQuestion(
       task: q.starPresence.T,
       action: q.starPresence.A,
       result: q.starPresence.R,
-      // Prod schema doesn't carry "Learning" presence — derive from a
-      // simple heuristic on the answer text. Best-effort; can be fed
-      // by the LLM in a future schema bump.
-      learning: /\b(learn(ed)?|takeaway|next time|in hindsight)\b/i.test(
-        q.answerText
-      ),
+      // STAR+L: prefer the deterministic detector's `L` flag now that
+      // evaluate-session.ts populates it (src/_star-detection.ts shares
+      // the regex with the live coach). Legacy reports stored before
+      // the bump won't carry `L`; fall back to the original inline
+      // heuristic so historical sessions still render a sensible value.
+      learning:
+        (q.starPresence as { L?: boolean }).L ??
+        /\b(learn(ed)?|takeaway|next time|in hindsight)\b/i.test(q.answerText),
     },
     metrics: {
       wordCount: q.lengthVerdict?.wordCount ?? wordCount(q.answerText),

@@ -39,19 +39,23 @@ interface Threshold {
   minFixtures: number;
 }
 
-// Conservative v1 thresholds. Raise once each focus has ≥15 fixtures.
-// New focuses bootstrap with minFixtures: 1 so the gate exists from day one;
-// raise as the fixture set grows.
+// Per-focus precision/recall + fixture-count gates. minFixtures rises
+// with the calibration set; precision/recall thresholds rise once the
+// focus has shipped a real fixture set AND a recent green run.
+// hr-round and campus-placement now have 37 / 61 fixtures and have
+// passed at recall=1.0 for several waves — promoting them to 0.85
+// locks in the precision improvements from the v4.3 cross-checks and
+// catches any future regression with one missed flag.
 const THRESHOLDS: Record<string, Threshold> = {
   behavioral: { precision: 0.7, recall: 0.7, minFixtures: 3 },
   "salary-negotiation": { precision: 0.7, recall: 0.7, minFixtures: 3 },
   technical: { precision: 0.7, recall: 0.7, minFixtures: 2 },
   "system-design": { precision: 0.7, recall: 0.7, minFixtures: 2 },
-  "hr-round": { precision: 0.7, recall: 0.7, minFixtures: 2 },
+  "hr-round": { precision: 0.85, recall: 0.85, minFixtures: 10 },
   strategic: { precision: 0.7, recall: 0.7, minFixtures: 2 },
   panel: { precision: 0.7, recall: 0.7, minFixtures: 2 },
   "case-study": { precision: 0.7, recall: 0.7, minFixtures: 2 },
-  "campus-placement": { precision: 0.7, recall: 0.7, minFixtures: 2 },
+  "campus-placement": { precision: 0.85, recall: 0.85, minFixtures: 10 },
   management: { precision: 0.7, recall: 0.7, minFixtures: 2 },
   "government-psu": { precision: 0.7, recall: 0.7, minFixtures: 2 },
 };

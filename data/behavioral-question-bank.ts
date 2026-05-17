@@ -209,6 +209,14 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "exr-03", text: "Tell me about a time you traded thoroughness for speed and had to defend the call later.",            competency: "execution-rigor",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 48, seniorityFloor: 3 },
 ];
 
+/** Canonical export name. `BEHAVIORAL_50` is the legacy alias kept for
+ *  backward-compat with existing call-sites; new code should import
+ *  `BEHAVIORAL_BANK`. Both point at the same array — the name is the
+ *  only difference. The "50" suffix is historical (the bank started at
+ *  50 entries before adaptability + execution-rigor split out in
+ *  2026-05). */
+export const BEHAVIORAL_BANK = BEHAVIORAL_50;
+
 /* ─────────── Deterministic sampler ─────────── */
 
 /** Tiny LCG — same seed in, same sequence out, no entropy from
@@ -230,6 +238,27 @@ function shuffle<T>(arr: ReadonlyArray<T>, rand: () => number): T[] {
   return out;
 }
 
+/** Weighted shuffle: produce an ordering where higher-weight items are
+ *  more likely to land near the top. Implemented as the standard
+ *  weighted-random-sample-without-replacement: each item gets a key of
+ *  `-ln(rand) / weight`, then sort ascending. Same seed → same output.
+ *  Weights ≤ 0 are clamped to 1 so a missing/zero `frequencyPct` doesn't
+ *  starve the entry entirely. */
+function weightedShuffle<T extends { frequencyPct: number }>(
+  arr: ReadonlyArray<T>,
+  rand: () => number,
+): T[] {
+  return arr
+    .map(item => {
+      const w = Math.max(1, item.frequencyPct);
+      // Avoid log(0); rand can be 0 with very rare LCG draws.
+      const u = Math.max(rand(), 1e-9);
+      return { item, key: -Math.log(u) / w };
+    })
+    .sort((a, b) => a.key - b.key)
+    .map(x => x.item);
+}
+
 export interface SampleOpts {
   count: number;
   seed: number;
@@ -246,6 +275,15 @@ export interface SampleOpts {
   /** Candidate's years of experience — questions with seniorityFloor
    *  > yoe are hard-filtered (would be inappropriate to ask). */
   yoe?: number;
+  /** When true, the deterministic shuffle is replaced with a
+   *  frequency-weighted draw — questions with higher `frequencyPct`
+   *  are more likely to land in the top of the order. Still seedable;
+   *  same seed → same output. Off by default so existing call-sites
+   *  (and the seed=42 backward-compat pin) keep their behaviour. The
+   *  static-fallback in `_generate-questions-helpers.ts` opts in so a
+   *  candidate hit by the LLM-down path still gets "what interviewers
+   *  actually ask" ordering. */
+  weightByFrequency?: boolean;
 }
 
 /** Deterministic sampler. Behaviour:
@@ -282,7 +320,9 @@ export function sampleBehavioralQuestions(opts: SampleOpts): BehavioralQuestion[
   //    sampler "prefers" but doesn't "eliminate". When role is absent,
   //    the shuffled order is used verbatim — preserving pre-change
   //    behaviour exactly.
-  const shuffledRaw = shuffle(pool, rand);
+  const shuffledRaw = opts.weightByFrequency
+    ? weightedShuffle(pool, rand)
+    : shuffle(pool, rand);
   let shuffled: BehavioralQuestion[];
   if (opts.role) {
     const role = opts.role;
