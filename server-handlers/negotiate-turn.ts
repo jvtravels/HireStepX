@@ -68,6 +68,8 @@ import { getTurnsToday, incrementTurnsToday } from "./_daily-cap-store";
 import { selectPromptVariant, type PromptVariant } from "./_prompt-variants";
 import { inferCompanyMode } from "./_market-mode";
 import { generateBotReply, type GenerateAiTextFn } from "./_response-pipeline";
+import { deriveMoveTag, type MoveTag } from "./_move-tag";
+import type { NextAction } from "./_next-action-planner";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -216,6 +218,12 @@ export async function generateAiText(
      time — directly addresses the "refusal rate is invisible" risk
      called out post-Phase-2. */
   envelopeMissingAttempts: number;
+  /* AP3 / Dim-14 transparency layer (2026-05-17). Planner output
+   * surfaced so the handler can derive a user-facing moveTag for the
+   * turn response without re-running planNextAction. Untouched by
+   * downstream post-processors (token-leak strip, sweetener strip,
+   * etc.) — it describes the TACTIC, not the prose. */
+  action: NextAction;
 }> {
   /* 2026-05-16 — KERNEL-FIRST PIPELINE (single path). The legacy
    * LLM-first reroll loop + validator chain + F2 substitution was
@@ -246,6 +254,7 @@ export async function generateAiText(
     source: adaptedSource,
     failureKinds: result.rejectReason ? [result.rejectReason] : [],
     envelopeMissingAttempts: 0,
+    action: result.action,
   };
 }
 
@@ -420,7 +429,8 @@ export default async function handler(
       });
       const move = pickAiMove(state);
       const promptVariant = selectPromptVariant(state.sessionId);
-      const { text, source, failureKinds, envelopeMissingAttempts } = await generateAiText(state, move, "", llm, auth.userId, promptVariant);
+      const { text, source, failureKinds, envelopeMissingAttempts, action: initAction } = await generateAiText(state, move, "", llm, auth.userId, promptVariant);
+      const initMoveTag: MoveTag = deriveMoveTag(initAction, state);
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
       if (failureKinds.length > 0) {
@@ -487,6 +497,7 @@ export default async function handler(
           move,
           source,
           terminal,
+          moveTag: initMoveTag,
         }),
         { status: 200, headers },
       );
@@ -639,6 +650,14 @@ export default async function handler(
       let source: "llm" | "llm-retry" | "fallback" | "deflection";
       let failureKinds: string[];
       let envelopeMissingAttempts: number;
+      /* AP3 / Dim-14 transparency layer (2026-05-17) — derived from
+       * the planner action. Defaults to a meta tag for the adversarial
+       * deflection branch where prose is replaced wholesale. */
+      let moveTag: MoveTag = {
+        label: "Redirecting the conversation",
+        family: "meta",
+        hint: "When the conversation drifts off-topic, recruiters redirect to the negotiation — stay focused on terms.",
+      };
       if (adversarial.shouldShortCircuit) {
         /* Skip the LLM. The canned deflection is neutral and redirects
          * the candidate back to the negotiation topic. The picked move
@@ -655,6 +674,7 @@ export default async function handler(
         source = gen.source;
         failureKinds = gen.failureKinds;
         envelopeMissingAttempts = gen.envelopeMissingAttempts;
+        moveTag = deriveMoveTag(gen.action, state);
       }
       const promptVariant = selectPromptVariant(state.sessionId);
       /* LLM-output token-leak guard (2026-05-14). Scrub any internal
@@ -810,6 +830,7 @@ export default async function handler(
         move,
         source,
         terminal,
+        moveTag,
       };
       /* Best-effort idempotency write — never block the response. A
          missed cache write just means a retry will reprocess the turn
