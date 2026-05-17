@@ -618,6 +618,33 @@ export const SessionReport = memo(function SessionReport({
     [session.id]
   );
 
+  /* Dispute a credibility-callout flag. Per-flag false-positive
+     auditing — the PostHog event powers the dashboard breakdown the
+     Wave-9 audit identified as the highest-ROI observability gap.
+     Fire-and-forget: the optimistic UI flip in CredibilitySection is
+     the source of truth client-side, so we never await this and we
+     never surface a failure toast. */
+  const onDisputeCredibility = useCallback(
+    (flag: string) => {
+      track("credibility_flag_disputed", {
+        sessionId: session.id,
+        flag,
+      });
+      void (async () => {
+        try {
+          const { apiFetch } = await import("../apiClient");
+          await apiFetch("/api/credibility-dispute", {
+            sessionId: session.id,
+            flag,
+          });
+        } catch {
+          /* Soft-fail — analytics already captured the user intent. */
+        }
+      })();
+    },
+    [session.id]
+  );
+
 
   /* ── Render gates ── */
   if (loading) return <LoadingShell onBack={onBack} />;
@@ -641,6 +668,7 @@ export const SessionReport = memo(function SessionReport({
       onTrustAnswer={onTrustAnswer}
       onUsefulAnswer={onUsefulAnswer}
       credibility={credibility}
+      onDisputeCredibility={onDisputeCredibility}
     />
   );
 });

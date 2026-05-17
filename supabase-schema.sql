@@ -146,6 +146,24 @@ create index if not exists idx_question_feedback_company_focus on question_feedb
 -- Upsert key: latest thumbs per (user, session, question) wins
 create unique index if not exists ux_question_feedback_per_question on question_feedback(user_id, session_id, question_index);
 
+-- Credibility-callout dispute log. Every row is a candidate saying "the
+-- analyzer's BGV-risk flag is wrong" for a specific (session, flag) pair.
+-- Drives false-positive auditing for the Wave-9 credibility callout:
+-- a per-flag dispute rate that climbs above ~3% means the detection
+-- regex is overfiring and the analyzer needs a tightening pass. One row
+-- per (user, session, flag) — last write wins on the upsert.
+create table if not exists credibility_disputes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  session_id text references sessions(id) on delete cascade not null,
+  flag text not null,                 -- e.g. 'cgpa_mismatch_with_resume'
+  analyzer_version text default '',   -- pinned at dispute time for forensics
+  reason text default '',             -- optional user-typed context (<=500ch)
+  created_at timestamptz default now()
+);
+create index if not exists idx_credibility_disputes_flag on credibility_disputes(flag, created_at desc);
+create unique index if not exists ux_credibility_disputes_per_flag on credibility_disputes(user_id, session_id, flag);
+
 -- 5. Payments
 create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
@@ -572,6 +590,19 @@ create policy "Users can insert own question feedback" on question_feedback
   for insert with check ((auth.uid())::text = user_id::text);
 drop policy if exists "Users can update own question feedback" on question_feedback;
 create policy "Users can update own question feedback" on question_feedback
+  for update using ((auth.uid())::text = user_id::text);
+
+-- Credibility disputes: candidate-owned. Users insert/update their own
+-- rows; service role aggregates across users for false-positive auditing.
+alter table credibility_disputes enable row level security;
+drop policy if exists "Users can view own credibility disputes" on credibility_disputes;
+create policy "Users can view own credibility disputes" on credibility_disputes
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can insert own credibility disputes" on credibility_disputes;
+create policy "Users can insert own credibility disputes" on credibility_disputes
+  for insert with check ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can update own credibility disputes" on credibility_disputes;
+create policy "Users can update own credibility disputes" on credibility_disputes
   for update using ((auth.uid())::text = user_id::text);
 
 -- Payments: users can only view their own payments (insert via service role only)

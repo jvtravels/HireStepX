@@ -2389,7 +2389,20 @@ function FooterSection({
  *  the top of the report so they don't disappear into the rubric-gap
  *  list. Quietly omitted when no credibility flags fired (the happy
  *  path for ~70% of campus-placement sessions). */
-function CredibilitySection({ summary }: { summary: CredibilitySummary }) {
+function CredibilitySection({
+  summary,
+  onDispute,
+}: {
+  summary: CredibilitySummary;
+  onDispute?: (flag: string) => void;
+}) {
+  /* Local optimistic set of flags the user clicked "Report inaccuracy"
+     on. The handler in SessionReport.tsx does the network round-trip
+     and PostHog event; this state just flips the button to a disabled
+     "Reported — thanks" state so the user gets immediate feedback. We
+     don't re-sync from the server: a dispute is a one-shot signal,
+     and even a soft-fail upsert still counts as the user's intent. */
+  const [disputed, setDisputed] = useState<Set<string>>(() => new Set());
   if (!summary.hasIssues) return null;
   return (
     <section
@@ -2526,6 +2539,59 @@ function CredibilitySection({ summary }: { summary: CredibilitySummary }) {
             >
               <strong style={{ fontWeight: 600 }}>Fix:</strong> {item.action}
             </div>
+            {/* Dispute affordance — single click, no confirm modal. The
+                analyzer's heuristic detection is good but not perfect; a
+                miscalled flag (resume typo, candidate correct) torpedoes
+                trust in the entire red callout. Letting the user say
+                "this one's wrong" in one tap recovers credibility for
+                the surface even on a false positive. Server-side rollup
+                of dispute rate per flag tells us which detection rules
+                to tighten. Quiet button — no scary "Report" affordance
+                that implies escalation; "Doesn't apply to me" is the
+                lowest-friction framing. */}
+            {onDispute && (
+              <div
+                style={{
+                  marginTop: 2,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={disputed.has(item.flag)}
+                  onClick={() => {
+                    if (disputed.has(item.flag)) return;
+                    setDisputed((prev) => {
+                      const next = new Set(prev);
+                      next.add(item.flag);
+                      return next;
+                    });
+                    onDispute(item.flag);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: "4px 6px",
+                    fontFamily: f.sans,
+                    fontSize: 11,
+                    color: disputed.has(item.flag) ? t.success : t.coal,
+                    opacity: disputed.has(item.flag) ? 0.7 : 0.55,
+                    cursor: disputed.has(item.flag) ? "default" : "pointer",
+                    textDecoration: disputed.has(item.flag) ? "none" : "underline",
+                  }}
+                  aria-label={
+                    disputed.has(item.flag)
+                      ? "Thanks — feedback recorded"
+                      : "Report that this flag doesn't apply to you"
+                  }
+                >
+                  {disputed.has(item.flag)
+                    ? "✓ Thanks — feedback recorded"
+                    : "Doesn't apply to me?"}
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
@@ -2565,6 +2631,11 @@ export interface SessionReportViewProps {
    *  panel between Hero and the cross-session strip. Omitted (or
    *  `hasIssues: false`) renders nothing — happy path is silent. */
   credibility?: CredibilitySummary;
+  /** "Report inaccuracy" handler on each credibility item — POSTs to
+   *  /api/credibility-dispute and fires PostHog `credibility_flag_disputed`.
+   *  Optional so the storybook / canvas path renders the panel without
+   *  needing the network layer wired. */
+  onDisputeCredibility?: (flag: string) => void;
 }
 
 export default function SessionReportView({
@@ -2578,6 +2649,7 @@ export default function SessionReportView({
   onTrustAnswer,
   onUsefulAnswer,
   credibility,
+  onDisputeCredibility,
 }: SessionReportViewProps) {
   // Pick the highest-scoring question so the "Save top story" CTA
   // points at the right answer. Falls back to the first question.
@@ -2623,7 +2695,7 @@ export default function SessionReportView({
           <JumpNav />
           <HeroSection data={data} />
           {credibility && credibility.hasIssues && (
-            <CredibilitySection summary={credibility} />
+            <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
           )}
           {data.negotiationOutcome && (
             <NegotiationFullReport
