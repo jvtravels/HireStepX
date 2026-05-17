@@ -118,7 +118,10 @@ async function generateRestyledCanonical(
   } catch {
     return { text: canonical, source: "canonical-fallback", action, move, rejectReason: "llm-throw" };
   }
-  restyled = (restyled || "").trim();
+  /* LN7 / Audit Pass 4 (PDF#27, 2026-05-17) — strip typographic curly
+   * quotes BEFORE validateRestyle so downstream regex matches see
+   * straight quotes. Silent normalization — not a rejection reason. */
+  restyled = stripCurlyQuotes((restyled || "").trim());
 
   const validation = validateRestyle(canonical, restyled, state, action);
   if (!validation.valid) {
@@ -508,6 +511,100 @@ const INVENTED_MARKET_JARGON_RE =
 const NON_INDIAN_CURRENCY_VOCAB_RE =
   /\b(?:USD|EUR|GBP|annual\s+salary|per\s+year|per\s+annum|dollars?|euros?|pounds?)\b/i;
 
+/** LN7 / Audit Pass 4 (PDF#27, 2026-05-17) — typographic curly quotes.
+ *  Mirror of candidate-side normalizeQuotes (in _negotiation-kernel and
+ *  _acceptance-classifier). Applied to AI output BEFORE validateRestyle
+ *  runs so downstream regex matches see straight quotes. Silent
+ *  normalization — not a rejection reason. */
+export function stripCurlyQuotes(s: string): string {
+  return s
+    .replace(/[\u2018\u2019\u02BC\u02BB]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"');
+}
+
+/** LN3 / Audit Pass 4 (PDF#27, 2026-05-17) — em-dash vs en-dash policy.
+ *  Canonical-prose locks em-dash (—, U+2014) for prose pauses; en-dash
+ *  (–, U+2013) is reserved for numeric ranges only ("20–25 LPA"). If
+ *  the restyle uses an en-dash where neither side is a number, the LLM
+ *  is hyphenating prose — reject so the canonical (em-dash everywhere
+ *  prose-side) ships. We only fire `mixed-dash-style` when BOTH dash
+ *  forms are present AND the en-dash is in a non-numeric context. */
+const EN_DASH = "\u2013";
+const EM_DASH = "\u2014";
+function hasNonNumericEnDash(s: string): boolean {
+  /* Walk every en-dash occurrence. Numeric range = digit on both sides
+   * (allowing one whitespace either side). Anything else is prose use. */
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== EN_DASH) continue;
+    let l = i - 1;
+    while (l >= 0 && /\s/.test(s[l])) l--;
+    let r = i + 1;
+    while (r < s.length && /\s/.test(s[r])) r++;
+    const leftCh = l >= 0 ? s[l] : "";
+    const rightCh = r < s.length ? s[r] : "";
+    const leftIsDigit = /\d/.test(leftCh);
+    const rightIsDigit = /\d/.test(rightCh);
+    if (!(leftIsDigit && rightIsDigit)) return true;
+  }
+  return false;
+}
+
+/** LN4 / Audit Pass 4 (PDF#27, 2026-05-17) — sentence length caps.
+ *  Reject if any single sentence exceeds 30 words, or if the average
+ *  across sentences exceeds 25 words. Real recruiter cadence is short;
+ *  long sentences are the LLM padding with subordinate clauses. */
+const MAX_SENTENCE_WORDS = 30;
+const MAX_AVG_SENTENCE_WORDS = 25;
+function checkSentenceLength(s: string): "ok" | "too-long" {
+  const sentences = s
+    .split(/(?<=[.!?])\s+/)
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0);
+  if (sentences.length === 0) return "ok";
+  let total = 0;
+  for (const sent of sentences) {
+    const words = sent.split(/\s+/).filter((w) => /\w/.test(w));
+    if (words.length > MAX_SENTENCE_WORDS) return "too-long";
+    total += words.length;
+  }
+  const avg = total / sentences.length;
+  if (avg > MAX_AVG_SENTENCE_WORDS) return "too-long";
+  return "ok";
+}
+
+/** LN5 / Audit Pass 4 (PDF#27, 2026-05-17) — inconsistent component
+ *  phrasing. Canonical phrasing for the comp breakdown is "fixed/variable
+ *  split". Variants like "fixed and variable elements", "fixed and
+ *  variable parts", or generic "compensation elements" sound corporate
+ *  rather than recruiter-natural. Reject so the canonical (which uses
+ *  the locked phrasing) ships. */
+const INCONSISTENT_COMPONENT_PHRASING_RE =
+  /\b(?:fixed\s+and\s+variable\s+(?:elements|parts|portions|components)|compensation\s+elements)\b/i;
+
+/** LN6 / Audit Pass 4 (PDF#27, 2026-05-17) — pronoun drift.
+ *  Recruiter persona: "I" for personal voice ("I'll check", "I think"),
+ *  "we" reserved for explicit company-position statements ("our band",
+ *  "we offer", "we can stretch"). Reject if both pronouns appear in the
+ *  same utterance and the "we" usage isn't anchored to a company-
+ *  position cue. The check is deliberately narrow — single-pronoun
+ *  utterances pass, and an utterance where "we" is paired with a
+ *  company-position cue ("we offer", "we can", "our band", "our side")
+ *  passes too. */
+const PERSONAL_I_RE = /\bI\b/;
+const WE_PRONOUN_RE = /\b(?:we|us|our)\b/i;
+const COMPANY_POSITION_CUE_RE =
+  /\b(?:we\s+(?:offer|can|stretch|are\s+(?:able|prepared|looking)|sit|cap)|our\s+(?:band|side|grade|policy|cap|offer|comp|fitment))\b/gi;
+function hasPronounDrift(s: string): boolean {
+  if (!PERSONAL_I_RE.test(s)) return false;
+  if (!WE_PRONOUN_RE.test(s)) return false;
+  /* If every "we/our/us" sits in a company-position cue context, no drift. */
+  /* Approximate: if any "we/our/us" occurrence is OUTSIDE a company cue
+   * window, it's personal-voice "we" — drift. We strip company-cue
+   * matches and re-test. */
+  const stripped = s.replace(COMPANY_POSITION_CUE_RE, " ");
+  return WE_PRONOUN_RE.test(stripped);
+}
+
 /** Validate the LLM restyle against the canonical line. Rejection
  *  causes canonical fallback. Conservative: any number not present in
  *  the canonical, any new closing-vocab outside close phase, or any
@@ -540,6 +637,13 @@ export function validateRestyle(
   }
   if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
     return { valid: false, reason: "internal-terminology-leak" };
+  }
+  /* LN4 / Audit Pass 4 (PDF#27, 2026-05-17) — sentence-length cap.
+   * Sits BEFORE the 2x-length gate so the more specific reason fires
+   * when the LLM emits over-long sentences (even if total length also
+   * exceeds the global cap). */
+  if (checkSentenceLength(restyled) === "too-long") {
+    return { valid: false, reason: "sentence-too-long" };
   }
   /* Length check — restyle must not balloon past 2x canonical. */
   if (restyled.length > canonical.length * 2 && restyled.length > 280) {
@@ -709,6 +813,28 @@ export function validateRestyle(
    * excited / hesitant cue gets stripped to flat-affect cadence. */
   if (SENTIMENT_VOCAB_RE.test(canonical) && !SENTIMENT_VOCAB_RE.test(restyled)) {
     return { valid: false, reason: "sentiment-prefix-stripped" };
+  }
+  /* LN3 / Audit Pass 4 (PDF#27, 2026-05-17) — em-dash vs en-dash policy.
+   * Canonical-prose locks em-dash (—) for prose pauses; en-dash (–) is
+   * reserved for numeric ranges only. */
+  if (
+    restyled.includes(EM_DASH) &&
+    restyled.includes(EN_DASH) &&
+    hasNonNumericEnDash(restyled) &&
+    !hasNonNumericEnDash(canonical)
+  ) {
+    return { valid: false, reason: "mixed-dash-style" };
+  }
+  /* LN5 / Audit Pass 4 (PDF#27, 2026-05-17) — fixed/variable phrasing. */
+  if (
+    INCONSISTENT_COMPONENT_PHRASING_RE.test(restyled) &&
+    !INCONSISTENT_COMPONENT_PHRASING_RE.test(canonical)
+  ) {
+    return { valid: false, reason: "inconsistent-component-phrasing" };
+  }
+  /* LN6 / Audit Pass 4 (PDF#27, 2026-05-17) — pronoun drift. */
+  if (hasPronounDrift(restyled) && !hasPronounDrift(canonical)) {
+    return { valid: false, reason: "pronoun-drift" };
   }
   /* Audit Pass 3 / Fix 3 (2026-05-16) — per-kind contract enforcement.
    * Looks up the active NextAction kind in NEXT_ACTION_CONTRACT and
