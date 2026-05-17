@@ -1948,7 +1948,19 @@ export function useInterviewEngine() {
         interviewType, currentStep,
         scriptStepTypes: interviewScript.map(s => s.type),
       });
-      const { feedback, score: answerScore } = computeMicroFeedback(answerText, interviewType, answerQualityRef.current, negPhase, recentFeedbacksRef.current);
+      /* Behavioural micro-feedback consumes the originating question text
+         so the Lift-A detectors (defensiveness, self-awareness, vagueness)
+         can fire the same cues the follow-up coach will pick up next. */
+      let originatingQuestionText: string | undefined;
+      if (interviewType === "behavioral") {
+        for (let i = currentStep; i >= 0; i--) {
+          if (interviewScript[i]?.type === "question") {
+            originatingQuestionText = interviewScript[i]?.aiText;
+            break;
+          }
+        }
+      }
+      const { feedback, score: answerScore } = computeMicroFeedback(answerText, interviewType, answerQualityRef.current, negPhase, recentFeedbacksRef.current, originatingQuestionText);
       answerQualityRef.current.push(answerScore);
       if (feedback) {
         setMicroFeedback(feedback);

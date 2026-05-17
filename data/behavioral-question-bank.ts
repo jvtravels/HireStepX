@@ -44,6 +44,15 @@ export const BEHAVIORAL_COMPETENCIES = [
   "mentorship-team",
   "communication",
   "integrity-trust",
+  /* Added 2026-05: adaptability + execution-rigor.
+     Two competencies real Indian-product-co loops grade against but the
+     original 12-set folded into others (adaptability got bucketed under
+     ambiguity; execution-rigor under ownership). Splitting them out so
+     blindSpots in the report can say "your loop missed adaptability"
+     instead of conflating it with "ambiguity" — different coaching tip,
+     different probe bank. */
+  "adaptability",
+  "execution-rigor",
 ] as const;
 
 export type BehavioralCompetency = typeof BEHAVIORAL_COMPETENCIES[number];
@@ -64,6 +73,8 @@ export const COMPETENCY_LABELS: Record<BehavioralCompetency, string> = {
   "mentorship-team": "Mentorship & team",
   "communication": "Communication",
   "integrity-trust": "Integrity & trust",
+  "adaptability": "Adaptability",
+  "execution-rigor": "Execution rigor",
 };
 
 /** Which STAR slot the question is biased toward — used by the
@@ -106,9 +117,12 @@ export interface BehavioralQuestion {
   seniorityFloor?: number;
 }
 
-/** The 50. Curated from real loops at: Razorpay, Flipkart, Swiggy,
- *  Zomato, CRED, Atlassian-IN, Microsoft IDC, Amazon-IN, Google-IN,
- *  Uber-IN, Walmart-Labs, ThoughtSpot, Postman, Freshworks. */
+/** The bank (originally 50, now 56 after adaptability + execution-rigor
+ *  split-out in 2026-05). Curated from real loops at: Razorpay, Flipkart,
+ *  Swiggy, Zomato, CRED, Atlassian-IN, Microsoft IDC, Amazon-IN,
+ *  Google-IN, Uber-IN, Walmart-Labs, ThoughtSpot, Postman, Freshworks.
+ *  Export name kept as `BEHAVIORAL_50` (historical brand — `.length` is
+ *  the authoritative size, not the constant name). */
 export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── ownership (5)
   { id: "own-01", text: "Tell me about a time you took ownership of something outside your job description.",                competency: "ownership",          starFocus: "action",          difficulty: "standard", frequencyPct: 78, seniorityFloor: 2 },
@@ -183,6 +197,16 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "int-02", text: "Tell me about a time you spoke up about something that wasn't right.",                                 competency: "integrity-trust",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
   { id: "int-03", text: "Tell me about a time you escalated something despite political risk.",                                competency: "integrity-trust",    starFocus: "action",          difficulty: "hard",     frequencyPct: 42, seniorityFloor: 5 },
   { id: "int-04", text: "Tell me about a time you took credit for less than you contributed.",                                 competency: "integrity-trust",    starFocus: "action",          difficulty: "standard", frequencyPct: 38, seniorityFloor: 4 },
+
+  // ── adaptability (3)
+  { id: "adp-01", text: "Tell me about a time you had to adapt to a major change at work.",                                    competency: "adaptability",       starFocus: "action",          difficulty: "warmup",   frequencyPct: 68 },
+  { id: "adp-02", text: "Tell me about a time you had to learn a new skill or tool quickly to ship something.",                competency: "adaptability",       starFocus: "action+result",   difficulty: "standard", frequencyPct: 65 },
+  { id: "adp-03", text: "Tell me about a time you had to switch context between very different problems in a single day.",    competency: "adaptability",       starFocus: "action",          difficulty: "hard",     frequencyPct: 45, seniorityFloor: 3 },
+
+  // ── execution-rigor (3)
+  { id: "exr-01", text: "Tell me about a time you caught a bug or issue in your own work before it shipped.",                  competency: "execution-rigor",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 60 },
+  { id: "exr-02", text: "Tell me about a time a missed detail came back to bite you.",                                         competency: "execution-rigor",    starFocus: "result",          difficulty: "standard", frequencyPct: 55 },
+  { id: "exr-03", text: "Tell me about a time you traded thoroughness for speed and had to defend the call later.",            competency: "execution-rigor",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 48, seniorityFloor: 3 },
 ];
 
 /* ─────────── Deterministic sampler ─────────── */

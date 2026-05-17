@@ -3,6 +3,12 @@
    and a numeric quality score for difficulty tracking. Extracted from useInterviewEngine. */
 
 import { detectStarPresence } from "./_star-detection";
+import {
+  detectVagueness,
+  detectSelfAwareness,
+  detectDefensiveness,
+  isFailureQuestion,
+} from "../server-handlers/_behavioural-answer-signals";
 
 export interface MicroFeedbackResult {
   feedback: string | null;
@@ -15,6 +21,12 @@ export function computeMicroFeedback(
   runningScores: number[],
   negotiationPhase?: string,
   recentFeedbacks?: string[],
+  /* Optional originating-question text. When supplied for behavioural
+     turns, enables Lift-A live cues (defensiveness on failure questions,
+     vagueness without numbers, self-awareness acknowledgement). Shared
+     with the follow-up coach via `_behavioural-answer-signals.ts`, so
+     the live tip and the next probe always agree on the same signal. */
+  currentQuestionText?: string,
 ): MicroFeedbackResult {
   const wordCount = answerText.trim().split(/\s+/).length;
 
@@ -42,9 +54,9 @@ export function computeMicroFeedback(
      (e.g. system-design micro-feedback that ignores STAR), add an explicit
      case ABOVE this — don't loosen behavioralFeedback to accommodate it. */
   if (interviewType === "behavioral") {
-    return behavioralFeedback(answerText, wordCount, runningScores, recentFeedbacks);
+    return behavioralFeedback(answerText, wordCount, runningScores, recentFeedbacks, currentQuestionText);
   }
-  return behavioralFeedback(answerText, wordCount, runningScores, recentFeedbacks);
+  return behavioralFeedback(answerText, wordCount, runningScores, recentFeedbacks, currentQuestionText);
 }
 
 /* ─── Salary Negotiation (phase-aware) ─── */
@@ -391,7 +403,7 @@ function detectNonAnswer(text: string, wordCount: number): boolean {
        / panel). Renamed from standardFeedback to make the STAR-shape focus
        explicit and to give a single grep target for "behavioural live
        coach". ─── */
-function behavioralFeedback(text: string, wordCount: number, runningScores: number[], recentFeedbacks?: string[]): MicroFeedbackResult {
+function behavioralFeedback(text: string, wordCount: number, runningScores: number[], recentFeedbacks?: string[], currentQuestionText?: string): MicroFeedbackResult {
   if (detectNonAnswer(text, wordCount)) {
     // Empathic acknowledgement, no STAR-coaching tip. Score reflects
     // a non-answer (low) but doesn't crater the running average — the
@@ -400,6 +412,36 @@ function behavioralFeedback(text: string, wordCount: number, runningScores: numb
       feedback: "No experience here is fine — try a hypothetical, or pivot to the closest situation you've handled.",
       score: 35,
     };
+  }
+  /* Lift-A live cues. Same detectors the follow-up coach reads — so when
+     the candidate sees "Own your role in this — what would *you* have done
+     differently?" as the live tip, the next AI probe will reinforce, not
+     contradict. Precedence mirrors `cueFromEngineHints` in
+     `_behavioral-followup-bank.ts`: defensiveness > vagueness > positive
+     self-awareness ack. Generic STAR coaching is the fallthrough below. */
+  if (currentQuestionText && wordCount >= 20) {
+    if (detectDefensiveness(currentQuestionText, text)) {
+      // Failure question + deflection — most diagnostic signal, fire first.
+      return {
+        feedback: "Own your role — what would *you* have done differently? Deflection lands worse than admission.",
+        score: clamp(40 + (wordCount >= 50 ? 5 : 0)),
+      };
+    }
+    if (isFailureQuestion(currentQuestionText) && detectSelfAwareness(text)) {
+      // Failure question + candidate volunteered self-critique. Strong
+      // positive — acknowledge so they don't second-guess on the next turn.
+      return {
+        feedback: "Good — you owned it without being asked. That self-awareness is what interviewers look for.",
+        score: clamp(70 + (wordCount >= 60 ? 5 : 0)),
+      };
+    }
+    if (detectVagueness(text)) {
+      // Scale words without numbers — push for quantification before STAR.
+      return {
+        feedback: "Vague on scale — 'many', 'several', 'a lot' need numbers. Was it 3 customers or 300?",
+        score: clamp(45 + (wordCount >= 50 ? 5 : 0)),
+      };
+    }
   }
   /* STAR-component detection lives in src/_star-detection.ts so the live
      coach and the post-session evaluator share one regex set. See that
