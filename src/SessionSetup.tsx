@@ -23,6 +23,25 @@ import { useToast } from "./Toast";
 import { unlockAudio, prefetchTTS } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
+import { GAP_CTA_MAP } from "./nextMove";
+
+/**
+ * Reverse-lookup: drill key → coaching CTA copy.
+ *
+ * GAP_CTA_MAP is keyed by gap CODE (e.g. "floor_collapse") but the
+ * URL carries the drill KEY (e.g. "comp_floor") so the dashboard CTA
+ * URLs stay user-stable across gap-code refactors. Building the
+ * reverse map at module load gives O(1) lookup at render time and
+ * means a stale URL with an unknown drill key fails closed (no
+ * banner) rather than crashing.
+ */
+const DRILL_TO_CTA: Record<string, { label: string; headline: string }> = Object.values(GAP_CTA_MAP).reduce(
+  (acc, cta) => {
+    acc[cta.drill] = { label: cta.label, headline: cta.headline };
+    return acc;
+  },
+  {} as Record<string, { label: string; headline: string }>,
+);
 
 /* ─── Suggestions ───
    ROLE_SUGGESTIONS is the canonical exhaustive list from onboardingData
@@ -641,6 +660,17 @@ export default function SessionSetup() {
   const prefillRole = searchParams.get("role") || "";
   const prefillCompany = searchParams.get("company") || "";
   const warnFlag = searchParams.get("warn");
+  /* Drill mode (v1) — when the dashboard "Your next move" CTA fires
+     from a known gap (see nextMove.GAP_CTA_MAP), the user lands here
+     with `?drill=<key>` (e.g. ?drill=comp_floor). We:
+       (a) surface a banner so the user knows the practice context was
+           recognized — without this the CTA promise is invisible,
+       (b) forward `&drill=` to /interview so useInterviewEngine can
+           later route it into the LLM prompt as a focused directive.
+     Unknown drill keys are ignored silently (forward-compat with
+     future additions to GAP_CTA_MAP). */
+  const drillKey = searchParams.get("drill") || "";
+  const drillCta = drillKey ? DRILL_TO_CTA[drillKey] || null : null;
 
   const [targetRole, setTargetRole] = useState(prefillRole || user?.targetRole || "");
   const [roleTouched, setRoleTouched] = useState(false);
@@ -1255,7 +1285,10 @@ export default function SessionSetup() {
       micStreamRef.current?.getTracks().forEach(t => t.stop());
       cameraStreamRef.current?.getTracks().forEach(t => t.stop());
       const cameraParam = cameraStatus === "granted" ? "&camera=1" : "";
-      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}`);
+      // Forward drill key when present + recognized. Unknown keys are
+      // dropped so /interview doesn't receive an unrecognized directive.
+      const drillParam = drillCta ? `&drill=${encodeURIComponent(drillKey)}` : "";
+      router.push(`/interview?type=${focusType}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}`);
     }, 1900);
   };
 
@@ -1494,6 +1527,42 @@ export default function SessionSetup() {
         <div id="hsx-setup-form" style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
 
           <div>
+              {/* Drill mode banner — shown when the user arrived from a
+                  dashboard gap CTA (e.g. ?drill=comp_floor). Tells the
+                  user the practice context was recognized so the CTA
+                  promise feels honest, even though /interview doesn't
+                  yet reshape the LLM prompt (follow-up — see commit
+                  message). */}
+              {drillCta && (
+                <div
+                  data-testid="session-setup-drill-banner"
+                  className="fade-up-1"
+                  style={{
+                    marginBottom: 20,
+                    padding: "14px 18px",
+                    borderRadius: 10,
+                    background: T.copper100,
+                    border: `1px solid ${T.copper}`,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.copper, marginBottom: 4 }}>
+                      Drilling from your last HR round
+                    </div>
+                    <div style={{ fontFamily: F.sans, fontSize: 14, color: T.coal, lineHeight: 1.45 }}>
+                      {drillCta.headline}
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
               <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1 hsx-setup-hero">
                 <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
