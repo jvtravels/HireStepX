@@ -48,7 +48,7 @@ describe("PDF#27 Fix 3 — repetition cap propagates to fallback", () => {
      * been asked twice in a row without disclosure. The cap inside
      * buildSkipRecord must flag the topic AND the fallback must
      * honour that flag. */
-    let s = seed({
+    const s = seed({
       phase: "opening",
       candidateCurrentCtc: 12,
       turnIndex: 3,

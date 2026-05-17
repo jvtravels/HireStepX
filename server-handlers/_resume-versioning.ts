@@ -276,7 +276,7 @@ export function normalizeStoredResumeForAnalyzer(parsed: unknown): ResumeForAnal
     // CGPA / percentage extraction. Accept "CGPA: 8.2", "8.2 CGPA",
     // "8.2/10", "GPA 3.7", or "84%". Stored as string (downstream
     // parseFloat); analyzer infers scale (>10 = percent) and tolerance.
-    const cgpaMatch = eduText.match(/\b(?:cgpa|gpa|sgpa)\s*[:\-]?\s*(\d{1,2}\.\d{1,2})\b/i)
+    const cgpaMatch = eduText.match(/\b(?:cgpa|gpa|sgpa)\s*[:-]?\s*(\d{1,2}\.\d{1,2})\b/i)
       || eduText.match(/\b(\d{1,2}\.\d{1,2})\s*(?:cgpa|gpa|sgpa|\/\s*10)\b/i)
       || eduText.match(/\b(\d{2,3})\s*%/);
     if (cgpaMatch) result.cgpa = cgpaMatch[1];

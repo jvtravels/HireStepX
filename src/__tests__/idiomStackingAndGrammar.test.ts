@@ -158,7 +158,7 @@ describe("smoke — 4-probe sequence respects all rules (Bug 1, salaryNegE2eSmok
     }
     /* No two consecutive openers identical (compare leading words up
      * to first comma/dash/space-run). */
-    const leads = fourTurns.map((s) => s.split(/[,—\-]/)[0].trim());
+    const leads = fourTurns.map((s) => s.split(/[,—-]/)[0].trim());
     for (let i = 1; i < leads.length; i++) {
       expect(leads[i]).not.toBe(leads[i - 1]);
     }
