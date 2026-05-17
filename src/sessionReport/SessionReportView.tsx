@@ -2412,7 +2412,9 @@ function CredibilitySection({
         background: "rgba(196,112,90,0.06)",
         border: `1px solid ${t.error}`,
         borderRadius: 14,
-        padding: "20px 22px",
+        // Responsive padding — at 360px viewport this lands ~14px so the
+        // panel doesn't feel claustrophobic on phones, ≥600px stays full.
+        padding: "clamp(14px, 4vw, 20px) clamp(14px, 4vw, 22px)",
         boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
@@ -2443,7 +2445,10 @@ function CredibilitySection({
           style={{
             margin: 0,
             fontFamily: f.serif,
-            fontSize: 20,
+            // Responsive: avoids wrapping awkwardly next to the badge on
+            // narrow phones, breathes back to 20px on desktop.
+            fontSize: "clamp(17px, 4.5vw, 20px)",
+            lineHeight: 1.25,
             fontWeight: 600,
             color: t.coal,
           }}
@@ -2484,10 +2489,18 @@ function CredibilitySection({
               background: "#fff",
               border: `1px solid rgba(196,112,90,0.30)`,
               borderRadius: 10,
-              padding: "12px 14px",
+              // Responsive padding — same rationale as the section
+              // wrapper above; keeps the card breathable but not
+              // claustrophobic on phones.
+              padding: "clamp(10px, 3vw, 12px) clamp(11px, 3.5vw, 14px)",
               display: "flex",
               flexDirection: "column",
               gap: 6,
+              // Long flag labels + evidence text contain long unbroken
+              // tokens (URLs, employer names with hyphens). overflow-wrap
+              // prevents horizontal scroll on 360px viewports.
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
             }}
           >
             <div

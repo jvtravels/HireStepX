@@ -390,6 +390,13 @@ export async function fetchLLMQuestions(params: {
    *  area (defined in `nextMove.ts` GAP_CTA_MAP). Free-form string —
    *  the server treats unknown values as a no-op. */
   drill?: string;
+  /** Optional auto-prebias signal — the flag set from the user's most
+   *  recent session for this focus (today HR-round only). The server
+   *  translates the subset of flags that map to dimension-coverage
+   *  misses into a "cover these dimensions this time" prompt clause.
+   *  Caller passes whatever it has; unknown flags are filtered out
+   *  server-side. */
+  priorFlags?: string[];
 }): Promise<LLMQuestionsResult | null> {
   // Client-side rate limit: max 3 question generations per 60s
   if (!checkRateLimit("generate-questions", 3, 60_000)) {

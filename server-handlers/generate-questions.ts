@@ -209,7 +209,7 @@ export default async function handler(req: Request): Promise<Response> {
   let requestFocus = "general";
   try {
     const rawBody = await req.json();
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle, drill } = rawBody;
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle, drill, priorFlags } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
@@ -295,6 +295,52 @@ export default async function handler(req: Request): Promise<Response> {
     const drillKey = typeof drill === "string" ? drill.trim() : "";
     const drillContext = drillKey && DRILL_GUIDANCE[drillKey]
       ? DRILL_GUIDANCE[drillKey]
+      : "";
+
+    /* Auto-prebias: when the focus is "hr-round" and the caller passed
+       priorFlags (the analyzer's flag set from the user's most recent
+       hr-round session), translate the dimension-coverage misses into a
+       short coverage-priority clause. This closes the autonomous loop —
+       the next session pre-covers what the last one skipped, without
+       the user having to click a drill CTA.
+
+       Vocabulary lives in hr-round.ts. The flag → dimension map below
+       only includes flags whose remediation requires the question
+       generator (not the candidate alone) — e.g. "notice_period_never_
+       discussed" means HR never asked, so the next session MUST ask.
+       Conversely, "user_anchor_leaked_salary" is a candidate-behaviour
+       miss; re-coverage doesn't help, so it's not mapped. */
+    const isHrRound = interviewFocus === "hr-round" || interviewType === "hr-round";
+    const PRIOR_FLAG_TO_DIMENSION: Record<string, string> = {
+      // Coverage gaps the generator can fix by surfacing the topic
+      notice_period_never_discussed: "logistics (notice / LWD / buyout / location)",
+      vague_notice_period: "logistics (notice / LWD / buyout — push for exact numbers)",
+      bgv_document_evasion: "compliance (BGV documents — push harder, candidate evaded last time)",
+      payslip_refusal: "comp transparency (payslip / Form 16 — push, was refused last time)",
+      counter_offer_dodge: "commitment (counter-offer protection — was dodged last time)",
+      generic_why_company: "motivation specificity (push past 'great culture' to concrete product / leader / domain)",
+      hike_rationale_thin: "comp transparency (hike % rationale — was unsubstantiated last time)",
+      salary_breakup_vague: "comp transparency (CTC fixed / variable / RSU breakup — was vague last time)",
+      reference_refusal: "compliance (ex-manager references — were refused last time)",
+      bond_compliance_skipped: "benefits / policy (service bond / clawback / non-compete)",
+      dimensions_thin_coverage: "balanced coverage across all 7 dimensions (last session touched < 4/7)",
+      no_company_specific_research: "motivation specificity (push for company-specific research)",
+      career_goal_vague: "fit (5-year plan — was vague last time)",
+      gap_unexplained: "stability (employment gap — wasn't addressed last time)",
+      job_hopping_unaddressed: "stability (multiple short stints — wasn't probed last time)",
+      genai_flat_denial: "stability (GenAI usage — flat denial last time, push for honest disclosure)",
+      pf_uan_evasive: "compliance (UAN / PF — was evasive last time)",
+      clawback_blind_accept: "benefits / policy (clawback / bond terms — was blind-accepted last time)",
+      rto_refusal: "logistics (RTO / hybrid — was flat-refused last time)",
+      cert_gap: "compliance (certification dates / IDs — was vague last time)",
+      ctc_first_question_user: "fit ordering (candidate opened with comp — sequence role → scope → comp this time)",
+      offer_letter_anxiety: "commitment (offer-letter timeline — surface cleanly, don't let it spike mid-round)",
+    };
+    const priorFlagList = Array.isArray(priorFlags)
+      ? priorFlags.filter((f): f is string => typeof f === "string" && !!PRIOR_FLAG_TO_DIMENSION[f]).slice(0, 6)
+      : [];
+    const priorCoverageContext = (isHrRound && priorFlagList.length > 0)
+      ? `LAST-SESSION COVERAGE PRIORITIES (auto-prebias from analyzer): The candidate's most recent HR-round session under-covered these dimensions. Ensure at least one question this session pressures each — without re-using last session's exact phrasings:\n${priorFlagList.map((f) => `  • ${PRIOR_FLAG_TO_DIMENSION[f]}`).join("\n")}`
       : "";
 
     /* Behavioural-shape guidance — pinned to interviewType="behavioral".
@@ -882,7 +928,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
-${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
+${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
 ${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
@@ -1364,6 +1410,12 @@ Requirements:
       // drilled sessions produce better outcomes than skill-only sessions.
       drill_key: drillContext ? drillKey : "",
       drill_applied: !!drillContext,
+      // Auto-prebias telemetry: counts the dimension-coverage hints the
+      // server actually injected for hr-round sessions, so we can A/B
+      // "prebias-applied vs not" on subsequent-session credibility flag
+      // counts and dimension coverage.
+      prior_coverage_hints: priorFlagList.length,
+      prior_coverage_applied: !!priorCoverageContext,
     }, req);
 
     // Best-effort: cache the successful response for ~5 min so retries /

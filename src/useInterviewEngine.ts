@@ -27,7 +27,7 @@ import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript } from "./interviewScripts";
 import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints, negotiationKernelInit, negotiationKernelTurn } from "./interviewAPI";
-import { initLiveSession, saveInterviewTurn } from "./supabase";
+import { initLiveSession, saveInterviewTurn, getLatestSessionInsightFlags } from "./supabase";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
 import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
@@ -334,6 +334,24 @@ export function useInterviewEngine() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* Auto-prebias: kick off a best-effort fetch of the user's most
+     recent session_insights flag set on mount (HR-round only — other
+     focuses have no dimension-coverage prebias today). When the LLM
+     fetch fires later, it reads from this ref; if the fetch hasn't
+     resolved yet (rare — typically completes in <200ms while the user
+     is reading the warmup card) the prebias is simply skipped this
+     run. Quiet failures: any error empties the ref. */
+  const priorFlagsRef = useRef<string[]>([]);
+  useEffect(() => {
+    if (interviewFocus !== "hr-round" || !user?.id) return;
+    let cancelled = false;
+    getLatestSessionInsightFlags(user.id).then((flags) => {
+      if (cancelled) return;
+      priorFlagsRef.current = flags;
+    }).catch(() => { /* silent — prebias degrades to no-op */ });
+    return () => { cancelled = true; };
+  }, [interviewFocus, user?.id]);
+
   // LLM question generation — extracted so it can be retried
   const llmFetchCancelRef = useRef(false);
   const fetchPersonalizedQuestions = useCallback(() => {
@@ -399,6 +417,7 @@ export function useInterviewEngine() {
       candidateName: user?.name || undefined,
       negotiationStyle: negotiationStyle || undefined,
       drill: drillKey || undefined,
+      priorFlags: priorFlagsRef.current.length > 0 ? priorFlagsRef.current : undefined,
     });
     const timeoutMs = isMiniMode ? 12_000 : 30_000;
     const timeoutPromise = new Promise<null>((_, reject) => {
