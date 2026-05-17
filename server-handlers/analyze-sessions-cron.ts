@@ -354,6 +354,24 @@ export default async function handler(req: Request): Promise<Response> {
         score_drift: row.score_drift,
         analyzer_version: row.analyzer_version,
       });
+      // Per-flag fanout. The aggregated `session_quality_analyzed` event
+      // above is great for session-level drilldown but useless for "which
+      // single flag is firing most often / at what tier / on what company"
+      // — exactly the question the Wave-9 credibility-callout audit asked.
+      // Splitting one event per flag here lets a PostHog breakdown over
+      // `flag` answer it without server-side aggregation. Best-effort,
+      // never throws; missing PostHog key early-returns inside captureServerEvent.
+      for (const flag of row.flags) {
+        void captureServerEvent("analyzer_flag_fired", session.user_id, {
+          session_id: session.id,
+          focus: session.type,
+          flag,
+          severity: row.severity,
+          analyzer_version: row.analyzer_version,
+          target_company: session.target_company || null,
+          target_role: session.target_role || null,
+        });
+      }
     }
 
     // Aggregate by (day, focus) for daily_quality_report.
