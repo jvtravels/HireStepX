@@ -1195,6 +1195,47 @@ export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrend
     .reverse(); // oldest → newest for left-to-right rendering
 }
 
+/**
+ * Fetch the credibility-relevant subset of session_insights for a single
+ * session — the BGV-checkable mismatches surfaced by the campus-placement
+ * analyzer (resume cross-checks). Returns null when:
+ *   - the user is signed out
+ *   - the session has no insights row yet (analyzer cron hasn't run)
+ *   - the row exists but has no credibility-bucket flags
+ *   - any query error (caller treats this as "callout disabled")
+ *
+ * Read-only, RLS-scoped (`session_insights_select_own`). Narrow select
+ * — only the two columns the callout helper needs, so the wire payload
+ * stays in the low hundreds of bytes even on a rich rubric.
+ */
+export async function fetchSessionCredibility(sessionId: string): Promise<{
+  flags: string[];
+  rubric_gaps: unknown;
+} | null> {
+  if (!sessionId) return null;
+  const { getSupabase } = await import("./supabase");
+  const client = await getSupabase();
+  const { data: sessionData } = await client.auth.getSession();
+  if (!sessionData.session?.user?.id) return null;
+  const { data, error } = await client
+    .from("session_insights")
+    .select("flags, rubric_gaps")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+  if (error) {
+    // Quiet failure — credibility callout is an enhancement; never block
+    // the report on it. Surface to the console for ops; PostHog tracks
+    // analyzer reliability separately.
+    console.warn("[fetchSessionCredibility] query failed:", error.message);
+    return null;
+  }
+  if (!data) return null;
+  return {
+    flags: Array.isArray(data.flags) ? data.flags : [],
+    rubric_gaps: data.rubric_gaps ?? [],
+  };
+}
+
 /* ─── Story Notebook (saved STAR stories from results reports) ─────── */
 
 export interface StoryNotebookEntry {

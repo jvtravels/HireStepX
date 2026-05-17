@@ -27,6 +27,7 @@ import { useState } from "react";
 import { t, f, shadows } from "./tokens";
 import { SESSION_REPORT_STYLES } from "./styles";
 import { NegotiationFullReport } from "./NegotiationFullReport";
+import type { CredibilitySummary } from "../_credibilityCallout";
 import type {
   AnswerSpan,
   BiasFinding,
@@ -2378,6 +2379,160 @@ function FooterSection({
   );
 }
 
+/* ─── Credibility callout ────────────────────────────────────────────
+ *  Surfaces the Wave-7/8.x resume cross-checks from the campus-
+ *  placement analyzer (claimed company / branch / grad year / college /
+ *  CGPA / internship duration). These are the highest-cost mistakes a
+ *  candidate can make — every one mirrors an Indian BGV team's actual
+ *  cross-check against the offer letter / transcript / degree
+ *  certificate. We render them in a dedicated red-headlined panel near
+ *  the top of the report so they don't disappear into the rubric-gap
+ *  list. Quietly omitted when no credibility flags fired (the happy
+ *  path for ~70% of campus-placement sessions). */
+function CredibilitySection({ summary }: { summary: CredibilitySummary }) {
+  if (!summary.hasIssues) return null;
+  return (
+    <section
+      id="ir-section-credibility"
+      aria-label="Credibility — resume vs transcript"
+      style={{
+        background: "rgba(196,112,90,0.06)",
+        border: `1px solid ${t.error}`,
+        borderRadius: 14,
+        padding: "20px 22px",
+        boxShadow: shadows.card,
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
+    >
+      <header style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minWidth: 24,
+            height: 24,
+            padding: "0 8px",
+            borderRadius: 999,
+            background: t.error,
+            color: "#fff",
+            fontFamily: f.sans,
+            fontSize: 12,
+            fontWeight: 700,
+          }}
+          aria-label={`${summary.count} credibility issue${summary.count === 1 ? "" : "s"}`}
+        >
+          {summary.count}
+        </span>
+        <h2
+          style={{
+            margin: 0,
+            fontFamily: f.serif,
+            fontSize: 20,
+            fontWeight: 600,
+            color: t.coal,
+          }}
+        >
+          BGV-risk audit — fix before the next interview
+        </h2>
+      </header>
+      <p
+        style={{
+          margin: 0,
+          fontFamily: f.sans,
+          fontSize: 13,
+          lineHeight: 1.55,
+          color: t.coal,
+          opacity: 0.85,
+        }}
+      >
+        What you said in the interview drifted from what your resume
+        claims. Indian recruiters cross-check these against the
+        offer letter, transcript, and degree certificate during
+        background verification — each one is an instant-disqualifier
+        if it surfaces post-offer.
+      </p>
+      <ul
+        style={{
+          margin: 0,
+          padding: 0,
+          listStyle: "none",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        {summary.items.map((item) => (
+          <li
+            key={item.flag}
+            style={{
+              background: "#fff",
+              border: `1px solid rgba(196,112,90,0.30)`,
+              borderRadius: 10,
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: f.sans,
+                fontSize: 14,
+                fontWeight: 600,
+                color: t.coal,
+              }}
+            >
+              {item.label}
+            </div>
+            {item.evidence ? (
+              <div
+                style={{
+                  fontFamily: f.mono ?? f.sans,
+                  fontSize: 12,
+                  color: t.coal,
+                  opacity: 0.78,
+                  lineHeight: 1.5,
+                }}
+              >
+                {item.evidence.observed}
+              </div>
+            ) : item.description ? (
+              <div
+                style={{
+                  fontFamily: f.sans,
+                  fontSize: 12,
+                  color: t.coal,
+                  opacity: 0.78,
+                  lineHeight: 1.5,
+                }}
+              >
+                {item.description}
+              </div>
+            ) : null}
+            <div
+              style={{
+                marginTop: 4,
+                padding: "8px 10px",
+                borderRadius: 6,
+                background: "rgba(21,128,61,0.06)",
+                fontFamily: f.sans,
+                fontSize: 12,
+                color: t.success,
+                lineHeight: 1.5,
+              }}
+            >
+              <strong style={{ fontWeight: 600 }}>Fix:</strong> {item.action}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /* ─── Main component ──────────────────────────────────────────────── */
 
 export interface SessionReportViewProps {
@@ -2405,6 +2560,11 @@ export interface SessionReportViewProps {
   /** Trust + usefulness 2-question polls. Both fire to analytics. */
   onTrustAnswer?: (value: "yes" | "no") => void;
   onUsefulAnswer?: (value: "yes" | "no") => void;
+  /** Resume cross-check summary from `session_insights`. When present
+   *  AND `hasIssues` is true, the report renders a dedicated BGV-risk
+   *  panel between Hero and the cross-session strip. Omitted (or
+   *  `hasIssues: false`) renders nothing — happy path is silent. */
+  credibility?: CredibilitySummary;
 }
 
 export default function SessionReportView({
@@ -2417,6 +2577,7 @@ export default function SessionReportView({
   onSaveTopStory,
   onTrustAnswer,
   onUsefulAnswer,
+  credibility,
 }: SessionReportViewProps) {
   // Pick the highest-scoring question so the "Save top story" CTA
   // points at the right answer. Falls back to the first question.
@@ -2461,6 +2622,9 @@ export default function SessionReportView({
         >
           <JumpNav />
           <HeroSection data={data} />
+          {credibility && credibility.hasIssues && (
+            <CredibilitySection summary={credibility} />
+          )}
           {data.negotiationOutcome && (
             <NegotiationFullReport
               outcome={data.negotiationOutcome}
