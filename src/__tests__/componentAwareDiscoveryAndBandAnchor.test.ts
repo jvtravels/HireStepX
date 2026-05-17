@@ -5,12 +5,12 @@
  * a senior comp profile (applicableYoe >= 4 OR role matches
  * /senior|lead|principal|staff/i), the planner queues component probes
  * in order base → variable → esop BEFORE the target probe. Entry /
- * junior profiles fall straight through to the anchor-with-band or
+ * junior profiles fall straight through to the anchor-with-offer or
  * target probe without component disclosure.
  *
  * Fix 2 (AP3-F3) — after currentCtc is disclosed AND component probes
  * have either fired or been skipped (entry/junior), the planner fires
- * anchor-with-band ONCE per session, gated on band completeness (lo +
+ * anchor-with-offer ONCE per session, gated on band completeness (lo +
  * hi numeric, lo < hi). Subsequent planner calls see the lever in the
  * askedTopics ledger and route to the target probe (which has access
  * to the anchor in conversation history).
@@ -200,7 +200,7 @@ describe("AP3-F2 — component-aware discovery for senior profiles", () => {
 });
 
 describe("AP3-F3 — band-disclosure lever", () => {
-  it("currentCtc disclosed + no components needed (junior) + band complete → anchor-with-band", () => {
+  it("currentCtc disclosed + no components needed (junior) + band complete → anchor-with-offer", () => {
     const s = initJunior({
       phase: "opening",
       candidateCurrentCtc: 8,
@@ -208,14 +208,14 @@ describe("AP3-F3 — band-disclosure lever", () => {
       candidateApplicableYoe: 1,
     });
     const action = planNextAction(s);
-    expect(action.kind).toBe("anchor-with-band");
-    if (action.kind === "anchor-with-band") {
-      expect(action.lo).toBe(BAND.initialOffer);
-      expect(action.hi).toBe(BAND.maxStretch);
+    expect(action.kind).toBe("anchor-with-offer");
+    if (action.kind === "anchor-with-offer") {
+      /* Phase 2 Indian-HR redesign — point-offer (band floor), NOT a range. */
+      expect(action.initialOffer).toBe(BAND.initialOffer);
     }
   });
 
-  it("anchor-with-band canonical prose contains en-dash range + LPA + fitment", () => {
+  it("anchor-with-offer canonical prose contains SINGLE LPA number + fitment, NO range", () => {
     const s = initJunior({
       phase: "opening",
       candidateCurrentCtc: 8,
@@ -223,15 +223,20 @@ describe("AP3-F3 — band-disclosure lever", () => {
       candidateApplicableYoe: 1,
     });
     const action = planNextAction(s);
-    if (action.kind !== "anchor-with-band") throw new Error("expected anchor-with-band");
+    if (action.kind !== "anchor-with-offer") throw new Error("expected anchor-with-offer");
     const prose = renderCanonicalProse(action, s);
-    expect(RANGE_DASH_RE.test(prose)).toBe(true);
-    expect(prose).toMatch(/\u2013/); // explicit en-dash
+    /* Phase 2 Indian-HR redesign — point disclosure. No range/dash between
+     * numbers; real Indian HR shares a single initial offer, never a band. */
+    expect(prose).not.toMatch(/\d+\s*[\u2013\u2014-]\s*\d/);
+    expect(prose).not.toMatch(/\d+\s+to\s+\d/);
     expect(prose).toMatch(/\bLPA\b/i);
     expect(prose).toMatch(/\bfitment\b/i);
+    expect(prose).toContain(`${BAND.initialOffer}`);
+    /* Suppress unused-import warning in legacy code paths. */
+    void RANGE_DASH_RE;
   });
 
-  it("incomplete band (hi <= lo) → fires anchor-with-band in honest-defer mode (bandIncomplete=true)", () => {
+  it("incomplete band (hi <= lo) → fires anchor-with-offer in honest-defer mode (bandIncomplete=true)", () => {
     /* PDF#27 Fix 5 design: NEVER fall back to internal-leak language
      * like "missing from fact pack". When the band is unusable, the
      * lever still fires but with bandIncomplete=true so the prose
@@ -252,8 +257,8 @@ describe("AP3-F3 — band-disclosure lever", () => {
       band: badBand,
     };
     const action = planNextAction(s);
-    expect(action.kind).toBe("anchor-with-band");
-    if (action.kind === "anchor-with-band") {
+    expect(action.kind).toBe("anchor-with-offer");
+    if (action.kind === "anchor-with-offer") {
       expect(action.bandIncomplete).toBe(true);
       /* Defer prose carries the "fitment" token but no range / "LPA". */
       const prose = renderCanonicalProse(action, s);
@@ -262,7 +267,7 @@ describe("AP3-F3 — band-disclosure lever", () => {
     }
   });
 
-  it("anchor-with-band fires at most ONCE per session", () => {
+  it("anchor-with-offer fires at most ONCE per session", () => {
     let s = initJunior({
       phase: "opening",
       candidateCurrentCtc: 8,
@@ -270,7 +275,7 @@ describe("AP3-F3 — band-disclosure lever", () => {
       candidateApplicableYoe: 1,
     });
     const first = planNextAction(s);
-    expect(first.kind).toBe("anchor-with-band");
+    expect(first.kind).toBe("anchor-with-offer");
     /* Simulate the move firing — applyAiMove would push the askedTopic
      * onto state.askedTopics. */
     s = {
@@ -281,10 +286,10 @@ describe("AP3-F3 — band-disclosure lever", () => {
       ],
     };
     const second = planNextAction(s);
-    expect(second.kind).not.toBe("anchor-with-band");
+    expect(second.kind).not.toBe("anchor-with-offer");
   });
 
-  it("senior session sequence: currentCtc → component probes (base/var/esop) → anchor-with-band", () => {
+  it("senior session sequence: currentCtc → component probes (base/var/esop) → anchor-with-offer", () => {
     let s = init({
       phase: "opening",
       candidateCurrentCtc: 18,
@@ -304,7 +309,7 @@ describe("AP3-F3 — band-disclosure lever", () => {
         };
         continue;
       }
-      if (a.kind === "anchor-with-band") {
+      if (a.kind === "anchor-with-offer") {
         s = {
           ...s,
           askedTopics: [
@@ -317,12 +322,12 @@ describe("AP3-F3 — band-disclosure lever", () => {
       break;
     }
     /* Expect the first four to be the three component probes plus
-     * anchor-with-band. */
+     * anchor-with-offer. */
     expect(sequence.slice(0, 4)).toEqual([
       "component:base",
       "component:variable",
       "component:esop",
-      "anchor-with-band",
+      "anchor-with-offer",
     ]);
   });
 });

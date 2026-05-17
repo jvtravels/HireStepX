@@ -47,7 +47,7 @@ const SAMPLE_ACTIONS: NextAction[] = [
   { kind: "close", mode: "walkaway" } as NextAction,
   { kind: "close", mode: "stalemate" } as NextAction,
   { kind: "auto-accept" } as NextAction,
-  { kind: "range-disclosure" } as NextAction,
+  { kind: "band-disclosure-deflect" } as NextAction,
   { kind: "probe-expectations" } as NextAction,
   { kind: "probe-justification" } as NextAction,
   { kind: "lever-explore", from: "default" } as NextAction,
@@ -106,10 +106,17 @@ describe("canonical prose — Indian idiom rewrite (Fix 2)", () => {
     expect(prose).toContain("25");
   });
 
-  it("range-disclosure frames using 'as per our band for this grade'", () => {
+  it("band-disclosure-deflect frames using 'as per our band' + 'panel' (no number leak)", () => {
+    /* Phase 2 Indian-HR redesign (2026-05-17): replaces the legacy
+     * `range-disclosure` lever. Real Indian HR deflects band asks rather
+     * than leaking internal numbers; "as per our band" idiom retained
+     * for register continuity, "panel" anchors the deflection escalation. */
     const s = baseState();
-    const prose = renderCanonicalProse({ kind: "range-disclosure" } as NextAction, s);
+    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect" } as NextAction, s);
     expect(prose).toMatch(/as per our band/i);
+    expect(prose).toMatch(/panel/i);
+    /* No internal numbers leaked. */
+    expect(prose).not.toMatch(/\d+\s*[\u2013\u2014-]\s*\d/);
   });
 
   it("hold-firm uses 'as per our band' + 'revert'", () => {

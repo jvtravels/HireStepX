@@ -278,8 +278,8 @@ const ACK_VOCAB_RE =
 const PROBE_KINDS_NEEDING_BRIDGE_SET = new Set<string>([
   "discovery-probe",
   "component-probe",
-  "anchor-with-band",
-  "range-disclosure",
+  "anchor-with-offer",
+  "band-disclosure-deflect",
   "probe-expectations",
   "probe-justification",
   "probe-mismatch",
@@ -429,18 +429,38 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
    * regex applied at validation time is selected by inspecting the
    * NextAction.component field via the lookup helper below. */
   "component-probe": { numberPolicy: "optional" },
-  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — anchor-with-band. Numbers are
-   * required (lo + hi) when the band is complete; the validator below
+  /* Phase 2 Indian-HR redesign (2026-05-17) — anchor-with-offer
+   * (replaces the legacy anchor-with-band range emitter). Real Indian
+   * HR recruiters disclose a SINGLE point offer, not a band; the dash
+   * requirement is dropped because the canonical no longer carries a
+   * range. Required tokens: "LPA", "fitment". The validator below
    * relaxes numberPolicy when action.bandIncomplete is true (honest-
-   * defer path). Required tokens: range-dash (matches RANGE_DASH_RE),
-   * "LPA", "fitment". */
-  "anchor-with-band": {
+   * defer path). bannedTokens include the range-dash so the LLM
+   * restyle cannot reintroduce a leaky range. */
+  "anchor-with-offer": {
     numberPolicy: "required",
     requiredTokens: [
-      /(?:[-\u2013\u2014]|\bto\b)/,
       /\bLPA\b/i,
       /\bfitment\b/i,
     ],
+    /* Reject any en-dash / em-dash / "to" between numbers — Indian HR
+     * does not disclose internal bands. We pattern-match on a digit
+     * followed by a dash/"to" followed by a digit to allow legitimate
+     * single-clause dashes elsewhere in the line. */
+    bannedTokens: [
+      /\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/,
+    ],
+  },
+  /* Phase 2 Indian-HR redesign (2026-05-17) — band-disclosure-deflect.
+   * No internal numbers leaked; "panel" anchors the deflection. */
+  "band-disclosure-deflect": {
+    numberPolicy: "forbidden",
+    requiredTokens: [/\bpanel\b/i],
+  },
+  /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance docs req. */
+  "post-acceptance-document-request": {
+    numberPolicy: "optional",
+    requiredTokens: [/\bBGV\b/i, /\bForm\s*16\b/i, /\bpayslip/i],
   },
 };
 
@@ -841,15 +861,15 @@ export function validateRestyle(
    * applies numberPolicy + requiredTokens + bannedTokens on top of the
    * global checks above. Unknown kinds fall through (no implicit deny).*/
   if (action != null) {
-    /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — anchor-with-band honest-defer
-     * override. When the band is incomplete the canonical emits a
-     * panel-signoff defer (no range, no "LPA"); the static contract
+    /* Phase 2 Indian-HR redesign (2026-05-17) — anchor-with-offer honest-
+     * defer override. When the band is incomplete the canonical emits a
+     * panel-signoff defer (no point-offer, no "LPA"); the static contract
      * would mis-reject it. Skip the contract block for the defer path
      * and require only "fitment" (the invitation token) which keeps
      * the line tied to its purpose. */
-    if (action.kind === "anchor-with-band" && action.bandIncomplete) {
+    if (action.kind === "anchor-with-offer" && action.bandIncomplete) {
       if (!/\bfitment\b/i.test(restyled)) {
-        return { valid: false, reason: "contract-required-token-missing:anchor-with-band-defer:fitment" };
+        return { valid: false, reason: "contract-required-token-missing:anchor-with-offer-defer:fitment" };
       }
       return { valid: true };
     }
@@ -989,8 +1009,8 @@ type ProbeKind =
   | "probe-expectations"
   | "probe-justification"
   | "reactive-followup"
-  | "anchor-with-band"
-  | "range-disclosure"
+  | "anchor-with-offer"
+  | "band-disclosure-deflect"
   | "probe-mismatch";
 
 const PROBE_KINDS: ReadonlySet<string> = new Set<ProbeKind>([
@@ -999,8 +1019,8 @@ const PROBE_KINDS: ReadonlySet<string> = new Set<ProbeKind>([
   "probe-expectations",
   "probe-justification",
   "reactive-followup",
-  "anchor-with-band",
-  "range-disclosure",
+  "anchor-with-offer",
+  "band-disclosure-deflect",
   "probe-mismatch",
 ]);
 
@@ -1025,9 +1045,9 @@ function deriveSatisfiesTopic(action: NextAction): CoherenceTopic | null {
       return "targetCtc";
     case "component-probe":
       return "currentCtc";
-    case "anchor-with-band":
+    case "anchor-with-offer":
       return "targetCtc";
-    case "range-disclosure":
+    case "band-disclosure-deflect":
       return "targetCtc";
     case "reactive-followup": {
       const topic = (action as { topic?: string }).topic ?? "";
@@ -1071,8 +1091,8 @@ const TOPIC_PHASE_ORDER: Record<string, number> = {
   "component-probe": 0,
   "probe-expectations": 1,
   "probe-justification": 1,
-  "anchor-with-band": 2,
-  "range-disclosure": 2,
+  "anchor-with-offer": 2,
+  "band-disclosure-deflect": 2,
   "counter-offer": 3,
   "close-recap-formal": 4,
 };

@@ -90,10 +90,13 @@ describe("planNextAction — kind reachability", () => {
     expect(action.kind).toBe("probe-mismatch");
   });
 
-  it("phase=range-disclosure → range-disclosure", () => {
+  it("phase=range-disclosure → band-disclosure-deflect", () => {
+    /* Phase 2 Indian-HR redesign (2026-05-17): the phase name is retained
+     * as a state-machine marker, but the lever rendered at this phase is
+     * `band-disclosure-deflect` — real Indian HR does not leak the band. */
     const s = init({ phase: "range-disclosure", turnIndex: 2 });
     const action = planNextAction(s);
-    expect(action.kind).toBe("range-disclosure");
+    expect(action.kind).toBe("band-disclosure-deflect");
   });
 
   it("info-disclosure intents map to topic-tagged actions", () => {

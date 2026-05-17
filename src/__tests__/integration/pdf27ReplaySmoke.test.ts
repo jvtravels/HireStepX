@@ -124,7 +124,7 @@ describe("PDF#27 8-turn replay smoke — discovery-loop class closed", () => {
     /* Pre-turn bot opener so candidate T1 has something to respond to. */
     const opener = botTurn(state);
     /* Opener is anchor-free. */
-    expect(opener.action.kind).toMatch(/discovery-probe|probe-expectations|range-disclosure/);
+    expect(opener.action.kind).toMatch(/discovery-probe|probe-expectations|band-disclosure-deflect/);
     state = opener.state;
     /* Record the canonical-validity check for the opener too — every
      * canonical the kernel ships must validate (assertion 7). */
@@ -164,7 +164,7 @@ describe("PDF#27 8-turn replay smoke — discovery-loop class closed", () => {
 
       /* Track the band-anchor fire site (assertion 4). */
       if (
-        turn.action.kind === "anchor-with-band" ||
+        turn.action.kind === "anchor-with-offer" ||
         turn.action.kind === "band-anchor-with-rationale"
       ) {
         if (bandAnchorSeenAt == null) bandAnchorSeenAt = t + 1; // 1-indexed by candidate turn

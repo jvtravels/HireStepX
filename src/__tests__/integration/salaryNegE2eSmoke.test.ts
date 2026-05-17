@@ -125,7 +125,7 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
       { matches: /what's the base split|base split\?/i, reply: "Base is around 14 LPA out of the 18 LPA total." },
       { matches: /\bvariable\b.*(fixed bonus|perf-linked)/i, reply: "Variable is perf-linked, around 4 LPA." },
       { matches: /esops?.*(vest|cliff|accelerator)|esops?\s+in\s+play/i, reply: "No ESOPs at the current place." },
-      { matches: /our band sits|fitment.*looking at/i, reply: "I'm expecting 38 LPA as target, anchored on market rates." },
+      { matches: /our band sits|fitment.*looking at|fitment we'?re able to offer|let me know your thoughts/i, reply: "I'm expecting 38 LPA as target, anchored on market rates." },
       { matches: /\bnotice\b|buyout/i, reply: "My notice period is 60 days. No buyout flexibility on my side." },
       { matches: /other companies|other opportunity|in process|competing/i, reply: "Yes, in final round at one other firm — verbal offer." },
       { matches: /project|anchor.*fitment.*discussion|impact is concrete|value/i, reply: "Led a checkout redesign last year that lifted conversion by 11%." },
@@ -179,7 +179,7 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
          * the cascade reaches the anchor/counter portion of the
          * session. */
         turn.action.kind === "component-probe" ||
-        turn.action.kind === "anchor-with-band"
+        turn.action.kind === "anchor-with-offer"
       ) {
         /* Find a matching candidate reply for this probe. */
         let reply: string | null = null;
@@ -238,7 +238,7 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
       turn = botTurn(state);
       turnsUsed += 1;
       state = turn.state;
-      if (turn.action.kind === "range-disclosure" && !rangeStamped) {
+      if (turn.action.kind === "band-disclosure-deflect" && !rangeStamped) {
         state = { ...state, rangeDisclosedAtTurn: state.turnIndex };
         rangeStamped = true;
       }

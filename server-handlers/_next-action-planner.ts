@@ -194,7 +194,17 @@ export type NextAction =
   | { kind: "credibility-probe"; resumeCompany: string; statedCompany: string; satisfiesTopic: SatisfiesTopic }
   | { kind: "probe-mismatch"; satisfiesTopic: SatisfiesTopic }
   | { kind: "live-walk-away"; mode: "walk" | "hold-firm" | "probe" }
-  | { kind: "range-disclosure"; satisfiesTopic: SatisfiesTopic }
+  /* Phase 2 Indian-HR redesign (2026-05-17) — replaces the legacy
+   * `range-disclosure` NextAction kind that leaked the band ceiling.
+   * Real Indian HR recruiters deflect band/range questions; they NEVER
+   * disclose internal bands. Fires when candidate asks "what's your band /
+   * range / budget?" (same planner trigger as the old `range-disclosure`
+   * kind), but the prose surface is a deflection that offers to take the
+   * candidate's expectation back to the panel. Note: the `range-disclosure`
+   * PHASE enum value (NegotiationPhase) is intentionally retained — it's a
+   * state-machine stage, not a lever, and removing it would invalidate
+   * derivePhase / phase-monotonicity rules. */
+  | { kind: "band-disclosure-deflect"; satisfiesTopic: SatisfiesTopic }
   | { kind: "discovery-probe"; item: string; ask: string; satisfiesTopic: SatisfiesTopic }
   | { kind: "open-with-offer"; satisfiesTopic: SatisfiesTopic }
   | { kind: "lever-loop-guard" }
@@ -268,8 +278,18 @@ export type NextAction =
     }
   /* AP3-F2 (2026-05-17) — component-aware discovery probe. */
   | { kind: "component-probe"; component: "base" | "variable" | "esop"; satisfiesTopic: SatisfiesTopic }
-  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor. */
-  | { kind: "anchor-with-band"; lo: number; hi: number; bandIncomplete: boolean; satisfiesTopic: SatisfiesTopic };
+  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor.
+   *
+   * Phase 2 Indian-HR redesign (2026-05-17 follow-up): real Indian HR
+   * recruiters do NOT disclose internal salary bands to candidates — they
+   * share a single initial offer number. Renamed from `anchor-with-band`
+   * to `anchor-with-offer`; `lo`/`hi` dropped in favour of a single
+   * `initialOffer` point (band floor, classic Indian HR lowball). */
+  | { kind: "anchor-with-offer"; initialOffer: number; bandIncomplete: boolean; satisfiesTopic: SatisfiesTopic }
+  /* Post-acceptance documentation request. Fires immediately after
+   * `verbalAcceptanceTurn` is stamped (close-recap acceptance). Single-fire
+   * via state.postAcceptanceDocsRequestedAtTurn; transitions to terminal. */
+  | { kind: "post-acceptance-document-request" };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -278,7 +298,7 @@ export const PROBE_PRODUCING_KINDS: ReadonlySet<NextAction["kind"]> = new Set<Ne
   "reactive-followup",
   "credibility-probe",
   "probe-mismatch",
-  "range-disclosure",
+  "band-disclosure-deflect",
   "discovery-probe",
   "open-with-offer",
   "probe-expectations",
@@ -295,7 +315,7 @@ export const PROBE_PRODUCING_KINDS: ReadonlySet<NextAction["kind"]> = new Set<Ne
   "internal-equity-defense",
   "comparative-anchoring",
   "component-probe",
-  "anchor-with-band",
+  "anchor-with-offer",
 ]);
 
 /** Internal carrier: the planner builds the move alongside the action so
@@ -635,6 +655,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     return buildCloseRecapFormal(state);
   }
 
+  /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance documentation
+   * request. Fires immediately after `verbalAcceptanceTurn` is stamped AND
+   * close-recap-formal has been delivered, BEFORE the terminal accepted
+   * close. Single-fire via state.postAcceptanceDocsRequestedAtTurn; after
+   * firing, the conversation transitions cleanly to the terminal accepted
+   * close on the next turn (the field is stamped by applyAiMove via the
+   * action kind, so a re-entry on the same turn returns the terminal
+   * close). */
+  if (
+    state.verbalAcceptanceTurn != null &&
+    state.postAcceptanceDocsRequestedAtTurn == null &&
+    (state.reactiveFollowupsFired ?? []).includes("close-recap-formal")
+  ) {
+    return {
+      kind: "post-acceptance-document-request",
+      _move: {
+        lever: "close-acceptance",
+        newTotalLpa: null,
+        rationale:
+          "Phase 2 Indian-HR — verbal acceptance recorded; request BGV / " +
+          "documentation set (payslips, Form 16, BGV docs, etc.).",
+        actionKind: "post-acceptance-document-request",
+      },
+    };
+  }
+
   /* Terminal closings. */
   if (state.phase === "accepted") {
     const jb = state.lastJoiningBonusOffered;
@@ -909,20 +955,25 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
   }
 
-  /* PDF#18 — range-disclosure phase override. */
+  /* PDF#18 — range-disclosure phase override.
+   *
+   * Phase 2 Indian-HR redesign (2026-05-17): the lever is now
+   * `band-disclosure-deflect` — real Indian HR recruiters do NOT disclose
+   * internal bands; they deflect and offer to take the candidate's
+   * expectation back to the panel. The PHASE name is retained as a state-
+   * machine marker; only the rendered lever / prose changed. */
   if (state.phase === "range-disclosure" && !isTerminalPhase(state.phase)) {
     const floor = state.band.initialOffer;
-    const ceiling = state.band.maxStretch;
     return {
-      kind: "range-disclosure",
-      satisfiesTopic: "range-to-point",
+      kind: "band-disclosure-deflect",
+      satisfiesTopic: "range-deflection",
       _move: {
         lever: "probe",
         newTotalLpa: null,
         rationale:
-          `Range-disclosure phase: bot MUST disclose the salary RANGE ` +
-          `(₹${floor}-${ceiling}L band) and NOT a specific number. ` +
-          `Wait for candidate reaction before converging to a single anchor.`,
+          `Band-disclosure deflect: candidate asked for the internal band; ` +
+          `real Indian HR does NOT disclose ranges. Restate offer (₹${floor}L) ` +
+          `if any, deflect, and offer to take expectation to the panel.`,
       },
     };
   }
@@ -977,7 +1028,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    *   - Band complete (lo < hi, both numeric).
    *   - Single-fire via askedTopics ledger inspection. */
   const bandAnchorAlreadyFired = (state.askedTopics ?? []).some(
-    (t) => t.topic === "band-anchor-with-rationale" || (t.topic as string) === "anchor-with-band",
+    (t) =>
+      t.topic === "band-anchor-with-rationale" ||
+      (t.topic as string) === "anchor-with-band" ||
+      (t.topic as string) === "anchor-with-offer",
   );
   /* Note: hasOutstandingInfoAsk is intentionally NOT consulted here.
    * The candidate's "what's the offer?" utterance flows into infoAsked
@@ -998,9 +1052,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       typeof lo === "number" && typeof hi === "number" && lo < hi;
     if (bandComplete) {
       return {
-        kind: "anchor-with-band",
-        lo,
-        hi,
+        kind: "anchor-with-offer",
+        initialOffer: lo,
         bandIncomplete: false,
         satisfiesTopic: "band-anchor-with-rationale",
         _move: {
@@ -1008,9 +1061,9 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           newTotalLpa: null,
           rationale:
             `PDF#27 Fix 5 — candidate asked for the offer at turn ${state.offerAskedAtTurn}; ` +
-            `anchor band [${lo},${hi}] and invite fitment.`,
+            `anchor point-offer at ₹${lo}L (band floor) and invite fitment.`,
           askedTopic: "band-anchor-with-rationale",
-          actionKind: "range-disclosure",
+          actionKind: "anchor-with-offer",
         },
       };
     }
@@ -1062,7 +1115,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * askedTopics entry (since the kernel mutation lives downstream of
      * planNextAction in the pipeline). */
     const bandAnchorFired = (state.askedTopics ?? []).some(
-      (t) => t.topic === "band-anchor-with-rationale" || (t.topic as string) === "anchor-with-band",
+      (t) =>
+        t.topic === "band-anchor-with-rationale" ||
+        (t.topic as string) === "anchor-with-band" ||
+        (t.topic as string) === "anchor-with-offer",
     );
     if (
       !seniorComponentsRemain &&
@@ -1074,9 +1130,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         typeof lo === "number" && typeof hi === "number" && lo < hi;
       if (bandComplete) {
         return {
-          kind: "anchor-with-band",
-          lo,
-          hi,
+          kind: "anchor-with-offer",
+          initialOffer: lo,
           bandIncomplete: false,
           satisfiesTopic: "band-anchor-with-rationale",
           _move: {
@@ -1084,9 +1139,9 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             newTotalLpa: null,
             rationale:
               `AP3-F3 band-disclosure: currentCtc satisfied, senior-component probes ` +
-              `${isSeniorCompProfile(state) ? "complete" : "n/a"}, target pending — anchor band [${lo},${hi}] and invite fitment.`,
+              `${isSeniorCompProfile(state) ? "complete" : "n/a"}, target pending — anchor point-offer at ₹${lo}L (band floor) and invite fitment.`,
             askedTopic: "band-anchor-with-rationale",
-            actionKind: "range-disclosure",
+            actionKind: "anchor-with-offer",
           },
         };
       }
@@ -1094,17 +1149,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
        * with bandIncomplete=true so the canonical-prose surface emits
        * the panel-signoff defer + fitment invitation. */
       return {
-        kind: "anchor-with-band",
-        lo: typeof lo === "number" ? lo : 0,
-        hi: typeof hi === "number" ? hi : 0,
+        kind: "anchor-with-offer",
+        initialOffer: typeof lo === "number" ? lo : 0,
         bandIncomplete: true,
         satisfiesTopic: "band-anchor-with-rationale",
         _move: {
-          lever: "anchor-with-band",
+          lever: "probe",
           newTotalLpa: null,
           rationale: `AP3-F3 band-disclosure: band incomplete (lo=${lo}, hi=${hi}); honest-defer with fitment invitation.`,
           askedTopic: "band-anchor-with-rationale",
-          actionKind: "range-disclosure",
+          actionKind: "anchor-with-offer",
         },
       };
     }

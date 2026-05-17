@@ -149,7 +149,7 @@ describe("range-disclosure phase — state machine transitions", () => {
     expect(derivePhase(sNoTarget)).toBe("offer-presented");
   });
 
-  it("pickAiMove in range-disclosure phase → forces range-disclosure rationale", () => {
+  it("pickAiMove in range-disclosure phase → forces band-disclosure deflect rationale (Indian HR does NOT disclose internal bands)", () => {
     const s = init({
       phase: "range-disclosure",
       turnIndex: 2,
@@ -160,13 +160,17 @@ describe("range-disclosure phase — state machine transitions", () => {
     const move = pickAiMove(s);
     expect(move.lever).toBe("probe");
     expect(move.newTotalLpa).toBeNull();
-    expect(move.rationale).toMatch(/Range-disclosure phase/i);
-    expect(move.rationale).toMatch(/RANGE/);
-    expect(move.rationale).toMatch(/NOT a specific number/);
-    /* Rationale should reference the band's floor + ceiling so the
-     * brief layer can echo "₹X-Y band" to the LLM. */
-    expect(move.rationale).toContain(`${BAND.initialOffer}`);
-    expect(move.rationale).toContain(`${BAND.maxStretch}`);
+    /* Post-PDF#27 (Change 2): the range-disclosure phase NEVER leaks an
+     * internal band range. The lever is replaced with band-disclosure
+     * deflect: restate the offer (if any) and route candidate's
+     * expectation to the panel. */
+    expect(move.rationale).toMatch(/Band-disclosure deflect/i);
+    expect(move.rationale).toMatch(/does NOT disclose/i);
+    expect(move.rationale).toMatch(/panel/i);
+    /* Rationale must NOT leak the band range. */
+    expect(move.rationale).not.toMatch(
+      new RegExp(`${BAND.initialOffer}\\s*[\\u2013\\u2014-]\\s*${BAND.maxStretch}`),
+    );
   });
 
   it("applyAiMove records rangeDisclosedAtTurn when bot text emits a range", () => {

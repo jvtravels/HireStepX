@@ -46,8 +46,8 @@ describe("AR1 — PROBE_PRODUCING_KINDS contains every probe variant", () => {
       "probe-mismatch",
       "reactive-followup",
       "credibility-probe",
-      "range-disclosure",
-      "anchor-with-band",
+      "band-disclosure-deflect",
+      "anchor-with-offer",
       "open-with-offer",
       "counter-offer",
       "close-recap-formal",
@@ -115,7 +115,10 @@ function _compileTimeProbeGuard(a: NextAction): void {
   if (a.kind === "reactive-followup") {
     void a.satisfiesTopic;
   }
-  if (a.kind === "anchor-with-band") {
+  if (a.kind === "anchor-with-offer") {
+    void a.satisfiesTopic;
+  }
+  if (a.kind === "band-disclosure-deflect") {
     void a.satisfiesTopic;
   }
   if (a.kind === "counter-offer") {

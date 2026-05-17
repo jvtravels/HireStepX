@@ -50,6 +50,16 @@ export const BANNED_RECRUITER_IDIOM = [
    * "compensation". The canonical prose surface never emits this token,
    * so any restyle occurrence is the LLM padding. */
   "remuneration",
+  /* Phase 2 Indian-HR redesign (2026-05-17) — American-startup register
+   * that bleaches Indian-HR vocabulary. "Start date" → "joining date",
+   * "compensation package" → "CTC" / "fitment", "does that work for
+   * you?" / "I'd love to" / "excited to" — too American-startup. */
+  "start date",
+  "compensation package",
+  "does that work for you",
+  "i'd love to",
+  "i would love to",
+  "excited to",
 ] as const;
 
 export const PREFERRED_RECRUITER_IDIOM = [
@@ -59,6 +69,22 @@ export const PREFERRED_RECRUITER_IDIOM = [
   "as per band",
   "let me check with leadership",
   "as per the band for this grade",
+] as const;
+
+/** Phase 2 Indian-HR redesign (2026-05-17) — extended Indian-HR
+ *  register tokens surfaced in the restyle PROMPT (so the LLM is
+ *  encouraged to use them) but intentionally kept OUT of the
+ *  IDIOM_PER_UTTERANCE_CAP regex so generic words like "panel" /
+ *  "leadership" don't double-count toward the stacking cap. */
+export const INDIAN_HR_EXTENDED_REGISTER = [
+  "as per company policy",
+  "kindly",
+  "do the needful",
+  "in-hand vs CTC",
+  "joining date",
+  "notice period buyout",
+  "let me check with the panel",
+  "from our side",
 ] as const;
 
 /** Bug 1 fix (PDF#25, 2026-05-16) — Indian-recruiter idioms are
@@ -135,8 +161,8 @@ const NON_ACK_PROBE_OPENERS = ["So,", "Quick one —", "", "Coming to"] as const
 const PROBE_OPENER_KINDS = new Set<string>([
   "discovery-probe",
   "component-probe",
-  "anchor-with-band",
-  "range-disclosure",
+  "anchor-with-offer",
+  "band-disclosure-deflect",
   "probe-expectations",
   "probe-justification",
   "probe-mismatch",
@@ -547,8 +573,8 @@ const SENTIMENT_PREFIX_SUPPRESSED_KINDS = new Set<string>([
 const PROBE_KINDS_NEEDING_BRIDGE = new Set<string>([
   "discovery-probe",
   "component-probe",
-  "anchor-with-band",
-  "range-disclosure",
+  "anchor-with-offer",
+  "band-disclosure-deflect",
   "probe-expectations",
   "probe-justification",
   "probe-mismatch",
@@ -707,10 +733,14 @@ function renderCanonicalProseBody(
       }
       return "Let me probe a little further before we move ahead.";
 
-    case "range-disclosure": {
-      const lo = state.band.initialOffer;
-      const hi = state.band.maxStretch;
-      return `As per our band for this grade, the fitment sits in the ₹${lo}–₹${hi} LPA total CTC range. Where do you see yourself landing within that?`;
+    case "band-disclosure-deflect": {
+      /* Phase 2 Indian-HR redesign (2026-05-17) — replaces the legacy
+       * `range-disclosure` lever that leaked the band ceiling. Real Indian
+       * HR recruiters NEVER share internal numbers; they deflect and offer
+       * to take the candidate's expectation back to the panel. Retains the
+       * "as per our band" idiom marker (required by canonicalProseIndianIdiom
+       * test) and the panel/leadership escalation reference. */
+      return "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.";
     }
 
     case "discovery-probe": {
@@ -949,17 +979,23 @@ function renderCanonicalProseBody(
       return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
     }
 
-    case "anchor-with-band": {
-      /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor.
-       * Combined band-as-range + fitment invitation. NEVER says
-       * "missing from fact pack" — honest defer when band is
-       * incomplete. en-dash range matches RANGE_DASH_RE; "fitment" +
-       * "LPA" are the contract's required tokens. */
+    case "anchor-with-offer": {
+      /* Phase 2 Indian-HR redesign (2026-05-17) — point-offer anchor.
+       * Replaces the legacy `anchor-with-band` lever that emitted a range.
+       * Real Indian HR recruiters disclose a single initial offer number
+       * (band floor / classic lowball), not an internal band. "fitment"
+       * + "LPA" + a number are the contract's required tokens. */
       if (action.bandIncomplete) {
         return "I'll have a firmer number once the panel signs off — meanwhile, what's the fitment you were targeting?";
       }
-      const companyLabel = state.company || "us";
-      return `For this level at ${companyLabel}, our band sits around \u20B9${action.lo}\u2013\u20B9${action.hi} LPA — what's the fitment you were looking at?`;
+      return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA fixed plus variable. Let me know your thoughts.`;
+    }
+
+    case "post-acceptance-document-request": {
+      /* Phase 2 Indian-HR redesign (2026-05-17) — fires once after the
+       * candidate verbally accepts and the formal close-recap has been
+       * delivered. Standard Indian-HR BGV documentation checklist. */
+      return "Congratulations! To start the documentation and BGV process, can you please share — last 3 months' payslips, last 2 years' Form 16, bank statements for the last 6 months, PAN card, Aadhaar card, educational certificates (10th, 12th, graduation), and relieving letters from previous employers. Once you resign, please also share the resignation acknowledgement. You can send these on this email itself.";
     }
 
     case "component-probe": {
@@ -1049,8 +1085,8 @@ export function buildRestylePrompt(
     `PHASE: ${state.phase}\n\n` +
     `INSTRUCTIONS (strict):\n` +
     `- Use Indian English cadence. Avoid US-tech-recruiter idiom.\n` +
-    `- BANNED phrases (do NOT use, ever): ${BANNED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "rounding out the package", "we're aligned", "package" (as a comp noun).\n` +
-    `- PREFERRED phrasing (Indian recruiter cadence): ${PREFERRED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "looking at the structure" (not "rounding out the package").\n` +
+    `- BANNED phrases (do NOT use, ever): ${BANNED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "rounding out the package", "we're aligned", "package" (as a comp noun). Also AVOID American-startup register: "does that work for you?" (prefer "how does this sound?" / "let me know your thoughts"), "start date" (use "joining date"), "compensation package" (use "CTC" / "fitment"), "I'd love to" / "excited to" (too American).\n` +
+    `- PREFERRED phrasing (Indian recruiter cadence): ${PREFERRED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "looking at the structure" (not "rounding out the package"). Indian-HR register markers you SHOULD feel free to use when natural: "as per company policy", "kindly", "revert" (= reply back, "kindly revert by EOD"), "do the needful", "in-hand vs CTC", "joining date" (NOT "start date"), "notice period buyout", "let me check with the panel" / "let me check with leadership".\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
     `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Thanks for that —", "Fair enough —") but do not strip it. Do NOT use the formulaic "Right, on X —" template; vary the lead.\n` +
     `- IDIOM CAP: use AT MOST ONE Indian-recruiter idiom from the preferred list per utterance. Stacking two or more (e.g. "fitment" + "as per the band" + "broadly aligned") reads as parody.\n` +

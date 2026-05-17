@@ -250,10 +250,19 @@ export type DiscoveryTopic =
   | "candidate-trial-close"
   | "comparative-anchoring"
   | "internal-equity-defense"
+  /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance documentation
+   * request actionKind. Pushed onto askedTopics via applyAiMove's F7 ledger
+   * so the planner can verify single-fire (in addition to the explicit
+   * postAcceptanceDocsRequestedAtTurn marker). */
+  | "post-acceptance-document-request"
   /* Structural-lever actionKinds — pushed onto askedTopic by
    * makeStructuralLeverAction so applyAiMove can route them through
    * the F7 ledger uniformly. */
   | "band-anchor-with-rationale"
+  /* Phase 2 Indian-HR redesign (2026-05-17) — point-offer anchor lever
+   * actionKind (replaces the legacy `anchor-with-band` kind that emitted
+   * a range). Single-fire per session via askedTopics ledger. */
+  | "anchor-with-offer"
   | "lever-grade-upgrade"
   | "lever-retention-bonus"
   | "lever-rsu-refresh"
@@ -311,6 +320,7 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "range-to-point", "range-deflection", "market-data-reference",
   "close-confirmation", "close-recap-formal", "candidate-trial-close",
   "comparative-anchoring", "internal-equity-defense", "band-anchor-with-rationale",
+  "anchor-with-offer", "post-acceptance-document-request",
   "lever-grade-upgrade", "lever-retention-bonus", "lever-rsu-refresh",
   "lever-relocation", "lever-perf-bonus-cadence", "lever-joining-bonus-explained",
   "open-with-offer", "probe", "probe-justification", "counter-base",
@@ -1138,6 +1148,13 @@ export interface NegotiationState {
    *  on the very next turn rather than after the discovery cascade. */
   offerAskedAtTurn?: number | null;
 
+  /** Phase 2 Indian-HR redesign (2026-05-17) — turn-index at which the
+   *  post-acceptance documentation request lever fired (Congrats + BGV
+   *  paperwork checklist). Stamped by applyAiMove when
+   *  move.actionKind === "post-acceptance-document-request". Single-fire
+   *  per session — read by the planner so the lever doesn't re-emit. */
+  postAcceptanceDocsRequestedAtTurn?: number | null;
+
   /** FL5 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-index at which the
    *  candidate's reply was hedged ("not sure", "around 30", "I think",
    *  "approximately", "don't remember"). Set by applyCandidateAnswer;
@@ -1767,6 +1784,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     marketMode: input.marketMode ?? "neutral",
     recruiterPersona: input.recruiterPersona ?? "consultative",
     acceptedAtTurn: null,
+    postAcceptanceDocsRequestedAtTurn: null,
     walkedAwayAtTurn: null,
     stalemateAtTurn: null,
     hikePercent: null,
@@ -3707,6 +3725,15 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       next.leversFired = firedLevers;
     }
   }
+  /* Phase 2 Indian-HR redesign (2026-05-17) — stamp the post-acceptance
+   * documentation-request turn marker so the planner emits the lever
+   * exactly once per session. */
+  if (
+    move.actionKind === "post-acceptance-document-request" &&
+    state.postAcceptanceDocsRequestedAtTurn == null
+  ) {
+    next.postAcceptanceDocsRequestedAtTurn = state.turnIndex;
+  }
   /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
    * ledger so planNextAction can skip same-topic probes within 3 turns.
    * Use move.askedTopic if set (reactive-followups), otherwise fall back
@@ -4085,6 +4112,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
     throw new Error("state.lastJoiningBonusOffered");
   }
   if (s.acceptedAtTurn !== null && !isFiniteNonNegInt(s.acceptedAtTurn)) throw new Error("state.acceptedAtTurn");
+  if (
+    s.postAcceptanceDocsRequestedAtTurn !== undefined &&
+    s.postAcceptanceDocsRequestedAtTurn !== null &&
+    !isFiniteNonNegInt(s.postAcceptanceDocsRequestedAtTurn)
+  ) {
+    throw new Error("state.postAcceptanceDocsRequestedAtTurn");
+  }
   if (s.walkedAwayAtTurn !== null && !isFiniteNonNegInt(s.walkedAwayAtTurn)) throw new Error("state.walkedAwayAtTurn");
   if (s.stalemateAtTurn !== undefined && s.stalemateAtTurn !== null && !isFiniteNonNegInt(s.stalemateAtTurn)) throw new Error("state.stalemateAtTurn");
   /* Backward-compatible optional fields: tolerate absence (older
@@ -4362,6 +4396,8 @@ export function deserializeState(json: string): NegotiationState {
     vossTacticsUsed: (s.vossTacticsUsed as VossTactic[] | undefined) ?? [],
     infoAsked: (s.infoAsked as InfoIntent[] | undefined) ?? [],
     verbalAcceptanceTurn: s.verbalAcceptanceTurn ?? null,
+    postAcceptanceDocsRequestedAtTurn:
+      (s.postAcceptanceDocsRequestedAtTurn as number | null | undefined) ?? null,
     postVerbalRenegotiationCount: (s.postVerbalRenegotiationCount as number | undefined) ?? 0,
     counterRound: (s.counterRound as number | undefined) ?? 0,
     recentRecoveryActive: (s.recentRecoveryActive as boolean | undefined) ?? false,
