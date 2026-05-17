@@ -16,7 +16,7 @@ import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-r
 import { summarizeReverseInterview } from "../src/_reverse-interview";
 import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-register";
 import { getPanelPersona, panelPersonaPromptFragment } from "../src/_indian-panel-personas";
-import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment } from "./_behavioral-followup-bank";
+import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment, shouldSuppressCue } from "./_behavioral-followup-bank";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -46,7 +46,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy, vagueness, crispness, selfAwarenessShown, defensiveness } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -104,6 +104,13 @@ export default async function handler(req: Request): Promise<Response> {
       candidateCompetingOffer?: number;
       starGap?: "action" | "result" | "situation-task";
       weHeavy?: boolean;
+      /* Lift A — answer-analysis signals computed in the engine. All
+         optional; absence is treated as "signal not detected" so legacy
+         callers and salary-neg / technical types are unaffected. */
+      vagueness?: boolean;
+      crispness?: "thin" | "ok" | "rambling";
+      selfAwarenessShown?: boolean;
+      defensiveness?: boolean;
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -226,12 +233,29 @@ export default async function handler(req: Request): Promise<Response> {
   // across sessions and saves a chunk of LLM cost on common gaps.
   const behaviouralProbeContext = (() => {
     if (type !== "behavioral" && type !== "behavioural") return "";
+    // Validate crispness shape — anything outside the documented union
+    // gets dropped rather than narrowing to a wrong cue.
+    const safeCrispness: "thin" | "ok" | "rambling" | undefined =
+      crispness === "thin" || crispness === "ok" || crispness === "rambling"
+        ? crispness
+        : undefined;
     const cue = cueFromEngineHints({
       starGap: starGap as "action" | "result" | "situation-task" | undefined,
       weHeavy: Boolean(weHeavy),
       questionText: question,
+      vagueness: Boolean(vagueness),
+      crispness: safeCrispness,
+      selfAwarenessShown: Boolean(selfAwarenessShown),
+      defensiveness: Boolean(defensiveness),
     });
     if (!cue) return "";
+    // Lift A — if the candidate already self-critiqued, suppress the
+    // would-do-differently closer; falling through to LLM generation is
+    // the right move because a custom probe will land better than an
+    // off-the-shelf one when the obvious cue is gone.
+    if (shouldSuppressCue(cue, { selfAwarenessShown: Boolean(selfAwarenessShown) })) {
+      return "";
+    }
     const alreadyAsked = Array.isArray(previousFollowUps) ? previousFollowUps : [];
     const probe = pickBehavioralProbe({ cue, alreadyAsked });
     if (!probe) return "";

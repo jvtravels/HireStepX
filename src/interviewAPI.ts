@@ -690,6 +690,15 @@ export async function fetchFollowUp(params: {
       to "we" out of cultural humility — we want to surface the
       individual contribution, not teach them "we" is wrong. */
   weHeavy?: boolean;
+  /** Behavioural-only Lift A signals — computed in the engine via
+      `detectBehaviouralAnswerSignals`. Drive the follow-up coach's
+      thin-answer re-elicit, defensiveness own-it redirect, vagueness
+      quantification probe, and self-awareness closer suppression. All
+      optional; absence is treated as "signal not detected". */
+  vagueness?: boolean;
+  crispness?: "thin" | "ok" | "rambling";
+  selfAwarenessShown?: boolean;
+  defensiveness?: boolean;
 }): Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string } | null> {
   // Client-side rate limit: max 10 follow-ups per 60s
   if (!checkRateLimit("follow-up", 10, 60_000)) return null;
