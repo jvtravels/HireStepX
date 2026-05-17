@@ -1,0 +1,25 @@
+{
+  "name": "Candidate verbally claims an 8-month internship at Razorpay but the resume shows a 3-month window (May–Jul 2024) — duration inflation",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your internship.", "time": "" },
+      { "speaker": "user", "text": "I interned at Razorpay for eight months on the payments team. I worked on the refunds pipeline and shipped two backend services.", "time": "" }
+    ]
+  },
+  "resume": {
+    "degree": "B.Tech CSE",
+    "school": "VIT Vellore",
+    "gradYear": "2025",
+    "experiences": [
+      {
+        "title": "Software Engineering Intern",
+        "company": "Razorpay",
+        "period": "May 2024 - July 2024",
+        "bullets": ["Refunds pipeline service in Go", "Latency benchmark harness"]
+      }
+    ]
+  },
+  "expected": { "must_include": ["internship_duration_mismatch_with_resume"], "must_not_include": ["empty_transcript", "claimed_internship_not_in_resume"] }
+}

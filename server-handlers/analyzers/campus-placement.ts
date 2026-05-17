@@ -305,7 +305,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.0",
+  version: "campus-placement-v6.1",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -1177,6 +1177,94 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         }
       }
 
+      // 5.5) Internship duration mismatch with resume.
+      // Resume's experience.period is the BGV-checked window. If the
+      // candidate verbally says "I was there for six months" near a
+      // company name but the resume shows a 3-month range, flag —
+      // recruiters routinely cross-check duration against the offer
+      // letter / relieving letter. We require BOTH an absolute drift
+      // > 2 months AND a relative drift > 30% to suppress noise from
+      // partial-month rounding ("about 4 months" vs an exact 3.5).
+      if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
+        const MONTHS_LOCAL: Record<string, number> = {
+          jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
+          apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6,
+          aug: 7, august: 7, sep: 8, sept: 8, september: 8,
+          oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11,
+        };
+        const parsePeriodMonths = (period: string | undefined | null): number | null => {
+          if (!period) return null;
+          const norm = period.toLowerCase().replace(/–|—/g, "-").replace(/\bto\b/g, "-")
+            .replace(/'(\d{2})\b/g, (_m, yy: string) => {
+              const n = parseInt(yy, 10);
+              return ` ${n >= 50 ? 1900 + n : 2000 + n}`;
+            });
+          const parts = norm.split("-").map((s) => s.trim()).filter(Boolean);
+          if (parts.length < 2) return null;
+          const parsePart = (p: string, isEnd: boolean): Date | null => {
+            if (/^(present|current|now|till\s+date|ongoing)$/i.test(p)) return new Date();
+            const mYr = /^(?:([a-z]{3,9})\.?\s+)?(\d{4})$/i.exec(p);
+            if (!mYr) return null;
+            const monRaw = mYr[1]?.toLowerCase();
+            const year = parseInt(mYr[2], 10);
+            if (year < 1990 || year > 2100) return null;
+            const mon = monRaw && MONTHS_LOCAL[monRaw] !== undefined ? MONTHS_LOCAL[monRaw] : isEnd ? 11 : 0;
+            return new Date(year, mon, isEnd ? 28 : 1);
+          };
+          const start = parsePart(parts[0], false);
+          const end = parsePart(parts[parts.length - 1], true);
+          if (!start || !end || end < start) return null;
+          return Math.max(1, Math.round((end.getTime() - start.getTime()) / (30 * 86400 * 1000)));
+        };
+        const NUM_WORDS: Record<string, number> = {
+          one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+          seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+        };
+        const durRe = /\b(?:for|about|around|nearly|roughly|some)?\s*(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(months?|years?)\b/gi;
+        const driftedCompanies: string[] = [];
+        for (const exp of resume.experiences) {
+          const resumeMonths = parsePeriodMonths(exp?.period);
+          const companyNorm = normalizeCompanyName(exp?.company);
+          if (!resumeMonths || !companyNorm || companyNorm.length < 3) continue;
+          const userLower = userText.toLowerCase();
+          // Find every occurrence of the company in userText, then check
+          // ±150 chars for a duration phrase.
+          let searchFrom = 0;
+          let foundDriftForThisCompany = false;
+          while (!foundDriftForThisCompany) {
+            const idx = userLower.indexOf(companyNorm.split(/\s+/)[0], searchFrom);
+            if (idx === -1) break;
+            searchFrom = idx + 1;
+            const window = userText.slice(Math.max(0, idx - 150), Math.min(userText.length, idx + 150));
+            durRe.lastIndex = 0;
+            let dm: RegExpExecArray | null;
+            while ((dm = durRe.exec(window)) !== null) {
+              const raw = dm[1].toLowerCase();
+              const n = NUM_WORDS[raw] ?? parseInt(raw, 10);
+              if (Number.isNaN(n) || n <= 0) continue;
+              const unit = dm[2].toLowerCase();
+              const spokenMonths = unit.startsWith("year") ? n * 12 : n;
+              const absDrift = Math.abs(spokenMonths - resumeMonths);
+              const relDrift = absDrift / resumeMonths;
+              if (absDrift > 2 && relDrift > 0.3) {
+                driftedCompanies.push(`${(exp?.company || "").trim()} (resume: ${resumeMonths}mo, spoken: ${spokenMonths}mo)`);
+                foundDriftForThisCompany = true;
+                break;
+              }
+            }
+          }
+        }
+        if (driftedCompanies.length > 0) {
+          flags.add("internship_duration_mismatch_with_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: "The internship duration you state verbally must match the period on your resume — recruiters cross-check against the offer / relieving letter during BGV. Even rounding 3 months up to 'six months' to sound stronger is a documented disqualifier in service-tier rounds.",
+            observed: `Duration drift detected for: ${driftedCompanies.slice(0, 2).join("; ")}.`,
+            severity: "high",
+          });
+        }
+      }
+
       // 6) Portfolio satisfied by resume.
       // The transcript-only `portfolio_absent_for_claim` rule fires
       // when the user narrates a project without dropping a GitHub
@@ -1243,6 +1331,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("branch_mismatch_with_resume")) tips.push("Your resume's degree field is the BGV-checked source of truth. If you spoke about a different branch than what's on your resume, frame it explicitly: 'My resume lists Mechanical — I've been doing CS50, Striver SDE Sheet, and projects on the side, which is why I'm targeting SDE roles.' Owning the bridge beats a silent verbal swap.");
     if (flags.has("grad_year_mismatch_with_resume")) tips.push("Your stated graduation year and the year on your resume must match within a year — BGV pulls the year off your provisional degree / transcript. If you're an extended-semester passout, state it once and stick to it: 'I graduated in 2024 — completed after one supplementary in extended semester.' Drifting between two years in the same interview reads as fabrication.");
     if (flags.has("college_mismatch_with_resume")) tips.push("Name the exact college on your resume — Indian campus BGV cross-checks the degree certificate, and Tier-1-sounding swaps (e.g. saying 'IIT' when the resume lists 'NIT') are an instant disqualifier. If you transferred, say it once: 'Started at NIT Surat, transferred to NIT Trichy in 2nd year, both reflected on the resume.'");
+    if (flags.has("internship_duration_mismatch_with_resume")) tips.push("Your resume's internship dates (and the matching offer / relieving letter) are what BGV pulls — never round 3 months up to 'six months' to sound stronger. If you genuinely extended an internship, state it cleanly: 'Initial 3-month internship, extended by another 3 months — both reflected on the relieving letter.' Specific timelines beat inflated round numbers.");
     if (flags.has("cgpa_mismatch_with_resume")) tips.push("Your CGPA on the resume is the BGV-checked number — recruiters cross-reference it against your transcript. Stating a different CGPA verbally (even rounded up by 1 point) reads as fabrication. If your latest semester moved the average, say so explicitly: 'My resume shows 7.2 from last semester; current cumulative is 7.4 after this semester's results.' Specificity beats inflation.");
 
     result.rubricGaps = gaps;
