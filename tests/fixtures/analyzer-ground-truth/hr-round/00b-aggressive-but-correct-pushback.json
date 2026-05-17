@@ -1,0 +1,56 @@
+{
+  "name": "Candidate pushes back hard and correctly — assertiveness is not a flag",
+  "notes": "Calibration baseline #2. Candidate refuses to anchor on comp, deflects a CTC-first probe, calls out an exploding-offer ask, and negotiates the buyout vs notice — all professionally. None of these should fire flags. Specifically guards against false-positives on `user_badmouthing_employer` (firm ≠ bad-mouth), `floor_collapse` (declining to name a number ≠ collapse), and `counter_offer_dodge` (saying 'won't take a counter' is the textbook answer, not a dodge).",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Before we begin — what's your current CTC and what are you expecting?", "time": "" },
+      { "speaker": "user", "text": "Happy to discuss comp, but I'd want to understand the role, the level, and the scope first — otherwise we'll anchor on the wrong number. Can we cover the role and team, and circle back to comp after I understand what I'd be hired into?", "time": "" },
+      { "speaker": "ai", "text": "Fair. Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "5 years backend, currently at a fintech leading the disputes service — owned it from a single-pod prototype to handling 8% of company-wide transaction volume. Before that, 2 years at an early-stage SaaS where I built the billing pipeline.", "time": "" },
+      { "speaker": "ai", "text": "Notice period?", "time": "" },
+      { "speaker": "user", "text": "90 days standard. I can fund a buyout for half of it if there's offer-side urgency — I'd want the buyout reimbursed in the joining bonus, which is standard for senior hires.", "time": "" },
+      { "speaker": "ai", "text": "Our band for this role tops out at 28 LPA fixed. Can you work with that?", "time": "" },
+      { "speaker": "user", "text": "That's below where I need to be — I'm at 30 fixed today and benchmarking 38-42 for the level we discussed. I won't drop below current. If 28 is firm, this isn't a fit and I'd rather we both save the cycles now than negotiate downward at offer stage. If there's flexibility on the band for the right candidate, I'm open to discussing structure — base + variable + stock split, sign-on, retention.", "time": "" },
+      { "speaker": "ai", "text": "If your current company counters with a 50% hike, would you reconsider?", "time": "" },
+      { "speaker": "user", "text": "No. If I accept your offer I'll resign within 48 hours and decline any counter — the reason I'm leaving is scope, not money, and a counter doesn't change that. I think it's fair for you to ask, though; you don't want to make an offer you'll lose.", "time": "" },
+      { "speaker": "ai", "text": "We'd need a decision within 48 hours of the offer landing.", "time": "" },
+      { "speaker": "user", "text": "48 hours is tight for a role of this level — I'd want a week to talk it through with my family and align on the joining timeline given the buyout. Two days feels like an exploding-offer setup, which makes me wonder why. Can we agree on five business days from written offer?", "time": "" },
+      { "speaker": "ai", "text": "BGV documents?", "time": "" },
+      { "speaker": "user", "text": "All ready — payslips, Form 16, relieving letters, UAN, PAN, Aadhaar. I'll share within 24 hours of the BGV portal link landing.", "time": "" },
+      { "speaker": "ai", "text": "Why us?", "time": "" },
+      { "speaker": "user", "text": "Your dispute resolution engine handles 4x the volume mine does with a smaller team. That's the kind of scale problem I want to be on. Also — I've watched two of your senior engineers' talks on incident postmortems and the engineering culture they describe is what I want next.", "time": "" },
+      { "speaker": "ai", "text": "Why are you leaving?", "time": "" },
+      { "speaker": "user", "text": "The team is being merged into a larger org and the disputes service is being absorbed. I don't want to spend the next year on integration work — I want to go deeper on the problem, and that's not the direction my current company is taking.", "time": "" },
+      { "speaker": "ai", "text": "Questions for us?", "time": "" },
+      { "speaker": "user", "text": "What's the team's incident frequency and on-call load? How are scope decisions made between platform investment and product asks? And what would a successful first six months look like from the hiring manager's POV?", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Senior Software Engineer", "company": "PhonePe", "period": "March 2022 - present" },
+      { "title": "Software Engineer", "company": "Chargebee", "period": "August 2020 - February 2022" }
+    ],
+    "topSkills": ["Java", "Kafka", "Postgres", "Distributed systems"]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": [
+      "user_anchor_leaked_salary",
+      "user_badmouthing_employer",
+      "floor_collapse",
+      "counter_offer_dodge",
+      "generic_why_company",
+      "generic_self_intro",
+      "bgv_document_evasion",
+      "payslip_refusal",
+      "hike_rationale_thin",
+      "salary_breakup_vague",
+      "reverse_interview_low_quality",
+      "dimensions_thin_coverage",
+      "resume_transcript_mismatch",
+      "gap_unexplained",
+      "loyalty_overcommit"
+    ]
+  }
+}

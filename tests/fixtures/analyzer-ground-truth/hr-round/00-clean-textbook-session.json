@@ -1,0 +1,61 @@
+{
+  "name": "Textbook-correct HR round — nothing should fire",
+  "notes": "Calibration baseline. Candidate hits every dimension cleanly: concrete self-intro, concrete notice, fixed+variable+RSU CTC breakdown, rationale-backed hike ask, BGV-ready, counter-offer commitment with timeline, specific 'why us', professional reason-for-leaving with no badmouthing, substantive reverse interview. If ANY flag fires here, a detector has drifted into false-positive territory and needs tightening before users see the noise.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a senior backend engineer with 6 years at a payments company. I lead the settlements platform — owned the rewrite from a Python monolith to Go microservices last year, which cut p99 from 800ms to 180ms and let us 4x merchant onboarding throughput.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period and earliest last working day?", "time": "" },
+      { "speaker": "user", "text": "60 days, with a 30-day buyout option I can fund myself if there's offer urgency. Earliest LWD is February 15th; with buyout I can do mid-January.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your current CTC — fixed, variable, joining bonus, RSUs.", "time": "" },
+      { "speaker": "user", "text": "Fixed base 32 lakhs, variable 6 lakhs paid out at roughly 85% of target, no joining bonus left, and 18 lakhs RSU vesting over 4 years with a 1-year cliff that I've cleared.", "time": "" },
+      { "speaker": "ai", "text": "And your expectation?", "time": "" },
+      { "speaker": "user", "text": "I'm targeting 52 fixed. The jump is roughly 60% — justified because the scope here is end-to-end ownership of a product line, the second offer I'm sitting on benchmarks at 50 fixed plus equity, and your published L5 band on Levels.fyi runs to 55. Happy to align on equity vs cash mix if the structure differs.", "time": "" },
+      { "speaker": "ai", "text": "Will you be available for BGV — payslips, Form 16, relieving letter, UAN, PAN, Aadhaar?", "time": "" },
+      { "speaker": "user", "text": "Yes. I have last 12 months of payslips, both years of Form 16, relieving letters from prior employers, UAN linked to my current PF, and PAN/Aadhaar ready. I can share within 24 hours of receiving the BGV portal link.", "time": "" },
+      { "speaker": "ai", "text": "If your current company counter-offers, what will you do?", "time": "" },
+      { "speaker": "user", "text": "I won't take it. I've made the decision to switch because of the scope here, not because of money — a counter solves the comp gap but not why I'm looking. If you make me an offer and I accept, I'll resign within 48 hours and not entertain a counter.", "time": "" },
+      { "speaker": "ai", "text": "Why this company specifically?", "time": "" },
+      { "speaker": "user", "text": "Two reasons. First — I've used your merchant APIs at my current company and the webhook reliability is better than anyone else in the market; I want to work on the system I respect. Second — I followed your VP Engineering Anuj's talk at GopherCon India on the settlements ledger redesign; that's the exact problem space I want to go deeper on.", "time": "" },
+      { "speaker": "ai", "text": "Why are you leaving your current role?", "time": "" },
+      { "speaker": "user", "text": "I've taken settlements as far as I can there — the next 12 months would be incremental optimizations on a system I already built. I want to be back at the start of a curve again, and your team is rebuilding the ledger from scratch.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Three. One — how is success measured for this role at 90 days, 6 months, and 1 year? Two — what's the on-call rotation and incident review culture for the settlements team? Three — how does the engineering org decide between paying down infra debt versus shipping new product surface area when both compete for the same quarter?", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Senior Software Engineer", "company": "Razorpay", "period": "January 2021 - present" },
+      { "title": "Software Engineer", "company": "Flipkart", "period": "July 2018 - December 2020" }
+    ],
+    "topSkills": ["Go", "Python", "Kafka", "Postgres", "Distributed systems"]
+  },
+  "expected": {
+    "must_include": [],
+    "must_not_include": [
+      "user_anchor_leaked_salary",
+      "user_badmouthing_employer",
+      "notice_period_never_discussed",
+      "vague_notice_period",
+      "generic_self_intro",
+      "bgv_document_evasion",
+      "payslip_refusal",
+      "counter_offer_dodge",
+      "generic_why_company",
+      "gap_unexplained",
+      "hike_rationale_thin",
+      "salary_breakup_vague",
+      "reference_refusal",
+      "floor_collapse",
+      "reverse_interview_low_quality",
+      "dimensions_thin_coverage",
+      "resume_transcript_mismatch",
+      "resume_gap_unaddressed",
+      "inflated_seniority_claim",
+      "under_titled_candidate",
+      "loyalty_overcommit",
+      "ctc_first_question_user"
+    ]
+  }
+}
