@@ -396,6 +396,15 @@ const HIKE_PCT_COMPLAINT_PATTERNS: RegExp[] = [
   /\bjust\s+\d+\s*%?\s*(?:hike|jump|bump|increase)\b/i,
   /\bthat\s*(?:\w+\s+){0,2}barely\s*(?:\w+\s+){0,3}hike\b/i,
   /\bthat\s*(?:\w+\s+){0,2}not\s+even\s+(?:\w+\s+){0,3}hike\b/i,
+  /* Phase 22 Hinglish (2026-05-17) — "sirf 8% hike" / "bas 10% hike"
+   * ("only/just N% hike"), "itna sa hike" / "thoda hi hike"
+   * ("such a small hike" / "only a little hike"). Patterns are
+   * anchored on the literal token `hike` to avoid neutral
+   * percentages elsewhere (variable share, equity %) firing. */
+  /\bsirf\s+\d+\s*%?\s*hike\b/i,
+  /\bbas\s+\d+\s*%?\s*hike\b/i,
+  /\bitna\s+sa\s+hike\b/i,
+  /\bthoda\s+(?:hi|sa)\s+hike\b/i,
 ];
 
 function detectComplainedAboutHikePercent(text: string): boolean {
@@ -412,11 +421,26 @@ const STALL_THINKING_PATTERNS: RegExp[] = [
 const STALL_FAMILY_PATTERNS: RegExp[] = [
   /\b(?:i(?:.?ll|\s+will)?\s+)?(?:discuss|talk|check)\s+(?:this\s+|it\s+)?with\s+(?:my\s+)?(?:family|wife|husband|spouse|partner|parents)\b/i,
   /\bneed\s+to\s+(?:discuss|talk|check)\s+with\s+(?:my\s+)?(?:family|wife|husband|spouse|partner|parents)\b/i,
+  /* Phase 22 Hinglish (2026-05-17) — "family se discuss / baat
+   * karunga / poochhna padega". */
+  /\bfamily\s+se\s+(?:discuss|baat|poochh|pooch)/i,
 ];
 const STALL_REVERT_PATTERNS: RegExp[] = [
   /\bi(?:.?ll|\s+will)?\s+(?:revert|get\s+back\s+to\s+you|come\s+back\s+to\s+you|respond)\s+(?:by|on|in|after|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|eod|next\s+week|the\s+weekend)/i,
   /\bcan\s+i\s+revert\s+(?:by|on|in|after|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|eod|next\s+week|the\s+weekend)/i,
   /\bgive\s+me\s+(?:a\s+)?(?:day|two\s+days|few\s+days|some\s+time|till|until)\b/i,
+  /* Phase 22 Hinglish/English (2026-05-17) — "ek din do" ("give me a
+   * day"), "thoda time" ("a bit of time"), "sochke batata" ("will
+   * think and tell"), "family se discuss" ("discuss with family"),
+   * "wapas call" ("call back"). Plus three English idioms that were
+   * missed in the Phase 3 set. */
+  /\bek\s+din\s+do\b/i,
+  /\bthoda\s+time\b/i,
+  /\bsochke\s+(?:batata|bataunga|bataenge|batayenge)/i,
+  /\bwapas\s+call\b/i,
+  /\bgive\s+me\s+a\s+day\b/i,
+  /\bsleep\s+on\s+it\b/i,
+  /\bneed\s+to\s+think\b/i,
 ];
 
 function detectStallSignal(text: string): "thinking" | "family-discussion" | "revert-later" | null {

@@ -242,3 +242,76 @@ describe("extractCandidateStance — stallSignal", () => {
     expect(merged.stallSignal?.statedAt).toBe(2);
   });
 });
+
+/* Phase 22 Hinglish coverage (2026-05-17) — new patterns for
+ * complainedAboutHikePercent and stallSignal added to support Indian
+ * conversational idioms in salary-negotiation transcripts. */
+describe("extractCandidateStance — Hinglish complainedAboutHikePercent", () => {
+  it("true on 'sirf 8% hike'", () => {
+    expect(extractCandidateStance("sirf 8% hike de rahe ho").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("true on 'bas 10% hike'", () => {
+    expect(extractCandidateStance("bas 10% hike to bahut kam hai").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("true on 'itna sa hike'", () => {
+    expect(extractCandidateStance("itna sa hike mein kaise chalega").complainedAboutHikePercent).toBe(
+      true,
+    );
+  });
+
+  it("true on 'thoda hi hike'", () => {
+    expect(extractCandidateStance("yeh to thoda hi hike hua").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("true on 'thoda sa hike'", () => {
+    expect(extractCandidateStance("thoda sa hike de rahe ho").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("false on neutral Hinglish ('hike acha hai')", () => {
+    expect(extractCandidateStance("hike acha hai").complainedAboutHikePercent).toBe(false);
+  });
+});
+
+describe("extractCandidateStance — Hinglish/English stallSignal", () => {
+  it("captures 'ek din do' as revert-later", () => {
+    const r = extractCandidateStance("ek din do, sochke batata hoon", 3);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+
+  it("captures 'thoda time' as revert-later", () => {
+    const r = extractCandidateStance("thoda time chahiye", 4);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+
+  it("captures 'sochke batata' as revert-later", () => {
+    const r = extractCandidateStance("sochke batata hoon kal tak", 2);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+
+  it("captures 'family se discuss' as family-discussion", () => {
+    const r = extractCandidateStance("family se discuss karke batata hoon", 2);
+    expect(r.stallSignal?.kind).toBe("family-discussion");
+  });
+
+  it("captures 'wapas call' as revert-later", () => {
+    const r = extractCandidateStance("main wapas call karunga", 1);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+
+  it("captures 'give me a day' as revert-later", () => {
+    const r = extractCandidateStance("give me a day to decide", 1);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+
+  it("captures 'sleep on it' as revert-later", () => {
+    const r = extractCandidateStance("let me sleep on it", 1);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+
+  it("captures 'need to think' as revert-later", () => {
+    const r = extractCandidateStance("I need to think before committing", 1);
+    expect(r.stallSignal?.kind).toBe("revert-later");
+  });
+});
