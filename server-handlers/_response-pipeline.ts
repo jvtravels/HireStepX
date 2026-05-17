@@ -490,6 +490,14 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
     numberPolicy: "required",
     requiredTokens: [/%\s*hike\b/i, /\bpeers\b/i],
   },
+  /* fake-leverage-challenge (2026-05-17) — soft proof-of-offer probe.
+   * Number-free (asking for the letter, not quoting LPA). Required
+   * tokens pin the proof-request semantics: must mention "offer letter"
+   * OR "redacted" so a sanitised restyle can't drop the proof ask. */
+  "fake-leverage-challenge": {
+    numberPolicy: "forbidden",
+    requiredTokens: [/\b(?:offer\s+letter|redacted)\b/i],
+  },
 };
 
 /** AP3-F2 (2026-05-17) — component-probe requiredTokens are

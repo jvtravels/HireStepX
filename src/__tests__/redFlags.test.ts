@@ -110,7 +110,7 @@ describe("detectRedFlags — lies-about-offer (narrow heuristic)", () => {
     const state = baseState({
       competingOffer: 32,
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: false, internalCounterRisk: null, hasAny: true },
-      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
+      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: false },
     });
     const flags = detectRedFlags({ state, stance: emptyStance, utterance: "" });
     const lies = flags.find((f) => f.code === "lies-about-offer");
@@ -356,7 +356,7 @@ describe("Phase 25 — offer-no-company-disclosure", () => {
       turnIndex: 3,
       competingOffer: 28,
       competingOfferDetail: {
-        company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: true,
+        company: null, status: null, stage: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("offer-no-company-disclosure");
@@ -367,7 +367,7 @@ describe("Phase 25 — offer-no-company-disclosure", () => {
       turnIndex: 3,
       competingOffer: 28,
       competingOfferDetail: {
-        company: "Razorpay", status: "verbal", stage: "offered", letterShareOffered: false, onHold: false, hasAny: true,
+        company: "Razorpay", status: "verbal", stage: "offered", letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("offer-no-company-disclosure");
@@ -378,7 +378,7 @@ describe("Phase 25 — offer-no-company-disclosure", () => {
       turnIndex: 1,
       competingOffer: 28,
       competingOfferDetail: {
-        company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: true,
+        company: null, status: null, stage: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("offer-no-company-disclosure");
@@ -390,7 +390,7 @@ describe("Phase 26 — offer-drop-risk", () => {
     const state = baseState({
       competingOffer: 30,
       competingOfferDetail: {
-        company: "Razorpay", status: "signed", stage: "accepted", letterShareOffered: false, onHold: false, hasAny: true,
+        company: "Razorpay", status: "signed", stage: "accepted", letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("offer-drop-risk");
@@ -400,7 +400,7 @@ describe("Phase 26 — offer-drop-risk", () => {
     const state = baseState({
       competingOffer: 30,
       competingOfferDetail: {
-        company: "Razorpay", status: "letter", stage: "offered", letterShareOffered: false, onHold: false, hasAny: true,
+        company: "Razorpay", status: "letter", stage: "offered", letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("offer-drop-risk");
@@ -496,7 +496,7 @@ describe("Phase 27 — competing-offer-on-hold", () => {
       competingOffer: 28,
       competingOfferDetail: {
         company: "flipkart", status: null, stage: "offered",
-        letterShareOffered: false, onHold: true, hasAny: true,
+        letterShareOffered: false, onHold: true, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).toContain("competing-offer-on-hold");
@@ -507,7 +507,7 @@ describe("Phase 27 — competing-offer-on-hold", () => {
       competingOffer: 28,
       competingOfferDetail: {
         company: "flipkart", status: "letter", stage: "offered",
-        letterShareOffered: false, onHold: false, hasAny: true,
+        letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true,
       },
     });
     expect(codes(state)).not.toContain("competing-offer-on-hold");

@@ -84,6 +84,8 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       stage: null,
       letterShareOffered: false,
       onHold: false,
+      proofRequestedAtTurn: null,
+      proofProvided: false,
       hasAny: false,
     },
     decisionDeadline: {

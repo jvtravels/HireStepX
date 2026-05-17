@@ -86,6 +86,8 @@ describe("F4 — counter-offer risk × concession curve", () => {
           stage: "received",
           letterShareOffered: true,
           onHold: false,
+          proofRequestedAtTurn: null,
+          proofProvided: false,
           hasAny: true,
         } as never,
       }),

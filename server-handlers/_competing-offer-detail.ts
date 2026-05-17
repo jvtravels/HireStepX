@@ -49,6 +49,16 @@ export interface CompetingOfferDetail {
    *  Materially weakens the candidate's leverage (the "I have another
    *  offer at ₹X" anchor is no longer a credible alternative). */
   onHold: boolean;
+  /** fake-leverage-challenge (2026-05-17) — turn index at which the AI
+   *  asked the candidate to share the offer letter (or redacted
+   *  version). Null until the lever fires; stamped once by applyAiMove.
+   *  Drives single-fire of the challenge and gates `proofProvided`
+   *  detection in subsequent candidate utterances. */
+  proofRequestedAtTurn: number | null;
+  /** fake-leverage-challenge (2026-05-17) — candidate complied with the
+   *  proof request: shared (or offered to share) an offer letter /
+   *  redacted PDF / concrete amount+company+status. Monotone-up. */
+  proofProvided: boolean;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -59,6 +69,8 @@ const EMPTY: CompetingOfferDetail = {
   stage: null,
   letterShareOffered: false,
   onHold: false,
+  proofRequestedAtTurn: null,
+  proofProvided: false,
   hasAny: false,
 };
 
@@ -147,6 +159,31 @@ const LETTER_SHARE_PATTERNS = [
   /\b(?:happy\s+to\s+share|can\s+share\s+(?:the\s+)?(?:letter|offer)|will\s+(?:share|forward)\s+(?:the\s+)?(?:letter|offer)|forward\s+(?:you\s+)?the\s+(?:letter|offer)|attach\s+(?:the\s+)?(?:letter|offer))\b/i,
 ];
 
+/* fake-leverage-challenge (2026-05-17) — proof-share signals. When the
+ * AI has asked for the offer letter (state.competingOfferDetail
+ * .proofRequestedAtTurn != null) and the candidate responds with one of
+ * these patterns, the leverage signal is corroborated (real candidate)
+ * vs. dodged (bluff). Patterns are intentionally broad — sharing intent,
+ * file-type tells (PDF/screenshot), or "redacted" qualifier all count. */
+const PROOF_SHARE_PATTERNS: RegExp[] = [
+  /\b(?:here.?s|attaching|sending|sharing|share|send\s+you)\s+(?:the\s+|a\s+|my\s+)?(?:offer|letter|pdf|screenshot)\b/i,
+  /\b(?:offer\s+letter|redacted\s+(?:version|copy|offer|letter)|redacted\s+pdf)\b/i,
+  /\b(?:pdf|screenshot)\s+of\s+(?:the\s+|my\s+)?(?:offer|letter)\b/i,
+  /\b(?:i.?ll|i\s+will|can|will)\s+(?:send|share|forward|attach)\s+(?:you\s+)?(?:the\s+|a\s+|my\s+)?(?:offer|letter|pdf|redacted)\b/i,
+];
+
+/* fake-leverage-challenge (2026-05-17) — concrete-tell detection: a
+ * candidate who names amount + company + status all in the same
+ * utterance has internalised the offer (real bluffers stay vague). */
+function hasConcreteTell(
+  text: string,
+  company: string | null,
+  status: CompetingOfferStatus | null,
+): boolean {
+  if (!company || !status) return false;
+  return /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l\b|cr|crore)\b/i.test(text);
+}
+
 export function extractCompetingOfferDetail(text: string): CompetingOfferDetail {
   if (!text) return EMPTY;
 
@@ -177,9 +214,26 @@ export function extractCompetingOfferDetail(text: string): CompetingOfferDetail 
   const letterShareOffered = LETTER_SHARE_PATTERNS.some((p) => p.test(text));
   const onHold = ON_HOLD_PATTERNS.some((p) => p.test(text));
 
+  /* fake-leverage-challenge — proofProvided fires either on an explicit
+   * proof-share pattern OR on the concrete-tell heuristic (amount +
+   * company + status co-occur). Whether the AI ACTED on this proof is
+   * gated downstream by state.competingOfferDetail.proofRequestedAtTurn
+   * in the merge step. The parser only surfaces the signal. */
+  const proofProvided =
+    PROOF_SHARE_PATTERNS.some((p) => p.test(text)) || hasConcreteTell(text, company, status);
+
   const hasAny =
-    company != null || status != null || stage != null || letterShareOffered || onHold;
-  return { company, status, stage, letterShareOffered, onHold, hasAny };
+    company != null || status != null || stage != null || letterShareOffered || onHold || proofProvided;
+  return {
+    company,
+    status,
+    stage,
+    letterShareOffered,
+    onHold,
+    proofRequestedAtTurn: null,
+    proofProvided,
+    hasAny,
+  };
 }
 
 export function mergeCompetingOfferDetail(
@@ -196,6 +250,11 @@ export function mergeCompetingOfferDetail(
      * competing offer is shaky, the leverage damage persists even if
      * the candidate later claims it's "back on track". */
     onHold: p.onHold || next.onHold,
+    /* fake-leverage-challenge (2026-05-17) — proofRequestedAtTurn is
+     * stamped by applyAiMove (never by the parser); preserve the prior
+     * state value. proofProvided is monotone-up. */
+    proofRequestedAtTurn: p.proofRequestedAtTurn ?? next.proofRequestedAtTurn ?? null,
+    proofProvided: p.proofProvided || next.proofProvided,
     hasAny: false,
   };
   merged.hasAny =
@@ -203,6 +262,7 @@ export function mergeCompetingOfferDetail(
     merged.status != null ||
     merged.stage != null ||
     merged.letterShareOffered ||
-    merged.onHold;
+    merged.onHold ||
+    merged.proofProvided;
   return merged;
 }

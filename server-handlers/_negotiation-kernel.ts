@@ -811,6 +811,11 @@ export interface NegotiationState {
   panelApprovalStallFiredAtTurn?: number | null;
   politeWalkawayFiredAtTurn?: number | null;
   hikeStrongDefenseFiredAtTurn?: number | null;
+  /* fake-leverage-challenge (2026-05-17) — single-fire turn marker for
+   * the soft offer-proof probe. Null on init; stamped by applyAiMove
+   * the turn the lever fires. Defensive single-fire layered on top of
+   * the proofRequestedAtTurn gate on competingOfferDetail. */
+  fakeLeverageChallengeFiredAtTurn?: number | null;
   /* Symmetric ledger entry for stalemate. Stamped once when derivePhase
    * first returns "stalemate"; cleared symmetrically with the others
    * when a walk-away-return reopens the session. Lets downstream
@@ -1821,6 +1826,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     panelApprovalStallFiredAtTurn: null,
     politeWalkawayFiredAtTurn: null,
     hikeStrongDefenseFiredAtTurn: null,
+    fakeLeverageChallengeFiredAtTurn: null,
     hikePercent: null,
     rationale: null,
     noticeJoining: {
@@ -1855,6 +1861,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       stage: null,
       letterShareOffered: false,
       onHold: false,
+      proofRequestedAtTurn: null,
+      proofProvided: false,
       hasAny: false,
     },
     decisionDeadline: {
@@ -2432,7 +2440,7 @@ export function parseCandidateAnswer(
       noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false, lastWorkingDayText: null, hasAny: false },
       equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: false },
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
-      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, hasAny: false },
+      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
       candidateProfile: { ...EMPTY_CANDIDATE_PROFILE },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
@@ -3795,6 +3803,23 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   ) {
     next.hikeStrongDefenseFiredAtTurn = state.turnIndex;
   }
+  /* fake-leverage-challenge (2026-05-17) — stamp BOTH the
+   * top-level single-fire marker AND the proofRequestedAtTurn on the
+   * competingOfferDetail record. Subsequent candidate-utterance parses
+   * read proofRequestedAtTurn to gate proofProvided into the state's
+   * monotone-up flag (handled in the parser/merge above). */
+  if (
+    move.actionKind === "fake-leverage-challenge" &&
+    state.fakeLeverageChallengeFiredAtTurn == null
+  ) {
+    next.fakeLeverageChallengeFiredAtTurn = state.turnIndex;
+    if (next.competingOfferDetail.proofRequestedAtTurn == null) {
+      next.competingOfferDetail = {
+        ...next.competingOfferDetail,
+        proofRequestedAtTurn: state.turnIndex,
+      };
+    }
+  }
   /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
    * ledger so planNextAction can skip same-topic probes within 3 turns.
    * Use move.askedTopic if set (reactive-followups), otherwise fall back
@@ -4204,6 +4229,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
   ) {
     throw new Error("state.hikeStrongDefenseFiredAtTurn");
   }
+  if (
+    s.fakeLeverageChallengeFiredAtTurn !== undefined &&
+    s.fakeLeverageChallengeFiredAtTurn !== null &&
+    !isFiniteNonNegInt(s.fakeLeverageChallengeFiredAtTurn)
+  ) {
+    throw new Error("state.fakeLeverageChallengeFiredAtTurn");
+  }
   /* Backward-compatible optional fields: tolerate absence (older
      in-flight sessions) but reject malformed values. deserializeState
      backfills defaults so the rest of the kernel sees a fully-shaped
@@ -4324,6 +4356,23 @@ export function validateState(state: unknown): asserts state is NegotiationState
     if (co.status !== null && typeof co.status !== "string") throw new Error("state.competingOfferDetail.status");
     if (co.stage !== null && typeof co.stage !== "string") throw new Error("state.competingOfferDetail.stage");
     if (typeof co.letterShareOffered !== "boolean") throw new Error("state.competingOfferDetail.letterShareOffered");
+    /* fake-leverage-challenge (2026-05-17) — proofRequestedAtTurn /
+     * proofProvided are optional on legacy serialized snapshots;
+     * deserializeState backfills via backfillCompetingOfferDetail.
+     * Validate shape only when present. */
+    if (
+      co.proofRequestedAtTurn !== undefined &&
+      co.proofRequestedAtTurn !== null &&
+      !isFiniteNonNegInt(co.proofRequestedAtTurn)
+    ) {
+      throw new Error("state.competingOfferDetail.proofRequestedAtTurn");
+    }
+    if (
+      co.proofProvided !== undefined &&
+      typeof co.proofProvided !== "boolean"
+    ) {
+      throw new Error("state.competingOfferDetail.proofProvided");
+    }
     if (typeof co.hasAny !== "boolean") throw new Error("state.competingOfferDetail.hasAny");
   }
   /* Phase 17 optional fields — structural shape checks only. */
@@ -4506,6 +4555,8 @@ export function deserializeState(json: string): NegotiationState {
       (s.politeWalkawayFiredAtTurn as number | null | undefined) ?? null,
     hikeStrongDefenseFiredAtTurn:
       (s.hikeStrongDefenseFiredAtTurn as number | null | undefined) ?? null,
+    fakeLeverageChallengeFiredAtTurn:
+      (s.fakeLeverageChallengeFiredAtTurn as number | null | undefined) ?? null,
     firstAnchoredTarget:
       typeof s.firstAnchoredTarget === "number"
         ? s.firstAnchoredTarget
@@ -4615,6 +4666,10 @@ function backfillCompetingOfferDetail(raw: unknown): CompetingOfferDetail {
     stage: v?.stage ?? null,
     letterShareOffered: v?.letterShareOffered ?? false,
     onHold: v?.onHold ?? false,
+    /* fake-leverage-challenge (2026-05-17) — backfill the two new
+     * proof-tracking fields for legacy in-flight sessions. */
+    proofRequestedAtTurn: v?.proofRequestedAtTurn ?? null,
+    proofProvided: v?.proofProvided ?? false,
     hasAny: v?.hasAny ?? false,
   };
 }

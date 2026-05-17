@@ -1007,6 +1007,19 @@ function renderCanonicalProseBody(
       return "Sure, take your time. I'll be honest — without a firm decision on your side or a competing offer to work against, I won't be able to hold this fitment open for too long. Kindly revert with a clear answer by EOD tomorrow, otherwise we'll need to move forward with other candidates.";
     }
 
+    case "fake-leverage-challenge": {
+      /* fake-leverage-challenge (2026-05-17) — soft Indian-HR probe for
+       * proof of the competing offer. "would you mind" is the natural
+       * polite register; "make a stronger case to the panel" matches
+       * the existing band-disclosure-deflect / panel-approval-stall
+       * register. No LPA numbers — numberPolicy is "forbidden". */
+      const co = action.competingCompany;
+      if (co) {
+        return `You'd mentioned the competing offer from ${co} — would you mind sharing the offer letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
+      }
+      return `On the competing offer you'd mentioned — would you mind sharing the letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
+    }
+
     case "anchor-defense-hike-strong": {
       /* Phase 3 missing-lever set (2026-05-17) — rebuts "only X% hike"
        * complaint with peer-context framing. Numbers come from the

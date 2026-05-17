@@ -321,7 +321,16 @@ export type NextAction =
       hikePct: number;
       currentCtc: number;
       offer: number;
-    };
+    }
+  /* fake-leverage-challenge: AI softly asks the candidate to share the
+   * competing offer letter (or a redacted version) after a concession
+   * round. Catches bluffs (candidate dodges → planner can downweight
+   * leverage in a future commit) and rewards real offers (candidate
+   * complies → leverage strengthens). NOT probe-producing — does not
+   * push onto askedTopics. Single-fire via
+   * state.fakeLeverageChallengeFiredAtTurn AND
+   * state.competingOfferDetail.proofRequestedAtTurn. */
+  | { kind: "fake-leverage-challenge"; competingCompany: string | null };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -1658,6 +1667,46 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             `Polite walk-away: candidate stall='${stallSignal.kind}' (since turn ${stallSignal.statedAt}), ` +
             `no leverage (competingOffer=null), counterRound=${state.counterRound}, ` +
             `flexibilityPosture=${flexibilityPosture ?? "null"}; decline to keep the fitment open.`,
+        },
+      };
+    }
+
+    /* 1b. fake-leverage-challenge — soft probe for offer-letter proof.
+     * Inserted between polite-walkaway (1) and anchor-defense-hike-strong
+     * (2). Fires when the candidate has DISCLOSED a competing offer but
+     * provided no proof, AND we have already conceded once (so we don't
+     * pre-emptively accuse the candidate of bluffing on round 0). Single-
+     * fire via two redundant gates: the top-level
+     * `fakeLeverageChallengeFiredAtTurn` marker AND the
+     * `competingOfferDetail.proofRequestedAtTurn` stamp. The challenge is
+     * skipped entirely once proof is provided (or already shared via
+     * letterShareOffered). */
+    const coDetail = state.competingOfferDetail;
+    const hasUnsubstantiatedOffer =
+      state.competingOffer != null &&
+      coDetail != null &&
+      coDetail.letterShareOffered !== true &&
+      coDetail.proofProvided !== true &&
+      coDetail.proofRequestedAtTurn == null;
+    if (
+      state.fakeLeverageChallengeFiredAtTurn == null &&
+      hasUnsubstantiatedOffer &&
+      state.counterRound >= 1
+    ) {
+      const competingCompany = coDetail?.company ?? null;
+      return {
+        kind: "fake-leverage-challenge",
+        competingCompany,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          actionKind: "fake-leverage-challenge",
+          rationale:
+            `Fake-leverage challenge: candidate disclosed competing offer ` +
+            `(₹${state.competingOffer}L${competingCompany ? `, ${competingCompany}` : ""}) ` +
+            `but provided no proof; counterRound=${state.counterRound}. ` +
+            `Softly request offer letter / redacted version to corroborate ` +
+            `before further concessions.`,
         },
       };
     }

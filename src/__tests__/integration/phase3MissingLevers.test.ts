@@ -115,6 +115,92 @@ describe("Phase 3 missing-lever set — panel-approval-stall", () => {
   });
 });
 
+describe("Phase 3 missing-lever set — fake-leverage-challenge", () => {
+  const baseFakeLeverageState = (overrides: Partial<NegotiationState> = {}): NegotiationState =>
+    mk({
+      phase: "counter-offer",
+      counterRound: 1,
+      turnIndex: 7,
+      highestOfferMade: 24,
+      candidateCurrentCtc: 18,
+      competingOffer: 30,
+      competingOfferDetail: {
+        company: "razorpay",
+        status: "verbal",
+        stage: "offered",
+        letterShareOffered: false,
+        onHold: false,
+        proofRequestedAtTurn: null,
+        proofProvided: false,
+        hasAny: true,
+      },
+      ...overrides,
+    });
+
+  it("fires when candidate disclosed competing offer with no proof + counterRound>=1", () => {
+    const s = baseFakeLeverageState();
+    const action = planNextAction(s);
+    expect(action.kind).toBe("fake-leverage-challenge");
+    if (action.kind !== "fake-leverage-challenge") return;
+    expect(action.competingCompany).toBe("razorpay");
+    const prose = renderCanonicalProse(action, s);
+    expect(prose).toMatch(/offer letter|redacted/i);
+    expect(prose).toContain("razorpay");
+  });
+
+  it("does NOT re-fire once fakeLeverageChallengeFiredAtTurn is stamped", () => {
+    const s = baseFakeLeverageState({
+      fakeLeverageChallengeFiredAtTurn: 7,
+      competingOfferDetail: {
+        company: "razorpay",
+        status: "verbal",
+        stage: "offered",
+        letterShareOffered: false,
+        onHold: false,
+        proofRequestedAtTurn: 7,
+        proofProvided: false,
+        hasAny: true,
+      },
+      turnIndex: 9,
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("fake-leverage-challenge");
+  });
+
+  it("does NOT fire when proofProvided is already true", () => {
+    const s = baseFakeLeverageState({
+      competingOfferDetail: {
+        company: "razorpay",
+        status: "letter",
+        stage: "offered",
+        letterShareOffered: false,
+        onHold: false,
+        proofRequestedAtTurn: null,
+        proofProvided: true,
+        hasAny: true,
+      },
+    });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("fake-leverage-challenge");
+  });
+
+  it("does NOT fire pre-emptively at counterRound===0", () => {
+    const s = baseFakeLeverageState({ counterRound: 0 });
+    const action = planNextAction(s);
+    expect(action.kind).not.toBe("fake-leverage-challenge");
+  });
+
+  it("parser detects proofProvided=true on offer-share utterance", async () => {
+    const { extractCompetingOfferDetail } = await import(
+      "../../../server-handlers/_competing-offer-detail"
+    );
+    const detail = extractCompetingOfferDetail(
+      "sure, I'll share the redacted offer PDF with you shortly",
+    );
+    expect(detail.proofProvided).toBe(true);
+  });
+});
+
 describe("Phase 3 missing-lever set — polite-walkaway", () => {
   it("stall signal + no leverage + counterRound >= 1 + non-flexible → polite-walkaway fires & stamps walkedAwayAtTurn", () => {
     const s = mk({
