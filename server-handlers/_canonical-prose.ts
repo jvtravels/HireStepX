@@ -991,6 +991,29 @@ function renderCanonicalProseBody(
       return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA fixed plus variable. Let me know your thoughts.`;
     }
 
+    case "panel-approval-stall": {
+      /* Phase 3 missing-lever set (2026-05-17) — distinct stall move.
+       * Real Indian HR escalation: after two cash concessions, further
+       * movement requires panel sign-off. The recruiter explicitly says
+       * "let me check with leadership" and commits to a revert window. */
+      return "Honestly, anything further on this will need panel approval. Let me check with leadership and revert by EOD — how does this sound?";
+    }
+
+    case "polite-walkaway": {
+      /* Phase 3 missing-lever set (2026-05-17) — AI declines to continue
+       * holding the fitment open when the candidate stalls without
+       * leverage. Frames the exit politely but unambiguously — kindly
+       * revert by EOD tomorrow or we move on. */
+      return "Sure, take your time. I'll be honest — without a firm decision on your side or a competing offer to work against, I won't be able to hold this fitment open for too long. Kindly revert with a clear answer by EOD tomorrow, otherwise we'll need to move forward with other candidates.";
+    }
+
+    case "anchor-defense-hike-strong": {
+      /* Phase 3 missing-lever set (2026-05-17) — rebuts "only X% hike"
+       * complaint with peer-context framing. Numbers come from the
+       * planner payload; prose echoes them verbatim. */
+      return `Honestly, ₹${action.offer} LPA on ₹${action.currentCtc} is a ${action.hikePct}% hike — for this grade, peers in the market typically see 8-12% bumps on lateral moves. We're already well above that range.`;
+    }
+
     case "post-acceptance-document-request": {
       /* Fires once after verbal acceptance + formal close-recap. Trimmed to
        * PAN + Aadhaar only — sufficient to generate the offer letter. The

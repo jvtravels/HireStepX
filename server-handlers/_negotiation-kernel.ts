@@ -249,6 +249,13 @@ export type DiscoveryTopic =
   | "candidate-trial-close"
   | "comparative-anchoring"
   | "internal-equity-defense"
+  /* Phase 3 missing-lever set (2026-05-17) — three additional Indian-HR
+   * levers (stall / walkaway / hike-strong rebuttal). actionKinds are
+   * registered as DiscoveryTopics so the applyAiMove F7 ledger push
+   * passes the dev-only KNOWN_TOPICS guard. */
+  | "panel-approval-stall"
+  | "polite-walkaway"
+  | "anchor-defense-hike-strong"
   /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance documentation
    * request actionKind. Pushed onto askedTopics via applyAiMove's F7 ledger
    * so the planner can verify single-fire (in addition to the explicit
@@ -319,6 +326,7 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "range-to-point", "range-deflection", "market-data-reference",
   "close-confirmation", "close-recap-formal", "candidate-trial-close",
   "comparative-anchoring", "internal-equity-defense", "band-anchor-with-rationale",
+  "panel-approval-stall", "polite-walkaway", "anchor-defense-hike-strong",
   "anchor-with-offer", "post-acceptance-document-request",
   "lever-grade-upgrade", "lever-retention-bonus", "lever-rsu-refresh",
   "lever-relocation", "lever-perf-bonus-cadence", "lever-joining-bonus-explained",
@@ -793,6 +801,16 @@ export interface NegotiationState {
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
   walkedAwayAtTurn: number | null;
+  /* Phase 3 missing-lever set (2026-05-17) — single-fire turn markers for
+   * the three new Indian-HR levers that complement the existing
+   * comparative-anchoring / internal-equity-defense / probe-justification
+   * triad. Null on init; stamped by applyAiMove the turn the lever fires;
+   * planner reads them as the single-fire gate. Optional for back-compat
+   * with in-flight sessions and test fixtures serialised before the
+   * fields shipped — deserializeState backfills to null. */
+  panelApprovalStallFiredAtTurn?: number | null;
+  politeWalkawayFiredAtTurn?: number | null;
+  hikeStrongDefenseFiredAtTurn?: number | null;
   /* Symmetric ledger entry for stalemate. Stamped once when derivePhase
    * first returns "stalemate"; cleared symmetrically with the others
    * when a walk-away-return reopens the session. Lets downstream
@@ -1786,6 +1804,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     postAcceptanceDocsRequestedAtTurn: null,
     walkedAwayAtTurn: null,
     stalemateAtTurn: null,
+    /* Phase 3 missing-lever set (2026-05-17) — single-fire turn markers. */
+    panelApprovalStallFiredAtTurn: null,
+    politeWalkawayFiredAtTurn: null,
+    hikeStrongDefenseFiredAtTurn: null,
     hikePercent: null,
     rationale: null,
     noticeJoining: {
@@ -1850,6 +1872,8 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       offerShoppingDemand: false,
       dismissesVariableRisk: false,
       overpromisesJoining: false,
+      complainedAboutHikePercent: false,
+      stallSignal: null,
       hasAny: false,
     },
     salesOTE: { ...EMPTY_SALES_OTE },
@@ -2372,6 +2396,12 @@ export function parseCandidateAnswer(
    *  accept what hasn't been offered. Default undefined preserves
    *  back-compat for callers that don't have state context. */
   offerOnTable?: boolean,
+  /** Phase 3 missing-lever set (2026-05-17) — current state.turnIndex.
+   *  Threaded through to extractCandidateStance to stamp
+   *  stallSignal.statedAt at the candidate-turn index of first
+   *  detection. Default 0 preserves back-compat with callers that
+   *  don't have state context (unit-test fixtures). */
+  turnIndex: number = 0,
 ): ParsedAnswer {
   const a = substituteHinglishNumbers((answer || "").trim());
   if (!a) {
@@ -2522,7 +2552,7 @@ export function parseCandidateAnswer(
   const decisionDeadline = extractDecisionDeadline(a);
   const candidateProfile = extractCandidateProfile(a);
   const miscSignals = extractMiscSignals(a);
-  const candidateStance = extractCandidateStance(a);
+  const candidateStance = extractCandidateStance(a, turnIndex);
   const retentionCounter = extractRetentionCounter(a);
 
   /* Phase 17A — when a conditional acceptance fires, the legacy
@@ -2661,7 +2691,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      idioms ("sounds good") that arrive before any number has been
      quoted — structural phase gate (Phase 9). */
   const offerOnTable = (state.highestOfferMade ?? 0) > 0;
-  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable);
+  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex);
   /* PDF#27 Fix 2 (2026-05-17) — repetition-complaint detection. The
    * candidate flags that the bot is repeating itself ("stop repeating",
    * "I already answered that", "asked this before"). Stamp the turn so
@@ -3719,6 +3749,35 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   ) {
     next.postAcceptanceDocsRequestedAtTurn = state.turnIndex;
   }
+  /* Phase 3 missing-lever set (2026-05-17) — stamp single-fire turn
+   * markers for the three new levers. Stamping is keyed to actionKind
+   * (which the planner sets via move.actionKind) so the markers are
+   * driven by the planner emission, not by the lower-level lever
+   * string. For polite-walkaway we ALSO stamp walkedAwayAtTurn so the
+   * existing terminal-phase machinery treats the emission as the
+   * formal walk-away trigger (the existing walk-away-return trapdoor
+   * handles re-engagement). */
+  if (
+    move.actionKind === "panel-approval-stall" &&
+    state.panelApprovalStallFiredAtTurn == null
+  ) {
+    next.panelApprovalStallFiredAtTurn = state.turnIndex;
+  }
+  if (
+    move.actionKind === "polite-walkaway" &&
+    state.politeWalkawayFiredAtTurn == null
+  ) {
+    next.politeWalkawayFiredAtTurn = state.turnIndex;
+    if (next.walkedAwayAtTurn == null) {
+      next.walkedAwayAtTurn = state.turnIndex;
+    }
+  }
+  if (
+    move.actionKind === "anchor-defense-hike-strong" &&
+    state.hikeStrongDefenseFiredAtTurn == null
+  ) {
+    next.hikeStrongDefenseFiredAtTurn = state.turnIndex;
+  }
   /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
    * ledger so planNextAction can skip same-topic probes within 3 turns.
    * Use move.askedTopic if set (reactive-followups), otherwise fall back
@@ -4106,6 +4165,28 @@ export function validateState(state: unknown): asserts state is NegotiationState
   }
   if (s.walkedAwayAtTurn !== null && !isFiniteNonNegInt(s.walkedAwayAtTurn)) throw new Error("state.walkedAwayAtTurn");
   if (s.stalemateAtTurn !== undefined && s.stalemateAtTurn !== null && !isFiniteNonNegInt(s.stalemateAtTurn)) throw new Error("state.stalemateAtTurn");
+  /* Phase 3 missing-lever set (2026-05-17) — single-fire turn markers. */
+  if (
+    s.panelApprovalStallFiredAtTurn !== undefined &&
+    s.panelApprovalStallFiredAtTurn !== null &&
+    !isFiniteNonNegInt(s.panelApprovalStallFiredAtTurn)
+  ) {
+    throw new Error("state.panelApprovalStallFiredAtTurn");
+  }
+  if (
+    s.politeWalkawayFiredAtTurn !== undefined &&
+    s.politeWalkawayFiredAtTurn !== null &&
+    !isFiniteNonNegInt(s.politeWalkawayFiredAtTurn)
+  ) {
+    throw new Error("state.politeWalkawayFiredAtTurn");
+  }
+  if (
+    s.hikeStrongDefenseFiredAtTurn !== undefined &&
+    s.hikeStrongDefenseFiredAtTurn !== null &&
+    !isFiniteNonNegInt(s.hikeStrongDefenseFiredAtTurn)
+  ) {
+    throw new Error("state.hikeStrongDefenseFiredAtTurn");
+  }
   /* Backward-compatible optional fields: tolerate absence (older
      in-flight sessions) but reject malformed values. deserializeState
      backfills defaults so the rest of the kernel sees a fully-shaped
@@ -4373,6 +4454,14 @@ export function deserializeState(json: string): NegotiationState {
     /* Audit Pass 3 / Fix 1 (2026-05-16) — backfill stalemate ledger
      * for in-flight sessions serialized before this field shipped. */
     stalemateAtTurn: (s.stalemateAtTurn as number | null | undefined) ?? null,
+    /* Phase 3 missing-lever set (2026-05-17) — backfill single-fire turn
+     * markers for sessions serialized before this field shipped. */
+    panelApprovalStallFiredAtTurn:
+      (s.panelApprovalStallFiredAtTurn as number | null | undefined) ?? null,
+    politeWalkawayFiredAtTurn:
+      (s.politeWalkawayFiredAtTurn as number | null | undefined) ?? null,
+    hikeStrongDefenseFiredAtTurn:
+      (s.hikeStrongDefenseFiredAtTurn as number | null | undefined) ?? null,
     firstAnchoredTarget:
       typeof s.firstAnchoredTarget === "number"
         ? s.firstAnchoredTarget
@@ -4553,6 +4642,8 @@ function backfillCandidateStance(raw: unknown): CandidateStanceResult {
     offerShoppingDemand: v?.offerShoppingDemand ?? false,
     dismissesVariableRisk: v?.dismissesVariableRisk ?? false,
     overpromisesJoining: v?.overpromisesJoining ?? false,
+    complainedAboutHikePercent: v?.complainedAboutHikePercent ?? false,
+    stallSignal: v?.stallSignal ?? null,
     hasAny: v?.hasAny ?? false,
   };
 }

@@ -462,6 +462,34 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
     numberPolicy: "optional",
     requiredTokens: [/\bBGV\b/i, /\bForm\s*16\b/i, /\bpayslip/i],
   },
+  /* Phase 3 missing-lever set (2026-05-17) — panel-approval-stall.
+   * Pure stall move; no numbers. The "panel" or "leadership" anchor
+   * pins the move's semantics so the restyle can't drift into a
+   * generic hedge ("let me check internally"). "revert by EOD" is
+   * the canonical close so we require the EOD token. */
+  "panel-approval-stall": {
+    numberPolicy: "forbidden",
+    requiredTokens: [/\b(?:panel|leadership)\b/i, /\b(?:EOD|end\s+of\s+day)\b/i],
+  },
+  /* Phase 3 missing-lever set (2026-05-17) — polite-walkaway.
+   * No numbers. The canonical line MUST surface the "without a firm
+   * decision / competing offer" hinge AND the "move forward with
+   * other candidates" exit clause — both pin the move to its
+   * declining semantics, blocking a soft restyle that hides the
+   * walk. "Honestly" is also required to gate against a sanitised
+   * restyle that drops the candid framing. */
+  "polite-walkaway": {
+    numberPolicy: "forbidden",
+    requiredTokens: [/\bhonest(?:ly)?\b/i, /\b(?:other\s+candidates|move\s+forward)\b/i],
+  },
+  /* Phase 3 missing-lever set (2026-05-17) — anchor-defense-hike-strong.
+   * Numbers required (the rebuttal IS the math). Required tokens
+   * pin the peer-context framing and the % hike claim so a restyle
+   * can't drop the comparative anchor that makes the rebuttal land. */
+  "anchor-defense-hike-strong": {
+    numberPolicy: "required",
+    requiredTokens: [/%\s*hike\b/i, /\bpeers\b/i],
+  },
 };
 
 /** AP3-F2 (2026-05-17) — component-probe requiredTokens are

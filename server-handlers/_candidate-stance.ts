@@ -82,6 +82,30 @@ export interface CandidateStanceResult {
    *  Text-side mirror to the overcommits-joining structural flag. */
   overpromisesJoining: boolean;
 
+  /** Phase 3 missing-lever set (2026-05-17) — candidate just complained
+   *  that the recruiter's offer represents only a small percentage hike
+   *  on their current CTC ("that's only 8% hike", "barely a hike",
+   *  "just a 5% jump"). Drives `anchor-defense-hike-strong` which rebuts
+   *  with peer-context framing. Monotone-up via mergeCandidateStance.
+   *  Optional for back-compat with fixtures constructed before the
+   *  field shipped — extractCandidateStance / mergeCandidateStance
+   *  default to false / null when absent. */
+  complainedAboutHikePercent?: boolean;
+
+  /** Phase 3 missing-lever set (2026-05-17) — candidate is stalling the
+   *  conversation without leverage ("let me think about it", "I'll
+   *  discuss with family", "I'll revert by Friday"). Drives the
+   *  `polite-walkaway` lever (gated additionally on no competing
+   *  offer + counterRound>=1 + non-flexible posture). `kind` records
+   *  the dominant pattern; `statedAt` is the candidate-turn index at
+   *  first detection. Last-stated-wins for kind, statedAt set on first
+   *  detection (sticky). null when no stall signal seen. Optional for
+   *  back-compat. */
+  stallSignal?: {
+    kind: "thinking" | "family-discussion" | "revert-later";
+    statedAt: number;
+  } | null;
+
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -99,6 +123,8 @@ const EMPTY: CandidateStanceResult = {
   offerShoppingDemand: false,
   dismissesVariableRisk: false,
   overpromisesJoining: false,
+  complainedAboutHikePercent: false,
+  stallSignal: null,
   hasAny: false,
 };
 
@@ -359,6 +385,47 @@ function detectOverpromisesJoining(text: string): boolean {
   return OVERPROMISES_JOINING_PATTERNS.some((p) => p.test(text));
 }
 
+/* ── Phase 3 missing-lever set (2026-05-17) — hike-% complaint ────── */
+
+/* Candidate is complaining that the offer represents only a small
+ * percentage hike on their current CTC. Conservative — pattern must
+ * mention the hike/jump explicitly so neutral percentages elsewhere
+ * (variable share, equity percent, etc.) don't false-fire. */
+const HIKE_PCT_COMPLAINT_PATTERNS: RegExp[] = [
+  /\bonly\s+\d+\s*%?\s*hike\b/i,
+  /\bjust\s+\d+\s*%?\s*(?:hike|jump|bump|increase)\b/i,
+  /\bthat\s*(?:\w+\s+){0,2}barely\s*(?:\w+\s+){0,3}hike\b/i,
+  /\bthat\s*(?:\w+\s+){0,2}not\s+even\s+(?:\w+\s+){0,3}hike\b/i,
+];
+
+function detectComplainedAboutHikePercent(text: string): boolean {
+  return HIKE_PCT_COMPLAINT_PATTERNS.some((p) => p.test(text));
+}
+
+/* ── Phase 3 missing-lever set (2026-05-17) — stall signals ───────── */
+
+const STALL_THINKING_PATTERNS: RegExp[] = [
+  /\blet\s+me\s+think\s+(?:about\s+it|it\s+over|on\s+it)\b/i,
+  /\bi(?:.?ll|\s+will)?\s+(?:need\s+to\s+|have\s+to\s+)?think\s+(?:about\s+it|on\s+it|it\s+over)\b/i,
+  /\bneed\s+(?:some\s+)?time\s+to\s+think\b/i,
+];
+const STALL_FAMILY_PATTERNS: RegExp[] = [
+  /\b(?:i(?:.?ll|\s+will)?\s+)?(?:discuss|talk|check)\s+(?:this\s+|it\s+)?with\s+(?:my\s+)?(?:family|wife|husband|spouse|partner|parents)\b/i,
+  /\bneed\s+to\s+(?:discuss|talk|check)\s+with\s+(?:my\s+)?(?:family|wife|husband|spouse|partner|parents)\b/i,
+];
+const STALL_REVERT_PATTERNS: RegExp[] = [
+  /\bi(?:.?ll|\s+will)?\s+(?:revert|get\s+back\s+to\s+you|come\s+back\s+to\s+you|respond)\s+(?:by|on|in|after|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|eod|next\s+week|the\s+weekend)/i,
+  /\bcan\s+i\s+revert\s+(?:by|on|in|after|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|eod|next\s+week|the\s+weekend)/i,
+  /\bgive\s+me\s+(?:a\s+)?(?:day|two\s+days|few\s+days|some\s+time|till|until)\b/i,
+];
+
+function detectStallSignal(text: string): "thinking" | "family-discussion" | "revert-later" | null {
+  if (STALL_THINKING_PATTERNS.some((p) => p.test(text))) return "thinking";
+  if (STALL_FAMILY_PATTERNS.some((p) => p.test(text))) return "family-discussion";
+  if (STALL_REVERT_PATTERNS.some((p) => p.test(text))) return "revert-later";
+  return null;
+}
+
 /* ── Phase 21 — Recovery signals (multi-turn posture decay) ──────── */
 
 /* A candidate who said "I really need this job" on turn 1 but on
@@ -455,7 +522,15 @@ export function detectRecoverySignals(text: string): RecoverySignals {
 
 /* ── Public API ──────────────────────────────────────────────────── */
 
-export function extractCandidateStance(text: string): CandidateStanceResult {
+export function extractCandidateStance(
+  text: string,
+  /* Phase 3 missing-lever set (2026-05-17) — turn index of the candidate
+   * utterance being analysed. Used to stamp stallSignal.statedAt on
+   * first detection. Defaults to 0 so existing callers / unit tests
+   * keep working without code change; the production call-site in the
+   * kernel passes state.turnIndex. */
+  turnIndex: number = 0,
+): CandidateStanceResult {
   if (!text) return EMPTY;
   const flexibilityPosture = detectFlexibility(text);
   const marketReferenceVague = detectMarketReferenceVague(text);
@@ -469,6 +544,9 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
   const offerShoppingDemand = detectOfferShoppingDemand(text);
   const dismissesVariableRisk = detectDismissesVariableRisk(text);
   const overpromisesJoining = detectOverpromisesJoining(text);
+  const complainedAboutHikePercent = detectComplainedAboutHikePercent(text);
+  const stallKind = detectStallSignal(text);
+  const stallSignal = stallKind == null ? null : { kind: stallKind, statedAt: turnIndex };
   const hasAny =
     flexibilityPosture != null ||
     marketReferenceVague ||
@@ -481,7 +559,9 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
     personalExpenseJustification ||
     offerShoppingDemand ||
     dismissesVariableRisk ||
-    overpromisesJoining;
+    overpromisesJoining ||
+    complainedAboutHikePercent ||
+    stallSignal != null;
   return {
     flexibilityPosture,
     marketReferenceVague,
@@ -495,6 +575,8 @@ export function extractCandidateStance(text: string): CandidateStanceResult {
     offerShoppingDemand,
     dismissesVariableRisk,
     overpromisesJoining,
+    complainedAboutHikePercent,
+    stallSignal,
     hasAny,
   };
 }
@@ -540,6 +622,17 @@ export function mergeCandidateStance(
    * red flags stay monotone-up — once a behavioural breach (badmouth,
    * confidential overshare, equity-as-cash, overpromise) fires, it
    * stays in the audit trail. */
+  /* Phase 3 missing-lever set (2026-05-17) — stallSignal: keep the
+   * earliest statedAt so the polite-walkaway lever has stable
+   * provenance ("the candidate has been stalling since turn N"); the
+   * `kind` is last-stated-wins to reflect the most recent posture. */
+  const mergedStallSignal =
+    next.stallSignal != null
+      ? {
+          kind: next.stallSignal.kind,
+          statedAt: p.stallSignal?.statedAt ?? next.stallSignal.statedAt,
+        }
+      : p.stallSignal;
   const merged: CandidateStanceResult = {
     flexibilityPosture: next.flexibilityPosture ?? p.flexibilityPosture,
     marketReferenceVague: p.marketReferenceVague || next.marketReferenceVague,
@@ -553,6 +646,8 @@ export function mergeCandidateStance(
     offerShoppingDemand: decayedOfferShopping || next.offerShoppingDemand,
     dismissesVariableRisk: p.dismissesVariableRisk || next.dismissesVariableRisk,
     overpromisesJoining: p.overpromisesJoining || next.overpromisesJoining,
+    complainedAboutHikePercent: p.complainedAboutHikePercent || next.complainedAboutHikePercent,
+    stallSignal: mergedStallSignal,
     hasAny: false,
   };
   merged.hasAny =
@@ -567,6 +662,8 @@ export function mergeCandidateStance(
     merged.personalExpenseJustification ||
     merged.offerShoppingDemand ||
     merged.dismissesVariableRisk ||
-    merged.overpromisesJoining;
+    merged.overpromisesJoining ||
+    merged.complainedAboutHikePercent ||
+    merged.stallSignal != null;
   return merged;
 }

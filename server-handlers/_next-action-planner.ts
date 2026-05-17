@@ -289,7 +289,39 @@ export type NextAction =
   /* Post-acceptance documentation request. Fires immediately after
    * `verbalAcceptanceTurn` is stamped (close-recap acceptance). Single-fire
    * via state.postAcceptanceDocsRequestedAtTurn; transitions to terminal. */
-  | { kind: "post-acceptance-document-request" };
+  | { kind: "post-acceptance-document-request" }
+  /* Phase 3 missing-lever set (2026-05-17) — three Indian-HR levers that
+   * complement the existing band-defense triad (comparative-anchoring /
+   * internal-equity-defense / probe-justification). All three are
+   * SINGLE-FIRE per session via dedicated turn-stamped state fields
+   * (panelApprovalStallFiredAtTurn / politeWalkawayFiredAtTurn /
+   * hikeStrongDefenseFiredAtTurn) so they're terminal-state-clean. None
+   * are probe-producing (no satisfiesTopic) — they're stall / walkaway /
+   * rebuttal moves, not discovery probes. */
+  /* panel-approval-stall: distinct "let me check with the panel and
+   * revert by EOD" stall move. Fires when counterRound>=2 and the
+   * candidate has just countered again. The AI does NOT make a fresh
+   * counter on this turn — it stalls; next turn (per planner cascade)
+   * the AI returns with the final counter or hold-firm. */
+  | { kind: "panel-approval-stall" }
+  /* polite-walkaway: AI declines to continue when candidate stalls
+   * without leverage. Fires when there's a stall signal AND no
+   * competing offer AND counterRound>=1 AND candidate isn't in
+   * good-faith negotiation. Stamps walkedAwayAtTurn immediately on
+   * fire (we treat the polite-walkaway emission as the formal exit
+   * trigger; if the candidate engages back the existing walk-away-
+   * return trapdoor handles re-opening). */
+  | { kind: "polite-walkaway" }
+  /* anchor-defense-hike-strong: rebuts "that's only X% hike" complaint
+   * with peer-context framing. Payload carries the computed hike% +
+   * the current CTC + the offer used for the computation so canonical
+   * prose can render the exact numbers without re-doing the math. */
+  | {
+      kind: "anchor-defense-hike-strong";
+      hikePct: number;
+      currentCtc: number;
+      offer: number;
+    };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -1576,6 +1608,93 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
   }
 
+  /* Phase 3 missing-lever set (2026-05-17) — interception block for the
+   * three new Indian-HR levers (panel-approval-stall / polite-walkaway /
+   * anchor-defense-hike-strong). All three apply across the
+   * counter-offer + closing-push phases, so the gate is hoisted above
+   * the per-phase branches. Single-fire each via dedicated turn-marker
+   * state fields.
+   *
+   * Priority order (per audit spec):
+   *   1. polite-walkaway — short-circuits everything when the candidate
+   *      is stalling without leverage. We've already conceded once and
+   *      they're not engaging; holding the fitment open burns the slot.
+   *   2. anchor-defense-hike-strong — reactive to a specific "only X%
+   *      hike" complaint. Must beat comparative-anchoring because the
+   *      candidate's framing is hike-%-driven, not band-quartile-driven.
+   *   3. panel-approval-stall — stall before escalating to the internal-
+   *      equity-defense round. Fires between comparative-anchoring's
+   *      counterRound==1 and internal-equity-defense's counterRound>=2,
+   *      i.e. counterRound>=2 AND the candidate countered again.
+   *
+   * The polite-walkaway / hike-strong branches sit ABOVE comparative-
+   * anchoring (which fires inside the counter-offer block); the
+   * panel-approval-stall branch is co-located after comparative-
+   * anchoring fires but BEFORE internal-equity-defense per spec — that
+   * ordering is enforced inside the counter-offer block itself. */
+  if (
+    (state.phase === "counter-offer" || state.phase === "closing-push") &&
+    state.verbalAcceptanceTurn == null
+  ) {
+    /* 1. polite-walkaway — highest priority. */
+    const stallSignal = state.candidateStance?.stallSignal ?? null;
+    const flexibilityPosture = state.candidateStance?.flexibilityPosture ?? null;
+    const competingOfferStatus = state.competingOfferDetail?.status ?? null;
+    if (
+      state.politeWalkawayFiredAtTurn == null &&
+      stallSignal != null &&
+      state.competingOffer == null &&
+      competingOfferStatus == null &&
+      state.counterRound >= 1 &&
+      flexibilityPosture !== "flexible"
+    ) {
+      return {
+        kind: "polite-walkaway",
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          actionKind: "polite-walkaway",
+          rationale:
+            `Polite walk-away: candidate stall='${stallSignal.kind}' (since turn ${stallSignal.statedAt}), ` +
+            `no leverage (competingOffer=null), counterRound=${state.counterRound}, ` +
+            `flexibilityPosture=${flexibilityPosture ?? "null"}; decline to keep the fitment open.`,
+        },
+      };
+    }
+
+    /* 2. anchor-defense-hike-strong — fires when candidate complains
+     * the offer represents only a small % hike on their current CTC.
+     * Compute hikePct from max(highestOfferMade, band.initialOffer) and
+     * candidateCurrentCtc; payload echoes both numbers so the canonical
+     * prose has the exact rebuttal context. */
+    const complained = state.candidateStance?.complainedAboutHikePercent ?? false;
+    if (
+      state.hikeStrongDefenseFiredAtTurn == null &&
+      state.phase === "counter-offer" &&
+      complained &&
+      state.candidateCurrentCtc != null &&
+      state.candidateCurrentCtc > 0
+    ) {
+      const offer =
+        state.highestOfferMade > 0 ? state.highestOfferMade : state.band.initialOffer;
+      const hikePct = Math.round(((offer - state.candidateCurrentCtc) / state.candidateCurrentCtc) * 100);
+      return {
+        kind: "anchor-defense-hike-strong",
+        hikePct,
+        currentCtc: state.candidateCurrentCtc,
+        offer,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          actionKind: "anchor-defense-hike-strong",
+          rationale:
+            `Anchor-defense (hike-strong): candidate complained about hike %; ` +
+            `offer ₹${offer}L on ₹${state.candidateCurrentCtc}L = ${hikePct}% hike (peers see 8-12% on laterals).`,
+        },
+      };
+    }
+  }
+
   /* counter-offer: split with stiffening / market / risk / boost. */
   if (state.phase === "counter-offer") {
     if (state.hardBandCap) {
@@ -1639,16 +1758,42 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       };
     }
 
-    /* internal-equity-defense fires when counterRound >= 2 AND there
-     * is a dissatisfaction signal from the candidate this turn (fresh
-     * counter / disclosed expected ctc again / asked a question). Uses
-     * band.maxStretch as the peer-band top, band-median as floor for
-     * the "between X and Y" framing. Single-fire via fired ledger. */
+    /* Phase 3 missing-lever set (2026-05-17) — panel-approval-stall.
+     * Fires AFTER comparative-anchoring (which lives at counterRound==1)
+     * and BEFORE internal-equity-defense (counterRound>=2). Semantics:
+     * we've conceded twice; the next move needs panel sign-off, so the
+     * AI stalls explicitly. Single-fire via panelApprovalStallFiredAtTurn.
+     * Requires a fresh candidate push (candidateRound conditions mirror
+     * the internal-equity-defense gate) so we don't stall when the
+     * candidate is silent. */
     const delta = state.lastTurnDelta;
     const candidatePushedAgain =
       state.lastCandidateCounterLpa != null ||
       (delta?.disclosedExpectedCtc ?? false) ||
       (delta?.askedQuestion ?? false);
+    if (
+      state.counterRound >= 2 &&
+      candidatePushedAgain &&
+      state.panelApprovalStallFiredAtTurn == null
+    ) {
+      return {
+        kind: "panel-approval-stall",
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          actionKind: "panel-approval-stall",
+          rationale:
+            `Panel-approval stall: counterRound=${state.counterRound}, candidate just countered again; ` +
+            `escalate to leadership before the next concession (single-fire).`,
+        },
+      };
+    }
+
+    /* internal-equity-defense fires when counterRound >= 2 AND there
+     * is a dissatisfaction signal from the candidate this turn (fresh
+     * counter / disclosed expected ctc again / asked a question). Uses
+     * band.maxStretch as the peer-band top, band-median as floor for
+     * the "between X and Y" framing. Single-fire via fired ledger. */
     if (
       state.counterRound >= 2 &&
       candidatePushedAgain &&

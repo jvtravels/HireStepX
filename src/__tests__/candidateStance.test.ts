@@ -200,3 +200,45 @@ describe("Phase 21 — multi-turn posture decay", () => {
     expect(merged.personalExpenseJustification).toBe(false);
   });
 });
+
+describe("extractCandidateStance — complainedAboutHikePercent", () => {
+  it("true on 'only 15% hike'", () => {
+    expect(extractCandidateStance("that's only 15% hike").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("true on 'just 10% bump'", () => {
+    expect(extractCandidateStance("just 10% bump on my current").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("false on neutral mention", () => {
+    expect(extractCandidateStance("I'd like a fair hike").complainedAboutHikePercent).toBe(false);
+  });
+});
+
+describe("extractCandidateStance — stallSignal", () => {
+  it("captures stall on 'let me think about it'", () => {
+    const r = extractCandidateStance("let me think about it", 7);
+    expect(r.stallSignal).toBeTruthy();
+    expect(r.stallSignal?.statedAt).toBe(7);
+    expect(r.stallSignal?.kind).toBe("thinking");
+  });
+
+  it("captures stall on 'I need to discuss with family'", () => {
+    const r = extractCandidateStance("I need to discuss with family", 3);
+    expect(r.stallSignal).toBeTruthy();
+    expect(r.stallSignal?.kind).toBe("family-discussion");
+  });
+
+  it("null when no stall cue", () => {
+    expect(extractCandidateStance("yes I accept", 1).stallSignal).toBeFalsy();
+  });
+
+  it("merge keeps earliest statedAt", () => {
+    const t1 = extractCandidateStance("let me think about it", 2);
+    const t2 = extractCandidateStance("let me think it over", 5);
+    expect(t1.stallSignal?.statedAt).toBe(2);
+    expect(t2.stallSignal?.statedAt).toBe(5);
+    const merged = mergeCandidateStance(t1, t2, detectRecoverySignals("let me think it over"));
+    expect(merged.stallSignal?.statedAt).toBe(2);
+  });
+});
