@@ -155,6 +155,24 @@ export function canRefire(topic: DiscoveryTopic, state: NegotiationState): boole
  *  taxonomy collapses the prior 15 sequential `if return` branches into
  *  a single declarative space external consumers can switch on without
  *  reading move.rationale strings. */
+/* AR1 / Audit Pass 4 (PDF#27, 2026-05-17) — type-level satisfiesTopic.
+ *
+ * Probe-producing NextAction variants now declare a REQUIRED
+ * `satisfiesTopic: DiscoveryTopic | DiscoveryTopic[]` field. The ship-
+ * site in applyAiMove uses this as the SINGLE source of truth for
+ * pushing onto state.askedTopics. Adding a new probe kind without
+ * satisfiesTopic is a COMPILE ERROR — the discovery-loop class of
+ * regression (kernel asks a topic but never records it) is closed
+ * permanently.
+ *
+ * Terminal/structural kinds (close, auto-accept, hold-firm, info-
+ * disclosure, etc.) don't probe and don't declare the field. */
+
+/** Topic(s) a probe-producing action declares it is asking about. The
+ *  array form is for legitimate multi-topic probes (e.g. close-recap-
+ *  formal recaps notice + variable + fixed simultaneously). */
+export type SatisfiesTopic = DiscoveryTopic | readonly DiscoveryTopic[];
+
 export type NextAction =
   | { kind: "terminal-restate" }
   | { kind: "close"; mode: "accept" | "walkaway" | "stalemate" }
@@ -166,23 +184,23 @@ export type NextAction =
    * candidate just said before sequencing through the ordered checklist.
    * The topic is recorded in state.reactiveFollowupsFired via the
    * move.askedTopic plumbing so the same probe doesn't re-fire. */
-  | { kind: "reactive-followup"; ask: string; trigger: string; topic: DiscoveryTopic }
+  | { kind: "reactive-followup"; ask: string; trigger: string; topic: DiscoveryTopic; satisfiesTopic: SatisfiesTopic }
   /* ResumeFactPack track Step 4 (2026-05-16) — credibility-probe. Fires
    * when the candidate states a current-company affiliation and the
    * ResumeFactPack does NOT confirm it (no fuzzy match against latestRole
    * or priorCompanies). Single-fire via state.credibilityProbeFired.
    * resumeCompany is the latestRole.companyName from the pack;
    * statedCompany is what the candidate said. */
-  | { kind: "credibility-probe"; resumeCompany: string; statedCompany: string }
-  | { kind: "probe-mismatch" }
+  | { kind: "credibility-probe"; resumeCompany: string; statedCompany: string; satisfiesTopic: SatisfiesTopic }
+  | { kind: "probe-mismatch"; satisfiesTopic: SatisfiesTopic }
   | { kind: "live-walk-away"; mode: "walk" | "hold-firm" | "probe" }
-  | { kind: "range-disclosure" }
-  | { kind: "discovery-probe"; item: string; ask: string }
-  | { kind: "open-with-offer" }
+  | { kind: "range-disclosure"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "discovery-probe"; item: string; ask: string; satisfiesTopic: SatisfiesTopic }
+  | { kind: "open-with-offer"; satisfiesTopic: SatisfiesTopic }
   | { kind: "lever-loop-guard" }
   | { kind: "info-disclosure"; topic: "breakdown" | "benefits" | "comp-structure" | "notice" | "hike-pct" }
-  | { kind: "probe-expectations" }
-  | { kind: "probe-justification" }
+  | { kind: "probe-expectations"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "probe-justification"; satisfiesTopic: SatisfiesTopic }
   | {
       kind: "counter-offer";
       /* Kernel-first cleanup (2026-05-16) — typed counter-offer payload.
@@ -194,6 +212,7 @@ export type NextAction =
       counterTotalLpa: number;
       counterFixedLpa?: number;
       counterVariableLpa?: number;
+      satisfiesTopic: SatisfiesTopic;
     }
   | { kind: "lever-explore"; from: "hard-band-cap" | "no-headroom" | "constraint-violation" | "default" }
   | { kind: "hold-firm"; mode: "verbal-accept" | "lever-loop" }
@@ -214,6 +233,7 @@ export type NextAction =
       proposedJoiningDate?: string;
       bgvStartTrigger: string;
       offerLetterEta: string;
+      satisfiesTopic: SatisfiesTopic;
     }
   /* Fix 1 (2026-05-16) — Real Indian-context negotiation levers. Each
    * is a structural alternative to cash on the table; the planner
@@ -221,13 +241,13 @@ export type NextAction =
    * and what hasn't fired yet (tracked via state.leversFired). RSU
    * refresh is sampled only when marketMode ∈ {hot,neutral} AND the
    * band carries equity (MNC/GCC). */
-  | { kind: "lever-grade-upgrade" }
-  | { kind: "lever-retention-bonus" }
-  | { kind: "lever-rsu-refresh" }
-  | { kind: "lever-relocation" }
-  | { kind: "lever-perf-bonus-cadence" }
-  | { kind: "lever-joining-bonus-explained" }
-  | { kind: "band-anchor-with-rationale" }
+  | { kind: "lever-grade-upgrade"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "lever-retention-bonus"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "lever-rsu-refresh"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "lever-relocation"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "lever-perf-bonus-cadence"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "lever-joining-bonus-explained"; satisfiesTopic: SatisfiesTopic }
+  | { kind: "band-anchor-with-rationale"; satisfiesTopic: SatisfiesTopic }
   /* perfect 5 (2026-05-16) — Indian-recruiter band-defense moves.
    * internal-equity-defense: surfaces peer-band ranges when the
    * candidate pushes past counterRound 2 — invokes the comp-team
@@ -239,28 +259,44 @@ export type NextAction =
       kind: "internal-equity-defense";
       peerBandTopLpa: number;
       peerBandMedianLpa: number;
+      satisfiesTopic: SatisfiesTopic;
     }
   | {
       kind: "comparative-anchoring";
       quartile: "top" | "median";
+      satisfiesTopic: SatisfiesTopic;
     }
-  /* AP3-F2 (2026-05-17) — component-aware discovery probe. Fires for
-   * senior comp negotiations AFTER currentCtc is satisfied AND BEFORE
-   * the target probe. Order: base → variable → esop. Skips any
-   * component already populated on state.candidateComponentBreakdown.
-   * Single-fire per (session, component) via the askedTopics ledger
-   * (topic = "currentCtcBase" | "currentCtcVariable" | "currentCtcEsop"). */
-  | { kind: "component-probe"; component: "base" | "variable" | "esop" }
-  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor. After
-   * currentCtc is satisfied and (for senior profiles) the component
-   * probes are done, anchor the company band as a range and invite the
-   * candidate's fitment number. Single-fire per session via
-   * leversUsed. `lo` / `hi` mirror band.initialOffer / band.maxStretch
-   * at the time the action is planned (so downstream prose / validator
-   * sees the same numbers the planner authored). `bandIncomplete`
-   * is true when the band is unusable (lo >= hi or missing) and the
-   * lever is firing as an honest defer instead. */
-  | { kind: "anchor-with-band"; lo: number; hi: number; bandIncomplete: boolean };
+  /* AP3-F2 (2026-05-17) — component-aware discovery probe. */
+  | { kind: "component-probe"; component: "base" | "variable" | "esop"; satisfiesTopic: SatisfiesTopic }
+  /* AP3-F3 / PDF#27 Fix 5 (2026-05-17) — band-disclosure anchor. */
+  | { kind: "anchor-with-band"; lo: number; hi: number; bandIncomplete: boolean; satisfiesTopic: SatisfiesTopic };
+
+/** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
+ *  the required `satisfiesTopic` field). Used by the ship-site to gate
+ *  the push onto state.askedTopics. */
+export const PROBE_PRODUCING_KINDS: ReadonlySet<NextAction["kind"]> = new Set<NextAction["kind"]>([
+  "reactive-followup",
+  "credibility-probe",
+  "probe-mismatch",
+  "range-disclosure",
+  "discovery-probe",
+  "open-with-offer",
+  "probe-expectations",
+  "probe-justification",
+  "counter-offer",
+  "close-recap-formal",
+  "lever-grade-upgrade",
+  "lever-retention-bonus",
+  "lever-rsu-refresh",
+  "lever-relocation",
+  "lever-perf-bonus-cadence",
+  "lever-joining-bonus-explained",
+  "band-anchor-with-rationale",
+  "internal-equity-defense",
+  "comparative-anchoring",
+  "component-probe",
+  "anchor-with-band",
+]);
 
 /** Internal carrier: the planner builds the move alongside the action so
  *  actionToLever is bit-identical to the prior pickAiMoveCore. The
@@ -714,6 +750,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             ask: "Clarify equity terms (vesting, strike/FMV, buyback history, included-vs-additional) before discussing comp.",
             trigger: "equityUnclear",
             topic: "equity-clarity",
+            satisfiesTopic: "equity-clarity",
             _move: {
               lever: "probe",
               newTotalLpa: null,
@@ -746,6 +783,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           kind: "credibility-probe",
           resumeCompany,
           statedCompany: stated,
+          satisfiesTopic: "credibility-probe",
           _move: {
             lever: "probe",
             newTotalLpa: null,
@@ -776,6 +814,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   ) {
     return {
       kind: "probe-mismatch",
+      satisfiesTopic: "probe",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -867,6 +906,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const ceiling = state.band.maxStretch;
     return {
       kind: "range-disclosure",
+      satisfiesTopic: "range-to-point",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -924,6 +964,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         return {
           kind: "component-probe",
           component: cp.component,
+          satisfiesTopic: cp.topic,
           _move: {
             lever: "probe",
             newTotalLpa: null,
@@ -973,6 +1014,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           lo,
           hi,
           bandIncomplete: false,
+          satisfiesTopic: "band-anchor-with-rationale",
           _move: {
             lever: "probe",
             newTotalLpa: null,
@@ -992,6 +1034,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         lo: typeof lo === "number" ? lo : 0,
         hi: typeof hi === "number" ? hi : 0,
         bandIncomplete: true,
+        satisfiesTopic: "band-anchor-with-rationale",
         _move: {
           lever: "anchor-with-band",
           newTotalLpa: null,
@@ -1069,6 +1112,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
                 kind: "discovery-probe",
                 item: advItem,
                 ask: advAsk.prompt,
+                satisfiesTopic: advItem,
                 _move: {
                   lever: "probe",
                   newTotalLpa: null,
@@ -1086,6 +1130,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             kind: "discovery-probe",
             item: orderedItem,
             ask: finalAsk,
+            satisfiesTopic: orderedItem,
             _move: {
               lever: "probe",
               newTotalLpa: null,
@@ -1110,6 +1155,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             kind: "discovery-probe",
             item: next.item,
             ask: next.prompt,
+            satisfiesTopic: next.item,
             _move: {
               lever: "probe",
               newTotalLpa: null,
@@ -1137,6 +1183,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * cascade (failure mode a + d). */
     return {
       kind: "open-with-offer",
+      satisfiesTopic: state.turnIndex === 0 ? "currentCtcAnswered" : "open-with-offer",
       _move: {
         lever: "open-with-offer",
         newTotalLpa: clampedOpener,
@@ -1278,6 +1325,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             kind: "discovery-probe",
             item: next.item,
             ask: next.prompt,
+            satisfiesTopic: next.item,
             _move: {
               lever: "probe",
               newTotalLpa: null,
@@ -1313,6 +1361,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     ) {
       return {
         kind: "band-anchor-with-rationale",
+        satisfiesTopic: "band-anchor-with-rationale",
         _move: {
           lever: "benefits-summary",
           newTotalLpa: null,
@@ -1326,6 +1375,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
     return {
       kind: "probe-expectations",
+      satisfiesTopic: "targetAsked",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -1346,6 +1396,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   if (shouldProbeJustification) {
     return {
       kind: "probe-justification",
+      satisfiesTopic: "probe-justification",
       _move: {
         lever: "probe-justification",
         newTotalLpa: null,
@@ -1460,6 +1511,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       return {
         kind: "comparative-anchoring",
         quartile,
+        satisfiesTopic: "comparative-anchoring",
         _move: {
           lever: "hold-firm",
           newTotalLpa: state.highestOfferMade,
@@ -1492,6 +1544,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         kind: "internal-equity-defense",
         peerBandTopLpa,
         peerBandMedianLpa,
+        satisfiesTopic: "internal-equity-defense",
         _move: {
           lever: "hold-firm",
           newTotalLpa: state.highestOfferMade,
@@ -1664,6 +1717,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       counterTotalLpa: newTotal,
       counterFixedLpa,
       counterVariableLpa,
+      satisfiesTopic: "counter-base",
       _move: {
         lever: "counter-base",
         newTotalLpa: newTotal,
@@ -1742,7 +1796,7 @@ function makeStructuralLeverAction(
     actionKind: kind,
     askedTopic: kind,
   };
-  return { kind, _move: move } as PlannedAction;
+  return { kind, satisfiesTopic: kind, _move: move } as PlannedAction;
 }
 
 function wrapLeverExplore(
@@ -1857,6 +1911,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         ask: "Answer the candidate's question first; checklist advance pauses until the question is addressed.",
         trigger: "askedQuestion",
         topic: "answer-direct",
+        satisfiesTopic: "answer-direct",
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -1891,6 +1946,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
           "and have you been hitting payouts in full?",
         trigger: "variable-share-high",
         topic: "variable-comfort",
+        satisfiesTopic: "variable-comfort",
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -1915,6 +1971,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       ask: "That's useful context — is the competing offer at a similar stage, or further along?",
       trigger: "invokedCompetingOffer",
       topic: "competing-leverage-ack",
+      satisfiesTopic: "competing-leverage-ack",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -1940,6 +1997,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       ask: `Just to make sure I have the right picture — can you confirm your current CTC is ${ctcRef}?`,
       trigger: "gaveInconsistentNumbers",
       topic: "number-clarification",
+      satisfiesTopic: "number-clarification",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -1965,6 +2023,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
           "Got it — which company is that with, and do you have the written offer or just verbal at this stage?",
         trigger: "competing-offer-vague",
         topic: "competing-credibility",
+        satisfiesTopic: "competing-credibility",
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -1988,6 +2047,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         "Got it — buyout is on the table. That helps us move faster on the timeline if we get to that stage.",
       trigger: "buyout-confirmed",
       topic: "notice-buyout-confirm",
+      satisfiesTopic: "notice-buyout-confirm",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -2014,6 +2074,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
           "or are you locked in?",
         trigger: "notice-period-long",
         topic: "notice-buyout",
+        satisfiesTopic: "notice-buyout",
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -2048,6 +2109,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         ask,
         trigger: "hike-above-threshold",
         topic: "hike-justification",
+        satisfiesTopic: "hike-justification",
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -2093,6 +2155,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
       ask: "I want to make sure I can go to bat for you internally — having a sense of your current package really helps. Are you comfortable sharing?",
       trigger: "evasiveOnCurrentCtc",
       topic: "ctc-gentle-push",
+      satisfiesTopic: "ctc-gentle-push",
       _move: {
         lever: "probe",
         newTotalLpa: null,
@@ -2135,6 +2198,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
         ask: "It sounds like the role's growth trajectory matters as much as the number — what would make the opportunity feel genuinely worth the move for you?",
         trigger: "directional-expectation",
         topic: "value-proof",
+        satisfiesTopic: "value-proof",
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -2256,6 +2320,7 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
         ask: rule.ask,
         trigger: rule.topic,
         topic: rule.topic,
+        satisfiesTopic: rule.topic,
         _move: {
           lever: "probe",
           newTotalLpa: null,
@@ -2295,6 +2360,7 @@ function buildCloseRecapFormal(state: NegotiationState): PlannedAction {
     proposedJoiningDate: undefined,
     bgvStartTrigger: "post-acceptance, on signed offer letter",
     offerLetterEta: "2-3 business days",
+    satisfiesTopic: "close-recap-formal",
     _move: {
       lever: "close-acceptance",
       newTotalLpa: total,

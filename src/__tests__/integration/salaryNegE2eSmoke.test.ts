@@ -383,6 +383,7 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
       noticePeriodWeeks: 9,
       bgvStartTrigger: "post-acceptance, on signed offer letter",
       offerLetterEta: "2-3 business days",
+      satisfiesTopic: "close-recap-formal",
     };
     const canonical = renderCanonicalProse(action, state);
     /* Restyle drops "BGV" — all other required tokens (fixed/variable/
