@@ -327,7 +327,7 @@ export const TOPIC_KEYWORD_MAP: Record<string, RegExp> = {
   targetCtc:
     /\b(?:expected|fitment|target|looking\s+at|anchoring|expectation)\b/i,
   fixedVariable:
-    /\b(?:fixed[\s\/\-]*variable|variable\s+split|fixed\s+and\s+variable|split\s+between\s+fixed|how\s+is\s+(?:your|the)\s+package\s+structured)\b/i,
+    /\b(?:fixed[\s/-]*variable|variable\s+split|fixed\s+and\s+variable|split\s+between\s+fixed|how\s+is\s+(?:your|the)\s+package\s+structured)\b/i,
   notice:
     /\b(?:notice\s+period|notice\s+side|buyout)\b/i,
   competing:

@@ -132,6 +132,7 @@ const DICT: Record<string, FriendlyFlag> = {
   branch_mismatch_with_resume: { label: "Spoken branch differs from resume", description: "Resume lists one branch but the candidate identified as a different branch without a dual-degree / minor framing — BGV will surface this.", category: "user_skipped_step" },
   grad_year_mismatch_with_resume: { label: "Spoken graduation year differs from resume", description: "Candidate's stated graduation / passout year doesn't match the resume — BGV uses the resume / college transcript as ground truth; a > 1-year drift reads as fabrication.", category: "user_skipped_step" },
   college_mismatch_with_resume: { label: "Spoken college differs from resume", description: "Candidate named a different college than the one on the resume — Indian campus BGV cross-checks the degree certificate; a verbal swap is an instant disqualifier.", category: "user_skipped_step" },
+  cgpa_mismatch_with_resume: { label: "Spoken CGPA differs from resume", description: "Candidate stated a CGPA that drifts > 0.5 points (or > 5%) from what's on the resume. Recruiters verify CGPA against the official transcript / provisional — even a small drift will trip BGV.", category: "user_skipped_step" },
 
   // Management
   answered_as_ic_not_manager: { label: "Answered as IC, not as manager", description: "Stories used 'I built / I shipped' — should be 'my team / my report'.", category: "user_skipped_step" },

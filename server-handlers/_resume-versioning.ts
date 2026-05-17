@@ -273,6 +273,13 @@ export function normalizeStoredResumeForAnalyzer(parsed: unknown): ResumeForAnal
     const schoolMatch = eduText.match(/\b(?:iit|nit|iiit|bits|iisc|vit|srm|manipal|thapar|dtu|nsit|coep|psg|pes university|pesu|bms college|rvce|ramaiah|amrita|jadavpur|anna university|jntu|nitk|nitt|nita)\b[^,;\n|]{0,60}/i)
       || eduText.match(/\b(?:from|at)\s+([A-Z][A-Za-z& ]{3,40}(?:\sUniversity|\sCollege|\sInstitute))/);
     if (schoolMatch) result.school = (schoolMatch[1] || schoolMatch[0]).trim();
+    // CGPA / percentage extraction. Accept "CGPA: 8.2", "8.2 CGPA",
+    // "8.2/10", "GPA 3.7", or "84%". Stored as string (downstream
+    // parseFloat); analyzer infers scale (>10 = percent) and tolerance.
+    const cgpaMatch = eduText.match(/\b(?:cgpa|gpa|sgpa)\s*[:-]?\s*(\d{1,2}\.\d{1,2})\b/i)
+      || eduText.match(/\b(\d{1,2}\.\d{1,2})\s*(?:cgpa|gpa|sgpa|\/\s*10)\b/i)
+      || eduText.match(/\b(\d{2,3})\s*%/);
+    if (cgpaMatch) result.cgpa = cgpaMatch[1];
     const linkText = [typeof p.headline === "string" ? p.headline : "", typeof p.summary === "string" ? p.summary : ""].join(" ");
     result.links = extractLinks(linkText);
     return result;
@@ -301,6 +308,8 @@ export function normalizeStoredResumeForAnalyzer(parsed: unknown): ResumeForAnal
     if (typeof ed.degree === "string") result.degree = ed.degree;
     if (typeof ed.school === "string") result.school = ed.school;
     if (typeof ed.year === "string") result.gradYear = ed.year;
+    if (typeof ed.cgpa === "string") result.cgpa = ed.cgpa;
+    else if (typeof ed.gpa === "string") result.cgpa = ed.gpa;
   }
 
   const linkText = [typeof p.linkedin === "string" ? p.linkedin : "", typeof p.summary === "string" ? p.summary : ""].join(" ");

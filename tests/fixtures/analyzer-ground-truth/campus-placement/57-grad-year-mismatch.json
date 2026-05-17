@@ -1,0 +1,17 @@
+{
+  "name": "Candidate verbally states a 2027 graduation year but the resume lists 2025 — > 1-year drift, BGV-fail signal",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Infosys",
+    "transcript": [
+      { "speaker": "ai", "text": "When do you graduate?", "time": "" },
+      { "speaker": "user", "text": "I'm in the 2027 batch, so I'll be graduating in 2027. Final year project is on machine learning.", "time": "" }
+    ]
+  },
+  "resume": {
+    "degree": "B.Tech CSE",
+    "school": "NIT Trichy",
+    "gradYear": "2025"
+  },
+  "expected": { "must_include": ["grad_year_mismatch_with_resume"], "must_not_include": ["empty_transcript"] }
+}

@@ -440,7 +440,7 @@ export const ACK_TEMPLATES: readonly AckTemplate[] = [
       );
     },
     restyleKeywordRe:
-      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:fixed[\s\/\-]*variable|variable\s+split|fixed\s+and\s+variable)\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:fixed[\s\/\-]*variable|variable\s+split|fixed\s+and\s+variable)\b/i,
+      /\b(?:fair enough|got it|noted|understood|thanks for that|appreciate)\b(?:\s+(?:on|about|with|regarding))?(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:fixed[\s/-]*variable|variable\s+split|fixed\s+and\s+variable)\b|\bright,?\s*on(?:\s+(?:the|your)){0,1}(?:\s+\w+){0,3}\s+(?:fixed[\s/-]*variable|variable\s+split|fixed\s+and\s+variable)\b/i,
   },
   {
     kind: "noticePeriod",

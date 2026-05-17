@@ -41,7 +41,25 @@ export type BehavioralProbeCue =
      question itself was about disagreement / pushback / conflict). */
   | "conflict.disagreement"
   | "conflict.team-reaction"
-  | "conflict.how-communicated";
+  | "conflict.how-communicated"
+  /* Pushback probes — stress-test the *reasoning* behind the Action by
+     pushing back the way a real interviewer would. Distinguishes
+     candidates who defended their call from those who got lucky. */
+  | "pushback.alternative"
+  | "pushback.risk"
+  | "pushback.assumption"
+  | "pushback.if-wrong"
+  /* Emotion probes — vulnerability / resilience signal. Used on
+     failure / conflict / setback questions to surface the human side. */
+  | "emotion.feel"
+  | "emotion.hardest"
+  | "emotion.regret"
+  /* Lift A — answer-analysis signals beyond starGap / weHeavy. These
+     fire deterministically from cheap regex detectors on the answer text
+     (see _behavioural-answer-signals.ts). */
+  | "defensiveness.own-it"
+  | "crispness.too-thin"
+  | "vagueness.quantify";
 
 export interface BehavioralProbe {
   cue: BehavioralProbeCue;
@@ -74,6 +92,17 @@ export const BEHAVIORAL_PROBES: ReadonlyArray<BehavioralProbe> = [
   { cue: "conflict.disagreement", text: "How did you handle the disagreement?",                         intent: "On conflict questions specifically — surface the de-escalation move." },
   { cue: "conflict.team-reaction", text: "How did the team react?",                                     intent: "Social-impact lens on conflict answers — was the outcome trusted?" },
   { cue: "conflict.how-communicated", text: "How did you communicate it?",                              intent: "Communication craft on conflict / bad-news / pushback answers." },
+  { cue: "pushback.alternative",  text: "Couldn't you have just done it the simpler way — keep the old flow and skip the migration?", intent: "Stress-test the *reasoning* behind the chosen Action by proposing a plausible-sounding alternative the candidate didn't take. Real interviewers do this to separate someone who *defended* their call from someone who *got lucky*. Phrasing should be specific to the answer when context allows — this is the canonical scaffold." },
+  { cue: "pushback.alternative",  text: "Why not just throw more people at it?",                        intent: "Naive-fix pushback — tests whether candidate thought about cost / second-order effects." },
+  { cue: "pushback.risk",         text: "Looking at it now — that sounds pretty risky. What gave you confidence it would work?", intent: "Surface the risk-management reasoning. Strong answers articulate the explicit risk-checks; weak answers say 'we just had to ship'." },
+  { cue: "pushback.assumption",   text: "What if the assumption you were making turned out to be wrong?", intent: "Counterfactual probe — tests whether the candidate understood what was *assumed* vs *known*." },
+  { cue: "pushback.if-wrong",     text: "If you ran into this situation again next week — same constraints — would you actually do anything differently?", intent: "Hindsight probe that's NOT 'what would you do differently' (which we already have as a closer). This one forces a yes/no on whether the experience updated the candidate's playbook." },
+  { cue: "emotion.feel",          text: "How did that actually feel in the moment?",                    intent: "Vulnerability probe. Used on failure / conflict / setback questions. Strong answers acknowledge emotion without melodrama; weak answers either gloss over ('it was fine') or wallow." },
+  { cue: "emotion.hardest",       text: "What was the hardest part of it for you personally?",          intent: "Emotional difficulty, not logistical. Tests whether the candidate can name the human cost of the story — usually surfaces what they actually learned." },
+  { cue: "emotion.regret",        text: "Is there anything about it you still think about?",            intent: "Soft probe for residual self-critique on failure questions. Strong answers name something specific; weak answers say 'no, we did the best we could'." },
+  { cue: "defensiveness.own-it",  text: "Setting aside everyone else for a moment — what's the piece you'd own?", intent: "Redirect deflection on a failure / mistake question back to first-person accountability. Fires when the answer leans on 'wasn't my call' / 'out of my control' / 'they didn't' style framing." },
+  { cue: "crispness.too-thin",    text: "Can you give me a bit more — set the scene first.",             intent: "Thin answer (< 40 words) — re-elicit Situation / Task before the coach probes deeper." },
+  { cue: "vagueness.quantify",    text: "Roughly what numbers are we talking about?",                    intent: "Push a scale-word answer ('many users', 'several teams') to a quantified one. Fires when the answer uses vague magnitudes with no digits present." },
 ];
 
 /** Lightweight rotation state — caller passes the set of probes
@@ -105,24 +134,80 @@ export function probePromptFragment(probe: BehavioralProbe): string {
   return `PREFERRED PHRASING for this gap (from the canonical behavioural-probe bank — match this phrasing unless the candidate's specific answer forces a more contextual variant): "${probe.text}". Intent: ${probe.intent}`;
 }
 
-/** Map the engine's `starGap` value + `weHeavy` boolean to a probe cue.
- *  Returns null when neither signal warrants a deterministic probe. */
+/** Map the engine's `starGap` value + `weHeavy` boolean (+ Lift A
+ *  answer-analysis signals) to a probe cue. Returns null when no signal
+ *  warrants a deterministic probe.
+ *
+ *  Precedence (high → low):
+ *   1. defensiveness on a failure question — own-it redirect comes first
+ *      because deflection is the single most disqualifying behaviour on
+ *      a failure prompt; getting STAR shape right after a dodge is moot.
+ *   2. conflict cue on conflict-shaped questions — the conflict deepener
+ *      is what separates strong conflict answers from generic STAR.
+ *   3. crispness === "thin" — re-elicit Situation/Task on stub answers
+ *      before any deeper probe; otherwise the coach probes air.
+ *   4. weHeavy — pronoun-attribution clarification.
+ *   5. starGap (action / result / situation-task).
+ *   6. vagueness — only fires when weHeavy and starGap are clean; on a
+ *      structurally-fine answer the remaining gap is quantification.
+ *
+ *  `selfAwarenessShown` doesn't return a cue — it suppresses the
+ *  `closer.would-do-differently` probe (caller checks
+ *  `shouldSuppressCue`).
+ */
 export function cueFromEngineHints(opts: {
   starGap?: "action" | "result" | "situation-task";
   weHeavy?: boolean;
   questionText?: string;
+  /* Lift A — answer-analysis signals (optional; default off so existing
+     callers continue to work). */
+  vagueness?: boolean;
+  crispness?: "thin" | "ok" | "rambling";
+  selfAwarenessShown?: boolean;
+  defensiveness?: boolean;
 }): BehavioralProbeCue | null {
-  // Conflict / disagreement questions get conflict-specific probes
+  const questionAboutFailure = !!opts.questionText && /\b(fail|mistake|wrong|missed|didn't go well|setback|regret)\b/i.test(opts.questionText);
+  // 1. Defensiveness on a failure question — own-it redirect first.
+  if (opts.defensiveness && questionAboutFailure) {
+    return "defensiveness.own-it";
+  }
+  // 2. Conflict / disagreement questions get conflict-specific probes
   // BEFORE the STAR-gap probes, because the conflict deepener is what
   // distinguishes a strong conflict answer from a generic one.
   if (opts.questionText && /\b(disagree|conflict|pushed back|push back|tough feedback|rejected)\b/i.test(opts.questionText)) {
     return "conflict.disagreement";
   }
+  // 3. Thin answer — need more substance before any deeper probe.
+  if (opts.crispness === "thin") return "crispness.too-thin";
+  // 4. Pronoun-attribution.
   if (opts.weHeavy) return "we-heavy";
+  // 5. STAR gaps.
   if (opts.starGap === "action") return "star.action";
   if (opts.starGap === "result") return "star.result";
   if (opts.starGap === "situation-task") return "star.situation-task";
+  // 6. Vagueness — fires only on otherwise-clean answers (no weHeavy /
+  //    starGap). On a structurally-fine answer the remaining gap is
+  //    scale; on a structurally-broken one, fix the structure first.
+  if (opts.vagueness && !opts.weHeavy && !opts.starGap) return "vagueness.quantify";
   return null;
+}
+
+/** Should a specific cue be SUPPRESSED given the answer-analysis signals?
+ *  Used for the self-awareness rule: when a candidate has already
+ *  self-critiqued without being asked, asking "what would you do
+ *  differently?" reads as not-listening — they just told you.
+ *
+ *  Callers (the follow-up coach) consult this AFTER picking a cue from
+ *  their own logic (e.g. a closer chosen because STAR was complete) —
+ *  if suppressed, fall back to a different closer or to LLM generation. */
+export function shouldSuppressCue(
+  cue: BehavioralProbeCue,
+  signals: { selfAwarenessShown?: boolean },
+): boolean {
+  if (cue === "closer.would-do-differently" && signals.selfAwarenessShown) {
+    return true;
+  }
+  return false;
 }
 
 /** The 15 probes as a plain list — useful for prompt injection into

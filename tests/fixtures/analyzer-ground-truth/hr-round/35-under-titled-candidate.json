@@ -1,0 +1,28 @@
+{
+  "name": "7+ years YoE but every title is plain 'Software Engineer'",
+  "notes": "Resume shows 7+ years across two companies, both titles are plain IC. HR will anchor comp band on title — coaching nudge: retitle to Senior or be ready to defend scope that exceeds the level on paper. Uses 'January'/'December' full month names + apostrophe-year 'Mar'19' to also smoke-test the v4.3 period parser.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your background.", "time": "" },
+      { "speaker": "user", "text": "I'm a backend engineer with around 7 years building Java services and data pipelines.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible. Earliest LWD would be late February.", "time": "" },
+      { "speaker": "ai", "text": "Current CTC and expectation?", "time": "" },
+      { "speaker": "user", "text": "Current is 28 LPA fixed plus 4 variable. Looking for around 42 LPA fixed.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Yes — what does success look like at the 90-day mark, and how is the team structured?", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Software Engineer", "company": "Acme Corp", "period": "Mar'19 - December 2021" },
+      { "title": "Software Engineer", "company": "Initech", "period": "January 2022 - present" }
+    ],
+    "topSkills": ["Java", "Kafka", "Postgres"]
+  },
+  "expected": {
+    "must_include": ["under_titled_candidate"],
+    "must_not_include": ["inflated_seniority_claim", "empty_transcript"]
+  }
+}

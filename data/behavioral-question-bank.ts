@@ -75,6 +75,19 @@ export type StarFocus = "action" | "result" | "situation-task" | "action+result"
  *  scenarios where ambiguity or conflict is high. */
 export type BehavioralDifficulty = "warmup" | "standard" | "hard";
 
+/** Role families used for tilt — keep deliberately coarse so tagging
+ *  stays cheap and the sampler's role match doesn't over-fit. */
+export type BehavioralRole = "pm" | "engineer" | "designer" | "manager" | "data" | "ops";
+
+export const BEHAVIORAL_ROLES: ReadonlyArray<BehavioralRole> = [
+  "pm",
+  "engineer",
+  "designer",
+  "manager",
+  "data",
+  "ops",
+] as const;
+
 export interface BehavioralQuestion {
   /** Stable id — used for analytics + dedupe across sessions. */
   id: string;
@@ -86,6 +99,11 @@ export interface BehavioralQuestion {
    *  loops, 0–100. Used as a soft weight in the sampler when the
    *  caller wants "what interviewers actually ask" ordering. */
   frequencyPct: number;
+  /** Which role families this question fits best. Empty = universal (any role). */
+  roleAffinity?: ReadonlyArray<BehavioralRole>;
+  /** Minimum YoE (years of experience) this question is appropriate for.
+   * 0 = anyone; 5 = senior+; 8 = staff+. */
+  seniorityFloor?: number;
 }
 
 /** The 50. Curated from real loops at: Razorpay, Flipkart, Swiggy,
@@ -93,10 +111,10 @@ export interface BehavioralQuestion {
  *  Uber-IN, Walmart-Labs, ThoughtSpot, Postman, Freshworks. */
 export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── ownership (5)
-  { id: "own-01", text: "Tell me about a time you took ownership of something outside your job description.",                competency: "ownership",          starFocus: "action",          difficulty: "standard", frequencyPct: 78 },
-  { id: "own-02", text: "Tell me about a time you saw a problem nobody else noticed and fixed it.",                            competency: "ownership",          starFocus: "action+result",   difficulty: "standard", frequencyPct: 72 },
+  { id: "own-01", text: "Tell me about a time you took ownership of something outside your job description.",                competency: "ownership",          starFocus: "action",          difficulty: "standard", frequencyPct: 78, seniorityFloor: 2 },
+  { id: "own-02", text: "Tell me about a time you saw a problem nobody else noticed and fixed it.",                            competency: "ownership",          starFocus: "action+result",   difficulty: "standard", frequencyPct: 72, seniorityFloor: 2 },
   { id: "own-03", text: "Tell me about a time you went above and beyond on a project.",                                        competency: "ownership",          starFocus: "action",          difficulty: "warmup",   frequencyPct: 65 },
-  { id: "own-04", text: "Tell me about a time you owned a decision that turned out to be wrong.",                              competency: "ownership",          starFocus: "result",          difficulty: "hard",     frequencyPct: 60 },
+  { id: "own-04", text: "Tell me about a time you owned a decision that turned out to be wrong.",                              competency: "ownership",          starFocus: "result",          difficulty: "hard",     frequencyPct: 60, seniorityFloor: 2 },
   { id: "own-05", text: "Tell me about a time you had to clean up a mess you didn't create.",                                  competency: "ownership",          starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
 
   // ── failure (4)
@@ -114,45 +132,45 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── conflict (5)
   { id: "cnf-01", text: "Tell me about a time you disagreed with your manager.",                                               competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 85 },
   { id: "cnf-02", text: "Tell me about a time you had a conflict with a teammate.",                                            competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 80 },
-  { id: "cnf-03", text: "Tell me about a time a peer pushed back hard on your technical decision.",                            competency: "conflict",           starFocus: "action+result",   difficulty: "hard",     frequencyPct: 62 },
-  { id: "cnf-04", text: "Tell me about a time you had to deliver bad news to a stakeholder.",                                  competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
+  { id: "cnf-03", text: "Tell me about a time a peer pushed back hard on your technical decision.",                            competency: "conflict",           starFocus: "action+result",   difficulty: "hard",     frequencyPct: 62, roleAffinity: ["engineer"] },
+  { id: "cnf-04", text: "Tell me about a time you had to deliver bad news to a stakeholder.",                                  competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 55, seniorityFloor: 3 },
   { id: "cnf-05", text: "Tell me about a time you had to work with someone whose style clashed with yours.",                   competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 50 },
 
   // ── feedback (3)
   { id: "fdb-01", text: "Tell me about a time you received tough feedback.",                                                    competency: "feedback",           starFocus: "action+result",   difficulty: "standard", frequencyPct: 72 },
   { id: "fdb-02", text: "Tell me about a time feedback changed how you worked.",                                                competency: "feedback",           starFocus: "result",          difficulty: "standard", frequencyPct: 60 },
-  { id: "fdb-03", text: "Tell me about a time you had to give difficult feedback to a peer.",                                   competency: "feedback",           starFocus: "action",          difficulty: "hard",     frequencyPct: 55 },
+  { id: "fdb-03", text: "Tell me about a time you had to give difficult feedback to a peer.",                                   competency: "feedback",           starFocus: "action",          difficulty: "hard",     frequencyPct: 55, roleAffinity: ["manager", "pm"] },
 
   // ── influence (4)
   { id: "inf-01", text: "Tell me about a time you convinced someone to change their mind.",                                    competency: "influence",          starFocus: "action",          difficulty: "standard", frequencyPct: 78 },
   { id: "inf-02", text: "Tell me about a time you had to influence a team without formal authority.",                          competency: "influence",          starFocus: "action",          difficulty: "hard",     frequencyPct: 70 },
-  { id: "inf-03", text: "Tell me about a time you sold an unpopular idea internally.",                                          competency: "influence",          starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
-  { id: "inf-04", text: "Tell me about a time you got buy-in from a senior leader.",                                            competency: "influence",          starFocus: "action",          difficulty: "standard", frequencyPct: 48 },
+  { id: "inf-03", text: "Tell me about a time you sold an unpopular idea internally.",                                          competency: "influence",          starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50, roleAffinity: ["pm", "manager"] },
+  { id: "inf-04", text: "Tell me about a time you got buy-in from a senior leader.",                                            competency: "influence",          starFocus: "action",          difficulty: "standard", frequencyPct: 48, roleAffinity: ["pm", "manager"] },
 
   // ── ambiguity (4)
   { id: "amb-01", text: "Tell me about a time you worked on something with unclear requirements.",                             competency: "ambiguity",          starFocus: "action",          difficulty: "standard", frequencyPct: 75 },
   { id: "amb-02", text: "Tell me about a time you had to make progress without knowing the full picture.",                     competency: "ambiguity",          starFocus: "action",          difficulty: "hard",     frequencyPct: 60 },
-  { id: "amb-03", text: "Tell me about a time you defined a problem nobody had framed before.",                                competency: "ambiguity",          starFocus: "situation-task",  difficulty: "hard",     frequencyPct: 45 },
+  { id: "amb-03", text: "Tell me about a time you defined a problem nobody had framed before.",                                competency: "ambiguity",          starFocus: "situation-task",  difficulty: "hard",     frequencyPct: 45, seniorityFloor: 5 },
   { id: "amb-04", text: "Tell me about a time the priorities shifted and you had to re-plan.",                                  competency: "ambiguity",          starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
 
   // ── decision-making (5)
-  { id: "dec-01", text: "Tell me about a time you had to make a decision with incomplete data.",                                competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 80 },
-  { id: "dec-02", text: "Tell me about a time you had to choose between two reasonable options.",                              competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 65 },
-  { id: "dec-03", text: "Tell me about a time you reversed a decision you'd already made.",                                    competency: "decision-making",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
-  { id: "dec-04", text: "Tell me about a time you had to say no to a stakeholder.",                                            competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 58 },
-  { id: "dec-05", text: "Tell me about a time you traded off speed against quality.",                                          competency: "decision-making",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 62 },
+  { id: "dec-01", text: "Tell me about a time you had to make a decision with incomplete data.",                                competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 80, seniorityFloor: 3 },
+  { id: "dec-02", text: "Tell me about a time you had to choose between two reasonable options.",                              competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 65, seniorityFloor: 3 },
+  { id: "dec-03", text: "Tell me about a time you reversed a decision you'd already made.",                                    competency: "decision-making",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50, seniorityFloor: 5 },
+  { id: "dec-04", text: "Tell me about a time you had to say no to a stakeholder.",                                            competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 58, seniorityFloor: 3 },
+  { id: "dec-05", text: "Tell me about a time you traded off speed against quality.",                                          competency: "decision-making",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 62, seniorityFloor: 3 },
 
   // ── problem-solving (4)
-  { id: "prb-01", text: "Tell me about a time you debugged a problem nobody else could crack.",                                competency: "problem-solving",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 70 },
+  { id: "prb-01", text: "Tell me about a time you debugged a problem nobody else could crack.",                                competency: "problem-solving",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 70, roleAffinity: ["engineer"] },
   { id: "prb-02", text: "Tell me about a time you simplified something complex.",                                              competency: "problem-solving",    starFocus: "action",          difficulty: "standard", frequencyPct: 60 },
   { id: "prb-03", text: "Tell me about a time you found a creative solution to a constraint.",                                 competency: "problem-solving",    starFocus: "action",          difficulty: "standard", frequencyPct: 58 },
-  { id: "prb-04", text: "Tell me about a time you used data to change a decision.",                                            competency: "problem-solving",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 65 },
+  { id: "prb-04", text: "Tell me about a time you used data to change a decision.",                                            competency: "problem-solving",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 65, roleAffinity: ["pm", "manager"] },
 
   // ── mentorship-team (4)
-  { id: "mnt-01", text: "Tell me about a time you mentored someone.",                                                          competency: "mentorship-team",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 70 },
-  { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60 },
-  { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45 },
-  { id: "mnt-04", text: "Tell me about a time you delegated something you would normally do yourself.",                        competency: "mentorship-team",    starFocus: "action",          difficulty: "hard",     frequencyPct: 40 },
+  { id: "mnt-01", text: "Tell me about a time you mentored someone.",                                                          competency: "mentorship-team",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 70, seniorityFloor: 3 },
+  { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60, roleAffinity: ["manager", "pm"] },
+  { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45, seniorityFloor: 3 },
+  { id: "mnt-04", text: "Tell me about a time you delegated something you would normally do yourself.",                        competency: "mentorship-team",    starFocus: "action",          difficulty: "hard",     frequencyPct: 40, seniorityFloor: 5 },
 
   // ── communication (4)
   { id: "cmm-01", text: "Tell me about a time you had to explain something technical to a non-technical audience.",            competency: "communication",      starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 80 },
@@ -163,8 +181,8 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── integrity-trust (4)
   { id: "int-01", text: "Tell me about a time you had to admit you didn't know something.",                                    competency: "integrity-trust",    starFocus: "action",          difficulty: "warmup",   frequencyPct: 60 },
   { id: "int-02", text: "Tell me about a time you spoke up about something that wasn't right.",                                 competency: "integrity-trust",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
-  { id: "int-03", text: "Tell me about a time you escalated something despite political risk.",                                competency: "integrity-trust",    starFocus: "action",          difficulty: "hard",     frequencyPct: 42 },
-  { id: "int-04", text: "Tell me about a time you took credit for less than you contributed.",                                 competency: "integrity-trust",    starFocus: "action",          difficulty: "standard", frequencyPct: 38 },
+  { id: "int-03", text: "Tell me about a time you escalated something despite political risk.",                                competency: "integrity-trust",    starFocus: "action",          difficulty: "hard",     frequencyPct: 42, seniorityFloor: 5 },
+  { id: "int-04", text: "Tell me about a time you took credit for less than you contributed.",                                 competency: "integrity-trust",    starFocus: "action",          difficulty: "standard", frequencyPct: 38, seniorityFloor: 4 },
 ];
 
 /* ─────────── Deterministic sampler ─────────── */
@@ -197,6 +215,13 @@ export interface SampleOpts {
   /** Competencies the caller wants prioritised — the sampler fills
    *  these first, then dedupes the remainder by competency. */
   prioritise?: ReadonlyArray<BehavioralCompetency>;
+  /** Candidate's role family — questions whose roleAffinity doesn't
+   *  include this role are downweighted (not eliminated, since most
+   *  questions are universal). */
+  role?: BehavioralRole;
+  /** Candidate's years of experience — questions with seniorityFloor
+   *  > yoe are hard-filtered (would be inappropriate to ask). */
+  yoe?: number;
 }
 
 /** Deterministic sampler. Behaviour:
@@ -210,16 +235,46 @@ export function sampleBehavioralQuestions(opts: SampleOpts): BehavioralQuestion[
   const competencyCount = BEHAVIORAL_COMPETENCIES.length;
   const requested = Math.max(0, Math.min(opts.count, BEHAVIORAL_50.length));
 
-  // 1) Filter by difficulty intent
+  // 0) Hard-filter by seniority — questions whose floor is above the
+  //    candidate's YoE would be inappropriate to ask. Runs BEFORE
+  //    difficulty filter so the difficulty pool reflects what's actually
+  //    askable.
   let pool: BehavioralQuestion[] = BEHAVIORAL_50.slice();
+  if (typeof opts.yoe === "number") {
+    const yoe = opts.yoe;
+    pool = pool.filter(q => (q.seniorityFloor ?? 0) <= yoe);
+  }
+
+  // 1) Filter by difficulty intent
   if (opts.difficulty === "warmup") {
     pool = pool.filter(q => q.difficulty !== "hard");
   } else if (opts.difficulty === "hard") {
     pool = pool.filter(q => q.difficulty !== "warmup");
   }
 
-  // 2) Shuffle deterministically
-  const shuffled = shuffle(pool, rand);
+  // 2) Shuffle deterministically. If a role is set, partition the
+  //    shuffled order: matching-or-universal first, explicit-other-role
+  //    last. We exhaust partition A before falling through to B so the
+  //    sampler "prefers" but doesn't "eliminate". When role is absent,
+  //    the shuffled order is used verbatim — preserving pre-change
+  //    behaviour exactly.
+  const shuffledRaw = shuffle(pool, rand);
+  let shuffled: BehavioralQuestion[];
+  if (opts.role) {
+    const role = opts.role;
+    const matches: BehavioralQuestion[] = [];
+    const others: BehavioralQuestion[] = [];
+    for (const q of shuffledRaw) {
+      if (!q.roleAffinity || q.roleAffinity.length === 0 || q.roleAffinity.includes(role)) {
+        matches.push(q);
+      } else {
+        others.push(q);
+      }
+    }
+    shuffled = matches.concat(others);
+  } else {
+    shuffled = shuffledRaw;
+  }
 
   // 3) First pass: dedupe by competency until we hit min(requested, 12)
   const firstPassTarget = Math.min(requested, competencyCount);

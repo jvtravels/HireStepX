@@ -1,0 +1,17 @@
+{
+  "name": "Candidate verbally names IIT Bombay but the resume lists NIT Surat — tier-jump fabrication tell",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Which college are you from?", "time": "" },
+      { "speaker": "user", "text": "I'm from IIT Bombay, final-year CSE. Did my coursework on systems and distributed computing.", "time": "" }
+    ]
+  },
+  "resume": {
+    "degree": "B.Tech CSE",
+    "school": "NIT Surat",
+    "gradYear": "2025"
+  },
+  "expected": { "must_include": ["college_mismatch_with_resume"], "must_not_include": ["empty_transcript"] }
+}
