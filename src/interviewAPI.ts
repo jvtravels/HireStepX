@@ -384,6 +384,12 @@ export async function fetchLLMQuestions(params: {
   resumeExperiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>;
   candidateName?: string;
   negotiationStyle?: string;
+  /** Optional coaching-drill hint forwarded from the dashboard's
+   *  "Your next move" CTA via `?drill=` on the interview URL. When set,
+   *  the question generator tilts at least 2 questions toward the drill
+   *  area (defined in `nextMove.ts` GAP_CTA_MAP). Free-form string —
+   *  the server treats unknown values as a no-op. */
+  drill?: string;
 }): Promise<LLMQuestionsResult | null> {
   // Client-side rate limit: max 3 question generations per 60s
   if (!checkRateLimit("generate-questions", 3, 60_000)) {
