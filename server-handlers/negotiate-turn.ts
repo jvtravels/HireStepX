@@ -57,6 +57,7 @@ import {
   detectUnpromptedSweetener,
   stripUnpromptedSweetener,
 } from "./_adversarial-detector";
+import { detectAndSanitizeInjection } from "./_prompt-injection-defense";
 import {
   clampInput,
   checkSessionTurnLimit,
@@ -526,7 +527,36 @@ export default async function handler(
          against client retries on flaky mobile networks where the
          response was generated but TLS dropped the body. */
       const clamped = clampInput(body.candidateAnswer || "");
-      const safeAnswer = clamped.text.slice(0, MAX_CANDIDATE_ANSWER_CHARS);
+      let safeAnswer = clamped.text.slice(0, MAX_CANDIDATE_ANSWER_CHARS);
+
+      /* Prompt-injection defense (2026-05-17). Span-redact known
+       * steering patterns BEFORE anything downstream sees the
+       * utterance — the restyle prompt treats candidate text as data,
+       * but we still neutralise injection attempts at the source so the
+       * LLM has zero opportunity to be steered. Silent — the AI does
+       * not telegraph the defense; the candidate's residual content
+       * continues to parse for target/current/stance signals. */
+      const injectionDefense = detectAndSanitizeInjection(safeAnswer);
+      if (injectionDefense.detected) {
+        const originalLength = safeAnswer.length;
+        safeAnswer = injectionDefense.sanitizedText;
+        if (!Array.isArray(state.promptInjectionAttempts)) {
+          state.promptInjectionAttempts = [];
+        }
+        state.promptInjectionAttempts.push({
+          atTurn: state.turnIndex,
+          patterns: injectionDefense.patterns,
+          originalLength,
+          sanitizedLength: injectionDefense.sanitizedText.length,
+        });
+        void captureServerEvent("kernel_prompt_injection_redacted", distinctId, {
+          patterns: injectionDefense.patterns.join(",") || null,
+          turn_index: state.turnIndex,
+          phase: state.phase,
+          original_length: originalLength,
+          sanitized_length: injectionDefense.sanitizedText.length,
+        }, req);
+      }
       const turnStartedAt = Date.now();
       const idemKey = `nt:${await hashStable(`turn|${body.state}|${safeAnswer}`)}`;
       const cached = await redisGet(idemKey);

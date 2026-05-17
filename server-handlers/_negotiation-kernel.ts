@@ -1231,6 +1231,19 @@ export interface NegotiationState {
    *  when it needs to know "did the candidate actually say this or
    *  did we infer it from the CV". Optional for back-compat. */
   flagProvenance?: Record<string, "resume" | "stated">;
+
+  /** Prompt-injection defense telemetry (2026-05-17). One record per
+   *  candidate turn on which `detectAndSanitizeInjection` flagged the
+   *  raw utterance and span-redacted it. Silent — the AI's response is
+   *  unchanged in shape; this ledger lets us see attack rate / which
+   *  patterns hit in prod without telegraphing the defense to the
+   *  candidate. Empty array at session start; never cleared. */
+  promptInjectionAttempts: Array<{
+    atTurn: number;
+    patterns: string[];
+    originalLength: number;
+    sanitizedLength: number;
+  }>;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -1923,6 +1936,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidateStatedCurrentCompany: null,
     credibilityProbeFired: false,
     credibilityProbeAvoidedAt: null,
+    /* Prompt-injection defense telemetry (2026-05-17) — empty ledger at
+     * session start; appended by the candidate-turn intake when
+     * detectAndSanitizeInjection flags the utterance. */
+    promptInjectionAttempts: [],
   };
 }
 
@@ -4426,6 +4443,33 @@ export function validateState(state: unknown): asserts state is NegotiationState
   if (s.discoveryStage !== undefined && !isValidDiscoveryStage(s.discoveryStage)) {
     throw new Error("state.discoveryStage");
   }
+  /* Prompt-injection defense ledger (2026-05-17) — optional for
+     back-compat with sessions serialized before this field shipped.
+     When present must be an array of { atTurn, patterns, originalLength,
+     sanitizedLength }. */
+  if (s.promptInjectionAttempts !== undefined) {
+    if (!Array.isArray(s.promptInjectionAttempts)) {
+      throw new Error("state.promptInjectionAttempts");
+    }
+    for (const entry of s.promptInjectionAttempts) {
+      if (!entry || typeof entry !== "object") {
+        throw new Error("state.promptInjectionAttempts[].shape");
+      }
+      const e = entry as Record<string, unknown>;
+      if (!isFiniteNonNegInt(e.atTurn)) {
+        throw new Error("state.promptInjectionAttempts[].atTurn");
+      }
+      if (!Array.isArray(e.patterns) || !e.patterns.every((p) => typeof p === "string")) {
+        throw new Error("state.promptInjectionAttempts[].patterns");
+      }
+      if (!isFiniteNonNegInt(e.originalLength)) {
+        throw new Error("state.promptInjectionAttempts[].originalLength");
+      }
+      if (!isFiniteNonNegInt(e.sanitizedLength)) {
+        throw new Error("state.promptInjectionAttempts[].sanitizedLength");
+      }
+    }
+  }
   /* conversationLog: optional for backwards compat with in-flight
      sessions; when present, every entry must have speaker ∈ {ai, candidate}
      and a string text. */
@@ -4552,6 +4596,11 @@ export function deserializeState(json: string): NegotiationState {
       (s.credibilityProbeFired as boolean | undefined) ?? false,
     credibilityProbeAvoidedAt:
       (s.credibilityProbeAvoidedAt as number | null | undefined) ?? null,
+    /* Prompt-injection defense ledger back-compat default. Sessions
+     * serialized before this field shipped deserialize with an empty
+     * ledger. */
+    promptInjectionAttempts:
+      (s.promptInjectionAttempts as NegotiationState["promptInjectionAttempts"] | undefined) ?? [],
   };
 }
 

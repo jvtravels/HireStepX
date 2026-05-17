@@ -78,6 +78,7 @@ function mkState(): NegotiationState {
     recruiterFactsAlreadySaid: [],
     anchorLocked: false,
     lockedAnchorLpa: null,
+    promptInjectionAttempts: [],
   } as NegotiationState;
 }
 

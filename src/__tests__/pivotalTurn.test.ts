@@ -90,6 +90,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
       dayRateAsAnnualConfusion: false, hasAny: false,
     },
     recruiterFactsAlreadySaid: [],
+    promptInjectionAttempts: [],
     ...over,
   };
 }

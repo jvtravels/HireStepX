@@ -130,6 +130,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       hasAny: false,
     },
     recruiterFactsAlreadySaid: [],
+    promptInjectionAttempts: [],
     ...over,
   };
 }
