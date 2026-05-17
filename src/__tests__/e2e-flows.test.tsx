@@ -33,6 +33,7 @@ vi.mock("../supabase", () => ({
   authHeaders: vi.fn(() => Promise.resolve({ "Content-Type": "application/json", Authorization: "Bearer mock-token" })),
   getGoogleProviderToken: vi.fn(() => null),
   getPaymentHistory: vi.fn(() => Promise.resolve([])),
+  getLatestSessionInsightFlags: vi.fn(() => Promise.resolve([])),
 }));
 
 vi.mock("../tts", () => ({
