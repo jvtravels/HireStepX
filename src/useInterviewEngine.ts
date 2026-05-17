@@ -1973,11 +1973,16 @@ export function useInterviewEngine() {
         interviewType, currentStep,
         scriptStepTypes: interviewScript.map(s => s.type),
       });
-      /* Behavioural micro-feedback consumes the originating question text
-         so the Lift-A detectors (defensiveness, self-awareness, vagueness)
-         can fire the same cues the follow-up coach will pick up next. */
+      /* Micro-feedback consumes the originating question text so the
+         Lift-A detectors (defensiveness, self-awareness, vagueness) can
+         fire the same cues the follow-up coach will pick up next.
+         Originally behavioural-only; opened up to every STAR-friendly
+         type (technical / strategic / panel / management / case-study)
+         since those interviews routinely embed behavioural beats and the
+         detectors no-op cleanly when irrelevant. Salary-negotiation
+         excluded — STAR doesn't apply to a price conversation. */
       let originatingQuestionText: string | undefined;
-      if (interviewType === "behavioral") {
+      if (interviewType !== "salary-negotiation") {
         for (let i = currentStep; i >= 0; i--) {
           if (interviewScript[i]?.type === "question") {
             originatingQuestionText = interviewScript[i]?.aiText;
@@ -1991,6 +1996,19 @@ export function useInterviewEngine() {
         setMicroFeedback(feedback);
         recentFeedbacksRef.current.push(feedback);
         if (recentFeedbacksRef.current.length > 3) recentFeedbacksRef.current.shift();
+        /* Telemetry: symmetric with the server-side `behavioural_probe_picked`
+           event so we can finally answer "what % of turns surface a coaching
+           tip" and "do Lift-A tips correlate with downstream improvement on
+           the next answer". `tip_prefix` (not full text) because tips are
+           templated — the prefix uniquely identifies the branch fired. */
+        captureClientEvent("micro_feedback_picked", {
+          interview_type: interviewType,
+          tip_prefix: feedback.slice(0, 48),
+          answer_score: answerScore,
+          word_count: answerText.trim().split(/\s+/).filter(Boolean).length,
+          had_question_text: Boolean(originatingQuestionText),
+          turn_index: currentStep,
+        });
       }
       /* Behavioural-only: snapshot STAR completeness for this question so
          the follow-up decision below can branch on "what's missing" rather
