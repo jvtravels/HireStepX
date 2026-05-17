@@ -337,13 +337,13 @@ export function mergeCompetingOfferDetail(
     proofProvided: p.proofProvided || next.proofProvided,
     hasAny: false,
   };
-  /* fake-leverage-challenge (2026-05-17) — apply concrete-tell against
-   * the ACCUMULATED record (not the per-turn extraction). This is the
-   * dribbled-disclosure fix: company at T14, amount at T16, status at
-   * T18 → proofProvided fires at T18. Sticky once true. */
-  if (!merged.proofProvided && hasConcreteTell(merged)) {
-    merged.proofProvided = true;
-  }
+  /* Crack 2.5 (2026-05-17) — proofProvided ONLY flips on
+   * PROOF_SHARE_PATTERNS match (already handled by parseCompetingOfferDetail).
+   * The prior auto-flip on hasConcreteTell(merged) conflated the lever's
+   * ARMING condition with its SUPPRESSION condition, permanently
+   * suppressing fake-leverage-challenge the moment it became applicable.
+   * hasConcreteTell is now the planner's arming gate, not a suppression
+   * trigger here. */
   merged.hasAny =
     merged.company != null ||
     merged.status != null ||

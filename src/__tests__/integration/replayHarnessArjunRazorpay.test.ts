@@ -394,7 +394,7 @@ describe("Crack 4 replay harness — Scenario C (dribbled-leverage accumulation)
    *   This is the audit's purpose: drive scripted utterances through
    *   the real kernel and surface contract violations rather than
    *   paper over them. Fix lives in a follow-up commit. */
-  it.skip("fires fake-leverage-challenge exactly once after company+status+amount accumulate; proofProvided halts re-fire — BLOCKED by mergeCompetingOfferDetail auto-proof bug", () => {
+  it("fires fake-leverage-challenge exactly once after company+status+amount accumulate; proofProvided halts re-fire", () => {
     let state = dribbleBaseState();
 
     state = applyCandidateAnswer(state, "I'm also interviewing with Flipkart for a similar role.");
@@ -418,22 +418,21 @@ describe("Crack 4 replay harness — Scenario C (dribbled-leverage accumulation)
     expect(action.kind).toBe("fake-leverage-challenge");
   });
 
-  /* Companion locked-down assertion: even with the auto-proof bug
-   * (above) suppressing the FIRE path, the SUPPRESSION half of the
-   * contract IS observable through the real pipeline — once
-   * `competingOfferDetail.proofProvided=true` (however it got there),
-   * the planner gate at line 1725 holds and the challenge is
-   * suppressed. Locks the non-buggy half of the spec so any future
-   * regression that flips it to fire-after-proof breaks the test. */
+  /* Companion locked-down assertion: once
+   * `competingOfferDetail.proofProvided=true` (via parser-side
+   * PROOF_SHARE_PATTERNS match — candidate actually shares evidence),
+   * the planner gate suppresses the challenge. Locks the SUPPRESSION
+   * half of the spec so any future regression that flips it to
+   * fire-after-proof breaks the test. */
   it("with proofProvided=true on competingOfferDetail, planner does NOT emit fake-leverage-challenge", () => {
     let state = dribbleBaseState();
     state = applyCandidateAnswer(state, "I'm also interviewing with Flipkart for a similar role.");
     state = applyAiMove(state, actionToLever(planNextAction(state), state), "[T0]");
-    state = applyCandidateAnswer(state, "They verbally offered me a position last week.");
+    state = applyCandidateAnswer(state, "They verbally offered me a position last week at 68 LPA.");
     state = applyAiMove(state, actionToLever(planNextAction(state), state), "[T1]");
-    state = applyCandidateAnswer(state, "Their offer of 68 LPA from Flipkart on the verbal stage.");
-    /* Real-pipeline state: by now proofProvided is true (per the
-     * merger auto-flip). Planner gate must hold. */
+    state = applyCandidateAnswer(state, "Happy to share the offer letter from Flipkart if that helps.");
+    /* proofProvided flipped via PROOF_SHARE_PATTERNS (candidate actually
+     * offered to share evidence). Planner gate must hold. */
     expect(state.competingOfferDetail?.proofProvided).toBe(true);
     const action = planNextAction(state);
     expect(action.kind).not.toBe("fake-leverage-challenge");

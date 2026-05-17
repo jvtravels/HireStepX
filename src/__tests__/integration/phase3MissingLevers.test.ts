@@ -134,6 +134,7 @@ describe("Phase 3 missing-lever set — fake-leverage-challenge", () => {
         company: "razorpay",
         status: "verbal",
         stage: "offered",
+        amount: 30,
         letterShareOffered: false,
         onHold: false,
         proofRequestedAtTurn: null,

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   extractCompetingOfferDetail,
   mergeCompetingOfferDetail,
+  hasConcreteTell,
 } from "../../server-handlers/_competing-offer-detail";
 
 describe("extractCompetingOfferDetail — company", () => {
@@ -141,26 +142,26 @@ describe("Phase 27 — competing-offer onHold detection", () => {
   });
 });
 
-/* Crack 2 (2026-05-17) — hasConcreteTell() now reads the ACCUMULATED
- * CompetingOfferDetail rather than single-utterance extraction. Real
- * candidates dribble: company at T14, amount at T16, status at T18.
- * The mergeCompetingOfferDetail folder accumulates each piece across
- * turns; proofProvided flips to true once all three are present in the
- * merged record. proofProvided=true sticky still blocks
- * fake-leverage-challenge regardless. */
-describe("hasConcreteTell — accumulated proofProvided across turns", () => {
-  it("all three in one utterance → proofProvided=true (existing behavior preserved)", () => {
+/* Crack 2.5 (2026-05-17) — proofProvided and hasConcreteTell are
+ * SEPARATE concepts. proofProvided flips ONLY when the candidate
+ * actually shares evidence (PROOF_SHARE_PATTERNS at parse time).
+ * hasConcreteTell is the lever's ARMING condition (accumulated
+ * company + status + amount across turns) and is consumed directly by
+ * the planner gate, NOT auto-flipped into proofProvided. The prior
+ * conflation suppressed fake-leverage-challenge the moment it became
+ * applicable. */
+describe("hasConcreteTell — arming condition (distinct from proofProvided)", () => {
+  it("parser-side flip: candidate explicitly shares evidence → proofProvided=true", () => {
     const detail = extractCompetingOfferDetail(
-      "I have an offer letter from Razorpay at 30 LPA",
+      "I can share the offer letter from Razorpay at 30 LPA",
     );
     const merged = mergeCompetingOfferDetail(null, detail);
     expect(merged.company).toBe("razorpay");
-    expect(merged.status).toBe("letter");
     expect(merged.amount).toBe(30);
     expect(merged.proofProvided).toBe(true);
   });
 
-  it("dribbled across 3 turns (company → amount → status) → proofProvided=true", () => {
+  it("dribbled across 3 turns (company → amount → status) → hasConcreteTell=true but proofProvided=false (no evidence shared)", () => {
     const t1 = extractCompetingOfferDetail("I'm in conversations with Razorpay");
     const m1 = mergeCompetingOfferDetail(null, t1);
     expect(m1.company).toBe("razorpay");
@@ -172,15 +173,18 @@ describe("hasConcreteTell — accumulated proofProvided across turns", () => {
     expect(m2.amount).toBe(32);
     expect(m2.proofProvided).toBe(false);
 
-    const t3 = extractCompetingOfferDetail("I have the offer letter in hand now");
+    const t3 = extractCompetingOfferDetail("they made a verbal offer last week");
     const m3 = mergeCompetingOfferDetail(m2, t3);
     expect(m3.company).toBe("razorpay");
     expect(m3.amount).toBe(32);
-    expect(m3.status).toBe("letter");
-    expect(m3.proofProvided).toBe(true);
+    expect(m3.status).toBe("verbal");
+    /* The lever is now ARMED but NOT suppressed — the planner can fire
+     * fake-leverage-challenge to ask for proof. */
+    expect(hasConcreteTell(m3)).toBe(true);
+    expect(m3.proofProvided).toBe(false);
   });
 
-  it("only two of three accumulated (company + amount, no status) → proofProvided=false", () => {
+  it("only two of three accumulated (company + amount, no status) → hasConcreteTell=false, proofProvided=false", () => {
     const t1 = extractCompetingOfferDetail("I'm talking to Flipkart");
     const m1 = mergeCompetingOfferDetail(null, t1);
     const t2 = extractCompetingOfferDetail("they mentioned 28 LPA");
@@ -188,12 +192,13 @@ describe("hasConcreteTell — accumulated proofProvided across turns", () => {
     expect(m2.company).toBe("flipkart");
     expect(m2.amount).toBe(28);
     expect(m2.status).toBe(null);
+    expect(hasConcreteTell(m2)).toBe(false);
     expect(m2.proofProvided).toBe(false);
   });
 
   it("proofProvided is sticky once true (further utterances don't undo it)", () => {
     const t1 = extractCompetingOfferDetail(
-      "verbal offer from Swiggy at 25 LPA",
+      "I'll send you the offer letter from Swiggy at 25 LPA",
     );
     const m1 = mergeCompetingOfferDetail(null, t1);
     expect(m1.proofProvided).toBe(true);

@@ -63,6 +63,7 @@ import {
 import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
+import { hasConcreteTell } from "./_competing-offer-detail";
 
 /** Polish 3 (2026-05-16) — render the reactive followup for a
  *  candidate who cited external market data. When the candidate named
@@ -1721,6 +1722,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const hasUnsubstantiatedOffer =
       state.competingOffer != null &&
       coDetail != null &&
+      hasConcreteTell(coDetail) &&
       coDetail.letterShareOffered !== true &&
       coDetail.proofProvided !== true &&
       coDetail.proofRequestedAtTurn == null;
