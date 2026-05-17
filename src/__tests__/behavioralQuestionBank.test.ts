@@ -8,8 +8,12 @@ import {
 } from "../../data/behavioral-question-bank";
 
 describe("BEHAVIORAL_50 — shape & coverage", () => {
-  it("has exactly 50 entries", () => {
-    expect(BEHAVIORAL_50).toHaveLength(50);
+  it("has exactly 56 entries (50 original + 6 adaptability/execution-rigor)", () => {
+    /* The export is named `BEHAVIORAL_50` for historical reasons; the bank
+       grew when `adaptability` + `execution-rigor` were split out from
+       `ambiguity` / `ownership`. The constant length is the source of
+       truth, not the name. */
+    expect(BEHAVIORAL_50).toHaveLength(56);
   });
 
   it("every entry has a valid competency", () => {
@@ -156,14 +160,19 @@ describe("sampleBehavioralQuestions — role/yoe tilt", () => {
     }
   });
 
-  it("backward compat: count=5, seed=42, no role/yoe returns the pre-change set", () => {
+  it("deterministic snapshot: count=5, seed=42, no role/yoe", () => {
+    /* Pinned snapshot to catch unintended drift in the sampler logic.
+       Adding/removing bank entries naturally changes the shuffle output,
+       so this expectation gets re-pinned alongside any bank-size change
+       — that's expected, not a regression. The invariant the test
+       protects is: same seed + same bank → same output. */
     const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
     expect(out.map(q => q.text)).toEqual([
-      "Tell me about a time you had to deliver something during a production incident.",
-      "Tell me about a time you had to say no to a stakeholder.",
-      "Tell me about a time you had to make progress without knowing the full picture.",
-      "Tell me about a time you sold an unpopular idea internally.",
-      "Tell me about a time you went above and beyond on a project.",
+      "Tell me about a time you had to make a decision with incomplete data.",
+      "Tell me about a time you had to deliver under a tight deadline.",
+      "Tell me about a time you onboarded a new joiner onto a complex codebase.",
+      "Tell me about a time you caught a bug or issue in your own work before it shipped.",
+      "Tell me about a time you found a creative solution to a constraint.",
     ]);
   });
 });
