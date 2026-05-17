@@ -401,6 +401,35 @@ export async function getSessionById(sessionId: string, userId: string): Promise
   return data;
 }
 
+/**
+ * Pull the gap-flag list from the user's most-recent analyzed session.
+ *
+ * Used by the dashboard "Your next move" CTA to surface gap-specific
+ * coaching (`pickNextMove({ topGaps })`). The analyzer writes one row
+ * per session into `session_insights` — we just need the freshest one
+ * for the current user.
+ *
+ * Returns [] on miss, RLS denial, or any error. Best-effort: a failed
+ * read silently falls back to the skill-based CTA, never breaks the
+ * dashboard.
+ */
+export async function getLatestSessionInsightFlags(userId: string): Promise<string[]> {
+  try {
+    const client = await getSupabase();
+    const { data } = await client
+      .from("session_insights")
+      .select("flags")
+      .eq("user_id", userId)
+      .order("analyzed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const flags = (data as { flags?: unknown } | null)?.flags;
+    return Array.isArray(flags) ? flags.filter((f): f is string => typeof f === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 /* ─── Feedback helpers ─── */
 
 export interface FeedbackRecord {
