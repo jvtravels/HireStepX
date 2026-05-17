@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   BEHAVIORAL_50,
   BEHAVIORAL_COMPETENCIES,
+  BEHAVIORAL_ROLES,
   COMPETENCY_LABELS,
   sampleBehavioralQuestions,
 } from "../../data/behavioral-question-bank";
@@ -111,5 +112,58 @@ describe("sampleBehavioralQuestions", () => {
     expect(() => sampleBehavioralQuestions({ count: 100, seed: 1 })).not.toThrow();
     const out = sampleBehavioralQuestions({ count: 100, seed: 1 });
     expect(out.length).toBeLessThanOrEqual(BEHAVIORAL_50.length);
+  });
+});
+
+describe("BEHAVIORAL_50 — role/seniority tagging", () => {
+  it("roleAffinity (when present) only contains valid role strings", () => {
+    const validRoles = new Set<string>(BEHAVIORAL_ROLES);
+    for (const q of BEHAVIORAL_50) {
+      if (q.roleAffinity === undefined) continue;
+      expect(Array.isArray(q.roleAffinity)).toBe(true);
+      expect(q.roleAffinity.length).toBeGreaterThan(0);
+      for (const r of q.roleAffinity) {
+        expect(validRoles.has(r)).toBe(true);
+      }
+    }
+  });
+
+  it("seniorityFloor (when present) is a number 0–10", () => {
+    for (const q of BEHAVIORAL_50) {
+      if (q.seniorityFloor === undefined) continue;
+      expect(typeof q.seniorityFloor).toBe("number");
+      expect(q.seniorityFloor).toBeGreaterThanOrEqual(0);
+      expect(q.seniorityFloor).toBeLessThanOrEqual(10);
+    }
+  });
+});
+
+describe("sampleBehavioralQuestions — role/yoe tilt", () => {
+  it("yoe=1 filters out questions whose seniorityFloor > 1", () => {
+    const out = sampleBehavioralQuestions({ count: 50, seed: 3, yoe: 1 });
+    for (const q of out) {
+      expect((q.seniorityFloor ?? 0) <= 1).toBe(true);
+    }
+  });
+
+  it("role='engineer' yields zero designer-only questions when alternatives exist", () => {
+    const out = sampleBehavioralQuestions({ count: 12, seed: 9, role: "engineer" });
+    for (const q of out) {
+      // A question is "designer-only" if roleAffinity is set and excludes engineer.
+      if (q.roleAffinity && q.roleAffinity.length > 0) {
+        expect(q.roleAffinity.includes("engineer")).toBe(true);
+      }
+    }
+  });
+
+  it("backward compat: count=5, seed=42, no role/yoe returns the pre-change set", () => {
+    const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
+    expect(out.map(q => q.text)).toEqual([
+      "Tell me about a time you had to deliver something during a production incident.",
+      "Tell me about a time you had to say no to a stakeholder.",
+      "Tell me about a time you had to make progress without knowing the full picture.",
+      "Tell me about a time you sold an unpopular idea internally.",
+      "Tell me about a time you went above and beyond on a project.",
+    ]);
   });
 });

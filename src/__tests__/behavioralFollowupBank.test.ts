@@ -5,14 +5,15 @@ import {
   cueFromEngineHints,
   pickBehavioralProbe,
   probePromptFragment,
+  shouldSuppressCue,
 } from "../../server-handlers/_behavioral-followup-bank";
 
 describe("BEHAVIORAL_PROBES — shape", () => {
   it("exposes ~15 canonical probes", () => {
     // Bank is intentionally ~15; allow a small range so adding a variant
     // doesn't break the suite, but catches runaway growth.
-    expect(BEHAVIORAL_PROBES.length).toBeGreaterThanOrEqual(12);
-    expect(BEHAVIORAL_PROBES.length).toBeLessThanOrEqual(20);
+    expect(BEHAVIORAL_PROBES.length).toBeGreaterThanOrEqual(20);
+    expect(BEHAVIORAL_PROBES.length).toBeLessThanOrEqual(30);
   });
 
   it("every probe has cue + text + intent", () => {
@@ -83,12 +84,132 @@ describe("pickBehavioralProbe", () => {
     expect(second!.text).not.toBe(first!.text);
   });
 
+  it("returns a non-null probe for each new pushback + emotion cue", () => {
+    const newCues = [
+      "pushback.alternative",
+      "pushback.risk",
+      "pushback.assumption",
+      "pushback.if-wrong",
+      "emotion.feel",
+      "emotion.hardest",
+      "emotion.regret",
+    ] as const;
+    for (const cue of newCues) {
+      const p = pickBehavioralProbe({ cue });
+      expect(p, `cue=${cue}`).not.toBeNull();
+      expect(p!.cue).toBe(cue);
+    }
+  });
+
+  it("rotates between both variants of pushback.alternative across two picks", () => {
+    const first = pickBehavioralProbe({ cue: "pushback.alternative" });
+    expect(first).not.toBeNull();
+    const second = pickBehavioralProbe({
+      cue: "pushback.alternative",
+      alreadyAsked: [first!.text],
+    });
+    expect(second).not.toBeNull();
+    expect(second!.text).not.toBe(first!.text);
+    expect(second!.cue).toBe("pushback.alternative");
+  });
+
   it("falls back to the first candidate if all phrasings are exhausted", () => {
     const cue = "star.action" as const;
     const all = BEHAVIORAL_PROBES.filter(p => p.cue === cue).map(p => p.text);
     const picked = pickBehavioralProbe({ cue, alreadyAsked: all });
     expect(picked).not.toBeNull();
     expect(all).toContain(picked!.text);
+  });
+});
+
+describe("cueFromEngineHints — Lift A signals", () => {
+  it("defensiveness + failure question → defensiveness.own-it (highest precedence)", () => {
+    expect(
+      cueFromEngineHints({
+        questionText: "Tell me about a mistake you made.",
+        defensiveness: true,
+        starGap: "action",
+        weHeavy: true,
+      }),
+    ).toBe("defensiveness.own-it");
+  });
+
+  it("defensiveness WITHOUT a failure question does NOT fire defensiveness.own-it", () => {
+    // No failure-shaped question → defensiveness shouldn't even be set
+    // upstream, but if it is, the cue must not fire.
+    expect(
+      cueFromEngineHints({
+        questionText: "Tell me about a successful project.",
+        defensiveness: true,
+        starGap: "action",
+      }),
+    ).toBe("star.action");
+  });
+
+  it("crispness === 'thin' → crispness.too-thin (beats weHeavy / starGap)", () => {
+    expect(
+      cueFromEngineHints({ crispness: "thin", weHeavy: true, starGap: "action" }),
+    ).toBe("crispness.too-thin");
+  });
+
+  it("crispness === 'ok' does NOT mask weHeavy", () => {
+    expect(cueFromEngineHints({ crispness: "ok", weHeavy: true })).toBe("we-heavy");
+  });
+
+  it("vagueness fires only when neither weHeavy nor starGap is set", () => {
+    expect(cueFromEngineHints({ vagueness: true })).toBe("vagueness.quantify");
+    // suppressed by weHeavy
+    expect(cueFromEngineHints({ vagueness: true, weHeavy: true })).toBe("we-heavy");
+    // suppressed by starGap
+    expect(cueFromEngineHints({ vagueness: true, starGap: "result" })).toBe("star.result");
+  });
+
+  it("conflict question beats defensiveness when there's no failure framing", () => {
+    expect(
+      cueFromEngineHints({
+        questionText: "Tell me about a time you had to disagree with your manager.",
+        defensiveness: true,
+      }),
+    ).toBe("conflict.disagreement");
+  });
+});
+
+describe("shouldSuppressCue — self-awareness suppression", () => {
+  it("suppresses closer.would-do-differently when selfAwarenessShown is true", () => {
+    expect(
+      shouldSuppressCue("closer.would-do-differently", { selfAwarenessShown: true }),
+    ).toBe(true);
+  });
+
+  it("does NOT suppress closer.would-do-differently when selfAwarenessShown is false", () => {
+    expect(
+      shouldSuppressCue("closer.would-do-differently", { selfAwarenessShown: false }),
+    ).toBe(false);
+    expect(shouldSuppressCue("closer.would-do-differently", {})).toBe(false);
+  });
+
+  it("does NOT suppress other cues when selfAwarenessShown is true", () => {
+    expect(shouldSuppressCue("star.action", { selfAwarenessShown: true })).toBe(false);
+    expect(shouldSuppressCue("closer.learning", { selfAwarenessShown: true })).toBe(false);
+    expect(shouldSuppressCue("we-heavy", { selfAwarenessShown: true })).toBe(false);
+  });
+});
+
+describe("BEHAVIORAL_PROBES — Lift A entries", () => {
+  it("has a probe for each Lift A cue", () => {
+    const cues = new Set(BEHAVIORAL_PROBES.map(p => p.cue));
+    expect(cues.has("defensiveness.own-it")).toBe(true);
+    expect(cues.has("crispness.too-thin")).toBe(true);
+    expect(cues.has("vagueness.quantify")).toBe(true);
+  });
+
+  it("pickBehavioralProbe returns text for each Lift A cue", () => {
+    const own = pickBehavioralProbe({ cue: "defensiveness.own-it" });
+    expect(own!.text.toLowerCase()).toContain("own");
+    const thin = pickBehavioralProbe({ cue: "crispness.too-thin" });
+    expect(thin!.text.toLowerCase()).toContain("set the scene");
+    const vague = pickBehavioralProbe({ cue: "vagueness.quantify" });
+    expect(vague!.text.toLowerCase()).toContain("numbers");
   });
 });
 
