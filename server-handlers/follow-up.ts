@@ -231,8 +231,26 @@ export default async function handler(req: Request): Promise<Response> {
   // or we-heavy framing, inject the preferred real-interviewer phrasing
   // into the prompt as a soft constraint. Makes probes feel consistent
   // across sessions and saves a chunk of LLM cost on common gaps.
-  const behaviouralProbeContext = (() => {
-    if (type !== "behavioral" && type !== "behavioural") return "";
+  /* Behavioural probe-bank selection. Returns the prompt fragment AND
+   *  a telemetry record so we can measure cache hit-rate in PostHog.
+   *  source values:
+   *    "bank"       — a canonical probe was picked and injected
+   *    "suppressed" — cue fired but shouldSuppressCue dropped it (e.g.
+   *                   would-do-differently closer when candidate already
+   *                   self-critiqued)
+   *    "no-cue"     — engine hints produced no deterministic cue;
+   *                   LLM generates a contextual probe
+   *    "no-match"   — cue fired but no probe in the bank matched
+   *    "skipped"    — non-behavioural type; telemetry not emitted */
+  const behaviouralProbeResult: {
+    fragment: string;
+    cue: string | null;
+    source: "bank" | "suppressed" | "no-cue" | "no-match" | "skipped";
+    probeText: string | null;
+  } = (() => {
+    if (type !== "behavioral" && type !== "behavioural") {
+      return { fragment: "", cue: null, source: "skipped", probeText: null };
+    }
     // Validate crispness shape — anything outside the documented union
     // gets dropped rather than narrowing to a wrong cue.
     const safeCrispness: "thin" | "ok" | "rambling" | undefined =
@@ -248,19 +266,46 @@ export default async function handler(req: Request): Promise<Response> {
       selfAwarenessShown: Boolean(selfAwarenessShown),
       defensiveness: Boolean(defensiveness),
     });
-    if (!cue) return "";
+    if (!cue) return { fragment: "", cue: null, source: "no-cue", probeText: null };
     // Lift A — if the candidate already self-critiqued, suppress the
     // would-do-differently closer; falling through to LLM generation is
     // the right move because a custom probe will land better than an
     // off-the-shelf one when the obvious cue is gone.
     if (shouldSuppressCue(cue, { selfAwarenessShown: Boolean(selfAwarenessShown) })) {
-      return "";
+      return { fragment: "", cue, source: "suppressed", probeText: null };
     }
     const alreadyAsked = Array.isArray(previousFollowUps) ? previousFollowUps : [];
     const probe = pickBehavioralProbe({ cue, alreadyAsked });
-    if (!probe) return "";
-    return "\n\n" + probePromptFragment(probe);
+    if (!probe) return { fragment: "", cue, source: "no-match", probeText: null };
+    return {
+      fragment: "\n\n" + probePromptFragment(probe),
+      cue,
+      source: "bank",
+      probeText: probe.text,
+    };
   })();
+  const behaviouralProbeContext = behaviouralProbeResult.fragment;
+  // Telemetry — measure bank hit-rate vs LLM fallback. Fire-and-forget
+  // so prompt-build latency stays unaffected. Skipped for non-behavioural
+  // types so the event volume isn't polluted.
+  if (behaviouralProbeResult.source !== "skipped") {
+    void captureServerEvent("behavioural_probe_picked", distinctIdFrom(req, auth.userId), {
+      cue: behaviouralProbeResult.cue,
+      source: behaviouralProbeResult.source,
+      probe_text: behaviouralProbeResult.probeText,
+      role: typeof role === "string" ? role.slice(0, 64) : null,
+      company: typeof company === "string" ? company.slice(0, 64) : null,
+      follow_up_depth: followUpDepth,
+      // Signal which Lift A inputs were present — lets us correlate
+      // bank-hit rate with engine-signal completeness in dashboards.
+      had_star_gap: Boolean(starGap),
+      had_we_heavy: Boolean(weHeavy),
+      had_vagueness: Boolean(vagueness),
+      had_crispness: crispness === "thin" || crispness === "ok" || crispness === "rambling",
+      had_self_awareness: Boolean(selfAwarenessShown),
+      had_defensiveness: Boolean(defensiveness),
+    });
+  }
     /* Wave-8: campus-placement in-session resume pushback.
      *
      * Carries the list of companies / titles the candidate has on their
