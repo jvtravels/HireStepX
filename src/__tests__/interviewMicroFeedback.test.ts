@@ -245,6 +245,63 @@ describe("computeMicroFeedback", () => {
       });
     });
 
+    /* Lift-A live cues: micro-feedback reads the originating question
+       text and runs the same detectors the follow-up coach uses, so the
+       live tip and the next AI probe stay aligned. */
+    describe("Lift-A live cues (questionText-aware)", () => {
+      it("fires defensiveness cue on failure question with deflection", () => {
+        const q = "Tell me about a mistake you made on a project.";
+        const a = pad("Honestly it wasn't my call — the team didn't listen and my manager kept changing priorities so the project missed its deadline", 30);
+        const r = computeMicroFeedback(a, "behavioral", [], undefined, [], q);
+        expect(r.feedback).toMatch(/Own your role|would .you. have done differently/i);
+        expect(r.score).toBeLessThan(60);
+      });
+
+      it("acknowledges self-awareness on failure question without prompting", () => {
+        const q = "Walk me through a mistake you made.";
+        const a = pad("In hindsight I should have asked more questions before committing. I underestimated the complexity and that's on me — next time I'd run a quick prototype before pitching the timeline", 35);
+        const r = computeMicroFeedback(a, "behavioral", [], undefined, [], q);
+        expect(r.feedback).toMatch(/owned it|self-awareness/i);
+        expect(r.score).toBeGreaterThanOrEqual(70);
+      });
+
+      it("fires vagueness cue when scale words have no numbers", () => {
+        const q = "Tell me about a project where you scaled impact.";
+        const a = pad("We helped many customers across several regions and saw a lot of engagement with multiple teams contributing to various improvements over time", 30);
+        const r = computeMicroFeedback(a, "behavioral", [], undefined, [], q);
+        expect(r.feedback).toMatch(/Vague on scale|need numbers/i);
+      });
+
+      it("does not fire vagueness when numbers are present", () => {
+        const q = "Tell me about a project where you scaled impact.";
+        const a = pad("We helped many customers — about 1200 across 3 regions — and saw a lot of engagement with 5 teams contributing", 30);
+        const r = computeMicroFeedback(a, "behavioral", [], undefined, [], q);
+        expect(r.feedback).not.toMatch(/Vague on scale/i);
+      });
+
+      it("defensiveness wins over vagueness when both fire", () => {
+        const q = "Describe a setback you regret.";
+        const a = pad("Honestly it wasn't my call — many things were out of my control and several stakeholders kept shifting goals", 30);
+        const r = computeMicroFeedback(a, "behavioral", [], undefined, [], q);
+        expect(r.feedback).toMatch(/Own your role/i);
+      });
+
+      it("falls through to generic STAR coaching when no Lift-A cue fires", () => {
+        const q = "Tell me about a project you're proud of.";
+        const a = pad("I led the migration from legacy infrastructure to a new platform working closely with the team to ship the changes", 35);
+        const r = computeMicroFeedback(a, "behavioral", [], undefined, [], q);
+        // No Lift-A tip — should still produce a coaching tip.
+        expect(r.feedback).not.toMatch(/Own your role|self-awareness|Vague on scale/i);
+        expect(r.feedback).toBeTruthy();
+      });
+
+      it("skips Lift-A cues when question text is not supplied (backward compat)", () => {
+        const a = pad("Honestly it wasn't my call — the team didn't listen and we missed the deadline", 30);
+        const r = computeMicroFeedback(a, "behavioral", []);
+        expect(r.feedback).not.toMatch(/Own your role/i);
+      });
+    });
+
     it("score is always within [0, 100]", () => {
       const r1 = computeMicroFeedback("ok", "behavioral", []);
       expect(r1.score).toBeGreaterThanOrEqual(0);
