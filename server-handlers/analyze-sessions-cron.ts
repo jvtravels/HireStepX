@@ -243,6 +243,19 @@ export default async function handler(req: Request): Promise<Response> {
       const resume = session.resume_version_id
         ? await fetchResumeForAnalyzer(SUPABASE_URL, SUPABASE_SERVICE_KEY, session.resume_version_id)
         : null;
+      // If the session referenced a resume_version_id but we got nothing
+      // back, the cross-check capability is silently disabled for this
+      // analysis — v4.2/v4.3 resume_* flags can never fire. Fire telemetry
+      // so the rate is visible (deleted-version is a legitimate cause; a
+      // sudden spike means the read path broke).
+      if (session.resume_version_id && !resume) {
+        void captureServerEvent("analyzer_resume_fetch_miss", session.user_id, {
+          session_id: session.id,
+          focus: session.type,
+          resume_version_id: session.resume_version_id,
+          analyzer_version: analyzer.version,
+        });
+      }
       const result = await analyzer.analyze({ session, resume });
 
       // Optional LLM rescore — only if budget remains and the focus is supported.
@@ -297,6 +310,7 @@ export default async function handler(req: Request): Promise<Response> {
         resume_snapshot: resume ?? null,
       };
     } catch (e) {
+      const errMsg = String((e as Error)?.message || e).slice(0, 500);
       row = {
         session_id: session.id,
         user_id: session.user_id,
@@ -310,10 +324,20 @@ export default async function handler(req: Request): Promise<Response> {
         flags: ["analyzer_error"],
         coaching_notes: "",
         severity: "high",
-        error: String((e as Error)?.message || e).slice(0, 500),
+        error: errMsg,
         duration_ms: Date.now() - turnT0,
         resume_snapshot: null,
       };
+      // Dedicated event so we can alert on analyzer-throw rate without
+      // having to filter `session_quality_analyzed` for flags=analyzer_error.
+      // Insight row records the error string for forensics; this event
+      // gives us a real-time signal in PostHog.
+      void captureServerEvent("analyzer_error", session.user_id, {
+        session_id: session.id,
+        focus: session.type,
+        analyzer_version: analyzer.version,
+        error_message: errMsg,
+      });
     }
     insights.push(row);
 
@@ -399,6 +423,10 @@ export default async function handler(req: Request): Promise<Response> {
   } catch (e) {
     console.error(`[analyze-sessions] digest failed: ${(e as Error).message}`);
     digestStatus = "failed";
+    void captureServerEvent("analyze_sessions_subtask_failed", "system", {
+      subtask: "digest",
+      error_message: String((e as Error)?.message || e).slice(0, 500),
+    });
   }
 
   // ── Fix-outcome verification ──────────────────────────────────
@@ -410,6 +438,10 @@ export default async function handler(req: Request): Promise<Response> {
     outcomesComputed = await computeFixOutcomes();
   } catch (e) {
     console.error(`[analyze-sessions] fix-outcome pass failed: ${(e as Error).message}`);
+    void captureServerEvent("analyze_sessions_subtask_failed", "system", {
+      subtask: "fix_outcomes",
+      error_message: String((e as Error)?.message || e).slice(0, 500),
+    });
   }
 
   // ── Auto-generate fix recommendations ─────────────────────────
@@ -421,6 +453,10 @@ export default async function handler(req: Request): Promise<Response> {
     recommendationsWritten = await generateRecommendations();
   } catch (e) {
     console.error(`[analyze-sessions] recommendations pass failed: ${(e as Error).message}`);
+    void captureServerEvent("analyze_sessions_subtask_failed", "system", {
+      subtask: "recommendations",
+      error_message: String((e as Error)?.message || e).slice(0, 500),
+    });
   }
 
   // ── Prompt-revision A/B outcomes ──────────────────────────────
@@ -432,6 +468,10 @@ export default async function handler(req: Request): Promise<Response> {
     revisionsMeasured = await computeRevisionOutcomes();
   } catch (e) {
     console.error(`[analyze-sessions] revision-outcome pass failed: ${(e as Error).message}`);
+    void captureServerEvent("analyze_sessions_subtask_failed", "system", {
+      subtask: "revision_outcomes",
+      error_message: String((e as Error)?.message || e).slice(0, 500),
+    });
   }
 
   return jsonResponse({
