@@ -729,6 +729,22 @@ function renderCanonicalProseBody(
        * structured between fixed and variable?"). */
       const rawItem = action.item;
       const item = rawItem.replace(/(?:Answered|Disclosed)$/, "");
+      /* PDF#27 FL5 (2026-05-17) — uncertainty-escape range-ask passthrough.
+       * The planner's FL5 escape hatch (_next-action-planner.ts
+       * applyUncertaintyEscapeHatch) may swap the canonical probe prompt
+       * for a range-shaped ask when the candidate hedged on the prior
+       * turn. The prose renderer would otherwise hard-code the
+       * boilerplate prompt per `item`, silently dropping the override.
+       * Detect the FL5 range-ask vocabulary on action.ask and prefer it
+       * over the default whenever it's present. */
+      const RANGE_ASK_RE = /\b(?:rough\s+range|ballpark|no\s+need\s+for\s+an\s+exact)\b/i;
+      if (action.ask && RANGE_ASK_RE.test(action.ask)) {
+        const probeOverride = action.ask;
+        const ackPrefix = buildDiscoveryAck(state, item);
+        return ackPrefix
+          ? `${ackPrefix} ${probeOverride}`
+          : probeOverride;
+      }
       let probe: string;
       if (item === "currentCtc") {
         probe = "Let's start with your current side — what's the total CTC at present?";

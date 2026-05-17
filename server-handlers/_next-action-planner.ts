@@ -547,7 +547,16 @@ function applyUncertaintyEscapeHatch(
   const NO_OP = { advance: false, rangeAsk: null } as const;
   const uncertainAt = state.lastAnswerUncertainAt ?? null;
   if (uncertainAt == null) return NO_OP;
-  if (uncertainAt !== state.turnIndex - 1) return NO_OP;
+  /* PDF#27 FL5 off-by-one fix (2026-05-17) — recency window covers
+   * BOTH the same-turn case (planner runs inside applyCandidateAnswer
+   * before the next applyAiMove increments turnIndex, so
+   * lastAnswerUncertainAt === state.turnIndex) AND the next-turn case
+   * (lastAnswerUncertainAt === state.turnIndex - 1, the historical
+   * shape this function assumed). Without the same-turn allowance the
+   * escape hatch never fired in the kernel-driven test harness — the
+   * uncertain candidate utterance and the planner read state at
+   * identical turnIndex values. */
+  if (uncertainAt !== state.turnIndex && uncertainAt !== state.turnIndex - 1) return NO_OP;
   /* The escape hatch is only triggered when we're about to re-ASK
    * the same topic that triggered the uncertain reply. Looking at
    * state.askedTopics tail tells us the topic the candidate was
@@ -951,6 +960,61 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     state.infoAsked.includes("compensation-breakdown") ||
     state.infoAsked.includes("notice-period-ask") ||
     state.infoAsked.includes("hike-percentage-ask");
+  /* PDF#27 Fix 5 (2026-05-17) — offer-ask → band-anchor short-circuit.
+   *
+   * When the candidate explicitly asked "what's the offer?" on their
+   * most recent turn, the recruiter should anchor the band ahead of
+   * grinding more discovery questions. The kernel stamps
+   * state.offerAskedAtTurn when applyCandidateAnswer detects the
+   * OFFER_ASK_RE pattern (_negotiation-kernel.ts Fix 5). This gate is
+   * the consumer: it routes to anchor-with-band regardless of
+   * currentCtc disclosure state, single-fire per session.
+   *
+   * Gating:
+   *   - PRE_ANCHOR_PHASES only (counter / closing-push are past).
+   *   - Recency: offerAskedAtTurn >= turnIndex - 1 (window of one
+   *     planner call from the candidate ask).
+   *   - Band complete (lo < hi, both numeric).
+   *   - Single-fire via askedTopics ledger inspection. */
+  const bandAnchorAlreadyFired = (state.askedTopics ?? []).some(
+    (t) => t.topic === "band-anchor-with-rationale" || (t.topic as string) === "anchor-with-band",
+  );
+  /* Note: hasOutstandingInfoAsk is intentionally NOT consulted here.
+   * The candidate's "what's the offer?" utterance flows into infoAsked
+   * as "package-breakdown" via the package-breakdown intent regex, so
+   * the generic gate would always be skipped. Fix 5's whole purpose is
+   * to ANSWER that ask with a band-anchor, so it short-circuits ahead
+   * of the generic info-ask handler. */
+  if (
+    !isTerminalPhase(state.phase) &&
+    PRE_ANCHOR_PHASES.has(state.phase) &&
+    !bandAnchorAlreadyFired &&
+    state.offerAskedAtTurn != null &&
+    state.offerAskedAtTurn >= state.turnIndex - 1
+  ) {
+    const lo = state.band?.initialOffer;
+    const hi = state.band?.maxStretch;
+    const bandComplete =
+      typeof lo === "number" && typeof hi === "number" && lo < hi;
+    if (bandComplete) {
+      return {
+        kind: "anchor-with-band",
+        lo,
+        hi,
+        bandIncomplete: false,
+        satisfiesTopic: "band-anchor-with-rationale",
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale:
+            `PDF#27 Fix 5 — candidate asked for the offer at turn ${state.offerAskedAtTurn}; ` +
+            `anchor band [${lo},${hi}] and invite fitment.`,
+          askedTopic: "band-anchor-with-rationale",
+          actionKind: "range-disclosure",
+        },
+      };
+    }
+  }
   if (
     !isTerminalPhase(state.phase) &&
     PRE_ANCHOR_PHASES.has(state.phase) &&
@@ -1899,13 +1963,23 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
    * failure mode. Topic key includes the turn so the same question
    * acknowledgement doesn't blanket-suppress future questions. */
   if (delta.askedQuestion) {
+    /* PDF#27 Fix 5 (2026-05-17) — when the candidate's question this
+     * turn IS specifically "what's the offer?" (kernel-stamped via
+     * state.offerAskedAtTurn === turnIndex), DO NOT route through the
+     * generic answer-direct branch. Defer to the dedicated band-anchor
+     * gate downstream which has the band context to actually answer.
+     * Without this skip, the generic reactive-followup pre-empts band-
+     * anchor and the candidate's offer-ask gets a non-answer. */
+    const offerAskedThisTurn =
+      state.offerAskedAtTurn != null &&
+      state.offerAskedAtTurn === state.turnIndex;
     /* ArchRec 2 (2026-05-16) — was `answer-direct@${turnIndex}`. The
      * per-turn suffix made hasFired() always pass (every turn produced
      * a fresh string), so the "single-fire" intent was actually dead.
      * Use the canonical literal topic; dedup against
      * reactiveFollowupsFired works as documented now that the key
      * matches across turns. */
-    if (!hasFired("answer-direct")) {
+    if (!hasFired("answer-direct") && !offerAskedThisTurn) {
       return {
         kind: "reactive-followup",
         ask: "Answer the candidate's question first; checklist advance pauses until the question is addressed.",
