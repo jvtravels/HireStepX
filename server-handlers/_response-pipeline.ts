@@ -954,3 +954,247 @@ function lowercaseFirst(s: string): string {
   if (!s) return s;
   return s.charAt(0).toLowerCase() + s.slice(1);
 }
+
+/* ─── AR2 / Audit Pass 4 — turn-pair coherence (dev only) ───────────── */
+
+/** AR2 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-pair coherence.
+ *
+ *  Diagnostic-only validator that fires AFTER a candidate answer has
+ *  been folded into state and the planner has emitted the NEXT AI turn.
+ *  Flags three classes of incoherence:
+ *
+ *  (a) SILENT DODGE — prev AI turn asked topic X, candidate gave a
+ *      non-trivial reply, planner is asking X again because state[X]
+ *      stayed null. The parser missed the disclosure.
+ *  (b) ACK WITHOUT DISCLOSURE — next AI turn acks a state field that
+ *      wasn't populated this turn (foldFacts missed, or the parser
+ *      hallucinated).
+ *  (c) TOPIC REGRESS — anchoring → discovery drop-back without an
+ *      explicit phase reset.
+ *
+ *  Dev-only (`process.env.NODE_ENV !== 'production'`). Never blocks
+ *  prod traffic. console.warn + ring-buffer for test inspection. */
+
+type CoherenceTopic =
+  | "currentCtc"
+  | "targetCtc"
+  | "noticePeriod"
+  | "competingOffers"
+  | "valueProof"
+  | "fixedVariableSplit";
+
+type ProbeKind =
+  | "discovery-probe"
+  | "component-probe"
+  | "probe-expectations"
+  | "probe-justification"
+  | "reactive-followup"
+  | "anchor-with-band"
+  | "range-disclosure"
+  | "probe-mismatch";
+
+const PROBE_KINDS: ReadonlySet<string> = new Set<ProbeKind>([
+  "discovery-probe",
+  "component-probe",
+  "probe-expectations",
+  "probe-justification",
+  "reactive-followup",
+  "anchor-with-band",
+  "range-disclosure",
+  "probe-mismatch",
+]);
+
+/** Map probe action → the topic it satisfies. Best-effort derivation
+ *  from the existing NextAction shape until AR1 lands the type-level
+ *  satisfiesTopic field. */
+function deriveSatisfiesTopic(action: NextAction): CoherenceTopic | null {
+  switch (action.kind) {
+    case "discovery-probe": {
+      const item = (action as { item?: string }).item ?? "";
+      if (item === "currentCtc") return "currentCtc";
+      if (item === "expectedCtc" || item === "target") return "targetCtc";
+      if (item === "noticePeriod") return "noticePeriod";
+      if (item === "competing" || item === "competingOffers") return "competingOffers";
+      if (item === "valueProof") return "valueProof";
+      if (item === "fixedVariable" || item === "fixedVariableSplit") return "fixedVariableSplit";
+      return null;
+    }
+    case "probe-expectations":
+      return "targetCtc";
+    case "probe-justification":
+      return "targetCtc";
+    case "component-probe":
+      return "currentCtc";
+    case "anchor-with-band":
+      return "targetCtc";
+    case "range-disclosure":
+      return "targetCtc";
+    case "reactive-followup": {
+      const topic = (action as { topic?: string }).topic ?? "";
+      if (topic === "ctc-gentle-push" || topic === "hike-justification" || topic === "number-clarification") return "currentCtc";
+      if (topic === "value-proof") return "valueProof";
+      if (topic === "notice-buyout" || topic === "notice-buyout-confirm") return "noticePeriod";
+      if (topic === "competing-credibility" || topic === "competing-leverage-ack") return "competingOffers";
+      if (topic === "variable-comfort" || topic === "equity-clarity") return "fixedVariableSplit";
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
+/** Read the state field a topic should be populating into. Null means
+ *  the candidate hasn't disclosed it yet. */
+function readTopicField(
+  topic: CoherenceTopic,
+  state: NegotiationState,
+): unknown {
+  switch (topic) {
+    case "currentCtc":
+      return state.candidateCurrentCtc ?? null;
+    case "targetCtc":
+      return state.candidateTarget ?? null;
+    case "noticePeriod":
+      return (state as { candidateNoticePeriodWeeks?: number | null }).candidateNoticePeriodWeeks ?? null;
+    case "competingOffers":
+      return state.competingOffer ?? null;
+    case "valueProof":
+      return (state as { valueProof?: unknown }).valueProof ?? null;
+    case "fixedVariableSplit":
+      return state.candidateComponentBreakdown ?? null;
+  }
+}
+
+/** Topic ordering for regression check — lower index = earlier phase. */
+const TOPIC_PHASE_ORDER: Record<string, number> = {
+  "discovery-probe": 0,
+  "component-probe": 0,
+  "probe-expectations": 1,
+  "probe-justification": 1,
+  "anchor-with-band": 2,
+  "range-disclosure": 2,
+  "counter-offer": 3,
+  "close-recap-formal": 4,
+};
+
+/** Ring buffer of dev-only warnings — exposed for tests. */
+interface CoherenceWarning {
+  kind: "silent-dodge" | "ack-without-disclosure" | "topic-regress";
+  topic: CoherenceTopic | null;
+  prevKind: string;
+  nextKind: string;
+  message: string;
+}
+const COHERENCE_BUFFER: CoherenceWarning[] = [];
+const COHERENCE_BUFFER_MAX = 64;
+
+export function getCoherenceWarnings(): readonly CoherenceWarning[] {
+  return COHERENCE_BUFFER.slice();
+}
+
+export function clearCoherenceWarnings(): void {
+  COHERENCE_BUFFER.length = 0;
+}
+
+function pushCoherenceWarning(w: CoherenceWarning): void {
+  COHERENCE_BUFFER.push(w);
+  if (COHERENCE_BUFFER.length > COHERENCE_BUFFER_MAX) {
+    COHERENCE_BUFFER.shift();
+  }
+  // eslint-disable-next-line no-console
+  console.warn(`[turn-coherence] ${w.kind}: ${w.message}`);
+}
+
+/** AR2 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-pair coherence
+ *  validator. Dev-only diagnostic. Returns the warnings it surfaced
+ *  (also pushed to the ring buffer). Always returns; never throws. */
+export function validateTurnCoherence(
+  prevAiTurn: NextAction | null,
+  candidateAnswer: string | null | undefined,
+  nextAiTurn: NextAction | null,
+  state: NegotiationState,
+): readonly CoherenceWarning[] {
+  if (process.env.NODE_ENV === "production") return [];
+  const surfaced: CoherenceWarning[] = [];
+  if (prevAiTurn == null || nextAiTurn == null) return surfaced;
+
+  /* Non-trivial = ≥3 words OR contains a number. */
+  const isNonTrivial = (() => {
+    const t = (candidateAnswer ?? "").trim();
+    if (!t) return false;
+    if (/\d/.test(t)) return true;
+    const words = t.split(/\s+/).filter((w) => w.length > 0);
+    return words.length >= 3;
+  })();
+
+  const prevTopic = PROBE_KINDS.has(prevAiTurn.kind)
+    ? deriveSatisfiesTopic(prevAiTurn)
+    : null;
+  const nextTopic = PROBE_KINDS.has(nextAiTurn.kind)
+    ? deriveSatisfiesTopic(nextAiTurn)
+    : null;
+
+  /* (a) SILENT DODGE — same topic re-asked after a non-trivial answer
+   *     but state field for that topic is still null. */
+  if (
+    prevTopic != null &&
+    nextTopic === prevTopic &&
+    isNonTrivial &&
+    readTopicField(prevTopic, state) == null
+  ) {
+    const w: CoherenceWarning = {
+      kind: "silent-dodge",
+      topic: prevTopic,
+      prevKind: prevAiTurn.kind,
+      nextKind: nextAiTurn.kind,
+      message: `re-asking topic "${prevTopic}" after non-trivial reply but state[${prevTopic}] still null — parser miss?`,
+    };
+    pushCoherenceWarning(w);
+    surfaced.push(w);
+  }
+
+  /* (b) ACK WITHOUT DISCLOSURE — next AI turn acks the prev topic but
+   *     the corresponding state field wasn't populated this turn. We
+   *     detect ack by checking whether nextAiTurn is NOT a re-probe of
+   *     prevTopic (i.e. moved on) AND state[prevTopic] still null. */
+  if (
+    prevTopic != null &&
+    nextTopic !== prevTopic &&
+    PROBE_KINDS.has(nextAiTurn.kind) &&
+    isNonTrivial &&
+    readTopicField(prevTopic, state) == null
+  ) {
+    const w: CoherenceWarning = {
+      kind: "ack-without-disclosure",
+      topic: prevTopic,
+      prevKind: prevAiTurn.kind,
+      nextKind: nextAiTurn.kind,
+      message: `advanced past topic "${prevTopic}" without state[${prevTopic}] being populated`,
+    };
+    pushCoherenceWarning(w);
+    surfaced.push(w);
+  }
+
+  /* (c) TOPIC REGRESS — anchoring/counter dropping back to discovery
+   *     without an explicit phase reset. */
+  const prevPhase = TOPIC_PHASE_ORDER[prevAiTurn.kind];
+  const nextPhase = TOPIC_PHASE_ORDER[nextAiTurn.kind];
+  if (
+    typeof prevPhase === "number" &&
+    typeof nextPhase === "number" &&
+    nextPhase < prevPhase &&
+    prevPhase >= 2
+  ) {
+    const w: CoherenceWarning = {
+      kind: "topic-regress",
+      topic: null,
+      prevKind: prevAiTurn.kind,
+      nextKind: nextAiTurn.kind,
+      message: `phase regress from "${prevAiTurn.kind}" (rank ${prevPhase}) to "${nextAiTurn.kind}" (rank ${nextPhase}) without explicit reset`,
+    };
+    pushCoherenceWarning(w);
+    surfaced.push(w);
+  }
+
+  return surfaced;
+}
