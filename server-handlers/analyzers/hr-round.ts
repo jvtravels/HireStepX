@@ -220,17 +220,40 @@ function tokensOverlap(a: string, b: string): boolean {
  * Returns null on anything ambiguous — we'd rather under-fire than
  * fabricate a fake gap. */
 const HR_MONTHS: Record<string, number> = {
-  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
-  jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
+  jan: 0, january: 0,
+  feb: 1, febr: 1, february: 1,
+  mar: 2, march: 2,
+  apr: 3, april: 3,
+  may: 4,
+  jun: 5, june: 5,
+  jul: 6, july: 6,
+  aug: 7, august: 7,
+  sep: 8, sept: 8, september: 8,
+  oct: 9, october: 9,
+  nov: 10, november: 10,
+  dec: 11, december: 11,
 };
 function parseResumePeriod(period: string | undefined | null): { start: Date; end: Date } | null {
   if (!period) return null;
-  const norm = period.toLowerCase().replace(/–|—/g, "-").replace(/\bto\b/g, "-");
+  // Normalize: en/em dashes → hyphen; " to " → hyphen; apostrophe-2-digit
+  // years ("Mar'22") → 4-digit ("Mar 2022"). Years ≥50 are treated as
+  // 19xx, the rest as 20xx — resume experience sections virtually never
+  // reference pre-1975 so the cutoff is safe.
+  const norm = period
+    .toLowerCase()
+    .replace(/–|—/g, "-")
+    .replace(/\bto\b/g, "-")
+    .replace(/'(\d{2})\b/g, (_m, yy: string) => {
+      const n = parseInt(yy, 10);
+      return ` ${n >= 50 ? 1900 + n : 2000 + n}`;
+    });
   const parts = norm.split("-").map((s) => s.trim()).filter(Boolean);
   if (parts.length < 2) return null;
   const parsePart = (p: string, isEnd: boolean): Date | null => {
     if (/^(present|current|now|till\s+date|ongoing)$/i.test(p)) return new Date();
-    const mYr = /^(?:([a-z]{3,5})\.?\s+)?(\d{4})$/i.exec(p);
+    // Accept "Jan 2022", "January 2022", "Sept 2022", "2022" (bare year),
+    // and "Jan. 2022". {3,9} covers all month spellings incl. "february".
+    const mYr = /^(?:([a-z]{3,9})\.?\s+)?(\d{4})$/i.exec(p);
     if (!mYr) return null;
     const monRaw = mYr[1]?.toLowerCase();
     const year = parseInt(mYr[2], 10);
@@ -294,7 +317,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.2",
+  version: "hr-round-v4.3",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -748,6 +771,31 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           });
         }
       }
+
+      // 4) under_titled_candidate — inverse of (3). Resume YoE ≥ 5 years
+      //    but every listed title is plain IC ("Software Engineer",
+      //    "Developer", "Analyst") with no Senior/Lead/Staff/Principal
+      //    modifier. This isn't a credibility issue — it's a comp-leverage
+      //    issue. HR anchors the comp band on title, not narrative; an
+      //    under-titled candidate gets anchored low. Coaching nudge: retitle
+      //    to match scope or be ready to walk through scope that exceeds
+      //    the level on paper before the offer locks in.
+      if (resumeAgg.yoeMonths !== null && resumeAgg.yoeMonths >= 60 && resumeAgg.titles.length > 0) {
+        const anySenior = resumeAgg.titles.some((t) => SENIOR_TITLE_RE.test(t));
+        const allPlainIC = resumeAgg.titles.every((t) =>
+          /\b(?:software\s+engineer|developer|programmer|analyst|consultant|associate|engineer)\b/i.test(t) && !SENIOR_TITLE_RE.test(t),
+        );
+        if (!anySenior && allPlainIC) {
+          flags.add("under_titled_candidate");
+          const yearsRounded = (resumeAgg.yoeMonths / 12).toFixed(1);
+          gaps.push({
+            dimension: "comp_transparency",
+            expected: "By ~5 years YoE in the Indian market, the resume title should reflect scope (Senior / Lead) — HR anchors the comp band on title, not narrative.",
+            observed: `Resume YoE ≈ ${yearsRounded} years but every title is plain IC ("${resumeAgg.titles[0]}"). Under-titled candidates get anchored low on band.`,
+            severity: "low",
+          });
+        }
+      }
     }
 
     const covered = DIMENSIONS.filter((d) => DIMENSION_PATTERNS[d].test(allText));
@@ -791,6 +839,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("dimensions_thin_coverage")) tips.push("Real Indian HR covers 7 dimensions. Re-run with notice/BGV/counter-offer/benefits prompts.");
     if (flags.has("resume_transcript_mismatch")) tips.push("Every employer you say out loud should already be on your resume. BGV pulls the resume as source-of-truth — verbal employers that aren't listed read as fabrication.");
     if (flags.has("resume_gap_unaddressed")) tips.push("Your resume shows a ≥3-month employment gap. Don't wait for the real interviewer to corner you — pre-prep a one-liner: 'between Mar 2022 and Jan 2023 I [studied / cared for family / took a sabbatical to ship X]; here's what I did with the time.'");
+    if (flags.has("under_titled_candidate")) tips.push("Your resume has 5+ years of experience but every title reads as plain IC (Software Engineer / Developer). Indian HR anchors comp on title, not scope — retitle to match what you actually own (Senior / Lead) or be ready to walk through scope that exceeds the level on paper. Under-titling costs lakhs at offer time.");
     if (flags.has("inflated_seniority_claim")) tips.push("Your resume reads Senior/Lead/Staff/Principal but your years don't support it yet. Either retitle to match the level you can defend (with scope + ownership stories) or be ready to justify the leap: 'titled Senior because I lead the X module end-to-end since month N — I know that's quick.'");
 
     const ILLEGAL_PROMPT_RE = /\b(?:caste|religion|mother tongue|marital|married|family.*(?:plan|soon)|are you (?:from|originally)|community)\b/i;
