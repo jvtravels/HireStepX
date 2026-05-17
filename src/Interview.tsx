@@ -25,6 +25,7 @@ import { isAutoplayBlocked, retryUnlockAudio, clearAutoplayBlock } from "./tts";
 import { stripProsodyMarkup } from "./_prosody";
 import { detectNegotiationTactic } from "./_negotiation-tactics";
 import { useAuth } from "./AuthContext";
+import { LearningModeToggle, MoveTagChip, useLearningMode } from "./LearningModeUI";
 
 /* Derive 1-2 letter initials from a logged-in user's display name, falling
    back to the email's local part. Returns "" when nothing usable exists —
@@ -890,6 +891,10 @@ function InterviewInner() {
   const myInitials = userInitials(user?.name, user?.email) || "You";
   const engine = useInterviewEngine();
   const video = useVideoRecorder();
+  /* Learning Mode — in-flow transparency (Dim 14). Off by default;
+     persists per user via localStorage. Surfaces only on salary-neg
+     sessions (gated below by isSalaryNegotiation). */
+  const [learningMode, setLearningMode] = useLearningMode();
 
   const {
     phase, step, currentStep, llmLoading, elapsed,
@@ -1103,6 +1108,14 @@ function InterviewInner() {
           <div className="iv-canvas-mobile-hide">
             <CanvasStatusPill status={mapConnectionStatus(isOffline)} />
           </div>
+          {/* Learning Mode toggle — salary-negotiation only. Off by
+              default; persists to localStorage. Renders the move-tag
+              chip footnote under each AI bubble when ON. */}
+          <LearningModeToggle
+            visible={isSalaryNegotiation}
+            enabled={learningMode}
+            onChange={setLearningMode}
+          />
           <CanvasMuteToggle muted={isMuted} onClick={() => setIsMuted(m => !m)} />
           <CanvasCameraToggle on={video.videoEnabled} onClick={video.toggleVideo} />
           <CanvasAvatar initials={myInitials} />
@@ -1235,6 +1248,13 @@ function InterviewInner() {
                 interview. (Was leaking lines like "Salary negotiation
                 response — evaluate negotiation strategy" and "Closing —
                 synthesized fallback (LLM omitted…)" to candidates.) */}
+            {/* In-flow transparency chip (Dim 14). Only renders when
+                Learning Mode is ON and the step carries a moveTag from
+                the kernel response. Otherwise null — no reserved space,
+                no warning on legacy steps. */}
+            {isSalaryNegotiation && phase !== "thinking" && (
+              <MoveTagChip tag={step.moveTag} enabled={learningMode} />
+            )}
           </div>
           );
         })()}

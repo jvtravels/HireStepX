@@ -1002,7 +1002,7 @@ export function useInterviewEngine() {
 
   // Interview flow: thinking -> speaking (with TTS) -> listening
   const flowGenerationRef = useRef(0);
-  const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string; conversationDone?: boolean } | null> | null>(null);
+  const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string; conversationDone?: boolean; moveTag?: import("./LearningModeUI").MoveTag } | null> | null>(null);
   /** Originating step index for the in-flight follow-up. When the
    *  follow-up resolves we verify the engine has advanced exactly one
    *  step from this — otherwise the user already moved past the question
@@ -1456,6 +1456,14 @@ export function useInterviewEngine() {
             scoreNote: isSalaryNegConversation ? "Salary negotiation response — evaluate negotiation strategy" : "Dynamic follow-up based on candidate's answer",
             persona: followUpPersona,
             ...(followUpAccent ? { accentSplit: followUpAccent } : {}),
+            /* In-flow transparency: server-derived move tag rides on
+             * the kernel response for salary-negotiation turns. Copy
+             * through to the step so the Learning Mode chip can render
+             * it under the AI bubble. Absent on non-negotiation
+             * follow-ups; renderer falls back to null. */
+            ...((result as { moveTag?: import("./LearningModeUI").MoveTag }).moveTag
+              ? { moveTag: (result as { moveTag?: import("./LearningModeUI").MoveTag }).moveTag }
+              : {}),
           };
           // Persist follow-up to DB in real-time
           if (user?.id) {
@@ -2306,6 +2314,7 @@ export function useInterviewEngine() {
                   followUpText: turnRes.aiTextDisplay ?? turnRes.aiText ?? turnRes.text,
                   followUpType: "negotiation",
                   conversationDone: turnRes.terminal,
+                  moveTag: turnRes.moveTag,
                 };
               }
               /* Mirror the kernel's highestOfferMade into the legacy
@@ -2365,6 +2374,7 @@ export function useInterviewEngine() {
                 followUpText: turnRes.aiTextDisplay ?? turnRes.aiText ?? turnRes.text,
                 followUpType: "negotiation",
                 conversationDone: turnRes.terminal,
+                moveTag: turnRes.moveTag,
               };
             } catch (err) {
               console.warn("[interview] kernel turn failed", err);

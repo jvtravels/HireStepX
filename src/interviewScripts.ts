@@ -1,6 +1,7 @@
 /* ─── Interview Script Definitions & Generators ─── */
 
 import type { User } from "./AuthContext";
+import type { MoveTag } from "./LearningModeUI";
 
 /** Fisher-Yates shuffle + pick N items — ensures different questions every session */
 function shuffleAndPick<T>(arr: T[], n: number): T[] {
@@ -34,6 +35,11 @@ export interface InterviewStep {
       and stripped before display. Optional — UI falls back to a
       heuristic extractor when absent. */
   accentSplit?: { before: string; accent: string; after: string };
+  /** In-flow transparency tag (Dim 14). Server-derived per turn for
+      salary-negotiation sessions; surfaced under the user's Learning
+      Mode toggle. Optional: scripted / non-negotiation turns omit it
+      and the chip renderer falls back to null. */
+  moveTag?: MoveTag;
 }
 
 export const scriptsByType: Record<string, InterviewStep[]> = {
