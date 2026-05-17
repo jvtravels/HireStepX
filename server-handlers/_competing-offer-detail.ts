@@ -43,6 +43,18 @@ export interface CompetingOfferDetail {
   status: CompetingOfferStatus | null;
   /** Stage in the competing pipeline. */
   stage: CompetingOfferStage | null;
+  /** fake-leverage-challenge (2026-05-17) — magnitude of the competing
+   *  offer in LPA when stated in this utterance (e.g. "30 LPA",
+   *  "32 lakhs"). Accumulates last-stated-wins across turns so the
+   *  hasConcreteTell() predicate (which gates fake-leverage-challenge)
+   *  can be satisfied via dribbled disclosure: company at T14, amount at
+   *  T16, status at T18. Distinct from the legacy top-level
+   *  state.competingOffer scalar — that one may have come from a
+   *  recruiter-side rumour or canonical fact pack; this one is the
+   *  amount the candidate themselves uttered alongside other tells.
+   *  Optional for back-compat with fixtures / serialized snapshots
+   *  constructed before the field shipped. */
+  amount?: number | null;
   /** Did candidate explicitly offer to share / forward the offer letter? */
   letterShareOffered: boolean;
   /** Phase 27 — competing offer is on hold / revoked / joining frozen.
@@ -67,12 +79,56 @@ const EMPTY: CompetingOfferDetail = {
   company: null,
   status: null,
   stage: null,
+  amount: null,
   letterShareOffered: false,
   onHold: false,
   proofRequestedAtTurn: null,
   proofProvided: false,
   hasAny: false,
 };
+
+/* fake-leverage-challenge (2026-05-17) — competing-offer amount in LPA.
+ * Recognised forms: "30 LPA", "32 lakhs", "1.5 cr", "1 crore". We
+ * normalise crore→LPA (×100). Conservative: a stray "L" without preceding
+ * digit is ignored.
+ *
+ * Contextual gating: candidates routinely state numbers that AREN'T
+ * about a competing offer — their own target ("I'm hoping for 26 LPA"),
+ * their current CTC ("currently at 18 LPA"), or a market reference
+ * ("market is 32 LPA"). We only treat a number as the competing-offer
+ * amount when the same utterance ALSO surfaces a competing-offer cue
+ * (company name, status/stage pattern, or one of the dedicated
+ * "their offer" / "competing offer" / "other offer" markers below).
+ * This keeps the dribbled-disclosure path working — company at T14,
+ * "their number is 32 LPA" at T16, status at T18 — while preventing
+ * the candidate's OWN target/current-CTC from being mis-extracted as
+ * the competing amount and falsely satisfying hasConcreteTell. */
+const AMOUNT_LPA_RE = /\b(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|l)\b/i;
+const AMOUNT_CR_RE = /\b(\d+(?:\.\d+)?)\s*(?:cr|crore)s?\b/i;
+const COMPETING_AMOUNT_CONTEXT_RE =
+  /\b(?:their|other|another|competing|alternate|alternative)\s+(?:offer|number|comp|ctc|package|amount|figure|range)\b|\b(?:offer|number|comp|ctc|package)\s+(?:from\s+them|on\s+the\s+table|in\s+hand)\b|\bthey\s+(?:offered|are\s+offering|gave|will\s+give|will\s+pay|mentioned|said|told\s+me|quoted)\b|\bthe\s+(?:number|offer|amount|figure)\s+(?:being\s+)?discussed\b/i;
+
+function extractCompetingAmount(
+  text: string,
+  hasCompetingContext: boolean,
+): number | null {
+  /* Require ANY competing-offer contextual signal in the same utterance:
+   *   - a recognised company name OR a status/stage pattern (caller
+   *     passes hasCompetingContext=true), OR
+   *   - one of the dedicated "their offer" / "competing offer" markers. */
+  if (!hasCompetingContext && !COMPETING_AMOUNT_CONTEXT_RE.test(text)) return null;
+  const cr = AMOUNT_CR_RE.exec(text);
+  if (cr && cr[1]) {
+    const n = parseFloat(cr[1]);
+    if (Number.isFinite(n)) return n * 100;
+  }
+  const lpa = AMOUNT_LPA_RE.exec(text);
+  if (lpa && lpa[1]) {
+    const n = parseFloat(lpa[1]);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
 
 /* Phase 27 — competing offer on hold / revoked / joining frozen.
  * Common India patterns: BGV pending, joining date pushed, offer
@@ -172,16 +228,20 @@ const PROOF_SHARE_PATTERNS: RegExp[] = [
   /\b(?:i.?ll|i\s+will|can|will)\s+(?:send|share|forward|attach)\s+(?:you\s+)?(?:the\s+|a\s+|my\s+)?(?:offer|letter|pdf|redacted)\b/i,
 ];
 
-/* fake-leverage-challenge (2026-05-17) — concrete-tell detection: a
- * candidate who names amount + company + status all in the same
- * utterance has internalised the offer (real bluffers stay vague). */
-function hasConcreteTell(
-  text: string,
-  company: string | null,
-  status: CompetingOfferStatus | null,
-): boolean {
-  if (!company || !status) return false;
-  return /\b\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l\b|cr|crore)\b/i.test(text);
+/* fake-leverage-challenge (2026-05-17) — concrete-tell detection.
+ *
+ * A candidate who has surfaced amount + company + status has internalised
+ * the offer (real bluffers stay vague). Originally this required all
+ * three in ONE utterance, but real candidates dribble: company at T14,
+ * amount at T16, status at T18. The mergeCompetingOfferDetail folder
+ * already accumulates these across turns — the predicate was just
+ * reading the wrong source (per-utterance extraction). This now reads
+ * the ACCUMULATED CompetingOfferDetail (the merged state object) so a
+ * dribbled disclosure satisfies the predicate without forcing the
+ * candidate to re-state everything in a single sentence. */
+export function hasConcreteTell(detail: CompetingOfferDetail | null | undefined): boolean {
+  if (!detail) return false;
+  return detail.company != null && detail.status != null && detail.amount != null;
 }
 
 export function extractCompetingOfferDetail(text: string): CompetingOfferDetail {
@@ -213,21 +273,36 @@ export function extractCompetingOfferDetail(text: string): CompetingOfferDetail 
 
   const letterShareOffered = LETTER_SHARE_PATTERNS.some((p) => p.test(text));
   const onHold = ON_HOLD_PATTERNS.some((p) => p.test(text));
+  /* fake-leverage-challenge (2026-05-17) — only extract amount when
+   * there's a competing-offer context cue in the same utterance.
+   * Otherwise the candidate's own target / current CTC / market quote
+   * would be mis-attributed as the competing-offer amount. */
+  const hasCompetingContext = company != null || status != null || stage != null;
+  const amount = extractCompetingAmount(text, hasCompetingContext);
 
-  /* fake-leverage-challenge — proofProvided fires either on an explicit
-   * proof-share pattern OR on the concrete-tell heuristic (amount +
-   * company + status co-occur). Whether the AI ACTED on this proof is
-   * gated downstream by state.competingOfferDetail.proofRequestedAtTurn
-   * in the merge step. The parser only surfaces the signal. */
-  const proofProvided =
-    PROOF_SHARE_PATTERNS.some((p) => p.test(text)) || hasConcreteTell(text, company, status);
+  /* fake-leverage-challenge — proofProvided at PARSE time only fires on
+   * an explicit proof-share pattern (offer letter / redacted PDF /
+   * screenshot). The accumulated-concrete-tell heuristic was previously
+   * applied here against the single-utterance extraction; that gated
+   * the planner on impossible single-turn co-occurrence and missed the
+   * realistic dribbled-disclosure path. The concrete-tell contribution
+   * is now applied in mergeCompetingOfferDetail() against the merged
+   * record so it reads accumulated state, not the latest utterance. */
+  const proofProvided = PROOF_SHARE_PATTERNS.some((p) => p.test(text));
 
   const hasAny =
-    company != null || status != null || stage != null || letterShareOffered || onHold || proofProvided;
+    company != null ||
+    status != null ||
+    stage != null ||
+    amount != null ||
+    letterShareOffered ||
+    onHold ||
+    proofProvided;
   return {
     company,
     status,
     stage,
+    amount,
     letterShareOffered,
     onHold,
     proofRequestedAtTurn: null,
@@ -245,6 +320,11 @@ export function mergeCompetingOfferDetail(
     company: next.company ?? p.company,
     status: next.status ?? p.status,
     stage: next.stage ?? p.stage,
+    /* fake-leverage-challenge (2026-05-17) — amount is last-stated-wins
+     * so the candidate can revise (e.g. "actually it's 32 LPA not 30"),
+     * but if the latest utterance didn't restate a number, the prior
+     * accumulated value is preserved. */
+    amount: next.amount ?? p.amount ?? null,
     letterShareOffered: p.letterShareOffered || next.letterShareOffered,
     /* Phase 27 — onHold is monotone-up. Once the recruiter knows the
      * competing offer is shaky, the leverage damage persists even if
@@ -257,10 +337,18 @@ export function mergeCompetingOfferDetail(
     proofProvided: p.proofProvided || next.proofProvided,
     hasAny: false,
   };
+  /* fake-leverage-challenge (2026-05-17) — apply concrete-tell against
+   * the ACCUMULATED record (not the per-turn extraction). This is the
+   * dribbled-disclosure fix: company at T14, amount at T16, status at
+   * T18 → proofProvided fires at T18. Sticky once true. */
+  if (!merged.proofProvided && hasConcreteTell(merged)) {
+    merged.proofProvided = true;
+  }
   merged.hasAny =
     merged.company != null ||
     merged.status != null ||
     merged.stage != null ||
+    merged.amount != null ||
     merged.letterShareOffered ||
     merged.onHold ||
     merged.proofProvided;

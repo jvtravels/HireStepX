@@ -342,6 +342,7 @@ describe("parseCandidateAnswer", () => {
         company: null,
         status: null,
         stage: null,
+        amount: null,
         letterShareOffered: false,
         onHold: false,
         proofRequestedAtTurn: null,

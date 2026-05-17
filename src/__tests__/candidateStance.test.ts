@@ -315,3 +315,79 @@ describe("extractCandidateStance — Hinglish/English stallSignal", () => {
     expect(r.stallSignal?.kind).toBe("revert-later");
   });
 });
+
+/* Crack 1 (2026-05-17) — semantic-equivalence extension to
+ * complainedAboutHikePercent. Real candidates rarely say "X% hike"
+ * verbatim — they gripe about the delta semantically ("the jump is
+ * too small", "barely a bump") or in Hinglish ("hike kam hai",
+ * "chhota sa hike"). The detector now triggers on co-occurrence of a
+ * delta noun with a smallness modifier without requiring a percent
+ * surface form. The two negative cases at the end must NOT trip the
+ * detector — they're neutral/positive mentions of the same nouns. */
+describe("extractCandidateStance — complainedAboutHikePercent semantic-equivalence", () => {
+  it("true on English semantic 'the delta is thin'", () => {
+    expect(
+      extractCandidateStance("honestly, the delta is thin").complainedAboutHikePercent,
+    ).toBe(true);
+  });
+
+  it("true on English semantic 'the jump is too small'", () => {
+    expect(
+      extractCandidateStance("the jump is too small for me to move").complainedAboutHikePercent,
+    ).toBe(true);
+  });
+
+  it("true on English semantic 'barely a bump'", () => {
+    expect(extractCandidateStance("that's barely a bump").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("true on English semantic 'raise is insufficient'", () => {
+    expect(
+      extractCandidateStance("the raise is insufficient given my YOE").complainedAboutHikePercent,
+    ).toBe(true);
+  });
+
+  it("true on English semantic 'increment is low'", () => {
+    expect(
+      extractCandidateStance("the increment is low compared to peers").complainedAboutHikePercent,
+    ).toBe(true);
+  });
+
+  it("true on English semantic 'not much of an increase'", () => {
+    expect(
+      extractCandidateStance("frankly that's not much of an increase").complainedAboutHikePercent,
+    ).toBe(true);
+  });
+
+  it("true on Hinglish 'hike kam hai'", () => {
+    expect(extractCandidateStance("yeh hike kam hai yaar").complainedAboutHikePercent).toBe(true);
+  });
+
+  it("true on Hinglish 'itna sa increment'", () => {
+    expect(
+      extractCandidateStance("itna sa increment se kya hoga").complainedAboutHikePercent,
+    ).toBe(true);
+  });
+
+  it("true on Hinglish 'thoda hi jump'", () => {
+    expect(extractCandidateStance("isme to thoda hi jump hai").complainedAboutHikePercent).toBe(
+      true,
+    );
+  });
+
+  it("true on Hinglish 'chhota sa hike'", () => {
+    expect(extractCandidateStance("chhota sa hike de rahe ho").complainedAboutHikePercent).toBe(
+      true,
+    );
+  });
+
+  it("false on positive: 'the offer is fair'", () => {
+    expect(extractCandidateStance("the offer is fair").complainedAboutHikePercent).toBe(false);
+  });
+
+  it("false on positive: 'I'm happy with the hike'", () => {
+    expect(
+      extractCandidateStance("I'm happy with the hike you're proposing").complainedAboutHikePercent,
+    ).toBe(false);
+  });
+});

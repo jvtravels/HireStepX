@@ -407,8 +407,67 @@ const HIKE_PCT_COMPLAINT_PATTERNS: RegExp[] = [
   /\bthoda\s+(?:hi|sa)\s+hike\b/i,
 ];
 
+/* Phase 3 missing-lever set (2026-05-17) — semantic-equivalence extension.
+ *
+ * The original detector only matched literal "X% hike" surface forms.
+ * Real candidates express the same complaint many ways without ever
+ * naming a percentage:
+ *
+ *   English semantic:
+ *     "the delta is thin", "the jump is too small", "barely a bump",
+ *     "raise is insufficient", "increment is low", "not much of an
+ *     increase".
+ *
+ *   Hinglish:
+ *     "hike kam hai", "itna sa increment", "thoda hi jump",
+ *     "zyada nahi hai", "chhota sa hike", "sirf X% hai".
+ *
+ * The trigger predicate is now a CO-OCCURRENCE check:
+ *
+ *   (delta-noun ∈ {hike, delta, jump, bump, raise, increment, increase})
+ *   co-occurring with
+ *   (smallness-modifier ∈ {thin, small, low, insufficient, barely, kam,
+ *     chhota, thoda, sirf, itna sa, zyada nahi}).
+ *
+ * "Co-occurring" means within ~40 characters of each other, in either
+ * order. The literal "X% hike" patterns above stay as a fast-path —
+ * they fire even when the smallness modifier is implicit in the small
+ * number. */
+const HIKE_DELTA_NOUN_RE =
+  /\b(hike|delta|jump|bump|raise|increment|increase)s?\b/i;
+
+/* Smallness modifiers. Hinglish forms ("kam"/"kum"/"chhota"/"chota"/
+ * "thoda"/"sirf"/"itna sa"/"bas") are listed alongside English. We
+ * deliberately keep this set conservative — generic negatives like
+ * "bad" or "poor" don't qualify because they don't disambiguate the
+ * SIZE complaint (they could also be a structural / culture gripe). */
+const HIKE_SMALLNESS_RE =
+  /\b(thin|small|tiny|low|insufficient|inadequate|meagre|meager|barely|hardly|not\s+much|not\s+enough|kam|kum|chhota|chota|thoda(?:\s+(?:hi|sa))?|sirf|bas|itna(?:\s+sa)?|zyada\s+nahi(?:n|.?n)?)\b/i;
+
+/* Special-case: "not much of a(n) <delta>" / "not much of an increase".
+ * The smallness modifier and delta noun are separated by an article,
+ * which is fine for the proximity check, but we also accept the exact
+ * idiom directly. */
+const HIKE_NOT_MUCH_OF_RE =
+  /\bnot\s+much\s+of\s+(?:a|an)\s+(?:hike|delta|jump|bump|raise|increment|increase)\b/i;
+
 function detectComplainedAboutHikePercent(text: string): boolean {
-  return HIKE_PCT_COMPLAINT_PATTERNS.some((p) => p.test(text));
+  if (HIKE_PCT_COMPLAINT_PATTERNS.some((p) => p.test(text))) return true;
+  if (HIKE_NOT_MUCH_OF_RE.test(text)) return true;
+  /* Proximity co-occurrence: smallness modifier within ~40 chars of a
+   * delta noun, in either order. We scan the FIRST delta-noun match and
+   * widen the window 40 chars in each direction. This is conservative
+   * enough that neutral mentions ("the offer is fair, I'm happy with
+   * the hike") don't trip — there's no smallness modifier near the
+   * delta noun. */
+  const deltaMatch = HIKE_DELTA_NOUN_RE.exec(text);
+  if (!deltaMatch) return false;
+  const idx = deltaMatch.index;
+  const len = deltaMatch[0].length;
+  const windowStart = Math.max(0, idx - 40);
+  const windowEnd = Math.min(text.length, idx + len + 40);
+  const window = text.slice(windowStart, windowEnd);
+  return HIKE_SMALLNESS_RE.test(window);
 }
 
 /* ── Phase 3 missing-lever set (2026-05-17) — stall signals ───────── */

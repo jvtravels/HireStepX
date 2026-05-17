@@ -1859,6 +1859,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       company: null,
       status: null,
       stage: null,
+      amount: null,
       letterShareOffered: false,
       onHold: false,
       proofRequestedAtTurn: null,
@@ -2440,7 +2441,7 @@ export function parseCandidateAnswer(
       noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false, lastWorkingDayText: null, hasAny: false },
       equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: false },
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
-      competingOfferDetail: { company: null, status: null, stage: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: false },
+      competingOfferDetail: { company: null, status: null, stage: null, amount: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
       candidateProfile: { ...EMPTY_CANDIDATE_PROFILE },
       miscSignals: { candidateFloor: null, salaryReviewMonths: null, proofOfCtcShareable: null, internalCounterRisk: null, hasAny: false },
@@ -4373,6 +4374,16 @@ export function validateState(state: unknown): asserts state is NegotiationState
     ) {
       throw new Error("state.competingOfferDetail.proofProvided");
     }
+    /* fake-leverage-challenge (2026-05-17) — amount is optional on
+     * legacy serialized snapshots; backfilled to null by the
+     * backfillCompetingOfferDetail folder. Shape-check when present. */
+    if (
+      co.amount !== undefined &&
+      co.amount !== null &&
+      (typeof co.amount !== "number" || !Number.isFinite(co.amount))
+    ) {
+      throw new Error("state.competingOfferDetail.amount");
+    }
     if (typeof co.hasAny !== "boolean") throw new Error("state.competingOfferDetail.hasAny");
   }
   /* Phase 17 optional fields — structural shape checks only. */
@@ -4670,6 +4681,10 @@ function backfillCompetingOfferDetail(raw: unknown): CompetingOfferDetail {
      * proof-tracking fields for legacy in-flight sessions. */
     proofRequestedAtTurn: v?.proofRequestedAtTurn ?? null,
     proofProvided: v?.proofProvided ?? false,
+    /* fake-leverage-challenge (2026-05-17) — backfill accumulated
+     * amount for legacy in-flight sessions serialized before the field
+     * shipped. */
+    amount: v?.amount ?? null,
     hasAny: v?.hasAny ?? false,
   };
 }
