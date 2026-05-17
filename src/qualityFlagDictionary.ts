@@ -135,6 +135,12 @@ const DICT: Record<string, FriendlyFlag> = {
   cgpa_mismatch_with_resume: { label: "Spoken CGPA differs from resume", description: "Candidate stated a CGPA that drifts > 0.5 points (or > 5%) from what's on the resume. Recruiters verify CGPA against the official transcript / provisional — even a small drift will trip BGV.", category: "user_skipped_step" },
   internship_duration_mismatch_with_resume: { label: "Spoken internship duration differs from resume", description: "Candidate verbally claimed an internship duration that drifts > 2 months AND > 30% from the resume's period for the same company. Recruiters cross-check against the offer / relieving letter during BGV — rounding 3 months up to 'six months' is a documented disqualifier.", category: "user_skipped_step" },
 
+  // HR-round resume cross-checks (v4.2 / v4.3)
+  resume_transcript_mismatch: { label: "Employer named in interview isn't on the resume", description: "Candidate verbally named a company that doesn't appear in their uploaded resume. Indian HR pulls the resume as source-of-truth during BGV — verbal-only employers read as fabrication.", category: "user_skipped_step" },
+  resume_gap_unaddressed: { label: "Unaddressed employment gap on resume", description: "Resume shows a ≥ 3-month gap between employments and HR never probed it this session. The gap will surface in the real round — pre-prep a factual one-liner now (dates + reason + what you did).", category: "user_skipped_step" },
+  inflated_seniority_claim: { label: "Senior title with thin years of experience", description: "Resume or self-introduction reads Senior / Lead / Staff / Principal but YoE is under 3 years. Indian HR cross-checks level against years; mismatch reads as resume inflation.", category: "user_skipped_step" },
+  under_titled_candidate: { label: "Under-titled at 5+ years of experience", description: "Resume shows 5+ YoE but every title is plain IC (Software Engineer / Developer). Indian HR anchors comp on title, not narrative — under-titling costs lakhs at offer time. Retitle to match scope or walk the panel through ownership that exceeds the level on paper.", category: "user_skipped_step" },
+
   // Management
   answered_as_ic_not_manager: { label: "Answered as IC, not as manager", description: "Stories used 'I built / I shipped' — should be 'my team / my report'.", category: "user_skipped_step" },
   no_team_metrics: { label: "No team-level metrics", description: "No retention / hiring / promotions / velocity numbers.", category: "user_skipped_step" },

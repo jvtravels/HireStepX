@@ -24,12 +24,21 @@ import { friendlyFlag } from "./qualityFlagDictionary";
  *  a BGV-checkable mismatch between what the candidate said and what
  *  the resume claims. Order is the rendering order in the callout. */
 export const CREDIBILITY_FLAGS = [
+  // Campus-placement resume cross-checks (Wave 7/8).
   "claimed_internship_not_in_resume",
   "branch_mismatch_with_resume",
   "grad_year_mismatch_with_resume",
   "college_mismatch_with_resume",
   "cgpa_mismatch_with_resume",
   "internship_duration_mismatch_with_resume",
+  // HR-round resume cross-checks (v4.2 / v4.3). Same BGV-defensibility
+  // shape — what the candidate said vs what the resume / transcript
+  // claims. Appended so existing ordering tests over the campus-placement
+  // subset stay green.
+  "resume_transcript_mismatch",
+  "resume_gap_unaddressed",
+  "inflated_seniority_claim",
+  "under_titled_candidate",
 ] as const;
 
 export type CredibilityFlag = (typeof CREDIBILITY_FLAGS)[number];
@@ -53,6 +62,14 @@ const ACTION_FOR_FLAG: Record<CredibilityFlag, string> = {
     "Quote the CGPA on your transcript. If a recent semester moved the average, say so explicitly — don't round up.",
   internship_duration_mismatch_with_resume:
     "Match the exact dates on your relieving / offer letter. If you extended, frame it cleanly — don't round 3 months up to 'six'.",
+  resume_transcript_mismatch:
+    "Every employer you name out loud must already be on the resume. Add the company before the next round — BGV pulls the resume, not the transcript.",
+  resume_gap_unaddressed:
+    "Prep a one-liner for the gap before the real round: dates + reason + what you did. Don't wait to be cornered — own it factually in 15 seconds.",
+  inflated_seniority_claim:
+    "Either retitle to a level you can defend with scope, or open with the years-vs-title gap and justify it: 'titled Senior because I own X end-to-end since month N — I know that's quick.'",
+  under_titled_candidate:
+    "Retitle to match the scope you actually own (Senior / Lead) — HR anchors comp on title, not narrative. Under-titling at 5+ YoE costs lakhs at offer time.",
 };
 
 export interface CredibilityItem {
@@ -114,9 +131,17 @@ export function summarizeCredibility(
   // analyzer doesn't tag gaps with a flag code directly, so we match
   // heuristically on the dimension + content. Imperfect but better
   // than nothing — falls back to no evidence when nothing pairs.
+  // Dimensions that ship credibility-class evidence. "credibility" is the
+  // canonical one (campus-placement + HR resume_transcript_mismatch +
+  // inflated_seniority_claim). "switch_rationale_honesty" and
+  // "comp_transparency" are the dimensions the HR analyzer pushes
+  // resume_gap_unaddressed / under_titled_candidate under — they're still
+  // BGV-defensibility evidence, just dispatched to the dimension that
+  // owns the user-facing rubric.
+  const CRED_DIMENSIONS = new Set(["credibility", "switch_rationale_honesty", "comp_transparency"]);
   const rubricGaps: RubricGapShape[] = Array.isArray(row.rubric_gaps)
     ? (row.rubric_gaps as RubricGapShape[]).filter(
-        (g) => g && typeof g === "object" && (g as RubricGapShape).dimension === "credibility",
+        (g) => g && typeof g === "object" && CRED_DIMENSIONS.has(String((g as RubricGapShape).dimension ?? "")),
       )
     : [];
   // Per-flag regex matched against the analyzer's gap text. The
@@ -131,6 +156,12 @@ export function summarizeCredibility(
     college_mismatch_with_resume: /college|nit|iit|iiit|bits/i,
     cgpa_mismatch_with_resume: /cgpa/i,
     internship_duration_mismatch_with_resume: /duration|months|years|drift/i,
+    // HR resume cross-checks. Patterns match the analyzer's
+    // expected/observed text in server-handlers/analyzers/hr-round.ts.
+    resume_transcript_mismatch: /employer|absent from the resume|source of truth/i,
+    resume_gap_unaddressed: /gap|employment gap|sabbatical|career break/i,
+    inflated_seniority_claim: /inflation|senior|lead|staff|principal|yoe/i,
+    under_titled_candidate: /under-titled|plain ic|anchored low|reflect scope/i,
   };
   const evidenceForFlag = (flag: CredibilityFlag): CredibilityItem["evidence"] => {
     const rx = FLAG_GAP_KEYWORD[flag];
