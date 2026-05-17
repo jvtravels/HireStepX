@@ -991,12 +991,24 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
         </p>
       )}
       {!skipReasonLabel && microFeedback && (
-        <div style={{
-          marginTop: 8, padding: "5px 10px", borderRadius: 999,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: isStrong ? "rgba(21,128,61,0.10)" : "rgba(180,83,9,0.10)",
-          border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "rgba(180,83,9,0.20)"}`,
-        }}>
+        /* role="status" + aria-live="polite" so screen-reader users hear
+           the coaching tip when it lands. polite (not assertive) because
+           the tip is advisory — it should yield to active speech (TTS
+           question playback, candidate's own STT readback). aria-atomic
+           ensures the whole tip is announced as one phrase, not chunked.
+           Labelled so it's distinguishable from the surrounding answer
+           card on screen-reader tab-out. */
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-label="Live coaching tip"
+          style={{
+            marginTop: 8, padding: "5px 10px", borderRadius: 999,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: isStrong ? "rgba(21,128,61,0.10)" : "rgba(180,83,9,0.10)",
+            border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "rgba(180,83,9,0.20)"}`,
+          }}>
           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             {isStrong ? <polyline points="20 6 9 17 4 12" /> : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>}
           </svg>

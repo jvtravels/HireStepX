@@ -57,6 +57,14 @@ export interface RubricGap {
   expected: string;
   observed: string;
   severity: "low" | "medium" | "high";
+  /** Optional source-flag tag — populated when this gap was emitted
+   *  alongside a specific `flags.add(...)` so downstream views (e.g.
+   *  CredibilitySection) can do an exact lookup instead of regex-
+   *  matching on `expected`/`observed` text. Today only the HR-round
+   *  resume cross-checks (v4.2 / v4.3) and the campus-placement
+   *  resume cross-checks set this. Existing untagged gaps continue
+   *  to work — the field is opt-in. */
+  flag?: string;
 }
 
 export interface BadQuestion {

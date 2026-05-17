@@ -209,7 +209,7 @@ export default async function handler(req: Request): Promise<Response> {
   let requestFocus = "general";
   try {
     const rawBody = await req.json();
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle } = rawBody;
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle, drill } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
@@ -275,6 +275,26 @@ export default async function handler(req: Request): Promise<Response> {
     // Only add focus context if it differs from the interview type (otherwise it's redundant)
     const focusContext = interviewFocus !== "general" && interviewFocus !== interviewType
       ? `PRIMARY FOCUS: Emphasize ${interviewFocus.replace(/-/g, " ")} in every question. This is the specific skill area the candidate wants to practice — make it the dominant theme.`
+      : "";
+
+    /* Coaching-drill guidance — surfaced when the dashboard "Your next
+       move" CTA forwards `?drill=<key>` (vocabulary in nextMove.ts
+       GAP_CTA_MAP.drill). Each key maps to a concrete pressure point the
+       last HR session exposed. The clause tilts at least 2 questions
+       toward that pressure point so the candidate gets reps on the
+       weakest link instead of broad coverage. Unknown keys = no-op
+       (safe: future drill keys won't crash the prompt). */
+    const DRILL_GUIDANCE: Record<string, string> = {
+      resume_facts: "DRILL FOCUS — Resume reconciliation: Ask at least 2 questions that probe employer / title / dates / scope, and explicitly ask the candidate to walk through items LISTED ON THEIR RESUME. The goal is forcing alignment between spoken story and resume facts.",
+      career_gap: "DRILL FOCUS — Career-gap one-liner: Ask at least 2 questions that surface employment continuity (timeline, transitions between roles, what they did between Job A and Job B). Probe directly: 'walk me through your timeline from <year> to <year>'. Reward a crisp factual one-liner; flag vague answers.",
+      seniority: "DRILL FOCUS — Owning seniority story: Ask at least 2 questions that test whether the candidate's claimed title is defensible at their years of experience. Probe scope, headcount-influenced, technical depth owned. The candidate should either justify the title with concrete ownership or honestly reframe.",
+      under_titled: "DRILL FOCUS — Scope-over-title framing: Ask at least 2 questions that surface the gap between the candidate's title (plain IC) and their actual scope. Push for stories where they owned more than the title suggests. The candidate should learn to lead with scope, not title, before HR anchors comp on the title.",
+      comp_floor: "DRILL FOCUS — Holding a comp floor with rationale: At least 2 questions should pressure the candidate on compensation. Push hard on 'what's your number?' / 'we can do ₹X, would you accept?'. Reward floor + rationale; flag any collapse to 'whatever you can offer'.",
+      comp_deflect: "DRILL FOCUS — Deflecting comp-first questions: Ask early-round comp probes ('what are you currently earning?' / 'what's your expectation?'). The candidate should defer comp until role / scope discovery is complete. Reward clean deflections; flag any premature anchor.",
+    };
+    const drillKey = typeof drill === "string" ? drill.trim() : "";
+    const drillContext = drillKey && DRILL_GUIDANCE[drillKey]
+      ? DRILL_GUIDANCE[drillKey]
       : "";
 
     /* Behavioural-shape guidance — pinned to interviewType="behavioral".
@@ -862,7 +882,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
-${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
+${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
 ${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
@@ -1338,6 +1358,12 @@ Requirements:
       anchor_checked: anchorChecked,
       anchor_hit: anchorHit,
       anchor_repaired: anchorRepaired,
+      // Drill-mode telemetry: empty string when no drill, the recognised
+      // key when the dashboard CTA forwarded one. Lets us measure the
+      // dashboard→interview funnel by drill type and (eventually) whether
+      // drilled sessions produce better outcomes than skill-only sessions.
+      drill_key: drillContext ? drillKey : "",
+      drill_applied: !!drillContext,
     }, req);
 
     // Best-effort: cache the successful response for ~5 min so retries /

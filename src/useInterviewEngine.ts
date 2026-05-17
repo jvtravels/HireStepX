@@ -91,6 +91,11 @@ export function useInterviewEngine() {
   const isMiniMode = searchParams.get("mini") === "true" || sessionLength === "10m";
   const shouldUseResume = searchParams.get("useResume") !== "false";
   const jobDescription = searchParams.get("jd") || "";
+  /* Coaching-drill hint surfaced by the dashboard "Your next move" CTA
+     and reflected on the SessionSetup banner. Forwarded straight to the
+     question generator so the LLM can tilt 2+ questions toward this
+     coaching area. Vocabulary lives in `nextMove.ts` GAP_CTA_MAP.drill. */
+  const drillKey = searchParams.get("drill") || "";
 
   // Session-level interviewer personality (persists for entire interview)
   const [personality] = useState<InterviewerPersonality>(() => pickPersonality());
@@ -393,6 +398,7 @@ export function useInterviewEngine() {
       resumeExperiences: effectiveUseResume ? aiProfile?.experiences : undefined,
       candidateName: user?.name || undefined,
       negotiationStyle: negotiationStyle || undefined,
+      drill: drillKey || undefined,
     });
     const timeoutMs = isMiniMode ? 12_000 : 30_000;
     const timeoutPromise = new Promise<null>((_, reject) => {

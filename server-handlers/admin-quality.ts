@@ -8,6 +8,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
+import { freshnessSnapshot } from "./_data-freshness";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -191,6 +192,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }))
     .sort((a, b) => b.sessions_7d - a.sessions_7d);
 
+  /* Credibility-callout dispute rollup. Aggregates last 30 days of
+     `credibility_disputes` rows per flag. The dispute-rate-per-flag
+     answers "is this analyzer flag misfiring?" — pair it with the
+     `issues` block above (which counts how often each flag fires) to
+     get a real false-positive rate per flag.
+     Soft-fails when the table doesn't exist yet (migration unapplied)
+     so the rest of the dashboard still renders. */
+  const sinceDisputes = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const disputeRows = await supa<{ flag: string; analyzer_version: string; created_at: string }>(
+    `credibility_disputes?created_at=gte.${encodeURIComponent(sinceDisputes)}&select=flag,analyzer_version,created_at&limit=2000`,
+  );
+  const disputeAgg = new Map<string, number>();
+  for (const row of disputeRows) {
+    if (!row.flag) continue;
+    disputeAgg.set(row.flag, (disputeAgg.get(row.flag) || 0) + 1);
+  }
+  const flagFireCount = new Map<string, number>();
+  for (const r of recent) {
+    for (const f of r.flags || []) {
+      flagFireCount.set(f, (flagFireCount.get(f) || 0) + 1);
+    }
+  }
+  const credibilityDisputes = Array.from(disputeAgg.entries())
+    .map(([flag, disputes]) => {
+      const fires = flagFireCount.get(flag) || 0;
+      return {
+        flag,
+        disputes,
+        fires_recent: fires,
+        // Rate clamped at 1.0; >0.15 (15%) is the audit's "tighten
+        // this regex" trigger. NaN when fires=0 → render as null.
+        dispute_rate: fires > 0 ? Math.min(1, disputes / fires) : null,
+      };
+    })
+    .sort((a, b) => b.disputes - a.disputes);
+
   res.status(200).json({
     headlines,
     daily,
@@ -199,6 +236,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     issues,
     revisions,
     recommendations,
+    credibility_disputes: credibilityDisputes,
+    data_freshness: freshnessSnapshot(),
     generated_at: new Date().toISOString(),
   });
 }

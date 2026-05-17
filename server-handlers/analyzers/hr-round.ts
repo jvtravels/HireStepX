@@ -22,6 +22,7 @@ import {
   TranscriptTurn,
   emptyResult,
 } from "./_types";
+import { parseResumePeriod } from "../_resume-period";
 
 function isAi(t: TranscriptTurn): boolean { return t.speaker.toLowerCase().startsWith("a"); }
 function isUser(t: TranscriptTurn): boolean { return t.speaker.toLowerCase().startsWith("u"); }
@@ -219,53 +220,9 @@ function tokensOverlap(a: string, b: string): boolean {
  * Tolerates: "Jan 2022 - Mar 2023", "2020 - present", "Jul 2021 — Dec 2022", "2018-2021".
  * Returns null on anything ambiguous — we'd rather under-fire than
  * fabricate a fake gap. */
-const HR_MONTHS: Record<string, number> = {
-  jan: 0, january: 0,
-  feb: 1, febr: 1, february: 1,
-  mar: 2, march: 2,
-  apr: 3, april: 3,
-  may: 4,
-  jun: 5, june: 5,
-  jul: 6, july: 6,
-  aug: 7, august: 7,
-  sep: 8, sept: 8, september: 8,
-  oct: 9, october: 9,
-  nov: 10, november: 10,
-  dec: 11, december: 11,
-};
-function parseResumePeriod(period: string | undefined | null): { start: Date; end: Date } | null {
-  if (!period) return null;
-  // Normalize: en/em dashes → hyphen; " to " → hyphen; apostrophe-2-digit
-  // years ("Mar'22") → 4-digit ("Mar 2022"). Years ≥50 are treated as
-  // 19xx, the rest as 20xx — resume experience sections virtually never
-  // reference pre-1975 so the cutoff is safe.
-  const norm = period
-    .toLowerCase()
-    .replace(/–|—/g, "-")
-    .replace(/\bto\b/g, "-")
-    .replace(/'(\d{2})\b/g, (_m, yy: string) => {
-      const n = parseInt(yy, 10);
-      return ` ${n >= 50 ? 1900 + n : 2000 + n}`;
-    });
-  const parts = norm.split("-").map((s) => s.trim()).filter(Boolean);
-  if (parts.length < 2) return null;
-  const parsePart = (p: string, isEnd: boolean): Date | null => {
-    if (/^(present|current|now|till\s+date|ongoing)$/i.test(p)) return new Date();
-    // Accept "Jan 2022", "January 2022", "Sept 2022", "2022" (bare year),
-    // and "Jan. 2022". {3,9} covers all month spellings incl. "february".
-    const mYr = /^(?:([a-z]{3,9})\.?\s+)?(\d{4})$/i.exec(p);
-    if (!mYr) return null;
-    const monRaw = mYr[1]?.toLowerCase();
-    const year = parseInt(mYr[2], 10);
-    if (year < 1990 || year > 2100) return null;
-    const mon = monRaw && HR_MONTHS[monRaw] !== undefined ? HR_MONTHS[monRaw] : isEnd ? 11 : 0;
-    return new Date(year, mon, isEnd ? 28 : 1);
-  };
-  const start = parsePart(parts[0], false);
-  const end = parsePart(parts[parts.length - 1], true);
-  if (!start || !end || end < start) return null;
-  return { start, end };
-}
+// parseResumePeriod now lives in `server-handlers/_resume-period.ts`
+// (shared with campus-placement). Behavior unchanged — same regex, same
+// year-expansion cutoff, same MONTHS map.
 
 interface ResumeSummary {
   employers: string[];
@@ -317,7 +274,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.3.1",
+  version: "hr-round-v4.3.2",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -720,6 +677,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             expected: "Every employer named in the interview must already appear on the resume — BGV pulls the resume as the source of truth.",
             observed: `Candidate named ${orphans.length === 1 ? "an employer" : "employers"} absent from the resume: ${Array.from(new Set(orphans)).slice(0, 3).join(", ")}.`,
             severity: "high",
+            flag: "resume_transcript_mismatch",
           });
         }
       }
@@ -739,6 +697,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             expected: "Resume gaps ≥3 months always surface in the real HR round — pre-prep a one-liner with dates + reason + what you did.",
             observed: `Resume shows a ${biggest}-month gap between employments; this session did not surface or address it.`,
             severity: "medium",
+            flag: "resume_gap_unaddressed",
           });
         }
       }
@@ -768,6 +727,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             expected: "Senior / Lead / Staff / Principal titles typically require 5+ years of relevant experience in the Indian market.",
             observed: `Resume YoE ≈ ${yearsRounded} years but ${resumeSenior ? "resume title" : "candidate self-describes"} as ${observedTitle}. Reads as level inflation.`,
             severity: "medium",
+            flag: "inflated_seniority_claim",
           });
         }
       }
@@ -795,6 +755,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             // Promoted low → medium: at 5+ YoE in the Indian market the
             // title-anchor gap is worth lakhs at offer time, not a nice-to-have.
             severity: "medium",
+            flag: "under_titled_candidate",
           });
         }
       }

@@ -16,6 +16,7 @@
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
 import { classifyCompanyTier } from "../_company-tier";
 import { classifyCollegeTier, cgpaCutoffAdjustment } from "../_college-tier";
+import { parsePeriodMonths, NUM_WORDS, SPOKEN_DURATION_REGEX } from "../_resume-period";
 
 const isAi = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("a");
 const isUser = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("u");
@@ -1029,6 +1030,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: "Every company / internship mentioned in the interview must already appear on the resume. BGV will pull the resume as source-of-truth — narrating a role that isn't listed reads as fabrication and is the #1 disqualifier in Indian campus drives.",
             observed: `Candidate referenced ${unverified.length === 1 ? "a company" : "companies"} not present in their uploaded resume: ${unverified.slice(0, 3).join(", ")}.`,
             severity: "high",
+            flag: "claimed_internship_not_in_resume",
           });
         }
       }
@@ -1061,6 +1063,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: `Match the branch you spoke about (${Array.from(spokenBranches).join(", ")}) with what's on your resume (${resumeBranch}). The resume is the BGV-checked source of truth — a verbal branch change without "dual-degree" / "minor in" framing reads as fabrication.`,
             observed: `Resume lists ${resumeBranch} but candidate identified as ${Array.from(spokenBranches).join(", ")} in the transcript.`,
             severity: "high",
+            flag: "branch_mismatch_with_resume",
           });
         }
       }
@@ -1088,6 +1091,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: `The graduation year you stated (${driftedYears.join(", ")}) should match what's on your resume (${resumeYear}). BGV pulls the resume — a verbal year drift > 1 year reads as fabrication and disqualifies in service-tier rounds.`,
             observed: `Resume lists graduation year ${resumeYear}, but candidate mentioned ${driftedYears.join(", ")} in the transcript.`,
             severity: "high",
+            flag: "grad_year_mismatch_with_resume",
           });
         }
       }
@@ -1138,6 +1142,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: `The college you named (${mismatched.slice(0, 2).join(", ")}) should match what's on your resume (${resume.school}). Indian campus BGV pulls the transcript / certificate — a verbal swap reads as fabrication.`,
             observed: `Resume lists ${resume.school}, but candidate mentioned ${mismatched.slice(0, 2).join(", ")} in the transcript.`,
             severity: "high",
+            flag: "college_mismatch_with_resume",
           });
         }
       }
@@ -1172,6 +1177,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
               expected: `The CGPA you stated (${drifted.map((d) => d.toFixed(2)).join(", ")}) should match what's on your resume (${resumeCgpa}). Recruiters verify CGPA against the transcript / provisional — even a 1-point drift will trip BGV.`,
               observed: `Resume lists CGPA ${resumeCgpa}, but candidate mentioned ${drifted.map((d) => d.toFixed(2)).join(", ")} in the transcript.`,
               severity: "high",
+              flag: "cgpa_mismatch_with_resume",
             });
           }
         }
@@ -1186,41 +1192,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       // > 2 months AND a relative drift > 30% to suppress noise from
       // partial-month rounding ("about 4 months" vs an exact 3.5).
       if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
-        const MONTHS_LOCAL: Record<string, number> = {
-          jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2,
-          apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6,
-          aug: 7, august: 7, sep: 8, sept: 8, september: 8,
-          oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11,
-        };
-        const parsePeriodMonths = (period: string | undefined | null): number | null => {
-          if (!period) return null;
-          const norm = period.toLowerCase().replace(/–|—/g, "-").replace(/\bto\b/g, "-")
-            .replace(/'(\d{2})\b/g, (_m, yy: string) => {
-              const n = parseInt(yy, 10);
-              return ` ${n >= 50 ? 1900 + n : 2000 + n}`;
-            });
-          const parts = norm.split("-").map((s) => s.trim()).filter(Boolean);
-          if (parts.length < 2) return null;
-          const parsePart = (p: string, isEnd: boolean): Date | null => {
-            if (/^(present|current|now|till\s+date|ongoing)$/i.test(p)) return new Date();
-            const mYr = /^(?:([a-z]{3,9})\.?\s+)?(\d{4})$/i.exec(p);
-            if (!mYr) return null;
-            const monRaw = mYr[1]?.toLowerCase();
-            const year = parseInt(mYr[2], 10);
-            if (year < 1990 || year > 2100) return null;
-            const mon = monRaw && MONTHS_LOCAL[monRaw] !== undefined ? MONTHS_LOCAL[monRaw] : isEnd ? 11 : 0;
-            return new Date(year, mon, isEnd ? 28 : 1);
-          };
-          const start = parsePart(parts[0], false);
-          const end = parsePart(parts[parts.length - 1], true);
-          if (!start || !end || end < start) return null;
-          return Math.max(1, Math.round((end.getTime() - start.getTime()) / (30 * 86400 * 1000)));
-        };
-        const NUM_WORDS: Record<string, number> = {
-          one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
-          seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
-        };
-        const durRe = /\b(?:for|about|around|nearly|roughly|some)?\s*(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(months?|years?)\b/gi;
+        // parsePeriodMonths, NUM_WORDS and the spoken-duration regex now
+        // live in `_resume-period.ts` — shared with hr-round.
+        const durRe = SPOKEN_DURATION_REGEX;
         const driftedCompanies: string[] = [];
         for (const exp of resume.experiences) {
           const resumeMonths = parsePeriodMonths(exp?.period);
@@ -1260,6 +1234,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             dimension: "credibility",
             expected: "The internship duration you state verbally must match the period on your resume — recruiters cross-check against the offer / relieving letter during BGV. Even rounding 3 months up to 'six months' to sound stronger is a documented disqualifier in service-tier rounds.",
             observed: `Duration drift detected for: ${driftedCompanies.slice(0, 2).join("; ")}.`,
+            flag: "internship_duration_mismatch_with_resume",
             severity: "high",
           });
         }

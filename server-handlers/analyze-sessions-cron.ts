@@ -28,6 +28,7 @@ import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcom
 import { captureServerEvent } from "./_posthog";
 import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
 import { fetchResumeForAnalyzer } from "./_resume-versioning";
+import { freshnessSnapshot } from "./_data-freshness";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -213,6 +214,23 @@ export default async function handler(req: Request): Promise<Response> {
 
   const t0 = Date.now();
 
+  /* Tier-data freshness check. Hardcoded constants (college tier
+     patterns, company tier classifier, CGPA cutoffs, salary bands)
+     all carry a LAST_VERIFIED_AT stamp in `_data-freshness.ts`. Fire
+     one event per cron run per stale source so an operator can see
+     "salary bands haven't been re-verified in 120 days" without
+     having to grep the codebase. Best-effort; no early-return on
+     stale data — the analyzer still runs with what it has. */
+  for (const f of freshnessSnapshot()) {
+    if (f.stale) {
+      void captureServerEvent("tier_data_stale", "system", {
+        key: f.key,
+        verified_on: f.verifiedOn,
+        age_days: f.ageDays,
+      });
+    }
+  }
+
   // Optional admin overrides: ?force_reanalyze=1 bypasses the staleness
   // filter entirely; ?lookback_hours=168 extends the window (default 25h).
   // Used by the admin "Force re-analyze" button after deploys.
@@ -354,6 +372,24 @@ export default async function handler(req: Request): Promise<Response> {
         score_drift: row.score_drift,
         analyzer_version: row.analyzer_version,
       });
+      // Per-flag fanout. The aggregated `session_quality_analyzed` event
+      // above is great for session-level drilldown but useless for "which
+      // single flag is firing most often / at what tier / on what company"
+      // — exactly the question the Wave-9 credibility-callout audit asked.
+      // Splitting one event per flag here lets a PostHog breakdown over
+      // `flag` answer it without server-side aggregation. Best-effort,
+      // never throws; missing PostHog key early-returns inside captureServerEvent.
+      for (const flag of row.flags) {
+        void captureServerEvent("analyzer_flag_fired", session.user_id, {
+          session_id: session.id,
+          focus: session.type,
+          flag,
+          severity: row.severity,
+          analyzer_version: row.analyzer_version,
+          target_company: session.target_company || null,
+          target_role: session.target_role || null,
+        });
+      }
     }
 
     // Aggregate by (day, focus) for daily_quality_report.

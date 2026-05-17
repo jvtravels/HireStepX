@@ -9,11 +9,12 @@ import {
 } from "../../server-handlers/_behavioral-followup-bank";
 
 describe("BEHAVIORAL_PROBES — shape", () => {
-  it("exposes ~15 canonical probes", () => {
-    // Bank is intentionally ~15; allow a small range so adding a variant
-    // doesn't break the suite, but catches runaway growth.
+  it("exposes the canonical probe set", () => {
+    // Originally ~15; grew as Lift-A signals + competency deepeners were
+    // added. Bounds are a soft guardrail against runaway growth — bump
+    // intentionally when a new cue lands with its own probe row(s).
     expect(BEHAVIORAL_PROBES.length).toBeGreaterThanOrEqual(20);
-    expect(BEHAVIORAL_PROBES.length).toBeLessThanOrEqual(30);
+    expect(BEHAVIORAL_PROBES.length).toBeLessThanOrEqual(40);
   });
 
   it("every probe has cue + text + intent", () => {
@@ -64,6 +65,100 @@ describe("cueFromEngineHints", () => {
 
   it("returns null when no signal warrants a deterministic probe", () => {
     expect(cueFromEngineHints({})).toBeNull();
+  });
+
+  /* Competency deepeners for adaptability + execution-rigor — added
+     alongside the taxonomy split in 2026-05. Same precedence band as
+     conflict: when the question is on-topic, the competency probe wins
+     over the generic STAR gap. */
+  describe("adaptability + execution-rigor routing", () => {
+    it("routes 'adapt to a major change' questions to adaptability.what-changed before STAR", () => {
+      expect(
+        cueFromEngineHints({
+          starGap: "action",
+          questionText: "Tell me about a time you had to adapt to a major change at work.",
+        })
+      ).toBe("adaptability.what-changed");
+    });
+
+    it("routes 'learn a new tool quickly' questions to adaptability.what-changed", () => {
+      expect(
+        cueFromEngineHints({
+          questionText: "Tell me about a time you had to learn a new skill or tool quickly to ship something.",
+        })
+      ).toBe("adaptability.what-changed");
+    });
+
+    it("routes 'switch context' questions to adaptability.what-changed", () => {
+      expect(
+        cueFromEngineHints({
+          questionText: "Tell me about a time you had to switch context between very different problems in a single day.",
+        })
+      ).toBe("adaptability.what-changed");
+    });
+
+    it("routes 'caught a bug in your own work' to execution-rigor.where-missed", () => {
+      expect(
+        cueFromEngineHints({
+          starGap: "result",
+          questionText: "Tell me about a time you caught a bug or issue in your own work before it shipped.",
+        })
+      ).toBe("execution-rigor.where-missed");
+    });
+
+    it("routes 'missed detail came back to bite' to execution-rigor.where-missed", () => {
+      expect(
+        cueFromEngineHints({
+          questionText: "Tell me about a time a missed detail came back to bite you.",
+        })
+      ).toBe("execution-rigor.where-missed");
+    });
+
+    it("routes 'traded thoroughness for speed' to execution-rigor.where-missed", () => {
+      expect(
+        cueFromEngineHints({
+          questionText: "Tell me about a time you traded thoroughness for speed and had to defend the call later.",
+        })
+      ).toBe("execution-rigor.where-missed");
+    });
+
+    it("defensiveness on failure question still wins over competency routing", () => {
+      // Failure-question + deflection is the most-disqualifying signal —
+      // even if some other competency keyword is present, own-it fires first.
+      expect(
+        cueFromEngineHints({
+          defensiveness: true,
+          questionText: "Tell me about a mistake you made adapting to a new process.",
+        })
+      ).toBe("defensiveness.own-it");
+    });
+  });
+});
+
+describe("pickBehavioralProbe — new competency cues", () => {
+  it("returns an adaptability probe for adaptability.what-changed", () => {
+    const p = pickBehavioralProbe({ cue: "adaptability.what-changed" });
+    expect(p?.text).toMatch(/change.*how you worked/i);
+  });
+
+  it("returns an execution-rigor probe for execution-rigor.where-missed", () => {
+    const p = pickBehavioralProbe({ cue: "execution-rigor.where-missed" });
+    expect(p?.text).toMatch(/detail slip/i);
+  });
+
+  it("each new cue has exactly one canonical phrasing in the bank", () => {
+    const newCues = [
+      "adaptability.what-changed",
+      "adaptability.learning-speed",
+      "adaptability.tradeoff",
+      "execution-rigor.where-missed",
+      "execution-rigor.process-change",
+      "execution-rigor.tradeoff-defense",
+    ] as const;
+    for (const c of newCues) {
+      const p = pickBehavioralProbe({ cue: c });
+      expect(p, `missing probe for ${c}`).not.toBeNull();
+    }
   });
 });
 
