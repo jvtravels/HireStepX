@@ -104,11 +104,17 @@ describe("Phase 3 missing-lever set — panel-approval-stall", () => {
     expect(prose).toMatch(/panel|leadership/i);
     expect(prose).toMatch(/EOD|end of day/i);
 
-    /* Single-fire stamp + re-plan should now route to internal-equity-defense
-     * (or another counter-offer branch) — NOT panel-approval-stall again. */
+    /* Crack 3 (2026-05-17) — the defensive-lever triad now single-fires via
+     * the reactiveFollowupsFired ledger (the same mechanism comparative-
+     * anchoring / internal-equity-defense already use). After applyAiMove
+     * ships the panel-approval-stall move, it pushes the askedTopic onto
+     * the ledger; re-plan must route off the panel branch. The legacy
+     * panelApprovalStallFiredAtTurn stamp is still maintained by applyAiMove
+     * but is no longer the ladder's source of truth. */
     const next: NegotiationState = {
       ...s,
       panelApprovalStallFiredAtTurn: s.turnIndex,
+      reactiveFollowupsFired: ["comparative-anchoring", "panel-approval-stall"],
     };
     const again = planNextAction(next);
     expect(again.kind).not.toBe("panel-approval-stall");

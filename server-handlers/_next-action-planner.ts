@@ -151,6 +151,42 @@ export function canRefire(topic: DiscoveryTopic, state: NegotiationState): boole
   return gap >= policy.gap;
 }
 
+/** Crack 3 (2026-05-17) — defensive-lever ladder determinism.
+ *
+ * The band-defense triad fires as a strict 3-step sequence when the
+ * negotiation is in counter-offer with at least one prior counter:
+ *
+ *   step 0 → comparative-anchoring   (peer-band reframe)
+ *   step 1 → panel-approval-stall    (manufactured friction)
+ *   step 2 → internal-equity-defense (final defensive)
+ *
+ * Before this helper, ordering was emergent from a mix of single-fire
+ * stamps and counterRound thresholds — swap a turn or interleave a
+ * reactive interrupt (anchor-defense-hike-strong, fake-leverage-
+ * challenge) and the sub-sequence shuffled. Now the ladder is keyed
+ * off the reactiveFollowupsFired ledger (the same mechanism the
+ * surrounding probes use): step N fires only if step N-1 is in the
+ * ledger. Interrupts pass through without shuffling because they
+ * don't push the triad's askedTopic markers.
+ *
+ * Returns the step that should fire next, or `null` if:
+ *   - the triad is not yet armed (wrong phase / counterRound 0), or
+ *   - the triad is exhausted (all three already in the ledger).
+ *
+ * Pure — no side-effects, no clock. */
+export function defensiveLadderStep(state: NegotiationState): 0 | 1 | 2 | null {
+  if (state.phase !== "counter-offer") return null;
+  if (state.counterRound < 1) return null;
+  const fired = state.reactiveFollowupsFired ?? [];
+  const comparativeFired = fired.includes("comparative-anchoring");
+  const stallFired = fired.includes("panel-approval-stall");
+  const equityFired = fired.includes("internal-equity-defense");
+  if (!comparativeFired) return 0;
+  if (!stallFired) return 1;
+  if (!equityFired) return 2;
+  return null;
+}
+
 /** Discriminated union of every action the planner can emit. The kind
  *  taxonomy collapses the prior 15 sequential `if return` branches into
  *  a single declarative space external consumers can switch on without
@@ -1771,99 +1807,84 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       };
     }
 
-    /* perfect 5 (2026-05-16) — Indian-recruiter band-defense moves.
+    /* Crack 3 (2026-05-17) — band-defense triad as a deterministic
+     * step ladder. Replaces three sequential if/return blocks whose
+     * ordering depended on a mix of counterRound thresholds and
+     * single-fire stamps — interleaving a reactive interrupt
+     * (anchor-defense-hike-strong / fake-leverage-challenge) used to
+     * shuffle the sub-sequence depending on which stamp happened to
+     * be set first. Now: defensiveLadderStep(state) returns the next
+     * step (0/1/2) keyed off the reactiveFollowupsFired ledger; each
+     * step gates on the previous step's ledger entry. The triad
+     * shares one single-fire mechanism (the askedTopic ledger), not
+     * a mix of ledger + dedicated stamp fields.
      *
-     * These intercept the counter-offer construction with structural
-     * band-anchored framing instead of yet another cash-split. Both
-     * register on the reactiveFollowupsFired ledger so they single-
-     * fire per session (the kernel's applyAiMove plumbing pushes the
-     * askedTopic onto the sticky ledger). */
-    const fired = state.reactiveFollowupsFired ?? [];
-
-    /* comparative-anchoring fires ONCE after the first counter (when
-     * the AI has already shipped a counter-base and the candidate is
-     * pushing for more). Quartile selection: candidate target >=
-     * band-median → "top", else "median". */
-    if (
-      state.counterRound === 1 &&
-      state.candidateTarget != null &&
-      !fired.includes("comparative-anchoring")
-    ) {
-      const peerBandMedian =
-        (state.band.maxStretch + state.band.initialOffer) / 2;
-      const quartile: "top" | "median" =
-        state.candidateTarget >= peerBandMedian ? "top" : "median";
-      return {
-        kind: "comparative-anchoring",
-        quartile,
-        satisfiesTopic: "comparative-anchoring",
-        _move: {
-          lever: "hold-firm",
-          newTotalLpa: state.highestOfferMade,
-          rationale: `Comparative-anchoring: candidate target ₹${state.candidateTarget}L vs band-median ₹${peerBandMedian.toFixed(1)}L (quartile=${quartile}).`,
-          askedTopic: "comparative-anchoring",
-          actionKind: "comparative-anchoring",
-        },
-      };
-    }
-
-    /* Phase 3 missing-lever set (2026-05-17) — panel-approval-stall.
-     * Fires AFTER comparative-anchoring (which lives at counterRound==1)
-     * and BEFORE internal-equity-defense (counterRound>=2). Semantics:
-     * we've conceded twice; the next move needs panel sign-off, so the
-     * AI stalls explicitly. Single-fire via panelApprovalStallFiredAtTurn.
-     * Requires a fresh candidate push (candidateRound conditions mirror
-     * the internal-equity-defense gate) so we don't stall when the
-     * candidate is silent. */
-    const delta = state.lastTurnDelta;
-    const candidatePushedAgain =
-      state.lastCandidateCounterLpa != null ||
-      (delta?.disclosedExpectedCtc ?? false) ||
-      (delta?.askedQuestion ?? false);
-    if (
-      state.counterRound >= 2 &&
-      candidatePushedAgain &&
-      state.panelApprovalStallFiredAtTurn == null
-    ) {
-      return {
-        kind: "panel-approval-stall",
-        _move: {
-          lever: "hold-firm",
-          newTotalLpa: state.highestOfferMade,
-          actionKind: "panel-approval-stall",
-          rationale:
-            `Panel-approval stall: counterRound=${state.counterRound}, candidate just countered again; ` +
-            `escalate to leadership before the next concession (single-fire).`,
-        },
-      };
-    }
-
-    /* internal-equity-defense fires when counterRound >= 2 AND there
-     * is a dissatisfaction signal from the candidate this turn (fresh
-     * counter / disclosed expected ctc again / asked a question). Uses
-     * band.maxStretch as the peer-band top, band-median as floor for
-     * the "between X and Y" framing. Single-fire via fired ledger. */
-    if (
-      state.counterRound >= 2 &&
-      candidatePushedAgain &&
-      !fired.includes("internal-equity-defense")
-    ) {
-      const peerBandTopLpa = Math.round(state.band.maxStretch * 10) / 10;
-      const peerBandMedianLpa =
-        Math.round(((state.band.maxStretch + state.band.initialOffer) / 2) * 10) / 10;
-      return {
-        kind: "internal-equity-defense",
-        peerBandTopLpa,
-        peerBandMedianLpa,
-        satisfiesTopic: "internal-equity-defense",
-        _move: {
-          lever: "hold-firm",
-          newTotalLpa: state.highestOfferMade,
-          rationale: `Internal-equity defense: peer band ₹${peerBandMedianLpa}-${peerBandTopLpa}L; further movement requires Comp sign-off.`,
-          askedTopic: "internal-equity-defense",
-          actionKind: "internal-equity-defense",
-        },
-      };
+     *   step 0 → comparative-anchoring   (peer-band reframe)
+     *   step 1 → panel-approval-stall    (manufactured friction)
+     *   step 2 → internal-equity-defense (final defensive)
+     *
+     * The panelApprovalStallFiredAtTurn stamp continues to be set by
+     * applyAiMove for downstream consumers; the ladder itself no
+     * longer reads it. */
+    switch (defensiveLadderStep(state)) {
+      case 0: {
+        /* Quartile selection requires candidateTarget. If absent, fall
+         * through to the rest of the planner — the triad re-arms next
+         * turn once the candidate has stated a target. */
+        if (state.candidateTarget != null) {
+          const peerBandMedian =
+            (state.band.maxStretch + state.band.initialOffer) / 2;
+          const quartile: "top" | "median" =
+            state.candidateTarget >= peerBandMedian ? "top" : "median";
+          return {
+            kind: "comparative-anchoring",
+            quartile,
+            satisfiesTopic: "comparative-anchoring",
+            _move: {
+              lever: "hold-firm",
+              newTotalLpa: state.highestOfferMade,
+              rationale: `Comparative-anchoring: candidate target ₹${state.candidateTarget}L vs band-median ₹${peerBandMedian.toFixed(1)}L (quartile=${quartile}).`,
+              askedTopic: "comparative-anchoring",
+              actionKind: "comparative-anchoring",
+            },
+          };
+        }
+        break;
+      }
+      case 1: {
+        return {
+          kind: "panel-approval-stall",
+          _move: {
+            lever: "hold-firm",
+            newTotalLpa: state.highestOfferMade,
+            actionKind: "panel-approval-stall",
+            askedTopic: "panel-approval-stall",
+            rationale:
+              `Panel-approval stall: counterRound=${state.counterRound}, defensive ladder step 1; ` +
+              `escalate to leadership before the next concession (single-fire).`,
+          },
+        };
+      }
+      case 2: {
+        const peerBandTopLpa = Math.round(state.band.maxStretch * 10) / 10;
+        const peerBandMedianLpa =
+          Math.round(((state.band.maxStretch + state.band.initialOffer) / 2) * 10) / 10;
+        return {
+          kind: "internal-equity-defense",
+          peerBandTopLpa,
+          peerBandMedianLpa,
+          satisfiesTopic: "internal-equity-defense",
+          _move: {
+            lever: "hold-firm",
+            newTotalLpa: state.highestOfferMade,
+            rationale: `Internal-equity defense: peer band ₹${peerBandMedianLpa}-${peerBandTopLpa}L; further movement requires Comp sign-off.`,
+            askedTopic: "internal-equity-defense",
+            actionKind: "internal-equity-defense",
+          },
+        };
+      }
+      case null:
+        break;
     }
 
     const target = state.candidateTarget ?? state.band.maxStretch;
