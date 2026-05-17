@@ -1,0 +1,25 @@
+{
+  "name": "Senior Software Engineer title with under 2 years YoE",
+  "notes": "Resume shows ~1.5 years of total experience but titles the candidate as Senior Software Engineer — Indian HR reads this as level inflation.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your current role.", "time": "" },
+      { "speaker": "user", "text": "I'm a Senior Software Engineer at Initech, leading the payments service migration.", "time": "" },
+      { "speaker": "ai", "text": "How long have you been in the industry?", "time": "" },
+      { "speaker": "user", "text": "About a year and a half full-time, plus an internship before that.", "time": "" },
+      { "speaker": "ai", "text": "Notice period?", "time": "" },
+      { "speaker": "user", "text": "30 days.", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Senior Software Engineer", "company": "Initech", "period": "Jan 2024 - present" }
+    ],
+    "topSkills": ["Java", "Kubernetes"]
+  },
+  "expected": {
+    "must_include": ["inflated_seniority_claim"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

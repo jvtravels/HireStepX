@@ -27,6 +27,7 @@ import { callLLM } from "./_llm";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 import { captureServerEvent } from "./_posthog";
 import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
+import { fetchResumeForAnalyzer } from "./_resume-versioning";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -133,6 +134,12 @@ interface InsightRow {
   severity: "high" | "medium" | "low";
   error: string | null;
   duration_ms: number;
+  /* Snapshot of the normalized resume facts we passed into the analyzer.
+   * Stored so the dashboard can render "we cross-checked your transcript
+   * against THIS view of your resume" without re-running the parser, and
+   * so future analyzers can deepen the cross-check without another fetch.
+   * `null` when no resume was available for this session. */
+  resume_snapshot: unknown;
 }
 
 const MAX_RESCORES_PER_RUN = 60;
@@ -230,7 +237,13 @@ export default async function handler(req: Request): Promise<Response> {
     const turnT0 = Date.now();
     let row: InsightRow;
     try {
-      const result = await analyzer.analyze({ session });
+      // Load resume for the analyzer (best-effort — null on any failure).
+      // Threading the parsed resume in unlocks cross-checks like "claim
+      // doesn't match resume" that pure-transcript analysis can't do.
+      const resume = session.resume_version_id
+        ? await fetchResumeForAnalyzer(SUPABASE_URL, SUPABASE_SERVICE_KEY, session.resume_version_id)
+        : null;
+      const result = await analyzer.analyze({ session, resume });
 
       // Optional LLM rescore — only if budget remains and the focus is supported.
       let rescore: number | null = result.rescore;
@@ -281,6 +294,7 @@ export default async function handler(req: Request): Promise<Response> {
         severity,
         error: null,
         duration_ms: Date.now() - turnT0,
+        resume_snapshot: resume ?? null,
       };
     } catch (e) {
       row = {
@@ -298,6 +312,7 @@ export default async function handler(req: Request): Promise<Response> {
         severity: "high",
         error: String((e as Error)?.message || e).slice(0, 500),
         duration_ms: Date.now() - turnT0,
+        resume_snapshot: null,
       };
     }
     insights.push(row);

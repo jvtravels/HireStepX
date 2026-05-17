@@ -65,18 +65,33 @@ export const WaveformVisualizer = React.memo(function WaveformVisualizer({ activ
 });
 
 /* ─── Interviewer Names (deterministic per session) ─── */
+/* Defaults pinned at index 0 of each pool so they're the most prominent
+ * pick and the no-seed fallback. "Prita Menon" → female default
+ * (routes to Sarvam `anushka`); "Rahul Verma" → male default (routes
+ * to Sarvam `abhilash`). The gender→voice mapping lives in
+ * server-handlers/sarvam-tts.ts. */
+export const DEFAULT_FEMALE_INTERVIEWER = "Prita Menon";
+export const DEFAULT_MALE_INTERVIEWER = "Rahul Verma";
+
 export const INTERVIEWER_NAMES = [
+  DEFAULT_FEMALE_INTERVIEWER, DEFAULT_MALE_INTERVIEWER,
   "Arjun Mehta", "Priya Sharma", "Rohan Kapoor", "Ananya Patel", "Vikram Desai",
   "Kavya Nair", "Siddharth Joshi", "Neha Gupta", "Aditya Rao", "Deepika Iyer",
   "Karthik Nair", "Aisha Rahman", "Rajesh Iyer", "Meera Reddy", "Tanvi Kulkarni",
 ];
 export function getInterviewerName(seed: string): string {
+  // Empty / missing seed → fall back to the canonical female default so
+  // a fresh load (before session context is wired) still has a coherent
+  // name and the Sarvam female voice plays.
+  if (!seed) return DEFAULT_FEMALE_INTERVIEWER;
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
   return INTERVIEWER_NAMES[Math.abs(hash) % INTERVIEWER_NAMES.length];
 }
 
-const FEMALE_FIRST_NAMES = new Set(["Priya", "Ananya", "Kavya", "Neha", "Deepika", "Aisha", "Meera", "Tanvi"]);
+// Prita is added explicitly; first name lookup keeps gender routing
+// honest end-to-end (display name → gender → TTS voice).
+const FEMALE_FIRST_NAMES = new Set(["Prita", "Priya", "Ananya", "Kavya", "Neha", "Deepika", "Aisha", "Meera", "Tanvi"]);
 /** Determine gender from interviewer name */
 export function getInterviewerGender(name: string): "male" | "female" {
   const firstName = name.split(" ")[0];
@@ -88,6 +103,8 @@ export function getInterviewerGender(name: string): "male" | "female" {
  *  meeting different hiring managers. Fed into the follow-up prompt
  *  as a one-line flavor cue. Deterministic by name. */
 const PERSONA_TRAITS: Record<string, string> = {
+  "Prita Menon":       "Composed, attentive. Pauses to acknowledge before redirecting. Asks clarifying questions before pushing back.",
+  "Rahul Verma":       "Friendly but firm. Frames the offer plainly, gives you space to react, then probes one beat at a time.",
   "Arjun Mehta":       "Pragmatic, numbers-first. Likes to settle quickly. Slightly impatient with vague answers.",
   "Priya Sharma":      "Warm, listener. Asks 'how are you feeling about this?' before pushing on numbers.",
   "Rohan Kapoor":      "Direct, no-nonsense. Gives you the headline and waits. Doesn't sugarcoat constraints.",
@@ -119,8 +136,11 @@ export interface PanelMember {
 
 /** Deterministically pick 3 panelists (Hiring Manager, Technical Lead, HR Partner)
  *  with gender-matched names. Same seed → same panel every time. */
-const MALE_NAMES = ["Arjun Mehta", "Rohan Kapoor", "Vikram Desai", "Siddharth Joshi", "Aditya Rao", "Karthik Nair", "Rajesh Iyer"];
-const FEMALE_NAMES = ["Priya Sharma", "Ananya Patel", "Kavya Nair", "Neha Gupta", "Deepika Iyer", "Meera Reddy", "Aisha Rahman"];
+// Index-0 entries are the pinned defaults — Rahul / Prita are the
+// canonical Indian-English personas the user sees first. The hash
+// picker still uses the full pool, so the rest add variety.
+const MALE_NAMES = [DEFAULT_MALE_INTERVIEWER, "Arjun Mehta", "Rohan Kapoor", "Vikram Desai", "Siddharth Joshi", "Aditya Rao", "Karthik Nair", "Rajesh Iyer"];
+const FEMALE_NAMES = [DEFAULT_FEMALE_INTERVIEWER, "Priya Sharma", "Ananya Patel", "Kavya Nair", "Neha Gupta", "Deepika Iyer", "Meera Reddy", "Aisha Rahman"];
 
 function hashString(s: string): number {
   let hash = 0;

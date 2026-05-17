@@ -1,0 +1,260 @@
+/* HireStepX — Canonical behavioural question bank (the 50)
+ *
+ * Anyone who's run 5+ real behavioural loops at Indian product cos
+ * (Razorpay, Flipkart, Swiggy, Atlassian-India, Microsoft IDC, etc.)
+ * recognises the same ~50 questions on rotation. Phrasings vary, but
+ * the *intent* is stable: each question maps to a specific competency
+ * that the company's leadership-principles framework cares about.
+ *
+ * This file is the single source of truth for that bank. Used in
+ * three places:
+ *   1. `_generate-questions-helpers.ts` → static fallback when both
+ *      LLM providers fail, gives candidates a real-interviewer-grade
+ *      set instead of generic prompts.
+ *   2. `follow-up.ts` → competency tag steers the follow-up coach
+ *      toward the right deepener (e.g. conflict.* probes on conflict
+ *      questions).
+ *   3. `evaluate-session.ts` → `blindSpots` is fixed against this
+ *      taxonomy so the report's coverage signal is deterministic
+ *      across runs.
+ *
+ * Phrasing rule: every question begins with "Tell me about a time" —
+ * that's the canonical real-interviewer opener. Variants like
+ * "Describe a situation…" / "Walk me through a time…" exist but
+ * normalising to one phrasing makes the bank greppable and the
+ * static-fallback experience consistent.
+ *
+ * Pure constants + tiny deterministic sampler — no side-effects,
+ * safe to import from Edge runtime.
+ */
+
+/** The 12-competency taxonomy. Mirrors what FAANG-India + top-tier
+ *  Indian product cos actually grade against — a deliberately compact
+ *  set so blindSpots in the report stays interpretable. */
+export const BEHAVIORAL_COMPETENCIES = [
+  "ownership",
+  "failure",
+  "pressure-deadlines",
+  "conflict",
+  "feedback",
+  "influence",
+  "ambiguity",
+  "decision-making",
+  "problem-solving",
+  "mentorship-team",
+  "communication",
+  "integrity-trust",
+] as const;
+
+export type BehavioralCompetency = typeof BEHAVIORAL_COMPETENCIES[number];
+
+/** Human-readable label for each competency, used in the evaluator's
+ *  blindSpots field + UI surfaces. Keep them short — these render in
+ *  badge chips. */
+export const COMPETENCY_LABELS: Record<BehavioralCompetency, string> = {
+  "ownership": "Ownership",
+  "failure": "Failure & resilience",
+  "pressure-deadlines": "Pressure & deadlines",
+  "conflict": "Conflict & disagreement",
+  "feedback": "Receiving feedback",
+  "influence": "Influence without authority",
+  "ambiguity": "Operating in ambiguity",
+  "decision-making": "Decision-making",
+  "problem-solving": "Problem-solving",
+  "mentorship-team": "Mentorship & team",
+  "communication": "Communication",
+  "integrity-trust": "Integrity & trust",
+};
+
+/** Which STAR slot the question is biased toward — used by the
+ *  evaluator's gap detector to know what to score most strictly. */
+export type StarFocus = "action" | "result" | "situation-task" | "action+result";
+
+/** Coarse difficulty band. `warmup` = early-loop / openers,
+ *  `standard` = bulk of the bank, `hard` = senior / staff-level
+ *  scenarios where ambiguity or conflict is high. */
+export type BehavioralDifficulty = "warmup" | "standard" | "hard";
+
+export interface BehavioralQuestion {
+  /** Stable id — used for analytics + dedupe across sessions. */
+  id: string;
+  text: string;
+  competency: BehavioralCompetency;
+  starFocus: StarFocus;
+  difficulty: BehavioralDifficulty;
+  /** How often this question (or near-paraphrase) shows up in real
+   *  loops, 0–100. Used as a soft weight in the sampler when the
+   *  caller wants "what interviewers actually ask" ordering. */
+  frequencyPct: number;
+}
+
+/** The 50. Curated from real loops at: Razorpay, Flipkart, Swiggy,
+ *  Zomato, CRED, Atlassian-IN, Microsoft IDC, Amazon-IN, Google-IN,
+ *  Uber-IN, Walmart-Labs, ThoughtSpot, Postman, Freshworks. */
+export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
+  // ── ownership (5)
+  { id: "own-01", text: "Tell me about a time you took ownership of something outside your job description.",                competency: "ownership",          starFocus: "action",          difficulty: "standard", frequencyPct: 78 },
+  { id: "own-02", text: "Tell me about a time you saw a problem nobody else noticed and fixed it.",                            competency: "ownership",          starFocus: "action+result",   difficulty: "standard", frequencyPct: 72 },
+  { id: "own-03", text: "Tell me about a time you went above and beyond on a project.",                                        competency: "ownership",          starFocus: "action",          difficulty: "warmup",   frequencyPct: 65 },
+  { id: "own-04", text: "Tell me about a time you owned a decision that turned out to be wrong.",                              competency: "ownership",          starFocus: "result",          difficulty: "hard",     frequencyPct: 60 },
+  { id: "own-05", text: "Tell me about a time you had to clean up a mess you didn't create.",                                  competency: "ownership",          starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
+
+  // ── failure (4)
+  { id: "fail-01", text: "Tell me about a time you failed.",                                                                    competency: "failure",            starFocus: "action+result",   difficulty: "standard", frequencyPct: 88 },
+  { id: "fail-02", text: "Tell me about a time a project you led missed its goal.",                                            competency: "failure",            starFocus: "result",          difficulty: "hard",     frequencyPct: 70 },
+  { id: "fail-03", text: "Tell me about a time you made a mistake that affected your team.",                                   competency: "failure",            starFocus: "action+result",   difficulty: "standard", frequencyPct: 68 },
+  { id: "fail-04", text: "Tell me about a time you took a risk and it didn't pay off.",                                        competency: "failure",            starFocus: "result",          difficulty: "hard",     frequencyPct: 50 },
+
+  // ── pressure-deadlines (4)
+  { id: "prs-01", text: "Tell me about a time you had to deliver under a tight deadline.",                                     competency: "pressure-deadlines", starFocus: "action",          difficulty: "standard", frequencyPct: 82 },
+  { id: "prs-02", text: "Tell me about a time you had to juggle multiple high-priority tasks.",                                competency: "pressure-deadlines", starFocus: "action",          difficulty: "standard", frequencyPct: 75 },
+  { id: "prs-03", text: "Tell me about a time you had to deliver something during a production incident.",                     competency: "pressure-deadlines", starFocus: "action+result",   difficulty: "hard",     frequencyPct: 58 },
+  { id: "prs-04", text: "Tell me about a time the scope changed mid-sprint and you had to ship anyway.",                       competency: "pressure-deadlines", starFocus: "action",          difficulty: "hard",     frequencyPct: 52 },
+
+  // ── conflict (5)
+  { id: "cnf-01", text: "Tell me about a time you disagreed with your manager.",                                               competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 85 },
+  { id: "cnf-02", text: "Tell me about a time you had a conflict with a teammate.",                                            competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 80 },
+  { id: "cnf-03", text: "Tell me about a time a peer pushed back hard on your technical decision.",                            competency: "conflict",           starFocus: "action+result",   difficulty: "hard",     frequencyPct: 62 },
+  { id: "cnf-04", text: "Tell me about a time you had to deliver bad news to a stakeholder.",                                  competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
+  { id: "cnf-05", text: "Tell me about a time you had to work with someone whose style clashed with yours.",                   competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 50 },
+
+  // ── feedback (3)
+  { id: "fdb-01", text: "Tell me about a time you received tough feedback.",                                                    competency: "feedback",           starFocus: "action+result",   difficulty: "standard", frequencyPct: 72 },
+  { id: "fdb-02", text: "Tell me about a time feedback changed how you worked.",                                                competency: "feedback",           starFocus: "result",          difficulty: "standard", frequencyPct: 60 },
+  { id: "fdb-03", text: "Tell me about a time you had to give difficult feedback to a peer.",                                   competency: "feedback",           starFocus: "action",          difficulty: "hard",     frequencyPct: 55 },
+
+  // ── influence (4)
+  { id: "inf-01", text: "Tell me about a time you convinced someone to change their mind.",                                    competency: "influence",          starFocus: "action",          difficulty: "standard", frequencyPct: 78 },
+  { id: "inf-02", text: "Tell me about a time you had to influence a team without formal authority.",                          competency: "influence",          starFocus: "action",          difficulty: "hard",     frequencyPct: 70 },
+  { id: "inf-03", text: "Tell me about a time you sold an unpopular idea internally.",                                          competency: "influence",          starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
+  { id: "inf-04", text: "Tell me about a time you got buy-in from a senior leader.",                                            competency: "influence",          starFocus: "action",          difficulty: "standard", frequencyPct: 48 },
+
+  // ── ambiguity (4)
+  { id: "amb-01", text: "Tell me about a time you worked on something with unclear requirements.",                             competency: "ambiguity",          starFocus: "action",          difficulty: "standard", frequencyPct: 75 },
+  { id: "amb-02", text: "Tell me about a time you had to make progress without knowing the full picture.",                     competency: "ambiguity",          starFocus: "action",          difficulty: "hard",     frequencyPct: 60 },
+  { id: "amb-03", text: "Tell me about a time you defined a problem nobody had framed before.",                                competency: "ambiguity",          starFocus: "situation-task",  difficulty: "hard",     frequencyPct: 45 },
+  { id: "amb-04", text: "Tell me about a time the priorities shifted and you had to re-plan.",                                  competency: "ambiguity",          starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
+
+  // ── decision-making (5)
+  { id: "dec-01", text: "Tell me about a time you had to make a decision with incomplete data.",                                competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 80 },
+  { id: "dec-02", text: "Tell me about a time you had to choose between two reasonable options.",                              competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 65 },
+  { id: "dec-03", text: "Tell me about a time you reversed a decision you'd already made.",                                    competency: "decision-making",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
+  { id: "dec-04", text: "Tell me about a time you had to say no to a stakeholder.",                                            competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 58 },
+  { id: "dec-05", text: "Tell me about a time you traded off speed against quality.",                                          competency: "decision-making",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 62 },
+
+  // ── problem-solving (4)
+  { id: "prb-01", text: "Tell me about a time you debugged a problem nobody else could crack.",                                competency: "problem-solving",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 70 },
+  { id: "prb-02", text: "Tell me about a time you simplified something complex.",                                              competency: "problem-solving",    starFocus: "action",          difficulty: "standard", frequencyPct: 60 },
+  { id: "prb-03", text: "Tell me about a time you found a creative solution to a constraint.",                                 competency: "problem-solving",    starFocus: "action",          difficulty: "standard", frequencyPct: 58 },
+  { id: "prb-04", text: "Tell me about a time you used data to change a decision.",                                            competency: "problem-solving",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 65 },
+
+  // ── mentorship-team (4)
+  { id: "mnt-01", text: "Tell me about a time you mentored someone.",                                                          competency: "mentorship-team",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 70 },
+  { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60 },
+  { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45 },
+  { id: "mnt-04", text: "Tell me about a time you delegated something you would normally do yourself.",                        competency: "mentorship-team",    starFocus: "action",          difficulty: "hard",     frequencyPct: 40 },
+
+  // ── communication (4)
+  { id: "cmm-01", text: "Tell me about a time you had to explain something technical to a non-technical audience.",            competency: "communication",      starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 80 },
+  { id: "cmm-02", text: "Tell me about a time a miscommunication caused a problem.",                                            competency: "communication",      starFocus: "result",          difficulty: "standard", frequencyPct: 55 },
+  { id: "cmm-03", text: "Tell me about a time you had to communicate a delay or slip.",                                         competency: "communication",      starFocus: "action",          difficulty: "standard", frequencyPct: 58 },
+  { id: "cmm-04", text: "Tell me about a time you presented work to senior leadership.",                                       competency: "communication",      starFocus: "action+result",   difficulty: "standard", frequencyPct: 50 },
+
+  // ── integrity-trust (4)
+  { id: "int-01", text: "Tell me about a time you had to admit you didn't know something.",                                    competency: "integrity-trust",    starFocus: "action",          difficulty: "warmup",   frequencyPct: 60 },
+  { id: "int-02", text: "Tell me about a time you spoke up about something that wasn't right.",                                 competency: "integrity-trust",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50 },
+  { id: "int-03", text: "Tell me about a time you escalated something despite political risk.",                                competency: "integrity-trust",    starFocus: "action",          difficulty: "hard",     frequencyPct: 42 },
+  { id: "int-04", text: "Tell me about a time you took credit for less than you contributed.",                                 competency: "integrity-trust",    starFocus: "action",          difficulty: "standard", frequencyPct: 38 },
+];
+
+/* ─────────── Deterministic sampler ─────────── */
+
+/** Tiny LCG — same seed in, same sequence out, no entropy from
+ *  Math.random. Numbers chosen are Numerical Recipes constants. */
+function lcg(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+
+function shuffle<T>(arr: ReadonlyArray<T>, rand: () => number): T[] {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+export interface SampleOpts {
+  count: number;
+  seed: number;
+  /** When set, exclude `hard` (warmup) or `warmup` (hard) — gives the
+   *  early-loop / late-loop tuning. `standard` returns everything. */
+  difficulty?: BehavioralDifficulty;
+  /** Competencies the caller wants prioritised — the sampler fills
+   *  these first, then dedupes the remainder by competency. */
+  prioritise?: ReadonlyArray<BehavioralCompetency>;
+}
+
+/** Deterministic sampler. Behaviour:
+ *  - When `count` ≤ competency count (12), every returned question
+ *    has a unique competency — interview coverage > question count.
+ *  - When `count` > 12, falls through to second-pass fill from the
+ *    remaining pool (now duplicates of competency are allowed).
+ *  - Hard cap = bank size; oversize requests truncate silently. */
+export function sampleBehavioralQuestions(opts: SampleOpts): BehavioralQuestion[] {
+  const rand = lcg(opts.seed);
+  const competencyCount = BEHAVIORAL_COMPETENCIES.length;
+  const requested = Math.max(0, Math.min(opts.count, BEHAVIORAL_50.length));
+
+  // 1) Filter by difficulty intent
+  let pool: BehavioralQuestion[] = BEHAVIORAL_50.slice();
+  if (opts.difficulty === "warmup") {
+    pool = pool.filter(q => q.difficulty !== "hard");
+  } else if (opts.difficulty === "hard") {
+    pool = pool.filter(q => q.difficulty !== "warmup");
+  }
+
+  // 2) Shuffle deterministically
+  const shuffled = shuffle(pool, rand);
+
+  // 3) First pass: dedupe by competency until we hit min(requested, 12)
+  const firstPassTarget = Math.min(requested, competencyCount);
+  const prioritiseSet = new Set(opts.prioritise || []);
+  const out: BehavioralQuestion[] = [];
+  const usedCompetencies = new Set<BehavioralCompetency>();
+
+  // Fill prioritised competencies first
+  if (prioritiseSet.size > 0) {
+    for (const q of shuffled) {
+      if (out.length >= firstPassTarget) break;
+      if (!prioritiseSet.has(q.competency)) continue;
+      if (usedCompetencies.has(q.competency)) continue;
+      out.push(q);
+      usedCompetencies.add(q.competency);
+    }
+  }
+
+  // Then fill remaining competencies deduped
+  for (const q of shuffled) {
+    if (out.length >= firstPassTarget) break;
+    if (usedCompetencies.has(q.competency)) continue;
+    out.push(q);
+    usedCompetencies.add(q.competency);
+  }
+
+  // 4) Second pass: if caller wanted more than competency count,
+  //    fill the rest from whatever remains (allow duplicate competencies)
+  if (out.length < requested) {
+    const remaining = shuffled.filter(q => !out.includes(q));
+    for (const q of remaining) {
+      if (out.length >= requested) break;
+      out.push(q);
+    }
+  }
+
+  return out;
+}

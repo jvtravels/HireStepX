@@ -1,7 +1,33 @@
 /* ─── Text-to-Speech Service ─── */
-/* Primary: Azure TTS (Indian English neural voices) via /api/azure-tts proxy
-   Fallback: Cartesia TTS via WebSocket + /api/tts REST proxy
+/* Primary:   Sarvam AI TTS  (Indian English / Hinglish, Bulbul model) via /api/sarvam-tts
+   Fallback:  Cartesia TTS   (low-latency PCM streaming) via WebSocket + /api/tts REST
+   3rd:       Azure TTS      (Indian English neural) via /api/azure-tts
    Last resort: Browser Web Speech API */
+
+/* ─────────────────────────────────────────────────────────────────────
+ * TTS KILL-SWITCH (2026-05-17)
+ *
+ * Temporarily disabled while iterating on the product so we don't burn
+ * Sarvam / Cartesia / Azure tokens during manual QA. When TTS_DISABLED
+ * is true:
+ *   - speak() and speakAs() resolve immediately and call onEnd() so the
+ *     interview state machine advances without waiting for audio.
+ *   - prefetchTTS() is a no-op (no upstream API calls).
+ *   - cancelTTS() / hardMuteTTS() / cleanupTTS() remain safe to call.
+ *
+ * To re-enable: flip TTS_DISABLED to false. No other change needed —
+ * the provider chain (Sarvam → Cartesia → Azure → browser) is intact.
+ * ───────────────────────────────────────────────────────────────────── */
+const TTS_DISABLED = true;
+
+/* Estimate how long the question would have taken to speak so the
+ * caption typewriter has a duration to pace against while the kill-
+ * switch is on. ~160 wpm matches our Sarvam/Cartesia delivery pace;
+ * floor at 1800ms so very short prompts still type instead of popping. */
+function syntheticReadDurationMs(text: string): number {
+  const words = (text || "").trim().split(/\s+/).filter(Boolean).length || 1;
+  return Math.max(1800, Math.round((words / 160) * 60_000));
+}
 
 import { safeUUID } from "./utils";
 
@@ -67,7 +93,7 @@ function isAutoplayError(err: unknown): boolean {
 const TTS_SETTINGS_KEY = "hirestepx_tts";
 
 export interface TTSSettings {
-  provider: "azure" | "cartesia" | "browser";
+  provider: "sarvam" | "cartesia" | "azure" | "browser";
   voiceId: string;
   voiceName: string;
   language?: string;
@@ -112,9 +138,9 @@ export function getCachedVoices(language = "en_IN"): CartesiaVoice[] {
 }
 
 const DEFAULT_SETTINGS: TTSSettings = {
-  provider: "azure",
-  voiceId: "en-IN-NeerjaNeural",
-  voiceName: "Neerja (Indian English)",
+  provider: "sarvam",
+  voiceId: "anushka",
+  voiceName: "Anushka (Sarvam Indian English)",
   language: "en_IN",
 };
 
@@ -123,9 +149,10 @@ export function loadTTSSettings(): TTSSettings {
     const raw = localStorage.getItem(TTS_SETTINGS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Migrate old providers to Azure
-      if (parsed.provider === "elevenlabs" || parsed.provider === "google" || parsed.provider === "cartesia") {
-        parsed.provider = "azure";
+      // Migrate legacy providers → Sarvam (current primary). Azure stays
+      // as a valid explicit choice but isn't the default anymore.
+      if (parsed.provider === "elevenlabs" || parsed.provider === "google") {
+        parsed.provider = "sarvam";
         parsed.voiceId = DEFAULT_SETTINGS.voiceId;
         parsed.voiceName = DEFAULT_SETTINGS.voiceName;
       }
@@ -193,6 +220,7 @@ export function clearPrefetchCache(): void {
 /* Pre-fetch TTS audio for a text so it's ready when needed.
    Pass gender so the correct voice (male/female) is cached. */
 export async function prefetchTTS(text: string, gender?: "male" | "female"): Promise<void> {
+  if (TTS_DISABLED) return; // kill-switch: skip upstream prefetch
   if (!text) return;
   // Sanitize first so prefetch keys collide on equivalent text — caller
   // and speak() both apply the same transform.
@@ -220,8 +248,12 @@ export async function prefetchTTS(text: string, gender?: "male" | "female"): Pro
     try {
       const { authHeaders } = await import("./supabase");
       const headers = await authHeaders();
-      // Use Azure TTS endpoint (primary) for prefetch
-      const endpoint = settings.provider === "azure" ? "/api/azure-tts" : "/api/tts";
+      // Prefetch hits whichever provider is currently configured as primary.
+      // Sarvam is the default; explicit Azure/Cartesia overrides honored.
+      const endpoint =
+        settings.provider === "sarvam" ? "/api/sarvam-tts" :
+        settings.provider === "azure"  ? "/api/azure-tts"  :
+        /* cartesia */                    "/api/tts";
       const res = await fetch(endpoint, {
         method: "POST",
         headers,
@@ -691,7 +723,118 @@ async function speakWithProxy(
   };
 }
 
-/* ─── Azure TTS (primary provider — Indian English neural voices) ─── */
+/* ─── Sarvam AI TTS (primary provider — Indian English / Hinglish Bulbul voices) ─── */
+async function speakWithSarvam(
+  text: string,
+  onEnd: () => void,
+  onError: () => void,
+  gender?: "male" | "female",
+  voiceId?: string,
+  onDurationKnown?: (ms: number) => void,
+  onAudioStarted?: () => void,
+): Promise<{ cancel: () => void }> {
+  if (_autoplayBlocked) {
+    console.warn("[TTS-Sarvam] autoplay blocked, skipping");
+    onEnd();
+    return { cancel: () => {} };
+  }
+
+  const controller = new AbortController();
+  let audio: HTMLAudioElement | null = null;
+  let settled = false;
+  const settle = (cb: () => void) => { if (!settled) { settled = true; cb(); } };
+  let audioStartedFired = false;
+  const fireAudioStarted = () => {
+    if (audioStartedFired || !onAudioStarted) return;
+    audioStartedFired = true;
+    try { onAudioStarted(); } catch { /* consumer error must not break TTS */ }
+  };
+
+  try {
+    let blob: Blob | null = null;
+
+    // Reuse prefetch cache — primary-provider prefetch hits /api/sarvam-tts.
+    const cached = consumePrefetch(text, gender);
+    if (cached) {
+      blob = await cached;
+    }
+
+    if (!blob) {
+      const { authHeaders } = await import("./supabase");
+      const headers = await authHeaders();
+
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+      const res = await fetch("/api/sarvam-tts", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          text: text.trim().slice(0, 1500),
+          voiceId: voiceId,
+          gender,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        console.warn("[TTS-Sarvam] API error:", res.status);
+        settle(onError);
+        return { cancel: () => {} };
+      }
+
+      blob = await res.blob();
+    }
+
+    if (!blob || blob.size < 100) {
+      console.warn("[TTS-Sarvam] empty audio");
+      settle(onError);
+      return { cancel: () => {} };
+    }
+
+    const url = URL.createObjectURL(blob);
+    audio = new Audio(url);
+    audio.onloadedmetadata = () => {
+      if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
+        onDurationKnown(audio.duration * 1000);
+      }
+    };
+    audio.onplaying = fireAudioStarted;
+    audio.onended = () => { URL.revokeObjectURL(url); settle(onEnd); };
+    audio.onerror = () => { URL.revokeObjectURL(url); settle(onError); };
+    await audio.play();
+    /* Same blob-Audio "playing" event quirk as Azure path. */
+    fireAudioStarted();
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      if (!settled) settle(onError);
+      return { cancel: () => {} };
+    }
+    if (isAutoplayError(err)) {
+      console.warn("[TTS-Sarvam] autoplay blocked by browser policy — disabling voice for session");
+      _autoplayBlocked = true;
+      settle(onEnd);
+      return { cancel: () => {} };
+    }
+    console.warn("[TTS-Sarvam] error:", err instanceof Error ? err.message : err);
+    settle(onError);
+    return { cancel: () => {} };
+  }
+
+  const capturedAudio = audio;
+  return {
+    cancel: () => {
+      controller.abort();
+      settled = true;
+      if (capturedAudio) {
+        capturedAudio.pause();
+        capturedAudio.onended = null;
+        capturedAudio.onerror = null;
+      }
+    },
+  };
+}
+
+/* ─── Azure TTS (3rd-tier provider — Indian English neural voices) ─── */
 async function speakWithAzure(
   text: string,
   onEnd: () => void,
@@ -953,6 +1096,22 @@ export async function speakAs(
   onDurationKnown?: (ms: number) => void,
   onAudioStarted?: () => void,
 ): Promise<{ cancel: () => void }> {
+  // Kill-switch: resolve as silent success so panel-mode state machine
+  // advances without waiting for audio. onError is intentionally NOT
+  // called — that would trigger a fallback chain we don't want either.
+  if (TTS_DISABLED) {
+    // Synthesize the audio lifecycle so the caption typewriter still
+    // reveals + paces. Without onAudioStarted, LiveCaptions stays hidden
+    // behind its 1.2s fallback timer and then pops in un-typed; without
+    // onDurationKnown the typing animation has no target duration.
+    const syntheticMs = syntheticReadDurationMs(text);
+    queueMicrotask(() => {
+      try { onAudioStarted?.(); } catch { /* consumer error must not break TTS */ }
+      try { onDurationKnown?.(syntheticMs); } catch { /* consumer error must not break TTS */ }
+    });
+    const endTimer = setTimeout(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } }, syntheticMs);
+    return { cancel: () => clearTimeout(endTimer) };
+  }
   text = addBreathCues(sanitizeForTTS(text));
   const settings = loadTTSSettings();
   if (settings.provider === "browser") {
@@ -966,24 +1125,39 @@ export async function speakAs(
 
   let handle: { cancel: () => void };
 
+  // Last-leg fallback: Azure → Browser. Returned as a thunk so it can be
+  // wired in after Cartesia fails.
+  const azureFallback = async () => {
+    console.warn("Trying Azure TTS fallback (speakAs)");
+    handle = await speakWithAzure(text, onEnd, () => {
+      console.warn("Azure TTS also failed (speakAs), falling back to browser TTS");
+      const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
+      handle = browserHandle;
+      setCancel(browserHandle.cancel);
+    }, gender, voiceId, onDurationKnown, onAudioStarted);
+    setCancel(handle.cancel);
+  };
+
+  // Cartesia (2nd) → Azure → Browser. Cartesia is now the secondary path
+  // — the WS-stream + REST fallback both live here.
   const cartesiaFallback = async () => {
     console.warn("Trying Cartesia TTS fallback (speakAs)");
     handle = await speakWithWebSocket(text, voiceId, onEnd, async () => {
       console.warn("Cartesia WS failed (speakAs), trying REST");
-      handle = await speakWithProxy(text, voiceId, onEnd, () => {
-        console.warn("Cartesia REST also failed (speakAs), falling back to browser TTS");
-        const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
-        handle = browserHandle;
-        setCancel(browserHandle.cancel);
+      handle = await speakWithProxy(text, voiceId, onEnd, async () => {
+        console.warn("Cartesia REST also failed (speakAs), trying Azure");
+        await azureFallback();
       }, gender, onDurationKnown, onAudioStarted);
       setCancel(handle.cancel);
     }, gender, onDurationKnown, onAudioStarted);
     setCancel(handle.cancel);
   };
 
-  // Azure primary → Cartesia fallback → Browser fallback
-  handle = await speakWithAzure(text, onEnd, async () => {
-    console.warn("Azure TTS failed (speakAs), trying Cartesia");
+  // Sarvam primary → Cartesia fallback → Azure fallback → Browser fallback.
+  // Sarvam's Bulbul Indian-English voices were promoted to primary because
+  // they're the most authentic en-IN accent in our roster.
+  handle = await speakWithSarvam(text, onEnd, async () => {
+    console.warn("Sarvam TTS failed (speakAs), trying Cartesia");
     await cartesiaFallback();
   }, gender, voiceId, onDurationKnown, onAudioStarted);
 
@@ -1236,6 +1410,21 @@ export async function speak(
   onDurationKnown?: (ms: number) => void,
   onAudioStarted?: () => void,
 ): Promise<{ cancel: () => void }> {
+  // Kill-switch: resolve as silent success so the interview state
+  // machine advances without waiting for audio. See top-of-file
+  // TTS_DISABLED comment for the re-enable path.
+  if (TTS_DISABLED) {
+    // See speakAs() above for why we synthesize the full lifecycle, not
+    // just onEnd: the caption typewriter needs onAudioStarted to reveal
+    // and onDurationKnown to pace itself.
+    const syntheticMs = syntheticReadDurationMs(text);
+    queueMicrotask(() => {
+      try { onAudioStarted?.(); } catch { /* consumer error must not break TTS */ }
+      try { onDurationKnown?.(syntheticMs); } catch { /* consumer error must not break TTS */ }
+    });
+    const endTimer = setTimeout(() => { try { onEnd(); } catch { /* consumer error must not break TTS */ } }, syntheticMs);
+    return { cancel: () => clearTimeout(endTimer) };
+  }
   text = addBreathCues(sanitizeForTTS(text));
   const settings = loadTTSSettings();
   let handle: { cancel: () => void };
@@ -1244,12 +1433,24 @@ export async function speak(
   const gen = ++_ttsGeneration;
   const setCancel = (fn: () => void) => { if (gen === _ttsGeneration) _activeCancel = fn; };
 
-  // Cartesia fallback chain (before browser TTS)
+  // Azure (3rd-tier) → Browser final fallback.
+  const azureFallback = async () => {
+    console.warn("Trying Azure TTS fallback");
+    handle = await speakWithAzure(text, onEnd, () => {
+      console.warn("Azure TTS also failed, falling back to browser TTS");
+      const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
+      handle = browserHandle;
+      setCancel(browserHandle.cancel);
+    }, gender, undefined, onDurationKnown, onAudioStarted);
+    setCancel(handle.cancel);
+  };
+
+  // Cartesia (2nd-tier) → Azure → Browser. Tries WS first for low latency,
+  // REST as same-tier retry, then escalates to Azure.
   const cartesiaFallback = async () => {
     console.warn("Trying Cartesia TTS fallback");
-    // Prefer an Indian-English voice when one is available — matches the
-    // Azure primary (en-IN-NeerjaNeural) so users in our target market don't
-    // hear a sudden accent change when Azure fails over.
+    // Pin an Indian-English Cartesia voice so the accent doesn't shift
+    // jarringly when Sarvam fails over.
     let cartesiaVoice = DEFAULT_VOICE_ID;
     try {
       const enInVoices = await fetchCartesiaVoices("en_IN");
@@ -1259,20 +1460,16 @@ export async function speak(
     const prefetchEntry = _prefetchCache.get(text);
     const hasPrefetch = !!prefetchEntry && Date.now() - prefetchEntry.createdAt < PREFETCH_TTL;
     if (hasPrefetch) {
-      handle = await speakWithProxy(text, cartesiaVoice, onEnd, () => {
-        console.warn("Cartesia REST also failed, falling back to browser TTS");
-        const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
-        handle = browserHandle;
-        setCancel(browserHandle.cancel);
+      handle = await speakWithProxy(text, cartesiaVoice, onEnd, async () => {
+        console.warn("Cartesia REST also failed, trying Azure");
+        await azureFallback();
       }, undefined, onDurationKnown, onAudioStarted);
     } else {
       handle = await speakWithWebSocket(text, cartesiaVoice, onEnd, async () => {
         console.warn("Cartesia WS failed, trying REST");
-        handle = await speakWithProxy(text, cartesiaVoice, onEnd, () => {
-          console.warn("Cartesia REST also failed, falling back to browser TTS");
-          const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
-          handle = browserHandle;
-          setCancel(browserHandle.cancel);
+        handle = await speakWithProxy(text, cartesiaVoice, onEnd, async () => {
+          console.warn("Cartesia REST also failed, trying Azure");
+          await azureFallback();
         }, undefined, onDurationKnown, onAudioStarted);
         setCancel(handle.cancel);
       }, undefined, onDurationKnown, onAudioStarted);
@@ -1283,9 +1480,11 @@ export async function speak(
   if (settings.provider === "browser") {
     handle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
   } else {
-    // Azure primary → Cartesia fallback → Browser fallback
-    handle = await speakWithAzure(text, onEnd, async () => {
-      console.warn("Azure TTS failed, trying Cartesia fallback");
+    // Sarvam primary → Cartesia → Azure → Browser. Each layer escalates
+    // on `onError`; `onEnd` short-circuits the chain on success or on
+    // autoplay-block (treated as silent success).
+    handle = await speakWithSarvam(text, onEnd, async () => {
+      console.warn("Sarvam TTS failed, trying Cartesia fallback");
       await cartesiaFallback();
     }, gender, undefined, onDurationKnown, onAudioStarted);
   }

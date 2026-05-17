@@ -165,8 +165,8 @@ function extractPercentageSplit(a: string): { basePercent: number | null; variab
     }
   }
   /* Form B: "80/20" or "80:20" near a split/fixed/variable cue. */
-  const ratioMatch = /(\d{1,3}(?:\.\d+)?)\s*[\/:]\s*(\d{1,3}(?:\.\d+)?)[^.!?\n]{0,20}?(?:split|fixed[-\s]?variable|fixed\s+and\s+variable)/i.exec(a)
-    ?? /(?:split|fixed[-\s]?variable|fixed\s+and\s+variable)[^.!?\n]{0,20}?(\d{1,3}(?:\.\d+)?)\s*[\/:]\s*(\d{1,3}(?:\.\d+)?)/i.exec(a);
+  const ratioMatch = /(\d{1,3}(?:\.\d+)?)\s*[/:]\s*(\d{1,3}(?:\.\d+)?)[^.!?\n]{0,20}?(?:split|fixed[-\s]?variable|fixed\s+and\s+variable)/i.exec(a)
+    ?? /(?:split|fixed[-\s]?variable|fixed\s+and\s+variable)[^.!?\n]{0,20}?(\d{1,3}(?:\.\d+)?)\s*[/:]\s*(\d{1,3}(?:\.\d+)?)/i.exec(a);
   if (ratioMatch) {
     const bp = parseFloat(ratioMatch[1]);
     const vp = parseFloat(ratioMatch[2]);

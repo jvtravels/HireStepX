@@ -254,10 +254,59 @@ const MONTH_YEAR_RANGE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|ma
 const BRANCH_NAME = /\b(?:cse\b|c\s*s\s*e\b|computer\s+science(?:\s+and\s+engineering)?|cs\s+engineering|information\s+technology|information\s+science|electronics\s+and\s+communication(?:\s+engineering)?|ece\b|e\s*c\s*e\b|electrical\s+and\s+electronics(?:\s+engineering)?|eee\b|e\s*e\s*e\b|mechanical(?:\s+engineering)?|\bmech\s+(?:branch|engineering|department|stream|major|student)|civil\s+engineering|chemical\s+engineering|chem\s+engg|biotech(?:nology)?|a\s*i\s*\/?\s*m\s*l\b|aiml\b|artificial\s+intelligence\s+(?:and|&)\s+machine\s+learning|\baids\s+(?:branch|department|stream|major|student|engineering)|artificial\s+intelligence\s+(?:and|&)\s+data\s+science|data\s+science\s+(?:engineering|branch))\b/i;
 const DUAL_DEGREE_CONNECTOR = /\b(?:minor\s+in|dual[- ]?degree|integrated\s+(?:m\s*tech|b\s*tech|m[- ]?s)|with\s+a\s+specialization\s+in|core\s+(?:branch|major)\s+is|primary\s+branch|specializ\w+\s+in|i'?m\s+from\s+\w+\s+but\s+(?:my\s+)?(?:minor|focus|elective)|switched\s+(?:from|branch|streams))\b/i;
 
+/* ── Resume-aware helpers (Wave-6) ────────────────────────────────── */
+
+/** Canonical branch keys we use for cross-checks (CSE, IT, IS, ECE, EEE,
+ *  Mech, Civil, Chem, Biotech, AIML, AIDS, DataScience). Anything else
+ *  resolves to undefined so callers can skip the check. */
+function canonicalizeBranch(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const k = raw.toLowerCase().replace(/[^a-z]/g, "");
+  if (!k) return undefined;
+  if (/^c(omputer)?s(cience)?(?:andengineering)?$/.test(k) || k.includes("cse")) return "cse";
+  if (/^i(nformation)?t(echnology)?$/.test(k) || k.endsWith("informationtechnology")) return "it";
+  if (/^i(nformation)?s(cience)?$/.test(k) || k.endsWith("informationscience")) return "is";
+  if (k.includes("ece") || k.includes("electronicscommunication")) return "ece";
+  if (k.includes("eee") || k.includes("electricalelectronics")) return "eee";
+  if (k.includes("mechanical")) return "mech";
+  if (k.includes("civil")) return "civil";
+  if (k.includes("chemical") || k.includes("chemengg")) return "chem";
+  if (k.includes("biotech")) return "biotech";
+  if (k.includes("aiml") || k.includes("machinelearning")) return "aiml";
+  if (k.includes("aids") || k.includes("datascienceengineering")) return "aids";
+  if (k.includes("datascience")) return "datascience";
+  return undefined;
+}
+
+/** Normalize a company string for cross-check comparison. Drops
+ *  Pvt Ltd / Inc / Technologies suffixes, lowercases, strips punctuation. */
+function normalizeCompanyName(raw: string | undefined): string {
+  if (!raw) return "";
+  return raw
+    .toLowerCase()
+    .replace(/\b(pvt|private|ltd|limited|inc|corporation|corp|technologies|technology|tech|labs|solutions|systems|india)\b\.?/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Extract candidate company names from transcript text — looks for
+ *  "interned at X" / "internship at X" / "at X as <role>". Conservative
+ *  — only returns short proper-noun-looking strings. */
+function extractClaimedCompanies(userText: string): string[] {
+  const out: string[] = [];
+  const re = /\b(?:interned|internship|worked|intern)\s+(?:at|with|for)\s+([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*){0,3})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(userText)) !== null) {
+    const name = m[1].replace(/[.,;:]+$/, "").trim();
+    if (name && name.length <= 60) out.push(name);
+  }
+  return out;
+}
+
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v5.0",
-  async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
+  version: "campus-placement-v6.0",
+  async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
     if (transcript.length === 0) { result.flags.push("empty_transcript"); return result; }
@@ -949,6 +998,160 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
+    /* ── Wave-6 detection: resume cross-checks ────────────────────────
+     * These only run when the cron successfully loaded the resume by
+     * resume_version_id. Otherwise we silently skip — analyzer must
+     * still produce useful output on transcript-only data. */
+    if (resume) {
+      // 1) Internship company cross-check.
+      // Candidate says "I interned at Razorpay" but Razorpay isn't on
+      // their resume → high-signal credibility issue. Soft match
+      // (normalized substring either direction) to tolerate "Razorpay"
+      // vs "Razorpay Software Pvt Ltd". Only fire when the resume
+      // actually has at least one experience entry — otherwise we
+      // can't distinguish "fabricated" from "resume missing data".
+      if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
+        const resumeCompanies = resume.experiences
+          .map((e) => normalizeCompanyName(e?.company))
+          .filter((s) => s.length >= 3);
+        const claimed = extractClaimedCompanies(userText);
+        const unverified: string[] = [];
+        for (const c of claimed) {
+          const norm = normalizeCompanyName(c);
+          if (!norm) continue;
+          const present = resumeCompanies.some((r) => r === norm || r.includes(norm) || norm.includes(r));
+          if (!present) unverified.push(c);
+        }
+        if (unverified.length > 0) {
+          flags.add("claimed_internship_not_in_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: "Every company / internship mentioned in the interview must already appear on the resume. BGV will pull the resume as source-of-truth — narrating a role that isn't listed reads as fabrication and is the #1 disqualifier in Indian campus drives.",
+            observed: `Candidate referenced ${unverified.length === 1 ? "a company" : "companies"} not present in their uploaded resume: ${unverified.slice(0, 3).join(", ")}.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 2) Branch mismatch with resume's degree.
+      // If the resume's education entry canonicalizes to e.g. "mech"
+      // but the candidate consistently says "I'm in CSE", that's a
+      // bigger tell than the transcript-only branch-drift check —
+      // the resume is the authoritative source.
+      const resumeBranch = canonicalizeBranch(resume.degree);
+      if (resumeBranch) {
+        // Reuse the BRANCH_NAME regex collected earlier in the Wave-5
+        // block by scanning userText. Canonicalize each hit with the
+        // shared helper so the comparison is apples-to-apples.
+        const spokenBranches = new Set<string>();
+        const reB = new RegExp(BRANCH_NAME.source, "gi");
+        let bm2: RegExpExecArray | null;
+        while ((bm2 = reB.exec(userText)) !== null) {
+          const canon = canonicalizeBranch(bm2[0]);
+          if (canon) spokenBranches.add(canon);
+        }
+        // Only fire if the spoken set is non-empty and excludes the
+        // resume branch entirely — i.e. the candidate is speaking a
+        // branch they don't have on paper. Mentioning the resume
+        // branch alongside others is handled by degree_branch_inconsistency.
+        if (spokenBranches.size > 0 && !spokenBranches.has(resumeBranch) && !DUAL_DEGREE_CONNECTOR.test(userText)) {
+          flags.add("branch_mismatch_with_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: `Match the branch you spoke about (${Array.from(spokenBranches).join(", ")}) with what's on your resume (${resumeBranch}). The resume is the BGV-checked source of truth — a verbal branch change without "dual-degree" / "minor in" framing reads as fabrication.`,
+            observed: `Resume lists ${resumeBranch} but candidate identified as ${Array.from(spokenBranches).join(", ")} in the transcript.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 3) Grad-year mismatch with resume.
+      // Resume.gradYear is the BGV-checked source of truth. If the
+      // candidate states a different year in the transcript ("I'll
+      // graduate in 2025" but resume says 2024), that's a credibility
+      // hit. We tolerate ±1 (legitimate spillover semester) before
+      // flagging.
+      if (resume.gradYear && /^20\d{2}$/.test(resume.gradYear)) {
+        const resumeYear = parseInt(resume.gradYear, 10);
+        const spokenYears = new Set<number>();
+        const yearRe = /\b(?:graduat(?:e|ing|ed|ion)|passing|passout|pass[- ]out|batch|class of)\b[^.?!]{0,40}\b(20\d{2})\b|\b(20\d{2})\s*(?:batch|passout|pass[- ]out|grad)/gi;
+        let ym: RegExpExecArray | null;
+        while ((ym = yearRe.exec(userText)) !== null) {
+          const y = parseInt(ym[1] || ym[2], 10);
+          if (y >= 2015 && y <= 2030) spokenYears.add(y);
+        }
+        const driftedYears = Array.from(spokenYears).filter((y) => Math.abs(y - resumeYear) > 1);
+        if (driftedYears.length > 0) {
+          flags.add("grad_year_mismatch_with_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: `The graduation year you stated (${driftedYears.join(", ")}) should match what's on your resume (${resumeYear}). BGV pulls the resume — a verbal year drift > 1 year reads as fabrication and disqualifies in service-tier rounds.`,
+            observed: `Resume lists graduation year ${resumeYear}, but candidate mentioned ${driftedYears.join(", ")} in the transcript.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 4) College mismatch with resume.
+      // Resume.school is the source of truth. Tolerate aliases (IIT
+      // Bombay vs IITB, VIT vs VIT Vellore) by canonicalising both
+      // sides via classifyCollegeTier — if both sides land on the
+      // same tier-1/tier-2 bucket OR the normalized substring matches
+      // either way, we treat as same college. Otherwise flag.
+      if (resume.school && resume.school.length >= 3) {
+        const resumeSchoolNorm = resume.school.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const resumeTier = classifyCollegeTier(resume.school);
+        // Detect college mentions in transcript — accept loose
+        // patterns (any "college" / "university" / "institute" noun
+        // following "from", "at", "studied at", or as standalone).
+        const collegeMentionRe = /\b(?:from|at|studied at|graduated from|i'?m at|i'?m in|i'?m from)\s+([A-Za-z][A-Za-z& .'-]{4,60}(?:university|college|institute|iit|nit|iiit|bits)[A-Za-z &.,'-]{0,40})/gi;
+        const mentions: string[] = [];
+        let cm: RegExpExecArray | null;
+        while ((cm = collegeMentionRe.exec(userText)) !== null) {
+          const m = cm[1].trim();
+          if (m.length >= 4) mentions.push(m);
+        }
+        const mismatched: string[] = [];
+        for (const m of mentions) {
+          const mNorm = m.toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (!mNorm) continue;
+          // Same college if normalized strings overlap either way.
+          if (resumeSchoolNorm.includes(mNorm) || mNorm.includes(resumeSchoolNorm)) continue;
+          // Same college if both canonicalise to the same tier-1/tier-2 bucket
+          // AND the bucket isn't "unknown" (otherwise every state college
+          // collides). Tier overlap on tier-1/-2 only.
+          const mTier = classifyCollegeTier(m);
+          if (mTier !== "unknown" && mTier === resumeTier && mTier === classifyCollegeTier(`${resume.school} ${m}`)) continue;
+          mismatched.push(m);
+        }
+        if (mismatched.length > 0) {
+          flags.add("college_mismatch_with_resume");
+          gaps.push({
+            dimension: "credibility",
+            expected: `The college you named (${mismatched.slice(0, 2).join(", ")}) should match what's on your resume (${resume.school}). Indian campus BGV pulls the transcript / certificate — a verbal swap reads as fabrication.`,
+            observed: `Resume lists ${resume.school}, but candidate mentioned ${mismatched.slice(0, 2).join(", ")} in the transcript.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 5) Portfolio satisfied by resume.
+      // The transcript-only `portfolio_absent_for_claim` rule fires
+      // when the user narrates a project without dropping a GitHub
+      // link in their answer. If their resume lists a GitHub /
+      // portfolio / live-demo URL we suppress that flag — recruiter
+      // can already see it.
+      if (flags.has("portfolio_absent_for_claim") && Array.isArray(resume.links) && resume.links.some((u) => /github|gitlab|bitbucket|vercel|netlify|herokuapp|render\.com|huggingface|kaggle/i.test(u || ""))) {
+        flags.delete("portfolio_absent_for_claim");
+        // Also drop the corresponding rubric gap, if any.
+        for (let i = gaps.length - 1; i >= 0; i--) {
+          if (gaps[i].dimension === "credibility" && /portfolio|github|live demo/i.test(gaps[i].expected)) {
+            gaps.splice(i, 1);
+          }
+        }
+      }
+    }
+
     const tips: string[] = [];
     if (flags.has("no_academic_project_discussed")) tips.push("As a fresher, lead with your capstone or final-year project — it's your strongest evidence.");
     if (flags.has("generic_passion_no_substance")) tips.push("Replace 'I'm passionate about tech' with 'I built X using Y, here's what I learned.'");
@@ -994,6 +1197,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("code_on_paper_freeze")) tips.push("Practice writing 15-20 line solutions on paper / chat / a doc during prep — at least 10 problems before any campus drive. 'I can only code in an IDE' tells the interviewer you've memorized templates, not internalized logic. Even rough pseudocode beats refusal.");
     if (flags.has("resume_date_inconsistency")) tips.push("Internship / project windows must not overlap unless explicitly part-time and disclosed. Two full-time ranges that overlap trip BGV instantly and read as fabrication. Pull the resume, fix the months, and rehearse the corrected timeline in one breath.");
     if (flags.has("degree_branch_inconsistency")) tips.push("Pick the exact branch name on your transcript and stick with it across the whole conversation. If you have a minor / dual-degree, say so once: 'CSE major with an AIML minor.' Drifting between 'I'm in CSE' and 'I'm in AIML' reads as confusion or fabrication.");
+    if (flags.has("claimed_internship_not_in_resume")) tips.push("Every company you mention in the interview must already appear on your uploaded resume. BGV uses the resume as ground truth — narrating a role that isn't listed reads as fabrication and is the #1 instant-disqualifier in Indian campus rounds. Update the resume before the next session, or only narrate companies you've already listed.");
+    if (flags.has("branch_mismatch_with_resume")) tips.push("Your resume's degree field is the BGV-checked source of truth. If you spoke about a different branch than what's on your resume, frame it explicitly: 'My resume lists Mechanical — I've been doing CS50, Striver SDE Sheet, and projects on the side, which is why I'm targeting SDE roles.' Owning the bridge beats a silent verbal swap.");
+    if (flags.has("grad_year_mismatch_with_resume")) tips.push("Your stated graduation year and the year on your resume must match within a year — BGV pulls the year off your provisional degree / transcript. If you're an extended-semester passout, state it once and stick to it: 'I graduated in 2024 — completed after one supplementary in extended semester.' Drifting between two years in the same interview reads as fabrication.");
+    if (flags.has("college_mismatch_with_resume")) tips.push("Name the exact college on your resume — Indian campus BGV cross-checks the degree certificate, and Tier-1-sounding swaps (e.g. saying 'IIT' when the resume lists 'NIT') are an instant disqualifier. If you transferred, say it once: 'Started at NIT Surat, transferred to NIT Trichy in 2nd year, both reflected on the resume.'");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

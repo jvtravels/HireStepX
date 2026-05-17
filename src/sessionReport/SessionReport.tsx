@@ -262,6 +262,31 @@ export const SessionReport = memo(function SessionReport({
       const liveInterviewerName = (() => {
         try { return getInterviewerName(interviewerSeed); } catch { return undefined; }
       })();
+      /* Pull resume facts off the client's stored AI-parsed resume so
+         the evaluator can ground its report in the candidate's real
+         background. Conservative shape — only the fields the evaluator
+         actually uses. Skipped silently if absent. */
+      const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
+        topSkills?: string[];
+        headline?: string;
+        careerTrajectory?: string;
+        experiences?: Array<{ topProjects?: string[] }>;
+      } | undefined;
+      const topProjects = (aiProfile?.experiences || [])
+        .flatMap(e => Array.isArray(e?.topProjects) ? e.topProjects : [])
+        .filter(p => typeof p === "string" && p.trim().length > 0)
+        .slice(0, 5);
+      const resumeContext = aiProfile && (
+        (aiProfile.topSkills && aiProfile.topSkills.length) ||
+        topProjects.length ||
+        aiProfile.headline ||
+        aiProfile.careerTrajectory
+      ) ? {
+        topSkills: aiProfile.topSkills,
+        topProjects: topProjects.length ? topProjects : undefined,
+        headline: aiProfile.headline,
+        careerTrajectory: aiProfile.careerTrajectory,
+      } : undefined;
       const meta = {
         role: session.role,
         roleFamily,
@@ -271,6 +296,7 @@ export const SessionReport = memo(function SessionReport({
           (session.difficulty as "warmup" | "standard" | "hard") || "standard",
         duration: parseDurationSec(session.duration),
         interviewerName: liveInterviewerName,
+        resumeContext,
       };
 
       const isTransient = (raw: string) =>

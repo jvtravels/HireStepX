@@ -16,6 +16,7 @@ import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-r
 import { summarizeReverseInterview } from "../src/_reverse-interview";
 import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-register";
 import { getPanelPersona, panelPersonaPromptFragment } from "../src/_indian-panel-personas";
+import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment } from "./_behavioral-followup-bank";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -45,7 +46,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -53,6 +54,14 @@ export default async function handler(req: Request): Promise<Response> {
       persona?: string; conversationHistory?: string;
       negotiationPhase?: string; questionIndex?: number; totalQuestions?: number;
       resumeTopSkills?: string[];
+      resumeProjects?: string[];
+      /** Wave-8: structured per-role experience timeline. Used only for
+       *  campus-placement follow-ups so the AI can push back live when
+       *  the candidate mentions a company that isn't on the resume
+       *  ("you said TCS — I don't see TCS on your resume. Was that an
+       *  unlisted internship?"). Behavioural / salary-neg flows already
+       *  consume `resumeProjects`; this is the campus-specific cousin. */
+      resumeExperiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>;
       initialOfferText?: string;
       negotiationFacts?: {
         acceptedImmediately?: boolean;
@@ -198,6 +207,66 @@ export default async function handler(req: Request): Promise<Response> {
     const jdContext = jobDescription ? `The candidate is targeting this role: ${sanitizeForLLM(jobDescription, 500)}. If relevant, probe for skills mentioned in the JD.` : "";
     const resumeSkillsContext = Array.isArray(resumeTopSkills) && resumeTopSkills.length > 0
       ? `Candidate's key skills from resume: ${resumeTopSkills.slice(0, 6).map(s => sanitizeForLLM(s, 50)).filter(Boolean).join(", ")}. If relevant to the current topic, ask them to demonstrate these skills with specific examples.`
+      : "";
+    /* Resume-grounded project anchors — the missing piece that turns
+       follow-ups from generic STAR probes into "walk me through the
+       Razorpay migration you led" type questions. Behavioural-only
+       on purpose: technical / case-study / salary-neg flows don't
+       want project trivia interrupting their own structure. Capped at
+       4 projects, sanitised, kept short so we don't bloat per-call
+       dynamic content (Groq prefix cache breaks if the dynamic tail
+       grows). */
+    const resumeProjectsContext = (type === "behavioral" && Array.isArray(resumeProjects) && resumeProjects.length > 0)
+      ? `\nCandidate's notable projects from resume: ${resumeProjects.slice(0, 4).map(p => sanitizeForLLM(p, 120)).filter(Boolean).join(" | ")}. If the candidate's current answer touches any of these, your follow-up MUST reference the project by name and probe the specific Action they took ("you mentioned X — what did you personally decide there?"). Avoid generic STAR probes when a concrete resume project is available to anchor on.`
+      : "";
+
+  // Canonical probe phrasing — when the engine has detected a STAR gap
+  // or we-heavy framing, inject the preferred real-interviewer phrasing
+  // into the prompt as a soft constraint. Makes probes feel consistent
+  // across sessions and saves a chunk of LLM cost on common gaps.
+  const behaviouralProbeContext = (() => {
+    if (type !== "behavioral" && type !== "behavioural") return "";
+    const cue = cueFromEngineHints({
+      starGap: starGap as "action" | "result" | "situation-task" | undefined,
+      weHeavy: Boolean(weHeavy),
+      questionText: question,
+    });
+    if (!cue) return "";
+    const alreadyAsked = Array.isArray(previousFollowUps) ? previousFollowUps : [];
+    const probe = pickBehavioralProbe({ cue, alreadyAsked });
+    if (!probe) return "";
+    return "\n\n" + probePromptFragment(probe);
+  })();
+    /* Wave-8: campus-placement in-session resume pushback.
+     *
+     * Carries the list of companies / titles the candidate has on their
+     * uploaded resume into the live follow-up prompt. When the
+     * candidate mentions a company NOT on the list, the AI is told to
+     * probe ("I don't see that on your resume — when was it?") instead
+     * of accepting silently. This is the live-pushback counterpart to
+     * the post-hoc `claimed_internship_not_in_resume` analyzer flag —
+     * catching the mismatch in-session lets the user correct it
+     * mid-interview, which is far more coachable than reading about
+     * it 30 minutes after the session ends.
+     *
+     * Campus-only on purpose: salary-neg / behavioural flows have
+     * their own follow-up grammars and don't want resume cross-checks
+     * interrupting the negotiation arc. */
+    const resumeExperiencesContext = (type === "campus-placement" && Array.isArray(resumeExperiences) && resumeExperiences.length > 0)
+      ? (() => {
+          const lines: string[] = [];
+          for (const e of resumeExperiences.slice(0, 6)) {
+            if (!e || typeof e !== "object") continue;
+            const er = e as Record<string, unknown>;
+            const company = typeof er.company === "string" ? sanitizeForLLM(er.company, 60) : "";
+            const title = typeof er.title === "string" ? sanitizeForLLM(er.title, 60) : "";
+            const period = typeof er.period === "string" ? sanitizeForLLM(er.period, 30) : "";
+            if (!company && !title) continue;
+            lines.push(`${[title, company, period].filter(Boolean).join(" • ")}`);
+          }
+          if (lines.length === 0) return "";
+          return `\nRESUME-LISTED EXPERIENCES (BGV source-of-truth):\n${lines.map(l => `- ${l}`).join("\n")}\nIf the candidate's current answer references a COMPANY or INTERNSHIP that is NOT in the list above, your follow-up MUST probe ("I don't see that role on your resume — when was it, and what shipped?"). Indian campus BGV uses the uploaded resume as ground truth; un-listed roles mid-interview are the #1 disqualifier. Do NOT accept the claim silently. If the mentioned company IS in the list, anchor your probe on the specific bullet ("you mentioned the OCR work at <company> — what trade-off forced that choice?").`;
+        })()
       : "";
     const previousContext = previousFollowUps && previousFollowUps.length > 0
       ? `\nPrevious follow-up exchange:\n${previousFollowUps.map(s => sanitizeForLLM(s, 300)).join("\n")}\n\nDO NOT REPEAT phrasing, opening lines, or core content from your previous follow-ups above. The candidate has already heard those words. If your next message would start with the same opener (e.g. "I heard ₹X — that's the absolute top of what I can approve") that you already said, REPHRASE the entire turn or pivot to a different angle (benefits, levers, role scope, decision timeline). Repeating yourself signals you weren't listening.`
@@ -1096,7 +1165,7 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
     const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${regionalDirective}${tenureProbe}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
-Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${historyContext}
+Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${resumeProjectsContext}${resumeExperiencesContext}${behaviouralProbeContext}${historyContext}
 
 Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}

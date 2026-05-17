@@ -17,6 +17,7 @@ import {
   AnalyzerInput,
   AnalyzerResult,
   FocusAnalyzer,
+  ResumeForAnalyzer,
   RubricGap,
   TranscriptTurn,
   emptyResult,
@@ -176,6 +177,109 @@ const CERT_VAGUE = /\b(?:long (?:back|time ago)|few years (?:back|ago)|don'?t re
    transactional / unprofessional. */
 const CTC_FIRST_USER = /\b(?:what(?:'s| is) the (?:ctc|package|salary|pay)|how much (?:does|will) (?:this|the role) pay|salary range|ctc range|package (?:offered|kya hai)|what are you offering)\b/i;
 
+/* ── v4.2 resume cross-checks ────────────────────────────────────────
+ * When the cron loads the user's resume by resume_version_id, three
+ * extra checks fire:
+ *   - resume_transcript_mismatch — employers named verbally that don't
+ *     appear in the resume's experiences (BGV will catch this).
+ *   - resume_gap_unaddressed — resume has a ≥3-month gap between two
+ *     experiences and HR never probed it. Coaching nudge: the gap WILL
+ *     come up in a real round; prepare a crisp one-liner now.
+ *   - inflated_seniority_claim — resume / transcript title says
+ *     "Senior / Lead / Staff" but resume YoE is <3. Indian HR cross-
+ *     checks the level against years; mismatch reads as inflation.
+ *
+ * All three are silent no-ops when `resume` is null / empty. */
+const TRANSCRIPT_EMPLOYER_RE = /\b(?:worked\s+at|was\s+at|joined|employed\s+at|currently\s+(?:at|with)|previously\s+at|my\s+(?:current|previous|last|ex)\s+(?:company|employer)\s+(?:is|was)|company\s+called)\s+([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*){0,3})/g;
+const SENIOR_TITLE_RE = /\b(?:senior|sr\.?|lead|staff|principal|architect|head\s+of|director|vp|vice\s+president)\b/i;
+const CAREER_BREAK_PROMPT = /\b(career\s+break|sabbatical|time\s+off|not\s+working|between\s+(?:jobs|roles)|year\s+off)\b/i;
+
+function normalizeEmployerName(raw: string | undefined | null): string {
+  if (!raw) return "";
+  return raw
+    .toLowerCase()
+    .replace(/\b(pvt|private|ltd|limited|inc|corporation|corp|technologies|technology|tech|labs|solutions|systems|india|llp)\b\.?/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function tokensOverlap(a: string, b: string): boolean {
+  const na = normalizeEmployerName(a);
+  const nb = normalizeEmployerName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.length >= 3 && (nb.includes(na) || na.includes(nb))) return true;
+  const ta = new Set(na.split(/\s+/).filter((w) => w.length >= 3));
+  const tb = new Set(nb.split(/\s+/).filter((w) => w.length >= 3));
+  for (const w of ta) if (tb.has(w)) return true;
+  return false;
+}
+
+/* Parse a resume "period" string into approximate {start,end} dates.
+ * Tolerates: "Jan 2022 - Mar 2023", "2020 - present", "Jul 2021 — Dec 2022", "2018-2021".
+ * Returns null on anything ambiguous — we'd rather under-fire than
+ * fabricate a fake gap. */
+const HR_MONTHS: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
+};
+function parseResumePeriod(period: string | undefined | null): { start: Date; end: Date } | null {
+  if (!period) return null;
+  const norm = period.toLowerCase().replace(/–|—/g, "-").replace(/\bto\b/g, "-");
+  const parts = norm.split("-").map((s) => s.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const parsePart = (p: string, isEnd: boolean): Date | null => {
+    if (/^(present|current|now|till\s+date|ongoing)$/i.test(p)) return new Date();
+    const mYr = /^(?:([a-z]{3,5})\.?\s+)?(\d{4})$/i.exec(p);
+    if (!mYr) return null;
+    const monRaw = mYr[1]?.toLowerCase();
+    const year = parseInt(mYr[2], 10);
+    if (year < 1990 || year > 2100) return null;
+    const mon = monRaw && HR_MONTHS[monRaw] !== undefined ? HR_MONTHS[monRaw] : isEnd ? 11 : 0;
+    return new Date(year, mon, isEnd ? 28 : 1);
+  };
+  const start = parsePart(parts[0], false);
+  const end = parsePart(parts[parts.length - 1], true);
+  if (!start || !end || end < start) return null;
+  return { start, end };
+}
+
+interface ResumeSummary {
+  employers: string[];
+  titles: string[];
+  yoeMonths: number | null;
+  gapsMonths: number[];
+}
+function summarizeResume(resume: ResumeForAnalyzer | null | undefined): ResumeSummary {
+  const empty: ResumeSummary = { employers: [], titles: [], yoeMonths: null, gapsMonths: [] };
+  if (!resume || !Array.isArray(resume.experiences) || resume.experiences.length === 0) return empty;
+  const employers = resume.experiences
+    .map((e) => (e?.company || "").trim())
+    .filter((s) => s.length >= 2);
+  const titles = resume.experiences
+    .map((e) => (e?.title || "").trim())
+    .filter((s) => s.length >= 2);
+  const periods = resume.experiences
+    .map((e) => parseResumePeriod(e?.period))
+    .filter((p): p is { start: Date; end: Date } => p !== null)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  let yoeMonths: number | null = null;
+  if (periods.length > 0) {
+    const total = periods.reduce(
+      (acc, p) => acc + Math.max(0, (p.end.getTime() - p.start.getTime()) / (30 * 86400 * 1000)),
+      0,
+    );
+    yoeMonths = Math.round(total);
+  }
+  const gapsMonths: number[] = [];
+  for (let i = 1; i < periods.length; i++) {
+    const gapMs = periods[i].start.getTime() - periods[i - 1].end.getTime();
+    const gapM = Math.round(gapMs / (30 * 86400 * 1000));
+    if (gapM >= 3) gapsMonths.push(gapM);
+  }
+  return { employers, titles, yoeMonths, gapsMonths };
+}
+
 const DIMENSIONS = ["logistics", "comp", "stability", "compliance", "commitment", "benefits", "motivation"] as const;
 type Dimension = typeof DIMENSIONS[number];
 const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
@@ -190,9 +294,9 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.0",
+  version: "hr-round-v4.2",
 
-  async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
+  async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
     if (transcript.length === 0) {
@@ -564,6 +668,88 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
+    /* ── v4.2 resume cross-checks (silent no-op when resume null) ─── */
+    if (resume) {
+      const resumeAgg = summarizeResume(resume);
+
+      // 1) resume_transcript_mismatch — candidate verbally names an
+      //    employer that doesn't appear in their resume. BGV will catch
+      //    this; flag it here so the candidate either corrects the habit
+      //    or updates the resume.
+      if (resumeAgg.employers.length > 0) {
+        const claimed: string[] = [];
+        for (const t of transcript) {
+          if (!isUser(t) || !t.text) continue;
+          const re = new RegExp(TRANSCRIPT_EMPLOYER_RE.source, "g");
+          let m: RegExpExecArray | null;
+          while ((m = re.exec(t.text)) !== null) {
+            const name = m[1].trim().replace(/[.,;:!?]+$/, "");
+            if (name.length >= 2 && name.length <= 60) claimed.push(name);
+          }
+        }
+        const orphans = claimed.filter(
+          (c) => !resumeAgg.employers.some((e) => tokensOverlap(c, e)),
+        );
+        if (orphans.length > 0) {
+          flags.add("resume_transcript_mismatch");
+          gaps.push({
+            dimension: "credibility",
+            expected: "Every employer named in the interview must already appear on the resume — BGV pulls the resume as the source of truth.",
+            observed: `Candidate named ${orphans.length === 1 ? "an employer" : "employers"} absent from the resume: ${Array.from(new Set(orphans)).slice(0, 3).join(", ")}.`,
+            severity: "high",
+          });
+        }
+      }
+
+      // 2) resume_gap_unaddressed — resume has a ≥3-month employment gap
+      //    and HR never probed it. Pre-empt the real round: prepare a
+      //    crisp factual one-liner now or get cornered later.
+      if (resumeAgg.gapsMonths.length > 0) {
+        const hrProbedGap = transcript.some(
+          (t) => isAi(t) && (GAP_PROMPT.test(t.text || "") || CAREER_BREAK_PROMPT.test(t.text || "")),
+        );
+        if (!hrProbedGap) {
+          const biggest = Math.max(...resumeAgg.gapsMonths);
+          flags.add("resume_gap_unaddressed");
+          gaps.push({
+            dimension: "switch_rationale_honesty",
+            expected: "Resume gaps ≥3 months always surface in the real HR round — pre-prep a one-liner with dates + reason + what you did.",
+            observed: `Resume shows a ${biggest}-month gap between employments; this session did not surface or address it.`,
+            severity: "medium",
+          });
+        }
+      }
+
+      // 3) inflated_seniority_claim — resume YoE < 3 years but the title
+      //    (on CV or in transcript) reads Senior / Lead / Staff / Principal.
+      //    Indian HR cross-checks level vs years; mismatch reads as
+      //    resume inflation.
+      if (resumeAgg.yoeMonths !== null && resumeAgg.yoeMonths < 36) {
+        const resumeSenior = resumeAgg.titles.some((t) => SENIOR_TITLE_RE.test(t));
+        const transcriptSenior: string[] = [];
+        for (const t of transcript) {
+          if (!isUser(t) || !t.text) continue;
+          const reSelf = /\b(?:i\s+am|i'?m|i\s+work\s+as|my\s+(?:current|present)\s+(?:role|title|designation)\s+is)\s+(?:a\s+|an\s+|the\s+)?([\w\s./-]{3,60})/gi;
+          let m: RegExpExecArray | null;
+          while ((m = reSelf.exec(t.text)) !== null) {
+            const claim = (m[1] || "").trim();
+            if (SENIOR_TITLE_RE.test(claim)) transcriptSenior.push(claim.slice(0, 40));
+          }
+        }
+        if (resumeSenior || transcriptSenior.length > 0) {
+          flags.add("inflated_seniority_claim");
+          const yearsRounded = (resumeAgg.yoeMonths / 12).toFixed(1);
+          const observedTitle = (resumeSenior ? resumeAgg.titles : transcriptSenior).find((t) => SENIOR_TITLE_RE.test(t)) || "senior";
+          gaps.push({
+            dimension: "credibility",
+            expected: "Senior / Lead / Staff / Principal titles typically require 5+ years of relevant experience in the Indian market.",
+            observed: `Resume YoE ≈ ${yearsRounded} years but ${resumeSenior ? "resume title" : "candidate self-describes"} as ${observedTitle}. Reads as level inflation.`,
+            severity: "medium",
+          });
+        }
+      }
+    }
+
     const covered = DIMENSIONS.filter((d) => DIMENSION_PATTERNS[d].test(allText));
     if (transcript.length > 8 && covered.length < 4) {
       flags.add("dimensions_thin_coverage");
@@ -603,6 +789,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("certification_gap_evasion")) tips.push("Know your cert dates and IDs cold. HR verifies via Credly/AWS directly — vague answers + a discrepancy read as resume inflation.");
     if (flags.has("ctc_first_question_user")) tips.push("Don't open with salary. Establish role / team / scope first; surface comp once HR signals discovery is wrapping. Asking comp upfront reads as transactional.");
     if (flags.has("dimensions_thin_coverage")) tips.push("Real Indian HR covers 7 dimensions. Re-run with notice/BGV/counter-offer/benefits prompts.");
+    if (flags.has("resume_transcript_mismatch")) tips.push("Every employer you say out loud should already be on your resume. BGV pulls the resume as source-of-truth — verbal employers that aren't listed read as fabrication.");
+    if (flags.has("resume_gap_unaddressed")) tips.push("Your resume shows a ≥3-month employment gap. Don't wait for the real interviewer to corner you — pre-prep a one-liner: 'between Mar 2022 and Jan 2023 I [studied / cared for family / took a sabbatical to ship X]; here's what I did with the time.'");
+    if (flags.has("inflated_seniority_claim")) tips.push("Your resume reads Senior/Lead/Staff/Principal but your years don't support it yet. Either retitle to match the level you can defend (with scope + ownership stories) or be ready to justify the leap: 'titled Senior because I lead the X module end-to-end since month N — I know that's quick.'");
 
     const ILLEGAL_PROMPT_RE = /\b(?:caste|religion|mother tongue|marital|married|family.*(?:plan|soon)|are you (?:from|originally)|community)\b/i;
     const touchedIllegal = transcript.some((t) => isAi(t) && ILLEGAL_PROMPT_RE.test(t.text || ""));

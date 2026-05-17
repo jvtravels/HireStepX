@@ -122,4 +122,53 @@ describe("buildBehavioralIntro", () => {
     const words = out.trim().split(/\s+/).length;
     expect(words).toBeLessThanOrEqual(70);
   });
+
+  it("references the first resume project when topProjects is supplied (product-co path)", () => {
+    const out = buildBehavioralIntro({
+      interviewerName: "Suresh Iyer",
+      candidateName: "Anjali Verma",
+      role: "Senior PM",
+      company: "Razorpay",
+      topProjects: ["UPI reconciliation rebuild", "merchant onboarding revamp"],
+    });
+    expect(out).toContain("UPI reconciliation rebuild");
+    // Only the FIRST project is surfaced — second one would be a recap, not rapport.
+    expect(out).not.toContain("merchant onboarding revamp");
+    // Resume-grounded variant explicitly says "I saw on your resume…"
+    expect(out.toLowerCase()).toContain("i saw on your resume");
+  });
+
+  it("services-track pedigree opener wins over project grounding", () => {
+    // At TCS / Infosys the academic walkthrough is a real ritual — resume
+    // projects must NOT override the pedigree opener.
+    const out = buildBehavioralIntro({
+      interviewerName: "Suresh Iyer",
+      role: "Senior Engineer",
+      company: "Infosys",
+      topProjects: ["UPI reconciliation rebuild"],
+    });
+    expect(out.toLowerCase()).toContain("walk me through your background");
+    expect(out).not.toContain("UPI reconciliation rebuild");
+  });
+
+  it("skips project grounding when topProjects is empty / blank", () => {
+    const out = buildBehavioralIntro({
+      interviewerName: "Suresh Iyer",
+      role: "Senior PM",
+      company: "Razorpay",
+      topProjects: ["", "   "],
+    });
+    expect(out.toLowerCase()).not.toContain("i saw on your resume");
+  });
+
+  it("truncates absurdly long project names instead of dumping them into TTS", () => {
+    const long = "An exceptionally verbose project title that nobody would ever actually fit on a resume line and which absolutely must be trimmed before the TTS layer ever sees it";
+    const out = buildBehavioralIntro({
+      interviewerName: "Suresh Iyer",
+      role: "Senior PM",
+      topProjects: [long],
+    });
+    expect(out).toContain("…");
+    expect(out).not.toContain(long);
+  });
 });

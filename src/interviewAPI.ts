@@ -376,6 +376,12 @@ export async function fetchLLMQuestions(params: {
   pastTopics?: string[]; weakSkills?: string[]; jobDescription?: string;
   experienceLevel?: string; mini?: boolean;
   resumeStrengths?: string[]; resumeGaps?: string[]; resumeTopSkills?: string[];
+  /** Per-role timeline from the parsed resume — fed to the question
+   *  generator so the LLM can anchor stems on real listed companies /
+   *  titles / projects ("walk me through the OCR pipeline you built
+   *  at X") instead of generic prompts. Keep entries compact; the
+   *  server clips to ~6 to bound prompt size. */
+  resumeExperiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>;
   candidateName?: string;
   negotiationStyle?: string;
 }): Promise<LLMQuestionsResult | null> {
@@ -628,6 +634,15 @@ export async function fetchFollowUp(params: {
   persona?: string;
   conversationHistory?: string;
   resumeTopSkills?: string[];
+  /** Top-N project strings flattened from the AI-parsed resume's
+      experience timeline. Used by the behavioural follow-up to ground
+      probes in the candidate's actual past work ("walk me through the
+      X project you mentioned") instead of generic STAR prompts. */
+  resumeProjects?: string[];
+  /** Wave-8: per-role experience timeline (campus-placement only).
+      Lets the follow-up LLM push back live when the candidate mentions
+      a company that isn't on the resume. */
+  resumeExperiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>;
   initialOfferText?: string;
   negotiationFacts?: {
     acceptedImmediately: boolean;

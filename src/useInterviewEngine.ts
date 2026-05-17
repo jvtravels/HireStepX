@@ -349,7 +349,7 @@ export function useInterviewEngine() {
       }
     } catch { /* silent */ }
 
-    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string } | undefined;
+    const aiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[]; topSkills?: string[]; headline?: string; experiences?: Array<{ title?: string; company?: string; period?: string; bullets?: string[] }> } | undefined;
     /* Resume-role contamination guard for salary-negotiation sessions.
        Production bug (2026-05): user with a "Senior Product Designer" resume
        selected "Java Developer" + TCS + salary-neg; the LLM personalised
@@ -389,6 +389,7 @@ export function useInterviewEngine() {
       resumeStrengths: effectiveUseResume ? aiProfile?.interviewStrengths : undefined,
       resumeGaps: effectiveUseResume ? aiProfile?.interviewGaps : undefined,
       resumeTopSkills: effectiveUseResume ? aiProfile?.topSkills : undefined,
+      resumeExperiences: effectiveUseResume ? aiProfile?.experiences : undefined,
       candidateName: user?.name || undefined,
       negotiationStyle: negotiationStyle || undefined,
     });
@@ -627,11 +628,23 @@ export function useInterviewEngine() {
     if (personalizedIntroRef.current) return;
     if (interviewType !== "behavioral") return;
     if ((draftRef.current?.currentStep ?? 0) > 0) return;
+    /* Resume-grounded rapport: pull first 1-2 projects from the AI-
+       parsed resume so the intro can reference what the candidate
+       actually worked on. Falls through to the generic intro when the
+       resume isn't present (resumeless practice flow). */
+    const introAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
+      experiences?: Array<{ topProjects?: string[] }>;
+    } | undefined;
+    const introTopProjects = (introAiProfile?.experiences || [])
+      .flatMap(e => Array.isArray(e?.topProjects) ? e.topProjects : [])
+      .filter(p => typeof p === "string" && p.trim().length > 0)
+      .slice(0, 2);
     const intro = buildBehavioralIntro({
       interviewerName,
       candidateName: user?.name || undefined,
       role: targetRole || user?.targetRole || undefined,
       company: targetCompany || user?.targetCompany || undefined,
+      topProjects: introTopProjects.length ? introTopProjects : undefined,
     });
     personalizedIntroRef.current = true;
     setInterviewScript(prev => {
@@ -644,7 +657,7 @@ export function useInterviewEngine() {
         ...prev.slice(1),
       ];
     });
-  }, [interviewType, interviewerName, user?.name, user?.targetRole, user?.targetCompany, targetRole, targetCompany]);
+  }, [interviewType, interviewerName, user?.name, user?.targetRole, user?.targetCompany, user?.resumeData, targetRole, targetCompany]);
 
   // Panel interview: 3 members with gender-matched voices
   const isPanelInterview = interviewType === "panel";
@@ -1968,6 +1981,21 @@ export function useInterviewEngine() {
       : ((currentStepObj?.type === "question" || currentStepObj?.type === "follow-up")
         && !isLastStep && hasRealAnswer);
 
+    /* Conversational continuity — extract noun phrases from EVERY real
+       user response (including the intro/TMAY reply), not just turns
+       that trigger a live follow-up. Real interviewers reference what
+       was said in the opener throughout the loop ("earlier you
+       mentioned the Razorpay project"); without lifting this out of
+       the canFollowUp gate, TMAY mentions never enter the rolling
+       memory and Q2+ probes feel like they're hearing the candidate
+       for the first time. See src/_noun-phrase-memory.ts. */
+    if (hasRealAnswer) {
+      const earlyPhrases = extractNounPhrases(answerText);
+      if (earlyPhrases.length > 0) {
+        mentionsMemoryRef.current = appendToMemory(mentionsMemoryRef.current, earlyPhrases);
+      }
+    }
+
     if (canFollowUp) {
       /* Conversation history + recent follow-ups for the LLM payload —
          see ./_advance-helpers.ts. Both are pure transformations of
@@ -2008,7 +2036,18 @@ export function useInterviewEngine() {
 
       if (depth <= 2) {
         followUpDepthRef.current = depth;
-        const followUpAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as { topSkills?: string[] } | undefined;
+        const followUpAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
+          topSkills?: string[];
+          experiences?: Array<{ company?: string; title?: string; period?: string; bullets?: string[]; topProjects?: string[] }>;
+        } | undefined;
+        /* Flatten top projects from the AI-parsed resume's experience
+           timeline. Cap to 5 so we keep the follow-up prompt cache-
+           friendly (Groq caches prefixes ≥1024 tokens — bloating
+           per-call dynamic content defeats the prefix cache). */
+        const followUpResumeProjects = (followUpAiProfile?.experiences || [])
+          .flatMap(e => Array.isArray(e?.topProjects) ? e.topProjects : [])
+          .filter(p => typeof p === "string" && p.trim().length > 0)
+          .slice(0, 5);
         // For salary negotiation: find the initial offer question text so the LLM can reference exact numbers
         const initialOfferText = isSalaryNegType
           ? interviewScript.find(s => s.type === "question" && /₹|lpa|ctc|offer|base/i.test(s.aiText))?.aiText
@@ -2044,13 +2083,9 @@ export function useInterviewEngine() {
         const userTurns = transcript.filter(m => m.speaker === "user").map(m => m.text);
         const candidateState = deriveCandidateState([...userTurns, answerText]);
 
-        // Conversational continuity — extract noun phrases from this
-        // answer and accumulate into the rolling memory ref. See
-        // src/_noun-phrase-memory.ts.
-        const newPhrases = extractNounPhrases(answerText);
-        if (newPhrases.length > 0) {
-          mentionsMemoryRef.current = appendToMemory(mentionsMemoryRef.current, newPhrases);
-        }
+        /* Noun-phrase memory was already appended above (outside the
+           canFollowUp gate) so it captures TMAY mentions too. Here we
+           just read the rolling buffer for the follow-up payload. */
         const previousMentions = mentionsMemoryRef.current.length > 0
           ? mentionsMemoryRef.current
           : undefined;
@@ -2321,6 +2356,14 @@ export function useInterviewEngine() {
           questionIndex: isSalaryNegType ? currentQuestionIdx : undefined,
           totalQuestions: isSalaryNegType ? totalQs : undefined,
           resumeTopSkills: followUpAiProfile?.topSkills,
+          resumeProjects: followUpResumeProjects.length ? followUpResumeProjects : undefined,
+          // Wave-8: campus-placement-only live BGV cross-check signal.
+          // Engine passes the whole experiences list; follow-up.ts gates
+          // the prompt-block on `type === "campus-placement"` so we
+          // don't bloat behavioural / salary-neg prompts.
+          resumeExperiences: interviewType === "campus-placement" && Array.isArray(followUpAiProfile?.experiences)
+            ? (followUpAiProfile!.experiences as Array<{ title?: string; company?: string; period?: string; bullets?: string[] }>)
+            : undefined,
           initialOfferText,
           negotiationFacts,
           negotiationStyle: negotiationStyle || undefined,

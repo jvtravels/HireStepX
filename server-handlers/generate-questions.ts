@@ -43,6 +43,51 @@ import {
   type RawQuestion,
 } from "./_generate-questions-helpers";
 import { fetchRecentQuestions } from "./_question-dedup";
+// sampleBehavioralQuestions is exported by the bank but not used here —
+// the canonical-phrasing rule below is built from BEHAVIORAL_50 directly
+// (one example per competency, deterministic, module-scoped).
+import { BEHAVIORAL_50 } from "../data/behavioral-question-bank";
+import { PROBE_TEXTS } from "./_behavioral-followup-bank";
+
+/* Module-level static rules for the behavioural generator. Built ONCE so
+   the text is byte-identical across every per-request call — Groq's
+   prefix cache keys on the longest shared prefix, so any per-call
+   variance here defeats the cache and triples per-call cost. Per-call
+   dynamic content (transcript, role, tier) MUST be appended AFTER these
+   constants. See CLAUDE.md > LLM prompt caching. */
+const BEHAVIOURAL_CANONICAL_PHRASING_RULE = (() => {
+  // Pick one canonical example per competency, highest-frequencyPct first,
+  // for a stable static block that gets prefix-cached by Groq.
+  const byCompetency = new Map<string, typeof BEHAVIORAL_50[number]>();
+  for (const q of [...BEHAVIORAL_50].sort((a, b) => b.frequencyPct - a.frequencyPct)) {
+    if (!byCompetency.has(q.competency)) byCompetency.set(q.competency, q);
+  }
+  const examples = Array.from(byCompetency.values()).map(q => `- "${q.text}"`).join("\n");
+  return `BEHAVIOURAL-PHRASING RULE (only for behavioural interviews):
+Every main question MUST start with the literal opener "Tell me about a time" (no variants like "Walk me through a time", "Describe a situation", or "Tell me about a project"). This is the canonical real-interviewer opener and we normalise on it.
+Canonical examples — match this phrasing shape:
+${examples}`;
+})();
+
+const BEHAVIOURAL_ONE_BEAT_RULE = `BEHAVIOURAL-ONE-BEAT RULE (only for behavioural interviews):
+Each main question asks ONE thing only. NEVER stack a closer ("what did you learn?", "what would you do differently?", "what feedback did you receive?", "what was the measurable impact?") into the main question. Closers belong in the follow-up coach's bank — the main question must leave them on the table so the follow-up has somewhere to go.
+Bad (stacked): "Tell me about a time you handled a design critique. How did you respond, and what did you learn?"
+Good (one beat): "Tell me about a time you handled a design critique."
+Reserved closer phrasings (DO NOT use these in main questions): ${PROBE_TEXTS.map(p => `"${p}"`).join(", ")}.`;
+
+const BEHAVIOURAL_INDIAN_REGISTER_RULE = `BEHAVIOURAL-INDIAN-REGISTER RULE (only for behavioural interviews):
+You are an Indian product-co interviewer. Match the register Indian engineers / PMs / designers actually hear in real loops at Razorpay, Flipkart, Swiggy, Meesho, CRED, Atlassian-IN, Microsoft IDC.
+
+HARD BAN — American spellings. Always use British/Indian spellings:
+"optimizing" → "optimising"; "organize" → "organise"; "analyze" → "analyse"; "behavior" → "behaviour"; "realize" → "realise"; "prioritize" → "prioritise"; "specialize" → "specialise"; "color" → "colour"; "favor" → "favour"; "labor" → "labour"; "center" → "centre"; "defense" → "defence"; "license" (verb) → "licence"; "program" (non-software) → "programme".
+
+HARD BAN — American business jargon. Never use these phrases anywhere — neither in question stems nor in the persona's intro/interstitials:
+"dive into" / "deep dive" / "circle back" / "reach out" / "take the time" / "what's drawing you to" / "walk me through" (use "tell me about" instead — "walk me through" is reserved for the follow-up coach's bank only) / "moving forward" / "at the end of the day" / "low-hanging fruit" / "touch base".
+
+PREFERRED Indian-English alternatives:
+"get into" or "begin with" instead of "dive into"; "what got you interested in" or "why are you looking at" instead of "what's drawing you to"; "thanks for joining" or "thanks for making the time" instead of "thanks for taking the time"; "actually", "basically", "just briefly", "so", "right" as natural softeners in interstitial / intro text only — NEVER in the question stem itself.
+
+PERSONA DELIVERY: the persona may sprinkle 1-2 Indian-English softeners ("right?", "actually", "just briefly", "so", "yes please") into intro and interstitial lines to feel like a real Indian interviewer, but the main question text stays clean and direct — no softeners inside the question stem.`;
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -164,7 +209,7 @@ export default async function handler(req: Request): Promise<Response> {
   let requestFocus = "general";
   try {
     const rawBody = await req.json();
-    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, candidateName, negotiationStyle } = rawBody;
+    const { type, focus, difficulty, role, company, industry, resumeText, pastTopics, weakSkills, jobDescription, experienceLevel, mini, currentCity, jobCity, resumeStrengths, resumeGaps, resumeTopSkills, resumeExperiences, candidateName, negotiationStyle } = rawBody;
     if (typeof type === "string") requestType = type;
     if (typeof focus === "string") requestFocus = focus;
     const isMini = mini === true;
@@ -240,7 +285,8 @@ export default async function handler(req: Request): Promise<Response> {
        and measurable impact) — which downstream lets the live STAR-gap
        follow-up directive actually have something to probe. */
     const behavioralShapeGuide = interviewType === "behavioral"
-      ? `\nBEHAVIOURAL QUESTION SHAPING:
+      ? `\n${BEHAVIOURAL_CANONICAL_PHRASING_RULE}\n\n${BEHAVIOURAL_ONE_BEAT_RULE}\n\n${BEHAVIOURAL_INDIAN_REGISTER_RULE}\n
+BEHAVIOURAL QUESTION SHAPING:
 - Every stem MUST naturally pull a STAR-shaped story: Situation (when/where) → Task (the goal/problem) → Action (what *they* specifically did) → Result (measurable outcome).
 - Reward ownership: prefer "Tell me about a time you OWNED a difficult call" over "Tell me about a project". The verb forces first-person Action.
 - Reward measurement: prefer "...how did you measure success?" or "...what was the impact?" baked into the stem, so candidates can't ship STA-without-R.
@@ -304,6 +350,39 @@ INDIAN CONVERSATIONAL REGISTER (when writing the questions themselves):
       }
       if (Array.isArray(resumeGaps) && resumeGaps.length > 0) {
         parts.push(`RESUME GAPS TO PROBE (important — ask questions that test these weak areas): ${resumeGaps.slice(0, 4).map((s: unknown) => sanitizeForLLM(s, 100)).filter(Boolean).join("; ")}`);
+      }
+      // Per-role timeline from the parsed resume — strongest grounding
+      // signal we have. Caps at 6 entries / 4 bullets each to bound
+      // prompt size; the LLM gets enough surface to anchor real
+      // questions on without dominating the cache prefix.
+      //
+      // Why this matters: without it, the LLM has only `resumeText`
+      // (truncated to 1500 chars and dropped at sentence boundaries —
+      // often loses the experience block) plus `topSkills` chips.
+      // It cannot ask "walk me through the OCR pipeline you built at
+      // Razorpay" because the model never reliably extracts the
+      // company-project pair from the raw text. Passing experiences
+      // as structured data eliminates the extraction step and makes
+      // resume-anchored questions reliable.
+      if (Array.isArray(resumeExperiences) && resumeExperiences.length > 0) {
+        const expLines: string[] = [];
+        for (const e of resumeExperiences.slice(0, 6)) {
+          if (!e || typeof e !== "object") continue;
+          const er = e as Record<string, unknown>;
+          const title = typeof er.title === "string" ? sanitizeForLLM(er.title, 80) : "";
+          const company = typeof er.company === "string" ? sanitizeForLLM(er.company, 80) : "";
+          const period = typeof er.period === "string" ? sanitizeForLLM(er.period, 40) : "";
+          const bullets = Array.isArray(er.bullets)
+            ? er.bullets.slice(0, 4).map((b: unknown) => sanitizeForLLM(b, 160)).filter(Boolean)
+            : [];
+          const header = [title, company, period].filter(Boolean).join(" • ");
+          if (!header && bullets.length === 0) continue;
+          const body = bullets.length > 0 ? `: ${bullets.join("; ")}` : "";
+          expLines.push(`- ${header}${body}`);
+        }
+        if (expLines.length > 0) {
+          parts.push(`RESUME EXPERIENCE TIMELINE (structured — use these company / project anchors when asking questions; never invent companies or projects beyond this list):\n${expLines.join("\n")}\n\nGROUNDING RULE: at least one question stem should explicitly reference a company / project / bullet from above (e.g. "Walk me through the OCR pipeline you built at <company>" or "You mentioned <bullet> — what trade-off forced that choice?"). Do NOT fabricate companies or projects not listed.`);
+        }
       }
       return parts.length > 0 ? parts.join("\n") : "";
     })();
@@ -781,7 +860,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
       : "";
 
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
-${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${behavioralShapeGuide}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
+${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
 ${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
@@ -880,8 +959,9 @@ Example bad: stacking multiple questions in step 2.`
 - DO NOT ask "Do you have any questions?" or similar — the system handles that separately
 - DO thank the candidate for their time, mention next steps neutrally, and end professionally
 - Keep it 2-3 sentences max. No flattery, no critique, no fabricated highlights.
-- Example closing: "Thanks for taking the time today. We'll review the conversation and our team will follow up with next steps shortly. Best of luck."
-- Example closing: "That covers what I wanted to discuss. Appreciate you walking through these scenarios with me — we'll be in touch on next steps."
+- INDIAN-ENGLISH REGISTER: the closing must obey the same register rules as the main questions. NO Americanisms — avoid "appreciate your time", "appreciate you walking through", "taking the time", "circle back", "moving forward", "reach out", "touch base", "that's a wrap". Prefer "thanks for your time", "thanks for making the time", "that's all I had", "we'll be in touch".
+- Example closing: "Thanks for your time today. We'll review the conversation and our team will share next steps shortly. All the best."
+- Example closing: "That's all I had for today. Thanks for the conversation — we'll be in touch on next steps."
 
 Example good question: "Walk me through a system you designed that had to handle 10x growth. What were the key architectural trade-offs you made, and how did you validate them?"
 Example bad question: "Tell me about your experience." (too vague, not role-specific)`}
@@ -1081,6 +1161,138 @@ Requirements:
         else groundingMissing++;
       }
     }
+    /* Wave-8 anchor-validator (telemetry only, no retry).
+     *
+     * When the caller supplied `resumeExperiences`, Wave-7's prompt
+     * block told the LLM "at least one stem must reference a listed
+     * company / project". Here we verify whether the LLM actually did
+     * — scan every aiText for any company name or 4+ char bullet word
+     * from the supplied experiences. Telemetry only for now: a
+     * second LLM round-trip on miss would 2x cost; first measure
+     * miss-rate, then decide whether the retry is worth it. The flag
+     * lights up the `gq_no_resume_anchor` event on PostHog for the
+     * dashboard. */
+    let anchorChecked = false;
+    let anchorHit = false;
+    if (Array.isArray(resumeExperiences) && resumeExperiences.length > 0 && Array.isArray(questions)) {
+      anchorChecked = true;
+      const anchorTokens = new Set<string>();
+      for (const e of resumeExperiences.slice(0, 6) as Array<Record<string, unknown>>) {
+        if (typeof e?.company === "string" && e.company.length >= 3) {
+          anchorTokens.add(e.company.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim());
+        }
+        if (typeof e?.title === "string" && e.title.length >= 4) {
+          anchorTokens.add(e.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim());
+        }
+        if (Array.isArray(e?.bullets)) {
+          for (const b of (e.bullets as unknown[]).slice(0, 4)) {
+            if (typeof b !== "string") continue;
+            // Pick the most distinctive 4+ char nouns from each bullet
+            // — cheap proxy for "the LLM referenced this bullet".
+            for (const w of b.toLowerCase().match(/\b[a-z][a-z0-9-]{3,}\b/g) || []) {
+              if (!/^(the|and|for|with|that|this|from|have|been|were|will|when|what|where|which|while|after|before|about|their|there|these|those|because|across|using|built|made|using|into)$/.test(w)) {
+                anchorTokens.add(w);
+              }
+            }
+          }
+        }
+      }
+      for (const q of questions as Array<Record<string, unknown>>) {
+        const text = typeof q?.aiText === "string" ? q.aiText.toLowerCase() : "";
+        if (!text) continue;
+        for (const tok of anchorTokens) {
+          if (tok && text.includes(tok)) { anchorHit = true; break; }
+        }
+        if (anchorHit) break;
+      }
+      if (!anchorHit) {
+        void captureServerEvent("gq_no_resume_anchor", distinctIdFrom(req, auth.userId), {
+          focus: requestFocus,
+          type: requestType,
+          experience_count: resumeExperiences.length,
+          anchor_token_count: anchorTokens.size,
+          question_count: questions.length,
+        }, req);
+      }
+    }
+
+    /* Behavioural phrasing-drift telemetry. Measures how often the live
+       LLM path drifts off the canonical "Tell me about a time" opener
+       and how often it compound-stacks closer probes into a main
+       question. Wrapped in try/catch — telemetry must never break a
+       real request. */
+    try {
+      if (requestType === "behavioral" || requestType === "behavioural") {
+        const CANONICAL_OPENER = /^\s*tell me about a time\b/i;
+        const CLOSER_FRAGMENTS = [
+          "what did you learn",
+          "what would you do differently",
+          "what feedback did you receive",
+          "what was the measurable impact",
+          "how did the team react",
+        ];
+        const US_SPELLING_RE = /\b(optimiz|organiz|analyz|behavior|realiz|prioritiz|specializ|color|favor|labor|defense)(e|ed|es|ing|ation|ations)?\b/i;
+        const JARGON_PHRASES = [
+          "dive into",
+          "deep dive",
+          "circle back",
+          "reach out",
+          "take the time",
+          "what's drawing you to",
+          "moving forward",
+          "low-hanging fruit",
+          "touch base",
+        ];
+        let behaviouralQuestionCount = 0;
+        let behaviouralCanonicalOpenerCount = 0;
+        let behaviouralDriftCount = 0;
+        let behaviouralCompoundCount = 0;
+        let americanSpellingCount = 0;
+        let businessJargonCount = 0;
+        if (Array.isArray(questions)) {
+          for (const q of questions as Array<Record<string, unknown>>) {
+            const qType = typeof q?.type === "string" ? q.type : "";
+            const text = typeof q?.aiText === "string"
+              ? q.aiText
+              : (typeof q?.text === "string" ? q.text : "");
+            if (!text) continue;
+            // Register/jargon checks apply to ALL behavioural text including
+            // intro/persona/closing — the LLM drifts in interstitials too.
+            const lowerAll = text.toLowerCase();
+            if (US_SPELLING_RE.test(text)) americanSpellingCount++;
+            for (const phrase of JARGON_PHRASES) {
+              if (lowerAll.includes(phrase)) { businessJargonCount++; break; }
+            }
+            // Canonical-opener + compound-stack checks skip intro/closing.
+            if (qType === "intro" || qType === "closing") continue;
+            behaviouralQuestionCount++;
+            if (CANONICAL_OPENER.test(text)) {
+              behaviouralCanonicalOpenerCount++;
+            } else {
+              behaviouralDriftCount++;
+            }
+            const lower = text.toLowerCase();
+            let closerHits = 0;
+            for (const frag of CLOSER_FRAGMENTS) {
+              if (lower.includes(frag)) closerHits++;
+            }
+            if (closerHits >= 2) behaviouralCompoundCount++;
+          }
+        }
+        void captureServerEvent("gq_behavioural_phrasing_drift", distinctIdFrom(req, auth.userId), {
+          focus: requestFocus,
+          type: requestType,
+          role: typeof targetRole === "string" ? targetRole : "",
+          behavioural_question_count: behaviouralQuestionCount,
+          behavioural_canonical_opener_count: behaviouralCanonicalOpenerCount,
+          behavioural_drift_count: behaviouralDriftCount,
+          behavioural_compound_count: behaviouralCompoundCount,
+          american_spelling_count: americanSpellingCount,
+          business_jargon_count: businessJargonCount,
+        }, req);
+      }
+    } catch { /* telemetry must never break a real request */ }
+
     await captureServerEvent("interview_started", distinctIdFrom(req, auth.userId), {
       question_count: Array.isArray(responseBody?.questions) ? responseBody.questions.length : undefined,
       grounding_verified: groundingVerified,
@@ -1089,6 +1301,8 @@ Requirements:
       grounding_missing: groundingMissing,
       has_company_facts: !!(companyName && knownFacts),
       retrieval_tier: retrievalResult.tier,
+      anchor_checked: anchorChecked,
+      anchor_hit: anchorHit,
     }, req);
 
     // Best-effort: cache the successful response for ~5 min so retries /

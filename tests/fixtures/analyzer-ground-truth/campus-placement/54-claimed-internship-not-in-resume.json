@@ -1,0 +1,17 @@
+{
+  "name": "Candidate narrates an internship at Razorpay but it's not on the uploaded resume — fabrication tell",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your internships.", "time": "" },
+      { "speaker": "user", "text": "Last summer I interned at Razorpay where I worked on the payments reconciliation pipeline. Wrote Kafka consumers in Go and shipped it to production after my third week.", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Software Engineering Intern", "company": "Zoho", "period": "May 2024 - July 2024", "bullets": ["Built CRM integration", "Wrote unit tests"] }
+    ]
+  },
+  "expected": { "must_include": ["claimed_internship_not_in_resume"], "must_not_include": ["empty_transcript"] }
+}

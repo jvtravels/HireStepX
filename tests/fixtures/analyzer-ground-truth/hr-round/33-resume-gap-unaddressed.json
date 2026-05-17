@@ -1,0 +1,28 @@
+{
+  "name": "Resume has a 10-month gap; HR never probes it",
+  "notes": "Acme ends Mar 2022, Initech starts Jan 2023. HR session covers notice and comp but never asks about the gap — coaching nudge: prep the one-liner.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Thanks for joining. Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a backend engineer with around 3 years across two companies, mostly working on Java services and Postgres.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period and earliest start date?", "time": "" },
+      { "speaker": "user", "text": "60 days notice. Buyout is possible. Earliest LWD would be late February.", "time": "" },
+      { "speaker": "ai", "text": "And your current CTC plus expectations?", "time": "" },
+      { "speaker": "user", "text": "Current is 22 LPA fixed + 3 variable. Looking for around 32 LPA fixed at the new role.", "time": "" },
+      { "speaker": "ai", "text": "Great. Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Yes — what's the team's roadmap for the next two quarters, and what does success look like at the 90-day mark?", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Software Engineer", "company": "Acme Corp", "period": "Jul 2020 - Mar 2022" },
+      { "title": "Software Engineer", "company": "Initech", "period": "Jan 2023 - present" }
+    ],
+    "topSkills": ["Java", "Postgres"]
+  },
+  "expected": {
+    "must_include": ["resume_gap_unaddressed"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

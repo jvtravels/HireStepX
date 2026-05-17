@@ -103,6 +103,21 @@ export interface CrossSessionInsight {
   delta?: number;
 }
 
+/**
+ * Resume-grounding sub-score — measures how often a candidate's answers
+ * cite specific resume facts (named companies, projects, tech, metrics
+ * they actually shipped) vs. generic claims. Only meaningful when the
+ * engine passed a resumeContext block to the evaluator; null otherwise.
+ * 0-100 scale, calibrated:
+ *   0-39  = barely references resume; mostly generic
+ *   40-69 = some grounding but several wasted opportunities
+ *   70-100 = consistently anchors answers in real, on-resume specifics
+ */
+export interface ResumeGroundingScore {
+  score: number;
+  rationale: string;
+}
+
 export const ROLE_SKILLS: Record<string, string[]> = {
   swe: ["Problem Framing", "Technical Depth", "Trade-off Reasoning", "Communication", "Ownership"],
   pm: ["Product Sense", "Analytical", "Execution", "Influencing", "Customer Focus"],
@@ -423,6 +438,21 @@ export function normalizeReadiness(raw: unknown): ReadinessForecast | null {
     confidence: validConf.includes(r.confidence) ? r.confidence : "medium",
     rationale: typeof r.rationale === "string" ? r.rationale.slice(0, 220) : "",
   };
+}
+
+/**
+ * Resume-grounding normalizer. Returns null when the LLM omitted the field
+ * or when resumeContext wasn't passed (caller-enforced). Clamps to 0-100
+ * and trims rationale so a misbehaving model can't blow up the payload.
+ */
+export function normalizeResumeGrounding(raw: unknown): ResumeGroundingScore | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { score?: unknown; rationale?: unknown };
+  const scoreNum = typeof r.score === "number" ? r.score : Number(r.score);
+  if (!isFinite(scoreNum)) return null;
+  const score = Math.max(0, Math.min(100, Math.round(scoreNum)));
+  const rationale = typeof r.rationale === "string" ? r.rationale.slice(0, 220) : "";
+  return { score, rationale };
 }
 
 /**

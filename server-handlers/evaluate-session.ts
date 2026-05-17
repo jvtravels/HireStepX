@@ -6,7 +6,8 @@ import { withAuthAndRateLimit, sanitizeForLLM, corsHeaders, withRequestId } from
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
-import { formatScoringRubric } from "../data/focus-question-recipes";
+import { formatScoringRubric, RECIPES } from "../data/focus-question-recipes";
+import { resolveHrRoundRecipe } from "./_hr-round-overlays";
 import { detectStarPresence } from "../src/_star-detection";
 import { detectCulturalRegister } from "../src/_cultural-register";
 import {
@@ -20,6 +21,8 @@ import {
   SELF_CHECK_DIRECTIVE,
   getRubricWeight,
 } from "./_evaluate-session-prompts";
+import { PROBE_TEXTS } from "./_behavioral-followup-bank";
+import { BEHAVIORAL_COMPETENCIES, COMPETENCY_LABELS } from "../data/behavioral-question-bank";
 import {
   ROLE_SKILLS,
   DEFAULT_BANDS,
@@ -36,7 +39,9 @@ import {
   normalizeStoryReuse,
   normalizeBlindSpots,
   normalizeReadiness,
+  normalizeResumeGrounding,
   normalizeCrossSessionInsights,
+  type ResumeGroundingScore,
   type WinOrFix as WinOrFixH,
   type RedFlag as RedFlagH,
 } from "./_evaluate-session-helpers";
@@ -49,7 +54,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 // Bump on any schema change to perQuestion/redFlags/etc. Old cached reports
 // with a different version are auto-invalidated on next view.
-const REPORT_VERSION = "mvp-6";
+const REPORT_VERSION = "mvp-7";
 
 /**
  * Try to read a cached report for this session. Returns null on any failure
@@ -184,6 +189,19 @@ interface EvaluateRequest {
         coach than the one who ran the live session. */
     interviewerName?: string;
     interviewerPersonality?: string;
+    /** Resume context surfaced to the evaluator so the rich report can
+     *  reason about what the candidate actually has on their CV —
+     *  flag missed-opportunity moments ("you never mentioned project X
+     *  even though it's directly relevant to this role"), validate
+     *  claimed experience against resume facts, and ground model-
+     *  answer exemplars in the candidate's own background. Optional
+     *  by design: resumeless practice flow still works. */
+    resumeContext?: {
+      topSkills?: string[];
+      topProjects?: string[];
+      headline?: string;
+      careerTrajectory?: string;
+    };
   };
 }
 
@@ -315,7 +333,7 @@ interface ReadinessForecast {
 }
 
 interface SessionReport {
-  version: "mvp-6";
+  version: "mvp-7";
   overallScore: number;
   /** LLM-self-reported 0-1 confidence in the overall score. Rendered as ±band. */
   scoreConfidence: number;
@@ -339,6 +357,13 @@ interface SessionReport {
   storyReuseFindings: StoryReuseFinding[];
   blindSpots: BlindSpot[];
   readiness: ReadinessForecast | null;
+  /**
+   * 0-100 sub-score measuring how often the candidate's answers cited
+   * specific resume facts vs. spoke in generic claims. `null` when no
+   * resumeContext was supplied to the evaluator (so the UI can hide the
+   * axis instead of showing a misleading zero).
+   */
+  resumeGrounding: ResumeGroundingScore | null;
   /**
    * Closing-turn reverse-interview classification — pinned deterministically
    * (see src/_reverse-interview.ts). When the interviewer asked "any
@@ -465,7 +490,23 @@ export default async function handler(req: Request): Promise<Response> {
        The eval LLM uses these as the scoring spine, so a strong
        case-study answer can no longer get a high overall score on
        behavioural-style "STAR completeness" alone. */
-    const focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
+    let focusRubric = meta?.type ? formatScoringRubric(meta.type) : "";
+    if (meta?.type === "hr-round") {
+      const base = RECIPES["hr-round"];
+      if (base?.scoringRubric) {
+        const { recipe, context } = resolveHrRoundRecipe(base, {
+          company: meta.targetCompany,
+          expLevel: meta.level,
+        });
+        if (recipe.scoringRubric) {
+          focusRubric = formatScoringRubric("hr-round", {
+            dimensions: recipe.scoringRubric,
+            sector: context.sector,
+            seniority: context.seniority,
+          });
+        }
+      }
+    }
     // Prompt order is intentional: every static block (opener, directives,
     // CRITICAL RULES) is emitted before any per-call variable content. This
     // lets Groq's automatic prompt caching (which keys on the longest shared
@@ -523,6 +564,15 @@ CRITICAL RULES:
 - TopPerformerAnswer IS allowed to invent realistic details — that's its purpose. The structure depends on the QUESTION TYPE: STAR for behavioral, trade-offs for technical, framework + reasoning for case-study, and FORMAT-MATCHED for salary-negotiation / HR / logistics (number + reasons for salary expectations, concrete duration for notice period, etc. — NOT STAR). Across all types: quantified where the question warrants it, first-person ownership, role-appropriate scope. Aim for what a strong L5/Senior would say at the target company.
 - TOPIC LOCK: Re-read the question before composing the exemplar. The exemplar must answer THIS question — not a different topic that came up earlier in the session. If question 5 asks about notice period, the exemplar discusses notice period (e.g. "I'm on a 60-day notice. I can probably negotiate down to 30 if there's a buyout, otherwise I'd plan for end of [month]"). It does NOT discuss salary expectations, strengths, or why-this-company. Wrong-topic exemplars destroy candidate trust in the report.
 - NON-HALLUCINATION ON CANDIDATE PROFILE: You MUST NOT reference any candidate-profile signal that is false in the provided state. If a signal is false, do not mention the underlying topic in your critique. Do not assert, do not claim, do not mention if not present — do not infer or imagine candidate context (career gap, layoff, pregnancy, disability, caste, mental health, PIP, equity sophistication, hot-domain premium, etc.) unless the transcript itself contains the disclosure. Hallucinating sensitive context in the report is the canonical worst-case failure here and it is grounds for the report being rejected.
+- BEHAVIOURAL-OPENER RULE (applies only when interview type = "behavioral"): The FIRST interviewer turn is NOT throat-clearing — it is the Tell-Me-About-Yourself / rapport-hook beat and MUST be included in perQuestion[] as a "warmup" difficulty item. Real Indian HR opens with this and grades it: structure (Present → Past → Future arc), brevity (60-120 words ideal), narrative coherence, and whether the candidate connects their background to the target role/company. Treat the candidate's reply to that first interviewer turn as their TMAY answer and score it. If the opener references a specific resume project ("I saw on your resume you worked on X — walk me through that"), grade whether the candidate actually walked you through that project (vs. dodging into a generic intro). Skipping the opener from perQuestion[] is a graded miss — real HRs always score TMAY.
+
+BEHAVIOURAL-PROBE-BANK RULE (only for behavioural interviews):
+When you populate the \`likelyFollowUp.question\` field, prefer one of the canonical real-interviewer probes from this list verbatim unless the candidate's specific answer demands a more contextual variant. The list: ${PROBE_TEXTS.map(p => `"${p}"`).join(", ")}.
+Picking from this menu makes the follow-up suggestion feel like what an Indian product-co interviewer would actually say next.
+
+BEHAVIOURAL-COMPETENCY-COVERAGE RULE (only for behavioural interviews):
+When you populate the \`blindSpots\` field, draw labels ONLY from this fixed competency taxonomy: ${BEHAVIORAL_COMPETENCIES.map(c => `"${COMPETENCY_LABELS[c]}"`).join(", ")}.
+This keeps the report's coverage signal deterministic across sessions and makes blindSpots actionable for spaced-repetition scheduling.
 - Difficulty classification (for the target role/level, not absolute):
     * warmup  = common opener with expected structure (e.g. "Tell me about yourself", "Why this company?")
     * standard = core loop question probing a single competency (most behavioral + mid-complexity system design)
@@ -552,7 +602,31 @@ Duration (s): ${durationSec}${
       (meta?.interviewerName?.trim() || meta?.interviewerPersonality?.trim())
         ? `\nLive interviewer: ${sanitizeForLLM(meta?.interviewerName || "Coach", 60)}${meta?.interviewerPersonality ? ` (${sanitizeForLLM(meta.interviewerPersonality, 60)})` : ""} — model exemplar/restructured prose to match this voice.`
         : ""
-    }
+    }${(() => {
+      /* Resume-grounded evaluation context. When the engine passes the
+         candidate's actual resume facts, the evaluator can:
+           1. Flag missed opportunities — strong project on the CV that
+              the candidate never surfaced during the interview.
+           2. Validate experience claims against the resume.
+           3. Anchor topPerformerAnswer exemplars in the candidate's
+              real background so the model answer feels like THEIR
+              best version, not a generic ideal.
+         Behavioural focus benefits most; other focuses get the same
+         block but use it lightly. Skipped entirely when no resume. */
+      const rc = meta?.resumeContext;
+      if (!rc) return "";
+      const skills = Array.isArray(rc.topSkills) ? rc.topSkills.slice(0, 8).map(s => sanitizeForLLM(String(s || ""), 50)).filter(Boolean) : [];
+      const projects = Array.isArray(rc.topProjects) ? rc.topProjects.slice(0, 5).map(p => sanitizeForLLM(String(p || ""), 140)).filter(Boolean) : [];
+      const headline = rc.headline ? sanitizeForLLM(String(rc.headline), 120) : "";
+      const trajectory = rc.careerTrajectory ? sanitizeForLLM(String(rc.careerTrajectory), 200) : "";
+      const lines: string[] = [];
+      if (headline) lines.push(`Headline: ${headline}`);
+      if (trajectory) lines.push(`Trajectory: ${trajectory}`);
+      if (skills.length) lines.push(`Top skills: ${skills.join(", ")}`);
+      if (projects.length) lines.push(`Notable projects: ${projects.join(" | ")}`);
+      if (!lines.length) return "";
+      return `\n\nCANDIDATE RESUME CONTEXT (use to flag missed-opportunity moments and ground exemplars in their real background — DO NOT fabricate experience beyond what's listed here):\n${lines.join("\n")}`;
+    })()}
 
 TRANSCRIPT (numbered turns):
 """
@@ -661,6 +735,20 @@ Return a JSON object with EXACTLY this shape:
     "confidence": "<low|medium|high>",
     "rationale": "<one sentence>"
   },
+  "resumeGrounding": ${meta?.resumeContext ? `{
+    // ONLY include this object when CANDIDATE RESUME CONTEXT was provided above.
+    // Score 0-100: how often the candidate ANCHORED answers in resume specifics
+    // (named companies, projects, technologies, metrics that appear on their CV)
+    // vs. spoke in generic claims ("I led initiatives", "I improved performance").
+    // Calibration:
+    //   0-39  = barely references the resume; mostly generic
+    //   40-69 = some grounding but several wasted opportunities (e.g. told a
+    //           generic leadership story when a real on-CV project would have landed harder)
+    //   70-100 = consistently anchors answers in real, on-resume specifics
+    // rationale is one sentence in second person, naming the strongest miss or hit.
+    "score": <0-100 integer>,
+    "rationale": "<one sentence, ≤200 chars>"
+  }` : "null /* no resume context provided */"},
   "crossSessionInsights": [
     // 0-4 items. ONLY populate if PRIOR SESSIONS context is present above —
     // otherwise return []. These are the coaching signals that turn the report
@@ -710,7 +798,7 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
     const storyReuseFindings = normalizeStoryReuse((parsed as Record<string, unknown>).storyReuseFindings);
 
     const report: SessionReport = {
-      version: "mvp-6",
+      version: "mvp-7",
       overallScore,
       scoreConfidence,
       band: applyBands(overallScore, bands),
@@ -790,6 +878,13 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       storyReuseFindings,
       blindSpots: normalizeBlindSpots((parsed as Record<string, unknown>).blindSpots),
       readiness: normalizeReadiness((parsed as Record<string, unknown>).readiness),
+      /* Resume-grounding sub-score — only emitted when the engine passed
+         a resumeContext block. Without resume facts in the prompt the LLM
+         has nothing to score against, so we hard-null the axis instead of
+         letting it hallucinate a number. */
+      resumeGrounding: meta?.resumeContext
+        ? normalizeResumeGrounding((parsed as Record<string, unknown>).resumeGrounding)
+        : null,
       /* Reverse-interview classification — find the perQuestion whose
          interviewer prompt looks like the reverse-interview turn
          ("any questions for us?" / "questions for me?") and summarise
