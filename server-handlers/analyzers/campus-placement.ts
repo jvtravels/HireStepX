@@ -1029,6 +1029,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: "Every company / internship mentioned in the interview must already appear on the resume. BGV will pull the resume as source-of-truth — narrating a role that isn't listed reads as fabrication and is the #1 disqualifier in Indian campus drives.",
             observed: `Candidate referenced ${unverified.length === 1 ? "a company" : "companies"} not present in their uploaded resume: ${unverified.slice(0, 3).join(", ")}.`,
             severity: "high",
+            flag: "claimed_internship_not_in_resume",
           });
         }
       }
@@ -1061,6 +1062,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: `Match the branch you spoke about (${Array.from(spokenBranches).join(", ")}) with what's on your resume (${resumeBranch}). The resume is the BGV-checked source of truth — a verbal branch change without "dual-degree" / "minor in" framing reads as fabrication.`,
             observed: `Resume lists ${resumeBranch} but candidate identified as ${Array.from(spokenBranches).join(", ")} in the transcript.`,
             severity: "high",
+            flag: "branch_mismatch_with_resume",
           });
         }
       }
@@ -1088,6 +1090,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: `The graduation year you stated (${driftedYears.join(", ")}) should match what's on your resume (${resumeYear}). BGV pulls the resume — a verbal year drift > 1 year reads as fabrication and disqualifies in service-tier rounds.`,
             observed: `Resume lists graduation year ${resumeYear}, but candidate mentioned ${driftedYears.join(", ")} in the transcript.`,
             severity: "high",
+            flag: "grad_year_mismatch_with_resume",
           });
         }
       }
@@ -1138,6 +1141,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             expected: `The college you named (${mismatched.slice(0, 2).join(", ")}) should match what's on your resume (${resume.school}). Indian campus BGV pulls the transcript / certificate — a verbal swap reads as fabrication.`,
             observed: `Resume lists ${resume.school}, but candidate mentioned ${mismatched.slice(0, 2).join(", ")} in the transcript.`,
             severity: "high",
+            flag: "college_mismatch_with_resume",
           });
         }
       }
@@ -1172,6 +1176,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
               expected: `The CGPA you stated (${drifted.map((d) => d.toFixed(2)).join(", ")}) should match what's on your resume (${resumeCgpa}). Recruiters verify CGPA against the transcript / provisional — even a 1-point drift will trip BGV.`,
               observed: `Resume lists CGPA ${resumeCgpa}, but candidate mentioned ${drifted.map((d) => d.toFixed(2)).join(", ")} in the transcript.`,
               severity: "high",
+              flag: "cgpa_mismatch_with_resume",
             });
           }
         }
@@ -1260,6 +1265,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             dimension: "credibility",
             expected: "The internship duration you state verbally must match the period on your resume — recruiters cross-check against the offer / relieving letter during BGV. Even rounding 3 months up to 'six months' to sound stronger is a documented disqualifier in service-tier rounds.",
             observed: `Duration drift detected for: ${driftedCompanies.slice(0, 2).join("; ")}.`,
+            flag: "internship_duration_mismatch_with_resume",
             severity: "high",
           });
         }

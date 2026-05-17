@@ -111,6 +111,10 @@ interface RubricGapShape {
   dimension?: unknown;
   expected?: unknown;
   observed?: unknown;
+  /** Source-flag tag set by the analyzer on cross-check gaps. When
+   *  present, evidence pairing prefers an exact match over the
+   *  legacy regex-on-text fallback. */
+  flag?: unknown;
 }
 
 /** Filter a session_insights row down to its credibility surface.
@@ -164,6 +168,18 @@ export function summarizeCredibility(
     under_titled_candidate: /under-titled|plain ic|anchored low|reflect scope/i,
   };
   const evidenceForFlag = (flag: CredibilityFlag): CredibilityItem["evidence"] => {
+    // 1) Prefer exact source-flag match (analyzers ≥ v4.3.1 tag gaps
+    //    with their originating flag code). Stable across copy edits.
+    const tagged = rubricGaps.find((g) => String(g.flag ?? "") === flag);
+    if (tagged) {
+      return {
+        observed: String(tagged.observed ?? "").slice(0, 400),
+        expected: String(tagged.expected ?? "").slice(0, 400),
+      };
+    }
+    // 2) Fallback for older sessions analysed before the tagging
+    //    landed: heuristic regex against the gap's expected/observed
+    //    text. Imperfect but better than no evidence.
     const rx = FLAG_GAP_KEYWORD[flag];
     const hit = rubricGaps.find((g) => {
       const blob = `${String(g.expected ?? "")} ${String(g.observed ?? "")}`;

@@ -317,7 +317,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.3.1",
+  version: "hr-round-v4.3.2",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -720,6 +720,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             expected: "Every employer named in the interview must already appear on the resume — BGV pulls the resume as the source of truth.",
             observed: `Candidate named ${orphans.length === 1 ? "an employer" : "employers"} absent from the resume: ${Array.from(new Set(orphans)).slice(0, 3).join(", ")}.`,
             severity: "high",
+            flag: "resume_transcript_mismatch",
           });
         }
       }
@@ -739,6 +740,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             expected: "Resume gaps ≥3 months always surface in the real HR round — pre-prep a one-liner with dates + reason + what you did.",
             observed: `Resume shows a ${biggest}-month gap between employments; this session did not surface or address it.`,
             severity: "medium",
+            flag: "resume_gap_unaddressed",
           });
         }
       }
@@ -768,6 +770,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             expected: "Senior / Lead / Staff / Principal titles typically require 5+ years of relevant experience in the Indian market.",
             observed: `Resume YoE ≈ ${yearsRounded} years but ${resumeSenior ? "resume title" : "candidate self-describes"} as ${observedTitle}. Reads as level inflation.`,
             severity: "medium",
+            flag: "inflated_seniority_claim",
           });
         }
       }
@@ -795,6 +798,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             // Promoted low → medium: at 5+ YoE in the Indian market the
             // title-anchor gap is worth lakhs at offer time, not a nice-to-have.
             severity: "medium",
+            flag: "under_titled_candidate",
           });
         }
       }
