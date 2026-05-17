@@ -1723,17 +1723,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * gap-fraction on each subsequent counter so the conversation
      * tapers naturally. The existing splitSchedule/boost stack is
      * already tuned for the first counter (round 0 → ~50% of gap), so
-     * the multiplier table is [1.0, 0.66, 0.33]:
-     *   round 0 → full tuned base (no taper; lead with movement)
-     *   round 1 → 2/3 of the tuned base (we've moved once)
-     *   round 2 → 1/3 of the tuned base (stretching the band)
+     * the multiplier table is [0.30, 0.20, 0.10] (counter-realism phase 3):
+     *   round 0 → 30% of tuned base (small first concession; Indian HR rarely jumps)
+     *   round 1 → 20% of tuned base (we've moved once; stiffer)
+     *   round 2 → 10% of tuned base (stretching the band; near-final)
      *   round 3+ → 0 (hold firm; pivot to structural levers)
      * Composes multiplicatively with splitSchedule/boost AND applies
-     * BEFORE the band-cap component clamp on newTotal. Tuned this way
-     * (rather than [0.6, 0.4, 0.2]) so the first-counter behaviour the
-     * rest of the system is calibrated against is preserved end-to-end;
-     * the diminishing-concessions intent lives strictly on subsequent
-     * rounds, which is where real negotiation feels stiffer anyway. */
+     * BEFORE the band-cap component clamp on newTotal. Tightened from
+     * the prior [1.0, 0.66, 0.33] curve to model realistic Indian HR
+     * concession behaviour — first counter is rarely > 5–10% of asked
+     * gap; subsequent rounds halve again. */
     const spiralRound = state.counterRound;
     if (spiralRound >= 3) {
       return {
@@ -1746,7 +1745,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
-    const SPIRAL_MULTIPLIERS = [1.0, 0.66, 0.33];
+    const SPIRAL_MULTIPLIERS = [0.30, 0.20, 0.10];
     const spiralMultiplier = SPIRAL_MULTIPLIERS[spiralRound] ?? 0;
     const counterCount = state.leversUsed.filter(l => l === "counter-base").length;
     const splitSchedule = [0.5, 0.35, 0.22, 0.12, 0.06];
