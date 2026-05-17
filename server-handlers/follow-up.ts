@@ -22,6 +22,39 @@ declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 
+/* ────────────────────────────────────────────────────────────────────
+ * Module-level static rules block — Groq prefix-cache friendly.
+ *
+ * These directives are byte-identical across every follow-up call
+ * (they don't reference role/company/answer/etc.). Building them once
+ * at module load and prepending them to the prompt extends the longest
+ * shared prefix across calls — which is exactly what Groq's automatic
+ * prompt cache (≥1024 tokens) keys on. Previously these rules lived
+ * AFTER the per-candidate resume context and per-turn question/answer
+ * blocks; the cache then broke on the first dynamic field (~30 tokens
+ * into the prompt) and the ~1000-token rules tail never got the cache
+ * benefit. See CLAUDE.md → "LLM prompt caching" for the discipline.
+ *
+ * Anything that interpolates a per-call variable (role, company,
+ * adaptiveDifficulty, candidateState, previousMentions, mirror
+ * tokens, depthInstructions, tenseDirective) MUST stay in the
+ * inline template — those defeat the cache by definition.
+ * ──────────────────────────────────────────────────────────────────── */
+const FOLLOW_UP_STATIC_RULES = `
+PUSHBACK RULE: Real interviewers push back on weak or vague answers — they don't just nod and move on. If the answer is high-level, generic, or lacks specifics (no metrics, no concrete actions, no "I" voice), your follow-up MUST press for specifics ONCE before changing topic. Examples: "That's high-level — what specifically did *you* do?", "Give me a concrete number.", "Walk me through one moment, not the general approach." Do NOT pile on with multiple challenges; one sharp pushback per weak answer.
+
+MIRRORING (rapport): Echo 1-2 distinctive nouns or phrases from the candidate's last answer in your follow-up. If they said "the migration" use "the migration" not "the project". If they said "my team of six" use "your team of six". Research shows verbal mirroring lifts perceived rapport ~30%. Don't be heavy-handed — one or two echoes per follow-up is enough.
+
+CROSS-QUESTION MEMORY: If the candidate mentioned something interesting in an earlier answer (visible in the conversation history), you SHOULD reference it naturally roughly every 3rd question: "Earlier you mentioned X — how does that connect to what you just described?" This makes the interview feel like a real conversation, not a checklist.
+
+RECOVERY MODE: If the candidate completely bombed the immediate answer (gave up, said 'I don't know', or produced <20 words of substantive content), the next follow-up MUST be a soft recovery offer: rephrase from a smaller angle, give a familiar starter, or pivot to a related topic where they can rebuild confidence. Never stack a hard challenge on top of a fail — that's punitive, not coaching.
+
+QUESTION LENGTH: Mix lengths like a real interviewer. About 30% of follow-ups should be ≤8 words ("So why now?", "And the team's reaction?", "What was the actual number?"). The rest can be longer. Avoid every follow-up being 25+ words — it sounds scripted.
+
+INDIAN INTERVIEWER VOICE: This is a mock for the Indian job market. Speak in natural Indian English. Light fillers like "Got it", "Right right", "One more thing —" are appropriate occasionally — don't overdo. Use ₹ / LPA / CTC, not $ / annual salary. AVOID Americanisms: "awesome", "totally", "reach out", "circle back", "touch base", "let's dive in", "killer", "rockstar". Currency, college tiers (IIT/IIM/NIT), and city references (Bangalore, Hyderabad, Pune, Gurgaon) should feel native, not exotic.
+
+LANGUAGE: Conduct the interview in English only. Do not mix in Hindi or other languages — MVP is English-first. If the candidate uses a non-English word, do not echo it; respond in standard Indian English.`.trim();
+
 export default async function handler(req: Request): Promise<Response> {
   if (!GROQ_KEY && !GEMINI_KEY) {
     return new Response(JSON.stringify({ error: "LLM not configured" }), {
@@ -1231,15 +1264,26 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.${panelContext}${behavioralModeGuard}${starGapDirective}${culturalRegisterHint}${regionalDirective}${tenureProbe}${reverseInterviewDirective}
+    /* Prompt assembly is ORDERED for Groq prefix-cache wins. Layers
+     *  from most-static (top, longest shared across calls) to most-
+     *  dynamic (bottom, varies per turn). See FOLLOW_UP_STATIC_RULES
+     *  for the byte-identical rules block; everything below that line
+     *  legitimately varies per call. */
+    const prompt = `You are an expert interviewer. Given a candidate's answer to an interview question, decide if a follow-up question is needed.
+
+${FOLLOW_UP_STATIC_RULES}
+
+${panelContext}${behavioralModeGuard}${culturalRegisterHint}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
-Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}${resumeSkillsContext ? `\n${resumeSkillsContext}` : ""}${resumeProjectsContext}${resumeExperiencesContext}${behaviouralProbeContext}${historyContext}
+Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}
 
-Question asked: "${sanitizeForLLM(question, 500)}"
-Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
-
-${depthInstructions}
+ROLE FENCE (mandatory): The candidate is interviewing for "${sanitizeForLLM(role, 100) || "this role"}". Your follow-up MUST stay within the discipline that role would actually be evaluated on. Specifically:
+  • An SEO Content Writer is NOT graded on user-research metrics, product roadmaps, or PM-style hypotheses. Stay on writing craft, content strategy, search intent, brand voice, editorial workflow.
+  • A Software Engineer is NOT graded on go-to-market strategy. Stay on system design, code, debugging, trade-offs.
+  • A Designer is NOT graded on quarterly OKRs. Stay on craft, user research, design systems, hand-off.
+  • If the candidate's answer drifted off-role (e.g. they talked about product strategy in a content-writer round), gently bring it back: "That's interesting — bringing it back to the writing craft itself, what was your editorial process for…"
+NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
 
 CANDIDATE-ASKS-BACK DETECTION (reverse interview):
 If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question they're asking YOU (the interviewer) — e.g. "What does success look like in 90 days?", "What's the team like?", "How is performance measured?", "What's one thing you like about working here?" — then your follow-up should ANSWER that question first, IN CHARACTER as the hiring manager / panelist for "${sanitizeForLLM(role, 100) || "this role"}" at ${company ? sanitizeForLLM(company, 100) : "the company"}.
@@ -1251,28 +1295,23 @@ If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question
    • Keep it tight: 2-4 sentences. Then add a soft re-pivot: "Anything else, or should we wrap up?" / "Does that help, or do you want me to go deeper on any of it?"
    • If the question is generic ("What's the company culture like?"), give a SPECIFIC honest answer rather than corporate platitudes — name one real thing you like and one thing the company is still working on.
 
-ROLE FENCE (mandatory): The candidate is interviewing for "${sanitizeForLLM(role, 100) || "this role"}". Your follow-up MUST stay within the discipline that role would actually be evaluated on. Specifically:
-  • An SEO Content Writer is NOT graded on user-research metrics, product roadmaps, or PM-style hypotheses. Stay on writing craft, content strategy, search intent, brand voice, editorial workflow.
-  • A Software Engineer is NOT graded on go-to-market strategy. Stay on system design, code, debugging, trade-offs.
-  • A Designer is NOT graded on quarterly OKRs. Stay on craft, user research, design systems, hand-off.
-  • If the candidate's answer drifted off-role (e.g. they talked about product strategy in a content-writer round), gently bring it back: "That's interesting — bringing it back to the writing craft itself, what was your editorial process for…"
-NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
+${tierPromptSuffix(classifyCompanyTier(company))}
 
-CROSS-QUESTION MEMORY: If the candidate mentioned something interesting in an earlier answer (visible in the conversation history above), you SHOULD reference it naturally roughly every 3rd question: "Earlier you mentioned X — how does that connect to what you just described?" This makes the interview feel like a real conversation, not a checklist.
+${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
+
+Question asked: "${sanitizeForLLM(question, 500)}"
+Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
+
+${depthInstructions}
 
 ${tenseDirective}
 
-PUSHBACK RULE: Real interviewers push back on weak or vague answers — they don't just nod and move on. If the answer is high-level, generic, or lacks specifics (no metrics, no concrete actions, no "I" voice), your follow-up MUST press for specifics ONCE before changing topic. Examples: "That's high-level — what specifically did *you* do?", "Give me a concrete number.", "Walk me through one moment, not the general approach." Do NOT pile on with multiple challenges; one sharp pushback per weak answer.
-
-MIRRORING (rapport): Echo 1-2 distinctive nouns or phrases from the candidate's last answer in your follow-up. If they said "the migration" use "the migration" not "the project". If they said "my team of six" use "your team of six". Research shows verbal mirroring lifts perceived rapport ~30%. Don't be heavy-handed — one or two echoes per follow-up is enough.${mirrorAnchorBlock}
-
 ADAPTIVE DIFFICULTY: ${adaptiveDifficulty === "escalate" ? "The candidate is performing strongly across recent answers. Push harder — go deeper, ask more challenging follow-ups, probe for trade-offs and edge cases. Don't go easy." : adaptiveDifficulty === "ease" ? "The candidate is struggling across recent answers. Ease the pressure — phrase the follow-up gently, offer a smaller scope, give them a chance to recover with a more concrete or familiar angle. Do NOT give up; just calibrate down." : "The candidate is performing as expected. Hold steady on difficulty."}
-${previousMentions && previousMentions.length > 0 ? `
+${mirrorAnchorBlock}${previousMentions && previousMentions.length > 0 ? `
 PREVIOUS MENTIONS (specific things the candidate has said this session — pickable hooks for cross-question references):
 ${previousMentions.slice(-8).map(p => `  • ${sanitizeForLLM(p, 80)}`).join("\n")}
 USAGE: When following up, you may reference one of these explicitly: "Earlier you mentioned <X> — how does that connect to what you just described?" or "You said <X> a moment ago. Tell me more about that." Use at most ONE per follow-up; don't enumerate.
-` : ""}
-${candidateState ? `
+` : ""}${candidateState ? `
 CANDIDATE EMOTIONAL STATE (from recent answers — use this to modulate TONE, not difficulty):
 - Stress level: ${candidateState.stress ?? "unknown"} (high = lots of "uhm", "let me think", hesitation markers)
 - Engagement: ${candidateState.engagement ?? "unknown"} (fading = answers shrinking; disengaged = very short)
@@ -1282,16 +1321,6 @@ TONE GUIDANCE:
 ${candidateState.stress === "high" ? "- Stress is high. Open with warmth: \"Take your time.\" Use a smaller, more concrete scope. Avoid stacked clauses." : ""}
 ${candidateState.engagement === "disengaged" ? "- They're checking out. Try a more interesting angle — a hypothetical, a story prompt, or pivot to a new topic entirely. Re-engage, don't drill." : candidateState.engagement === "fading" ? "- Engagement is dropping. Acknowledge the work so far before the follow-up: \"Got it — quick one before we move on.\" Keep it short." : ""}
 ${candidateState.lengthTrend === "shortening" && candidateState.stress !== "high" ? "- Answers are getting shorter. They might be tired or you've gone too deep on this thread. Pick a fresher angle." : ""}` : ""}
-
-RECOVERY MODE: If the candidate completely bombed the immediate answer (gave up, said 'I don't know', or produced <20 words of substantive content), the next follow-up MUST be a soft recovery offer: rephrase from a smaller angle, give a familiar starter, or pivot to a related topic where they can rebuild confidence. Never stack a hard challenge on top of a fail — that's punitive, not coaching.
-
-QUESTION LENGTH: Mix lengths like a real interviewer. About 30% of follow-ups should be ≤8 words ("So why now?", "And the team's reaction?", "What was the actual number?"). The rest can be longer. Avoid every follow-up being 25+ words — it sounds scripted.
-
-INDIAN INTERVIEWER VOICE: This is a mock for the Indian job market. Speak in natural Indian English. Light fillers like "Got it", "Right right", "One more thing —" are appropriate occasionally — don't overdo. Use ₹ / LPA / CTC, not $ / annual salary. AVOID Americanisms: "awesome", "totally", "reach out", "circle back", "touch base", "let's dive in", "killer", "rockstar". Currency, college tiers (IIT/IIM/NIT), and city references (Bangalore, Hyderabad, Pune, Gurgaon) should feel native, not exotic.
-
-LANGUAGE: Conduct the interview in English only. Do not mix in Hindi or other languages — MVP is English-first. If the candidate uses a non-English word, do not echo it; respond in standard Indian English.
-
-${tierPromptSuffix(classifyCompanyTier(company))}
 
 Respond JSON only:
 {"needsFollowUp":true/false,"followUpText":"The follow-up question (2-3 sentences, conversational). Only include if needsFollowUp is true.","followUpType":"${followUpTypeLabel}","reason":"Brief reason"${isSalaryNeg ? ",\"wantsBreakdown\":true_if_giving_a_breakdown,\"proposedCounter\":number_or_null_if_making_a_counter_offer" : ""}}`;
