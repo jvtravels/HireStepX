@@ -28,6 +28,7 @@ import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcom
 import { captureServerEvent } from "./_posthog";
 import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
 import { fetchResumeForAnalyzer } from "./_resume-versioning";
+import { freshnessSnapshot } from "./_data-freshness";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -212,6 +213,23 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const t0 = Date.now();
+
+  /* Tier-data freshness check. Hardcoded constants (college tier
+     patterns, company tier classifier, CGPA cutoffs, salary bands)
+     all carry a LAST_VERIFIED_AT stamp in `_data-freshness.ts`. Fire
+     one event per cron run per stale source so an operator can see
+     "salary bands haven't been re-verified in 120 days" without
+     having to grep the codebase. Best-effort; no early-return on
+     stale data — the analyzer still runs with what it has. */
+  for (const f of freshnessSnapshot()) {
+    if (f.stale) {
+      void captureServerEvent("tier_data_stale", "system", {
+        key: f.key,
+        verified_on: f.verifiedOn,
+        age_days: f.ageDays,
+      });
+    }
+  }
 
   // Optional admin overrides: ?force_reanalyze=1 bypasses the staleness
   // filter entirely; ?lookback_hours=168 extends the window (default 25h).
