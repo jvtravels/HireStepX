@@ -546,7 +546,8 @@ describe("E2E smoke — ResumeFactPack track", () => {
     const turn = botTurn(state);
     expect(turn.action.kind).toBe("counter-offer");
     if (turn.action.kind === "counter-offer") {
-      expect(turn.action._move.rationale).toMatch(/priorCtcFloor ₹36/);
+      const move = actionToLever(turn.action, state);
+      expect(move.rationale).toMatch(/priorCtcFloor ₹36/);
       expect(turn.action.counterTotalLpa).toBeGreaterThanOrEqual(36);
     }
   });

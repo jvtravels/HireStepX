@@ -22,7 +22,7 @@ import {
   type NegotiationState,
   type AiMove,
 } from "../../../server-handlers/_negotiation-kernel";
-import { planNextAction } from "../../../server-handlers/_next-action-planner";
+import { planNextAction, actionToLever } from "../../../server-handlers/_next-action-planner";
 
 const BAND: NegotiationBand = {
   initialOffer: 22,
@@ -174,19 +174,20 @@ describe("F7 — askedTopics repetition guard", () => {
       // Force the open-with-offer path by clearing the checklist so the
       // discovery-probe branch in the opening guard falls through. We just
       // need the planner to land on open-with-offer for turn-0 verification.
-      const action = planNextAction({ ...state, discoveryChecklist: undefined });
+      const seed: NegotiationState = { ...state, discoveryChecklist: undefined };
+      const action = planNextAction(seed);
       expect(action.kind).toBe("open-with-offer");
       if (action.kind === "open-with-offer") {
-        const move = action._move;
+        const move = actionToLever(action, seed);
         expect(move.askedTopic).toBe("currentCtcAnswered");
       }
     });
 
     it("turn-0 opener + planner pipeline writes currentCtcAnswered into askedTopics", () => {
-      let state = { ...fresh(), discoveryChecklist: undefined };
+      let state: NegotiationState = { ...fresh(), discoveryChecklist: undefined };
       const action = planNextAction(state);
       if (action.kind === "open-with-offer") {
-        state = applyAiMove(state, action._move, "Walk me through your current compensation structure.");
+        state = applyAiMove(state, actionToLever(action, state), "Walk me through your current compensation structure.");
       }
       const topics = state.askedTopics ?? [];
       expect(topics.some((t) => t.topic === "currentCtcAnswered")).toBe(true);

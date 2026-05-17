@@ -15,7 +15,6 @@ const BAND: NegotiationBand = {
   initialOffer: 20,
   maxStretch: 28,
   walkAway: 16,
-  displayLabel: "",
   hasEquity: false,
 };
 

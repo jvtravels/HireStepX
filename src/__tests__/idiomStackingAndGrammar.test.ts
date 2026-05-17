@@ -52,10 +52,9 @@ describe("IDIOM_PER_UTTERANCE_CAP — countPreferredIdioms", () => {
 
 describe("validateRestyle — idiom-stacking rejection (Bug 1)", () => {
   it("rejects Session #25 sample with 3 idioms stacked", () => {
-    const canonical =
-      "Got it on the current side — what's the fitment you were looking at for this move — broadly, what range are you anchoring on?";
-    /* Canonical has fitment + broadly ≈ 2 idioms — restyle must not exceed.
-     * Use a simpler canonical so the test rejection is unambiguous. */
+    /* Original Session #25 sample had fitment + broadly ≈ 2 idioms — too
+     * close to the cap to assert rejection unambiguously. Use a simpler
+     * canonical (1 idiom) so the stacked restyle definitively exceeds. */
     const simpleCanonical =
       "Got it on the current side — what's the fitment you were looking at?";
     const stacked =

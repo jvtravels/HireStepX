@@ -334,8 +334,7 @@ type PlannedAction = NextAction & { _move: AiMove };
  *  stalemate; anchoring → counter-offer; counter → stalemate). That
  *  means planNextAction sees the already-advanced phase and emits the
  *  natural next-group action through the existing cascade — no override
- *  needed at this layer. The helper `exceededPhaseBudget` remains
- *  exported on the kernel for tests / decision-log surfaces. */
+ *  needed at this layer. */
 export function planNextAction(state: NegotiationState): NextAction {
   return planNextActionInternal(state);
 }

@@ -770,7 +770,7 @@ function renderCanonicalProseBody(
       const RANGE_ASK_RE = /\b(?:rough\s+range|ballpark|no\s+need\s+for\s+an\s+exact)\b/i;
       if (action.ask && RANGE_ASK_RE.test(action.ask)) {
         const probeOverride = action.ask;
-        const ackPrefix = buildDiscoveryAck(state, item);
+        const ackPrefix = buildDiscoveryAck(state.lastTurnDelta, item, state);
         return ackPrefix
           ? `${ackPrefix} ${probeOverride}`
           : probeOverride;

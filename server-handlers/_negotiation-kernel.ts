@@ -132,7 +132,6 @@ import {
   detectStatedCurrentCompany,
   resumeConfirmsCompany,
   type ResumeFactPack,
-  type ParsedResume,
 } from "./_resume-fact-pack";
 import { getNextActionPlanner } from "./_planner-registry";
 
@@ -2897,8 +2896,8 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     const provenance: Record<string, "resume" | "stated"> = { ...(state.flagProvenance ?? {}) };
     const trackFlag = (key: "tenureSignal" | "peopleManagementClaimed" | "domesticTopMbaAnchor" | "mncExperience") => {
       if (provenance[key]) return; // resume seed wins; stated only confirms.
-      const before = (state.candidateProfile as Record<string, unknown>)[key];
-      const after = (next.candidateProfile as Record<string, unknown>)[key];
+      const before = state.candidateProfile[key];
+      const after = next.candidateProfile[key];
       if (!before && after) provenance[key] = "stated";
     };
     trackFlag("tenureSignal");
@@ -3366,20 +3365,6 @@ function forcedPhaseFor(
   }
   if (group === "anchoring") return "counter-offer";
   return "stalemate";
-}
-
-/** AR3 — has the current phase exceeded its budget? Pure helper called
- *  by the planner. Returns null when the phase is non-grouped, terminal,
- *  or still within budget. */
-function exceededPhaseBudget(state: NegotiationState): "discovery" | "anchoring" | "counter" | null {
-  if (isTerminalPhase(state.phase)) return null;
-  const group = phaseGroupOf(state.phase);
-  if (group == null) return null;
-  const enteredAt = state.phaseEnteredAtTurn;
-  if (enteredAt == null) return null;
-  const cap = MAX_TURNS_PER_PHASE[group];
-  if (state.turnIndex - enteredAt > cap) return group;
-  return null;
 }
 
 export function derivePhase(state: NegotiationState): NegotiationPhase {

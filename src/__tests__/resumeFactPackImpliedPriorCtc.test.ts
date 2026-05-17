@@ -11,18 +11,17 @@ import {
   type NegotiationBand,
   type NegotiationState,
 } from "../../server-handlers/_negotiation-kernel";
-import { planNextAction } from "../../server-handlers/_next-action-planner";
-import type { ResumeFactPack } from "../../server-handlers/_resume-fact-pack";
+import { planNextAction, actionToLever } from "../../server-handlers/_next-action-planner";
+import type { ResumeFactPack, ResumePriorCompany } from "../../server-handlers/_resume-fact-pack";
 
 const BAND: NegotiationBand = {
   initialOffer: 20,
   maxStretch: 32,
   walkAway: 15,
-  displayLabel: "",
   hasEquity: false,
 };
 
-function makePack(latestCompany: string, tier: ResumeFactPack["latestRole"] extends { companyTier: infer T } ? T : never): ResumeFactPack {
+function makePack(latestCompany: string, tier: ResumePriorCompany["tier"]): ResumeFactPack {
   return {
     priorCompanies: [{ name: latestCompany, tier, tenureMonths: 24 }],
     stackTags: ["react"],
@@ -58,7 +57,7 @@ describe("ResumeFactPack — impliedPriorCtcFromResume as counter floor", () => 
     const action = planNextAction(s);
     expect(action.kind).toBe("counter-offer");
     if (action.kind === "counter-offer") {
-      expect(action._move.rationale).not.toMatch(/priorCtcFloor/);
+      expect(actionToLever(action, s).rationale).not.toMatch(/priorCtcFloor/);
     }
   });
 
@@ -71,7 +70,7 @@ describe("ResumeFactPack — impliedPriorCtcFromResume as counter floor", () => 
     const action = planNextAction(s);
     expect(action.kind).toBe("counter-offer");
     if (action.kind === "counter-offer") {
-      expect(action._move.rationale).toMatch(/priorCtcFloor ₹26/);
+      expect(actionToLever(action, s).rationale).toMatch(/priorCtcFloor ₹26/);
       // newTotal must respect the prior-ctc floor (>= 26)
       expect(action.counterTotalLpa).toBeGreaterThanOrEqual(26);
     }
@@ -88,7 +87,7 @@ describe("ResumeFactPack — impliedPriorCtcFromResume as counter floor", () => 
     expect(action.kind).toBe("counter-offer");
     if (action.kind === "counter-offer") {
       // priorCtcFloor only kicks in when candidateCurrentCtc is null
-      expect(action._move.rationale).not.toMatch(/priorCtcFloor/);
+      expect(actionToLever(action, s).rationale).not.toMatch(/priorCtcFloor/);
     }
   });
 });
