@@ -9,7 +9,7 @@ import { detectStarPresence, nextStarGap } from "../_star-detection";
 describe("detectStarPresence", () => {
   it("returns all-false for empty input", () => {
     const r = detectStarPresence("");
-    expect(r).toMatchObject({ situation: false, task: false, action: false, result: false, count: 0, hasMetrics: false, weHeavy: false });
+    expect(r).toMatchObject({ situation: false, task: false, action: false, result: false, count: 0, hasMetrics: false, weHeavy: false, learning: false });
   });
 
   it("detects a full STAR answer", () => {
@@ -93,6 +93,27 @@ describe("detectStarPresence", () => {
     const text = "I designed the schema, I wrote the migration, and we shipped on Friday.";
     const r = detectStarPresence(text);
     expect(r.weHeavy).toBe(false);
+  });
+
+  it("learning — explicit reflective bridges fire", () => {
+    expect(detectStarPresence("I learned that scoping early matters").learning).toBe(true);
+    expect(detectStarPresence("In hindsight I'd start with the data model").learning).toBe(true);
+    expect(detectStarPresence("Looking back, the lesson was to over-communicate").learning).toBe(true);
+    expect(detectStarPresence("Next time I would loop in security on day one").learning).toBe(true);
+    expect(detectStarPresence("What I took away from that was test in prod-shape envs").learning).toBe(true);
+    expect(detectStarPresence("Since then I always write the rollback first").learning).toBe(true);
+  });
+
+  it("learning — generic positive language does NOT fire", () => {
+    // Guard against false positives — "it was good" / "we did well" is
+    // not the same as reflective takeaway language.
+    expect(detectStarPresence("It went really well in the end").learning).toBe(false);
+    expect(detectStarPresence("The team was happy with the result").learning).toBe(false);
+    expect(detectStarPresence("I think it was a good outcome").learning).toBe(false);
+  });
+
+  it("learning — empty input returns false", () => {
+    expect(detectStarPresence("").learning).toBe(false);
   });
 
   it("count reflects partial STAR coverage", () => {

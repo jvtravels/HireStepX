@@ -49,6 +49,16 @@ export interface StarPresence {
    *  synthesize a StarPresence by hand (e.g. nextStarGap unit tests)
    *  don't need to set it — detectStarPresence always populates it. */
   weHeavy?: boolean;
+  /** STAR+L: Learning. Did the candidate articulate what they took away
+   *  from the experience? Especially load-bearing on failure / mistake /
+   *  setback questions, where a strong answer doesn't just narrate the
+   *  miss — it closes with the lesson and how the candidate would handle
+   *  it differently next time. Detected via reflective bridges
+   *  ("I learned that…", "in hindsight…", "looking back…", "what I took
+   *  away…", "next time I would…", "the lesson was…"). Optional so
+   *  callers synthesising StarPresence by hand (nextStarGap unit tests)
+   *  don't need to set it — detectStarPresence always populates it. */
+  learning?: boolean;
 }
 
 /* Numeric / metric markers. ₹50,000 / $5M / 40% / 3x / "50 users". */
@@ -79,7 +89,16 @@ const ACTION_RE = /\bi\s+(?:built|designed|shipped|led|drove|created|wrote|made|
    present (which would silently approve hiding behind the team). */
 const WE_ACTION_RE = /\b(?:we|our\s+team|the\s+team)\s+(?:built|designed|shipped|led|drove|created|wrote|made|fixed|launched|coordinated|negotiated|trained|coached|presented|prototyped|tested|migrated|refactored|architected|implemented|defined|aligned|escalated|prioriti[sz]ed|delivered|drafted|reviewed|analy[sz]ed|championed|spearheaded|pioneered|steered|rolled\s+out|stood\s+up|cut\s+over)\b/gi;
 
-const RESULT_BRIDGE_RE = /\bresult(?:ed|ing)?\b|\bwhich\s+led\s+to\b|\bwhich\s+drove\b|\bso\s+that\b|\bwe\s+saw\b|\bafter\s+(?:that|launch)\b|\bin\s+the\s+end\b|\boutcome\b|\bimpact\b|\bby\s+\d+|\bmost[\s-]used\b|\btop[\s-]rated\b|\bwidely[\s-]adopted\b|\bbecame\s+(?:the|a|our)\b|\bgained\s+(?:traction|adoption|users)\b|\bachieved\b|\b(?:was|were)\s+(?:successful|adopted)\b|\brolled\s+out\s+(?:to|across|org)\b|\bshipped\s+on\s+(?:time|schedule)\b|\bwent\s+(?:live|to\s+prod)\b/i;
+/* STAR+L: Learning bridges. Reflective markers that signal the candidate
+   closed the loop on the experience — they didn't just describe what
+   happened, they extracted a takeaway and (often) what they'd do
+   differently. On failure questions this is the single strongest
+   self-awareness signal; on success questions it's a nice-to-have. The
+   regex is intentionally narrow — generic phrases like "it was good"
+   don't count; we want explicit reflection cues. */
+const LEARNING_RE = /\bi\s+learned\b|\bi\s+(?:now\s+)?realize[ds]?\b|\blesson(?:s)?\s+(?:was|were|i\s+took|learned)\b|\bthe\s+takeaway\b|\bwhat\s+i\s+(?:took\s+away|learned)\b|\bin\s+hindsight\b|\blooking\s+back\b|\bnext\s+time\s+i\s+(?:would|will|'d|d)\b|\bwhat\s+i'?d\s+do\s+differently\b|\bgoing\s+forward\s+i\b|\bsince\s+then\s+i\b|\bnow\s+i\s+(?:always|make\s+sure|start\s+by)\b/i;
+
+const RESULT_BRIDGE_RE =/\bresult(?:ed|ing)?\b|\bwhich\s+led\s+to\b|\bwhich\s+drove\b|\bso\s+that\b|\bwe\s+saw\b|\bafter\s+(?:that|launch)\b|\bin\s+the\s+end\b|\boutcome\b|\bimpact\b|\bby\s+\d+|\bmost[\s-]used\b|\btop[\s-]rated\b|\bwidely[\s-]adopted\b|\bbecame\s+(?:the|a|our)\b|\bgained\s+(?:traction|adoption|users)\b|\bachieved\b|\b(?:was|were)\s+(?:successful|adopted)\b|\brolled\s+out\s+(?:to|across|org)\b|\bshipped\s+on\s+(?:time|schedule)\b|\bwent\s+(?:live|to\s+prod)\b/i;
 
 export function detectStarPresence(text: string): StarPresence {
   const t = text || "";
@@ -97,7 +116,8 @@ export function detectStarPresence(text: string): StarPresence {
      materially we-attributed, not ones with passing collective mentions. */
   const weHits = (t.match(WE_ACTION_RE) || []).length;
   const weHeavy = weHits >= 2 && !action;
-  return { situation, task, action, result, count, hasMetrics, weHeavy };
+  const learning = LEARNING_RE.test(t);
+  return { situation, task, action, result, count, hasMetrics, weHeavy, learning };
 }
 
 /** Which STAR component is most useful to nudge next, given current presence

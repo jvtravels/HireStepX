@@ -223,7 +223,7 @@ interface PerQuestionReport {
   answerText: string;
   verdict: "strong" | "complete" | "partial" | "weak" | "skipped";
   score: number;
-  starPresence: { S: boolean; T: boolean; A: boolean; R: boolean };
+  starPresence: { S: boolean; T: boolean; A: boolean; R: boolean; L: boolean };
   /**
    * Indian-context cultural-register markers detected deterministically
    * on the candidate's answer (see src/_cultural-register.ts). The live
@@ -683,7 +683,7 @@ Return a JSON object with EXACTLY this shape:
       "answerText": "<candidate's verbatim answer>",
       "verdict": "<strong|complete|partial|weak|skipped>",
       "score": <0-100>,
-      "starPresence": {"S": <bool>, "T": <bool>, "A": <bool>, "R": <bool>},
+      "starPresence": {"S": <bool>, "T": <bool>, "A": <bool>, "R": <bool>, "L": <bool>},
       "difficulty": "<warmup|standard|hard>",
       "frequencyPct": <0-100 integer estimate OR null if you can't estimate>,
       "frequencyNote": "<≤60 chars, e.g. 'common opener at FAANG', 'bar-raiser variant', 'role-specific probe'>",
@@ -846,7 +846,17 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
                  Result was missing, report says it was present"). Pinning
                  both surfaces to one detector keeps the story coherent. */
               const det = detectStarPresence(pq.answerText || "");
-              const starPresence = { S: det.situation, T: det.task, A: det.action, R: det.result };
+              const starPresence = {
+                S: det.situation,
+                T: det.task,
+                A: det.action,
+                R: det.result,
+                /* STAR+L: Learning. Pin to the deterministic detector so the
+                   live coach + report agree on whether a takeaway was
+                   articulated. Particularly load-bearing on failure /
+                   mistake questions — see _star-detection.ts. */
+                L: Boolean(det.learning),
+              };
               /* Same logic for cultural-register markers: pin the report
                  to the deterministic detector so the candidate sees the
                  same non-penalty signals the live coach treated as such.

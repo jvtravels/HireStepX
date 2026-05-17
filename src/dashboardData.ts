@@ -1005,7 +1005,7 @@ export interface SessionReportPerQuestion {
   answerText: string;
   verdict: "strong" | "complete" | "partial" | "weak" | "skipped";
   score: number;
-  starPresence: { S: boolean; T: boolean; A: boolean; R: boolean };
+  starPresence: { S: boolean; T: boolean; A: boolean; R: boolean; L: boolean };
   difficulty: "warmup" | "standard" | "hard";
   frequencyPct: number | null;
   frequencyNote: string;
