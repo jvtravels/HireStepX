@@ -392,7 +392,7 @@ type NextActionContractEntry = {
   bannedTokens?: RegExp[];
 };
 
-const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContractEntry>> = {
+export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContractEntry>> = {
   /* Discovery probes ask one structured question; emitting a number
    * here is almost always the LLM hallucinating a salary anchor before
    * the recruiter has decided to disclose. Numbers that legitimately
@@ -406,8 +406,18 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
   /* Counter-offers are math turns — the restyle must carry a numeric
    * offer or the candidate has no anchor to react to. */
   "counter-offer": { numberPolicy: "required" },
-  /* Open-with-offer is the seed anchor; numbers are mandatory. */
-  "open-with-offer": { numberPolicy: "required" },
+  /* Open-with-offer: in the kernel-first world this turn is the OPENING
+   * DISCOVERY PROBE (turn 0: "what's your current CTC at the moment?";
+   * turn != 0: "Before I put a number out — what fitment were you
+   * anchoring on?"). Crack 6 (2026-05-17) — contract↔prose drift fix.
+   * The legacy contract required at least one number (it was authored
+   * back when this kind emitted a seed anchor); under the kernel-first
+   * inversion the canonical never emits a number here, so every LLM
+   * restyle of the opener was being rejected on the now-stale
+   * "contract-number-required" rule. Switched to `forbidden` to match
+   * the probe semantics: any number the LLM introduces in the opener is
+   * an unauthorised salary anchor. */
+  "open-with-offer": { numberPolicy: "forbidden" },
   /* close-recap-formal is the structured confirmation turn — numbers
    * are mandatory (the recap exists to bind the candidate to the
    * structured offer). The four band-anchor field tokens (fixed /
@@ -457,10 +467,20 @@ const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextActionContrac
     numberPolicy: "forbidden",
     requiredTokens: [/\bpanel\b/i],
   },
-  /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance docs req. */
+  /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance docs req.
+   * Crack 6 (2026-05-17) — contract↔prose drift fix. The canonical prose
+   * was trimmed (per Phase 4.5 direction) so the offer-letter touchpoint
+   * only asks for PAN + Aadhaar; Form 16 / payslips / bank statements /
+   * relieving letters belong to a separate later BGV workflow. The
+   * contract used to require `Form 16` and `payslip` — tokens the prose
+   * no longer carried — which meant every LLM restyle of this canonical
+   * was being silently rejected in production. Required tokens now
+   * mirror the trimmed canonical: PAN + Aadhaar at the offer-letter
+   * touchpoint, plus a BGV-deferred-step reference so the restyle can't
+   * drop the "we'll come back for the rest" framing. */
   "post-acceptance-document-request": {
     numberPolicy: "optional",
-    requiredTokens: [/\bBGV\b/i, /\bForm\s*16\b/i, /\bpayslip/i],
+    requiredTokens: [/\bPAN\b/i, /\bAadhaar\b/i, /\bBGV\b/i],
   },
   /* Phase 3 missing-lever set (2026-05-17) — panel-approval-stall.
    * Pure stall move; no numbers. The "panel" or "leadership" anchor
@@ -511,7 +531,15 @@ const COMPONENT_PROBE_REQUIRED_TOKENS: Record<
 > = {
   base: /\bbase\b/i,
   variable: /\b(?:variable|bonus|perf)\b/i,
-  esop: /\b(?:esop|rsu|equity|vest)\b/i,
+  /* Crack 6 (2026-05-17) — contract↔prose drift fix. The canonical prose
+   * for the esop component-probe reads "ESOPs in play? Any vesting cliff
+   * or accelerator?" — both "ESOPs" (plural) and "vesting" (gerund) carry
+   * the morpheme, but the prior `\besop\b|\bvest\b` regex pinned the
+   * word boundary and rejected both. Real Indian recruiter idiom for
+   * this topic spans esop/esops/rsu/rsus/equity/vest/vesting/vested, so
+   * the contract token now matches the morpheme + any of its standard
+   * inflections. */
+  esop: /\b(?:esops?|rsus?|equity|vest(?:ed|ing|s)?)\b/i,
 };
 
 /** PDF#27 Fix 2 (2026-05-17) — FOURTH-WALL BREAK.

@@ -1031,8 +1031,13 @@ function renderCanonicalProseBody(
       /* Fires once after verbal acceptance + formal close-recap. Trimmed to
        * PAN + Aadhaar only — sufficient to generate the offer letter. The
        * BGV team requests payslips / Form 16 / bank statements / relieving
-       * letters separately in a later workflow. */
-      return "Congratulations! To get started with the offer letter, can you please share scanned copies of your PAN card and Aadhaar card on this email itself. Our BGV team will reach out separately for the remaining documents.";
+       * letters separately in a later workflow.
+       *
+       * Crack 6 (2026-05-17) — banned-idiom fix. The prior phrasing leaned
+       * on "reach out" which is on BANNED_RECRUITER_IDIOM (US-tech register;
+       * Indian recruiters say "revert"). Switched to "will revert
+       * separately" so the canonical passes the banned-idiom gate. */
+      return "Congratulations! To get started with the offer letter, can you please share scanned copies of your PAN card and Aadhaar card on this email itself. Our BGV team will revert separately for the remaining documents.";
     }
 
     case "component-probe": {
