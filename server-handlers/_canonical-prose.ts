@@ -992,10 +992,11 @@ function renderCanonicalProseBody(
     }
 
     case "post-acceptance-document-request": {
-      /* Phase 2 Indian-HR redesign (2026-05-17) — fires once after the
-       * candidate verbally accepts and the formal close-recap has been
-       * delivered. Standard Indian-HR BGV documentation checklist. */
-      return "Congratulations! To start the documentation and BGV process, can you please share — last 3 months' payslips, last 2 years' Form 16, bank statements for the last 6 months, PAN card, Aadhaar card, educational certificates (10th, 12th, graduation), and relieving letters from previous employers. Once you resign, please also share the resignation acknowledgement. You can send these on this email itself.";
+      /* Fires once after verbal acceptance + formal close-recap. Trimmed to
+       * PAN + Aadhaar only — sufficient to generate the offer letter. The
+       * BGV team requests payslips / Form 16 / bank statements / relieving
+       * letters separately in a later workflow. */
+      return "Congratulations! To get started with the offer letter, can you please share scanned copies of your PAN card and Aadhaar card on this email itself. Our BGV team will reach out separately for the remaining documents.";
     }
 
     case "component-probe": {

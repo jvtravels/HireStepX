@@ -110,9 +110,14 @@ describe("Phase 2 Indian-HR redesign — post-acceptance-document-request single
     const first = planNextAction(s);
     expect(first.kind).toBe("post-acceptance-document-request");
     const prose = renderCanonicalProse(first, s);
-    /* Prose should reference BGV / Form 16 / payslip checklist
-     * vocabulary (canonical wording lives in _canonical-prose.ts case). */
+    /* Prose should reference PAN + Aadhaar (offer-letter-stage docs only)
+     * and BGV as the deferred next step. Heavy docs (Form 16, payslips,
+     * bank statements, relieving letters) intentionally out of scope here —
+     * they belong to a separate later BGV workflow. */
+    expect(prose).toMatch(/PAN/);
+    expect(prose).toMatch(/Aadhaar/);
     expect(prose).toMatch(/BGV|background|verification/i);
+    expect(prose).not.toMatch(/Form 16|payslip|bank statement|relieving/i);
 
     /* Simulate applyAiMove stamping the single-fire field. */
     s = { ...s, postAcceptanceDocsRequestedAtTurn: s.turnIndex };
