@@ -59,7 +59,17 @@ export type BehavioralProbeCue =
      (see _behavioural-answer-signals.ts). */
   | "defensiveness.own-it"
   | "crispness.too-thin"
-  | "vagueness.quantify";
+  | "vagueness.quantify"
+  /* Competency deepeners for the two competencies split out in 2026-05.
+     These fire when the QUESTION itself is on-topic (regex below) — they
+     replace generic STAR coaching with probe phrasing a real interviewer
+     uses for adaptability / execution-rigor specifically. */
+  | "adaptability.what-changed"
+  | "adaptability.learning-speed"
+  | "adaptability.tradeoff"
+  | "execution-rigor.where-missed"
+  | "execution-rigor.process-change"
+  | "execution-rigor.tradeoff-defense";
 
 export interface BehavioralProbe {
   cue: BehavioralProbeCue;
@@ -103,6 +113,18 @@ export const BEHAVIORAL_PROBES: ReadonlyArray<BehavioralProbe> = [
   { cue: "defensiveness.own-it",  text: "Setting aside everyone else for a moment — what's the piece you'd own?", intent: "Redirect deflection on a failure / mistake question back to first-person accountability. Fires when the answer leans on 'wasn't my call' / 'out of my control' / 'they didn't' style framing." },
   { cue: "crispness.too-thin",    text: "Can you give me a bit more — set the scene first.",             intent: "Thin answer (< 40 words) — re-elicit Situation / Task before the coach probes deeper." },
   { cue: "vagueness.quantify",    text: "Roughly what numbers are we talking about?",                    intent: "Push a scale-word answer ('many users', 'several teams') to a quantified one. Fires when the answer uses vague magnitudes with no digits present." },
+  /* adaptability — context-switching, learning velocity, what they
+     gave up. Real interviewers grade on the *cost* of the adaptation,
+     not just that it happened. */
+  { cue: "adaptability.what-changed",   text: "What specifically did you have to change about how you worked?",       intent: "Surface the concrete delta — strong answers name a habit or process they rebuilt; weak answers say 'I adjusted'." },
+  { cue: "adaptability.learning-speed", text: "How long did it take you to get productive again?",                    intent: "Velocity probe — separates candidates who time-boxed their own learning from those who waited to be productive." },
+  { cue: "adaptability.tradeoff",       text: "What did you have to deprioritise to make room for it?",               intent: "Cost-of-change probe — strong answers name what they explicitly cut; weak answers claim 'nothing, I just worked harder'." },
+  /* execution-rigor — self-QA, where in the process the miss lived,
+     what they built so it wouldn't repeat. Differs from ownership: the
+     miss is the *focus*, not just the trigger. */
+  { cue: "execution-rigor.where-missed",     text: "Where in your process did the detail slip?",                       intent: "Force a specific failure point — design, review, testing, handoff — instead of generic 'I should have checked'." },
+  { cue: "execution-rigor.process-change",   text: "What did you put in place so it wouldn't happen again?",           intent: "Systems-thinking probe — strong answers describe a checklist / lint / gate they added; weak answers say 'I'm more careful now'." },
+  { cue: "execution-rigor.tradeoff-defense", text: "If you had the same time pressure again, would you cut the same corner?", intent: "Hindsight + integrity probe — tests whether the candidate can defend a deliberate trade-off vs only confessing in hindsight." },
 ];
 
 /** Lightweight rotation state — caller passes the set of probes
@@ -176,6 +198,18 @@ export function cueFromEngineHints(opts: {
   // distinguishes a strong conflict answer from a generic one.
   if (opts.questionText && /\b(disagree|conflict|pushed back|push back|tough feedback|rejected)\b/i.test(opts.questionText)) {
     return "conflict.disagreement";
+  }
+  // 2b. Adaptability / execution-rigor competency deepeners — same
+  // precedence-band as conflict: when the question is on-topic, the
+  // competency-specific probe beats the generic STAR gap. Mirrors how
+  // a real interviewer doesn't follow up "tell me about adapting" with
+  // "what did you do?" — they follow up with "what did you have to
+  // change about how you worked?".
+  if (opts.questionText && /\b(adapt|adapted|adapting|major change|switch context|learn(?:ed|ing)? (?:a )?(?:new|quickly)|new (?:skill|tool|stack))\b/i.test(opts.questionText)) {
+    return "adaptability.what-changed";
+  }
+  if (opts.questionText && /\b(caught a bug|missed detail|missed (?:a )?detail|came back to bite|thoroughness|cut(?: a)? corner|traded (?:thoroughness|rigor)|defend the call)\b/i.test(opts.questionText)) {
+    return "execution-rigor.where-missed";
   }
   // 3. Thin answer — need more substance before any deeper probe.
   if (opts.crispness === "thin") return "crispness.too-thin";
