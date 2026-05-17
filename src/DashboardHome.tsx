@@ -395,7 +395,7 @@ export default function DashboardHome() {
   } = useDashboardCore();
   const {
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
-    weekActivity, currentStreak, readinessScore, calendarEvents,
+    weekActivity, currentStreak, readinessScore, calendarEvents, topGaps,
   } = useDashboardSessions();
   const { isFree, atSessionLimit, sessionsRemaining } = useDashboardSubscription();
 
@@ -763,8 +763,15 @@ export default function DashboardHome() {
           currentStreak,
           sessionCredits: user?.sessionCredits ?? 0,
           smartSchedule,
+          // Severity-ordering is the caller's contract per nextMove docs.
+          // The analyzer's flag-set order is roughly severity-meaningful
+          // already (each detection appends as it fires through the
+          // dimension cascade); for the v1 wiring we pass through. If
+          // false-positive ranking becomes a problem the fix is a tiny
+          // per-flag severity table here, not in pickNextMove.
+          topGaps,
         });
-        const { headline, ctaLabel, ctaHref, chips: pureChips } = next;
+        const { headline, ctaLabel, ctaHref, chips: pureChips, coachingFocus } = next;
 
         const chipIcon = {
           streak: <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
@@ -792,6 +799,14 @@ export default function DashboardHome() {
               <p style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 500, color: c.ivory, lineHeight: 1.45, margin: 0 }}>
                 {headline}
               </p>
+              {coachingFocus && (
+                <p
+                  style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, marginTop: 6, marginBottom: 0, fontStyle: "italic" }}
+                  data-testid="dashboard-next-step-coaching-focus"
+                >
+                  From your last HR round: {coachingFocus.label}
+                </p>
+              )}
               {chips.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                   {chips.map((chip, i) => (

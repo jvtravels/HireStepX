@@ -18,10 +18,12 @@ import { track } from "@vercel/analytics";
 import {
   evaluateSessionWithAI,
   fetchRecentSessionScores,
+  fetchSessionCredibility,
   saveStoryToNotebook,
   type SessionReport as SessionReportData,
   type SessionTrendPoint,
 } from "../dashboardData";
+import { summarizeCredibility, type CredibilitySummary } from "../_credibilityCallout";
 import {
   fetchLiveCohort,
   type LiveCohort,
@@ -230,6 +232,7 @@ export const SessionReport = memo(function SessionReport({
   const [reloadTick, setReloadTick] = useState(0);
   const [trend, setTrend] = useState<SessionTrendPoint[]>([]);
   const [liveCohort, setLiveCohort] = useState<LiveCohort | null>(null);
+  const [credibility, setCredibility] = useState<CredibilitySummary | undefined>(undefined);
 
   const roleFamily: RoleFamily = useMemo(
     () => roleToFamily(session.role),
@@ -389,6 +392,24 @@ export const SessionReport = memo(function SessionReport({
     fetchLiveCohort()
       .then((cohort) => {
         if (!cancelled) setLiveCohort(cohort);
+      })
+      .catch(() => {});
+    /* Credibility callout — fetches the session_insights row for this
+       session and filters to the BGV-checkable subset. Quiet failure:
+       the panel simply doesn't render if the analyzer cron hasn't
+       written a row yet, or if the row has no credibility flags. */
+    fetchSessionCredibility(session.id)
+      .then((row) => {
+        if (cancelled) return;
+        const summary = summarizeCredibility(row);
+        setCredibility(summary);
+        if (summary.hasIssues) {
+          track("report_credibility_callout_shown", {
+            sessionId: session.id,
+            count: summary.count,
+            flags: summary.items.map((i) => i.flag).join(","),
+          });
+        }
       })
       .catch(() => {});
     return () => {
@@ -619,6 +640,7 @@ export const SessionReport = memo(function SessionReport({
       onSaveTopStory={onSaveTopStory}
       onTrustAnswer={onTrustAnswer}
       onUsefulAnswer={onUsefulAnswer}
+      credibility={credibility}
     />
   );
 });

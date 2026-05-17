@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pickNextMove } from "../nextMove";
+import { pickNextMove, GAP_CTA_MAP } from "../nextMove";
 
 /**
  * Tests for the Dashboard "Your next move" CTA decision tree. Covers the
@@ -199,6 +199,90 @@ describe("pickNextMove", () => {
     it("no weakness, streak < 3 → generic welcome-back", () => {
       const out = pickNextMove({ skills: [], currentStreak: 1, sessionCredits: 0 });
       expect(out.headline).toBe("Pick up where you left off.");
+    });
+  });
+
+  describe("gap-aware CTA (v4.2/v4.3 HR-round)", () => {
+    it("matched gap wins over weakest skill (gap CTAs are more concrete)", () => {
+      const out = pickNextMove({
+        skills: [{ name: "Communication", score: 30 }],
+        currentStreak: 0,
+        sessionCredits: 0,
+        topGaps: ["under_titled_candidate"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("under_titled_candidate");
+      expect(out.ctaLabel).toBe("Practice defending your scope at offer time");
+      expect(out.ctaHref).toBe("/session/new?focus=hr-round&drill=under_titled");
+      // weakest-skill still surfaced for the sublabel/legacy callers
+      expect(out.weakestSkillName).toBe("Communication");
+    });
+
+    it("highest-severity gap (topGaps[0]) takes priority over later entries", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        sessionCredits: 0,
+        topGaps: ["resume_transcript_mismatch", "floor_collapse", "under_titled_candidate"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("resume_transcript_mismatch");
+    });
+
+    it("unknown gap codes fall through to skill-based CTA (additive map)", () => {
+      const out = pickNextMove({
+        skills: [{ name: "Structure", score: 40 }],
+        currentStreak: 0,
+        sessionCredits: 0,
+        topGaps: ["some_future_gap_we_dont_handle_yet"],
+      });
+      expect(out.coachingFocus).toBe(null);
+      expect(out.ctaLabel).toBe("Practice Structure");
+    });
+
+    it("first unknown then known → walks the list and picks the known one", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        sessionCredits: 0,
+        topGaps: ["unknown_a", "unknown_b", "floor_collapse"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("floor_collapse");
+    });
+
+    it("topGaps absent → behavior identical to skill-only callers (backward compat)", () => {
+      const out = pickNextMove({
+        skills: [{ name: "Structure", score: 40 }],
+        currentStreak: 0,
+        sessionCredits: 0,
+      });
+      expect(out.coachingFocus).toBe(null);
+      expect(out.ctaLabel).toBe("Practice Structure");
+    });
+
+    it("topGaps empty array → also a no-op", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 5,
+        sessionCredits: 0,
+        topGaps: [],
+      });
+      expect(out.coachingFocus).toBe(null);
+      expect(out.ctaLabel).toBe("Keep the streak going");
+    });
+
+    it("every gap in GAP_CTA_MAP produces a non-empty label + headline + drill key", () => {
+      // Regression guard: nobody adds a gap to the map without filling all fields.
+      for (const [code, cta] of Object.entries(GAP_CTA_MAP)) {
+        expect(cta.label, `${code}.label`).toBeTruthy();
+        expect(cta.headline, `${code}.headline`).toBeTruthy();
+        expect(cta.drill, `${code}.drill`).toMatch(/^[a-z_]+$/);
+      }
+    });
+
+    it("all four v4.2/v4.3 resume-cross-check codes are covered", () => {
+      expect(GAP_CTA_MAP).toHaveProperty("resume_transcript_mismatch");
+      expect(GAP_CTA_MAP).toHaveProperty("resume_gap_unaddressed");
+      expect(GAP_CTA_MAP).toHaveProperty("inflated_seniority_claim");
+      expect(GAP_CTA_MAP).toHaveProperty("under_titled_candidate");
     });
   });
 });

@@ -1051,7 +1051,7 @@ function FAQ() {
   const items = [
     { q: "Why not just use ChatGPT?", a: "No voice, no timer, no rubric, no memory. ChatGPT is a tutor; HireStepX is a simulator." },
     { q: "Is this for freshers?", a: "Yes. Campus placement (TCS NQT, Infosys, Wipro) is one of four core flows." },
-    { q: "System design, coding, behavioral, HR, salary — all of these?", a: "All. Plus case study, panel, govt/PSU, and teaching." },
+    { q: "System design, coding, behavioral, HR, salary — all of these?", a: "All. Plus case study, panel, and govt/PSU." },
     { q: "Hindi or Hinglish supported?", a: "Yes. Speak in either, get feedback in either, switch mid-interview." },
     { q: "What if the AI feedback is wrong?", a: "Every score has a flag button. Wrong feedback gets a free re-mock + manual review within 24h." },
     { q: "Is my resume used to train models?", a: "No. We use frozen APIs (Groq, Gemini). Your data is yours. Delete anytime." },

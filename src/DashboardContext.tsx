@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
-import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken } from "./supabase";
+import { getUserSessions, getCalendarEvents, syncGoogleEvents, getGoogleProviderToken, getLatestSessionInsightFlags } from "./supabase";
 import { scheduleEventNotifications } from "./interviewNotifications";
 import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
@@ -30,6 +30,14 @@ interface SessionsContextValue {
   currentStreak: number;
   readinessScore: number;
   calendarEvents: InterviewEvent[];
+  /**
+   * Gap-flag codes from the user's most-recently analyzed session
+   * (`session_insights.flags`), used by the "Your next move" CTA to
+   * surface gap-specific coaching. Empty array when no insight row
+   * exists yet (first-time user or last session not yet analyzed
+   * by the nightly cron).
+   */
+  topGaps: string[];
   refreshSessions: () => void;
 }
 
@@ -148,6 +156,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   });
   const [calendarEvents, setCalendarEvents] = useState<InterviewEvent[]>(loadEvents);
   const [supabaseSessions, setSupabaseSessions] = useState<RealSession[]>([]);
+  // Flags from the user's most-recent analyzed session — drives the
+  // gap-aware "Your next move" CTA. Loaded lazily after auth so the
+  // initial dashboard paint isn't blocked by it; empty until the fetch
+  // completes (degrades gracefully to skill-based CTA).
+  const [topGaps, setTopGaps] = useState<string[]>([]);
   const [syncError, setSyncError] = useState("");
   const [dataLoading, setDataLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -268,6 +281,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           }
         } catch { setSyncError("Could not load session data."); }
       }),
+      // Best-effort fetch of latest analyzed-session flags for the
+      // gap-aware "Your next move" CTA. Failure → empty topGaps →
+      // dashboard falls back to skill-based CTA.
+      getLatestSessionInsightFlags(user.id).then(flags => {
+        if (cancelled) return;
+        setTopGaps(flags);
+      }).catch(() => { /* silent — CTA degrades to skill-based */ }),
       getCalendarEvents(user.id).then(events => {
         if (cancelled) return;
         const mapped = events.map(e => ({
@@ -575,8 +595,8 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
   const sessionsValue: SessionsContextValue = useMemo(() => ({
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
     weekActivity, currentStreak, readinessScore,
-    calendarEvents, refreshSessions,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, refreshSessions]);
+    calendarEvents, topGaps, refreshSessions,
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, isPro, atSessionLimit,

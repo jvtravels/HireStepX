@@ -317,7 +317,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.3",
+  version: "hr-round-v4.3.1",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -792,7 +792,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
             dimension: "comp_transparency",
             expected: "By ~5 years YoE in the Indian market, the resume title should reflect scope (Senior / Lead) — HR anchors the comp band on title, not narrative.",
             observed: `Resume YoE ≈ ${yearsRounded} years but every title is plain IC ("${resumeAgg.titles[0]}"). Under-titled candidates get anchored low on band.`,
-            severity: "low",
+            // Promoted low → medium: at 5+ YoE in the Indian market the
+            // title-anchor gap is worth lakhs at offer time, not a nice-to-have.
+            severity: "medium",
           });
         }
       }

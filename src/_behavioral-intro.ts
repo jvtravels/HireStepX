@@ -21,7 +21,7 @@
  * voice-continuity check (same interviewer name surfaces in evaluation).
  */
 
-export interface BuildBehavioralIntroOpts {
+interface BuildBehavioralIntroOpts {
   /** Deterministic per-session interviewer name (e.g. "Priya Sharma").
    *  Built upstream via getInterviewerName(seed). */
   interviewerName: string;
@@ -141,10 +141,3 @@ export function buildBehavioralIntro(opts: BuildBehavioralIntroOpts): string {
   return `${greeting} ${selfIntro} ${rapportHook}`;
 }
 
-/** Display-ready variant — identical to TTS output for behavioural intros
- *  (no prosody markers to strip). Kept as a separate function so future
- *  prosody additions to buildBehavioralIntro (e.g. [pause:short] beats)
- *  don't leak into the UI. */
-export function buildBehavioralIntroDisplay(opts: BuildBehavioralIntroOpts): string {
-  return buildBehavioralIntro(opts);
-}

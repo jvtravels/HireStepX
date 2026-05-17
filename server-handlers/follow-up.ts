@@ -16,7 +16,7 @@ import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-r
 import { summarizeReverseInterview } from "../src/_reverse-interview";
 import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-register";
 import { getPanelPersona, panelPersonaPromptFragment } from "../src/_indian-panel-personas";
-import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment } from "./_behavioral-followup-bank";
+import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment, shouldSuppressCue } from "./_behavioral-followup-bank";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -46,7 +46,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { headers, auth } = pre;
 
   try {
-    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy } = await req.json() as {
+    const { question, answer, type, role, jobDescription, company, currentCity, jobCity, followUpDepth = 0, adaptiveDifficulty, previousFollowUps, persona, conversationHistory, negotiationPhase, questionIndex, totalQuestions, resumeTopSkills, resumeProjects, resumeExperiences, initialOfferText, negotiationFacts, negotiationStyle, negotiationBand: clientNegotiationBand, industry, highestOfferMade, candidateTarget, negotiationScenario, candidateState, previousMentions, personaTrait, candidateWalkAway: prepWalkAway, candidateCompetingOffer: prepCompetingOffer, starGap, weHeavy, vagueness, crispness, selfAwarenessShown, defensiveness } = await req.json() as {
       question: string; answer: string; type: string; role: string;
       jobDescription?: string; company?: string;
       currentCity?: string; jobCity?: string;
@@ -104,6 +104,13 @@ export default async function handler(req: Request): Promise<Response> {
       candidateCompetingOffer?: number;
       starGap?: "action" | "result" | "situation-task";
       weHeavy?: boolean;
+      /* Lift A — answer-analysis signals computed in the engine. All
+         optional; absence is treated as "signal not detected" so legacy
+         callers and salary-neg / technical types are unaffected. */
+      vagueness?: boolean;
+      crispness?: "thin" | "ok" | "rambling";
+      selfAwarenessShown?: boolean;
+      defensiveness?: boolean;
     };
 
     if (!question || typeof question !== "string" || !answer || typeof answer !== "string") {
@@ -224,19 +231,81 @@ export default async function handler(req: Request): Promise<Response> {
   // or we-heavy framing, inject the preferred real-interviewer phrasing
   // into the prompt as a soft constraint. Makes probes feel consistent
   // across sessions and saves a chunk of LLM cost on common gaps.
-  const behaviouralProbeContext = (() => {
-    if (type !== "behavioral" && type !== "behavioural") return "";
+  /* Behavioural probe-bank selection. Returns the prompt fragment AND
+   *  a telemetry record so we can measure cache hit-rate in PostHog.
+   *  source values:
+   *    "bank"       — a canonical probe was picked and injected
+   *    "suppressed" — cue fired but shouldSuppressCue dropped it (e.g.
+   *                   would-do-differently closer when candidate already
+   *                   self-critiqued)
+   *    "no-cue"     — engine hints produced no deterministic cue;
+   *                   LLM generates a contextual probe
+   *    "no-match"   — cue fired but no probe in the bank matched
+   *    "skipped"    — non-behavioural type; telemetry not emitted */
+  const behaviouralProbeResult: {
+    fragment: string;
+    cue: string | null;
+    source: "bank" | "suppressed" | "no-cue" | "no-match" | "skipped";
+    probeText: string | null;
+  } = (() => {
+    if (type !== "behavioral" && type !== "behavioural") {
+      return { fragment: "", cue: null, source: "skipped", probeText: null };
+    }
+    // Validate crispness shape — anything outside the documented union
+    // gets dropped rather than narrowing to a wrong cue.
+    const safeCrispness: "thin" | "ok" | "rambling" | undefined =
+      crispness === "thin" || crispness === "ok" || crispness === "rambling"
+        ? crispness
+        : undefined;
     const cue = cueFromEngineHints({
       starGap: starGap as "action" | "result" | "situation-task" | undefined,
       weHeavy: Boolean(weHeavy),
       questionText: question,
+      vagueness: Boolean(vagueness),
+      crispness: safeCrispness,
+      selfAwarenessShown: Boolean(selfAwarenessShown),
+      defensiveness: Boolean(defensiveness),
     });
-    if (!cue) return "";
+    if (!cue) return { fragment: "", cue: null, source: "no-cue", probeText: null };
+    // Lift A — if the candidate already self-critiqued, suppress the
+    // would-do-differently closer; falling through to LLM generation is
+    // the right move because a custom probe will land better than an
+    // off-the-shelf one when the obvious cue is gone.
+    if (shouldSuppressCue(cue, { selfAwarenessShown: Boolean(selfAwarenessShown) })) {
+      return { fragment: "", cue, source: "suppressed", probeText: null };
+    }
     const alreadyAsked = Array.isArray(previousFollowUps) ? previousFollowUps : [];
     const probe = pickBehavioralProbe({ cue, alreadyAsked });
-    if (!probe) return "";
-    return "\n\n" + probePromptFragment(probe);
+    if (!probe) return { fragment: "", cue, source: "no-match", probeText: null };
+    return {
+      fragment: "\n\n" + probePromptFragment(probe),
+      cue,
+      source: "bank",
+      probeText: probe.text,
+    };
   })();
+  const behaviouralProbeContext = behaviouralProbeResult.fragment;
+  // Telemetry — measure bank hit-rate vs LLM fallback. Fire-and-forget
+  // so prompt-build latency stays unaffected. Skipped for non-behavioural
+  // types so the event volume isn't polluted.
+  if (behaviouralProbeResult.source !== "skipped") {
+    void captureServerEvent("behavioural_probe_picked", distinctIdFrom(req, auth.userId), {
+      cue: behaviouralProbeResult.cue,
+      source: behaviouralProbeResult.source,
+      probe_text: behaviouralProbeResult.probeText,
+      role: typeof role === "string" ? role.slice(0, 64) : null,
+      company: typeof company === "string" ? company.slice(0, 64) : null,
+      follow_up_depth: followUpDepth,
+      // Signal which Lift A inputs were present — lets us correlate
+      // bank-hit rate with engine-signal completeness in dashboards.
+      had_star_gap: Boolean(starGap),
+      had_we_heavy: Boolean(weHeavy),
+      had_vagueness: Boolean(vagueness),
+      had_crispness: crispness === "thin" || crispness === "ok" || crispness === "rambling",
+      had_self_awareness: Boolean(selfAwarenessShown),
+      had_defensiveness: Boolean(defensiveness),
+    });
+  }
     /* Wave-8: campus-placement in-session resume pushback.
      *
      * Carries the list of companies / titles the candidate has on their

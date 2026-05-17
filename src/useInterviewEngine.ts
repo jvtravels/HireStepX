@@ -39,6 +39,7 @@ import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
 import { detectStarPresence, nextStarGap } from "./_star-detection";
+import { detectBehaviouralAnswerSignals, type BehaviouralAnswerSignals } from "../server-handlers/_behavioural-answer-signals";
 import { buildBehavioralIntro } from "./_behavioral-intro";
 import { cleanSalarySttArtifacts } from "./_salary-stt-cleanup";
 import { useInterviewTimers } from "./useInterviewTimers";
@@ -2110,6 +2111,14 @@ export function useInterviewEngine() {
            default to "we" out of cultural humility; we don't want to
            punish that, just ask the next question. */
         let weHeavyHint = false;
+        /* Lift A — answer-analysis signals (vagueness, crispness,
+           self-awareness, defensiveness). Pure regex on answer text +
+           the originating question; cheap enough to run inline. Computed
+           here so the follow-up coach can fire `crispness.too-thin`,
+           `defensiveness.own-it`, `vagueness.quantify` cues and suppress
+           `closer.would-do-differently` when the candidate already
+           self-critiqued. */
+        let behaviouralSignals: BehaviouralAnswerSignals | null = null;
         if (interviewType === "behavioral") {
           let questionStepIdx = currentStep;
           for (let i = currentStep; i >= 0; i--) {
@@ -2126,6 +2135,13 @@ export function useInterviewEngine() {
             }
             if (star.weHeavy && wordCount >= 25) weHeavyHint = true;
           }
+          // Pin signals against the ORIGINATING question (not a prior
+          // follow-up step) so `isFailureQuestion` reads the right text.
+          const originatingQ = interviewScript[questionStepIdx]?.aiText ?? currentStepObj?.aiText ?? "";
+          behaviouralSignals = detectBehaviouralAnswerSignals({
+            questionText: originatingQ,
+            answer: answerText,
+          });
         }
 
         /* Canonical kernel path for salary-negotiation. Routes through
@@ -2397,6 +2413,10 @@ export function useInterviewEngine() {
           previousMentions,
           starGap: starGapHint,
           weHeavy: weHeavyHint,
+          vagueness: behaviouralSignals?.vagueness,
+          crispness: behaviouralSignals?.crispness,
+          selfAwarenessShown: behaviouralSignals?.selfAwarenessShown,
+          defensiveness: behaviouralSignals?.defensiveness,
         }); }
       } else {
         pendingFollowUpRef.current = null;
