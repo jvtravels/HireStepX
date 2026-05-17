@@ -274,7 +274,15 @@ export function buildStaticFallback(opts: {
   // generic prompts.
   if (focus === "behavioral" || focus === "behavioural") {
     const seed = ((count * 31) + (focus.length * 17) + (roleFamily.length)) >>> 0;
-    const sampled = sampleBehavioralQuestions({ count, seed });
+    /* Opt in to frequency-weighted sampling for the LLM-down fallback
+       path: a candidate who hits this code is already getting a degraded
+       experience, so the consolation is "at least we ask the questions
+       interviewers actually ask most often" instead of a uniform draw
+       across the bank. The LLM-up path (where `generate-questions` calls
+       Groq/Gemini) still uses the unweighted bank for the
+       canonical-phrasing rule — see the rationale in
+       `generate-questions.ts`. */
+    const sampled = sampleBehavioralQuestions({ count, seed, weightByFrequency: true });
     if (sampled.length > 0) {
       return [
         { type: "intro", aiText: "Hi — let's get started. To warm up, tell me a bit about yourself and what brings you to this role." },
