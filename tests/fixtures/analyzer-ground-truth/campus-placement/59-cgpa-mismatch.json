@@ -1,0 +1,18 @@
+{
+  "name": "Candidate verbally claims 8.7 CGPA but the resume lists 7.2 — > 0.5 drift, transcript-checkable fabrication",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Wipro",
+    "transcript": [
+      { "speaker": "ai", "text": "What's your current CGPA?", "time": "" },
+      { "speaker": "user", "text": "My CGPA is 8.7, currently. I've been consistent across all semesters.", "time": "" }
+    ]
+  },
+  "resume": {
+    "degree": "B.Tech CSE",
+    "school": "VIT Vellore",
+    "gradYear": "2025",
+    "cgpa": "7.2"
+  },
+  "expected": { "must_include": ["cgpa_mismatch_with_resume"], "must_not_include": ["empty_transcript"] }
+}

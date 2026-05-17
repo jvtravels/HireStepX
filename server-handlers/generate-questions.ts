@@ -1161,19 +1161,23 @@ Requirements:
         else groundingMissing++;
       }
     }
-    /* Wave-8 anchor-validator (telemetry only, no retry).
+    /* Wave-8 anchor-validator (now: detect + repair on miss).
      *
      * When the caller supplied `resumeExperiences`, Wave-7's prompt
      * block told the LLM "at least one stem must reference a listed
      * company / project". Here we verify whether the LLM actually did
      * — scan every aiText for any company name or 4+ char bullet word
-     * from the supplied experiences. Telemetry only for now: a
-     * second LLM round-trip on miss would 2x cost; first measure
-     * miss-rate, then decide whether the retry is worth it. The flag
-     * lights up the `gq_no_resume_anchor` event on PostHog for the
-     * dashboard. */
+     * from the supplied experiences. On miss, instead of paying for a
+     * full second LLM round-trip, we deterministically REPLACE the
+     * last question with a synthesized anchor probe built from the
+     * first resume experience. Cheap (no LLM call), guaranteed to
+     * anchor, and matches what a real interviewer would ask. The
+     * `gq_no_resume_anchor` event still fires so we can monitor the
+     * miss rate; a new `anchor_repaired` property tracks whether the
+     * injection happened. */
     let anchorChecked = false;
     let anchorHit = false;
+    let anchorRepaired = false;
     if (Array.isArray(resumeExperiences) && resumeExperiences.length > 0 && Array.isArray(questions)) {
       anchorChecked = true;
       const anchorTokens = new Set<string>();
@@ -1206,12 +1210,42 @@ Requirements:
         if (anchorHit) break;
       }
       if (!anchorHit) {
+        // Repair: replace the last question with a deterministic anchor
+        // probe built from the first resume experience. Picks the most
+        // recent / most distinctive entry — typically the candidate's
+        // current or most-recent role — and synthesizes a stem that any
+        // good interviewer would ask. Falls back to telemetry-only if
+        // the first experience is degenerate (no company AND no title).
+        try {
+          const first = (resumeExperiences as Array<Record<string, unknown>>)[0] || {};
+          const company = typeof first.company === "string" ? first.company.trim() : "";
+          const title = typeof first.title === "string" ? first.title.trim() : "";
+          const bullets = Array.isArray(first.bullets) ? (first.bullets as unknown[]).filter((b): b is string => typeof b === "string" && b.trim().length > 0) : [];
+          const firstBullet = bullets[0] ? bullets[0].trim().replace(/^[-•*]\s*/, "") : "";
+          if ((company || title) && Array.isArray(questions) && questions.length > 0) {
+            const anchorStem = firstBullet
+              ? `Walk me through the work you did at ${company || title}${firstBullet ? ` — specifically the "${firstBullet.slice(0, 90)}" bullet on your resume` : ""}. What was the actual contribution you owned, and what was the measurable outcome?`
+              : `Walk me through your time at ${company || title}. What was the project, what was your specific contribution, and what shipped?`;
+            const lastIdx = (questions as unknown[]).length - 1;
+            (questions as Array<Record<string, unknown>>)[lastIdx] = {
+              type: "question",
+              aiText: anchorStem,
+              scoreNote: "Resume-anchored probe (deterministic injection). Grade on STAR specificity, ownership clarity, and measurable outcome.",
+              groundingCheck: "verified",
+            };
+            anchorRepaired = true;
+            anchorHit = true; // by construction
+          }
+        } catch {
+          // Repair is best-effort — telemetry below still fires.
+        }
         void captureServerEvent("gq_no_resume_anchor", distinctIdFrom(req, auth.userId), {
           focus: requestFocus,
           type: requestType,
           experience_count: resumeExperiences.length,
           anchor_token_count: anchorTokens.size,
           question_count: questions.length,
+          anchor_repaired: anchorRepaired,
         }, req);
       }
     }
@@ -1303,6 +1337,7 @@ Requirements:
       retrieval_tier: retrievalResult.tier,
       anchor_checked: anchorChecked,
       anchor_hit: anchorHit,
+      anchor_repaired: anchorRepaired,
     }, req);
 
     // Best-effort: cache the successful response for ~5 min so retries /

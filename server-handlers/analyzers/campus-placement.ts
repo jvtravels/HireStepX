@@ -1101,11 +1101,18 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       if (resume.school && resume.school.length >= 3) {
         const resumeSchoolNorm = resume.school.toLowerCase().replace(/[^a-z0-9]/g, "");
         const resumeTier = classifyCollegeTier(resume.school);
-        // Detect college mentions in transcript — accept loose
-        // patterns (any "college" / "university" / "institute" noun
-        // following "from", "at", "studied at", or as standalone).
-        const collegeMentionRe = /\b(?:from|at|studied at|graduated from|i'?m at|i'?m in|i'?m from)\s+([A-Za-z][A-Za-z& .'-]{4,60}(?:university|college|institute|iit|nit|iiit|bits)[A-Za-z &.,'-]{0,40})/gi;
+        // Detect college mentions in transcript. Two patterns:
+        //   (a) Tier-1/2 acronym + city — "IIT Bombay", "NIT Surathkal",
+        //       "BITS Pilani", "IIIT Hyderabad". Acronym at start of span.
+        //   (b) After a preposition ("from", "at", "studied at"…) a longer
+        //       name ending in University / College / Institute.
         const mentions: string[] = [];
+        const acronymRe = /\b(IIT|NIT|IIIT|BITS|IISc|IIM)\b[\s-]*([A-Za-z][A-Za-z .'-]{2,40})/g;
+        let am: RegExpExecArray | null;
+        while ((am = acronymRe.exec(userText)) !== null) {
+          mentions.push(`${am[1]} ${am[2]}`.trim());
+        }
+        const collegeMentionRe = /\b(?:from|at|studied at|graduated from|i'?m at|i'?m in|i'?m from)\s+([A-Za-z][A-Za-z& .'-]{4,60}(?:university|college|institute)[A-Za-z &.,'-]{0,40})/gi;
         let cm: RegExpExecArray | null;
         while ((cm = collegeMentionRe.exec(userText)) !== null) {
           const m = cm[1].trim();
@@ -1135,7 +1142,42 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         }
       }
 
-      // 5) Portfolio satisfied by resume.
+      // 5) CGPA mismatch with resume.
+      // Resume.cgpa is BGV-checked (transcript / provisional). If the
+      // candidate verbally claims a CGPA > 0.5 points off (or > 5% for
+      // percentage scales), flag — recruiters do verify against the
+      // transcript. Tolerate small drift (rounding, latest-semester SGPA
+      // movement). Skip entirely if resume CGPA is unparseable.
+      if (resume.cgpa) {
+        const resumeCgpa = parseFloat(resume.cgpa);
+        if (!Number.isNaN(resumeCgpa) && resumeCgpa > 0) {
+          const isPercentScale = resumeCgpa > 10;
+          const tolerance = isPercentScale ? 5 : 0.5;
+          // Patterns: "my CGPA is 8.2", "I have 7.4 CGPA", "8.7 out of 10",
+          // "scored 84%". Plausibility-filter to the resume's own scale.
+          const cgpaRe = /\b(?:cgpa|gpa|sgpa)\s*(?:is|of|:|stands at|currently)?\s*(\d{1,2}(?:\.\d{1,2})?)\b|\b(\d{1,2}\.\d{1,2})\s*(?:cgpa|gpa|sgpa|\/\s*10|out of (?:ten|10))\b|\b(?:scored|got|secured|with)\s+(\d{2,3})\s*(?:%|percent)\b/gi;
+          const spoken: number[] = [];
+          let cm2: RegExpExecArray | null;
+          while ((cm2 = cgpaRe.exec(userText)) !== null) {
+            const v = parseFloat(cm2[1] || cm2[2] || cm2[3]);
+            if (Number.isNaN(v)) continue;
+            if (isPercentScale && v >= 30 && v <= 100) spoken.push(v);
+            else if (!isPercentScale && v >= 4 && v <= 10) spoken.push(v);
+          }
+          const drifted = spoken.filter((v) => Math.abs(v - resumeCgpa) > tolerance);
+          if (drifted.length > 0) {
+            flags.add("cgpa_mismatch_with_resume");
+            gaps.push({
+              dimension: "credibility",
+              expected: `The CGPA you stated (${drifted.map((d) => d.toFixed(2)).join(", ")}) should match what's on your resume (${resumeCgpa}). Recruiters verify CGPA against the transcript / provisional — even a 1-point drift will trip BGV.`,
+              observed: `Resume lists CGPA ${resumeCgpa}, but candidate mentioned ${drifted.map((d) => d.toFixed(2)).join(", ")} in the transcript.`,
+              severity: "high",
+            });
+          }
+        }
+      }
+
+      // 6) Portfolio satisfied by resume.
       // The transcript-only `portfolio_absent_for_claim` rule fires
       // when the user narrates a project without dropping a GitHub
       // link in their answer. If their resume lists a GitHub /
@@ -1201,6 +1243,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("branch_mismatch_with_resume")) tips.push("Your resume's degree field is the BGV-checked source of truth. If you spoke about a different branch than what's on your resume, frame it explicitly: 'My resume lists Mechanical — I've been doing CS50, Striver SDE Sheet, and projects on the side, which is why I'm targeting SDE roles.' Owning the bridge beats a silent verbal swap.");
     if (flags.has("grad_year_mismatch_with_resume")) tips.push("Your stated graduation year and the year on your resume must match within a year — BGV pulls the year off your provisional degree / transcript. If you're an extended-semester passout, state it once and stick to it: 'I graduated in 2024 — completed after one supplementary in extended semester.' Drifting between two years in the same interview reads as fabrication.");
     if (flags.has("college_mismatch_with_resume")) tips.push("Name the exact college on your resume — Indian campus BGV cross-checks the degree certificate, and Tier-1-sounding swaps (e.g. saying 'IIT' when the resume lists 'NIT') are an instant disqualifier. If you transferred, say it once: 'Started at NIT Surat, transferred to NIT Trichy in 2nd year, both reflected on the resume.'");
+    if (flags.has("cgpa_mismatch_with_resume")) tips.push("Your CGPA on the resume is the BGV-checked number — recruiters cross-reference it against your transcript. Stating a different CGPA verbally (even rounded up by 1 point) reads as fabrication. If your latest semester moved the average, say so explicitly: 'My resume shows 7.2 from last semester; current cumulative is 7.4 after this semester's results.' Specificity beats inflation.");
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);

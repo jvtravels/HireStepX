@@ -90,6 +90,9 @@ export interface ResumeForAnalyzer {
   school?: string;
   /** Graduation year as string ("2025") — kept loose for fallback parser. */
   gradYear?: string;
+  /** CGPA / percentage as string, e.g. "8.2" or "84". Used by the
+   *  campus-placement analyzer to cross-check verbal CGPA claims. */
+  cgpa?: string;
   /** Per-role timeline. Each entry has the company / title / period the
    *  user listed on the resume. Bullets included so cross-checks can
    *  spot project / metric drift between transcript and resume. */
