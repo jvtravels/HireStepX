@@ -7,6 +7,14 @@
  *
  * Cost: ~1500 input tokens, ~200 output. With Groq the cost is roughly
  * $0.0003 per session — bounded by MAX_RESCORES_PER_RUN in the cron.
+ *
+ * This file also exports `rescoreFlags()` — a narrower 2nd-pass LLM
+ * call that takes specific regex-fired flags + their evidence turns
+ * and asks the LLM whether each one is a true positive. The HR-round
+ * analyzer wires three weak-regex flags through this (see hr-round.ts)
+ * so semantic false positives drop out before the report is generated.
+ * Cost is bounded: only fires when the regex first-pass already
+ * matched, max 3 flags per session, ~500-token prompt each.
  */
 
 import { callLLM, extractJSON } from "../_llm";
@@ -144,6 +152,85 @@ ${compactTranscript(session.transcript)}
     return parsed;
   } catch (e) {
     console.error(`[llm-rescore] failed for ${session.id}: ${(e as Error).message}`);
+    return null;
+  }
+}
+
+/* ─── Flag rescore: weak-regex false-positive guard ───────────────── */
+
+/** One regex hit, plus the surrounding context the LLM needs to judge
+ *  whether the flag is a true positive. */
+export interface FlagRescoreCandidate {
+  flag: string;
+  /** The HR / AI prompt that elicited the user's reply, when known. */
+  aiPrompt?: string;
+  /** The candidate's reply text the regex matched against. */
+  userReply: string;
+  /** Short prose rubric — what would make this flag a TRUE positive. */
+  rubric: string;
+}
+
+/** Per-flag verdict from the LLM. `keep=true` means the regex was right;
+ *  `keep=false` drops the flag from the analyzer result. */
+export interface FlagRescoreVerdict {
+  flag: string;
+  keep: boolean;
+  reason: string;
+}
+
+/** Returns null when rescore is disabled or the LLM call fails — the
+ *  caller should treat null as "keep every flag as-is" (fail-open).
+ *  When successful, returns one verdict per input candidate; flags whose
+ *  verdict is `keep:false` should be removed from the analyzer result. */
+export async function rescoreFlags(
+  candidates: FlagRescoreCandidate[],
+): Promise<FlagRescoreVerdict[] | null> {
+  if (!isRescoreEnabled()) return null;
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+  // Cap at 5 so the prompt stays small and bounded.
+  const slice = candidates.slice(0, 5);
+
+  const payload = slice
+    .map(
+      (c, i) =>
+        `${i + 1}. flag: ${c.flag}\n   rubric: ${c.rubric}\n   ai_prompt: ${
+          (c.aiPrompt || "(unknown)").slice(0, 240)
+        }\n   user_reply: ${(c.userReply || "").slice(0, 600)}`,
+    )
+    .join("\n\n");
+
+  const prompt = `You are validating regex-fired interview flags. For each numbered candidate, judge whether the regex was a TRUE positive against its rubric. A flag is FALSE if the candidate's reply actually meets the rubric despite triggering a weak-keyword regex (e.g. someone says "great culture, specifically RazorpayX's launch in 2024" — the "great culture" token fires generic_why_company but the reply IS specific).
+
+Respond ONLY with JSON in this exact shape — one verdict per input, same order:
+{ "verdicts": [ { "flag": "<copied verbatim>", "keep": true|false, "reason": "<≤15 words>" }, ... ] }
+
+CANDIDATES:
+${payload}`.trim();
+
+  try {
+    const res = await callLLM({ prompt, temperature: 0.1, maxTokens: 400, jsonMode: true }, 8000, {
+      endpoint: "analyzer-flag-rescore",
+    });
+    const parsed = extractJSON<{ verdicts?: unknown }>(res.text);
+    const arr = parsed && Array.isArray((parsed as { verdicts?: unknown }).verdicts)
+      ? ((parsed as { verdicts: unknown[] }).verdicts)
+      : null;
+    if (!arr) return null;
+    const verdicts: FlagRescoreVerdict[] = [];
+    for (const v of arr) {
+      if (!v || typeof v !== "object") continue;
+      const o = v as Record<string, unknown>;
+      const flag = typeof o.flag === "string" ? o.flag : "";
+      if (!flag) continue;
+      verdicts.push({
+        flag,
+        keep: o.keep !== false, // default to keep on ambiguous LLM output
+        reason: typeof o.reason === "string" ? o.reason.slice(0, 200) : "",
+      });
+    }
+    return verdicts.length > 0 ? verdicts : null;
+  } catch (e) {
+    console.error(`[llm-rescore] flag rescore failed: ${(e as Error).message}`);
     return null;
   }
 }

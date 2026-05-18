@@ -23,6 +23,7 @@ import {
   emptyResult,
 } from "./_types";
 import { parseResumePeriod } from "../_resume-period";
+import { rescoreFlags, type FlagRescoreCandidate } from "./_llm-rescore";
 
 function isAi(t: TranscriptTurn): boolean { return t.speaker.toLowerCase().startsWith("a"); }
 function isUser(t: TranscriptTurn): boolean { return t.speaker.toLowerCase().startsWith("u"); }
@@ -119,6 +120,15 @@ const FLOOR_COLLAPSE = /\b(?:whatever (?:you|the company) (?:can|offer)|i'?m (?:
 const REVERSE_INVITED = /\b(?:do you have (?:any )?questions for me|any questions (?:from your|for) (?:side|me)|anything you'?d like to ask)\b/i;
 const REVERSE_FLUFF = /\b(?:no(?:t really)?,?\s*(?:nothing|no questions|all good|i'?m good)|just (?:wanted to know|curious about) (?:the )?(?:start date|joining date|location|timing))\b/i;
 const REVERSE_SUBSTANTIVE = /\b(?:team structure|reporting (?:line|to)|success (?:metric|criteria|look like)|first (?:30|60|90) days|manager(?:'s)? style|growth path|attrition|tech stack|on[- ]?call|roadmap|investment in|how is success measured)\b/i;
+
+/* Multi-probe RESOLUTION patterns — when a candidate initially hedges
+   on BGV / payslip / reference but then eventually commits ("yes, I
+   can share", "happy to provide", "I have them ready"). We track
+   resolution across the session so a single bad reply doesn't lock
+   them into a "high-severity evasion" flag if they corrected course
+   on the follow-up probe. */
+const BGV_RESOLVED = /\b(?:yes,?\s*i (?:can|will|have|am able to) (?:share|provide)|happy to (?:share|provide)|will (?:share|send|provide) (?:them|those|by)|i (?:have|already have) (?:them|those|the documents)|can definitely (?:share|provide))\b/i;
+const REFERENCE_RESOLVED = /\b(?:i have (?:two |2 |references? ready|some references?)|yes,?\s*(?:references? )?(?:are )?(?:ready|available)|will (?:share|provide) (?:references?|their (?:names?|contacts?))|happy to (?:share|provide) references?)\b/i;
 
 /* ── Wave-2 HR-round flags — real-life Indian HR scenarios ───────────── */
 
@@ -274,7 +284,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.3.2",
+  version: "hr-round-v4.4.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -286,6 +296,12 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
 
     const flags = new Set<string>();
     const gaps: RubricGap[] = [];
+    /* Evidence collected for weak-regex flags that get a 2nd-pass
+       semantic-coherence LLM rescore at the end of analyze(). Map key
+       is the flag name; value is the AI prompt + user reply the regex
+       fired on. When LLM_RESCORE_ENABLED=0 the map is built but never
+       consumed — cheap. */
+    const rescoreEvidence = new Map<string, { aiPrompt: string; userReply: string }>();
     const aiText = transcript.filter(isAi).map((t) => t.text || "").join(" ");
     const userText = transcript.filter(isUser).map((t) => t.text || "").join(" ");
     const allText = `${aiText} ${userText}`;
@@ -326,32 +342,87 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       const r = replyTo(transcript, idx);
       if (r && r.text && r.text.length >= 60 && !SPECIFICS.test(r.text)) {
         flags.add("generic_self_intro");
-        gaps.push({ dimension: "specificity", expected: "Self-intro includes years of experience, concrete projects, results", observed: "Self-intro lacked numbers, project names, or action verbs", severity: "medium" });
+        gaps.push({ dimension: "specificity", expected: "Self-intro includes years of experience, concrete projects, results", observed: "Self-intro lacked numbers, project names, or action verbs", severity: "medium", flag: "generic_self_intro" });
+        rescoreEvidence.set("generic_self_intro", {
+          aiPrompt: transcript[idx]?.text || "",
+          userReply: r.text || "",
+        });
       }
     }
 
-    for (let i = 0; i < transcript.length; i++) {
-      const t = transcript[i];
-      if (isAi(t) && BGV_PROMPT.test(t.text || "")) {
+    /* BGV multi-probe tracker. Old behavior: first evasive reply → flag,
+       break. New behavior: walk every probe in the session, tally
+       evasions vs eventual resolution. Sustained evasion across ≥2
+       probes is high-severity; single-probe evasion that's later
+       resolved is downgraded to medium (still worth coaching but not a
+       "BGV will block onboarding" panic). */
+    {
+      let probes = 0;
+      let evasions = 0;
+      let resolved = false;
+      for (let i = 0; i < transcript.length; i++) {
+        const t = transcript[i];
+        if (!(isAi(t) && BGV_PROMPT.test(t.text || ""))) continue;
+        probes += 1;
         const r = replyTo(transcript, i);
-        if (r && r.text && BGV_EVASIVE.test(r.text)) {
-          flags.add("bgv_document_evasion");
-          gaps.push({ dimension: "compliance_readiness", expected: "Comfort sharing payslips, Form 16, relieving letters, PAN/Aadhaar/UAN for BGV", observed: "Candidate hedged or refused on document sharing — BGV will block onboarding", severity: "high" });
-          break;
-        }
+        if (!r || !r.text) continue;
+        if (BGV_EVASIVE.test(r.text)) evasions += 1;
+        if (BGV_RESOLVED.test(r.text)) resolved = true;
+      }
+      if (evasions > 0 && !resolved) {
+        flags.add("bgv_document_evasion");
+        const sustained = probes >= 2 && evasions >= 2;
+        gaps.push({
+          dimension: "compliance_readiness",
+          expected: "Comfort sharing payslips, Form 16, relieving letters, PAN/Aadhaar/UAN for BGV",
+          observed: sustained
+            ? `Candidate hedged across ${evasions} of ${probes} BGV probes without recovering — BGV will block onboarding`
+            : "Candidate hedged or refused on document sharing — BGV will block onboarding",
+          severity: "high",
+          flag: "bgv_document_evasion",
+        });
+        if (sustained) flags.add("bgv_document_evasion_sustained");
+      } else if (evasions > 0 && resolved) {
+        // Recovered: downgrade to a softer commitment-confidence flag.
+        flags.add("bgv_document_initial_hedge");
+        gaps.push({
+          dimension: "compliance_readiness",
+          expected: "Answer BGV-doc probes crisply on the first ask — initial hedges read as flight risk even when followed by yes",
+          observed: "Candidate hedged on a BGV probe before recovering on a later probe — recoverable but tighten the first answer",
+          severity: "low",
+          flag: "bgv_document_initial_hedge",
+        });
       }
     }
 
-    for (let i = 0; i < transcript.length; i++) {
-      const t = transcript[i];
-      if (isAi(t) && PAYSLIP_PROMPT.test(t.text || "")) {
+    /* Payslip refusal tracker — same cumulative pattern as BGV. */
+    {
+      let probes = 0;
+      let refusals = 0;
+      let resolved = false;
+      for (let i = 0; i < transcript.length; i++) {
+        const t = transcript[i];
+        if (!(isAi(t) && PAYSLIP_PROMPT.test(t.text || ""))) continue;
+        probes += 1;
         const r = replyTo(transcript, i);
-        if (r && r.text && PAYSLIP_REFUSED.test(r.text)) {
-          flags.add("payslip_refusal");
-          if (!flags.has("bgv_document_evasion")) {
-            gaps.push({ dimension: "comp_transparency", expected: "Share payslips/Form 16 when asked — refusal signals inflated current CTC", observed: "Candidate refused payslip share — HR will assume current CTC is inflated", severity: "high" });
-          }
-          break;
+        if (!r || !r.text) continue;
+        if (PAYSLIP_REFUSED.test(r.text)) refusals += 1;
+        if (BGV_RESOLVED.test(r.text)) resolved = true;
+      }
+      if (refusals > 0 && !resolved) {
+        flags.add("payslip_refusal");
+        if (!flags.has("bgv_document_evasion")) {
+          const sustained = probes >= 2 && refusals >= 2;
+          gaps.push({
+            dimension: "comp_transparency",
+            expected: "Share payslips/Form 16 when asked — refusal signals inflated current CTC",
+            observed: sustained
+              ? `Candidate refused payslip share across ${refusals} of ${probes} probes — HR will assume current CTC is inflated`
+              : "Candidate refused payslip share — HR will assume current CTC is inflated",
+            severity: "high",
+            flag: "payslip_refusal",
+          });
+          if (sustained) flags.add("payslip_refusal_sustained");
         }
       }
     }
@@ -362,7 +433,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         const r = replyTo(transcript, i);
         if (r && r.text && r.text.length < 220 && COUNTER_OFFER_DODGE.test(r.text)) {
           flags.add("counter_offer_dodge");
-          gaps.push({ dimension: "commitment_signal", expected: "Clear stance on counter-offer / other offers — HR is testing pre-joining drop-out risk", observed: "Candidate dodged the commitment question, reads as flight risk", severity: "medium" });
+          gaps.push({ dimension: "commitment_signal", expected: "Clear stance on counter-offer / other offers — HR is testing pre-joining drop-out risk", observed: "Candidate dodged the commitment question, reads as flight risk", severity: "medium", flag: "counter_offer_dodge" });
+          rescoreEvidence.set("counter_offer_dodge", { aiPrompt: t.text || "", userReply: r.text || "" });
           break;
         }
       }
@@ -374,7 +446,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         const r = replyTo(transcript, i);
         if (r && r.text && r.text.length >= 40 && GENERIC_WHY.test(r.text) && !SPECIFIC_WHY.test(r.text)) {
           flags.add("generic_why_company");
-          gaps.push({ dimension: "motivation_specificity", expected: "Why-us tied to a specific product, leader, domain, or recent move", observed: "Answer used generic platitudes (great culture/brand/growth) without specifics", severity: "medium" });
+          gaps.push({ dimension: "motivation_specificity", expected: "Why-us tied to a specific product, leader, domain, or recent move", observed: "Answer used generic platitudes (great culture/brand/growth) without specifics", severity: "medium", flag: "generic_why_company" });
+          rescoreEvidence.set("generic_why_company", { aiPrompt: t.text || "", userReply: r.text || "" });
           break;
         }
       }
@@ -413,15 +486,45 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    for (let i = 0; i < transcript.length; i++) {
-      const t = transcript[i];
-      if (isAi(t) && REFERENCE_PROMPT.test(t.text || "")) {
+    /* Reference-refusal tracker — same cumulative pattern. Recovery
+       on a follow-up probe ("oh I do have a couple of references
+       actually") downgrades the flag; sustained refusal across ≥2
+       probes is high-severity. */
+    {
+      let probes = 0;
+      let refusals = 0;
+      let resolved = false;
+      for (let i = 0; i < transcript.length; i++) {
+        const t = transcript[i];
+        if (!(isAi(t) && REFERENCE_PROMPT.test(t.text || ""))) continue;
+        probes += 1;
         const r = replyTo(transcript, i);
-        if (r && r.text && REFERENCE_REFUSAL.test(r.text)) {
-          flags.add("reference_refusal");
-          gaps.push({ dimension: "compliance_readiness", expected: "Two professional references ready (ex-managers preferred); current manager exception is fine and expected", observed: "Candidate refused to provide any references — BGV blocker, recruiter will assume hidden exit", severity: "high" });
-          break;
-        }
+        if (!r || !r.text) continue;
+        if (REFERENCE_REFUSAL.test(r.text)) refusals += 1;
+        if (REFERENCE_RESOLVED.test(r.text)) resolved = true;
+      }
+      if (refusals > 0 && !resolved) {
+        flags.add("reference_refusal");
+        const sustained = probes >= 2 && refusals >= 2;
+        gaps.push({
+          dimension: "compliance_readiness",
+          expected: "Two professional references ready (ex-managers preferred); current manager exception is fine and expected",
+          observed: sustained
+            ? `Candidate refused references across ${refusals} of ${probes} probes — BGV blocker, recruiter will assume hidden exit`
+            : "Candidate refused to provide any references — BGV blocker, recruiter will assume hidden exit",
+          severity: "high",
+          flag: "reference_refusal",
+        });
+        if (sustained) flags.add("reference_refusal_sustained");
+      } else if (refusals > 0 && resolved) {
+        flags.add("reference_initial_hedge");
+        gaps.push({
+          dimension: "compliance_readiness",
+          expected: "Have 2 references ready on the first ask — initial hesitation reads as a hidden-exit signal",
+          observed: "Candidate hedged on a reference probe before recovering on a later probe — tighten the first answer",
+          severity: "low",
+          flag: "reference_initial_hedge",
+        });
       }
     }
 
@@ -768,12 +871,48 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       gaps.push({ dimension: "session_coverage", expected: "Indian HR round should touch ≥4 of 7 dimensions: logistics, comp, stability, compliance, commitment, benefits, motivation", observed: `Only ${covered.length}/7 covered. Missing: ${missed.join(", ")}.`, severity: "medium" });
     }
 
+    /* ── 2nd-pass LLM rescore for weak-regex flags ──
+       Three flags rely on token-level regex matches that can false-positive on
+       answers which actually meet their rubric (e.g. someone says "great culture
+       — specifically RazorpayX's launch in 2024" — "great culture" fires
+       generic_why_company even though the reply IS specific). The rescore step
+       hands each fired flag + its surrounding turns to the LLM and drops the
+       flag if the LLM judges it a false positive.
+
+       Gated by LLM_RESCORE_ENABLED. When off, rescoreFlags returns null and
+       every flag is kept as-is (fail-open). When the call fails, same. So the
+       worst case is "back to v4.3.2 behavior," never a regression. */
+    const rescoreCandidates: FlagRescoreCandidate[] = [];
+    const RESCORE_RUBRICS: Record<string, string> = {
+      generic_why_company: "Did the candidate name a verifiable specific (launch name, leader name, blog title, recent move, product, domain)? If yes, the flag is FALSE.",
+      counter_offer_dodge: "Did the candidate commit OR did they only defer? If they deferred WITH a stated decision criterion (e.g. 'I'll commit once the role scope is locked'), the flag is FALSE. Pure 'I'll see' / 'we'll see' / 'dekhta hu' is TRUE.",
+      generic_self_intro: "Does the intro have a narrative arc (years of experience + role + an outcome / project)? If yes, the flag is FALSE. Purely token-listing (skills, tech stack) with no story is TRUE.",
+    };
+    for (const flag of Object.keys(RESCORE_RUBRICS)) {
+      const ev = rescoreEvidence.get(flag);
+      if (ev && flags.has(flag)) {
+        rescoreCandidates.push({ flag, aiPrompt: ev.aiPrompt, userReply: ev.userReply, rubric: RESCORE_RUBRICS[flag] });
+      }
+    }
+    if (rescoreCandidates.length > 0) {
+      const verdicts = await rescoreFlags(rescoreCandidates);
+      if (verdicts) {
+        for (const v of verdicts) {
+          if (!v.keep && flags.has(v.flag)) {
+            flags.delete(v.flag);
+          }
+        }
+      }
+    }
+
     const tips: string[] = [];
     if (flags.has("user_anchor_leaked_salary")) tips.push("Never name a salary first — deflect with 'I'd want to understand the role + level before discussing comp.'");
     if (flags.has("user_badmouthing_employer")) tips.push("Reframe past frustrations as growth opportunities. HR scores professionalism heavily.");
     if (flags.has("generic_self_intro")) tips.push("Tighten 'tell me about yourself' to a 90-second story with 2 concrete projects + outcomes.");
     if (flags.has("vague_notice_period")) tips.push("Know your notice period cold — exact days, buyout policy, earliest LWD. Vague answers signal flight risk.");
     if (flags.has("bgv_document_evasion")) tips.push("Keep payslips (last 3), Form 16, relieving letters, PAN/Aadhaar/UAN ready. Hesitation here blocks onboarding via BGV.");
+    if (flags.has("bgv_document_evasion_sustained")) tips.push("Sustained BGV evasion across multiple probes is the strongest pre-offer red flag. Pre-prep a single line: 'I have all documents — payslips, Form 16, UAN — ready to share over secure channel.'");
+    if (flags.has("bgv_document_initial_hedge")) tips.push("You recovered on a later BGV probe, but the first hedge still registers. Lead with confidence: 'Yes, I can share' beats 'let me check first.'");
     if (flags.has("payslip_refusal") && !flags.has("bgv_document_evasion")) tips.push("Refusing payslips reads as inflated current CTC. Share them — or justify why your number isn't anchored on current.");
     if (flags.has("counter_offer_dodge")) tips.push("On counter-offers: 'If I accept yours, I won't take a counter.' Pre-joining drop-out is HR's #1 fear — give them the clarity.");
     if (flags.has("generic_why_company")) tips.push("Drop 'great culture / great brand'. Name one specific thing: a recent launch, a leader's blog, a domain bet.");
@@ -781,6 +920,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("hike_rationale_thin")) tips.push("Anchor hike % on market data or scope, not a desired round number.");
     if (flags.has("salary_breakup_vague")) tips.push("When HR asks structure, break the CTC down: 'Fixed X, variable Y (paid out Z%), joining bonus A, RSU vest B over 4 years.' Single-number CTC reads as inflated variable.");
     if (flags.has("reference_refusal")) tips.push("Have 2 references ready (ex-managers preferred). Saying 'no references' is a hard BGV blocker — even one current peer + one ex-manager is fine.");
+    if (flags.has("reference_refusal_sustained")) tips.push("Refusing references across multiple HR probes is a hard pre-offer stop. Line up at least one ex-manager + one peer before the next round.");
+    if (flags.has("reference_initial_hedge")) tips.push("You recovered on the second reference probe, but the initial hedge still scored. Have a name + role ready before HR asks twice.");
+    if (flags.has("payslip_refusal_sustained")) tips.push("Refusing payslips on every probe locks HR into assuming inflated CTC. Share them or pre-empt: 'My ask isn't anchored on current — here's the rationale.'");
     if (flags.has("offer_letter_delay_anxiety")) tips.push("Hold offer-letter timing questions for the close — asking mid-interview reads as anxious. Phrase it cleanly: 'What's your typical timeline from verbal to written offer?'");
     if (flags.has("prior_bgv_fail_uncontextualised")) tips.push("Prior BGV failure? Own it with date + reason + resolution in one breath: 'flagged in 2022 for date overlap with my notice, cleared in 30 days.' Recruiters trust honest specifics.");
     if (flags.has("non_compete_unquantified")) tips.push("Non-compete? State scope crisply: duration + geography + industry coverage. 'Vague non-compete' = recruiter timebomb.");
@@ -812,7 +954,10 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       tips.push("Note: this session included prompts (marital, caste, religion, origin, family-planning) that are illegal-in-India under Equal Remuneration Act and constitutional non-discrimination — included ONLY to drill deflection. Tempo does not endorse asking them. If a real interviewer asks, deflect warmly: 'I'd prefer to keep the conversation on the role.'");
     }
 
-    result.rubricGaps = gaps;
+    /* When rescore dropped a flag, drop its tagged gap too so the report
+       stays internally consistent. Untagged gaps (the vast majority —
+       all the non-rescore detections) pass through unchanged. */
+    result.rubricGaps = gaps.filter((g) => !g.flag || flags.has(g.flag));
     result.flags = Array.from(flags);
     result.coachingNotes = tips.join(" ");
     return result;
