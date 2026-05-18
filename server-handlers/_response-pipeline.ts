@@ -24,7 +24,7 @@
  * Pure orchestration. The LLM caller is injected so tests can mock it.
  */
 
-import type { NegotiationState, AiMove } from "./_negotiation-kernel";
+import type { NegotiationState, AiMove, NegotiationPhase } from "./_negotiation-kernel";
 import { planNextAction, actionToLever, type NextAction } from "./_next-action-planner";
 import {
   renderCanonicalProse,
@@ -220,8 +220,14 @@ async function generateAnswerToCandidate(
     const defer = buildDeferText("empty-llm", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: "empty-llm" };
   }
-  /* Answer-side validation: same number/fact discipline as restyle. */
-  const validation = validateAnswer(answer, factPack);
+  /* Answer-side validation: same number/fact discipline as restyle.
+   * PDF#29 Bug 5 (2026-05-18) — thread stateContext so the semantic
+   * guards (unfounded-final-offer-claim, band-leak-pre-anchor) fire
+   * on this path too. */
+  const validation = validateAnswer(answer, factPack, {
+    highestOfferMade: state.highestOfferMade,
+    phase: state.phase,
+  });
   if (!validation.valid) {
     const defer = buildDeferText("validation", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: validation.reason };
@@ -1010,8 +1016,50 @@ export function validateRestyle(
 export function validateAnswer(
   answer: string,
   factPack: { candidateCurrentCtc?: number; candidateExpectedCtc?: number; budgetBand?: { low: number; high: number; walk: number }; teamSize?: number },
+  /* PDF#29 Bug 5 (2026-05-18) — semantic state guards. The previous
+   * validator only enforced numeric-allowlist + banned-idiom checks;
+   * it could not catch claims that DEPEND ON the negotiation state
+   * (e.g. "Our final offer remains the same as presented earlier"
+   * when highestOfferMade=0 — no offer was ever presented). Two
+   * guards live here:
+   *   (a) unfounded-final-offer-claim — pre-anchor language about an
+   *       offer that doesn't exist.
+   *   (b) band-leak-pre-anchor — internal-band reference in any pre-
+   *       anchor phase, defence-in-depth against an LLM restyle path
+   *       that bypassed the per-action contract.
+   * Optional to preserve back-compat with unit-test fixtures that
+   * don't have a kernel state to thread. */
+  stateContext?: { highestOfferMade: number; phase: NegotiationPhase },
 ): { valid: boolean; reason?: string } {
   if (!answer || !answer.trim()) return { valid: false, reason: "empty-answer" };
+  /* PDF#29 Bug 5 (2026-05-18) — semantic state guards run FIRST so the
+   * named reason ("unfounded-final-offer-claim", "band-leak-pre-anchor")
+   * surfaces instead of a generic "unfounded-number:X" downstream. */
+  if (stateContext) {
+    if (stateContext.highestOfferMade <= 0) {
+      const UNFOUNDED_FINAL_OFFER_RES: RegExp[] = [
+        /\bfinal\s+offer\b/i,
+        /\b(?:offer\s+)?remains?\s+the\s+same\b/i,
+        /\bas\s+(?:presented|stated|discussed)\s+earlier\b/i,
+        /\bour\s+offer\s+(?:stands|stays|holds)\b/i,
+      ];
+      for (const re of UNFOUNDED_FINAL_OFFER_RES) {
+        if (re.test(answer)) {
+          return { valid: false, reason: "unfounded-final-offer-claim" };
+        }
+      }
+    }
+    const PRE_ANCHOR_PHASES: NegotiationPhase[] = [
+      "opening",
+      "range-disclosure",
+      "probe-expectations",
+    ];
+    if (PRE_ANCHOR_PHASES.includes(stateContext.phase)) {
+      if (/\bband\b[^.!?\n]*\d/i.test(answer)) {
+        return { valid: false, reason: "band-leak-pre-anchor" };
+      }
+    }
+  }
   const allowed = new Set<string>();
   if (factPack.candidateCurrentCtc != null) allowed.add(String(factPack.candidateCurrentCtc));
   if (factPack.candidateExpectedCtc != null) allowed.add(String(factPack.candidateExpectedCtc));
