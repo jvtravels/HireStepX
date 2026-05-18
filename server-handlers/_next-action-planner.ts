@@ -1159,9 +1159,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const bandComplete =
       typeof lo === "number" && typeof hi === "number" && lo < hi;
     if (bandComplete) {
+      const anchored = clampAnchorAboveDisclosed(lo, hi, state);
       return {
         kind: "anchor-with-offer",
-        initialOffer: lo,
+        initialOffer: anchored,
         bandIncomplete: false,
         satisfiesTopic: "band-anchor-with-rationale",
         _move: {
@@ -1169,7 +1170,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           newTotalLpa: null,
           rationale:
             `PDF#27 Fix 5 — candidate asked for the offer at turn ${state.offerAskedAtTurn}; ` +
-            `anchor point-offer at ₹${lo}L (band floor) and invite fitment.`,
+            `anchor point-offer at ₹${anchored}L (band floor=${lo}, disclosed CTC=${state.candidateCurrentCtc ?? "?"}) and invite fitment.`,
           askedTopic: "band-anchor-with-rationale",
           actionKind: "anchor-with-offer",
         },
@@ -1237,9 +1238,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       const bandComplete =
         typeof lo === "number" && typeof hi === "number" && lo < hi;
       if (bandComplete) {
+        const anchored = clampAnchorAboveDisclosed(lo, hi, state);
         return {
           kind: "anchor-with-offer",
-          initialOffer: lo,
+          initialOffer: anchored,
           bandIncomplete: false,
           satisfiesTopic: "band-anchor-with-rationale",
           _move: {
@@ -1247,7 +1249,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             newTotalLpa: null,
             rationale:
               `AP3-F3 band-disclosure: currentCtc satisfied, senior-component probes ` +
-              `${isSeniorCompProfile(state) ? "complete" : "n/a"}, target pending — anchor point-offer at ₹${lo}L (band floor) and invite fitment.`,
+              `${isSeniorCompProfile(state) ? "complete" : "n/a"}, target pending — anchor point-offer at ₹${anchored}L (band floor=${lo}, disclosed CTC=${state.candidateCurrentCtc ?? "?"}) and invite fitment.`,
             askedTopic: "band-anchor-with-rationale",
             actionKind: "anchor-with-offer",
           },
@@ -2113,6 +2115,36 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 /* Fix 1 (2026-05-16) — sample the next un-fired structural lever based on
  * marketMode. Returns null when every lever has fired (caller falls
  * through to the legacy cash-lever rotation). */
+/** PDF#30 R5 (2026-05-18, Meesho/Prita T12) — disclosed-CTC anchor floor.
+ *
+ *  Real recruiters never anchor BELOW a candidate's already-disclosed
+ *  current CTC; doing so signals an immediate lowball and burns trust.
+ *  But the planner emits `anchor-with-offer` at the band FLOOR (`lo`)
+ *  by design — and when band.initialOffer < candidateCurrentCtc, the
+ *  point-offer goes out below the disclosed package.
+ *
+ *  PDF#30 evidence: Prita disclosed 24 LPA, band.initialOffer was 23,
+ *  the anchor went out at ₹23L — below her current CTC. Recoverable
+ *  only via R1 (which lifts parser accuracy so candidateCurrentCtc is
+ *  populated) PLUS this floor (which honours the disclosure).
+ *
+ *  Policy: clamp the anchor to max(lo, candidateCurrentCtc). If that
+ *  pushes us above `hi`, cap at `hi` — the band is structurally too
+ *  tight for this candidate but we still hold the maxStretch ceiling.
+ *  When candidateCurrentCtc is null, return `lo` unchanged (no signal
+ *  to clamp against). */
+function clampAnchorAboveDisclosed(
+  lo: number,
+  hi: number,
+  state: NegotiationState,
+): number {
+  const disclosed = state.candidateCurrentCtc;
+  if (typeof disclosed !== "number" || disclosed <= 0) return lo;
+  if (disclosed <= lo) return lo;
+  /* Disclosed CTC is above the band floor — clamp up, capped by hi. */
+  return Math.min(hi, disclosed);
+}
+
 function pickStructuralLever(state: NegotiationState): PlannedAction | null {
   const fired = new Set(state.leversFired ?? []);
   /* Rotation order: anchor-with-rationale (first turn after cash floor
