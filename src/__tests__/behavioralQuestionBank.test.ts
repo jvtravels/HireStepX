@@ -9,12 +9,13 @@ import {
 } from "../../data/behavioral-question-bank";
 
 describe("BEHAVIORAL_50 — shape & coverage", () => {
-  it("has exactly 56 entries (50 original + 6 adaptability/execution-rigor)", () => {
+  it("has exactly 61 entries (50 original + 6 adaptability/execution-rigor + 5 designer-affinity)", () => {
     /* The export is named `BEHAVIORAL_50` for historical reasons; the bank
        grew when `adaptability` + `execution-rigor` were split out from
-       `ambiguity` / `ownership`. The constant length is the source of
-       truth, not the name. */
-    expect(BEHAVIORAL_50).toHaveLength(56);
+       `ambiguity` / `ownership` (→ 56), then again when Phase-6.6 added
+       designer-affinity entries (cnf-06, amb-05, dec-06, fdb-04, mnt-05).
+       The constant length is the source of truth, not the name. */
+    expect(BEHAVIORAL_50).toHaveLength(61);
   });
 
   it("every entry has a valid competency", () => {
@@ -169,12 +170,72 @@ describe("sampleBehavioralQuestions — role/yoe tilt", () => {
        protects is: same seed + same bank → same output. */
     const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
     expect(out.map(q => q.text)).toEqual([
-      "Tell me about a time you had to make a decision with incomplete data.",
-      "Tell me about a time you had to deliver under a tight deadline.",
+      "Tell me about a time you had to work with someone whose style clashed with yours.",
+      "Tell me about a time you got buy-in from a senior leader.",
       "Tell me about a time you onboarded a new joiner onto a complex codebase.",
-      "Tell me about a time you caught a bug or issue in your own work before it shipped.",
+      "Tell me about a time you had to choose between two reasonable options.",
       "Tell me about a time you found a creative solution to a constraint.",
     ]);
+  });
+});
+
+describe("Phase 6.6 — designer-affinity coverage for SPD loops", () => {
+  /* Senior Product Designer loops grade influence + judgement + leadership
+     alongside execution. Pre-Phase-6.6 the bank had ZERO designer-affinity
+     entries — every designer fell through to universal questions and missed
+     the SPD-specific shape (cross-functional design disagreement, UX vs
+     business trade-offs, direction-change after critique/data, raising team
+     design quality). These tests pin the five canonical SPD question types
+     to live ids so a future bank refactor can't silently drop them. */
+  it("has at least one designer-affinity question in each of the 5 SPD-load-bearing competencies", () => {
+    const sppCompetencies = [
+      "conflict",         // disagreement with PM / eng
+      "ambiguity",        // unclear problem → clarity through design
+      "decision-making",  // UX vs business goal trade-off
+      "feedback",         // changed direction after critique / data
+      "mentorship-team",  // raised team design quality
+    ] as const;
+    for (const c of sppCompetencies) {
+      const hits = BEHAVIORAL_50.filter(
+        q => q.competency === c && q.roleAffinity?.includes("designer"),
+      );
+      expect(hits.length, `competency=${c} must have ≥1 designer-affinity entry`).toBeGreaterThan(0);
+    }
+  });
+
+  it("the canonical SPD ids are present with correct text shape", () => {
+    const expected: Array<{ id: string; matches: RegExp }> = [
+      { id: "cnf-06", matches: /disagreed with a PM or engineer/i },
+      { id: "amb-05", matches: /problem statement was unclear/i },
+      { id: "dec-06", matches: /user experience with a business goal/i },
+      { id: "fdb-04", matches: /changed your design direction/i },
+      { id: "mnt-05", matches: /raised the design quality/i },
+    ];
+    for (const { id, matches } of expected) {
+      const q = BEHAVIORAL_50.find(x => x.id === id);
+      expect(q, `${id} must exist`).toBeDefined();
+      expect(q!.text).toMatch(matches);
+      expect(q!.roleAffinity).toContain("designer");
+    }
+  });
+
+  it("sampling with role='designer' surfaces designer-affinity questions across seeds", () => {
+    /* Role partition treats universal AND role-matching entries as
+       equally eligible (by design — universal questions still apply to
+       designers). So a single-seed run isn't guaranteed to pick a
+       designer-affinity entry. Statistical guard: across 20 seeds with
+       count=12 / yoe=6, at least one run must surface ≥1 designer-affinity
+       question. Catches the regression where the role filter accidentally
+       *excludes* designer-only entries (the bug we'd actually care about). */
+    let anyDesignerHit = false;
+    for (let s = 0; s < 20; s++) {
+      const out = sampleBehavioralQuestions({ count: 12, seed: s, role: "designer", yoe: 6 });
+      if (out.some(q => q.roleAffinity?.includes("designer"))) {
+        anyDesignerHit = true;
+        break;
+      }
+    }
+    expect(anyDesignerHit).toBe(true);
   });
 });
 
@@ -215,7 +276,7 @@ describe("sampleBehavioralQuestions — weightByFrequency", () => {
     // doesn't accidentally leak into the default path.
     const out = sampleBehavioralQuestions({ count: 5, seed: 42 });
     expect(out[0].text).toBe(
-      "Tell me about a time you had to make a decision with incomplete data.",
+      "Tell me about a time you had to work with someone whose style clashed with yours.",
     );
   });
 });

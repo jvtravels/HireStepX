@@ -117,8 +117,9 @@ export interface BehavioralQuestion {
   seniorityFloor?: number;
 }
 
-/** The bank (originally 50, now 56 after adaptability + execution-rigor
- *  split-out in 2026-05). Curated from real loops at: Razorpay, Flipkart,
+/** The bank (originally 50, grew to 56 with adaptability + execution-rigor
+ *  split-out in 2026-05, then to 61 with Phase-6.6 designer-affinity
+ *  additions in 2026-05). Curated from real loops at: Razorpay, Flipkart,
  *  Swiggy, Zomato, CRED, Atlassian-IN, Microsoft IDC, Amazon-IN,
  *  Google-IN, Uber-IN, Walmart-Labs, ThoughtSpot, Postman, Freshworks.
  *  Export name kept as `BEHAVIORAL_50` (historical brand — `.length` is
@@ -146,14 +147,25 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   // ── conflict (5)
   { id: "cnf-01", text: "Tell me about a time you disagreed with your manager.",                                               competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 85 },
   { id: "cnf-02", text: "Tell me about a time you had a conflict with a teammate.",                                            competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 80 },
-  { id: "cnf-03", text: "Tell me about a time a peer pushed back hard on your technical decision.",                            competency: "conflict",           starFocus: "action+result",   difficulty: "hard",     frequencyPct: 62, roleAffinity: ["engineer"] },
+  { id: "cnf-03", text: "Tell me about a time a peer pushed back hard on your technical decision.",                            competency: "conflict",           starFocus: "action+result",   difficulty: "hard",     frequencyPct: 62, roleAffinity: ["engineer", "designer"] },
   { id: "cnf-04", text: "Tell me about a time you had to deliver bad news to a stakeholder.",                                  competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 55, seniorityFloor: 3 },
   { id: "cnf-05", text: "Tell me about a time you had to work with someone whose style clashed with yours.",                   competency: "conflict",           starFocus: "action",          difficulty: "standard", frequencyPct: 50 },
+  /* Designer-affinity additions (Phase 6.6, 2026-05).
+     Senior Product Designer loops grade influence + judgement + leadership
+     alongside execution. Pre-Phase-6.6 the bank had zero designer-affinity
+     entries — designers fell through to universal questions and missed the
+     SPD-specific shape: disagreement on design decisions with cross-functional
+     partners, UX-vs-business trade-offs, changing direction after critique/data,
+     raising team design quality. Each entry below maps 1:1 to a real loop
+     question pattern from senior-designer rounds at Indian product cos
+     (Razorpay, Flipkart, Swiggy, Meesho, Atlassian-IN). */
+  { id: "cnf-06", text: "Tell me about a time you disagreed with a PM or engineer on a design decision. How did you resolve it?", competency: "conflict",        starFocus: "action",          difficulty: "standard", frequencyPct: 75, roleAffinity: ["designer"], seniorityFloor: 3 },
 
   // ── feedback (3)
   { id: "fdb-01", text: "Tell me about a time you received tough feedback.",                                                    competency: "feedback",           starFocus: "action+result",   difficulty: "standard", frequencyPct: 72 },
   { id: "fdb-02", text: "Tell me about a time feedback changed how you worked.",                                                competency: "feedback",           starFocus: "result",          difficulty: "standard", frequencyPct: 60 },
   { id: "fdb-03", text: "Tell me about a time you had to give difficult feedback to a peer.",                                   competency: "feedback",           starFocus: "action",          difficulty: "hard",     frequencyPct: 55, roleAffinity: ["manager", "pm"] },
+  { id: "fdb-04", text: "Tell me about a time you changed your design direction after critique, user research, or data.",      competency: "feedback",           starFocus: "action+result",   difficulty: "standard", frequencyPct: 70, roleAffinity: ["designer"], seniorityFloor: 2 },
 
   // ── influence (4)
   { id: "inf-01", text: "Tell me about a time you convinced someone to change their mind.",                                    competency: "influence",          starFocus: "action",          difficulty: "standard", frequencyPct: 78 },
@@ -166,6 +178,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "amb-02", text: "Tell me about a time you had to make progress without knowing the full picture.",                     competency: "ambiguity",          starFocus: "action",          difficulty: "hard",     frequencyPct: 60 },
   { id: "amb-03", text: "Tell me about a time you defined a problem nobody had framed before.",                                competency: "ambiguity",          starFocus: "situation-task",  difficulty: "hard",     frequencyPct: 45, seniorityFloor: 5 },
   { id: "amb-04", text: "Tell me about a time the priorities shifted and you had to re-plan.",                                  competency: "ambiguity",          starFocus: "action",          difficulty: "standard", frequencyPct: 55 },
+  { id: "amb-05", text: "Tell me about a time the problem statement was unclear and you had to create clarity for the team through design.", competency: "ambiguity",       starFocus: "situation-task",   difficulty: "standard", frequencyPct: 62, roleAffinity: ["designer"] },
 
   // ── decision-making (5)
   { id: "dec-01", text: "Tell me about a time you had to make a decision with incomplete data.",                                competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 80, seniorityFloor: 3 },
@@ -173,6 +186,7 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
   { id: "dec-03", text: "Tell me about a time you reversed a decision you'd already made.",                                    competency: "decision-making",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 50, seniorityFloor: 5 },
   { id: "dec-04", text: "Tell me about a time you had to say no to a stakeholder.",                                            competency: "decision-making",    starFocus: "action",          difficulty: "standard", frequencyPct: 58, seniorityFloor: 3 },
   { id: "dec-05", text: "Tell me about a time you traded off speed against quality.",                                          competency: "decision-making",    starFocus: "action+result",   difficulty: "standard", frequencyPct: 62, seniorityFloor: 3 },
+  { id: "dec-06", text: "Tell me about a time you had to balance user experience with a business goal or revenue metric.",     competency: "decision-making",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 72, roleAffinity: ["designer", "pm"], seniorityFloor: 3 },
 
   // ── problem-solving (4)
   { id: "prb-01", text: "Tell me about a time you debugged a problem nobody else could crack.",                                competency: "problem-solving",    starFocus: "action+result",   difficulty: "hard",     frequencyPct: 70, roleAffinity: ["engineer"] },
@@ -182,9 +196,10 @@ export const BEHAVIORAL_50: ReadonlyArray<BehavioralQuestion> = [
 
   // ── mentorship-team (4)
   { id: "mnt-01", text: "Tell me about a time you mentored someone.",                                                          competency: "mentorship-team",    starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 70, seniorityFloor: 3 },
-  { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60, roleAffinity: ["manager", "pm"] },
+  { id: "mnt-02", text: "Tell me about a time you helped a struggling teammate.",                                              competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 60, roleAffinity: ["manager", "pm", "designer"] },
   { id: "mnt-03", text: "Tell me about a time you onboarded a new joiner onto a complex codebase.",                            competency: "mentorship-team",    starFocus: "action",          difficulty: "standard", frequencyPct: 45, seniorityFloor: 3 },
   { id: "mnt-04", text: "Tell me about a time you delegated something you would normally do yourself.",                        competency: "mentorship-team",    starFocus: "action",          difficulty: "hard",     frequencyPct: 40, seniorityFloor: 5 },
+  { id: "mnt-05", text: "Tell me about a time you raised the design quality of your team — through mentoring juniors, running design crits, or building a system.", competency: "mentorship-team", starFocus: "action+result", difficulty: "hard", frequencyPct: 65, roleAffinity: ["designer"], seniorityFloor: 5 },
 
   // ── communication (4)
   { id: "cmm-01", text: "Tell me about a time you had to explain something technical to a non-technical audience.",            competency: "communication",      starFocus: "action+result",   difficulty: "warmup",   frequencyPct: 80 },
