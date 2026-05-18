@@ -63,6 +63,7 @@ function makeState(over: Partial<NegotiationState>): NegotiationState {
       strikePriceDiscussed: false,
       valuationDiscussed: false,
       liquidityDiscussed: false,
+      equityExists: null,
       hasAny: false,
     },
     locationMode: {

@@ -613,10 +613,15 @@ function nextComponentProbe(
   if (state.candidateCurrentCtc == null) return null;
   const bd = state.candidateComponentBreakdown;
   const asked = new Set((state.askedTopics ?? []).map((t) => t.topic));
+  /* PDF#31 BUG A (2026-05-18) — esop component is "populated" when the
+   * candidate has explicitly stated NO equity (equityExists === false).
+   * Otherwise the bot re-asks "ESOPs in play?" after the candidate
+   * already said no — exactly the Meesho/Prita repro. */
+  const esopNegated = state.equityVesting?.equityExists === false;
   const order: { component: "base" | "variable" | "esop"; topic: DiscoveryTopic; populated: boolean }[] = [
     { component: "base", topic: "currentCtcBase", populated: bd?.base != null },
     { component: "variable", topic: "currentCtcVariable", populated: bd?.variable != null },
-    { component: "esop", topic: "currentCtcEsop", populated: bd?.equity != null },
+    { component: "esop", topic: "currentCtcEsop", populated: bd?.equity != null || esopNegated },
   ];
   for (const o of order) {
     if (o.populated) continue;
@@ -939,7 +944,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * clarity pillars, and the equity-clarity probe hasn't been fired yet.
    * Placed above planReactiveFollowup so it fires even when lastTurnDelta is
    * null (e.g. when candidate asks "what does the equity look like?"). */
-  if (!isTerminalPhase(state.phase) && state.band.hasEquity) {
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.band.hasEquity &&
+    /* PDF#31 BUG B (2026-05-18) — never narrate vesting/cliff when the
+     * candidate has explicitly stated no equity in the package. The
+     * narration assumes equity exists; firing it on a cash-only package
+     * produces the "hallucinated ESOP vesting" failure mode (Meesho
+     * Sr PD repro). */
+    state.equityVesting?.equityExists !== false
+  ) {
     const equityFired = (state.reactiveFollowupsFired ?? []).includes("equity-clarity");
     if (!equityFired) {
       const lastBotReply = state.lastAiText ?? "";
@@ -1474,7 +1488,19 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     recentLevers.length === 2 &&
     recentLevers[0] === recentLevers[1] &&
     INFO_LEVERS_FOR_LOOP_GUARD.has(recentLevers[0]);
-  if (stuckLever && !isTerminalPhase(state.phase)) {
+  if (
+    stuckLever &&
+    !isTerminalPhase(state.phase) &&
+    /* PDF#31 BUG D fix (2026-05-18) — don't hold-firm before the
+     * candidate and recruiter have actually negotiated. The lever-loop-
+     * guard catches a repeating INFO-lever (compensation-summary,
+     * benefits-summary, etc.) and pivots to hold-firm — but if this
+     * fires before MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM counter rounds,
+     * the candidate hears "we'll hold the fitment" after a single
+     * exchange. PDF#31 Meesho/Prita T18 leaked exactly this pattern.
+     * Min-rounds gate ensures hold-firm only after real bargaining. */
+    state.counterRound >= MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM
+  ) {
     if (state.highestOfferMade > 0) {
       const jb = state.lastJoiningBonusOffered;
       return {
@@ -1483,7 +1509,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           lever: "hold-firm",
           newTotalLpa: state.highestOfferMade,
           joiningBonusAmount: jb != null ? jb : undefined,
-          rationale: `Lever-loop guard: ${recentLevers[0]} has fired twice already; force hold-firm at ₹${state.highestOfferMade}L instead of a third identical disclosure.`,
+          rationale: `Lever-loop guard: ${recentLevers[0]} has fired twice already; force hold-firm at ₹${state.highestOfferMade}L instead of a third identical disclosure (counterRound=${state.counterRound}, min=${MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM}).`,
         },
       };
     }
@@ -2167,11 +2193,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
  *  only via R1 (which lifts parser accuracy so candidateCurrentCtc is
  *  populated) PLUS this floor (which honours the disclosure).
  *
- *  Policy: clamp the anchor to max(lo, candidateCurrentCtc). If that
- *  pushes us above `hi`, cap at `hi` — the band is structurally too
- *  tight for this candidate but we still hold the maxStretch ceiling.
- *  When candidateCurrentCtc is null, return `lo` unchanged (no signal
- *  to clamp against). */
+ *  Policy: clamp the anchor to max(lo, candidateCurrentCtc * (1 + MIN_HIKE_PCT)).
+ *  If that pushes us above `hi`, cap at `hi` — the band is structurally
+ *  too tight for this candidate but we still hold the maxStretch ceiling.
+ *  When candidateCurrentCtc is null, return `lo` unchanged.
+ *
+ *  PDF#31 BUG C fix (2026-05-18, Meesho/Prita): the previous version
+ *  only lifted the anchor TO currentCtc, not ABOVE — anchoring at the
+ *  candidate's current package is functionally a zero-hike offer and
+ *  reads as a lowball. Real Indian-market hike norms for a Sr PD switch
+ *  are 20–30 %; we anchor at MIN 15 % to leave headroom for the
+ *  counter-base bargaining round to land in the 20–30 % zone. The floor
+ *  is conservative; the planner's negotiation loop pushes higher on
+ *  candidate counter. */
+const MIN_HIKE_PCT_FOR_ANCHOR = 0.15;
+
+/** PDF#31 BUG D fix (2026-05-18, Meesho/Prita T18) — minimum number of
+ *  counter-base rounds that must have happened before a hold-firm action
+ *  can fire from a non-acceptance, non-rescission emission site. Real
+ *  Indian-HR bargaining patterns require at least two counter-rounds
+ *  before "we'll hold the fitment" reads as honest negotiation rather
+ *  than a stonewall. Verbal-accept hold-firm and the counter-spiral-
+ *  exhausted hold-firm (round >= 3) bypass this — those are structurally
+ *  later in the flow and the candidate has already consumed the offered
+ *  concessions. */
+export const MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM = 2;
+
 function clampAnchorAboveDisclosed(
   lo: number,
   hi: number,
@@ -2179,9 +2226,16 @@ function clampAnchorAboveDisclosed(
 ): number {
   const disclosed = state.candidateCurrentCtc;
   if (typeof disclosed !== "number" || disclosed <= 0) return lo;
-  if (disclosed <= lo) return lo;
-  /* Disclosed CTC is above the band floor — clamp up, capped by hi. */
-  return Math.min(hi, disclosed);
+  /* Floor = disclosed * (1 + hike) — anchor must beat current CTC by a
+   * real margin, not merely match it. */
+  const hikeFloor = disclosed * (1 + MIN_HIKE_PCT_FOR_ANCHOR);
+  /* Round to 1 decimal so anchor doesn't ship with messy fractions. */
+  const hikeFloorRounded = Math.round(hikeFloor * 10) / 10;
+  const candidate = Math.max(lo, hikeFloorRounded);
+  if (candidate <= lo) return lo;
+  /* Cap by maxStretch — won't blow through the band ceiling even if the
+   * candidate's current CTC is structurally above it. */
+  return Math.min(hi, candidate);
 }
 
 function pickStructuralLever(state: NegotiationState): PlannedAction | null {
@@ -2300,6 +2354,21 @@ function pickLeverExploreMove(state: NegotiationState): AiMove {
       rationale: "Recap non-cash benefits totality.",
     };
   }
+  /* PDF#31 BUG D fix (2026-05-18) — tail-of-explore hold-firm is only
+   * legitimate after MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM. Before that,
+   * even if all soft levers happen to have been used, the conversation
+   * hasn't earned a "hold firm and invite decision" close — re-fall back
+   * to benefits-summary (the least committal exploratory lever) so the
+   * negotiation continues. */
+  if (state.counterRound < MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM) {
+    return {
+      lever: "benefits-summary",
+      newTotalLpa: state.highestOfferMade,
+      rationale:
+        `Levers exhausted but counterRound=${state.counterRound} < min=${MIN_COUNTER_ROUNDS_BEFORE_HOLD_FIRM}; ` +
+        "re-summarise benefits instead of declaring hold-firm.",
+    };
+  }
   return {
     lever: "hold-firm",
     newTotalLpa: state.highestOfferMade,
@@ -2351,9 +2420,18 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
      * reactiveFollowupsFired works as documented now that the key
      * matches across turns. */
     if (!hasFired("answer-direct") && !offerAskedThisTurn) {
+      /* BUG E fix (PDF#31, 2026-05-18) — `ask` MUST be candidate-facing
+       * prose, never an internal directive. Previously this field carried
+       * "Answer the candidate's question first; checklist advance pauses
+       * until the question is addressed.", which the canonical-prose
+       * answer-direct branch shipped verbatim to the candidate, producing
+       * the system-prompt leak in PDF#31 T18. The actual question is
+       * answered by generateAnswerToCandidate via the LLM factPack path;
+       * the canonical here is only a fallback tail. Keep it as safe,
+       * neutral candidate prose. */
       return {
         kind: "reactive-followup",
-        ask: "Answer the candidate's question first; checklist advance pauses until the question is addressed.",
+        ask: "Sure — let me address that directly.",
         trigger: "askedQuestion",
         topic: "answer-direct",
         satisfiesTopic: "answer-direct",

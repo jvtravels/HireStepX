@@ -112,8 +112,23 @@ describe("kernel-first architecture — HDFC RM bug repro", () => {
     let state = newState(); // no workMode / no teamSize
     state = applyCandidateAnswer(state, "What's the team size?");
     const { text, source } = await generateBotReply(state, mockGen, "What's the team size?");
-    /* Defer language must show up. */
-    expect(text.toLowerCase()).toMatch(/confirm|check|get back|team and get back/);
+    /* Defer language must show up. The fact-gap lead for `teamSize` is
+     * "Team size is something the HM walks through in the next round —"
+     * (see buildDeferLead in _response-pipeline.ts). The regex below
+     * accepts that vocab plus historical defer phrasing.
+     *
+     * BUG E (PDF#31 T18, 2026-05-18) — this regex previously matched the
+     * substring "check" inside the leaked directive string "checklist
+     * advance pauses…". That false-positive masked the system-prompt
+     * leak. Removed bare "check" — kept only standalone-word matches
+     * and the real defer-lead vocab. */
+    expect(text.toLowerCase()).toMatch(
+      /\b(confirm|get back|come back|walks through|next round|hm)\b/,
+    );
+    /* BUG E — explicit guard that the meta-directive never leaks. */
+    expect(text.toLowerCase()).not.toMatch(
+      /\b(checklist|advance pauses|the candidate's question first)\b/,
+    );
     /* The fabricated "42" must NOT survive. */
     expect(text).not.toMatch(/\b42\b/);
     expect(source).toBe("answer-canonical");

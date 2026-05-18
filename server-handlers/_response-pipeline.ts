@@ -34,6 +34,7 @@ import {
   IDIOM_PER_UTTERANCE_CAP,
   countPreferredIdioms,
   ACK_TEMPLATES,
+  META_DIRECTIVE_TOKENS_RE,
 } from "./_canonical-prose";
 import {
   buildFactPack,
@@ -80,12 +81,46 @@ export async function generateBotReply(
     ? detectCandidateAskedQuestion(candidateAnswer)
     : { asked: false };
 
+  let result: PipelineResult;
   if ((askedFromDelta && askedFromDelta.raw) || askedFromAnswer.asked) {
     const rawQ = askedFromDelta?.raw ?? askedFromAnswer.raw ?? candidateAnswer ?? "";
-    return generateAnswerToCandidate(state, action, move, rawQ, generateAiText);
+    result = await generateAnswerToCandidate(state, action, move, rawQ, generateAiText);
+  } else {
+    result = await generateRestyledCanonical(state, action, move, generateAiText);
   }
 
-  return generateRestyledCanonical(state, action, move, generateAiText);
+  /* BUG E fix (PDF#31 T18, 2026-05-18) — defense-in-depth boundary.
+   * If for ANY reason a meta-directive token (e.g. "Answer the
+   * candidate's question first; checklist advance pauses…") slipped
+   * through canonical-prose or the LLM restyle/answer paths, swap to
+   * a safe deterministic stub before the candidate ever sees it. The
+   * planner-side and canonical-side fixes should make this branch
+   * unreachable; keeping the boundary check guards against future
+   * regressions of the same class. */
+  if (META_DIRECTIVE_TOKENS_RE.test(result.text)) {
+    return {
+      text: "Happy to address that — let me come back to where we were.",
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: "meta-directive-leak",
+    };
+  }
+  /* PDF#31 BUG F fix (2026-05-18) — empty / whitespace-only text would
+   * crash the downstream UI render and looked like an abrupt session
+   * end in the Meesho/Prita replay. Defense-in-depth: any path that
+   * fails to produce visible prose ships a neutral stub so the session
+   * can recover gracefully. */
+  if (!result.text || !result.text.trim()) {
+    return {
+      text: "Let me come back to that in a moment.",
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: "empty-text",
+    };
+  }
+  return result;
 }
 
 async function generateRestyledCanonical(

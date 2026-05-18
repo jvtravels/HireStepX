@@ -62,6 +62,21 @@ export interface EquityVestingResult {
    *  secondaries, tender offers, or IPO timeline? Often paired with
    *  valuation; signals exit-aware framing. */
   liquidityDiscussed: boolean;
+  /** PDF#31 BUG A+B fix (2026-05-18) — explicit negative disclosure
+   *  about equity in the candidate's CURRENT or OFFERED package.
+   *    - `null`  = unstated (default)
+   *    - `false` = candidate explicitly negated equity (e.g. "no ESOP",
+   *                "no equity", "only fixed + variable, no stock")
+   *    - `true`  = candidate explicitly affirmed equity exists
+   *
+   *  Drives two gates downstream:
+   *   1. component-probe (esop) is suppressed when `false` — otherwise
+   *      the bot re-asks "ESOPs in play?" after the candidate already
+   *      said no (PDF#31 BUG A repro).
+   *   2. equity-clarity narration (vesting/cliff walkthrough) is
+   *      suppressed when `false` — otherwise the bot hallucinates a
+   *      vesting structure for a cash-only package (PDF#31 BUG B). */
+  equityExists: boolean | null;
   /** Convenience flag. */
   hasAny: boolean;
 }
@@ -74,8 +89,41 @@ const EMPTY: EquityVestingResult = {
   strikePriceDiscussed: false,
   valuationDiscussed: false,
   liquidityDiscussed: false,
+  equityExists: null,
   hasAny: false,
 };
+
+/** PDF#31 BUG A+B (2026-05-18) — explicit negation patterns. Conservative
+ *  set; each requires "no/zero/without/only ... base+variable, no" type
+ *  cue tied to an equity token (esop/rsu/equity/stock(s)/options).
+ *
+ *  Token-anchored: a bare "no equity" mid-sentence counts, but only when
+ *  the equity token is preceded by an explicit negator within a short
+ *  window. The classifier intentionally does NOT catch hedged forms
+ *  ("not much equity", "barely any equity") — those keep equityExists
+ *  null and let the bot follow up to clarify. */
+const EQUITY_NEGATION_PATTERNS: RegExp[] = [
+  /\bno\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?|options?|shares?|grants?)\b/i,
+  /\bzero\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\bwithout\s+(?:any\s+)?(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\b(?:there\s+(?:is|are|'s)|i\s+have)\s+no\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\b(?:don.?t|do\s+not)\s+(?:have|get)\s+(?:any\s+)?(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\b(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\s*[:\-—]?\s*(?:nil|none|zero|0)\b/i,
+  /\bonly\s+(?:base|fixed)\s+(?:and|\+|&)\s+variable\b.*\bno\s+(?:esops?|equity|stock|rsus?)\b/i,
+];
+
+/** PDF#31 BUG A+B — explicit affirmation patterns. Only fires when the
+ *  candidate confirms equity presence ("yes, I have ESOPs", "ESOPs are
+ *  part of my package"). Numbers-only ("I have ₹5 LPA RSUs") are NOT
+ *  enough — the ComponentBreakdown parser already records that as
+ *  equity-component value, and presence is inferable from that. Here we
+ *  capture the standalone affirmation so a candidate who says "yes ESOPs
+ *  are there" without a number still gets equityExists=true. */
+const EQUITY_AFFIRMATION_PATTERNS: RegExp[] = [
+  /\b(?:yes|yeah|yep),?\s+(?:i\s+(?:have|get|hold)|there\s+are)\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\b(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\s+(?:are|is)\s+(?:part\s+of|included\s+in|in)\s+(?:my|the)\s+(?:package|comp|ctc|offer)\b/i,
+  /\bi\s+(?:have|hold|get|receive)\s+(?:some\s+|annual\s+)?(?:esops?|rsus?|stock(?:s|\s+options?)?|equity\s+grants?)\b/i,
+];
 
 const VEST_YEAR_PATTERNS = [
   /\b(\d{1,2})\s*[-\s]?\s*(?:year|yr|years|yrs)\s+vest(?:ing)?\b/i,
@@ -169,6 +217,16 @@ export function extractEquityVesting(text: string): EquityVestingResult {
   const valuationDiscussed = /\b(?:current\s+valuation|company\s+valuation|last[-\s]?round|preferred[-\s]?share\s+price|post[-\s]?money|pre[-\s]?money|series\s+[a-h]\s+(?:price|valuation)|cap\s+table|dilution)\b/i.test(text);
   const liquidityDiscussed = /\b(?:liquidity\s+(?:event|window)|secondary\s+(?:sale|market|tender)|tender\s+offer|ipo\s+(?:timeline|date|plan)|exit\s+(?:strategy|plan|event)|acquisition\s+(?:plan|trigger))\b/i.test(text);
 
+  /* PDF#31 BUG A+B (2026-05-18) — negation takes precedence over
+   * affirmation; a sentence containing both ("I have RSUs but no ESOPs")
+   * is conservatively treated as null and the planner will probe to
+   * disambiguate. */
+  let equityExists: boolean | null = null;
+  const negated = EQUITY_NEGATION_PATTERNS.some((p) => p.test(text));
+  const affirmed = EQUITY_AFFIRMATION_PATTERNS.some((p) => p.test(text));
+  if (negated && !affirmed) equityExists = false;
+  else if (affirmed && !negated) equityExists = true;
+
   const hasAny =
     vestingYears != null ||
     cliffMonths != null ||
@@ -176,7 +234,8 @@ export function extractEquityVesting(text: string): EquityVestingResult {
     familiarity != null ||
     strikePriceDiscussed ||
     valuationDiscussed ||
-    liquidityDiscussed;
+    liquidityDiscussed ||
+    equityExists != null;
   return {
     vestingYears,
     cliffMonths,
@@ -185,6 +244,7 @@ export function extractEquityVesting(text: string): EquityVestingResult {
     strikePriceDiscussed,
     valuationDiscussed,
     liquidityDiscussed,
+    equityExists,
     hasAny,
   };
 }
@@ -202,6 +262,11 @@ export function mergeEquityVesting(
     strikePriceDiscussed: p.strikePriceDiscussed || next.strikePriceDiscussed,
     valuationDiscussed: p.valuationDiscussed || next.valuationDiscussed,
     liquidityDiscussed: p.liquidityDiscussed || next.liquidityDiscussed,
+    /* PDF#31 BUG A+B — last explicit statement wins. The candidate can
+     * revise ("actually we do get RSUs after 6 months tenure"); the
+     * fresh disclosure overrides the stale one. Null from `next` does
+     * NOT wipe a prior explicit value — only an explicit reversal does.*/
+    equityExists: next.equityExists ?? p.equityExists,
     hasAny: false,
   };
   merged.hasAny =
@@ -211,6 +276,7 @@ export function mergeEquityVesting(
     merged.familiarity != null ||
     merged.strikePriceDiscussed ||
     merged.valuationDiscussed ||
-    merged.liquidityDiscussed;
+    merged.liquidityDiscussed ||
+    merged.equityExists != null;
   return merged;
 }

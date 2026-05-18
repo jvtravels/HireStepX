@@ -113,7 +113,7 @@ describe("recommendFollowups — notice-and-counter", () => {
 describe("recommendFollowups — esop-literacy", () => {
   it("fires when equity-pref but novice familiarity", () => {
     const state = baseState({
-      equityVesting: { vestingYears: null, cliffMonths: null, preference: "equity-pref", familiarity: "novice", strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: true },
+      equityVesting: { vestingYears: null, cliffMonths: null, preference: "equity-pref", familiarity: "novice", strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, equityExists: null, hasAny: true },
     });
     expect(categories(state)).toContain("esop-literacy");
   });

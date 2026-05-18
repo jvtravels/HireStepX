@@ -1869,6 +1869,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
       strikePriceDiscussed: false,
       valuationDiscussed: false,
       liquidityDiscussed: false,
+      equityExists: null,
       hasAny: false,
     },
     locationMode: {
@@ -2468,7 +2469,7 @@ export function parseCandidateAnswer(
       componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
       rationale: null,
       noticeJoining: { noticePeriodDays: null, buyoutRequested: false, joiningBonusAsk: null, earlyJoinPreferred: false, joiningBonusClawbackDiscussed: false, lastWorkingDayText: null, hasAny: false },
-      equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: false },
+      equityVesting: { vestingYears: null, cliffMonths: null, preference: null, familiarity: null, strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, equityExists: null, hasAny: false },
       locationMode: { workMode: null, locationCity: null, relocationRequested: false, relocationRefused: false, hasAny: false },
       competingOfferDetail: { company: null, status: null, stage: null, amount: null, letterShareOffered: false, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: false },
       decisionDeadline: { deadlineDays: null, deadlineExplicit: false, conditionalAcceptance: false, conditionalEvidence: null, hasAny: false },
@@ -4748,6 +4749,9 @@ function backfillEquityVesting(raw: unknown): EquityVestingResult {
     strikePriceDiscussed: v?.strikePriceDiscussed ?? false,
     valuationDiscussed: v?.valuationDiscussed ?? false,
     liquidityDiscussed: v?.liquidityDiscussed ?? false,
+    /* PDF#31 BUG A+B (2026-05-18) — backfill for sessions serialized
+     * before the equityExists field existed. */
+    equityExists: v?.equityExists ?? null,
     hasAny: v?.hasAny ?? false,
   };
 }

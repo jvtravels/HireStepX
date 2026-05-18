@@ -119,6 +119,30 @@ export function countPreferredIdioms(s: string | null | undefined): number {
   return matches ? matches.length : 0;
 }
 
+/** BUG E fix (PDF#31 T18, 2026-05-18) — meta-directive tokens that must
+ *  NEVER appear in candidate-facing prose. These are the second-person
+ *  directives the planner / system-prompt scaffolding uses to reason
+ *  about ITS OWN behavior ("answer first", "checklist advance pauses",
+ *  "planner", etc.). If any of these slip into the `ask` field of a
+ *  reactive-followup or the body of a restyled line, the candidate
+ *  hears the bot narrate its own internal control flow.
+ *
+ *  Treat any prose containing these tokens as poisoned and reject it. */
+export const META_DIRECTIVE_TOKENS_RE =
+  /\b(checklist|advance pauses|advance is paused|planner|planned action|next action|reactive[- ]followup|system prompt|llm|directive|the candidate's question first|address(?:es|ed)?\s+(?:the\s+)?question\s+first)\b/i;
+
+/** Return null if `s` contains a meta-directive token (poisoned), else
+ *  return `s` trimmed. Used by callers that own a safe fallback. */
+export function sanitiseCandidateProse(
+  s: string | null | undefined,
+): string | null {
+  if (!s) return null;
+  const trimmed = s.trim();
+  if (!trimmed) return null;
+  if (META_DIRECTIVE_TOKENS_RE.test(trimmed)) return null;
+  return trimmed;
+}
+
 /** Bug 1 (PDF#25, 2026-05-16) — discovery-probe opener rotation set.
  *  Previously every probe was prefaced by the same "Right, on X —"
  *  template, regardless of how many probes had fired. Real recruiters
@@ -707,9 +731,19 @@ function renderCanonicalProseBody(
          * the candidate directly instead of narrating their own thought.*/
         return "Noted on the competing opportunity. Before I revert internally — walk me through what matters most to you on this role.";
       }
-      /* answer-direct, ctc-gentle-push, notice-buyout, etc. all carry a
-       * planner-supplied ask string — use it verbatim. */
-      return action.ask || "Can you elaborate on that a little?";
+      if (topic === "answer-direct") {
+        /* BUG E fix (PDF#31 T18, 2026-05-18) — explicit safe prose for
+         * the answer-direct topic so a regression in the planner can't
+         * leak an internal directive through the verbatim fallback below.
+         * The real answer comes from generateAnswerToCandidate (LLM +
+         * factPack); this is the deterministic tail when the LLM path
+         * defers or falls back. */
+        return "Happy to address that — let me come back to where we were.";
+      }
+      /* ctc-gentle-push, notice-buyout, etc. carry planner-supplied ask
+       * strings — use verbatim, but sanitise meta-directive tokens that
+       * must never reach the candidate. */
+      return sanitiseCandidateProse(action.ask) || "Can you elaborate on that a little?";
     }
 
     case "probe-mismatch":

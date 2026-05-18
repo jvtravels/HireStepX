@@ -57,7 +57,7 @@ function makeState(over: Partial<NegotiationState> = {}): NegotiationState {
     },
     equityVesting: {
       vestingYears: null, cliffMonths: null, preference: null, familiarity: null,
-      strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, hasAny: false,
+      strikePriceDiscussed: false, valuationDiscussed: false, liquidityDiscussed: false, equityExists: null, hasAny: false,
     },
     locationMode: {
       workMode: null, locationCity: null, relocationRequested: false,

@@ -329,6 +329,7 @@ describe("parseCandidateAnswer", () => {
         strikePriceDiscussed: false,
         valuationDiscussed: false,
         liquidityDiscussed: false,
+        equityExists: null,
         hasAny: false,
       },
       locationMode: {
