@@ -240,6 +240,73 @@ describe("behavioralAnalyzer", () => {
     expect(out.flags).toContain("unquantified_answers");
   });
 
+  it("emits topCompetencies + competencyCounts in meta.behavioral (Phase 2)", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        target_company: "Amazon",
+        transcript: [
+          ai("Tell me about a project."),
+          user(
+            "I owned the checkout migration end-to-end. I talked to merchants weekly to validate the redesign. We shipped on time and reduced p99 latency by 40%.",
+          ),
+          ai("Another?"),
+          user(
+            "I drove cross-team alignment on the logging schema. I rebuilt trust with platform after a missed handoff. We delivered the rollout in six weeks and cut on-call paging by 30%.",
+          ),
+        ],
+      }),
+    });
+    const meta = out.meta?.behavioral;
+    expect(meta?.topCompetencies?.length).toBeGreaterThanOrEqual(2);
+    expect(meta?.competencyCounts?.["ownership"]).toBeGreaterThanOrEqual(2);
+    expect(meta?.competencyCounts?.["deliver-results"]).toBeGreaterThanOrEqual(1);
+    // Per-answer competencies surface on the breakdown rows too.
+    const firstAnswerBreakdown = meta?.starBreakdown?.[0];
+    expect(firstAnswerBreakdown?.competencies).toContain("ownership");
+  });
+
+  it("Amazon track weighting prefers Amazon-aligned competencies", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        target_company: "Amazon",
+        transcript: [
+          ai("One example."),
+          user(
+            "I dug into the metrics and root-caused the latency issue. I owned the fix and we shipped within a week. The data showed a 60% reduction in p99.",
+          ),
+          ai("Another example."),
+          user(
+            "I made the case for a longer-term migration plan. We invested in a 3-year roadmap. I drove cross-team alignment over six months.",
+          ),
+        ],
+      }),
+    });
+    const top = out.meta?.behavioral?.topCompetencies || [];
+    // Ownership, dive-deep, think-big are all Amazon LPs and should rank.
+    expect(top.length).toBeGreaterThanOrEqual(2);
+    const amazonAligned = ["ownership", "dive-deep", "think-big", "deliver-results"];
+    const overlap = top.filter((c) => amazonAligned.includes(c));
+    expect(overlap.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("surfaces a positive coaching anchor when 2+ competencies are demonstrated", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a project."),
+          user(
+            "I owned the redesign. I talked to users every week. We shipped on time and reduced churn by 20%.",
+          ),
+          ai("Another?"),
+          user(
+            "I drove the migration. I dogfooded the new system for a month. We delivered it in eight weeks.",
+          ),
+        ],
+      }),
+    });
+    expect(out.coachingNotes.toLowerCase()).toMatch(/strong signals|anchor/);
+  });
+
   it("ignores micro-replies (yes/ok) when scoring STAR completeness", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({

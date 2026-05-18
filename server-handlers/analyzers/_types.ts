@@ -92,7 +92,20 @@ export interface AnalyzerMeta {
       missing: Array<"S" | "T" | "A" | "R">;
       text_preview: string;
       quantified: boolean;
+      /** Competencies demonstrated in this specific answer
+       *  (see _behavioral-competencies.ts). Empty array when no
+       *  behavioural markers matched — the answer may still be a
+       *  strong STAR but didn't paint a recognisable competency. */
+      competencies?: string[];
     }>;
+    /** Aggregate frequency of each competency across the session.
+     *  Used by the report to rank "top demonstrated" — three
+     *  ownership stories beat one customer-obsession story. */
+    competencyCounts?: Record<string, number>;
+    /** The top N competencies for the candidate's target track,
+     *  pre-ranked so the UI doesn't need to know the weighting
+     *  rules. Empty array when no competency hits at all. */
+    topCompetencies?: string[];
   };
   /** Campus-placement: tier-aware CGPA calibration the analyzer used.
    *  Surfaced in the report so the candidate sees the actual cutoff

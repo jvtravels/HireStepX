@@ -23,6 +23,13 @@ import {
   TranscriptTurn,
   emptyResult,
 } from "./_types";
+import {
+  aggregateCompetencies,
+  Competency,
+  CompetencyTrack,
+  detectCompetencies,
+  topCompetenciesForTrack,
+} from "./_behavioral-competencies";
 
 type StarPart = "S" | "T" | "A" | "R";
 
@@ -198,12 +205,19 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         unquantifiedCount += 1;
       }
 
+      /* Phase 2: per-answer competency detection. Storing the keys
+       * here means the report can show "this answer demonstrated
+       * ownership + bias-for-action" inline with the STAR matrix —
+       * not just an aggregate at the bottom. */
+      const competencies = Array.from(detectCompetencies(text));
+
       starBreakdown.push({
         turn_idx: i,
         present,
         missing,
         text_preview: text.slice(0, 160),
         quantified,
+        competencies,
       });
     }
 
@@ -269,14 +283,82 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       coachingBits.push("Add concrete numbers (%, hours saved, users impacted) to make impact credible.");
     }
 
+    /* Phase 2: aggregate competency counts across the session and
+     * rank the top demonstrated for the candidate's target track.
+     * If we can't infer the track, fall back to unweighted top-by-
+     * frequency — still useful as a positive signal in the report. */
+    const userAnswers = transcript
+      .filter(isUserTurn)
+      .map((t) => (t.text || "").trim())
+      .filter((t) => t.length >= 60);
+    const competencyCounts = aggregateCompetencies(userAnswers);
+    const track = inferCompetencyTrack(session.target_company || null);
+    const topCompetencies = topCompetenciesForTrack(competencyCounts, track, 3);
+
+    /* Coaching: positive anchoring. Plan principle #5 — surface
+     * positives, not just negatives. When the candidate clearly
+     * demonstrated 2+ competencies, name them. */
+    if (topCompetencies.length >= 2) {
+      const labels = topCompetencies.slice(0, 2).join(", ");
+      coachingBits.unshift(
+        `Strong signals on ${labels} — anchor future stories on these proven strengths.`,
+      );
+    }
+
     result.hallucinations = hallucinations;
     result.rubricGaps = gaps;
     result.badQuestions = bad;
     result.flags = Array.from(flags);
     result.coachingNotes = coachingBits.join(" ");
     if (starBreakdown.length > 0) {
-      result.meta = { ...(result.meta || {}), behavioral: { starBreakdown } };
+      result.meta = {
+        ...(result.meta || {}),
+        behavioral: {
+          starBreakdown,
+          /* `Record<Competency, number>` widens to `Record<string, number>`
+           * at the meta boundary because consumers (DB rows, report
+           * UI) treat the keys as opaque strings. */
+          competencyCounts: { ...competencyCounts },
+          topCompetencies: topCompetencies.map((c) => String(c)),
+        },
+      };
     }
     return result;
   },
 };
+
+/* Track-inference: which hiring track is this candidate interviewing
+ * for? Heuristic on `target_company` because behavioral sessions
+ * rarely carry an explicit track field. Conservative — when we don't
+ * recognise the company, return null and the analyzer falls back to
+ * unweighted top-by-frequency. */
+function inferCompetencyTrack(company: string | null): CompetencyTrack | null {
+  if (!company) return null;
+  const c = company.toLowerCase();
+  if (
+    /\b(amazon|aws|amzn)\b/.test(c)
+  ) {
+    return "amazon-lp";
+  }
+  if (/\b(google|alphabet|youtube)\b/.test(c)) return "google";
+  if (
+    /\b(flipkart|razorpay|swiggy|zomato|cred|phonepe|paytm|myntra|nykaa|groww|zerodha|meesho|udaan|delhivery|ola|uber\s+india)\b/.test(
+      c,
+    )
+  ) {
+    return "indian-product";
+  }
+  if (
+    /\b(tcs|infosys|wipro|cognizant|accenture|capgemini|hcl|tech\s+mahindra|mindtree|deloitte\s+india)\b/.test(
+      c,
+    )
+  ) {
+    return "services-lateral";
+  }
+  if (/\b(startup|seed|pre[\s-]?seed|series[\s-]?a)\b/.test(c)) return "startup";
+  return null;
+}
+
+/* Local type alias re-exports kept for downstream files that import
+ * the analyzer module directly (legacy DB-row mappers). */
+export type { Competency };
