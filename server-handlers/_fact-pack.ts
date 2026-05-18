@@ -61,6 +61,67 @@ export const INDIAN_MARKET_FACTS = Object.freeze({
 
 export type IndianMarketFacts = typeof INDIAN_MARKET_FACTS;
 
+/* PDF#29 Bugs 6 + 8 (2026-05-18) — phase-gated market facts.
+ *
+ * Bug 6 (premature BGV): Bot dropped "AuthBridge / FirstAdvantage" /
+ * relieving-letter / Form-16 references during discovery — these are
+ * BGV-process facts that have no business in the LLM's view until the
+ * candidate has accepted (post-acceptance) or is being walked through
+ * close-recap. Shipping them into the factPack in `opening` /
+ * `probe-expectations` was the upstream root cause.
+ *
+ * Bug 8 (variable-split anchor leak): The static `variableSplitNorms`
+ * fact carries percentage RANGES ("10-15%", "20-30%", "30-40%"). When
+ * surfaced to the LLM pre-anchor, the model treated those bands as an
+ * offer to disclose. Gated to post-anchor phases for the same reason
+ * as the BGV process facts.
+ *
+ * Keys that are ALWAYS safe (statutory or generic Indian comp mechanics):
+ * gratuityRule, pfRule, joiningBonusClawback, retentionBonusStandard,
+ * rsuStandard, rsuCliffMnc, rsuStartup, taxRegime*, sec87aRebate, plus
+ * benefits + leverage/market context. */
+const BGV_PROCESS_KEYS = [
+  "bgvTimeline",
+  "bgvScope",
+  "relievingLetterRisk",
+  "form16Requirement",
+  "pfUanTransfer",
+  "joiningDateConvention",
+  "noticeBuyoutPolicy",
+  "bondPolicy",
+] as const satisfies ReadonlyArray<keyof IndianMarketFacts>;
+
+const PRE_ANCHOR_OMIT_KEYS = [
+  ...BGV_PROCESS_KEYS,
+  "variableSplitNorms",
+] as const satisfies ReadonlyArray<keyof IndianMarketFacts>;
+
+/* Anchoring band — has put a number on the table but not yet closing:
+ * comp mechanics + leverage are useful, BGV / process facts are still
+ * premature until the candidate accepts. */
+const MID_ANCHOR_OMIT_KEYS = BGV_PROCESS_KEYS;
+
+/** Phase-gated projection of INDIAN_MARKET_FACTS for the LLM-facing
+ *  factPack. The LLM ONLY sees what we hand it; gating here is what
+ *  prevents downstream leaks even when the prompt is otherwise loose.
+ *  Pure. */
+export function selectMarketFacts(
+  phase: NegotiationPhase,
+): Partial<IndianMarketFacts> {
+  const omit: ReadonlyArray<keyof IndianMarketFacts> =
+    phase === "opening" || phase === "range-disclosure" || phase === "probe-expectations"
+      ? PRE_ANCHOR_OMIT_KEYS
+      : phase === "offer-presented" || phase === "counter-offer" || phase === "lever-explore"
+        ? MID_ANCHOR_OMIT_KEYS
+        : /* closing-push / accepted / walked-away / stalemate — full set;
+           * BGV facts are needed for the offer-letter / docs touchpoint. */
+          [];
+  if (omit.length === 0) return { ...INDIAN_MARKET_FACTS };
+  const out: Partial<IndianMarketFacts> = { ...INDIAN_MARKET_FACTS };
+  for (const k of omit) delete out[k];
+  return out;
+}
+
 export interface FactPack {
   role: string;
   company: string;
@@ -98,7 +159,11 @@ export function buildFactPack(
     company: state.company || "",
     marketMode: state.marketMode,
     phase: state.phase,
-    marketFacts: INDIAN_MARKET_FACTS,
+    /* PDF#29 Bugs 6 + 8 (2026-05-18) — phase-gated. Cast at the boundary:
+     * the FactPack consumer (LLM prompt builder) JSON-stringifies the
+     * pack and the LLM is instructed to defer when a fact is absent, so
+     * a Partial projection is safe and the cast is local to this writer. */
+    marketFacts: selectMarketFacts(state.phase) as IndianMarketFacts,
   };
 
   if (state.candidateCurrentCtc != null && state.candidateCurrentCtc > 0) {
