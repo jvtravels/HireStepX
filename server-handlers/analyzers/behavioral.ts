@@ -39,6 +39,7 @@ import {
 } from "./_behavioral-probing";
 import { findUsismDrift, type UsismHit } from "./_usism-patterns";
 import { detectEvidenceQuality } from "../_evidence-signals";
+import { isAnswerOffTopic } from "../_topical-alignment";
 
 type StarPart = "S" | "T" | "A" | "R";
 
@@ -176,6 +177,12 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     let aiAcceptedUnevidencedMetric = 0;
     const evidenceGapHits: { turn_idx: number; missing: string[]; preview: string }[] = [];
 
+    /* Phase-6.2 — answer↔question topical-alignment counters. We pair
+     * each user answer with the LAST preceding AI turn (the prompt it
+     * was responding to) and ask whether the answer is on-topic. */
+    let offTopicCount = 0;
+    const offTopicHits: { turn_idx: number; questionIntent: string; preview: string }[] = [];
+
     const seenQuestions: { idx: number; norm: string }[] = [];
     const starBreakdown: NonNullable<NonNullable<AnalyzerResult["meta"]>["behavioral"]>["starBreakdown"] = [];
 
@@ -277,6 +284,30 @@ export const behavioralAnalyzer: FocusAnalyzer = {
           } else {
             aiAcceptedUnevidencedMetric += 1;
           }
+        }
+      }
+
+      /* Phase-6.2 topical-alignment pass. Find the most recent AI turn
+       * before this user reply — that's the prompt the candidate was
+       * answering. If the answer carries neither the question's intent
+       * nor shared vocabulary, count it. ≥2 occurrences raises the
+       * session-level flag below. */
+      let precedingAi: TranscriptTurn | undefined;
+      for (let j = i - 1; j >= 0; j--) {
+        if (isAiTurn(transcript[j]) && (transcript[j].text || "").trim().length > 0) {
+          precedingAi = transcript[j];
+          break;
+        }
+      }
+      if (precedingAi) {
+        const check = isAnswerOffTopic(precedingAi.text || "", text);
+        if (check.offTopic) {
+          offTopicCount += 1;
+          offTopicHits.push({
+            turn_idx: i,
+            questionIntent: check.questionIntent ?? "unknown",
+            preview: text.slice(0, 160),
+          });
         }
       }
 
@@ -418,6 +449,22 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (aiAcceptedUnevidencedMetric >= 2) flags.add("ai_accepted_unevidenced_metric");
 
+    /* Phase-6.2 — repeated off-topic answers. Single misfire is
+     * forgivable (paraphrased to a related theme); ≥2 across the
+     * session signals the candidate isn't anchoring to the prompt. */
+    if (offTopicCount >= 2) {
+      flags.add("answer_off_topic");
+      for (const hit of offTopicHits.slice(0, 3)) {
+        gaps.push({
+          dimension: "topical_alignment",
+          expected: `Answer should address the question's intent (${hit.questionIntent})`,
+          observed: `Turn ${hit.turn_idx}: "${hit.preview}"`,
+          severity: "medium",
+          flag: "answer_off_topic",
+        });
+      }
+    }
+
     if (aiAcceptedVague >= 2) flags.add("ai_accepted_vague");
     if (userAnswerCount >= 4 && learningReflections === 0) {
       flags.add("no_learning_reflection");
@@ -461,6 +508,9 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("ai_accepted_unevidenced_metric")) {
       coachingBits.push("The mock interviewer rolled past quantified claims without checking the source — in real Bar-Raiser / Director rounds you should expect 'what was the baseline?' or 'how was that measured?' right after every number.");
+    }
+    if (flags.has("answer_off_topic")) {
+      coachingBits.push("A few answers drifted from the question's intent — start every response by mirroring the prompt ('You asked about a conflict — let me take one from my last role…') so the interviewer hears you've heard them.");
     }
 
     /* Phase 2: aggregate competency counts across the session and

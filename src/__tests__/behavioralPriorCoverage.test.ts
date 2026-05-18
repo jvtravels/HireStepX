@@ -51,6 +51,7 @@ describe("Phase-6.1 — behavioural prebias plumbing", () => {
       "ai_accepted_vague",
       "no_learning_reflection",
       "unquantified_answers",
+      "answer_off_topic",
     ];
     for (const f of canonicalBehavioralFlags) {
       // Match `f:` (object key) — must be present as a property name

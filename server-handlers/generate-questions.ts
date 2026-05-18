@@ -377,6 +377,8 @@ export default async function handler(req: Request): Promise<Response> {
         "STAR+L learning (at least one failure / mistake / setback question should explicitly invite 'what did you take away / what would you do differently')",
       unquantified_answers:
         "Quantification (the candidate consistently answers without numbers — at least 2 questions should bake quantification into the prompt, e.g. 'walk me through the numbers')",
+      answer_off_topic:
+        "Prompt anchoring (last session showed repeated drift from the question's intent — open at least 2 stems with a single sharp clause that the candidate can't sidestep, e.g. 'specifically about a CONFLICT — not a tough decision — tell me about…')",
     };
     const isBehavioral = interviewType === "behavioral";
     const behavioralPriorFlagList = (isBehavioral && Array.isArray(priorFlags))
