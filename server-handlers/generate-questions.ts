@@ -17,6 +17,7 @@ import { matchCompanyKey } from "../data/company-guidance";
 import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-facts";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { getCompanyTier } from "../data/company-tiers";
+import { selectHrPersona, hrPersonaPromptFragment } from "../src/_indian-hr-personas";
 import { renderCanonicalProse } from "./_canonical-prose";
 import { initState as initNegotiationState } from "./_negotiation-kernel";
 import {
@@ -341,6 +342,23 @@ export default async function handler(req: Request): Promise<Response> {
       : [];
     const priorCoverageContext = (isHrRound && priorFlagList.length > 0)
       ? `LAST-SESSION COVERAGE PRIORITIES (auto-prebias from analyzer): The candidate's most recent HR-round session under-covered these dimensions. Ensure at least one question this session pressures each — without re-using last session's exact phrasings:\n${priorFlagList.map((f) => `  • ${PRIOR_FLAG_TO_DIMENSION[f]}`).join("\n")}`
+      : "";
+
+    /* v4.6 / Phase 3 — HR-round persona variability. Pick one of three
+       Indian HR archetypes (warm Partner / firm HRBP / transactional TA)
+       based on company tier + experience level. The fragment colours the
+       question generator so the same role doesn't produce three
+       identical-sounding HR rounds across persona variants. Silent
+       no-op for non-HR-round interview types. */
+    const hrPersonaContext = isHrRound
+      ? (() => {
+          const tier = typeof companyName === "string" ? getCompanyTier(companyName) : null;
+          const persona = selectHrPersona({
+            companyTier: tier || "unknown",
+            experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "unknown",
+          });
+          return hrPersonaPromptFragment(persona);
+        })()
       : "";
 
     /* Behavioural-shape guidance — pinned to interviewType="behavioral".
@@ -928,7 +946,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
-${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
+${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
 ${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
@@ -1416,6 +1434,15 @@ Requirements:
       // counts and dimension coverage.
       prior_coverage_hints: priorFlagList.length,
       prior_coverage_applied: !!priorCoverageContext,
+      // HR persona variability (Phase 3): which archetype the selector
+      // picked from (company tier × experience level). Empty string for
+      // non-HR-round sessions.
+      hr_persona: hrPersonaContext
+        ? selectHrPersona({
+            companyTier: typeof companyName === "string" ? getCompanyTier(companyName) || "unknown" : "unknown",
+            experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "unknown",
+          }).id
+        : "",
     }, req);
 
     // Best-effort: cache the successful response for ~5 min so retries /
