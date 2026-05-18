@@ -44,6 +44,8 @@ import { resolveServerBand } from "./_band-resolver";
 import { enforceRoleLabel } from "./_role-label";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
+import type { CompanyTierBucket } from "../src/_negotiation-math";
+import { selectRecruiterSectorPersona } from "./_indian-recruiter-personas";
 import {
   detectAdversarialInput,
   JAILBREAK_DEFLECTION_TEXT,
@@ -414,6 +416,30 @@ export default async function handler(
         "neutral"
       ) as import("./_negotiation-kernel").MarketMode;
 
+      /* Phase 3 of Salary-Negotiation plan (2026-05-18) — derive the
+       * Indian recruiter SECTOR persona once at session start, from
+       * (tierBucket, band shape). Mirrors the analyzer's `tierBucket`
+       * helper so the kernel + analyzer agree on the persona. Kernel
+       * is data-tier-agnostic; we compute here and pass via init. */
+      const initTierBucket: CompanyTierBucket | null = (() => {
+        const t = getCompanyTier(company);
+        switch (t) {
+          case "faang": case "big-tech": case "gcc":          return "listed_big_tech";
+          case "indian-unicorn": case "saas-product":         return "mature_unicorn";
+          case "edtech": case "startup-growth":               return "growth_startup";
+          case "startup-early":                                return "early_startup";
+          case "it-services":                                  return "it_services";
+          case "bfsi-global": case "bfsi-domestic":           return "bfsi";
+          case "fmcg-mnc":                                     return "fmcg";
+          case "government-psu":                               return "psu";
+          default:                                             return null;
+        }
+      })();
+      const initRecruiterSectorPersona = selectRecruiterSectorPersona({
+        tierBucket: initTierBucket,
+        band: serverBand,
+        company,
+      });
       let state = initState({
         sessionId: body.sessionId || crypto.randomUUID(),
         role,
@@ -426,6 +452,8 @@ export default async function handler(
         marketMode: inferredMarketMode,
         resumeFactPack: body.resumeFactPack ?? null,
         parsedResume: body.parsedResume ?? null,
+        recruiterSectorPersona: initRecruiterSectorPersona,
+        tierBucketHint: initTierBucket,
       });
       const move = pickAiMove(state);
       const promptVariant = selectPromptVariant(state.sessionId);
@@ -467,6 +495,10 @@ export default async function handler(
         band_initial: serverBand.initialOffer,
         band_max: serverBand.maxStretch,
         band_walk: serverBand.walkAway,
+        /* Phase 3 of Salary-Negotiation plan (2026-05-18) — the
+         * sector persona kernel selected for this session. Logged
+         * once at session start; never mutates. */
+        salneg_persona: state.recruiterSectorPersona ?? "default",
       }, req);
       if (source === "fallback") {
         void captureServerEvent("kernel_fallback", distinctId, { lever: move.lever, phase: state.phase, where: "init" }, req);

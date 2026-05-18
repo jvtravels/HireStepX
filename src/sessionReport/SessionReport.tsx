@@ -259,6 +259,9 @@ export const SessionReport = memo(function SessionReport({
     monthlyTakeHomeOldRegimeInr?: number | null;
     annualTaxNewRegimeLpa?: number | null;
     annualTaxOldRegimeLpa?: number | null;
+    /* Phase 3 of Salary-Negotiation plan (2026-05-18) — sector persona. */
+    recruiterPersona?: string;
+    recruiterPersonaLabel?: string;
   } | undefined>(undefined);
 
   const roleFamily: RoleFamily = useMemo(
@@ -476,6 +479,10 @@ export const SessionReport = memo(function SessionReport({
               monthlyTakeHomeOldRegimeInr: numOrNull(s.monthlyTakeHomeOldRegimeInr),
               annualTaxNewRegimeLpa: numOrNull(s.annualTaxNewRegimeLpa),
               annualTaxOldRegimeLpa: numOrNull(s.annualTaxOldRegimeLpa),
+              /* Phase 3 of Salary-Negotiation plan (2026-05-18) —
+                 sector persona forwarded to the header chip. */
+              recruiterPersona: strOrUndef(s.recruiterPersona),
+              recruiterPersonaLabel: strOrUndef(s.recruiterPersonaLabel),
             });
           }
         }

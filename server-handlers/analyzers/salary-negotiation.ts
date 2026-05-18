@@ -41,6 +41,11 @@ import {
   variablePayoutFactorForTier,
 } from "../../src/_ctc-breakdown";
 import { computeEquityGrant } from "../../src/_equity-literacy";
+import {
+  selectRecruiterSectorPersona,
+  getRecruiterSectorPersona,
+  type RecruiterSectorPersona,
+} from "../_indian-recruiter-personas";
 
 /** Human-readable label per CompanyTierBucket. Surfaced in the report
  *  header so the candidate sees which band they were scored against
@@ -332,7 +337,7 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   //     (`lastAnswerClarificationAtTurn` / `variableInferred`) which
   //     isn't carried on SessionRowForAnalysis. Re-evaluate once kernel
   //     state is persisted onto the session row.
-  version: "salary-negotiation-v6",
+  version: "salary-negotiation-v7",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -1459,6 +1464,18 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // Earlier versions skipped meta on unknown-tier sessions; with v6 we
     // still want to surface equity literacy or batna strength if those
     // ran, so the report's batna / equity cards have something to show.
+    /* Phase 3 — surface the Indian recruiter sector persona for this
+     * session (derived purely from tierBucket; no band shape on the
+     * analyzer side, since the analyzer doesn't carry NegotiationBand).
+     * Always computed — falls through to "default" when the tier isn't
+     * recognised. Surfaced as a small chip next to the tier-band chip
+     * in NegotiationFullReport. */
+    const recruiterPersonaId: RecruiterSectorPersona = selectRecruiterSectorPersona({
+      tierBucket: tier ?? null,
+      company: session.target_company ?? null,
+    });
+    const recruiterPersonaLabel = getRecruiterSectorPersona(recruiterPersonaId).displayName;
+
     if (tier || closingTotalLpa !== null || equityLiteracyMeta || batnaMeta) {
       result.meta = {
         ...(result.meta ?? {}),
@@ -1472,6 +1489,8 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           annualTaxOldRegimeLpa: annualTaxOld,
           equityLiteracy: equityLiteracyMeta ?? null,
           batnaStrength: batnaMeta ?? null,
+          recruiterPersona: recruiterPersonaId,
+          recruiterPersonaLabel,
         },
       };
     }

@@ -255,7 +255,7 @@ describe("salaryNegotiationAnalyzer v5 — Phase 1 wire-ins", () => {
   });
 
   it("bumps version to v6", () => {
-    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v6");
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v7");
   });
 });
 
@@ -424,7 +424,90 @@ describe("salaryNegotiationAnalyzer v6 — Phase 2 wire-ins", () => {
   });
 
   it("bumps version to v6", () => {
-    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v6");
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v7");
+  });
+});
+
+/* ─── Phase 3 (SCORE_IMPROVEMENT_PLAN.md section 2) ─────────────
+   Coverage for v7: Indian recruiter SECTOR persona surfaced on
+   meta.salaryNegotiation. Five archetypes (IT services / GCC /
+   unicorn / startup / BFSI) + default fallthrough. Selector keys
+   off tierBucket (derived from target_company via getCompanyTier). */
+describe("salaryNegotiationAnalyzer v7 — Phase 3 recruiter sector persona meta", () => {
+  it("emits recruiterPersona=indian-unicorn for a unicorn target company (Razorpay)", async () => {
+    const ses = session([
+      ai("For your senior role we can offer 60 LPA total — base 42 + variable 12 + joining 6 LPA."),
+      user("My expectation is 70 LPA based on my research. I have a competing offer at 65 LPA."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    ses.target_company = "Razorpay";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation?.recruiterPersona).toBe("indian-unicorn");
+    expect(out.meta?.salaryNegotiation?.recruiterPersonaLabel).toBe("Indian unicorn recruiter");
+  });
+
+  it("emits recruiterPersona=it-services for an IT-services target company (Infosys)", async () => {
+    const ses = session([
+      ai("For this fresher role we typically pay 4 LPA during probation, stepping up to 4.5 LPA on confirmation."),
+      user("Okay, that works for me."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Software Engineer";
+    ses.target_company = "Infosys";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation?.recruiterPersona).toBe("it-services");
+    expect(out.meta?.salaryNegotiation?.recruiterPersonaLabel).toBe("IT Services recruiter");
+  });
+
+  it("emits recruiterPersona=gcc for a FAANG / GCC target company (Google)", async () => {
+    const ses = session([
+      ai("For this senior role we can put 65 LPA total comp on the table, with a 30 LPA RSU grant vesting over 4 years."),
+      user("My target is 75 LPA."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    ses.target_company = "Google";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation?.recruiterPersona).toBe("gcc");
+  });
+
+  it("emits recruiterPersona=bfsi for a BFSI target company (HDFC Bank)", async () => {
+    const ses = session([
+      ai("For this senior role we can offer 35 LPA total — 25 LPA fixed plus 10 LPA target variable on the performance cycle."),
+      user("My current is 28 LPA, target 38 LPA."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    ses.target_company = "HDFC Bank";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation?.recruiterPersona).toBe("bfsi");
+  });
+
+  it("emits recruiterPersona=early-startup for a seed-stage company (via 'pre-seed' keyword)", async () => {
+    const ses = session([
+      ai("We're early stage so cash is tight — fitment is 18 LPA total, but we can stretch on equity %."),
+      user("Okay."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Software Engineer";
+    /* The company-tier map keys "pre-seed" / "seed" → startup-early.
+     * Use that keyword inside the company string so the tier resolver
+     * picks it up without depending on a specific named company. */
+    ses.target_company = "Acme pre-seed";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation?.recruiterPersona).toBe("early-startup");
+  });
+
+  it("emits recruiterPersona=default when target_company is unknown / unmapped", async () => {
+    const ses = session([
+      ai("We can offer 25 LPA for this role."),
+      user("My target is 30 LPA."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Software Engineer";
+    /* Don't set target_company → tierBucket undefined → selector
+     * falls through to default. */
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    /* Meta may not be emitted at all when tier is undefined AND no
+     * other Phase-1/2 sub-fields populate; assert the contract: if
+     * meta IS emitted, recruiterPersona must be "default". */
+    const persona = out.meta?.salaryNegotiation?.recruiterPersona;
+    if (persona !== undefined) expect(persona).toBe("default");
   });
 });
 

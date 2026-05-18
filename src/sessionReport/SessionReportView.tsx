@@ -2902,6 +2902,10 @@ export interface SessionReportViewProps {
     monthlyTakeHomeOldRegimeInr?: number | null;
     annualTaxNewRegimeLpa?: number | null;
     annualTaxOldRegimeLpa?: number | null;
+    /* Phase 3 of Salary-Negotiation plan (2026-05-18) — Indian
+       recruiter sector persona for the report header chip. */
+    recruiterPersona?: string;
+    recruiterPersonaLabel?: string;
   };
 }
 

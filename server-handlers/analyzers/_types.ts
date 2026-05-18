@@ -195,6 +195,18 @@ export interface AnalyzerMeta {
       rationale: string;
       offerCount: number;
     } | null;
+    /** Phase 3 — Indian recruiter SECTOR persona resolved from the
+     *  tier bucket. Stable string set; UI renders a chip next to the
+     *  tier band chip. `default` is shown when tier is unknown OR
+     *  unmapped (FMCG / PSU). */
+    recruiterPersona?:
+      | "it-services"
+      | "gcc"
+      | "indian-unicorn"
+      | "early-startup"
+      | "bfsi"
+      | "default";
+    recruiterPersonaLabel?: string;
   };
 }
 

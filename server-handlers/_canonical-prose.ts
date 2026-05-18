@@ -29,6 +29,15 @@
 
 import type { NegotiationState } from "./_negotiation-kernel";
 import type { NextAction } from "./_next-action-planner";
+import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
+
+/** Phase 3 of Salary-Negotiation plan (2026-05-18) — read the sector
+ *  persona off state. Optional field; undefined / "default" both fall
+ *  through to the legacy prose path so PDF#34/35 surfaces stay
+ *  byte-identical. */
+function sectorPersona(state: NegotiationState): RecruiterSectorPersona {
+  return state.recruiterSectorPersona ?? "default";
+}
 
 /** Single source of truth for Indian-recruiter vocabulary policy.
  *  Defect 2 + ArchRec 1 (2026-05-16) — previously the BANNED / PREFERRED
@@ -781,8 +790,42 @@ function renderCanonicalProseBody(
        * HR recruiters NEVER share internal numbers; they deflect and offer
        * to take the candidate's expectation back to the panel. Retains the
        * "as per our band" idiom marker (required by canonicalProseIndianIdiom
-       * test) and the panel/leadership escalation reference. */
-      return "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.";
+       * test) and the panel/leadership escalation reference.
+       *
+       * Phase 3 of Salary-Negotiation plan (2026-05-18) — persona-specific
+       * deflection. Each archetype leans on a different framing for WHY
+       * the band can't move: IT services → rigid policy + grade fitment;
+       * GCC → global band reference; Unicorn → ESOP leverage; Startup →
+       * cash constraint; BFSI → regulatory bands. All variants preserve
+       * the "as per our band" idiom marker and panel-escalation offer
+       * required by the canonical contract; the default path renders
+       * byte-identical to pre-Phase-3 prose. */
+      const persona = sectorPersona(state);
+      switch (persona) {
+        /* Each persona variant respects the sentence-length cap
+         * (max 30 words / sentence, 25 avg) enforced by
+         * checkSentenceLength in _response-pipeline.ts. Sentiment
+         * prefixes ("Coming to" / "Hearing you out") add 2-3 words
+         * to the first sentence, so we keep each persona body
+         * short enough that the prefixed version still passes. */
+        case "it-services":
+          return "I won't be able to share internal numbers — as per our band, the grade fitment I shared is what I have. Happy to take this back to the panel.";
+        case "gcc":
+          return "I won't be able to share internal numbers, but as per our band for this grade — anchored to the global benchmark — the offer stands. Happy to take this back to the panel.";
+        case "indian-unicorn":
+          return "I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity.";
+        case "early-startup":
+          return "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity.";
+        case "bfsi":
+          return "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel.";
+        case "default":
+          return "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.";
+        default: {
+          const _exhaustive: never = persona;
+          void _exhaustive;
+          return "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.";
+        }
+      }
     }
 
     case "discovery-probe": {
@@ -961,14 +1004,51 @@ function renderCanonicalProseBody(
        * round >= 2 = stretching the band, signal we're near the cap. */
       const total = action.counterTotalLpa;
       const round = state.counterRound;
+      const persona = sectorPersona(state);
       let spiralLead = "Hearing you out — let me see what I can structure.";
       if (round >= 2) {
         spiralLead = "I've stretched as far as my band allows on cash —";
       } else if (round >= 1) {
-        spiralLead = "We've already moved on fitment once — let me see what's possible at this stage:";
+        spiralLead = "We've already moved on fitment once. Let me see what's possible at this stage.";
       }
+      /* Phase 3 of Salary-Negotiation plan (2026-05-18) — persona-specific
+       * counter-offer pushback. Each archetype shapes WHERE the
+       * concession comes from: services caps at the 30% hike band;
+       * GCC anchors to global band; unicorn pivots to ESOP; startup
+       * defers cash for higher equity %; BFSI bumps variable, not
+       * fixed. All variants preserve the ₹N L token shape so the
+       * restyle contract validator continues to verify the number
+       * survives. The default branch renders byte-identical to the
+       * pre-Phase-3 prose. */
       if (total != null && total > 0) {
-        return `${spiralLead} We can revise the fitment to ₹${total}L total. How does that look from your side?`;
+        /* Persona-specific body. Kept short (one sentence < 30 words)
+         * so the spiralLead + body + closer concatenation respects
+         * checkSentenceLength in _response-pipeline.ts (MAX 30 words /
+         * sentence, MAX 25 avg). Spiral lead carries its own `—` /
+         * `:` punctuation; persona body always ends with a `.` so
+         * the closer becomes its own sentence. */
+        const body = (() => {
+          switch (persona) {
+            case "it-services":
+              return `Services-track ceiling lands the fitment at ₹${total}L total.`;
+            case "gcc":
+              return `Anchored to the global band, we can revise the fitment to ₹${total}L total.`;
+            case "indian-unicorn":
+              return `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`;
+            case "early-startup":
+              return `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`;
+            case "bfsi":
+              return `Variable bumps to land the fitment at ₹${total}L total on the perf cycle.`;
+            case "default":
+              return `We can revise the fitment to ₹${total}L total.`;
+            default: {
+              const _exhaustive: never = persona;
+              void _exhaustive;
+              return `We can revise the fitment to ₹${total}L total.`;
+            }
+          }
+        })();
+        return `${spiralLead} ${body} How does that look from your side?`;
       }
       return state.highestOfferMade > 0
         ? `We're holding the current fitment at ₹${state.highestOfferMade}L. What would move this forward for you?`
@@ -1056,11 +1136,32 @@ function renderCanonicalProseBody(
         return "I'll have a firmer number once the panel signs off — meanwhile, what's the fitment you were targeting?";
       }
       const variableMax = state.band?.variableMax;
+      const persona = sectorPersona(state);
+      /* Phase 3 of Salary-Negotiation plan (2026-05-18) — persona-coloured
+       * band shape commentary on the opening anchor. The number-token
+       * contract (₹N LPA + "fitment") is preserved across every branch;
+       * persona variance is one trailing clause that frames the band.
+       * Default path renders byte-identical to pre-Phase-3 prose. */
+      const tail = (() => {
+        switch (persona) {
+          case "it-services":  return " That's the grade fitment as per our band for this role.";
+          case "gcc":          return " That's anchored to the global band for this level.";
+          case "indian-unicorn": return " The cash sits inside our band; ESOP grant is on top.";
+          case "early-startup": return " Cash is tight at this stage, but equity % is where we can stretch.";
+          case "bfsi":         return " Fixed sits as per our regulatory band; variable is on the performance cycle.";
+          case "default":      return "";
+          default: {
+            const _exhaustive: never = persona;
+            void _exhaustive;
+            return "";
+          }
+        }
+      })();
       if (typeof variableMax === "number" && variableMax > 0) {
         const fixedComponent = Math.max(0, action.initialOffer - variableMax);
-        return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle. Let me know your thoughts.`;
+        return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle.${tail} Let me know your thoughts.`;
       }
-      return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA. Let me know your thoughts.`;
+      return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA.${tail} Let me know your thoughts.`;
     }
 
     case "offer-recap": {

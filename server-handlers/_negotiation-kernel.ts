@@ -36,6 +36,10 @@
  */
 
 import type { NegotiationFacts } from "../src/interviewEvaluation";
+import {
+  type RecruiterSectorPersona,
+  selectRecruiterSectorPersona,
+} from "./_indian-recruiter-personas";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
 import { classifyNumberRoles } from "./_number-role-classifier";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
@@ -827,6 +831,21 @@ export interface NegotiationState {
    * tone and tactical preferences but NOT band math. Frozen at session
    * start. Default "consultative" preserves legacy behaviour. */
   recruiterPersona: RecruiterPersona;
+
+  /* Phase 3 of Salary-Negotiation SCORE_IMPROVEMENT_PLAN (2026-05-18) —
+   * Indian recruiter SECTOR archetype (IT Services / GCC / Indian
+   * Unicorn / Early Startup / BFSI / default). Frozen at session start
+   * from tierBucket + band shape via selectRecruiterSectorPersona.
+   * Distinct from `recruiterPersona` above (which is a tone axis:
+   * hardline / consultative / founder / agency, and modulates band
+   * economics). This persona only colours prose surfaces — pushback
+   * shape, counter-offer phrasing, band-disclosure-deflect. Never
+   * mutates after init. Optional on the interface for back-compat with
+   * hand-constructed partial-state test fixtures and with in-flight
+   * sessions serialised before Phase 3 shipped — consumers treat
+   * undefined as "default". `initState` always sets it; deserializeState
+   * backfills to "default" on load. */
+  recruiterSectorPersona?: RecruiterSectorPersona;
 
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
@@ -1762,6 +1781,18 @@ export interface InitStateExtras {
   hardBandCap?: boolean;
   marketMode?: MarketMode;
   recruiterPersona?: RecruiterPersona;
+  /* Phase 3 of Salary-Negotiation SCORE_IMPROVEMENT_PLAN (2026-05-18) —
+   * the sector archetype the caller has resolved from company + band.
+   * Optional: when omitted, `initState` derives via
+   * selectRecruiterSectorPersona using only the band shape (heuristic
+   * fallback). Callers in negotiate-turn pass an explicit tierBucket
+   * via the dedicated field below so the kernel doesn't need to
+   * depend on data/company-tiers. */
+  recruiterSectorPersona?: RecruiterSectorPersona;
+  /* Optional tierBucket hint forwarded from the caller. Used only by
+   * the persona selector when recruiterSectorPersona is not
+   * pre-resolved. */
+  tierBucketHint?: import("../src/_negotiation-math").CompanyTierBucket | null;
   /* Phase 29 — role-applicable YOE plumbed from the client (resume
    * profile + target role). All three optional; defaults to null. */
   candidateTotalYoe?: number | null;
@@ -1885,6 +1916,18 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     hardBandCap: input.hardBandCap ?? false,
     marketMode: input.marketMode ?? "neutral",
     recruiterPersona: input.recruiterPersona ?? "consultative",
+    /* Phase 3 of Salary-Negotiation plan — sector persona derived once
+     * from the (tierBucket hint, band shape, company). Caller-supplied
+     * value wins; otherwise the kernel runs the selector against the
+     * band shape (heuristic fallback). Cheap, deterministic; never
+     * mutates after init. */
+    recruiterSectorPersona:
+      input.recruiterSectorPersona ??
+      selectRecruiterSectorPersona({
+        tierBucket: input.tierBucketHint ?? null,
+        band: input.band,
+        company: input.company,
+      }),
     acceptedAtTurn: null,
     postAcceptanceDocsRequestedAtTurn: null,
     walkedAwayAtTurn: null,
@@ -4529,6 +4572,19 @@ export function validateState(state: unknown): asserts state is NegotiationState
   ) {
     throw new Error("state.recruiterPersona");
   }
+  /* Phase 3 — recruiterSectorPersona validator. Optional for back-compat
+   * with in-flight sessions serialised before Phase 3 shipped. */
+  if (
+    s.recruiterSectorPersona !== undefined &&
+    s.recruiterSectorPersona !== "it-services" &&
+    s.recruiterSectorPersona !== "gcc" &&
+    s.recruiterSectorPersona !== "indian-unicorn" &&
+    s.recruiterSectorPersona !== "early-startup" &&
+    s.recruiterSectorPersona !== "bfsi" &&
+    s.recruiterSectorPersona !== "default"
+  ) {
+    throw new Error("state.recruiterSectorPersona");
+  }
   if (s.candidateComponentBreakdown !== undefined) {
     const cb = s.candidateComponentBreakdown as Record<string, unknown>;
     if (!cb || typeof cb !== "object") throw new Error("state.candidateComponentBreakdown");
@@ -4813,6 +4869,11 @@ export function deserializeState(json: string): NegotiationState {
     hardBandCap: s.hardBandCap ?? false,
     marketMode: (s.marketMode as MarketMode | undefined) ?? "neutral",
     recruiterPersona: (s.recruiterPersona as RecruiterPersona | undefined) ?? "consultative",
+    /* Phase 3 — sector-persona back-compat: in-flight sessions
+     * serialised before Phase 3 shipped get "default", which renders
+     * the legacy prose surfaces (no persona-conditional overrides). */
+    recruiterSectorPersona:
+      (s.recruiterSectorPersona as RecruiterSectorPersona | undefined) ?? "default",
     conversationLog: (s.conversationLog as NegotiationState["conversationLog"] | undefined) ?? [],
     candidateComponentBreakdown: (s.candidateComponentBreakdown as ComponentBreakdown | undefined)
       ?? { base: null, variable: null, equity: null, hasAny: false },

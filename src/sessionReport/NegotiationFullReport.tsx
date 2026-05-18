@@ -82,6 +82,11 @@ interface Props {
     monthlyTakeHomeOldRegimeInr?: number | null;
     annualTaxNewRegimeLpa?: number | null;
     annualTaxOldRegimeLpa?: number | null;
+    /* Phase 3 of Salary-Negotiation plan (2026-05-18) — Indian
+       recruiter SECTOR persona surfaced as a chip next to the
+       tier band chip. Undefined for pre-v7 rows. */
+    recruiterPersona?: string;
+    recruiterPersonaLabel?: string;
   };
 }
 
@@ -1526,6 +1531,27 @@ export function NegotiationFullReport({
             title="Compensation band the analyzer scored you against (Phase 1 of SCORE_IMPROVEMENT_PLAN)."
           >
             Tier · {salaryMeta.tierBucketLabel}
+          </span>
+        )}
+        {salaryMeta?.recruiterPersonaLabel && salaryMeta.recruiterPersona !== "default" && (
+          <span
+            style={{
+              display: "inline-block",
+              marginLeft: 8,
+              padding: "3px 10px",
+              background: t.creamSoft,
+              color: t.inkSoft,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              borderRadius: 6,
+              textTransform: "uppercase",
+              fontFamily: f.mono,
+              border: `1px solid ${t.line}`,
+            }}
+            title="Indian recruiter sector archetype the analyzer scored against (Phase 3 of SCORE_IMPROVEMENT_PLAN)."
+          >
+            {salaryMeta.recruiterPersonaLabel}
           </span>
         )}
         <h2
