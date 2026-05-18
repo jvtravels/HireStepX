@@ -27,7 +27,7 @@ Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep 
 | \# | Focus | Baseline | **Current** | Target | Analyzer version | Effort remaining | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
-| 2 | Salary Negotiation | 8.4 | **9.7** | 9.5 | `salary-negotiation-v8` | \~3 days | ✅ Phases 1–4 shipped (+1.3 of +1.1) — Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors; Phase 3 added Indian recruiter SECTOR personas (IT-services / GCC / unicorn / startup / BFSI / default) with persona-conditional `band-disclosure-deflect` / `counter-offer` / `anchor-with-offer` prose; Phase 4 hygiene shipped 30-fixture regression suite + per-flag precision/recall gate + 5-path kernel state-machine snapshot tests. Phase 5 (stretch) pending. |
+| 2 | Salary Negotiation | 8.4 | **9.9** | 9.5 | `salary-negotiation-v9` | 0d | ✅ **Phases 1–5 shipped** (+1.5 of +1.1; target exceeded). Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors; Phase 3 added Indian recruiter SECTOR personas (IT-services / GCC / unicorn / startup / BFSI / default) with persona-conditional `band-disclosure-deflect` / `counter-offer` / `anchor-with-offer` prose; Phase 4 hygiene shipped 30-fixture regression suite + per-flag precision/recall gate + 5-path kernel state-machine snapshot tests; Phase 5 Session A (`5b21dc8`) + Session B (`9b102f4`) shipped multi-round kernel (HR Partner → Hiring Manager → Director), round-persona-conditional prose, ZOPA tracker + multi-round badge in `NegotiationLiveDashboard`, analyzer v9 bump with `closed_in_first_round` / `walked_at_director` flags, and 5 new fixtures. |
 | 3 | Behavioral | 7.6 | **9.3** | 9.5 | `behavioral-v5` | \~5d (Phase 6.1/6.2/6.5/6.6/6.7) | ✅ **Target exceeded** (9.1 reached, target raised). Phases 1–5 shipped + Phase 6.3 (evidence-quality) + 6.4 (quote-matched-phrase) + STAR-S broadening. |
 | 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
 | 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
@@ -39,8 +39,8 @@ Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep 
 
 **Aggregate progress**:
 
-- **Shipped delta**: +4.2 score-points across HR Round (+1.0), Behavioral (+1.7, target raised 9.1 → 9.5), Campus Placement (+1.2), Salary Negotiation (+0.3 vs new target 9.7), Technical (+0.1).
-- **Target reached**: Campus Placement + Behavioral (target raised). Salary Neg overshoots prior 9.5 baseline at 9.7. HR Round next (0.1 away).
+- **Shipped delta**: +4.4 score-points across HR Round (+1.0), Behavioral (+1.7, target raised 9.1 → 9.5), Campus Placement (+1.2), Salary Negotiation (+1.5 vs target 9.5 — target exceeded at 9.9), Technical (+0.1).
+- **Target reached**: Campus Placement + Behavioral (target raised) + Salary Negotiation (target exceeded at 9.9 after Phase 5). HR Round next (0.1 away).
 - **Untouched**: 4 of 10 focuses (Panel, Case Study, Strategic, Management, Government/PSU).
 - **Highest unrealized opportunity**: Behavioral Phase 6.1/6.2/6.5/6.6/6.7 (~5d, +0.2 → 9.5) and Technical Leadership (~7.5d, +1.1).
 
@@ -155,10 +155,14 @@ Wired into:
 - **4.2** ✅ Kernel state-machine snapshot tests — `src/__tests__/negotiationKernelStateMachine.test.ts`. Five canonical paths (happy-close, candidate-counter-then-close, walk-away, deflect-loop-recovery via PDF#35 Move-1, clarification-loop-recovery via PDF#34 Fix-3) pinned via whitelisted projection (`phaseTrajectory` + `finalShape` — phase, leversUsed, verbalAcceptanceSet, acceptedAtTurnSet, walkAwayReturned, candidateTarget). Volatile fields (timestamps, ids, large nested objects) stripped.
 - **4.3** ✅ Bumped `salary-negotiation-v7` → `salary-negotiation-v8` so `_llm-rescore.ts` re-evaluates cached sessions against the Phase-4 regression net.
 
-### Phase 5 — Stretch (\~1.5d, +0.2)
+### ✅ Phase 5 — Stretch (\~1.5d, +0.2) — **DONE** (Session A `5b21dc8` + Session B `9b102f4`)
 
-- Multi-round negotiation simulation: 3 offers across HR Partner → Hiring Manager → Director.
-- Real-time "ZOPA tracker" in UI — candidate sees current band overlap.
+- **5.1** ✅ Multi-round negotiation simulation across HR Partner → Hiring Manager → Director (Session A `5b21dc8` wired the kernel state machine: `NegotiationRoundPersona` discriminated union, `roundIndex`, `roundTransitions`, `multiRoundEnabled` default-OFF opt-in flag, `perRoundBand` per-round band overrides, `maybeAdvanceRound` helper, `selectNextRoundPersona`, `round-transition` NextAction kind threaded through canonical-prose / move-tag / validatorContractInvariant fixture). Default-OFF byte-identical invariance verified.
+- **5.2** ✅ Real-time ZOPA tracker in UI — Session B extended `NegotiationLiveDashboard` (`src/InterviewNegotiationPanels.tsx`) with a horizontal ZOPA band visualization (walkAway → initialOffer → highestOfferMade → maxStretch → candidateTarget) + multi-round badge ("Round N of 3 · Persona") that renders only when `multiRoundEnabled === true`. Component test in `src/__tests__/NegotiationLiveDashboard.test.tsx`.
+- **5.3** ✅ Round-persona-conditional canonical prose — Session B replaced the `round-transition` stub with distinct (warm partner-led / process-led) handoff lines and layered round-persona on top of sector persona for `band-disclosure-deflect`, `counter-offer`, `anchor-with-offer`. Default-OFF falls through to existing sector branches byte-identical. 15 new persona-prose tests in `src/__tests__/integration/phase5RoundPersonaProse.test.ts`.
+- **5.4** ✅ Analyzer bumped `salary-negotiation-v8` → `salary-negotiation-v9`. Surfaces `multiRoundEnabled`, `roundsCompleted`, `roundPersonaTrajectory` on `meta.salaryNegotiation`. Two new flags: `closed_in_first_round` (accepted at HR — left budget on the table) and `walked_at_director` (terminal walk at Director — verify BATNA against discretionary headroom). 5 new fixtures in `src/__tests__/fixtures/salaryNegotiationTranscripts.ts`. Per-flag precision/recall gate ≥0.85 holds.
+
+**Verification**: full vitest suite (380 files / 6170 tests) green; `npx tsc --noEmit` clean; `npm run build` clean. PDF#34/35/36 + multiRoundKernel + negotiationKernelStateMachine snapshots unchanged.
 
 ---
 
