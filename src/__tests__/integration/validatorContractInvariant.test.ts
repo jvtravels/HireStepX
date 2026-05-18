@@ -354,6 +354,30 @@ const FIXTURES: Fixture[] = [
       candidateCurrentCtc: 18,
     }),
   },
+  /* Phase 5 Session A (2026-05-19) — round-transition handoff stub.
+   * No NEXT_ACTION_CONTRACT entry (Session B owns prose + contract);
+   * fixture exists to exercise the canonical-prose stub through the
+   * validator and to anchor future drift detection when Session B
+   * lands the persona-specific phrasing. */
+  {
+    label: "round-transition:hr-to-hm",
+    action: {
+      kind: "round-transition",
+      from: "hr-partner",
+      to: "hiring-manager",
+      satisfiesTopic: "round-transition" as unknown as never,
+    },
+    state: mk({
+      phase: "opening",
+      turnIndex: 5,
+      multiRoundEnabled: true,
+      roundPersona: "hiring-manager",
+      roundIndex: 1,
+      roundTransitions: [
+        { atTurn: 5, from: "hr-partner", to: "hiring-manager" },
+      ],
+    }),
+  },
 ];
 
 describe("Crack 6 — validator-contract invariant (canonical prose ↔ NEXT_ACTION_CONTRACT)", () => {

@@ -46,6 +46,7 @@ import {
   type AiMove,
   type DiscoveryTopic,
 } from "./_negotiation-kernel";
+import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { registerNextActionPlanner } from "./_planner-registry";
 import { classifyRoleFamily, getCompanyHikeCap } from "./_company-band-tiers";
 import {
@@ -393,7 +394,28 @@ export type NextAction =
    * to be REMINDED of the standing offer after it's already been put
    * on the table. The prose layer recaps highestOfferMade with the
    * fixed/variable split when available. Not probe-producing. */
-  | { kind: "offer-recap"; offerLpa: number };
+  | { kind: "offer-recap"; offerLpa: number }
+  /* Phase 5 Session A (2026-05-19) — multi-round persona handoff.
+   * Fires the single turn the kernel transitions between round personas
+   * (HR Partner → Hiring Manager → Director). The planner detects the
+   * fresh entry on `state.roundTransitions` (atTurn === turnIndex) and
+   * pre-empts every other branch so the handoff prose runs that turn.
+   * `satisfiesTopic` is typed as `"round-transition" as never` because
+   * this is NOT a discovery probe (no askedTopics ledger push) — the
+   * field exists only so existing satisfiesTopic plumbing compiles
+   * uniformly; downstream PROBE_PRODUCING_KINDS excludes this kind. */
+  | {
+      kind: "round-transition";
+      from: NegotiationRoundPersona;
+      to: NegotiationRoundPersona;
+      /* Typed `never` so the discriminated-union threading compiles
+       * uniformly with the probe-producing kinds — but PROBE_PRODUCING_
+       * KINDS deliberately excludes "round-transition" so this kind does
+       * NOT push onto the askedTopics ledger. The runtime value is the
+       * literal string "round-transition", which the canonical-prose
+       * stub doesn't read (it consumes `from`/`to`). */
+      satisfiesTopic: never;
+    };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -736,6 +758,38 @@ function buildUncertaintyRangeAsk(itemRoot: string): string {
 }
 
 function planNextActionInternal(state: NegotiationState): PlannedAction {
+  /* Phase 5 Session A (2026-05-19) — multi-round persona handoff
+   * pre-emption. When the kernel just transitioned between round
+   * personas (maybeAdvanceRound pushed a fresh entry to
+   * state.roundTransitions THIS turn), the planner emits a dedicated
+   * `round-transition` action ahead of every other branch so the
+   * handoff prose runs in front of the candidate before the new
+   * persona starts their cascade.
+   *
+   * Default-OFF invariance: when `multiRoundEnabled` is false (HEAD
+   * default), `roundTransitions` is empty (initialised to []) and this
+   * branch never fires. Byte-identical to today. */
+  if (state.multiRoundEnabled === true && (state.roundTransitions?.length ?? 0) > 0) {
+    const transitions = state.roundTransitions!;
+    const last = transitions[transitions.length - 1];
+    if (last.atTurn === state.turnIndex) {
+      return {
+        kind: "round-transition",
+        from: last.from,
+        to: last.to,
+        satisfiesTopic: "round-transition" as unknown as never,
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale:
+            `Phase 5 Session A — multi-round handoff at turn ${state.turnIndex}: ` +
+            `${last.from} → ${last.to}.`,
+          actionKind: "round-transition",
+        },
+      };
+    }
+  }
+
   /* Terminal stickiness guard (session 13 bug, 2026-05-14): see notes in
    * the original move-picker. */
   if (

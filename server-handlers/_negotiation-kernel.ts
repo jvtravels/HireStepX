@@ -40,6 +40,11 @@ import {
   type RecruiterSectorPersona,
   selectRecruiterSectorPersona,
 } from "./_indian-recruiter-personas";
+import {
+  type NegotiationRoundPersona,
+  selectNextRoundPersona,
+  ROUND_PERSONA_SEQUENCE,
+} from "./_negotiation-rounds";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
 import { classifyNumberRoles } from "./_number-role-classifier";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
@@ -1335,6 +1340,45 @@ export interface NegotiationState {
     originalLength: number;
     sanitizedLength: number;
   }>;
+
+  /* Phase 5 Session A (2026-05-19) — multi-round simulated persona switch.
+   *
+   * The kernel can cycle a single conversation through three sequential
+   * "rounds" (HR Partner → Hiring Manager → Director). To the candidate
+   * it reads as one continuous interview that hands off mid-session.
+   * Default-OFF opt-in: when `multiRoundEnabled` is false (the HEAD
+   * default), the kernel behaves byte-identical to single-round — none
+   * of the round fields ever mutate.
+   *
+   * When enabled:
+   *   - `roundPersona` starts at "hr-partner" and advances via
+   *     `selectNextRoundPersona` as the kernel detects round-end signals
+   *     (closing-push reached, or accepted / walked-away phase) for
+   *     rounds 0..1; round 2 (Director) is terminal.
+   *   - `roundIndex` 0 → 1 → 2, monotone-up. Stays at 2 once Director.
+   *   - `roundTransitions` accumulates the per-handoff ledger so
+   *     downstream consumers (analyzer in Session B, UI dashboard) can
+   *     reconstruct the round trajectory from state alone.
+   *   - `perRoundBand` lets callers pre-resolve per-round band overrides
+   *     (HR Partner = floor only; HM = floor + 8% stretch; Director =
+   *     full stretch). `initState` derives defaults from the base band
+   *     when caller omits.
+   *
+   * All five fields are optional / nullable so existing serialised
+   * sessions deserialise unchanged. */
+  roundPersona?: NegotiationRoundPersona;
+  /* Optional on the interface so legacy partial-state test fixtures and
+   * pre-Phase-5A serialised sessions deserialise without TS errors. The
+   * kernel always treats `undefined` as 0 / [] / false respectively —
+   * see `maybeAdvanceRound` and the planner's pre-emption guard. */
+  roundIndex?: 0 | 1 | 2;
+  roundTransitions?: Array<{
+    atTurn: number;
+    from: NegotiationRoundPersona;
+    to: NegotiationRoundPersona;
+  }>;
+  multiRoundEnabled?: boolean;
+  perRoundBand?: Record<NegotiationRoundPersona, NegotiationBand>;
 }
 
 /* ─── Negotiation-flow redesign commit 1 (2026-05-15) — TurnDelta ────
@@ -1804,6 +1848,13 @@ export interface InitStateExtras {
    * credibility-probe / prior-CTC floor levers are inert (back-compat). */
   resumeFactPack?: import("./_resume-fact-pack").ResumeFactPack | null;
   parsedResume?: import("./_resume-fact-pack").ParsedResume | null;
+  /* Phase 5 Session A (2026-05-19) — multi-round simulated persona
+   * switch. Default-OFF; when omitted or false, the kernel runs single-
+   * round (HEAD behaviour). When true, `roundPersona` initialises to
+   * "hr-partner", `roundIndex` to 0, and `perRoundBand` is derived from
+   * the input band unless the caller pre-resolves it. */
+  multiRoundEnabled?: boolean;
+  perRoundBand?: Record<NegotiationRoundPersona, NegotiationBand>;
 }
 
 export function initState(input: InitStateInput & InitStateExtras): NegotiationState {
@@ -2060,8 +2111,146 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * session start; appended by the candidate-turn intake when
      * detectAndSanitizeInjection flags the utterance. */
     promptInjectionAttempts: [],
+    /* Phase 5 Session A (2026-05-19) — multi-round persona switch.
+     * Default-OFF invariance: when `multiRoundEnabled` is false (HEAD
+     * default), `roundPersona` stays undefined, `roundIndex` stays 0,
+     * `roundTransitions` stays empty, `perRoundBand` stays undefined.
+     * No round-aware code path can fire. When true, seed at HR Partner /
+     * round 0 with derived per-round band defaults (caller may override). */
+    multiRoundEnabled: input.multiRoundEnabled === true,
+    roundPersona: input.multiRoundEnabled === true ? "hr-partner" : undefined,
+    roundIndex: 0,
+    roundTransitions: [],
+    perRoundBand:
+      input.multiRoundEnabled === true
+        ? (input.perRoundBand ?? deriveDefaultPerRoundBand(input.band))
+        : undefined,
   };
 }
+
+/* ─── Phase 5 Session A (2026-05-19) — multi-round helpers ─────────── */
+
+/** Derive a `perRoundBand` record from a single base band. Used by
+ *  `initState` when caller enables multi-round but doesn't pre-resolve
+ *  the per-round bands.
+ *
+ *  Shape:
+ *   - HR Partner    = floor only           → initialOffer = base.initialOffer,
+ *                                            maxStretch = base.initialOffer
+ *   - Hiring Manager= floor + ~8% stretch  → maxStretch = floor + 8% of
+ *                                            (base.maxStretch − base.initialOffer)
+ *                                            (i.e. partial stretch authority)
+ *   - Director      = full stretch         → identical to the base band
+ *
+ *  walkAway / hasEquity / component caps stay aligned with the base band
+ *  so the close-floor invariant (highestOfferMade never drops on round
+ *  swap) is preserved structurally. */
+export function deriveDefaultPerRoundBand(
+  base: NegotiationBand,
+): Record<NegotiationRoundPersona, NegotiationBand> {
+  const stretchGap = Math.max(0, base.maxStretch - base.initialOffer);
+  return {
+    "hr-partner": {
+      ...base,
+      initialOffer: base.initialOffer,
+      maxStretch: base.initialOffer,
+    },
+    "hiring-manager": {
+      ...base,
+      initialOffer: base.initialOffer,
+      maxStretch: base.initialOffer + stretchGap * 0.08,
+    },
+    "director": {
+      ...base,
+      initialOffer: base.initialOffer,
+      maxStretch: base.maxStretch,
+    },
+  };
+}
+
+/** Round-end trigger evaluator. Returns the post-transition state when
+ *  the current round is closing AND there's a next persona in the
+ *  sequence; otherwise returns `state` unchanged.
+ *
+ *  Fires when:
+ *    1. `multiRoundEnabled` is true (default-OFF invariance);
+ *    2. `roundPersona` is set AND `selectNextRoundPersona` returns a
+ *       non-null next persona (i.e. roundIndex < 2);
+ *    3. Current phase is one of:
+ *         - "closing-push"   (the round-end pressure beat)
+ *         - "accepted"       (candidate accepted this round)
+ *         - "walked-away"    (candidate walked this round)
+ *       In all three cases, this round has run its course and the next
+ *       persona takes over.
+ *
+ *  On transition:
+ *    - `roundPersona` ← next persona
+ *    - `roundIndex`   incremented
+ *    - `roundTransitions` accumulates the handoff entry
+ *    - `phase`        reset to "opening" (each round opens fresh)
+ *    - `band`         swapped to `perRoundBand[newPersona]` when defined
+ *      (preserves close-floor invariant by clamping initialOffer at
+ *      `highestOfferMade` if the new round band's initialOffer would
+ *      drop below it; that's handled inside the swap itself).
+ *    - `verbalAcceptanceTurn` / `acceptedAtTurn` / `walkedAwayAtTurn`
+ *      cleared (round-scoped — next round starts fresh).
+ *
+ *  When `roundIndex === 2` (Director already in seat) AND the round
+ *  closes, NO transition fires: the session terminates as today.
+ *
+ *  Pure. Call from `applyAiMove` AND `applyCandidateAnswer` at the tail,
+ *  after the normal phase derivation. Idempotent — running on a state
+ *  that doesn't satisfy the trigger returns the input reference. */
+export function maybeAdvanceRound(state: NegotiationState): NegotiationState {
+  if (!state.multiRoundEnabled) return state;
+  const current = state.roundPersona;
+  if (current == null) return state;
+  /* Round-end signal: closing-push OR a terminal phase reached this round. */
+  const ROUND_END_PHASES = new Set<NegotiationPhase>([
+    "closing-push",
+    "accepted",
+    "walked-away",
+  ]);
+  if (!ROUND_END_PHASES.has(state.phase)) return state;
+  const next = selectNextRoundPersona(current);
+  if (next == null) return state; /* Director — terminal, no further round. */
+  /* Defensive guard — should never trip given the index/persona invariant
+   * carried through initState + this helper, but kept so a corrupted
+   * legacy session can't escalate past Director. */
+  const currentIndex = state.roundIndex ?? 0;
+  if (currentIndex >= 2) return state;
+  const nextIndex = (currentIndex + 1) as 0 | 1 | 2;
+  const nextBand =
+    state.perRoundBand?.[next] ?? state.band;
+  /* Preserve the candidate's disclosed signal: the band swap MUST NOT
+   * drop initialOffer below `highestOfferMade`, otherwise the close-
+   * floor invariant breaks across the handoff. Clamp upward if needed. */
+  const clampedBand: NegotiationBand =
+    nextBand.initialOffer < state.highestOfferMade
+      ? { ...nextBand, initialOffer: state.highestOfferMade }
+      : nextBand;
+  return {
+    ...state,
+    roundPersona: next,
+    roundIndex: nextIndex,
+    roundTransitions: [
+      ...(state.roundTransitions ?? []),
+      { atTurn: state.turnIndex, from: current, to: next },
+    ],
+    phase: "opening",
+    band: clampedBand,
+    /* Round-scoped — clear acceptance / walked-away markers so the new
+     * round's machinery starts fresh. `highestOfferMade` is preserved
+     * (the candidate doesn't forget what's been put on the table). */
+    verbalAcceptanceTurn: null,
+    acceptedAtTurn: null,
+    walkedAwayAtTurn: null,
+  };
+}
+
+/* Exported for the round-aware persona sequence helper used by tests
+ * and Session B downstream consumers. */
+export { ROUND_PERSONA_SEQUENCE };
 
 /* ─── Fix 3 (PDF #17 follow-up, 2026-05-15) — Explicit decline + dead-end ──
  *
@@ -2973,6 +3162,16 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       pre.cumulativeUrgency,
       n.lastTurnDelta.urgencySignal,
     );
+    /* Phase 5 Session A (2026-05-19) — evaluate round-end trigger BEFORE
+     * planNextAction so the planner sees the post-transition state (new
+     * persona, opening phase, swapped band, fresh round). Default-OFF:
+     * typed no-op when `multiRoundEnabled` is false. */
+    const advanced = maybeAdvanceRound(n);
+    if (advanced !== n) {
+      /* In-place copy of advanced fields onto `n` so the rest of finalize
+       * sees the post-transition state. */
+      Object.assign(n, advanced);
+    }
     /* Commit 3 (2026-05-15) — stamp planNextAction so the brief and the
      * move-picker read the SAME action without recomputing. The planner
      * registers itself via _planner-registry at module load (see commit
@@ -4317,7 +4516,12 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   if (!isTerminalPhase(next.phase)) {
     next.phase = derivePhase(next);
   }
-  return next;
+  /* Phase 5 Session A (2026-05-19) — multi-round persona switch.
+   * Evaluate round-end trigger AFTER phase derivation so the handoff
+   * fires the same turn the kernel converges on closing-push (or a
+   * terminal phase). Default-OFF: when `multiRoundEnabled` is false,
+   * this is a typed no-op and `next` is returned unchanged. */
+  return maybeAdvanceRound(next);
 }
 
 /* ─── Validation helpers ─────────────────────────────────────────── */
@@ -5016,6 +5220,17 @@ export function deserializeState(json: string): NegotiationState {
      * ledger. */
     promptInjectionAttempts:
       (s.promptInjectionAttempts as NegotiationState["promptInjectionAttempts"] | undefined) ?? [],
+    /* Phase 5 Session A (2026-05-19) — multi-round persona switch.
+     * Back-compat: legacy sessions serialised before this field shipped
+     * deserialise as single-round (multiRoundEnabled=false), with empty
+     * transitions and roundIndex=0. `roundPersona` stays undefined so
+     * downstream consumers treat the session as legacy. */
+    multiRoundEnabled: (s.multiRoundEnabled as boolean | undefined) ?? false,
+    roundPersona: (s.roundPersona as NegotiationRoundPersona | undefined) ?? undefined,
+    roundIndex: ((s.roundIndex as 0 | 1 | 2 | undefined) ?? 0),
+    roundTransitions:
+      (s.roundTransitions as NegotiationState["roundTransitions"] | undefined) ?? [],
+    perRoundBand: (s.perRoundBand as NegotiationState["perRoundBand"]) ?? undefined,
   };
 }
 

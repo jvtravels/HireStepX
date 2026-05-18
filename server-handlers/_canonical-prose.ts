@@ -1351,6 +1351,34 @@ function renderCanonicalProseBody(
       return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. Sounds good?${urgencyTail}`;
     }
 
+    case "round-transition": {
+      /* Phase 5 Session A (2026-05-19) — multi-round persona handoff
+       * stub. Session B replaces with persona-specific prose, glossary
+       * lookups, and Indian recruiter idioms; ship the stub now so the
+       * exhaustive switch compiles and the integration-fixture entry has
+       * something to validate against.
+       *
+       * Stub copy intentionally uses the persona display word the
+       * candidate would recognise ("the hiring manager" / "the
+       * director"); HR Partner is never the TARGET of a handoff (it's
+       * the starting persona) so the switch only enumerates the two
+       * realisable destinations. */
+      const targetLabel =
+        action.to === "hiring-manager"
+          ? "the hiring manager"
+          : action.to === "director"
+            ? "the director"
+            : (() => {
+                /* Defensive: the only legal `to` values are hiring-manager
+                 * or director (HR Partner is never a handoff TARGET).
+                 * Compile-time exhaustiveness on the `to` literal. */
+                const _exhaustive: never = action.to as never;
+                void _exhaustive;
+                return "the next round";
+              })();
+      return `Thanks — passing you to ${targetLabel} for the next round.`;
+    }
+
     default: {
       /* TypeScript exhaustiveness check. If a new NextAction.kind is
        * added without canonical coverage, the type system flags this

@@ -435,6 +435,13 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "meta",
         hint: "The recruiter heard you ask for clarification on a term they just used and is defining it inline — a strong signal that you can ask for plain English without losing ground.",
       };
+    /* Phase 5 Session A — multi-round persona handoff (2026-05-19) */
+    case "round-transition":
+      return {
+        label: "Round handoff",
+        family: "meta",
+        hint: "Multi-round persona switch",
+      };
   }
   /* Exhaustiveness fallback — TS's stricter Vercel build flags this
    * function as "lacks ending return" without an explicit out-of-switch
