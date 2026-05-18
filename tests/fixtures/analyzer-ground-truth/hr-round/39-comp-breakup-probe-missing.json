@@ -1,0 +1,25 @@
+{
+  "name": "ESOP / joining bonus mentioned but candidate never probed terms",
+  "notes": "Phase 2.3: comp_breakup_probe_missing fires when benefits come up and candidate accepts blind.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a senior PM with 8 years across Cred and Zerodha. Built fraud detection workflows at Cred for the past 3 years.", "time": "" },
+      { "speaker": "ai", "text": "Why looking to switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into wealth-tech where I can apply the fraud learnings to a different risk surface.", "time": "" },
+      { "speaker": "ai", "text": "Notice period?", "time": "" },
+      { "speaker": "user", "text": "90 days, buyout possible at 1.5 months gross, handover plan documented. Earliest LWD is end of next quarter.", "time": "" },
+      { "speaker": "ai", "text": "On comp — we offer base + variable + a joining bonus, plus an ESOP grant with the standard vesting cliff. There's also a clawback if you leave before 18 months. Are you okay with that structure?", "time": "" },
+      { "speaker": "user", "text": "Yeah that sounds fine, I'm okay with the structure.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your founder's recent talk at YC Fintech on KYC unification is exactly the bet I want to be on. The product surface lines up with my fraud-detection background.", "time": "" },
+      { "speaker": "ai", "text": "What questions do you have for us?", "time": "" },
+      { "speaker": "user", "text": "How is the wealth-tech team structured? What does success look like in the first 90 days?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["comp_breakup_probe_missing"],
+    "must_not_include": ["empty_transcript"]
+  }
+}

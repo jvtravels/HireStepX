@@ -1,0 +1,23 @@
+{
+  "name": "Concrete notice days but no buyout / handover / LWD discussion",
+  "notes": "Phase 2.1: notice_period_shallow fires when notice is concrete but lacks depth.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a senior engineer with 7 years at Swiggy working on order management systems.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Looking for ownership of a larger problem space — Swiggy has matured and I want to be back in the 0-to-1 zone.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period? When can you join us?", "time": "" },
+      { "speaker": "user", "text": "60 days. I can join in two months from offer acceptance.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project where you owned the design end to end.", "time": "" },
+      { "speaker": "user", "text": "I designed the new payouts pipeline that processes 2M transactions a day. Owned it from spec to launch over four months.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "I've followed your engineering blog — especially the recent piece on tiered consensus. The infra problems you're solving line up with where I want to grow.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["notice_period_shallow"],
+    "must_not_include": ["vague_notice_period", "empty_transcript"]
+  }
+}

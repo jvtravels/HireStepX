@@ -1,0 +1,21 @@
+{
+  "name": "Candidate closes counter-offer probe gracefully — positive signal",
+  "notes": "Phase 1.3: OFFER_ACCEPTED_GRACEFUL fires, suppresses counter_offer_dodge.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a backend engineer with 6 years across Razorpay and Flipkart, focused on payments infrastructure.", "time": "" },
+      { "speaker": "ai", "text": "Why are you looking to switch?", "time": "" },
+      { "speaker": "user", "text": "I want to move from payments to core ledger work — that's the next problem space I want to own.", "time": "" },
+      { "speaker": "ai", "text": "If we make you an offer and your current company comes back with a counter-offer, how will you handle it?", "time": "" },
+      { "speaker": "user", "text": "If I accept yours, I won't take a counter. Once I sign I'm in — I've already decided that no counter-offer consideration will change my mind. I'd rather not waste your hiring cycle if I'm not committed.", "time": "" },
+      { "speaker": "ai", "text": "Got it. What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at 1 month gross. I can also negotiate early release if there's flexibility on your side.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["offer_accepted_graceful"],
+    "must_not_include": ["counter_offer_dodge", "empty_transcript"]
+  }
+}

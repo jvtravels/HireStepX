@@ -586,7 +586,7 @@ This keeps the report's coverage signal deterministic across sessions and makes 
 - lengthVerdict.wordCount must be the actual word count of answerText. Target range depends on question type: behavioral 120-240, system design 180-360, opener 60-120, deep-dive probe 150-300.
 - storyReuseFindings only fires when the SAME underlying project/situation is used for DIFFERENT competencies (e.g. once for leadership, again for trade-offs). Two behavioral answers from different projects is fine; same project across two is a flag.
 - scoreConfidence should reflect transcript quality and answer clarity. Short interviews (<3 turns), garbled transcripts, or highly ambiguous answers warrant <0.7.
-- Return ONLY valid JSON — no markdown wrapping, no prose.${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}
+- Return ONLY valid JSON — no markdown wrapping, no prose.
 
 CONTEXT:
 Role: ${sanitizeForLLM(meta?.role || "general", 80)}
@@ -632,7 +632,7 @@ TRANSCRIPT (numbered turns):
 """
 ${transcriptBlock}
 """
-${priorContextBlock}
+${priorContextBlock}${tierSuffix ? `\n\n${tierSuffix}` : ""}${rubricWeight ? `\n\nRUBRIC WEIGHTS FOR THIS INTERVIEW TYPE:\n${rubricWeight}` : ""}${focusRubric}
 
 RUBRIC — score each skill 0-100:
 ${skillAxes.map((s) => `- ${s}`).join("\n")}
@@ -933,6 +933,9 @@ Apply all the CRITICAL RULES above to every field. Return ONLY valid JSON — no
       llm_ms: tLLM,
       total_ms: totalMs,
       model: result.model,
+      interview_focus: typeof meta?.type === "string" ? meta.type : "",
+      role: typeof meta?.role === "string" ? meta.role.slice(0, 100) : "",
+      company: typeof meta?.targetCompany === "string" ? meta.targetCompany.slice(0, 60) : "",
     }, req);
 
     return new Response(JSON.stringify({ report, cached: false }), { status: 200, headers });

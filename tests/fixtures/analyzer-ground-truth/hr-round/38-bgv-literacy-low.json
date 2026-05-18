@@ -1,0 +1,23 @@
+{
+  "name": "BGV came up but candidate never named a single document",
+  "notes": "Phase 2.2: bgv_literacy_low — distinct from bgv_document_evasion (no active refusal).",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm a data engineer with 4 years at TCS and Mu Sigma. Currently building dbt pipelines for retail clients.", "time": "" },
+      { "speaker": "ai", "text": "Why are you switching?", "time": "" },
+      { "speaker": "user", "text": "Want to move into a product company where the data work actually drives the roadmap, not just monthly reports.", "time": "" },
+      { "speaker": "ai", "text": "We run a thorough background verification. Are you comfortable with that?", "time": "" },
+      { "speaker": "user", "text": "Yes, sure, I'm comfortable with it. Whatever process you have I'll go through it.", "time": "" },
+      { "speaker": "ai", "text": "Good. What's your notice period and earliest LWD?", "time": "" },
+      { "speaker": "user", "text": "30 days notice, I can serve out or negotiate a buyout. Earliest LWD would be around mid-March if I accept this week.", "time": "" },
+      { "speaker": "ai", "text": "What's your expected CTC and current CTC?", "time": "" },
+      { "speaker": "user", "text": "Current is 18 LPA fixed, 2 LPA variable. Expecting around 28 LPA for the right scope.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["bgv_literacy_low"],
+    "must_not_include": ["bgv_document_evasion", "bgv_document_evasion_sustained", "empty_transcript"]
+  }
+}
