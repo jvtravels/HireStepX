@@ -24,7 +24,7 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 
 | \# | Focus | Baseline | Target | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | HR Round | 8.1 | 9.2 | \~7 days | ✅ Phases 1–4 shipped (+0.8 of +1.1) — analyzer at v5.0.0 |
+| 1 | HR Round | 8.1 | 9.2 | \~7 days | ✅ Phases 1–5 shipped (+1.0 of +1.1) — analyzer at v5.1.0 |
 | 2 | Salary Negotiation | 8.4 | 9.5 | \~8 days | — |
 | 3 | Behavioral | 7.6 | 9.1 | \~7.5 days | ✅ Phases 1–3 shipped (+1.1 of +1.5) — analyzer at v3 |
 | 4 | Campus Placement | 7.4 | 8.6 | \~6 days | — |
@@ -41,7 +41,7 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 
 ## 1. HR Round (8.1 → 9.2)
 
-**File**: `server-handlers/analyzers/hr-round.ts` (v5.0.0, \~34 detection blocks) **State**: Most mature analyzer alongside Salary Neg. Strong signal coverage; gaps are at the edges. Phases 1–4 complete; Phase 5 (stretch) pending.
+**File**: `server-handlers/analyzers/hr-round.ts` (v5.1.0, \~36 detection blocks) **State**: Most mature analyzer alongside Salary Neg. Strong signal coverage; gaps are at the edges. Phases 1–5 complete.
 
 **Top weaknesses**:
 
@@ -77,10 +77,11 @@ Selector keyed off company tier × experience: TA for IT-services / startup-earl
 - **4.2** ✅ Reorder `evaluate-session` HR path: static rules before transcript (current path interleaves company context). → Moved `tierSuffix` + `rubricWeight` + per-company `focusRubric` overlay out of the static CRITICAL RULES prefix and into the tail after the transcript; cacheable prefix is now company-invariant.
 - **4.3** ✅ Bump version to v5. → `hr-round-v5.0.0` shipped.
 
-### Phase 5 — Stretch (\~1d, +0.2) — pending
+### ✅ Phase 5 — Stretch (\~1d, +0.2) — **DONE** (commit `5e40e8a`)
 
-- Counter-offer simulation: when user mentions current employer counter-offering, AI should escalate with realistic India-market response patterns.
-- Probationary-period awareness probe (services-track specific).
+- **5.1** ✅ Counter-offer simulation: when user volunteers that their current employer is likely to counter, analyzer flags `current_employer_counter_unresolved` unless candidate explicitly declines. — `COUNTER_OFFER_VOLUNTEERED` + `COUNTER_OFFER_DECLINE` regex pair; suppressed when `offer_accepted_graceful` already fires.
+- **5.2** ✅ Probationary-period awareness probe (services-track specific). — `PROBATION_PROMPT` + `PROBATION_PROBE` regex pair; fires `probation_terms_unprobed` when HR raises probation and candidate never asks duration / criteria / pay implications.
+- **5.3** ✅ Bumped analyzer to `hr-round-v5.1.0`; added fixtures 40 & 41 (total 43, all green at 0.85 / 0.85 gate).
 
 ---
 
