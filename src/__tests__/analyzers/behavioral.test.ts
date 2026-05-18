@@ -361,6 +361,36 @@ describe("behavioralAnalyzer", () => {
     expect(out.meta?.behavioral?.probing?.failureQuestionAsked).toBe(true);
   });
 
+  it("Phase-4.1: flags register_drift_to_us when AI turns leak USD / 401k / PTO", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Welcome — for context the role offers around $120,000 base and a 401(k) match."),
+          user("I led the migration end-to-end and shipped on time."),
+          ai("Great. PTO at our org is generous — how do you think about leave?"),
+          user("I planned around major milestones."),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("register_drift_to_us");
+    expect(out.coachingNotes.toLowerCase()).toMatch(/lpa|₹|indian-market|us framing/);
+    expect(out.rubricGaps.some((g) => g.flag === "register_drift_to_us")).toBe(true);
+  });
+
+  it("Phase-4.1: does not fire register_drift on a clean Indian-register session", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a project."),
+          user("I owned the launch and shipped on time."),
+          ai("What was the impact in ₹ terms or LPA saved?"),
+          user("We saved roughly ₹2 crore annually in vendor costs."),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("register_drift_to_us");
+  });
+
   it("ignores micro-replies (yes/ok) when scoring STAR completeness", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({

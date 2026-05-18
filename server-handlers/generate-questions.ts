@@ -18,6 +18,11 @@ import { getKnownFacts, formatKnownFactsForPrompt } from "../data/company-known-
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { getCompanyTier } from "../data/company-tiers";
 import { selectHrPersona, hrPersonaPromptFragment } from "../src/_indian-hr-personas";
+import {
+  selectBehavioralPersona,
+  behavioralPersonaPromptFragment,
+  pedigreeAwareOpenerFragment,
+} from "../src/_indian-behavioral-personas";
 import { renderCanonicalProse } from "./_canonical-prose";
 import { initState as initNegotiationState } from "./_negotiation-kernel";
 import {
@@ -358,6 +363,27 @@ export default async function handler(req: Request): Promise<Response> {
             experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "unknown",
           });
           return hrPersonaPromptFragment(persona);
+        })()
+      : "";
+
+    /* Phase 4.2 / Phase 4.3 — Behavioural persona variability + pedigree-
+       aware opener. Pick one of three Indian behavioural archetypes
+       (warm HR Partner / depth-led Hiring Manager / strategic Director)
+       based on company tier + experience level, and prepend a softer
+       opener block when the candidate is <2 yrs in. Silent no-op for
+       non-behavioural interview types. */
+    const isBehavioralFocus = interviewType === "behavioral";
+    const behavioralPersonaContext = isBehavioralFocus
+      ? (() => {
+          const tier = typeof companyName === "string" ? getCompanyTier(companyName) : null;
+          const persona = selectBehavioralPersona({
+            companyTier: tier || "unknown",
+            experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "unknown",
+          });
+          const opener = pedigreeAwareOpenerFragment({
+            experienceLevel: typeof experienceLevel === "string" ? experienceLevel : null,
+          });
+          return [behavioralPersonaPromptFragment(persona), opener].filter(Boolean).join("\n\n");
         })()
       : "";
 
@@ -955,7 +981,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
-${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
+${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${behavioralPersonaContext ? `- ${behavioralPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
 ${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
@@ -1448,6 +1474,14 @@ Requirements:
       // non-HR-round sessions.
       hr_persona: hrPersonaContext
         ? selectHrPersona({
+            companyTier: typeof companyName === "string" ? getCompanyTier(companyName) || "unknown" : "unknown",
+            experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "unknown",
+          }).id
+        : "",
+      // Behavioural persona variability (Phase 4.2). Empty for
+      // non-behavioural sessions.
+      behavioral_persona: behavioralPersonaContext
+        ? selectBehavioralPersona({
             companyTier: typeof companyName === "string" ? getCompanyTier(companyName) || "unknown" : "unknown",
             experienceLevel: typeof experienceLevel === "string" ? experienceLevel : "unknown",
           }).id

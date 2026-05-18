@@ -37,6 +37,7 @@ import {
   isFailureQuestion,
   isVagueAnswer,
 } from "./_behavioral-probing";
+import { findUsismDrift, type UsismHit } from "./_usism-patterns";
 
 type StarPart = "S" | "T" | "A" | "R";
 
@@ -132,7 +133,7 @@ function normalizeQuestion(text: string): string {
 
 export const behavioralAnalyzer: FocusAnalyzer = {
   focus: "behavioral",
-  version: "behavioral-v3",
+  version: "behavioral-v4",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -321,6 +322,30 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       if (unknownCompanies.size >= 2) flags.add("unverifiable_companies");
     }
 
+    /* Phase-4.1 — register-drift detector. Run the shared USISM
+     * scanner against AI turns. The Behavioral focus is Indian-
+     * register by default (see BEHAVIOURAL_INDIAN_REGISTER_RULE in
+     * generate-questions); when the LLM slips into "$120k base" or
+     * "401(k) match" the candidate's mock prep drifts to a market
+     * they're not interviewing for. Single hit is noisy (one stray
+     * "$" can sneak through); 2+ across the session is a pattern. */
+    const usismHits: UsismHit[] = findUsismDrift(transcript);
+    if (usismHits.length >= 2) {
+      flags.add("register_drift_to_us");
+      /* Surface the top 3 hits as rubric gaps so the report can quote
+       * the exact phrasing back at the user — same pattern salary-neg
+       * uses for credibility cross-checks. */
+      for (const hit of usismHits.slice(0, 3)) {
+        gaps.push({
+          dimension: "indian_register",
+          expected: "AI should ground coaching in Indian-market terms (₹ / LPA / leave / EPF)",
+          observed: `Turn ${hit.turn_idx}: "${hit.phrase}" — ${hit.label}`,
+          severity: "low",
+          flag: "register_drift_to_us",
+        });
+      }
+    }
+
     /* Phase-3 flags. Thresholds are conservative: 2+ vague accepts is
      * a pattern; one could be the AI moving on intentionally because
      * the question was already answered. Same for missing learning
@@ -361,6 +386,9 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("deflects_failure")) {
       coachingBits.push("The failure question landed on blame routing — own the miss explicitly before naming external factors.");
+    }
+    if (flags.has("register_drift_to_us")) {
+      coachingBits.push("The mock drifted into US framing (USD figures / PTO / 401k) — for Indian-market rounds, keep numbers in ₹ / LPA and leave / PL/CL terminology.");
     }
 
     /* Phase 2: aggregate competency counts across the session and

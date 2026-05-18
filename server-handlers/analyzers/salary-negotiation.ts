@@ -60,40 +60,11 @@ function tierBucket(co: string | undefined): CompanyTierBucket | undefined {
 const GLOBAL_LPA_MIN = 2;
 const GLOBAL_LPA_MAX = 300;
 
-/** US-isms that should never appear in an Indian-market salary-neg.
- *  Hitting any of these means the LLM drifted out of character —
- *  the candidate's coaching is grounded in the wrong market then.
- *  Each pattern → human-readable label for the rubric gap. */
-const USISM_PATTERNS: Array<{ re: RegExp; label: string }> = [
-  { re: /\$[\d,]+(?:[KkMm]|\s*(?:thousand|million|k\b|m\b))?/, label: "USD figure ($) instead of ₹ / LPA" },
-  { re: /\b401\s*[-(]?\s*[Kk]\b/, label: "401(k) reference (US-only retirement plan)" },
-  { re: /\bPTO\b/, label: "'PTO' (US term; India uses 'leave' or 'PL/CL')" },
-  { re: /\bvacation\s+days\b/i, label: "'vacation days' (US phrasing; India uses 'leave')" },
-  { re: /\bseverance\s+package\b/i, label: "'severance package' (rare in India; use 'notice pay' / 'gardening leave')" },
-  { re: /\bmedical\s+(?:insurance|coverage)\s+at\s+\$/i, label: "USD-denominated medical coverage" },
-  { re: /\b(?:H1B|H-1B|green\s*card|GC\b)/i, label: "US visa terminology in an India-domestic offer" },
-  { re: /\bIRA\b(?!\s*(?:role|score|rating|context))/, label: "'IRA' (US retirement account; India uses 'EPF/PPF')" },
-  { re: /\bsign[\s-]*on\s+package\b/i, label: "'sign-on package' (US phrasing; India uses 'joining bonus')" },
-  { re: /\bnegotiate\s+up\b/i, label: "'negotiate up' (US idiom; India uses 'stretch / push for more')" },
-];
-
-/** Scan AI hiring-manager turns for US-ism leakage. Each hit is a
- *  rubric gap because the AI is grounding coaching in the wrong market. */
-function findUsismDrift(transcript: TranscriptTurn[]): Array<{ turn_idx: number; phrase: string; label: string }> {
-  const out: Array<{ turn_idx: number; phrase: string; label: string }> = [];
-  for (let i = 0; i < transcript.length; i++) {
-    const t = transcript[i];
-    if (!t || t.speaker !== "ai") continue;
-    const text = t.text || "";
-    for (const { re, label } of USISM_PATTERNS) {
-      const m = text.match(re);
-      if (m) {
-        out.push({ turn_idx: i, phrase: m[0], label });
-      }
-    }
-  }
-  return out;
-}
+/* US-ism patterns and the scanner that walks AI turns moved to
+ * `_usism-patterns.ts` so the behavioral analyzer (and future Indian-
+ * register foci) can reuse the same set. Re-exporting the scanner
+ * under its original local name keeps the call-sites below unchanged. */
+import { findUsismDrift } from "./_usism-patterns";
 
 /* Extract any numeric compensation claim with unit. Examples matched:
  *   "32 LPA", "₹45 lakh", "1.2 crore", "INR 28L", "55-65 LPA"

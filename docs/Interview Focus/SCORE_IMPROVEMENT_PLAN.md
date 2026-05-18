@@ -28,7 +28,7 @@ Verified against on-disk analyzer versions on 2026-05-18 (re-checked from `grep 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
 | 2 | Salary Negotiation | 8.4 | **8.4** | 9.5 | `salary-negotiation-v4` | \~8 days | — Not started. Largest unrealized revenue-leverage gap. |
-| 3 | Behavioral | 7.6 | **8.7** | 9.1 | `behavioral-v3` | \~2.5 days | ✅ Phases 1–3 shipped (+1.1 of +1.5). Phase 4 (register / persona) + Phase 5 hygiene pending. |
+| 3 | Behavioral | 7.6 | **9.1** | 9.1 | `behavioral-v4` | 0d (stretch only) | ✅ **Target reached.** Phases 1–5 shipped (+1.5 of +1.5). Phase 6 (stretch) optional. |
 | 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
 | 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
 | 6 | Panel Interview | 7.5 | **7.5** | 8.8 | `panel-v1` | \~6 days | — Not started. |
@@ -39,19 +39,18 @@ Verified against on-disk analyzer versions on 2026-05-18 (re-checked from `grep 
 
 **Aggregate progress**:
 
-- **Shipped delta**: +3.3 score-points across HR Round (+1.0), Behavioral (+1.1), Campus Placement (+1.2), Technical (+0.1).
-- **Target reached**: Campus Placement — first focus to hit target. HR Round next (0.1 away).
+- **Shipped delta**: +3.7 score-points across HR Round (+1.0), Behavioral (+1.5), Campus Placement (+1.2), Technical (+0.1).
+- **Target reached**: Campus Placement + Behavioral. HR Round next (0.1 away).
 - **Untouched**: 5 of 10 focuses (Salary Neg, Panel, Case Study, Strategic, Management, Government/PSU).
 - **Highest unrealized opportunity**: Salary Negotiation — +1.1 score available, 0 shipped. Orphan helpers (`_ctc-breakdown.ts`, `_equity-literacy.ts`, `_negotiation-math.ts:batnaStrength`) still unwired despite being ship-ready.
 
 **Recommended sequencing (updated)**: Campus Placement and HR Round are essentially done. Next priorities by leverage-per-day:
 
-1. **Finish HR Round Phase 5 polish** (~0.5d, +0.1) — closes one focus completely.
-2. **Behavioral Phases 4–5** (~2.5d, +0.4) — closes the second-largest in-flight focus.
-3. **Salary Negotiation Phases 1–5** (~8d, +1.1) — largest unrealized revenue lever; orphan helpers already shipped.
-4. **Technical Leadership** (~7.5d, +1.1) — largest TAM segment.
-5. **Panel / Case Study / Strategic / Management** — mid-tier, bundle in one sprint.
-6. **Government / PSU** last — smallest paying segment but highest competitive moat (nobody else builds for SSC/UPSC/PSU candidates).
+1. **Finish HR Round Phase 5 polish** (\~0.5d, +0.1) — closes one focus completely.
+2. **Salary Negotiation Phases 1–5** (\~8d, +1.1) — largest unrealized revenue lever; orphan helpers already shipped.
+3. **Technical Leadership** (\~7.5d, +1.1) — largest TAM segment.
+4. **Panel / Case Study / Strategic / Management** — mid-tier, bundle in one sprint.
+5. **Government / PSU** last — smallest paying segment but highest competitive moat (nobody else builds for SSC/UPSC/PSU candidates).
 
 ---
 
@@ -149,17 +148,17 @@ Each gets distinct counter-offer logic and pushback patterns.
 
 ---
 
-## 3. Behavioral (7.6 → **8.7** → 9.1)
+## 3. Behavioral (7.6 → **9.1** → 9.1) — ✅ Target reached
 
-**File**: `server-handlers/analyzers/behavioral.ts` (**v3**, \~30 signals) **State**: Phases 1–3 shipped; analyzer now grades STAR per-answer, scores 10 competencies across 5 hiring tracks, and detects AI probing depth + failure ownership.
+**File**: `server-handlers/analyzers/behavioral.ts` (**v4**, \~32 signals) **State**: Phases 1–5 shipped. Analyzer grades STAR per-answer, scores 10 competencies across 5 hiring tracks, detects AI probing depth + failure ownership, enforces Indian register via shared USISM scan, selects an interviewer persona by tier × experience, and has a 19-case ground-truth fixture suite.
 
-**Top weaknesses**:
+**Top weaknesses** (all addressed):
 
 1. ~~STAR detection is binary, not graded~~ — ✅ per-answer STAR matrix shipped (Phase 1)
 2. ~~No competency taxonomy~~ — ✅ 10 competencies × 5 tracks shipped (Phase 2)
-3. `unverifiable_companies` ~~false-fires on "At Last Year"~~ — ✅ suffix + stoplist gate shipped (Phase 1)
+3. ~~`unverifiable_companies` false-fires on "At Last Year"~~ — ✅ suffix + stoplist gate shipped (Phase 1)
 4. ~~No follow-up probing logic~~ — ✅ AI_PROBED_DEPTH / AI_ACCEPTED_VAGUE shipped (Phase 3)
-5. Indian-register rule prompt-only — no analyzer enforcement (Phase 4)
+5. ~~Indian-register rule prompt-only — no analyzer enforcement~~ — ✅ shared `_usism-patterns.ts` scan + `register_drift_to_us` flag shipped (Phase 4)
 
 ### ✅ Phase 1 — Quick wins (\~1d, +0.4) — **DONE** (commit `6008842`)
 
@@ -179,17 +178,17 @@ Each gets distinct counter-offer logic and pushback patterns.
 - **3.2** ✅ `LEARNING_REFLECTION` detector — closure beats matter in Indian behavioral rounds. — `hasLearningReflection()` → `no_learning_reflection` flag
 - **3.3** ✅ `OWNS_FAILURE` vs. `DEFLECTS_FAILURE` for failure-question handling. — `classifyFailureResponse()` → `owns_failure` / `deflects_failure` flags
 
-### Phase 4 — Indian register + persona (\~1.5d, +0.2)
+### ✅ Phase 4 — Indian register + persona (\~1.5d, +0.2) — **DONE**
 
-- **4.1** Mid-session register-drift detector reusing `USISM_PATTERNS`.
-- **4.2** Three interviewer archetypes (HR Partner / Hiring Manager / Director).
-- **4.3** Pedigree-aware opener for &lt;2-yr experience.
+- **4.1** ✅ Mid-session register-drift detector reusing `USISM_PATTERNS`. — Patterns extracted to shared `server-handlers/analyzers/_usism-patterns.ts`; behavioral scans AI turns and fires `register_drift_to_us` flag (with up to 3 rubric gaps quoting the offending phrase) on ≥2 hits. Salary-negotiation now imports from the same source.
+- **4.2** ✅ Three interviewer archetypes (HR Partner / Hiring Manager / Director). — New `src/_indian-behavioral-personas.ts`; selector keyed on company-tier × experience-level. Director for lead/executive (and senior at FAANG/big-tech/GCC); warm HR Partner for fresher/entry (and mid at IT-services/edtech/early-startup); depth-led Hiring Manager default. Wired into `generate-questions.ts`; persona id logged to PostHog as `behavioral_persona`.
+- **4.3** ✅ Pedigree-aware opener for &lt;2-yr experience. — `pedigreeAwareOpenerFragment()` prepended to the behavioral persona block when `experienceLevel` ∈ {fresher, entry} OR numeric YOE < 2. Pushes the LLM toward internship / college / open-source story shapes and weights Situation / Task framing higher than Result quantification.
 
-### Phase 5 — Hygiene (\~1d, +0.2)
+### ✅ Phase 5 — Hygiene (\~1d, +0.2) — **DONE**
 
-- **5.1** Fixture suite (15–20 transcripts).
-- **5.2** Prompt-cache reorder.
-- **5.3** ✅ Bump to v2. — **superseded**: shipped as **v3** in commit `ba5222f` (covers Phases 1–3 in one bump so `_llm-rescore` recomputes all behavioral sessions).
+- **5.1** ✅ Fixture suite (15–20 transcripts). — New `src/__tests__/analyzers/behavioralFixtures.test.ts` with 19 end-to-end ground-truth transcripts (green / red pairs for STAR, quantification, company-verification, probing depth, register drift, competency taxonomy, duplicate-question, degenerate-input). All pass.
+- **5.2** ✅ Prompt-cache reorder. — Audited `evaluate-session.ts` behavioral path: CRITICAL RULES + BEHAVIOURAL-PROBE-BANK + BEHAVIOURAL-COMPETENCY-COVERAGE blocks already precede the dynamic CONTEXT / TRANSCRIPT / RUBRIC tail, and the only interpolations into the prefix (`PROBE_TEXTS`, `BEHAVIORAL_COMPETENCIES`, `COMPETENCY_LABELS`) are static module imports. The ≥1024-token shared prefix is already cacheable per Groq's prefix-cache rules — no reorder needed. Documented for future maintainers.
+- **5.3** ✅ Bump to v2. — **superseded**: shipped as **v3** for Phases 1–3, now **v4** for Phase 4.1 register-drift signal (so `_llm-rescore` recomputes behavioral sessions against the new flag set).
 
 ### Phase 6 — Stretch
 
@@ -253,7 +252,6 @@ Four archetypes resolved in new helper `server-handlers/_campus-archetype.ts`. A
 ## 5. Technical Leadership (7.8 → **7.9** → 9.0)
 
 > Note: `technical.ts` shipped a v1 → v2 bump (+0.1 inferred). `system-design.ts` still at v1. Phases 1–5 still substantively pending end-to-end.
-
 
 Combines `technical.ts` (320 LOC, deepest analyzer outside HR/Sal-Neg) + `system-design.ts` (121 LOC).
 
@@ -558,4 +556,4 @@ Done as part of Salary Neg work but worth flagging — wasted engineering otherw
 
 ---
 
-*Last updated 2026-05-18 — owner: analyzer team. Update score columns after each phase ships. Last reconciliation against on-disk analyzer `version:` fields: 2026-05-18.*
+*Last updated 2026-05-18 — owner: analyzer team. Update score columns after each phase ships. Last reconciliation against on-disk analyzer* `version:` *fields: 2026-05-18.*
