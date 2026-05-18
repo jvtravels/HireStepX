@@ -370,4 +370,57 @@ describe("behavioral fixtures — empty / degenerate input", () => {
     expect(out.flags).not.toContain("weak_star_structure");
     expect(out.flags).not.toContain("frequent_missing_result");
   });
+
+  it("FIXTURE: all-AI transcript (no substantive user answers) → no_user_answers_recorded", async () => {
+    /* Phase-6-hygiene — distinguishable from `empty_transcript` (0
+       turns). Useful when the candidate was muted / mic broken — the
+       report layer needs to render a different empty state. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about yourself."),
+          ai("Take your time."),
+          ai("Walk me through your most recent project."),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("no_user_answers_recorded");
+    expect(out.flags).not.toContain("empty_transcript");
+  });
+});
+
+describe("behavioral fixtures — we_attribution_heavy (Phase-6 hygiene)", () => {
+  it("FIXTURE: 4 substantive answers, 3 lean on we/team without first-person action → we_attribution_heavy", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you owned a tough delivery."),
+          user("So we managed the migration as a team. The team handled the rollout and we figured out the gaps as they came up over a couple of months."),
+          ai("Tell me about a time you drove cross-functional alignment."),
+          user("The team handled it really well. Everyone got it done in the end and we managed the dependencies between three pods without major issues."),
+          ai("Tell me about a time you closed a critical bug."),
+          user("We worked out a fix quickly. The team got that done within a sprint and we managed the comms back to the customer through the AM."),
+          ai("Tell me about a real win this year."),
+          user("I personally led the redesign of the checkout funnel — I owned the discovery, drove the prototype reviews, and shipped a 12% conversion lift over the baseline."),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("we_attribution_heavy");
+  });
+
+  it("FIXTURE: every answer carries first-person action → no we_attribution_heavy", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you owned a tough delivery."),
+          user("I led the migration end-to-end. I owned the rollout plan, I designed the cutover sequence, and I shipped it over a six-week window."),
+          ai("Tell me about cross-functional alignment."),
+          user("I drove the alignment myself — I scheduled the weekly stand-ups, I wrote the brief, and I escalated when the PM and tech-lead disagreed on scope."),
+          ai("Tell me about a recent bug fix."),
+          user("I debugged the production incident, I root-caused the race condition, and I shipped the hotfix that night."),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("we_attribution_heavy");
+  });
 });

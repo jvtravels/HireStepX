@@ -113,6 +113,46 @@ const KNOWN_COMPANY_HINT = new Set([
 
 const PROBE_FOR_RESULT = /\b(what (?:was|were) the (?:result|outcome|impact)|how did (?:it|that) turn out|did (?:it|that) work|what happened (?:in the end|after)|measurable|quantif|metric)\b/i;
 
+/* Phase-6-hygiene — named thresholds. Promoted out of inline magic
+ * numbers so a future tuning round can audit "why 0.4 vs 0.5" in one
+ * place. Each value was calibrated against the fixture suite under
+ * `__tests__/analyzers/behavioralFixtures.test.ts`; changes here will
+ * shift fixture flag emissions and require re-pinning. */
+export const BEHAVIORAL_THRESHOLDS = {
+  /* "Substantive" answer floor (chars). Below this we treat the turn
+   * as a micro-reply ("yes", "I think so") and exclude from STAR /
+   * topical / evidence counters. */
+  MIN_ANSWER_CHARS: 60,
+  /* AI-question normalised length floor for dedupe — short
+   * acknowledgements ("got it") shouldn't dedupe against each other. */
+  MIN_QUESTION_NORM_CHARS: 30,
+  /* STAR completion rate below which the session is "weak STAR". */
+  WEAK_STAR_COMPLETION_RATE: 0.4,
+  /* Missing-Result rate above which we flag candidate-side. */
+  MISSING_RESULT_RATE: 0.5,
+  /* AI accepted-missing-Result rate (of missing-R answers AI rolled
+   * past) above which we flag AI-side. Paired with a min-count gate
+   * because one miss in two is noisy. */
+  AI_ACCEPTED_MISSING_R_RATE: 0.6,
+  AI_ACCEPTED_MISSING_R_MIN_COUNT: 2,
+  /* Unquantified-answer rate above which we flag (gated by min
+   * answer count so a 2-question screen doesn't trip). */
+  UNQUANTIFIED_RATE: 0.7,
+  UNQUANTIFIED_MIN_ANSWERS: 3,
+  /* Most "≥2 across the session" pattern thresholds — single misfire
+   * is forgivable; the pattern is what we care about. */
+  PATTERN_MIN_COUNT: 2,
+  /* No-learning-reflection requires a min session length so short
+   * screens (single answer) don't trip it. */
+  NO_LEARNING_MIN_ANSWERS: 4,
+  /* `we_attribution_heavy` — fraction of substantive user answers
+   * that lean on we / team framing WITHOUT a first-person action verb.
+   * Paired with a min-count gate so one stray collective turn doesn't
+   * trip the session-level flag. */
+  WE_ATTRIBUTION_RATE: 0.5,
+  WE_ATTRIBUTION_MIN_HITS: 3,
+} as const;
+
 function classifyStar(text: string): Set<StarPart> {
   const found = new Set<StarPart>();
   for (const part of ["S", "T", "A", "R"] as StarPart[]) {
@@ -183,6 +223,13 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     let offTopicCount = 0;
     const offTopicHits: { turn_idx: number; questionIntent: string; preview: string }[] = [];
 
+    /* Phase-6-hygiene — `we_attribution_heavy` counter. Increment for
+     * each substantive user answer that leans on collective framing
+     * (`isVagueAnswer` returns true) — that helper already AND-gates
+     * on "no first-person action verb", which is exactly the signal
+     * we want. */
+    let weAttributionHits = 0;
+
     const seenQuestions: { idx: number; norm: string }[] = [];
     const starBreakdown: NonNullable<NonNullable<AnalyzerResult["meta"]>["behavioral"]>["starBreakdown"] = [];
 
@@ -207,7 +254,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         }
         const norm = normalizeQuestion(text);
         // Only dedupe substantive AI prompts, not "got it" / "nice" etc.
-        if (norm.length > 30) {
+        if (norm.length > BEHAVIORAL_THRESHOLDS.MIN_QUESTION_NORM_CHARS) {
           const dup = seenQuestions.find((q) => q.norm === norm);
           if (dup) {
             bad.push({
@@ -223,7 +270,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       }
 
       if (!isUserTurn(turn)) continue;
-      if (text.length < 60) continue; // ignore "ok", "yes", micro-replies
+      if (text.length < BEHAVIORAL_THRESHOLDS.MIN_ANSWER_CHARS) continue; // ignore "ok", "yes", micro-replies
       userAnswerCount += 1;
 
       const parts = classifyStar(text);
@@ -326,6 +373,13 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         competencies,
       });
 
+      /* Phase-6-hygiene — independent we-attribution counter. Same
+       * `isVagueAnswer` predicate as the Phase-3 probing pass below,
+       * but counted unconditionally on every answer (not only when an
+       * AI follow-up exists). The session-level `we_attribution_heavy`
+       * flag fires off this counter. */
+      if (isVagueAnswer(text)) weAttributionHits += 1;
+
       /* Phase-3 probing pass: classify the AI turn that follows this
        * user answer. We look at the next 2 AI turns (some sessions
        * interleave a brief acknowledgement before the real probe). */
@@ -348,16 +402,39 @@ export const behavioralAnalyzer: FocusAnalyzer = {
 
     if (userAnswerCount > 0) {
       const completionRate = starComplete / userAnswerCount;
-      if (completionRate < 0.4) flags.add("weak_star_structure");
+      if (completionRate < BEHAVIORAL_THRESHOLDS.WEAK_STAR_COMPLETION_RATE) flags.add("weak_star_structure");
 
       const missingRRate = missingResultCount / userAnswerCount;
-      if (missingRRate > 0.5) flags.add("frequent_missing_result");
+      if (missingRRate > BEHAVIORAL_THRESHOLDS.MISSING_RESULT_RATE) flags.add("frequent_missing_result");
 
       const acceptedRate = acceptedMissingR / Math.max(missingResultCount, 1);
-      if (acceptedMissingR >= 2 && acceptedRate > 0.6) flags.add("ai_accepts_missing_result");
+      if (acceptedMissingR >= BEHAVIORAL_THRESHOLDS.AI_ACCEPTED_MISSING_R_MIN_COUNT && acceptedRate > BEHAVIORAL_THRESHOLDS.AI_ACCEPTED_MISSING_R_RATE) {
+        flags.add("ai_accepts_missing_result");
+      }
 
       const unquantifiedRate = unquantifiedCount / userAnswerCount;
-      if (unquantifiedRate > 0.7 && userAnswerCount >= 3) flags.add("unquantified_answers");
+      if (unquantifiedRate > BEHAVIORAL_THRESHOLDS.UNQUANTIFIED_RATE && userAnswerCount >= BEHAVIORAL_THRESHOLDS.UNQUANTIFIED_MIN_ANSWERS) {
+        flags.add("unquantified_answers");
+      }
+
+      /* Phase-6-hygiene — `we_attribution_heavy`. Fires when ≥3 user
+       * answers and ≥50% of them lean on collective framing (we / the
+       * team / they) WITHOUT a first-person action verb. This is the
+       * signal `BEHAVIORAL_PRIOR_FLAG_TO_DIMENSION` was already wired
+       * to consume — we just hadn't implemented the emitter. */
+      if (
+        weAttributionHits >= BEHAVIORAL_THRESHOLDS.WE_ATTRIBUTION_MIN_HITS &&
+        weAttributionHits / userAnswerCount >= BEHAVIORAL_THRESHOLDS.WE_ATTRIBUTION_RATE
+      ) {
+        flags.add("we_attribution_heavy");
+      }
+    } else {
+      /* All-AI transcript or every user reply was a micro-utterance
+       * below MIN_ANSWER_CHARS. Distinguishable from empty_transcript
+       * (which has length 0); useful for the report layer to show a
+       * different empty-state ("we have your interviewer but no
+       * substantive answers") vs. "we have nothing". */
+      flags.add("no_user_answers_recorded");
     }
 
     // Resume cross-check: if user mentions a company that isn't in the
@@ -394,7 +471,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         if (!(hasSuffix || isKnown || inResume)) continue;
         if (!inResume) unknownCompanies.add(co);
       }
-      if (unknownCompanies.size >= 2) flags.add("unverifiable_companies");
+      if (unknownCompanies.size >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT) flags.add("unverifiable_companies");
     }
 
     /* Phase-4.1 — register-drift detector. Run the shared USISM
@@ -405,7 +482,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
      * they're not interviewing for. Single hit is noisy (one stray
      * "$" can sneak through); 2+ across the session is a pattern. */
     const usismHits: UsismHit[] = findUsismDrift(transcript);
-    if (usismHits.length >= 2) {
+    if (usismHits.length >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT) {
       flags.add("register_drift_to_us");
       /* Surface the top 3 hits as rubric gaps so the report can quote
        * the exact phrasing back at the user — same pattern salary-neg
@@ -435,7 +512,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
      * Separating them matches the way the rest of the analyzer
      * distinguishes user-side vs interviewer-side misses (see
      * `frequent_missing_result` vs `ai_accepts_missing_result`). */
-    if (metricAnswersUnevidenced >= 2 && metricAnswersCount >= 2) {
+    if (metricAnswersUnevidenced >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT && metricAnswersCount >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT) {
       flags.add("metric_without_baseline");
       for (const hit of evidenceGapHits.slice(0, 3)) {
         gaps.push({
@@ -447,12 +524,12 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         });
       }
     }
-    if (aiAcceptedUnevidencedMetric >= 2) flags.add("ai_accepted_unevidenced_metric");
+    if (aiAcceptedUnevidencedMetric >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT) flags.add("ai_accepted_unevidenced_metric");
 
     /* Phase-6.2 — repeated off-topic answers. Single misfire is
      * forgivable (paraphrased to a related theme); ≥2 across the
      * session signals the candidate isn't anchoring to the prompt. */
-    if (offTopicCount >= 2) {
+    if (offTopicCount >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT) {
       flags.add("answer_off_topic");
       for (const hit of offTopicHits.slice(0, 3)) {
         gaps.push({
@@ -465,8 +542,8 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       }
     }
 
-    if (aiAcceptedVague >= 2) flags.add("ai_accepted_vague");
-    if (userAnswerCount >= 4 && learningReflections === 0) {
+    if (aiAcceptedVague >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT) flags.add("ai_accepted_vague");
+    if (userAnswerCount >= BEHAVIORAL_THRESHOLDS.NO_LEARNING_MIN_ANSWERS && learningReflections === 0) {
       flags.add("no_learning_reflection");
     }
     if (failureQuestionAsked && failureResponse === "deflects") {
@@ -508,6 +585,9 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("ai_accepted_unevidenced_metric")) {
       coachingBits.push("The mock interviewer rolled past quantified claims without checking the source — in real Bar-Raiser / Director rounds you should expect 'what was the baseline?' or 'how was that measured?' right after every number.");
+    }
+    if (flags.has("we_attribution_heavy")) {
+      coachingBits.push("Most answers narrated the team's work, not yours — open every story with what *you* personally did ('I led / I designed / I decided') so the interviewer doesn't have to ask who-did-what twice.");
     }
     if (flags.has("answer_off_topic")) {
       coachingBits.push("A few answers drifted from the question's intent — start every response by mirroring the prompt ('You asked about a conflict — let me take one from my last role…') so the interviewer hears you've heard them.");

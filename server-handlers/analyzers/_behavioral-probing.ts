@@ -49,8 +49,13 @@ export const AI_PROBED_OWNERSHIP_RE =
  * AND the next AI turn is short (< 80 chars) or doesn't probe. The
  * combination tells us the AI rolled past a vague answer without
  * pushing back. */
+/* Phase-6-hygiene — tightened from the original loose `?\s*` chain to
+ * a single non-capturing optional-filler group with required trailing
+ * whitespace. Linear-time on adversarial input; the prior version's
+ * optional quantifier + greedy `\s*` was inefficient on long collective
+ * pronoun chains. */
 export const VAGUE_ANSWER_HINT_RE =
-  /\b(?:we|the\s+team|they|everyone|people)\s+(?:kind\s+of|sort\s+of|basically|just|generally|usually|always)?\s*(?:figured|managed|handled|sorted|worked\s+out|got\s+(?:it|that)\s+done)\b/i;
+  /\b(?:we|the\s+team|they|everyone|people)\s+(?:(?:kind\s+of|sort\s+of|basically|just|generally|usually|always)\s+)?(?:figured|managed|handled|sorted|worked\s+out|got\s+(?:it|that)\s+done)\b/i;
 
 export const FIRST_PERSON_ACTION_RE =
   /\bi\s+(?:\w+\s+){0,2}(?:led|built|drove|owned|shipped|designed|wrote|chose|decided|negotiated|escalated|proposed|implemented|coded|debugged|root[\s-]?caused|deployed|migrated|refactored|launched)\b/i;

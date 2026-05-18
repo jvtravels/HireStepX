@@ -94,6 +94,17 @@ describe("isAnswerOffTopic — conservative skips", () => {
     expect(isAnswerOffTopic(q, a).offTopic).toBe(false);
   });
 
+  it("DOES flag when token overlap = 1 and intent mismatch (boundary)", () => {
+    /* Phase-6-hygiene — pin the overlap threshold boundary. A single
+       shared content token isn't enough to save an answer with the
+       wrong intent. */
+    const q = "Tell me about a time you had a conflict with a peer.";
+    const a = "I led the entire migration project last year and rallied the team across three pods.";
+    const result = isAnswerOffTopic(q, a);
+    expect(result.offTopic).toBe(true);
+    expect(result.overlapCount).toBeLessThanOrEqual(1);
+  });
+
   it("does NOT flag when token overlap ≥2 even without intent match", () => {
     const q = "Tell me about a time you handled a difficult stakeholder negotiation.";
     const a = "The stakeholder negotiation around our pricing model was tough — I prepared three options and walked the partner through each.";
