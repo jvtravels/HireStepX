@@ -2473,18 +2473,52 @@ export function parseCandidateAnswer(
 
      Range support: "I'm earning 25-28 LPA" binds the upper bound so
      a candidate's stated comp ceiling becomes the disclosed value
-     (matching how recruiters interpret stated current packages). */
+     (matching how recruiters interpret stated current packages).
+
+     Probe-loop fix (2026-05-18, live HireStepX session): the original
+     bank required the noun ("package"/"ctc"/...) to sit IMMEDIATELY
+     after "current" — failed on "my current TOTAL ANNUAL CTC". And
+     the verb-led row required `\s` after the verb — failed on
+     "Currently," (trailing comma). Broadened both, added bare-LPA
+     "my CTC is N lakhs" shape, and a lakhs-only unit token so utterances
+     like "I'm at about 25 lakhs annually" / "I make around ₹18L" bind. */
+  /* `noun` cue group: package / salary / ctc / compensation / pay /
+     fitment / fixed / total[-]ctc / annual[-]ctc. */
+  const ctcNoun =
+    "(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total[\\s-]ctc|annual[\\s-]ctc|role)";
+  /* `unit` cue group: lpa / lakhs / lakh / lacs / lac / l\b / cr / crore. */
+  const ctcUnit = "(?:lpa|lakhs?|lacs?|l\\b|cr|crore)";
+  /* `verb` cue group: currently / earning / getting / drawing / making /
+     take home / i get / i earn / i'm at. Allows 0-3 descriptive words
+     before the noun ("current TOTAL ANNUAL ctc") and optional comma/
+     punctuation after the verb ("Currently,"). */
+  const ctcVerb =
+    "(?:currently|earning|getting|drawing|making|i\\s+make|take\\s+home|i\\s+get|i\\s+earn|i.?m\\s+at)";
   const currentCtc =
     extractUsdAmount(a, [
-      /\bcurrent(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay)[^.!?\n]{0,30}?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i,
-      /\b(?:currently|earning|getting|drawing|making|making\s+about|take\s+home|i\s+get|i\s+earn|i.?m\s+at)\s.*?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i,
+      // USD: "current [...] package/ctc is $150k"
+      new RegExp(`\\bcurrent(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n]{0,30}?\\$\\s*(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|K)?`, "i"),
+      // USD: verb-led "currently, earning $150k"
+      new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?\\$\\s*(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|K)?`, "i"),
     ]) ??
     extractFirstNumber(a, [
-      /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-      /\b(?:my\s+)?current(?:ly)?\s+(?:package|salary|ctc|comp(?:ensation)?|pay|role)[^.!?\n₹]{0,30}?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-      /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-      /\b(?:currently|earning|getting|drawing|my\s+ctc|i.?m\s+at|making|take\s+home|i\s+get|i\s+earn)\s.*?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
-      /\bpackage\s+progression[^.!?\n₹]{0,30}?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i,
+      // Range: "my current package is 25-28 LPA" — bind upper bound.
+      new RegExp(`\\b(?:my\\s+)?current(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n₹]{0,30}?₹?\\s*\\d+(?:\\.\\d+)?\\s*(?:[-–—]|to)\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
+      // Single-value, noun-led with 0-3 descriptive words:
+      //   "my current package is 18 LPA"
+      //   "my current TOTAL ANNUAL CTC is around ₹18 LPA"
+      //   "current annual CTC is roughly 22 LPA"
+      new RegExp(`\\b(?:my\\s+)?current(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n₹]{0,30}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
+      // "my CTC is 19 LPA" / "my total annual CTC is around 18 LPA" —
+      // no leading "current" required when "my" pins ownership.
+      new RegExp(`\\bmy\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}\\s+(?:is\\s+)?[^.!?\\n₹]{0,30}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
+      // Range, verb-led: "I'm earning 25-28 LPA" / "Currently, drawing 25 to 28 lakhs"
+      new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?₹?\\s*\\d+(?:\\.\\d+)?\\s*(?:[-–—]|to)\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
+      // Single-value, verb-led: "Currently, my total CTC is around ₹19 LPA"
+      //   "I make around ₹18L" / "I'm at about 25 lakhs annually"
+      new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
+      // Legacy: "package progression ... 18 LPA".
+      new RegExp(`\\bpackage\\s+progression[^.!?\\n₹]{0,30}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
     ]);
 
   /* Competing-offer patterns. Also must NOT bind to target. */

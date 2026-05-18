@@ -1307,3 +1307,51 @@ describe("Phase 25a — firstAnchoredTarget freezes on first non-null target", (
     expect(s1.firstAnchoredTarget).toBe(null);
   });
 });
+
+/* Probe-loop fix (2026-05-18) — the live HireStepX session probed
+ * currentCtc 3x because the parser missed real disclosures. These
+ * tests pin the broadened pattern bank. */
+describe("parseCandidateAnswer — CTC parser broadening (probe-loop fix)", () => {
+  it("binds 'my current total annual CTC is around ₹18 LPA'", () => {
+    const p = parseCandidateAnswer(
+      "Sure. My current total annual CTC is around ₹18 LPA. Out of that, roughly ₹12 LPA is fixed, around ₹4 LPA is annual bonus, and the remaining is part of benefits and long-term incentives.",
+    );
+    expect(p.currentCtc).toBe(18);
+  });
+
+  it("binds 'Currently, my total CTC is around ₹19 LPA annually.' (verb followed by comma)", () => {
+    const p = parseCandidateAnswer("Currently, my total CTC is around ₹19 LPA annually.");
+    expect(p.currentCtc).toBe(19);
+  });
+
+  it("binds 'My current package is roughly 22 LPA.'", () => {
+    const p = parseCandidateAnswer("My current package is roughly 22 LPA.");
+    expect(p.currentCtc).toBe(22);
+  });
+
+  it("binds 'I'm at about 25 lakhs annually.' via lakhs unit", () => {
+    const p = parseCandidateAnswer("I'm at about 25 lakhs annually.");
+    expect(p.currentCtc).toBe(25);
+  });
+
+  it("binds 'I make around ₹18L.'", () => {
+    const p = parseCandidateAnswer("I make around ₹18L.");
+    expect(p.currentCtc).toBe(18);
+  });
+
+  /* Negatives — must NOT bind. */
+  it("does NOT bind 'I'm currently looking for a new role'", () => {
+    const p = parseCandidateAnswer("I'm currently looking for a new role.");
+    expect(p.currentCtc).toBeNull();
+  });
+
+  it("does NOT bind 'Currently happy with the team'", () => {
+    const p = parseCandidateAnswer("Currently happy with the team.");
+    expect(p.currentCtc).toBeNull();
+  });
+
+  it("does NOT bind 'current focus is design systems'", () => {
+    const p = parseCandidateAnswer("My current focus is design systems.");
+    expect(p.currentCtc).toBeNull();
+  });
+});

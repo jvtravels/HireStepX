@@ -142,26 +142,71 @@ function extractPercentageSplit(a: string): { basePercent: number | null; variab
    * (base, variable) pair whose percentages sum to ~100. Restricting
    * to ADJACENT pairings avoids the "80% fixed, 20% variable" trap
    * where a loose gap would let the variable-cue gobble past the
-   * fixed-side percentage. */
+   * fixed-side percentage.
+   *
+   * Single-sided fallback (2026-05-18 probe-loop fix): real candidates
+   * disclose only one side ("80% fixed", "90% fixed for me") and let
+   * the complement be implied. When only one side is tagged, derive
+   * the other as 100 − x. We also accept range shapes ("80-85% fixed"),
+   * binding the upper bound — same rule the target-range parser uses
+   * (`targetRangePat` in _negotiation-kernel.ts).
+   *
+   * Sanity gates: the explicit pct must be in (0, 100] and the derived
+   * complement must be ≥ 0 (so an out-of-band value like "120% fixed"
+   * is rejected, not silently turned into negative variable). */
   const tagged: Array<{ side: "base" | "variable"; pct: number }> = [];
+  /* Range-aware: optional "N-M%" / "N to M%" — bind upper bound (M). */
+  const baseRangeRe = /(?:(\d{1,3}(?:\.\d+)?)\s*(?:[-–—]|to)\s*(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+)?(fixed|base|basic)|(fixed|base|basic)\s+(?:is|of|at|=)?\s*(\d{1,3}(?:\.\d+)?)\s*(?:[-–—]|to)\s*(\d{1,3}(?:\.\d+)?)\s*%)/gi;
+  const varRangeRe = /(?:(\d{1,3}(?:\.\d+)?)\s*(?:[-–—]|to)\s*(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+)?(variable|bonus|performance)|(variable|bonus|performance)\s+(?:is|of|at|=)?\s*(\d{1,3}(?:\.\d+)?)\s*(?:[-–—]|to)\s*(\d{1,3}(?:\.\d+)?)\s*%)/gi;
   const baseRe = /(?:(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+)?(fixed|base|basic)|(fixed|base|basic)\s+(?:is|of|at|=)?\s*(\d{1,3}(?:\.\d+)?)\s*%)/gi;
   const varRe = /(?:(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+)?(variable|bonus|performance)|(variable|bonus|performance)\s+(?:is|of|at|=)?\s*(\d{1,3}(?:\.\d+)?)\s*%)/gi;
   let m: RegExpExecArray | null;
+  /* Range shapes first so "80-85% fixed" doesn't get half-eaten by the
+   * single-value regex (which would bind 80 as base, missing the 85). */
+  const rangeSpans: Array<[number, number]> = [];
+  while ((m = baseRangeRe.exec(a)) !== null) {
+    const upper = parseFloat(m[2] ?? m[6]);
+    if (Number.isFinite(upper)) tagged.push({ side: "base", pct: upper });
+    rangeSpans.push([m.index, m.index + m[0].length]);
+  }
+  while ((m = varRangeRe.exec(a)) !== null) {
+    const upper = parseFloat(m[2] ?? m[6]);
+    if (Number.isFinite(upper)) tagged.push({ side: "variable", pct: upper });
+    rangeSpans.push([m.index, m.index + m[0].length]);
+  }
+  const inRangeSpan = (idx: number) => rangeSpans.some(([s, e]) => idx >= s && idx < e);
   while ((m = baseRe.exec(a)) !== null) {
+    if (inRangeSpan(m.index)) continue;
     const n = parseFloat(m[1] ?? m[4]);
     if (Number.isFinite(n)) tagged.push({ side: "base", pct: n });
   }
   while ((m = varRe.exec(a)) !== null) {
+    if (inRangeSpan(m.index)) continue;
     const n = parseFloat(m[1] ?? m[4]);
     if (Number.isFinite(n)) tagged.push({ side: "variable", pct: n });
   }
   const baseHits = tagged.filter((t) => t.side === "base");
   const varHits = tagged.filter((t) => t.side === "variable");
+  /* Both-sided: prefer the pair that sums to ~100. */
   for (const bh of baseHits) {
     for (const vh of varHits) {
       if (bh.pct > 0 && vh.pct > 0 && Math.abs(bh.pct + vh.pct - 100) <= 2) {
         return { basePercent: bh.pct, variablePercent: vh.pct };
       }
+    }
+  }
+  /* Single-sided: derive the complement. Sanity-gate to keep the result
+   * in [0, 100] on both sides. */
+  if (baseHits.length > 0 && varHits.length === 0) {
+    const bp = baseHits[0].pct;
+    if (bp > 0 && bp <= 100) {
+      return { basePercent: bp, variablePercent: Math.round((100 - bp) * 10) / 10 };
+    }
+  }
+  if (varHits.length > 0 && baseHits.length === 0) {
+    const vp = varHits[0].pct;
+    if (vp > 0 && vp <= 100) {
+      return { basePercent: Math.round((100 - vp) * 10) / 10, variablePercent: vp };
     }
   }
   /* Form B: "80/20" or "80:20" near a split/fixed/variable cue. */

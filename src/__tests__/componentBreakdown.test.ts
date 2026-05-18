@@ -137,6 +137,52 @@ describe("extractComponentBreakdown — combined", () => {
   });
 });
 
+/* Probe-loop fix (2026-05-18) — single-sided split disclosure is the
+ * common candidate shape. Parser must derive the complement, not
+ * return null. */
+describe("extractPercentageSplit — single-sided + range (probe-loop fix)", () => {
+  it("'About 80% fixed for me.' → base=80, variable=20 (derived)", () => {
+    const b = extractComponentBreakdown("About 80% fixed for me.");
+    expect(b.basePercent).toBe(80);
+    expect(b.variablePercent).toBe(20);
+  });
+
+  it("'I'd want it to be 90% fixed.' → base=90, variable=10 (derived)", () => {
+    const b = extractComponentBreakdown("I'd want it to be 90% fixed.");
+    expect(b.basePercent).toBe(90);
+    expect(b.variablePercent).toBe(10);
+  });
+
+  it("range '80-85% fixed' binds upper bound → base=85, variable=15", () => {
+    const b = extractComponentBreakdown(
+      "Preferably, I'd want the majority to be fixed. Something around 80-85% fixed would be ideal for me.",
+    );
+    expect(b.basePercent).toBe(85);
+    expect(b.variablePercent).toBe(15);
+  });
+
+  it("range '85-95% fixed' → base=95, variable=5", () => {
+    const b = extractComponentBreakdown(
+      "I'd generally prefer a stronger fixed component over a heavily variable structure. Something around 85-95% fixed feels more comfortable.",
+    );
+    expect(b.basePercent).toBe(95);
+    expect(b.variablePercent).toBe(5);
+  });
+
+  /* Negatives. */
+  it("does NOT bind '80% of my work is design' (no fixed/variable cue)", () => {
+    const b = extractComponentBreakdown("80% of my work is design.");
+    expect(b.basePercent).toBe(null);
+    expect(b.variablePercent).toBe(null);
+  });
+
+  it("does NOT bind '60-70 hours a week' (% missing)", () => {
+    const b = extractComponentBreakdown("I work 60-70 hours a week.");
+    expect(b.basePercent).toBe(null);
+    expect(b.variablePercent).toBe(null);
+  });
+});
+
 describe("mergeBreakdown", () => {
   it("non-null fields overwrite prior", () => {
     const prior = { base: 28, variable: null, equity: null, hasAny: true };

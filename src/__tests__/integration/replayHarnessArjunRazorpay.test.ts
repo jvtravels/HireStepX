@@ -438,3 +438,61 @@ describe("Crack 4 replay harness — Scenario C (dribbled-leverage accumulation)
     expect(action.kind).not.toBe("fake-leverage-challenge");
   });
 });
+
+/* ─── Scenario D: Probe-loop regression (HireStepX live, 2026-05-18) ── */
+
+describe("Replay regression — HireStepX probe-loop live bug", () => {
+  /* Live session symptom: the recruiter probed currentCtc 3x and the
+   * fixed/variable split 2x across one session because the parser
+   * silently dropped these utterances:
+   *
+   *   Turn 1: "Sure. My current total annual CTC is around ₹18 LPA.
+   *            Out of that, roughly ₹12 LPA is fixed, around ₹4 LPA
+   *            is annual bonus."
+   *   Turn 2: "Preferably, I'd want the majority to be fixed.
+   *            Something around 80-85% fixed would be ideal for me."
+   *
+   * After turn 2 the planner MUST NOT re-emit a discovery-probe for
+   * currentCtc, nor a probe for the variable split — both facts are
+   * now on state. */
+  it("scripts the exact live-bug utterances; CTC + split bind; no re-probe of either", () => {
+    let state = initArjun();
+    /* Drive the opener so the planner is past turn-0. */
+    const opening = planNextAction(state);
+    state = applyAiMove(state, actionToLever(opening, state), "[opening probe]");
+
+    /* Turn 1: current-CTC disclosure with embedded component breakdown. */
+    state = applyCandidateAnswer(
+      state,
+      "Sure. My current total annual CTC is around ₹18 LPA. Out of that, roughly ₹12 LPA is fixed, around ₹4 LPA is annual bonus.",
+    );
+    expect(state.candidateCurrentCtc).toBe(18);
+    const a1 = planNextAction(state);
+    state = applyAiMove(state, actionToLever(a1, state), "[T1 ack]");
+
+    /* Turn 2: single-sided range split disclosure. */
+    state = applyCandidateAnswer(
+      state,
+      "Preferably, I'd want the majority to be fixed. Something around 80-85% fixed would be ideal for me.",
+    );
+
+    /* Both facts must be on state. */
+    expect(state.candidateCurrentCtc).toBe(18);
+    expect(state.candidateComponentBreakdown?.basePercent).toBe(85);
+    expect(state.candidateComponentBreakdown?.variablePercent).toBe(15);
+
+    /* Next planner call: must NOT re-probe currentCtc or the variable
+     * split. We check the emitted NextAction's discovery slot doesn't
+     * target either fact. */
+    const next = planNextAction(state);
+    if (next.kind === "discovery-probe") {
+      /* discovery-probe carries an `item` slot — assert it isn't asking
+       * for currentCtc or for the variable split. The exact string
+       * shape varies across builds, so we check substrings tolerantly. */
+      const item = String((next as { item?: unknown }).item ?? "").toLowerCase();
+      expect(item).not.toContain("currentctc");
+      expect(item).not.toContain("current-ctc");
+      expect(item).not.toMatch(/variable|split|fixed[-_]?variable/);
+    }
+  });
+});
