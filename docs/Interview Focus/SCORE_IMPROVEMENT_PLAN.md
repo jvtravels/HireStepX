@@ -140,7 +140,7 @@ Each gets distinct counter-offer logic and pushback patterns.
 
 1. ~~STAR detection is binary, not graded~~ — ✅ per-answer STAR matrix shipped (Phase 1)
 2. ~~No competency taxonomy~~ — ✅ 10 competencies × 5 tracks shipped (Phase 2)
-3. ~~`unverifiable_companies` false-fires on "At Last Year"~~ — ✅ suffix + stoplist gate shipped (Phase 1)
+3. `unverifiable_companies` ~~false-fires on "At Last Year"~~ — ✅ suffix + stoplist gate shipped (Phase 1)
 4. ~~No follow-up probing logic~~ — ✅ AI_PROBED_DEPTH / AI_ACCEPTED_VAGUE shipped (Phase 3)
 5. Indian-register rule prompt-only — no analyzer enforcement (Phase 4)
 
@@ -186,40 +186,45 @@ Each gets distinct counter-offer logic and pushback patterns.
 
 **File**: `server-handlers/analyzers/campus-placement.ts`**Target market**: TCS NQT, Infosys NQT, Wipro NLTH — 100k+ Indian hires/yr.
 
+**Status**: Phases 1–4 shipped. Current score 8.4 / 8.6 target. Phase 5 (stretch, +0.2) pending.
+
 **Top weaknesses**:
 
 1. Tech-stack detection inflates ("I know Python" == "I built production scraper in Python")
 2. Passion-generic fires on keyword "passionate" anywhere
 3. `classifyCollegeTier` + `cgpaCutoffAdjustment` computed but invisible in UI
 
-### Phase 1 — Quick wins (\~1d, +0.4)
+### Phase 1 — Quick wins (\~1d, +0.4) ✅ DONE — commit `8273f98`
 
-- **1.1** Surface tier-adjusted CGPA in the report.
-- **1.2** `PASSION_GENERIC` (penalty) vs. `PASSION_SUBSTANTIATED` (paired with project / hackathon / internship).
-- **1.3** Static fallback-question banner when `_fallback: "static"` fires.
+- **1.1** ✅ Surface tier-adjusted CGPA in the report. (`meta.campusPlacement` + `CampusCgpaCalibrationNote` in `SessionReportView.tsx`)
+- **1.2** ✅ `PASSION_GENERIC` (penalty) vs. `PASSION_SUBSTANTIATED` (paired with project / hackathon / internship / MOOC / quantified outcome via `SUBSTANTIATION_TOKEN`).
+- **1.3** ✅ Static fallback-question banner when `_fallback: "static"` fires. (`questionFallbackSource` in `useInterviewEngine.ts`, "Practice mode" pill in `Interview.tsx`)
+- **Tests**: `src/__tests__/campusPlacementPhase1.test.ts` (10 tests).
 
-### Phase 2 — Depth validators (\~2d, +0.3)
+### Phase 2 — Depth validators (\~2d, +0.3) ✅ DONE — commit `795b91c`
 
-- **2.1** Tech-stack depth: `TECH_MENTIONED` vs. `TECH_APPLIED` (paired with project / line-count / deployment URL).
-- **2.2** GitHub / portfolio link presence detector.
-- **2.3** Recency multiplier (final-year &gt; 2nd-sem).
+- **2.1** ✅ Tech-stack depth: `TECH_APPLIED` regex pairs tech names with applied artifacts (endpoint count, deployed URL, line count, schema shape). New flag `tech_named_but_not_applied`.
+- **2.2** ✅ GitHub / portfolio link presence detector — positive signal `portfolio_link_present` fires when `PORTFOLIO_LINK` accompanies project narration.
+- **2.3** ✅ Recency multiplier proxy. `PROJECT_RECENT_MARKER` / `PROJECT_DISTANT_MARKER` → new flag `projects_dated_not_recent`.
+- **Tests**: `src/__tests__/campusPlacementPhase2.test.ts` (9 tests).
 
-### Phase 3 — Persona variability (\~2d, +0.2)
+### Phase 3 — Persona variability (\~2d, +0.2) ✅ DONE — commit `8053ec2`
 
-Four archetypes:
+Four archetypes resolved in new helper `server-handlers/_campus-archetype.ts`. Archetype overrides the coarse `companyTier` CGPA cutoff; surfaced on `meta.campusPlacement.archetype` + `archetypeLabel` and as `campus_archetype_*` flag. UI renders archetype pill chip inside the CGPA calibration card.
 
-- **TCS NQT (Ninja)** — academic walkthrough opener, 6.0 CGPA bar
-- **TCS Digital / Infosys Power Programmer** — DSA depth, 7.5+ CGPA
-- **Wipro NLTH** — bond awareness, location flexibility
-- **Top-tier campus (product-co)** — project depth, system-design lite
+- **TCS NQT (Ninja)** ✅ — academic walkthrough opener, 6.0 CGPA bar
+- **TCS Digital / Infosys Power Programmer** ✅ — DSA depth, 7.5 CGPA
+- **Wipro NLTH** ✅ — bond awareness, location flexibility, 6.5 CGPA
+- **Top-tier campus (product-co)** ✅ — project depth, system-design lite, 7.5 CGPA
+- **Tests**: `src/__tests__/campusPlacementPhase3.test.ts` (7 tests).
 
-### Phase 4 — Hygiene (\~1d, +0.1)
+### Phase 4 — Hygiene (\~1d, +0.1) ✅ DONE — commit `d305f61`
 
-- **4.1** Fixture suite.
-- **4.2** Inherit `BEHAVIOURAL_INDIAN_REGISTER_RULE` for archetypes 1–3.
-- **4.3** Prompt-cache reorder.
+- **4.1** ✅ Fixture suite. 5 hand-crafted transcripts (one per archetype + unknown-fallback) in `src/__tests__/fixtures/campusPlacementTranscripts.ts`, driven by `src/__tests__/campusPlacementFixtures.test.ts`.
+- **4.2** ✅ Inherit `BEHAVIOURAL_INDIAN_REGISTER_RULE` for archetypes 1–3 — appended to `TYPE_GUIDANCE` for `interviewType="campus-placement"` in `generate-questions.ts`. STAR-shape mandates NOT inherited (would conflict with TCS NQT openers).
+- **4.3** ✅ Prompt-cache reorder — verified already-correct (static rules precede dynamic `Context:` block per CLAUDE.md guidance).
 
-### Phase 5 — Stretch (\~1.5d, +0.2)
+### Phase 5 — Stretch (\~1.5d, +0.2) — PENDING
 
 - Bond / service-agreement awareness probe.
 - "Any backlogs?" honest-handling detector.
