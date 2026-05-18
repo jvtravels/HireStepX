@@ -27,7 +27,7 @@ Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep 
 | \# | Focus | Baseline | **Current** | Target | Analyzer version | Effort remaining | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
-| 2 | Salary Negotiation | 8.4 | **9.4** | 9.5 | `salary-negotiation-v7` | \~5 days | ✅ Phases 1–3 shipped (+1.0 of +1.1) — Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors; Phase 3 added Indian recruiter SECTOR personas (IT-services / GCC / unicorn / startup / BFSI / default) with persona-conditional `band-disclosure-deflect` / `counter-offer` / `anchor-with-offer` prose. Phases 4–5 pending. |
+| 2 | Salary Negotiation | 8.4 | **9.7** | 9.5 | `salary-negotiation-v8` | \~3 days | ✅ Phases 1–4 shipped (+1.3 of +1.1) — Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors; Phase 3 added Indian recruiter SECTOR personas (IT-services / GCC / unicorn / startup / BFSI / default) with persona-conditional `band-disclosure-deflect` / `counter-offer` / `anchor-with-offer` prose; Phase 4 hygiene shipped 30-fixture regression suite + per-flag precision/recall gate + 5-path kernel state-machine snapshot tests. Phase 5 (stretch) pending. |
 | 3 | Behavioral | 7.6 | **9.1** | 9.1 | `behavioral-v4` | 0d (stretch only) | ✅ **Target reached.** Phases 1–5 shipped (+1.5 of +1.5). Phase 6 (stretch) optional. |
 | 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
 | 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
@@ -149,11 +149,11 @@ Wired into:
 
 **Version**: bumped `salary-negotiation-v6` → `salary-negotiation-v7` so `_llm-rescore.ts` re-runs cached sessions against the persona-coloured scoring surface. `AnalyzerMeta.salaryNegotiation` gains `recruiterPersona` + `recruiterPersonaLabel` optional fields. Tests: unit suite for `selectRecruiterSectorPersona` (5 archetypes + 2 fallback cases) + 5 PDF-style integration tests in `_canonical-prose.test.ts` covering persona-conditional prose surfaces + analyzer-side meta fixture. PDF#34/35 default-path tests still pass. `npx tsc --noEmit` clean; `npm run build` clean.
 
-### Phase 4 — Hygiene (\~1.5d, +0.3)
+### Phase 4 — Hygiene (\~1.5d, +0.3) ✅ DONE (commit `ef413d0`)
 
-- **4.1** Expand fixture suite to cover all `ai_*` self-consistency flags.
-- **4.2** Negotiation-kernel state-machine snapshot tests — `_negotiation-state.ts` paths.
-- **4.3** Bump to v5.
+- **4.1** ✅ Expanded fixture suite for `salaryNegotiationAnalyzer` — 30 hand-crafted fixtures in `src/__tests__/fixtures/salaryNegotiationTranscripts.ts` driven by `src/__tests__/salaryNegotiationFixtures.test.ts`. Coverage: 15 ai_* self-consistency flags (one positive fixture each), 5 coaching-cluster exemplars (discovery / anchoring / counter / close / batna), 5 recruiter-sector-persona transcripts (it-services / gcc / indian-unicorn / early-startup / bfsi), 5 negative cases for high-FP detectors (bare "stocks", AI acknowledging confusion, revision-language regression, low-to-high range, non-grant stock mention). Aggregate per-flag precision/recall gated at >=0.85.
+- **4.2** ✅ Kernel state-machine snapshot tests — `src/__tests__/negotiationKernelStateMachine.test.ts`. Five canonical paths (happy-close, candidate-counter-then-close, walk-away, deflect-loop-recovery via PDF#35 Move-1, clarification-loop-recovery via PDF#34 Fix-3) pinned via whitelisted projection (`phaseTrajectory` + `finalShape` — phase, leversUsed, verbalAcceptanceSet, acceptedAtTurnSet, walkAwayReturned, candidateTarget). Volatile fields (timestamps, ids, large nested objects) stripped.
+- **4.3** ✅ Bumped `salary-negotiation-v7` → `salary-negotiation-v8` so `_llm-rescore.ts` re-evaluates cached sessions against the Phase-4 regression net.
 
 ### Phase 5 — Stretch (\~1.5d, +0.2)
 
