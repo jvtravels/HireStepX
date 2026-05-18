@@ -27,7 +27,7 @@ Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep 
 | \# | Focus | Baseline | **Current** | Target | Analyzer version | Effort remaining | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
-| 2 | Salary Negotiation | 8.4 | **9.1** | 9.5 | `salary-negotiation-v6` | \~5 days | ✅ Phases 1–2 shipped (+0.7 of +1.1) — Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors. Phases 3–5 pending. |
+| 2 | Salary Negotiation | 8.4 | **9.4** | 9.5 | `salary-negotiation-v7` | \~5 days | ✅ Phases 1–3 shipped (+1.0 of +1.1) — Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors; Phase 3 added Indian recruiter SECTOR personas (IT-services / GCC / unicorn / startup / BFSI / default) with persona-conditional `band-disclosure-deflect` / `counter-offer` / `anchor-with-offer` prose. Phases 4–5 pending. |
 | 3 | Behavioral | 7.6 | **9.1** | 9.1 | `behavioral-v4` | 0d (stretch only) | ✅ **Target reached.** Phases 1–5 shipped (+1.5 of +1.5). Phase 6 (stretch) optional. |
 | 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
 | 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
@@ -127,17 +127,27 @@ Selector keyed off company tier × experience: TA for IT-services / startup-earl
 - **Skipped (with rationale)**: `jargon_literacy_gap` (requires `lastAnswerClarificationAtTurn` count, not exposed on `SessionRowForAnalysis`; transcript-side proxy would need a clarification-utterance regex with high false-positive risk vs. genuine clarification asks) and `variable_not_owned` (requires `variableInferred` from the kernel breakdown; can't be reconstructed reliably from the transcript alone). Re-evaluate once kernel state is persisted onto the session row.
 - **Version**: bumped `salary-negotiation-v5` → `salary-negotiation-v6` so `_llm-rescore.ts` re-evaluates cached sessions. New `meta.salaryNegotiation.equityLiteracy` + `batnaStrength` sub-fields added to `AnalyzerMeta`. Tests: 13 new fixtures in `src/__tests__/analyzers/salary-negotiation.test.ts` covering each Phase-2 detector (positive + negative case) + version bump. All 45 file-local cases green; full vitest suite green (5 unrelated wave-prompt timeouts, pre-existing parallel-load flakes — pass in isolation). `npx tsc --noEmit` clean; `npm run build` clean.
 
-### Phase 3 — Persona variability (\~2d, +0.3)
+### Phase 3 — Persona variability (\~2d, +0.3) ✅ DONE (commit `c8032bd`)
 
-Five recruiter archetypes by sector — already mapped in `tierBucket()`:
+Five Indian recruiter SECTOR archetypes selected per session from `tierBucket` + band shape, distinct from the existing tone-axis `RecruiterPersona` (hardline / consultative / founder / agency) which modulates band economics:
 
-- **IT Services** — fixed bands, 30% hike cap, services-track register
-- **GCC (Indian arm of MNC)** — global pay benchmark, structured RSU
-- **Indian Unicorn** — ESOP-heavy, cash-light
-- **Early Startup** — aggressive ESOP %, low base, high risk
-- **BFSI** — variable-heavy, regulatory comp constraints
+- **IT Services** — fixed bands, ~30% hike cap, services-track register. `pushbackStyle: rigid-band`, no ESOP preference.
+- **GCC (Indian arm of MNC)** — anchored to the global comp band, structured RSU. `pushbackStyle: global-benchmark`.
+- **Indian Unicorn** — ESOP-heavy, cash-light. `pushbackStyle: equity-pivot`.
+- **Early Startup** — aggressive ESOP %, low base, cash-constrained framing. `pushbackStyle: cash-constrained`.
+- **BFSI** — variable-heavy, regulatory bands on fixed. `pushbackStyle: variable-bump`.
+- **default** — back-compat fallthrough for unknown / FMCG / PSU tiers. Renders byte-identical pre-Phase-3 prose.
 
-Each gets distinct counter-offer logic and pushback patterns.
+New module `server-handlers/_indian-recruiter-personas.ts` exports `RecruiterSectorPersona` enum, `selectRecruiterSectorPersona({ tierBucket, band, company })`, and per-persona constants (`hikeCap`, `bandSpread`, `pushbackStyle`, `prefersEsop`, `idiomBias`). Selector keys off `tierBucket` first, falls through to band-shape heuristics (variableMax/initialOffer > 0.30 → BFSI; hasEquity + low baseFloor → startup; hasEquity → unicorn).
+
+Wired into:
+- `NegotiationState.recruiterSectorPersona` (optional for back-compat; `initState` sets it from caller-supplied persona or via the selector against the (band, tierBucketHint, company) tuple).
+- `_canonical-prose.ts` — three persona-conditional switch arms: `band-disclosure-deflect`, `counter-offer`, `anchor-with-offer`. Each branch carries an `_exhaustive: never` fallback per the move-tag pattern. `default` branch renders byte-identical to pre-Phase-3 prose (PDF#34/35 contract).
+- `negotiate-turn.ts` — computes the persona once at session start using the same tier-bucket mapping as the analyzer, passes via `initState`, and logs as `salneg_persona` on the `kernel_init` PostHog event.
+- `meta.salaryNegotiation.{recruiterPersona, recruiterPersonaLabel}` — analyzer derives via the same selector and surfaces in the report.
+- `NegotiationFullReport.tsx` — small persona chip next to the tier-band chip (suppressed when persona = `default`).
+
+**Version**: bumped `salary-negotiation-v6` → `salary-negotiation-v7` so `_llm-rescore.ts` re-runs cached sessions against the persona-coloured scoring surface. `AnalyzerMeta.salaryNegotiation` gains `recruiterPersona` + `recruiterPersonaLabel` optional fields. Tests: unit suite for `selectRecruiterSectorPersona` (5 archetypes + 2 fallback cases) + 5 PDF-style integration tests in `_canonical-prose.test.ts` covering persona-conditional prose surfaces + analyzer-side meta fixture. PDF#34/35 default-path tests still pass. `npx tsc --noEmit` clean; `npm run build` clean.
 
 ### Phase 4 — Hygiene (\~1.5d, +0.3)
 
