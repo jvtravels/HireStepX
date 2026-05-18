@@ -963,7 +963,17 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         if (!clarity.allFourCovered) {
           return {
             kind: "reactive-followup",
-            ask: "Clarify equity terms (vesting, strike/FMV, buyback history, included-vs-additional) before discussing comp.",
+            /* BUG E audit (PDF#31, 2026-05-18) — `ask` is candidate-
+             * facing prose, never an internal directive. The
+             * directive-shape "Clarify equity terms (vesting, strike/
+             * FMV, buyback history, included-vs-additional) before
+             * discussing comp." was a planner-internal note that has
+             * no business being shipped to the candidate. The canonical-
+             * prose equity-clarity branch already returns explicit
+             * recruiter prose; the `ask` here is the fallback safety
+             * net for that case. The four clarity-pillars belong in
+             * the rationale, not the ask. */
+            ask: "On the equity piece — let me walk you through how the vesting and cliff are structured for this grade.",
             trigger: "equityUnclear",
             topic: "equity-clarity",
             satisfiesTopic: "equity-clarity",
