@@ -349,6 +349,43 @@ export default async function handler(req: Request): Promise<Response> {
       ? `LAST-SESSION COVERAGE PRIORITIES (auto-prebias from analyzer): The candidate's most recent HR-round session under-covered these dimensions. Ensure at least one question this session pressures each — without re-using last session's exact phrasings:\n${priorFlagList.map((f) => `  • ${PRIOR_FLAG_TO_DIMENSION[f]}`).join("\n")}`
       : "";
 
+    /* Phase-6.1 — behavioural auto-prebias. Mirror the HR-round
+       pattern: translate the candidate's last-session behavioural
+       flag set into a question-bias clause for the new session. The
+       vocabulary lives in `analyzers/behavioral.ts` (`flags.add(...)`
+       call sites). Only flags whose remediation is *generator-side*
+       are mapped — i.e. the next batch of questions can directly
+       address the miss. Candidate-only behaviours (e.g. unverifiable
+       companies) aren't included; re-coverage by the generator
+       doesn't help. */
+    const BEHAVIORAL_PRIOR_FLAG_TO_DIMENSION: Record<string, string> = {
+      weak_star_structure:
+        "STAR shape (questions should explicitly invite scene-setting + first-person action + outcome — e.g. 'walk me from the moment you noticed the problem to the measurable result')",
+      frequent_missing_result:
+        "Result orientation (every question should make a measurable outcome the natural close — push for what changed, by how much, over what window)",
+      ai_accepts_missing_result:
+        "Result drilling (interviewer must NOT let an answer end without an outcome — bake the result ask into the question stem, not the follow-up)",
+      we_attribution_heavy:
+        "Ownership specificity (frame at least two questions as 'tell me about a time YOU personally…' to flush out solo-contribution stories rather than team narration)",
+      metric_without_baseline:
+        "Evidence depth (when asking for impact, request the baseline / measurement method / sample alongside the number — 'what was the baseline before' / 'how did you measure')",
+      ai_accepted_unevidenced_metric:
+        "Evidence drilling (interviewer must probe quoted metrics for baseline + method + sample within the same beat — don't accept naked percentages)",
+      ai_accepted_vague:
+        "Quantification (the question stems should demand numbers, dates, or sizes — push past 'many' / 'several' to exact counts)",
+      no_learning_reflection:
+        "STAR+L learning (at least one failure / mistake / setback question should explicitly invite 'what did you take away / what would you do differently')",
+      unquantified_answers:
+        "Quantification (the candidate consistently answers without numbers — at least 2 questions should bake quantification into the prompt, e.g. 'walk me through the numbers')",
+    };
+    const isBehavioral = interviewType === "behavioral";
+    const behavioralPriorFlagList = (isBehavioral && Array.isArray(priorFlags))
+      ? priorFlags.filter((f): f is string => typeof f === "string" && !!BEHAVIORAL_PRIOR_FLAG_TO_DIMENSION[f]).slice(0, 6)
+      : [];
+    const behavioralPriorCoverageContext = (isBehavioral && behavioralPriorFlagList.length > 0)
+      ? `LAST-SESSION COACHING PRIORITIES (auto-prebias from analyzer): The candidate's most recent behavioural session showed these recurring misses. Bias this session's question stems to attack each — without re-using last session's exact phrasings:\n${behavioralPriorFlagList.map((f) => `  • ${BEHAVIORAL_PRIOR_FLAG_TO_DIMENSION[f]}`).join("\n")}`
+      : "";
+
     /* v4.6 / Phase 3 — HR-round persona variability. Pick one of three
        Indian HR archetypes (warm Partner / firm HRBP / transactional TA)
        based on company tier + experience level. The fragment colours the
@@ -981,7 +1018,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
     const prompt = `You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
-${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${behavioralPersonaContext ? `- ${behavioralPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
+${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${behavioralPriorCoverageContext ? `- ${behavioralPriorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${behavioralPersonaContext ? `- ${behavioralPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
 ${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
@@ -1469,6 +1506,12 @@ Requirements:
       // counts and dimension coverage.
       prior_coverage_hints: priorFlagList.length,
       prior_coverage_applied: !!priorCoverageContext,
+      // Phase-6.1: behavioural auto-prebias telemetry. Same shape as
+      // HR — counts + binary applied — so the dashboard can A/B
+      // "behavioural-prebias-applied" against subsequent-session
+      // STAR / evidence / learning metrics.
+      behavioral_prior_coverage_hints: behavioralPriorFlagList.length,
+      behavioral_prior_coverage_applied: !!behavioralPriorCoverageContext,
       // HR persona variability (Phase 3): which archetype the selector
       // picked from (company tier × experience level). Empty string for
       // non-HR-round sessions.

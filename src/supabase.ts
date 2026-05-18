@@ -413,13 +413,28 @@ export async function getSessionById(sessionId: string, userId: string): Promise
  * read silently falls back to the skill-based CTA, never breaks the
  * dashboard.
  */
-export async function getLatestSessionInsightFlags(userId: string): Promise<string[]> {
+export async function getLatestSessionInsightFlags(
+  userId: string,
+  /* Phase-6.1: optional focus filter. The auto-prebias path in
+   *  useInterviewEngine wants the latest flag set for the SAME focus
+   *  as the new session — feeding HR flags into a behavioral run (or
+   *  vice-versa) drops every flag at the server's vocabulary check
+   *  anyway, but the unfiltered query also blocks the legitimate same-
+   *  focus row when intervening sessions of other focuses exist.
+   *  When `focus` is omitted, behaviour is unchanged (latest of any
+   *  focus) — protects the existing HR-round caller until it migrates. */
+  focus?: string,
+): Promise<string[]> {
   try {
     const client = await getSupabase();
-    const { data } = await client
+    let query = client
       .from("session_insights")
       .select("flags")
-      .eq("user_id", userId)
+      .eq("user_id", userId);
+    if (focus) {
+      query = query.eq("focus", focus);
+    }
+    const { data } = await query
       .order("analyzed_at", { ascending: false })
       .limit(1)
       .maybeSingle();

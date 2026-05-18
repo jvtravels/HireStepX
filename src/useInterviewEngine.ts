@@ -335,17 +335,26 @@ export function useInterviewEngine() {
   }, []);
 
   /* Auto-prebias: kick off a best-effort fetch of the user's most
-     recent session_insights flag set on mount (HR-round only — other
-     focuses have no dimension-coverage prebias today). When the LLM
+     recent session_insights flag set on mount. When the LLM
      fetch fires later, it reads from this ref; if the fetch hasn't
      resolved yet (rare — typically completes in <200ms while the user
      is reading the warmup card) the prebias is simply skipped this
-     run. Quiet failures: any error empties the ref. */
+     run. Quiet failures: any error empties the ref.
+
+     Phase-6.1 expanded this from HR-round only to behavioral as well.
+     Behavioral analyzer emits a similar coverage-miss flag set (weak
+     STAR structure, frequent missing Result, metric-without-baseline,
+     we-attribution-heavy, no-learning-reflection, …) and the next
+     behavioral session can pre-bias toward dimensions the candidate
+     consistently under-covered. The focus-filtered fetch ensures we
+     read the candidate's last behavioral session even if intervening
+     HR/campus sessions exist. */
   const priorFlagsRef = useRef<string[]>([]);
   useEffect(() => {
-    if (interviewFocus !== "hr-round" || !user?.id) return;
+    const prebiasFocuses = new Set(["hr-round", "behavioral"]);
+    if (!prebiasFocuses.has(interviewFocus) || !user?.id) return;
     let cancelled = false;
-    getLatestSessionInsightFlags(user.id).then((flags) => {
+    getLatestSessionInsightFlags(user.id, interviewFocus).then((flags) => {
       if (cancelled) return;
       priorFlagsRef.current = flags;
     }).catch(() => { /* silent — prebias degrades to no-op */ });
