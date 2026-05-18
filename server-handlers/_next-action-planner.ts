@@ -214,6 +214,16 @@ export type NextAction =
   | { kind: "terminal-restate" }
   | { kind: "close"; mode: "accept" | "walkaway" | "stalemate" }
   | { kind: "auto-accept" }
+  /* PDF#34 Fix 3 (2026-05-18) — clarification response.
+   *
+   * Fires when state.lastAnswerClarificationAtTurn === turnIndex - 1
+   * (the candidate's most recent turn was a comprehension question
+   * about a term the bot just used). The canonical-prose surface
+   * looks up the term in the glossary, emits the definition inline,
+   * and re-asks the prior question in plain English. `priorAiText`
+   * is the bot's last utterance so the prose layer can identify
+   * which jargon term needs defining. */
+  | { kind: "clarify-prior-question"; priorAiText: string; satisfiesTopic: SatisfiesTopic }
   /* Commit 4 (2026-05-15) — reactive follow-up emitted when the
    * candidate's CURRENT TURN disclosure created a higher-leverage
    * probe target than the next checklist item. Priority-gated above
@@ -405,6 +415,8 @@ export const PROBE_PRODUCING_KINDS: ReadonlySet<NextAction["kind"]> = new Set<Ne
    * askedTopics ledger so analyzer / coverage downstream can detect
    * that the planner actually responded to the frustration signal. */
   "acknowledge-and-recover",
+  /* PDF#34 Fix 3 (2026-05-18). */
+  "clarify-prior-question",
 ]);
 
 /** Internal carrier: the planner builds the move alongside the action so
@@ -738,6 +750,48 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         newTotalLpa: clampToCloseFloor(state, state.highestOfferMade || state.band.initialOffer),
         joiningBonusAmount: state.lastJoiningBonusOffered ?? undefined,
         rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? state.stalemateAtTurn ?? "?"}; restate close.`,
+      },
+    };
+  }
+
+  /* PDF#34 Fix 3 (2026-05-18) — clarification-request branch.
+   *
+   * When the candidate's most recent utterance was a comprehension
+   * question about a term the bot just used ("what is that?", "huh?",
+   * "what does X mean?"), the parser stamps
+   * `state.lastAnswerClarificationAtTurn = state.turnIndex`. Route to
+   * a dedicated `clarify-prior-question` action so the canonical-prose
+   * surface defines the jargon term inline and re-asks in plain
+   * English — INSTEAD of letting the LLM freelance an off-topic
+   * deflection ("This conversation is about Senior Product Designer
+   * at Meesho…" — the PDF#34 Meesho/Prita persona break).
+   *
+   * Single-fire per clarification: only fires when the stamp matches
+   * the current turn index (the parser just set it). Repeated
+   * confusion across turns falls through to other planner branches
+   * so we don't loop on the same definition.
+   *
+   * Suppressed in terminal phases (the session is winding down; the
+   * candidate's "huh?" is best handled by the close-recap, not a new
+   * clarification turn). */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.lastAnswerClarificationAtTurn != null &&
+    state.lastAnswerClarificationAtTurn === state.turnIndex
+  ) {
+    const priorAi = state.lastAiText ?? "";
+    return {
+      kind: "clarify-prior-question",
+      priorAiText: priorAi,
+      satisfiesTopic: "clarify-prior-question" as SatisfiesTopic,
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale:
+          `PDF#34 Fix 3 — candidate requested clarification at turn ${state.turnIndex}; ` +
+          `re-explain the prior question's jargon inline before advancing.`,
+        askedTopic: null,
+        actionKind: "clarify-prior-question",
       },
     };
   }
@@ -1265,7 +1319,30 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     state.candidateCurrentCtc != null &&
     state.candidateTarget == null
   ) {
-    if (isSeniorCompProfile(state)) {
+    /* PDF#34 Fix 2 (2026-05-18) — anchor circuit-breaker.
+     *
+     * The senior-comp path below keeps firing component-probes until
+     * `nextComponentProbe` returns null. If the candidate gets confused
+     * (PDF#34 Meesho/Prita: "what is that?" after vesting probe) or
+     * never volunteers expected-CTC, the planner stays in discovery
+     * limbo forever and the AI never anchors its initial offer.
+     *
+     * Real recruiters don't probe indefinitely. After ~3-4 component
+     * probes, an Indian HR recruiter would anchor a number anchored on
+     * the band floor and invite the candidate's reaction — that's how
+     * the negotiation gets unstuck. The probes-without-anchor count is
+     * derived from the askedTopics ledger so we don't need a new state
+     * field. */
+    const componentProbeAskCount = (state.askedTopics ?? []).filter(
+      (t) =>
+        t.topic === "currentCtcBase" ||
+        t.topic === "currentCtcVariable" ||
+        t.topic === "currentCtcEsop",
+    ).length;
+    const ANCHOR_CIRCUIT_BREAKER_THRESHOLD = 3;
+    const circuitBreakerTripped =
+      componentProbeAskCount >= ANCHOR_CIRCUIT_BREAKER_THRESHOLD;
+    if (isSeniorCompProfile(state) && !circuitBreakerTripped) {
       const cp = nextComponentProbe(state);
       if (cp != null) {
         return {
@@ -1297,8 +1374,15 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * (maxStretch) and both numeric. When the band is incomplete the
      * lever still fires but in honest-defer mode (bandIncomplete=true)
      * — NEVER falls back to "missing from fact pack"-style language. */
+    /* PDF#34 Fix 2 (2026-05-18) — circuit-breaker also collapses
+     * seniorComponentsRemain to false so the anchor fires even when
+     * nextComponentProbe would otherwise still return a candidate
+     * (e.g. unfilled esop slot after 3 probes). The circuit-breaker
+     * threshold is the architectural "enough probes" line. */
     const seniorComponentsRemain =
-      isSeniorCompProfile(state) && nextComponentProbe(state) != null;
+      isSeniorCompProfile(state) &&
+      !circuitBreakerTripped &&
+      nextComponentProbe(state) != null;
     /* Single-fire marker. The kernel's applyAiMove pushes the askedTopic
      * onto state.askedTopics; subsequent planner calls see the entry
      * and skip the lever. Test fixtures simulate this by injecting an

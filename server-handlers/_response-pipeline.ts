@@ -545,6 +545,16 @@ export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextAction
     numberPolicy: "forbidden",
     requiredTokens: [/apolog/i],
   },
+  /* PDF#34 Fix 3 (2026-05-18) — clarify-prior-question. Optional
+   * numbers (the base-split clarification quotes ₹X LPA from the
+   * candidate's prior disclosure). Required tokens pin the
+   * clarification semantics so the LLM restyle cannot drift into a
+   * deflection ("this conversation is about…" — the PDF#34 persona
+   * break) or a silent topic-advance. */
+  "clarify-prior-question": {
+    numberPolicy: "optional",
+    requiredTokens: [/\b(?:let\s+me\s+(?:clarify|rephrase)|sorry|by\s+\w+\s+i\s+mean|means?\b)/i],
+  },
   /* Bug 3 fix (2026-05-18) — band-anchor-with-rationale. Point offer only;
    * the dash/"to" between digits is banned so the LLM restyle cannot
    * reintroduce the internal band range. */

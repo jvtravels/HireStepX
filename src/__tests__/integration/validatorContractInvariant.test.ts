@@ -325,6 +325,21 @@ const FIXTURES: Fixture[] = [
       candidateCurrentCtc: 18,
     }),
   },
+  /* PDF#34 Fix 3 (2026-05-18) — clarify-prior-question. Candidate
+   * asked "what is that?" about a jargon term in the prior AI turn;
+   * canonical prose must define the term inline (required token
+   * "let me clarify"/"rephrase"/"mean") and re-ask. Numbers are
+   * optional — the vesting/ESOP branches carry no LPA; the
+   * base-split branch may include a placeholder. */
+  {
+    label: "clarify-prior-question",
+    action: {
+      kind: "clarify-prior-question",
+      priorAiText: "What's the vesting schedule on your current grant?",
+      satisfiesTopic: "clarify-prior-question",
+    },
+    state: mk({ phase: "probe-expectations", turnIndex: 3 }),
+  },
 ];
 
 describe("Crack 6 — validator-contract invariant (canonical prose ↔ NEXT_ACTION_CONTRACT)", () => {

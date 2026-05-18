@@ -727,6 +727,34 @@ export default async function handler(
           phase: state.phase,
         }, req);
       }
+      /* PDF#34 Fix 4 (2026-05-18, Meesho/Prita BUG 3) — final-mile
+       * same-response repeat guard. The response-pipeline has an 8-
+       * content-word fingerprint guard for the restyle/answer paths,
+       * but the adversarial-deflection short-circuit (JAILBREAK_-
+       * DEFLECTION_TEXT) bypasses the pipeline entirely AND is a
+       * fixed canned string — when the candidate sends two off-topic
+       * inputs in a row the bot shipped the byte-identical sentence
+       * twice, which made the session feel stuck and (downstream)
+       * tripped the auto-terminate heuristic. The architectural fix
+       * is a single boundary check on the FINAL shipped text against
+       * state.lastAiText, after every post-processor has run. On
+       * match we ship a deterministic loop-breaker stub instead.
+       * This catches all generation paths uniformly: restyle,
+       * canonical-fallback, deflection, deferral, anything. */
+      {
+        const normalize = (s: string): string =>
+          (s || "").trim().toLowerCase().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
+        const prior = normalize(state.lastAiText || "");
+        const next = normalize(text);
+        if (prior.length > 0 && next.length > 0 && prior === next) {
+          text = "I realise I'm circling — let's reset. What would be most useful to cover next from your side?";
+          void captureServerEvent("kernel_same_response_guard", distinctId, {
+            turn_index: state.turnIndex,
+            phase: state.phase,
+            source,
+          }, req);
+        }
+      }
       state = applyAiMove(state, move, text);
       const terminal = isTerminalPhase(state.phase);
 

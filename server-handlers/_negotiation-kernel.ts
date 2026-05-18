@@ -299,7 +299,12 @@ export type DiscoveryTopic =
   /* PDF#29 Bug 7 (2026-05-18) — frustration-recovery actionKind. Pushed
    * onto state.askedTopics by applyAiMove so the F7 ledger records the
    * single-fire emission alongside the lastUserFrustrated clear. */
-  | "acknowledge-and-recover";
+  | "acknowledge-and-recover"
+  /* PDF#34 Fix 3 (2026-05-18) — clarification response actionKind.
+   * Pushed onto state.askedTopics by applyAiMove so the F7 ledger sees
+   * the single-fire emission; the planner consults
+   * lastAnswerClarificationAtTurn to decide whether to re-fire. */
+  | "clarify-prior-question";
 
 /** Exhaustiveness helper. Used in topic switches so adding a new
  *  DiscoveryTopic literal lights up at every consumer site that hasn't
@@ -342,6 +347,8 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "close-acceptance", "close-walkaway", "close-stalemate", "terminal-restate",
   /* PDF#29 Bug 7 (2026-05-18). */
   "acknowledge-and-recover",
+  /* PDF#34 Fix 3 (2026-05-18). */
+  "clarify-prior-question",
 ]);
 
 export function isDiscoveryTopic(s: string): s is DiscoveryTopic {
@@ -1216,6 +1223,20 @@ export interface NegotiationState {
    *  never addressed. Mostly diagnostic — downstream analyzers can
    *  count noise turns to flag transcription degradation. */
   lastAnswerNoiseAtTurn?: number | null;
+
+  /** PDF#34 Fix 3 (2026-05-18) — turn-index at which the candidate
+   *  asked a CLARIFICATION about a term the bot just used ("what is
+   *  that?", "what's vesting?", "huh?", "I don't understand", "?"
+   *  alone). Distinct from off-topic (the candidate IS on-topic — they
+   *  just don't know the term) and from uncertainty (which is about
+   *  the candidate's own value, not the bot's question).
+   *
+   *  Set by applyCandidateAnswer; read by the planner to emit a
+   *  `clarify-prior-question` action that defines the term inline
+   *  before re-asking. Without this gate, real Indian-PD candidates
+   *  who don't know vesting jargon get the off-topic deflection
+   *  ("this conversation is about…") and bounce. */
+  lastAnswerClarificationAtTurn?: number | null;
 
   /** AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-index at which the
    *  current state.phase was entered. Stamped by derivePhase whenever
@@ -2733,6 +2754,40 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   const lastAnswerNoiseAtTurn = lastAnswerWasNoise
     ? state.turnIndex
     : (state.lastAnswerNoiseAtTurn ?? null);
+
+  /* PDF#34 Fix 3 (2026-05-18) — clarification-request detector.
+   *
+   * PDF#34 Meesho/Prita T6: bot asked "what's the vesting schedule?"
+   * → candidate said "what is that?" — a comprehension question about
+   * the term `vesting`. Pre-fix, the off-topic detector flagged the
+   * utterance (14 chars, no on-topic lexicon, no digit, turn ≥ 2) and
+   * the LLM freelanced "I'm not sure what you're referring to. This
+   * conversation is about Senior Product Designer at Meesho." — a
+   * persona break that misread a clarification as a topic-drift.
+   *
+   * Real recruiters answer the clarification ("vesting is the
+   * schedule on which equity grants become yours") before re-asking.
+   * The detector below is conservative: short utterance (≤ 40 chars)
+   * AND matches a clarification shape ("what is X", "what does X
+   * mean", "what's that", "huh", "I don't understand", "explain",
+   * "?" alone). Stamps the turn so the planner can route to a
+   * `clarify-prior-question` action instead of advancing discovery
+   * or letting the LLM freelance a deflection.
+   *
+   * The detector does NOT fire when the utterance also carries a
+   * number — that's typically a substantive answer (e.g. "what is
+   * 22 LPA" probably came from a confused parse, not a clarification
+   * request). */
+  const CLARIFICATION_REQUEST_RE =
+    /^[\s"'""''.,!?\-]*(?:what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?|what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)|huh|i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what))|explain(?:\s+(?:that|this|it|please))?|come\s+again|sorry,?\s+what|pardon|meaning(?:\s+of\s+(?:that|this|it))?|\?)\s*\??[\s.!]*$/i;
+  const lastAnswerWasClarification =
+    answer.trim().length > 0 &&
+    answer.trim().length <= 40 &&
+    !/\d/.test(answer) &&
+    CLARIFICATION_REQUEST_RE.test(answer.trim());
+  const lastAnswerClarificationAtTurn = lastAnswerWasClarification
+    ? state.turnIndex
+    : (state.lastAnswerClarificationAtTurn ?? null);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
@@ -2744,6 +2799,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     lastAnswerUncertainAt,
     lastUserFrustrated,
     lastAnswerNoiseAtTurn,
+    lastAnswerClarificationAtTurn,
   };
   /* PDF#32 BUG H (2026-05-18) — askedTopics tail rewind.
    * When the prior AI turn pushed an askedTopics entry and the
@@ -2843,9 +2899,34 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      * `expectedCtcFixedVariableSplitDisclosed` stayed false, leaving
      * downstream consumers that key on the subject-specific flag blind
      * to the percent-only disclosure. Monotone-up. */
+    /* PDF#34 Fix 1 (2026-05-18) — variableInferred provenance gate on
+     * the discovery checklist.
+     *
+     * PDF#33 Move B1 stamped `variableInferred=true` on the breakdown
+     * when `variable` arrived via the total−base complement (the
+     * candidate stated total + base but not variable). The
+     * nextComponentProbe consumer was taught to treat the inferred
+     * value as needs-confirmation. But this checklist setter was NOT —
+     * an inferred variable would still flip
+     * `currentCtcFixedVariableSplitDisclosed=true`, advancing the
+     * discovery sequence past the split slot without the candidate
+     * ever confirming the number.
+     *
+     * In the PDF#34 Meesho/Prita repro: total=24, base=22 → variable
+     * inferred=2. Checklist flag flipped → sequence advanced → planner
+     * jumped to vesting/esop before the variable was ratified. Move
+     * B1's component-probe path SHOULD have caught it, but the
+     * discovery cascade was already racing ahead.
+     *
+     * Fix: gate `splitHasBoth` on the variable being EXPLICITLY
+     * disclosed, not inferred. The percent-shape path is unaffected
+     * (percentages are always explicit). */
+    const variableExplicitlyDisclosed =
+      parsed.componentBreakdown.variable != null &&
+      parsed.componentBreakdown.variableInferred !== true;
     const splitHasBoth =
       (parsed.componentBreakdown.base != null &&
-        parsed.componentBreakdown.variable != null) ||
+        variableExplicitlyDisclosed) ||
       (parsed.componentBreakdown.basePercent != null &&
         parsed.componentBreakdown.variablePercent != null);
     if (splitHasBoth && state.discoveryChecklist != null) {
