@@ -32,7 +32,7 @@ import { USER_FRUSTRATION_RE } from "../_user-signals";
 import { generateNegotiationBand, getReferenceBand } from "../../data/salary-lookup";
 import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { matchRoleKey } from "../../data/salaries";
-import { askPositioning, landingZone, type CompanyTierBucket } from "../../src/_negotiation-math";
+import { askPositioning, batnaStrength, landingZone, type CompanyTierBucket, type CompetingOffer } from "../../src/_negotiation-math";
 import { getCompanyTier } from "../../data/company-tiers";
 import { detectRoleCompanyFit } from "../../src/_role-company-fit";
 import {
@@ -40,6 +40,7 @@ import {
   computeOldRegimeTaxLpa,
   variablePayoutFactorForTier,
 } from "../../src/_ctc-breakdown";
+import { computeEquityGrant } from "../../src/_equity-literacy";
 
 /** Human-readable label per CompanyTierBucket. Surfaced in the report
  *  header so the candidate sees which band they were scored against
@@ -252,6 +253,40 @@ const JOINING_BONUS_RE = /\b(joining bonus|sign[- ]?on|signing bonus|relocation)
 const NOTICE_RE = /\b(notice period|buyout|buy[- ]?out|serve notice)\b/i;
 const PUSHBACK_RE = /\b(can you (?:do|stretch|consider)|is there room|any flexibility|can we revisit|stretch goal|ceiling|upper end|top of the band)\b/i;
 
+/* Phase 2.1 — Equity literacy. ESOP / RSU mention + probe vocabulary.
+ *   ESOP_MENTION_RE   → equity grant came up in transcript (any speaker)
+ *   EQUITY_PROBE_RE   → candidate asked the questions a literate
+ *                       candidate must ask: vesting cliff, FMV / strike,
+ *                       dilution / refresh / exercise window.
+ *   EQUITY_GRANT_RE   → extract grant face value when AI quotes it,
+ *                       e.g. "₹20 LPA equity vesting 4 years". Conservative
+ *                       — drops to undefined when no explicit equity number. */
+const ESOP_MENTION_RE = /\b(esop|rsu|stock option|stock options|equity grant|equity component|equity at|equity of)\b/i;
+const RSU_HINT_RE = /\b(rsu|listed (?:stock|equity)|public stock)\b/i;
+const EQUITY_PROBE_RE = /\b(cliff|vesting cliff|fmv|fair market value|strike (?:price|rate)|dilution|refresh (?:grant|cycle)|exercise window|post[- ]?exercise|post[- ]?termination|409a|409 ?a|liquidity (?:event|window)|secondary (?:sale|buyback)|buyback program)\b/i;
+const EQUITY_GRANT_RE = /\b(?:equity|esop|rsu|stock(?: option)?s?)\s+(?:(?:component|grant|of|at|worth|valued at|portion|per year|annually)\s+)*(?:₹|inr\s*)?(\d{1,3}(?:\.\d{1,2})?)\s*(?:LPA|lakhs?|cr|crores?)/i;
+
+/* Phase 2.3 — Joining-bonus clawback awareness. Fires only when joining
+ * bonus was mentioned but no probe of clawback / pro-rate / repayment. */
+const CLAWBACK_PROBE_RE = /\b(clawback|claw[- ]?back|pro[- ]?rate(?:d)?|pro[- ]?rata|repay(?:ment)?|forfeit|paid back|return the bonus|return the joining|early exit|hold period|tenure (?:requirement|condition)|recovery clause|recovered if)\b/i;
+
+/* Phase 2.4 — Variable-pay realism. Fires when variable / performance
+ * pay was mentioned but candidate never asked about payout history,
+ * payout %, target vs. actual, last year's pay-out. */
+const VARIABLE_MENTION_RE = /\b(variable (?:pay|component|comp|portion|bonus)|performance (?:bonus|pay|comp)|target bonus|target variable|incentive (?:pay|comp))\b/i;
+const VARIABLE_PROBE_RE = /\b(payout (?:history|percentage|%|ratio|record|rate)|paid out|pay[- ]?out (?:last|previous|history|%)|% of target|target (?:bonus )?paid|hit rate|achievement (?:%|rate|history)|actual variable|actual payout|past year|last year|previous year|how much (?:was|did) (?:variable|payout|the bonus|the variable) (?:pay|hit|paid)|on[- ]?target earnings|ote\b)\b/i;
+
+/* Phase 2 bonus — kernel-derived signal proxies from the transcript:
+ *   VERBAL_ACCEPT_RE  → candidate said yes ("I'll take it", "sounds good
+ *                       let's go", "I accept", "deal", "I'm in"). Pairs
+ *                       with `closed_too_fast` when no counter was
+ *                       extracted before this turn.
+ *   OFFER_RECAP_REQ_RE → user asked the AI to recap the offer
+ *                       AFTER it was on the table. Proxies
+ *                       `lastAnswerOfferRecapAtTurn` from the kernel. */
+const VERBAL_ACCEPT_RE = /\b(i(?:'ll| will) take (?:it|the offer)|i accept(?:\b| the offer)|i'?m (?:in|on board)|let'?s (?:do it|go ahead|move (?:forward|ahead))|that works for me|that(?:'s| is) (?:a deal|acceptable|fine|good)|deal\b|done deal|sounds (?:good|great), (?:i(?:'ll| will)|let'?s)|happy to (?:accept|join|sign))\b/i;
+const OFFER_RECAP_REQ_RE = /\b(can you (?:recap|summari[sz]e|repeat|walk me through)|could you (?:recap|summari[sz]e|repeat|walk me through)|(?:please )?(?:recap|summari[sz]e) (?:the offer|the numbers|the package|what'?s on the table)|what'?s on the table|what (?:are|is) the (?:total|final) (?:offer|number|ctc)|run me through the offer|let me re[- ]?confirm|i(?:'?ve)? lost track|i(?:'?m)? confused about the (?:numbers|offer)|where did we land)\b/i;
+
 function monthsSince(yyyymm: string): number {
   const m = /^(\d{4})-(\d{2})$/.exec(yyyymm);
   if (!m) return 999;
@@ -274,7 +309,30 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   //   - Surfaces `tierBucket` (+ label) on meta for header chip.
   //   - Coaching catalog expanded 5 → ~20 tips via CLUSTERS pattern
   //     (mirrors hr-round v4.5 / commit 06881b8).
-  version: "salary-negotiation-v5",
+  // v6 (Phase 2 of SCORE_IMPROVEMENT_PLAN section 2):
+  //   - Wires `computeEquityGrant` from src/_equity-literacy.ts: when
+  //     ESOP / RSU mentioned, computes vesting / cliff value / perq tax
+  //     and surfaces on `meta.salaryNegotiation.equityLiteracy`. Flags
+  //     `equity_terms_not_probed` when candidate didn't probe terms.
+  //   - Wires `batnaStrength` from src/_negotiation-math.ts. Replaces
+  //     binary BATNA detection with a 0..1 score + label (weak/moderate/
+  //     strong). Drives `batna_weak_unsupported` flag.
+  //   - Joining-bonus clawback detector. `joining_bonus_clawback_not_probed`
+  //     fires when joining bonus mentioned + clawback / pro-rate /
+  //     repayment never asked.
+  //   - Variable-pay realism. `variable_pay_face_value_accepted` fires
+  //     when candidate accepted variable comp without probing payout %.
+  //   - Transcript-derived bonus detectors mapped to Phase-2 themes:
+  //     `closed_too_fast` (verbal yes before any counter / pushback),
+  //     `lost_track_of_offer` (candidate asks AI to recap the offer
+  //     after it's already on the table — kernel-pair for
+  //     lastAnswerOfferRecapAtTurn).
+  //   - Skipped: `jargon_literacy_gap` + `variable_not_owned` from the
+  //     kernel-bonus list — they require the negotiation kernel state
+  //     (`lastAnswerClarificationAtTurn` / `variableInferred`) which
+  //     isn't carried on SessionRowForAnalysis. Re-evaluate once kernel
+  //     state is persisted onto the session row.
+  version: "salary-negotiation-v6",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -943,6 +1001,235 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       });
     }
 
+    // --- 4c. Phase 2 — equity literacy, BATNA strength, joining-bonus
+    //         clawback probe, variable-pay realism, transcript-derived
+    //         kernel-state proxies (closed_too_fast / lost_track_of_offer).
+    //
+    //         Each block computes ONCE off the full userText / aiText /
+    //         combined text and adds a flag + optional rubric gap +
+    //         optional meta sub-field. Coaching tips live in section 5.
+    const combinedText = `${userText} ${aiText}`;
+
+    /* 2.1 — Equity grant literacy. Run iff equity vocabulary appears
+     * anywhere (any speaker). Extract the largest face value seen in
+     * an AI turn so we score the recruiter's quoted grant, not a
+     * candidate's hypothetical. Classify rsu vs esop on the same text
+     * window where the grant was named. */
+    let equityLiteracyMeta: NonNullable<NonNullable<typeof result.meta>["salaryNegotiation"]>["equityLiteracy"] | undefined = undefined;
+    const esopMentionedInSession = ESOP_MENTION_RE.test(combinedText) || /\b(equity|esop|rsu|stock|shares?|vesting|cliff)\b/i.test(combinedText);
+    if (esopMentionedInSession) {
+      // Find largest equity-grant face value across AI turns.
+      let largestGrantLpa = 0;
+      let grantTurnText = "";
+      for (const turn of transcript) {
+        if (!isAiTurn(turn)) continue;
+        const text = turn.text || "";
+        const m = EQUITY_GRANT_RE.exec(text);
+        if (!m) continue;
+        const v = parseFloat(m[1]!);
+        const isCr = /cr/i.test(m[0]);
+        const lpa = isCr ? v * 100 : v;
+        if (lpa > largestGrantLpa) {
+          largestGrantLpa = lpa;
+          grantTurnText = text;
+        }
+      }
+      if (largestGrantLpa > 0) {
+        // Pick equity type from the turn where grant was named. Default
+        // to esop unless RSU-specific tokens appear (covers Indian
+        // unicorn / pre-IPO default — most common case).
+        const equityType: "rsu" | "esop" = RSU_HINT_RE.test(grantTurnText) ? "rsu" : "esop";
+        const grant = computeEquityGrant({
+          totalGrantLpa: largestGrantLpa,
+          equityType,
+        });
+        equityLiteracyMeta = {
+          grantTotalLpa: Math.round(largestGrantLpa * 10) / 10,
+          equityType,
+          cliffRealisticLpa: grant.cliffRealisticLpa,
+          halfVestRealisticLpa: grant.halfVestRealisticLpa,
+          fullVestRealisticLpa: grant.fullVestRealisticLpa,
+          perquisiteTaxAtFullVestLpa: grant.perquisiteTaxAtFullVestLpa,
+          netAfterTaxLpa: grant.netAfterTaxLpa,
+          realisticPctOfFace: grant.realisticPctOfFace,
+        };
+      }
+
+      // equity_terms_not_probed — equity mentioned, but no probe of
+      // cliff / FMV / strike / dilution / refresh / exercise window
+      // anywhere in the user's turns. Only the candidate's probes count.
+      const userProbedEquity = EQUITY_PROBE_RE.test(userText);
+      if (!userProbedEquity && userTurnCount >= 2) {
+        flags.add("equity_terms_not_probed");
+        gaps.push({
+          dimension: "equity_literacy",
+          expected: "When equity grant is named, candidate probes vesting cliff, FMV vs. strike, dilution / refresh, post-exit exercise window",
+          observed: "Equity / ESOP / RSU mentioned in session; candidate never asked about cliff, FMV, strike, dilution, refresh, or exercise window",
+          severity: "medium",
+        });
+      }
+    }
+
+    /* 2.2 — BATNA strength. Parse the candidate's BATNA mentions into
+     * CompetingOffer records and pass through batnaStrength(). Heuristics:
+     *   inWriting   → "offer letter", "written offer", "in writing"
+     *   peerTier    → mention of a peer-tier company name OR explicit
+     *                 LPA figure (a verbal LPA without naming a company
+     *                 already implies "moderate" — recruiter still has
+     *                 to test it). Conservative default: false.
+     *   ageDays     → 30 unless candidate says "stale", "old", "months
+     *                 ago"; then 120. Fresh ("yesterday", "last week"):
+     *                 7. Verbal "interview" with no offer → ageDays
+     *                 doesn't matter because the offer is dropped.
+     *   totalCtcLpa → first LPA extracted from a user turn that also
+     *                 matched BATNA_RE; falls back to 0 if none. */
+    let batnaMeta: NonNullable<NonNullable<typeof result.meta>["salaryNegotiation"]>["batnaStrength"] | undefined = undefined;
+    if (userTurnCount >= 2) {
+      const competing: CompetingOffer[] = [];
+      const WRITTEN_RE = /\b(offer letter|written offer|in writing|sent (?:me )?the (?:offer|letter)|signed offer|formal offer in)\b/i;
+      const FRESH_RE = /\b(yesterday|today|this week|last week|just got|just received|past few days)\b/i;
+      const STALE_RE = /\b(months? ago|earlier this year|few months back|three months|four months|five months|six months)\b/i;
+      // Per-user-turn parse: each user turn matching BATNA_RE counts
+      // as a single competing-offer signal. Multiple distinct turns
+      // → multiple offers (escalates the score).
+      // Only treat an LPA as a competing-offer LPA when it appears
+      // in a clause attached to BATNA vocabulary — not when the
+      // candidate is naming their own target in the same turn. The
+      // shape we want: "another offer at 32 LPA", "competing offer 35
+      // LPA", "30 LPA at Company X". The shape we DON'T want:
+      // "my target is 30 LPA, I'm also interviewing elsewhere" —
+      // the 30 is the ask, not the BATNA.
+      const BATNA_LPA_RE = /\b(?:(?:another|competing|other|alternative) offer (?:at |of |is |for )?|elsewhere (?:at |of |for |is )?|offer letter (?:at |of |for |is )?|written offer (?:at |of |for |is )?)(?:₹|inr\s*)?(\d{1,3}(?:\.\d{1,2})?)\s*(?:LPA|lakhs?|cr|crores?)/i;
+      for (const turn of transcript) {
+        if (!isUserTurn(turn)) continue;
+        const text = turn.text || "";
+        if (!BATNA_RE.test(text)) continue;
+        // Pull an LPA figure ONLY when it's adjacent to BATNA vocab.
+        let ctcLpa = 0;
+        const lm = BATNA_LPA_RE.exec(text);
+        if (lm) {
+          const v = parseFloat(lm[1]!);
+          const isCr = /cr/i.test(lm[0]);
+          ctcLpa = isCr ? v * 100 : v;
+        }
+        const inWriting = WRITTEN_RE.test(text);
+        // Peer-tier inferred when LPA was named AND looks plausible
+        // (≥5 LPA, ≤500 LPA). Verbal-only without LPA stays false.
+        const peerTier = ctcLpa >= 5 && ctcLpa <= 500;
+        const ageDays = STALE_RE.test(text) ? 120 : FRESH_RE.test(text) ? 7 : 30;
+        competing.push({ totalCtcLpa: ctcLpa, inWriting, peerTier, ageDays });
+      }
+      // Compute batna strength even when offers is empty — the helper
+      // returns label "none" / score 0 and we surface a coaching anchor.
+      const bs = batnaStrength(competing);
+      batnaMeta = {
+        score: bs.score,
+        label: bs.label,
+        rationale: bs.rationale,
+        offerCount: competing.length,
+      };
+
+      // batna_weak_unsupported — fires when there IS some BATNA signal
+      // in transcript but the strength is "weak" (verbal-only, no LPA,
+      // no peer-tier name). Replaces binary detection of past versions.
+      if (competing.length > 0 && bs.label === "weak") {
+        flags.add("batna_weak_unsupported");
+        gaps.push({
+          dimension: "batna_quality",
+          expected: "BATNA grounded in a written, peer-tier, recent competing offer (named company + LPA)",
+          observed: `Detected ${competing.length} BATNA mention(s) but strength scored "${bs.label}" (${bs.score.toFixed(2)}). Verbal-only / unnamed offers don't move recruiters.`,
+          severity: "medium",
+        });
+      }
+    }
+
+    /* 2.3 — Joining-bonus clawback. Fires only when joining bonus was
+     * mentioned AND the candidate never asked about clawback / pro-rate
+     * / repayment / hold period. Symmetric to HR-round's
+     * `comp_breakup_probe_missing` but scoped to the joining-bonus
+     * lever specifically. */
+    if (JOINING_BONUS_RE.test(combinedText)) {
+      const userAskedClawback = CLAWBACK_PROBE_RE.test(userText);
+      if (!userAskedClawback && userTurnCount >= 2) {
+        flags.add("joining_bonus_clawback_not_probed");
+        gaps.push({
+          dimension: "joining_bonus_literacy",
+          expected: "Candidate asks about clawback period, pro-rate vs. cliff, and exit conditions before accepting a joining bonus",
+          observed: "Joining / signing bonus mentioned; candidate never asked about clawback, pro-rate, repayment, or hold period",
+          severity: "medium",
+        });
+      }
+    }
+
+    /* 2.4 — Variable-pay realism. Fires when variable / performance pay
+     * was mentioned AND the candidate never probed payout history /
+     * target-vs-actual / past year's hit rate. Indian candidates
+     * routinely sign offers with 20-30% variable and discover later
+     * that the team consistently pays out at 60-70% of target. */
+    if (VARIABLE_MENTION_RE.test(combinedText)) {
+      const userProbedVariable = VARIABLE_PROBE_RE.test(userText);
+      if (!userProbedVariable && userTurnCount >= 2) {
+        flags.add("variable_pay_face_value_accepted");
+        gaps.push({
+          dimension: "variable_pay_literacy",
+          expected: "Candidate probes payout history (% of target paid last year, this team's hit rate) before accepting variable comp at face value",
+          observed: "Variable / performance pay mentioned; candidate never asked about payout history, % of target paid, or hit rate",
+          severity: "medium",
+        });
+      }
+    }
+
+    /* Bonus — closed_too_fast. Transcript-side proxy for
+     * `verbalAcceptanceTurn` arriving before any meaningful counter
+     * has been extracted. Fires when:
+     *   - Candidate said an acceptance phrase (VERBAL_ACCEPT_RE) AND
+     *   - No PUSHBACK_RE language from candidate ANYWHERE before that
+     *     turn AND
+     *   - At most one numeric AI claim before the acceptance (i.e. the
+     *     candidate accepted the FIRST offer with no negotiation
+     *     round-trip).
+     * Pairs with the close cluster.  */
+    {
+      const acceptanceTurnIdx = transcript.findIndex(t => isUserTurn(t) && VERBAL_ACCEPT_RE.test(t.text || ""));
+      if (acceptanceTurnIdx >= 0) {
+        const userBefore = transcript.slice(0, acceptanceTurnIdx).filter(isUserTurn).map(t => t.text || "").join(" ");
+        const aiClaimsBefore = claims.filter(c => isAiTurn(transcript[c.turn_idx]) && c.turn_idx < acceptanceTurnIdx);
+        const pushbackBefore = PUSHBACK_RE.test(userBefore);
+        if (!pushbackBefore && aiClaimsBefore.length <= 1 && userTurnCount >= 2) {
+          flags.add("closed_too_fast");
+          gaps.push({
+            dimension: "close_pacing",
+            expected: "Candidate runs at least one counter / pushback round before verbally accepting",
+            observed: `Verbal acceptance at turn ${acceptanceTurnIdx + 1} after ${aiClaimsBefore.length} AI number(s) with no pushback language earlier in session — closed on the first offer.`,
+            severity: "medium",
+          });
+        }
+      }
+    }
+
+    /* Bonus — lost_track_of_offer. Transcript-side proxy for
+     * `lastAnswerOfferRecapAtTurn`: user explicitly asks the AI to
+     * recap / summarise / repeat the offer AFTER at least one AI
+     * number has been put on the table. Signals candidate lost
+     * the thread of the negotiation — pair with close cluster. */
+    {
+      const firstAiClaimIdx = claims.find(c => isAiTurn(transcript[c.turn_idx]))?.turn_idx ?? -1;
+      if (firstAiClaimIdx >= 0) {
+        const recapAt = transcript.findIndex((t, idx) =>
+          idx > firstAiClaimIdx && isUserTurn(t) && OFFER_RECAP_REQ_RE.test(t.text || ""),
+        );
+        if (recapAt >= 0) {
+          flags.add("lost_track_of_offer");
+          gaps.push({
+            dimension: "offer_tracking",
+            expected: "Candidate tracks each component of the offer (base / variable / equity / joining / total) as it's quoted",
+            observed: `User asked AI to recap the offer at turn ${recapAt + 1}, after numbers were already on the table at turn ${firstAiClaimIdx + 1}. Candidate lost track of components mid-negotiation.`,
+            severity: "low",
+          });
+        }
+      }
+    }
+
     // --- 5. Coaching summary ---
     // v5: grouped into narrative clusters (discovery / anchoring /
     // counter / close). When ≥2 members of a cluster fire, lead with a
@@ -965,6 +1252,9 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           "equity_never_discussed",
           "joining_bonus_never_discussed",
           "notice_period_never_discussed",
+          "equity_terms_not_probed",
+          "joining_bonus_clawback_not_probed",
+          "variable_pay_face_value_accepted",
         ],
       },
       {
@@ -975,6 +1265,7 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           "user_below_band_underask",
           "user_moonshot_no_batna",
           "no_batna_articulated",
+          "batna_weak_unsupported",
         ],
       },
       {
@@ -997,6 +1288,8 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           "ai_ignored_user_complaint",
           "ai_didnt_answer_direct_question",
           "ai_consecutive_duplicate_question",
+          "closed_too_fast",
+          "lost_track_of_offer",
         ],
       },
     ];
@@ -1079,6 +1372,25 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     if (flags.has("implausible_salary_claim") || flags.has("above_role_band")) {
       tips.push("Recruiter quoted a number outside the realistic band for this role + company. That's hallucination — don't anchor on it. Use Levels.fyi / company override data, not the simulated ceiling.");
     }
+    // Phase 2 per-flag tips.
+    if (flags.has("equity_terms_not_probed")) {
+      tips.push("Equity was on the table but you didn't probe the terms that determine its real value: vesting cliff (1-yr standard, 0 if you exit early), strike vs. FMV (zero-strike ESOP is fully taxable as perq at exercise), refresh cycle, and post-exit exercise window. A pre-IPO ESOP at face value is roughly 30% real — ask the questions before signing.");
+    }
+    if (flags.has("batna_weak_unsupported")) {
+      tips.push("You hinted at a BATNA but it scored 'weak' — verbal-only, no LPA, no named peer-tier company. Recruiters test weak BATNAs first. Either upgrade your reference (written peer-tier offer + LPA + decision deadline) or drop the BATNA framing and lead with role-fit + market data instead.");
+    }
+    if (flags.has("joining_bonus_clawback_not_probed")) {
+      tips.push("Joining bonus came up but you didn't ask about clawback terms. Indian standard is 1-yr or 2-yr cliff with full repayment if you exit early — a ₹5L joining bonus is ₹0 if you leave in 18 months on a 2-yr cliff. Always ask: clawback period, pro-rate vs. cliff, what triggers repayment (resignation vs. termination-for-cause).");
+    }
+    if (flags.has("variable_pay_face_value_accepted")) {
+      tips.push("You accepted variable comp at face value without asking how much actually pays out. Indian product teams routinely pay out variable at 60-80% of target; some BFSI / consulting practices hit 100-120%. The right question: 'What's the average % of target paid out across this team in the last two cycles?' — face value is a marketing number.");
+    }
+    if (flags.has("closed_too_fast")) {
+      tips.push("You verbally accepted on the first offer with no counter round. In Indian recruiting that signals you were under-prepped — recruiters always have 8-15% headroom they only release when asked. Even if the offer looks good, ask 'Is there room on the joining bonus / signing / equity refresh?' before saying yes.");
+    }
+    if (flags.has("lost_track_of_offer")) {
+      tips.push("You asked the recruiter to recap the offer mid-negotiation — that signals you lost the thread. Before the call, write down a 5-line table: base / variable / joining / equity / total. Update it live as numbers move. Walking into a real call with that table on screen is the single highest-leverage prep step.");
+    }
 
     /* ── Phase 1.1 — CTC take-home breakdown ──
        Wire computeNewRegimeTaxLpa + computeOldRegimeTaxLpa into a
@@ -1143,7 +1455,11 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // Always emit a meta block (even partial) so the report's header
     // chip can render the tier band the session was scored against —
     // independent of whether a closing offer was extracted.
-    if (tier || closingTotalLpa !== null) {
+    // v6 — emit meta when ANY of tier / closing / equity / batna populated.
+    // Earlier versions skipped meta on unknown-tier sessions; with v6 we
+    // still want to surface equity literacy or batna strength if those
+    // ran, so the report's batna / equity cards have something to show.
+    if (tier || closingTotalLpa !== null || equityLiteracyMeta || batnaMeta) {
       result.meta = {
         ...(result.meta ?? {}),
         salaryNegotiation: {
@@ -1154,6 +1470,8 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           monthlyTakeHomeOldRegimeInr: monthlyOld,
           annualTaxNewRegimeLpa: annualTaxNew,
           annualTaxOldRegimeLpa: annualTaxOld,
+          equityLiteracy: equityLiteracyMeta ?? null,
+          batnaStrength: batnaMeta ?? null,
         },
       };
     }

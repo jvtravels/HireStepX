@@ -171,6 +171,30 @@ export interface AnalyzerMeta {
      *  "₹X.X LPA tax under new regime" hint line. */
     annualTaxNewRegimeLpa?: number | null;
     annualTaxOldRegimeLpa?: number | null;
+    /** Phase 2.1 — Equity literacy. Populated only when an equity grant
+     *  was named in the transcript with an extractable face value.
+     *  Cliff/half/full-vest are computed at the helper's defaults
+     *  (4-yr / 1-yr cliff; RSU = 100% liquidity, ESOP = 30%). */
+    equityLiteracy?: {
+      grantTotalLpa: number;
+      equityType: "rsu" | "esop";
+      cliffRealisticLpa: number;
+      halfVestRealisticLpa: number;
+      fullVestRealisticLpa: number;
+      perquisiteTaxAtFullVestLpa: number;
+      netAfterTaxLpa: number;
+      realisticPctOfFace: number;
+    } | null;
+    /** Phase 2.2 — BATNA strength score (0..1) + label. Computed even
+     *  when no competing offers detected (label = "none", score = 0)
+     *  so the report card always has something to render once the
+     *  candidate triggers BATNA-mention. */
+    batnaStrength?: {
+      score: number;
+      label: "none" | "weak" | "moderate" | "strong";
+      rationale: string;
+      offerCount: number;
+    } | null;
   };
 }
 

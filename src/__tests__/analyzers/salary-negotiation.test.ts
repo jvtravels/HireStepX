@@ -254,8 +254,177 @@ describe("salaryNegotiationAnalyzer v5 — Phase 1 wire-ins", () => {
     expect(out.coachingNotes).toMatch(/Notice period/);
   });
 
-  it("bumps version to v5", () => {
-    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v5");
+  it("bumps version to v6", () => {
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v6");
+  });
+});
+
+/* ─── Phase 2 (SCORE_IMPROVEMENT_PLAN.md section 2) ─────────────
+   Coverage for v6: equity literacy wire-in (computeEquityGrant),
+   BATNA strength scoring (batnaStrength), joining-bonus clawback
+   probe detector, variable-pay realism detector, transcript-side
+   kernel-state proxies (closed_too_fast, lost_track_of_offer). */
+describe("salaryNegotiationAnalyzer v6 — Phase 2 wire-ins", () => {
+  it("emits equityLiteracy meta when AI quotes an equity grant face value", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Total CTC is 45 LPA — base 28 LPA, equity grant of 12 LPA vesting over 4 years with 1-year cliff."),
+        user("My target is 50 LPA based on my research. What is the vesting cliff and the strike price relative to FMV?"),
+        ai("Standard 4-year vest, 1-year cliff, strike at the latest 409a valuation."),
+      ]),
+    });
+    expect(out.meta?.salaryNegotiation?.equityLiteracy).toBeDefined();
+    expect(out.meta!.salaryNegotiation!.equityLiteracy!.grantTotalLpa).toBeCloseTo(12, 1);
+    // Default ESOP at 30% liquidity → ~3.6 LPA realistic.
+    expect(out.meta!.salaryNegotiation!.equityLiteracy!.fullVestRealisticLpa).toBeGreaterThan(0);
+    expect(out.meta!.salaryNegotiation!.equityLiteracy!.fullVestRealisticLpa).toBeLessThan(12);
+    expect(out.meta!.salaryNegotiation!.equityLiteracy!.perquisiteTaxAtFullVestLpa).toBeGreaterThan(0);
+  });
+
+  it("flags equity_terms_not_probed when equity is mentioned but user never asks cliff/FMV/strike", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We're offering 30 LPA base plus equity of 8 LPA per year."),
+        user("My target is 38 LPA total based on my research and conversations with peers."),
+        ai("Equity vests over four years with a one-year cliff."),
+        user("Okay that sounds reasonable to me, when can I expect the formal offer letter please?"),
+      ]),
+    });
+    expect(out.flags).toContain("equity_terms_not_probed");
+    expect(out.coachingNotes).toMatch(/cliff/i);
+  });
+
+  it("does NOT flag equity_terms_not_probed when user asks cliff / FMV / strike", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Equity grant of 10 LPA per year, vesting over four years."),
+        user("What is the vesting cliff and what's the strike price relative to current FMV? Also any refresh policy?"),
+        ai("Cliff is one year, strike at 409a, refresh every two years."),
+        user("Got it, thanks for the detail."),
+      ]),
+    });
+    expect(out.flags).not.toContain("equity_terms_not_probed");
+  });
+
+  it("emits batnaStrength meta with 'weak' label for stale verbal-only BATNA", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("What are your salary expectations for this senior role?"),
+        user("My target is 30 LPA. I had another offer at a different company months ago, but it expired."),
+        ai("Okay, walk me through the role you're looking for."),
+        user("Standard senior IC scope, similar to what I'm doing now in my current role."),
+      ]),
+    });
+    expect(out.meta?.salaryNegotiation?.batnaStrength).toBeDefined();
+    expect(out.meta!.salaryNegotiation!.batnaStrength!.label).toBe("weak");
+    expect(out.flags).toContain("batna_weak_unsupported");
+  });
+
+  it("emits batnaStrength meta with 'strong' label when LPA + written offer claimed", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("What's your target?"),
+        user("My target is 35 LPA based on my research. I have an offer letter at 32 LPA from another company, written offer signed and received yesterday."),
+        ai("Noted. We'll see what we can do."),
+        user("That competing offer expires in a week. I have another offer letter at 33 LPA from a peer company, written and in writing also received this week."),
+      ]),
+    });
+    const bs = out.meta?.salaryNegotiation?.batnaStrength;
+    expect(bs).toBeDefined();
+    expect(bs!.label === "strong" || bs!.label === "moderate").toBe(true);
+    expect(out.flags).not.toContain("batna_weak_unsupported");
+  });
+
+  it("flags joining_bonus_clawback_not_probed when bonus is mentioned but no clawback probe", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can add a joining bonus of 5 LPA on day-1."),
+        user("Great, that helps close the gap. My target was 40 LPA total."),
+        ai("Got it, we'll wire that in."),
+        user("Sounds good — looking forward to the formal offer letter from HR soon."),
+      ]),
+    });
+    expect(out.flags).toContain("joining_bonus_clawback_not_probed");
+    expect(out.coachingNotes).toMatch(/clawback/i);
+  });
+
+  it("does NOT flag joining_bonus_clawback_not_probed when user asks clawback / pro-rate", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Joining bonus is 5 LPA on day-1."),
+        user("What is the clawback period and is it pro-rated or full repayment? My target is 40 LPA."),
+        ai("Two-year cliff, full repayment if you exit early."),
+        user("Understood, thanks for confirming."),
+      ]),
+    });
+    expect(out.flags).not.toContain("joining_bonus_clawback_not_probed");
+  });
+
+  it("flags variable_pay_face_value_accepted when variable mentioned but no payout-history probe", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Total CTC is 40 LPA — 30 LPA fixed plus 10 LPA variable component tied to performance."),
+        user("My target was 38 LPA based on research, so 40 works well for me."),
+        ai("Glad to hear it. We'll send the formal offer."),
+        user("Looking forward to it, thanks for the conversation today."),
+      ]),
+    });
+    expect(out.flags).toContain("variable_pay_face_value_accepted");
+    expect(out.coachingNotes).toMatch(/% of target/i);
+  });
+
+  it("does NOT flag variable_pay_face_value_accepted when user asks payout history", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Variable component is 8 LPA tied to performance."),
+        user("What was the average % of target paid out across this team last year, and what's the hit rate?"),
+        ai("Last year team paid out at 85% of target."),
+        user("Helpful, thanks for sharing the actual payout figures."),
+      ]),
+    });
+    expect(out.flags).not.toContain("variable_pay_face_value_accepted");
+  });
+
+  it("flags closed_too_fast when user accepts first offer without any pushback", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can offer 32 LPA total compensation for this role."),
+        user("That works for me — I'll take it. Let's go ahead with the formal offer."),
+        ai("Glad to have you on board."),
+        user("Thanks, looking forward to joining the team next month."),
+      ]),
+    });
+    expect(out.flags).toContain("closed_too_fast");
+    expect(out.coachingNotes).toMatch(/counter round|first offer/i);
+  });
+
+  it("does NOT flag closed_too_fast when user pushed back before accepting", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("We can offer 30 LPA."),
+        user("Can you stretch the joining bonus? My target was 35 LPA based on research."),
+        ai("We can do 32 LPA with a 3 LPA joining bonus."),
+        user("That works for me, I'll take it. Let's move ahead with the formal offer please."),
+      ]),
+    });
+    expect(out.flags).not.toContain("closed_too_fast");
+  });
+
+  it("flags lost_track_of_offer when user asks AI to recap mid-session", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("So far we've talked about 30 LPA base, 8 LPA variable, 5 LPA joining bonus."),
+        user("Can you please recap the offer? I've lost track of the numbers we discussed earlier."),
+        ai("Sure — total CTC is 43 LPA: 30 base + 8 variable + 5 joining."),
+        user("Got it, thanks for the recap."),
+      ]),
+    });
+    expect(out.flags).toContain("lost_track_of_offer");
+    expect(out.coachingNotes).toMatch(/lost the thread|table/i);
+  });
+
+  it("bumps version to v6", () => {
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v6");
   });
 });
 
