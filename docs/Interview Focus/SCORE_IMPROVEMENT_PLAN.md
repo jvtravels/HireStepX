@@ -28,7 +28,7 @@ Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
 | 2 | Salary Negotiation | 8.4 | **9.7** | 9.5 | `salary-negotiation-v8` | \~3 days | ✅ Phases 1–4 shipped (+1.3 of +1.1) — Phase 1 wired `_ctc-breakdown.ts`, clustered coaching, tier band; Phase 2 wired `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength`, added clawback / variable-pay realism / closed-too-fast / lost-track-of-offer detectors; Phase 3 added Indian recruiter SECTOR personas (IT-services / GCC / unicorn / startup / BFSI / default) with persona-conditional `band-disclosure-deflect` / `counter-offer` / `anchor-with-offer` prose; Phase 4 hygiene shipped 30-fixture regression suite + per-flag precision/recall gate + 5-path kernel state-machine snapshot tests. Phase 5 (stretch) pending. |
-| 3 | Behavioral | 7.6 | **9.1** | 9.1 | `behavioral-v4` | 0d (stretch only) | ✅ **Target reached.** Phases 1–5 shipped (+1.5 of +1.5). Phase 6 (stretch) optional. |
+| 3 | Behavioral | 7.6 | **9.3** | 9.5 | `behavioral-v5` | \~5d (Phase 6.1/6.2/6.5/6.6/6.7) | ✅ **Target exceeded** (9.1 reached, target raised). Phases 1–5 shipped + Phase 6.3 (evidence-quality) + 6.4 (quote-matched-phrase) + STAR-S broadening. |
 | 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
 | 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
 | 6 | Panel Interview | 7.5 | **7.5** | 8.8 | `panel-v1` | \~6 days | — Not started. |
@@ -39,10 +39,10 @@ Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep 
 
 **Aggregate progress**:
 
-- **Shipped delta**: +4.0 score-points across HR Round (+1.0), Behavioral (+1.5), Campus Placement (+1.2), Salary Negotiation (+0.3), Technical (+0.1).
-- **Target reached**: Campus Placement + Behavioral. HR Round next (0.1 away).
+- **Shipped delta**: +4.2 score-points across HR Round (+1.0), Behavioral (+1.7, target raised 9.1 → 9.5), Campus Placement (+1.2), Salary Negotiation (+0.3 vs new target 9.7), Technical (+0.1).
+- **Target reached**: Campus Placement + Behavioral (target raised). Salary Neg overshoots prior 9.5 baseline at 9.7. HR Round next (0.1 away).
 - **Untouched**: 4 of 10 focuses (Panel, Case Study, Strategic, Management, Government/PSU).
-- **Highest unrealized opportunity**: Salary Negotiation — +0.8 score still available. Phase 1 wired `_ctc-breakdown.ts`; `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength` queued for Phase 2.
+- **Highest unrealized opportunity**: Behavioral Phase 6.1/6.2/6.5/6.6/6.7 (~5d, +0.2 → 9.5) and Technical Leadership (~7.5d, +1.1).
 
 **Recommended sequencing (updated)**: Campus Placement and HR Round are essentially done. Next priorities by leverage-per-day:
 
@@ -170,7 +170,7 @@ Wired into:
 
 1. ~~STAR detection is binary, not graded~~ — ✅ per-answer STAR matrix shipped (Phase 1)
 2. ~~No competency taxonomy~~ — ✅ 10 competencies × 5 tracks shipped (Phase 2)
-3. ~~`unverifiable_companies` false-fires on "At Last Year"~~ — ✅ suffix + stoplist gate shipped (Phase 1)
+3. `unverifiable_companies` ~~false-fires on "At Last Year"~~ — ✅ suffix + stoplist gate shipped (Phase 1)
 4. ~~No follow-up probing logic~~ — ✅ AI_PROBED_DEPTH / AI_ACCEPTED_VAGUE shipped (Phase 3)
 5. ~~Indian-register rule prompt-only — no analyzer enforcement~~ — ✅ shared `_usism-patterns.ts` scan + `register_drift_to_us` flag shipped (Phase 4)
 
@@ -196,7 +196,7 @@ Wired into:
 
 - **4.1** ✅ Mid-session register-drift detector reusing `USISM_PATTERNS`. — Patterns extracted to shared `server-handlers/analyzers/_usism-patterns.ts`; behavioral scans AI turns and fires `register_drift_to_us` flag (with up to 3 rubric gaps quoting the offending phrase) on ≥2 hits. Salary-negotiation now imports from the same source.
 - **4.2** ✅ Three interviewer archetypes (HR Partner / Hiring Manager / Director). — New `src/_indian-behavioral-personas.ts`; selector keyed on company-tier × experience-level. Director for lead/executive (and senior at FAANG/big-tech/GCC); warm HR Partner for fresher/entry (and mid at IT-services/edtech/early-startup); depth-led Hiring Manager default. Wired into `generate-questions.ts`; persona id logged to PostHog as `behavioral_persona`.
-- **4.3** ✅ Pedigree-aware opener for &lt;2-yr experience. — `pedigreeAwareOpenerFragment()` prepended to the behavioral persona block when `experienceLevel` ∈ {fresher, entry} OR numeric YOE < 2. Pushes the LLM toward internship / college / open-source story shapes and weights Situation / Task framing higher than Result quantification.
+- **4.3** ✅ Pedigree-aware opener for &lt;2-yr experience. — `pedigreeAwareOpenerFragment()` prepended to the behavioral persona block when `experienceLevel` ∈ {fresher, entry} OR numeric YOE &lt; 2. Pushes the LLM toward internship / college / open-source story shapes and weights Situation / Task framing higher than Result quantification.
 
 ### ✅ Phase 5 — Hygiene (\~1d, +0.2) — **DONE**
 
@@ -204,11 +204,25 @@ Wired into:
 - **5.2** ✅ Prompt-cache reorder. — Audited `evaluate-session.ts` behavioral path: CRITICAL RULES + BEHAVIOURAL-PROBE-BANK + BEHAVIOURAL-COMPETENCY-COVERAGE blocks already precede the dynamic CONTEXT / TRANSCRIPT / RUBRIC tail, and the only interpolations into the prefix (`PROBE_TEXTS`, `BEHAVIORAL_COMPETENCIES`, `COMPETENCY_LABELS`) are static module imports. The ≥1024-token shared prefix is already cacheable per Groq's prefix-cache rules — no reorder needed. Documented for future maintainers.
 - **5.3** ✅ Bump to v2. — **superseded**: shipped as **v3** for Phases 1–3, now **v4** for Phase 4.1 register-drift signal (so `_llm-rescore` recomputes behavioral sessions against the new flag set).
 
-### Phase 6 — Stretch
+### Phase 6 — Adaptive senior layer (post-audit, May 2026)
 
-- STAR-graded scoring (0–3 per part).
-- Story-recycling detector.
-- Cross-story consistency check.
+Triggered by the **Senior Product Designer × Meesho** audit (`docs/Interview Focus/SCORE_IMPROVEMENT_PLAN.md` companion `HireStepX Behavioral Interview Audit Report.docx`). The audit caught three classes of issue that Phases 1–5 didn't address:
+
+1. **Live coaching template hard-coded example tokens** that often didn't appear in the candidate's answer (chip said "'many', 'several', 'a lot' need numbers" while the answer used "some").
+2. **STAR Situation false-positives** on artifact-for-context framing ("I built a reusable data table component for an admin dashboard because…" read as no-Situation).
+3. **Senior interviews accept unsourced metrics** — "35-40% improvement" went un-probed for baseline / measurement method / sample size.
+
+Score impact: +0.2 → 9.3. Target raised 9.1 → 9.5. Remaining items 6.1 / 6.2 / 6.5 / 6.6 / 6.7 carry the rest.
+
+- **6.1** ⏳ Adaptive follow-up: pass prior answer's `starBreakdown` + lowest-scoring competency into `generate-questions` so the next prompt attacks the weakest dim. ~1.5d.
+- **6.2** ⏳ Answer ↔ question topical-alignment detector (`answer_off_topic` flag). Keyword-overlap + intent-tag heuristic. ~1d.
+- **6.3** ✅ **Evidence-quality validator.** New `server-handlers/_evidence-signals.ts` detects metric without baseline / method / sample within ±120 chars. Wired into live coach + post-session analyzer. New flags `metric_without_baseline` (candidate-side) and `ai_accepted_unevidenced_metric` (AI-side). Two new coaching notes. 18 unit tests + 2 analyzer fixtures.
+- **6.4** ✅ **Quote-the-actual-phrase across coaching messages.** `vaguenessMatch()` returns the candidate's actual hedge ("some" / "few" / "many") so the live chip becomes `Vague on scale — "some" needs a number` instead of the static `'many', 'several', 'a lot'` list.
+- **6.5** ⏳ Difficulty modes selector (Warm-up / Realistic / Senior / Bar-Raiser) in `generate-questions.ts`. Persona archetypes approximate this today but aren't user-toggleable. ~1d.
+- **6.6** ⏳ Company-specific behavioural question seeds (Meesho-Bharat / Flipkart / PhonePe / etc.) keyed off `target_company`. ~1d.
+- **6.7** ⏳ UX: progress chip ("Q 4 of 8"), expandable answer card, retry-this-answer + compare. ~1.5d.
+
+Also under 6.3: broadened `SITUATION_RE` in `src/_star-detection.ts` and `STAR_CUES.S` in `behavioral.ts` to accept artifact-for-context framing ("for an admin dashboard" / "in one of my projects" / "in my current role") + causal-clause anchoring. Eliminates the audit's false-positive "Jumped straight to action" chip while keeping the bare-preposition discipline (test `does NOT over-fire on 'for it / for them'` pins the floor).
 
 ---
 

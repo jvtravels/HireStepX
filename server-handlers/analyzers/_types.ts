@@ -121,6 +121,17 @@ export interface AnalyzerMeta {
        *  question was asked, or no substantive user response. */
       failureResponse: "owns" | "deflects" | "neutral" | null;
     };
+    /** Phase-6.3: evidence-quality counters. Tracks how many user
+     *  answers quoted a metric, how many of those metrics floated
+     *  without baseline / method / sample within the proximity
+     *  window, and how many times the next AI turn rolled past
+     *  without probing for evidence. Populated only when at least
+     *  one metric-bearing user answer was scanned. */
+    evidence?: {
+      metricAnswersCount: number;
+      metricAnswersUnevidenced: number;
+      aiAcceptedUnevidencedMetric: number;
+    };
   };
   /** Campus-placement: tier-aware CGPA calibration the analyzer used.
    *  Surfaced in the report so the candidate sees the actual cutoff

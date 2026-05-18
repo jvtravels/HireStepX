@@ -8,7 +8,11 @@ import {
   detectSelfAwareness,
   detectDefensiveness,
   isFailureQuestion,
+  vaguenessMatch,
 } from "../server-handlers/_behavioural-answer-signals";
+import {
+  detectEvidenceQuality,
+} from "../server-handlers/_evidence-signals";
 
 export interface MicroFeedbackResult {
   feedback: string | null;
@@ -436,10 +440,32 @@ function behavioralFeedback(text: string, wordCount: number, runningScores: numb
       };
     }
     if (detectVagueness(text)) {
-      // Scale words without numbers — push for quantification before STAR.
+      // Scale words without numbers — quote the actual hedge the candidate
+      // used so the chip feels diagnostic, not boilerplate.
+      const hit = vaguenessMatch(text);
+      const phrase = hit ? `"${hit}"` : "scale words";
       return {
-        feedback: "Vague on scale — 'many', 'several', 'a lot' need numbers. Was it 3 customers or 300?",
+        feedback: `Vague on scale — ${phrase} needs a number. Was it 3 customers or 300?`,
         score: clamp(45 + (wordCount >= 50 ? 5 : 0)),
+      };
+    }
+    /* Evidence-quality cue: candidate quoted a metric but left no baseline,
+       measurement source, or sample size in the same answer. Fires after
+       vagueness (a vague answer with no numbers is a different problem)
+       and before generic STAR coaching. Senior interviews probe for
+       baseline / method / sample — flag this live so the candidate self-
+       corrects on the next turn instead of hearing it post-session. */
+    const evidence = detectEvidenceQuality(text);
+    if (evidence.hasMetric && evidence.missingDimensions.length > 0) {
+      const miss = evidence.missingDimensions[0];
+      const ask: Record<typeof miss, string> = {
+        baseline: "Numbers are in — anchor them: what was the baseline before the change?",
+        method: "Strong metric. How was it measured — A/B test, analytics, or post-launch read?",
+        sample: "Good number. Over how many users / sessions / requests?",
+      };
+      return {
+        feedback: ask[miss],
+        score: clamp(65 + (wordCount >= 60 ? 5 : 0)),
       };
     }
   }

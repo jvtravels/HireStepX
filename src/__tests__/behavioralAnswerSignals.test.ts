@@ -6,7 +6,29 @@ import {
   detectDefensiveness,
   detectBehaviouralAnswerSignals,
   isFailureQuestion,
+  vaguenessMatch,
 } from "../../server-handlers/_behavioural-answer-signals";
+
+describe("vaguenessMatch — Phase 6.4 quote-the-actual-phrase", () => {
+  it("returns the matched hedge lowercased", () => {
+    expect(vaguenessMatch("Many users were dropping off.")).toBe("many");
+    expect(vaguenessMatch("Some disagreement, no resolution yet.")).toBe("some");
+    expect(vaguenessMatch("Several teams chimed in.")).toBe("several");
+  });
+
+  it("returns null when answer has a numeric token", () => {
+    expect(vaguenessMatch("Many users — about 1200 — saw it.")).toBeNull();
+  });
+
+  it("returns null when no scale word", () => {
+    expect(vaguenessMatch("I led the migration over six weeks.")).toBeNull();
+  });
+
+  it("returns null on empty / null", () => {
+    expect(vaguenessMatch(null)).toBeNull();
+    expect(vaguenessMatch("")).toBeNull();
+  });
+});
 
 describe("detectVagueness", () => {
   it("fires on scale words with no digits anywhere", () => {

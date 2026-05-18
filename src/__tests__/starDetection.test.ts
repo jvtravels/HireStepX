@@ -29,6 +29,30 @@ describe("detectStarPresence", () => {
     expect(detectStarPresence("During the migration we struggled").situation).toBe(true);
   });
 
+  it("Phase-6 — accepts artifact-for-context framing as Situation", () => {
+    /* Pre-Phase-6 audit caught a false-positive on
+       "I built a reusable data table component for an admin dashboard
+        because every module had slightly different table patterns."
+       The narrow SITUATION_RE rejected this and the live coach said
+       "Jumped straight to the action — set the scene first" even
+       though the candidate did set the scene. */
+    expect(
+      detectStarPresence(
+        "I built a reusable data table component for an admin dashboard because every module had slightly different table patterns.",
+      ).situation,
+    ).toBe(true);
+    expect(detectStarPresence("In one of my projects, we had to design for low-bandwidth users in Tier 2 cities.").situation).toBe(true);
+    expect(detectStarPresence("In my current role, I owned the checkout funnel.").situation).toBe(true);
+    expect(detectStarPresence("On our consumer mobile app, the onboarding step was leaking.").situation).toBe(true);
+  });
+
+  it("Phase-6 — does NOT over-fire on bare 'for it / for them'", () => {
+    /* Discipline check: the broadened regex must require a concrete
+       artifact/domain noun, not bare prepositions. */
+    expect(detectStarPresence("I worked for it and made sure things shipped.").situation).toBe(false);
+    expect(detectStarPresence("I designed for them and got positive feedback.").situation).toBe(false);
+  });
+
   it("Task alone — 'the goal / the brief / needed to'", () => {
     expect(detectStarPresence("the goal was to ship onboarding").task).toBe(true);
     expect(detectStarPresence("our goal was clear").task).toBe(true);

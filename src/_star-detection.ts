@@ -64,7 +64,18 @@ export interface StarPresence {
 /* Numeric / metric markers. ₹50,000 / $5M / 40% / 3x / "50 users". */
 const METRIC_RE = /\d+%|\$\d|[0-9]+x\b|₹[\d,]+|[0-9]+\s*(users|customers|engineers|people|team|months|days|crore|lakh|lpa)/i;
 
-const SITUATION_RE = /\bat\s+(?:my\s+last|my\s+previous|my\s+current)?\s*(?:company|job|role|team|firm)\b|\bwhen\s+(?:i|we)\b|\bin\s+(?:20\d\d|q[1-4])\b|\bduring\s+(?:my|the)\b|\bwe\s+were\s+\b/i;
+/* Situation cues. v2 broadened beyond temporal/employment anchors
+   ("at my last company / when I / in 2023") to also accept artifact-for-
+   context framing ("for an admin dashboard", "for users in Tier 2
+   cities", "on a fintech product") and causal openers ("because every
+   module had…"). The previous narrow set false-positived "Jumped
+   straight to the action" on perfectly contextual answers — e.g.
+   "I built a reusable data table component for an admin dashboard
+   because every module had slightly different table patterns" was
+   read as having no Situation. Keep all alternates conservative:
+   require a concrete artifact / domain noun after the preposition, not
+   bare "for it" / "for them". */
+const SITUATION_RE = /\bat\s+(?:my\s+last|my\s+previous|my\s+current)?\s*(?:company|job|role|team|firm)\b|\bwhen\s+(?:i|we)\b|\bin\s+(?:20\d\d|q[1-4])\b|\bduring\s+(?:my|the)\b|\bwe\s+were\s+\b|\bfor\s+(?:an?\s+|our\s+)?(?:admin|internal|customer[\s-]?facing|user[\s-]?facing|legacy|new|existing|enterprise|consumer|b2b|b2c|saas|mobile|web|fintech|edtech|healthtech|e[\s-]?commerce|growth|onboarding|checkout|payments?|dashboard|portal|product|platform|system|app|tool|component|service|users?\s+in)\b|\bon\s+(?:an?\s+|our\s+)(?:admin|internal|customer[\s-]?facing|legacy|new|existing|enterprise|consumer|b2b|b2c|saas|mobile|web|fintech|edtech|healthtech|e[\s-]?commerce|growth|onboarding|checkout|payments?|dashboard|portal|product|platform|system)\b|\bin\s+one\s+of\s+my\s+(?:projects|roles|teams)\b|\bin\s+my\s+(?:current|previous|last)\s+(?:project|role|team|company)\b/i;
 
 const TASK_RE = /\b(?:the\s+(?:challenge|problem|goal|task|ask|brief)|needed\s+to|had\s+to|was\s+(?:asked|tasked)\s+to|the\s+target\s+was|our\s+goal\s+was|the\s+brief\s+was)\b/i;
 

@@ -377,6 +377,50 @@ describe("behavioralAnalyzer", () => {
     expect(out.rubricGaps.some((g) => g.flag === "register_drift_to_us")).toBe(true);
   });
 
+  it("Phase-6.3: flags metric_without_baseline when answers quote numbers but skip evidence", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you improved performance on a low-bandwidth product."),
+          user(
+            "In one of my projects we designed for users in Tier 2 cities. I prioritised compressed assets and simpler components. The page load time reduced by around 35-40% on slower networks and task completion improved by roughly 15-20%, especially on mobile devices.",
+          ),
+          ai("Quantify the impact on user experience."),
+          user(
+            "Yes, we saw a 30% lift in conversion and engagement went up by 25%. Users were more active and bounce dropped significantly.",
+          ),
+          ai("Tell me about another project."),
+          user(
+            "I led the redesign of a checkout funnel. Drop-off improved by 40% and we shipped on time.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("metric_without_baseline");
+    expect(out.flags).toContain("ai_accepted_unevidenced_metric");
+    expect(out.coachingNotes.toLowerCase()).toMatch(/baseline|measured|sample/);
+    expect(out.meta?.behavioral?.evidence?.metricAnswersCount).toBeGreaterThanOrEqual(2);
+    expect(out.meta?.behavioral?.evidence?.metricAnswersUnevidenced).toBeGreaterThanOrEqual(2);
+  });
+
+  it("Phase-6.3: does NOT flag metric_without_baseline when metrics are well-evidenced", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you improved a metric."),
+          user(
+            "In one of my roles I owned the onboarding funnel. In the A/B test across 80000 users, completion rose from 11% to 16% over two weeks. We confirmed via Mixpanel analytics that the lift held across cohorts.",
+          ),
+          ai("Another example?"),
+          user(
+            "I led a checkout redesign. Conversion was at 8% previously; after launch it sat at 14%, measured via our analytics dashboard across roughly 50000 weekly users.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("metric_without_baseline");
+  });
+
   it("Phase-4.1: does not fire register_drift on a clean Indian-register session", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({

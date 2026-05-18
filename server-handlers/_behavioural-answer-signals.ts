@@ -59,6 +59,20 @@ export function detectVagueness(answer: string | null | undefined): boolean {
   return VAGUENESS_WORDS_RE.test(t);
 }
 
+/** Return the first scale-word hit (lowercased) when an answer is vague,
+ *  else null. Lets coaching surfaces quote the candidate's *actual* hedge
+ *  ("some", "few", "many") instead of a static example list — avoids the
+ *  jarring "'many', 'several', 'a lot'" chip on an answer that said
+ *  "some". Mirrors the quote-the-match discipline used in
+ *  `resume_transcript_mismatch`. */
+export function vaguenessMatch(answer: string | null | undefined): string | null {
+  const t = answer || "";
+  if (!t) return null;
+  if (NUMERIC_TOKEN_RE.test(t)) return null;
+  const m = t.match(VAGUENESS_WORDS_RE);
+  return m ? m[0].toLowerCase() : null;
+}
+
 export type Crispness = "thin" | "ok" | "rambling";
 
 /** Word-count shape. Thin: < 40, Ok: 40–300, Rambling: > 300. */

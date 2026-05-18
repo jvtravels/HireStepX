@@ -38,11 +38,12 @@ import {
   isVagueAnswer,
 } from "./_behavioral-probing";
 import { findUsismDrift, type UsismHit } from "./_usism-patterns";
+import { detectEvidenceQuality } from "../_evidence-signals";
 
 type StarPart = "S" | "T" | "A" | "R";
 
 const STAR_CUES: Record<StarPart, RegExp[]> = {
-  S: [/\b(situation|context|background|at the time|when i was|the project was|we were|the team was|i once|once when|earlier this year|last year|previously)\b/i],
+  S: [/\b(situation|context|background|at the time|when i was|the project was|we were|the team was|i once|once when|earlier this year|last year|previously)\b/i, /\bin one of my (?:projects|roles|teams)\b/i, /\bin my (?:current|previous|last) (?:project|role|team|company)\b/i, /\bfor (?:an?|our) (?:admin|internal|customer[\s-]?facing|user[\s-]?facing|legacy|enterprise|consumer|b2b|b2c|saas|mobile|web|fintech|edtech|healthtech|e[\s-]?commerce|growth|onboarding|checkout|payments?|dashboard|portal|product|platform|system|app|tool|component|service)\b/i],
   T: [/\b(my (?:task|goal|job|role|responsibility)|i was (?:responsible|assigned|asked|told)|the objective|i needed to|asked me to|to (?:adopt|migrate|deliver|ship|fix|build|design|reduce|launch))\b/i],
   // Action: any "I + past-tense verb" or "I + modal-action" — broad on purpose, narrows via R/T overlap.
   // Action: "I" + (optional filler word) + past-tense verb, OR explicit phrases.
@@ -133,7 +134,7 @@ function normalizeQuestion(text: string): string {
 
 export const behavioralAnalyzer: FocusAnalyzer = {
   focus: "behavioral",
-  version: "behavioral-v4",
+  version: "behavioral-v5",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -163,6 +164,17 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     let learningReflections = 0;
     let failureQuestionAsked = false;
     let failureResponse: "owns" | "deflects" | "neutral" | null = null;
+
+    /* Phase-6.3 evidence-quality counters. An answer with a metric but
+     * no baseline / method / sample is a soft fail at senior level —
+     * Bar-Raiser interviewers push exactly there. We aggregate across
+     * the session because one floating "+30%" is forgivable; a pattern
+     * of unsourced metrics + an AI that never probes the source is
+     * what we want to flag. */
+    let metricAnswersCount = 0;
+    let metricAnswersUnevidenced = 0;
+    let aiAcceptedUnevidencedMetric = 0;
+    const evidenceGapHits: { turn_idx: number; missing: string[]; preview: string }[] = [];
 
     const seenQuestions: { idx: number; norm: string }[] = [];
     const starBreakdown: NonNullable<NonNullable<AnalyzerResult["meta"]>["behavioral"]>["starBreakdown"] = [];
@@ -234,6 +246,38 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       const quantified = hasImpactQuantified(text);
       if (parts.has("A") && !quantified) {
         unquantifiedCount += 1;
+      }
+
+      /* Phase-6.3 evidence-quality scan. Independent of the
+       * `hasImpactQuantified` STAR signal: that asks "did the
+       * candidate quote a number near a result verb?"; this asks
+       * "for the numbers they quoted, did they attach baseline /
+       * method / sample size?". A senior answer does both. */
+      const evidence = detectEvidenceQuality(text);
+      if (evidence.hasMetric) {
+        metricAnswersCount += 1;
+        if (!evidence.evidenced) {
+          metricAnswersUnevidenced += 1;
+          evidenceGapHits.push({
+            turn_idx: i,
+            missing: evidence.missingDimensions,
+            preview: text.slice(0, 160),
+          });
+          /* AI-side probe check: did the next AI turn ask for
+           * baseline / method / sample? If yes, the gap was caught
+           * conversationally and we don't double-charge the score. */
+          const nextAiTurn = transcript.slice(i + 1, i + 3).find(isAiTurn);
+          if (nextAiTurn) {
+            const probe = nextAiTurn.text || "";
+            const probed =
+              /\b(baseline|before|previously|from\s+\d|down\s+from|up\s+from)\b/i.test(probe) ||
+              /\b(how (?:did|was) (?:you|that|it|the team) (?:measure|measured|track))\b/i.test(probe) ||
+              /\b(a[\s\/-]?b\s+test|sample|cohort|how many users)\b/i.test(probe);
+            if (!probed) aiAcceptedUnevidencedMetric += 1;
+          } else {
+            aiAcceptedUnevidencedMetric += 1;
+          }
+        }
       }
 
       /* Phase 2: per-answer competency detection. Storing the keys
@@ -352,6 +396,28 @@ export const behavioralAnalyzer: FocusAnalyzer = {
      * reflection — gated to sessions with ≥4 substantive answers so
      * short screens don't trip it. Set BEFORE coaching so the
      * coaching block below reads a fully-populated flag set. */
+    /* Phase-6.3 evidence flags. Two distinct signals:
+     *  - `metric_without_baseline` fires on the CANDIDATE (≥2 metric
+     *    answers that floated untethered out of ≥2 metric answers).
+     *  - `ai_accepted_unevidenced_metric` fires on the AI (≥2 cases
+     *    where the next AI turn rolled past without probing).
+     * Separating them matches the way the rest of the analyzer
+     * distinguishes user-side vs interviewer-side misses (see
+     * `frequent_missing_result` vs `ai_accepts_missing_result`). */
+    if (metricAnswersUnevidenced >= 2 && metricAnswersCount >= 2) {
+      flags.add("metric_without_baseline");
+      for (const hit of evidenceGapHits.slice(0, 3)) {
+        gaps.push({
+          dimension: "evidence_quality",
+          expected: "Metrics quoted should attach baseline (from X to Y), measurement method (A/B / analytics), or sample size",
+          observed: `Turn ${hit.turn_idx}: "${hit.preview}" — missing ${hit.missing.join(", ")}`,
+          severity: "medium",
+          flag: "metric_without_baseline",
+        });
+      }
+    }
+    if (aiAcceptedUnevidencedMetric >= 2) flags.add("ai_accepted_unevidenced_metric");
+
     if (aiAcceptedVague >= 2) flags.add("ai_accepted_vague");
     if (userAnswerCount >= 4 && learningReflections === 0) {
       flags.add("no_learning_reflection");
@@ -389,6 +455,12 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("register_drift_to_us")) {
       coachingBits.push("The mock drifted into US framing (USD figures / PTO / 401k) — for Indian-market rounds, keep numbers in ₹ / LPA and leave / PL/CL terminology.");
+    }
+    if (flags.has("metric_without_baseline")) {
+      coachingBits.push("You cited numbers without anchoring them — for senior rounds, always say what the baseline was, how it was measured (A/B test / analytics / session recordings), or the sample size. A floating '35-40% improvement' invites the next probe.");
+    }
+    if (flags.has("ai_accepted_unevidenced_metric")) {
+      coachingBits.push("The mock interviewer rolled past quantified claims without checking the source — in real Bar-Raiser / Director rounds you should expect 'what was the baseline?' or 'how was that measured?' right after every number.");
     }
 
     /* Phase 2: aggregate competency counts across the session and
@@ -435,6 +507,11 @@ export const behavioralAnalyzer: FocusAnalyzer = {
             learningReflections,
             failureQuestionAsked,
             failureResponse,
+          },
+          evidence: {
+            metricAnswersCount,
+            metricAnswersUnevidenced,
+            aiAcceptedUnevidencedMetric,
           },
         },
       };
