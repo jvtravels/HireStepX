@@ -346,7 +346,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.3",
+  version: "campus-placement-v6.4",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -869,7 +869,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
 
     /* ── Wave-4 detection: deeper Indian campus realism ───────────────── */
 
-    // Active backlog evasion (service-tier dealbreaker).
+    // Active backlog evasion (service-tier dealbreaker). Phase-5
+    // adds the symmetric POSITIVE signal `backlog_honest_disclosure`
+    // when the candidate gives a clean, unhedged answer on the same
+    // probe — recruiters explicitly reward this in service-tier loops.
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && BACKLOG_PROBE.test(t.text || "")) {
@@ -882,6 +885,13 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             observed: "Candidate hedged on the backlog probe — recruiters flag this as either active arrears or evasion. Both are dealbreakers at TCS/Infosys/Wipro/Cognizant.",
             severity: "high",
           });
+          break;
+        } else if (reply && reply.text && BACKLOG_CLEAN.test(reply.text) && !BACKLOG_EVASIVE.test(reply.text)) {
+          // Phase-5 positive signal — candidate answered the backlog
+          // probe with a crisp, unhedged clean disclosure. Surfaces
+          // as a green chip on the report and a positive note for the
+          // LLM evaluator to lift the score.
+          flags.add("backlog_honest_disclosure");
           break;
         }
       }
@@ -999,12 +1009,19 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
-    // Aptitude / on-spot puzzle refusal.
+    // Aptitude / on-spot puzzle refusal. Phase-5 also surfaces an
+    // APTITUDE-TO-PROJECT CONSISTENCY signal: when the candidate
+    // refuses a live puzzle AND elsewhere claimed substantial project
+    // depth (TECH_APPLIED evidence or a portfolio link), the two
+    // claims are inconsistent — recruiters drill exactly this gap
+    // ("you shipped a FastAPI service but can't reason about 8 balls?").
+    let aptitudeRefusedAt = -1;
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && APTITUDE_LIVE_PROBE.test(t.text || "")) {
         const reply = transcript.slice(i + 1, i + 3).find(isUser);
         if (reply && reply.text && APTITUDE_REFUSAL.test(reply.text)) {
+          aptitudeRefusedAt = i;
           flags.add("aptitude_puzzle_refusal");
           gaps.push({
             dimension: "preparation",
@@ -1015,6 +1032,18 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           break;
         }
       }
+    }
+    if (
+      aptitudeRefusedAt >= 0 &&
+      (TECH_APPLIED.test(userText) || PORTFOLIO_LINK.test(userText))
+    ) {
+      flags.add("aptitude_project_inconsistency");
+      gaps.push({
+        dimension: "credibility",
+        expected: "If you actually shipped the project you described, a 60-second aptitude question should not be a wall. Anchor the refusal: 'Let me try — I ship in code, so let me reason through it like a debugger.' Refusing while claiming depth invites the recruiter to discount the project.",
+        observed: "Candidate refused a live aptitude / puzzle probe but earlier claimed substantial project depth (applied tech stack or portfolio link). The two signals don't fit — recruiters interpret this as either an inflated project claim or an unwillingness to think on the spot.",
+        severity: "high",
+      });
     }
 
     // Onsite / foreign opportunity premature — fresher asks within first 3 turns.

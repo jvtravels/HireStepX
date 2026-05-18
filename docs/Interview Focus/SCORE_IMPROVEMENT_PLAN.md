@@ -22,24 +22,40 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 
 ## Score summary
 
-| \# | Focus | Baseline | Target | Effort | Status |
-| --- | --- | --- | --- | --- | --- |
-| 1 | HR Round | 8.1 | 9.2 | \~7 days | ✅ Phases 1–5 shipped (+1.0 of +1.1) — analyzer at v5.1.0 |
-| 2 | Salary Negotiation | 8.4 | 9.5 | \~8 days | — |
-| 3 | Behavioral | 7.6 | 9.1 | \~7.5 days | ✅ Phases 1–3 shipped (+1.1 of +1.5) — analyzer at v3 |
-| 4 | Campus Placement | 7.4 | 8.6 | \~6 days | — |
-| 5 | Technical Leadership (Technical + System Design) | 7.8 | 9.0 | \~8 days | — |
-| 6 | Panel Interview | 7.5 | 8.8 | \~6 days | — |
-| 7 | Case Study | 7.2 | 8.7 | \~6.5 days | — |
-| 8 | Strategic | 7.3 | 8.7 | \~6.5 days | — |
-| 9 | Management | 7.4 | 8.7 | \~6 days | — |
-| 10 | Government / PSU | 7.0 | 8.5 | \~6 days | — |
+Verified against on-disk analyzer versions on 2026-05-18 (re-checked from `grep "version:" server-handlers/analyzers/*.ts`). **Current** column reflects shipped phases against the live `version:` field in each analyzer.
 
-**Recommended sequencing**: HR Round → Salary Negotiation are already deepest; ship Behavioral + Campus Placement first (biggest delta-per-day). Then Technical Leadership (largest TAM). Government/PSU last (smallest paying segment but highest competitive moat — nobody else builds for SSC/UPSC/PSU candidates).
+| \# | Focus | Baseline | **Current** | Target | Analyzer version | Effort remaining | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
+| 2 | Salary Negotiation | 8.4 | **8.4** | 9.5 | `salary-negotiation-v4` | \~8 days | — Not started. Largest unrealized revenue-leverage gap. |
+| 3 | Behavioral | 7.6 | **8.7** | 9.1 | `behavioral-v3` | \~2.5 days | ✅ Phases 1–3 shipped (+1.1 of +1.5). Phase 4 (register / persona) + Phase 5 hygiene pending. |
+| 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
+| 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
+| 6 | Panel Interview | 7.5 | **7.5** | 8.8 | `panel-v1` | \~6 days | — Not started. |
+| 7 | Case Study | 7.2 | **7.2** | 8.7 | `case-study-v1` | \~6.5 days | — Not started. |
+| 8 | Strategic | 7.3 | **7.3** | 8.7 | `strategic-v1` | \~6.5 days | — Not started. |
+| 9 | Management | 7.4 | **7.4** | 8.7 | `management-v1` | \~6 days | — Not started. |
+| 10 | Government / PSU | 7.0 | **7.0** | 8.5 | `government-psu-v1` | \~6 days | — Not started. |
+
+**Aggregate progress**:
+
+- **Shipped delta**: +3.3 score-points across HR Round (+1.0), Behavioral (+1.1), Campus Placement (+1.2), Technical (+0.1).
+- **Target reached**: Campus Placement — first focus to hit target. HR Round next (0.1 away).
+- **Untouched**: 5 of 10 focuses (Salary Neg, Panel, Case Study, Strategic, Management, Government/PSU).
+- **Highest unrealized opportunity**: Salary Negotiation — +1.1 score available, 0 shipped. Orphan helpers (`_ctc-breakdown.ts`, `_equity-literacy.ts`, `_negotiation-math.ts:batnaStrength`) still unwired despite being ship-ready.
+
+**Recommended sequencing (updated)**: Campus Placement and HR Round are essentially done. Next priorities by leverage-per-day:
+
+1. **Finish HR Round Phase 5 polish** (~0.5d, +0.1) — closes one focus completely.
+2. **Behavioral Phases 4–5** (~2.5d, +0.4) — closes the second-largest in-flight focus.
+3. **Salary Negotiation Phases 1–5** (~8d, +1.1) — largest unrealized revenue lever; orphan helpers already shipped.
+4. **Technical Leadership** (~7.5d, +1.1) — largest TAM segment.
+5. **Panel / Case Study / Strategic / Management** — mid-tier, bundle in one sprint.
+6. **Government / PSU** last — smallest paying segment but highest competitive moat (nobody else builds for SSC/UPSC/PSU candidates).
 
 ---
 
-## 1. HR Round (8.1 → 9.2)
+## 1. HR Round (8.1 → **9.1** → 9.2)
 
 **File**: `server-handlers/analyzers/hr-round.ts` (v5.1.0, \~36 detection blocks) **State**: Most mature analyzer alongside Salary Neg. Strong signal coverage; gaps are at the edges. Phases 1–5 complete.
 
@@ -133,7 +149,7 @@ Each gets distinct counter-offer logic and pushback patterns.
 
 ---
 
-## 3. Behavioral (7.6 → 9.1)
+## 3. Behavioral (7.6 → **8.7** → 9.1)
 
 **File**: `server-handlers/analyzers/behavioral.ts` (**v3**, \~30 signals) **State**: Phases 1–3 shipped; analyzer now grades STAR per-answer, scores 10 competencies across 5 hiring tracks, and detects AI probing depth + failure ownership.
 
@@ -183,11 +199,11 @@ Each gets distinct counter-offer logic and pushback patterns.
 
 ---
 
-## 4. Campus Placement (7.4 → 8.6)
+## 4. Campus Placement (7.4 → **8.6** ✅ target reached)
 
 **File**: `server-handlers/analyzers/campus-placement.ts`**Target market**: TCS NQT, Infosys NQT, Wipro NLTH — 100k+ Indian hires/yr.
 
-**Status**: Phases 1–4 shipped. Current score 8.4 / 8.6 target. Phase 5 (stretch, +0.2) pending.
+**Status**: ✅ Phases 1–5 shipped. Analyzer at `campus-placement-v6.4`. Target reached.
 
 **Top weaknesses**:
 
@@ -225,15 +241,19 @@ Four archetypes resolved in new helper `server-handlers/_campus-archetype.ts`. A
 - **4.2** ✅ Inherit `BEHAVIOURAL_INDIAN_REGISTER_RULE` for archetypes 1–3 — appended to `TYPE_GUIDANCE` for `interviewType="campus-placement"` in `generate-questions.ts`. STAR-shape mandates NOT inherited (would conflict with TCS NQT openers).
 - **4.3** ✅ Prompt-cache reorder — verified already-correct (static rules precede dynamic `Context:` block per CLAUDE.md guidance).
 
-### Phase 5 — Stretch (\~1.5d, +0.2) — PENDING
+### Phase 5 — Stretch (\~1.5d, +0.2) ✅ DONE
 
-- Bond / service-agreement awareness probe.
-- "Any backlogs?" honest-handling detector.
-- Aptitude-to-project consistency.
+- ✅ Bond / service-agreement awareness probe — already covered by Wave-3 `BOND_PROBE` / `BOND_REFUSAL` / `BOND_IGNORANCE` / `BOND_HEALTHY_RESPONSE` patterns.
+- ✅ "Any backlogs?" honest-handling detector — new positive flag `backlog_honest_disclosure` (paired with existing `active_backlog_evasion`); fires when AI probes backlogs and candidate gives a clean, unhedged disclosure ("zero backlogs", "cleared first attempt").
+- ✅ Aptitude-to-project consistency — new flag `aptitude_project_inconsistency` fires when candidate refuses an aptitude / puzzle probe AND elsewhere claimed applied-tech depth (`TECH_APPLIED`) or a portfolio link (`PORTFOLIO_LINK`).
+- **Tests**: `src/__tests__/campusPlacementPhase5.test.ts` (5 tests). Analyzer bumped to `campus-placement-v6.4`.
 
 ---
 
-## 5. Technical Leadership (7.8 → 9.0)
+## 5. Technical Leadership (7.8 → **7.9** → 9.0)
+
+> Note: `technical.ts` shipped a v1 → v2 bump (+0.1 inferred). `system-design.ts` still at v1. Phases 1–5 still substantively pending end-to-end.
+
 
 Combines `technical.ts` (320 LOC, deepest analyzer outside HR/Sal-Neg) + `system-design.ts` (121 LOC).
 
@@ -538,4 +558,4 @@ Done as part of Salary Neg work but worth flagging — wasted engineering otherw
 
 ---
 
-*Last updated 2026-05-18 — owner: analyzer team. Update score columns after each phase ships.*
+*Last updated 2026-05-18 — owner: analyzer team. Update score columns after each phase ships. Last reconciliation against on-disk analyzer `version:` fields: 2026-05-18.*
