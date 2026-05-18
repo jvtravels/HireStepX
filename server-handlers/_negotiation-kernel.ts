@@ -2521,7 +2521,7 @@ export function parseCandidateAnswer(
   const roles = classifyNumberRoles(a, { lastAiText, phase });
   const currentCtc = roles.currentCtc;
   const competing = roles.competing;
-  let target = roles.target;
+  const target = roles.target;
   const targetAsRange = roles.targetAsRange;
 
   /* Competing-without-number: candidate has signaled competing exists
