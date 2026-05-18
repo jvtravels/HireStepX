@@ -429,4 +429,16 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         hint: "The recruiter heard you ask for clarification on a term they just used and is defining it inline — a strong signal that you can ask for plain English without losing ground.",
       };
   }
+  /* Exhaustiveness fallback — TS's stricter Vercel build flags this
+   * function as "lacks ending return" without an explicit out-of-switch
+   * return, even though every NextAction kind has a case. The fallback
+   * also future-proofs against new NextAction kinds shipped without a
+   * corresponding move-tag entry. */
+  const _exhaustive: never = action;
+  void _exhaustive;
+  return {
+    label: "Continuing the conversation",
+    family: "meta",
+    hint: "The recruiter is moving the conversation forward — stay focused on the next concrete decision.",
+  };
 }
