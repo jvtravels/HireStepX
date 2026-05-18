@@ -13,10 +13,45 @@
  */
 
 /** True when the candidate's last utterance contains a frustration
- *  cue ("I already told you my CTC is 18", "you keep asking", "I just
- *  said", "we covered this", "asked and answered"). Conservative —
- *  the live planner only fires the recover lever when this matches;
- *  false positives interrupt the negotiation, so the cue list is
- *  deliberately narrow. */
-export const USER_FRUSTRATION_RE =
-  /\b(?:i\s+already\s+told\s+you|you\s+keep\s+asking|i\s+just\s+said|we\s+(?:covered|discussed)\s+this|asked\s+(?:and\s+)?answered)\b/i;
+ *  cue. Live planner uses this to promote `acknowledge-and-recover` to
+ *  the top of the cascade.
+ *
+ *  PDF#30 broadening (2026-05-18) — every cue in this regex maps to a
+ *  candidate phrasing actually observed in the Meesho/Prita session:
+ *    T5  "already told you 24 LPA CTC"          (no leading "i")
+ *    T9  "why are you repeating the question?"
+ *    T15 "I have told you multiple times..."    (not "already told")
+ *    T17 "but why do you want justification on my current CTC"
+ *
+ *  Conservative still — each alt requires a verb that pins the
+ *  candidate complaining about repetition / re-asking; no bare cues
+ *  like "I said" or "told you" alone (false-positive risk on normal
+ *  disclosure).
+ */
+export const USER_FRUSTRATION_RE = new RegExp(
+  [
+    // "I already told you" / "I have told you" / "I told you (already|multiple times|before)" / "already told you" (no leading "i", PDF#30 T5)
+    String.raw`(?:\bi\s+)?(?:have\s+|already\s+)?told\s+you(?:\s+(?:already|multiple\s+times|before|many\s+times|so\s+many\s+times))?`,
+    // "you keep asking" / "you keep repeating"
+    String.raw`\byou\s+keep\s+(?:asking|repeating)`,
+    // "I just said"
+    String.raw`\bi\s+just\s+said\b`,
+    // "we covered this" / "we discussed this"
+    String.raw`\bwe\s+(?:covered|discussed)\s+this`,
+    // "asked and answered"
+    String.raw`\basked\s+(?:and\s+)?answered`,
+    // "as I mentioned" / "as I said" / "like I said" / "I repeat"
+    String.raw`\b(?:as|like)\s+i\s+(?:mentioned|said|stated|told\s+you)\b`,
+    String.raw`\bi\s+repeat\b`,
+    // PDF#30 T9 — "why are you repeating the question?" / "why are you asking again?"
+    String.raw`\bwhy\s+(?:are\s+you|do\s+you|you)\s+(?:repeat(?:ing)?|ask(?:ing)?\s+(?:again|the\s+same|me\s+(?:again|the\s+same))|keep\s+(?:asking|repeating))`,
+    // PDF#30 T17 — "but why do you want justification on my current CTC" —
+    // the candidate questioning the bot's premise after already disclosing.
+    String.raw`\bwhy\s+do\s+you\s+(?:want|need)\s+(?:justification|to\s+(?:ask|know))`,
+    // "multiple times" / "many times" as standalone qualifier when paired
+    // with "told"/"said" (handled by the first alt above) — also catch
+    // bare "i said this (already|multiple times)" without "told".
+    String.raw`\bi\s+said\s+(?:this\s+)?(?:already|multiple\s+times|many\s+times|before)`,
+  ].join("|"),
+  "i",
+);
