@@ -772,7 +772,16 @@ If unclear, default to IAS-style interview tone.`,
 - BOND PROBE: if the company is service-tier (TCS, Infosys, Wipro, Cognizant, HCL, Tech Mahindra, Capgemini, Accenture), include a direct bond question: "We have a [duration] service agreement. Are you comfortable signing it? What would make you reconsider?" Use real durations: TCS 2yr, Infosys 1yr, Wipro 1yr-15-month + 2L bond, Cognizant 1yr, HCL 1.5yr, Tech Mahindra 1yr, Capgemini 1yr, Accenture 1yr.
 - REVERSE-QUESTION GRADE: the closing question MUST be "Do you have any questions for us?" — and the LLM should be ready to silently grade the smartness of what comes back (specific = good, "what's the work culture" = generic = weak signal).`
       : "";
-    const typeGuidance = (TYPE_GUIDANCE[interviewType] || "") + stressPostureDirective + recipeFragment + (canonFragment ? `\n\n${canonFragment}` : "");
+    /* Phase-4 (4.2) — campus-placement inherits ONLY the Indian-register
+     * spelling/idiom rule from behavioural (not the STAR shape rules,
+     * which conflict with TCS NQT openers like "introduce yourself").
+     * Pinned to interviewType="campus-placement" so it appends to
+     * TYPE_GUIDANCE without affecting other tracks. Static — cached
+     * by Groq alongside the rest of TYPE_GUIDANCE. */
+    const campusRegisterAppend = interviewType === "campus-placement"
+      ? `\n\n${BEHAVIOURAL_INDIAN_REGISTER_RULE}`
+      : "";
+    const typeGuidance = (TYPE_GUIDANCE[interviewType] || "") + campusRegisterAppend + stressPostureDirective + recipeFragment + (canonFragment ? `\n\n${canonFragment}` : "");
 
     /* ROLE FENCE — keep questions inside the discipline the candidate is
        actually being evaluated on. The user-reported failure mode: a
