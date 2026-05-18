@@ -139,6 +139,39 @@ export interface AnalyzerMeta {
     archetype?: string;
     archetypeLabel?: string;
   };
+  /** Salary-negotiation: tier-aware scoring band + CTC take-home
+   *  breakdown the analyzer used. Surfaced in the report header so the
+   *  candidate sees which compensation band they were graded against,
+   *  and on the offer card so they see in-hand monthly under both tax
+   *  regimes. Populated only when the session has a closing offer +
+   *  target_role; old insight rows render the report without it. */
+  salaryNegotiation?: {
+    /** Canonical bucket label, e.g. "FAANG / Big-Tech / GCC", "Indian
+     *  unicorn", "Early-stage startup". Stable strings — UI displays
+     *  verbatim. `undefined` when company isn't recognised. */
+    tierBucket?:
+      | "listed_big_tech"
+      | "listed_unicorn"
+      | "mature_unicorn"
+      | "growth_startup"
+      | "early_startup"
+      | "it_services"
+      | "bfsi"
+      | "fmcg"
+      | "psu";
+    tierBucketLabel?: string;
+    /** Closing offer total CTC (LPA) — the number used for the
+     *  take-home computation below. Null when no offer was extracted. */
+    closingTotalLpa?: number | null;
+    /** In-hand monthly (₹) under both regimes for the closing offer.
+     *  Null when no offer was extracted. */
+    monthlyTakeHomeNewRegimeInr?: number | null;
+    monthlyTakeHomeOldRegimeInr?: number | null;
+    /** Annual tax under each regime (LPA). Used by the UI to render the
+     *  "₹X.X LPA tax under new regime" hint line. */
+    annualTaxNewRegimeLpa?: number | null;
+    annualTaxOldRegimeLpa?: number | null;
+  };
 }
 
 export interface AnalyzerResult {

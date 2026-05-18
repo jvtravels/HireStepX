@@ -22,12 +22,12 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 
 ## Score summary
 
-Verified against on-disk analyzer versions on 2026-05-18 (re-checked from `grep "version:" server-handlers/analyzers/*.ts`). **Current** column reflects shipped phases against the live `version:` field in each analyzer.
+Verified against on-disk analyzer versions on 2026-05-19 (re-checked from `grep "version:" server-handlers/analyzers/*.ts`). **Current** column reflects shipped phases against the live `version:` field in each analyzer.
 
 | \# | Focus | Baseline | **Current** | Target | Analyzer version | Effort remaining | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | HR Round | 8.1 | **9.1** | 9.2 | `hr-round-v5.1.0` | \~0.5d | ✅ Phases 1–5 shipped (+1.0 of +1.1). Within 0.1 of target — polish only. |
-| 2 | Salary Negotiation | 8.4 | **8.4** | 9.5 | `salary-negotiation-v4` | \~8 days | — Not started. Largest unrealized revenue-leverage gap. |
+| 2 | Salary Negotiation | 8.4 | **8.7** | 9.5 | `salary-negotiation-v5` | \~7 days | ✅ Phase 1 shipped (+0.3 of +1.1) — `_ctc-breakdown.ts` wired, coaching catalog clustered, tier band in header. Phases 2–5 pending. |
 | 3 | Behavioral | 7.6 | **9.1** | 9.1 | `behavioral-v4` | 0d (stretch only) | ✅ **Target reached.** Phases 1–5 shipped (+1.5 of +1.5). Phase 6 (stretch) optional. |
 | 4 | Campus Placement | 7.4 | **8.6** | 8.6 | `campus-placement-v6.4` | 0d | ✅ **Target reached.** Phases 1–5 shipped (+1.2 of +1.2). Live version v6.4 confirms continued post-target iteration. |
 | 5 | Technical Leadership (Technical + System Design) | 7.8 | **7.9** | 9.0 | `technical-v2` / `system-design-v1` | \~7.5 days | Technical analyzer at v2 (+0.1 inferred from version bump). System Design untouched. Phases 1–5 still pending end-to-end. |
@@ -39,10 +39,10 @@ Verified against on-disk analyzer versions on 2026-05-18 (re-checked from `grep 
 
 **Aggregate progress**:
 
-- **Shipped delta**: +3.7 score-points across HR Round (+1.0), Behavioral (+1.5), Campus Placement (+1.2), Technical (+0.1).
+- **Shipped delta**: +4.0 score-points across HR Round (+1.0), Behavioral (+1.5), Campus Placement (+1.2), Salary Negotiation (+0.3), Technical (+0.1).
 - **Target reached**: Campus Placement + Behavioral. HR Round next (0.1 away).
-- **Untouched**: 5 of 10 focuses (Salary Neg, Panel, Case Study, Strategic, Management, Government/PSU).
-- **Highest unrealized opportunity**: Salary Negotiation — +1.1 score available, 0 shipped. Orphan helpers (`_ctc-breakdown.ts`, `_equity-literacy.ts`, `_negotiation-math.ts:batnaStrength`) still unwired despite being ship-ready.
+- **Untouched**: 4 of 10 focuses (Panel, Case Study, Strategic, Management, Government/PSU).
+- **Highest unrealized opportunity**: Salary Negotiation — +0.8 score still available. Phase 1 wired `_ctc-breakdown.ts`; `_equity-literacy.ts` + `_negotiation-math.ts:batnaStrength` queued for Phase 2.
 
 **Recommended sequencing (updated)**: Campus Placement and HR Round are essentially done. Next priorities by leverage-per-day:
 
@@ -110,11 +110,12 @@ Selector keyed off company tier × experience: TA for IT-services / startup-earl
 2. CTC breakdown helper exists but never surfaces in report
 3. Equity-literacy helper exists but unused — startup/unicorn candidates fly blind on ESOP terms
 
-### Phase 1 — Quick wins (\~1d, +0.3)
+### Phase 1 — Quick wins (\~1d, +0.3) ✅ DONE (commit `4fede45`)
 
-- **1.1** Wire `computeOldRegimeTaxLpa` + `computeNewRegimeTaxLpa` from `_ctc-breakdown.ts` into the report — show in-hand monthly under both regimes for the negotiated offer.
-- **1.2** Expand coaching catalog from 5 to \~20 tips, one per top-frequency flag cluster.
-- **1.3** Surface `tierBucket` (FAANG/GCC/Unicorn/Startup/Services/BFSI) in the report header so candidate sees which band they were scored against.
+- **1.1** ✅ Wire `computeOldRegimeTaxLpa` + `computeNewRegimeTaxLpa` from `_ctc-breakdown.ts` into the report — show in-hand monthly under both regimes for the negotiated offer. → Analyzer writes `meta.salaryNegotiation.{closingTotalLpa, monthlyTakeHomeNewRegimeInr, monthlyTakeHomeOldRegimeInr, annualTaxNewRegimeLpa, annualTaxOldRegimeLpa}` against the last AI compensation claim. UI renders `InHandMonthlyCard` in `NegotiationFullReport.tsx` directly under the offer trajectory, side-by-side new vs old regime + caveat line.
+- **1.2** ✅ Expand coaching catalog from 5 to \~20 tips, one per top-frequency flag cluster. → `CLUSTERS` table mirrors HR-round v4.5 (commit `06881b8`): discovery / anchoring / counter / close. "Pattern, not isolated" line prepended when ≥2 cluster members fire. ~20 per-flag tips appended covering usism drift, role-company mismatch, stale calibration, anchoring/underask/moonshot, BATNA, equity, joining bonus, notice period, accepted-without-pushback, silent capitulation, no-counter, regression, unrealistic close, self-contradiction, misread-conditional, ignored-complaint, repetition stutter, reversed range, arithmetic error, hallucinated band.
+- **1.3** ✅ Surface `tierBucket` (FAANG/GCC/Unicorn/Startup/Services/BFSI) in the report header so candidate sees which band they were scored against. → `meta.salaryNegotiation.tierBucketLabel` rendered as a mono chip ("Tier · Indian unicorn") in `NegotiationFullReport` header alongside the existing copper Salary Negotiation pill. Tier band emitted independently of closing offer, so first-time sessions on services / startup tier still see it.
+- **Version**: bumped to `salary-negotiation-v5`. Tests: `src/__tests__/analyzers/salary-negotiation.test.ts` extended with 8 Phase-1 cases (meta presence, regime monthly math, tier-only fallback, omitted meta when unknown, two cluster narratives, expanded per-flag tips, version bump). All 32 file-local cases + full vitest suite (368 files / 5945 tests) green.
 
 ### Phase 2 — Depth validators (\~2d, +0.4)
 

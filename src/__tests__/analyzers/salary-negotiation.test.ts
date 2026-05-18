@@ -141,6 +141,124 @@ describe("salaryNegotiationAnalyzer", () => {
   });
 });
 
+/* ─── Phase 1 (SCORE_IMPROVEMENT_PLAN.md section 2) ─────────────
+   Coverage for v5: tier-bucket meta, CTC take-home wire-in, and
+   the CLUSTERS-based coaching catalog. */
+describe("salaryNegotiationAnalyzer v5 — Phase 1 wire-ins", () => {
+  it("emits salaryNegotiation meta with tierBucket + tierBucketLabel for known company", async () => {
+    const ses = session([
+      ai("For your senior role we can offer 60 LPA total — base 42 + variable 12 + joining 6 LPA."),
+      user("My expectation is 70 LPA based on my research. I have a competing offer at 65 LPA."),
+      ai("Let me see what I can stretch to. Equity vests over 4 years quarterly. Notice period is 60 days."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    ses.target_company = "Razorpay"; // mature unicorn
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation).toBeDefined();
+    expect(out.meta?.salaryNegotiation?.tierBucket).toBe("mature_unicorn");
+    expect(out.meta?.salaryNegotiation?.tierBucketLabel).toBe("Indian unicorn");
+  });
+
+  it("computes monthly take-home under both regimes when AI quotes a closing offer", async () => {
+    const ses = session([
+      ai("For your senior role we can offer 30 LPA total compensation. Equity vests over 4 years."),
+      user("My target is 35 LPA based on my research. I have a competing offer at 32 LPA."),
+      ai("I can stretch to 32 LPA total compensation. Notice period 60 days, buyout possible."),
+    ]) as SessionRowForAnalysis & { target_role?: string; target_company?: string };
+    ses.target_role = "Senior Software Engineer";
+    ses.target_company = "Razorpay";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    const m = out.meta?.salaryNegotiation;
+    expect(m?.closingTotalLpa).toBeCloseTo(32, 1);
+    expect(typeof m?.monthlyTakeHomeNewRegimeInr).toBe("number");
+    expect(typeof m?.monthlyTakeHomeOldRegimeInr).toBe("number");
+    // Sanity: monthly take-home for 32 LPA new regime should land somewhere
+    // in ₹1.4L–₹2.2L/mo range (3.5k–5.5k per LPA × 32 = 112k–176k, before
+    // tax. Post-tax slightly lower).
+    expect(m!.monthlyTakeHomeNewRegimeInr!).toBeGreaterThan(100000);
+    expect(m!.monthlyTakeHomeNewRegimeInr!).toBeLessThan(250000);
+    expect(m!.annualTaxNewRegimeLpa).not.toBeNull();
+  });
+
+  it("emits tier meta even when no closing offer is present", async () => {
+    const ses = session([
+      ai("Tell me about your salary expectations."),
+      user("I'm flexible, depends on the role and level."),
+    ]) as SessionRowForAnalysis & { target_company?: string };
+    ses.target_company = "Razorpay";
+    const out = await salaryNegotiationAnalyzer.analyze({ session: ses });
+    expect(out.meta?.salaryNegotiation?.tierBucket).toBe("mature_unicorn");
+    expect(out.meta?.salaryNegotiation?.closingTotalLpa).toBeNull();
+    expect(out.meta?.salaryNegotiation?.monthlyTakeHomeNewRegimeInr).toBeNull();
+  });
+
+  it("omits salaryNegotiation meta entirely for unrecognised company + no offer", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Tell me about your expectations."),
+        user("Whatever you can offer is fine."),
+      ]),
+    });
+    expect(out.meta?.salaryNegotiation).toBeUndefined();
+  });
+
+  it("renders a 'Pattern, not isolated' discovery-cluster tip when ≥2 cluster members fire", async () => {
+    // Trigger equity_never_discussed + joining_bonus_never_discussed +
+    // notice_period_never_discussed — all in the discovery cluster.
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("Tell me about your expectations."),
+        user("I'm targeting around 30 LPA based on my research and have an alternative offer at 28 LPA elsewhere."),
+        ai("That's reasonable. Can you stretch your timeline?"),
+        user("Yes, I can be flexible on start date if the base meets my target."),
+        ai("Got it, let me come back with numbers."),
+      ]),
+    });
+    expect(out.coachingNotes).toMatch(/Pattern, not isolated/);
+    expect(out.coachingNotes).toMatch(/discovery/i);
+  });
+
+  it("renders an anchoring-cluster tip when user_never_anchored + no_batna_articulated both fire", async () => {
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("What are your salary expectations?"),
+        user("I'm flexible, what does the role pay typically these days?"),
+        ai("We can offer 24 LPA base."),
+        user("Hmm okay, can you do better than that please?"),
+        ai("We could go to 26 LPA."),
+        user("Alright that sounds workable I guess."),
+      ]),
+    });
+    expect(out.coachingNotes).toMatch(/Pattern, not isolated/);
+    expect(out.coachingNotes).toMatch(/anchoring/i);
+  });
+
+  it("expanded catalog: per-flag tips for the top-frequency flags now exist", async () => {
+    // Drive a session that triggers user_never_anchored + no_batna + all
+    // three discovery flags so we hit at least 5 per-flag tips. Need
+    // ≥2 substantive (>30 char) user turns to clear the userTurnCount
+    // gate inside the analyzer.
+    const out = await salaryNegotiationAnalyzer.analyze({
+      session: session([
+        ai("What are your salary expectations for this senior role?"),
+        user("I'm pretty flexible on the comp side, would love to hear what you have in mind."),
+        ai("We typically offer 20 LPA for this level of experience and scope."),
+        user("Okay that sounds reasonable, I think that works for me as a starting point."),
+        ai("Great. We'll send the formal offer letter through HR within 48 hours."),
+      ]),
+    });
+    expect(out.coachingNotes).toMatch(/researched target range/i);
+    expect(out.coachingNotes).toMatch(/BATNA/);
+    expect(out.coachingNotes).toMatch(/Equity is often the largest lever/);
+    expect(out.coachingNotes).toMatch(/Joining bonus/);
+    expect(out.coachingNotes).toMatch(/Notice period/);
+  });
+
+  it("bumps version to v5", () => {
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v5");
+  });
+});
+
 /* Direct behavioral tests for applyTitleExpFloor via generateNegotiationBand.
  * Confirms title prefix overrides YOE-derived experience floor. */
 import { generateNegotiationBand } from "../../../data/salary-lookup";

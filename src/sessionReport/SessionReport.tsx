@@ -246,6 +246,20 @@ export const SessionReport = memo(function SessionReport({
     statedCgpa: number | null;
     targetCompany?: string | null;
   } | undefined>(undefined);
+  /* Salary-negotiation: tier-aware compensation bucket the analyzer
+   * scored against + CTC take-home breakdown for the closing offer.
+   * Plumbed in parallel to campusPlacementMeta from the same insights
+   * row. `undefined` until fetched OR when the row predates v5
+   * (salary-negotiation-v5 ships the meta). */
+  const [salaryNegotiationMeta, setSalaryNegotiationMeta] = useState<{
+    tierBucket?: string;
+    tierBucketLabel?: string;
+    closingTotalLpa?: number | null;
+    monthlyTakeHomeNewRegimeInr?: number | null;
+    monthlyTakeHomeOldRegimeInr?: number | null;
+    annualTaxNewRegimeLpa?: number | null;
+    annualTaxOldRegimeLpa?: number | null;
+  } | undefined>(undefined);
 
   const roleFamily: RoleFamily = useMemo(
     () => roleToFamily(session.role),
@@ -444,6 +458,25 @@ export const SessionReport = memo(function SessionReport({
                 targetCompany: typeof c.targetCompany === "string" ? c.targetCompany : null,
               });
             }
+          }
+          /* Salary-negotiation meta — same shape narrowing. Render
+           * only when at least the tier band is known, so first-time
+           * sessions on services / startup tier still get the header
+           * chip even before a closing offer is extracted. */
+          const sn = (meta as { salaryNegotiation?: unknown }).salaryNegotiation;
+          if (sn && typeof sn === "object") {
+            const s = sn as Record<string, unknown>;
+            const numOrNull = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+            const strOrUndef = (v: unknown) => (typeof v === "string" ? v : undefined);
+            setSalaryNegotiationMeta({
+              tierBucket: strOrUndef(s.tierBucket),
+              tierBucketLabel: strOrUndef(s.tierBucketLabel),
+              closingTotalLpa: numOrNull(s.closingTotalLpa),
+              monthlyTakeHomeNewRegimeInr: numOrNull(s.monthlyTakeHomeNewRegimeInr),
+              monthlyTakeHomeOldRegimeInr: numOrNull(s.monthlyTakeHomeOldRegimeInr),
+              annualTaxNewRegimeLpa: numOrNull(s.annualTaxNewRegimeLpa),
+              annualTaxOldRegimeLpa: numOrNull(s.annualTaxOldRegimeLpa),
+            });
           }
         }
       })
@@ -706,6 +739,7 @@ export const SessionReport = memo(function SessionReport({
       credibility={credibility}
       onDisputeCredibility={onDisputeCredibility}
       campusPlacementMeta={campusPlacementMeta}
+      salaryNegotiationMeta={salaryNegotiationMeta}
     />
   );
 });

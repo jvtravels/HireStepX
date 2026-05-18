@@ -2889,6 +2889,20 @@ export interface SessionReportViewProps {
     archetype?: string;
     archetypeLabel?: string;
   };
+  /** Salary-negotiation: tier-aware compensation bucket the analyzer
+   *  scored against + CTC take-home breakdown for the closing offer.
+   *  When present, the NegotiationFullReport renders a tier-band chip
+   *  in its header and an in-hand-monthly card under the offer
+   *  trajectory. Undefined for non-salary sessions or pre-v5 rows. */
+  salaryNegotiationMeta?: {
+    tierBucket?: string;
+    tierBucketLabel?: string;
+    closingTotalLpa?: number | null;
+    monthlyTakeHomeNewRegimeInr?: number | null;
+    monthlyTakeHomeOldRegimeInr?: number | null;
+    annualTaxNewRegimeLpa?: number | null;
+    annualTaxOldRegimeLpa?: number | null;
+  };
 }
 
 export default function SessionReportView({
@@ -2904,6 +2918,7 @@ export default function SessionReportView({
   credibility,
   onDisputeCredibility,
   campusPlacementMeta,
+  salaryNegotiationMeta,
 }: SessionReportViewProps) {
   // Pick the highest-scoring question so the "Save top story" CTA
   // points at the right answer. Falls back to the first question.
@@ -2962,6 +2977,7 @@ export default function SessionReportView({
               questions={data.questions}
               daysUntilInterview={data.daysUntilInterview}
               priorSessionCount={data.priorSessionCount}
+              salaryMeta={salaryNegotiationMeta}
             />
           )}
           {data.kernelMetrics && (

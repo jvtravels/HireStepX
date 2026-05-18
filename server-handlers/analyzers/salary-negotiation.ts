@@ -35,6 +35,26 @@ import { matchRoleKey } from "../../data/salaries";
 import { askPositioning, landingZone, type CompanyTierBucket } from "../../src/_negotiation-math";
 import { getCompanyTier } from "../../data/company-tiers";
 import { detectRoleCompanyFit } from "../../src/_role-company-fit";
+import {
+  computeNewRegimeTaxLpa,
+  computeOldRegimeTaxLpa,
+  variablePayoutFactorForTier,
+} from "../../src/_ctc-breakdown";
+
+/** Human-readable label per CompanyTierBucket. Surfaced in the report
+ *  header so the candidate sees which band they were scored against
+ *  (FAANG vs. early-stage startup grade salary moves very differently). */
+const TIER_BUCKET_LABEL: Record<CompanyTierBucket, string> = {
+  listed_big_tech: "FAANG / Big-Tech / GCC",
+  listed_unicorn: "Listed Indian unicorn",
+  mature_unicorn: "Indian unicorn",
+  growth_startup: "Growth-stage startup",
+  early_startup: "Early-stage startup",
+  it_services: "IT services",
+  bfsi: "BFSI",
+  fmcg: "FMCG",
+  psu: "Government / PSU",
+};
 
 /** Local tier mapper. Mirrors the one in salary-lookup.ts. Kept here to
  *  avoid circular imports between data/ and src/ helpers. */
@@ -247,7 +267,14 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   // ai_ignored_user_complaint fires on no-acknowledge as well as
   // premature-close. Plus code-level guards in follow-up.ts (LLM dedup
   // retry) and generate-questions.ts (initial-offer fallback inject).
-  version: "salary-negotiation-v4",
+  // v5 (Phase 1 of SCORE_IMPROVEMENT_PLAN section 2):
+  //   - Wires CTC take-home (computeNewRegimeTaxLpa / computeOldRegimeTaxLpa)
+  //     into a `meta.salaryNegotiation` block so the report can render
+  //     in-hand monthly under both regimes on the offer card.
+  //   - Surfaces `tierBucket` (+ label) on meta for header chip.
+  //   - Coaching catalog expanded 5 → ~20 tips via CLUSTERS pattern
+  //     (mirrors hr-round v4.5 / commit 06881b8).
+  version: "salary-negotiation-v5",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -917,27 +944,219 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     }
 
     // --- 5. Coaching summary ---
+    // v5: grouped into narrative clusters (discovery / anchoring /
+    // counter / close). When ≥2 members of a cluster fire, lead with a
+    // "Pattern, not isolated" line so the candidate sees the cluster
+    // signal before the per-flag tips. Mirrors hr-round v4.5 pattern
+    // (commit 06881b8).
     const tips: string[] = [];
+
+    /* ── Coaching clusters (v5) ──
+       Each cluster groups flags by negotiation phase so the report
+       leads with phase framing when ≥2 flags in the same phase fire.
+       Salary negotiation is scored as a sequence of moves, not as a
+       bag of points — telling the candidate "two anchoring failures
+       in one session" lands harder than two isolated one-liners. */
+    const CLUSTERS: Array<{ label: string; theme: string; members: string[] }> = [
+      {
+        label: "discovery",
+        theme: "discovery + comp-component awareness",
+        members: [
+          "equity_never_discussed",
+          "joining_bonus_never_discussed",
+          "notice_period_never_discussed",
+        ],
+      },
+      {
+        label: "anchoring",
+        theme: "anchoring + opener",
+        members: [
+          "user_never_anchored",
+          "user_below_band_underask",
+          "user_moonshot_no_batna",
+          "no_batna_articulated",
+        ],
+      },
+      {
+        label: "counter",
+        theme: "counter quality + recruiter pushback",
+        members: [
+          "ai_accepted_without_pushback",
+          "ai_silent_capitulation",
+          "ai_no_counter_offered",
+          "ai_offer_regression",
+          "ai_unrealistic_close_above_predicted",
+          "ai_under_close_below_predicted",
+        ],
+      },
+      {
+        label: "close",
+        theme: "close + conversation repair",
+        members: [
+          "ai_misread_conditional_as_acceptance",
+          "ai_ignored_user_complaint",
+          "ai_didnt_answer_direct_question",
+          "ai_consecutive_duplicate_question",
+        ],
+      },
+    ];
+    for (const cluster of CLUSTERS) {
+      const hits = cluster.members.filter((m) => flags.has(m));
+      if (hits.length >= 2) {
+        tips.push(
+          `Pattern, not isolated: ${hits.length} signals across ${cluster.theme} (${hits.slice(0, 4).join(", ")}). Indian recruiters read salary negotiation as a sequence — fix the ${cluster.label} phase as a whole, not the loudest single flag.`,
+        );
+      }
+    }
+
+    /* Per-flag tips. Order: voice / setup → anchoring → discovery →
+       counter quality → conversation repair → hallucinations. Each
+       reads as a single actionable line; together they cover the top
+       ~20 flag clusters the analyzer emits today. */
     if (flags.has("ai_usism_drift")) {
-      tips.push("AI hiring-manager voice slipped into US phrasing during the call — flag this as a quality issue if reviewing the transcript.");
+      tips.push("AI hiring-manager voice slipped into US phrasing during the call — flag this as a quality issue if reviewing the transcript. Indian recruiters say 'leave' not 'PTO', 'joining bonus' not 'sign-on package'.");
+    }
+    if (flags.has("role_company_mismatch")) {
+      tips.push("Role × company sector mismatch — the role you picked doesn't usually exist at this company tier. Re-pick before the real round, or your ask will be benchmarked against the wrong band.");
+    }
+    if (flags.has("stale_market_calibration")) {
+      tips.push("Coaching benchmark is over 12 months stale — treat the numbers in this session as directional, not gospel. Pull a fresh band from Levels.fyi / AmbitionBox before your real call.");
     }
     if (flags.has("user_never_anchored")) {
-      tips.push("Open with a researched target range — letting the recruiter quote first costs you leverage.");
+      tips.push("Open with a researched target range — letting the recruiter quote first costs you 10–20% leverage. Indian template: 'Based on my research for this level / location, I'm targeting ₹X-Y total.'");
+    }
+    if (flags.has("user_below_band_underask")) {
+      tips.push("Your ask was below the documented band-min — that's leaving 15–30% on the table. The recruiter will close at-or-below your number; they never raise you above your stated ask.");
+    }
+    if (flags.has("user_moonshot_no_batna")) {
+      tips.push("Asking above band-max without articulating a competing offer or scope rationale reads as anchored-on-a-whim. Either name the BATNA (₹X at Company Y, hard deadline) or pin the moonshot to a concrete scope expansion.");
     }
     if (flags.has("no_batna_articulated")) {
-      tips.push("Reference an alternative offer or clear walk-away point. BATNA is what makes negotiation real.");
+      tips.push("Reference an alternative offer or clear walk-away point. BATNA is what makes negotiation real — without one, every 'I'd need a stretch' reads as wish, not constraint.");
     }
     if (flags.has("equity_never_discussed")) {
-      tips.push("Equity is often the largest lever at senior levels — bring it up explicitly.");
+      tips.push("Equity is often the largest lever at senior levels. Ask: vesting cliff (1-yr standard), grant face value vs. FMV, refresh policy, post-exit exercise window. Pre-IPO ESOP at face value is a ~70% paper number.");
     }
     if (flags.has("joining_bonus_never_discussed")) {
-      tips.push("Joining bonus / sign-on can recover gap when base is capped. Always ask.");
+      tips.push("Joining bonus / sign-on can recover gap when base is capped. Always ask: amount, clawback period (1-yr or 2-yr is common), pro-rated or cliff. A ₹5L joining bonus with 2-yr cliff is ₹0 if you leave in 18 months.");
+    }
+    if (flags.has("notice_period_never_discussed")) {
+      tips.push("Notice period costs real money — most Indian roles are 60-90 days. Ask about buyout, gardening leave, partial early release. A 90-day buyout at your current CTC can be ₹6-15L the new company eats.");
+    }
+    if (flags.has("ai_accepted_without_pushback")) {
+      tips.push("Recruiter accepted your first number with no probe — in a real call this almost never happens. Treat the simulated outcome as artificially friendly; in reality expect 'let me check with the panel' + a counter 8-15% below your ask.");
+    }
+    if (flags.has("ai_silent_capitulation")) {
+      tips.push("Recruiter matched your ask without ever saying it was above market. That's an LLM artifact — a real Indian recruiter pushes back at least once ('the band tops at ₹X'). Don't take the simulated close as proof your ask was reasonable.");
+    }
+    if (flags.has("ai_no_counter_offered")) {
+      tips.push("Across the whole session the recruiter never produced a numeric counter — that means YOU never extracted a real number. Block on 'Give me your best within the band' early, or you'll get coached against a phantom offer.");
+    }
+    if (flags.has("ai_offer_regression")) {
+      tips.push("Recruiter walked back an earlier higher number without saying 'I misspoke / let me revise' — that's an LLM bug, real recruiters never silently regress. In a real call, anchor on the FIRST number they name and treat any drop as bad faith.");
+    }
+    if (flags.has("ai_unrealistic_close_above_predicted") || flags.has("ai_under_close_below_predicted")) {
+      tips.push("The simulated close landed outside the predicted realistic zone for this tier. Take the headline number with skepticism — focus on the moves you made (anchoring, BATNA, lever exploration), not the dollar outcome.");
+    }
+    if (flags.has("ai_self_contradiction") || flags.has("offer_components_inconsistent")) {
+      tips.push("Recruiter contradicted itself within a turn (different numbers, components that don't sum). In a real call this is your cue: 'Help me reconcile — earlier you said ₹X, now ₹Y. Which is the firm number?' Forces the recruiter to commit.");
+    }
+    if (flags.has("ai_misread_conditional_as_acceptance")) {
+      tips.push("You said 'IF you can do X, I'd take it' — the simulated recruiter treated that as a definite yes. In a real call, conditionals get probed ('which condition is most important?'). Be ready: don't drop a conditional unless you mean to commit on it.");
+    }
+    if (flags.has("ai_ignored_user_complaint") || flags.has("ai_didnt_answer_direct_question")) {
+      tips.push("You asked a direct question or expressed confusion and the recruiter pivoted away. In a real call, repeat the ask once more, then drop the silence — 'I want to understand the offer before going further' forces a recap.");
+    }
+    if (flags.has("ai_phrase_repetition") || flags.has("ai_consecutive_duplicate_question")) {
+      tips.push("Recruiter looped — same phrase / same question twice. That's an LLM stutter, not a real-world signal. In a real call, an interviewer repeating the same line means you missed something; here it just means re-run the session for a clean scoring.");
+    }
+    if (flags.has("ai_reversed_range")) {
+      tips.push("Recruiter quoted a reversed range (₹12 to ₹8.5 LPA) — that's an LLM artifact. Read it as the corrected band ₹8.5-₹12 LPA and price your ask accordingly.");
+    }
+    if (flags.has("ai_arithmetic_error")) {
+      tips.push("Recruiter's monthly take-home math was outside the plausible range for the stated CTC. Sanity check: for new regime FY 2025-26, expect ~₹3.5-5.5k monthly per LPA of CTC. Verify the recruiter's monthly figure in any real call before signing.");
+    }
+    if (flags.has("implausible_salary_claim") || flags.has("above_role_band")) {
+      tips.push("Recruiter quoted a number outside the realistic band for this role + company. That's hallucination — don't anchor on it. Use Levels.fyi / company override data, not the simulated ceiling.");
+    }
+
+    /* ── Phase 1.1 — CTC take-home breakdown ──
+       Wire computeNewRegimeTaxLpa + computeOldRegimeTaxLpa into a
+       meta block so the report can render in-hand monthly under
+       both regimes on the offer card. Computed off the closing AI
+       offer (most-recent AI claim); skipped when no offer exists. */
+    const aiClaimsForMeta = claims.filter((c) => isAiTurn(transcript[c.turn_idx]));
+    const closingClaim = aiClaimsForMeta.length > 0 ? aiClaimsForMeta[aiClaimsForMeta.length - 1] : null;
+    const tier = tierBucket(session.target_company || undefined);
+    const tierLabel = tier ? TIER_BUCKET_LABEL[tier] : undefined;
+
+    let monthlyNew: number | null = null;
+    let monthlyOld: number | null = null;
+    let annualTaxNew: number | null = null;
+    let annualTaxOld: number | null = null;
+    let closingTotalLpa: number | null = null;
+    if (closingClaim && closingClaim.lpa >= GLOBAL_LPA_MIN && closingClaim.lpa <= GLOBAL_LPA_MAX) {
+      closingTotalLpa = Math.round(closingClaim.lpa * 10) / 10;
+      // Cash CTC ≈ stated minus equity (assume cash-only for the offer-card
+      // line since transcript regex doesn't reliably split equity), minus
+      // the 18% benefits loading the helper bakes in. Variable defaults to
+      // 12% with tier-aware payout factor.
+      const benefitsLoading = 0.18;
+      const variablePct = 0.12;
+      const payoutFactor = variablePayoutFactorForTier(
+        // Map analyzer tier to the helper's tier enum. Listed/big-tech →
+        // listed; mature_unicorn → mature_unicorn; etc.
+        tier === "listed_big_tech" ? "listed"
+        : tier === "listed_unicorn" ? "listed"
+        : tier === "mature_unicorn" ? "mature_unicorn"
+        : tier === "growth_startup" ? "growth_startup"
+        : tier === "early_startup" ? "early_startup"
+        : tier === "it_services" ? "it_services"
+        : tier === "bfsi" ? "bfsi"
+        : tier === "fmcg" ? "fmcg"
+        : tier === "psu" ? "psu"
+        : undefined,
+      );
+      const cashCtc = closingTotalLpa / (1 + benefitsLoading);
+      const variableTarget = cashCtc * variablePct;
+      const variableRealistic = variableTarget * payoutFactor;
+      const fixedCash = cashCtc - variableTarget;
+      const employeeEpf = fixedCash * 0.50 * 0.12;
+
+      // New regime
+      const taxableNew = Math.max(0, fixedCash + variableRealistic - 0.75 - employeeEpf);
+      annualTaxNew = Math.round(computeNewRegimeTaxLpa(taxableNew) * 10) / 10;
+      const takeHomeNew = Math.max(0, fixedCash + variableRealistic - employeeEpf - annualTaxNew);
+      monthlyNew = Math.round(((takeHomeNew * 100000) / 12) / 100) * 100;
+
+      // Old regime
+      const taxableOld = Math.max(0, fixedCash + variableRealistic - 0.50 - employeeEpf);
+      annualTaxOld = Math.round(computeOldRegimeTaxLpa(taxableOld) * 10) / 10;
+      const takeHomeOld = Math.max(0, fixedCash + variableRealistic - employeeEpf - annualTaxOld);
+      monthlyOld = Math.round(((takeHomeOld * 100000) / 12) / 100) * 100;
     }
 
     result.hallucinations = hallucinations;
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);
     result.coachingNotes = tips.join(" ");
+    // Always emit a meta block (even partial) so the report's header
+    // chip can render the tier band the session was scored against —
+    // independent of whether a closing offer was extracted.
+    if (tier || closingTotalLpa !== null) {
+      result.meta = {
+        ...(result.meta ?? {}),
+        salaryNegotiation: {
+          tierBucket: tier,
+          tierBucketLabel: tierLabel,
+          closingTotalLpa,
+          monthlyTakeHomeNewRegimeInr: monthlyNew,
+          monthlyTakeHomeOldRegimeInr: monthlyOld,
+          annualTaxNewRegimeLpa: annualTaxNew,
+          annualTaxOldRegimeLpa: annualTaxOld,
+        },
+      };
+    }
     return result;
   },
 };

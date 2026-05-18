@@ -69,6 +69,20 @@ interface Props {
      show "Start drill →" buttons that call this with the drill slug.
      If omitted, the buttons are hidden entirely (no placeholder UI). */
   onLaunchDrill?: (slug: string) => void;
+  /* Phase 1 SCORE_IMPROVEMENT_PLAN — surfaces the analyzer's tier
+     band (FAANG / GCC / unicorn / startup / services / BFSI) in the
+     report header, plus in-hand monthly take-home under both regimes
+     on the offer card. Undefined for pre-v5 rows or non-salary
+     sessions. */
+  salaryMeta?: {
+    tierBucket?: string;
+    tierBucketLabel?: string;
+    closingTotalLpa?: number | null;
+    monthlyTakeHomeNewRegimeInr?: number | null;
+    monthlyTakeHomeOldRegimeInr?: number | null;
+    annualTaxNewRegimeLpa?: number | null;
+    annualTaxOldRegimeLpa?: number | null;
+  };
 }
 
 /* ─── Inline primitives ─────────────────────────────────────── */
@@ -1361,10 +1375,114 @@ function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcom
   );
 }
 
+/* ─── Phase 1 — In-hand monthly card ────────────────────────────
+   Wires computeOldRegimeTaxLpa + computeNewRegimeTaxLpa (run on the
+   server in salary-negotiation analyzer v5) into the report so the
+   candidate sees what actually hits the bank account for the closing
+   offer — under both old and new regimes. Side-by-side because
+   regime selection is the single largest ₹/month delta most Indian
+   candidates miss. */
+function InHandMonthlyCard({
+  salaryMeta,
+}: {
+  salaryMeta: NonNullable<Props["salaryMeta"]>;
+}) {
+  const fmtInr = (v: number | null | undefined) =>
+    typeof v === "number" && v > 0
+      ? `₹${Math.round(v).toLocaleString("en-IN")}`
+      : "—";
+  const fmtTaxLpa = (v: number | null | undefined) =>
+    typeof v === "number" && v >= 0 ? `₹${v.toFixed(1)} LPA tax/yr` : "";
+  return (
+    <div
+      style={{
+        margin: "8px 0 4px",
+        padding: "14px 16px",
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
+        borderRadius: 12,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+          color: t.inkSoft,
+          marginBottom: 8,
+          fontFamily: f.mono,
+        }}
+      >
+        Take-home on closing offer · ₹{salaryMeta.closingTotalLpa?.toFixed(1)} LPA
+      </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
+            New regime (FY 2025-26)
+          </div>
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              fontFamily: f.mono,
+              color: t.coal,
+              lineHeight: 1.1,
+            }}
+          >
+            {fmtInr(salaryMeta.monthlyTakeHomeNewRegimeInr)}
+            <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>/mo</span>
+          </div>
+          <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
+            {fmtTaxLpa(salaryMeta.annualTaxNewRegimeLpa)}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
+            Old regime
+          </div>
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              fontFamily: f.mono,
+              color: t.coal,
+              lineHeight: 1.1,
+            }}
+          >
+            {fmtInr(salaryMeta.monthlyTakeHomeOldRegimeInr)}
+            <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>/mo</span>
+          </div>
+          <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
+            {fmtTaxLpa(salaryMeta.annualTaxOldRegimeLpa)}
+          </div>
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: 11,
+          color: t.inkSoft,
+          marginTop: 10,
+          fontFamily: f.sans,
+          lineHeight: 1.5,
+        }}
+      >
+        Heuristic — assumes 12% variable, 18% employer benefits loading, 12% employee EPF on 50% basic. HRA / 80C deductions NOT netted (depend on rent / investments). Most candidates &lt; ₹15L taxable do better under new regime; HRA-heavy + 80C-active candidates &gt; ₹20L often beat new regime under old.
+      </div>
+    </div>
+  );
+}
+
 /* ─── Top-level component ────────────────────────────────────── */
 
 export function NegotiationFullReport({
-  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill,
+  outcome, role, company, questions, daysUntilInterview, priorSessionCount, onLaunchDrill, salaryMeta,
 }: Props) {
   const offers = outcome.offers ?? [];
   const finalTotal = outcome.finalTotal ?? offers[offers.length - 1]?.total ?? null;
@@ -1389,6 +1507,27 @@ export function NegotiationFullReport({
         >
           Salary Negotiation · Full Report
         </div>
+        {salaryMeta?.tierBucketLabel && (
+          <span
+            style={{
+              display: "inline-block",
+              marginLeft: 8,
+              padding: "3px 10px",
+              background: t.creamSoft,
+              color: t.inkSoft,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.8,
+              borderRadius: 6,
+              textTransform: "uppercase",
+              fontFamily: f.mono,
+              border: `1px solid ${t.line}`,
+            }}
+            title="Compensation band the analyzer scored you against (Phase 1 of SCORE_IMPROVEMENT_PLAN)."
+          >
+            Tier · {salaryMeta.tierBucketLabel}
+          </span>
+        )}
         <h2
           id="ir-section-negotiation"
           style={{ fontFamily: f.serif, fontSize: 26, margin: "10px 0 6px", color: t.coal, letterSpacing: -0.4 }}
@@ -1415,6 +1554,17 @@ export function NegotiationFullReport({
 
       {/* Offer trajectory pill row — preserved from legacy section */}
       {offers.length > 0 && <OfferTrajectory outcome={outcome} />}
+
+      {/* Phase 1.1 — in-hand monthly under both tax regimes for the
+          closing offer. Rendered only when the analyzer extracted a
+          closing offer + computed take-home; silent otherwise so
+          first-time / no-offer sessions don't show a ₹0 card. */}
+      {salaryMeta?.closingTotalLpa != null
+        && (salaryMeta.monthlyTakeHomeNewRegimeInr != null
+            || salaryMeta.monthlyTakeHomeOldRegimeInr != null)
+        && (
+        <InHandMonthlyCard salaryMeta={salaryMeta} />
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <PhaseLadderPanel outcome={outcome} />
