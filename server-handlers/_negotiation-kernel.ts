@@ -37,6 +37,7 @@
 
 import type { NegotiationFacts } from "../src/interviewEvaluation";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
+import { classifyNumberRoles } from "./_number-role-classifier";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
 import { buildPostAcceptanceMessage } from "./_post-acceptance";
@@ -2494,205 +2495,33 @@ export function parseCandidateAnswer(
   const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
   const signalsWalkAway = walkAwayPat.test(a);
 
-  /* Current-CTC patterns. These claim their number FIRST so the
-     target regex can't accidentally pick "8.5" out of "my current
-     package is 8.5 LPA" — that exact bug shipped in production
-     (Bombay Design Centre session, May 2026).
-
-     Range support: "I'm earning 25-28 LPA" binds the upper bound so
-     a candidate's stated comp ceiling becomes the disclosed value
-     (matching how recruiters interpret stated current packages).
-
-     Probe-loop fix (2026-05-18, live HireStepX session): the original
-     bank required the noun ("package"/"ctc"/...) to sit IMMEDIATELY
-     after "current" — failed on "my current TOTAL ANNUAL CTC". And
-     the verb-led row required `\s` after the verb — failed on
-     "Currently," (trailing comma). Broadened both, added bare-LPA
-     "my CTC is N lakhs" shape, and a lakhs-only unit token so utterances
-     like "I'm at about 25 lakhs annually" / "I make around ₹18L" bind. */
-  /* `noun` cue group: package / salary / ctc / compensation / pay /
-     fitment / fixed / total[-]ctc / annual[-]ctc. */
-  const ctcNoun =
-    "(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total[\\s-]ctc|annual[\\s-]ctc|role)";
-  /* `unit` cue group: lpa / lakhs / lakh / lacs / lac / l\b / cr / crore. */
-  const ctcUnit = "(?:lpa|lakhs?|lacs?|l\\b|cr|crore)";
-  /* `verb` cue group: currently / earning / getting / drawing / making /
-     take home / i get / i earn / i'm at. Allows 0-3 descriptive words
-     before the noun ("current TOTAL ANNUAL ctc") and optional comma/
-     punctuation after the verb ("Currently,"). */
-  const ctcVerb =
-    "(?:currently|earning|getting|drawing|making|i\\s+make|take\\s+home|i\\s+get|i\\s+earn|i.?m\\s+at)";
-  /* PDF#30 (2026-05-18, Meesho/Prita session) — three CTC-disclosure
-   * shapes that the legacy bank dropped on the floor:
+  /* Architectural refactor (PDF#30, 2026-05-18) — number-role classification.
    *
-   *   T3  "24LPA CTC overall"           — number-first, no verb, no "current/my".
-   *                                        "CTC overall" is the totalizing tell.
-   *   T5  "already told you 24 LPA CTC" — number+LPA+CTC after a frustration
-   *                                        cue; same bare-CTC shape.
-   *   (post-probe) "24 LPA"             — bare number+unit when the BOT
-   *                                        just asked for current CTC.
+   * Five PDFs in a row surfaced parser misses where a candidate's
+   * disclosure was dropped on the floor and the bot looped. Each fix
+   * added a regex alternative to a 60+-alt bank in this function;
+   * eventually the bank became impossible to reason about (alt-N
+   * shadowing alt-N+1, role cues interleaved across patterns).
    *
-   * The recruiter literally asked "what's your current CTC?" in T2; under
-   * Gricean cooperation any number the candidate replies with IS the
-   * current CTC. The legacy parser required a current/my/verb cue and
-   * silently ignored bare disclosures, forcing a re-probe loop that
-   * persisted for 6+ turns in the Meesho session.
+   * That entire bank is now replaced by `classifyNumberRoles`
+   * (`_number-role-classifier.ts`):
    *
-   * Three new patterns, fired BEFORE the legacy bank:
-   *   1. "<N> LPA CTC [overall|total|annual|presently|right now]"
-   *      — explicit CTC qualifier disambiguates from target.
-   *   2. "[told you|told you already] <N> LPA CTC"
-   *      — frustration-prefixed disclosure (PDF#30 T5).
-   *   3. Bare "<N> LPA" when:
-   *        (a) lastAiText asked for current CTC, AND
-   *        (b) no target/competing/want/expect cues in the answer.
+   *   - One token-finder for salary numbers (LPA / USD / range upper).
+   *   - Three small cue tables (current / target / competing) — adding
+   *     a phrasing means appending one row to the matching table.
+   *   - One scoring function that picks the role per number span.
+   *   - Sentence-level defaults when no cue fires (Gricean cooperation
+   *     when AI just asked for CTC; phase-aware bare number when in
+   *     probe-expectations).
    *
-   * Pattern 3 is the highest-risk; gated tightly on AI-just-asked. */
-  const aiAskedCurrentCtc =
-    !!lastAiText &&
-    /\b(?:current(?:ly)?\s+(?:total\s+)?(?:annual\s+)?ctc|total\s+(?:annual\s+)?ctc|what.?s\s+your\s+(?:current\s+)?(?:total\s+)?(?:annual\s+)?ctc|ctc\s+at\s+(?:present|the\s+moment)|present\s+ctc)\b/i.test(
-      lastAiText,
-    );
-  const hasTargetCue = /\b(?:expect(?:ing|ed)?|want|looking\s+for|target|hoping|aim(?:ing)?|would\s+like|i.?d\s+like)\b/i.test(a);
-  const hasCompetingCue = /\b(?:competing|another|other)\s+offer\b|\bin[-\s]?hand\b|\boffer\s+of\b/i.test(a);
-
-  const currentCtcPrimary =
-    extractUsdAmount(a, [
-      // USD: "current [...] package/ctc is $150k"
-      new RegExp(`\\bcurrent(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n]{0,30}?\\$\\s*(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|K)?`, "i"),
-      // USD: verb-led "currently, earning $150k"
-      new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?\\$\\s*(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|K)?`, "i"),
-    ]) ??
-    extractFirstNumber(a, [
-      // PDF#30 pattern 1 — "24LPA CTC overall" / "24 LPA CTC". Number+unit+CTC,
-      // with optional trailing qualifier. CTC MUST be explicit; the bare
-      // qualifier alone ("60 LPA total") is target-language, not CTC.
-      // Negative lookahead rejects "30 LPA CTC expectation/target/range".
-      // Allows zero whitespace between digit and unit ("24LPA").
-      new RegExp(
-        `(?:^|[^a-z₹])₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}\\s+ctc\\b(?!\\s+(?:expectation|target|expect|range))`,
-        "i",
-      ),
-      // PDF#30 pattern 2 — bare "<N> LPA" prefixed by a told-you cue
-      // (frustration-tagged disclosure: "already told you 24 LPA").
-      new RegExp(
-        `\\b(?:told\\s+you|said|mentioned)(?:\\s+(?:already|multiple\\s+times|before))?\\s+[^.!?\\n₹]{0,20}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`,
-        "i",
-      ),
-    ]) ??
-    extractFirstNumber(a, [
-      // Range: "my current package is 25-28 LPA" — bind upper bound.
-      new RegExp(`\\b(?:my\\s+)?current(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n₹]{0,30}?₹?\\s*\\d+(?:\\.\\d+)?\\s*(?:[-–—]|to)\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
-      // Single-value, noun-led with 0-3 descriptive words:
-      //   "my current package is 18 LPA"
-      //   "my current TOTAL ANNUAL CTC is around ₹18 LPA"
-      //   "current annual CTC is roughly 22 LPA"
-      new RegExp(`\\b(?:my\\s+)?current(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n₹]{0,30}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
-      // "my CTC is 19 LPA" / "my total annual CTC is around 18 LPA" —
-      // no leading "current" required when "my" pins ownership.
-      new RegExp(`\\bmy\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}\\s+(?:is\\s+)?[^.!?\\n₹]{0,30}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
-      // Range, verb-led: "I'm earning 25-28 LPA" / "Currently, drawing 25 to 28 lakhs"
-      new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?₹?\\s*\\d+(?:\\.\\d+)?\\s*(?:[-–—]|to)\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
-      // Single-value, verb-led: "Currently, my total CTC is around ₹19 LPA"
-      //   "I make around ₹18L" / "I'm at about 25 lakhs annually"
-      new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
-      // Legacy: "package progression ... 18 LPA".
-      new RegExp(`\\bpackage\\s+progression[^.!?\\n₹]{0,30}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`, "i"),
-    ]);
-
-  /* Competing-offer patterns. Also must NOT bind to target. */
-  const competingCtx = /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)/i;
-  const competing =
-    extractUsdAmount(a, [
-      new RegExp(competingCtx.source + /\s*\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/.source, "i"),
-    ]) ??
-    extractFirstNumber(a, [
-      /(?:offer\s+of|in[-\s]?hand(?:\s+offer)?\s+(?:of|at)?|already\s+have|received|competing\s+offer\s+(?:of|at)?|got\s+an\s+offer\s+(?:of|at)?|another\s+offer\s+(?:of|at)?)\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|cr|crore)/i,
-    ]);
-
-  /* Target patterns. We require explicit ask context to bind — bare
-     numbers are ignored to avoid "currently 8.5" leaking to target.
-     Both directions matter for Indian candidates:
-       - English / pre-number: "want / expecting / looking for N LPA"
-       - Hindi-mix / post-number: "N lakh chahiye", "N LPA ka package",
-         "N lakh mil jaye", "N LPA milna chahiye" — common in mixed
-         Hindi-English STT output, previously dropped on the floor. */
-  /* PDF#29 Bug 2 (2026-05-18) — accept "the anchor I had in mind was
-   * around 28" / "anchoring around 32 LPA". The `anchor` / `anchoring`
-   * cue was missing entirely; the previous `(?:an?\s+)?` filler only
-   * matched a/an, never "the" or the explicit anchor cue. Before:
-   *   (?:an?\s+|about\s+|approximately\s+|roughly\s+)?
-   * After:
-   *   (?:(?:an?|the)\s+)?(?:anchor(?:ing)?\s+)?
-   *     (?:an?\s+|about\s+|approximately\s+|roughly\s+)?
-   * The new sub-group is OPTIONAL so existing matches survive. */
-  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|anchor(?:ing)?(?:\s+(?:around|at|on))?|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:(?:an?|the)\s+)?(?:anchor(?:ing)?\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+|around\s+)?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
-  const targetHindiPostPat = /₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
-  /* Range patterns — "30-35 LPA" / "30 to 35 lakhs" / "₹30 – ₹35 LPA".
-     Candidates anchor at the top of their stated range, so we bind the
-     upper bound as the target (more realistic recruiter framing). */
-  /* PDF#29 Bug 2 (2026-05-18) — same broadening as targetCtxPat so
-   * "anchoring between 28-32 LPA" / "the anchor was 28-32 LPA"
-   * binds the upper bound. */
-  const targetRangePat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for|around|between|anchor(?:ing)?(?:\s+(?:around|at|on|between))?)\s+(?:(?:an?|the)\s+)?(?:anchor(?:ing)?\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
-  /* USD anchors — "$150k", "$120,000", "USD 100k". Common in tech
-     candidates moving from US-comp companies. Converted to LPA at a
-     fixed rate so kernel math stays in one unit. */
-  const targetUsdPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for)\s+(?:an?\s+|about\s+|approximately\s+|roughly\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i;
-  let target = extractUsdAmount(a, [targetUsdPat]) ?? extractFirstNumber(a, [targetRangePat, targetCtxPat, targetHindiPostPat]);
-
-  /* PDF#30 pattern 3 (2026-05-18) — last-resort current-CTC fallback.
-   * When the bot's previous turn explicitly asked for current CTC and
-   * the candidate's reply is a bare number+LPA with NO target/competing
-   * cues, bind the number to currentCtc. This is the Gricean-cooperation
-   * rule: under a direct question "what's your current CTC?", any
-   * unqualified number in the response IS the answer.
-   *
-   * Tight gating: aiAskedCurrentCtc must be true, no target/competing
-   * cue in the answer, and currentCtc must still be unbound after the
-   * primary patterns. False-positive risk is minimal — by definition
-   * the bot just asked for this number. */
-  const postProbeBareCtc =
-    currentCtcPrimary == null && aiAskedCurrentCtc && !hasTargetCue && !hasCompetingCue
-      ? extractFirstNumber(a, [
-          /(?:^|[^a-z₹])₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)\b/i,
-        ])
-      : null;
-  const currentCtc = currentCtcPrimary ?? postProbeBareCtc;
-
-  /* Phase-aware bare-number fallback. When the recruiter is in
-     probe-expectations and the candidate replies with a number+LPA
-     but no "looking for / want" trigger ("30 lpa thirty lakhs per
-     ctc"), accept the number as target. Skip when the sentence has
-     current/competing markers — those paths already bound. */
-  if (
-    target == null &&
-    phase === "probe-expectations" &&
-    currentCtc == null &&
-    competing == null
-  ) {
-    const bareNumberPat = /(?:^|[^a-z])₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\b/i;
-    /* "per ctc" / "per annum ctc" is a unit qualifier — only treat "ctc"
-       as a current-CTC marker when prefixed by current/my (or the explicit
-       earning/drawing verbs). Otherwise "30 lpa per ctc" is a target. */
-    const hasCurrentCtcWord = /\bcurrent(?:ly)?\b|\bmy\s+ctc\b|\bearning\b|\bgetting\b|\bdrawing\b|\bmaking\b|\btake\s+home\b/i.test(a);
-    const hasCompetingWord = /\b(?:competing|another|other)\s+offer\b|\bin[-\s]?hand\b|\boffer\s+of\b/i.test(a);
-    if (!hasCurrentCtcWord && !hasCompetingWord) {
-      target = extractFirstNumber(a, [bareNumberPat]);
-    }
-  }
-
-  /* Disambiguation: if a number was already bound to current/
-     competing, it isn't ALSO the target — drop it. */
-  if (target != null && (target === currentCtc || target === competing)) {
-    target = null;
-  }
-
-  /* Range-ask detection — fires if any of the range patterns matched
-     regardless of whether the bound number came from a range or a
-     single-value path. */
-  const rangeAnyPat = /\b\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
-  const targetAsRange = rangeAnyPat.test(a) && target != null;
+   * The 200 lines this block used to occupy now live in a 350-line
+   * module with explicit precedence, a single decision point, and a
+   * table-driven test surface. */
+  const roles = classifyNumberRoles(a, { lastAiText, phase });
+  const currentCtc = roles.currentCtc;
+  const competing = roles.competing;
+  let target = roles.target;
+  const targetAsRange = roles.targetAsRange;
 
   /* Competing-without-number: candidate has signaled competing exists
      but refuses or omits to share magnitude.
@@ -2784,56 +2613,6 @@ export function parseCandidateAnswer(
     candidateStance,
     retentionCounter,
   };
-}
-
-/* Extract the first numeric value from `text` using any of `patterns`.
-   Output is normalised to LPA.
-
-   Unit handling: when the matched substring contains a crore marker
-   (`cr` / `crore`) we multiply by 100 so "5 crore" → 500 LPA. Without
-   this, the senior/exec hiring path silently truncated magnitude (we
-   captured the digit `5` but treated it as 5 LPA). Clamp is widened
-   to 5000 LPA (= 50 crore) which covers C-suite while still rejecting
-   garbage from STT mishears like "five hundred thousand".
-
-   Comma stripping: Indian "30,00,000" and Western "3,000,000" both
-   strip to "3000000". The downstream LPA/lakh unit then resolves
-   them correctly. */
-function extractFirstNumber(text: string, patterns: RegExp[]): number | null {
-  for (const re of patterns) {
-    const m = re.exec(text);
-    if (m && m[1]) {
-      let n = parseFloat(m[1].replace(/,/g, ""));
-      if (!Number.isFinite(n)) continue;
-      const isCrore = /\bcr\b|crore/i.test(m[0]);
-      if (isCrore) n *= 100;
-      if (n >= 1 && n <= 5000) return n;
-    }
-  }
-  return null;
-}
-
-/* Convert a USD amount to LPA. Used when a candidate quotes US-comp
-   numbers ("$150k", "$120,000"). We use a fixed 83 INR/USD rate —
-   close enough for negotiation-band math and avoids the operational
-   risk of a live FX lookup on every turn. Anything outside 10k–5M USD
-   is rejected as malformed. */
-const USD_TO_INR = 83;
-function extractUsdAmount(text: string, patterns: RegExp[]): number | null {
-  for (const re of patterns) {
-    const m = re.exec(text);
-    if (m && m[1]) {
-      let usd = parseFloat(m[1].replace(/,/g, ""));
-      if (!Number.isFinite(usd)) continue;
-      /* The `k` suffix on the match means thousands. */
-      if (/k/i.test(m[2] || "")) usd *= 1000;
-      if (usd < 10_000 || usd > 5_000_000) continue;
-      /* USD → INR → lakhs. 1 lakh = 100k INR. */
-      const lpa = Math.round((usd * USD_TO_INR) / 100_000 * 10) / 10;
-      if (lpa >= 1 && lpa <= 5000) return lpa;
-    }
-  }
-  return null;
 }
 
 /* ─── State transition: fold candidate's answer into state ───────── */
