@@ -2779,7 +2779,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * 22 LPA" probably came from a confused parse, not a clarification
    * request). */
   const CLARIFICATION_REQUEST_RE =
-    /^[\s"'""''.,!?\-]*(?:what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?|what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)|huh|i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what))|explain(?:\s+(?:that|this|it|please))?|come\s+again|sorry,?\s+what|pardon|meaning(?:\s+of\s+(?:that|this|it))?|\?)\s*\??[\s.!]*$/i;
+    /^[\s"'""''.,!?-]*(?:what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?|what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)|huh|i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what))|explain(?:\s+(?:that|this|it|please))?|come\s+again|sorry,?\s+what|pardon|meaning(?:\s+of\s+(?:that|this|it))?|\?)\s*\??[\s.!]*$/i;
   const lastAnswerWasClarification =
     answer.trim().length > 0 &&
     answer.trim().length <= 40 &&
