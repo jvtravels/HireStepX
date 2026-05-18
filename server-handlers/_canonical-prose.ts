@@ -1424,7 +1424,8 @@ export function buildAnswerCandidatePrompt(
     `- If a fact is missing, output the deterministic defer line provided by the pipeline. Do NOT invent a hedge or callback promise; do NOT use any phrase in the BANNED list (${BANNED_RECRUITER_IDIOM.join(", ")}).\n` +
     `- Do NOT invent numbers, policies, perks, dates, or commitments.\n` +
     `- NEVER mention internal vocabulary in your answer — banned words include: "fact pack", "factPack", "the system", "the prompt", "internal data", "according to my data", "I don't have data on", "missing from my context". Speak in plain recruiter idiom only. If a fact is missing, defer gracefully (e.g. "that's something the HM walks through later") without referring to your data source.\n` +
-    `- Keep it conversational, 1-3 sentences.\n\n` +
+    `- If you cannot answer from the data, say "that's something the HM walks through later" — do NOT mention data sources, fact packs, internal notes, or any meta-reference to where information comes from.\n` +
+    `- Keep it conversational, max 2 sentences, max 25 words per sentence. Real recruiters speak in short clauses. If multiple concepts come up, name the top one and ask "which one do you want to dig into?" instead of bundling them.\n\n` +
     `OUTPUT: just your answer, no preamble.`;
   const user =
     `CANDIDATE ASKED: "${candidateQuestion}"\n\n` +

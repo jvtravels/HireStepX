@@ -195,6 +195,22 @@ async function generateRestyledCanonical(
       rejectReason: "verbatim-repeat-restyle",
     };
   }
+  /* PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop guard at
+   * pipeline boundary. byte-identical comparisons (isVerbatimRepeat)
+   * miss the case where the body of two consecutive AI turns is the
+   * same but the leading ack word rotates ("Got it. X" → "Okay. X").
+   * Catch it here so the deterministic loop-breaker fires instead of
+   * shipping the restyle and waiting for the negotiate-turn boundary
+   * guard to substitute. */
+  if (isLeadingAckRotationRepeat(restyled, state.lastAiText)) {
+    return {
+      text: LOOP_BREAKER_STUB,
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: "leading-ack-repeat-restyle",
+    };
+  }
   return { text: restyled, source: "restyle", action, move };
 }
 
@@ -294,6 +310,37 @@ async function generateAnswerToCandidate(
     const defer = buildDeferText("validation", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: validation.reason };
   }
+  /* PDF#36 Fix A4 (2026-05-19) — META directive leak on the answer
+   * path. The boundary META check in generateBotReply runs AFTER this
+   * returns, but its only fallback is a generic stub. We prefer the
+   * deterministic defer + canonical follow-up here so the candidate
+   * gets a usable answer surface, not the boundary's generic line. */
+  if (META_DIRECTIVE_TOKENS_RE.test(answer)) {
+    const defer = buildDeferText("validation", [], canonicalFollowup);
+    return { text: defer, source: "answer-canonical", action, move, rejectReason: "meta-directive-leak-answer" };
+  }
+  /* PDF#36 Fix B4 (2026-05-19) — answer-path sentence-length cap.
+   * The restyle path enforces this via validateRestyle; the answer
+   * path historically did not, so kitchen-sink 50+ word single-
+   * sentence answers shipped unchecked. Same cap as restyle. */
+  if (checkSentenceLength(answer) !== "ok") {
+    const defer = buildDeferText("validation", [], canonicalFollowup);
+    return { text: defer, source: "answer-canonical", action, move, rejectReason: "answer-too-long" };
+  }
+  /* PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop guard on
+   * the answer path. The negotiate-turn boundary guard catches this
+   * AFTER the pipeline ships, but moving the check upstream means we
+   * surface a deterministic loop-breaker via the defer cadence
+   * instead of letting the boundary substitute its own stub. */
+  if (isLeadingAckRotationRepeat(answer, state.lastAiText)) {
+    return {
+      text: LOOP_BREAKER_STUB,
+      source: "answer-canonical",
+      action,
+      move,
+      rejectReason: "leading-ack-repeat-answer",
+    };
+  }
   /* PDF#30 R4 (2026-05-18) — same verbatim-repeat guard on the answer
    * path. If the LLM's answer is identical to the prior AI turn, defer
    * to the deterministic canonical follow-up instead. */
@@ -303,6 +350,33 @@ async function generateAnswerToCandidate(
   }
   return { text: answer, source: "answer-restyle", action, move };
 }
+
+/** PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop detector.
+ *  Same normalize logic as the negotiate-turn boundary guard: strip an
+ *  optional leading ack word and compare bodies. Returns true when the
+ *  proposed text differs from `lastAiText` ONLY by rotation of the
+ *  leading ack token. */
+const LEADING_ACK_RE_PIPELINE =
+  /^\s*(?:got it|okay|ok|right|sure|alright|noted|understood|fair enough|fine|i hear you)[\s,.\-—:;]+/i;
+function normalizeForLoopCompare(s: string): string {
+  return (s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+    .replace(LEADING_ACK_RE_PIPELINE, "")
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/, "");
+}
+export function isLeadingAckRotationRepeat(
+  proposed: string,
+  lastAiText: string | undefined,
+): boolean {
+  const prior = normalizeForLoopCompare(lastAiText || "");
+  const next = normalizeForLoopCompare(proposed);
+  return prior.length > 0 && next.length > 0 && prior === next;
+}
+const LOOP_BREAKER_STUB =
+  "Let me try that differently — what would be most useful to cover next from your side?";
 
 /* ─── validators ───────────────────────────────────────────────────── */
 

@@ -2914,8 +2914,17 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * landed and the candidate is asking to be REMINDED of the standing
    * offer. Pre-anchor offer asks ("what's the offer?") are handled by
    * OFFER_ASK_RE which routes to anchor-with-offer. */
+  /* PDF#36 Fix A3 (2026-05-19) — broadened recap phrasings. Prior gate
+   * only matched verb-template forms (what's/repeat/restate/summarize).
+   * Candidate utterances like "I want to know CTC", "tell me the
+   * numbers", "what are the numbers" and "share the offer" fell through
+   * and got routed to band-disclosure-deflect instead of recap.
+   *
+   * Expanded verb branches: want-to-know / tell-me / what-are / give-
+   * me / share. Expanded offer-word aliases: salary, total comp,
+   * numbers, breakdown, split. */
   const OFFER_RECAP_RE =
-    /\b(?:(?:what'?s|repeat|restate|remind\s+me(?:\s+of)?|summari[sz]e|what\s+was)\s+(?:the\s+)?(?:offer|ctc|fitment|number|package|total)|offer\s+again|sorry,?\s+what\s+was|come\s+again\s+on\s+the\s+(?:offer|ctc|number)|where\s+(?:are|were)\s+we\s+(?:at|landing))\b/i;
+    /\b(?:(?:what'?s|repeat|restate|remind\s+me(?:\s+of)?|summari[sz]e|summari[sz]e\s+the|what\s+was)\s+(?:the\s+)?(?:offer|ctc|fitment|number|numbers|package|total|total\s+comp(?:ensation)?|salary|breakdown|split)|want\s+to\s+know\s+(?:the\s+)?(?:offer|ctc|fitment|number|numbers|package|total|total\s+comp(?:ensation)?|salary|breakdown|split)|tell\s+me\s+(?:about\s+)?(?:the\s+)?(?:offer|ctc|fitment|number|numbers|package|total|total\s+comp(?:ensation)?|salary|breakdown|split)|what\s+(?:are|were)\s+(?:the\s+)?(?:offer|ctc|numbers|components|breakdown|split|package|total)|(?:share|give)\s+(?:me\s+)?(?:the\s+)?(?:offer|ctc|numbers|breakdown|split|package|total|fitment|salary)|offer\s+again|sorry,?\s+what\s+was|come\s+again\s+on\s+the\s+(?:offer|ctc|number|numbers)|where\s+(?:are|were)\s+we\s+(?:at|landing))\b/i;
   const lastAnswerOfferRecapAtTurn =
     state.highestOfferMade > 0 && OFFER_RECAP_RE.test(answer)
       ? state.turnIndex
@@ -3090,6 +3099,43 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
       const ratio = parsed.componentBreakdown.variable / parsed.currentCtc;
       if (ratio >= 0.01 && ratio <= 0.25) {
         variableUnambiguous = true;
+      }
+    }
+    /* PDF#36 Fix B2 (2026-05-19) — cross-turn unambiguous-math gate.
+     * The same-turn gate above only fires when base + total both arrive
+     * in a single utterance. Real candidates often disclose total on
+     * one turn and base on another ("My CTC is 24 LPA" → next turn:
+     * "base is 22 LPA"). Re-evaluate the unambiguous gate using prior
+     * sticky state values, ratio window unchanged.
+     *
+     * We require:
+     *   - variable came from inference THIS turn (variableInferred true)
+     *   - we now have BOTH a base value (parsed this turn OR sticky)
+     *     and a total (parsed this turn OR sticky)
+     *   - both explicit (not previously inferred — base has no inferred
+     *     flag in the schema, so its presence implies explicit; total
+     *     never carries inferred provenance)
+     *   - ratio of variable/total is in [0.01, 0.25]. */
+    if (!variableUnambiguous && variableCameFromInference) {
+      const baseCross =
+        parsed.componentBreakdown.base ??
+        state.candidateComponentBreakdown?.base ??
+        null;
+      const totalCross =
+        parsed.currentCtc ??
+        state.candidateCurrentCtc ??
+        null;
+      const variableNow = parsed.componentBreakdown.variable;
+      if (
+        baseCross != null &&
+        totalCross != null &&
+        totalCross > 0 &&
+        variableNow != null
+      ) {
+        const ratio = variableNow / totalCross;
+        if (ratio >= 0.01 && ratio <= 0.25) {
+          variableUnambiguous = true;
+        }
       }
     }
     const variableExplicitlyDisclosed =
@@ -3536,6 +3582,24 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
         if (trailingNonCounter >= 3) break;
       }
       if (!hasOffer || trailingNonCounter < 3) {
+        /* PDF#36 Fix A2 (2026-05-19) — soft-accept idiom on top of an
+         * anchored offer ("works for me", "sounds good", etc.) must
+         * still stamp verbalAcceptanceTurn so the planner's
+         * post-anchor close gate fires on the SAME turn. Prior code
+         * dropped the stamp when trailing-non-counter < 3, which meant
+         * the planner had to wait for the candidate to fall silent
+         * for three more turns — by which point the bot had typically
+         * fired another probe and the candidate had to "accept" again.
+         *
+         * Keep the 3-turn rule for whether to flip terminal
+         * phase="accepted" (that still requires the strong proxy);
+         * the verbalAcceptanceTurn stamp is the signal the planner
+         * needs to route to close-on-acceptance and is safe to set
+         * whenever the candidate signals acceptance over a standing
+         * offer. */
+        if (hasOffer) {
+          next.verbalAcceptanceTurn = state.turnIndex;
+        }
         /* Not strict-accepted and no implicit-accept proxy: hold the
          * phase instead of closing. Derive phase normally. */
         next.phase = derivePhase(next);
