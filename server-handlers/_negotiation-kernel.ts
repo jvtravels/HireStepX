@@ -2522,12 +2522,63 @@ export function parseCandidateAnswer(
      punctuation after the verb ("Currently,"). */
   const ctcVerb =
     "(?:currently|earning|getting|drawing|making|i\\s+make|take\\s+home|i\\s+get|i\\s+earn|i.?m\\s+at)";
-  const currentCtc =
+  /* PDF#30 (2026-05-18, Meesho/Prita session) — three CTC-disclosure
+   * shapes that the legacy bank dropped on the floor:
+   *
+   *   T3  "24LPA CTC overall"           — number-first, no verb, no "current/my".
+   *                                        "CTC overall" is the totalizing tell.
+   *   T5  "already told you 24 LPA CTC" — number+LPA+CTC after a frustration
+   *                                        cue; same bare-CTC shape.
+   *   (post-probe) "24 LPA"             — bare number+unit when the BOT
+   *                                        just asked for current CTC.
+   *
+   * The recruiter literally asked "what's your current CTC?" in T2; under
+   * Gricean cooperation any number the candidate replies with IS the
+   * current CTC. The legacy parser required a current/my/verb cue and
+   * silently ignored bare disclosures, forcing a re-probe loop that
+   * persisted for 6+ turns in the Meesho session.
+   *
+   * Three new patterns, fired BEFORE the legacy bank:
+   *   1. "<N> LPA CTC [overall|total|annual|presently|right now]"
+   *      — explicit CTC qualifier disambiguates from target.
+   *   2. "[told you|told you already] <N> LPA CTC"
+   *      — frustration-prefixed disclosure (PDF#30 T5).
+   *   3. Bare "<N> LPA" when:
+   *        (a) lastAiText asked for current CTC, AND
+   *        (b) no target/competing/want/expect cues in the answer.
+   *
+   * Pattern 3 is the highest-risk; gated tightly on AI-just-asked. */
+  const aiAskedCurrentCtc =
+    !!lastAiText &&
+    /\b(?:current(?:ly)?\s+(?:total\s+)?(?:annual\s+)?ctc|total\s+(?:annual\s+)?ctc|what.?s\s+your\s+(?:current\s+)?(?:total\s+)?(?:annual\s+)?ctc|ctc\s+at\s+(?:present|the\s+moment)|present\s+ctc)\b/i.test(
+      lastAiText,
+    );
+  const hasTargetCue = /\b(?:expect(?:ing|ed)?|want|looking\s+for|target|hoping|aim(?:ing)?|would\s+like|i.?d\s+like)\b/i.test(a);
+  const hasCompetingCue = /\b(?:competing|another|other)\s+offer\b|\bin[-\s]?hand\b|\boffer\s+of\b/i.test(a);
+
+  const currentCtcPrimary =
     extractUsdAmount(a, [
       // USD: "current [...] package/ctc is $150k"
       new RegExp(`\\bcurrent(?:ly)?\\s+(?:[a-z]+\\s+){0,3}${ctcNoun}[^.!?\\n]{0,30}?\\$\\s*(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|K)?`, "i"),
       // USD: verb-led "currently, earning $150k"
       new RegExp(`\\b${ctcVerb}\\b[\\s,]+.*?\\$\\s*(\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)\\s*(k|K)?`, "i"),
+    ]) ??
+    extractFirstNumber(a, [
+      // PDF#30 pattern 1 — "24LPA CTC overall" / "24 LPA CTC". Number+unit+CTC,
+      // with optional trailing qualifier. CTC MUST be explicit; the bare
+      // qualifier alone ("60 LPA total") is target-language, not CTC.
+      // Negative lookahead rejects "30 LPA CTC expectation/target/range".
+      // Allows zero whitespace between digit and unit ("24LPA").
+      new RegExp(
+        `(?:^|[^a-z₹])₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}\\s+ctc\\b(?!\\s+(?:expectation|target|expect|range))`,
+        "i",
+      ),
+      // PDF#30 pattern 2 — bare "<N> LPA" prefixed by a told-you cue
+      // (frustration-tagged disclosure: "already told you 24 LPA").
+      new RegExp(
+        `\\b(?:told\\s+you|said|mentioned)(?:\\s+(?:already|multiple\\s+times|before))?\\s+[^.!?\\n₹]{0,20}?₹?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${ctcUnit}`,
+        "i",
+      ),
     ]) ??
     extractFirstNumber(a, [
       // Range: "my current package is 25-28 LPA" — bind upper bound.
@@ -2589,6 +2640,25 @@ export function parseCandidateAnswer(
      fixed rate so kernel math stays in one unit. */
   const targetUsdPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for)\s+(?:an?\s+|about\s+|approximately\s+|roughly\s+)?\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(k|K)?/i;
   let target = extractUsdAmount(a, [targetUsdPat]) ?? extractFirstNumber(a, [targetRangePat, targetCtxPat, targetHindiPostPat]);
+
+  /* PDF#30 pattern 3 (2026-05-18) — last-resort current-CTC fallback.
+   * When the bot's previous turn explicitly asked for current CTC and
+   * the candidate's reply is a bare number+LPA with NO target/competing
+   * cues, bind the number to currentCtc. This is the Gricean-cooperation
+   * rule: under a direct question "what's your current CTC?", any
+   * unqualified number in the response IS the answer.
+   *
+   * Tight gating: aiAskedCurrentCtc must be true, no target/competing
+   * cue in the answer, and currentCtc must still be unbound after the
+   * primary patterns. False-positive risk is minimal — by definition
+   * the bot just asked for this number. */
+  const postProbeBareCtc =
+    currentCtcPrimary == null && aiAskedCurrentCtc && !hasTargetCue && !hasCompetingCue
+      ? extractFirstNumber(a, [
+          /(?:^|[^a-z₹])₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)\b/i,
+        ])
+      : null;
+  const currentCtc = currentCtcPrimary ?? postProbeBareCtc;
 
   /* Phase-aware bare-number fallback. When the recruiter is in
      probe-expectations and the candidate replies with a number+LPA
