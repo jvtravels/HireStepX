@@ -1207,6 +1207,16 @@ export interface NegotiationState {
    *  hatch on the same topic instead of grinding on an exact value. */
   lastAnswerUncertainAt?: number | null;
 
+  /** PDF#32 BUG H (2026-05-18) — turn-index at which the candidate's
+   *  reply was an unparseable noise artifact (empty after trim, or
+   *  stage-direction text like "audible" / "[noise]" / "[unclear]"
+   *  surfaced by the STT layer). Set by applyCandidateAnswer; the same
+   *  pass also rewinds the askedTopics tail so the planner re-fires
+   *  the prior probe instead of advancing past a topic the candidate
+   *  never addressed. Mostly diagnostic — downstream analyzers can
+   *  count noise turns to flag transcription degradation. */
+  lastAnswerNoiseAtTurn?: number | null;
+
   /** AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-index at which the
    *  current state.phase was entered. Stamped by derivePhase whenever
    *  the phase changes. Read by the per-phase maxTurns cap so a phase
@@ -2692,6 +2702,37 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   const lastAnswerUncertainAt = UNCERTAINTY_RE.test(answer)
     ? state.turnIndex
     : (state.lastAnswerUncertainAt ?? null);
+  /* PDF#32 BUG H (2026-05-18) — unparseable / noise candidate input.
+   *
+   * Prita replay T19: candidate's STT layer surfaced the literal string
+   * "audible" (a stage-direction artifact, not actual speech) as the
+   * answer to the bot's "what's the base split?" probe. Downstream the
+   * bot:
+   *   1. Marked "base" satisfied on the askedTopics ledger anyway
+   *      (the push happens at applyAiMove time, BEFORE the candidate
+   *      answers — so an unparseable answer left "base" looking
+   *      satisfied).
+   *   2. Planner advanced past base, fired the esop component-probe.
+   *   3. LLM-restyle drifted the question into a fabricated-disclosure
+   *      statement ("ESOPs do kick in, but vesting cliff…"). [BUG G]
+   *   4. Session terminated abruptly.
+   *
+   * Architectural fix: detect the small, well-bounded set of "this is
+   * not a real answer" signals at the kernel input boundary, and REWIND
+   * the askedTopics tail so the prior probe re-fires on the next turn.
+   * The bot then re-asks instead of advancing past a topic the
+   * candidate never actually addressed.
+   *
+   * Conservative-by-design: matches only literal stage-direction
+   * artifacts and bracket-wrapped transcription tags. Real terse
+   * answers ("yes", "no", "k", "fine") are NOT noise and must pass
+   * through — those are legitimate signal the parser handles. */
+  const NOISE_ANSWER_RE =
+    /^[\s"'""''.,!?\-—–]*(?:\[(?:noise|unclear|silence|inaudible|crosstalk|unintelligible)\]|<(?:silence|noise|unclear|inaudible)>|(?:in)?audible|unintelligible|crosstalk|silence|\.{2,}|—+|-{2,})[\s"'""''.,!?\-—–]*$/i;
+  const lastAnswerWasNoise = answer.trim().length === 0 || NOISE_ANSWER_RE.test(answer);
+  const lastAnswerNoiseAtTurn = lastAnswerWasNoise
+    ? state.turnIndex
+    : (state.lastAnswerNoiseAtTurn ?? null);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
@@ -2702,7 +2743,24 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     offerAskedAtTurn,
     lastAnswerUncertainAt,
     lastUserFrustrated,
+    lastAnswerNoiseAtTurn,
   };
+  /* PDF#32 BUG H (2026-05-18) — askedTopics tail rewind.
+   * When the prior AI turn pushed an askedTopics entry and the
+   * candidate's reply to it was noise, pop that tail entry so the
+   * planner re-fires the same probe instead of advancing. The pop is
+   * scoped to the most-recent entry only — historical asked-topics are
+   * preserved (they were answered, possibly imperfectly, but answered).
+   *
+   * Idempotent: if there's no tail entry or it was pushed at a turn
+   * other than the last AI turn, leave the ledger alone. */
+  if (lastAnswerWasNoise) {
+    const prior = state.askedTopics ?? [];
+    const tail = prior[prior.length - 1];
+    if (tail != null && tail.atTurn === state.turnIndex) {
+      next.askedTopics = prior.slice(0, -1);
+    }
+  }
   /* Commit 1 (2026-05-15): finalize() stamps state.lastTurnDelta from the
    * pre-state snapshot before every return. Keeps the 8+ return branches
    * (terminal-accept / soft-accept / walk-away / regular / phase-only)

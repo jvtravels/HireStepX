@@ -1066,6 +1066,43 @@ export function validateRestyle(
           reason: `contract-required-token-missing:component-probe:${action.component}:${re.source}`,
         };
       }
+      /* PDF#32 BUG G (2026-05-18) — component-probe SHAPE invariant.
+       * A component-probe is by construction an ASK: the recruiter is
+       * requesting disclosure of base/variable/esop, not narrating that
+       * those components exist. PDF#32 T17 shipped a restyle that
+       * dropped the question mark and pivoted to a statement of fact:
+       *   "Thanks for that — ESOPs do kick in, but there's a vesting
+       *    cliff as per company policy."
+       * vs canonical: "ESOPs in play? Any vesting cliff or accelerator?"
+       *
+       * The statement form *fabricates a disclosure on the candidate's
+       * behalf* — combined with the "Thanks for that" acknowledgement
+       * lead, it reads as if the recruiter is confirming what the
+       * candidate just said. But the candidate's prior turn was
+       * unparseable noise. The contract-token check passed because
+       * "ESOPs"/"vesting" tokens are present; only a shape gate catches
+       * the question→statement drift.
+       *
+       * Reject any component-probe restyle that doesn't carry an
+       * interrogative marker (`?`). Canonical always ships with one;
+       * if the LLM dropped it, it changed the speech act. */
+      if (!/\?/.test(restyled)) {
+        return {
+          valid: false,
+          reason: `contract-shape-not-interrogative:component-probe:${action.component}`,
+        };
+      }
+      /* PDF#32 BUG G (2026-05-18) — fabricated-disclosure statement.
+       * Catch the specific statement-form drift even if a `?` slipped
+       * in elsewhere: "ESOPs do kick in", "RSUs do vest", "equity does
+       * vest", "<equity-token> kicks in" all assert candidate facts
+       * the recruiter has no business asserting. */
+      if (/\b(?:esops?|rsus?|equity|vest(?:ing)?)\s+(?:do|does|will)\s+(?:kick|vest|exist)/i.test(restyled)) {
+        return {
+          valid: false,
+          reason: `contract-fabricated-disclosure:component-probe:${action.component}`,
+        };
+      }
     }
   }
   /* Defect 6 (2026-05-16) — close-recap-formal field completeness.
