@@ -16,6 +16,7 @@
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
 import { classifyCompanyTier } from "../_company-tier";
 import { classifyCollegeTier, cgpaCutoffAdjustment } from "../_college-tier";
+import { classifyCampusArchetype, archetypeCgpaCutoff, archetypeLabel } from "../_campus-archetype";
 import { parsePeriodMonths, NUM_WORDS, SPOKEN_DURATION_REGEX } from "../_resume-period";
 
 const isAi = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("a");
@@ -345,7 +346,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.2",
+  version: "campus-placement-v6.3",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -540,9 +541,21 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // most others gate at 7.0; service-tier (TCS/Infosys/Wipro) at 6.5.
     const companyTier = classifyCompanyTier(session.target_company);
     const collegeTier = classifyCollegeTier(userText);
-    const baseCgpaCutoff = companyTier === "product-global" ? 7.5
-      : companyTier === "service" ? 6.5
-      : 7.0;
+    /* Phase-3 — Persona archetype.
+     *
+     * companyTier is coarse (TCS == service). The archetype layer is
+     * finer: TCS NQT Ninja (CGPA 6.0, basic coding) is a different
+     * interview from TCS Digital (CGPA 7.5, deep DSA, 3x comp) even
+     * though both classify as "service". The archetype overrides the
+     * tier-derived CGPA cutoff when known and surfaces a label the
+     * report can render ("TCS NQT (Ninja) / Infosys SE"). */
+    const archetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
+    const archetypeCutoff = archetypeCgpaCutoff(archetype);
+    const baseCgpaCutoff = archetypeCutoff !== null
+      ? archetypeCutoff
+      : (companyTier === "product-global" ? 7.5
+        : companyTier === "service" ? 6.5
+        : 7.0);
     // Tier-1 colleges (IIT/NIT/BITS/IIIT/IISc) get -0.5 leniency due to
     // harder grading curves. Tier-2 + unknown apply the baseline.
     const cgpaCutoff = baseCgpaCutoff + cgpaCutoffAdjustment(collegeTier);
@@ -561,6 +574,8 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         adjustedCgpaCutoff: cgpaCutoff,
         statedCgpa: Number.isFinite(statedCgpaForMeta) && statedCgpaForMeta > 0 ? statedCgpaForMeta : null,
         targetCompany: session.target_company || null,
+        archetype,
+        archetypeLabel: archetypeLabel(archetype),
       },
     };
     if (cgpaMatch) {
@@ -587,6 +602,14 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       flags.add("college_tier_1");
     } else if (collegeTier === "tier-2") {
       flags.add("college_tier_2");
+    }
+
+    // Phase-3 — surface the campus archetype as a flag so dashboard
+    // chips + the LLM evaluator can branch on it without re-running
+    // the classifier. `unknown` is intentionally NOT emitted (no
+    // signal to render).
+    if (archetype !== "unknown") {
+      flags.add(`campus_archetype_${archetype.replace(/-/g, "_")}`);
     }
 
     // Reverse-questions: AI closed with "any questions for us?" — grade what came back.

@@ -2534,9 +2534,11 @@ function CampusCgpaCalibrationNote({
     adjustedCgpaCutoff: number;
     statedCgpa: number | null;
     targetCompany?: string | null;
+    archetype?: string;
+    archetypeLabel?: string;
   };
 }) {
-  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany } = meta;
+  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany, archetypeLabel } = meta;
   const adjustmentDelta = adjustedCgpaCutoff - baseCgpaCutoff;
   /* Compose the headline string. Branches on whether the user said
      a CGPA aloud — if so we render the pass/fail glyph; otherwise we
@@ -2570,8 +2572,25 @@ function CampusCgpaCalibrationNote({
         gap: 6,
       }}
     >
-      <header style={{ fontSize: 13, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase" }}>
-        CGPA calibration
+      <header style={{ fontSize: 13, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span>CGPA calibration</span>
+        {archetypeLabel && archetypeLabel !== "Generic campus" && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: t.success,
+              background: "rgba(21,128,61,0.12)",
+              borderRadius: 999,
+              padding: "2px 8px",
+              letterSpacing: 0.2,
+              textTransform: "none",
+            }}
+            title="Campus archetype — drives the CGPA bar, DSA expectation, and bond/location-flex rubric"
+          >
+            {archetypeLabel}
+          </span>
+        )}
       </header>
       <p style={{ fontSize: 15, color: t.coal, lineHeight: 1.5, margin: 0 }}>
         {companyName} baseline {baseCgpaCutoff.toFixed(1)} CGPA{adjustmentText}
@@ -2867,6 +2886,8 @@ export interface SessionReportViewProps {
     adjustedCgpaCutoff: number;
     statedCgpa: number | null;
     targetCompany?: string | null;
+    archetype?: string;
+    archetypeLabel?: string;
   };
 }
 

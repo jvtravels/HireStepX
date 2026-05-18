@@ -62,13 +62,14 @@ function session(opts: {
 }
 
 describe("campus-placement meta.campusPlacement", () => {
-  it("emits the service-tier cutoff (6.5) for TCS", async () => {
+  it("emits the TCS Ninja archetype cutoff (6.0) for TCS — Phase 3 archetype overrides the coarse service-tier 6.5", async () => {
     const result = await campusPlacement.analyze({
       session: session({ userText: "My CGPA is 7.4.", targetCompany: "TCS" }),
       resume: null,
     });
     expect(result.meta?.campusPlacement?.companyTier).toBe("service");
-    expect(result.meta?.campusPlacement?.baseCgpaCutoff).toBe(6.5);
+    // Phase-3 archetype layer pins TCS NQT Ninja at 6.0 (vs generic service 6.5).
+    expect(result.meta?.campusPlacement?.baseCgpaCutoff).toBe(6.0);
     expect(result.meta?.campusPlacement?.targetCompany).toBe("TCS");
   });
 
