@@ -146,3 +146,53 @@ describe("campus-placement aptitude_project_inconsistency (Phase 5)", () => {
     expect(result.flags).not.toContain("aptitude_project_inconsistency");
   });
 });
+
+/* Audit follow-up — Phase-5 resume.links suppression path.
+ *
+ * The `portfolio_absent_for_claim` flag fires when a candidate narrates
+ * a project without dropping a GitHub / live-demo link in the same turn.
+ * If `resume.links` contains a public-artifact URL the recruiter can
+ * already see, we suppress the flag — punishing the candidate twice for
+ * a single absence reads as a UX bug. This path existed since Phase 2
+ * but was never directly asserted; adding the regression net here. */
+describe("campus-placement portfolio suppression via resume.links (audit follow-up)", () => {
+  it("suppresses portfolio_absent_for_claim when resume.links includes a github URL", async () => {
+    const result = await campusPlacement.analyze({
+      session: session({
+        targetCompany: "Wipro",
+        transcript: [
+          { speaker: "ai", text: "Tell me about a project.", time: "00:00" },
+          { speaker: "user", text: "I built a Django REST backend for a college event manager with five endpoints and Postgres.", time: "00:05" },
+          { speaker: "ai", text: "Walk me through the hardest part.", time: "01:00" },
+          { speaker: "user", text: "Schema migrations under load — I shipped a blue-green deploy script to handle it cleanly.", time: "01:15" },
+          { speaker: "ai", text: "Any questions for us?", time: "02:00" },
+          { speaker: "user", text: "Could you walk me through the typical onboarding timeline and the team allocation process?", time: "02:15" },
+        ],
+      }),
+      resume: {
+        links: ["https://github.com/me/eventbook", "https://linkedin.com/in/me"],
+      },
+    });
+    expect(result.flags).not.toContain("portfolio_absent_for_claim");
+  });
+
+  it("still fires portfolio_absent_for_claim when resume.links has no portfolio URL", async () => {
+    const result = await campusPlacement.analyze({
+      session: session({
+        targetCompany: "Wipro",
+        transcript: [
+          { speaker: "ai", text: "Tell me about a project.", time: "00:00" },
+          { speaker: "user", text: "I built a Django REST backend for a college event manager with five endpoints and Postgres.", time: "00:05" },
+          { speaker: "ai", text: "Walk me through the hardest part.", time: "01:00" },
+          { speaker: "user", text: "Schema migrations under load — I shipped a blue-green deploy script to handle it cleanly.", time: "01:15" },
+          { speaker: "ai", text: "Any questions for us?", time: "02:00" },
+          { speaker: "user", text: "Could you walk me through the typical onboarding timeline and the team allocation process?", time: "02:15" },
+        ],
+      }),
+      resume: {
+        links: ["https://linkedin.com/in/me"],
+      },
+    });
+    expect(result.flags).toContain("portfolio_absent_for_claim");
+  });
+});

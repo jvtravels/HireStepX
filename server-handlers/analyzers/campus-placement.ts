@@ -1,4 +1,4 @@
-/* Campus-placement interview analyzer — deterministic v2.
+/* Campus-placement interview analyzer.
  *
  * Tailored to Indian campus / fresher hiring patterns. Catches:
  *   - Generic "passion for technology" answers without specifics
@@ -11,6 +11,27 @@
  *   - Volunteered backlogs / KTs / low CGPA unprompted (poor framing)
  *   - Excessive filler words ("basically", "as such", "like")
  *   - Internship claimed in resume but never elaborated
+ *
+ * ── Version history ────────────────────────────────────────────────
+ *   v2   deterministic baseline (initial waves 1–3).
+ *   v5   Phase 1 quick wins — tier-adjusted CGPA surfaced
+ *        (`meta.campusPlacement`), `PASSION_SUBSTANTIATED` / `SUBSTANTIATION_TOKEN`
+ *        pair, static-fallback banner.
+ *   v6   Phase 2 depth validators — `TECH_APPLIED`, `PORTFOLIO_LINK`,
+ *        `PROJECT_RECENT_MARKER` / `PROJECT_DISTANT_MARKER`. New flags
+ *        `tech_named_but_not_applied`, `portfolio_link_present`,
+ *        `projects_dated_not_recent`.
+ *   v6.2 Phase 3 archetypes — `_campus-archetype.ts` resolves
+ *        tcs-ninja / tcs-digital / wipro-nlth / top-tier-campus / unknown.
+ *        Archetype overrides the coarse-tier CGPA cutoff; surfaces as
+ *        `campus_archetype_*` flag + `meta.campusPlacement.archetypeLabel`.
+ *   v6.3 Phase 4 hygiene — fixture suite (`campusPlacementFixtures.test.ts`),
+ *        register-rule inheritance in `generate-questions.ts`, prompt-cache
+ *        order verified.
+ *   v6.4 Phase 5 stretch — `backlog_honest_disclosure` (positive pair to
+ *        `active_backlog_evasion`) + `aptitude_project_inconsistency`
+ *        cross-signal. Bond awareness covered by Wave-3 patterns.
+ * ──────────────────────────────────────────────────────────────────
  */
 
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
@@ -346,7 +367,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.4",
+  version: "campus-placement-v6.4.1",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -875,26 +896,31 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // probe — recruiters explicitly reward this in service-tier loops.
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
-      if (isAi(t) && BACKLOG_PROBE.test(t.text || "")) {
-        const reply = transcript.slice(i + 1, i + 3).find(isUser);
-        if (reply && reply.text && BACKLOG_EVASIVE.test(reply.text) && !BACKLOG_CLEAN.test(reply.text)) {
-          flags.add("active_backlog_evasion");
-          gaps.push({
-            dimension: "preparation",
-            expected: "Service-tier firms have a no-active-backlog rule. State your exact standing crisply: 'Zero active backlogs, cleared one supplementary in 2nd year, all subjects passed.'",
-            observed: "Candidate hedged on the backlog probe — recruiters flag this as either active arrears or evasion. Both are dealbreakers at TCS/Infosys/Wipro/Cognizant.",
-            severity: "high",
-          });
-          break;
-        } else if (reply && reply.text && BACKLOG_CLEAN.test(reply.text) && !BACKLOG_EVASIVE.test(reply.text)) {
-          // Phase-5 positive signal — candidate answered the backlog
-          // probe with a crisp, unhedged clean disclosure. Surfaces
-          // as a green chip on the report and a positive note for the
-          // LLM evaluator to lift the score.
-          flags.add("backlog_honest_disclosure");
-          break;
-        }
+      if (!isAi(t) || !BACKLOG_PROBE.test(t.text || "")) continue;
+      const reply = transcript.slice(i + 1, i + 3).find(isUser);
+      if (!reply || !reply.text) continue;
+
+      // Single decision tree — evasive and clean are mutually exclusive
+      // by construction. If both match (e.g. "no backlogs but maybe one
+      // pending"), evasive wins (recruiter ear hears the hedge first).
+      const evasive = BACKLOG_EVASIVE.test(reply.text);
+      const clean = BACKLOG_CLEAN.test(reply.text);
+      if (evasive) {
+        flags.add("active_backlog_evasion");
+        gaps.push({
+          dimension: "preparation",
+          expected: "Service-tier firms have a no-active-backlog rule. State your exact standing crisply: 'Zero active backlogs, cleared one supplementary in 2nd year, all subjects passed.'",
+          observed: "Candidate hedged on the backlog probe — recruiters flag this as either active arrears or evasion. Both are dealbreakers at TCS/Infosys/Wipro/Cognizant.",
+          severity: "high",
+        });
+      } else if (clean) {
+        // Phase-5 positive signal — candidate answered the backlog
+        // probe with a crisp, unhedged clean disclosure. Surfaces
+        // as a green chip on the report and a positive note for the
+        // LLM evaluator to lift the score.
+        flags.add("backlog_honest_disclosure");
       }
+      break;
     }
 
     // Branch-jump narrative — non-CS branch + SDE role + no learning story.
@@ -1416,7 +1442,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       // link in their answer. If their resume lists a GitHub /
       // portfolio / live-demo URL we suppress that flag — recruiter
       // can already see it.
-      if (flags.has("portfolio_absent_for_claim") && Array.isArray(resume.links) && resume.links.some((u) => /github|gitlab|bitbucket|vercel|netlify|herokuapp|render\.com|huggingface|kaggle/i.test(u || ""))) {
+      if (flags.has("portfolio_absent_for_claim") && Array.isArray(resume.links) && resume.links.filter((u): u is string => typeof u === "string" && u.length > 0).some((u) => /github|gitlab|bitbucket|vercel|netlify|herokuapp|render\.com|huggingface|kaggle/i.test(u))) {
         flags.delete("portfolio_absent_for_claim");
         // Also drop the corresponding rubric gap, if any.
         for (let i = gaps.length - 1; i >= 0; i--) {
