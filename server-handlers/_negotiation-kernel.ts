@@ -2428,6 +2428,12 @@ export function parseCandidateAnswer(
    *  detection. Default 0 preserves back-compat with callers that
    *  don't have state context (unit-test fixtures). */
   turnIndex: number = 0,
+  /** PDF#29 Bug 1 (2026-05-18) — prior-state total CTC. When supplied
+   *  AND the candidate names a single-sided absolute split this turn,
+   *  the component-breakdown parser derives the complement (variable =
+   *  total − base, or base = total − variable). Optional to preserve
+   *  back-compat for callers that don't have state context. */
+  priorTotalCtc: number | null = null,
 ): ParsedAnswer {
   const a = substituteHinglishNumbers((answer || "").trim());
   if (!a) {
@@ -2538,12 +2544,24 @@ export function parseCandidateAnswer(
        - Hindi-mix / post-number: "N lakh chahiye", "N LPA ka package",
          "N lakh mil jaye", "N LPA milna chahiye" — common in mixed
          Hindi-English STT output, previously dropped on the floor. */
-  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+)?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
+  /* PDF#29 Bug 2 (2026-05-18) — accept "the anchor I had in mind was
+   * around 28" / "anchoring around 32 LPA". The `anchor` / `anchoring`
+   * cue was missing entirely; the previous `(?:an?\s+)?` filler only
+   * matched a/an, never "the" or the explicit anchor cue. Before:
+   *   (?:an?\s+|about\s+|approximately\s+|roughly\s+)?
+   * After:
+   *   (?:(?:an?|the)\s+)?(?:anchor(?:ing)?\s+)?
+   *     (?:an?\s+|about\s+|approximately\s+|roughly\s+)?
+   * The new sub-group is OPTIONAL so existing matches survive. */
+  const targetCtxPat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|i.?d\s+like|aim(?:ing)?\s+for|comfortable\s+with|settle\s+for|around|anchor(?:ing)?(?:\s+(?:around|at|on))?|mujhe|mera\s+target)\s+(?:to\s+(?:have|get)\s+)?(?:(?:an?|the)\s+)?(?:anchor(?:ing)?\s+)?(?:an?\s+|about\s+|approximately\s+|roughly\s+|around\s+)?₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)?/i;
   const targetHindiPostPat = /₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|lakh|l\b|cr|crore)\s+(?:chahiye|ka\s+package|mil\s+jaye|milna\s+chahiye|expect\s+kar(?:ta|ti)\s+hu|chahta\s+hu|chahti\s+hu)/i;
   /* Range patterns — "30-35 LPA" / "30 to 35 lakhs" / "₹30 – ₹35 LPA".
      Candidates anchor at the top of their stated range, so we bind the
      upper bound as the target (more realistic recruiter framing). */
-  const targetRangePat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for|around|between)\s+(?:an?\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
+  /* PDF#29 Bug 2 (2026-05-18) — same broadening as targetCtxPat so
+   * "anchoring between 28-32 LPA" / "the anchor was 28-32 LPA"
+   * binds the upper bound. */
+  const targetRangePat = /(?:expecting|want|need|asking|target|hoping|looking\s+for|would\s+like|aim(?:ing)?\s+for|around|between|anchor(?:ing)?(?:\s+(?:around|at|on|between))?)\s+(?:(?:an?|the)\s+)?(?:anchor(?:ing)?\s+)?₹?\s*\d+(?:\.\d+)?\s*(?:[-–—]|to)\s*₹?\s*([\d,]+(?:\.\d+)?)\s*(?:lpa|lakhs?|l\b|cr|crore)/i;
   /* USD anchors — "$150k", "$120,000", "USD 100k". Common in tech
      candidates moving from US-comp companies. Converted to LPA at a
      fixed rate so kernel math stays in one unit. */
@@ -2598,7 +2616,24 @@ export function parseCandidateAnswer(
 
   const vossTactics = detectVossTactics(a, lastAiText);
   const infoAsked = detectInfoIntents(a);
-  const componentBreakdown = extractComponentBreakdown(a);
+  /* PDF#29 Bug 1 (2026-05-18) — pass total CTC so a single-sided
+   * absolute-rupee split ("₹12 LPA fixed" with known currentCtc=18)
+   * can derive the complement. Prefer the freshly-parsed currentCtc
+   * from THIS turn (if any) over the stale state field so a turn that
+   * names both total + split satisfies fixedVariableSplitHasBoth in
+   * one shot. */
+  /* PDF#29 Bug 1 (2026-05-18) — total source preference. The prior state
+   * total wins over a same-turn freshly-parsed currentCtc, because the
+   * fresh parse can mis-bind a single component value (e.g. the "12" in
+   * "₹12 LPA fixed" is the FIXED component, not the total) and that
+   * would force the complement gate to compute complement=0. The stale
+   * state value (set in an earlier discovery turn) is the trustworthy
+   * total here. Falls back to fresh currentCtc only when no prior is
+   * recorded. */
+  const totalForSplitComplement =
+    (priorTotalCtc != null && priorTotalCtc > 0 ? priorTotalCtc : null) ??
+    (typeof currentCtc === "number" && currentCtc > 0 ? currentCtc : null);
+  const componentBreakdown = extractComponentBreakdown(a, totalForSplitComplement);
   /* Phases 11/13/14/15/16 parsers — each returns a structured record
    * with `hasAny` (or null for the rationale singleton). They run
    * over the SAME normalized text so a single utterance "I'm in
@@ -2751,7 +2786,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      idioms ("sounds good") that arrive before any number has been
      quoted — structural phase gate (Phase 9). */
   const offerOnTable = (state.highestOfferMade ?? 0) > 0;
-  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex);
+  const parsed = parseCandidateAnswer(answer, state.lastAiText, state.phase, offerOnTable, state.turnIndex, state.candidateCurrentCtc ?? null);
   /* PDF#27 Fix 2 (2026-05-17) — repetition-complaint detection. The
    * candidate flags that the bot is repeating itself ("stop repeating",
    * "I already answered that", "asked this before"). Stamp the turn so

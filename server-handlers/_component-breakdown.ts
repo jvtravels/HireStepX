@@ -111,6 +111,43 @@ function extractNumberAfter(
   return Math.round(lpa * 10) / 10;
 }
 
+/* PDF#29 Bug 1 (2026-05-18) — number-BEFORE-cue extractor.
+ *
+ * Real candidates phrase splits with the number ahead of the cue:
+ *   "I'm currently drawing ₹12 LPA fixed"
+ *   "10 LPA base + 8 LPA variable"
+ *   "₹8L variable"
+ * extractNumberAfter is anchored on cue→number adjacency; it misses
+ * every one of these. Symmetric companion below: capture a leading
+ * "₹? N (lpa|lakhs|l)? ... cue" — the unit is REQUIRED here (without
+ * it the regex would over-match generic numbers in nearby text). Same
+ * LPA-normalisation + sanity gates as extractNumberAfter. */
+function extractNumberBefore(
+  text: string,
+  cuePattern: string,
+): number | null {
+  /* Negative lookahead `(?!\s*%)` after the unit blocks the trivial
+   * "(\d+)% (cue)" form (percentage splits are handled separately).
+   * The filler char class `[^.!?\n%,]` (note `%` and `,` excluded)
+   * additionally blocks a *secondary* percent-split appearing between
+   * the absolute number and the cue ("18 LPA, 80% fixed" must NOT bind
+   * base=18 just because "fixed" follows). */
+  const re = new RegExp(
+    String.raw`₹?\s*(\d{1,3}(?:,\d{2,3})*(?:\.\d+)?)\s*(lpa|lakhs?|l)\b(?!\s*%)[^.!?\n%,]{0,15}?\b${cuePattern}\b`,
+    "i",
+  );
+  const m = re.exec(text);
+  if (!m) return null;
+  const raw = parseFloat(m[1].replace(/,/g, ""));
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  /* Unit is captured (lpa|lakhs?|l) — all of these normalize to LPA
+   * directly. We don't accept crore here because nobody phrases
+   * components as "0.5 crore variable" — that's a total-CTC idiom. */
+  const lpa = raw;
+  if (lpa < 0.5 || lpa > 5000) return null;
+  return Math.round(lpa * 10) / 10;
+}
+
 /** Extract component breakdown from candidate text. Returns an
  *  object with `hasAny: false` and all-null components when no
  *  components are named.
@@ -222,10 +259,23 @@ function extractPercentageSplit(a: string): { basePercent: number | null; variab
   return { basePercent: null, variablePercent: null };
 }
 
-export function extractComponentBreakdown(text: string): ComponentBreakdown {
+export function extractComponentBreakdown(
+  text: string,
+  /* PDF#29 Bug 1 (2026-05-18) — caller may supply the candidate's known
+   * total CTC. When set AND we extract a single-sided absolute split
+   * (e.g. "₹12 LPA fixed" with no variable named), we derive the
+   * complement = total − stated. The kernel uses this to satisfy
+   * fixedVariableSplitHasBoth without re-probing. Optional to preserve
+   * existing call-site signatures. */
+  totalCtc?: number | null,
+): ComponentBreakdown {
   if (!text) return EMPTY;
   const a = text.toLowerCase();
 
+  /* Combined cue lookup: number-AFTER takes precedence (it matches the
+   * vast majority of phrasings the corpus has historically covered).
+   * When that misses, fall through to number-BEFORE for "₹12 LPA fixed"-
+   * style leading-number constructions. PDF#29 Bug 1. */
   const base =
     extractNumberAfter(a, "base\\s+salary") ??
     extractNumberAfter(a, "base\\s+pay") ??
@@ -233,9 +283,12 @@ export function extractComponentBreakdown(text: string): ComponentBreakdown {
     extractNumberAfter(a, "fixed\\s+component") ??
     extractNumberAfter(a, "fixed") ??
     extractNumberAfter(a, "basic") ??
-    extractNumberAfter(a, "base");
+    extractNumberAfter(a, "base") ??
+    extractNumberBefore(a, "fixed") ??
+    extractNumberBefore(a, "base(?:\\s+(?:salary|pay))?") ??
+    extractNumberBefore(a, "basic");
 
-  const variable =
+  let variable =
     extractNumberAfter(a, "performance\\s+bonus") ??
     extractNumberAfter(a, "performance\\s+pay") ??
     extractNumberAfter(a, "target\\s+bonus") ??
@@ -243,7 +296,10 @@ export function extractComponentBreakdown(text: string): ComponentBreakdown {
     extractNumberAfter(a, "variable\\s+comp(?:onent)?") ??
     extractNumberAfter(a, "variable") ??
     extractNumberAfter(a, "incentive") ??
-    extractNumberAfter(a, "bonus");
+    extractNumberAfter(a, "bonus") ??
+    extractNumberBefore(a, "variable") ??
+    extractNumberBefore(a, "bonus") ??
+    extractNumberBefore(a, "incentive");
 
   const equity =
     extractNumberAfter(a, "rsus?") ??
@@ -255,11 +311,26 @@ export function extractComponentBreakdown(text: string): ComponentBreakdown {
     extractNumberAfter(a, "shares") ??
     extractNumberAfter(a, "grant");
 
+  /* PDF#29 Bug 1: single-sided absolute split + known total → derive
+   * complement. variable = total − base (or base = total − variable).
+   * Guarded: result must be strictly positive AND strictly less than
+   * the total so we don't fabricate a zero/negative component. */
+  let base2 = base;
+  if (totalCtc != null && totalCtc > 0) {
+    if (base != null && variable == null) {
+      const complement = Math.round((totalCtc - base) * 10) / 10;
+      if (complement > 0 && complement < totalCtc) variable = complement;
+    } else if (variable != null && base == null) {
+      const complement = Math.round((totalCtc - variable) * 10) / 10;
+      if (complement > 0 && complement < totalCtc) base2 = complement;
+    }
+  }
+
   const { basePercent, variablePercent } = extractPercentageSplit(a);
 
   const hasAny =
-    base != null || variable != null || equity != null || basePercent != null || variablePercent != null;
-  return { base, variable, equity, basePercent, variablePercent, hasAny };
+    base2 != null || variable != null || equity != null || basePercent != null || variablePercent != null;
+  return { base: base2, variable, equity, basePercent, variablePercent, hasAny };
 }
 
 /** Merge a freshly-parsed breakdown with the prior session-state
