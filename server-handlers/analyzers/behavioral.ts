@@ -36,7 +36,63 @@ const STAR_CUES: Record<StarPart, RegExp[]> = {
   R: [/\b(the result|as a result|outcome|impact|we (?:shipped|launched|reduced|increased|saved|deprecated|migrated)|this led to|ultimately|in the end|by the end|saved (?:roughly|about|around)?\s*\d|dropped\s+\d|increased\s+\d|reduced\s+\d)\b/i],
 };
 
-const NUMERIC_CLAIM = /\b\d+(?:\.\d+)?\s*(?:%|percent|x|hours?|days?|weeks?|months?|users?|customers?|requests?|qps|ms|seconds?|crores?|lakhs?|k|m|b|million|billion)\b/i;
+/* IMPACT_QUANTIFIED — a number that lands near a result verb, signalling
+ * an outcome claim ("reduced p99 by 40%", "shipped to 10k users"). Any
+ * other number is NUMERIC_INCIDENTAL ("I worked 5 days a week") and
+ * doesn't count as a quantified impact. We scan a ±48-char window
+ * around each result verb hit. 48 chars ≈ 8 tokens at typical English
+ * density — wider than that and proximity stops meaning attribution. */
+const RESULT_VERB_RE = /\b(reduced|increased|saved|shipped|launched|grew|cut|improved|dropped|raised|lowered|boosted|accelerated|deprecated|migrated|delivered|onboarded|converted|retained|scaled)\b/gi;
+const NUMBER_NEARBY_RE = /\b\d+(?:[.,]\d+)?\s*(?:%|percent|x|k|m|b|crores?|lakhs?|million|billion|hours?|days?|weeks?|months?|users?|customers?|requests?|qps|ms|engineers?|services?|teams?)?\b/i;
+
+function hasImpactQuantified(text: string): boolean {
+  RESULT_VERB_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = RESULT_VERB_RE.exec(text)) !== null) {
+    const start = Math.max(0, m.index - 48);
+    const end = Math.min(text.length, m.index + m[0].length + 48);
+    const window = text.slice(start, end);
+    if (NUMBER_NEARBY_RE.test(window)) return true;
+  }
+  return false;
+}
+
+/* Corporate-suffix gate for `unverifiable_companies`. v1 fired on any
+ * capitalized 2-word phrase after "at" — "At Northern India", "At Last
+ * Year", "At The Time" all looked like company names. The fix: a
+ * captured token only counts as a company hint if it has a corporate
+ * suffix OR matches a known-company hint list. Mirrors the discipline
+ * used in salary-negotiation / campus-placement company detection. */
+const CORPORATE_SUFFIX_RE = /\b(Inc|Ltd|LLP|LLC|Pvt|Private|Limited|Technologies|Technology|Tech|Labs|Systems|Software|Solutions|Networks|Group|Corp|Corporation|Holdings|Industries|Enterprises|Consulting|Services|Capital|Ventures)\b\.?/i;
+
+/* Hand-curated low-precision-cost stop-list of common false-positive
+ * bigrams the old regex caught ("At Northern India" etc.). Anything in
+ * this set is rejected even if it sneaks past the suffix check. */
+const COMPANY_HINT_STOPLIST = new Set([
+  "northern india", "southern india", "eastern india", "western india",
+  "last year", "this year", "the time", "the moment", "the start", "the end",
+  "the beginning", "the company", "the team", "the office", "the firm",
+  "first glance", "one point", "some point", "the same", "the latest",
+]);
+
+/* Known-company hint list — small, high-precision set of cos that
+ * appear in user transcripts without a corporate suffix. The set is
+ * intentionally short; the resume cross-check + suffix gate carry the
+ * verification load. Expand as production false-positive reports come
+ * in, not preemptively. Stored lowercased; matching is lowercased. */
+const KNOWN_COMPANY_HINT = new Set([
+  "amazon", "google", "microsoft", "apple", "meta", "netflix", "tesla",
+  "flipkart", "razorpay", "swiggy", "zomato", "ola", "uber", "paytm",
+  "phonepe", "byju", "byjus", "freshworks", "zoho", "infosys", "tcs",
+  "wipro", "accenture", "deloitte", "cognizant", "capgemini", "hcl",
+  "oracle", "salesforce", "adobe", "ibm", "intel", "nvidia", "openai",
+  "anthropic", "stripe", "shopify", "atlassian", "github", "linkedin",
+  "myntra", "cred", "groww", "zerodha", "meesho", "udaan", "delhivery",
+  "nykaa", "snapdeal", "makemytrip", "redbus", "bookmyshow", "cleartrip",
+  "policybazaar", "lenskart", "boat", "boattt", "noise", "mamaearth",
+  "sharechat", "moj", "dailyhunt", "inshorts", "unacademy", "vedantu",
+  "physicswallah", "upgrad", "scaler", "newton", "interviewbit",
+]);
 
 const PROBE_FOR_RESULT = /\b(what (?:was|were) the (?:result|outcome|impact)|how did (?:it|that) turn out|did (?:it|that) work|what happened (?:in the end|after)|measurable|quantif|metric)\b/i;
 
@@ -62,7 +118,7 @@ function normalizeQuestion(text: string): string {
 
 export const behavioralAnalyzer: FocusAnalyzer = {
   focus: "behavioral",
-  version: "behavioral-v1",
+  version: "behavioral-v2",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -84,6 +140,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     let acceptedMissingR = 0;
 
     const seenQuestions: { idx: number; norm: string }[] = [];
+    const starBreakdown: NonNullable<NonNullable<AnalyzerResult["meta"]>["behavioral"]>["starBreakdown"] = [];
 
     for (let i = 0; i < transcript.length; i++) {
       const turn = transcript[i];
@@ -113,6 +170,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       userAnswerCount += 1;
 
       const parts = classifyStar(text);
+      const present: StarPart[] = (["S", "T", "A", "R"] as StarPart[]).filter((p) => parts.has(p));
       const missing: StarPart[] = (["S", "T", "A", "R"] as StarPart[]).filter((p) => !parts.has(p));
 
       if (missing.length === 0) starComplete += 1;
@@ -131,9 +189,22 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         }
       }
 
-      if (parts.has("A") && !NUMERIC_CLAIM.test(text)) {
+      /* Quantified-impact check: v1 accepted any number (`5 days a
+       * week` flagged as quantified). v2 requires the number to land
+       * within ~8 tokens of a result verb — that's the difference
+       * between "reduced p99 by 40%" and "I worked 5 days a week". */
+      const quantified = hasImpactQuantified(text);
+      if (parts.has("A") && !quantified) {
         unquantifiedCount += 1;
       }
+
+      starBreakdown.push({
+        turn_idx: i,
+        present,
+        missing,
+        text_preview: text.slice(0, 160),
+        quantified,
+      });
     }
 
     if (userAnswerCount > 0) {
@@ -158,12 +229,31 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         .filter(isUserTurn)
         .map((t) => t.text || "")
         .join(" ");
-      const companyHints = userText.match(/\bat ([A-Z][a-zA-Z0-9&.]{2,30}(?:\s[A-Z][a-zA-Z0-9&.]{2,30})?)\b/g) || [];
+      /* Case-insensitive "at" — natural speech starts sentences with
+       * "At Phantom Technologies" and the existing case-sensitive
+       * `at` pattern silently lost those. Safe to broaden now that
+       * the suffix + stoplist + known-co gate filters noise. */
+      const companyHints = userText.match(/\bat\s+([A-Z][a-zA-Z0-9&.]{2,30}(?:\s[A-Z][a-zA-Z0-9&.]{2,30}){0,3})\b/gi) || [];
       const unknownCompanies = new Set<string>();
       for (const hint of companyHints) {
         const co = hint.replace(/^at\s+/i, "").trim();
         if (co.length < 3) continue;
-        if (!resumeText.includes(co.toLowerCase())) unknownCompanies.add(co);
+        const coLower = co.toLowerCase();
+        /* Drop bigrams that are obviously not company names. v1 fired
+         * on "At Northern India" / "At Last Year" — false positives
+         * that eroded the signal. */
+        if (COMPANY_HINT_STOPLIST.has(coLower)) continue;
+        /* A capitalized phrase only counts as a company hint when it
+         *  (a) carries a corporate suffix (Inc / Pvt Ltd / Technologies),
+         *  (b) matches a known-company list, or
+         *  (c) appears in the resume (treated as user-attested name).
+         * Without one of these, the phrase is noise. */
+        const hasSuffix = CORPORATE_SUFFIX_RE.test(co);
+        const isKnown = KNOWN_COMPANY_HINT.has(coLower) ||
+          Array.from(KNOWN_COMPANY_HINT).some((k) => coLower.startsWith(k + " "));
+        const inResume = resumeText.includes(coLower);
+        if (!(hasSuffix || isKnown || inResume)) continue;
+        if (!inResume) unknownCompanies.add(co);
       }
       if (unknownCompanies.size >= 2) flags.add("unverifiable_companies");
     }
@@ -184,6 +274,9 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     result.badQuestions = bad;
     result.flags = Array.from(flags);
     result.coachingNotes = coachingBits.join(" ");
+    if (starBreakdown.length > 0) {
+      result.meta = { ...(result.meta || {}), behavioral: { starBreakdown } };
+    }
     return result;
   },
 };

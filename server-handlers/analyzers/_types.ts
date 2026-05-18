@@ -73,6 +73,40 @@ export interface BadQuestion {
   evidence: string;
 }
 
+/* Per-focus structured metadata surfaced alongside the standard
+ * analyzer outputs. Each focus owns one optional sub-key; callers
+ * read defensively (`meta?.campusPlacement?.…`) because older cached
+ * insights predate this field. New foci append a new optional sub-
+ * key here rather than overloading flags / rubricGaps with rendering
+ * hints. */
+export interface AnalyzerMeta {
+  /** Behavioral: per-answer STAR breakdown so the report can render
+   *  a turn-by-turn ✓S ✓T ✓A ✗R matrix instead of just an aggregate
+   *  completion rate. `quantified` reflects whether the answer paired
+   *  a number with a result verb ("reduced X by 40%") — distinct from
+   *  incidental numerics ("I worked 5 days a week"). */
+  behavioral?: {
+    starBreakdown: Array<{
+      turn_idx: number;
+      present: Array<"S" | "T" | "A" | "R">;
+      missing: Array<"S" | "T" | "A" | "R">;
+      text_preview: string;
+      quantified: boolean;
+    }>;
+  };
+  /** Campus-placement: tier-aware CGPA calibration the analyzer used.
+   *  Surfaced in the report so the candidate sees the actual cutoff
+   *  they were graded against — not a guessed one. */
+  campusPlacement?: {
+    companyTier: string;          // e.g. "service" | "product-india" | "product-global" | "unknown"
+    collegeTier: string;          // e.g. "tier-1" | "tier-2" | "unknown"
+    baseCgpaCutoff: number;       // pre-adjustment, per company tier
+    adjustedCgpaCutoff: number;   // after collegeTier adjustment
+    statedCgpa: number | null;    // CGPA the candidate said aloud, if any
+    targetCompany?: string | null;
+  };
+}
+
 export interface AnalyzerResult {
   rescore: number | null;       // null when analyzer didn't run an LLM rescore
   scoreDrift: number | null;
@@ -81,6 +115,9 @@ export interface AnalyzerResult {
   badQuestions: BadQuestion[];
   flags: string[];              // tags for filtering/aggregation
   coachingNotes: string;
+  /** Optional structured metadata — see AnalyzerMeta. Older insight
+   *  rows in the DB won't have this; render defensively. */
+  meta?: AnalyzerMeta;
 }
 
 /**

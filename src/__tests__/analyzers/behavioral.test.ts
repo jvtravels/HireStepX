@@ -123,6 +123,123 @@ describe("behavioralAnalyzer", () => {
     expect(out.rubricGaps).toEqual([]);
   });
 
+  it("emits per-answer starBreakdown in meta.behavioral", async () => {
+    /* Phase-1 (v2) addition: aggregate completionRate told the candidate
+       "weak STAR" without identifying WHICH answer was thin. The
+       breakdown lets the report render a per-turn ✓S ✓T ✓A ✗R matrix. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a project."),
+          user(
+            "At my last company the team was struggling with a stalled migration. My task was to unblock it. I built a dashboard and led daily standups. As a result we reduced the cutover risk by 40% and shipped on time.",
+          ),
+          ai("And another?"),
+          user(
+            "We were the team — we built things together. It went well overall and people were happy with the outcome at the end.",
+          ),
+        ],
+      }),
+    });
+    const bd = out.meta?.behavioral?.starBreakdown;
+    expect(bd).toBeDefined();
+    expect(bd!.length).toBe(2);
+    expect(bd![0].quantified).toBe(true);
+    expect(bd![0].missing).not.toContain("A");
+    expect(bd![0].missing).not.toContain("R");
+    expect(bd![1].quantified).toBe(false);
+    // Each breakdown row carries a short preview the UI can show.
+    expect(bd![0].text_preview.length).toBeGreaterThan(0);
+    expect(bd![0].text_preview.length).toBeLessThanOrEqual(160);
+  });
+
+  it("unverifiable_companies does NOT fire on capitalized phrases without a corporate suffix", async () => {
+    /* Phase-1 (v2) fix: v1 fired on "At Northern India" / "At Last
+       Year". The new gate requires a corporate suffix, a known-co
+       hint, or a resume match before counting a phrase as a company. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        jd_analysis: { role: "engineer" }, // non-empty resumeText source
+        transcript: [
+          ai("Walk me through your background."),
+          user(
+            "At Northern India offices we had a team of four. At Last Year's hackathon we built a prototype. The result was a working demo that won second place.",
+          ),
+          ai("Anything else?"),
+          user(
+            "At The Time we were figuring out the architecture. At First Glance the design seemed fine, but I rewrote it. The result was a cleaner system.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("unverifiable_companies");
+  });
+
+  it("unverifiable_companies DOES fire when 2+ company-suffixed names aren't in the resume", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        jd_analysis: { role: "engineer" }, // resume mentions nothing
+        transcript: [
+          ai("Walk me through your background."),
+          user(
+            "At Phantom Technologies Pvt Ltd I led the backend team. We shipped a billing service. The result was a 30% drop in support tickets.",
+          ),
+          ai("Another role?"),
+          user(
+            "At Imaginary Labs Inc I drove the migration to microservices. The team adopted my proposal. The result was a successful cutover in 8 weeks.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("unverifiable_companies");
+  });
+
+  it("unquantified_answers does NOT fire when numbers sit next to result verbs", async () => {
+    /* Phase-1 (v2) numeric depth: v1 counted "5 days a week" as
+       quantified. v2 requires the number near a result verb. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a launch."),
+          user(
+            "The situation was a delayed rollout. My task was to recover the schedule. I built a tiger team and shipped on time. We reduced p99 latency by 40% across the API.",
+          ),
+          ai("Another?"),
+          user(
+            "Context: a migration. I was responsible for it. I ran daily syncs. We migrated 200 services in 6 weeks and cut on-call paging by 30%.",
+          ),
+          ai("One more?"),
+          user(
+            "Situation: a struggling team. My task was to refocus. I ran retros and reset the roadmap. We delivered 3 milestones ahead of plan and increased velocity by 25%.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("unquantified_answers");
+  });
+
+  it("unquantified_answers DOES fire on incidental numerics with no result-verb proximity", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a project."),
+          user(
+            "The situation was a stalled effort. My task was to push it. I worked 5 days a week with the team for 3 months. People felt better aligned and happier overall.",
+          ),
+          ai("Another?"),
+          user(
+            "Context: a struggling launch. I was responsible. I ran 10 standups and 4 retros. The team felt good about the direction by the end of the quarter.",
+          ),
+          ai("Another?"),
+          user(
+            "Situation: a delay. My task was to recover. I scheduled 6 meetings and read 2 books. People felt better aligned and morale was higher by the end of the quarter.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("unquantified_answers");
+  });
+
   it("ignores micro-replies (yes/ok) when scoring STAR completeness", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({
