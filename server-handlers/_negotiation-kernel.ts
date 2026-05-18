@@ -1365,7 +1365,24 @@ export interface NegotiationState {
    *     when caller omits.
    *
    * All five fields are optional / nullable so existing serialised
-   * sessions deserialise unchanged. */
+   * sessions deserialise unchanged.
+   *
+   * ── Default-OFF byte-identical invariant ───────────────────────────
+   * When `multiRoundEnabled !== true` (the HEAD default), every code
+   * path that reads these fields short-circuits to the pre-Phase-5
+   * behaviour:
+   *   - `maybeAdvanceRound` returns the state untouched
+   *     (no roundTransitions append).
+   *   - `_canonical-prose.ts:activeRoundPersona` returns null
+   *     (sector-only prose branch — pre-Phase-5 byte-identical).
+   *   - `_next-action-planner.ts` round-transition pre-emption is
+   *     gated on `multiRoundEnabled === true && roundTransitions.length > 0`.
+   *   - The Session B analyzer block on `meta.salaryNegotiation` is
+   *     additive only — never mutates existing fields.
+   * The integration test fixtures in
+   * `src/__tests__/integration/phase5RoundPersonaProse.test.ts`
+   * exercise the OFF path explicitly and assert byte-identity against
+   * the v8 sector-default surfaces. */
   roundPersona?: NegotiationRoundPersona;
   /* Optional on the interface so legacy partial-state test fixtures and
    * pre-Phase-5A serialised sessions deserialise without TS errors. The

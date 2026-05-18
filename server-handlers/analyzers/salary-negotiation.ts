@@ -300,6 +300,72 @@ function monthsSince(yyyymm: string): number {
   return (now.getFullYear() - then.getFullYear()) * 12 + (now.getMonth() - then.getMonth());
 }
 
+/* ── Coaching clusters (v5) ──
+   Code-quality audit cleanup (2026-05-19): hoisted to module scope.
+   Previously re-allocated as a local array on every analyzer call;
+   nothing about the clusters depends on per-session state. The shape
+   is intentionally frozen so the cluster identity is stable across
+   the analyzer + downstream rescore plumbing.
+
+   Each cluster groups flags by negotiation phase so the report leads
+   with phase framing when ≥2 flags in the same phase fire. Salary
+   negotiation is scored as a sequence of moves, not a bag of points
+   — "two anchoring failures in one session" lands harder than two
+   isolated one-liners. Mirrors hr-round v4.5 pattern (commit 06881b8). */
+const COACHING_CLUSTERS: ReadonlyArray<{
+  readonly label: string;
+  readonly theme: string;
+  readonly members: ReadonlyArray<string>;
+}> = [
+  {
+    label: "discovery",
+    theme: "discovery + comp-component awareness",
+    members: [
+      "equity_never_discussed",
+      "joining_bonus_never_discussed",
+      "notice_period_never_discussed",
+      "equity_terms_not_probed",
+      "joining_bonus_clawback_not_probed",
+      "variable_pay_face_value_accepted",
+    ],
+  },
+  {
+    label: "anchoring",
+    theme: "anchoring + opener",
+    members: [
+      "user_never_anchored",
+      "user_below_band_underask",
+      "user_moonshot_no_batna",
+      "no_batna_articulated",
+      "batna_weak_unsupported",
+    ],
+  },
+  {
+    label: "counter",
+    theme: "counter quality + recruiter pushback",
+    members: [
+      "ai_accepted_without_pushback",
+      "ai_silent_capitulation",
+      "ai_no_counter_offered",
+      "ai_offer_regression",
+      "ai_unrealistic_close_above_predicted",
+      "ai_under_close_below_predicted",
+    ],
+  },
+  {
+    label: "close",
+    theme: "close + conversation repair",
+    members: [
+      "ai_misread_conditional_as_acceptance",
+      "ai_ignored_user_complaint",
+      "ai_didnt_answer_direct_question",
+      "ai_consecutive_duplicate_question",
+      "closed_too_fast",
+      "lost_track_of_offer",
+    ],
+  },
+] as const;
+
 export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   focus: "salary-negotiation",
   // v4 (2026-05-07 night): Accenture fixes — broader DIRECT_ASK regex,
@@ -1253,62 +1319,8 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // (commit 06881b8).
     const tips: string[] = [];
 
-    /* ── Coaching clusters (v5) ──
-       Each cluster groups flags by negotiation phase so the report
-       leads with phase framing when ≥2 flags in the same phase fire.
-       Salary negotiation is scored as a sequence of moves, not as a
-       bag of points — telling the candidate "two anchoring failures
-       in one session" lands harder than two isolated one-liners. */
-    const CLUSTERS: Array<{ label: string; theme: string; members: string[] }> = [
-      {
-        label: "discovery",
-        theme: "discovery + comp-component awareness",
-        members: [
-          "equity_never_discussed",
-          "joining_bonus_never_discussed",
-          "notice_period_never_discussed",
-          "equity_terms_not_probed",
-          "joining_bonus_clawback_not_probed",
-          "variable_pay_face_value_accepted",
-        ],
-      },
-      {
-        label: "anchoring",
-        theme: "anchoring + opener",
-        members: [
-          "user_never_anchored",
-          "user_below_band_underask",
-          "user_moonshot_no_batna",
-          "no_batna_articulated",
-          "batna_weak_unsupported",
-        ],
-      },
-      {
-        label: "counter",
-        theme: "counter quality + recruiter pushback",
-        members: [
-          "ai_accepted_without_pushback",
-          "ai_silent_capitulation",
-          "ai_no_counter_offered",
-          "ai_offer_regression",
-          "ai_unrealistic_close_above_predicted",
-          "ai_under_close_below_predicted",
-        ],
-      },
-      {
-        label: "close",
-        theme: "close + conversation repair",
-        members: [
-          "ai_misread_conditional_as_acceptance",
-          "ai_ignored_user_complaint",
-          "ai_didnt_answer_direct_question",
-          "ai_consecutive_duplicate_question",
-          "closed_too_fast",
-          "lost_track_of_offer",
-        ],
-      },
-    ];
-    for (const cluster of CLUSTERS) {
+    /* ── Coaching clusters ── See COACHING_CLUSTERS at module scope. */
+    for (const cluster of COACHING_CLUSTERS) {
       const hits = cluster.members.filter((m) => flags.has(m));
       if (hits.length >= 2) {
         tips.push(
