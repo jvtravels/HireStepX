@@ -42,7 +42,35 @@ const COLLEGE_BADMOUTH = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:pro
 /* Concrete tech stack — at least one of these must appear when the user
  * narrates a project, otherwise the answer reads as hand-wave. */
 const TECH_STACK = /\b(python|java\b|javascript|typescript|c\+\+|kotlin|swift|go(?:lang)?|rust|node(?:\.?js)?|react|next(?:\.?js)?|angular|vue|django|flask|spring|express|fastapi|tensorflow|pytorch|numpy|pandas|scikit|opencv|sql|mysql|postgres|mongodb|redis|firebase|aws|gcp|azure|docker|kubernetes|git|linux|raspberry pi|arduino|html|css|tailwind|bootstrap|figma|excel|tableau|powerbi|r studio|matlab|verilog|vhdl|simulink|autocad|solidworks|catia|ansys|matlab simulink|plc|scada)\b/i;
+/* Global tech-name capture — used to count DISTINCT tech mentions so we
+ * can tell "mentioned" (≥2 names but no application context) apart from
+ * "applied" (named + paired with an artifact). Mirrors TECH_STACK with
+ * a /g flag and no /i fragments specific to single-token forms. */
+const TECH_STACK_G = /\b(python|java|javascript|typescript|c\+\+|kotlin|swift|go(?:lang)?|rust|node(?:\.?js)?|react|next(?:\.?js)?|angular|vue|django|flask|spring|express|fastapi|tensorflow|pytorch|numpy|pandas|scikit|opencv|sql|mysql|postgres|mongodb|redis|firebase|aws|gcp|azure|docker|kubernetes|raspberry pi|arduino|tailwind|bootstrap|figma|tableau|powerbi|matlab|verilog|vhdl|simulink|autocad|solidworks|catia|ansys|plc|scada)\b/gi;
 const PROJECT_NARRATION = /\b(my project|our project|the project|i (?:built|made|developed|coded|designed|trained|implemented)|we (?:built|made|developed|coded|designed|trained|implemented))\b/i;
+
+/* Phase-2 tech-DEPTH evidence: a tech name fused with an applied artifact.
+ *
+ *   - A REST/GraphQL endpoint count    ("3 endpoints", "REST API with 5 routes")
+ *   - A deployed URL                  ("deployed on vercel/netlify/render")
+ *   - A code-volume marker            ("400 LOC", "~2k lines")
+ *   - A concrete pairing verb         ("used Flask to serve", "trained a CNN in PyTorch")
+ *   - A schema/DB shape signal        ("Postgres with 3 tables", "Mongo collections for")
+ *
+ * Presence of ANY of these alongside a tech name turns a hand-wave name-drop
+ * into evidence the candidate actually shipped with it. The flag we add
+ * below (tech_named_but_not_applied) is the SYMMETRIC counterpart to
+ * project_no_tech_stack: that flag catches projects with no tech named,
+ * this one catches tech named with no project depth around it. */
+const TECH_APPLIED = /\b(?:(?:\d+\s+)?(?:rest|graphql|grpc)?\s*(?:api\s+)?endpoints?|api\s+with\s+\d+\s+(?:routes?|endpoints?)|deployed\s+(?:on|to|at)\s+(?:vercel|netlify|render|heroku|aws|gcp|azure|fly\.io|railway|huggingface|streamlit|firebase\s+hosting)|live\s+(?:demo|url|site)\s+(?:at|on)|hosted\s+(?:at|on)|\d{2,}\s*(?:loc|lines\s+of\s+code|lines\b)|~?\s*\d+\s*k\s+lines|used\s+(?:python|java|react|next|flask|django|fastapi|node|express|spring|tensorflow|pytorch|postgres|mongo|redis|aws|docker|kubernetes)\s+(?:to|for|and)\s+\w+|trained\s+(?:a|the|my)\s+(?:cnn|rnn|lstm|transformer|model|classifier|regressor|gan|bert|gpt)\s+(?:in|with|on)\s+(?:python|tensorflow|pytorch|keras|scikit)|(?:postgres|mysql|mongo(?:db)?|sqlite)\s+(?:with|database\s+with)\s+\d+\s+(?:tables?|collections?|documents?)|wrote\s+(?:the\s+)?(?:backend|frontend|api|service|pipeline)\s+in\s+\w+|schema\s+with\s+\d+\s+(?:tables?|collections?))\b/i;
+
+/* Phase-2 recency markers — the campus-interview rubric weights a final-year
+ * project well above a 2nd-semester one. Without a recency anchor we have
+ * to assume the most distant signal applies. We surface a flag when the
+ * candidate cites only DISTANT markers (1st year / 2nd sem) for project
+ * narration. The presence of any RECENT marker suppresses. */
+const PROJECT_RECENT_MARKER = /\b(?:final[- ]?year(?:\s+project)?|fy(?:p|np)?\b|capstone|currently\s+(?:building|working\s+on|developing)|this\s+(?:semester|month|year|week)|last\s+(?:semester|month)|ongoing|in\s+progress|recently\s+(?:built|finished|completed|shipped|deployed)|8th\s+sem(?:ester)?|7th\s+sem(?:ester)?|final\s+sem(?:ester)?|pre[- ]?final|3rd\s+year|fourth\s+year|senior\s+year|major\s+project)\b/i;
+const PROJECT_DISTANT_MARKER = /\b(?:1st\s+year|first\s+year|2nd\s+year|second\s+year|1st\s+sem(?:ester)?|2nd\s+sem(?:ester)?|3rd\s+sem(?:ester)?|4th\s+sem(?:ester)?|first\s+sem(?:ester)?|second\s+sem(?:ester)?|freshman\s+year|sophomore\s+year|two\s+years\s+(?:ago|back)|three\s+years\s+(?:ago|back)|long\s+(?:time\s+)?ago)\b/i;
 
 /* Implausible team-size brag for a fresher / college context. */
 const IMPLAUSIBLE_TEAM = /\b(?:led|managed|headed|directed)\s+(?:a\s+)?team\s+of\s+(\d{2,})/i;
@@ -317,7 +345,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.1",
+  version: "campus-placement-v6.2",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -387,6 +415,59 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         expected: "Name the actual stack — language, framework, DB, deployment target",
         observed: "User narrated a project without naming any concrete technology",
         severity: "medium",
+      });
+    }
+
+    /* Phase-2 (2.1) — Tech-stack DEPTH check (symmetric to project_no_tech_stack).
+     * Catches the inverse failure mode: the candidate name-drops ≥2 distinct
+     * technologies but never anchors them in an artifact (endpoint count,
+     * deployed URL, line count, schema shape, applied verb pairing). The
+     * recruiter read of this is "lists Python, Flask, React, MongoDB, AWS,
+     * Docker on the resume but couldn't tell me what they actually did with
+     * any of them." We require ≥2 distinct tech names so a single bare
+     * "I used Python" doesn't trip it. */
+    const techNameHits = userText.match(TECH_STACK_G) || [];
+    const distinctTech = new Set(techNameHits.map((s) => s.toLowerCase()));
+    if (
+      distinctTech.size >= 2 &&
+      PROJECT_NARRATION.test(userText) &&
+      !TECH_APPLIED.test(userText) &&
+      userTurnCount >= 3
+    ) {
+      flags.add("tech_named_but_not_applied");
+      gaps.push({
+        dimension: "specificity",
+        expected: "Pair each tech with what you did with it: 'Flask backend serving 4 REST endpoints, Postgres with 3 tables (users / sessions / events), deployed on Render at xyz.onrender.com.' Names alone read as resume keywords.",
+        observed: `User named ${distinctTech.size} technologies but never anchored them in an artifact (no endpoint count, deployed URL, line-count, or applied verb pairing) — reads as keyword-stuffed`,
+        severity: "medium",
+      });
+    }
+
+    /* Phase-2 (2.2) — Portfolio link present as a POSITIVE signal.
+     * Surfaces alongside the existing negative `portfolio_absent_for_claim`.
+     * Lets the report render a green check ('✓ shared GitHub / live demo')
+     * and gives downstream consumers (LLM evaluator, dashboard chip) a
+     * single flag to read without re-running PORTFOLIO_LINK. */
+    if (PORTFOLIO_LINK.test(userText) && (PROJECT_NARRATION.test(userText) || INTERNSHIP_CLAIM.test(userText))) {
+      flags.add("portfolio_link_present");
+    }
+
+    /* Phase-2 (2.3) — Recency multiplier proxy. We don't raise/lower the
+     * numeric score here (the LLM evaluator owns scoring); we surface a
+     * flag the evaluator + report read as "project depth was real, but it
+     * was 2nd-semester, not final-year — discount accordingly." Only fires
+     * when distant markers are PRESENT and no recent marker counterbalances. */
+    if (
+      PROJECT_NARRATION.test(userText) &&
+      PROJECT_DISTANT_MARKER.test(userText) &&
+      !PROJECT_RECENT_MARKER.test(userText)
+    ) {
+      flags.add("projects_dated_not_recent");
+      gaps.push({
+        dimension: "credibility",
+        expected: "Anchor at least one project to your CURRENT semester or final-year. A 2nd-semester project carries far less weight than what you're building this term — interviewers calibrate against recency.",
+        observed: "User narrated a project but only cited distant time markers (1st / 2nd year, freshman year) with no current-term or final-year anchor",
+        severity: "low",
       });
     }
 
