@@ -45,6 +45,16 @@ export interface KnownFacts {
   /** Cultural / interview signals not captured in COMPANY_GUIDANCE
    *  but worth flagging. */
   notes?: string;
+  /** Phase-6.6: short, structured theme tags the LLM should bias the
+   *  question set toward. Lives alongside the prose `notes` field
+   *  because the LLM treats explicit "BIAS QUESTIONS TOWARD: …"
+   *  directives more reliably than implied cues buried in narrative.
+   *  Example for Meesho: ["India scale", "Tier 2/3 buyers",
+   *  "mobile-first", "low-bandwidth UX", "social-commerce behaviour",
+   *  "seller ↔ customer trust", "growth & retention"]. Keep entries
+   *  short (≤6 words) and concrete — these render verbatim as a
+   *  comma-joined directive in the question-generation prompt. */
+  themes?: string[];
   /** ISO date (YYYY-MM-DD). Older than 12 months → re-verify before
    *  next refresh. */
   lastVerified: string;
@@ -59,7 +69,16 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     scale: "Millions of merchants; serves Indian SMBs to large enterprises. Filed DRHP via SEBI confidential route in April 2026.",
     techHints: "Java + Go services, Kafka for event pipelines, Postgres + DynamoDB-style stores, AWS-heavy. Strong emphasis on idempotency and reconciliation.",
     notes: "Bar is engineering rigor over product polish. Compliance + correctness > speed. Candidates expected to discuss idempotency keys, retry semantics, and money-movement edge cases.",
-    lastVerified: "2026-05-07",
+    themes: [
+      "idempotency & retry semantics",
+      "money-movement edge cases",
+      "PG / payouts / banking rails",
+      "SMB merchant economics",
+      "reconciliation & ledgers",
+      "compliance + correctness > speed",
+      "fraud / chargeback handling",
+    ],
+    lastVerified: "2026-05-19",
   },
   phonepe: {
     description: "India's largest UPI app by volume; also offers insurance, mutual funds, gold, and merchant payments.",
@@ -68,7 +87,16 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     scale: "Largest UPI app in India by transaction volume. Filed DRHP via SEBI confidential route. Reverse-flipped to India in 2022.",
     techHints: "JVM-heavy (Java/Scala), heavy Kafka usage, runs own datacenter infra. Distributed-systems depth expected.",
     notes: "Engineering rounds prioritize reliability and partner-bank-failure handling. Generic 'design Twitter' answers fall flat — bring UPI-specific constraints.",
-    lastVerified: "2026-05-07",
+    themes: [
+      "UPI rails & NPCI constraints",
+      "partner-bank failure handling",
+      "idempotency & reconciliation",
+      "merchant onboarding",
+      "fraud & risk",
+      "India scale (txn/sec)",
+      "regulatory compliance (RBI)",
+    ],
+    lastVerified: "2026-05-19",
   },
   paytm: {
     description: "Listed Indian fintech offering UPI, payments, lending (consumer + merchant), and a payments bank.",
@@ -85,7 +113,16 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     scale: "Hundreds of millions of registered users. India's largest e-commerce marketplace by GMV. Walmart-owned, IPO discussions ongoing.",
     techHints: "Polyglot — Java for core services, Go for newer infra, heavy use of Kafka, internal-built data platforms. Mobile-first (Android-heavy user base).",
     notes: "Engineering rounds emphasize India-scale problems: pincode coverage, monsoon logistics, low-bandwidth UX. PMs probed on Tier 2/3 city economics.",
-    lastVerified: "2026-05-07",
+    themes: [
+      "India scale",
+      "Tier 2/3 city economics",
+      "pincode / serviceability",
+      "monsoon & last-mile logistics",
+      "Android-first UX",
+      "marketplace seller economics",
+      "category P&L trade-offs",
+    ],
+    lastVerified: "2026-05-19",
   },
   swiggy: {
     description: "Listed Indian food-delivery + quick-commerce (Instamart) platform, also operates dine-out (Dineout) and B2B grocery.",
@@ -93,7 +130,16 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     competitors: ["Zomato", "Zepto", "Blinkit (Zomato-owned)", "BigBasket"],
     scale: "Listed on NSE/BSE 2024. Operates across 500+ Indian cities.",
     notes: "Operational rigor over product polish. PM rounds dive into delivery time, partner economics, dark-store unit economics. Comfortable with messy ground-truth data.",
-    lastVerified: "2026-05-07",
+    themes: [
+      "delivery-time SLAs",
+      "partner / DE economics",
+      "dark-store unit economics",
+      "10-min commerce constraints",
+      "India scale across 500+ cities",
+      "monsoon / surge handling",
+      "marketplace supply-demand balance",
+    ],
+    lastVerified: "2026-05-19",
   },
   zomato: {
     description: "Listed Indian food-tech (food delivery + dining out + Hyperpure B2B + Blinkit quick commerce).",
@@ -101,7 +147,15 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     competitors: ["Swiggy", "Zepto", "Eternal/Tata Restaurants", "BigBasket"],
     scale: "Public company. Operates in India + select international markets.",
     notes: "Direct, unfiltered culture. PM/eng rounds reward defending controversial calls with numbers. Fluffy answers get pushback.",
-    lastVerified: "2026-05-07",
+    themes: [
+      "food-tech unit economics",
+      "quick-commerce (Blinkit) dynamics",
+      "restaurant / supply side",
+      "advertising on marketplace",
+      "India scale",
+      "defending calls with numbers",
+    ],
+    lastVerified: "2026-05-19",
   },
   cred: {
     description: "Premium Indian fintech for credit-card payments + reward platform; expanded into payments, lending, and rent payments.",
@@ -126,7 +180,18 @@ export const COMPANY_KNOWN_FACTS: Record<string, KnownFacts> = {
     competitors: ["Flipkart Shopsy", "Amazon India", "Glowroad (now Glance)", "DealShare"],
     scale: "Listed on NSE/BSE December 2025. Largest social-commerce platform in India by orders.",
     notes: "PM rounds test Bharat-female-reseller persona empathy specifically. Vernacular UX, low-bandwidth, WhatsApp-native answers expected. Urban-ICP fluency alone fails.",
-    lastVerified: "2026-05-07",
+    themes: [
+      "India scale",
+      "Tier 2/3 buyers",
+      "mobile-first UX",
+      "low-bandwidth performance",
+      "social-commerce behaviour",
+      "seller ↔ customer trust",
+      "reseller ecosystem",
+      "growth & retention loops",
+      "vernacular / WhatsApp-native flows",
+    ],
+    lastVerified: "2026-05-19",
   },
 
   // ─── FAANG / Big Tech ───────────────────────────────────────────
@@ -253,6 +318,14 @@ export function formatKnownFactsForPrompt(facts: KnownFacts | null, companyName:
   if (facts.scale) lines.push(`  • Scale: ${facts.scale}`);
   if (facts.techHints) lines.push(`  • Tech signals: ${facts.techHints}`);
   if (facts.notes) lines.push(`  • Interview signals: ${facts.notes}`);
+  /* Phase-6.6: explicit theme-bias directive. Rendered as a separate
+     line (not folded into `notes`) because the LLM gives it more
+     weight when the instruction is structured and imperative. Empty
+     `themes` arrays are skipped — defensive against future refactors
+     that mistakenly emit []. */
+  if (facts.themes && facts.themes.length > 0) {
+    lines.push(`  • BIAS QUESTIONS TOWARD: ${facts.themes.join(", ")}.`);
+  }
   lines.push(`  • Facts last verified: ${facts.lastVerified}.`);
   lines.push(`If the candidate asks about a fact NOT in this list (revenue, headcount, founders, recent news, internal structure), do NOT invent it. Acknowledge the limit and ask the candidate or stay generic.`);
   lines.push("");
