@@ -30,10 +30,8 @@ import {
   type NegotiationBand,
   type NegotiationState,
 } from "../../../server-handlers/_negotiation-kernel";
-import {
-  validateRestyle,
-  type NextAction,
-} from "../../../server-handlers/_response-pipeline";
+import { validateRestyle } from "../../../server-handlers/_response-pipeline";
+import { type NextAction } from "../../../server-handlers/_next-action-planner";
 
 const BAND: NegotiationBand = {
   initialOffer: 30,

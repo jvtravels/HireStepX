@@ -52,14 +52,14 @@ describe("PDF#32 BUG H — noise candidate answer rewinds askedTopics tail", () 
     const state = newState({
       turnIndex: 3,
       askedTopics: [
-        { topic: "currentCtc", atTurn: 1 },
+        { topic: "currentCtcAsked", atTurn: 1 },
         { topic: "currentCtcBase", atTurn: 3 },
       ],
     });
     const next = applyCandidateAnswer(state, "audible");
     expect(next.lastAnswerNoiseAtTurn).toBe(3);
     /* Tail popped — base probe will re-fire next planner call. */
-    expect(next.askedTopics?.map((t) => t.topic)).toEqual(["currentCtc"]);
+    expect(next.askedTopics?.map((t) => t.topic)).toEqual(["currentCtcAsked"]);
   });
 
   it("'inaudible' and bracket-wrapped transcription tags are noise", () => {
@@ -103,12 +103,12 @@ describe("PDF#32 BUG H — noise candidate answer rewinds askedTopics tail", () 
     const state = newState({
       turnIndex: 5,
       askedTopics: [
-        { topic: "currentCtc", atTurn: 1 },
+        { topic: "currentCtcAsked", atTurn: 1 },
         { topic: "currentCtcBase", atTurn: 5 },
       ],
     });
     const next = applyCandidateAnswer(state, "audible");
-    expect(next.askedTopics).toEqual([{ topic: "currentCtc", atTurn: 1 }]);
+    expect(next.askedTopics).toEqual([{ topic: "currentCtcAsked", atTurn: 1 }]);
   });
 
   it("rewind is a no-op when tail.atTurn != current state.turnIndex", () => {
@@ -153,13 +153,13 @@ describe("PDF#32 BUG H — noise candidate answer rewinds askedTopics tail", () 
       turnIndex: 3,
       candidateCurrentCtc: 24,
       askedTopics: [
-        { topic: "currentCtc", atTurn: 1 },
+        { topic: "currentCtcAsked", atTurn: 1 },
         { topic: "currentCtcBase", atTurn: 3 },
       ],
     };
     const next = applyCandidateAnswer(state, "audible");
     const topics = (next.askedTopics ?? []).map((t) => t.topic);
-    expect(topics).toEqual(["currentCtc"]);
+    expect(topics).toEqual(["currentCtcAsked"]);
     expect(topics).not.toContain("currentCtcBase");
     expect(topics).not.toContain("currentCtcEsop");
   });
