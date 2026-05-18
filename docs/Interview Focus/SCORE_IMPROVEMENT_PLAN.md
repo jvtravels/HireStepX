@@ -24,7 +24,7 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 
 | \# | Focus | Baseline | Target | Effort | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | HR Round | 8.1 | 9.2 | \~7 days | — |
+| 1 | HR Round | 8.1 | 9.2 | \~7 days | ✅ Phases 1–4 shipped (+0.8 of +1.1) — analyzer at v5.0.0 |
 | 2 | Salary Negotiation | 8.4 | 9.5 | \~8 days | — |
 | 3 | Behavioral | 7.6 | 9.1 | \~7.5 days | ✅ Phases 1–3 shipped (+1.1 of +1.5) — analyzer at v3 |
 | 4 | Campus Placement | 7.4 | 8.6 | \~6 days | — |
@@ -41,7 +41,7 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 
 ## 1. HR Round (8.1 → 9.2)
 
-**File**: `server-handlers/analyzers/hr-round.ts` (v4.3.2, \~30 detection blocks) **State**: Most mature analyzer alongside Salary Neg. Strong signal coverage; gaps are at the edges.
+**File**: `server-handlers/analyzers/hr-round.ts` (v5.0.0, \~34 detection blocks) **State**: Most mature analyzer alongside Salary Neg. Strong signal coverage; gaps are at the edges. Phases 1–4 complete; Phase 5 (stretch) pending.
 
 **Top weaknesses**:
 
@@ -49,33 +49,35 @@ Single source of truth for raising the analyzer + UX quality of every interview 
 2. Resume cross-checks fire but feedback is generic ("inflated_seniority_claim" → no story for the candidate)
 3. Coaching tips are 1-liner per flag; \~30 flags share \~10 coaching templates → repetition feels rote
 
-### Phase 1 — Quick wins (\~1d, +0.3)
+### Phase 1 — Quick wins (\~1d, +0.3) ✅ DONE (commit `06881b8`)
 
-- **1.1** Group similar flags into coaching clusters with templated narrative ("3 evasive signals across compliance — pattern, not isolated"). Edit: `hr-round.ts` coaching-bits builder.
-- **1.2** Surface resume-vs-transcript mismatch with the specific delta ("Resume: TL at Flipkart 2021-23; you said 'I led the team since 2020'"). Pull from `session.jd_analysis` already loaded.
-- **1.3** Add `OFFER_ACCEPTED_GRACEFUL` positive counterpart to `COUNTER_OFFER_DODGE` — candidate gets credit for handling cleanly.
+- **1.1** ✅ Group similar flags into coaching clusters with templated narrative ("3 evasive signals across compliance — pattern, not isolated"). Edit: `hr-round.ts` coaching-bits builder. → Implemented as `CLUSTERS` table (compliance / commitment / stability / credibility); "Pattern, not isolated" line prepended when ≥2 members fire.
+- **1.2** ✅ Surface resume-vs-transcript mismatch with the specific delta ("Resume: TL at Flipkart 2021-23; you said 'I led the team since 2020'"). Pull from `session.jd_analysis` already loaded. → `resume_transcript_mismatch` and `inflated_seniority_claim` observed strings now quote resume employers / titles vs. verbal claim.
+- **1.3** ✅ Add `OFFER_ACCEPTED_GRACEFUL` positive counterpart to `COUNTER_OFFER_DODGE` — candidate gets credit for handling cleanly. → New regex + flag; suppresses `counter_offer_dodge`; surfaced as positive note in `coachingNotes`.
 
-### Phase 2 — Depth validators (\~2d, +0.3)
+### Phase 2 — Depth validators (\~2d, +0.3) ✅ DONE (commit `3a4a5e3`)
 
-- **2.1** Notice-period negotiation depth: detect buyout discussion / handover plan vs. pure "I can join in X days".
-- **2.2** BGV / employment verification literacy: detect knowledge of `Form 16`, `UAN`, `relieving letter`, `payslip` requirements.
-- **2.3** Compensation breakup probing: detect when candidate asks ESOP vesting cliff, variable %, joining bonus clawback terms.
+- **2.1** ✅ Notice-period negotiation depth: detect buyout discussion / handover plan vs. pure "I can join in X days". → `notice_period_shallow` flag fires when notice is concrete but session never touches buyout / handover / KT / LWD / early release.
+- **2.2** ✅ BGV / employment verification literacy: detect knowledge of `Form 16`, `UAN`, `relieving letter`, `payslip` requirements. → `bgv_literacy_low` flag fires when BGV came up and candidate never named a single doc (suppressed under active evasion).
+- **2.3** ✅ Compensation breakup probing: detect when candidate asks ESOP vesting cliff, variable %, joining bonus clawback terms. → `comp_breakup_probe_missing` flag fires when benefits/ESOP/clawback was on the table and candidate never probed terms.
 
-### Phase 3 — Persona variability (\~2d, +0.2)
+### Phase 3 — Persona variability (\~2d, +0.2) ✅ DONE (commit `41cf71f`)
 
-Three HR archetypes (already partially modelled in `_indian-panel-personas.ts`):
+Three HR archetypes (distinct from `_indian-panel-personas.ts` — those model voices INSIDE a panel loop; these model standalone-HR archetypes):
 
 - **HR Partner (warm)** — default; rapport-led
 - **HR Business Partner (firm)** — process-led, asks for proof points
-- **Talent Acquisition (transactional)** — quick screen; speed-of-decision dominates Selected from company-size + role-seniority signals.
+- **Talent Acquisition (transactional)** — quick screen; speed-of-decision dominates
 
-### Phase 4 — Hygiene (\~1d, +0.2)
+Selector keyed off company tier × experience: TA for IT-services / startup-early / edtech freshers-to-mid; HRBP for FAANG / big-tech / GCC / consulting / BFSI-global or any senior+; warm Partner default. Wired into `generate-questions.ts`; persona id logged to PostHog as `hr_persona`. New file: `src/_indian-hr-personas.ts` + 9 unit tests.
 
-- **4.1** Expand `hrRoundAnalyzer.test.ts` fixture suite to cover each of the 30+ detection blocks.
-- **4.2** Reorder `evaluate-session` HR path: static rules before transcript (current path interleaves company context).
-- **4.3** Bump version to v5.
+### Phase 4 — Hygiene (\~1d, +0.2) ✅ DONE (commit `185cc88`)
 
-### Phase 5 — Stretch (\~1d, +0.2)
+- **4.1** ✅ Expand `hrRoundAnalyzer.test.ts` fixture suite to cover each of the 30+ detection blocks. → Added 4 fixtures for the new flags (36–39); total HR-round fixtures 37 → 41, all pass the 0.85 precision / recall gate.
+- **4.2** ✅ Reorder `evaluate-session` HR path: static rules before transcript (current path interleaves company context). → Moved `tierSuffix` + `rubricWeight` + per-company `focusRubric` overlay out of the static CRITICAL RULES prefix and into the tail after the transcript; cacheable prefix is now company-invariant.
+- **4.3** ✅ Bump version to v5. → `hr-round-v5.0.0` shipped.
+
+### Phase 5 — Stretch (\~1d, +0.2) — pending
 
 - Counter-offer simulation: when user mentions current employer counter-offering, AI should escalate with realistic India-market response patterns.
 - Probationary-period awareness probe (services-track specific).
