@@ -613,6 +613,132 @@ const negStockNonGrant: SalaryNegotiationFixture = {
   ],
 };
 
+/* ─────────────────────────────────────────────────────────────────
+ *  Block E — Phase 5 Session B multi-round flags (2026-05-19).
+ *  Handoff prose lines mirror the kernel-authored bodies in
+ *  `_canonical-prose.ts` for the `round-transition` action so the
+ *  analyzer's regex-based round detection catches them.
+ * ───────────────────────────────────────────────────────────────── */
+
+/* closed_in_first_round — multi-round session where the candidate
+ * accepted before the HR Partner round handed off. */
+const closedInFirstRound: SalaryNegotiationFixture = {
+  id: "closed-in-first-round",
+  description: "Multi-round on; candidate accepts at HR before any handoff fires",
+  targetCompany: "Razorpay",
+  targetRole: "Senior Product Designer",
+  difficulty: "senior",
+  expectedPersona: "indian-unicorn",
+  mustHaveFlags: ["closed_in_first_round"],
+  mustNotHaveFlags: ["walked_at_director"],
+  transcript: [
+    { speaker: "ai", text: "Thanks for joining the screen. Let's get straight into it — what's your current CTC?", time: "00:00" },
+    { speaker: "user", text: "Current is ₹32 LPA fixed plus ₹4 LPA variable. Expectation around ₹42 LPA.", time: "00:30" },
+    { speaker: "ai", text: "So for this grade, the fitment we're able to offer is ₹38 LPA. Let me know your thoughts.", time: "01:00" },
+    { speaker: "user", text: "That works for me. I'll take the offer at ₹38 LPA.", time: "01:30" },
+    /* Director handoff never fires; trajectory stops at HR. The
+     * acceptance is BEFORE any handoff, so closed_in_first_round
+     * fires once the analyzer sees multi-round was on. We sneak in
+     * a later AI line that DOES carry the HM handoff phrase so the
+     * session-wide multi-round detector lights up. */
+    { speaker: "ai", text: "Let me bring in the hiring manager who'll walk you through scope and team fit.", time: "02:00" },
+    { speaker: "user", text: "Understood, looking forward.", time: "02:30" },
+  ],
+};
+
+/* walked_at_director — multi-round trajectory reached Director and
+ * the candidate walked away rather than verifying BATNA. */
+const walkedAtDirector: SalaryNegotiationFixture = {
+  id: "walked-at-director",
+  description: "Multi-round; reached Director and walked away on final number",
+  targetCompany: "Swiggy",
+  targetRole: "Engineering Manager",
+  difficulty: "senior",
+  expectedPersona: "indian-unicorn",
+  mustHaveFlags: ["walked_at_director"],
+  transcript: [
+    { speaker: "ai", text: "Thanks for joining. Current CTC?", time: "00:00" },
+    { speaker: "user", text: "₹48 LPA. Targeting ₹62 LPA on this move. Competing offer at ₹58 LPA, written.", time: "00:30" },
+    { speaker: "ai", text: "So for this grade, the fitment we're able to offer is ₹52 LPA. Let me know your thoughts.", time: "01:00" },
+    { speaker: "user", text: "That's below my competing offer. Can we move?", time: "01:30" },
+    { speaker: "ai", text: "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.", time: "02:00" },
+    { speaker: "user", text: "Okay.", time: "02:30" },
+    { speaker: "ai", text: "We can revise the fitment to ₹56 LPA total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?", time: "03:00" },
+    { speaker: "user", text: "Still below my competing. Anything else you can do?", time: "03:30" },
+    { speaker: "ai", text: "Appreciate the depth on scope. I'd like to pull in the director for the final round — they'll cover the closing offer and any flexibility we have.", time: "04:00" },
+    { speaker: "user", text: "Sure.", time: "04:30" },
+    { speaker: "ai", text: "Final number on cash is ₹58 LPA total — this is the leverage I'm able to sign off on. How does that look from your side?", time: "05:00" },
+    { speaker: "user", text: "That matches my competing offer with no premium. I'm walking away — not taking this.", time: "05:30" },
+  ],
+};
+
+/* Negative — single-round session must not trip closed_in_first_round
+ * or walked_at_director (multi-round inference must require handoff
+ * prose). */
+const negMultiRoundNegative: SalaryNegotiationFixture = {
+  id: "neg-multi-round",
+  description: "Single-round session — neither multi-round flag should fire",
+  targetCompany: "TCS",
+  targetRole: "Software Engineer",
+  difficulty: "mid",
+  expectedPersona: "it-services",
+  mustHaveFlags: [],
+  mustNotHaveFlags: ["closed_in_first_round", "walked_at_director"],
+  transcript: [
+    { speaker: "ai", text: "Welcome. What's your current CTC?", time: "00:00" },
+    { speaker: "user", text: "₹12 LPA. Expectation ₹16 LPA. Competing offer at ₹15 LPA, written.", time: "00:30" },
+    { speaker: "ai", text: "We can stretch to ₹15 LPA total as per band. Joining bonus ₹1 LPA with 1-year clawback.", time: "01:00" },
+    { speaker: "user", text: "Can we move to ₹16 LPA? I've also asked about RSU vesting and notice period.", time: "01:30" },
+    { speaker: "ai", text: "₹15.5 LPA total is my ceiling. No RSU at this level; notice buyout possible.", time: "02:00" },
+    { speaker: "user", text: "Acceptable. Yes, ₹15.5 LPA.", time: "02:30" },
+  ],
+};
+
+/* Multi-round trajectory hits HM (mid round) without acceptance or
+ * walk — verifies the analyzer surfaces the trajectory + counts
+ * without lighting up either new flag. */
+const multiRoundMidRoundOnly: SalaryNegotiationFixture = {
+  id: "multi-round-mid-only",
+  description: "Multi-round; HM handoff fires but session ends mid-negotiation",
+  targetCompany: "Flipkart",
+  targetRole: "Senior Engineer",
+  difficulty: "senior",
+  expectedPersona: "indian-unicorn",
+  mustHaveFlags: [],
+  mustNotHaveFlags: ["closed_in_first_round", "walked_at_director"],
+  transcript: [
+    { speaker: "ai", text: "Current CTC?", time: "00:00" },
+    { speaker: "user", text: "₹28 LPA. Looking at ₹38 LPA. Competing offer at ₹35 LPA written.", time: "00:30" },
+    { speaker: "ai", text: "So for this grade, the fitment we're able to offer is ₹32 LPA. Let me know your thoughts.", time: "01:00" },
+    { speaker: "user", text: "That's below my expectation and my competing offer. Can we structure better — equity, joining bonus?", time: "01:30" },
+    { speaker: "ai", text: "Let me bring in the hiring manager who'll walk you through scope and team fit.", time: "02:00" },
+    { speaker: "user", text: "Sure. What's the scope they'd cover?", time: "02:30" },
+    { speaker: "ai", text: "We can revise the fitment to ₹34 LPA total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?", time: "03:00" },
+    { speaker: "user", text: "Let me think on it and revert.", time: "03:30" },
+  ],
+};
+
+/* closed_in_first_round + closed_too_fast intersection — accepting at
+ * HR round on first offer is BOTH a multi-round failure and a
+ * close-pacing failure. Verifies both flags coexist cleanly. */
+const closedInFirstRoundFast: SalaryNegotiationFixture = {
+  id: "closed-in-first-round-fast",
+  description: "Multi-round; immediate accept at HR round on first offer",
+  targetCompany: "PhonePe",
+  targetRole: "Product Manager",
+  difficulty: "senior",
+  expectedPersona: "indian-unicorn",
+  mustHaveFlags: ["closed_in_first_round", "closed_too_fast"],
+  transcript: [
+    { speaker: "ai", text: "Welcome. What's your current CTC?", time: "00:00" },
+    { speaker: "user", text: "My current CTC is ₹35 LPA total. I'm looking at around ₹45 LPA on this move.", time: "00:30" },
+    { speaker: "ai", text: "So for this grade, the fitment we're able to offer is ₹42 LPA. Let me know your thoughts.", time: "01:00" },
+    { speaker: "user", text: "That works for me — I'll take the offer at ₹42 LPA, sounds good.", time: "01:30" },
+    { speaker: "ai", text: "Let me bring in the hiring manager who'll walk you through scope and team fit.", time: "02:00" },
+    { speaker: "user", text: "Sure, happy to continue the discussion with the hiring manager.", time: "02:30" },
+  ],
+};
+
 export const SALARY_NEGOTIATION_FIXTURES: SalaryNegotiationFixture[] = [
   // Block A — ai_* flags (15)
   aiPhraseRepetition,
@@ -648,4 +774,10 @@ export const SALARY_NEGOTIATION_FIXTURES: SalaryNegotiationFixture[] = [
   negRegressionWithRevision,
   negRangeLowToHigh,
   negStockNonGrant,
+  // Block E — Phase 5 Session B multi-round (5)
+  closedInFirstRound,
+  walkedAtDirector,
+  negMultiRoundNegative,
+  multiRoundMidRoundOnly,
+  closedInFirstRoundFast,
 ];

@@ -337,7 +337,17 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   //     (`lastAnswerClarificationAtTurn` / `variableInferred`) which
   //     isn't carried on SessionRowForAnalysis. Re-evaluate once kernel
   //     state is persisted onto the session row.
-  version: "salary-negotiation-v8",
+  // v9 (Phase 5 Session B of SCORE_IMPROVEMENT_PLAN section 2, 2026-05-19):
+  //   - Surfaces multi-round signals (multiRoundEnabled,
+  //     roundsCompleted, roundPersonaTrajectory) on
+  //     meta.salaryNegotiation so the report can render the round
+  //     ledger.
+  //   - Adds two new flags driven by multi-round state:
+  //     `closed_in_first_round` (accepted at HR round → left budget on
+  //     the table) and `walked_at_director` (terminal walk-away at the
+  //     Director round → verify BATNA against discretionary headroom).
+  //   - Bump forces `_llm-rescore.ts` to re-evaluate cached sessions.
+  version: "salary-negotiation-v9",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -1453,9 +1463,114 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       monthlyOld = Math.round(((takeHomeOld * 100000) / 12) / 100) * 100;
     }
 
+    /* ── Phase 5 Session B (2026-05-19) — multi-round detection ──
+       Analyzer doesn't have access to NegotiationState; multi-round
+       state must be inferred from the transcript. The kernel-authored
+       handoff prose carries distinctive phrasing
+       ("bring in the hiring manager who'll walk you through scope"
+       and "pull in the director for the final round") that we can
+       match deterministically.
+
+       roundsCompleted = number of unique handoff lines observed + 1
+       (the round in which the session terminates). Trajectory is the
+       ordered tuple of destination personas.
+
+       Default-OFF safety: when no handoff prose is detected,
+       `multiRoundEnabledInferred` stays false and the meta block omits
+       multi-round signals (byte-identical to v8 output). */
+    const HANDOFF_HM_RE = /bring in the hiring manager who'll walk you through scope/i;
+    const HANDOFF_DIR_RE = /pull in the director for the final round/i;
+    const roundPersonaTrajectory: Array<"hr-partner" | "hiring-manager" | "director"> = ["hr-partner"];
+    let sawHmHandoff = false;
+    let sawDirHandoff = false;
+    for (const t of transcript) {
+      if (!isAiTurn(t)) continue;
+      const text = t.text || "";
+      if (!sawHmHandoff && HANDOFF_HM_RE.test(text)) {
+        sawHmHandoff = true;
+        roundPersonaTrajectory.push("hiring-manager");
+      }
+      if (!sawDirHandoff && HANDOFF_DIR_RE.test(text)) {
+        sawDirHandoff = true;
+        roundPersonaTrajectory.push("director");
+      }
+    }
+    const multiRoundEnabledInferred = sawHmHandoff || sawDirHandoff;
+    const finalRoundIndex = (roundPersonaTrajectory.length - 1) as 0 | 1 | 2;
+    const roundsCompleted = roundPersonaTrajectory.length;
+
+    /* Flag — closed_in_first_round. Fires when multi-round was on,
+     * the candidate accepted (verbal acceptance detected), and no
+     * handoff to HM/Director was ever observed. Coaching reframes the
+     * "leave the HR round" maxim — push to at least the HM round
+     * before saying yes. */
+    if (multiRoundEnabledInferred && finalRoundIndex === 0) {
+      /* This branch is unreachable today because the
+       * multiRoundEnabledInferred trigger REQUIRES at least one
+       * handoff. Kept as a guard so a future refactor that lifts
+       * multi-round detection out of the transcript (e.g. reads it
+       * directly off a kernel-state column) doesn't have to revisit
+       * this flag's wiring. */
+    }
+    {
+      const acceptanceTurnIdx = transcript.findIndex(
+        (t) => isUserTurn(t) && VERBAL_ACCEPT_RE.test(t.text || ""),
+      );
+      if (acceptanceTurnIdx >= 0) {
+        const aiBeforeAccept = transcript.slice(0, acceptanceTurnIdx).filter(isAiTurn);
+        const hmHandoffBefore = aiBeforeAccept.some((t) => HANDOFF_HM_RE.test(t.text || ""));
+        const dirHandoffBefore = aiBeforeAccept.some((t) => HANDOFF_DIR_RE.test(t.text || ""));
+        /* Direct trigger: candidate accepted before any handoff
+         * fired, AND the session actually had multi-round enabled
+         * (otherwise we'd light up every single-round acceptance).
+         * Inference for multiRoundEnabled here uses the SESSION-WIDE
+         * handoff signal — if any handoff fired anywhere in the
+         * session, we know the kernel was running multi-round. */
+        if (multiRoundEnabledInferred && !hmHandoffBefore && !dirHandoffBefore) {
+          flags.add("closed_in_first_round");
+          gaps.push({
+            dimension: "round_progression",
+            expected: "Candidate negotiates through HR round → Hiring Manager round before accepting",
+            observed: `Verbal acceptance at turn ${acceptanceTurnIdx + 1} before the HR Partner round handed off. Closed at HR — left HM / Director discretionary headroom on the table.`,
+            severity: "medium",
+          });
+        }
+      }
+    }
+
+    /* Flag — walked_at_director. Fires when the session terminated in
+     * a walk-away AND the Director handoff was seen earlier in the
+     * transcript (we reached the Director round before walking).
+     * Coaching nudges the candidate to verify BATNA against the
+     * discretionary headroom Director typically carries. */
+    {
+      const walkSignal = transcript.some(
+        (t) => isUserTurn(t) && /\b(?:walk(?:ing)?\s+away|not\s+(?:taking|accepting)|no\s+deal|i'?ll\s+pass|i\s+pass|withdraw)\b/i.test(t.text || ""),
+      );
+      if (sawDirHandoff && walkSignal) {
+        flags.add("walked_at_director");
+        gaps.push({
+          dimension: "batna_validation_at_director",
+          expected: "Candidate verifies BATNA against Director-tier headroom before walking",
+          observed: "Session reached the Director round and ended in walk-away. Director typically carries discretionary headroom not visible in HR / HM rounds — verify your BATNA against the final number before walking.",
+          severity: "high",
+        });
+      }
+    }
+
     result.hallucinations = hallucinations;
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);
+
+    /* Phase 5 Session B (2026-05-19) — coaching tips for the two new
+     * multi-round flags. */
+    if (flags.has("closed_in_first_round")) {
+      tips.push("Closed at HR — you left budget on the table. Push to at least the HM round to negotiate scope.");
+    }
+    if (flags.has("walked_at_director")) {
+      tips.push("Reached Director and walked — verify the final number against your BATNA before walking; the Director typically has discretionary headroom.");
+    }
+
     result.coachingNotes = tips.join(" ");
     // Always emit a meta block (even partial) so the report's header
     // chip can render the tier band the session was scored against —
@@ -1476,7 +1591,7 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     });
     const recruiterPersonaLabel = getRecruiterSectorPersona(recruiterPersonaId).displayName;
 
-    if (tier || closingTotalLpa !== null || equityLiteracyMeta || batnaMeta) {
+    if (tier || closingTotalLpa !== null || equityLiteracyMeta || batnaMeta || multiRoundEnabledInferred) {
       result.meta = {
         ...(result.meta ?? {}),
         salaryNegotiation: {
@@ -1491,6 +1606,17 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
           batnaStrength: batnaMeta ?? null,
           recruiterPersona: recruiterPersonaId,
           recruiterPersonaLabel,
+          /* Phase 5 Session B (2026-05-19) — multi-round signals. Only
+           * surface when at least one handoff was detected (otherwise
+           * omit so v8-shape sessions stay byte-identical on the
+           * meta block). */
+          ...(multiRoundEnabledInferred
+            ? {
+                multiRoundEnabled: true,
+                roundsCompleted,
+                roundPersonaTrajectory,
+              }
+            : {}),
         },
       };
     }

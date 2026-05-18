@@ -510,7 +510,30 @@ export const DealSummaryCard = memo(function DealSummaryCard({ transcript, negot
 
 /* ─── Live Negotiation Dashboard (shown during salary negotiation) ─── */
 
-export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({ liveState, negotiationBand, highestOffer, targetSalary, voiceConfidence, negotiationStyle }: {
+export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
+  liveState,
+  negotiationBand,
+  highestOffer,
+  targetSalary,
+  voiceConfidence,
+  negotiationStyle,
+  /* Phase 5 Session B (2026-05-19) — multi-round overlay. Optional;
+   * when `multiRoundEnabled` is false / undefined the badge does NOT
+   * render (default-OFF byte-identical invariance for the UI).
+   * `roundPersonaLabel` is the human-readable persona name surfaced
+   * on the badge (e.g. "HR Partner", "Hiring Manager", "Director");
+   * `roundIndex` is 0..2. */
+  multiRoundEnabled,
+  roundPersonaLabel,
+  roundIndex,
+  /* Phase 5 Session B (2026-05-19) — candidate target for the ZOPA
+   * marker. Distinct from `targetSalary` (which is the candidate's
+   * configured target on intake); `candidateTarget` is what the
+   * kernel parsed from the live transcript ("I'm looking at ₹X").
+   * Either may drive the ZOPA marker; we prefer candidateTarget
+   * when present and fall back to targetSalary. */
+  candidateTarget,
+}: {
   liveState: {
     facts: { candidateCounter: string | null; hasCompetingOffers: boolean; topicsRaised: string[]; acceptedImmediately: boolean; mentionedBATNA: boolean };
     phase: string;
@@ -524,6 +547,10 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
   targetSalary: number | null;
   voiceConfidence?: { score: number; volume: number; variability: number } | null;
   negotiationStyle?: string;
+  multiRoundEnabled?: boolean;
+  roundPersonaLabel?: string;
+  roundIndex?: 0 | 1 | 2;
+  candidateTarget?: number | null;
 }) {
   const styleMap: Record<string, { label: string; color: string; icon: string }> = {
     cooperative: { label: "Friendly", color: e.success, icon: "🤝" },
@@ -573,7 +600,110 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
         <span style={{ fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.copper, flexShrink: 0 }}>
           {phaseLabels[liveState.phase] || liveState.phase}
         </span>
+        {/* Phase 5 Session B (2026-05-19) — multi-round badge. Renders
+            only when `multiRoundEnabled` is true so default-OFF
+            sessions are byte-identical to pre-Phase-5 UI. */}
+        {multiRoundEnabled === true && roundPersonaLabel && (
+          <span
+            data-testid="multi-round-badge"
+            style={{
+              fontFamily: ef.sans, fontSize: 10, fontWeight: 600,
+              color: e.copper, padding: "2px 8px", borderRadius: 999,
+              background: "rgba(180,83,9,0.10)",
+              border: "1px solid rgba(180,83,9,0.24)",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}
+          >
+            Round {(roundIndex ?? 0) + 1} of 3 · {roundPersonaLabel}
+          </span>
+        )}
       </div>
+
+      {/* Phase 5 Session B (2026-05-19) — ZOPA band visualization.
+          Renders only when the candidate has surfaced a target OR an
+          offer has been put on the table (so the strip stays empty
+          pre-turn-1). Markers (left → right):
+            walkAway (red) → initialOffer (amber) → highestOfferMade
+            (purple, if > initialOffer) → maxStretch (green) →
+            candidateTarget / targetSalary (blue diamond if disclosed). */}
+      {negotiationBand && negotiationBand.initialOffer > 0 &&
+        ((candidateTarget != null && candidateTarget > 0) || highestOffer > 0) && (
+        (() => {
+          const lo = negotiationBand.walkAway;
+          const hi = negotiationBand.maxStretch;
+          const range = hi - lo;
+          const pct = (n: number) =>
+            range > 0 ? Math.max(0, Math.min(100, ((n - lo) / range) * 100)) : 50;
+          const targetForMarker = (candidateTarget != null && candidateTarget > 0)
+            ? candidateTarget
+            : (targetSalary != null && targetSalary > 0 ? targetSalary : null);
+          return (
+            <div data-testid="zopa-band" style={{ paddingTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  ZOPA Band
+                </span>
+                <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>
+                  ₹{lo} → ₹{hi}
+                </span>
+              </div>
+              <div style={{
+                position: "relative", height: 24, borderRadius: 12,
+                background: "linear-gradient(90deg, rgba(185,28,28,0.18), rgba(180,83,9,0.18), rgba(21,128,61,0.18))",
+              }}>
+                {/* walkAway (red, far left) */}
+                <div
+                  data-testid="zopa-walkaway"
+                  style={{
+                    position: "absolute", left: "0%", top: 0, bottom: 0,
+                    width: 3, background: e.error, borderRadius: 2, zIndex: 2,
+                  }}
+                />
+                {/* initialOffer (amber) */}
+                <div
+                  data-testid="zopa-initial-offer"
+                  style={{
+                    position: "absolute", left: `${pct(negotiationBand.initialOffer)}%`, top: 0, bottom: 0,
+                    width: 2, background: e.copper, borderRadius: 1, zIndex: 2,
+                    transform: "translateX(-50%)",
+                  }}
+                />
+                {/* highestOfferMade (purple) — only when > initialOffer */}
+                {highestOffer > negotiationBand.initialOffer && (
+                  <div
+                    data-testid="zopa-highest-offer"
+                    style={{
+                      position: "absolute", left: `${pct(highestOffer)}%`, top: 0, bottom: 0,
+                      width: 3, background: "#7e22ce", borderRadius: 2, zIndex: 3,
+                      transform: "translateX(-50%)",
+                    }}
+                  />
+                )}
+                {/* maxStretch (green, far right) */}
+                <div
+                  data-testid="zopa-max-stretch"
+                  style={{
+                    position: "absolute", right: "0%", top: 0, bottom: 0,
+                    width: 3, background: e.success, borderRadius: 2, zIndex: 2,
+                  }}
+                />
+                {/* candidateTarget (blue diamond) — only when disclosed */}
+                {targetForMarker != null && (
+                  <div
+                    data-testid="zopa-candidate-target"
+                    style={{
+                      position: "absolute", left: `${pct(targetForMarker)}%`, top: "50%",
+                      width: 10, height: 10, background: "#2563eb",
+                      transform: "translate(-50%, -50%) rotate(45deg)", zIndex: 4,
+                      borderRadius: 1,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })()
+      )}
 
       {/* Manager Style + Phase Guidance */}
       <div style={{ padding: "8px 10px", borderRadius: 8, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.13)" }}>

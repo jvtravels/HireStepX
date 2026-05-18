@@ -30,6 +30,27 @@
 import type { NegotiationState } from "./_negotiation-kernel";
 import type { NextAction } from "./_next-action-planner";
 import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
+import type { NegotiationRoundPersona } from "./_negotiation-rounds";
+import { getNegotiationRoundPersona } from "./_negotiation-rounds";
+/* Phase 5 Session B (2026-05-19) — keep `getNegotiationRoundPersona`
+ * imported so downstream consumers (e.g. analyzer / UI label
+ * resolvers re-exporting via this module) have one canonical lookup.
+ * The prose layer itself uses `activeRoundPersona` for the cheap
+ * null-vs-id check; the full config is consulted only when shape /
+ * idiomBias is needed at a deeper layer. */
+void getNegotiationRoundPersona;
+
+/** Phase 5 Session B (2026-05-19) — read the multi-round persona off
+ *  state. Returns null when multi-round is OFF (default) so the rest
+ *  of the prose pipeline stays byte-identical for pre-Phase-5
+ *  sessions. Only consults `roundPersona` when `multiRoundEnabled`
+ *  is explicitly true. */
+function activeRoundPersona(
+  state: NegotiationState,
+): NegotiationRoundPersona | null {
+  if (state.multiRoundEnabled !== true) return null;
+  return state.roundPersona ?? null;
+}
 
 /** Phase 3 of Salary-Negotiation plan (2026-05-18) — read the sector
  *  persona off state. Optional field; undefined / "default" both fall
@@ -800,6 +821,29 @@ function renderCanonicalProseBody(
        * the "as per our band" idiom marker and panel-escalation offer
        * required by the canonical contract; the default path renders
        * byte-identical to pre-Phase-3 prose. */
+      /* Phase 5 Session B (2026-05-19) — round-persona overlay. When
+       * multi-round is enabled, the round persona dictates the
+       * deflection style independent of sector. HR Partner cites
+       * grade fitment; Hiring Manager pivots to scope-trade;
+       * Director frames as final-leverage. Multi-round OFF (default)
+       * falls through to the sector persona branch byte-identical
+       * to pre-Phase-5 prose. */
+      const roundPersonaA = activeRoundPersona(state);
+      if (roundPersonaA != null) {
+        switch (roundPersonaA) {
+          case "hr-partner":
+            return "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally.";
+          case "hiring-manager":
+            return "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level.";
+          case "director":
+            return "This is the final number my approval supports — as per our band for this grade. Let me know if there's a path forward.";
+          default: {
+            const _exhaustive: never = roundPersonaA;
+            void _exhaustive;
+            break;
+          }
+        }
+      }
       const persona = sectorPersona(state);
       switch (persona) {
         /* Each persona variant respects the sentence-length cap
@@ -1021,6 +1065,31 @@ function renderCanonicalProseBody(
        * survives. The default branch renders byte-identical to the
        * pre-Phase-3 prose. */
       if (total != null && total > 0) {
+        /* Phase 5 Session B (2026-05-19) — round-persona overlay
+         * preempts the sector body when multi-round is on. HR
+         * Partner caps to band floor (cites policy); Hiring Manager
+         * frames as scope-tradeoff; Director frames as final
+         * leverage. Default-OFF: roundPersonaC == null → falls
+         * through to sector body (byte-identical). */
+        const roundPersonaC = activeRoundPersona(state);
+        if (roundPersonaC != null) {
+          const roundBody = (() => {
+            switch (roundPersonaC) {
+              case "hr-partner":
+                return `As per band, the most I can structure is ₹${total}L total — that's the grade fitment ceiling I have.`;
+              case "hiring-manager":
+                return `We can revise the fitment to ₹${total}L total — that's the stretch I can hold against the scope we're hiring.`;
+              case "director":
+                return `Final number on cash is ₹${total}L total — this is the leverage I'm able to sign off on.`;
+              default: {
+                const _exhaustive: never = roundPersonaC;
+                void _exhaustive;
+                return `We can revise the fitment to ₹${total}L total.`;
+              }
+            }
+          })();
+          return `${spiralLead} ${roundBody} How does that look from your side?`;
+        }
         /* Persona-specific body. Kept short (one sentence < 30 words)
          * so the spiralLead + body + closer concatenation respects
          * checkSentenceLength in _response-pipeline.ts (MAX 30 words /
@@ -1137,12 +1206,31 @@ function renderCanonicalProseBody(
       }
       const variableMax = state.band?.variableMax;
       const persona = sectorPersona(state);
-      /* Phase 3 of Salary-Negotiation plan (2026-05-18) — persona-coloured
-       * band shape commentary on the opening anchor. The number-token
-       * contract (₹N LPA + "fitment") is preserved across every branch;
-       * persona variance is one trailing clause that frames the band.
-       * Default path renders byte-identical to pre-Phase-3 prose. */
-      const tail = (() => {
+      /* Phase 5 Session B (2026-05-19) — round-persona overlay on
+       * anchor-with-offer tail. HR Partner anchors at the floor
+       * ("grade fitment, no stretch"); HM widens with a stretch
+       * reference; Director hits the Director-tier band framing
+       * (bandSpreadMultiplier signal — full sign-off authority).
+       * Default-OFF: falls through to the sector tail
+       * byte-identical. */
+      const roundPersonaB = activeRoundPersona(state);
+      const tail = roundPersonaB != null
+        ? (() => {
+            switch (roundPersonaB) {
+              case "hr-partner":
+                return " That's the band floor for this grade — no stretch on cash from my side.";
+              case "hiring-manager":
+                return " That sits inside the stretch band I can hold against this scope.";
+              case "director":
+                return " That's the Director-tier band — full sign-off authority on this number.";
+              default: {
+                const _exhaustive: never = roundPersonaB;
+                void _exhaustive;
+                return "";
+              }
+            }
+          })()
+        : (() => {
         switch (persona) {
           case "it-services":  return " That's the grade fitment as per our band for this role.";
           case "gcc":          return " That's anchored to the global band for this level.";
@@ -1352,31 +1440,50 @@ function renderCanonicalProseBody(
     }
 
     case "round-transition": {
-      /* Phase 5 Session A (2026-05-19) — multi-round persona handoff
-       * stub. Session B replaces with persona-specific prose, glossary
-       * lookups, and Indian recruiter idioms; ship the stub now so the
-       * exhaustive switch compiles and the integration-fixture entry has
-       * something to validate against.
+      /* Phase 5 Session B (2026-05-19) — distinct handoff prose per
+       * (from → to) edge. HR Partner hands off to Hiring Manager with
+       * a warm partner-led tone; Hiring Manager hands off to Director
+       * with a process-led tone that signals the closing round.
        *
-       * Stub copy intentionally uses the persona display word the
-       * candidate would recognise ("the hiring manager" / "the
-       * director"); HR Partner is never the TARGET of a handoff (it's
-       * the starting persona) so the switch only enumerates the two
-       * realisable destinations. */
-      const targetLabel =
-        action.to === "hiring-manager"
-          ? "the hiring manager"
-          : action.to === "director"
-            ? "the director"
-            : (() => {
-                /* Defensive: the only legal `to` values are hiring-manager
-                 * or director (HR Partner is never a handoff TARGET).
-                 * Compile-time exhaustiveness on the `to` literal. */
-                const _exhaustive: never = action.to as never;
-                void _exhaustive;
-                return "the next round";
-              })();
-      return `Thanks — passing you to ${targetLabel} for the next round.`;
+       * Distinct phrasing across the two edges so two consecutive
+       * round-transition turns would never collide on the PDF#36 A1
+       * rotating-ack guard (which normalises body text against
+       * state.lastAiText after stripping leading acks). The bodies
+       * also intentionally avoid the canonical ACK leads ("Noted",
+       * "Got it", "Understood", "Appreciate", "Right,", "Fair
+       * enough", "Okay,", "Alright,") so the FL2 neutral bridge does
+       * not double-prepend an ack onto an already-warm handoff. */
+      const from: NegotiationRoundPersona = action.from;
+      const to: NegotiationRoundPersona = action.to;
+      switch (to) {
+        case "hiring-manager":
+          /* hr-partner → hiring-manager. Partner-led warmth. No
+           * "hiring manager" name is threaded through state today, so
+           * the generic descriptor "the hiring manager" is the safe
+           * surface. If a future iteration adds
+           * state.hiringManagerName, swap the descriptor here. */
+          return "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.";
+        case "director":
+          /* hiring-manager → director. Process-led: signals the final
+           * round and frames the Director's scope (closing offer +
+           * any remaining flexibility). */
+          return "Appreciate the depth on scope. I'd like to pull in the director for the final round — they'll cover the closing offer and any flexibility we have.";
+        case "hr-partner": {
+          /* HR Partner is never a handoff TARGET in the sequence
+           * hr-partner → hiring-manager → director. Defensive
+           * fallback only — should never be reached at runtime. */
+          return "Let me bring in the next round of the conversation.";
+        }
+        default: {
+          const _exhaustive: never = to;
+          void _exhaustive;
+          return "Let me bring in the next round of the conversation.";
+        }
+      }
+      /* `from` is part of the discriminator surface so downstream
+       * analyzers can read the edge; not used in the prose body
+       * itself today. */
+      void from;
     }
 
     default: {

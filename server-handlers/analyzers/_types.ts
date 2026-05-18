@@ -218,6 +218,15 @@ export interface AnalyzerMeta {
       | "bfsi"
       | "default";
     recruiterPersonaLabel?: string;
+    /** Phase 5 Session B (2026-05-19) — multi-round signals. Inferred
+     *  from transcript-side handoff prose (analyzer doesn't see kernel
+     *  state directly). `multiRoundEnabled` reflects whether ANY
+     *  handoff prose was detected. `roundsCompleted` is the count of
+     *  personas in the trajectory (1..3). `roundPersonaTrajectory`
+     *  is the ordered tuple of personas the session passed through. */
+    multiRoundEnabled?: boolean;
+    roundsCompleted?: number;
+    roundPersonaTrajectory?: Array<"hr-partner" | "hiring-manager" | "director">;
   };
 }
 
