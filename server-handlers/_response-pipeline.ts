@@ -24,7 +24,7 @@
  * Pure orchestration. The LLM caller is injected so tests can mock it.
  */
 
-import type { NegotiationState, AiMove, NegotiationPhase } from "./_negotiation-kernel";
+import { isVerbatimRepeat, type NegotiationState, type AiMove, type NegotiationPhase } from "./_negotiation-kernel";
 import { planNextAction, actionToLever, type NextAction } from "./_next-action-planner";
 import {
   renderCanonicalProse,
@@ -133,6 +133,33 @@ async function generateRestyledCanonical(
       rejectReason: validation.reason,
     };
   }
+  /* PDF#30 R4 (2026-05-18, Meesho/Prita T18/T20/T22) — verbatim-repeat
+   * guard. The kernel exports `isVerbatimRepeat` but no path called it,
+   * so the pipeline could ship the IDENTICAL sentence three turns in a
+   * row when the planner stayed on the same lever and the LLM landed
+   * on the same content-word prefix. We reject the restyle (falls back
+   * to canonical) if it verbatim-matches state.lastAiText. If the
+   * canonical ALSO matches lastAiText, the planner is the one looping —
+   * surface a deterministic stub that breaks the repeat instead of
+   * shipping a third copy. */
+  if (isVerbatimRepeat(restyled, state)) {
+    if (isVerbatimRepeat(canonical, state)) {
+      return {
+        text: "Let me step back for a moment — what would be most useful to cover next from your side?",
+        source: "canonical-fallback",
+        action,
+        move,
+        rejectReason: "verbatim-repeat-canonical",
+      };
+    }
+    return {
+      text: canonical,
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: "verbatim-repeat-restyle",
+    };
+  }
   return { text: restyled, source: "restyle", action, move };
 }
 
@@ -231,6 +258,13 @@ async function generateAnswerToCandidate(
   if (!validation.valid) {
     const defer = buildDeferText("validation", [], canonicalFollowup);
     return { text: defer, source: "answer-canonical", action, move, rejectReason: validation.reason };
+  }
+  /* PDF#30 R4 (2026-05-18) — same verbatim-repeat guard on the answer
+   * path. If the LLM's answer is identical to the prior AI turn, defer
+   * to the deterministic canonical follow-up instead. */
+  if (isVerbatimRepeat(answer, state)) {
+    const defer = buildDeferText("validation", [], canonicalFollowup);
+    return { text: defer, source: "answer-canonical", action, move, rejectReason: "verbatim-repeat-answer" };
   }
   return { text: answer, source: "answer-restyle", action, move };
 }
@@ -1096,8 +1130,48 @@ export function validateAnswer(
   if (BANNED_RECRUITER_IDIOM_RE.test(answer)) {
     return { valid: false, reason: "banned-idiom-leaked" };
   }
+  /* PDF#30 R3 (2026-05-18, Meesho/Prita session T10) — defensive-loop
+   * guard. After a candidate signals frustration at being re-probed
+   * (USER_FRUSTRATION_RE), the LLM has historically emitted bot-self-
+   * defense rationalizations like "we're asking to ensure we're on the
+   * same page" / "to align our understanding" / "for clarity on our
+   * end". These are meta-explanations of WHY the bot keeps asking — a
+   * tell that the bot is looping on a topic the candidate has already
+   * answered. The correct response is acknowledge-and-recover (the new
+   * lever added in the PDF#29 batch), NOT a meta-justification.
+   *
+   * We reject the restyle so the pipeline falls back to the canonical
+   * acknowledge-and-recover prose, which apologizes and pivots WITHOUT
+   * defending the previous question. */
+  if (DEFENSIVE_LOOP_RE.test(answer)) {
+    return { valid: false, reason: "defensive-loop-leaked" };
+  }
   return { valid: true };
 }
+
+/* PDF#30 R3 (2026-05-18) — bot self-defense phrasings that indicate
+ * the LLM is justifying the re-probe instead of recovering from it.
+ * Conservative list — every cue requires both a meta verb ("ensure",
+ * "align", "confirm") AND a topic about the conversation itself
+ * ("same page", "understanding", "on our end") so plain "to ensure
+ * fit for the role" doesn't false-positive. */
+const DEFENSIVE_LOOP_RE = new RegExp(
+  [
+    // "to ensure we're on the same page" / "ensuring we are on the same page"
+    String.raw`\b(?:to\s+)?ensur(?:e|ing)\s+(?:we|that\s+we|you\s+and\s+i)\s*(?:are|.?re)?\s*(?:on\s+the\s+same\s+page|aligned|in\s+sync|in\s+alignment)`,
+    // "to align our understanding" / "for alignment on our end"
+    String.raw`\b(?:to\s+|for\s+)?align(?:ment|ing)?\s+(?:our|on)\s+(?:understanding|end|side|process)`,
+    // "for clarity on our end" / "clarity on our side"
+    String.raw`\bfor\s+clarity\s+on\s+(?:our|my)\s+(?:end|side|process)`,
+    // "to make sure we have the right understanding" / "we have a clear picture"
+    String.raw`\b(?:to\s+)?make\s+sure\s+(?:we|i)\s+(?:have|get)\s+(?:the\s+right|a\s+clear|complete)\s+(?:understanding|picture|alignment)`,
+    // "for our records to be accurate" / "to keep our records straight"
+    String.raw`\b(?:for|to\s+keep)\s+our\s+records\s+(?:to\s+be\s+)?(?:accurate|straight|complete)`,
+    // "we're asking [again|this] to confirm/verify our understanding"
+    String.raw`\bwe.?re\s+asking\s+(?:again|this|the\s+same)\s+(?:to|so\s+(?:that|we))\s+(?:confirm|verify|align|ensure)`,
+  ].join("|"),
+  "i",
+);
 
 function lowercaseFirst(s: string): string {
   if (!s) return s;
