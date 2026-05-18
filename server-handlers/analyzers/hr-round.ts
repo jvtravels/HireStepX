@@ -46,6 +46,11 @@ const BGV_PROMPT = /\b(bgv|background verification|background check|payslip|form
 const BGV_EVASIVE = /\b(?:not comfortable|prefer not|can'?t share|cannot share|don'?t share|won'?t share|not willing|not (?:able|ready) to share|don'?t have|lost|misplaced|nahi hai|kho gaya|share nahi)\b/i;
 const COUNTER_OFFER_PROMPT = /\b(counter[- ]offer|counter offer|if (?:your )?current (?:company|employer) (?:offers|matches|counters)|other offers|interviewing elsewhere|if we (?:make|extend) (?:you )?an offer|commitment within|kahin aur interview|aur offer)\b/i;
 const COUNTER_OFFER_DODGE = /\b(?:i'?ll see|it depends|maybe|not sure|can'?t say|too early|let me think|i'?ll decide (?:then|later)|will see how|dekhta hu|dekhte hain|soch ke bataunga|tab ki tab|abhi nahi bol sakta)\b/i;
+/* Positive counterpart to COUNTER_OFFER_DODGE — candidate handles the
+   counter-offer probe gracefully with a firm "no counter" commitment.
+   When this fires we suppress counter_offer_dodge AND record a
+   positive signal so the report credits the candidate. */
+const OFFER_ACCEPTED_GRACEFUL = /\b(?:if i (?:accept|take) (?:yours|your offer)[\s,]+i (?:won'?t|will not|don'?t plan to) (?:take|consider|entertain) (?:a |any )?counter|no counter[- ]?offer (?:consideration|for me|here|please)|(?:i'?ve|i have) (?:already )?decided[\s,]+no counter|once i sign[\s,]+i'?m (?:in|committed|done)|i (?:won'?t|will not) entertain (?:a |any )?counter[- ]?offer|counter[- ]?offer (?:not in (?:the )?picture|out of (?:the )?picture|isn'?t happening)|haan main commit (?:karta|kar) (?:hu|raha))\b/i;
 const WHY_COMPANY_PROMPT = /\b(why (?:our|this) company|why us|why are you interested in (?:us|our|this company)|what do you know about (?:us|our company)|why (?:do )?you want to (?:join|work (?:at|with|here))|humari company kyu|yahan kyu)\b/i;
 const GENERIC_WHY = /\b(great culture|great brand|good company|reputed|reputation|big name|industry leader|top company|growth opportunit|good work[- ]?life|good place|nice place|love the company|achi company|badi company|brand achi)\b/i;
 const SPECIFIC_WHY = /\b(launched|launch|product|feature|leader|founder|ceo|cto|paper|blog|talk|conference|series [a-d]|ipo|acquired|acquisition|mission|domain|space|sector|stack|engineering blog|open source|case study|customer|use case)\b/i;
@@ -284,7 +289,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.4.0",
+  version: "hr-round-v4.5.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -427,11 +432,20 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
+    /* Counter-offer loop: prefer the graceful-acceptance positive
+       signal when both patterns could match, since the graceful phrase
+       often contains a "decide" / "see" token that the dodge regex also
+       picks up. */
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && COUNTER_OFFER_PROMPT.test(t.text || "")) {
         const r = replyTo(transcript, i);
-        if (r && r.text && r.text.length < 220 && COUNTER_OFFER_DODGE.test(r.text)) {
+        if (!r || !r.text || r.text.length >= 220) continue;
+        if (OFFER_ACCEPTED_GRACEFUL.test(r.text)) {
+          flags.add("offer_accepted_graceful");
+          break;
+        }
+        if (COUNTER_OFFER_DODGE.test(r.text)) {
           flags.add("counter_offer_dodge");
           gaps.push({ dimension: "commitment_signal", expected: "Clear stance on counter-offer / other offers — HR is testing pre-joining drop-out risk", observed: "Candidate dodged the commitment question, reads as flight risk", severity: "medium", flag: "counter_offer_dodge" });
           rescoreEvidence.set("counter_offer_dodge", { aiPrompt: t.text || "", userReply: r.text || "" });
@@ -775,10 +789,12 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         );
         if (orphans.length > 0) {
           flags.add("resume_transcript_mismatch");
+          const uniqOrphans = Array.from(new Set(orphans)).slice(0, 3);
+          const resumeList = resumeAgg.employers.slice(0, 4).join(", ");
           gaps.push({
             dimension: "credibility",
             expected: "Every employer named in the interview must already appear on the resume — BGV pulls the resume as the source of truth.",
-            observed: `Candidate named ${orphans.length === 1 ? "an employer" : "employers"} absent from the resume: ${Array.from(new Set(orphans)).slice(0, 3).join(", ")}.`,
+            observed: `Resume lists: ${resumeList}. You said: ${uniqOrphans.join(", ")} — ${uniqOrphans.length === 1 ? "this employer is" : "these employers are"} absent from the resume.`,
             severity: "high",
             flag: "resume_transcript_mismatch",
           });
@@ -825,10 +841,14 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           flags.add("inflated_seniority_claim");
           const yearsRounded = (resumeAgg.yoeMonths / 12).toFixed(1);
           const observedTitle = (resumeSenior ? resumeAgg.titles : transcriptSenior).find((t) => SENIOR_TITLE_RE.test(t)) || "senior";
+          const resumeTitle = resumeAgg.titles[0] || "unknown";
+          const transcriptQuote = transcriptSenior[0] ? ` you said "${transcriptSenior[0]}"` : "";
           gaps.push({
             dimension: "credibility",
             expected: "Senior / Lead / Staff / Principal titles typically require 5+ years of relevant experience in the Indian market.",
-            observed: `Resume YoE ≈ ${yearsRounded} years but ${resumeSenior ? "resume title" : "candidate self-describes"} as ${observedTitle}. Reads as level inflation.`,
+            observed: resumeSenior
+              ? `Resume YoE ≈ ${yearsRounded} years, resume title is "${resumeTitle}" (matches ${observedTitle}).${transcriptQuote ? ` Verbally${transcriptQuote}.` : ""} Reads as level inflation.`
+              : `Resume YoE ≈ ${yearsRounded} years, resume title is "${resumeTitle}",${transcriptQuote} — claimed level outruns the YoE on paper.`,
             severity: "medium",
             flag: "inflated_seniority_claim",
           });
@@ -906,6 +926,81 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     }
 
     const tips: string[] = [];
+
+    /* ── Coaching clusters (v4.5) ──
+       Group flags by theme so the report leads with "pattern" framing
+       when ≥2 flags in a cluster fire. Indian HR scores compliance and
+       commitment as patterns, not isolated mistakes — telling the
+       candidate "3 evasive signals across compliance" lands harder
+       than 3 separate one-liners further down. Linear per-flag tips
+       still follow so the candidate sees the per-issue specifics. */
+    const CLUSTERS: Array<{ label: string; theme: string; members: string[] }> = [
+      {
+        label: "compliance",
+        theme: "BGV / documentation",
+        members: [
+          "bgv_document_evasion",
+          "bgv_document_evasion_sustained",
+          "bgv_document_initial_hedge",
+          "payslip_refusal",
+          "payslip_refusal_sustained",
+          "reference_refusal",
+          "reference_refusal_sustained",
+          "reference_initial_hedge",
+          "prior_bgv_fail_uncontextualised",
+          "certification_gap_evasion",
+          "pf_uan_evasive",
+        ],
+      },
+      {
+        label: "commitment",
+        theme: "pre-joining commitment",
+        members: [
+          "counter_offer_dodge",
+          "offer_letter_delay_anxiety",
+          "joining_date_overpromise",
+          "aspiration_walkback",
+          "loyalty_overcommit",
+        ],
+      },
+      {
+        label: "stability",
+        theme: "switch rationale / tenure",
+        members: [
+          "gap_unexplained",
+          "resume_gap_unaddressed",
+          "job_hopping_pattern",
+          "user_badmouthing_employer",
+        ],
+      },
+      {
+        label: "credibility",
+        theme: "resume cross-checks",
+        members: [
+          "resume_transcript_mismatch",
+          "inflated_seniority_claim",
+          "moonlighting_flat_denial",
+          "genai_flat_denial",
+        ],
+      },
+    ];
+    for (const cluster of CLUSTERS) {
+      const hits = cluster.members.filter((m) => flags.has(m));
+      if (hits.length >= 2) {
+        tips.push(
+          `Pattern, not isolated: ${hits.length} signals across ${cluster.theme} (${hits.slice(0, 4).join(", ")}). Indian HR scores ${cluster.label} as a cluster — fix the pattern, not just the loudest one.`,
+        );
+      }
+    }
+
+    /* Phase 1.3 — positive-signal counterpart to counter_offer_dodge.
+       Surfaced before the negative tips so the candidate sees credit
+       first. We don't add it to the rubric-gap list (not a gap) but
+       we DO push it into coachingNotes for visibility. */
+    if (flags.has("offer_accepted_graceful")) {
+      tips.push("Strong commitment signal: you closed the counter-offer probe cleanly ('won't entertain a counter / once I sign I'm in'). HR's #1 fear is pre-joining drop-out — that line de-risks you. Keep using it.");
+    }
+
     if (flags.has("user_anchor_leaked_salary")) tips.push("Never name a salary first — deflect with 'I'd want to understand the role + level before discussing comp.'");
     if (flags.has("user_badmouthing_employer")) tips.push("Reframe past frustrations as growth opportunities. HR scores professionalism heavily.");
     if (flags.has("generic_self_intro")) tips.push("Tighten 'tell me about yourself' to a 90-second story with 2 concrete projects + outcomes.");
