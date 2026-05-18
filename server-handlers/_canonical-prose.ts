@@ -991,6 +991,17 @@ function renderCanonicalProseBody(
       return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA fixed plus variable. Let me know your thoughts.`;
     }
 
+    case "acknowledge-and-recover": {
+      /* PDF#29 Bug 7 (2026-05-18) — frustration recovery. Number-free,
+       * carries the required "apolog" token so the contract entry
+       * pins the move's repair semantics. Partial line; the planner
+       * could chain a next non-redundant action behind this in a v2
+       * (acceptable to ship standalone for v1 — lastUserFrustrated is
+       * cleared in applyAiMove so the next turn resumes the normal
+       * cascade). */
+      return "You're right, my apologies — let me not loop on that. Moving on.";
+    }
+
     case "panel-approval-stall": {
       /* Phase 3 missing-lever set (2026-05-17) — distinct stall move.
        * Real Indian HR escalation: after two cash concessions, further

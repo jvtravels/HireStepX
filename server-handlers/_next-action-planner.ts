@@ -367,7 +367,14 @@ export type NextAction =
    * push onto askedTopics. Single-fire via
    * state.fakeLeverageChallengeFiredAtTurn AND
    * state.competingOfferDetail.proofRequestedAtTurn. */
-  | { kind: "fake-leverage-challenge"; competingCompany: string | null };
+  | { kind: "fake-leverage-challenge"; competingCompany: string | null }
+  /* PDF#29 Bug 7 (2026-05-18) — acknowledge-and-recover. Fires when
+   * state.lastUserFrustrated is true (candidate said "I already told
+   * you", "you keep asking", "we covered this"). Highest-priority lever
+   * so the bot acknowledges + breaks the loop instead of doubling down
+   * on the same topic. Not probe-producing in the satisfiesTopic sense
+   * but carries one so the askedTopics ledger records the recovery. */
+  | { kind: "acknowledge-and-recover"; satisfiesTopic: SatisfiesTopic };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -394,6 +401,10 @@ export const PROBE_PRODUCING_KINDS: ReadonlySet<NextAction["kind"]> = new Set<Ne
   "comparative-anchoring",
   "component-probe",
   "anchor-with-offer",
+  /* PDF#29 Bug 7 (2026-05-18) — recovery turn is recorded in the
+   * askedTopics ledger so analyzer / coverage downstream can detect
+   * that the planner actually responded to the frustration signal. */
+  "acknowledge-and-recover",
 ]);
 
 /** Internal carrier: the planner builds the move alongside the action so
@@ -714,6 +725,26 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         newTotalLpa: clampToCloseFloor(state, state.highestOfferMade || state.band.initialOffer),
         joiningBonusAmount: state.lastJoiningBonusOffered ?? undefined,
         rationale: `Terminal phase ${state.phase} reached at turn ${state.acceptedAtTurn ?? state.walkedAwayAtTurn ?? state.stalemateAtTurn ?? "?"}; restate close.`,
+      },
+    };
+  }
+
+  /* PDF#29 Bug 7 (2026-05-18) — frustration recovery is the highest-
+   * priority lever (sits above every other branch). Fires when the
+   * candidate's last utterance carried a "you're looping on me" cue.
+   * Acceptable to ship as a standalone turn for v1; subsequent turns
+   * resume the normal cascade because lastUserFrustrated is cleared
+   * in applyAiMove. Not pushed through STRUCTURAL_LEVERS rotation
+   * (this is a meta / repair move, not a comp lever). */
+  if (state.lastUserFrustrated === true) {
+    return {
+      kind: "acknowledge-and-recover",
+      satisfiesTopic: "acknowledge-and-recover",
+      _move: {
+        lever: "acknowledge-and-recover",
+        newTotalLpa: null,
+        rationale: "Candidate signalled frustration / topic-loop; acknowledge + break out of the loop before continuing the cascade.",
+        actionKind: "acknowledge-and-recover",
       },
     };
   }

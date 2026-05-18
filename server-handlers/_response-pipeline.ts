@@ -467,6 +467,15 @@ export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextAction
       /\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/,
     ],
   },
+  /* PDF#29 Bug 7 (2026-05-18) — acknowledge-and-recover (frustration
+   * recovery). No numbers (it's a repair turn, not a comp move).
+   * Required token "apolog" pins the recovery semantics so the LLM
+   * restyle cannot drift into a generic "got it, moving on" that
+   * drops the explicit acknowledgement. */
+  "acknowledge-and-recover": {
+    numberPolicy: "forbidden",
+    requiredTokens: [/apolog/i],
+  },
   /* Bug 3 fix (2026-05-18) — band-anchor-with-rationale. Point offer only;
    * the dash/"to" between digits is banned so the LLM restyle cannot
    * reintroduce the internal band range. */

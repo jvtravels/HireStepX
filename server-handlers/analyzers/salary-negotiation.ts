@@ -21,6 +21,14 @@ import {
   emptyResult,
 } from "./_types";
 import { SALARY_DATA, CALIBRATION_DATE, type SalaryEntry, type ExperienceLevel } from "../../data/salaries";
+/* PDF#29 Bug 7 (2026-05-18) — frustration regex moved to a shared
+ * module so the live planner and the post-session analyzer agree on
+ * the subset of cues that promote acknowledge-and-recover. The
+ * analyzer's own USER_CONFUSION_RE is a SUPERSET (it also covers
+ * "i'm confused", "wait what", etc. that don't necessarily mean the
+ * candidate is being looped); the imported regex is the narrower
+ * looping-on-topic subset. */
+import { USER_FRUSTRATION_RE } from "../_user-signals";
 import { generateNegotiationBand, getReferenceBand } from "../../data/salary-lookup";
 import { getCompanyBandOverride } from "../../data/company-salary-overrides";
 import { matchRoleKey } from "../../data/salaries";

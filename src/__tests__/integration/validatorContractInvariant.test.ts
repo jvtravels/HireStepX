@@ -297,6 +297,17 @@ const FIXTURES: Fixture[] = [
       competingOffer: 28,
     }),
   },
+  /* PDF#29 Bug 7 (2026-05-18) — acknowledge-and-recover. Frustration
+   * recovery turn; no numbers, must carry the "apolog" required token
+   * to pin the repair semantics. */
+  {
+    label: "acknowledge-and-recover",
+    action: {
+      kind: "acknowledge-and-recover",
+      satisfiesTopic: "acknowledge-and-recover",
+    },
+    state: mk({ phase: "probe-expectations", turnIndex: 3 }),
+  },
   /* PDF#29 Bug 3 (2026-05-18) — band-anchor-with-rationale. Point offer
    * at band floor; contract requires LPA + band tokens and bans any
    * dash/"to" between two digits so the LLM cannot reintroduce a band

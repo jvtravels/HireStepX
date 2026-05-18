@@ -125,6 +125,7 @@ import {
   type DiscoveryChecklist,
   type DiscoveryStage,
 } from "./_discovery-stage";
+import { USER_FRUSTRATION_RE } from "./_user-signals";
 import { classifyRoleFamily, getBandForRole, classifyCompanyTier as classifyBandCompanyTier } from "./_company-band-tiers";
 import {
   buildResumeFactPack,
@@ -293,7 +294,11 @@ export type DiscoveryTopic =
   | "close-acceptance"
   | "close-walkaway"
   | "close-stalemate"
-  | "terminal-restate";
+  | "terminal-restate"
+  /* PDF#29 Bug 7 (2026-05-18) — frustration-recovery actionKind. Pushed
+   * onto state.askedTopics by applyAiMove so the F7 ledger records the
+   * single-fire emission alongside the lastUserFrustrated clear. */
+  | "acknowledge-and-recover";
 
 /** Exhaustiveness helper. Used in topic switches so adding a new
  *  DiscoveryTopic literal lights up at every consumer site that hasn't
@@ -334,6 +339,8 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "joining-bonus", "equity-grant", "benefits-summary", "compensation-summary",
   "notice-period-summary", "hike-context-summary", "hold-firm",
   "close-acceptance", "close-walkaway", "close-stalemate", "terminal-restate",
+  /* PDF#29 Bug 7 (2026-05-18). */
+  "acknowledge-and-recover",
 ]);
 
 export function isDiscoveryTopic(s: string): s is DiscoveryTopic {
@@ -464,7 +471,13 @@ export type NegotiationLever =
    * phase was reached. Distinct from close-acceptance so we can tell in
    * telemetry / tests that this turn is a sticky restate, not a fresh
    * transition. Always carries terminal=true in the response payload. */
-  | "terminal-restate";
+  | "terminal-restate"
+  /* PDF#29 Bug 7 (2026-05-18) — frustration-recovery move. The bot
+   * acknowledges that it looped on a topic the candidate already
+   * answered and breaks out of the loop. Not a comp lever; no
+   * newTotalLpa is emitted. Single-fire is enforced by the planner
+   * via state.lastUserFrustrated being one-shot. */
+  | "acknowledge-and-recover";
 
 /* ─── Band — server-derived once at session start ────────────────── */
 
@@ -784,6 +797,15 @@ export interface NegotiationState {
      engaged. Comes with a penalty (loss of joining bonus, lower base
      ceiling on return). */
   walkAwayReturned: boolean;
+
+  /* PDF#29 Bug 7 (2026-05-18) — candidate frustration signal. Set in
+   * applyCandidateAnswer when the last user utterance matches
+   * USER_FRUSTRATION_RE ("I already told you", "you keep asking",
+   * "we covered this", "asked and answered"). Consumed by the planner
+   * to promote `acknowledge-and-recover` as the highest-priority lever,
+   * and cleared in applyAiMove after the recover turn fires so it
+   * doesn't repeat. */
+  lastUserFrustrated?: boolean;
 
   /* Hard-vs-soft band cap. When true, `maxStretch` is genuinely
      unreachable on base — the AI redirects to JB/equity/level instead
@@ -2796,6 +2818,11 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   const repetitionComplaintAtTurn = REPETITION_COMPLAINT_RE.test(answer)
     ? state.turnIndex
     : (state.repetitionComplaintAtTurn ?? null);
+  /* PDF#29 Bug 7 (2026-05-18) — frustration signal. Distinct from the
+   * repetition-complaint stamp (which lives forever for analyzer
+   * audit): this is a one-turn fold the planner consumes to fire the
+   * acknowledge-and-recover lever. Cleared in applyAiMove. */
+  const lastUserFrustrated = USER_FRUSTRATION_RE.test(answer);
   /* PDF#27 Fix 5 (2026-05-17) — offer-ask detection. Candidate asks
    * what the company is offering; the band-disclosure lever reads this
    * to fire on the very next planner call. */
@@ -2824,6 +2851,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     repetitionComplaintAtTurn,
     offerAskedAtTurn,
     lastAnswerUncertainAt,
+    lastUserFrustrated,
   };
   /* Commit 1 (2026-05-15): finalize() stamps state.lastTurnDelta from the
    * pre-state snapshot before every return. Keeps the 8+ return branches
@@ -3784,6 +3812,11 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * the next applyCandidateAnswer call repopulates from the post-derive
      * state. */
     plannedNextAction: null,
+    /* PDF#29 Bug 7 (2026-05-18) — frustration signal is one-shot. Clear
+     * after the AI turn fires so a single complaint doesn't re-trigger
+     * acknowledge-and-recover on every subsequent turn until the
+     * candidate happens to send a non-frustrated utterance. */
+    lastUserFrustrated: false,
   };
   /* Negotiation-flow redesign commit 4 (2026-05-15) — record the
    * reactive-followup topic the planner emitted this turn. Sticky:
