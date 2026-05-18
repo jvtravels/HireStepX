@@ -790,12 +790,10 @@ export interface NegotiationKernelResponse {
    *  first response already did. Without this guard the metrics
    *  pipeline would double-count the turn on flaky-network retries. */
   _replayed?: boolean;
-  /** In-flow transparency tag (Dim 14). Server-derived from the planner
-   *  action via deriveMoveTag(); ABSENT on older client cache hits and
-   *  on responses where the planner action is structurally invalid. The
-   *  client renders it under the user's Learning Mode toggle; if
-   *  missing, the chip renderer falls through to null. */
-  moveTag?: import("./LearningModeUI").MoveTag;
+  /** Server-derived move tag from the planner action (deriveMoveTag()).
+   *  Retained on the response payload for telemetry / analytics even
+   *  after the in-flow Learning Mode UI was removed (2026-05-18). */
+  moveTag?: import("./MoveTag").MoveTag;
 }
 
 export async function negotiationKernelInit(params: {

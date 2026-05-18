@@ -1,7 +1,7 @@
 /* ─── Interview Script Definitions & Generators ─── */
 
 import type { User } from "./AuthContext";
-import type { MoveTag } from "./LearningModeUI";
+import type { MoveTag } from "./MoveTag";
 
 /** Fisher-Yates shuffle + pick N items — ensures different questions every session */
 function shuffleAndPick<T>(arr: T[], n: number): T[] {

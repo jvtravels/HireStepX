@@ -1021,7 +1021,7 @@ export function useInterviewEngine() {
 
   // Interview flow: thinking -> speaking (with TTS) -> listening
   const flowGenerationRef = useRef(0);
-  const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string; conversationDone?: boolean; moveTag?: import("./LearningModeUI").MoveTag } | null> | null>(null);
+  const pendingFollowUpRef = useRef<Promise<{ needsFollowUp: boolean; followUpText: string; followUpType?: string; conversationDone?: boolean; moveTag?: import("./MoveTag").MoveTag } | null> | null>(null);
   /** Originating step index for the in-flight follow-up. When the
    *  follow-up resolves we verify the engine has advanced exactly one
    *  step from this — otherwise the user already moved past the question
@@ -1480,8 +1480,8 @@ export function useInterviewEngine() {
              * through to the step so the Learning Mode chip can render
              * it under the AI bubble. Absent on non-negotiation
              * follow-ups; renderer falls back to null. */
-            ...((result as { moveTag?: import("./LearningModeUI").MoveTag }).moveTag
-              ? { moveTag: (result as { moveTag?: import("./LearningModeUI").MoveTag }).moveTag }
+            ...((result as { moveTag?: import("./MoveTag").MoveTag }).moveTag
+              ? { moveTag: (result as { moveTag?: import("./MoveTag").MoveTag }).moveTag }
               : {}),
           };
           // Persist follow-up to DB in real-time
