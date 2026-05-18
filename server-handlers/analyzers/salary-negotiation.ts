@@ -612,7 +612,16 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
     // --- 3a-iii. AI ignored user complaint ---
     // User says "I'm confused" / "what are you saying" / "you're confusing me"
     // and AI's next turn is celebration / closing language without addressing.
-    const USER_CONFUSION_RE = /\b(i'?m confused|i don'?t (?:understand|know what)|why don'?t you understand|what (?:are you saying|do you mean)|why are you (?:confusing|asking (?:again|the same|me the same))|this (?:doesn'?t make|isn'?t making) sense|you'?re confusing me|can you clarify|wait what|already (?:mentioned|told you|said)|i (?:told|mentioned) you (?:already|multiple times|before))\b/i;
+    /* Compose the analyzer's superset from the shared frustration subset
+     * (single source of truth — the live planner uses the same subset
+     * via USER_FRUSTRATION_RE). The analyzer-only cues ("i'm confused",
+     * "wait what", "can you clarify") stay scoped here because they're
+     * not necessarily looping signals — they merit post-session review
+     * but shouldn't interrupt the live negotiation. */
+    const USER_CONFUSION_RE = new RegExp(
+      `${USER_FRUSTRATION_RE.source}|\\b(?:i'?m confused|i don'?t (?:understand|know what)|why don'?t you understand|what (?:are you saying|do you mean)|why are you (?:confusing|asking (?:again|the same|me the same))|this (?:doesn'?t make|isn'?t making) sense|you'?re confusing me|can you clarify|wait what|already (?:mentioned|told you|said)|i (?:told|mentioned) you (?:already|multiple times|before))\\b`,
+      "i",
+    );
     const PREMATURE_CLOSE_RE = /\b(thanks?\s+\w*[,.!]?\s*(?:i'?ll connect|i'?ll send|formal offer|expect the (?:formal|final) offer|hr will|rest of your day|joining the team|welcome (?:aboard|to))|excited about (?:the possibility of you|having you))\b/i;
     const HEARD_ACK_RE = /\b(you'?re right|i hear you|i apologi[sz]e|apologies|let me clarify|let me recap|to be clear|here'?s what i can|to summari[sz]e|let me try again)\b/i;
     const HAS_RUPEE = /(?:₹|inr\s*)?\d{1,3}(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crores?)/i;

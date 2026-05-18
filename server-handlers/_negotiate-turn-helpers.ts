@@ -190,6 +190,8 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Note that you've run out of turns. Suggest they take time and revert. Brief, neutral.",
   "terminal-restate":
     "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. If the prior turn did not yet collect onboarding documents (Aadhaar / PAN / recent payslips), gently re-prompt for them. One or two short sentences only.",
+  "acknowledge-and-recover":
+    "The candidate has signalled they're repeating themselves ('I already told you', 'we covered this', 'you keep asking'). Acknowledge the loop in ONE short clause ('you're right, my apologies — let me not loop on that') and then advance to the next non-redundant topic. Do NOT re-ask anything the candidate has already answered. Do NOT introduce a new number. The recover line is a meta-turn — it exists to reset rapport, not to negotiate.",
 };
 
 export interface BuildPromptInput {

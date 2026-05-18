@@ -414,5 +414,12 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "counter",
         hint: "Joining bonuses are clawback-tied to tenure — treat them as advance pay you'd repay if you leave, not as part of your base.",
       };
+    /* ── Meta — frustration recovery (Commit E follow-up 2026-05-18) ── */
+    case "acknowledge-and-recover":
+      return {
+        label: "Acknowledging the loop",
+        family: "meta",
+        hint: "The recruiter heard you repeat yourself and is course-correcting — a healthy signal, but watch that the next move actually advances the topic.",
+      };
   }
 }
