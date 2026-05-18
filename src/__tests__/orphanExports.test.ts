@@ -44,6 +44,8 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["canTransitionPhase", "internally called inside _negotiation-kernel.ts by derivePhase (rg excludes the defining file); exported for monotonicity-contract unit tests (commit 6, 2026-05-15)"],
   ["assertNever", "exhaustiveness helper for DiscoveryTopic switches; exported for downstream consumers and unit-test ergonomics (ArchRec 2, 2026-05-16)"],
   ["isDiscoveryTopic", "internally called inside _negotiation-kernel.ts by the applyAiMove fallback chain (rg excludes the defining file); exported so kernel-adjacent validators can narrow strings without re-implementing KNOWN_TOPICS (ArchRec 2, 2026-05-16)"],
+  ["FLAT_ACK_RE", "PDF#35 Move 3 — flat-ack vocabulary single source of truth; consumed inside _negotiation-kernel.ts by parseCandidateAnswer's noise detector (rg excludes the defining file); exported so downstream consumers reading 'flat-ack vs real answer' read from the same literal set (2026-05-18)"],
+  ["isFlatAck", "PDF#35 Move 3 — flat-ack predicate helper; consumed inside _negotiation-kernel.ts by parseCandidateAnswer's noise detector (rg excludes the defining file); exported for unit-test ergonomics and downstream wiring (2026-05-18)"],
 
   /* ── Kernel public API exposed for direct external consumers ───────── */
   ["applyPersonaToBand", "public kernel API; persona-derived band shaping is opt-in for consumers"],

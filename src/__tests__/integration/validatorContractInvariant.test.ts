@@ -340,6 +340,20 @@ const FIXTURES: Fixture[] = [
     },
     state: mk({ phase: "probe-expectations", turnIndex: 3 }),
   },
+  /* PDF#35 Move 1 (2026-05-18) — offer-recap. Recap of the standing
+   * offer when candidate asks "what was the offer again?". Numbers
+   * REQUIRED (must quote the offer); range dashes banned so the LLM
+   * cannot reintroduce a band. */
+  {
+    label: "offer-recap",
+    action: { kind: "offer-recap", offerLpa: 24 },
+    state: mk({
+      phase: "range-disclosure",
+      turnIndex: 4,
+      highestOfferMade: 24,
+      candidateCurrentCtc: 18,
+    }),
+  },
 ];
 
 describe("Crack 6 — validator-contract invariant (canonical prose ↔ NEXT_ACTION_CONTRACT)", () => {

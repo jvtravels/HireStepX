@@ -742,8 +742,24 @@ export default async function handler(
        * This catches all generation paths uniformly: restyle,
        * canonical-fallback, deflection, deferral, anything. */
       {
+        /* PDF#35 (2026-05-18) — strengthen the normalize: PDF#34 Fix 4's
+         * byte-exact match missed the Meesho/Prita repeated-deflection
+         * loop because the bot rotated the LEADING ACK WORD only
+         * ("Got it.", "Okay.", "Right.", "Noted."). Strip an optional
+         * leading ack so the comparison sees the body of the sentence,
+         * not the rotation surface. Also collapses straight vs.
+         * typographic quotes, which the prior pipeline already
+         * pre-normalises but we belt-and-brace here. */
+        const LEADING_ACK_RE =
+          /^\s*(?:got it|okay|ok|right|sure|alright|noted|understood|fair enough|fine|i hear you)[\s,.\-—:;]+/i;
         const normalize = (s: string): string =>
-          (s || "").trim().toLowerCase().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
+          (s || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+            .replace(LEADING_ACK_RE, "")
+            .replace(/\s+/g, " ")
+            .replace(/[.!?]+$/, "");
         const prior = normalize(state.lastAiText || "");
         const next = normalize(text);
         if (prior.length > 0 && next.length > 0 && prior === next) {

@@ -384,7 +384,16 @@ export type NextAction =
    * so the bot acknowledges + breaks the loop instead of doubling down
    * on the same topic. Not probe-producing in the satisfiesTopic sense
    * but carries one so the askedTopics ledger records the recovery. */
-  | { kind: "acknowledge-and-recover"; satisfiesTopic: SatisfiesTopic };
+  | { kind: "acknowledge-and-recover"; satisfiesTopic: SatisfiesTopic }
+  /* PDF#35 Move 1 (2026-05-18) — offer-recap. Post-anchor branch that
+   * fires when the candidate has asked to hear the offer again /
+   * summarise / restate the CTC. Distinct from `info-disclosure` (which
+   * answers component-breakdown asks) and from `anchor-with-offer`
+   * (the first-time anchor): this is the candidate explicitly asking
+   * to be REMINDED of the standing offer after it's already been put
+   * on the table. The prose layer recaps highestOfferMade with the
+   * fixed/variable split when available. Not probe-producing. */
+  | { kind: "offer-recap"; offerLpa: number };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
  *  the required `satisfiesTopic` field). Used by the ship-site to gate
@@ -1005,9 +1014,32 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * clarity pillars, and the equity-clarity probe hasn't been fired yet.
    * Placed above planReactiveFollowup so it fires even when lastTurnDelta is
    * null (e.g. when candidate asks "what does the equity look like?"). */
+  /* PDF#35 Move 3 (2026-05-18) — explicit "no equity" disclosure also
+   * silences the equity-clarity probe. The PDF#33 gate already requires
+   * `equityExists === true`; this comment documents the symmetric
+   * exit so future readers don't reintroduce a default-narrate
+   * regression. When the candidate has stated `equity === null` on the
+   * breakdown AND equityVesting carries the explicit-none signal, no
+   * equity-related reactive followup may fire — regardless of which
+   * planner branch is below. */
+  const equityExplicitlyNone =
+    state.equityVesting?.equityExists === false ||
+    (state.candidateComponentBreakdown?.equity === null &&
+      state.candidateComponentBreakdown?.hasAny === true &&
+      /\b(?:no\s+(?:equity|esops?|rsus?|stock|stocks?|options?)|don'?t\s+(?:get|have)\s+(?:any\s+)?(?:equity|esops?|rsus?|stock)|nothing\s+like\s+(?:that|it))\b/i.test(
+        (() => {
+          const log = state.conversationLog ?? [];
+          for (let i = log.length - 1; i >= 0; i--) {
+            const e = log[i];
+            if (e && e.speaker === "candidate") return e.text || "";
+          }
+          return "";
+        })(),
+      ));
   if (
     !isTerminalPhase(state.phase) &&
     state.band.hasEquity &&
+    !equityExplicitlyNone &&
     /* PDF#33 architectural flip (2026-05-18) — narrate equity ONLY when
      * the candidate has *explicitly confirmed* equity exists. Prior
      * gate was `equityExists !== false`, which lets `null` (unknown)
@@ -1194,6 +1226,105 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           rationale: `Walk-away signal (${wa.reason}) suppressed: turn ${state.turnIndex} < minTurnsBeforeClose ${minTurns}; probe instead.`,
         },
       };
+    }
+  }
+
+  /* PDF#35 Move 1 (2026-05-18) — post-anchor planner branches.
+   *
+   * Symptom (BUG 6/7/8): after the recruiter put a number on the table
+   * (state.highestOfferMade > 0), the candidate said "Works for me" /
+   * "Sounds good" / "Could we make it 32?" / "What was the offer
+   * again?" — but `phase === "range-disclosure"` was still set so the
+   * planner kept hitting `band-disclosure-deflect`. Result:
+   * post-anchor deflection lock; no close, no recap, no counter
+   * engagement.
+   *
+   * Fix: three short-circuit branches inserted ABOVE the
+   * `band-disclosure-deflect` gate.
+   *
+   *   (a) Post-anchor acceptance close — verbalAcceptanceTurn was
+   *       stamped this turn → route to close{mode:"accept"}.
+   *   (b) Offer-recap — lastAnswerOfferRecapAtTurn stamped → route to
+   *       a deterministic recap of the standing offer.
+   *   (c) Counter-engagement post-anchor — lastCandidateCounterLpa >
+   *       highestOfferMade → fall through (return null here so the
+   *       counter-offer planner branch downstream takes the turn,
+   *       instead of band-disclosure-deflect winning the race). */
+  if (state.highestOfferMade > 0 && !isTerminalPhase(state.phase)) {
+    /* (a) Acceptance close: candidate signalled acceptance THIS turn
+     * (state.verbalAcceptanceTurn === state.turnIndex). The terminal
+     * close branch above requires phase === "accepted"; that flip is
+     * derivePhase's job and happens on the NEXT turn. We need the
+     * close to fire on the SAME turn the acceptance lands. */
+    if (
+      state.verbalAcceptanceTurn != null &&
+      state.verbalAcceptanceTurn === state.turnIndex &&
+      !(state.reactiveFollowupsFired ?? []).includes("close-confirmation")
+    ) {
+      const jb = state.lastJoiningBonusOffered;
+      return {
+        kind: "close",
+        mode: "accept",
+        _move: {
+          lever: "close-acceptance",
+          newTotalLpa: clampToCloseFloor(state, state.highestOfferMade),
+          joiningBonusAmount: jb != null ? jb : undefined,
+          rationale: `Post-anchor acceptance: candidate verbally accepted at turn ${state.verbalAcceptanceTurn}; close at ₹${state.highestOfferMade}L (floor=highestOfferMade).`,
+          askedTopic: "close-confirmation",
+        },
+      };
+    }
+
+    /* (b) Offer-recap: candidate asked to be reminded of the standing
+     * offer. Parser stamped state.lastAnswerOfferRecapAtTurn on the
+     * just-completed candidate turn. */
+    if (
+      state.lastAnswerOfferRecapAtTurn != null &&
+      state.lastAnswerOfferRecapAtTurn >= state.turnIndex - 1
+    ) {
+      return {
+        kind: "offer-recap",
+        offerLpa: state.highestOfferMade,
+        _move: {
+          lever: "probe",
+          newTotalLpa: null,
+          rationale: `Post-anchor offer-recap: candidate asked to restate the standing offer at turn ${state.lastAnswerOfferRecapAtTurn}; recap ₹${state.highestOfferMade}L without re-anchoring.`,
+        },
+      };
+    }
+
+    /* (c) Counter-engagement post-anchor: candidate countered ABOVE
+     * the current offer. The auto-accept gate above (line ~936)
+     * already handles counter ≤ offer; the >offer case must NOT
+     * deflect — fall through so the counter-offer planner branch
+     * downstream gets the turn. We skip the band-disclosure-deflect
+     * by returning a hold-firm/probe wrapper that's structurally a
+     * pass-through; the cleanest architectural way is to clear the
+     * range-disclosure phase guard for this case. Since planNextAction
+     * runs on a frozen state, we instead emit a `live-walk-away`
+     * mode:probe wrapper here is wrong — what we really want is for
+     * the counter-offer branch to fire. The counter-offer branch is
+     * deep in pickCounterOrLever (called below). To route through
+     * cleanly, we simply DO NOT short-circuit here; the
+     * band-disclosure-deflect block below also checks state.phase ===
+     * "range-disclosure", which derivePhase has already moved past
+     * once highestOfferMade > 0 in a healthy state. In the buggy
+     * sessions the phase was sticky on range-disclosure even after
+     * the anchor; we now break that lock by force-routing past it
+     * when the candidate's counter is on the table. */
+    if (
+      state.lastCandidateCounterLpa != null &&
+      state.lastCandidateCounterLpa > state.highestOfferMade &&
+      state.phase === "range-disclosure"
+    ) {
+      /* Force the planner to skip band-disclosure-deflect by treating
+       * the state as if it were counter-offer phase for the remainder
+       * of this turn. We construct a derived state inline (no mutation
+       * — planNextAction is pure) and recurse. Recursion is bounded:
+       * the recursive call sees phase !== "range-disclosure" so it
+       * cannot re-enter this branch. */
+      const derived: NegotiationState = { ...state, phase: "counter-offer" };
+      return planNextActionInternal(derived);
     }
   }
 

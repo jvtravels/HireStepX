@@ -68,22 +68,23 @@ const newState = (overrides: Partial<NegotiationState> = {}): NegotiationState =
 });
 
 describe("PDF#34 Fix 1 — variableInferred gate on discovery checklist", () => {
-  it("does NOT flip currentCtcFixedVariableSplitDisclosed when variable was inferred from total−base", () => {
-    /* Parser path: candidate says "total 24, base 22" → variable
-     * inferred=2 with variableInferred=true. The discovery checklist
-     * should NOT advance past the split slot. */
+  it("does NOT flip currentCtcFixedVariableSplitDisclosed when inference is AMBIGUOUS (large residual)", () => {
+    /* Parser path: candidate says "total 24, base 11" → variable
+     * inferred=13 (54% variable share, implausible) with
+     * variableInferred=true and ratio > 0.25. The PDF#35 Move 5
+     * refinement keeps variableInferred=true here because the share is
+     * implausible enough to warrant a re-confirmation rather than a
+     * silent advance. */
     let state = newState();
-    /* Simulate the bot having asked about current CTC base so
-     * lastDisclosureSubject = "current". */
     state = {
       ...state,
       lastDisclosureSubject: "current",
     } as NegotiationState;
-    const after = applyCandidateAnswer(state, "My total is 24 LPA, base is 22 LPA");
-    expect(after.candidateComponentBreakdown?.variable).toBe(2);
+    const after = applyCandidateAnswer(state, "My total is 24 LPA, base is 11 LPA");
+    expect(after.candidateComponentBreakdown?.variable).toBe(13);
     expect(after.candidateComponentBreakdown?.variableInferred).toBe(true);
-    /* The checklist flag MUST stay false — variable was not
-     * explicitly disclosed. */
+    /* The checklist flag MUST stay false — variable inference was
+     * ambiguous (ratio > 0.25), needs confirmation. */
     expect(
       after.discoveryChecklist?.currentCtcFixedVariableSplitDisclosed,
     ).not.toBe(true);

@@ -421,6 +421,13 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "meta",
         hint: "The recruiter heard you repeat yourself and is course-correcting — a healthy signal, but watch that the next move actually advances the topic.",
       };
+    /* PDF#35 Move 1 — post-anchor offer-recap (2026-05-18) */
+    case "offer-recap":
+      return {
+        label: "Recapping the offer",
+        family: "anchor",
+        hint: "The recruiter is restating the standing offer at your request — use the pause to think structure, not to renegotiate the number.",
+      };
     /* PDF#34 Fix 3 — clarification inline-define (2026-05-18) */
     case "clarify-prior-question":
       return {

@@ -129,7 +129,7 @@ export function countPreferredIdioms(s: string | null | undefined): number {
  *
  *  Treat any prose containing these tokens as poisoned and reject it. */
 export const META_DIRECTIVE_TOKENS_RE =
-  /\b(checklist|advance pauses|advance is paused|planner|planned action|next action|reactive[- ]followup|system prompt|llm|directive|the candidate's question first|address(?:es|ed)?\s+(?:the\s+)?question\s+first)\b/i;
+  /\b(checklist|advance pauses|advance is paused|planner|planned action|next action|reactive[- ]followup|system prompt|llm|directive|the candidate's question first|address(?:es|ed)?\s+(?:the\s+)?question\s+first|fact[\s-]?pack|factpack)\b/i;
 
 /** Return null if `s` contains a meta-directive token (poisoned), else
  *  return `s` trimmed. Used by callers that own a safe fallback. */
@@ -1038,11 +1038,44 @@ function renderCanonicalProseBody(
        * Replaces the legacy `anchor-with-band` lever that emitted a range.
        * Real Indian HR recruiters disclose a single initial offer number
        * (band floor / classic lowball), not an internal band. "fitment"
-       * + "LPA" + a number are the contract's required tokens. */
+       * + "LPA" + a number are the contract's required tokens.
+       *
+       * PDF#35 Move 4 (2026-05-18) — number-discipline. The legacy
+       * template said "₹X LPA fixed plus variable" with "variable" used
+       * as a noun-phrase. The contract-validator did not reject it (it
+       * only requires `LPA` + `fitment`), but the prose primed the LLM
+       * restyle to interpolate "variable" as if it were a number-token,
+       * producing "fixed plus variable" surfaces in production where
+       * the candidate read "variable" as a literal placeholder leak. We
+       * now (i) emit a deterministic fixed-component phrasing when the
+       * band carries `variableMax`, OR (ii) omit the variable fragment
+       * entirely when the band does not carry a variable component.
+       * Never ship the word "variable" as a standalone noun in this
+       * canonical. */
       if (action.bandIncomplete) {
         return "I'll have a firmer number once the panel signs off — meanwhile, what's the fitment you were targeting?";
       }
-      return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA fixed plus variable. Let me know your thoughts.`;
+      const variableMax = state.band?.variableMax;
+      if (typeof variableMax === "number" && variableMax > 0) {
+        const fixedComponent = Math.max(0, action.initialOffer - variableMax);
+        return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle. Let me know your thoughts.`;
+      }
+      return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA. Let me know your thoughts.`;
+    }
+
+    case "offer-recap": {
+      /* PDF#35 Move 1 (2026-05-18) — post-anchor offer-recap. The
+       * candidate has asked to be REMINDED of the standing offer
+       * ("what was the offer again?"); we recap highestOfferMade
+       * without re-anchoring or moving the band. When component
+       * metadata is available, surface the fixed/variable split so
+       * the candidate doesn't have to ask twice. */
+      const variableMax = state.band?.variableMax;
+      if (typeof variableMax === "number" && variableMax > 0) {
+        const fixedComponent = Math.max(0, action.offerLpa - variableMax);
+        return `Just to recap — the fitment on the table is ₹${action.offerLpa} LPA, with ₹${fixedComponent} LPA fixed and ₹${variableMax} LPA target variable on the performance cycle. Let me know what's on your mind.`;
+      }
+      return `Just to recap — the fitment on the table is ₹${action.offerLpa} LPA. Let me know what's on your mind.`;
     }
 
     case "acknowledge-and-recover": {
@@ -1286,14 +1319,15 @@ export function buildAnswerCandidatePrompt(
     `ROLE: ${state.role || "this role"} at ${state.company || "this company"}\n` +
     `PHASE: ${state.phase}\n\n` +
     `INSTRUCTIONS (strict):\n` +
-    `- Answer the candidate's question using ONLY the facts in the factPack below.\n` +
+    `- Answer the candidate's question using ONLY the facts in the data block below.\n` +
     `- If a fact is missing, output the deterministic defer line provided by the pipeline. Do NOT invent a hedge or callback promise; do NOT use any phrase in the BANNED list (${BANNED_RECRUITER_IDIOM.join(", ")}).\n` +
     `- Do NOT invent numbers, policies, perks, dates, or commitments.\n` +
+    `- NEVER mention internal vocabulary in your answer — banned words include: "fact pack", "factPack", "the system", "the prompt", "internal data", "according to my data", "I don't have data on", "missing from my context". Speak in plain recruiter idiom only. If a fact is missing, defer gracefully (e.g. "that's something the HM walks through later") without referring to your data source.\n` +
     `- Keep it conversational, 1-3 sentences.\n\n` +
     `OUTPUT: just your answer, no preamble.`;
   const user =
     `CANDIDATE ASKED: "${candidateQuestion}"\n\n` +
-    `FACT PACK (the only context you may use):\n${factPackJson}\n\n` +
+    `RECRUITER DATA (the only context you may use; never name this block to the candidate):\n${factPackJson}\n\n` +
     `FOLLOW-UP LINE (use if a fact is missing): "${canonicalFollowup}"`;
   return { system, user };
 }

@@ -545,6 +545,16 @@ export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextAction
     numberPolicy: "forbidden",
     requiredTokens: [/apolog/i],
   },
+  /* PDF#35 Move 1 (2026-05-18) — offer-recap. Numbers REQUIRED (the
+   * recap quotes the standing offer). Required tokens: "LPA" pins the
+   * unit + "recap" / "on the table" pins the recap framing so the LLM
+   * restyle can't drift into a fresh anchor. Range dashes banned so
+   * the LLM cannot reintroduce a band range. */
+  "offer-recap": {
+    numberPolicy: "required",
+    requiredTokens: [/\bLPA\b/i, /\b(?:recap|on\s+the\s+table)\b/i],
+    bannedTokens: [/\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/],
+  },
   /* PDF#34 Fix 3 (2026-05-18) — clarify-prior-question. Optional
    * numbers (the base-split clarification quotes ₹X LPA from the
    * candidate's prior disclosure). Required tokens pin the

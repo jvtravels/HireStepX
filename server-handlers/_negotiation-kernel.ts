@@ -1238,6 +1238,19 @@ export interface NegotiationState {
    *  ("this conversation is about…") and bounce. */
   lastAnswerClarificationAtTurn?: number | null;
 
+  /** PDF#35 Move 1 (2026-05-18) — turn-index at which the candidate
+   *  asked the bot to RECAP / REPEAT / SUMMARISE the standing offer
+   *  AFTER the anchor had already been put on the table. Distinct from
+   *  `offerAskedAtTurn` (which fires BEFORE the anchor — "what's the
+   *  offer?" pre-anchor → triggers anchor-with-offer). This stamp
+   *  fires ONLY when highestOfferMade > 0 already and the candidate
+   *  is asking to be reminded ("what was the offer again?", "can you
+   *  restate the CTC?", "summarise where we landed").
+   *
+   *  Read by the planner to route to `offer-recap` instead of looping
+   *  through `band-disclosure-deflect`. */
+  lastAnswerOfferRecapAtTurn?: number | null;
+
   /** AR3 / Audit Pass 4 (PDF#27, 2026-05-17) — turn-index at which the
    *  current state.phase was entered. Stamped by derivePhase whenever
    *  the phase changes. Read by the per-phase maxTurns cap so a phase
@@ -2038,6 +2051,23 @@ export function detectExplicitDecline(answer: string | null | undefined): boolea
   return EXPLICIT_DECLINE_PATTERNS.some((p) => p.test(answer));
 }
 
+/** PDF#35 Move 3 (2026-05-18) — flat-ack vocabulary. Single source of
+ *  truth for "bare acknowledgement, zero new content" candidate
+ *  utterances. Prior implementation caught only "ok / cool / sure";
+ *  Meesho/Prita replay surfaced "got it", "right", "noted",
+ *  "understood", "makes sense", "fair", "fine", "alright" being
+ *  treated as substantive (and downstream loops were planning around
+ *  them as if discovery had advanced). Broadened here so every
+ *  consumer that needs "flat-ack vs real answer" reads from the same
+ *  literal set. */
+export const FLAT_ACK_RE =
+  /^\s*(?:ok|okay|cool|sure|got\s+it|right|understood|noted|makes\s+sense|fair(?:\s+enough)?|fine|alright|hmm+|mm+hmm+|yeah|yep|yup|aha|ah)[\s.,!?]*$/i;
+
+export function isFlatAck(answer: string | null | undefined): boolean {
+  if (!answer || typeof answer !== "string") return false;
+  return FLAT_ACK_RE.test(answer);
+}
+
 /* Sprint B.2 (2026-05-15) — number-discipline gate.
  *
  * Recruiter-anchors-first is the #1 reason new recruiters give away money:
@@ -2750,7 +2780,53 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * through — those are legitimate signal the parser handles. */
   const NOISE_ANSWER_RE =
     /^[\s"'""''.,!?\-—–]*(?:\[(?:noise|unclear|silence|inaudible|crosstalk|unintelligible)\]|<(?:silence|noise|unclear|inaudible)>|(?:in)?audible|unintelligible|crosstalk|silence|\.{2,}|—+|-{2,})[\s"'""''.,!?\-—–]*$/i;
-  const lastAnswerWasNoise = answer.trim().length === 0 || NOISE_ANSWER_RE.test(answer);
+  /* PDF#35 Move 6 (2026-05-18) — single-word affirmative on a substantive
+   * yes/no probe should be treated as noise (not as a discovery signal).
+   *
+   * Symptom: bot asks "Do you have variable in your current package?" —
+   * a yes/no probe whose useful follow-up needs a NUMBER. Candidate
+   * answers "Yes." The parser treated this as substantive, advanced
+   * past the variable slot, and the bot never got the actual split.
+   *
+   * Fix: when the most recent bot turn was a substantive probe (asks
+   * about a specific component, contains "?" but DOES NOT itself
+   * contain a digit and is NOT framed as "what's the X / how much /
+   * what number"), AND the candidate's reply is a bare single-word
+   * affirmative, stamp lastAnswerNoiseAtTurn so the askedTopics tail
+   * gets rewound and the planner re-asks for the actual number.
+   *
+   * Conservative gate: only fires on bare single-word affirmatives —
+   * "yes, I do have variable" or "yes, 3 LPA" pass through normally
+   * (the parser binds the number; the affirmative is decoration). */
+  const SINGLE_WORD_AFFIRMATIVE_RE = /^\s*(?:yes|yeah|yep|yup|sure|ok|okay)\.?\s*$/i;
+  const lastBotProbeIsYesNoSubstantive = (() => {
+    const t = (state.lastAiText || "").trim();
+    if (t.length === 0) return false;
+    if (!/\?/.test(t)) return false;
+    if (/\d/.test(t)) return false; /* a probe quoting numbers wants confirmation, not a number back */
+    /* Number-seeking probes — these legitimately accept "yes" as a
+     * deflection and the parser's noise stamp would over-fire. */
+    if (/\b(?:what(?:'s)?|how\s+much|how\s+many|what\s+number|what\s+figure|share\s+the|range|fitment)\b/i.test(t)) {
+      return false;
+    }
+    /* Substantive yes/no probes about a component / current package. */
+    return /\b(?:do\s+you\s+have|is\s+there|any\s+(?:variable|equity|esop|rsu|bonus|stock|grants?)|got\s+(?:variable|equity|esops?|rsus?|bonus|stock)|in\s+your\s+(?:current\s+)?package)\b/i.test(t);
+  })();
+  const lastAnswerWasSingleWordYesOnProbe =
+    lastBotProbeIsYesNoSubstantive && SINGLE_WORD_AFFIRMATIVE_RE.test(answer);
+  /* PDF#35 Move 3 (2026-05-18) — flat-ack on a substantive bot probe
+   * is noise. If the prior bot turn ended in "?" (a real probe) and
+   * the candidate replies with a bare acknowledgement ("got it",
+   * "noted", "makes sense"), the slot did not advance — stamp noise
+   * so the planner re-asks instead of advancing past the probe. */
+  const lastBotEndedInQuestion = /\?\s*$/.test((state.lastAiText ?? "").trim());
+  const lastAnswerWasFlatAckOnProbe =
+    lastBotEndedInQuestion && isFlatAck(answer);
+  const lastAnswerWasNoise =
+    answer.trim().length === 0 ||
+    NOISE_ANSWER_RE.test(answer) ||
+    lastAnswerWasSingleWordYesOnProbe ||
+    lastAnswerWasFlatAckOnProbe;
   const lastAnswerNoiseAtTurn = lastAnswerWasNoise
     ? state.turnIndex
     : (state.lastAnswerNoiseAtTurn ?? null);
@@ -2788,6 +2864,19 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   const lastAnswerClarificationAtTurn = lastAnswerWasClarification
     ? state.turnIndex
     : (state.lastAnswerClarificationAtTurn ?? null);
+
+  /* PDF#35 Move 1 (2026-05-18) — post-anchor offer-recap detector.
+   *
+   * Fires only when highestOfferMade > 0 — i.e. the anchor has already
+   * landed and the candidate is asking to be REMINDED of the standing
+   * offer. Pre-anchor offer asks ("what's the offer?") are handled by
+   * OFFER_ASK_RE which routes to anchor-with-offer. */
+  const OFFER_RECAP_RE =
+    /\b(?:(?:what'?s|repeat|restate|remind\s+me(?:\s+of)?|summari[sz]e|what\s+was)\s+(?:the\s+)?(?:offer|ctc|fitment|number|package|total)|offer\s+again|sorry,?\s+what\s+was|come\s+again\s+on\s+the\s+(?:offer|ctc|number)|where\s+(?:are|were)\s+we\s+(?:at|landing))\b/i;
+  const lastAnswerOfferRecapAtTurn =
+    state.highestOfferMade > 0 && OFFER_RECAP_RE.test(answer)
+      ? state.turnIndex
+      : (state.lastAnswerOfferRecapAtTurn ?? null);
   const next: NegotiationState = {
     ...state,
     leversUsed: [...state.leversUsed],
@@ -2800,6 +2889,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     lastUserFrustrated,
     lastAnswerNoiseAtTurn,
     lastAnswerClarificationAtTurn,
+    lastAnswerOfferRecapAtTurn,
   };
   /* PDF#32 BUG H (2026-05-18) — askedTopics tail rewind.
    * When the prior AI turn pushed an askedTopics entry and the
@@ -2921,14 +3011,61 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      * Fix: gate `splitHasBoth` on the variable being EXPLICITLY
      * disclosed, not inferred. The percent-shape path is unaffected
      * (percentages are always explicit). */
+    /* PDF#35 Move 5 (2026-05-18) — variableInferred unambiguous-math
+     * refinement. PDF#34 Fix 1's gate was too coarse: it forced
+     * `variableInferred=true` on every total−base inference, including
+     * cases where the math is completely unambiguous (total=24, base=22
+     * → variable=2 with no plausible alternative). The kernel was then
+     * re-asking the variable even after the candidate had clearly
+     * stated total + base, producing a perceived loop.
+     *
+     * Refinement: when variable came via the total−base complement AND
+     * the resulting ratio variable/total is in [0.01, 0.25] (small
+     * residual = credible variable component, not a parser slip) AND
+     * both total and base were explicitly stated in the same utterance,
+     * treat the inference as unambiguous — drop the inferred flag for
+     * the checklist gate so the split slot advances naturally. Outside
+     * that range (e.g. base=11, total=24 → variable=13, ratio≈0.54)
+     * keep variableInferred=true: a 54% variable share is implausible
+     * enough that we should re-confirm rather than silently advance.
+     *
+     * "Explicitly stated in the same utterance" is signalled here by
+     * `currentCtc != null` (this turn parsed a total) AND `base != null`
+     * (this turn parsed a base). The complement is derived inside
+     * extractComponentBreakdown, so when both are present this turn,
+     * the inference is from THIS utterance, not stale state. */
+    const variableCameFromInference =
+      parsed.componentBreakdown.variableInferred === true;
+    let variableUnambiguous = false;
+    if (
+      variableCameFromInference &&
+      parsed.componentBreakdown.base != null &&
+      parsed.componentBreakdown.variable != null &&
+      parsed.currentCtc != null &&
+      parsed.currentCtc > 0
+    ) {
+      const ratio = parsed.componentBreakdown.variable / parsed.currentCtc;
+      if (ratio >= 0.01 && ratio <= 0.25) {
+        variableUnambiguous = true;
+      }
+    }
     const variableExplicitlyDisclosed =
       parsed.componentBreakdown.variable != null &&
-      parsed.componentBreakdown.variableInferred !== true;
+      (parsed.componentBreakdown.variableInferred !== true || variableUnambiguous);
     const splitHasBoth =
       (parsed.componentBreakdown.base != null &&
         variableExplicitlyDisclosed) ||
       (parsed.componentBreakdown.basePercent != null &&
         parsed.componentBreakdown.variablePercent != null);
+    /* When the math was unambiguous, also clear the inferred flag on
+     * the breakdown so downstream consumers (component-probe path)
+     * treat the variable as settled. */
+    if (variableUnambiguous && next.candidateComponentBreakdown) {
+      next.candidateComponentBreakdown = {
+        ...next.candidateComponentBreakdown,
+        variableInferred: false,
+      };
+    }
     if (splitHasBoth && state.discoveryChecklist != null) {
       const subject = state.lastDisclosureSubject ?? null;
       const checklist = { ...state.discoveryChecklist };
