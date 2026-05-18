@@ -110,7 +110,7 @@ Selector keyed off company tier × experience: TA for IT-services / startup-earl
 2. CTC breakdown helper exists but never surfaces in report
 3. Equity-literacy helper exists but unused — startup/unicorn candidates fly blind on ESOP terms
 
-### Phase 1 — Quick wins (\~1d, +0.3) ✅ DONE (commit `4fede45`)
+### Phase 1 — Quick wins (\~1d, +0.3) ✅ DONE (commit `ff07b5e`)
 
 - **1.1** ✅ Wire `computeOldRegimeTaxLpa` + `computeNewRegimeTaxLpa` from `_ctc-breakdown.ts` into the report — show in-hand monthly under both regimes for the negotiated offer. → Analyzer writes `meta.salaryNegotiation.{closingTotalLpa, monthlyTakeHomeNewRegimeInr, monthlyTakeHomeOldRegimeInr, annualTaxNewRegimeLpa, annualTaxOldRegimeLpa}` against the last AI compensation claim. UI renders `InHandMonthlyCard` in `NegotiationFullReport.tsx` directly under the offer trajectory, side-by-side new vs old regime + caveat line.
 - **1.2** ✅ Expand coaching catalog from 5 to \~20 tips, one per top-frequency flag cluster. → `CLUSTERS` table mirrors HR-round v4.5 (commit `06881b8`): discovery / anchoring / counter / close. "Pattern, not isolated" line prepended when ≥2 cluster members fire. ~20 per-flag tips appended covering usism drift, role-company mismatch, stale calibration, anchoring/underask/moonshot, BATNA, equity, joining bonus, notice period, accepted-without-pushback, silent capitulation, no-counter, regression, unrealistic close, self-contradiction, misread-conditional, ignored-complaint, repetition stutter, reversed range, arithmetic error, hallucinated band.
