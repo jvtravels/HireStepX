@@ -2511,6 +2511,89 @@ function FooterSection({
  *  the top of the report so they don't disappear into the rubric-gap
  *  list. Quietly omitted when no credibility flags fired (the happy
  *  path for ~70% of campus-placement sessions). */
+/* Tier-aware CGPA calibration note for campus-placement sessions.
+ *
+ * The campus-placement analyzer grades CGPA framing against a cutoff
+ * that combines (a) the company tier (TCS/Infosys/Wipro at 6.5,
+ * generic at 7.0, Google/MSFT/Amazon at 7.5) and (b) the college
+ * tier (IIT/NIT/BITS/IIIT/IISc get -0.5 leniency). Without surfacing
+ * the math the candidate can't tell why their 6.4 was OK at TCS but
+ * flagged at Amazon. This note makes the calibration visible —
+ * "TCS NQT baseline 6.0 CGPA, tier-2 adjusted 5.5 — you're at 6.4 ✓".
+ *
+ * Quietly omitted when the analyzer didn't record any CGPA cutoff
+ * (non-campus focus or insight row predates the `meta` column).
+ */
+function CampusCgpaCalibrationNote({
+  meta,
+}: {
+  meta: {
+    companyTier: string;
+    collegeTier: string;
+    baseCgpaCutoff: number;
+    adjustedCgpaCutoff: number;
+    statedCgpa: number | null;
+    targetCompany?: string | null;
+  };
+}) {
+  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany } = meta;
+  const adjustmentDelta = adjustedCgpaCutoff - baseCgpaCutoff;
+  /* Compose the headline string. Branches on whether the user said
+     a CGPA aloud — if so we render the pass/fail glyph; otherwise we
+     just surface the cutoff so the candidate knows the bar. */
+  const tierLabel = (() => {
+    if (companyTier === "product-global") return "Tier-1 global product";
+    if (companyTier === "product-india") return "Indian product";
+    if (companyTier === "service") return "Service-tier (TCS / Infosys / Wipro)";
+    return "Company";
+  })();
+  const collegeLabel = collegeTier === "tier-1" ? "tier-1"
+    : collegeTier === "tier-2" ? "tier-2"
+    : null;
+  const adjustmentText = adjustmentDelta !== 0 && collegeLabel
+    ? `, ${collegeLabel} adjusted ${adjustedCgpaCutoff.toFixed(1)}`
+    : "";
+  const companyName = targetCompany && targetCompany.trim() ? targetCompany.trim() : tierLabel;
+  const passed = statedCgpa !== null && statedCgpa >= adjustedCgpaCutoff;
+  return (
+    <section
+      id="ir-section-cgpa-calibration"
+      aria-label="CGPA calibration"
+      style={{
+        background: "rgba(21,128,61,0.06)",
+        border: `1px solid ${t.success}`,
+        borderRadius: 14,
+        padding: "clamp(12px, 3.5vw, 16px) clamp(14px, 4vw, 20px)",
+        boxShadow: shadows.card,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+    >
+      <header style={{ fontSize: 13, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase" }}>
+        CGPA calibration
+      </header>
+      <p style={{ fontSize: 15, color: t.coal, lineHeight: 1.5, margin: 0 }}>
+        {companyName} baseline {baseCgpaCutoff.toFixed(1)} CGPA{adjustmentText}
+        {statedCgpa !== null && (
+          <>
+            {" — you're at "}
+            <strong style={{ color: passed ? t.success : t.error }}>
+              {statedCgpa.toFixed(1)} {passed ? "✓" : "✗"}
+            </strong>
+          </>
+        )}
+        .
+      </p>
+      <p style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
+        {collegeLabel === "tier-1"
+          ? "IIT / NIT / BITS / IIIT / IISc get a 0.5 leniency on the cutoff because of harder grading curves."
+          : "Cutoffs combine the company's typical fresher gate with a college-tier adjustment (IIT/NIT/BITS get -0.5)."}
+      </p>
+    </section>
+  );
+}
+
 function CredibilitySection({
   summary,
   onDispute,
@@ -2771,6 +2854,20 @@ export interface SessionReportViewProps {
    *  Optional so the storybook / canvas path renders the panel without
    *  needing the network layer wired. */
   onDisputeCredibility?: (flag: string) => void;
+  /** Campus-placement: tier-aware CGPA calibration. Surfaced inline
+   *  so the candidate sees the actual cutoff they were graded
+   *  against — e.g. "TCS NQT baseline 6.0 CGPA, tier-2 adjusted
+   *  5.5 — you're at 6.4 ✓". Undefined when the session isn't
+   *  campus-placement, the analyzer hasn't run, or the insight row
+   *  predates the `meta` column. */
+  campusPlacementMeta?: {
+    companyTier: string;
+    collegeTier: string;
+    baseCgpaCutoff: number;
+    adjustedCgpaCutoff: number;
+    statedCgpa: number | null;
+    targetCompany?: string | null;
+  };
 }
 
 export default function SessionReportView({
@@ -2785,6 +2882,7 @@ export default function SessionReportView({
   onUsefulAnswer,
   credibility,
   onDisputeCredibility,
+  campusPlacementMeta,
 }: SessionReportViewProps) {
   // Pick the highest-scoring question so the "Save top story" CTA
   // points at the right answer. Falls back to the first question.
@@ -2831,6 +2929,9 @@ export default function SessionReportView({
           <HeroSection data={data} />
           {credibility && credibility.hasIssues && (
             <CredibilitySection summary={credibility} onDispute={onDisputeCredibility} />
+          )}
+          {campusPlacementMeta && (
+            <CampusCgpaCalibrationNote meta={campusPlacementMeta} />
           )}
           {data.negotiationOutcome && (
             <NegotiationFullReport

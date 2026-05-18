@@ -367,6 +367,15 @@ export interface NegotiationBandData {
 export interface LLMQuestionsResult {
   questions: InterviewStep[];
   negotiationBand?: NegotiationBandData;
+  /** Provenance hint from the server — `"static"` when the LLM
+   *  generators failed and `data/interview-question-bank.ts` shipped
+   *  the script instead, `"cached"` when the same prompt-hash hit
+   *  Upstash within the 300s window, undefined when the call hit a
+   *  fresh LLM response. PostHog also tracks this as `gq_static_fallback`
+   *  / `gq_cache_hit` for cohort analysis; UI uses it to surface a
+   *  subtle "practice mode" badge so the candidate knows the questions
+   *  aren't fresh LLM. */
+  _fallback?: "static" | "cached" | string;
 }
 
 /** Fetch LLM-generated interview questions */
@@ -548,7 +557,18 @@ export async function fetchLLMQuestions(params: {
     if (downgradedCount > 0) {
       console.info(`[questions] quality-filter downgraded ${downgradedCount}/${questions.length} steps to safe fallbacks`);
     }
-    return { questions: filteredQuestions, negotiationBand: data.negotiationBand || undefined };
+    /* Pass server-side fallback / cache provenance through to the
+       caller so the interview chrome can surface a "practice mode"
+       badge when the static question bank fired. Server sets
+       `_fallback: "static"` when both LLMs failed, undefined
+       otherwise. `_cached` is the analogous flag for Upstash hits. */
+    const fallbackHint =
+      typeof (data as { _fallback?: unknown })._fallback === "string"
+        ? ((data as { _fallback: string })._fallback)
+        : (data as { _cached?: unknown })._cached === true
+        ? "cached"
+        : undefined;
+    return { questions: filteredQuestions, negotiationBand: data.negotiationBand || undefined, _fallback: fallbackHint };
   };
   for (let i = 0; i < 3; i++) {
     try {

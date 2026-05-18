@@ -430,6 +430,15 @@ export function useInterviewEngine() {
       if (result?.negotiationBand && typeof result.negotiationBand.initialOffer === "number" && typeof result.negotiationBand.maxStretch === "number") {
         negotiationBandRef.current = result.negotiationBand;
       }
+      /* Surface provenance to the UI. Only `"static"` and `"cached"`
+         are user-visible; any other server hint is ignored so the
+         chip doesn't flash on transient strings. */
+      const fb = result?._fallback;
+      if (fb === "static" || fb === "cached") {
+        setQuestionFallbackSource(fb);
+      } else {
+        setQuestionFallbackSource(null);
+      }
       const step = currentStepRef.current;
       if (questions && questions.length > 0 && step === 0) {
         // Step 0 (intro) is already speaking — keep current intro, replace only steps 1+
@@ -468,6 +477,9 @@ export function useInterviewEngine() {
       } else if (!questions) {
         console.warn("[interview] LLM returned null — using fallback questions");
         setSaveWarning("Using practice questions. Tap retry for personalized ones.");
+        /* Hard fallback (LLM null) is functionally identical to the
+           server's static-bank path, so chip behavior should match. */
+        setQuestionFallbackSource("static");
         if (!isMiniMode) toast("Using practice questions — tap retry for personalized ones.", "info");
       }
       // Persist questions to DB in real-time (best-effort, non-blocking)
@@ -593,6 +605,15 @@ export function useInterviewEngine() {
   // Offline + save status + mic error
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [saveWarning, setSaveWarning] = useState("");
+  /* Provenance hint for the active question script. `"static"` means
+   * the LLM path failed and we shipped the static bank from
+   * `data/interview-question-bank.ts`; `"cached"` means a 300s Upstash
+   * hit; `null` means a fresh LLM response (or the engine never
+   * received a hint). Drives the subtle "Practice mode" chip in
+   * InterviewPanels — candidates deserve to know when they're
+   * answering canned questions rather than fresh AI ones. */
+  const [questionFallbackSource, setQuestionFallbackSource] =
+    useState<"static" | "cached" | null>(null);
   // Mirror saveWarning to a ref so the recovery hook can read it
   // at fire-time without re-binding window listeners on each change.
   const saveWarningRef = useRef("");
@@ -3234,6 +3255,7 @@ export function useInterviewEngine() {
     tabConflict,
     isOffline,
     saveWarning,
+    questionFallbackSource,
     micError,
     ttsError,
     micQuiet,

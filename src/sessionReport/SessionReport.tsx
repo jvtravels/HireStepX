@@ -233,6 +233,19 @@ export const SessionReport = memo(function SessionReport({
   const [trend, setTrend] = useState<SessionTrendPoint[]>([]);
   const [liveCohort, setLiveCohort] = useState<LiveCohort | null>(null);
   const [credibility, setCredibility] = useState<CredibilitySummary | undefined>(undefined);
+  /* Campus-placement: tier-aware CGPA calibration the analyzer used.
+   * Stored separately from credibility because this block always shows
+   * (when present + focus matches) — it's calibration context, not a
+   * BGV-defensibility alert. `undefined` until the insights row is
+   * fetched OR when the row predates the `meta` column. */
+  const [campusPlacementMeta, setCampusPlacementMeta] = useState<{
+    companyTier: string;
+    collegeTier: string;
+    baseCgpaCutoff: number;
+    adjustedCgpaCutoff: number;
+    statedCgpa: number | null;
+    targetCompany?: string | null;
+  } | undefined>(undefined);
 
   const roleFamily: RoleFamily = useMemo(
     () => roleToFamily(session.role),
@@ -409,6 +422,29 @@ export const SessionReport = memo(function SessionReport({
             count: summary.count,
             flags: summary.items.map((i) => i.flag).join(","),
           });
+        }
+        /* Pluck campus-placement meta from the same insights row so we
+         * don't double-fetch. `meta` is a jsonb blob — narrow with
+         * shape checks before trusting any field (analyzer code may
+         * ship new fields ahead of frontend coercion). */
+        const meta = (row as { meta?: unknown } | null)?.meta;
+        if (meta && typeof meta === "object") {
+          const cp = (meta as { campusPlacement?: unknown }).campusPlacement;
+          if (cp && typeof cp === "object") {
+            const c = cp as Record<string, unknown>;
+            const baseN = typeof c.baseCgpaCutoff === "number" ? c.baseCgpaCutoff : NaN;
+            const adjN = typeof c.adjustedCgpaCutoff === "number" ? c.adjustedCgpaCutoff : NaN;
+            if (Number.isFinite(baseN) && Number.isFinite(adjN)) {
+              setCampusPlacementMeta({
+                companyTier: typeof c.companyTier === "string" ? c.companyTier : "unknown",
+                collegeTier: typeof c.collegeTier === "string" ? c.collegeTier : "unknown",
+                baseCgpaCutoff: baseN,
+                adjustedCgpaCutoff: adjN,
+                statedCgpa: typeof c.statedCgpa === "number" ? c.statedCgpa : null,
+                targetCompany: typeof c.targetCompany === "string" ? c.targetCompany : null,
+              });
+            }
+          }
         }
       })
       .catch(() => {});
@@ -669,6 +705,7 @@ export const SessionReport = memo(function SessionReport({
       onUsefulAnswer={onUsefulAnswer}
       credibility={credibility}
       onDisputeCredibility={onDisputeCredibility}
+      campusPlacementMeta={campusPlacementMeta}
     />
   );
 });

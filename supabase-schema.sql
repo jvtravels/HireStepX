@@ -758,6 +758,13 @@ alter table session_insights add column if not exists severity text default 'med
 -- failed; otherwise a normalized ResumeForAnalyzer shape.
 alter table session_insights add column if not exists resume_snapshot jsonb;
 
+-- Structured per-focus analyzer metadata (AnalyzerMeta). Today carries
+-- the campus-placement tier-aware CGPA calibration and the behavioral
+-- STAR breakdown; new foci append optional sub-keys without a migration.
+-- NULL on rows written before the column landed — readers MUST treat
+-- missing as "no meta" rather than erroring out.
+alter table session_insights add column if not exists meta jsonb;
+
 create index if not exists idx_session_insights_status on session_insights(resolution_status);
 create index if not exists idx_session_insights_severity on session_insights(severity);
 

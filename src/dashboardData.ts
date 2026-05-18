@@ -1211,6 +1211,7 @@ export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrend
 export async function fetchSessionCredibility(sessionId: string): Promise<{
   flags: string[];
   rubric_gaps: unknown;
+  meta: unknown;
 } | null> {
   if (!sessionId) return null;
   const { getSupabase } = await import("./supabase");
@@ -1219,7 +1220,7 @@ export async function fetchSessionCredibility(sessionId: string): Promise<{
   if (!sessionData.session?.user?.id) return null;
   const { data, error } = await client
     .from("session_insights")
-    .select("flags, rubric_gaps")
+    .select("flags, rubric_gaps, meta")
     .eq("session_id", sessionId)
     .maybeSingle();
   if (error) {
@@ -1233,6 +1234,10 @@ export async function fetchSessionCredibility(sessionId: string): Promise<{
   return {
     flags: Array.isArray(data.flags) ? data.flags : [],
     rubric_gaps: data.rubric_gaps ?? [],
+    /* `meta` predates the migration on older rows — Postgres returns
+     * `undefined` on the unselected column. Normalise to null so
+     * consumers can `?? null`-test cleanly. */
+    meta: (data as { meta?: unknown }).meta ?? null,
   };
 }
 

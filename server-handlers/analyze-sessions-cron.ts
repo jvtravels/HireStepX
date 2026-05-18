@@ -141,6 +141,9 @@ interface InsightRow {
    * so future analyzers can deepen the cross-check without another fetch.
    * `null` when no resume was available for this session. */
   resume_snapshot: unknown;
+  /* Optional per-focus structured metadata (AnalyzerMeta). Older
+   * insight rows predate this column — render defensively. */
+  meta: unknown;
 }
 
 const MAX_RESCORES_PER_RUN = 60;
@@ -326,6 +329,7 @@ export default async function handler(req: Request): Promise<Response> {
         error: null,
         duration_ms: Date.now() - turnT0,
         resume_snapshot: resume ?? null,
+        meta: result.meta ?? null,
       };
     } catch (e) {
       const errMsg = String((e as Error)?.message || e).slice(0, 500);
@@ -345,6 +349,7 @@ export default async function handler(req: Request): Promise<Response> {
         error: errMsg,
         duration_ms: Date.now() - turnT0,
         resume_snapshot: null,
+        meta: null,
       };
       // Dedicated event so we can alert on analyzer-throw rate without
       // having to filter `session_quality_analyzed` for flags=analyzer_error.

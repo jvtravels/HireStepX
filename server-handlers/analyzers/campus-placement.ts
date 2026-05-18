@@ -25,6 +25,17 @@ const ACADEMIC_PROJECT = /\b(capstone|final[- ]?year project|btech project|major
 const FRESHER_LEXICON = /\b(fresher|just graduated|final year|recent graduate|college senior|placement|on[- ]campus|btech|b\.?tech|bca|mca|m\.?tech)\b/i;
 const GENERIC_PASSION = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?learn)\b/i;
 const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designed|trained|integrated|published)\s+\w+/i;
+/* Substantiation tokens — any one of these next to a "passionate"
+ * claim turns the claim from cliché into a defendable answer. We
+ * gate `generic_passion_no_substance` on the ABSENCE of all of them:
+ *   - github URL or repo handle (artifact)
+ *   - hackathon / coding contest mention (named event)
+ *   - internship mention (real-world signal)
+ *   - named MOOC / course (NPTEL, Coursera, Udemy, edX, CS50, Striver)
+ *   - a quantified outcome ("won", "ranked", "200+ problems", percentile)
+ * Mirrors the GENERIC_WHY / SPECIFIC_WHY paired pattern from hr-round.ts.
+ */
+const SUBSTANTIATION_TOKEN = /\b(github\.com\/[\w-]+|github\.io|gitlab\.com\/[\w-]+|leetcode\.com\/[\w-]+|codeforces\.com\/profile|kaggle\.com\/[\w-]+|hackerrank\.com\/[\w-]+|hackathon|sih\b|smart india hackathon|coding contest|code[- ]?jam|hash[- ]?code|kickstart|internship|intern at|interned at|nptel|coursera|udemy|edx\b|cs50|striver(?:'s)?\s+sdc?\s*sheet|striver sde|neetcode|grokking|knight (?:badge|rated)|guardian rated|expert rated|specialist rated|top\s+\d+%?|\d{2,}\s*\+?\s*(?:problems|leetcode|questions|submissions))\b/i;
 const AVAILABILITY = /\b(available (?:from|after)|join (?:by|in|on|after)|notice|graduation|exam|semester|joining date|relocat)\b/i;
 const COLLEGE_BADMOUTH = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:professors|faculty) (?:are|were) (?:useless|incompetent|terrible)|nothing was taught|wasted (?:my )?time)\b/i;
 
@@ -331,13 +342,23 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       });
     }
 
-    // Generic passion language without concrete project
-    if (GENERIC_PASSION.test(userText) && !SPECIFIC_PROJECT.test(userText)) {
+    // Generic passion language without ANY substantiation. We require
+    // BOTH the verb-based SPECIFIC_PROJECT pattern AND the noun-based
+    // SUBSTANTIATION_TOKEN list (github / hackathon / internship / named
+    // MOOC / quantified outcome) to be absent before flagging — mirrors
+    // the GENERIC_WHY / SPECIFIC_WHY pair pattern in hr-round.ts. Cuts
+    // the false-positive rate on candidates who say "I'm passionate
+    // about ML, you can see my Kaggle profile at …".
+    if (
+      GENERIC_PASSION.test(userText) &&
+      !SPECIFIC_PROJECT.test(userText) &&
+      !SUBSTANTIATION_TOKEN.test(userText)
+    ) {
       flags.add("generic_passion_no_substance");
       gaps.push({
         dimension: "specificity",
-        expected: "Replace 'passionate about tech' with a specific project + outcome",
-        observed: "User used generic passion language without describing a built artifact",
+        expected: "Replace 'passionate about tech' with a specific project + outcome (or a GitHub link, hackathon, internship, named course, or a quantified milestone like '200+ LeetCode')",
+        observed: "User used generic passion language without describing a built artifact or any substantiation (no GitHub / hackathon / internship / MOOC / quantified outcome)",
         severity: "medium",
       });
     }
@@ -445,6 +466,22 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // harder grading curves. Tier-2 + unknown apply the baseline.
     const cgpaCutoff = baseCgpaCutoff + cgpaCutoffAdjustment(collegeTier);
     const cgpaMatch = userText.match(CGPA_STATED);
+    /* Stash CGPA calibration on `result.meta` so the candidate sees the
+     * exact cutoff they were graded against in the report — surfaces
+     * the otherwise-invisible tier-adjustment math (TCS NQT base 6.0 →
+     * tier-2 adjusted 5.5, etc.) instead of leaving them to guess. */
+    const statedCgpaForMeta = cgpaMatch ? Number(cgpaMatch[1]) : NaN;
+    result.meta = {
+      ...(result.meta || {}),
+      campusPlacement: {
+        companyTier,
+        collegeTier,
+        baseCgpaCutoff,
+        adjustedCgpaCutoff: cgpaCutoff,
+        statedCgpa: Number.isFinite(statedCgpaForMeta) && statedCgpaForMeta > 0 ? statedCgpaForMeta : null,
+        targetCompany: session.target_company || null,
+      },
+    };
     if (cgpaMatch) {
       const cgpa = Number(cgpaMatch[1]);
       if (cgpa > 0 && cgpa < cgpaCutoff && !CGPA_FRAMING_CONTEXT.test(userText)) {
