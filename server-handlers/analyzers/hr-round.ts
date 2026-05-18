@@ -57,6 +57,20 @@ const SPECIFIC_WHY = /\b(launched|launch|product|feature|leader|founder|ceo|cto|
 const SELF_INTRO_PROMPT = /\b(tell me about yourself|walk me through|introduce yourself|your background|apne baare mein|introduction)\b/i;
 const SPECIFICS = /\b\d+\s*(?:years?|months?|saal|mahine)\b|\b(?:built|led|shipped|launched|migrated|deployed|scaled|owned|drove|delivered|banaya|kiya tha|lead kiya)\b/i;
 const BENEFITS_PROMPT = /\b(joining bonus|signing bonus|clawback|probation|bond|service agreement|esop|rsu|vesting|cliff|insurance|epf|provident fund|gratuity|nps|variable pay)\b/i;
+
+/* v4.6 depth validators ───────────────────────────────────────────
+   2.1  NOTICE_DEPTH — extras that distinguish a shallow "60 days"
+        from a real notice-period plan (buyout, handover, LWD, early
+        release, garden leave).
+   2.2  BGV_DOC_NAMED — candidate-side BGV literacy: did they ever
+        name a specific document (Form 16 / UAN / payslip / relieving
+        letter / Aadhaar / PAN / EPFO)?
+   2.3  COMP_PROBE_RE — did the candidate ASK about ESOP cliff /
+        variable payout / clawback / vesting terms? HR offers benefits;
+        a candidate who never probes the terms accepts blind. */
+const NOTICE_DEPTH = /\b(?:buy[- ]?out|hand[- ]?over|knowledge transfer|kt plan|early release|negotiate (?:my )?notice|reduce (?:my )?notice|serve (?:full|partial|out)|garden(?:ing)? leave|lwd (?:of|is|on|will be)|last working day (?:of|on|is|will be)|relieving (?:date|letter on|on)|formal resignation|notice buyout|notice negotiate)\b/i;
+const BGV_DOC_NAMED = /\b(?:form\s*16|uan|pay\s*slips?|relieving letter|experience letter|pan(?:\s*card)?|aadha+r|epfo|epf statement|salary slip|appointment letter)\b/i;
+const COMP_PROBE_RE = /\b(?:what(?:'?s| is) the (?:cliff|vesting|variable|clawback|payout|breakup)|cliff (?:period|duration|of)|vesting (?:schedule|period|cliff|over)|variable (?:payout|percentage|%|pay out)|clawback (?:terms|duration|period|amount)|how (?:much|long) is the (?:cliff|vesting|clawback|variable)|joining bonus clawback|esop (?:vest|cliff|schedule|grant)|when does the (?:variable|bonus|esop) (?:pay|vest|kick)|kya cliff hai|cliff kitna|variable kitna)\b/i;
 const HIKE_RATIONALE = /\b(market|benchmark|levels|glassdoor|range|peers?|competing|other offer|levels\.fyi|because i|since i'?ve|scope|impact|delivered|saved|drove|market rate|market mein)\b/i;
 
 /* Salary breakup vagueness — when HR asks for the fixed/variable/bonus
@@ -289,7 +303,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v4.5.0",
+  version: "hr-round-v4.6.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -339,6 +353,35 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           gaps.push({ dimension: "logistics_clarity", expected: "Crisp notice period (e.g. '60 days, buyout possible') and earliest LWD", observed: "Candidate hedged on notice period — Indian HR treats this as flight risk", severity: "medium" });
           break;
         }
+      }
+    }
+
+    /* v4.6 / 2.1 — notice_period_shallow. Concrete notice answer
+       ("60 days") but no buyout / handover / LWD / early-release
+       discussion across the whole session. Mid-senior HR rounds expect
+       depth here; the shallow answer leaves comp-of-buyout and handover
+       blind spots that surface at offer time. */
+    {
+      const hrAskedNotice = transcript.some((t) => isAi(t) && NOTICE_ASKED.test(t.text || ""));
+      const candidateGaveConcrete = transcript.some(
+        (t) => isUser(t) && NOTICE_CONCRETE.test(t.text || "") && (t.text || "").length < 220,
+      );
+      const depthDiscussed = NOTICE_DEPTH.test(allText);
+      if (
+        hrAskedNotice &&
+        candidateGaveConcrete &&
+        !depthDiscussed &&
+        !flags.has("vague_notice_period") &&
+        transcript.length > 6
+      ) {
+        flags.add("notice_period_shallow");
+        gaps.push({
+          dimension: "logistics_clarity",
+          expected: "Beyond raw days: buyout policy, handover / KT plan, earliest LWD, and early-release options",
+          observed: "Candidate stated notice in days but never discussed buyout, handover, or LWD — shallow for mid-senior HR rounds",
+          severity: "medium",
+          flag: "notice_period_shallow",
+        });
       }
     }
 
@@ -497,6 +540,53 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           gaps.push({ dimension: "comp_transparency", expected: "When asked for the CTC structure, state fixed / variable / joining bonus / RSU split explicitly", observed: "Candidate gave a single CTC number with no component breakup — Indian HR reads this as inflated variable", severity: "medium" });
           break;
         }
+      }
+    }
+
+    /* v4.6 / 2.2 — bgv_literacy_low. HR raised BGV / documents but the
+       candidate never named a single doc back (Form 16 / UAN /
+       payslip / relieving letter / Aadhaar / PAN / EPFO). Even when
+       not actively evading, this reads as unprepared and slows
+       onboarding. Distinct from bgv_document_evasion which requires
+       active refusal language. */
+    {
+      const hrAskedBgv = transcript.some((t) => isAi(t) && BGV_PROMPT.test(t.text || ""));
+      const userNamedDoc = transcript.some((t) => isUser(t) && BGV_DOC_NAMED.test(t.text || ""));
+      if (
+        hrAskedBgv &&
+        !userNamedDoc &&
+        !flags.has("bgv_document_evasion") &&
+        !flags.has("bgv_document_evasion_sustained")
+      ) {
+        flags.add("bgv_literacy_low");
+        gaps.push({
+          dimension: "compliance_readiness",
+          expected: "Name BGV docs by name (Form 16, UAN, last 3 payslips, relieving letter, PAN/Aadhaar) — fluency signals 'I've done this before'",
+          observed: "BGV came up but candidate never named a single document by name — reads as unprepared even without active evasion",
+          severity: "medium",
+          flag: "bgv_literacy_low",
+        });
+      }
+    }
+
+    /* v4.6 / 2.3 — comp_breakup_probe_missing. HR mentioned benefits /
+       ESOP / clawback / joining bonus but the candidate never PROBED
+       the terms back (cliff, vesting schedule, variable payout %,
+       clawback duration). Accepting benefits blind is the classic
+       post-joining shock pattern; HR rounds reward candidates who
+       ask before signing. */
+    {
+      const hrMentionedBenefits = transcript.some((t) => isAi(t) && BENEFITS_PROMPT.test(t.text || ""));
+      const userProbed = transcript.some((t) => isUser(t) && COMP_PROBE_RE.test(t.text || ""));
+      if (hrMentionedBenefits && !userProbed && transcript.length > 8) {
+        flags.add("comp_breakup_probe_missing");
+        gaps.push({
+          dimension: "negotiation_protection",
+          expected: "When ESOP / joining bonus / clawback / variable comes up, probe terms: cliff, vesting schedule, payout %, clawback duration",
+          observed: "Benefits / ESOP / clawback was on the table but candidate never asked terms — accepting blind invites post-joining shock",
+          severity: "medium",
+          flag: "comp_breakup_probe_missing",
+        });
       }
     }
 
@@ -950,6 +1040,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           "prior_bgv_fail_uncontextualised",
           "certification_gap_evasion",
           "pf_uan_evasive",
+          "bgv_literacy_low",
         ],
       },
       {
@@ -961,6 +1052,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           "joining_date_overpromise",
           "aspiration_walkback",
           "loyalty_overcommit",
+          "notice_period_shallow",
+          "comp_breakup_probe_missing",
         ],
       },
       {
@@ -1005,6 +1098,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("user_badmouthing_employer")) tips.push("Reframe past frustrations as growth opportunities. HR scores professionalism heavily.");
     if (flags.has("generic_self_intro")) tips.push("Tighten 'tell me about yourself' to a 90-second story with 2 concrete projects + outcomes.");
     if (flags.has("vague_notice_period")) tips.push("Know your notice period cold — exact days, buyout policy, earliest LWD. Vague answers signal flight risk.");
+    if (flags.has("notice_period_shallow")) tips.push("Concrete days alone aren't enough at mid-senior. Layer on: buyout cost (typically 1 month gross), handover / KT plan, earliest LWD with manager sign-off, and whether early release is precedented. That's what HR scores.");
+    if (flags.has("bgv_literacy_low")) tips.push("Name the docs by name when BGV comes up: 'Form 16 for last 2 years, UAN active, last 3 payslips, relieving letter from each employer.' Fluency signals you've onboarded before — opaque hand-waving slows down BGV intake.");
+    if (flags.has("comp_breakup_probe_missing")) tips.push("Always probe ESOP / variable / clawback terms before you sign: cliff (typically 1yr), vesting (4yr standard), variable payout history (% paid out last 2 cycles), joining-bonus clawback duration. Accepting blind is the #1 post-joining regret pattern.");
     if (flags.has("bgv_document_evasion")) tips.push("Keep payslips (last 3), Form 16, relieving letters, PAN/Aadhaar/UAN ready. Hesitation here blocks onboarding via BGV.");
     if (flags.has("bgv_document_evasion_sustained")) tips.push("Sustained BGV evasion across multiple probes is the strongest pre-offer red flag. Pre-prep a single line: 'I have all documents — payslips, Form 16, UAN — ready to share over secure channel.'");
     if (flags.has("bgv_document_initial_hedge")) tips.push("You recovered on a later BGV probe, but the first hedge still registers. Lead with confidence: 'Yes, I can share' beats 'let me check first.'");
