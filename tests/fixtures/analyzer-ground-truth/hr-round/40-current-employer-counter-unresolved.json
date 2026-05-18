@@ -1,0 +1,23 @@
+{
+  "name": "Candidate raises current-employer counter-offer but never declines",
+  "notes": "Phase 5.1: current_employer_counter_unresolved — candidate self-discloses retention attempt without resolution.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior backend engineer with 8 years across Flipkart and Razorpay, currently leading the payouts squad at Razorpay.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Looking for a fresh problem space — payouts has plateaued for me. Also, honestly, my current employer is likely to come back with a retention offer when I resign; my manager has already hinted at it.", "time": "" },
+      { "speaker": "ai", "text": "I see. What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at 1 month gross. I can negotiate early release with a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "I designed and shipped the new instant payouts pipeline handling 5M transactions a day. Owned spec to launch over five months.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your founder's blog on ledger consensus lines up with my interests, and the engineering scale you're at is the next jump from where I am.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["current_employer_counter_unresolved"],
+    "must_not_include": ["offer_accepted_graceful", "empty_transcript"]
+  }
+}

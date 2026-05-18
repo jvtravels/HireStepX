@@ -71,6 +71,24 @@ const BENEFITS_PROMPT = /\b(joining bonus|signing bonus|clawback|probation|bond|
 const NOTICE_DEPTH = /\b(?:buy[- ]?out|hand[- ]?over|knowledge transfer|kt plan|early release|negotiate (?:my )?notice|reduce (?:my )?notice|serve (?:full|partial|out)|garden(?:ing)? leave|lwd (?:of|is|on|will be)|last working day (?:of|on|is|will be)|relieving (?:date|letter on|on)|formal resignation|notice buyout|notice negotiate)\b/i;
 const BGV_DOC_NAMED = /\b(?:form\s*16|uan|pay\s*slips?|relieving letter|experience letter|pan(?:\s*card)?|aadha+r|epfo|epf statement|salary slip|appointment letter)\b/i;
 const COMP_PROBE_RE = /\b(?:what(?:'?s| is) the (?:cliff|vesting|variable|clawback|payout|breakup)|cliff (?:period|duration|of)|vesting (?:schedule|period|cliff|over)|variable (?:payout|percentage|%|pay out)|clawback (?:terms|duration|period|amount)|how (?:much|long) is the (?:cliff|vesting|clawback|variable)|joining bonus clawback|esop (?:vest|cliff|schedule|grant)|when does the (?:variable|bonus|esop) (?:pay|vest|kick)|kya cliff hai|cliff kitna|variable kitna)\b/i;
+
+/* v5.1 / Phase 5 stretch ─────────────────────────────────────────
+   5.1  Counter-offer simulation guard. Candidate volunteers that
+        their current employer IS likely to / already has counter-
+        offered. Indian-market reality: counter-offers from current
+        employer arrive in ~40% of senior switches; HR's #1 fear is
+        the post-counter retraction. If the candidate raises it but
+        never firmly declines, the round reads as "flight risk
+        confirmed by their own admission".
+   5.2  Probationary period probe. Indian probation is 3-6 months
+        (services-track), 6 months at most product orgs. Candidate
+        who never probes duration / confirmation criteria / pay
+        during probation accepts blind — the classic "I joined and
+        got let go in month 4 with no warning" pattern. */
+const COUNTER_OFFER_VOLUNTEERED = /\b(?:my (?:current )?(?:employer|company|manager|boss) (?:is likely to|might|will|may) (?:counter|match|come back)|current (?:employer|company) (?:gave|offered|made) (?:me )?(?:a )?counter|already (?:got|received|have) (?:a )?counter[- ]?offer|they'?re (?:trying to|going to) match|trying to retain me|retention (?:offer|bonus) on the table)\b/i;
+const COUNTER_OFFER_DECLINE = /\b(?:i (?:declined|refused|turned (?:it )?down|rejected) (?:it|the counter|their offer)|told them no|not (?:taking|considering|accepting) (?:the |their |any )?counter|will not entertain|won'?t entertain|already (?:said|told them) no|no chance i (?:take|accept))\b/i;
+const PROBATION_PROMPT = /\b(probation(?:ary)?(?:\s+period)?|probationary|confirmation(?:\s+period)?|under probation|during probation)\b/i;
+const PROBATION_PROBE = /\b(?:how long is the probation|probation (?:period|duration|length) (?:is|of)|(?:what'?s|what is) the (?:probation|confirmation) (?:period|criteria|process)|confirmation (?:criteria|review|process)|probation pay|salary during probation|notice (?:during|in) probation|probation kitni|probation kab tak|kya criteria hai)\b/i;
 const HIKE_RATIONALE = /\b(market|benchmark|levels|glassdoor|range|peers?|competing|other offer|levels\.fyi|because i|since i'?ve|scope|impact|delivered|saved|drove|market rate|market mein)\b/i;
 
 /* Salary breakup vagueness — when HR asks for the fixed/variable/bonus
@@ -303,7 +321,7 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v5.0.0",
+  version: "hr-round-v5.1.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -540,6 +558,50 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           gaps.push({ dimension: "comp_transparency", expected: "When asked for the CTC structure, state fixed / variable / joining bonus / RSU split explicitly", observed: "Candidate gave a single CTC number with no component breakup — Indian HR reads this as inflated variable", severity: "medium" });
           break;
         }
+      }
+    }
+
+    /* v5.1 / Phase 5.1 — current_employer_counter_unresolved.
+       Candidate volunteers that their current employer is likely to /
+       did counter-offer them, but never gives a firm decline ("I told
+       them no" / "won't entertain"). Distinct from counter_offer_dodge
+       (which fires when HR probes hypothetically). This one is the
+       candidate self-disclosing an active retention attempt — and not
+       resolving it. HR reads it as flight risk confirmed. */
+    {
+      const userTextLower = userText.toLowerCase();
+      const candidateRaised = COUNTER_OFFER_VOLUNTEERED.test(userTextLower);
+      const candidateDeclined = COUNTER_OFFER_DECLINE.test(userTextLower) || flags.has("offer_accepted_graceful");
+      if (candidateRaised && !candidateDeclined) {
+        flags.add("current_employer_counter_unresolved");
+        gaps.push({
+          dimension: "commitment_signal",
+          expected: "If the candidate raises a current-employer counter-offer, they MUST close it with a firm decline in the same breath ('they're trying to match — I've told them no')",
+          observed: "Candidate volunteered that their current employer is counter-offering but never explicitly declined — HR reads this as active flight risk",
+          severity: "high",
+          flag: "current_employer_counter_unresolved",
+        });
+      }
+    }
+
+    /* v5.1 / Phase 5.2 — probation_terms_unprobed.
+       Probation came up (HR side OR candidate side) but the candidate
+       never asked duration / confirmation criteria / pay-during-
+       probation. Services-track probation is 3-6 months with
+       termination-without-cause clauses; accepting blind is the
+       classic post-joining shock pattern. */
+    {
+      const probationMentioned = PROBATION_PROMPT.test(allText);
+      const userProbed = transcript.some((t) => isUser(t) && PROBATION_PROBE.test(t.text || ""));
+      if (probationMentioned && !userProbed && transcript.length > 8) {
+        flags.add("probation_terms_unprobed");
+        gaps.push({
+          dimension: "negotiation_protection",
+          expected: "When probation comes up, probe duration (3 / 6 months), confirmation criteria, pay during probation, and notice-during-probation. Services-track probation has termination-without-cause clauses — knowing the terms protects the candidate",
+          observed: "Probation was mentioned but candidate never asked duration / confirmation criteria / probation pay — accepting blind invites month-3 termination shock",
+          severity: "medium",
+          flag: "probation_terms_unprobed",
+        });
       }
     }
 
@@ -1054,6 +1116,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           "loyalty_overcommit",
           "notice_period_shallow",
           "comp_breakup_probe_missing",
+          "current_employer_counter_unresolved",
+          "probation_terms_unprobed",
         ],
       },
       {
@@ -1101,6 +1165,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("notice_period_shallow")) tips.push("Concrete days alone aren't enough at mid-senior. Layer on: buyout cost (typically 1 month gross), handover / KT plan, earliest LWD with manager sign-off, and whether early release is precedented. That's what HR scores.");
     if (flags.has("bgv_literacy_low")) tips.push("Name the docs by name when BGV comes up: 'Form 16 for last 2 years, UAN active, last 3 payslips, relieving letter from each employer.' Fluency signals you've onboarded before — opaque hand-waving slows down BGV intake.");
     if (flags.has("comp_breakup_probe_missing")) tips.push("Always probe ESOP / variable / clawback terms before you sign: cliff (typically 1yr), vesting (4yr standard), variable payout history (% paid out last 2 cycles), joining-bonus clawback duration. Accepting blind is the #1 post-joining regret pattern.");
+    if (flags.has("current_employer_counter_unresolved")) tips.push("If you mention your current employer is counter-offering, ALWAYS close it in the same breath: 'they're trying to match — I've already told them no.' Mentioning a counter without declining reads as you keeping the option open. India-market reality: ~40% of senior offers face a counter; HR rounds reward candidates who pre-empt the script.");
+    if (flags.has("probation_terms_unprobed")) tips.push("When probation comes up, probe terms cold: 'What's the duration — 3 or 6 months? What are the confirmation criteria? Is the notice period during probation different? Is pay full or pro-rated?' Services-track probation has termination-without-cause clauses; blind acceptance leaves you exposed to a month-3 surprise.");
     if (flags.has("bgv_document_evasion")) tips.push("Keep payslips (last 3), Form 16, relieving letters, PAN/Aadhaar/UAN ready. Hesitation here blocks onboarding via BGV.");
     if (flags.has("bgv_document_evasion_sustained")) tips.push("Sustained BGV evasion across multiple probes is the strongest pre-offer red flag. Pre-prep a single line: 'I have all documents — payslips, Form 16, UAN — ready to share over secure channel.'");
     if (flags.has("bgv_document_initial_hedge")) tips.push("You recovered on a later BGV probe, but the first hedge still registers. Lead with confidence: 'Yes, I can share' beats 'let me check first.'");

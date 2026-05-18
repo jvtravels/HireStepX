@@ -1,0 +1,25 @@
+{
+  "name": "HR mentions probation period but candidate never probes terms",
+  "notes": "Phase 5.2: probation_terms_unprobed — candidate accepts probation framing without asking duration, criteria, or pay implications.",
+  "session": {
+    "type": "hr-round",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your background.", "time": "" },
+      { "speaker": "user", "text": "Six years in product engineering, last three at Swiggy on the discovery team.", "time": "" },
+      { "speaker": "ai", "text": "Standard policy here: all new joiners are on a probation period before confirmation. Are you comfortable with that?", "time": "" },
+      { "speaker": "user", "text": "Yeah, that's fine. I've been through probation before, no issue.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "Two months notice, buyout possible at one month gross if needed.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a recent project.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the search ranking pipeline to cut p95 latency from 800ms to 220ms — owned design and rollout.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your scale of catalog and the recsys roadmap your VP shared at a recent meetup are exactly the problems I want to be solving next.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for me?", "time": "" },
+      { "speaker": "user", "text": "How is the team structured between platform and product pods?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["probation_terms_unprobed"],
+    "must_not_include": ["empty_transcript", "current_employer_counter_unresolved"]
+  }
+}
