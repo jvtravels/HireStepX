@@ -337,7 +337,7 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
   //     (`lastAnswerClarificationAtTurn` / `variableInferred`) which
   //     isn't carried on SessionRowForAnalysis. Re-evaluate once kernel
   //     state is persisted onto the session row.
-  version: "salary-negotiation-v7",
+  version: "salary-negotiation-v8",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();

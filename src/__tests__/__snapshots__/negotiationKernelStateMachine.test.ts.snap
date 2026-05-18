@@ -1,0 +1,134 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Phase 4.2 — negotiation-kernel canonical paths > candidate-counter-then-close: open → counter → counter → accept 1`] = `
+{
+  "finalShape": {
+    "acceptedAtTurnSet": true,
+    "leversUsed": [
+      "close-acceptance",
+      "counter-base",
+      "counter-base",
+      "open-with-offer",
+    ],
+    "phase": "accepted",
+    "verbalAcceptanceSet": true,
+    "walkAwayReturned": false,
+  },
+  "phaseTrajectory": [
+    "opening",
+    "offer-presented",
+    "probe-expectations",
+    "probe-expectations",
+    "probe-expectations",
+    "probe-expectations",
+    "accepted",
+    "accepted",
+  ],
+}
+`;
+
+exports[`Phase 4.2 — negotiation-kernel canonical paths > clarification-loop-recovery: clarification ask → recap → counter → accept 1`] = `
+{
+  "finalShape": {
+    "acceptedAtTurnSet": true,
+    "candidateTarget": 26,
+    "leversUsed": [
+      "close-acceptance",
+      "compensation-summary",
+      "counter-base",
+      "open-with-offer",
+    ],
+    "phase": "accepted",
+    "verbalAcceptanceSet": true,
+    "walkAwayReturned": false,
+  },
+  "phaseTrajectory": [
+    "opening",
+    "offer-presented",
+    "offer-presented",
+    "offer-presented",
+    "counter-offer",
+    "counter-offer",
+    "accepted",
+    "accepted",
+  ],
+}
+`;
+
+exports[`Phase 4.2 — negotiation-kernel canonical paths > deflect-loop-recovery: frustration → acknowledge-and-recover → counter 1`] = `
+{
+  "finalShape": {
+    "acceptedAtTurnSet": true,
+    "leversUsed": [
+      "acknowledge-and-recover",
+      "close-acceptance",
+      "counter-base",
+      "open-with-offer",
+      "probe",
+    ],
+    "phase": "accepted",
+    "verbalAcceptanceSet": true,
+    "walkAwayReturned": false,
+  },
+  "phaseTrajectory": [
+    "opening",
+    "offer-presented",
+    "probe-expectations",
+    "probe-expectations",
+    "probe-expectations",
+    "probe-expectations",
+    "probe-expectations",
+    "accepted",
+    "accepted",
+  ],
+}
+`;
+
+exports[`Phase 4.2 — negotiation-kernel canonical paths > happy-close: opening → counter-base → close-acceptance 1`] = `
+{
+  "finalShape": {
+    "acceptedAtTurnSet": true,
+    "leversUsed": [
+      "close-acceptance",
+      "counter-base",
+      "open-with-offer",
+    ],
+    "phase": "accepted",
+    "verbalAcceptanceSet": true,
+    "walkAwayReturned": false,
+  },
+  "phaseTrajectory": [
+    "opening",
+    "offer-presented",
+    "probe-expectations",
+    "probe-expectations",
+    "accepted",
+    "accepted",
+  ],
+}
+`;
+
+exports[`Phase 4.2 — negotiation-kernel canonical paths > walk-away: open → counter → user declines → walked-away 1`] = `
+{
+  "finalShape": {
+    "acceptedAtTurnSet": false,
+    "candidateTarget": 30,
+    "leversUsed": [
+      "close-walkaway",
+      "counter-base",
+      "open-with-offer",
+    ],
+    "phase": "walked-away",
+    "verbalAcceptanceSet": false,
+    "walkAwayReturned": false,
+  },
+  "phaseTrajectory": [
+    "opening",
+    "offer-presented",
+    "counter-offer",
+    "lever-explore",
+    "walked-away",
+    "walked-away",
+  ],
+}
+`;

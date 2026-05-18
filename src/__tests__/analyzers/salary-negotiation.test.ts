@@ -255,7 +255,7 @@ describe("salaryNegotiationAnalyzer v5 — Phase 1 wire-ins", () => {
   });
 
   it("bumps version to v6", () => {
-    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v7");
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v8");
   });
 });
 
@@ -424,7 +424,7 @@ describe("salaryNegotiationAnalyzer v6 — Phase 2 wire-ins", () => {
   });
 
   it("bumps version to v6", () => {
-    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v7");
+    expect(salaryNegotiationAnalyzer.version).toBe("salary-negotiation-v8");
   });
 });
 
