@@ -289,7 +289,7 @@ describe("Phase 5 Session A — canonical-prose stub", () => {
         kind: "round-transition",
         from: "hr-partner",
         to: "hiring-manager",
-        satisfiesTopic: "round-transition" as unknown as never,
+        
       },
       { ...base, roundPersona: "hiring-manager", roundIndex: 1 },
     );
@@ -305,7 +305,7 @@ describe("Phase 5 Session A — canonical-prose stub", () => {
         kind: "round-transition",
         from: "hiring-manager",
         to: "director",
-        satisfiesTopic: "round-transition" as unknown as never,
+        
       },
       { ...base, roundPersona: "director", roundIndex: 2 },
     );

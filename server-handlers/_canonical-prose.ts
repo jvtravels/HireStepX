@@ -60,6 +60,35 @@ function sectorPersona(state: NegotiationState): RecruiterSectorPersona {
   return state.recruiterSectorPersona ?? "default";
 }
 
+/** Code-quality audit cleanup (2026-05-19) — persona dispatch helpers.
+ *
+ *  Replaces 4× `switch (roundPersona)` + 3× `switch (sectorPersona)`
+ *  duplicated across band-disclosure-deflect / counter-offer /
+ *  anchor-with-offer / round-transition with a single `Record<Persona,
+ *  T>` lookup. TypeScript's `Record<UnionType, T>` enforces
+ *  exhaustiveness at compile time: omitting a key is a type error, so
+ *  the previous `default: { const _exhaustive: never = persona; }`
+ *  boilerplate is no longer needed at each call site. Behaviour is
+ *  byte-identical to the prior switches — same string returned for
+ *  same persona id.
+ *
+ *  Default-OFF invariance: round-persona helper is only reached after
+ *  `activeRoundPersona(state) != null`, which requires
+ *  `multiRoundEnabled === true`. Sector helper falls through to
+ *  `"default"` for legacy sessions. */
+function selectByRoundPersona<T>(
+  p: NegotiationRoundPersona,
+  table: Record<NegotiationRoundPersona, T>,
+): T {
+  return table[p];
+}
+function selectBySectorPersona<T>(
+  p: RecruiterSectorPersona,
+  table: Record<RecruiterSectorPersona, T>,
+): T {
+  return table[p];
+}
+
 /** Single source of truth for Indian-recruiter vocabulary policy.
  *  Defect 2 + ArchRec 1 (2026-05-16) — previously the BANNED / PREFERRED
  *  lists were duplicated as ad-hoc strings across `_canonical-prose.ts`,
@@ -830,46 +859,35 @@ function renderCanonicalProseBody(
        * to pre-Phase-5 prose. */
       const roundPersonaA = activeRoundPersona(state);
       if (roundPersonaA != null) {
-        switch (roundPersonaA) {
-          case "hr-partner":
-            return "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally.";
-          case "hiring-manager":
-            return "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level.";
-          case "director":
-            return "This is the final number my approval supports — as per our band for this grade. Let me know if there's a path forward.";
-          default: {
-            const _exhaustive: never = roundPersonaA;
-            void _exhaustive;
-            break;
-          }
-        }
+        return selectByRoundPersona(roundPersonaA, {
+          "hr-partner":
+            "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally.",
+          "hiring-manager":
+            "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level.",
+          "director":
+            "This is the final number my approval supports — as per our band for this grade. Let me know if there's a path forward.",
+        });
       }
-      const persona = sectorPersona(state);
-      switch (persona) {
-        /* Each persona variant respects the sentence-length cap
-         * (max 30 words / sentence, 25 avg) enforced by
-         * checkSentenceLength in _response-pipeline.ts. Sentiment
-         * prefixes ("Coming to" / "Hearing you out") add 2-3 words
-         * to the first sentence, so we keep each persona body
-         * short enough that the prefixed version still passes. */
-        case "it-services":
-          return "I won't be able to share internal numbers — as per our band, the grade fitment I shared is what I have. Happy to take this back to the panel.";
-        case "gcc":
-          return "I won't be able to share internal numbers, but as per our band for this grade — anchored to the global benchmark — the offer stands. Happy to take this back to the panel.";
-        case "indian-unicorn":
-          return "I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity.";
-        case "early-startup":
-          return "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity.";
-        case "bfsi":
-          return "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel.";
-        case "default":
-          return "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.";
-        default: {
-          const _exhaustive: never = persona;
-          void _exhaustive;
-          return "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.";
-        }
-      }
+      /* Each persona variant respects the sentence-length cap
+       * (max 30 words / sentence, 25 avg) enforced by
+       * checkSentenceLength in _response-pipeline.ts. Sentiment
+       * prefixes ("Coming to" / "Hearing you out") add 2-3 words
+       * to the first sentence, so we keep each persona body
+       * short enough that the prefixed version still passes. */
+      return selectBySectorPersona(sectorPersona(state), {
+        "it-services":
+          "I won't be able to share internal numbers — as per our band, the grade fitment I shared is what I have. Happy to take this back to the panel.",
+        "gcc":
+          "I won't be able to share internal numbers, but as per our band for this grade — anchored to the global benchmark — the offer stands. Happy to take this back to the panel.",
+        "indian-unicorn":
+          "I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity.",
+        "early-startup":
+          "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity.",
+        "bfsi":
+          "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel.",
+        "default":
+          "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.",
+      });
     }
 
     case "discovery-probe": {
@@ -1073,21 +1091,11 @@ function renderCanonicalProseBody(
          * through to sector body (byte-identical). */
         const roundPersonaC = activeRoundPersona(state);
         if (roundPersonaC != null) {
-          const roundBody = (() => {
-            switch (roundPersonaC) {
-              case "hr-partner":
-                return `As per band, the most I can structure is ₹${total}L total — that's the grade fitment ceiling I have.`;
-              case "hiring-manager":
-                return `We can revise the fitment to ₹${total}L total — that's the stretch I can hold against the scope we're hiring.`;
-              case "director":
-                return `Final number on cash is ₹${total}L total — this is the leverage I'm able to sign off on.`;
-              default: {
-                const _exhaustive: never = roundPersonaC;
-                void _exhaustive;
-                return `We can revise the fitment to ₹${total}L total.`;
-              }
-            }
-          })();
+          const roundBody = selectByRoundPersona(roundPersonaC, {
+            "hr-partner": `As per band, the most I can structure is ₹${total}L total — that's the grade fitment ceiling I have.`,
+            "hiring-manager": `We can revise the fitment to ₹${total}L total — that's the stretch I can hold against the scope we're hiring.`,
+            "director": `Final number on cash is ₹${total}L total — this is the leverage I'm able to sign off on.`,
+          });
           return `${spiralLead} ${roundBody} How does that look from your side?`;
         }
         /* Persona-specific body. Kept short (one sentence < 30 words)
@@ -1096,27 +1104,14 @@ function renderCanonicalProseBody(
          * sentence, MAX 25 avg). Spiral lead carries its own `—` /
          * `:` punctuation; persona body always ends with a `.` so
          * the closer becomes its own sentence. */
-        const body = (() => {
-          switch (persona) {
-            case "it-services":
-              return `Services-track ceiling lands the fitment at ₹${total}L total.`;
-            case "gcc":
-              return `Anchored to the global band, we can revise the fitment to ₹${total}L total.`;
-            case "indian-unicorn":
-              return `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`;
-            case "early-startup":
-              return `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`;
-            case "bfsi":
-              return `Variable bumps to land the fitment at ₹${total}L total on the perf cycle.`;
-            case "default":
-              return `We can revise the fitment to ₹${total}L total.`;
-            default: {
-              const _exhaustive: never = persona;
-              void _exhaustive;
-              return `We can revise the fitment to ₹${total}L total.`;
-            }
-          }
-        })();
+        const body = selectBySectorPersona(persona, {
+          "it-services": `Services-track ceiling lands the fitment at ₹${total}L total.`,
+          "gcc": `Anchored to the global band, we can revise the fitment to ₹${total}L total.`,
+          "indian-unicorn": `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`,
+          "early-startup": `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`,
+          "bfsi": `Variable bumps to land the fitment at ₹${total}L total on the perf cycle.`,
+          "default": `We can revise the fitment to ₹${total}L total.`,
+        });
         return `${spiralLead} ${body} How does that look from your side?`;
       }
       return state.highestOfferMade > 0
@@ -1215,36 +1210,19 @@ function renderCanonicalProseBody(
        * byte-identical. */
       const roundPersonaB = activeRoundPersona(state);
       const tail = roundPersonaB != null
-        ? (() => {
-            switch (roundPersonaB) {
-              case "hr-partner":
-                return " That's the band floor for this grade — no stretch on cash from my side.";
-              case "hiring-manager":
-                return " That sits inside the stretch band I can hold against this scope.";
-              case "director":
-                return " That's the Director-tier band — full sign-off authority on this number.";
-              default: {
-                const _exhaustive: never = roundPersonaB;
-                void _exhaustive;
-                return "";
-              }
-            }
-          })()
-        : (() => {
-        switch (persona) {
-          case "it-services":  return " That's the grade fitment as per our band for this role.";
-          case "gcc":          return " That's anchored to the global band for this level.";
-          case "indian-unicorn": return " The cash sits inside our band; ESOP grant is on top.";
-          case "early-startup": return " Cash is tight at this stage, but equity % is where we can stretch.";
-          case "bfsi":         return " Fixed sits as per our regulatory band; variable is on the performance cycle.";
-          case "default":      return "";
-          default: {
-            const _exhaustive: never = persona;
-            void _exhaustive;
-            return "";
-          }
-        }
-      })();
+        ? selectByRoundPersona(roundPersonaB, {
+            "hr-partner": " That's the band floor for this grade — no stretch on cash from my side.",
+            "hiring-manager": " That sits inside the stretch band I can hold against this scope.",
+            "director": " That's the Director-tier band — full sign-off authority on this number.",
+          })
+        : selectBySectorPersona(persona, {
+            "it-services":   " That's the grade fitment as per our band for this role.",
+            "gcc":           " That's anchored to the global band for this level.",
+            "indian-unicorn":" The cash sits inside our band; ESOP grant is on top.",
+            "early-startup": " Cash is tight at this stage, but equity % is where we can stretch.",
+            "bfsi":          " Fixed sits as per our regulatory band; variable is on the performance cycle.",
+            "default":       "",
+          });
       if (typeof variableMax === "number" && variableMax > 0) {
         const fixedComponent = Math.max(0, action.initialOffer - variableMax);
         return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle.${tail} Let me know your thoughts.`;
@@ -1455,35 +1433,30 @@ function renderCanonicalProseBody(
        * not double-prepend an ack onto an already-warm handoff. */
       const from: NegotiationRoundPersona = action.from;
       const to: NegotiationRoundPersona = action.to;
-      switch (to) {
-        case "hiring-manager":
-          /* hr-partner → hiring-manager. Partner-led warmth. No
-           * "hiring manager" name is threaded through state today, so
-           * the generic descriptor "the hiring manager" is the safe
-           * surface. If a future iteration adds
-           * state.hiringManagerName, swap the descriptor here. */
-          return "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.";
-        case "director":
-          /* hiring-manager → director. Process-led: signals the final
-           * round and frames the Director's scope (closing offer +
-           * any remaining flexibility). */
-          return "Appreciate the depth on scope. I'd like to pull in the director for the final round — they'll cover the closing offer and any flexibility we have.";
-        case "hr-partner": {
-          /* HR Partner is never a handoff TARGET in the sequence
-           * hr-partner → hiring-manager → director. Defensive
-           * fallback only — should never be reached at runtime. */
-          return "Let me bring in the next round of the conversation.";
-        }
-        default: {
-          const _exhaustive: never = to;
-          void _exhaustive;
-          return "Let me bring in the next round of the conversation.";
-        }
-      }
       /* `from` is part of the discriminator surface so downstream
        * analyzers can read the edge; not used in the prose body
-       * itself today. */
+       * itself today. If a future iteration threads
+       * state.hiringManagerName, swap the generic descriptor on the
+       * hiring-manager arm below. */
       void from;
+      return selectByRoundPersona(to, {
+        /* hr-partner → hiring-manager. Partner-led warmth. No
+         * "hiring manager" name is threaded through state today, so
+         * the generic descriptor "the hiring manager" is the safe
+         * surface. */
+        "hiring-manager":
+          "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+        /* hiring-manager → director. Process-led: signals the final
+         * round and frames the Director's scope (closing offer +
+         * any remaining flexibility). */
+        "director":
+          "Appreciate the depth on scope. I'd like to pull in the director for the final round — they'll cover the closing offer and any flexibility we have.",
+        /* HR Partner is never a handoff TARGET in the sequence
+         * hr-partner → hiring-manager → director. Defensive fallback
+         * only — should never be reached at runtime. */
+        "hr-partner":
+          "Let me bring in the next round of the conversation.",
+      });
     }
 
     default: {

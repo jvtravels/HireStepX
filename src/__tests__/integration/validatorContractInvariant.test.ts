@@ -365,7 +365,7 @@ const FIXTURES: Fixture[] = [
       kind: "round-transition",
       from: "hr-partner",
       to: "hiring-manager",
-      satisfiesTopic: "round-transition" as unknown as never,
+      
     },
     state: mk({
       phase: "opening",

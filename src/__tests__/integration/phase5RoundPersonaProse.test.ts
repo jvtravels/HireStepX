@@ -56,7 +56,7 @@ describe("Phase 5 Session B — round-transition handoff prose", () => {
         kind: "round-transition",
         from: "hr-partner",
         to: "hiring-manager",
-        satisfiesTopic: "round-transition" as unknown as never,
+        
       },
       s,
     );
@@ -74,7 +74,7 @@ describe("Phase 5 Session B — round-transition handoff prose", () => {
         kind: "round-transition",
         from: "hiring-manager",
         to: "director",
-        satisfiesTopic: "round-transition" as unknown as never,
+        
       },
       s,
     );
@@ -87,11 +87,11 @@ describe("Phase 5 Session B — round-transition handoff prose", () => {
     const sHm = mk({}, "hiring-manager");
     const sDir = mk({}, "director");
     const a = renderCanonicalProse(
-      { kind: "round-transition", from: "hr-partner", to: "hiring-manager", satisfiesTopic: "round-transition" as unknown as never },
+      { kind: "round-transition", from: "hr-partner", to: "hiring-manager" },
       sHm,
     );
     const b = renderCanonicalProse(
-      { kind: "round-transition", from: "hiring-manager", to: "director", satisfiesTopic: "round-transition" as unknown as never },
+      { kind: "round-transition", from: "hiring-manager", to: "director" },
       sDir,
     );
     /* Strip leading ACK tokens both sides; the residual must differ. */

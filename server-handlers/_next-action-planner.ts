@@ -400,21 +400,18 @@ export type NextAction =
    * (HR Partner → Hiring Manager → Director). The planner detects the
    * fresh entry on `state.roundTransitions` (atTurn === turnIndex) and
    * pre-empts every other branch so the handoff prose runs that turn.
-   * `satisfiesTopic` is typed as `"round-transition" as never` because
-   * this is NOT a discovery probe (no askedTopics ledger push) — the
-   * field exists only so existing satisfiesTopic plumbing compiles
-   * uniformly; downstream PROBE_PRODUCING_KINDS excludes this kind. */
+   *
+   * Code-quality audit cleanup (2026-05-19): this variant carries NO
+   * `satisfiesTopic` field — it's not a discovery probe, doesn't push
+   * onto askedTopics, and the only `satisfiesTopic` consumer
+   * (_move-tag.ts `case "discovery-probe"`) is kind-narrowed so the
+   * field's absence is sound. `PROBE_PRODUCING_KINDS` deliberately
+   * excludes "round-transition", which is the single source of truth
+   * for "does this kind feed the askedTopics ledger?". */
   | {
       kind: "round-transition";
       from: NegotiationRoundPersona;
       to: NegotiationRoundPersona;
-      /* Typed `never` so the discriminated-union threading compiles
-       * uniformly with the probe-producing kinds — but PROBE_PRODUCING_
-       * KINDS deliberately excludes "round-transition" so this kind does
-       * NOT push onto the askedTopics ledger. The runtime value is the
-       * literal string "round-transition", which the canonical-prose
-       * stub doesn't read (it consumes `from`/`to`). */
-      satisfiesTopic: never;
     };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
@@ -777,7 +774,6 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         kind: "round-transition",
         from: last.from,
         to: last.to,
-        satisfiesTopic: "round-transition" as unknown as never,
         _move: {
           lever: "probe",
           newTotalLpa: null,
