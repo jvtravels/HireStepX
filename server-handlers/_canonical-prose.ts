@@ -1057,8 +1057,7 @@ function renderCanonicalProseBody(
 
     case "band-anchor-with-rationale": {
       const lo = state.band.initialOffer;
-      const hi = state.band.maxStretch;
-      return `Just to anchor the discussion — as per our band for this grade, the fitment range is ₹${lo}-${hi} LPA. That's set against the role's scope and our internal parity for the level, not on a single benchmark.`;
+      return `As per the band for this grade, fitment lands at ₹${lo} LPA. That's anchored against role scope and internal parity, not a single benchmark.`;
     }
 
     case "close-recap-formal": {

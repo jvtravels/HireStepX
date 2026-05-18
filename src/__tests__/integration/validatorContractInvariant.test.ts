@@ -297,6 +297,23 @@ const FIXTURES: Fixture[] = [
       competingOffer: 28,
     }),
   },
+  /* PDF#29 Bug 3 (2026-05-18) — band-anchor-with-rationale. Point offer
+   * at band floor; contract requires LPA + band tokens and bans any
+   * dash/"to" between two digits so the LLM cannot reintroduce a band
+   * range in the restyle. */
+  {
+    label: "band-anchor-with-rationale",
+    action: {
+      kind: "band-anchor-with-rationale",
+      satisfiesTopic: "band-anchor-with-rationale",
+    },
+    state: mk({
+      phase: "probe-expectations",
+      turnIndex: 3,
+      highestOfferMade: 0,
+      candidateCurrentCtc: 18,
+    }),
+  },
 ];
 
 describe("Crack 6 — validator-contract invariant (canonical prose ↔ NEXT_ACTION_CONTRACT)", () => {

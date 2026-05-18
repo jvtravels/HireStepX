@@ -461,6 +461,14 @@ export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextAction
       /\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/,
     ],
   },
+  /* Bug 3 fix (2026-05-18) — band-anchor-with-rationale. Point offer only;
+   * the dash/"to" between digits is banned so the LLM restyle cannot
+   * reintroduce the internal band range. */
+  "band-anchor-with-rationale": {
+    numberPolicy: "required",
+    requiredTokens: [/\bLPA\b/i, /\bband\b/i],
+    bannedTokens: [/\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/],
+  },
   /* Phase 2 Indian-HR redesign (2026-05-17) — band-disclosure-deflect.
    * No internal numbers leaked; "panel" anchors the deflection. */
   "band-disclosure-deflect": {

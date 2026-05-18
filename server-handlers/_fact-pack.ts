@@ -107,7 +107,20 @@ export function buildFactPack(
   if (state.candidateTarget != null && state.candidateTarget > 0) {
     pack.candidateExpectedCtc = state.candidateTarget;
   }
-  if (state.band) {
+  /* Bug 3 fix (2026-05-18) — phase-gate budgetBand. Pre-anchor phases
+   * (opening / range-disclosure / probe-expectations) must not see the
+   * internal band range; leaking it to the LLM is the upstream root cause
+   * of the "₹23 to ₹32.2 lakhs" band-leak symptom. The band is only safe
+   * once the AI has actually anchored (offer-presented onward) or is in
+   * a terminal-accept context. */
+  const BAND_SAFE_PHASES = new Set<NegotiationPhase>([
+    "offer-presented",
+    "counter-offer",
+    "lever-explore",
+    "closing-push",
+    "accepted",
+  ]);
+  if (state.band && BAND_SAFE_PHASES.has(state.phase)) {
     pack.budgetBand = {
       low: state.band.initialOffer,
       high: state.band.maxStretch,
