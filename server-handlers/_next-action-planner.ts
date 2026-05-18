@@ -790,7 +790,6 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         rationale:
           `PDF#34 Fix 3 — candidate requested clarification at turn ${state.turnIndex}; ` +
           `re-explain the prior question's jargon inline before advancing.`,
-        askedTopic: null,
         actionKind: "clarify-prior-question",
       },
     };

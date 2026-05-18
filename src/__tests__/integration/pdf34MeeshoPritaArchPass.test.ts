@@ -50,10 +50,6 @@ import {
   planNextAction,
 } from "../../../server-handlers/_next-action-planner";
 import { renderCanonicalProse } from "../../../server-handlers/_canonical-prose";
-import {
-  extractComponentBreakdown,
-} from "../../../server-handlers/_component-breakdown";
-
 const BAND: NegotiationBand = {
   initialOffer: 30,
   maxStretch: 45,
@@ -67,7 +63,6 @@ const newState = (overrides: Partial<NegotiationState> = {}): NegotiationState =
     role: "Senior Product Designer",
     company: "Meesho",
     band: BAND,
-    applicableYoe: 6,
   }),
   ...overrides,
 });

@@ -421,5 +421,12 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "meta",
         hint: "The recruiter heard you repeat yourself and is course-correcting — a healthy signal, but watch that the next move actually advances the topic.",
       };
+    /* PDF#34 Fix 3 — clarification inline-define (2026-05-18) */
+    case "clarify-prior-question":
+      return {
+        label: "Clarifying the prior question",
+        family: "meta",
+        hint: "The recruiter heard you ask for clarification on a term they just used and is defining it inline — a strong signal that you can ask for plain English without losing ground.",
+      };
   }
 }
