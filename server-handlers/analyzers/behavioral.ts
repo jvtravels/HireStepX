@@ -30,6 +30,13 @@ import {
   detectCompetencies,
   topCompetenciesForTrack,
 } from "./_behavioral-competencies";
+import {
+  classifyAiProbe,
+  classifyFailureResponse,
+  hasLearningReflection,
+  isFailureQuestion,
+  isVagueAnswer,
+} from "./_behavioral-probing";
 
 type StarPart = "S" | "T" | "A" | "R";
 
@@ -125,7 +132,7 @@ function normalizeQuestion(text: string): string {
 
 export const behavioralAnalyzer: FocusAnalyzer = {
   focus: "behavioral",
-  version: "behavioral-v2",
+  version: "behavioral-v3",
 
   async analyze({ session }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -146,6 +153,16 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     let unquantifiedCount = 0;
     let acceptedMissingR = 0;
 
+    /* Phase-3 probing-depth counters. The pairing is "user answer →
+     * next AI turn". We compute them inline with the STAR loop so a
+     * single pass over the transcript covers both. */
+    let aiProbedDepth = 0;
+    let aiProbedOwnership = 0;
+    let aiAcceptedVague = 0;
+    let learningReflections = 0;
+    let failureQuestionAsked = false;
+    let failureResponse: "owns" | "deflects" | "neutral" | null = null;
+
     const seenQuestions: { idx: number; norm: string }[] = [];
     const starBreakdown: NonNullable<NonNullable<AnalyzerResult["meta"]>["behavioral"]>["starBreakdown"] = [];
 
@@ -155,6 +172,19 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       if (!text) continue;
 
       if (isAiTurn(turn)) {
+        /* Phase-3: tag the first AI turn that asks a failure-style
+         * question and capture the user's classification on the NEXT
+         * substantive user reply. We capture only the first failure
+         * Q/A pair because the report renders one card. */
+        if (!failureQuestionAsked && isFailureQuestion(text)) {
+          failureQuestionAsked = true;
+          const nextUser = transcript
+            .slice(i + 1, i + 6)
+            .find((t) => isUserTurn(t) && (t.text || "").trim().length >= 60);
+          if (nextUser) {
+            failureResponse = classifyFailureResponse(nextUser.text || "");
+          }
+        }
         const norm = normalizeQuestion(text);
         // Only dedupe substantive AI prompts, not "got it" / "nice" etc.
         if (norm.length > 30) {
@@ -219,6 +249,25 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         quantified,
         competencies,
       });
+
+      /* Phase-3 probing pass: classify the AI turn that follows this
+       * user answer. We look at the next 2 AI turns (some sessions
+       * interleave a brief acknowledgement before the real probe). */
+      const nextAi = transcript.slice(i + 1, i + 4).find(isAiTurn);
+      if (nextAi) {
+        const probe = classifyAiProbe(nextAi.text || "");
+        if (probe.probedDepth) aiProbedDepth += 1;
+        if (probe.probedOwnership) aiProbedOwnership += 1;
+        /* "Accepted vague" = the user answer was vague AND the AI's
+         * next turn neither probed for depth nor for ownership. This
+         * is the false-pass we want to catch: the AI rolled on
+         * without pushing back. */
+        if (isVagueAnswer(text) && !probe.probedDepth && !probe.probedOwnership) {
+          aiAcceptedVague += 1;
+        }
+      }
+
+      if (hasLearningReflection(text)) learningReflections += 1;
     }
 
     if (userAnswerCount > 0) {
@@ -272,6 +321,25 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       if (unknownCompanies.size >= 2) flags.add("unverifiable_companies");
     }
 
+    /* Phase-3 flags. Thresholds are conservative: 2+ vague accepts is
+     * a pattern; one could be the AI moving on intentionally because
+     * the question was already answered. Same for missing learning
+     * reflection — gated to sessions with ≥4 substantive answers so
+     * short screens don't trip it. Set BEFORE coaching so the
+     * coaching block below reads a fully-populated flag set. */
+    if (aiAcceptedVague >= 2) flags.add("ai_accepted_vague");
+    if (userAnswerCount >= 4 && learningReflections === 0) {
+      flags.add("no_learning_reflection");
+    }
+    if (failureQuestionAsked && failureResponse === "deflects") {
+      flags.add("deflects_failure");
+    }
+    if (failureQuestionAsked && failureResponse === "owns") {
+      /* Positive signal — kept in flags so the report can render it
+       * as a strength badge alongside negative flags. */
+      flags.add("owns_failure");
+    }
+
     const coachingBits: string[] = [];
     if (flags.has("weak_star_structure")) {
       coachingBits.push("Practice answering with all four STAR parts — many answers skipped Situation or Task framing.");
@@ -281,6 +349,18 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("unquantified_answers")) {
       coachingBits.push("Add concrete numbers (%, hours saved, users impacted) to make impact credible.");
+    }
+    /* Phase-3 coaching. Aim per the plan: tell the candidate not just
+     * that the AI rolled past a vague answer, but what to do about it
+     * (preempt with first-person framing). */
+    if (flags.has("ai_accepted_vague")) {
+      coachingBits.push("Some answers stayed at 'we' / 'the team' — lead with what *you* personally did so the interviewer doesn't have to dig.");
+    }
+    if (flags.has("no_learning_reflection")) {
+      coachingBits.push("Close stories with what you took away — 'In hindsight I would have…' lands well in Indian behavioral rounds.");
+    }
+    if (flags.has("deflects_failure")) {
+      coachingBits.push("The failure question landed on blame routing — own the miss explicitly before naming external factors.");
     }
 
     /* Phase 2: aggregate competency counts across the session and
@@ -320,6 +400,14 @@ export const behavioralAnalyzer: FocusAnalyzer = {
            * UI) treat the keys as opaque strings. */
           competencyCounts: { ...competencyCounts },
           topCompetencies: topCompetencies.map((c) => String(c)),
+          probing: {
+            aiProbedDepth,
+            aiProbedOwnership,
+            aiAcceptedVague,
+            learningReflections,
+            failureQuestionAsked,
+            failureResponse,
+          },
         },
       };
     }

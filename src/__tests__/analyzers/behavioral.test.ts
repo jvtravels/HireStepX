@@ -307,6 +307,60 @@ describe("behavioralAnalyzer", () => {
     expect(out.coachingNotes.toLowerCase()).toMatch(/strong signals|anchor/);
   });
 
+  it("Phase-3: flags ai_accepted_vague when AI rolls past collective-framed answers", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a project."),
+          user(
+            "We kind of figured it out as a team. Everyone pitched in and the team handled it. We sort of worked through the issues.",
+          ),
+          ai("Got it. Next one?"),
+          user(
+            "The team basically managed the rollout. Everyone just sort of did their part and things worked out fine in the end.",
+          ),
+          ai("Cool, moving on."),
+          user(
+            "We generally figured it out together. The team kind of sorted the launch and things worked out for the customer.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("ai_accepted_vague");
+    expect(out.coachingNotes.toLowerCase()).toMatch(/personally did|lead with/);
+  });
+
+  it("Phase-3: deflects_failure flag fires when user blames the team on a failure question", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you failed."),
+          user(
+            "The team didn't deliver on time and management kept changing scope. The client wouldn't sign off so we couldn't ship. It was a mess.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("deflects_failure");
+    expect(out.meta?.behavioral?.probing?.failureResponse).toBe("deflects");
+  });
+
+  it("Phase-3: owns_failure flag + meta capture when user takes accountability", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("What was your biggest mistake?"),
+          user(
+            "I underestimated the migration risk and shipped late. In hindsight I should have escalated sooner. My mistake — I owned the slip in the retro.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("owns_failure");
+    expect(out.meta?.behavioral?.probing?.failureResponse).toBe("owns");
+    expect(out.meta?.behavioral?.probing?.failureQuestionAsked).toBe(true);
+  });
+
   it("ignores micro-replies (yes/ok) when scoring STAR completeness", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({

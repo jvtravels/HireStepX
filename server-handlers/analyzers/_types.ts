@@ -106,6 +106,21 @@ export interface AnalyzerMeta {
      *  pre-ranked so the UI doesn't need to know the weighting
      *  rules. Empty array when no competency hits at all. */
     topCompetencies?: string[];
+    /** Phase-3: probing-depth signal counts collected across the
+     *  session. Populated only when at least one user answer / AI
+     *  follow-up pair was scanned. Older insight rows won't have
+     *  this — render defensively. */
+    probing?: {
+      aiProbedDepth: number;
+      aiProbedOwnership: number;
+      aiAcceptedVague: number;
+      learningReflections: number;
+      failureQuestionAsked: boolean;
+      /** Failure-response classification on the user's first answer
+       *  to a failure-style AI question. `null` when no failure
+       *  question was asked, or no substantive user response. */
+      failureResponse: "owns" | "deflects" | "neutral" | null;
+    };
   };
   /** Campus-placement: tier-aware CGPA calibration the analyzer used.
    *  Surfaced in the report so the candidate sees the actual cutoff
@@ -117,6 +132,12 @@ export interface AnalyzerMeta {
     adjustedCgpaCutoff: number;   // after collegeTier adjustment
     statedCgpa: number | null;    // CGPA the candidate said aloud, if any
     targetCompany?: string | null;
+    /** Phase-3 campus archetype — finer than companyTier. One of
+     *  "tcs-ninja" | "tcs-digital" | "wipro-nlth" | "top-tier-campus"
+     *  | "unknown". Drives the archetype-specific CGPA cutoff above
+     *  and the report chip label. */
+    archetype?: string;
+    archetypeLabel?: string;
   };
 }
 
