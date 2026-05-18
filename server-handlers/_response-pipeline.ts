@@ -814,6 +814,27 @@ export function validateRestyle(
   if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
     return { valid: false, reason: "internal-terminology-leak" };
   }
+  /* PDF#33 Move A (2026-05-18) — TEASER-PROSE GATE.
+   *
+   * "Let me walk you through X" / "let me run you through Y" /
+   * "let me put X in context" are teaser patterns: the line promises
+   * content the kernel doesn't actually deliver on the same turn, so
+   * the candidate's natural next utterance ("what?" / "go on") finds
+   * the kernel jumping topics or repeating. Excised across all
+   * canonical sites; this boundary gate stops the LLM-restyle from
+   * reintroducing the pattern.
+   *
+   * Scoped to bare-teaser shapes — sentences that promise a walk-
+   * through with NO substantive content immediately after the
+   * promise. We allow "let me check with X and revert" (legitimate
+   * defer cadence with delivery commitment) by requiring the teaser
+   * to NOT be followed by a concrete deferral verb (check/confirm/
+   * run/revert) tied to an escalation anchor. */
+  const TEASER_PROSE_RE =
+    /\b(?:let\s+me\s+(?:walk|run)\s+you\s+through|let\s+me\s+put\s+(?:the\s+)?(?:fitment|number|structure|details?)\s+in\s+context)\b/i;
+  if (TEASER_PROSE_RE.test(restyled)) {
+    return { valid: false, reason: "teaser-prose" };
+  }
   /* PDF#33 (2026-05-18) — BUREAUCRATIC PROBE TERMINATOR.
    *
    * PDF#33 T5 shipped "Vesting cliff or accelerator in place? Kindly

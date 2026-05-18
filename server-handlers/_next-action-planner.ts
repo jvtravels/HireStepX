@@ -618,9 +618,17 @@ function nextComponentProbe(
    * Otherwise the bot re-asks "ESOPs in play?" after the candidate
    * already said no — exactly the Meesho/Prita repro. */
   const esopNegated = state.equityVesting?.equityExists === false;
+  /* PDF#33 Move B1 (2026-05-18) — when `variable` arrived via complement
+   * inference (`variableInferred === true`), the candidate never
+   * explicitly stated it. Treat as NOT populated so the variable probe
+   * fires for confirmation ("Quick check — variable is the remaining
+   * ₹X on that ₹Y total?"). The candidate's reply either confirms the
+   * derived number, corrects it, or denies any variable at all (which
+   * the next parse will overwrite to a non-inferred value or null). */
+  const variablePopulated = bd?.variable != null && bd?.variableInferred !== true;
   const order: { component: "base" | "variable" | "esop"; topic: DiscoveryTopic; populated: boolean }[] = [
     { component: "base", topic: "currentCtcBase", populated: bd?.base != null },
-    { component: "variable", topic: "currentCtcVariable", populated: bd?.variable != null },
+    { component: "variable", topic: "currentCtcVariable", populated: variablePopulated },
     { component: "esop", topic: "currentCtcEsop", populated: bd?.equity != null || esopNegated },
   ];
   for (const o of order) {

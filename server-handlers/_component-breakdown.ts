@@ -53,6 +53,19 @@ export interface ComponentBreakdown {
    *  (tests + kernel defaults) remain valid; absence ≡ null. */
   basePercent?: number | null;
   variablePercent?: number | null;
+  /** PDF#33 Move B1 (2026-05-18) — provenance flag for the variable
+   *  component. When true, `variable` was computed as the total−base
+   *  complement (PDF#29 Bug 1 inference), NOT explicitly disclosed.
+   *  The kernel's component-probe sequencer treats inferred variables
+   *  as "needs confirmation" rather than "satisfied", so the bot
+   *  asks "Quick check — variable is the remaining X on that Y total?"
+   *  instead of silently skipping the variable probe. Prevents the
+   *  PDF#33 base → esop jump that surprised candidates whose
+   *  intended message was "base IS my total, no variable".
+   *
+   *  Optional so existing literal constructions (tests, fixtures,
+   *  legacy serialized sessions) remain valid; absence ≡ false. */
+  variableInferred?: boolean;
   /** Did this turn name any component at all? Convenience for the
    *  applyTurn fold — we only update state when the candidate
    *  actively stated a breakdown. */
@@ -314,12 +327,22 @@ export function extractComponentBreakdown(
   /* PDF#29 Bug 1: single-sided absolute split + known total → derive
    * complement. variable = total − base (or base = total − variable).
    * Guarded: result must be strictly positive AND strictly less than
-   * the total so we don't fabricate a zero/negative component. */
+   * the total so we don't fabricate a zero/negative component.
+   *
+   * PDF#33 Move B1 (2026-05-18) — when we compute variable as the
+   * total−base complement, stamp `variableInferred = true`. Downstream
+   * (nextComponentProbe) treats inferred variables as "needs
+   * confirmation" instead of "satisfied", so the kernel asks the
+   * candidate to verify rather than silently jumping past the topic. */
   let base2 = base;
+  let variableInferred = false;
   if (totalCtc != null && totalCtc > 0) {
     if (base != null && variable == null) {
       const complement = Math.round((totalCtc - base) * 10) / 10;
-      if (complement > 0 && complement < totalCtc) variable = complement;
+      if (complement > 0 && complement < totalCtc) {
+        variable = complement;
+        variableInferred = true;
+      }
     } else if (variable != null && base == null) {
       const complement = Math.round((totalCtc - variable) * 10) / 10;
       if (complement > 0 && complement < totalCtc) base2 = complement;
@@ -330,7 +353,7 @@ export function extractComponentBreakdown(
 
   const hasAny =
     base2 != null || variable != null || equity != null || basePercent != null || variablePercent != null;
-  return { base: base2, variable, equity, basePercent, variablePercent, hasAny };
+  return { base: base2, variable, equity, basePercent, variablePercent, variableInferred, hasAny };
 }
 
 /** Merge a freshly-parsed breakdown with the prior session-state
@@ -343,12 +366,20 @@ export function mergeBreakdown(
   next: ComponentBreakdown,
 ): ComponentBreakdown {
   const p = prior ?? EMPTY;
+  /* PDF#33 Move B1 (2026-05-18) — variableInferred travels with the
+   * variable value that won the merge. If `next` supplies a fresh
+   * variable (explicit OR inferred), its inferred-flag wins. Otherwise
+   * we inherit prior's flag along with prior's variable. */
+  const variableFromNext = next.variable != null;
   const merged: ComponentBreakdown = {
     base: next.base ?? p.base,
     variable: next.variable ?? p.variable,
     equity: next.equity ?? p.equity,
     basePercent: next.basePercent ?? p.basePercent,
     variablePercent: next.variablePercent ?? p.variablePercent,
+    variableInferred: variableFromNext
+      ? next.variableInferred === true
+      : p.variableInferred === true,
     hasAny: false,
   };
   merged.hasAny =
