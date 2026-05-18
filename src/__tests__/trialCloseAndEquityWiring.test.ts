@@ -91,18 +91,32 @@ describe("ITEM 3 — planNextAction: close-confirmation when candidateSignaledCl
 });
 
 describe("ITEM 3 — analyzeEquityClarity probe wiring", () => {
-  it("equity-clarification probe fires when equity is on offer and bot reply is unclear", () => {
-    /* State with equity band and a vague equity reply */
+  it("equity-clarification probe fires when candidate has confirmed equity AND bot reply is unclear", () => {
+    /* PDF#33 (2026-05-18) — equity-clarity gate flipped from
+     * `equityExists !== false` to `equityExists === true`. The probe
+     * now requires the candidate to have explicitly confirmed equity
+     * in their current package — otherwise we risk narrating vesting
+     * details to a cash-only candidate (Meesho Sr PD T7 repro). This
+     * test pins the new positive-path behavior. */
     const state = baseState({
       phase: "counter-offer",
       highestOfferMade: 22,
       lastAiText: "We can offer some equity for senior roles.",
+      equityVesting: {
+        vestingYears: null,
+        cliffMonths: null,
+        preference: null,
+        familiarity: null,
+        strikePriceDiscussed: false,
+        valuationDiscussed: false,
+        liquidityDiscussed: false,
+        equityExists: true,
+        hasAny: true,
+      },
     });
     const next = applyCandidateAnswer(state, "What does the equity look like?");
     const fired = (next as NegotiationState & { reactiveFollowupsFired?: string[] }).reactiveFollowupsFired ?? [];
-    /* The equity-clarification probe should appear in fired OR the move picker handles it */
     const move = pickAiMove(next);
-    /* Either a probe was triggered about equity, or the reactive followup was queued */
     const equityProbeTriggered =
       fired.includes("equity-clarity") ||
       (move.lever === "probe" && (move.rationale ?? "").toLowerCase().includes("equity")) ||

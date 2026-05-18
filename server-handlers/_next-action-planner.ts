@@ -947,12 +947,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
   if (
     !isTerminalPhase(state.phase) &&
     state.band.hasEquity &&
-    /* PDF#31 BUG B (2026-05-18) — never narrate vesting/cliff when the
-     * candidate has explicitly stated no equity in the package. The
-     * narration assumes equity exists; firing it on a cash-only package
-     * produces the "hallucinated ESOP vesting" failure mode (Meesho
-     * Sr PD repro). */
-    state.equityVesting?.equityExists !== false
+    /* PDF#33 architectural flip (2026-05-18) — narrate equity ONLY when
+     * the candidate has *explicitly confirmed* equity exists. Prior
+     * gate was `equityExists !== false`, which lets `null` (unknown)
+     * through; combined with regex-only negation detection that misses
+     * colloquial denials like "nothing like it" / "we don't get any",
+     * this shipped equity-vesting walkthroughs to cash-only candidates
+     * (Meesho Sr PD T7). The default-narrate posture is wrong for a
+     * probe topic — silence is correct when status is unknown. We now
+     * only narrate on confirmed `=== true`. */
+    state.equityVesting?.equityExists === true
   ) {
     const equityFired = (state.reactiveFollowupsFired ?? []).includes("equity-clarity");
     if (!equityFired) {
@@ -973,7 +977,13 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
              * recruiter prose; the `ask` here is the fallback safety
              * net for that case. The four clarity-pillars belong in
              * the rationale, not the ask. */
-            ask: "On the equity piece — let me walk you through how the vesting and cliff are structured for this grade.",
+            /* PDF#33 (2026-05-18) — substantive ask, not a teaser.
+             * Prior fallback was "let me walk you through how the
+             * vesting and cliff are structured for this grade" which
+             * promised content the kernel never delivered. Now asks the
+             * candidate to disclose schedule + cliff, which is the
+             * actual signal the equity-clarity probe needs. */
+            ask: "On the equity piece — what's the vesting schedule and cliff on your current grant?",
             trigger: "equityUnclear",
             topic: "equity-clarity",
             satisfiesTopic: "equity-clarity",

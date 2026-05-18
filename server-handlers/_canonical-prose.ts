@@ -717,7 +717,15 @@ function renderCanonicalProseBody(
           || "That's a meaningful jump on your current fitment — help me understand what's anchoring the expectation at that level.";
       }
       if (topic === "equity-clarity") {
-        return "On the equity piece — let me walk you through how the vesting and cliff are structured for this grade.";
+        /* PDF#33 (2026-05-18) — substantive probe, not a teaser. Prior
+         * prose ("let me walk you through how the vesting and cliff are
+         * structured for this grade") promised a walkthrough that the
+         * kernel never delivered: next turn the bot either repeated the
+         * teaser or jumped elsewhere. Real recruiters ask the candidate
+         * to share their schedule — that's an actual question with an
+         * actual answer, gated upstream on equityExists === true so it
+         * only fires when the candidate has confirmed equity. */
+        return "On the equity piece — what's the vesting schedule and cliff on your current grant?";
       }
       if (topic === "number-clarification") {
         const n = state.candidateCurrentCtc ?? state.candidateTarget ?? null;
@@ -1173,10 +1181,13 @@ export function buildRestylePrompt(
     `INSTRUCTIONS (strict):\n` +
     `- Use Indian English cadence. Avoid US-tech-recruiter idiom.\n` +
     `- BANNED phrases (do NOT use, ever): ${BANNED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "rounding out the package", "we're aligned", "package" (as a comp noun). Also AVOID American-startup register: "does that work for you?" (prefer "how does this sound?" / "let me know your thoughts"), "start date" (use "joining date"), "compensation package" (use "CTC" / "fitment"), "I'd love to" / "excited to" (too American).\n` +
-    `- PREFERRED phrasing (Indian recruiter cadence): ${PREFERRED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "looking at the structure" (not "rounding out the package"). Indian-HR register markers you SHOULD feel free to use when natural: "as per company policy", "kindly", "revert" (= reply back, "kindly revert by EOD"), "do the needful", "in-hand vs CTC", "joining date" (NOT "start date"), "notice period buyout", "let me check with the panel" / "let me check with leadership".\n` +
+    /* PDF#33 (2026-05-18) — PLAIN-ENGLISH BIAS. PDF#33 T5 shipped "Vesting cliff or accelerator in place? Kindly revert with details." Both "in place" and "kindly revert with details" are corporate-jargon templates that ring false on a simple disclosure probe. The IDIOM CAP (below) is supposed to gate this, but a single line carrying ONE idiom can still feel stiff if it's a closing-imperative ("kindly revert", "do the needful"). The bias here: on short probe lines, idioms get *zero* slots, not one. */
+    `- BANNED on probe / disclosure lines (asking the candidate to share info): "kindly revert", "revert with details", "kindly share", "do the needful", "in place" (as in "vesting cliff in place"), "as per company policy" (as a question terminator). These are bureaucratic closers, not natural recruiter speech. A probe ends with a clean question mark, not a directive.\n` +
+    `- PREFERRED phrasing (Indian recruiter cadence): ${PREFERRED_RECRUITER_IDIOM.map((p) => `"${p}"`).join(", ")}, "looking at the structure" (not "rounding out the package"). Indian-HR register markers you SHOULD feel free to use when natural and SPARINGLY: "kindly", "revert" (= reply back, ONLY in scheduling context like "kindly revert by EOD" — not as a probe terminator), "do the needful" (post-acceptance ops only), "in-hand vs CTC", "joining date" (NOT "start date"), "notice period buyout", "let me check with the panel" / "let me check with leadership", "as per company policy" (ONLY as a statement-of-fact, never as a probe terminator).\n` +
+    `- PLAIN-ENGLISH BIAS: if the canonical line is short and asks one thing, the restyle should also be short and ask one thing. Prefer "what's the vesting schedule?" over "kindly share the vesting structure as per company policy"; prefer "how does the base split look?" over "kindly revert with the base-split details". Recruiter prose should sound like a human, not a form letter.\n` +
     `- You MAY change word order, contractions, opening phrases.\n` +
     `- If the canonical line opens with an acknowledgement of the candidate's prior turn ("Noted on …", "Got it on …", "Understood on …", "Appreciate the colour …"), KEEP an acknowledgement gesture in your restyle — you may rephrase it (e.g. "Thanks for that —", "Fair enough —") but do not strip it. Do NOT use the formulaic "Right, on X —" template; vary the lead.\n` +
-    `- IDIOM CAP: use AT MOST ONE Indian-recruiter idiom from the preferred list per utterance. Stacking two or more (e.g. "fitment" + "as per the band" + "broadly aligned") reads as parody.\n` +
+    `- IDIOM CAP: use AT MOST ONE Indian-recruiter idiom from the preferred list per utterance. Stacking two or more (e.g. "fitment" + "as per the band" + "broadly aligned") reads as parody. On short PROBE lines (<= 15 words asking one question) the cap drops to ZERO — keep it plain.\n` +
     `- DO NOT pad with tautologies like "the total CTC as per your current band" — the candidate's current CTC is already band-anchored; "what's your current CTC?" suffices.\n` +
     `- GRAMMAR: a sentence that begins with a declarative connective ("Fair enough,", "Got it,", "Sure,", "Right,") must end with "." not "?". If you want a question, build it as a clean interrogative without the declarative lead.\n` +
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +

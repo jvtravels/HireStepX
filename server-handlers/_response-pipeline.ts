@@ -814,6 +814,24 @@ export function validateRestyle(
   if (INTERNAL_TERMINOLOGY_LEAK_RE.test(restyled)) {
     return { valid: false, reason: "internal-terminology-leak" };
   }
+  /* PDF#33 (2026-05-18) — BUREAUCRATIC PROBE TERMINATOR.
+   *
+   * PDF#33 T5 shipped "Vesting cliff or accelerator in place? Kindly
+   * revert with details." — a probe (asking the candidate to disclose)
+   * with a corporate-jargon imperative tail ("Kindly revert with
+   * details"). The system-prompt now bans this construction on probe
+   * lines, but the prompt is advisory and the LLM occasionally still
+   * emits the pattern. Boundary check rejects so the canonical (plain-
+   * English probe) ships instead.
+   *
+   * Scoped to lines containing a `?` (i.e. actual probes) so a
+   * legitimate scheduling line ("kindly revert by EOD") in a non-probe
+   * context can still pass. */
+  const BUREAUCRATIC_PROBE_TERMINATOR_RE =
+    /\?[^?]*\b(?:kindly\s+(?:revert|share|confirm)|revert\s+with\s+(?:details|the\s+details)|do\s+the\s+needful)\b/i;
+  if (BUREAUCRATIC_PROBE_TERMINATOR_RE.test(restyled)) {
+    return { valid: false, reason: "bureaucratic-probe-terminator" };
+  }
   /* LN4 / Audit Pass 4 (PDF#27, 2026-05-17) — sentence-length cap.
    * Sits BEFORE the 2x-length gate so the more specific reason fires
    * when the LLM emits over-long sentences (even if total length also
