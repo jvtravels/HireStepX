@@ -729,6 +729,45 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* PDF#30 architectural pass (2026-05-18) — stalled-discovery cap.
+   * Sibling to the explicit-frustration branch below: even when the
+   * candidate hasn't VOICED frustration, if the bot has emitted a
+   * probe-family lever on the last 4 consecutive turns, we are by
+   * definition looping on discovery. PDF#30 T18/T20/T22 was the
+   * canonical example — three identical "what's your CTC?" probes
+   * in a row before the candidate finally pushed back. This rule
+   * promotes acknowledge-and-recover BEFORE the candidate has to
+   * complain. Single-fire per session via `stalled-recovery` marker
+   * pushed into leversFired by applyAiMove (downstream); subsequent
+   * stalls fall through to the normal cascade. */
+  const PROBE_FAMILY: ReadonlySet<string> = new Set([
+    "probe",
+    "probe-justification",
+  ]);
+  const recent = state.leversUsed.slice(-4);
+  const allProbes = recent.length >= 4 && recent.every((l) => PROBE_FAMILY.has(l));
+  /* Stalled-discovery is the conjunction of (a) 4 consecutive probes
+   * AND (b) the candidate has bound NO salary disclosure across that
+   * window. If currentCtc or target has materialized, probes are
+   * progressing through OTHER topics — not stalled. This guard is
+   * deliberately conservative: it only fires when the parser came
+   * back empty 4 times in a row.
+   * No explicit single-fire guard needed: once acknowledge-and-recover
+   * lands in leversUsed, the streak breaks. */
+  const noSalaryDisclosed = state.candidateCurrentCtc == null && state.candidateTarget == null;
+  if (allProbes && noSalaryDisclosed) {
+    return {
+      kind: "acknowledge-and-recover",
+      satisfiesTopic: "acknowledge-and-recover",
+      _move: {
+        lever: "acknowledge-and-recover",
+        newTotalLpa: null,
+        rationale: "Stalled-discovery cap (PDF#30): 4 consecutive probe-family turns; promote acknowledge-and-recover before the candidate has to push back.",
+        actionKind: "acknowledge-and-recover",
+      },
+    };
+  }
+
   /* PDF#29 Bug 7 (2026-05-18) — frustration recovery is the highest-
    * priority lever (sits above every other branch). Fires when the
    * candidate's last utterance carried a "you're looping on me" cue.
