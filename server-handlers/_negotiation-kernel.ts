@@ -46,6 +46,7 @@ import {
   ROUND_PERSONA_SEQUENCE,
 } from "./_negotiation-rounds";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
+import { classifyCandidateArchetype } from "./_candidate-archetype";
 import { classifyNumberRoles } from "./_number-role-classifier";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
@@ -696,7 +697,15 @@ export interface NegotiationState {
   /* Candidate-stated facts. Folded in via applyCandidateAnswer or
      foldFactsIntoState — set ONCE per turn, never re-derived from
      transcript. Null = not stated. */
-  candidateTarget: number | null;        // their ask (LPA, last-stated-wins)
+  candidateTarget: number | null;        // their TOTAL-package ask (LPA, last-stated-wins)
+  /** Audit Fix (2026-05-19) — Fixed-component target. Separate from
+   *  candidateTarget so a fixed-only restatement ("target is ₹26 LPA
+   *  fixed at minimum") does NOT overwrite a previously stated total
+   *  target ("expecting ₹32 LPA total"). The number-role classifier
+   *  routes a target here when its adjacency window names "fixed" /
+   *  "base" / "basic" without a "total"/"ctc"/"overall" override.
+   *  Optional in serialized form for back-compat — absence ≡ null. */
+  candidateTargetFixed: number | null;
   /** Bug-report 12 (2026-05-14) — the numeric counter the candidate
    *  parsed THIS turn (LPA). Distinct from `candidateTarget` which is
    *  sticky from intake / earliest anchor; this field is the per-turn
@@ -1463,6 +1472,16 @@ export interface TurnDelta {
    *  applyAiMove (sticky upgrade — firm overrides soft overrides none,
    *  never downgrades within a session). */
   urgencySignal?: "none" | "soft" | "firm";
+  /** QA v3 round 3 (2026-05-19) — classified candidate archetype from
+   *  `_candidate-archetype.ts`. Per-turn classification on the raw
+   *  utterance; `null` when no signal fires. The planner uses this to
+   *  disambiguate routing when wired-profile flags don't fully describe
+   *  the candidate's stance (e.g. P09_NON_CASH_FOCUS suppresses counter-
+   *  offer; P15_HARD_ANCHOR forces band-disclosure-deflect over generic
+   *  acknowledge). Pure metadata — no state mutation. */
+  candidateArchetype?:
+    | import("./_candidate-archetype").CandidateArchetype
+    | null;
 }
 
 export const EMPTY_TURN_DELTA: TurnDelta = {
@@ -1479,6 +1498,7 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
   freshGradDisclosed: false,
   candidateSentiment: "neutral",
   urgencySignal: "none",
+  candidateArchetype: null,
 };
 
 /** Perfect 2 (2026-05-16) — coarse emotional sentiment classifier for
@@ -1494,6 +1514,70 @@ export const EMPTY_TURN_DELTA: TurnDelta = {
  *  → frustrated wins because frustration drives the prefix decision).
  *  Default is "neutral". Downstream renderSentimentPrefix suppresses
  *  the prefix for decisive + neutral. */
+/* Audit Fix (2026-05-19) — Mask target-context spans of a candidate
+ * utterance so downstream DISCLOSURE-context parsers (specifically
+ * extractComponentBreakdown) don't bind target-LPA values as if they
+ * were the candidate's currently-paid breakdown.
+ *
+ * A target clause starts at a target-marking cue ("target", "expecting",
+ * "want", "looking for", "asking for", "ideal", "would like", "anchor")
+ * AND runs until the next sentence boundary (`.` `!` `?` `\n`) OR a
+ * clause break that resets to a non-target context. Within the masked
+ * span we replace every non-whitespace, non-sentence-boundary char with
+ * a space so regex byte-offsets are preserved (no downstream parser
+ * relies on contiguous character positions across the mask boundary).
+ *
+ * Conservative: we mask only when an UNAMBIGUOUS target cue fires.
+ * Hedge words alone ("at minimum", "at least") do NOT trigger a mask
+ * — they're modifiers, not target markers. */
+const TARGET_CLAUSE_CUES = [
+  /\btarget\s+is\b/i,
+  /\bmy\s+target\b/i,
+  /\bi.?m\s+expecting\b/i,
+  /\bi\s+(?:am\s+)?expecting\b/i,
+  /\bexpecting\s+(?:around|about|at|near)?\b/i,
+  /\bi\s+want\b/i,
+  /\bi.?d\s+like\b/i,
+  /\bi\s+would\s+like\b/i,
+  /\blooking\s+for\b/i,
+  /\basking\s+for\b/i,
+  /\bideal(?:ly)?\b/i,
+  /\bhoping\s+for\b/i,
+  /\baim(?:ing)?\s+for\b/i,
+  /\banchor(?:ing)?\s+(?:around|at|on)?\b/i,
+  /\bcan\s+we\s+revisit\b/i,
+  /* Audit Fix (2026-05-19) — conditional close phrasings. When the
+   * candidate says "if you can get fixed to ₹X, I'm ready to move
+   * forward" they are stating a TARGET condition, not disclosing their
+   * current fixed. The ask is forward-looking; the number must not
+   * leak into candidateComponentBreakdown.base. */
+  /\bif\s+you\s+can\s+(?:get|make|push|move|bring|raise|bump|stretch)\b/i,
+  /\bif\s+(?:the\s+)?fixed\s+(?:can\s+)?(?:get|go|move|push|stretch)/i,
+  /\bget\s+(?:the\s+)?fixed\s+to\b/i,
+  /\bpush\s+(?:the\s+)?fixed\s+to\b/i,
+];
+function maskTargetClauses(text: string): string {
+  if (!text) return text;
+  const out: string[] = text.split("");
+  for (const cue of TARGET_CLAUSE_CUES) {
+    const m = cue.exec(text);
+    if (!m || m.index == null) continue;
+    /* Mask from the cue's start up to the next sentence boundary. */
+    const start = m.index;
+    let end = text.length;
+    for (let i = start; i < text.length; i++) {
+      if (/[.!?\n]/.test(text[i])) {
+        end = i;
+        break;
+      }
+    }
+    for (let i = start; i < end; i++) {
+      if (!/\s/.test(out[i])) out[i] = " ";
+    }
+  }
+  return out.join("");
+}
+
 function detectCandidateSentiment(
   rawCandidateText: string,
 ): TurnDelta["candidateSentiment"] {
@@ -1714,6 +1798,17 @@ export function computeTurnDelta(
    * field state.cumulativeUrgency is upgraded by finalize() in applyCandidate-
    * Answer using this value; the delta field stays as the per-turn read. */
   d.urgencySignal = detectUrgencySignal(rawAnswer);
+
+  /* QA v3 round 3 (2026-05-19) — per-turn archetype classification.
+   * Reads the post-state candidateProfile so the classifier can boost on
+   * wired-profile flags (e.g. wantsHigherBase boosts P18_BREAKUP_PUSHBACK
+   * confidence). Stored on the delta so planReactiveFollowup can read it
+   * without re-running regex. */
+  const classified = classifyCandidateArchetype(
+    rawAnswer,
+    post.candidateProfile ?? null,
+  );
+  d.candidateArchetype = classified?.archetype ?? null;
 
   return d;
 }
@@ -1962,6 +2057,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
      * of headroom, too tight for as-per-band reality. */
     maxTurns: input.maxTurns ?? 20,
     candidateTarget: null,
+    candidateTargetFixed: null,
     lastCandidateCounterLpa: null,
     firstAnchoredTarget: null,
     candidateCurrentCtc: null,
@@ -2447,6 +2543,13 @@ export interface ParsedAnswer {
   /* Candidate stated their target as a range ("30-35 LPA") rather than
      a single number. Set on the turn it's detected; sticky on state. */
   targetAsRange: boolean;
+  /** Audit Fix (2026-05-19) — Component scope of the bound `target`.
+   *  Passed through from the number-role classifier. "total" by default,
+   *  "fixed" when the candidate tagged the target with a base/fixed
+   *  qualifier, null when no target was bound. The kernel routes
+   *  "fixed"-scoped targets to candidateTargetFixed instead of
+   *  candidateTarget. */
+  targetComponent?: "total" | "fixed" | null;
   /* Voss / interviewing.io tactics detected this turn. Multiple may
      fire on the same answer. */
   vossTactics: VossTactic[];
@@ -2774,7 +2877,7 @@ export function parseCandidateAnswer(
     return {
       target: null, currentCtc: null, competing: null,
       signalsAcceptance: false, signalsWalkAway: false,
-      targetAsRange: false, vossTactics: [], infoAsked: [],
+      targetAsRange: false, targetComponent: null, vossTactics: [], infoAsked: [],
       signalsCompetingExistsWithoutNumber: false,
       componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
       rationale: null,
@@ -2833,6 +2936,7 @@ export function parseCandidateAnswer(
   const competing = roles.competing;
   const target = roles.target;
   const targetAsRange = roles.targetAsRange;
+  const targetComponent = roles.targetComponent;
 
   /* Competing-without-number: candidate has signaled competing exists
      but refuses or omits to share magnitude.
@@ -2865,7 +2969,18 @@ export function parseCandidateAnswer(
   const totalForSplitComplement =
     (priorTotalCtc != null && priorTotalCtc > 0 ? priorTotalCtc : null) ??
     (typeof currentCtc === "number" && currentCtc > 0 ? currentCtc : null);
-  const componentBreakdown = extractComponentBreakdown(a, totalForSplitComplement);
+  /* Audit Fix (2026-05-19) — Mask target-context clauses before
+   * feeding the disclosed-breakdown parser. Target utterances
+   * ("my target is ₹26 LPA fixed at minimum") describe what the
+   * candidate WANTS, not what they're CURRENTLY paid; without this
+   * mask the breakdown parser would update candidateComponentBreakdown
+   * .base = 26 even though the candidate's actual current fixed is
+   * unchanged (e.g. 18 from an earlier disclosure). The masker
+   * replaces target clauses with whitespace of the same length so all
+   * regex offsets remain stable and only DISCLOSURE-context language
+   * reaches extractComponentBreakdown. */
+  const breakdownInput = maskTargetClauses(a);
+  const componentBreakdown = extractComponentBreakdown(breakdownInput, totalForSplitComplement);
   /* Phases 11/13/14/15/16 parsers — each returns a structured record
    * with `hasAny` (or null for the rationale singleton). They run
    * over the SAME normalized text so a single utterance "I'm in
@@ -2910,7 +3025,7 @@ export function parseCandidateAnswer(
     currentCtc: clampInr(currentCtc),
     competing: clampInr(competing),
     signalsAcceptance: signalsAcceptanceFinal, signalsWalkAway,
-    targetAsRange, vossTactics, infoAsked,
+    targetAsRange, targetComponent, vossTactics, infoAsked,
     signalsCompetingExistsWithoutNumber,
     componentBreakdown,
     rationale: hikeRationale.rationale,
@@ -3203,17 +3318,27 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      also records the FIRST anchored target, frozen — used by the
      red-flag layer to detect upward drift. */
   if (parsed.target != null) {
-    /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
-       Only count as a fresh counter when the parsed number is
-       materially different from the prior sticky candidateTarget; a
-       candidate re-asserting the same intake number doesn't unlock
-       the auto-accept gate. */
-    const prior = state.candidateTarget;
-    if (prior == null || Math.abs(prior - parsed.target) > 0.05) {
-      next.lastCandidateCounterLpa = parsed.target;
+    /* Audit Fix (2026-05-19) — Target-component routing. When the
+     * classifier flags the target as fixed-scoped ("₹26 LPA fixed at
+     * minimum"), it goes to candidateTargetFixed and does NOT touch
+     * candidateTarget (which holds the total-package anchor). Only
+     * total-scoped targets feed lastCandidateCounterLpa /
+     * firstAnchoredTarget — those signals are about the overall ask. */
+    if (parsed.targetComponent === "fixed") {
+      next.candidateTargetFixed = parsed.target;
+    } else {
+      /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
+         Only count as a fresh counter when the parsed number is
+         materially different from the prior sticky candidateTarget; a
+         candidate re-asserting the same intake number doesn't unlock
+         the auto-accept gate. */
+      const prior = state.candidateTarget;
+      if (prior == null || Math.abs(prior - parsed.target) > 0.05) {
+        next.lastCandidateCounterLpa = parsed.target;
+      }
+      next.candidateTarget = parsed.target;
+      if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
     }
-    next.candidateTarget = parsed.target;
-    if (next.firstAnchoredTarget == null) next.firstAnchoredTarget = parsed.target;
     /* Sprint B.3 (2026-05-15) — in-hand framing disambiguation. If the
      * candidate's anchor utterance frames the number as in-hand /
      * take-home, flag it and back-compute a CTC-equivalent so downstream
@@ -4107,7 +4232,14 @@ function derivePhaseInner(state: NegotiationState): NegotiationPhase {
     return "closing-push";
   }
 
-  const target = state.candidateTarget;
+  /* PDF#37 BUG-C/D (2026-05-20) — phase derivation must also consult
+   * candidateTargetFixed. When the candidate states a fixed-component
+   * target ("I want ₹26 LPA fixed") without a separate total-target, the
+   * session was stuck in probe-expectations because `target` was null,
+   * which caused planNextAction to regress to discovery-probe even after
+   * an anchor offer was on the table. Folding candidateTargetFixed into
+   * the target gate drives the legitimate transition to counter-offer. */
+  const target = state.candidateTarget ?? state.candidateTargetFixed;
   /* Negotiation-flow redesign commit 6 (2026-05-15) — sticky-floor
    * clauses (POST_PROBE_PHASES / isPostProbe / alreadyProbed /
    * candidateEngagedAtAll) removed. Monotonicity is now enforced
@@ -4382,18 +4514,30 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     /* ArchRec 2 (2026-05-16) — narrow the fallback chain to DiscoveryTopic.
      * move.askedTopic is already typed; the actionKind/lever fallback is
      * validated against KNOWN_TOPICS (dev throws on unknown; prod widens
-     * via cast for back-compat with pre-typing serialized sessions). */
+     * via cast for back-compat with pre-typing serialized sessions).
+     *
+     * Audit Fix (2026-05-19) — Non-probe action kinds (round-transition,
+     * etc.) legitimately carry NO askedTopic and must NOT feed the
+     * askedTopics ledger. Mirrors the planner's `PROBE_PRODUCING_KINDS`
+     * single-source-of-truth — when actionKind is in the non-probe set
+     * we skip the ledger push and short-circuit before the validator
+     * would otherwise throw on an unregistered DiscoveryTopic. */
+    const NON_PROBE_ACTION_KINDS: ReadonlySet<string> = new Set([
+      "round-transition",
+      "reactive-followup" /* generic reactive carrier — askedTopic supplied when probe-shaped */,
+    ]);
     const fallbackRaw =
       (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
       move.lever;
     let topicKey: DiscoveryTopic | null = move.askedTopic ?? null;
-    if (topicKey == null && fallbackRaw) {
+    if (topicKey == null && fallbackRaw && !NON_PROBE_ACTION_KINDS.has(fallbackRaw)) {
       if (isDiscoveryTopic(fallbackRaw)) {
         topicKey = fallbackRaw;
       } else if (process.env.NODE_ENV !== "production") {
         throw new Error(
           `applyAiMove: fallback topic '${fallbackRaw}' is not a registered DiscoveryTopic. ` +
-            `Add it to the DiscoveryTopic union + KNOWN_TOPICS in _negotiation-kernel.ts.`,
+            `Add it to the DiscoveryTopic union + KNOWN_TOPICS in _negotiation-kernel.ts, ` +
+            `or to NON_PROBE_ACTION_KINDS if it legitimately bypasses the askedTopics ledger.`,
         );
       } else {
         topicKey = fallbackRaw as DiscoveryTopic;

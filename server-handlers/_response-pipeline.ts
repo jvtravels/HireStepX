@@ -156,7 +156,7 @@ async function generateRestyledCanonical(
   /* LN7 / Audit Pass 4 (PDF#27, 2026-05-17) — strip typographic curly
    * quotes BEFORE validateRestyle so downstream regex matches see
    * straight quotes. Silent normalization — not a rejection reason. */
-  restyled = stripCurlyQuotes((restyled || "").trim());
+  restyled = stripWrappingQuotes(stripCurlyQuotes((restyled || "").trim()));
 
   const validation = validateRestyle(canonical, restyled, state, action);
   if (!validation.valid) {
@@ -648,10 +648,19 @@ export const NEXT_ACTION_CONTRACT: Partial<Record<NextAction["kind"], NextAction
     bannedTokens: [/\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/],
   },
   /* Phase 2 Indian-HR redesign (2026-05-17) — band-disclosure-deflect.
-   * No internal numbers leaked; "panel" anchors the deflection. */
+   * "panel" anchors the deflection.
+   * PDF#37 BUG-B (2026-05-20) — numberPolicy relaxed from "forbidden"
+   * to "optional". The deflect's job is to refuse INTERNAL band
+   * disclosure (band ceiling / range); when a point-offer is already
+   * on the table from a prior anchor turn, the deflect MAY recap that
+   * already-disclosed number so the candidate isn't confused into
+   * thinking the offer was withdrawn. The "panel" required token plus
+   * the bannedTokens (range-dash + "between") still block real band
+   * leakage; a single ₹XL recap of the on-table offer is permitted. */
   "band-disclosure-deflect": {
-    numberPolicy: "forbidden",
+    numberPolicy: "optional",
     requiredTokens: [/\bpanel\b/i],
+    bannedTokens: [/\d+\s*(?:[-\u2013\u2014]|\bto\b)\s*\d/, /\bbetween\b/i],
   },
   /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance docs req.
    * Crack 6 (2026-05-17) — contract↔prose drift fix. The canonical prose
@@ -790,6 +799,32 @@ export function stripCurlyQuotes(s: string): string {
   return s
     .replace(/[\u2018\u2019\u02BC\u02BB]/g, "'")
     .replace(/[\u201C\u201D]/g, '"');
+}
+
+/** PDF#37 BUG-E (2026-05-20) — strip surrounding wrapping quotes.
+ *  LLM restyle occasionally returns the recruiter line wrapped in
+ *  outer quotation marks ("..."), which leaks into the chat UI as a
+ *  spoken-quote artifact. Only strip when BOTH ends carry the same
+ *  quote AND no inner quote of the same flavour is opened — i.e. it's
+ *  a wrapper, not legitimate dialogue. Idempotent; runs after curly
+ *  quotes have already been normalized to straight quotes. */
+export function stripWrappingQuotes(s: string): string {
+  let out = s.trim();
+  for (let i = 0; i < 2; i++) {
+    if (out.length < 2) break;
+    const first = out[0];
+    const last = out[out.length - 1];
+    if ((first === '"' || first === "'") && first === last) {
+      const inner = out.slice(1, -1);
+      // Reject if inner already contains a matching quote (real dialogue).
+      if (!inner.includes(first)) {
+        out = inner.trim();
+        continue;
+      }
+    }
+    break;
+  }
+  return out;
 }
 
 /** LN3 / Audit Pass 4 (PDF#27, 2026-05-17) — em-dash vs en-dash policy.

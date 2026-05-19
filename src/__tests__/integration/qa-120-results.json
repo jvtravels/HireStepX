@@ -1,0 +1,1958 @@
+{
+  "generatedAt": "2026-05-19",
+  "total": 120,
+  "counts": {
+    "PASS": 0,
+    "PARTIAL": 21,
+    "FAIL": 99,
+    "INCONCLUSIVE": 0
+  },
+  "results": [
+    {
+      "tcId": "TC001",
+      "stage": "S01_START",
+      "persona": "P03",
+      "severity": "Critical",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: variable, breakup, fixed, ctc",
+      "prose": "Got it on the total — what's the base split?",
+      "actionKind": "component-probe",
+      "keywords": [
+        "variable",
+        "breakup",
+        "fixed",
+        "ctc"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC002",
+      "stage": "S02_BREAKUP",
+      "persona": "P03",
+      "severity": "Critical",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: understands, expectation, variable, fixed",
+      "prose": "You shared a range — to frame the fitment cleanly, where in that range do you actually see yourself landing? Helps me run a sharper number past leadership.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "expectation",
+        "variable",
+        "fixed"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC003",
+      "stage": "S03_EXPECTATION",
+      "persona": "P01",
+      "severity": "Critical",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: weakness, exploit, range",
+      "prose": "I understand wanting to hear our number first — fair. As per our band for this grade, the fitment sits in a defined corridor; if you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "weakness",
+        "exploit",
+        "range"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC004",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Critical",
+      "verdict": "PARTIAL",
+      "reason": "1/2 keywords present",
+      "prose": "On the budget — I can't share the full internal band, but the fitment sits in a defined corridor for this grade. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "stuck",
+        "get"
+      ],
+      "hits": [
+        "get"
+      ]
+    },
+    {
+      "tcId": "TC005",
+      "stage": "S04_JUSTIFY",
+      "persona": "P15",
+      "severity": "Critical",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: justification, reject, rudely",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "justification",
+        "reject",
+        "rudely"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC006",
+      "stage": "S04_JUSTIFY",
+      "persona": "P02",
+      "severity": "Critical",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: correction, framing, allows, market",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "correction",
+        "framing",
+        "allows",
+        "market"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC007",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "High",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "negotiation",
+        "continues",
+        "fixed"
+      ],
+      "hits": [
+        "fixed"
+      ]
+    },
+    {
+      "tcId": "TC008",
+      "stage": "S07_COMPONENTS",
+      "persona": "P07",
+      "severity": "High",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the structure — the breakup will include fixed cash, variable target (paid quarterly against KPIs), and ESOPs as a separate component. Are you comfortable with that shape, or would you want me to size the fixed harder against the variable?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "importance",
+        "respects",
+        "fixed"
+      ],
+      "hits": [
+        "fixed"
+      ]
+    },
+    {
+      "tcId": "TC009",
+      "stage": "S07_COMPONENTS",
+      "persona": "P07",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: understands, guaranteed, variable",
+      "prose": "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "guaranteed",
+        "variable"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC010",
+      "stage": "S08_OFFERS",
+      "persona": "P04",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: respectfully, leverage",
+      "prose": "On the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "respectfully",
+        "leverage"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC011",
+      "stage": "S08_OFFERS",
+      "persona": "P04",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: demanding, forward, exact, proof",
+      "prose": "Hearing you out — let me see what I can structure. We can revise the fitment to ₹25.2L total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "keywords": [
+        "demanding",
+        "forward",
+        "exact",
+        "proof"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC012",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: negotiates, structure",
+      "prose": "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "negotiates",
+        "structure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC013",
+      "stage": "S07_COMPONENTS",
+      "persona": "P06",
+      "severity": "High",
+      "verdict": "PARTIAL",
+      "reason": "3/4 keywords present",
+      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "treat",
+        "fixed",
+        "esop",
+        "cash"
+      ],
+      "hits": [
+        "fixed",
+        "esop",
+        "cash"
+      ]
+    },
+    {
+      "tcId": "TC014",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: random, exact",
+      "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "random",
+        "exact"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC015",
+      "stage": "S09_NOTICE",
+      "persona": "P05",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: realistically, timeline, treats",
+      "prose": "90 days is a long runway — would your current employer entertain a buyout, or are you locked in?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "realistically",
+        "timeline",
+        "treats"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC016",
+      "stage": "S09_NOTICE",
+      "persona": "P05",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: commitment, pressure, tests",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "commitment",
+        "pressure",
+        "tests"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC017",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "2/4 keywords present",
+      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "realistically",
+        "handles",
+        "review",
+        "cycle"
+      ],
+      "hits": [
+        "review",
+        "cycle"
+      ]
+    },
+    {
+      "tcId": "TC018",
+      "stage": "S06_FLEXIBILITY",
+      "persona": "P03",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: flexibility, become, tests, rude",
+      "prose": "Noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "flexibility",
+        "become",
+        "tests",
+        "rude"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC019",
+      "stage": "S03_EXPECTATION",
+      "persona": "P01",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: weakness, exploit",
+      "prose": "I understand wanting to hear our number first — fair. As per our band for this grade, the fitment sits in a defined corridor; if you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "weakness",
+        "exploit"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC020",
+      "stage": "S03_EXPECTATION",
+      "persona": "P09",
+      "severity": "High",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: alignment, balances, interest, comp",
+      "prose": "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "alignment",
+        "balances",
+        "interest",
+        "comp"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC021",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/5 keywords present; prose missing: identifies, variable, fixed, bonus, lever",
+      "prose": "On the budget — I can't share the full internal band, but the fitment sits in a defined corridor for this grade. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "identifies",
+        "variable",
+        "fixed",
+        "bonus",
+        "lever"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC022",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: conditional, acceptance, closure",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "conditional",
+        "acceptance",
+        "closure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC023",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: professional, closure",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "professional",
+        "closure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC024",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: fake, doc",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "fake",
+        "doc"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC025",
+      "stage": "S07_COMPONENTS",
+      "persona": "P17",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: unfairly, lowball",
+      "prose": "On the location piece — the fitment doesn't change for remote or different-city, but the allowance structure (HRA, location pay) does shift to match the policy for that city. I can pull the city-wise structuring before we lock the offer.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "unfairly",
+        "lowball"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC026",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: promises, avoids",
+      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "promises",
+        "avoids"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC027",
+      "stage": "S04_JUSTIFY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: respects, document, timing",
+      "prose": "Noted on the verification piece — slips can come at the formal BGV stage. For now let's first align on whether the range works for you, and then I'll move it through the panel.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "respects",
+        "document",
+        "timing"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC028",
+      "stage": "S08_OFFERS",
+      "persona": "P04",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: prematurely, force, proof",
+      "prose": "Noted on the verification piece — slips can come at the formal BGV stage. For now let's first align on whether the range works for you, and then I'll move it through the panel.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "prematurely",
+        "force",
+        "proof"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC029",
+      "stage": "S05_BUDGET",
+      "persona": "P02",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: discussion, exception, handles",
+      "prose": "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "actionKind": "band-disclosure-deflect",
+      "keywords": [
+        "discussion",
+        "exception",
+        "handles"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC030",
+      "stage": "S05_BUDGET",
+      "persona": "P02",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: percentage, anchor, only",
+      "prose": "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "actionKind": "band-disclosure-deflect",
+      "keywords": [
+        "percentage",
+        "anchor",
+        "only"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC031",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: understands, replacement, title, pay",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "understands",
+        "replacement",
+        "title",
+        "pay"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC032",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: promise, future, vague",
+      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "promise",
+        "future",
+        "vague"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC033",
+      "stage": "S07_COMPONENTS",
+      "persona": "P07",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/2 keywords present",
+      "prose": "On the variable piece — variable is target-based, not guaranteed: payout sits between 0 and 200% of target against KPIs that get locked in the first quarter. The split between individual and company KPIs varies by grade — I can have the comp team share the policy doc once you're onboarded.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "clarifies",
+        "variable"
+      ],
+      "hits": [
+        "variable"
+      ]
+    },
+    {
+      "tcId": "TC034",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: overpromise, clarifies",
+      "prose": "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "overpromise",
+        "clarifies"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC035",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "take",
+        "home",
+        "ctc"
+      ],
+      "hits": [
+        "ctc"
+      ]
+    },
+    {
+      "tcId": "TC036",
+      "stage": "S10_CLOSURE",
+      "persona": "P18",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: negotiation, component, resumes",
+      "prose": "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "negotiation",
+        "component",
+        "resumes"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC037",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: professional, closure",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "professional",
+        "closure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC038",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/1 keywords present; prose missing: closure",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "closure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC039",
+      "stage": "S08_OFFERS",
+      "persona": "P10",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: commitment, hostility, checks",
+      "prose": "Hearing you out — let me see what I can structure. We can revise the fitment to ₹25.3L total — that's the stretch I can hold against the scope we're hiring. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "keywords": [
+        "commitment",
+        "hostility",
+        "checks"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC040",
+      "stage": "S07_COMPONENTS",
+      "persona": "P17",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "Relocation is on our standard menu — one-time shift assistance plus a settling-in component. Are we talking intra-city or a base-city change?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "component",
+        "handles",
+        "benefit"
+      ],
+      "hits": [
+        "component"
+      ]
+    },
+    {
+      "tcId": "TC041",
+      "stage": "S09_NOTICE",
+      "persona": "P05",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: integrates, joining, comp",
+      "prose": "On the notice piece — buyout support is case-by-case and tied to the urgency from the hiring side. If they want an early join, I can take the buyout ask to the panel with your notice-period letter as evidence.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "integrates",
+        "joining",
+        "comp"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC042",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "retention",
+        "fixed",
+        "isn"
+      ],
+      "hits": [
+        "fixed"
+      ]
+    },
+    {
+      "tcId": "TC043",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: respects, decision, process",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "respects",
+        "decision",
+        "process"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC044",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: repeat, final",
+      "prose": "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "repeat",
+        "final"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC045",
+      "stage": "S01_START",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: prevents, mismatch, late",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "prevents",
+        "mismatch",
+        "late"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC046",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: repeated, refusal, forward",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "repeated",
+        "refusal",
+        "forward"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC047",
+      "stage": "S02_BREAKUP",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: maintained, order",
+      "prose": "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "maintained",
+        "order"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC048",
+      "stage": "S01_START",
+      "persona": "P07",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: structure, captures",
+      "prose": "Got it on the total — what's the base split?",
+      "actionKind": "component-probe",
+      "keywords": [
+        "structure",
+        "captures"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC049",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: avoids, exact, fake, calc",
+      "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "avoids",
+        "exact",
+        "fake",
+        "calc"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC050",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: sounds, indian",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "sounds",
+        "indian"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC051",
+      "stage": "S04_JUSTIFY",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: coaching, practice, unless, mode",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "coaching",
+        "practice",
+        "unless",
+        "mode"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC052",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/1 keywords present; prose missing: only",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "only"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC053",
+      "stage": "S06_FLEXIBILITY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: maintains, state",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "maintains",
+        "state"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC054",
+      "stage": "S03_EXPECTATION",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: phrasing, handles, indian",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "phrasing",
+        "handles",
+        "indian"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC055",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: understands, shorthand",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "understands",
+        "shorthand"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC056",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "2/3 keywords present",
+      "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "take",
+        "home"
+      ],
+      "hits": [
+        "take",
+        "home"
+      ]
+    },
+    {
+      "tcId": "TC057",
+      "stage": "S09_NOTICE",
+      "persona": "P05",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: balances, urgency, comp",
+      "prose": "Got it — buyout is on the table. That helps us move faster on the timeline if we get to that stage.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "balances",
+        "urgency",
+        "comp"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC058",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: understands, recurring, fixed",
+      "prose": "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "recurring",
+        "fixed"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC059",
+      "stage": "S07_COMPONENTS",
+      "persona": "P06",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "correctly",
+        "handles",
+        "equity"
+      ],
+      "hits": [
+        "equity"
+      ]
+    },
+    {
+      "tcId": "TC060",
+      "stage": "S07_COMPONENTS",
+      "persona": "P06",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "On the ESOP piece — equity is reported separately from cash CTC: the offer letter splits fixed, variable, and ESOPs with the vesting schedule and cliff. So you'll see the cash component as guaranteed and the ESOP as a 4-year grant on top.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "equity",
+        "doesn",
+        "types",
+        "mix"
+      ],
+      "hits": [
+        "equity"
+      ]
+    },
+    {
+      "tcId": "TC061",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "recognizes",
+        "grade",
+        "lever"
+      ],
+      "hits": [
+        "grade"
+      ]
+    },
+    {
+      "tcId": "TC062",
+      "stage": "S04_JUSTIFY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: compensation, connects, scope",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "compensation",
+        "connects",
+        "scope"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC063",
+      "stage": "S04_JUSTIFY",
+      "persona": "P15",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: challenges, evidence, politely",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "challenges",
+        "evidence",
+        "politely"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC064",
+      "stage": "S01_START",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: deadlock, handles, privacy",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "deadlock",
+        "handles",
+        "privacy"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC065",
+      "stage": "S01_START",
+      "persona": "P11",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "Got it — freelance billing isn't a clean CTC equivalent. What's your typical monthly run-rate over the last 6–12 months, and how loaded is it (one big retainer vs. multiple gigs)?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "context",
+        "adapts",
+        "non",
+        "ctc"
+      ],
+      "hits": [
+        "ctc"
+      ]
+    },
+    {
+      "tcId": "TC066",
+      "stage": "S01_START",
+      "persona": "P11",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: understands, monthly, annual",
+      "prose": "Got it on the total — what's the base split?",
+      "actionKind": "component-probe",
+      "keywords": [
+        "understands",
+        "monthly",
+        "annual"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC067",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "components",
+        "includes",
+        "cash",
+        "non"
+      ],
+      "hits": [
+        "cash"
+      ]
+    },
+    {
+      "tcId": "TC068",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: budget, trap, max",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "budget",
+        "trap",
+        "max"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC069",
+      "stage": "S03_EXPECTATION",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: professional, exploitative",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "professional",
+        "exploitative"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC070",
+      "stage": "S04_JUSTIFY",
+      "persona": "P13",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: anchoring, avoids, biased",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "anchoring",
+        "avoids",
+        "biased"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC071",
+      "stage": "S09_NOTICE",
+      "persona": "P12",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: exploit, urgency",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "exploit",
+        "urgency"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC072",
+      "stage": "S05_BUDGET",
+      "persona": "P14",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: respectful, realistic",
+      "prose": "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "respectful",
+        "realistic"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC073",
+      "stage": "S05_BUDGET",
+      "persona": "P14",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: handles, concern, level",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "handles",
+        "concern",
+        "level"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC074",
+      "stage": "S04_JUSTIFY",
+      "persona": "P11",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: transferable, evaluates, skills",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "transferable",
+        "evaluates",
+        "skills"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC075",
+      "stage": "S06_FLEXIBILITY",
+      "persona": "P20",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: exploiting, interest",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "exploiting",
+        "interest"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC076",
+      "stage": "S06_FLEXIBILITY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: captures, floor, hard",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "captures",
+        "floor",
+        "hard"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC077",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/1 keywords present; prose missing: closure",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "closure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC078",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: asynchronous, handles, context",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "asynchronous",
+        "handles",
+        "context"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC079",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: understands, structure, decision, based",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "understands",
+        "structure",
+        "decision",
+        "based"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC080",
+      "stage": "S04_JUSTIFY",
+      "persona": "P09",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: salary, doesn, shame, focus",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "salary",
+        "doesn",
+        "shame",
+        "focus"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC081",
+      "stage": "S06_FLEXIBILITY",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: clarifies, floor",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "clarifies",
+        "floor"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC082",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "transparent",
+        "internal",
+        "details"
+      ],
+      "hits": [
+        "internal"
+      ]
+    },
+    {
+      "tcId": "TC083",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: advisory, avoids, tax",
+      "prose": "On the structuring piece — the breakup is built around the standard flexi plan (HRA, LTA, NPS, meal card). It's not aggressively optimised but it covers the usual heads. Once we lock the fitment I can have the structuring sheet shared so you can plan your declarations.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "advisory",
+        "avoids",
+        "tax"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC084",
+      "stage": "S06_FLEXIBILITY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: inconsistency, challenges",
+      "prose": "Noted on the expected fitment — Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "inconsistency",
+        "challenges"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC085",
+      "stage": "S12_RECOVERY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: recovery, exists, path",
+      "prose": "Hearing you out — let me see what I can structure. As per band, the most I can structure is ₹25.2L total — that's the grade fitment ceiling I have. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "keywords": [
+        "recovery",
+        "exists",
+        "path"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC086",
+      "stage": "S12_RECOVERY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: fallback, usable",
+      "prose": "Hearing you out — let me see what I can structure. As per band, the most I can structure is ₹25.2L total — that's the grade fitment ceiling I have. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "keywords": [
+        "fallback",
+        "usable"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC087",
+      "stage": "S11_REPORT",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: coaching, session, after",
+      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "actionKind": "close",
+      "keywords": [
+        "coaching",
+        "session",
+        "after"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC088",
+      "stage": "S11_REPORT",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: evaluation, rubric, maps",
+      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "actionKind": "close",
+      "keywords": [
+        "evaluation",
+        "rubric",
+        "maps"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC089",
+      "stage": "S11_REPORT",
+      "persona": "P07",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: recognizes, awareness, variable, fixed",
+      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "actionKind": "close",
+      "keywords": [
+        "recognizes",
+        "awareness",
+        "variable",
+        "fixed"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC090",
+      "stage": "S11_REPORT",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: coaching, useful",
+      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "actionKind": "close",
+      "keywords": [
+        "coaching",
+        "useful"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC091",
+      "stage": "S03_EXPECTATION",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/4 keywords present",
+      "prose": "Noted on the expected fitment — Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "clarifies",
+        "ambiguous",
+        "total",
+        "fixed"
+      ],
+      "hits": [
+        "total"
+      ]
+    },
+    {
+      "tcId": "TC092",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: maintains, context",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "maintains",
+        "context"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC093",
+      "stage": "S07_COMPONENTS",
+      "persona": "P07",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: structure, handles, math",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "structure",
+        "handles",
+        "math"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC094",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understand",
+        "components",
+        "ctc"
+      ],
+      "hits": [
+        "ctc"
+      ]
+    },
+    {
+      "tcId": "TC095",
+      "stage": "S07_COMPONENTS",
+      "persona": "P07",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: negotiates, structure",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "negotiates",
+        "structure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC096",
+      "stage": "S07_COMPONENTS",
+      "persona": "P07",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: clarifies, bonus, basis",
+      "prose": "On the variable piece — variable is target-based, not guaranteed: payout sits between 0 and 200% of target against KPIs that get locked in the first quarter. The split between individual and company KPIs varies by grade — I can have the comp team share the policy doc once you're onboarded.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "clarifies",
+        "bonus",
+        "basis"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC097",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: promise, avoids, fake",
+      "prose": "On the review piece — the next appraisal cycle is anchored to the company calendar, and joiners are usually eligible on a pro-rated basis once they've crossed the qualifying tenure. I can have the cycle dates and eligibility rule confirmed in writing alongside the offer.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "promise",
+        "avoids",
+        "fake"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC098",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: leverage, closure",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "leverage",
+        "closure"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC099",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "logically",
+        "feedback",
+        "panel"
+      ],
+      "hits": [
+        "panel"
+      ]
+    },
+    {
+      "tcId": "TC100",
+      "stage": "S09_NOTICE",
+      "persona": "P05",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: connects, timeline, comp",
+      "prose": "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "connects",
+        "timeline",
+        "comp"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC101",
+      "stage": "S02_BREAKUP",
+      "persona": "P06",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: compensation, parsing",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "compensation",
+        "parsing"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC102",
+      "stage": "S07_COMPONENTS",
+      "persona": "P06",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: identifies, bridge, lever",
+      "prose": "Before we go further, can you share your current CTC — fixed, variable, and in-hand?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "identifies",
+        "bridge",
+        "lever"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC103",
+      "stage": "S07_COMPONENTS",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: unsupported, timing",
+      "prose": "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "unsupported",
+        "timing"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC104",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the in-hand piece — the monthly take-home depends on your tax declarations and structuring (HRA, LTA, NPS), so the offer letter will show a band rather than a single number. We can walk through the structuring sheet once the fitment is locked.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "understands",
+        "monthly",
+        "gross"
+      ],
+      "hits": [
+        "monthly"
+      ]
+    },
+    {
+      "tcId": "TC105",
+      "stage": "S12_RECOVERY",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: graceful, crash, retry",
+      "prose": "Hearing you out — let me see what I can structure. As per band, the most I can structure is ₹25.2L total — that's the grade fitment ceiling I have. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "keywords": [
+        "graceful",
+        "crash",
+        "retry"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC106",
+      "stage": "S12_RECOVERY",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: handles, invalid, input",
+      "prose": "Hearing you out — let me see what I can structure. As per band, the most I can structure is ₹25.2L total — that's the grade fitment ceiling I have. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "keywords": [
+        "handles",
+        "invalid",
+        "input"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC107",
+      "stage": "S02_BREAKUP",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: handles, units",
+      "prose": "And on the variable side — is it a fixed bonus or perf-linked?",
+      "actionKind": "component-probe",
+      "keywords": [
+        "handles",
+        "units"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC108",
+      "stage": "S04_JUSTIFY",
+      "persona": "P15",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: keeps, role",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "keeps",
+        "role"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC109",
+      "stage": "S12_RECOVERY",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: respects, mode",
+      "prose": "I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "respects",
+        "mode"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC110",
+      "stage": "S11_REPORT",
+      "persona": "P01",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/4 keywords present; prose missing: practice, coaches, only, mode",
+      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "actionKind": "close",
+      "keywords": [
+        "practice",
+        "coaches",
+        "only",
+        "mode"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC111",
+      "stage": "S08_OFFERS",
+      "persona": "P04",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: guidance, ethical",
+      "prose": "I'll let you frame it the way you're comfortable — just share what's true for you and we'll work from there.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "guidance",
+        "ethical"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC112",
+      "stage": "S12_RECOVERY",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: professional, alternative",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "professional",
+        "alternative"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC113",
+      "stage": "S05_BUDGET",
+      "persona": "P02",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: normalize, pay, cut",
+      "prose": "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "actionKind": "band-disclosure-deflect",
+      "keywords": [
+        "normalize",
+        "pay",
+        "cut"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC114",
+      "stage": "S05_BUDGET",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: handles, mapping, level",
+      "prose": "On the range piece — I can't put an internal band on the table, but the fitment moves with the grade we've slotted you against. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned, and I can take it back to the panel if there's a gap.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "handles",
+        "mapping",
+        "level"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC115",
+      "stage": "S10_CLOSURE",
+      "persona": "P18",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/3 keywords present; prose missing: professional, process, keeps",
+      "prose": "Happy to take this on a call — let me set up a time once I've taken your range back to the panel. We can close the open points faster on a call than over email.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "professional",
+        "process",
+        "keeps"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC116",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "PARTIAL",
+      "reason": "1/3 keywords present",
+      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "separately",
+        "benefits",
+        "handled"
+      ],
+      "hits": [
+        "benefits"
+      ]
+    },
+    {
+      "tcId": "TC117",
+      "stage": "S07_COMPONENTS",
+      "persona": "P19",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: professional, safe",
+      "prose": "On the benefits piece — beyond cash CTC there's group medical (self + family), gratuity, PF as per statute, and a few flexi allowances under the structuring envelope. I can share the full benefits sheet alongside the offer letter.",
+      "actionKind": "reactive-followup",
+      "keywords": [
+        "professional",
+        "safe"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC118",
+      "stage": "S10_CLOSURE",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: dismissive, balanced",
+      "prose": "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
+      "actionKind": "round-transition",
+      "keywords": [
+        "dismissive",
+        "balanced"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC119",
+      "stage": "S03_EXPECTATION",
+      "persona": "P13",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/2 keywords present; prose missing: treatment, fair",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "treatment",
+        "fair"
+      ],
+      "hits": []
+    },
+    {
+      "tcId": "TC120",
+      "stage": "S01_START",
+      "persona": "P03",
+      "severity": "Medium",
+      "verdict": "FAIL",
+      "reason": "0/5 keywords present; prose missing: generated, machine, intact, report, loops",
+      "prose": "Let's start with your current side — what's the total CTC at present?",
+      "actionKind": "discovery-probe",
+      "keywords": [
+        "generated",
+        "machine",
+        "intact",
+        "report",
+        "loops"
+      ],
+      "hits": []
+    }
+  ]
+}

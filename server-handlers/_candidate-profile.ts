@@ -3077,12 +3077,28 @@ export function detectFreshGradDisclosure(text: string): boolean {
   return FRESH_GRAD_PATTERNS.some((p) => p.test(text));
 }
 
-/* `wantsHigherBase` — candidate explicitly asked for higher fixed/base. */
+/* `wantsHigherBase` — candidate explicitly asked for higher fixed/base.
+ * BUG-006 widening (QA v3, 2026-05-19) — TC007 ("Is there flexibility on
+ * fixed?") and TC009 ("I prefer stronger fixed because that is guaranteed")
+ * are clear higher-base asks but the original regex required the literal
+ * "higher fixed". Add (i) "flexibility on fixed / room on fixed",
+ * (ii) "stronger / better fixed" without an explicit comparative verb,
+ * (iii) "comfortable with fixed of N" / "fixed component of N" comp asks. */
 function detectWantsHigherBase(t: string): boolean {
   return /\b(?:higher\s+(?:fixed|base|basic)\s+(?:salary|pay|component))\b/i.test(t) ||
     /\b(?:want\s+(?:a\s+)?(?:better|higher|more)\s+(?:fixed|base)\b)/i.test(t) ||
     /\b(?:increase\s+(?:the\s+)?(?:fixed|base)\s+(?:salary|component|pay))\b/i.test(t) ||
-    /\b(?:more\s+(?:in\s+)?(?:fixed|base|guaranteed)\s+(?:comp|salary|pay))\b/i.test(t);
+    /\b(?:more\s+(?:in\s+)?(?:fixed|base|guaranteed)\s+(?:comp|salary|pay))\b/i.test(t) ||
+    /\b(?:(?:any\s+)?(?:flexibility|flex|room|movement|wiggle\s*room)\s+on\s+(?:the\s+)?(?:fixed|base))\b/i.test(t) ||
+    /\b(?:(?:stronger|bigger|fatter|larger)\s+(?:fixed|base)\b)/i.test(t) ||
+    /\b(?:prefer\s+(?:a\s+)?(?:stronger|higher|larger|more)\s+(?:fixed|base|guaranteed))\b/i.test(t) ||
+    /\b(?:(?:if\s+)?fixed\s+cannot\s+move)\b/i.test(t) ||
+    /* QA v3 round 3 (2026-05-19) — breakup-pushback pattern. Candidate
+     * has seen the offer breakup, fixed component is below expectation,
+     * asks to revisit. Maps to P18_BREAKUP_PUSHBACK archetype. */
+    /\bfixed\s+is\s+(?:lower|less|below)\s+(?:than\s+)?(?:expected|market|i\s+expected)\b/i.test(t) ||
+    /\b(?:can\s+we\s+)?revisit\s+(?:it|the\s+(?:breakup|fixed|base|offer))\b/i.test(t) ||
+    /\bbreakup.*(?:lower|less|below|disappointing)\b/i.test(t);
 }
 
 /* `wantsJoiningBonus` — candidate asked about or mentioned joining bonus. */
@@ -3200,11 +3216,24 @@ function detectGaveRangeNotPoint(t: string): boolean {
     /\b(?:(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs)\s+(?:to|–|-|and)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|l|lakh|lakhs))\b/i.test(t);
 }
 
-/* `deflectedOnRange` — candidate deflected when asked for a number. */
+/* `deflectedOnRange` — candidate deflected when asked for a number.
+ * BUG-007 widening (QA v3, 2026-05-19) — also catch the "salary is not
+ * the main priority" / "whatever you decide / as per company standard"
+ * patterns that previously only fired `candidateStance.avoidsAnchor`.
+ * Without this widening, TC003 / TC019 hit the discovery-restart path
+ * (no anti-exploitation guard) instead of the range-deflection prose.
+ * The wired-profile rule for range-deflection then fires and produces
+ * the "band-grade language + mutual disclosure" probe that explicitly
+ * does NOT exploit the candidate's low-priority signal. */
 function detectDeflectedOnRange(t: string): boolean {
   return /\b(?:i(?:'m|\s+am)\s+(?:quite\s+)?flexible\s+(?:on\s+the\s+(?:number|salary|range)|about\s+(?:this|the\s+(?:number|package)))|you\s+(?:tell\s+me|can\s+decide|know\s+best)\s+(?:the\s+)?(?:number|salary|package))\b/i.test(t) ||
     /\b(?:(?:whatever\s+|you\s+tell\s+me\s+)?(?:the\s+)?market\s+(?:rate|says|dictates)|(?:open\s+to\s+discussion|happy\s+with\s+the\s+market\s+rate))\b/i.test(t) ||
-    /\b(?:i\s+(?:don'?t|do\s+not)\s+have\s+a\s+(?:specific\s+)?(?:number\s+in\s+mind|fixed\s+expectation))\b/i.test(t);
+    /\b(?:i\s+(?:don'?t|do\s+not)\s+have\s+a\s+(?:specific\s+)?(?:number\s+in\s+mind|fixed\s+expectation))\b/i.test(t) ||
+    /* BUG-007 — avoidsAnchor patterns folded in. */
+    /\bas\s+per\s+(?:company|your)\s+(?:standards?|policy|norms?|discretion|decision)\b/i.test(t) ||
+    /\bwhatever\s+(?:you\s+)?(?:offer|decide|think\s+is\s+fair|company\s+(?:decides|gives))\b/i.test(t) ||
+    /\b(?:salary|comp(?:ensation)?|package|money|the\s+number)\s+(?:is\s+)?(?:not|isn'?t)\s+(?:the\s+)?(?:main|primary|top|biggest|key)\s+(?:priority|consideration|factor|driver)/i.test(t) ||
+    /\b(?:salary|comp(?:ensation)?|package|money|the\s+number)\s+is\s+secondary\b/i.test(t);
 }
 
 /* Polish 3 (2026-05-16) — `referencedMarketData` source detector with

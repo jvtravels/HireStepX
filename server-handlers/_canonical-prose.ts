@@ -32,6 +32,11 @@ import type { NextAction } from "./_next-action-planner";
 import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { getNegotiationRoundPersona } from "./_negotiation-rounds";
+import {
+  classifyCandidateQuestion,
+  renderCandidateQuestionResponse,
+  CANDIDATE_QUESTION_GENERIC_FALLBACK,
+} from "./_candidate-question";
 /* Phase 5 Session B (2026-05-19) — keep `getNegotiationRoundPersona`
  * imported so downstream consumers (e.g. analyzer / UI label
  * resolvers re-exporting via this module) have one canonical lookup.
@@ -799,13 +804,29 @@ function renderCanonicalProseBody(
         return "Noted on the competing opportunity. Before I revert internally — walk me through what matters most to you on this role.";
       }
       if (topic === "answer-direct") {
-        /* BUG E fix (PDF#31 T18, 2026-05-18) — explicit safe prose for
-         * the answer-direct topic so a regression in the planner can't
-         * leak an internal directive through the verbatim fallback below.
-         * The real answer comes from generateAnswerToCandidate (LLM +
-         * factPack); this is the deterministic tail when the LLM path
-         * defers or falls back. */
-        return "Happy to address that — let me come back to where we were.";
+        /* QA v3 round 3 (2026-05-19) — extracted to a typed classifier +
+         * response bank in `_candidate-question.ts`. Prior architecture
+         * was a ~70-line regex-ladder co-locating intent detection with
+         * recruiter prose, which (a) blocked persona overlay, (b) made
+         * topic addition a copy-paste edit, (c) tied test assertions to
+         * full strings. The new module separates classification (pure
+         * string → typed enum) from rendering (enum + persona → prose),
+         * so persona-tilted responses compose without re-running regex.
+         *
+         * The deterministic LLM fallback path (`generateAnswerToCandidate`)
+         * still owns the rich answers; this branch is the safe tail that
+         * fires when the LLM defers. */
+        const raw = state.lastTurnDelta?.candidateAskedQuestion?.raw ?? "";
+        const classified = classifyCandidateQuestion(raw);
+        if (classified) {
+          const prose = renderCandidateQuestionResponse(
+            classified,
+            sectorPersona(state),
+            activeRoundPersona(state),
+          );
+          if (prose) return prose;
+        }
+        return CANDIDATE_QUESTION_GENERIC_FALLBACK;
       }
       /* ctc-gentle-push, notice-buyout, etc. carry planner-supplied ask
        * strings — use verbatim, but sanitise meta-directive tokens that
@@ -858,14 +879,33 @@ function renderCanonicalProseBody(
        * falls through to the sector persona branch byte-identical
        * to pre-Phase-5 prose. */
       const roundPersonaA = activeRoundPersona(state);
+      /* BUG-004 fix (QA v2, 2026-05-19) — chain a same-turn probe so the
+       * deflection doesn't stall the conversation for a turn. Real
+       * recruiters: deflect + immediately re-anchor on candidate's
+       * target. Single shared chain tail keeps the 9 variants
+       * byte-stable until the chained probe. */
+      const chainedProbe =
+        " If you can share even a rough target, I can tell you straight away whether we're broadly aligned.";
+      /* PDF#37 BUG-B (2026-05-20) — when an offer is already on the
+       * table, the deflect MUST restate that number explicitly so the
+       * LLM-restyle layer can't drift the line to "there isn't a fixed
+       * amount mentioned for the role" / "that's something the HM walks
+       * through later". Naming the number forecloses the hallucination
+       * path: the LLM cannot substitute "no number exists" while
+       * preserving an explicit ₹X.YL token. */
+      const highestOffer = state.highestOfferMade ?? 0;
+      const offerOnTableClause =
+        highestOffer > 0
+          ? ` The fitment of ₹${highestOffer}L I shared is what I have on the table.`
+          : "";
       if (roundPersonaA != null) {
         return selectByRoundPersona(roundPersonaA, {
           "hr-partner":
-            "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally.",
+            "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table." + offerOnTableClause + " Happy to escalate your expectation internally." + chainedProbe,
           "hiring-manager":
-            "Within the band for this scope, I can flex on structure but not headline. If you want me to move the cash, we'd need to revisit scope or level.",
+            "Within the band for this scope, I can flex on structure but not headline." + offerOnTableClause + " If you want me to move the cash, we'd need to revisit scope or level." + chainedProbe,
           "director":
-            "This is the final number my approval supports — as per our band for this grade. Let me know if there's a path forward.",
+            "This is the final number my approval supports — as per our band for this grade." + offerOnTableClause + " Let me know if there's a path forward." + chainedProbe,
         });
       }
       /* Each persona variant respects the sentence-length cap
@@ -874,20 +914,33 @@ function renderCanonicalProseBody(
        * prefixes ("Coming to" / "Hearing you out") add 2-3 words
        * to the first sentence, so we keep each persona body
        * short enough that the prefixed version still passes. */
-      return selectBySectorPersona(sectorPersona(state), {
+      const sectorBody = selectBySectorPersona(sectorPersona(state), {
         "it-services":
-          "I won't be able to share internal numbers — as per our band, the grade fitment I shared is what I have. Happy to take this back to the panel.",
+          "I won't be able to share internal numbers — as per our band, the grade fitment I shared is what I have. Happy to take this back to the panel." + chainedProbe,
         "gcc":
-          "I won't be able to share internal numbers, but as per our band for this grade — anchored to the global benchmark — the offer stands. Happy to take this back to the panel.",
+          "I won't be able to share internal numbers, but as per our band for this grade — anchored to the global benchmark — the offer stands. Happy to take this back to the panel." + chainedProbe,
         "indian-unicorn":
-          "I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity.",
+          "I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity." + chainedProbe,
         "early-startup":
-          "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity.",
+          "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity." + chainedProbe,
         "bfsi":
-          "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel.",
+          "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel." + chainedProbe,
         "default":
-          "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.",
+          "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap." + chainedProbe,
       });
+      /* PDF#37 BUG-B (2026-05-20) — when an explicit offer is already on
+       * the table, splice the number into the deflect so the LLM-restyle
+       * layer can't hallucinate "there isn't a fixed amount for the role"
+       * / "the HM walks through later". The token forecloses semantic
+       * drift — paraphrasing must preserve the ₹X.YL literal. Only fires
+       * when highestOfferMade > 0; the byte-identical pre-Phase-3 default
+       * contract (initState, no offer) is preserved verbatim. */
+      if (highestOffer > 0) {
+        const explicitRecap =
+          ` The fitment of ₹${highestOffer}L I shared earlier still stands.`;
+        return sectorBody + explicitRecap;
+      }
+      return sectorBody;
     }
 
     case "discovery-probe": {

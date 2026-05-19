@@ -75,6 +75,16 @@ export interface NumberRoleResult {
    *  bound, but downstream code uses this to render "you mentioned
    *  a range". */
   targetAsRange: boolean;
+  /** Audit Fix (2026-05-19) — Component scope of the bound `target`.
+   *  - `"total"` (default) when the candidate framed it as the whole
+   *    package ("expecting ₹32 LPA total").
+   *  - `"fixed"` when the candidate explicitly tagged the target as a
+   *    fixed/base/basic component ("target is ₹26 LPA fixed at
+   *    minimum"). The kernel routes fixed-scoped targets to a separate
+   *    `candidateTargetFixed` field so a fixed-component target does
+   *    NOT overwrite a previously stated total target.
+   *  - `null` when no target was bound. */
+  targetComponent: "total" | "fixed" | null;
 }
 
 /* ─── Constants ────────────────────────────────────────────────────── */
@@ -429,17 +439,18 @@ export function classifyNumberRoles(
   ctx: NumberRoleContext = {},
 ): NumberRoleResult {
   if (!text || !text.trim()) {
-    return { currentCtc: null, target: null, competing: null, targetAsRange: false };
+    return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
   }
   const spans = findSalarySpans(text);
   if (spans.length === 0) {
-    return { currentCtc: null, target: null, competing: null, targetAsRange: false };
+    return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
   }
   let currentCtc: number | null = null;
   let target: number | null = null;
   let competing: number | null = null;
   let currentFromRange = false;
   let targetFromRange = false;
+  let targetComponent: "total" | "fixed" | null = null;
   for (const span of spans) {
     const scores = scoreRolesForSpan(text, span);
     const role = pickRole(scores, ctx, span, text);
@@ -450,6 +461,7 @@ export function classifyNumberRoles(
     } else if (role === "target" && target == null) {
       target = span.value;
       targetFromRange = span.isRangeUpper;
+      targetComponent = detectTargetComponentScope(text, span);
     } else if (role === "competing" && competing == null) {
       competing = span.value;
     }
@@ -461,6 +473,7 @@ export function classifyNumberRoles(
   if (target != null && (target === currentCtc || target === competing)) {
     target = null;
     targetFromRange = false;
+    targetComponent = null;
   }
   const targetAsRange = targetFromRange || (target != null && currentFromRange === false && spans.some((s) => s.isRangeUpper));
   return {
@@ -468,5 +481,41 @@ export function classifyNumberRoles(
     target,
     competing,
     targetAsRange: target != null ? targetAsRange : false,
+    targetComponent: target != null ? (targetComponent ?? "total") : null,
   };
+}
+
+/* ─── Component-scope detection for the bound target ───────────────── */
+
+/** Cue patterns that mark a target number as referring to the FIXED /
+ *  BASE component specifically (not the total package). Conservative:
+ *  must appear adjacent to the number span (within 20 chars on either
+ *  side) and must not be negated by a "total"/"overall" / "ctc"
+ *  qualifier in the same window. */
+const FIXED_COMPONENT_CUES = [
+  /\bfixed(?:\s+(?:component|pay|salary))?\b/i,
+  /\bbase(?:\s+(?:pay|salary))?\b/i,
+  /\bbasic\b/i,
+];
+const TOTAL_COMPONENT_CUES = [
+  /\btotal\b/i,
+  /\boverall\b/i,
+  /\bctc\b/i,
+  /\bpackage\b/i,
+  /\bgross\b/i,
+];
+
+function detectTargetComponentScope(text: string, span: SalarySpan): "total" | "fixed" | null {
+  const COMPONENT_WINDOW = 20;
+  const leftWindow = text.slice(Math.max(0, span.start - COMPONENT_WINDOW), span.start);
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + COMPONENT_WINDOW));
+  const window = `${leftWindow} ${rightWindow}`;
+  const fixedHit = FIXED_COMPONENT_CUES.some((re) => re.test(window));
+  const totalHit = TOTAL_COMPONENT_CUES.some((re) => re.test(window));
+  /* Both hit ("₹32 LPA total with base at ₹26") → total wins. The
+   * candidate's anchor is the total; the base mention is a constraint
+   * but the bound target value here is the total. */
+  if (totalHit) return "total";
+  if (fixedHit) return "fixed";
+  return null;
 }

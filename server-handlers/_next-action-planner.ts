@@ -42,6 +42,7 @@ import {
   canCloseSession,
   clampAnchorAgainstCandidateAsk,
   effectiveAnchorLpa,
+  canDiscloseSpecificNumber,
   type NegotiationState,
   type AiMove,
   type DiscoveryTopic,
@@ -784,6 +785,34 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
+  }
+
+  /* PDF#37 BUG-H (2026-05-20) — hard terminal cap. When the AI has
+   * produced `state.maxTurns` turns and is still non-terminal (no
+   * accept, no walk, no stalemate ledger stamp), the session silently
+   * loops on the last non-terminal action — observed in PDF#37 as the
+   * Flipkart session running past its budget without a close turn.
+   * Force a stalemate close so the conversation always ends with an
+   * explicit terminal turn. derivePhase already routes turnIndex ===
+   * maxTurns-1 → closing-push (line 4228) for a final framed close;
+   * this guard catches the case where that escalation didn't fire (no
+   * candidateTarget, lever-explore never entered) and the budget is
+   * about to overshoot. */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.turnIndex >= state.maxTurns
+  ) {
+    return {
+      kind: "close",
+      mode: "stalemate",
+      _move: {
+        lever: "close-stalemate",
+        newTotalLpa: state.highestOfferMade || state.band.initialOffer,
+        rationale:
+          `Turn budget (${state.maxTurns}) reached at non-terminal phase ${state.phase}; ` +
+          `force stalemate close so session ends with an explicit terminal turn.`,
+      },
+    };
   }
 
   /* Terminal stickiness guard (session 13 bug, 2026-05-14): see notes in
@@ -1905,7 +1934,24 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           roleFamily,
           skipRecord,
         );
-        if (next != null) {
+        /* PDF#37 BUG-C/D (2026-05-20) — once an anchor offer is on the
+         * table, discovery-probe must NOT regress the flow with an
+         * orthogonal question. Flow-central items (currentCtc /
+         * fixedVariableSplit / target) remain legitimate probes
+         * because their answers reshape the counter directly.
+         * Orthogonal items (noticePeriod / competingOffers /
+         * valueProof) should NOT drop the recruiter back into a
+         * discovery cascade — they get folded into reactive follow-
+         * ups in counter / recap prose downstream instead. */
+        const ORTHOGONAL_POST_ANCHOR_ITEMS: ReadonlySet<string> = new Set([
+          "noticePeriodAsked",
+          "competingOffersAsked",
+          "valueProofAsked",
+        ]);
+        const allowProbeWithOfferOnTable =
+          state.highestOfferMade === 0 ||
+          (next != null && !ORTHOGONAL_POST_ANCHOR_ITEMS.has(next.item));
+        if (next != null && allowProbeWithOfferOnTable) {
           return {
             kind: "discovery-probe",
             item: next.item,
@@ -2705,13 +2751,40 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     const offerAskedThisTurn =
       state.offerAskedAtTurn != null &&
       state.offerAskedAtTurn === state.turnIndex;
+    /* BUG-006 fix (QA v3, 2026-05-19) — when the candidate's question
+     * resolves to a specific wired-profile topic (joining bonus, fixed
+     * flex, ESOP, growth path, tax, BGV, moonlighting, team, reporting,
+     * relocation, spouse-family), DO NOT route through the generic
+     * answer-direct branch. Defer to planWiredProfileFollowup which has
+     * topic-specific Indian-recruiter prose for each of those asks.
+     * Without this skip, 47/120 QA cases hit the generic "Sure — let me
+     * address that directly." tail because answer-direct pre-empted the
+     * more specific wired branch. */
+    const profile = state.candidateProfile;
+    const wiredProfileTopicMatches =
+      profile != null &&
+      (profile.wantsHigherBase ||
+        profile.wantsJoiningBonus ||
+        profile.wantsRelocationAllowance ||
+        profile.mentionedSpouseFamily ||
+        profile.askedAboutReporting ||
+        profile.askedAboutGrowthPath ||
+        profile.askedAboutGrowthPath8 ||
+        profile.askedAboutTeamSize ||
+        profile.mentionedTaxImplication ||
+        profile.mentionedBgvConcern ||
+        profile.mentionedMoonlighting);
     /* ArchRec 2 (2026-05-16) — was `answer-direct@${turnIndex}`. The
      * per-turn suffix made hasFired() always pass (every turn produced
      * a fresh string), so the "single-fire" intent was actually dead.
      * Use the canonical literal topic; dedup against
      * reactiveFollowupsFired works as documented now that the key
      * matches across turns. */
-    if (!hasFired("answer-direct") && !offerAskedThisTurn) {
+    if (
+      !hasFired("answer-direct") &&
+      !offerAskedThisTurn &&
+      !wiredProfileTopicMatches
+    ) {
       /* BUG E fix (PDF#31, 2026-05-18) — `ask` MUST be candidate-facing
        * prose, never an internal directive. Previously this field carried
        * "Answer the candidate's question first; checklist advance pauses
@@ -3025,6 +3098,103 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     }
   }
 
+  /* QA v3 round 3 (2026-05-19) — archetype-aware tail.
+   *
+   * Sits AFTER all wired reactive rules but BEFORE the planner returns
+   * null (which falls through to discovery-probe). When a recognisable
+   * candidate archetype fires and none of the wired rules consumed it,
+   * route to an archetype-specific reactive instead of the generic
+   * discovery default. This is the BUG-002 classifier landing in the
+   * planner: the scaffold from `_candidate-archetype.ts` now drives
+   * routing for archetypes whose intent isn't captured by any single
+   * profile-flag.
+   *
+   * Why a tail and not interleaved: the wired rules already capture
+   * specific intents (joining bonus, ESOP probe, etc.) more reliably
+   * than the archetype classifier. The tail only fires when those miss,
+   * so we never override a more-specific reactive with a less-specific
+   * archetype. */
+  const archetype = delta.candidateArchetype;
+  if (archetype) {
+    const archetypeReactive = planArchetypeReactive(state, archetype, hasFired);
+    if (archetypeReactive) return archetypeReactive;
+  }
+
+  return null;
+}
+
+/**
+ * Archetype-specific reactive routing. Pure function over (state,
+ * archetype). Returns a `PlannedAction` for archetypes that warrant a
+ * distinct recruiter response, or `null` to fall through to discovery.
+ *
+ * Only handles archetypes whose stance has no clean profile-flag
+ * representation:
+ *   - P09_NON_CASH_FOCUS  — salary-secondary signal; recruiter acknowledges
+ *                           the non-cash priority before re-anchoring.
+ *   - P11_FREELANCER      — no standard CTC anchor; recruiter probes
+ *                           rate-card / project-billing.
+ *   - P14_HIGH_EARNER     — already at high CTC; recruiter probes role
+ *                           pull / non-money motivation.
+ *
+ * Other archetypes (P03 direct, P15 hard-anchor, P06 equity prober, etc.)
+ * are already well-handled by wired-profile flags + discovery probes;
+ * adding archetype routes for those would compete with the more-specific
+ * wired path.
+ */
+function planArchetypeReactive(
+  state: NegotiationState,
+  archetype: NonNullable<NegotiationState["lastTurnDelta"]>["candidateArchetype"],
+  hasFired: (topic: DiscoveryTopic) => boolean,
+): PlannedAction | null {
+  if (archetype === "P09_NON_CASH_FOCUS" && !hasFired("value-proof")) {
+    return {
+      kind: "reactive-followup",
+      ask: "Got it — learning and exposure are weighing heavier than the number here. Just so I frame the offer right, what would make this role feel like the right next step beyond comp?",
+      trigger: "archetype:P09",
+      topic: "value-proof",
+      satisfiesTopic: "value-proof",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: "Archetype P09_NON_CASH_FOCUS — acknowledge non-cash priority before re-anchoring.",
+        actionKind: "reactive-followup",
+        askedTopic: "value-proof",
+      },
+    };
+  }
+  if (archetype === "P11_FREELANCER" && !hasFired("anchor-clarify")) {
+    return {
+      kind: "reactive-followup",
+      ask: "Got it — freelance billing isn't a clean CTC equivalent. What's your typical monthly run-rate over the last 6–12 months, and how loaded is it (one big retainer vs. multiple gigs)?",
+      trigger: "archetype:P11",
+      topic: "anchor-clarify",
+      satisfiesTopic: "anchor-clarify",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: "Archetype P11_FREELANCER — no standard CTC; probe rate-card to set anchor.",
+        actionKind: "reactive-followup",
+        askedTopic: "anchor-clarify",
+      },
+    };
+  }
+  if (archetype === "P14_HIGH_EARNER" && !hasFired("value-proof")) {
+    return {
+      kind: "reactive-followup",
+      ask: "Noted — at your current level, money alone isn't going to be the lever. What's pulling you toward this role specifically?",
+      trigger: "archetype:P14",
+      topic: "value-proof",
+      satisfiesTopic: "value-proof",
+      _move: {
+        lever: "probe",
+        newTotalLpa: null,
+        rationale: "Archetype P14_HIGH_EARNER — high current CTC; probe role pull beyond comp.",
+        actionKind: "reactive-followup",
+        askedTopic: "value-proof",
+      },
+    };
+  }
   return null;
 }
 

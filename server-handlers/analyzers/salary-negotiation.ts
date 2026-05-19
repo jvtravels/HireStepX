@@ -135,6 +135,22 @@ function toLpa(value: number, unit: string): number {
   return value; // lakh/lpa/L all = 1 LPA
 }
 
+/* BUG-003 fix (QA v2, 2026-05-19) — monthly-vs-LPA suffix detection.
+ * When a comp claim like "₹1.5L per month" / "1.5 lakhs monthly" / "₹1.5L pm"
+ * appears, the raw lakh value is a MONTHLY in-hand figure, not an annual
+ * LPA. Multiply by 12 to land on the annualised LPA value the downstream
+ * pipeline expects. TC055, TC066, TC107 were misparsed at 1.5 LPA when
+ * the candidate's intent was ~₹18 LPA. */
+const MONTHLY_SUFFIX_RE =
+  /\b(?:per\s*month|p\.?m\.?|monthly|a\s+month|each\s+month|month\s*(?:ly)?)\b/i;
+function isMonthlyContext(fullText: string, matchIndex: number, matchLen: number): boolean {
+  /* Look at up to 30 chars trailing the comp match for a monthly token.
+   * Bound on the right side so "₹50L per month vs ₹60 LPA" doesn't
+   * pull the suffix from across an unrelated clause. */
+  const tail = fullText.slice(matchIndex + matchLen, matchIndex + matchLen + 30);
+  return MONTHLY_SUFFIX_RE.test(tail);
+}
+
 interface CompClaim {
   turn_idx: number;
   speaker: string;
@@ -155,7 +171,12 @@ function extractCompClaims(transcript: TranscriptTurn[]): CompClaim[] {
       const lo = parseFloat(m[1]);
       const hi = m[2] ? parseFloat(m[2]) : lo;
       if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue;
-      out.push({ turn_idx: i, speaker: t.speaker, raw: m[0], lpa: toLpa(hi, m[3]) });
+      let lpa = toLpa(hi, m[3]);
+      /* BUG-003 fix — annualise monthly-suffixed lakh claims. */
+      if (isMonthlyContext(text, m.index, m[0].length)) {
+        lpa = lpa * 12;
+      }
+      out.push({ turn_idx: i, speaker: t.speaker, raw: m[0], lpa });
     }
 
     // Compact crore: "1.5cr" without surrounding LPA suffix. Skip if the
@@ -816,7 +837,8 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
       while ((m = COMP_RE.exec(text)) !== null) {
         const lo = parseFloat(m[1]);
         const hi = m[2] ? parseFloat(m[2]) : lo;
-        const lpa = toLpa(hi, m[3]);
+        let lpa = toLpa(hi, m[3]);
+        if (isMonthlyContext(text, m.index, m[0].length)) lpa *= 12;
         // Only count amounts AFTER the "can't meet" position
         if ((m.index || 0) > (cannotMatch.index || 0) && lpa >= declinedAmount * 0.95) {
           offered = lpa;

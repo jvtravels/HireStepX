@@ -308,7 +308,7 @@ describe("parseCandidateAnswer", () => {
     expect(parseCandidateAnswer("")).toEqual({
       target: null, currentCtc: null, competing: null,
       signalsAcceptance: false, signalsWalkAway: false,
-      targetAsRange: false, vossTactics: [], infoAsked: [],
+      targetAsRange: false, targetComponent: null, vossTactics: [], infoAsked: [],
       signalsCompetingExistsWithoutNumber: false,
       componentBreakdown: { base: null, variable: null, equity: null, hasAny: false },
       rationale: null,

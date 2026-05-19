@@ -31,6 +31,7 @@ describe("TurnDelta surface — no orphan fields", () => {
     expect(keys).toEqual(
       [
         "askedQuestion",
+        "candidateArchetype",
         "candidateAskedQuestion",
         "candidateSentiment",
         "disclosedCompetingOffer",

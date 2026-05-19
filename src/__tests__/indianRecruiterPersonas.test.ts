@@ -179,7 +179,11 @@ describe("canonical-prose — persona-conditional surfaces (PDF-style)", () => {
     /* Pre-Phase-3 default text — exact contract for the band-disclosure-deflect
      * surface. PDF#34/35 contract verification: byte-identical. */
     expect(renderCanonicalProse(deflect, s)).toBe(
-      "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.",
+      /* BUG-004 chain-probe (QA v3, 2026-05-19) — appended same-turn
+       * probe across all 9 deflect variants. The "byte-identical to
+       * pre-Phase-3" contract is reset here against the new canonical
+       * default, which now carries the chain probe deterministically. */
+      "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
     );
     /* Counter-offer default surface — byte-identical to pre-Phase-3
      * spiral lead + number. counterRound = 0 → first spiralLead. */
@@ -197,7 +201,11 @@ describe("canonical-prose — persona-conditional surfaces (PDF-style)", () => {
     /* Strip the field explicitly (back-compat shape simulation). */
     const sbare = { ...sundef, recruiterSectorPersona: undefined } as NegotiationState;
     expect(renderCanonicalProse(deflect, sbare)).toBe(
-      "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap.",
+      /* BUG-004 chain-probe (QA v3, 2026-05-19) — appended same-turn
+       * probe across all 9 deflect variants. The "byte-identical to
+       * pre-Phase-3" contract is reset here against the new canonical
+       * default, which now carries the chain probe deterministically. */
+      "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
     );
   });
 });
