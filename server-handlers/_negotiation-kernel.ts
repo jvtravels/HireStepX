@@ -255,6 +255,10 @@ export type DiscoveryTopic =
   | "range-to-point"
   | "range-deflection"
   | "market-data-reference"
+  /* PDF#37 (2026-05-20) — freelancer/archetype anchor-clarify reactive
+   * followup. P11_FREELANCER candidates need a rate-card probe before
+   * a CTC anchor is meaningful. */
+  | "anchor-clarify"
   /* Single-fire markers pushed through applyAiMove. */
   | "close-confirmation"
   | "close-recap-formal"
@@ -345,6 +349,8 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "spouse-family-context", "reporting-structure", "growth-path", "team-size",
   "tax-implication", "bgv-concern", "moonlighting-policy",
   "range-to-point", "range-deflection", "market-data-reference",
+  /* PDF#37 (2026-05-20). */
+  "anchor-clarify",
   "close-confirmation", "close-recap-formal", "candidate-trial-close",
   "comparative-anchoring", "internal-equity-defense", "band-anchor-with-rationale",
   "panel-approval-stall", "polite-walkaway", "anchor-defense-hike-strong",

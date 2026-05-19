@@ -265,7 +265,7 @@ export function classifyCandidateArchetype(
     if (
       sig.profileFlag &&
       profile != null &&
-      (profile as Record<string, unknown>)[sig.profileFlag] === true
+      (profile as unknown as Record<string, unknown>)[sig.profileFlag] === true
     ) {
       score += sig.profileBoost;
     }

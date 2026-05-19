@@ -42,7 +42,6 @@ import {
   canCloseSession,
   clampAnchorAgainstCandidateAsk,
   effectiveAnchorLpa,
-  canDiscloseSpecificNumber,
   type NegotiationState,
   type AiMove,
   type DiscoveryTopic,
