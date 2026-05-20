@@ -145,6 +145,7 @@ import {
   resumeConfirmsCompany,
   type ResumeFactPack,
 } from "./_resume-fact-pack";
+import { detectResumeRoleMismatch } from "./_resume-role-match";
 import { getNextActionPlanner } from "./_planner-registry";
 
 /* ─── Commit 4 (2026-05-15) — planner-registry refactor ───────────────
@@ -2193,11 +2194,29 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     lockedAnchorLpa: null,
     minTurnsBeforeClose: 8,
     /* PDF #17 architectural fix (2026-05-15) — initial checklist all
-     * false; initial stage "discovery". Probe-mismatch stage is set
-     * only when caller has detected a resume↔role mismatch via the
-     * existing mismatch-probe path; default to "discovery" here. */
+     * false. PDF#38 BUG-B (2026-05-20) — the prior init wired
+     * discoveryStage unconditionally to "discovery", which orphaned
+     * the planner's probe-mismatch consumer (no code anywhere set
+     * the stage to "probe-mismatch"). Now we derive the initial
+     * stage from a resume↔role hard mismatch: when the candidate's
+     * resume domain (resumeFactPack.latestRole.title preferred,
+     * candidatePrimaryDomain as fallback) crosses a domain-family
+     * boundary versus the target role, we route the first
+     * substantive turn through the mismatch-probe before letting
+     * the discovery cascade or anchor turn fire. Subsequent
+     * stage advance to "discovery" happens in applyAiMove below
+     * (after the probe-mismatch lever lands its single turn). */
     discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
-    discoveryStage: "discovery",
+    discoveryStage: ((): DiscoveryStage => {
+      const resumeTitle =
+        resumeFactPack?.latestRole?.title ?? input.candidatePrimaryDomain ?? null;
+      if (!resumeTitle || !input.role) return "discovery";
+      const mm = detectResumeRoleMismatch({
+        resumeTitle,
+        targetRole: input.role,
+      });
+      return mm.mismatch && mm.severity === "hard" ? "probe-mismatch" : "discovery";
+    })(),
     /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive-followup
      * de-dupe ledger. Empty at session start; each reactive-followup
      * emission pushes its topic. */
@@ -4405,6 +4424,20 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
      * candidate happens to send a non-frustrated utterance. */
     lastUserFrustrated: false,
   };
+  /* PDF#38 BUG-B (2026-05-20) — single-fire advance from probe-mismatch
+   * to discovery. The planner routes the FIRST substantive turn through
+   * the mismatch-probe when the resume↔role gap is hard. Once that
+   * probe lands (any AI turn while stage === "probe-mismatch") we
+   * advance the stage so the discovery cascade resumes on the next
+   * turn. Without this advance the bot would re-route into the same
+   * probe every turn (the consumer at planner line 1219 gates purely
+   * on stage). The mismatch-probe lever shape is `lever: "probe"`
+   * with rationale containing "probe-mismatch" — but any AI turn
+   * fired while stage === "probe-mismatch" satisfies the probe slot,
+   * so we advance unconditionally on the stage match. */
+  if (state.discoveryStage === "probe-mismatch") {
+    next.discoveryStage = "discovery";
+  }
   /* Negotiation-flow redesign commit 4 (2026-05-15) — record the
    * reactive-followup topic the planner emitted this turn. Sticky:
    * future planNextAction calls consult this ledger before re-emitting
@@ -4802,15 +4835,35 @@ export function findOutOfBandNumber(text: string, band: NegotiationBand): number
 const FINGERPRINT_WORDS = 8;
 const MIN_CONTENT_WORDS = 4;
 
+/* PDF#38 BUG-C (2026-05-20) — widen the verbatim-repeat look-back from
+ * 1 AI turn (state.lastAiText) to the last 3 AI turns. PDF#38 Flipkart
+ * T5 and T7 carried byte-identical canonical phrasing with a non-
+ * matching T6 in between; the original guard never compared T7 to T5
+ * (only to T6) and let the repeat through. Now we fingerprint the
+ * candidate text against EACH of the last 3 AI utterances. */
+const VERBATIM_LOOKBACK_AI_TURNS = 3;
+
 export function isVerbatimRepeat(text: string, state: NegotiationState): boolean {
-  if (!state.lastAiText || !text) return false;
+  if (!text) return false;
   const a = fingerprintWords(text);
-  const b = fingerprintWords(state.lastAiText);
-  /* Min-length guard: trivial closers ("Sounds good.", "Right.") can't
-     trigger a verbatim flag — they have <4 content words and may
-     legitimately repeat across turns. */
-  if (a.length < MIN_CONTENT_WORDS || b.length < MIN_CONTENT_WORDS) return false;
-  return a.slice(0, FINGERPRINT_WORDS).join(" ") === b.slice(0, FINGERPRINT_WORDS).join(" ");
+  if (a.length < MIN_CONTENT_WORDS) return false;
+  const aKey = a.slice(0, FINGERPRINT_WORDS).join(" ");
+  const log = state.conversationLog ?? [];
+  const aiTurns: string[] = [];
+  for (let i = log.length - 1; i >= 0 && aiTurns.length < VERBATIM_LOOKBACK_AI_TURNS; i--) {
+    const entry = log[i];
+    if (entry && entry.speaker === "ai" && entry.text) aiTurns.push(entry.text);
+  }
+  /* Back-compat: also consult state.lastAiText when conversationLog is
+   * empty (early-init sessions / unit-test fixtures that don't seed
+   * the log). */
+  if (aiTurns.length === 0 && state.lastAiText) aiTurns.push(state.lastAiText);
+  for (const prior of aiTurns) {
+    const b = fingerprintWords(prior);
+    if (b.length < MIN_CONTENT_WORDS) continue;
+    if (b.slice(0, FINGERPRINT_WORDS).join(" ") === aKey) return true;
+  }
+  return false;
 }
 
 const STOP_WORDS = new Set([

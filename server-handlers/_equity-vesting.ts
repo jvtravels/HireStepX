@@ -107,9 +107,16 @@ const EQUITY_NEGATION_PATTERNS: RegExp[] = [
   /\bzero\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
   /\bwithout\s+(?:any\s+)?(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
   /\b(?:there\s+(?:is|are|'s)|i\s+have)\s+no\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
-  /\b(?:don.?t|do\s+not)\s+(?:have|get)\s+(?:any\s+)?(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\b(?:don.?t|do\s+not|doesn.?t|does\s+not)\s+(?:have|get|offer|give|provide|grant|extend|include)\s+(?:any\s+)?(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
   /\b(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\s*[:\-—]?\s*(?:nil|none|zero|0)\b/i,
   /\bonly\s+(?:base|fixed)\s+(?:and|\+|&)\s+variable\b.*\bno\s+(?:esops?|equity|stock|rsus?)\b/i,
+  /* PDF#38 BUG-F (2026-05-20) — additional negation forms encountered
+   * in real Indian recruiter sessions. */
+  /\bnot\s+eligible\s+for\s+(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\b(?:esops?|rsus?|equity)\s+(?:are\s+)?nahi(?:\s+hai|\s+hain)?\b/i,
+  /\bno\s+(?:esops?|equity|rsus?)\s+(?:nahi\s+hai|in\s+(?:current|my)|in\s+(?:the\s+)?package)\b/i,
+  /\b(?:current|present|existing)\s+(?:company|employer|role|package)\s+(?:doesn.?t|does\s+not|has\s+no)\s+(?:have|offer|include|give|provide)?\s*(?:esops?|rsus?|equity|stock(?:s|\s+options?)?)\b/i,
+  /\bnot\s+a\s+component\s+(?:of|in)\s+(?:my\s+)?(?:current\s+)?(?:ctc|package|comp)\b/i,
 ];
 
 /** PDF#31 BUG A+B — explicit affirmation patterns. Only fires when the

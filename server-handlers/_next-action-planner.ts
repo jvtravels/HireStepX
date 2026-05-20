@@ -786,6 +786,40 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
   }
 
+  /* PDF#38 BUG-D (2026-05-20) — stuck-progress terminal close. PDF#38
+   * Flipkart SPD session ended at T8 with the candidate still
+   * disengaged: no salary disclosure, two probe-and-repeat cycles,
+   * acknowledge-and-recover already burned. The hard MAX_TURNS cap
+   * below would force closure but only at turnIndex >= maxTurns (T20+).
+   * This earlier cap catches the case where the recovery lever failed
+   * to break the loop: acknowledge-and-recover has fired AND the
+   * candidate is STILL non-disclosing (no currentCtc, no target) AND
+   * we've burned ≥ 8 turns. Force stalemate close — both sides have
+   * given up; dragging the session to T20 is worse user-experience
+   * than a clean terminal turn. Single-fire by virtue of routing to
+   * the terminal branch (phase becomes stalemate). */
+  if (
+    !isTerminalPhase(state.phase) &&
+    state.turnIndex >= 8 &&
+    state.candidateCurrentCtc == null &&
+    state.candidateTarget == null &&
+    state.leversUsed.includes("acknowledge-and-recover")
+  ) {
+    return {
+      kind: "close",
+      mode: "stalemate",
+      _move: {
+        lever: "close-stalemate",
+        newTotalLpa: state.highestOfferMade || state.band.initialOffer,
+        rationale:
+          `PDF#38 BUG-D stuck-progress cap: acknowledge-and-recover ` +
+          `already fired AND candidate still non-disclosing at turn ` +
+          `${state.turnIndex}; force stalemate close before the budget ` +
+          `overshoot at maxTurns=${state.maxTurns}.`,
+      },
+    };
+  }
+
   /* PDF#37 BUG-H (2026-05-20) — hard terminal cap. When the AI has
    * produced `state.maxTurns` turns and is still non-terminal (no
    * accept, no walk, no stalemate ledger stamp), the session silently

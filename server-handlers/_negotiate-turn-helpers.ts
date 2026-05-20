@@ -1851,6 +1851,22 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
  *  invalidates the prefix). Keep field order stable. */
 function compactTurnBrief(state: NegotiationState, move: AiMove): string {
   const parts: string[] = [];
+  /* PDF#38 BUG-A (2026-05-20) — first-turn warmup directive. PDF#38
+   * Flipkart T1 opened with a cold "what's your current CTC?" probe.
+   * Real Indian HRs spend the first turn on a brief greeting + role
+   * confirmation BEFORE asking comp questions; jumping straight to
+   * salary feels transactional and burns rapport. The directive runs
+   * ONLY at turnIndex === 0 and is a one-line brief override — the
+   * LLM still receives the planned probe in the same brief, so it
+   * weaves the warmup as a lead-in rather than as a separate turn.
+   * (A dedicated warmup turn would shift the entire discovery
+   * cascade by one and break the maxTurns budget headroom — the
+   * lead-in pattern keeps turn budget intact.) */
+  if (state.turnIndex === 0) {
+    parts.push(
+      `[OPENING-TURN WARMUP — this is the FIRST recruiter turn. Open with ONE short greeting + role/company confirmation (≤ 18 words), then transition naturally into the planned probe. Do NOT lead with a salary question; lead with the warmup and let the probe land as a follow-up clause.]`,
+    );
+  }
   /* Bug 4 (2026-05-14) — resume↔role mismatch prelude. When the
    * candidate's resume primary domain doesn't match the target role,
    * prepend a recruiter directive so the early-probe lands. We surface
@@ -1878,6 +1894,30 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (shouldProbe) {
       parts.push(
         `[RESUME-TARGET MISMATCH: resume=${state.candidatePrimaryDomain}, target=${state.role} — probe motivation before negotiation]`,
+      );
+    }
+    /* PDF#38 BUG-G (2026-05-20) — honest-walk advisory after probe-
+     * mismatch has fired. When the resume↔role mismatch is hard AND
+     * we've already burned the probe-mismatch turn (state.turnIndex
+     * advanced past probe-mismatch stage) AND the candidate still has
+     * not disclosed salary anchors (no currentCtc, no target),
+     * inject a brief directive instructing the LLM to offer an
+     * honest career-fit framing — the dignified out for cross-
+     * domain pivots without underlying relevant signal. PDF#38
+     * Flipkart SPD↔SSE: the bot kept negotiating comp for a candidate
+     * whose resume showed zero engineering. The advisory is a brief-
+     * layer hint, not a hard-route — the planner cascade can still
+     * land discovery/anchor if the LLM judges the candidate has
+     * surfaced a plausible pivot rationale. */
+    if (
+      mm.severity === "hard" &&
+      state.discoveryStage !== "probe-mismatch" &&
+      state.turnIndex >= 2 &&
+      state.candidateCurrentCtc == null &&
+      state.candidateTarget == null
+    ) {
+      parts.push(
+        `[HONEST-WALK ADVISORY: resume domain (${state.candidatePrimaryDomain}) and target role (${state.role}) are cross-family. Probe-mismatch turn already fired; candidate has not disclosed salary anchors. Consider an HONEST career-fit framing this turn — name the gap, ask what specific role-relevant experience the candidate brings (projects, transferable skills, side work). If the candidate cannot surface concrete role-relevant evidence in this exchange, prefer a gracious "this role may not be the right fit at this band, but happy to keep you in mind for design openings" close over continuing salary discovery.]`,
       );
     }
   }

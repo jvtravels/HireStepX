@@ -314,6 +314,30 @@ export function extractComponentBreakdown(
     extractNumberBefore(a, "bonus") ??
     extractNumberBefore(a, "incentive");
 
+  /* PDF#38 BUG-E (2026-05-20) — explicit zero-variable parse. When the
+   * candidate's reply is a DEFINITIVE negation tied to a variable
+   * token ("no variable", "no variable component", "zero variable",
+   * "no incentive"), set variable = 0 so the nextComponentProbe gate
+   * treats variable as populated and stops re-asking. Without this,
+   * the planner's component cascade kept firing variable probes
+   * because variable === null even after the candidate stated "no
+   * variable component" — exact Flipkart/SPD repro at T6.
+   *
+   * Conservative by design: we only fire on an explicit variable-
+   * negation token. Bare "fixed only" / "just fixed 10L" phrasings
+   * are NOT enough — they're ambiguous (the candidate may simply
+   * be naming what they know rather than asserting "no variable
+   * exists"). The split-disambiguation test guards against this. */
+  if (variable == null) {
+    const NO_VARIABLE_RE =
+      /\b(?:no|zero|nil|none|without\s+any|don.?t\s+(?:have|get)\s+(?:any\s+)?|doesn.?t\s+(?:have|offer)\s+(?:any\s+)?)\s+(?:variable|incentive)(?:\s+(?:pay|comp(?:onent)?|component))?\b/i;
+    const HUNDRED_PCT_FIXED_RE =
+      /\b(?:100\s*%?|hundred\s+percent)\s+(?:fixed|base)\b/i;
+    if (NO_VARIABLE_RE.test(a) || HUNDRED_PCT_FIXED_RE.test(a)) {
+      variable = 0;
+    }
+  }
+
   const equity =
     extractNumberAfter(a, "rsus?") ??
     extractNumberAfter(a, "esops?") ??
