@@ -40,6 +40,9 @@ import {
   type RecruiterSectorPersona,
   selectRecruiterSectorPersona,
 } from "./_indian-recruiter-personas";
+/* Re-export so test fixtures and downstream callers can read the type
+ * straight off the kernel barrel (qa-120-matrix.test.ts and others). */
+export type { RecruiterSectorPersona };
 import {
   type NegotiationRoundPersona,
   selectNextRoundPersona,
@@ -711,8 +714,11 @@ export interface NegotiationState {
    *  target ("expecting ₹32 LPA total"). The number-role classifier
    *  routes a target here when its adjacency window names "fixed" /
    *  "base" / "basic" without a "total"/"ctc"/"overall" override.
-   *  Optional in serialized form for back-compat — absence ≡ null. */
-  candidateTargetFixed: number | null;
+   *  Optional in serialized form AND in fixture construction for
+   *  back-compat — absence ≡ null. All consumers must coalesce
+   *  `state.candidateTargetFixed ?? null` (or `?? state.candidateTarget`
+   *  where the field is used as a fallback target). */
+  candidateTargetFixed?: number | null;
   /** Bug-report 12 (2026-05-14) — the numeric counter the candidate
    *  parsed THIS turn (LPA). Distinct from `candidateTarget` which is
    *  sticky from intake / earliest anchor; this field is the per-turn
