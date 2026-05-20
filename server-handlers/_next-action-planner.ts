@@ -1544,7 +1544,14 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         satisfiesTopic: "band-anchor-with-rationale",
         _move: {
           lever: "probe",
-          newTotalLpa: null,
+          /* PDF#39 BUG-A root-cause (2026-05-20): thread `anchored` into
+           * newTotalLpa so applyAiMove records highestOfferMade and
+           * derivePhase can promote out of range-disclosure. Without
+           * this, the band-disclosure-deflect gate (which fires
+           * only at phase === "range-disclosure") re-runs on every
+           * subsequent turn — including post-anchor breakdown asks —
+           * trapping the session in opening-phase deflection prose. */
+          newTotalLpa: anchored,
           rationale:
             `PDF#27 Fix 5 — candidate asked for the offer at turn ${state.offerAskedAtTurn}; ` +
             `anchor point-offer at ₹${anchored}L (band floor=${lo}, disclosed CTC=${state.candidateCurrentCtc ?? "?"}) and invite fitment.`,
@@ -1653,7 +1660,8 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
           satisfiesTopic: "band-anchor-with-rationale",
           _move: {
             lever: "probe",
-            newTotalLpa: null,
+            /* PDF#39 BUG-A root-cause (see Fix-5 site above). */
+            newTotalLpa: anchored,
             rationale:
               `AP3-F3 band-disclosure: currentCtc satisfied, senior-component probes ` +
               `${isSeniorCompProfile(state) ? "complete" : "n/a"}, target pending — anchor point-offer at ₹${anchored}L (band floor=${lo}, disclosed CTC=${state.candidateCurrentCtc ?? "?"}) and invite fitment.`,
@@ -1664,7 +1672,11 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       }
       /* Honest defer path — band is unusable; still fire the lever
        * with bandIncomplete=true so the canonical-prose surface emits
-       * the panel-signoff defer + fitment invitation. */
+       * the panel-signoff defer + fitment invitation. The honest-defer
+       * branch intentionally leaves newTotalLpa=null: no committed
+       * number has been put on the table yet (the prose surface defers
+       * to the panel), so highestOfferMade must stay 0 and the phase
+       * machine must remain in range-disclosure pending a real anchor. */
       return {
         kind: "anchor-with-offer",
         initialOffer: typeof lo === "number" ? lo : 0,
@@ -2491,6 +2503,10 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
      * concessions take effect first and the band-ceiling still wins
      * as a hard ceiling when the multiplied gap would overshoot. */
     split = split * spiralMultiplier;
+    /* Counter-offer side keeps 1-decimal precision: the concession-curve
+     * arithmetic (risk × multiplier × spiralMultiplier × marketMode boost)
+     * relies on small numeric differences for the anti-exploitation and
+     * hot/neutral comparisons. PDF#39 BUG-D scope was the anchor only. */
     const newTotal = Math.round((floor + (aspiration - floor) * split) * 10) / 10;
 
     const constraint = validateComponentConstraints(state.band, newTotal);
@@ -2600,8 +2616,14 @@ function clampAnchorAboveDisclosed(
   /* Floor = disclosed * (1 + hike) — anchor must beat current CTC by a
    * real margin, not merely match it. */
   const hikeFloor = disclosed * (1 + MIN_HIKE_PCT_FOR_ANCHOR);
-  /* Round to 1 decimal so anchor doesn't ship with messy fractions. */
-  const hikeFloorRounded = Math.round(hikeFloor * 10) / 10;
+  /* PDF#39 BUG-D (2026-05-20) — round to INTEGER, not 1 decimal. The
+   * previous policy ("messy fractions") still emitted ₹30.4 LPA-style
+   * numbers, which (i) read awkwardly in recruiter prose and (ii) caused
+   * the offer-extractor downstream to miss them, leaving highestOfferMade
+   * at 0 and trapping the session in range-disclosure phase forever.
+   * Integer rounding is consistent with how real Indian HR anchors land
+   * (₹30L, ₹32L — never ₹30.4L). */
+  const hikeFloorRounded = Math.round(hikeFloor);
   const candidate = Math.max(lo, hikeFloorRounded);
   if (candidate <= lo) return lo;
   /* Cap by maxStretch — won't blow through the band ceiling even if the

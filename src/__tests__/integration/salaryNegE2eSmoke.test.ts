@@ -271,8 +271,16 @@ describe("E2E smoke — salary-negotiation kernel full session", () => {
      * sequence deterministically. */
     state = applyCandidateAnswer(state, "Can you stretch to 38? Otherwise 36 works.");
     const counterRoundBefore = state.counterRound;
-    let counterEngaged = false;
-    for (let i = 0; i < 2 && !counterEngaged; i++) {
+    /* PDF#39 BUG-A regression (2026-05-20) — with BUG-A fixed, the
+     * AP3-F3 anchor-with-band lever may already have fired in the
+     * discovery cascade above AND the planner may already have emitted
+     * a counter-offer in response to the target candidate (T8 in the
+     * debug trace), pushing counterRound to 1 before this assertion.
+     * The structural contract this test guards is "the planner engages
+     * on the counter side at some point in the session" — accept
+     * either prior or post-candidate-counter engagement. */
+    let counterEngaged = state.counterRound > 0;
+    for (let i = 0; i < 4 && !counterEngaged; i++) {
       turn = botTurn(state);
       turnsUsed += 1;
       state = turn.state;

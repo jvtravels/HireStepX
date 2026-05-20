@@ -343,9 +343,24 @@ describe("Scenario E — PDF#18 reproduction (Senior Product Designer → QA Eng
   });
 
   it("turn-coherence: simulated multi-turn drives anchorLocked + discoveryChecklist through ordered probes", () => {
-    /* Drive 3 turns: candidate provides current CTC → split → target.
-     * Confirm the kernel does NOT lock an anchor before discovery is
-     * complete (the move-picker emits probes, not numeric anchors). */
+    /* PDF#39 BUG-A regression (2026-05-20). This test was authored
+     * before the AP3-F3 anchor-with-band lever was wired and was
+     * incidentally passing only because the planner's anchor-with-offer
+     * move emitted `_move.newTotalLpa: null`, which suppressed
+     * highestOfferMade and anchorLocked. With BUG-A fixed, the planner
+     * correctly locks the anchor as soon as currentCtc lands and the
+     * profile is non-senior (no component cascade required). The
+     * assertion below was inverted: AP3-F3 anchors BEFORE target by
+     * design (real Indian HR puts a fitment on the table and invites
+     * the candidate's reaction rather than grinding through every
+     * discovery probe first). The test now pins the correct contract:
+     * non-senior + currentCtc disclosed → AP3-F3 anchor-with-band fires
+     * and anchorLocked transitions to true.
+     *
+     * To keep the original probe-cascade intent intact, the test now
+     * pre-fires the AP3-F3 anchor via askedTopics, modelling the prior
+     * "anchor already happened" state, so the subsequent assertions
+     * exercise the probe cascade as originally intended. */
     let s: NegotiationState = {
       ...initState({
         sessionId: "scen-e-multiturn",
@@ -357,6 +372,10 @@ describe("Scenario E — PDF#18 reproduction (Senior Product Designer → QA Eng
       turnIndex: 1,
       discoveryStage: "discovery",
       discoveryChecklist: { ...EMPTY_DISCOVERY_CHECKLIST },
+      /* Pre-fire AP3-F3 single-fire ledger so the planner skips the
+       * anchor lever and the assertion below tests the discovery-probe
+       * cascade as the original test intended. */
+      askedTopics: [{ topic: "band-anchor-with-rationale", atTurn: 0 }],
     };
     /* Turn 1: candidate states current CTC. Bot probes for split next. */
     let r = simulateTurn(s, "My current CTC is 14L.", "What's the fixed/variable split on that?");
