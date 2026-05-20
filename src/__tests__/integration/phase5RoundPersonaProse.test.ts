@@ -22,6 +22,7 @@ import {
 } from "../../../server-handlers/_negotiation-kernel";
 import { renderCanonicalProse } from "../../../server-handlers/_canonical-prose";
 import type { NegotiationRoundPersona } from "../../../server-handlers/_negotiation-rounds";
+import type { SatisfiesTopic } from "../../../server-handlers/_next-action-planner";
 
 const BAND: NegotiationBand = {
   initialOffer: 24,
@@ -103,21 +104,21 @@ describe("Phase 5 Session B — round-transition handoff prose", () => {
 describe("Phase 5 Session B — band-disclosure-deflect × round persona", () => {
   it("HR Partner cites the hiring panel / band policy", () => {
     const s = mk({}, "hr-partner");
-    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as any }, s);
+    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as SatisfiesTopic }, s);
     expect(prose).toMatch(/hiring panel/);
     expect(prose).toMatch(/grade fitment/);
   });
 
   it("Hiring Manager pivots to scope-trade framing", () => {
     const s = mk({}, "hiring-manager");
-    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as any }, s);
+    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as SatisfiesTopic }, s);
     expect(prose).toMatch(/flex on structure/);
     expect(prose).toMatch(/scope|level/);
   });
 
   it("Director frames the deflection as final-leverage", () => {
     const s = mk({}, "director");
-    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as any }, s);
+    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as SatisfiesTopic }, s);
     expect(prose).toMatch(/final number/);
     expect(prose).toMatch(/path forward/);
   });
@@ -125,7 +126,7 @@ describe("Phase 5 Session B — band-disclosure-deflect × round persona", () =>
   it("default-OFF (multiRoundEnabled=false) falls through to sector persona prose", () => {
     /* No roundPersona seeded; uses sector-default prose. */
     const s = mk();
-    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as any }, s);
+    const prose = renderCanonicalProse({ kind: "band-disclosure-deflect", satisfiesTopic: "band-disclosure-deflect" as SatisfiesTopic }, s);
     expect(prose).toMatch(/won't be able to share internal numbers/);
   });
 });
@@ -134,7 +135,7 @@ describe("Phase 5 Session B — counter-offer × round persona", () => {
   it("HR Partner caps at the band floor and cites grade-fitment ceiling", () => {
     const s = mk({}, "hr-partner");
     const prose = renderCanonicalProse(
-      { kind: "counter-offer", counterTotalLpa: 24, satisfiesTopic: "counter-offer" as any },
+      { kind: "counter-offer", counterTotalLpa: 24, satisfiesTopic: "counter-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹24L/);
@@ -144,7 +145,7 @@ describe("Phase 5 Session B — counter-offer × round persona", () => {
   it("Hiring Manager frames the revision as a scope-tradeoff", () => {
     const s = mk({}, "hiring-manager");
     const prose = renderCanonicalProse(
-      { kind: "counter-offer", counterTotalLpa: 28, satisfiesTopic: "counter-offer" as any },
+      { kind: "counter-offer", counterTotalLpa: 28, satisfiesTopic: "counter-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹28L/);
@@ -154,7 +155,7 @@ describe("Phase 5 Session B — counter-offer × round persona", () => {
   it("Director frames the revision as final-leverage sign-off", () => {
     const s = mk({}, "director");
     const prose = renderCanonicalProse(
-      { kind: "counter-offer", counterTotalLpa: 32, satisfiesTopic: "counter-offer" as any },
+      { kind: "counter-offer", counterTotalLpa: 32, satisfiesTopic: "counter-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹32L/);
@@ -164,7 +165,7 @@ describe("Phase 5 Session B — counter-offer × round persona", () => {
   it("default-OFF falls through to sector body (byte-identical to v8)", () => {
     const s = mk();
     const prose = renderCanonicalProse(
-      { kind: "counter-offer", counterTotalLpa: 28, satisfiesTopic: "counter-offer" as any },
+      { kind: "counter-offer", counterTotalLpa: 28, satisfiesTopic: "counter-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹28L/);
@@ -178,7 +179,7 @@ describe("Phase 5 Session B — anchor-with-offer × round persona", () => {
   it("HR Partner anchors at the band floor with a no-stretch tail", () => {
     const s = mk({}, "hr-partner");
     const prose = renderCanonicalProse(
-      { kind: "anchor-with-offer", initialOffer: 22, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as any },
+      { kind: "anchor-with-offer", initialOffer: 22, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹22 LPA/);
@@ -188,7 +189,7 @@ describe("Phase 5 Session B — anchor-with-offer × round persona", () => {
   it("Hiring Manager widens the framing with a stretch reference", () => {
     const s = mk({}, "hiring-manager");
     const prose = renderCanonicalProse(
-      { kind: "anchor-with-offer", initialOffer: 24, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as any },
+      { kind: "anchor-with-offer", initialOffer: 24, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹24 LPA/);
@@ -198,7 +199,7 @@ describe("Phase 5 Session B — anchor-with-offer × round persona", () => {
   it("Director hits the Director-tier band framing", () => {
     const s = mk({}, "director");
     const prose = renderCanonicalProse(
-      { kind: "anchor-with-offer", initialOffer: 30, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as any },
+      { kind: "anchor-with-offer", initialOffer: 30, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹30 LPA/);
@@ -208,7 +209,7 @@ describe("Phase 5 Session B — anchor-with-offer × round persona", () => {
   it("default-OFF preserves byte-identical sector-default output", () => {
     const s = mk();
     const prose = renderCanonicalProse(
-      { kind: "anchor-with-offer", initialOffer: 24, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as any },
+      { kind: "anchor-with-offer", initialOffer: 24, bandIncomplete: false, satisfiesTopic: "anchor-with-offer" as SatisfiesTopic },
       s,
     );
     expect(prose).toMatch(/₹24 LPA/);

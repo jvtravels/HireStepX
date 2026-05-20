@@ -53,7 +53,7 @@ const BASELINE_RE =
    The list is intentionally broad on tooling names — anything that
    names a measurement instrument counts. */
 const METHOD_RE =
-  /\bA[\s\/-]?B\s+(?:test|tested|testing|experiment)\b|\bsplit[\s-]?test\b|\bcontrolled\s+experiment\b|\bexperiment\b|\bholdout\b|\bcohort\b|\banalytics\b|\bmixpanel\b|\bamplitude\b|\bsegment\b|\bgoogle\s+analytics\b|\bga4?\b|\bsession\s+recordings?\b|\bheatmap\b|\bfullstory\b|\bhotjar\b|\bclarity\b|\bclickstream\b|\btelemetry\b|\bdashboard\b|\bgrafana\b|\bdatadog\b|\bkibana\b|\blooker\b|\btableau\b|\bsurveys?\b|\bnps\b|\bcsat\b|\busability\s+test\b|\buser\s+interviews?\b|\bdiary\s+study\b|\bfunnel\s+(?:analysis|metrics)\b|\bretention\s+curve\b/i;
+  /\bA[\s/-]?B\s+(?:test|tested|testing|experiment)\b|\bsplit[\s-]?test\b|\bcontrolled\s+experiment\b|\bexperiment\b|\bholdout\b|\bcohort\b|\banalytics\b|\bmixpanel\b|\bamplitude\b|\bsegment\b|\bgoogle\s+analytics\b|\bga4?\b|\bsession\s+recordings?\b|\bheatmap\b|\bfullstory\b|\bhotjar\b|\bclarity\b|\bclickstream\b|\btelemetry\b|\bdashboard\b|\bgrafana\b|\bdatadog\b|\bkibana\b|\blooker\b|\btableau\b|\bsurveys?\b|\bnps\b|\bcsat\b|\busability\s+test\b|\buser\s+interviews?\b|\bdiary\s+study\b|\bfunnel\s+(?:analysis|metrics)\b|\bretention\s+curve\b/i;
 
 /* Sample-size cues. The metric is grounded against a denominator.
    "30% improvement across 12,000 users" passes; "30% improvement" on

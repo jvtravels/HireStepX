@@ -326,7 +326,7 @@ export const behavioralAnalyzer: FocusAnalyzer = {
             const probed =
               /\b(baseline|before|previously|from\s+\d|down\s+from|up\s+from)\b/i.test(probe) ||
               /\b(how (?:did|was) (?:you|that|it|the team) (?:measure|measured|track))\b/i.test(probe) ||
-              /\b(a[\s\/-]?b\s+test|sample|cohort|how many users)\b/i.test(probe);
+              /\b(a[\s/-]?b\s+test|sample|cohort|how many users)\b/i.test(probe);
             if (!probed) aiAcceptedUnevidencedMetric += 1;
           } else {
             aiAcceptedUnevidencedMetric += 1;
