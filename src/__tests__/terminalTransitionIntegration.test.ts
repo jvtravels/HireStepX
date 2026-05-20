@@ -63,16 +63,22 @@ describe("terminal-phase sticky integration — multi-turn post-acceptance seque
     state = applyAiMove(state, move, "Locked at ₹40 LPA.");
     expect(isTerminalPhase(state.phase)).toBe(true);
 
-    /* Turn 3 — candidate chit-chat #1. */
+    /* Turn 3 — candidate chit-chat #1. PDF#40 BUG-3 (2026-05-21):
+     * terminal-stickiness now falls through while the session OWES the
+     * post-acceptance-document-request (BGV/docs ask). The planner
+     * fires that step before stickiness resumes. The lever surface is
+     * still "close-acceptance" (shared lever name for the closeout
+     * family), so external behaviour is a clean two-step closeout
+     * (recap → docs) before terminal-restate. */
     state = applyCandidateAnswer(state, "Thank you so much! When does onboarding start?");
     expect(state.phase).toBe("accepted");
     expect(isTerminalPhase(state.phase)).toBe(true);
     move = pickAiMove(state);
-    expect(move.lever).toBe("terminal-restate");
-    expect(move.newTotalLpa!).toBeGreaterThanOrEqual(40);
-    state = applyAiMove(state, move, "Restate.");
+    expect(move.lever).toBe("close-acceptance");
+    state = applyAiMove(state, move, "BGV docs.");
 
-    /* Turn 4 — candidate chit-chat #2. */
+    /* Turn 4 — candidate chit-chat #2. Closeout family now complete;
+     * terminal-stickiness resumes. */
     state = applyCandidateAnswer(state, "Could you share the benefits document?");
     expect(state.phase).toBe("accepted");
     expect(isTerminalPhase(state.phase)).toBe(true);

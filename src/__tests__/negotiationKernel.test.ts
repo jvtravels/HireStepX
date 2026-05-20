@@ -591,53 +591,55 @@ describe("pickAiMove", () => {
   });
 
   it("counter-offer splits floor → aspiration", () => {
-    /* floor=20, target=26, ceiling=28 → split = 20 + (26-20)*0.5*0.30 = 20.9.
+    /* floor=20, target=26, ceiling=28 → split = 20 + (26-20)*0.5*0.60 = 21.8.
      * Bug-report 15 (2026-05-14) — probe-justification fires once before
      * the first counter, so seed leversUsed with it to isolate the
-     * counter-base math here. Phase 3 counter-realism (2026-05-17) —
-     * spiral multiplier round-0 dropped from 1.0 → 0.30 to model the
-     * realistic Indian HR concession curve (first counter rarely > 5–10%
-     * of asked gap). */
+     * counter-base math here. PDF#40 BUG-1 (2026-05-21) — spiral round-0
+     * retuned to 0.60 (was 0.30): the prior curve produced ~0.15× gap
+     * concessions, too stingy to model real Indian HR first moves.
+     * New curve lands round-0 at 0.30× gap, still tapering hard. */
     const m = pickAiMove(init({
       phase: "counter-offer", highestOfferMade: 20, candidateTarget: 26,
       leversUsed: ["probe-justification"],
     }));
     expect(m.lever).toBe("counter-base");
-    expect(m.newTotalLpa).toBe(20.9);
+    expect(m.newTotalLpa).toBe(21.8);
   });
 
   it("counter-offer caps at maxStretch when target above ceiling", () => {
-    /* target=40, ceiling=28 → aspiration=28, split = 20 + (28-20)*0.5*0.30 = 21.2.
-     * Phase 3 counter-realism (2026-05-17) — spiral round-0 = 0.30. */
+    /* target=40, ceiling=28 → aspiration=28, split = 20 + (28-20)*0.5*0.60 = 22.4.
+     * PDF#40 BUG-1 (2026-05-21) — spiral round-0 = 0.60. */
     const m = pickAiMove(init({
       phase: "counter-offer", highestOfferMade: 20, candidateTarget: 40,
       leversUsed: ["probe-justification"],
     }));
-    expect(m.newTotalLpa).toBe(21.2);
+    expect(m.newTotalLpa).toBe(22.4);
   });
 
   it("counter-offer stiffens on repeated counter-base pulls (anti-exploitation)", () => {
     /* floor=20, target=40, ceiling=28 → aspiration=28. Schedule
-       0.5 / 0.35 / 0.22 / 0.12 / 0.06 multiplied by spiral round-0 = 0.30
-       (Phase 3 counter-realism, 2026-05-17). A candidate who keeps
-       hammering the same demand pulls the AI ever-smaller increments
-       rather than reaching maxStretch in 2 turns. Note: init() builds
-       fresh state with counterRound=0 regardless of leversUsed content,
-       so all t-values use the round-0 spiralMultiplier (0.30). */
+       0.5 / 0.35 / 0.22 / 0.12 / 0.06 multiplied by spiral round-0 = 0.60
+       (PDF#40 BUG-1, 2026-05-21 — retuned from 0.30 because the prior
+       curve produced ₹0.7L concessions on a 5L gap, too stingy to model
+       real Indian HR first moves). A candidate who keeps hammering the
+       same demand still pulls the AI ever-smaller increments via the
+       splitSchedule decay. Note: init() builds fresh state with
+       counterRound=0 regardless of leversUsed content, so all t-values
+       use the round-0 spiralMultiplier (0.60). */
     const base = { phase: "counter-offer" as const, highestOfferMade: 20, candidateTarget: 40 };
 
     const t1 = pickAiMove(init({ ...base, leversUsed: ["probe-justification"] }));
-    expect(t1.newTotalLpa).toBe(21.2); // 20 + 8 * 0.5 * 0.30
+    expect(t1.newTotalLpa).toBe(22.4); // 20 + 8 * 0.5 * 0.60
 
     const t2 = pickAiMove(init({ ...base, leversUsed: ["counter-base"] }));
-    expect(t2.newTotalLpa).toBe(20.8); // 20 + 8 * 0.35 * 0.30 = 20.84 → 20.8
+    expect(t2.newTotalLpa).toBe(21.7); // 20 + 8 * 0.35 * 0.60 = 21.68 → 21.7
 
     const t3 = pickAiMove(init({ ...base, leversUsed: ["counter-base", "counter-base"] }));
-    expect(t3.newTotalLpa).toBe(20.5); // 20 + 8 * 0.22 * 0.30 = 20.528 → 20.5
+    expect(t3.newTotalLpa).toBe(21.1); // 20 + 8 * 0.22 * 0.60 = 21.056 → 21.1
 
     /* Past schedule: floors at 0.05 split. */
     const tLate = pickAiMove(init({ ...base, leversUsed: Array(10).fill("counter-base") }));
-    expect(tLate.newTotalLpa).toBe(20.1); // 20 + 8 * 0.05 * 0.30 = 20.12 → 20.1
+    expect(tLate.newTotalLpa).toBe(20.2); // 20 + 8 * 0.05 * 0.60 = 20.24 → 20.2
   });
 
   it("counter-offer rotates to lever-explore when no headroom", () => {
@@ -1130,11 +1132,11 @@ describe("integration: full arc", () => {
     /* T3: AI counters. */
     move = pickAiMove(state);
     expect(move.lever).toBe("counter-base");
-    /* Phase 3 counter-realism (2026-05-17) — spiral round-0 = 0.30.
-     * floor=20, target=26, ceiling=28 → 20 + 6 * 0.5 * 0.30 = 20.9 */
-    expect(move.newTotalLpa).toBe(20.9);
+    /* PDF#40 BUG-1 (2026-05-21) — spiral round-0 = 0.60.
+     * floor=20, target=26, ceiling=28 → 20 + 6 * 0.5 * 0.60 = 21.8 */
+    expect(move.newTotalLpa).toBe(21.8);
     state = applyAiMove(state, move, `Let me stretch to ₹${move.newTotalLpa} LPA.`);
-    expect(state.highestOfferMade).toBe(20.9);
+    expect(state.highestOfferMade).toBe(21.8);
 
     /* Candidate: accepts. */
     state = applyCandidateAnswer(state, "OK, I accept.");

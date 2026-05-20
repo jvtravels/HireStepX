@@ -850,8 +850,26 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
 
   /* Terminal stickiness guard (session 13 bug, 2026-05-14): see notes in
    * the original move-picker. */
+  /* PDF#40 BUG-3 (2026-05-21) — accepted-phase closeout escape hatch.
+   * Terminal stickiness was firing on the FIRST AI turn after the
+   * candidate verbally accepted (acceptedAtTurn = turnIndex-1), which
+   * bypassed the two-step closeout (close-recap-formal → post-
+   * acceptance-document-request) at L983+ and L1000+. The live
+   * Flipkart session terminated abruptly with no enumerated recap
+   * and no BGV/docs ask. Fix: when the session OWES either of those
+   * post-acceptance turns, fall through to L983 / L1000. After both
+   * have fired, stickiness resumes its role of preventing re-opening
+   * the negotiation on subsequent turns. */
+  const owesPostAcceptanceCloseout =
+    state.phase === "accepted" &&
+    state.verbalAcceptanceTurn != null &&
+    (
+      !(state.reactiveFollowupsFired ?? []).includes("close-recap-formal") ||
+      state.postAcceptanceDocsRequestedAtTurn == null
+    );
   if (
     isTerminalPhase(state.phase) &&
+    !owesPostAcceptanceCloseout &&
     (
       (state.phase === "accepted" && state.acceptedAtTurn != null && state.acceptedAtTurn < state.turnIndex) ||
       (state.phase === "walked-away" && state.walkedAwayAtTurn != null && state.walkedAwayAtTurn < state.turnIndex) ||
@@ -2443,7 +2461,16 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
-    const SPIRAL_MULTIPLIERS = [0.30, 0.20, 0.10];
+    /* PDF#40 BUG-1 (2026-05-21) — re-tuned from [0.30, 0.20, 0.10].
+     * The old curve composed multiplicatively with splitSchedule[0]=0.5
+     * to produce a 0.15× gap-fraction on the first counter (e.g. ₹37
+     * → ₹37.75 on a 5L candidate ask — the live Flipkart session).
+     * That's a ~₹0.7L concession on a ₹5L gap; real Indian HR first
+     * concessions sit in the 1.5–2L band on the same gap. New curve
+     * lands round 0 at 0.5×0.60=0.30 of the gap, round 1 at 0.35×0.35
+     * =0.12, round 2 at 0.22×0.18≈0.04 — meaningful first concession,
+     * still tapering hard into the band ceiling on subsequent rounds. */
+    const SPIRAL_MULTIPLIERS = [0.60, 0.35, 0.18];
     const spiralMultiplier = SPIRAL_MULTIPLIERS[spiralRound] ?? 0;
     const counterCount = state.leversUsed.filter(l => l === "counter-base").length;
     const splitSchedule = [0.5, 0.35, 0.22, 0.12, 0.06];

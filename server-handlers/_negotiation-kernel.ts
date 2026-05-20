@@ -3357,6 +3357,20 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      * firstAnchoredTarget — those signals are about the overall ask. */
     if (parsed.targetComponent === "fixed") {
       next.candidateTargetFixed = parsed.target;
+      /* PDF#40 BUG-2 (2026-05-21) — a base-only counter (e.g. "39.2L
+       * as base salary") IS a counter signal — the candidate is naming
+       * the single most negotiable component. Without this stamp the
+       * planner's post-anchor counter-engagement override (gate at
+       * _next-action-planner.ts L1427) never fires (it reads
+       * lastCandidateCounterLpa), the planner falls through to a
+       * generic info/benefits lever, and the candidate gets a
+       * non-sequitur (live Flipkart session: AI replied with medical
+       * floater info to a base-counter ask). Stamp fresh-counter on
+       * material change, mirroring the total-scope branch below. */
+      const priorFixed = state.candidateTargetFixed;
+      if (priorFixed == null || Math.abs(priorFixed - parsed.target) > 0.05) {
+        next.lastCandidateCounterLpa = parsed.target;
+      }
     } else {
       /* Bug-report 12 (2026-05-14) — per-turn fresh-counter signal.
          Only count as a fresh counter when the parsed number is
