@@ -798,11 +798,21 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
    * given up; dragging the session to T20 is worse user-experience
    * than a clean terminal turn. Single-fire by virtue of routing to
    * the terminal branch (phase becomes stalemate). */
+  /* PDF#41 BUG-D (2026-05-21) — also require highestOfferMade === 0.
+   * The stuck-progress cap was designed for pre-anchor sessions where
+   * the candidate never discloses anything. If an anchor IS on the
+   * table (highestOfferMade > 0), we are past discovery — even if the
+   * candidate is being squirrelly about target / current CTC. Force-
+   * closing as stalemate post-anchor truncates the session before the
+   * candidate can respond to the offer. The Flipkart PDF#41 session
+   * terminated abruptly after the candidate asked for a breakdown
+   * because this guard fired with the anchor already on the table. */
   if (
     !isTerminalPhase(state.phase) &&
     state.turnIndex >= 8 &&
     state.candidateCurrentCtc == null &&
     state.candidateTarget == null &&
+    state.highestOfferMade === 0 &&
     state.leversUsed.includes("acknowledge-and-recover")
   ) {
     return {

@@ -2712,7 +2712,17 @@ function detectInfoIntents(a: string): InfoIntent[] {
   if (/\b(in[-\s]?hand|take[-\s]?home|net\s+(?:salary|monthly|pay)|monthly\s+(?:salary|pay|in\s+hand))\b/i.test(a)) out.push("in-hand-monthly");
   if (/\b(exercise\s+window|post[-\s]?termination|after\s+(?:leaving|resignation)|exercise\s+period)\b/i.test(a)) out.push("exercise-window");
   if (/\b(accelerat(?:ed|ion)\s+vest|change\s+of\s+control|acquisition\s+(?:trigger|clause|vesting)|single[-\s]?trigger|double[-\s]?trigger)\b/i.test(a)) out.push("acceleration");
-  if (/\b(fixed\s+(?:vs|versus|and|or)\s+variable|variable\s+(?:vs|versus|or)\s+fixed|split\s+(?:between|of)\s+fixed|how\s+much\s+(?:is\s+)?fixed|fixed\s+component|ctc\s+(?:breakdown|split)|base\s+fixed\s+or\s+variable)\b/i.test(a)) out.push("fixed-vs-variable");
+  /* PDF#41 BUG-B (2026-05-21) — broaden fixed-vs-variable detection.
+   * Live Flipkart session: candidate asked "can you provide the
+   * breakdown of base vs variable?" and the AI freelanced a refusal
+   * because neither this regex (matched only "fixed vs variable", not
+   * "base vs variable") nor package-breakdown (required "breakdown of
+   * offer/package/ctc", not "breakdown of base") fired. Added
+   * "base vs/versus/or/and variable" + "breakdown of base" + "base
+   * split" so the wantsBreakdown short-circuit at the planner picks
+   * the canonical breakdown lever instead of routing to the LLM
+   * answer path. */
+  if (/\b(fixed\s+(?:vs|versus|and|or)\s+variable|variable\s+(?:vs|versus|or)\s+fixed|base\s+(?:vs|versus|and|or)\s+variable|variable\s+(?:vs|versus|or|and)\s+base|split\s+(?:between|of)\s+(?:fixed|base)|how\s+much\s+(?:is\s+)?fixed|fixed\s+component|ctc\s+(?:breakdown|split)|base\s+fixed\s+or\s+variable|breakdown\s+of\s+base|base\s+split)\b/i.test(a)) out.push("fixed-vs-variable");
   if (/\b(sodexo|food\s+coupon|gratuity|nps|insurance\s+(?:value|cost)|non[-\s]?cash|benefits\s+(?:value|in\s+ctc))\b/i.test(a)) out.push("perks-non-cash");
   /* Generic "walk me through / break it down / what's the structure" —
      the candidate is explicitly asking the recruiter to enumerate the
@@ -3199,16 +3209,26 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
     if (t.length === 0) return false;
     if (!/\?/.test(t)) return false;
     if (/\d/.test(t)) return false; /* a probe quoting numbers wants confirmation, not a number back */
-    /* Number-seeking probes — these legitimately accept "yes" as a
-     * deflection and the parser's noise stamp would over-fire. */
-    if (/\b(?:what(?:'s)?|how\s+much|how\s+many|what\s+number|what\s+figure|share\s+the|range|fitment)\b/i.test(t)) {
-      return false;
-    }
     /* Substantive yes/no probes about a component / current package. */
     return /\b(?:do\s+you\s+have|is\s+there|any\s+(?:variable|equity|esop|rsu|bonus|stock|grants?)|got\s+(?:variable|equity|esops?|rsus?|bonus|stock)|in\s+your\s+(?:current\s+)?package)\b/i.test(t);
   })();
+  /* PDF#41 BUG-A (2026-05-21) — number-seeking probe + bare "yes" = noise.
+   * Prior gate (lastBotProbeIsYesNoSubstantive) EXCLUDED number-seeking
+   * probes ("what's your current CTC?"), letting a bare "yes" reply
+   * fall through as a substantive answer — the parser bound no facts,
+   * the planner re-emitted the same probe, isVerbatimRepeat fired the
+   * generic recovery stub, and the candidate perceived the UI as frozen
+   * (PDF#41: "screen is stuck no way to speak"). A bare "yes" to ANY
+   * number-seeking probe is noise too — it answers nothing. */
+  const lastBotProbeIsNumberSeeking = (() => {
+    const t = (state.lastAiText || "").trim();
+    if (t.length === 0 || !/\?/.test(t)) return false;
+    if (/\d/.test(t)) return false;
+    return /\b(?:what(?:'s)?|how\s+much|how\s+many|what\s+number|what\s+figure|share\s+the|range|fitment)\b/i.test(t);
+  })();
   const lastAnswerWasSingleWordYesOnProbe =
-    lastBotProbeIsYesNoSubstantive && SINGLE_WORD_AFFIRMATIVE_RE.test(answer);
+    (lastBotProbeIsYesNoSubstantive || lastBotProbeIsNumberSeeking) &&
+    SINGLE_WORD_AFFIRMATIVE_RE.test(answer);
   /* PDF#35 Move 3 (2026-05-18) — flat-ack on a substantive bot probe
    * is noise. If the prior bot turn ended in "?" (a real probe) and
    * the candidate replies with a bare acknowledgement ("got it",
@@ -3249,8 +3269,14 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * number — that's typically a substantive answer (e.g. "what is
    * 22 LPA" probably came from a confused parse, not a clarification
    * request). */
+  /* PDF#41 BUG-C (2026-05-21) — bare "why?" / "why not" / "how come"
+   * added. Live Flipkart session: candidate said "why?" after the AI
+   * refused a breakdown ask, and the AI emitted the verbatim refusal
+   * a second time. Routing "why" to clarify-prior-question forces the
+   * canonical-prose surface to re-explain inline rather than letting
+   * the LLM re-emit the prior refusal sentence. */
   const CLARIFICATION_REQUEST_RE =
-    /^[\s"'""''.,!?-]*(?:what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?|what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)|huh|i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what))|explain(?:\s+(?:that|this|it|please))?|come\s+again|sorry,?\s+what|pardon|meaning(?:\s+of\s+(?:that|this|it))?|\?)\s*\??[\s.!]*$/i;
+    /^[\s"'""''.,!?-]*(?:what(?:'?s|\s+is|\s+does|\s+are)?\s+(?:that|this|it|those|these|they)(?:\s+mean(?:s|ing)?)?|what\s+(?:do\s+you\s+mean|does\s+(?:that|this|it)\s+mean)|huh|i\s+(?:don'?t\s+(?:understand|know\s+what(?:'?s|\s+(?:that|this)))|am\s+(?:confused|not\s+sure\s+what))|explain(?:\s+(?:that|this|it|please))?|come\s+again|sorry,?\s+what|pardon|meaning(?:\s+of\s+(?:that|this|it))?|why(?:\s+not|\s+is\s+(?:that|this|it))?|how\s+come|\?)\s*\??[\s.!]*$/i;
   const lastAnswerWasClarification =
     answer.trim().length > 0 &&
     answer.trim().length <= 40 &&
