@@ -2142,6 +2142,51 @@ registerWaveFlag({
   mergeStrategy: "or",
 });
 
+/* Audit follow-up (2026-05-21) — wave-flag registry Wave-2B SHADOW mode.
+ * Five Wave-2B detectors register themselves below alongside the legacy
+ * direct-call path that still lives in extractCandidateProfile. The
+ * parity contract test (candidateProfileRegistry.test.ts) asserts that
+ * runRegistry(text)[flag] === legacy detector(text) byte-for-byte, and
+ * a NODE_ENV !== "production" runtime parity-assert in the call-site
+ * surfaces drift fast in dev/CI. Once SHADOW soaks clean, a separate
+ * commit will cut Wave-2B over to PRIMARY (delete the legacy calls and
+ * read the values from the registry) — same pattern as Wave-2A. */
+registerWaveFlag({
+  name: "taxStructureAsked",
+  waveId: "wave-2B",
+  detect: detectTaxStructureAsked,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "bgvAnxiety",
+  waveId: "wave-2B",
+  detect: detectBgvAnxiety,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "esopSophisticationProbe",
+  waveId: "wave-2B",
+  detect: detectEsopSophisticationProbe,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "spouseJobConstraint",
+  waveId: "wave-2B",
+  detect: detectSpouseJobConstraint,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "agingParentCare",
+  waveId: "wave-2B",
+  detect: detectAgingParentCare,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+
 /* Wave-2A — returnship from maternity. */
 const RETURNSHIP_MATERNITY_PATTERNS: RegExp[] = [
   /\b(?:returning|coming\s+back|getting\s+back)\s+(?:to\s+work\s+)?(?:after|from|post)\s+(?:my\s+)?(?:maternity|parental|child\s+care|baby)\b/i,
@@ -3427,6 +3472,35 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const esopSophisticationProbe = detectEsopSophisticationProbe(text);
   const spouseJobConstraint = detectSpouseJobConstraint(text);
   const agingParentCare = detectAgingParentCare(text);
+  /* Wave-2B SHADOW parity-assert (2026-05-21). Legacy direct-call values
+   * above remain canonical; the registry is registered in parallel and
+   * checked here. The contract test enforces byte-for-byte parity across
+   * the adversarial corpus; this dev-only assert surfaces drift fast if
+   * either path is later modified. Cutover to PRIMARY happens in a
+   * separate commit after the soak window. */
+  if (process.env.NODE_ENV !== "production") {
+    const __wave2bRegistry = runRegistry(text);
+    console.assert(
+      taxStructureAsked === Boolean(__wave2bRegistry.taxStructureAsked),
+      "wave-2b drift: taxStructureAsked",
+    );
+    console.assert(
+      bgvAnxiety === Boolean(__wave2bRegistry.bgvAnxiety),
+      "wave-2b drift: bgvAnxiety",
+    );
+    console.assert(
+      esopSophisticationProbe === Boolean(__wave2bRegistry.esopSophisticationProbe),
+      "wave-2b drift: esopSophisticationProbe",
+    );
+    console.assert(
+      spouseJobConstraint === Boolean(__wave2bRegistry.spouseJobConstraint),
+      "wave-2b drift: spouseJobConstraint",
+    );
+    console.assert(
+      agingParentCare === Boolean(__wave2bRegistry.agingParentCare),
+      "wave-2b drift: agingParentCare",
+    );
+  }
   const moonlightingDisclosed = detectMoonlightingDisclosed(text);
   const mentalHealthDisclosed = detectMentalHealthDisclosed(text);
   const payParityAsked = detectPayParityAsked(text);

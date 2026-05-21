@@ -48,14 +48,31 @@ const CORPUS: string[] = [
   "Was promised hybrid, now they're mandating return to office five days.",
   "RTO mandate is becoming a dealbreaker for me.",
   "ctc vs in-hand — I care about take-home pay.",
+  /* Wave-2B signals — newly shadow-registered (2026-05-21). */
+  "Can we restructure the CTC for HRA and LTA tax optimization?",
+  "I'm worried about the BGV — please don't call my current manager.",
+  "What's the 409A FMV and the post-termination exercise window?",
+  "My wife works in Pune, dual-career — can't relocate easily.",
+  "Need to be near my aging parents, they have medical issues.",
 ];
 
-/* The 3 flags currently in SHADOW mode. Keep this list in sync with
- * the registerWaveFlag(...) calls in _candidate-profile.ts. */
+/* Flags registered in the wave-flag registry. Wave-2A is PRIMARY (the
+ * legacy direct-call path has been removed and extractCandidateProfile
+ * reads from runRegistry); Wave-2B is SHADOW (legacy path canonical,
+ * registry registered in parallel). Both groups must agree with the
+ * legacy extractor byte-for-byte. Keep this list in sync with the
+ * registerWaveFlag(...) calls in _candidate-profile.ts. */
 const EXPECTED_SHADOW_FLAGS = [
+  /* Wave-2A (PRIMARY since 2026-05-21). */
   "parentInsuranceAsked",
   "inHandTakehomeFocus",
   "rtoPushback",
+  /* Wave-2B (SHADOW since 2026-05-21). */
+  "taxStructureAsked",
+  "bgvAnxiety",
+  "esopSophisticationProbe",
+  "spouseJobConstraint",
+  "agingParentCare",
 ] as const;
 
 describe("candidate-profile registry — contract", () => {
