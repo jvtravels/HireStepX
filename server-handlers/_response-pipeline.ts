@@ -68,6 +68,15 @@ const WIRED_PROFILE_TOPICS = new Set<string>([
   "market-data-reference",
 ]);
 
+/** Chaos audit (2026-05-21) — structural prompt-template artifacts.
+ *  Matches: unfilled mustache `{{name}}`, markdown code fences,
+ *  lead-anchored `system:` framing, the literal recruiter persona
+ *  string. Used by the pipeline boundary check to swap to a safe
+ *  canonical stub when an LLM regurgitates the prompt scaffolding
+ *  instead of producing prose. */
+export const PROMPT_ARTIFACT_RE =
+  /\{\{[a-z_][a-z0-9_]*\}\}|```|^\s*system\s*:|you\s+are\s+a\s+recruiter/i;
+
 export type GenerateAiTextFn = (
   system: string,
   user: string,
@@ -130,6 +139,24 @@ export async function generateBotReply(
       action,
       move,
       rejectReason: "meta-directive-leak",
+    };
+  }
+  /* Chaos audit (2026-05-21) — defense-in-depth boundary for raw
+   * prompt-template artifacts. If the LLM regurgitates an unfilled
+   * mustache (`{{candidate_name}}`), a markdown code-fence, a raw
+   * `system:` lead, or the literal recruiter persona ("you are a
+   * recruiter"), it means the LLM has reflected the system prompt
+   * back instead of producing prose. The restyle/answer validators
+   * are salary-number focused and don't catch these structural
+   * artifacts. Boundary-swap to a safe stub so the candidate never
+   * sees the seams. */
+  if (PROMPT_ARTIFACT_RE.test(result.text)) {
+    return {
+      text: "Let me circle back on that — give me a beat to think it through.",
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: "prompt-artifact-leak",
     };
   }
   /* PDF#31 BUG F fix (2026-05-18) — empty / whitespace-only text would
