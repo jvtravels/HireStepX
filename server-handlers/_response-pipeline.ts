@@ -36,6 +36,7 @@ import {
   ACK_TEMPLATES,
   META_DIRECTIVE_TOKENS_RE,
 } from "./_canonical-prose";
+import { extractSalaryScalars } from "./_fact-parser";
 import {
   buildFactPack,
   detectFactGap,
@@ -493,20 +494,14 @@ const LOOP_BREAKER_STUB =
 
 /* ─── validators ───────────────────────────────────────────────────── */
 
-/** Numbers (LPA / lakh / crore) that look like salary references. */
-const SALARY_NUM_RE = /(\d+(?:\.\d+)?)\s*(?:LPA|L\b|lakhs?|crores?|cr|lac|lacs)/gi;
-/** ₹-prefixed numbers. */
-const RUPEE_NUM_RE = /₹\s*(\d[\d,.]*)/g;
-
+/* Salary scalar extraction now delegates to the typed `_fact-parser`
+ * module. The legacy `extractNumbers(s) → string[]` contract is
+ * preserved (restyle subset-check still iterates raw digit strings),
+ * but the underlying parse is range-aware and unit-normalised. The
+ * two former regex literals (`SALARY_NUM_RE`, `RUPEE_NUM_RE`) live in
+ * `_fact-parser.ts` as `UNIT_NUM_RE` / `RUPEE_NUM_RE`. */
 function extractNumbers(s: string): string[] {
-  const out: string[] = [];
-  if (!s) return out;
-  let m: RegExpExecArray | null;
-  SALARY_NUM_RE.lastIndex = 0;
-  while ((m = SALARY_NUM_RE.exec(s)) !== null) out.push(m[1]);
-  RUPEE_NUM_RE.lastIndex = 0;
-  while ((m = RUPEE_NUM_RE.exec(s)) !== null) out.push(m[1].replace(/[,]/g, ""));
-  return out;
+  return extractSalaryScalars(s);
 }
 
 const CLOSE_VOCAB_RE =
