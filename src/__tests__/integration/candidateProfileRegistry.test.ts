@@ -54,14 +54,20 @@ const CORPUS: string[] = [
   "What's the 409A FMV and the post-termination exercise window?",
   "My wife works in Pune, dual-career — can't relocate easily.",
   "Need to be near my aging parents, they have medical issues.",
+  /* Wave-2C signals — newly shadow-registered (2026-05-22). */
+  "Do you allow moonlighting? I run a small YouTube channel on the side.",
+  "I'm on leave for burnout — therapy sessions have helped, asking about EAP coverage.",
+  "What's your gender pay parity report? Curious about women in engineering leadership.",
+  "My current employer already gave me a counter-offer and a promotion to retain me.",
+  "Can I have a couple of weeks to decide? Need some time to think before I commit.",
 ];
 
 /* Flags registered in the wave-flag registry. Wave-2A is PRIMARY (the
  * legacy direct-call path has been removed and extractCandidateProfile
- * reads from runRegistry); Wave-2B is SHADOW (legacy path canonical,
- * registry registered in parallel). Both groups must agree with the
- * legacy extractor byte-for-byte. Keep this list in sync with the
- * registerWaveFlag(...) calls in _candidate-profile.ts. */
+ * reads from runRegistry); Wave-2B and Wave-2C are SHADOW (legacy path
+ * canonical, registry registered in parallel). All groups must agree
+ * with the legacy extractor byte-for-byte. Keep this list in sync with
+ * the registerWaveFlag(...) calls in _candidate-profile.ts. */
 const EXPECTED_SHADOW_FLAGS = [
   /* Wave-2A (PRIMARY since 2026-05-21). */
   "parentInsuranceAsked",
@@ -73,6 +79,12 @@ const EXPECTED_SHADOW_FLAGS = [
   "esopSophisticationProbe",
   "spouseJobConstraint",
   "agingParentCare",
+  /* Wave-2C (SHADOW since 2026-05-22). */
+  "moonlightingDisclosed",
+  "mentalHealthDisclosed",
+  "payParityAsked",
+  "preemptiveCounterReceived",
+  "acceptanceTimeRequest",
 ] as const;
 
 describe("candidate-profile registry — contract", () => {
