@@ -37,10 +37,10 @@ import {
   deserializeState,
   isTerminalPhase,
   type NegotiationState,
-  type NegotiationBand,
   type AiMove,
 } from "./_negotiation-kernel";
 import { resolveServerBand } from "./_band-resolver";
+import { validateRequestBody } from "./_request-validator";
 import { enforceRoleLabel } from "./_role-label";
 import { checkBandSanity, bandFamilyForRole, clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
@@ -118,56 +118,11 @@ const IDEMPOTENCY_TTL_SEC = 60;
  * ./_band-resolver — extracted so the kernel can re-resolve mid-session
  * when freshGradDisclosed flips true. Imported above. */
 
-interface InitRequest {
-  action: "init";
-  sessionId: string;
-  role: string;
-  company: string;
-  band?: NegotiationBand;
-  maxTurns?: number;
-  /** Candidate's self-reported experience level (entry/mid/senior/lead/
-   *  executive). Threaded through to generateNegotiationBand so the
-   *  server-resolved band reflects seniority — without this, a senior
-   *  Java dev applying to TCS was getting the entry-level band ceiling
-   *  (May 2026 session). Untrusted in the sense that the salary-lookup
-   *  pipeline gates downstream, but the field itself is informational. */
-  experienceLevel?: string;
-  /* Phase 29 (2026-05-14) — role-applicable YOE. The client computes
-   * (totalYoe, primaryDomain) from the resume and applicableYoe from
-   * the (primaryDomain, role) pair. When applicableYoe is provided, it
-   * trumps experienceLevel — a Senior Product Designer pivoting to
-   * Java would carry experienceLevel="senior" from onboarding but
-   * applicableYoe≈0, and the band must reflect the latter. Untrusted
-   * in the band-resolution sense (salary-lookup gates downstream), but
-   * the dispatch field is informational. */
-  totalYoe?: number | null;
-  applicableYoe?: number | null;
-  primaryDomain?: string | null;
-  /** Fresher-flow extension (2026-05-14c). Optional onboarding signal —
-   *  client may pass collegeTier from resume parsing or a self-select
-   *  field. Routes into resolveServerBand as a ±20-25% multiplier on
-   *  the entry band. Server-validated to the known enum before use. */
-  collegeTier?: string;
-  /** Fresher-flow extension (2026-05-14d). Optional override of the
-   *  default 6-month internship duration when the role is an intern
-   *  role. Sent by the onboarding flow when the user selects a 12-week
-   *  summer / 3-month winter program. Clamped server-side to [1,12]. */
-  internshipMonths?: number;
-  /* ResumeFactPack track (2026-05-16) — caller may supply EITHER a
-   * pre-built fact pack OR a raw parsed-resume shape. The kernel builds
-   * the pack once at init and stores it frozen on state. Used by the
-   * credibility-probe lever and the counter-math prior-CTC floor. */
-  resumeFactPack?: import("./_resume-fact-pack").ResumeFactPack | null;
-  parsedResume?: import("./_resume-fact-pack").ParsedResume | null;
-}
-
-interface TurnRequest {
-  action: "turn";
-  state: string; // serialized NegotiationState
-  candidateAnswer: string;
-}
-
-type RequestBody = InitRequest | TurnRequest;
+/* Request shapes used to live here as `InitRequest`/`TurnRequest`/
+ * `RequestBody`. They were replaced by the validated shapes in
+ * `_request-validator.ts` (2026-05-21 audit follow-up). The validator
+ * owns the field documentation now — the handler reads pre-cleaned
+ * values from validation.body. */
 
 /* ─── LLM glue (injectable for tests) ─────────────────────────────── */
 
@@ -298,12 +253,28 @@ export default async function handler(
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;
 
-  let body: RequestBody;
+  let rawBody: unknown;
   try {
-    body = (await req.json()) as RequestBody;
+    rawBody = await req.json();
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers });
   }
+
+  /* Audit follow-up (2026-05-21) — API boundary schema validation.
+   * Untyped JSON payload is run through a Result-style validator
+   * (_request-validator.ts) that asserts presence, type, length, and
+   * shape on every documented field. Replaces 30+ lines of inline
+   * `body.X || default` coercion. On invalid shape we return a 400
+   * with a precise error message — corruption can no longer flow into
+   * the kernel and surface deep in the parser. */
+  const validation = validateRequestBody(rawBody);
+  if (!validation.ok) {
+    return new Response(JSON.stringify({ error: validation.error }), {
+      status: validation.status,
+      headers,
+    });
+  }
+  const body = validation.body;
 
   const llm = deps?.llm ?? defaultLlmCaller;
 
@@ -311,33 +282,18 @@ export default async function handler(
     const distinctId = distinctIdFrom(req, auth.userId);
 
     if (body.action === "init") {
+      /* Field coercion / validation now lives in _request-validator.ts —
+       * the values below are pre-cleaned (defaults applied, enums
+       * narrowed, numbers asserted finite). SECURITY: body.band is
+       * still ignored here and recomputed server-side from (role,
+       * company) so a tampered client can't push the band ceiling. */
       const role = body.role || "swe";
-      const company = body.company || "";
-      /* SECURITY: ignore body.band. Recompute server-side from (role,
-         company) so a tampered client can't push the band ceiling. */
-      const applicableYoe = typeof body.applicableYoe === "number" && Number.isFinite(body.applicableYoe)
-        ? body.applicableYoe
-        : null;
-      const totalYoe = typeof body.totalYoe === "number" && Number.isFinite(body.totalYoe)
-        ? body.totalYoe
-        : null;
-      const primaryDomain = typeof body.primaryDomain === "string" && body.primaryDomain
-        ? body.primaryDomain
-        : null;
-      /* Fresher-flow extension (2026-05-14c): collegeTier may arrive in
-       * the onboarding body (resume-derived or self-selected). PPO flag
-       * is candidate-utterance-derived so it won't be set at init —
-       * mid-session rebase handles the late-disclosure case. Accept a
-       * conservative subset of CollegeTier strings; anything else
-       * passes through as null and falls back to the standard band. */
-      const onboardingCollegeTier =
-        body.collegeTier === "tier-1" || body.collegeTier === "tier-2" || body.collegeTier === "tier-3"
-          ? body.collegeTier
-          : null;
-      const onboardingInternshipMonths =
-        typeof body.internshipMonths === "number" && Number.isFinite(body.internshipMonths)
-          ? body.internshipMonths
-          : undefined;
+      const company = body.company;
+      const applicableYoe = body.applicableYoe;
+      const totalYoe = body.totalYoe;
+      const primaryDomain = body.primaryDomain;
+      const onboardingCollegeTier = body.collegeTier;
+      const onboardingInternshipMonths = body.internshipMonths;
       const resolvedBand = resolveServerBand(role, company, body.experienceLevel, applicableYoe, {
         collegeTier: onboardingCollegeTier,
         internshipMonths: onboardingInternshipMonths,

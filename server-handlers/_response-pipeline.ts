@@ -101,7 +101,20 @@ export async function generateBotReply(
   generateAiText: GenerateAiTextFn,
   candidateAnswer?: string,
 ): Promise<PipelineResult> {
-  const action = planNextAction(state);
+  const rawAction = planNextAction(state);
+  /* Audit follow-up (2026-05-21) — planner → pipeline shape guard.
+   * planNextAction is the kernel's authoritative decision; downstream
+   * validators (NEXT_ACTION_CONTRACT, validateRestyle) all key off
+   * action.kind. If a future planner branch ever returns a malformed
+   * shape (missing kind, non-string kind, null, etc.), the validators
+   * silently no-op and the LLM lands an unchecked restyle. Catch
+   * malformed planner output at the boundary and degrade to a safe
+   * terminal-restate (which has no contract requirements other than
+   * canonical-verbatim) before the LLM is invoked. */
+  const action: NextAction =
+    rawAction && typeof rawAction === "object" && typeof (rawAction as { kind?: unknown }).kind === "string" && (rawAction as { kind: string }).kind.length > 0
+      ? rawAction
+      : ({ kind: "terminal-restate" } as NextAction);
   const move = actionToLever(action, state);
 
   /* Off-script candidate-question routing. Two signals — preferred is

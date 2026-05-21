@@ -1,4 +1,4 @@
-import { registerWaveFlag } from "./_candidate-profile-registry";
+import { registerWaveFlag, runRegistry } from "./_candidate-profile-registry";
 
 /* Candidate-profile parser — Phase 17B (2026-05-13).
  *
@@ -2110,15 +2110,16 @@ function detectRtoPushback(t: string): boolean {
   return RTO_PUSHBACK_PATTERNS.some((p) => p.test(t));
 }
 
-/* Audit follow-up (2026-05-21) — wave-flag registry SHADOW registration.
+/* Audit follow-up (2026-05-21) — wave-flag registry PRIMARY mode.
  * Three Wave-2A detectors register themselves with the composition seam
- * (`_candidate-profile-registry.ts`). The legacy direct-call path in
- * extractCandidateProfile remains canonical; the registry runs in
- * shadow and a contract test asserts byte-identical parity. When the
- * wave is fully cut over the registration becomes PRIMARY and the
- * legacy lines below in extract/merge/EMPTY can be deleted without
- * behaviour change. This is the proof-of-pattern; six more waves to
- * migrate after this. */
+ * (`_candidate-profile-registry.ts`). As of the 2026-05-21 cutover,
+ * extractCandidateProfile READS these flags from the registry via
+ * runRegistry(text) — the legacy direct-call path was removed. The
+ * `detect:` references below are now the single source of truth for
+ * these three signals. The parity contract test
+ * (candidateProfileRegistry.test.ts) remains in place as a regression
+ * backstop against accidental drift if either path is later modified
+ * independently. Six more waves to migrate after this. */
 registerWaveFlag({
   name: "parentInsuranceAsked",
   waveId: "wave-2A",
@@ -3402,10 +3403,23 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const gardenLeaveDisclosed = detectGardenLeaveDisclosed(text);
   const nonCompeteFlagged = detectNonCompeteFlagged(text);
   const relocationBonusAsked = detectRelocationBonusAsked(text);
-  /* Wave-2 (2026-05-14i) — 20 deeper signals. */
-  const parentInsuranceAsked = detectParentInsuranceAsked(text);
-  const inHandTakehomeFocus = detectInHandTakehomeFocus(text);
-  const rtoPushback = detectRtoPushback(text);
+  /* Wave-2 (2026-05-14i) — 20 deeper signals.
+   *
+   * Wave-2A SHADOW → PRIMARY cutover (2026-05-21). The three flags
+   * below (parentInsuranceAsked, inHandTakehomeFocus, rtoPushback) used
+   * to be computed by direct detector calls AND parallel-registered in
+   * the wave-flag registry for shadow parity. The parity contract test
+   * (`candidateProfileRegistry.test.ts`) ran green for the entire SHADOW
+   * window. Switching to read from the registry output here removes the
+   * dual-write — the registered `detect:` references still point at the
+   * same module-local functions, so behaviour is byte-identical to
+   * SHADOW mode. The parity test now becomes a tautological backstop
+   * that prevents accidental drift if either path is later modified
+   * independently. */
+  const __wave2aRegistry = runRegistry(text);
+  const parentInsuranceAsked = Boolean(__wave2aRegistry.parentInsuranceAsked);
+  const inHandTakehomeFocus = Boolean(__wave2aRegistry.inHandTakehomeFocus);
+  const rtoPushback = Boolean(__wave2aRegistry.rtoPushback);
   const returnshipMaternity = detectReturnshipMaternity(text);
   const payBandAsked = detectPayBandAsked(text);
   const taxStructureAsked = detectTaxStructureAsked(text);

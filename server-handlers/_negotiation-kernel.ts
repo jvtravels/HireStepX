@@ -48,6 +48,8 @@ import {
   selectNextRoundPersona,
   ROUND_PERSONA_SEQUENCE,
 } from "./_negotiation-rounds";
+import { clampBandToTierP50 } from "./_band-sanity";
+import { getCompanyTier } from "../data/company-tiers";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
 import { classifyCandidateArchetype } from "./_candidate-archetype";
 import { classifyNumberRoles } from "./_number-role-classifier";
@@ -3756,10 +3758,24 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      * internshipConversion from the (merged) candidate profile into the
      * rebase. Both are monotone-up, so reading from `next` (the about-to-
      * commit state) captures any disclosure made on this turn. */
-    const rebased = resolveServerBand(state.role, state.company, "entry", 0, {
+    const rebasedRaw = resolveServerBand(state.role, state.company, "entry", 0, {
       collegeTier: next.candidateProfile?.collegeTier ?? null,
       internshipConversion: next.candidateProfile?.internshipConversion ?? false,
     });
+    /* Audit follow-up (2026-05-21) — mid-session band re-clamp. The
+     * INIT path runs clampBandToTierP50 to catch curator data that
+     * would price the opener at >2× the tier P50 (Wipro UI/UX ₹27L
+     * regression). The fresher-rebase path used to skip the clamp,
+     * which meant a senior PD disclosing pre-grad at TCS could land on
+     * a rebased band that still inherited a designer-family curator
+     * outlier. Apply the same clamp here, gated by the highest-offer
+     * floor below so we still never claw back an already-committed
+     * number. */
+    const rebasedTier = getCompanyTier(state.company);
+    const rebasedClamp = clampBandToTierP50(rebasedRaw, state.role, rebasedTier);
+    const rebased = rebasedClamp.clamped
+      ? { ...rebasedRaw, ...rebasedClamp.band }
+      : rebasedRaw;
     const floor = Math.max(state.highestOfferMade ?? 0, rebased.initialOffer);
     /* `band` is `readonly` on NegotiationState — by design it's an
      * init-time field. Phase 30 is the one explicit case where we
