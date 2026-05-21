@@ -1381,7 +1381,12 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             const rawText = panelMembers && isAi ? msg.text.replace(/^\[.+?\]\s*/, "") : msg.text;
             const displayText = isAi ? stripProsodyMarkup(rawText) : rawText;
             return (
-              <div key={`${msg.speaker}-${msg.time}-${i}`} style={{ display: "flex", gap: 10 }}>
+              <article
+                key={`${msg.speaker}-${msg.time}-${i}`}
+                role="article"
+                aria-label={isAi ? `${speakerName} (recruiter) at ${msg.time}` : `You at ${msg.time}`}
+                style={{ display: "flex", gap: 10 }}
+              >
                 <div style={{
                   width: 24, height: 24, borderRadius: "50%", flexShrink: 0, marginTop: 1,
                   background: isAi ? `${speakerColor}1A` : "rgba(49,46,129,0.12)",
@@ -1412,7 +1417,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
                     {displayText}
                   </p>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
@@ -1521,7 +1526,7 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
   const maxRetries = 2;
   const canRetry = retryCountRef.current < maxRetries;
   return (
-    <div style={{
+    <div role="status" aria-live="polite" aria-label="Evaluating your interview" style={{
       position: "fixed", inset: 0, zIndex: 200,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       // Cream surface — matches the SessionReport view that loads next so

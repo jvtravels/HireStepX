@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { c, font, radius } from "./tokens";
 import { QualityContent } from "./AdminQualityDashboard";
+import { EmptyState } from "./components/EmptyState";
 
 /* ─── Token-based auth ─── */
 const TOKEN_KEY = "hirestepx_admin_token";
@@ -367,16 +368,6 @@ function ServiceStatusBadge({ status }: { status: string }) {
   );
 }
 
-/* ─── Empty State ─── */
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div style={{ ...card, textAlign: "center", padding: 60 }}>
-      <p style={{ fontSize: 16, color: c.stone, margin: 0 }}>{message}</p>
-    </div>
-  );
-}
-
 /* ─── Refresh Button ─── */
 
 function RefreshButton({ onClick, loading }: { onClick: () => void; loading: boolean }) {
@@ -730,7 +721,7 @@ export default function AdminDashboard() {
   /* ─── Render Helpers ─── */
 
   const renderOverview = () => {
-    if (!overview) return <EmptyState message="No overview data available" />;
+    if (!overview) return <EmptyState title="No overview data available" />;
     const { users: u, sessions: s, revenue: r, llm: l } = overview;
 
     return (
@@ -876,7 +867,7 @@ export default function AdminDashboard() {
   };
 
   const renderSessionDetail = () => {
-    if (!sessionDetail || !sessionDetail.session) return <EmptyState message="Session not found" />;
+    if (!sessionDetail || !sessionDetail.session) return <EmptyState title="Session not found" />;
     const s = sessionDetail.session;
     const skillScores = s.skill_scores && typeof s.skill_scores === "object" ? s.skill_scores as Record<string, unknown> : {};
     const scoreColor = (score: number) => score >= 65 ? c.sage : score >= 40 ? c.gilt : c.ember;
@@ -1033,7 +1024,7 @@ export default function AdminDashboard() {
   };
 
   const renderUserDetail = () => {
-    if (!userDetail?.profile) return <EmptyState message="User not found" />;
+    if (!userDetail?.profile) return <EmptyState title="User not found" />;
     const p = userDetail.profile;
 
     return (
@@ -1178,7 +1169,7 @@ export default function AdminDashboard() {
   };
 
   const renderFinancials = () => {
-    if (!financials) return <EmptyState message="No financial data available" />;
+    if (!financials) return <EmptyState title="No financial data available" />;
 
     return (
       <div>
@@ -1244,7 +1235,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : (
-          <EmptyState message="No payments recorded yet" />
+          <EmptyState title="No payments recorded yet" />
         )}
       </div>
     );
@@ -1390,7 +1381,7 @@ export default function AdminDashboard() {
   };
 
   const renderLLM = () => {
-    if (!llm) return <EmptyState message="No AI/LLM data available" />;
+    if (!llm) return <EmptyState title="No AI/LLM data available" />;
 
     return (
       <div>
@@ -1540,7 +1531,7 @@ export default function AdminDashboard() {
   };
 
   const renderSessions = () => {
-    if (!sessions) return <EmptyState message="No session data available" />;
+    if (!sessions) return <EmptyState title="No session data available" />;
 
     return (
       <div>
@@ -1645,14 +1636,14 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : (
-          <EmptyState message="No sessions recorded yet" />
+          <EmptyState title="No sessions recorded yet" />
         )}
       </div>
     );
   };
 
   const renderFeedback = () => {
-    if (!feedback) return <EmptyState message="No feedback data available" />;
+    if (!feedback) return <EmptyState title="No feedback data available" />;
 
     const ratingColors: Record<string, string> = {
       helpful: c.sage, too_harsh: c.ember, too_generous: c.gilt, inaccurate: c.ember,
@@ -1702,7 +1693,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : (
-          <EmptyState message="No feedback received yet" />
+          <EmptyState title="No feedback received yet" />
         )}
       </div>
     );
@@ -1757,7 +1748,7 @@ export default function AdminDashboard() {
   };
 
   const renderOutcomes = () => {
-    if (!outcomes) return <EmptyState message="No outcome data yet — users haven't reported job-search results." />;
+    if (!outcomes) return <EmptyState title="No outcome data yet — users haven't reported job-search results." />;
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
@@ -1831,7 +1822,7 @@ export default function AdminDashboard() {
   /* ─── New tab renderers ─── */
 
   const renderReferrals = () => {
-    if (!referrals) return <EmptyState message="No referral data available" />;
+    if (!referrals) return <EmptyState title="No referral data available" />;
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
@@ -1904,7 +1895,7 @@ export default function AdminDashboard() {
   };
 
   const renderPromoCodes = () => {
-    if (!promoCodes) return <EmptyState message="No promo code data available" />;
+    if (!promoCodes) return <EmptyState title="No promo code data available" />;
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
@@ -1952,13 +1943,13 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-        ) : <EmptyState message="No promo codes have been created yet." />}
+        ) : <EmptyState title="No promo codes have been created yet." />}
       </div>
     );
   };
 
   const renderCalendar = () => {
-    if (!calendar) return <EmptyState message="No calendar data available" />;
+    if (!calendar) return <EmptyState title="No calendar data available" />;
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
@@ -2014,13 +2005,13 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-        ) : <EmptyState message="No upcoming or recent calendar events." />}
+        ) : <EmptyState title="No upcoming or recent calendar events." />}
       </div>
     );
   };
 
   const renderStoryNotebook = () => {
-    if (!storyNotebook) return <EmptyState message="No story-notebook data available" />;
+    if (!storyNotebook) return <EmptyState title="No story-notebook data available" />;
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
@@ -2083,7 +2074,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-        ) : <EmptyState message="No saved stories yet." />}
+        ) : <EmptyState title="No saved stories yet." />}
       </div>
     );
   };
