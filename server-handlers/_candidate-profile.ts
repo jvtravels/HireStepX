@@ -1468,6 +1468,19 @@ export const EMPTY_CANDIDATE_PROFILE: CandidateProfileResult = {
   referencedMarketDataSources: [],
   mentionedTaxImplication: false,
 
+  /* Audit follow-up (2026-05-21) — Wave-fact-disclosure markers. These
+   * are typed `?: boolean` on the interface and were silently absent
+   * from EMPTY, so consumers spreading `...EMPTY_CANDIDATE_PROFILE`
+   * received `undefined` for these fields. The chaos test caught this
+   * as schema drift between extract output and EMPTY. Defaults explicit
+   * so spread-construction yields a fully-populated profile. */
+  currentCtcDisclosed: false,
+  fixedVariableSplitDisclosed: false,
+  inHandSalaryDisclosed: false,
+  noticePeriodDisclosed: false,
+  competingOffersDisclosed: false,
+  valueProofProvided: false,
+
   hasAny: false,
 };
 
