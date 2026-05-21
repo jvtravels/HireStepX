@@ -31,6 +31,7 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["MAX_NOTICE_DAYS", "kernel-public clamp constant; documentation surface for downstream validators"],
   ["MAX_GAP_MONTHS", "kernel-public clamp constant; documentation surface for downstream validators"],
   ["CONVERSATION_LOG_CAP", "kernel-public log cap; documentation constant"],
+  ["KERNEL_STATE_VERSION", "wire-format version marker (2026-05-21 audit follow-up); consumed inside serializeState + deserializeState in the same file (rg excludes the defining file) and exported so the wireFormatVersion.test.ts contract can pin the version + so future kernel forks can branch on it"],
   ["detectCurrentEmployer", "internally called inside _negotiation-kernel.ts (rg excludes the defining file)"],
   ["computeTurnDelta", "internally called inside _negotiation-kernel.ts by applyCandidateAnswer's finalize() (rg excludes the defining file); exported for unit-testability of the diff logic"],
   ["EMPTY_TURN_DELTA", "zero-value TurnDelta constant exported for test fixtures to spread over; prevents tests from becoming stale when new fields are added to TurnDelta"],

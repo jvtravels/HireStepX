@@ -4993,8 +4993,22 @@ function fingerprintWords(s: string): string[] {
 
 /* JSON-safe state for over-the-wire transit. Sets/Maps and `readonly`
    round-trip cleanly because NegotiationState uses plain arrays. */
+/* Audit follow-up (2026-05-21) — wire-format version. Embedded under
+ * the reserved `__v` key on every serialized state. The kernel reads
+ * it on deserialize to refuse FUTURE-versioned payloads loudly (rather
+ * than letting an unknown shape silently coerce through the
+ * back-compat backfill chain). Bump this number ONLY when a kernel
+ * change makes prior serialized states incompatible (field rename,
+ * shape change, enum narrowing). Adding new fields with defaults does
+ * NOT require a bump — the backfill block in deserializeState handles
+ * that case. */
+export const KERNEL_STATE_VERSION = 1;
+
 export function serializeState(state: NegotiationState): string {
-  return JSON.stringify(state);
+  /* Embed `__v` so a future kernel can refuse stale formats. The key
+   * is deliberately namespaced (`__` prefix) so it cannot collide with
+   * a legitimate state field name. */
+  return JSON.stringify({ ...state, __v: KERNEL_STATE_VERSION });
 }
 
 const VALID_PHASES: ReadonlySet<NegotiationPhase> = new Set<NegotiationPhase>([
@@ -5435,6 +5449,32 @@ export function validateState(state: unknown): asserts state is NegotiationState
 
 export function deserializeState(json: string): NegotiationState {
   const parsed: unknown = JSON.parse(json);
+  /* Audit follow-up (2026-05-21) — wire-format version check. Refuse
+   * payloads with __v ABOVE the kernel's current KERNEL_STATE_VERSION:
+   * that means the client is running a newer kernel and the server
+   * has been rolled back / lags behind. Failing loudly here prevents
+   * the back-compat backfill chain from silently coercing a
+   * future-shape payload into the legacy default values. Payloads
+   * with NO __v (legacy in-flight sessions) and with __v ≤ current
+   * are accepted as before. */
+  if (parsed && typeof parsed === "object") {
+    const wireVersion = (parsed as { __v?: unknown }).__v;
+    if (wireVersion !== undefined) {
+      if (typeof wireVersion !== "number" || !Number.isFinite(wireVersion)) {
+        throw new Error(`state.__v: expected finite number, got ${typeof wireVersion}`);
+      }
+      if (wireVersion > KERNEL_STATE_VERSION) {
+        throw new Error(
+          `state.__v=${wireVersion} exceeds server KERNEL_STATE_VERSION=${KERNEL_STATE_VERSION} ` +
+            `(client is newer than server — refusing rather than coercing)`,
+        );
+      }
+      /* Strip __v before downstream validators run. The version marker
+       * is wire-only metadata; it is NOT a field on NegotiationState
+       * so leaving it in would trip strict shape checks elsewhere. */
+      delete (parsed as { __v?: unknown }).__v;
+    }
+  }
   validateState(parsed);
   /* Backfill defaults for optional fields added after the wire format
      was first deployed. Existing in-flight sessions serialized without
