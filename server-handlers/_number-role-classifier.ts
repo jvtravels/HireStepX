@@ -222,10 +222,21 @@ interface SalarySpan {
   isRangeUpper: boolean;
 }
 
+/** Voice-STT robustness (2026-05-22): mirror the same `lp[a-z]` near-miss
+ *  tolerance the shared `_fact-parser.ts` adopted. Indian candidates
+ *  spell "L-P-A" out loud and Sarvam / Azure STT regularly mis-transcribe
+ *  the trailing vowel ("LPE", "LPI", "LPO", "LPU") or close consonant
+ *  ("LPS", "LPP"). The unit shape `[Dd]igits + LP[A-Z]` is unambiguous
+ *  in the Indian-HR register; accept the whole family as LPA so the
+ *  role-classifier mirrors the fact-parser. */
+const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|l|cr|crore)";
+
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
-const LPA_NUM_RE =
-  /(?:^|[^a-z0-9])(₹?\s*)([\d,]+(?:\.\d+)?)\s*(lpa|lakhs?|lacs?|l|cr|crore)\b/gi;
+const LPA_NUM_RE = new RegExp(
+  `(?:^|[^a-z0-9])(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP}\\b`,
+  "gi",
+);
 
 /** USD-shaped salary number: `$NNNk` / `$NNN,NNN`. */
 const USD_NUM_RE =
@@ -233,8 +244,10 @@ const USD_NUM_RE =
 
 /** Range pattern — matches `30-35 LPA` / `30 to 35 lakhs` / `₹30 – ₹35 LPA`.
  *  Used to mark the upper-bound number as `isRangeUpper`. */
-const RANGE_RE =
-  /(₹?\s*)([\d,]+(?:\.\d+)?)\s*(?:[-–—]|to)\s*(₹?\s*)([\d,]+(?:\.\d+)?)\s*(lpa|lakhs?|lacs?|l|cr|crore)\b/gi;
+const RANGE_RE = new RegExp(
+  `(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*(?:[-–—]|to)\\s*(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP}\\b`,
+  "gi",
+);
 
 /** Units that should make us SKIP a numeric match — these are not
  *  salary disclosures. `\d+ days`, `\d+ years`, `\d+%`, `\d+ PF`. */

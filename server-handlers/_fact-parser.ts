@@ -49,21 +49,36 @@ export interface SalaryFact {
 
 /* ─────────────── core patterns ─────────────── */
 
+/* Voice-STT robustness (2026-05-22): Indian candidates say "LPA" out
+ * loud constantly ("thirty-six L-P-A"), and the Sarvam / Azure STT
+ * layers regularly mis-transcribe the trailing "A" as a different
+ * vowel — "LPE", "LPI", "LPO", "LPU" — or as a close consonant
+ * ("LPS", "LPP"). User report (Flipkart Senior Product Designer
+ * session): candidate said "my current CTC is 36 LPA" → STT shipped
+ * "36 LPE" → parser returned [] → kernel saw no disclosure → engine
+ * fell through to the static closing on turn 1. The unit shape is
+ * unambiguous (digits + space + "LP" + one letter), so accept any
+ * `LP[A-Z]` token as LPA — there is no real word in the Indian-HR
+ * register that this collides with. */
+const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|crores?|cr|lacs?|L";
+
 /* Standalone salary-bearing tokens: 22 LPA / 22.5 lakhs / 1.2 crore / 22L.
  * Capture groups:
  *   1 → digits, 2 → unit token */
-const UNIT_NUM_RE = /(\d+(?:\.\d+)?)\s*(LPA|lakhs?|crores?|cr|lacs?|L)\b/gi;
+const UNIT_NUM_RE = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*(${UNIT_TOKEN})\\b`, "gi");
 
 /* ₹-prefixed numbers — these may or may not have a unit token after. */
-const RUPEE_NUM_RE = /₹\s*(\d[\d,.]*)(?:\s*(LPA|lakhs?|crores?|cr|lacs?|L)\b)?/gi;
+const RUPEE_NUM_RE = new RegExp(`₹\\s*(\\d[\\d,.]*)(?:\\s*(${UNIT_TOKEN})\\b)?`, "gi");
 
 /* Range detector — bridges two numbers across a dash/hyphen/word "to",
  * with a shared trailing unit. Matches both:
  *   "22-24 LPA"      (single unit at the end)
  *   "₹22 to ₹24 LPA" (₹-prefixed peers)
  *   "22 to 24 LPA" */
-const RANGE_RE =
-  /(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(?:₹\s*)?(\d+(?:\.\d+)?)\s*(LPA|lakhs?|crores?|cr|lacs?|L)\b/gi;
+const RANGE_RE = new RegExp(
+  `(?:₹\\s*)?(\\d+(?:\\.\\d+)?)\\s*(?:-|–|to)\\s*(?:₹\\s*)?(\\d+(?:\\.\\d+)?)\\s*(${UNIT_TOKEN})\\b`,
+  "gi",
+);
 
 function normaliseUnit(raw: string | undefined): SalaryUnit {
   if (!raw) return "raw";
@@ -71,6 +86,10 @@ function normaliseUnit(raw: string | undefined): SalaryUnit {
   if (u === "lpa") return "LPA";
   if (u.startsWith("crore") || u === "cr") return "crore";
   if (u.startsWith("lakh") || u.startsWith("lac") || u === "l") return "lakh";
+  /* STT typo tolerance — any 3-char `lp?` shape (lpe / lps / lpp / lpi /
+   * lpo / lpu / lpm …) is treated as LPA. Constrained by the regex above
+   * to `LP[A-Z]`, so this branch only ever sees the near-miss family. */
+  if (u.length === 3 && u.startsWith("lp")) return "LPA";
   return "raw";
 }
 
