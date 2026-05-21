@@ -43,6 +43,10 @@ export function proseAnchorWithOffer(
         "indian-unicorn":" The cash sits inside our band; ESOP grant is on top.",
         "early-startup": " Cash is tight at this stage, but equity % is where we can stretch.",
         "bfsi":          " Fixed sits as per our regulatory band; variable is on the performance cycle.",
+        /* Realism-Audit Fix 1 — three new sector personas. */
+        "psu":           " That's the grade fitment as per the pay-scale matrix; HRA and LTC are on top per government norms.",
+        "consulting-big4": " That's the fitment to the level — internal equity caps any movement at this band.",
+        "fmcg-management": " That's the band for the leadership-development cohort; the trajectory matters more than the joining number.",
         "default":       "",
       });
   if (typeof variableMax === "number" && variableMax > 0) {

@@ -208,14 +208,18 @@ export interface AnalyzerMeta {
     } | null;
     /** Phase 3 — Indian recruiter SECTOR persona resolved from the
      *  tier bucket. Stable string set; UI renders a chip next to the
-     *  tier band chip. `default` is shown when tier is unknown OR
-     *  unmapped (FMCG / PSU). */
+     *  tier band chip. Realism-Audit Fix 1 (2026-05-22) adds `psu`,
+     *  `consulting-big4`, and `fmcg-management` so PSU + FMCG sessions
+     *  no longer fall through to `default`. */
     recruiterPersona?:
       | "it-services"
       | "gcc"
       | "indian-unicorn"
       | "early-startup"
       | "bfsi"
+      | "psu"
+      | "consulting-big4"
+      | "fmcg-management"
       | "default";
     recruiterPersonaLabel?: string;
     /** Phase 5 Session B (2026-05-19) — multi-round signals. Inferred

@@ -64,9 +64,14 @@ describe("selectRecruiterSectorPersona — tier-bucket mapping", () => {
   it("bfsi tier → bfsi persona", () => {
     expect(selectRecruiterSectorPersona({ tierBucket: "bfsi" })).toBe("bfsi");
   });
-  it("fmcg / psu → default (no sector-specific override yet)", () => {
-    expect(selectRecruiterSectorPersona({ tierBucket: "fmcg" })).toBe("default");
-    expect(selectRecruiterSectorPersona({ tierBucket: "psu" })).toBe("default");
+  /* Realism-Audit Fix 1 (2026-05-22) — fmcg / psu now route to their
+   * own sector personas (`fmcg-management` / `psu`) rather than
+   * falling through to default. */
+  it("fmcg → fmcg-management persona", () => {
+    expect(selectRecruiterSectorPersona({ tierBucket: "fmcg" })).toBe("fmcg-management");
+  });
+  it("psu → psu persona", () => {
+    expect(selectRecruiterSectorPersona({ tierBucket: "psu" })).toBe("psu");
   });
   it("unknown tier + no band shape → default", () => {
     expect(selectRecruiterSectorPersona({})).toBe("default");

@@ -464,6 +464,30 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         hint:
           "The recruiter answered honestly after you asked for the breakdown. Same numbers, different framing — this is what you should always anchor on.",
       };
+    /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall is a
+     * leverage move, not a tactical lever. The coaching hint differs by
+     * mode: open turns flag "the recruiter is stalling"; return turns
+     * confirm the outcome. */
+    case "manager-consult-stall":
+      if (action.mode === "open") {
+        return {
+          label: "Recruiter stall (manager consult)",
+          family: "meta",
+          hint:
+            "The recruiter has deferred to a manager / comp committee. This is the #1 Indian-recruiter leverage tactic — expect a small concession or a hold on the return turn. Don't restate your ask while the stall is in flight; let them come back.",
+        };
+      }
+      return {
+        label:
+          action.mode === "return-move"
+            ? "Stall return — small concession"
+            : "Stall return — band held",
+        family: "meta",
+        hint:
+          action.mode === "return-move"
+            ? "The recruiter came back with a small concession after the stall. This is real movement; weigh it against your walk-away."
+            : "The recruiter held the band after the stall. The leverage tactic was a hold, not a setup for movement.",
+      };
   }
   /* Exhaustiveness fallback — TS's stricter Vercel build flags this
    * function as "lacks ending return" without an explicit out-of-switch

@@ -65,6 +65,7 @@ import { analyzeEquityClarity } from "./_trial-close-detector";
 import { marketDataSources } from "./_candidate-profile";
 import { resumeConfirmsCompany } from "./_resume-fact-pack";
 import { hasConcreteTell } from "./_competing-offer-detail";
+import { getRecruiterSectorPersona } from "./_indian-recruiter-personas";
 
 /** Polish 3 (2026-05-16) — render the reactive followup for a
  *  candidate who cited external market data. When the candidate named
@@ -452,6 +453,43 @@ export type NextAction =
       kind: "round-transition";
       from: NegotiationRoundPersona;
       to: NegotiationRoundPersona;
+    }
+  /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.
+   *
+   * Real Indian recruiters' #1 leverage tactic is the multi-turn stall:
+   * "let me check with my manager and revert by tomorrow." The
+   * simulator now genuinely models this: when fired, the kernel sets
+   * `stallTurnsRemaining` so the next AI turn ships a deterministic
+   * stall-return outcome ("checked — we can move ₹X on joining
+   * bonus only" / "checked — band stays") that reuses the stalled-ask
+   * context (`lastStallContext`).
+   *
+   * `mode`:
+   *   - "open" — the first turn the stall fires (no outcome yet)
+   *   - "return-move"  — return turn that ships a small concession
+   *   - "return-hold"  — return turn that holds the band firm
+   *
+   * Pre-conditions enforced in the planner gate:
+   *   1. NOT the first AI turn (recruiter must have heard the ask).
+   *   2. Candidate just dropped an ask above `band.maxStretch`.
+   *   3. Persona's `stallProbability` ≥ stallGateThreshold OR
+   *      `recruiterSectorPersona` ∈ {psu, consulting-big4}.
+   *   4. `stallsFiredCount` < 3 in this session.
+   *   5. No stall is already in-flight (`stallTurnsRemaining === 0`).
+   *
+   * NOT a probe — does not feed the askedTopics ledger (see
+   * NON_PROBE_ACTION_KINDS in the kernel). */
+  | {
+      kind: "manager-consult-stall";
+      mode: "open" | "return-move" | "return-hold";
+      /** Stalled-ask context: the candidate's number that prompted the
+       *  stall, carried verbatim to the return turn so coaching can see
+       *  the simulator genuinely tracked the ask. */
+      stalledAskLpa: number | null;
+      /** On the return turn, the small concession the persona ships
+       *  ("checked — we can move ₹2L on joining bonus") OR null when
+       *  the return mode is "hold". Always null in "open" mode. */
+      returnConcessionLpa: number | null;
     };
 
 /** AR1 / Audit Pass 4 — set of NextAction kinds that probe (i.e. carry
@@ -794,6 +832,103 @@ function buildUncertaintyRangeAsk(itemRoot: string): string {
   return "Rough range or ballpark is fine — no need for an exact number.";
 }
 
+/** Realism-Audit Fix 3 (2026-05-22) — manager-consult stall gate.
+ *
+ *  Returns the stall PlannedAction (open OR return) when all gate
+ *  conditions are met, else null and the planner cascade proceeds
+ *  normally. Pure / deterministic; reads `stallTurnsRemaining`,
+ *  `stallsFiredCount`, `lastStallContext`, turn budget, persona's
+ *  `stallProbability`, and the candidate's ask vs `band.maxStretch`. */
+export const STALL_SESSION_CAP = 3;
+export const STALL_PROBABILITY_GATE = 0.40;
+
+function maybePlanManagerConsultStall(
+  state: NegotiationState,
+): PlannedAction | null {
+  /* (A) Return-turn — a stall is already in flight. Ship the deterministic
+   * outcome and let applyAiMove decrement stallTurnsRemaining + clear
+   * lastStallContext. The simulator commits to either a small concession
+   * OR a hold; choice keys off persona pushback + headroom against
+   * highestOfferMade. */
+  const inFlight = (state.stallTurnsRemaining ?? 0) > 0;
+  if (inFlight) {
+    const stalledAskLpa = state.lastStallContext?.stalledAskLpa ?? null;
+    const personaCfg = getRecruiterSectorPersona(state.recruiterSectorPersona ?? "default");
+    /* Choose return mode. PSU / Big-4 hold harder; unicorn / startup
+     * tend to ship a small concession on the return turn. The hold
+     * branch is also chosen when there's no headroom left between
+     * highestOfferMade and band.maxStretch. */
+    const headroom = state.band.maxStretch - state.highestOfferMade;
+    const personaHolds =
+      personaCfg.pushbackStyle === "cadre-pay-rigid" ||
+      personaCfg.pushbackStyle === "internal-equity-cap";
+    const returnMode: "return-move" | "return-hold" =
+      personaHolds || headroom < 0.5 ? "return-hold" : "return-move";
+    /* Concession size — half a LPA on consultative personas, ₹2L on
+     * unicorn/startup who actually have JB flex; capped at headroom. */
+    let concession: number | null = null;
+    if (returnMode === "return-move") {
+      const target = personaCfg.id === "indian-unicorn" || personaCfg.id === "early-startup" ? 2.0 : 1.0;
+      concession = Math.max(0.5, Math.min(target, headroom));
+      concession = Math.round(concession * 10) / 10;
+    }
+    return {
+      kind: "manager-consult-stall",
+      mode: returnMode,
+      stalledAskLpa,
+      returnConcessionLpa: concession,
+      _move: {
+        lever: "hold-firm",
+        newTotalLpa: state.highestOfferMade,
+        actionKind: "manager-consult-stall",
+        rationale:
+          `Manager-consult stall — return turn (mode=${returnMode}, concession=` +
+          `₹${concession ?? 0}L). Stalled ask was ₹${stalledAskLpa ?? "?"}L; ` +
+          `stallsFiredCount=${state.stallsFiredCount ?? 0}.`,
+      },
+    } as PlannedAction;
+  }
+
+  /* (B) Open-turn gates. */
+  /* Gate 1 — not the first AI turn. Recruiter must have heard the ask. */
+  if (state.turnIndex < 1) return null;
+  /* Gate 2 — candidate just dropped a hard ask above band.maxStretch.
+   * Uses lastCandidateCounterLpa (fresh this-turn signal) rather than
+   * sticky candidateTarget so a stale intake target doesn't keep
+   * re-triggering stalls across the session. */
+  const freshAsk = state.lastCandidateCounterLpa;
+  if (freshAsk == null || freshAsk <= state.band.maxStretch) return null;
+  /* Gate 3 — session-wide cap. */
+  if ((state.stallsFiredCount ?? 0) >= STALL_SESSION_CAP) return null;
+  /* Gate 4 — persona stall probability OR PSU/Big-4 short-circuit
+   * (those are dominant-stall sectors per audit). */
+  const personaCfg = getRecruiterSectorPersona(state.recruiterSectorPersona ?? "default");
+  const personaIsHighStall =
+    personaCfg.id === "psu" ||
+    personaCfg.id === "consulting-big4" ||
+    personaCfg.stallProbability >= STALL_PROBABILITY_GATE;
+  if (!personaIsHighStall) return null;
+  /* Gate 5 — must not be in a terminal phase. Stalls only make sense
+   * once an offer is on the table (offer-presented) or in counter-offer. */
+  if (state.phase !== "counter-offer" && state.phase !== "offer-presented") return null;
+
+  return {
+    kind: "manager-consult-stall",
+    mode: "open",
+    stalledAskLpa: freshAsk,
+    returnConcessionLpa: null,
+    _move: {
+      lever: "hold-firm",
+      newTotalLpa: state.highestOfferMade,
+      actionKind: "manager-consult-stall",
+      rationale:
+        `Manager-consult stall — open. Candidate asked ₹${freshAsk}L vs band ` +
+        `maxStretch ₹${state.band.maxStretch}L (persona=${personaCfg.id}, ` +
+        `stallsFiredCount=${state.stallsFiredCount ?? 0}).`,
+    },
+  } as PlannedAction;
+}
+
 function planNextActionInternal(state: NegotiationState): PlannedAction {
   /* Phase 5 Session A (2026-05-19) — multi-round persona handoff
    * pre-emption. When the kernel just transitioned between round
@@ -824,6 +959,25 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
         },
       };
     }
+  }
+
+  /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.
+   *
+   * Two-phase gate:
+   *   (A) Stall ALREADY in flight (stallTurnsRemaining > 0): ship the
+   *       return-turn this turn. The simulator commits to either a
+   *       small concession ("checked — we can move ₹X on JB only")
+   *       OR a hold ("checked — band stays"). Choice is deterministic
+   *       from persona + band headroom.
+   *   (B) Stall NOT in flight: consider opening one when ALL gates pass.
+   *       Gates are conservative — the audit explicitly forbids first-turn
+   *       short-circuit stalls.
+   *
+   * The stall genuinely models a leverage move; coaching downstream
+   * can observe `stallsFiredCount` and `lastStallContext`. */
+  {
+    const stallSelected = maybePlanManagerConsultStall(state);
+    if (stallSelected !== null) return stallSelected;
   }
 
   /* PDF#38 BUG-D (2026-05-20) — stuck-progress terminal close. PDF#38

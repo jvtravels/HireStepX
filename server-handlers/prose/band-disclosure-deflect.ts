@@ -73,6 +73,13 @@ export function proseBandDisclosureDeflect(
       "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity." + chainedProbe,
     "bfsi":
       "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel." + chainedProbe,
+    /* Realism-Audit Fix 1 — PSU / Big-4 / FMCG-management deflects. */
+    "psu":
+      "Kindly note the pay-scale is fixed as per government norms — the grade fitment is set by the pay commission. I won't be able to share internal numbers beyond what's in the rule book." + chainedProbe,
+    "consulting-big4":
+      "I won't be able to share internal numbers — fitment to the level is set by internal equity for this cohort. Happy to take your expectation back to the people-team partner." + chainedProbe,
+    "fmcg-management":
+      "I won't be able to share internal numbers. For the leadership-development cohort the band is internal-policy driven; the long-term trajectory is the real value here." + chainedProbe,
     "default":
       "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap." + chainedProbe,
   });

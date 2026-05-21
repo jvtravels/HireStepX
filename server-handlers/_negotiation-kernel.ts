@@ -896,6 +896,35 @@ export interface NegotiationState {
    * backfills to "default" on load. */
   recruiterSectorPersona?: RecruiterSectorPersona;
 
+  /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state.
+   *
+   * Models the multi-turn "let me check with my manager and revert"
+   * leverage tactic. Three coupled fields:
+   *
+   * `stallTurnsRemaining` — when > 0, the recruiter is in the middle
+   *   of a stall and the next AI turn must ship a stall-return outcome
+   *   (small concession OR hold). Decremented to 0 after the return
+   *   fires.
+   *
+   * `stallsFiredCount` — session-wide count of stalls opened. Capped
+   *   at 3 in the planner gate so the same persona doesn't loop into
+   *   "let me check with my manager" forever.
+   *
+   * `lastStallContext` — the stalled-ask number carried across the
+   *   open turn → return turn boundary so the return prose can recap
+   *   it verbatim. Cleared after the return fires.
+   *
+   * All three optional for back-compat with serialized state from
+   * before this fix (in-flight sessions deserialize to 0 / null). */
+  stallTurnsRemaining?: number;
+  stallsFiredCount?: number;
+  lastStallContext?: {
+    /** Candidate's stalled ask (LPA, total package). */
+    stalledAskLpa: number | null;
+    /** Turn index when the stall opened. */
+    openedAtTurn: number;
+  } | null;
+
   /* Terminal signals (turn index where the transition fired) */
   acceptedAtTurn: number | null;
   walkedAwayAtTurn: number | null;
@@ -2147,6 +2176,10 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
         band: input.band,
         company: input.company,
       }),
+    /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state. */
+    stallTurnsRemaining: 0,
+    stallsFiredCount: 0,
+    lastStallContext: null,
     acceptedAtTurn: null,
     postAcceptanceDocsRequestedAtTurn: null,
     walkedAwayAtTurn: null,
@@ -4739,6 +4772,36 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   ) {
     next.competitorMatchFiredAtTurn = state.turnIndex;
   }
+  /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state
+   * advancement. Three transitions, all keyed off `move.actionKind`:
+   *
+   *  - Open-turn: fresh stall fires. Set stallTurnsRemaining=1 so the
+   *    next AI turn lands in the return branch; bump stallsFiredCount;
+   *    record the stalled-ask context via move.stalledAskLpa (carried
+   *    on the AiMove for this lever).
+   *
+   *  - Return-turn (move OR hold): decrement stallTurnsRemaining and
+   *    clear lastStallContext so a fresh stall can open later in the
+   *    session. The planner picks return-mode deterministically; we
+   *    don't need to inspect mode here.
+   *
+   * `applyAiMove` runs before turnIndex is finalised below, so writes
+   * are applied on `next`. */
+  if (move.actionKind === "manager-consult-stall") {
+    const wasInFlight = (state.stallTurnsRemaining ?? 0) > 0;
+    if (wasInFlight) {
+      next.stallTurnsRemaining = Math.max(0, (state.stallTurnsRemaining ?? 0) - 1);
+      next.lastStallContext = null;
+    } else {
+      next.stallTurnsRemaining = 1;
+      next.stallsFiredCount = (state.stallsFiredCount ?? 0) + 1;
+      next.lastStallContext = {
+        stalledAskLpa: state.lastCandidateCounterLpa ?? state.candidateTarget ?? null,
+        openedAtTurn: state.turnIndex,
+      };
+    }
+  }
+
   /* Audit fix 2026-05-21 — CTC-inflation anchor stamps the headline CTC
    * at fire time so the truth follow-up reuses the EXACT same numbers
    * (the lie was the framing, not the values). Pulled off the action
@@ -4779,6 +4842,12 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
        * askedTopics ledger. */
       "ctc-inflation-anchor",
       "ctc-inflation-truth",
+      /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall.
+       * The stall is a leverage-tactic carrier, not a discovery probe;
+       * its open + return turns legitimately bypass the askedTopics
+       * ledger. The stall genuinely advances state (stallTurnsRemaining
+       * / stallsFiredCount / lastStallContext) — see _next-action-planner. */
+      "manager-consult-stall",
     ]);
     const fallbackRaw =
       (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
@@ -5340,6 +5409,10 @@ export function validateState(state: unknown): asserts state is NegotiationState
     s.recruiterSectorPersona !== "indian-unicorn" &&
     s.recruiterSectorPersona !== "early-startup" &&
     s.recruiterSectorPersona !== "bfsi" &&
+    /* Realism-Audit Fix 1 (2026-05-22) — three new personas. */
+    s.recruiterSectorPersona !== "psu" &&
+    s.recruiterSectorPersona !== "consulting-big4" &&
+    s.recruiterSectorPersona !== "fmcg-management" &&
     s.recruiterSectorPersona !== "default"
   ) {
     throw new Error("state.recruiterSectorPersona");
@@ -5679,6 +5752,14 @@ export function deserializeState(json: string): NegotiationState {
      * the legacy prose surfaces (no persona-conditional overrides). */
     recruiterSectorPersona:
       (s.recruiterSectorPersona as RecruiterSectorPersona | undefined) ?? "default",
+    /* Realism-Audit Fix 3 (2026-05-22) — manager-consult stall state.
+     * In-flight sessions serialised before this fix shipped backfill
+     * to 0 / null so the planner gate treats them as "no stall in
+     * flight, none fired yet". */
+    stallTurnsRemaining: (s.stallTurnsRemaining as number | undefined) ?? 0,
+    stallsFiredCount: (s.stallsFiredCount as number | undefined) ?? 0,
+    lastStallContext:
+      (s.lastStallContext as NegotiationState["lastStallContext"] | undefined) ?? null,
     conversationLog: (s.conversationLog as NegotiationState["conversationLog"] | undefined) ?? [],
     candidateComponentBreakdown: (s.candidateComponentBreakdown as ComponentBreakdown | undefined)
       ?? { base: null, variable: null, equity: null, hasAny: false },

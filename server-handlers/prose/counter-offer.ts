@@ -47,6 +47,10 @@ export function proseCounterOffer(
       "indian-unicorn": `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`,
       "early-startup": `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`,
       "bfsi": `Variable bumps to land the fitment at ₹${total}L total on the perf cycle.`,
+      /* Realism-Audit Fix 1 — PSU / Big-4 / FMCG-management framings. */
+      "psu": `As per government norms the grade-fitment lands at ₹${total}L total — HRA and LTC are the only flex.`,
+      "consulting-big4": `Fitment to the level lands at ₹${total}L total — internal equity at this band caps further movement.`,
+      "fmcg-management": `For the leadership-development cohort the band lands at ₹${total}L total — the trajectory carries more long-term value.`,
       "default": `We can revise the fitment to ₹${total}L total.`,
     });
     return `${spiralLead} ${body} How does that look from your side?`;

@@ -972,6 +972,69 @@ function renderCanonicalProseBody(
     case "clarify-prior-question":
       return proseClarifyPriorQuestion(action, state, helpers);
 
+    case "manager-consult-stall": {
+      /* Realism-Audit Fix 3 (2026-05-22) — multi-turn stall move.
+       *
+       * Three modes:
+       *   - "open" — recruiter receives the over-band ask and defers to
+       *     their manager / HR head / comp committee. No outcome yet;
+       *     the next AI turn ships the deterministic return.
+       *   - "return-move" — recruiter returns from the consult with a
+       *     small concession (typically JB-shaped, ₹0.5–2L).
+       *   - "return-hold" — recruiter returns and confirms the band
+       *     stays. The stall has been TRUTHFUL in coaching terms: the
+       *     state genuinely advanced through stallTurnsRemaining.
+       *
+       * Persona-flavoured idiom comes from the persona's idiomBias
+       * bank via `recruiterSectorPersonaPromptFragment` upstream; the
+       * canonical line carries the core stall semantics. */
+      const persona = sectorPersona(state);
+      const ask = action.stalledAskLpa;
+      const askClause = ask != null ? ` on the ₹${ask}L ask` : "";
+      if (action.mode === "open") {
+        const opener = selectBySectorPersona(persona, {
+          "it-services": "Let me check with the HR head on this and revert by EOD",
+          "gcc": "Let me loop in the global TA partner on this and revert by tomorrow",
+          "indian-unicorn": "Let me run this past the founders and revert by tomorrow",
+          "early-startup": "Let me check with the founders on this and revert by tomorrow",
+          "bfsi": "Let me take this to the business head and revert by tomorrow",
+          "psu": "Kindly note this will need to go to the establishment section — we'll revert as per process",
+          "consulting-big4": "Let me discuss in the comp-committee meeting tomorrow and revert",
+          "fmcg-management": "Let me check with the talent council and revert by tomorrow",
+          "default": "Let me check with my manager on this and revert by tomorrow",
+        });
+        return `${opener}${askClause}. I want to come back with a clear answer rather than commit to something I can't hold.`;
+      }
+      if (action.mode === "return-move") {
+        const move = action.returnConcessionLpa ?? 0;
+        const lever = selectBySectorPersona(persona, {
+          "it-services": "on the joining bonus side",
+          "gcc": "on the stock refresh side",
+          "indian-unicorn": "on the ESOP grant side",
+          "early-startup": "on the equity % side",
+          "bfsi": "on the variable / joining bonus side",
+          "psu": "via the HRA classification",
+          "consulting-big4": "on the joining-bonus side",
+          "fmcg-management": "on the joining-bonus side",
+          "default": "on the joining bonus side",
+        });
+        return `Checked${askClause} — we can move ₹${move}L ${lever}. The headline band stays as is. How does this sound?`;
+      }
+      /* return-hold */
+      const holdTail = selectBySectorPersona(persona, {
+        "it-services": "as per band, the grade fitment is what we have",
+        "gcc": "the global band for this level holds",
+        "indian-unicorn": "cash side is held; equity is where we have room",
+        "early-startup": "cash runway is the constraint; equity is the only lever",
+        "bfsi": "the regulatory band holds; variable is the only flex",
+        "psu": "the pay scale is fixed as per government norms",
+        "consulting-big4": "internal equity at this level holds the fitment",
+        "fmcg-management": "the band for the LDP cohort is internal-policy driven",
+        "default": "the band stays as it is",
+      });
+      return `Checked${askClause} — ${holdTail}. I'd rather be straight with you than promise something I can't hold.`;
+    }
+
     case "panel-approval-stall": {
       /* Phase 3 missing-lever set (2026-05-17) — distinct stall move.
        * Real Indian HR escalation: after two cash concessions, further
