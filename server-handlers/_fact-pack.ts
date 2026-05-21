@@ -18,6 +18,14 @@ import type {
   MarketMode,
   NegotiationPhase,
 } from "./_negotiation-kernel";
+import { classifyQuestionIntent, type QuestionIntent } from "./_question-intent";
+
+/* Re-export so external test fixtures and callers that historically
+ * imported the classifier from `_fact-pack` continue to compile. The
+ * implementation now lives in `_question-intent.ts` (see DEBT #1
+ * consolidation). */
+export { classifyQuestionIntent };
+export type { QuestionIntent };
 
 /** Static Indian-market reference facts. Always available in the
  *  factPack — these are general knowledge any competent recruiter
@@ -251,10 +259,16 @@ const Q_LEAD_RE =
 const RHETORICAL_BEFORE_RE =
   /\b(thinking|wondering|wonder|guess|suppose|imagine|just|maybe)\b[^.?!]*?\b(what|how|when|where|who|why)\b/i;
 
+/** Detector wrapping classifyQuestionIntent with a question-shape gate.
+ *  Returns asked=true only when the candidate's utterance is genuinely
+ *  interrogative (trailing "?" OR leading wh-/aux-word) and not a
+ *  rhetorical embedding ("I was wondering what..."). Intent is taken
+ *  directly from classifyQuestionIntent — the ONE shared classifier
+ *  (DEBT #1 consolidation, 2026-05-21). */
 export function detectCandidateAskedQuestion(reply: string): {
   asked: boolean;
   raw?: string;
-  intent?: string;
+  intent?: QuestionIntent;
 } {
   if (!reply) return { asked: false };
   const trimmed = reply.trim();
@@ -269,57 +283,8 @@ export function detectCandidateAskedQuestion(reply: string): {
   const leadingQ = Q_LEAD_RE.test(trimmed);
   if (!trailingQ && !leadingQ) return { asked: false };
 
-  /* Best-effort intent tag — coarse buckets the answer pipeline can
-   * branch on without needing an LLM classifier. */
-  const lower = trimmed.toLowerCase();
-  let intent: string | undefined;
-  if (/\b(wfh|work from home|remote|hybrid|office)\b/.test(lower)) intent = "work-mode";
-  else if (/\b(clawback|prorat|prorated)\b/.test(lower)) intent = "clawback";
-  else if (/\b(retention\s*bonus|retention)\b/.test(lower)) intent = "retention";
-  else if (/\b(bgv|background\s*verif|relieving|form\s*-?\s*16)\b/.test(lower)) intent = "bgv";
-  else if (/\b(medical|insurance|floater|esic|parental\s*insurance)\b/.test(lower)) intent = "insurance";
-  else if (/\b(meal\s*voucher|sodexo|fbp)\b/.test(lower)) intent = "fbp";
-  else if (/\b(pf|epf|uan|provident)\b/.test(lower)) intent = "pf";
-  else if (/\b(notice|join|joining|buyout|last working day)\b/.test(lower)) intent = "joining";
-  else if (/\b(team|report|manager|reporting to|hierarchy)\b/.test(lower)) intent = "team";
-  else if (/\b(tax|87a|rebate|regime)\b/.test(lower)) intent = "tax";
-  else if (/\b(gratuity)\b/.test(lower)) intent = "policy";
-  else if (/\b(equity|rsu|esop|vesting|stock)\b/.test(lower)) intent = "equity";
-  else if (/\b(perk|benefit|leave|wellness)\b/.test(lower)) intent = "benefits";
-  else if (/\b(appraisal|march\s*cycle|hike\s*cycle)\b/.test(lower)) intent = "appraisal";
-  else if (/\b(hike|raise|cycle)\b/.test(lower)) intent = "hike";
-
+  const intent = classifyQuestionIntent(trimmed) ?? undefined;
   return { asked: true, raw: trimmed.slice(0, 240), intent };
-}
-
-/** Coarse intent classifier for a candidate question. Returns one of
- *  the documented buckets ("wfh" | "team" | "reporting" | "growth-path"
- *  | "perf-cycle" | "equity" | "joining" | "perks" | "process" | "tax"
- *  | "documents") or null. Pure regex match — caller decides what to do
- *  with the bucket. Used both by `detectCandidateAskedQuestion` (above)
- *  and by `_negotiation-kernel.ts:computeTurnDelta` to tag the
- *  structured `candidateAskedQuestion` field on TurnDelta. */
-export function classifyQuestionIntent(question: string): string | null {
-  const q = (question || "").toLowerCase();
-  if (/wfh|work.from.home|remote|hybrid|office/.test(q)) return "wfh";
-  if (/team.size|how many|team structure|how big/.test(q)) return "team";
-  if (/report|manager|who.*report|reporting to|hierarchy/.test(q)) return "reporting";
-  if (/growth|career path|progression/.test(q)) return "growth-path";
-  if (/clawback|prorat/.test(q)) return "clawback";
-  if (/retention\s*bonus|retention/.test(q)) return "retention";
-  if (/appraisal|march\s*cycle|hike\s*cycle/.test(q)) return "appraisal";
-  if (/perf.*cycle|review.*cycle/.test(q)) return "perf-cycle";
-  if (/esop|equity|rsu|stock|vesting/.test(q)) return "equity";
-  if (/joining|notice|start.*date|when.*join|buyout|last working day/.test(q)) return "joining";
-  if (/medical|insurance|floater|esic|parental.*insurance/.test(q)) return "insurance";
-  if (/meal.*voucher|sodexo|fbp/.test(q)) return "fbp";
-  if (/uan|pf\b|epf|provident/.test(q)) return "pf";
-  if (/perk|benefit|gratuity|leave|wellness/.test(q)) return "perks";
-  if (/process|interview|next.*round/.test(q)) return "process";
-  if (/tax|87a|deduction|new.regime|old.regime|rebate|regime/.test(q)) return "tax";
-  if (/bgv|background.*verif(?:y|ication)/.test(q)) return "bgv";
-  if (/relieving|form.16|payslip|document/.test(q)) return "documents";
-  return null;
 }
 
 /** Inspect the question + fact-pack and return which factPack keys are

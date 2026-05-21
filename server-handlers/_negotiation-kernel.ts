@@ -50,6 +50,7 @@ import {
 } from "./_negotiation-rounds";
 import { clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
+import { classifyQuestionIntent, type QuestionIntent } from "./_question-intent";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
 import { classifyCandidateArchetype } from "./_candidate-archetype";
 import { classifyNumberRoles } from "./_number-role-classifier";
@@ -1021,7 +1022,7 @@ export interface NegotiationState {
    *
    * Optional for back-compat with in-flight sessions serialized before
    * this field shipped; deserializeState backfills to {}. */
-  answeredQuestionLedger?: Record<string, { answerText: string; turn: number }>;
+  answeredQuestionLedger?: Partial<Record<QuestionIntent, { answerText: string; turn: number }>>;
 
   /* Fix 3 (2026-05-15) — Promise-keeping enforcement. Open promises the
    * bot has made but not yet delivered ("we can discuss X", "let me share
@@ -1501,7 +1502,7 @@ export interface TurnDelta {
   /** Structured form of the candidate question. Carries the (trimmed) raw
    *  text and a coarse intent tag so the response pipeline can decide
    *  whether to answer vs. defer without re-detecting the question. */
-  candidateAskedQuestion?: { raw: string; intent?: string } | null;
+  candidateAskedQuestion?: { raw: string; intent?: QuestionIntent } | null;
   /** Candidate refused a probe this turn (probeRefusalCount incremented). */
   refusedItem: boolean;
   /** Candidate first-disclosed fresh-grad status this turn. */
@@ -1791,9 +1792,11 @@ export function computeTurnDelta(
    *                                response pipeline prefers over a
    *                                fresh re-detection at request time.
    *
-   * Detection mirrors _fact-pack.ts:detectCandidateAskedQuestion. It is
-   * duplicated here to keep _negotiation-kernel.ts free of a circular
-   * import to _fact-pack.ts. If the heuristic ever drifts, fix both.
+   * Audit follow-up (2026-05-21) — DEBT #1 consolidation. The classifier
+   * lives in `_question-intent.ts`, called from BOTH this site (write
+   * side of the answeredQuestionLedger) and `_fact-pack.ts:detect-
+   * CandidateAskedQuestion` / `_response-pipeline.ts` (read side). Same
+   * function, same vocabulary, ledger dedup actually fires.
    */
   if (typeof rawAnswer === "string" && rawAnswer.trim()) {
     const trimmed = rawAnswer.trim();
@@ -1806,19 +1809,7 @@ export function computeTurnDelta(
     const rhetorical = RHETORICAL_BEFORE_RE.test(trimmed) && !trailingQ;
     if (!rhetorical && (trailingQ || leadingQ)) {
       d.askedQuestion = true;
-      const lower = trimmed.toLowerCase();
-      let intent: string | undefined;
-      if (/wfh|work.from.home|remote|hybrid|office/.test(lower)) intent = "wfh";
-      else if (/team.size|how many|team structure|how big/.test(lower)) intent = "team";
-      else if (/report|manager|reporting to|hierarchy/.test(lower)) intent = "reporting";
-      else if (/growth|career path|progression/.test(lower)) intent = "growth-path";
-      else if (/perf.*cycle|review.*cycle|appraisal|hike.*cycle/.test(lower)) intent = "perf-cycle";
-      else if (/esop|equity|rsu|stock|vesting/.test(lower)) intent = "equity";
-      else if (/joining|notice|start.*date|when.*join|buyout|last working day/.test(lower)) intent = "joining";
-      else if (/perk|benefit|insurance|gratuity|pf|epf|leave|wellness/.test(lower)) intent = "perks";
-      else if (/process|interview|next.*round/.test(lower)) intent = "process";
-      else if (/tax|87a|deduction|new.regime|old.regime|rebate/.test(lower)) intent = "tax";
-      else if (/bgv|background.*verif|relieving|form.16|payslip|document/.test(lower)) intent = "documents";
+      const intent = classifyQuestionIntent(trimmed);
       d.candidateAskedQuestion = {
         raw: trimmed.slice(0, 240),
         ...(intent ? { intent } : {}),
@@ -4493,6 +4484,13 @@ export { pickAiMove } from "./_kernel-move-picker";
  * is just for natural-language reference resolution). */
 export const CONVERSATION_LOG_CAP = 4;
 
+/** DEBT #2 (2026-05-21) — answeredQuestionLedger cardinality cap.
+ *  Sized comfortably above the current QuestionIntent enum (~20
+ *  buckets) so the cap acts as defense-in-depth, not as a routine
+ *  pressure on the eviction policy. applyAiMove evicts the smallest-
+ *  turn (LRU) entry on overflow; validateState asserts the invariant. */
+const MAX_LEDGER_ENTRIES = 20;
+
 /** Push a new entry onto the rolling log, capping at the most recent
  *  CONVERSATION_LOG_CAP entries. Empty text drops the entry (e.g. the
  *  init turn where candidateAnswer = ""). Pure. */
@@ -4583,10 +4581,34 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   const askedIntent = state.lastTurnDelta?.candidateAskedQuestion?.intent;
   if (typeof askedIntent === "string" && askedIntent.length > 0 && aiText && aiText.trim().length > 0) {
     const priorLedger = state.answeredQuestionLedger ?? {};
-    next.answeredQuestionLedger = {
+    const merged: Partial<Record<QuestionIntent, { answerText: string; turn: number }>> = {
       ...priorLedger,
       [askedIntent]: { answerText: aiText, turn: state.turnIndex },
     };
+    /* DEBT #2 (2026-05-21) — bounded cardinality. The QuestionIntent
+     * enum has ~20 buckets so in practice the ledger should never grow
+     * past that. The cap is defense-in-depth against future enum growth
+     * or a back-compat hole that lets a stale string-keyed payload
+     * accumulate. LRU-by-turn eviction matches the read-side semantic:
+     * the entry with the smallest `turn` is the oldest answer and the
+     * one least likely to still be referenced by a follow-up. */
+    const keys = Object.keys(merged) as QuestionIntent[];
+    if (keys.length > MAX_LEDGER_ENTRIES) {
+      let evictKey: QuestionIntent = keys[0];
+      let evictTurn = merged[evictKey]?.turn ?? Infinity;
+      for (const k of keys) {
+        const t = merged[k]?.turn ?? Infinity;
+        if (t < evictTurn) {
+          evictTurn = t;
+          evictKey = k;
+        }
+      }
+      /* Never evict the entry we just wrote — its turn is state.turnIndex
+       * which (until close-recap) is the largest in the table. The min-
+       * turn loop above naturally picks an older entry. */
+      delete merged[evictKey];
+    }
+    next.answeredQuestionLedger = merged;
   }
   /* Negotiation-flow redesign commit 4 (2026-05-15) — record the
    * reactive-followup topic the planner emitted this turn. Sticky:
@@ -5247,6 +5269,12 @@ export function validateState(state: unknown): asserts state is NegotiationState
       if (typeof entry.answerText !== "string") throw new Error("state.answeredQuestionLedger.answerText");
       if (!isFiniteNonNegInt(entry.turn)) throw new Error("state.answeredQuestionLedger.turn");
     }
+    /* DEBT #2 (2026-05-21) — cardinality cap. applyAiMove evicts LRU-
+     * by-turn before re-write, so a well-formed state from THIS kernel
+     * will never exceed the cap. Reject any payload that does. */
+    if (Object.keys(s.answeredQuestionLedger).length > MAX_LEDGER_ENTRIES) {
+      throw new Error("state.answeredQuestionLedger.size");
+    }
   }
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
@@ -5524,25 +5552,41 @@ export function deserializeState(json: string): NegotiationState {
    * the back-compat backfill chain from silently coercing a
    * future-shape payload into the legacy default values. Payloads
    * with NO __v (legacy in-flight sessions) and with __v ≤ current
-   * are accepted as before. */
+   * are accepted as before.
+   *
+   * DEBT #3 (2026-05-21) — capture __v into a local BEFORE deletion so
+   * a future migration hook (e.g. "if wireVersion < 2, migrate field X")
+   * can branch on the original wire version. At KERNEL_STATE_VERSION=1
+   * the value is unused beyond the bounds check, but exposing it now
+   * means the migration scaffolding is already in place when it's
+   * actually needed. The local is named (not just left in place on
+   * parsed) so the backfill chain below can still run against a
+   * __v-stripped payload — validateState would otherwise reject the
+   * reserved key as an unknown field. */
+  let wireVersion: number | undefined;
   if (parsed && typeof parsed === "object") {
-    const wireVersion = (parsed as { __v?: unknown }).__v;
-    if (wireVersion !== undefined) {
-      if (typeof wireVersion !== "number" || !Number.isFinite(wireVersion)) {
-        throw new Error(`state.__v: expected finite number, got ${typeof wireVersion}`);
+    const rawV = (parsed as { __v?: unknown }).__v;
+    if (rawV !== undefined) {
+      if (typeof rawV !== "number" || !Number.isFinite(rawV)) {
+        throw new Error(`state.__v: expected finite number, got ${typeof rawV}`);
       }
-      if (wireVersion > KERNEL_STATE_VERSION) {
+      if (rawV > KERNEL_STATE_VERSION) {
         throw new Error(
-          `state.__v=${wireVersion} exceeds server KERNEL_STATE_VERSION=${KERNEL_STATE_VERSION} ` +
+          `state.__v=${rawV} exceeds server KERNEL_STATE_VERSION=${KERNEL_STATE_VERSION} ` +
             `(client is newer than server — refusing rather than coercing)`,
         );
       }
+      wireVersion = rawV;
       /* Strip __v before downstream validators run. The version marker
        * is wire-only metadata; it is NOT a field on NegotiationState
        * so leaving it in would trip strict shape checks elsewhere. */
       delete (parsed as { __v?: unknown }).__v;
     }
   }
+  /* Future migration hooks read `wireVersion` here. Intentionally
+   * referenced (no-op) so the linter doesn't strip the local — the
+   * value is part of the contract for the next kernel bump. */
+  void wireVersion;
   validateState(parsed);
   /* Backfill defaults for optional fields added after the wire format
      was first deployed. Existing in-flight sessions serialized without

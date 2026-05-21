@@ -149,15 +149,21 @@ export function validateInitRequest(raw: unknown): ValidationResult<ValidatedIni
     maxTurns = raw.maxTurns;
   }
 
-  /* totalYoe / applicableYoe — both number-or-null. */
-  const totalYoe = isFiniteNumber(raw.totalYoe) ? raw.totalYoe : null;
-  if (raw.totalYoe !== undefined && raw.totalYoe !== null && totalYoe === null) {
+  /* totalYoe / applicableYoe — both number-or-null.
+   *
+   * DEBT #4 (2026-05-21) — explicit-reject ordering. The earlier shape
+   * coerced first and then re-checked, which read as "silently absorb a
+   * bad value, then maybe complain". Invert: assert the shape first,
+   * then bind the local from the (now-trusted) raw field. Same external
+   * behaviour, clearer intent, no two-step coercion-then-check. */
+  if (raw.totalYoe != null && !isFiniteNumber(raw.totalYoe)) {
     return reject("totalYoe: expected finite number or null");
   }
-  const applicableYoe = isFiniteNumber(raw.applicableYoe) ? raw.applicableYoe : null;
-  if (raw.applicableYoe !== undefined && raw.applicableYoe !== null && applicableYoe === null) {
+  const totalYoe = (raw.totalYoe as number | null | undefined) ?? null;
+  if (raw.applicableYoe != null && !isFiniteNumber(raw.applicableYoe)) {
     return reject("applicableYoe: expected finite number or null");
   }
+  const applicableYoe = (raw.applicableYoe as number | null | undefined) ?? null;
 
   /* primaryDomain — string-or-null with length cap. */
   let primaryDomain: string | null = null;

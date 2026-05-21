@@ -42,6 +42,7 @@ import {
   detectFactGap,
   detectCandidateAskedQuestion,
 } from "./_fact-pack";
+import type { QuestionIntent } from "./_question-intent";
 
 /* PDF#42 BUG-B (2026-05-21) — set of reactive-followup topics whose
  * canonical prose is authored in planWiredProfileFollowup (planner)
@@ -122,7 +123,7 @@ export async function generateBotReply(
    * fallback is a fresh detection on the candidate answer string. */
   const lastDelta = state.lastTurnDelta;
   const ext = (lastDelta ?? {}) as {
-    candidateAskedQuestion?: { raw: string; intent?: string };
+    candidateAskedQuestion?: { raw: string; intent?: QuestionIntent };
     askedQuestion?: boolean;
   };
   const askedFromDelta = ext.candidateAskedQuestion;

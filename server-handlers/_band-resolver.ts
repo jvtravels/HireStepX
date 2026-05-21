@@ -25,6 +25,7 @@ import {
   getBandForRole as getBandTierRoleBand,
 } from "./_company-band-tiers";
 import { clampBandToTargetRoleMarket } from "./_band-target-clamp";
+import { clampBandToTierP50 } from "./_band-sanity";
 
 /** Fresher-flow extension (2026-05-14c). Per-college-tier multiplier
  *  applied to the entry-level band. Calibrated to Indian campus hiring
@@ -300,7 +301,26 @@ export function resolveServerBand(
      * passes, so internship / college-tier / probation transforms run
      * against the right starting band first. One-way: only compresses. */
     const clamped = clampBandToTargetRoleMarket(band, role);
-    return clamped.band;
+    const targetClamped = clamped.band;
+
+    /* DEBT #5 (2026-05-21) — tier-P50 clamp wired into the resolver
+     * itself. Prior shape: the clamp ran at the negotiate-turn call-
+     * site and at the kernel's mid-session rebase, but a new third
+     * caller of resolveServerBand could quietly skip it. Folding the
+     * clamp in here makes the resolver itself the single guarantee —
+     * every band that leaves this function has been considered against
+     * the tier-family P50. The clamp is idempotent (input ≤ 2× P50 is
+     * a no-op), so existing call-sites that ALSO clamp downstream stay
+     * correct. Skip on internship stipends — those are deliberately
+     * scaled below the full-CTC P50. */
+    if (!targetClamped.isInternshipStipend) {
+      const resolverTier = company ? getCompanyTier(company) : null;
+      const resolverClamp = clampBandToTierP50(targetClamped, role, resolverTier);
+      if (resolverClamp.clamped) {
+        return { ...targetClamped, ...resolverClamp.band };
+      }
+    }
+    return targetClamped;
   } catch {
     return DEFAULT_BAND;
   }
