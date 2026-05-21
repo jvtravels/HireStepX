@@ -2130,6 +2130,24 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     hikeStrongDefenseFiredAtTurn: null,
     fakeLeverageChallengeFiredAtTurn: null,
     competitorMatchFiredAtTurn: null,
+    /* Audit follow-up (2026-05-21) — kernel chaos test caught schema
+     * drift on 10 optional fields: applyCandidateAnswer produced these
+     * keys, but initState never seeded them. Consumers checking the
+     * field before its first trigger got `undefined`, often masked
+     * because the field is typed `?:`. Explicit defaults close the
+     * drift so the state shape after initState ≡ state shape after
+     * applyCandidateAnswer (modulo derived facts). */
+    repetitionComplaintAtTurn: null,
+    lastAnswerClarificationAtTurn: null,
+    lastAnswerNoiseAtTurn: null,
+    lastAnswerOfferRecapAtTurn: null,
+    lastAnswerUncertainAt: null,
+    lastTurnDelta: null,
+    lastUserFrustrated: false,
+    offerAskedAtTurn: null,
+    pendingCandidateAcks: [],
+    phaseEnteredAtTurn: null,
+    plannedNextAction: null,
     hikePercent: null,
     rationale: null,
     noticeJoining: {
