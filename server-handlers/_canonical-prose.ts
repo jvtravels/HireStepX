@@ -33,11 +33,17 @@ import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { getNegotiationRoundPersona } from "./_negotiation-rounds";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
-import {
-  classifyCandidateQuestion,
-  renderCandidateQuestionResponse,
-  CANDIDATE_QUESTION_GENERIC_FALLBACK,
-} from "./_candidate-question";
+import type { ProseHelpers } from "./prose/_helpers";
+import { proseBandDisclosureDeflect } from "./prose/band-disclosure-deflect";
+import { proseReactiveFollowup } from "./prose/reactive-followup";
+import { proseDiscoveryProbe } from "./prose/discovery-probe";
+import { proseCounterOffer } from "./prose/counter-offer";
+import { proseOpenWithOffer } from "./prose/open-with-offer";
+import { proseAnchorWithOffer } from "./prose/anchor-with-offer";
+import { proseClarifyPriorQuestion } from "./prose/clarify-prior-question";
+import { proseRoundTransition } from "./prose/round-transition";
+import { proseCloseRecapFormal } from "./prose/close-recap-formal";
+import { proseInfoDisclosure } from "./prose/info-disclosure";
 /* Phase 5 Session B (2026-05-19) — keep `getNegotiationRoundPersona`
  * imported so downstream consumers (e.g. analyzer / UI label
  * resolvers re-exporting via this module) have one canonical lookup.
@@ -744,6 +750,34 @@ function renderCanonicalProseBody(
   const firstName = getCandidateFirstName(state);
   const greet = firstName ?? "there";
 
+  /* Carve-out (2026-05-22) — per-action arms moved to sibling
+   * `prose/<kind>.ts` modules receive a ProseHelpers bundle so they
+   * stay pure. The bundle re-exposes the file-local helpers
+   * (sectorPersona, activeRoundPersona, persona dispatchers,
+   * gradeLabel, firstName) plus the file-exported helpers
+   * (selectEscalationAnchor, buildDiscoveryAck,
+   * sanitiseCandidateProse) the carved arms reference. Building it
+   * once per call keeps behaviour byte-identical to the
+   * pre-carve-out monolithic switch. */
+  const helpers: ProseHelpers = {
+    firstName,
+    sectorPersona: sectorPersona(state),
+    activeRoundPersona: activeRoundPersona(state),
+    selectByRoundPersona,
+    selectBySectorPersona,
+    selectEscalationAnchor,
+    buildDiscoveryAck,
+    sanitiseCandidateProse,
+    gradeLabel,
+  };
+
+  // FIXME(carve-out): 32 arms remaining — only the 10 largest were
+  // extracted in the 2026-05-22 carve-out (band-disclosure-deflect,
+  // reactive-followup, discovery-probe, counter-offer, open-with-offer,
+  // anchor-with-offer, clarify-prior-question, round-transition,
+  // close-recap-formal, info-disclosure). Remaining short arms (1-15
+  // lines each) stay inline pending future extraction; the helpers
+  // bundle is already shaped to accept them.
   switch (action.kind) {
     case "terminal-restate":
       return state.highestOfferMade > 0
@@ -765,75 +799,8 @@ function renderCanonicalProseBody(
       return `Broadly aligned, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
     }
 
-    case "reactive-followup": {
-      const topic = action.topic;
-      if (topic === "variable-comfort") {
-        return action.ask
-          || "Your variable component is on the higher side — what has been your payout history, and are you comfortable with that structure continuing?";
-      }
-      if (topic === "competing-credibility") {
-        return "On the other opportunity you mentioned — is the offer letter in hand, or is the discussion still in process?";
-      }
-      if (topic === "value-proof") {
-        return "Sounds like the trajectory of the role matters as much as the fitment — what would make this opportunity feel worth the move for you?";
-      }
-      if (topic === "hike-justification") {
-        return action.ask
-          || "That's a meaningful jump on your current fitment — help me understand what's anchoring the expectation at that level.";
-      }
-      if (topic === "equity-clarity") {
-        /* PDF#33 (2026-05-18) — substantive probe, not a teaser. Prior
-         * prose ("let me walk you through how the vesting and cliff are
-         * structured for this grade") promised a walkthrough that the
-         * kernel never delivered: next turn the bot either repeated the
-         * teaser or jumped elsewhere. Real recruiters ask the candidate
-         * to share their schedule — that's an actual question with an
-         * actual answer, gated upstream on equityExists === true so it
-         * only fires when the candidate has confirmed equity. */
-        return "On the equity piece — what's the vesting schedule and cliff on your current grant?";
-      }
-      if (topic === "number-clarification") {
-        const n = state.candidateCurrentCtc ?? state.candidateTarget ?? null;
-        return n != null
-          ? `Just to be sure I noted it correctly — that's ₹${n} lakh you mentioned, na?`
-          : "Just to be sure I noted it correctly — can you confirm the number you mentioned?";
-      }
-      if (topic === "competing-leverage-ack") {
-        /* F2 (Audit Pass 2, 2026-05-16) — removed "let me make sure
-         * we're broadly aligned" process-narration; recruiter speaks to
-         * the candidate directly instead of narrating their own thought.*/
-        return "Noted on the competing opportunity. Before I revert internally — walk me through what matters most to you on this role.";
-      }
-      if (topic === "answer-direct") {
-        /* QA v3 round 3 (2026-05-19) — extracted to a typed classifier +
-         * response bank in `_candidate-question.ts`. Prior architecture
-         * was a ~70-line regex-ladder co-locating intent detection with
-         * recruiter prose, which (a) blocked persona overlay, (b) made
-         * topic addition a copy-paste edit, (c) tied test assertions to
-         * full strings. The new module separates classification (pure
-         * string → typed enum) from rendering (enum + persona → prose),
-         * so persona-tilted responses compose without re-running regex.
-         *
-         * The deterministic LLM fallback path (`generateAnswerToCandidate`)
-         * still owns the rich answers; this branch is the safe tail that
-         * fires when the LLM defers. */
-        const raw = state.lastTurnDelta?.candidateAskedQuestion?.raw ?? "";
-        const classified = classifyCandidateQuestion(raw);
-        if (classified) {
-          const prose = renderCandidateQuestionResponse(
-            classified,
-            sectorPersona(state),
-            activeRoundPersona(state),
-          );
-          if (prose) return prose;
-        }
-        return CANDIDATE_QUESTION_GENERIC_FALLBACK;
-      }
-      /* ctc-gentle-push, notice-buyout, etc. carry planner-supplied ask
-       * strings — use verbatim, but sanitise meta-directive tokens that
-       * must never reach the candidate. */
-      return sanitiseCandidateProse(action.ask) || "Can you elaborate on that a little?";
-    }
+    case "reactive-followup":
+      return proseReactiveFollowup(action, state, helpers);
 
     case "probe-mismatch":
       return "Before we get into the fitment side, can you walk me through how your current work maps to this role?";
@@ -856,249 +823,20 @@ function renderCanonicalProseBody(
       }
       return "Let me probe a little further before we move ahead.";
 
-    case "band-disclosure-deflect": {
-      /* Phase 2 Indian-HR redesign (2026-05-17) — replaces the legacy
-       * `range-disclosure` lever that leaked the band ceiling. Real Indian
-       * HR recruiters NEVER share internal numbers; they deflect and offer
-       * to take the candidate's expectation back to the panel. Retains the
-       * "as per our band" idiom marker (required by canonicalProseIndianIdiom
-       * test) and the panel/leadership escalation reference.
-       *
-       * Phase 3 of Salary-Negotiation plan (2026-05-18) — persona-specific
-       * deflection. Each archetype leans on a different framing for WHY
-       * the band can't move: IT services → rigid policy + grade fitment;
-       * GCC → global band reference; Unicorn → ESOP leverage; Startup →
-       * cash constraint; BFSI → regulatory bands. All variants preserve
-       * the "as per our band" idiom marker and panel-escalation offer
-       * required by the canonical contract; the default path renders
-       * byte-identical to pre-Phase-3 prose. */
-      /* Phase 5 Session B (2026-05-19) — round-persona overlay. When
-       * multi-round is enabled, the round persona dictates the
-       * deflection style independent of sector. HR Partner cites
-       * grade fitment; Hiring Manager pivots to scope-trade;
-       * Director frames as final-leverage. Multi-round OFF (default)
-       * falls through to the sector persona branch byte-identical
-       * to pre-Phase-5 prose. */
-      const roundPersonaA = activeRoundPersona(state);
-      /* BUG-004 fix (QA v2, 2026-05-19) — chain a same-turn probe so the
-       * deflection doesn't stall the conversation for a turn. Real
-       * recruiters: deflect + immediately re-anchor on candidate's
-       * target. Single shared chain tail keeps the 9 variants
-       * byte-stable until the chained probe. */
-      const chainedProbe =
-        " If you can share even a rough target, I can tell you straight away whether we're broadly aligned.";
-      /* PDF#37 BUG-B (2026-05-20) — when an offer is already on the
-       * table, the deflect MUST restate that number explicitly so the
-       * LLM-restyle layer can't drift the line to "there isn't a fixed
-       * amount mentioned for the role" / "that's something the HM walks
-       * through later". Naming the number forecloses the hallucination
-       * path: the LLM cannot substitute "no number exists" while
-       * preserving an explicit ₹X.YL token. */
-      const highestOffer = state.highestOfferMade ?? 0;
-      const offerOnTableClause =
-        highestOffer > 0
-          ? ` The fitment of ₹${highestOffer}L I shared is what I have on the table.`
-          : "";
-      if (roundPersonaA != null) {
-        return selectByRoundPersona(roundPersonaA, {
-          "hr-partner":
-            "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table." + offerOnTableClause + " Happy to escalate your expectation internally." + chainedProbe,
-          "hiring-manager":
-            "Within the band for this scope, I can flex on structure but not headline." + offerOnTableClause + " If you want me to move the cash, we'd need to revisit scope or level." + chainedProbe,
-          "director":
-            "This is the final number my approval supports — as per our band for this grade." + offerOnTableClause + " Let me know if there's a path forward." + chainedProbe,
-        });
-      }
-      /* Each persona variant respects the sentence-length cap
-       * (max 30 words / sentence, 25 avg) enforced by
-       * checkSentenceLength in _response-pipeline.ts. Sentiment
-       * prefixes ("Coming to" / "Hearing you out") add 2-3 words
-       * to the first sentence, so we keep each persona body
-       * short enough that the prefixed version still passes. */
-      const sectorBody = selectBySectorPersona(sectorPersona(state), {
-        "it-services":
-          "I won't be able to share internal numbers — as per our band, the grade fitment I shared is what I have. Happy to take this back to the panel." + chainedProbe,
-        "gcc":
-          "I won't be able to share internal numbers, but as per our band for this grade — anchored to the global benchmark — the offer stands. Happy to take this back to the panel." + chainedProbe,
-        "indian-unicorn":
-          "I won't be able to share internal numbers on cash. As per our band for this grade the fixed is what I shared, with the ESOP grant on top. Happy to take this back to the panel and structure more on equity." + chainedProbe,
-        "early-startup":
-          "I won't be able to share internal numbers. As per our band, cash runway is the constraint. Happy to take this back to the panel and stretch on equity." + chainedProbe,
-        "bfsi":
-          "I won't be able to share internal numbers. As per our regulatory band, fixed sits where I shared it; variable is where we have room. Happy to take this back to the panel." + chainedProbe,
-        "default":
-          "I won't be able to share internal numbers, but as per our band for this grade, the offer I have on the table is what I shared. Happy to take your expectation back to the panel if there's a gap." + chainedProbe,
-      });
-      /* PDF#37 BUG-B (2026-05-20) — when an explicit offer is already on
-       * the table, splice the number into the deflect so the LLM-restyle
-       * layer can't hallucinate "there isn't a fixed amount for the role"
-       * / "the HM walks through later". The token forecloses semantic
-       * drift — paraphrasing must preserve the ₹X.YL literal. Only fires
-       * when highestOfferMade > 0; the byte-identical pre-Phase-3 default
-       * contract (initState, no offer) is preserved verbatim. */
-      if (highestOffer > 0) {
-        const explicitRecap =
-          ` The fitment of ₹${highestOffer}L I shared earlier still stands.`;
-        return sectorBody + explicitRecap;
-      }
-      return sectorBody;
-    }
+    case "band-disclosure-deflect":
+      return proseBandDisclosureDeflect(action, state, helpers);
 
-    case "discovery-probe": {
-      /* Planner emits item keys with the `*Answered` suffix (mirroring
-       * DiscoveryItemKey from _discovery-stage) OR the `*Disclosed`
-       * suffix for items in DISCOVERY_SEQUENCE that gate on a separate
-       * disclosure flag (e.g. `currentCtcFixedVariableSplitDisclosed`).
-       * Strip BOTH suffixes once so the switch arms accept either form.
-       *
-       * Defect 4 (2026-05-16): pre-fix only stripped `Answered`, so
-       * `currentCtcFixedVariableSplitDisclosed` slipped through without
-       * normalisation; the un-stripped key never matched the probeItem
-       * comparator in buildDiscoveryAck and the ack fired self-
-       * referentially on same-topic probes ("Understood on the
-       * fixed/variable structure — and how is your current package
-       * structured between fixed and variable?"). */
-      const rawItem = action.item;
-      const item = rawItem.replace(/(?:Answered|Disclosed)$/, "");
-      /* PDF#27 FL5 (2026-05-17) — uncertainty-escape range-ask passthrough.
-       * The planner's FL5 escape hatch (_next-action-planner.ts
-       * applyUncertaintyEscapeHatch) may swap the canonical probe prompt
-       * for a range-shaped ask when the candidate hedged on the prior
-       * turn. The prose renderer would otherwise hard-code the
-       * boilerplate prompt per `item`, silently dropping the override.
-       * Detect the FL5 range-ask vocabulary on action.ask and prefer it
-       * over the default whenever it's present. */
-      const RANGE_ASK_RE = /\b(?:rough\s+range|ballpark|no\s+need\s+for\s+an\s+exact)\b/i;
-      if (action.ask && RANGE_ASK_RE.test(action.ask)) {
-        const probeOverride = action.ask;
-        const ackPrefix = buildDiscoveryAck(state.lastTurnDelta, item, state);
-        return ackPrefix
-          ? `${ackPrefix} ${probeOverride}`
-          : probeOverride;
-      }
-      let probe: string;
-      if (item === "currentCtc") {
-        probe = "Let's start with your current side — what's the total CTC at present?";
-      } else if (item === "fixedVariableSplit" || item === "currentCtcFixedVariableSplit") {
-        probe = "And how is your current package structured between fixed and variable?";
-      } else if (item === "expectedCtc" || item === "target") {
-        probe = "What's the fitment you were looking at for this move — broadly, what range are you anchoring on?";
-      } else if (item === "expectedCtcFixedVariableSplit") {
-        probe = "On the expected side — how would you want the split between fixed and variable to land?";
-      } else if (item === "noticePeriod") {
-        probe = "What's the notice period at your current company? Any scope for buyout there?";
-      } else if (item === "competingOffers") {
-        probe = "Are you actively in process with other companies right now?";
-      } else if (item === "valueProof") {
-        probe = "Walk me through one project from your current role that you'd anchor on in a fitment discussion — something where the impact is concrete.";
-      } else {
-        /* Discovery-probe for any other checklist item — defer to the
-         * planner-supplied prompt (already kernel-authored, never an LLM
-         * string). */
-        probe = action.ask || "Can you tell me a little more about what you're looking at?";
-      }
-      /* BUG-2 ROOT CAUSE FIX (PDF#24, 2026-05-16): preface every
-       * discovery probe with a one-line acknowledgement of the
-       * disclosure the candidate volunteered on the prior turn. Without
-       * it, the bot sounded transactional — candidate said "I'm looking
-       * at ₹12L" and the next bot turn jumped straight to fitment-split
-       * with no recognition of the number that was just put on the
-       * table. Indian-recruiter idiom: "Got it" / "Noted" / "Understood".
-       *
-       * The prefix is suppressed when the prior turn yielded no fresh
-       * disclosure (delta empty) — so the OPENING probe doesn't get an
-       * incongruous "Got it on the X" prepended to it. */
-      const delta = state.lastTurnDelta;
-      const ack = buildDiscoveryAck(delta, item, state);
-      return ack ? `${ack} ${probe}` : probe;
-    }
+    case "discovery-probe":
+      return proseDiscoveryProbe(action, state, helpers);
 
     case "open-with-offer":
-      /* OPENING-greeting variant: the kernel previously routed this to an
-       * anchor with a specific number. In the kernel-first world the
-       * opener is a discovery probe; if we still reach this case (planner
-       * decided to anchor BECAUSE discovery is complete), the canonical
-       * line names the band, not a single number, so the LLM cannot
-       * sneak an anchor in via restyle.
-       *
-       * F4 / Audit Pass 2 (PDF#25, 2026-05-16) — resume-aware opener.
-       * When state.resumeFactPack is present we prefer an opener that
-       * references latestRole.companyName and (where available) the role
-       * title so the candidate hears that the recruiter has actually
-       * read the resume. We DO NOT fabricate seniority, team size, or
-       * other facts ResumeFactPack doesn't carry; the safe surface is
-       * (title, companyName) which are typed-non-empty on latestRole.
-       *
-       * F6 / Audit Pass 2 (PDF#25, 2026-05-16) — dropped the trailing
-       * "first" from the generic opener because no second probe was
-       * being queued. Honouring "first" would require a next-action
-       * commitment we don't track; removing it is the simpler fix and
-       * leaves no state debt. */
-      /* FL1 / Audit Pass 4 (PDF#27, 2026-05-17) — concrete opener ask.
-       * "walk me through your current compensation structure" was
-       * ambiguous: candidates reasonably answered with hike rationale,
-       * components, or a refusal — none of which let the planner
-       * stamp candidateCurrentCtc, so the next turn had to re-ask.
-       * Replace the vague verbiage with a single concrete number ask.
-       * Senior candidates (applicableYoe >= 4 OR role matches
-       * /senior|lead|principal|staff/i) get a tighter "total annual"
-       * framing so the answer can't be a monthly take-home or
-       * in-hand figure. Component probes (base/variable/ESOP) fire
-       * AFTER currentCtc is satisfied via the AP3-F2 gate in the
-       * planner — the opener never asks for "structure". */
-      if (state.turnIndex === 0) {
-        const yoe = state.candidateApplicableYoe;
-        const senior =
-          (yoe != null && yoe >= 4) ||
-          (state.role != null && /senior|lead|principal|staff/i.test(state.role));
-        const concreteAsk = senior
-          ? "what's your current CTC — total annual?"
-          : "what's your current CTC at the moment?";
-        const rfp = state.resumeFactPack;
-        const latest = rfp?.latestRole ?? null;
-        if (latest && latest.companyName && latest.companyName.trim().length > 0) {
-          const co = latest.companyName.trim();
-          const titleStr =
-            latest.title && latest.title.trim().length > 0
-              ? `I can see you're at ${co} as ${latest.title.trim()} — `
-              : `I can see you're at ${co} — `;
-          return `Thanks for making the time${firstName ? ", " + firstName : ""}. ${titleStr}${concreteAsk}`;
-        }
-        return `Thanks for making the time${firstName ? ", " + firstName : ""}. Let's get straight into it — ${concreteAsk}`;
-      }
-      return "Before I put a number out — what fitment were you anchoring on?";
+      return proseOpenWithOffer(action, state, helpers);
 
     case "lever-loop-guard":
       return "Take some time to think it through and revert with where you'd like to land.";
 
-    case "info-disclosure": {
-      /* PDF#33 Move A (2026-05-18) — "let me walk you through" was a
-       * teaser pattern: it promised content the kernel never actually
-       * delivered, so the next turn looped, jumped topics, or
-       * repeated. Replaced across all info-disclosure topics with
-       * either (a) substantive content the kernel CAN deliver
-       * deterministically, or (b) a concrete question whose answer
-       * advances the negotiation. */
-      const topic = action.topic;
-      if (topic === "breakdown") {
-        return state.highestOfferMade > 0
-          ? `On the ₹${state.highestOfferMade}L fitment — broadly that's fixed cash + a target variable on the perf cycle, with benefits layered on top. Want me to break out the fixed/variable split?`
-          : "On the structure — which side of it matters most to you: fixed, variable, or benefits?";
-      }
-      if (topic === "benefits") {
-        return "Beyond cash, the standard cover is medical (self + family + parents), term life, and accidental — group-policy. Anything specific you want me to confirm on?";
-      }
-      if (topic === "comp-structure") {
-        return "On the structure — fixed is the bulk of the package, variable sits on the perf cycle, and equity (where applicable) vests over four years. Which piece do you want to dig into?";
-      }
-      if (topic === "notice") {
-        return "On notice — what's the standard period at your current side, and is a buyout an option there?";
-      }
-      if (topic === "hike-pct") {
-        return "On the hike piece — what's anchoring the expectation at that level?";
-      }
-      return "What part of the structure do you want me to break down first?";
-    }
+    case "info-disclosure":
+      return proseInfoDisclosure(action, state, helpers);
 
     case "probe-expectations":
       return "What fitment were you anchoring on for this role?";
@@ -1106,72 +844,8 @@ function renderCanonicalProseBody(
     case "probe-justification":
       return "Help me understand what's anchoring that number — where is the expectation coming from?";
 
-    case "counter-offer": {
-      /* The planner pre-computes the counter total + optional fixed /
-       * variable split on the typed action (kernel-first cleanup
-       * 2026-05-16). Canonical prose for a counter ALWAYS includes the
-       * number so the restyle validator can verify it survives.
-       *
-       * perfect 1 (2026-05-16) — spiral prose tells. counterRound is
-       * the number of counter-base moves ALREADY shipped this session
-       * (this turn's counter has not yet been recorded in state — the
-       * applyAiMove that increments it runs after planNextAction).
-       * round >= 1 = at least one prior movement, surface that fact;
-       * round >= 2 = stretching the band, signal we're near the cap. */
-      const total = action.counterTotalLpa;
-      const round = state.counterRound;
-      const persona = sectorPersona(state);
-      let spiralLead = "Hearing you out — let me see what I can structure.";
-      if (round >= 2) {
-        spiralLead = "I've stretched as far as my band allows on cash —";
-      } else if (round >= 1) {
-        spiralLead = "We've already moved on fitment once. Let me see what's possible at this stage.";
-      }
-      /* Phase 3 of Salary-Negotiation plan (2026-05-18) — persona-specific
-       * counter-offer pushback. Each archetype shapes WHERE the
-       * concession comes from: services caps at the 30% hike band;
-       * GCC anchors to global band; unicorn pivots to ESOP; startup
-       * defers cash for higher equity %; BFSI bumps variable, not
-       * fixed. All variants preserve the ₹N L token shape so the
-       * restyle contract validator continues to verify the number
-       * survives. The default branch renders byte-identical to the
-       * pre-Phase-3 prose. */
-      if (total != null && total > 0) {
-        /* Phase 5 Session B (2026-05-19) — round-persona overlay
-         * preempts the sector body when multi-round is on. HR
-         * Partner caps to band floor (cites policy); Hiring Manager
-         * frames as scope-tradeoff; Director frames as final
-         * leverage. Default-OFF: roundPersonaC == null → falls
-         * through to sector body (byte-identical). */
-        const roundPersonaC = activeRoundPersona(state);
-        if (roundPersonaC != null) {
-          const roundBody = selectByRoundPersona(roundPersonaC, {
-            "hr-partner": `As per band, the most I can structure is ₹${total}L total — that's the grade fitment ceiling I have.`,
-            "hiring-manager": `We can revise the fitment to ₹${total}L total — that's the stretch I can hold against the scope we're hiring.`,
-            "director": `Final number on cash is ₹${total}L total — this is the leverage I'm able to sign off on.`,
-          });
-          return `${spiralLead} ${roundBody} How does that look from your side?`;
-        }
-        /* Persona-specific body. Kept short (one sentence < 30 words)
-         * so the spiralLead + body + closer concatenation respects
-         * checkSentenceLength in _response-pipeline.ts (MAX 30 words /
-         * sentence, MAX 25 avg). Spiral lead carries its own `—` /
-         * `:` punctuation; persona body always ends with a `.` so
-         * the closer becomes its own sentence. */
-        const body = selectBySectorPersona(persona, {
-          "it-services": `Services-track ceiling lands the fitment at ₹${total}L total.`,
-          "gcc": `Anchored to the global band, we can revise the fitment to ₹${total}L total.`,
-          "indian-unicorn": `On cash we can revise the fitment to ₹${total}L total, with a stronger ESOP grant on top.`,
-          "early-startup": `Cash runway is tight — we can revise the fitment to ₹${total}L total, with a stretch on equity %.`,
-          "bfsi": `Variable bumps to land the fitment at ₹${total}L total on the perf cycle.`,
-          "default": `We can revise the fitment to ₹${total}L total.`,
-        });
-        return `${spiralLead} ${body} How does that look from your side?`;
-      }
-      return state.highestOfferMade > 0
-        ? `We're holding the current fitment at ₹${state.highestOfferMade}L. What would move this forward for you?`
-        : "What number would land for you?";
-    }
+    case "counter-offer":
+      return proseCounterOffer(action, state, helpers);
 
     case "lever-explore":
       return "Let me see what else we can structure on the fitment side.";
@@ -1266,58 +940,8 @@ function renderCanonicalProseBody(
       return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
     }
 
-    case "anchor-with-offer": {
-      /* Phase 2 Indian-HR redesign (2026-05-17) — point-offer anchor.
-       * Replaces the legacy `anchor-with-band` lever that emitted a range.
-       * Real Indian HR recruiters disclose a single initial offer number
-       * (band floor / classic lowball), not an internal band. "fitment"
-       * + "LPA" + a number are the contract's required tokens.
-       *
-       * PDF#35 Move 4 (2026-05-18) — number-discipline. The legacy
-       * template said "₹X LPA fixed plus variable" with "variable" used
-       * as a noun-phrase. The contract-validator did not reject it (it
-       * only requires `LPA` + `fitment`), but the prose primed the LLM
-       * restyle to interpolate "variable" as if it were a number-token,
-       * producing "fixed plus variable" surfaces in production where
-       * the candidate read "variable" as a literal placeholder leak. We
-       * now (i) emit a deterministic fixed-component phrasing when the
-       * band carries `variableMax`, OR (ii) omit the variable fragment
-       * entirely when the band does not carry a variable component.
-       * Never ship the word "variable" as a standalone noun in this
-       * canonical. */
-      if (action.bandIncomplete) {
-        return "I'll have a firmer number once the panel signs off — meanwhile, what's the fitment you were targeting?";
-      }
-      const variableMax = state.band?.variableMax;
-      const persona = sectorPersona(state);
-      /* Phase 5 Session B (2026-05-19) — round-persona overlay on
-       * anchor-with-offer tail. HR Partner anchors at the floor
-       * ("grade fitment, no stretch"); HM widens with a stretch
-       * reference; Director hits the Director-tier band framing
-       * (bandSpreadMultiplier signal — full sign-off authority).
-       * Default-OFF: falls through to the sector tail
-       * byte-identical. */
-      const roundPersonaB = activeRoundPersona(state);
-      const tail = roundPersonaB != null
-        ? selectByRoundPersona(roundPersonaB, {
-            "hr-partner": " That's the band floor for this grade — no stretch on cash from my side.",
-            "hiring-manager": " That sits inside the stretch band I can hold against this scope.",
-            "director": " That's the Director-tier band — full sign-off authority on this number.",
-          })
-        : selectBySectorPersona(persona, {
-            "it-services":   " That's the grade fitment as per our band for this role.",
-            "gcc":           " That's anchored to the global band for this level.",
-            "indian-unicorn":" The cash sits inside our band; ESOP grant is on top.",
-            "early-startup": " Cash is tight at this stage, but equity % is where we can stretch.",
-            "bfsi":          " Fixed sits as per our regulatory band; variable is on the performance cycle.",
-            "default":       "",
-          });
-      if (typeof variableMax === "number" && variableMax > 0) {
-        const fixedComponent = Math.max(0, action.initialOffer - variableMax);
-        return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA — ₹${fixedComponent} LPA fixed plus a ₹${variableMax} LPA target on the performance cycle.${tail} Let me know your thoughts.`;
-      }
-      return `So for this grade, the fitment we're able to offer is ₹${action.initialOffer} LPA.${tail} Let me know your thoughts.`;
-    }
+    case "anchor-with-offer":
+      return proseAnchorWithOffer(action, state, helpers);
 
     case "offer-recap": {
       /* PDF#35 Move 1 (2026-05-18) — post-anchor offer-recap. The
@@ -1345,50 +969,8 @@ function renderCanonicalProseBody(
       return "You're right, my apologies — let me not loop on that. Moving on.";
     }
 
-    case "clarify-prior-question": {
-      /* PDF#34 Fix 3 (2026-05-18) — clarification response.
-       *
-       * The candidate asked "what is that?" / "huh?" / "what does X
-       * mean?" about a term the bot just used. Real recruiters answer
-       * the comprehension question inline before re-asking — they
-       * NEVER deflect with "this conversation is about Senior Product
-       * Designer at Meesho" (the PDF#34 persona-break).
-       *
-       * The prose surface scans the prior AI text for known jargon
-       * terms (vesting, ESOP, RSU, OTE, base/variable split, hike,
-       * notice period) and emits a plain-English definition plus
-       * a re-asked question. When no recognized term is found, ships
-       * a generic "let me rephrase" recovery — the LLM-restyle layer
-       * can then adapt the phrasing to the local context.
-       *
-       * Number-free; required token "let me" / "rephrase" / "mean"
-       * pins the clarification semantics so the contract validator
-       * can confirm the restyle didn't drop the clarification intent. */
-      const prior = (action.priorAiText || "").toLowerCase();
-      if (/\bvest(?:ing|ed)?\b/.test(prior)) {
-        return "Sorry, let me clarify — vesting is the schedule on which equity grants become yours over time. Most grants vest over 4 years with a 1-year cliff. Does your current package have any ESOPs or RSUs?";
-      }
-      if (/\b(?:esops?|rsus?|equity|stocks?|grants?)\b/.test(prior)) {
-        return "Sorry, let me clarify — ESOPs / RSUs are stock options or restricted stock that the company grants on top of cash. They vest over time. Do you currently have anything like that in your package?";
-      }
-      if (/\b(?:base|fixed)\s+(?:split|salary|pay|component)\b/.test(prior) || /\bbase\s+split\b/.test(prior)) {
-        return "Sorry, let me clarify — by base split I mean the fixed-salary portion of your CTC versus the variable / bonus piece. Of your current ₹X LPA total, how much is the fixed base?";
-      }
-      if (/\bvariable\b/.test(prior)) {
-        return "Sorry, let me clarify — variable means the performance-linked bonus paid out on top of your fixed base. How is yours structured today — fixed-target bonus, or fully performance-linked?";
-      }
-      if (/\bnotice\s+period\b/.test(prior)) {
-        return "Sorry, let me clarify — notice period is how long you'd need to serve before you can join us, per your current company's policy. How many days is yours?";
-      }
-      if (/\b(?:ote|on-target\s+earnings|commission)\b/.test(prior)) {
-        return "Sorry, let me clarify — OTE is on-target earnings: base plus full target commission if you hit 100% of quota. What's your current OTE?";
-      }
-      if (/\bhike\b/.test(prior)) {
-        return "Sorry, let me clarify — by hike I mean the percentage increase over your current CTC that you're hoping for. What number are you targeting?";
-      }
-      /* Generic fallback — restate without the jargon. */
-      return "Sorry, let me rephrase that. Could you share a bit more about what you'd like me to explain — I want to make sure we're on the same page before moving forward.";
-    }
+    case "clarify-prior-question":
+      return proseClarifyPriorQuestion(action, state, helpers);
 
     case "panel-approval-stall": {
       /* Phase 3 missing-lever set (2026-05-17) — distinct stall move.
@@ -1487,82 +1069,11 @@ function renderCanonicalProseBody(
       return `As per the band for this grade, fitment lands at ₹${lo} LPA. That's anchored against role scope and internal parity, not a single benchmark.`;
     }
 
-    case "close-recap-formal": {
-      /* Fix 4 (2026-05-16) — formal close recap. Enumerates Fixed |
-       * Variable target | JB (optional) | Retention (optional) | Notice |
-       * Proposed joining (optional) | BGV start trigger | OL ETA, then
-       * asks "Sounds good?" so the candidate explicitly reconfirms the
-       * full structured fitment before the offer letter is cut. */
-      const parts: string[] = [];
-      parts.push(`Fixed ₹${action.fixedLpa}L`);
-      parts.push(`variable target ₹${action.variableLpa}L`);
-      if (action.joiningBonusLpa != null && action.joiningBonusLpa > 0) {
-        /* Audit fix 2026-05-21: tier+amount-aware clawback. */
-        const cb = clawbackForCompany(action.joiningBonusLpa, state.company);
-        parts.push(`joining bonus ₹${action.joiningBonusLpa}L with a ${cb.months}-month ${cb.structure === "it-services-service-bond" ? "service bond" : "clawback"}`);
-      }
-      if (action.retentionBonusLpa != null && action.retentionBonusLpa > 0) {
-        parts.push(`retention bonus ₹${action.retentionBonusLpa}L split across the retention window`);
-      }
-      parts.push(`notice ${action.noticePeriodWeeks} weeks`);
-      if (action.proposedJoiningDate) {
-        parts.push(`proposed joining ${action.proposedJoiningDate}`);
-      }
-      parts.push(`BGV starts ${action.bgvStartTrigger}`);
-      parts.push(`offer letter in ${action.offerLetterEta}`);
-      /* Perfect 3 (2026-05-16) — when sticky cumulativeUrgency is firm
-       * (candidate has surfaced an explicit deadline / in-hand offer),
-       * append a fast-track line on the formal recap so the candidate
-       * hears that the OL pipeline is being shortened to match their
-       * timeline. Suppressed on soft / none — informational only. */
-      const urgencyTail =
-        state.cumulativeUrgency === "firm"
-          ? " Given your timeline, we'll fast-track the offer letter — expect it within 24 hours of BGV initiation."
-          : "";
-      return `Let me recap the fitment before I revert internally — ${parts.join(", ")}. Sounds good?${urgencyTail}`;
-    }
+    case "close-recap-formal":
+      return proseCloseRecapFormal(action, state, helpers);
 
-    case "round-transition": {
-      /* Phase 5 Session B (2026-05-19) — distinct handoff prose per
-       * (from → to) edge. HR Partner hands off to Hiring Manager with
-       * a warm partner-led tone; Hiring Manager hands off to Director
-       * with a process-led tone that signals the closing round.
-       *
-       * Distinct phrasing across the two edges so two consecutive
-       * round-transition turns would never collide on the PDF#36 A1
-       * rotating-ack guard (which normalises body text against
-       * state.lastAiText after stripping leading acks). The bodies
-       * also intentionally avoid the canonical ACK leads ("Noted",
-       * "Got it", "Understood", "Appreciate", "Right,", "Fair
-       * enough", "Okay,", "Alright,") so the FL2 neutral bridge does
-       * not double-prepend an ack onto an already-warm handoff. */
-      const from: NegotiationRoundPersona = action.from;
-      const to: NegotiationRoundPersona = action.to;
-      /* `from` is part of the discriminator surface so downstream
-       * analyzers can read the edge; not used in the prose body
-       * itself today. If a future iteration threads
-       * state.hiringManagerName, swap the generic descriptor on the
-       * hiring-manager arm below. */
-      void from;
-      return selectByRoundPersona(to, {
-        /* hr-partner → hiring-manager. Partner-led warmth. No
-         * "hiring manager" name is threaded through state today, so
-         * the generic descriptor "the hiring manager" is the safe
-         * surface. */
-        "hiring-manager":
-          "Thanks — that's everything from my side. Let me bring in the hiring manager who'll walk you through scope and team fit.",
-        /* hiring-manager → director. Process-led: signals the final
-         * round and frames the Director's scope (closing offer +
-         * any remaining flexibility). */
-        "director":
-          "Appreciate the depth on scope. I'd like to pull in the director for the final round — they'll cover the closing offer and any flexibility we have.",
-        /* HR Partner is never a handoff TARGET in the sequence
-         * hr-partner → hiring-manager → director. Defensive fallback
-         * only — should never be reached at runtime. */
-        "hr-partner":
-          "Let me bring in the next round of the conversation.",
-      });
-    }
+    case "round-transition":
+      return proseRoundTransition(action, state, helpers);
 
     default: {
       /* TypeScript exhaustiveness check. If a new NextAction.kind is
