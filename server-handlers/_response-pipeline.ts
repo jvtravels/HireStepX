@@ -42,6 +42,32 @@ import {
   detectCandidateAskedQuestion,
 } from "./_fact-pack";
 
+/* PDF#42 BUG-B (2026-05-21) — set of reactive-followup topics whose
+ * canonical prose is authored in planWiredProfileFollowup (planner)
+ * and MUST be shipped through the restyle path. If a candidate's
+ * question routes the planner to one of these, the pipeline must NOT
+ * pre-empt with the LLM answer-from-factPack path. Keep in sync with
+ * the WiredRule list in _next-action-planner.ts.
+ *
+ * Note: "answer-direct" is the GENERIC fallback (not wired) and stays
+ * on the LLM-answer path; only the topic-specific wired entries skip
+ * the answer path. */
+const WIRED_PROFILE_TOPICS = new Set<string>([
+  "wants-higher-base",
+  "wants-joining-bonus",
+  "wants-relocation-allowance",
+  "spouse-family-context",
+  "reporting-structure",
+  "growth-path",
+  "team-size",
+  "tax-implication",
+  "bgv-concern",
+  "moonlighting-policy",
+  "range-to-point",
+  "range-deflection",
+  "market-data-reference",
+]);
+
 export type GenerateAiTextFn = (
   system: string,
   user: string,
@@ -272,11 +298,71 @@ async function generateAnswerToCandidate(
     catch { return "Let me come back to that in a moment."; }
   })();
 
+  /* PDF#42 BUG-B (2026-05-21) — wired-profile precedence.
+   *
+   * When the planner has already routed this turn to a wired-profile-
+   * followup (the candidate's question matched candidateProfile flags
+   * like wantsHigherBase / wantsJoiningBonus / askedAboutTeamSize),
+   * the canonical prose is itself the substantive, topic-correct
+   * answer. Inviting the LLM to answer-from-factPack is BOTH
+   * unnecessary (canonical already answers) and unsafe (the answer-
+   * path validator only catches salary-formatted numbers, so the LLM
+   * can leak fabricated facts like "42 people across three pods" on
+   * non-salary topics).
+   *
+   * Architectural decision: for wired-profile topics, ship the
+   * canonical verbatim. No LLM, no restyle. The deterministic answer
+   * is strictly better than the LLM freelancing — pre-fix, the LLM
+   * famously emitted "Base salary is a fixed component, and we don't
+   * negotiate it separately from the CTC" when the wired canonical
+   * was "Understood that fixed weight matters to you — is that to
+   * bank against EMIs or to anchor the next appraisal cycle?". */
+  if (
+    action.kind === "reactive-followup" &&
+    WIRED_PROFILE_TOPICS.has(action.topic)
+  ) {
+    return {
+      text: canonicalFollowup,
+      source: "canonical-fallback",
+      action,
+      move,
+      rejectReason: `wired-profile-topic:${action.topic}`,
+    };
+  }
+
+  /* PDF#42 BUG-C (2026-05-21) — every defer early-return below used to
+   * ship its built text without running the loop guards, which meant a
+   * second consecutive validation rejection (or fact-gap, llm-throw,
+   * empty-llm, meta-leak, length-cap) emitted byte-identical defer text
+   * twice in a row. Live capture: T23 LLM-answer shipped, T25 LLM
+   * regenerated the same text and validation-rejected on both turns,
+   * defer was identical, no guard fired. Route every defer through
+   * `shipDefer` so the verbatim-repeat / leading-ack-repeat / META
+   * checks all run before the text leaves the pipeline. */
+  const shipDefer = (
+    defer: string,
+    rejectReason: string,
+  ): PipelineResult => {
+    if (
+      isVerbatimRepeat(defer, state) ||
+      isLeadingAckRotationRepeat(defer, state.lastAiText)
+    ) {
+      return {
+        text: LOOP_BREAKER_STUB,
+        source: "answer-canonical",
+        action,
+        move,
+        rejectReason: `${rejectReason}+defer-repeat`,
+      };
+    }
+    return { text: defer, source: "answer-canonical", action, move, rejectReason };
+  };
+
   /* When a fact is missing → graceful defer + resume planned line.
    * No LLM call needed — the deterministic answer is more reliable. */
   if (!gap.canAnswer) {
     const defer = buildDeferText("fact-gap", gap.missing, canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: `fact-gap: ${gap.missing.join(",")}` };
+    return shipDefer(defer, `fact-gap: ${gap.missing.join(",")}`);
   }
 
   /* All required facts present — ask the LLM to answer from factPack. */
@@ -291,12 +377,12 @@ async function generateAnswerToCandidate(
     answer = await generateAiText(system, user, { temperature: 0.4 });
   } catch {
     const defer = buildDeferText("llm-throw", [], canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: "llm-throw" };
+    return shipDefer(defer, "llm-throw");
   }
   answer = (answer || "").trim();
   if (!answer) {
     const defer = buildDeferText("empty-llm", [], canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: "empty-llm" };
+    return shipDefer(defer, "empty-llm");
   }
   /* Answer-side validation: same number/fact discipline as restyle.
    * PDF#29 Bug 5 (2026-05-18) — thread stateContext so the semantic
@@ -308,7 +394,7 @@ async function generateAnswerToCandidate(
   });
   if (!validation.valid) {
     const defer = buildDeferText("validation", [], canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: validation.reason };
+    return shipDefer(defer, validation.reason ?? "validation-failed");
   }
   /* PDF#36 Fix A4 (2026-05-19) — META directive leak on the answer
    * path. The boundary META check in generateBotReply runs AFTER this
@@ -317,7 +403,7 @@ async function generateAnswerToCandidate(
    * gets a usable answer surface, not the boundary's generic line. */
   if (META_DIRECTIVE_TOKENS_RE.test(answer)) {
     const defer = buildDeferText("validation", [], canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: "meta-directive-leak-answer" };
+    return shipDefer(defer, "meta-directive-leak-answer");
   }
   /* PDF#36 Fix B4 (2026-05-19) — answer-path sentence-length cap.
    * The restyle path enforces this via validateRestyle; the answer
@@ -325,7 +411,7 @@ async function generateAnswerToCandidate(
    * sentence answers shipped unchecked. Same cap as restyle. */
   if (checkSentenceLength(answer) !== "ok") {
     const defer = buildDeferText("validation", [], canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: "answer-too-long" };
+    return shipDefer(defer, "answer-too-long");
   }
   /* PDF#36 Fix A1 (2026-05-19) — leading-ack-rotation loop guard on
    * the answer path. The negotiate-turn boundary guard catches this
@@ -346,7 +432,7 @@ async function generateAnswerToCandidate(
    * to the deterministic canonical follow-up instead. */
   if (isVerbatimRepeat(answer, state)) {
     const defer = buildDeferText("validation", [], canonicalFollowup);
-    return { text: defer, source: "answer-canonical", action, move, rejectReason: "verbatim-repeat-answer" };
+    return shipDefer(defer, "verbatim-repeat-answer");
   }
   return { text: answer, source: "answer-restyle", action, move };
 }

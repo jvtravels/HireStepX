@@ -379,6 +379,19 @@ export type NextAction =
    * state.fakeLeverageChallengeFiredAtTurn AND
    * state.competingOfferDetail.proofRequestedAtTurn. */
   | { kind: "fake-leverage-challenge"; competingCompany: string | null }
+  /* PDF#42 BUG-A (2026-05-21) — competitor-match. Fires when the
+   * candidate has substantiated a competing offer (proofProvided or
+   * letterShareOffered) AND that offer exceeds the current
+   * highestOfferMade. The recruiter commits to taking the competing
+   * number back to the panel with a defined revert window — an
+   * authoritative closing-push register, NOT a candidate-facing
+   * "what else can we add?" probe (the live BUG-A surface). Single-
+   * fire via state.competitorMatchFiredAtTurn. */
+  | {
+      kind: "competitor-match";
+      competingOffer: number;
+      competingCompany: string | null;
+    }
   /* PDF#29 Bug 7 (2026-05-18) — acknowledge-and-recover. Fires when
    * state.lastUserFrustrated is true (candidate said "I already told
    * you", "you keep asking", "we covered this"). Highest-priority lever
@@ -2254,6 +2267,50 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
             `but provided no proof; counterRound=${state.counterRound}. ` +
             `Softly request offer letter / redacted version to corroborate ` +
             `before further concessions.`,
+        },
+      };
+    }
+
+    /* 1c. competitor-match (PDF#42 BUG-A, 2026-05-21) — fires when the
+     * candidate HAS substantiated the competing offer (proofProvided
+     * OR letterShareOffered) AND that offer exceeds our standing offer.
+     * Without this branch, the planner cascaded into lever-explore /
+     * pickLeverExploreMove, whose canonical surface (after LLM restyle)
+     * landed on "Thanks for that — what else can we add to the
+     * fitment?" — putting the ball in the candidate's court right at
+     * the moment leverage is concrete. The recruiter MUST own the
+     * response: commit to a panel re-check with a revert window. */
+    const competitorProven =
+      coDetail != null &&
+      (coDetail.proofProvided === true || coDetail.letterShareOffered === true);
+    if (
+      state.competitorMatchFiredAtTurn == null &&
+      competitorProven &&
+      state.competingOffer != null &&
+      state.competingOffer > state.highestOfferMade &&
+      state.highestOfferMade > 0 &&
+      /* Order discipline: only commit panel-match AFTER the proof-of-
+       * leverage probe has fired. If the candidate volunteers a letter
+       * unprompted, we still want the fake-leverage-challenge to run
+       * first so the recruiter visibly verified before committing. The
+       * single-fire stamp ensures we don't loop on the challenge. */
+      state.fakeLeverageChallengeFiredAtTurn != null
+    ) {
+      const competingCompany = coDetail?.company ?? null;
+      return {
+        kind: "competitor-match",
+        competingOffer: state.competingOffer,
+        competingCompany,
+        _move: {
+          lever: "hold-firm",
+          newTotalLpa: state.highestOfferMade,
+          actionKind: "competitor-match",
+          rationale:
+            `Competitor-match: candidate substantiated competing offer ` +
+            `(₹${state.competingOffer}L${competingCompany ? `, ${competingCompany}` : ""}) ` +
+            `above standing offer ₹${state.highestOfferMade}L. Commit to ` +
+            `panel re-check with revert window rather than routing through ` +
+            `lever-explore (which historically prompted the candidate).`,
         },
       };
     }

@@ -330,6 +330,12 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "defense",
         hint: "Recruiters ask for proof of competing offers — vague leverage gets discounted; specific, verifiable leverage moves the number.",
       };
+    case "competitor-match":
+      return {
+        label: "Taking your competing offer to the panel",
+        family: "counter",
+        hint: "When you substantiate a higher competing offer, recruiters commit to a panel re-check — that's the signal to clarify your acceptance criteria, not to add new asks.",
+      };
 
     /* ── Counter family ────────────────────────────────────────── */
     case "counter-offer":

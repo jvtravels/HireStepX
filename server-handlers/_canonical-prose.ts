@@ -1383,6 +1383,20 @@ function renderCanonicalProseBody(
       return `On the competing offer you'd mentioned — would you mind sharing the letter, or even a redacted version? It helps me make a stronger case to the panel for matching it.`;
     }
 
+    case "competitor-match": {
+      /* PDF#42 BUG-A (2026-05-21) — recruiter-owned response to a
+       * substantiated, above-offer competing number. Indian-HR
+       * register: panel escalation + concrete revert window + soft
+       * close-readiness probe. No new numbers beyond echoing the
+       * candidate's competing total; numberPolicy is "echo-only". */
+      const co = action.competingCompany;
+      const competingOffer = action.competingOffer;
+      if (co) {
+        return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we broadly aligned?`;
+      }
+      return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we broadly aligned?`;
+    }
+
     case "anchor-defense-hike-strong": {
       /* Phase 3 missing-lever set (2026-05-17) — rebuts "only X% hike"
        * complaint with peer-context framing. Numbers come from the

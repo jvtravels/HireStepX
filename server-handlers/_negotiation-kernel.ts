@@ -276,6 +276,14 @@ export type DiscoveryTopic =
   | "panel-approval-stall"
   | "polite-walkaway"
   | "anchor-defense-hike-strong"
+  /* PDF#42 BUG-A (2026-05-21) — competitor-match. AI's authoritative
+   * response after the candidate proves a higher competing offer
+   * (proofProvided OR letterShareOffered). Commits to taking the
+   * competing number back to the panel with a revert window, instead
+   * of routing through lever-explore which historically prompted the
+   * candidate ("what else can we add to the fitment?"). Single-fire
+   * via state.competitorMatchFiredAtTurn. */
+  | "competitor-match"
   /* Phase 2 Indian-HR redesign (2026-05-17) — post-acceptance documentation
    * request actionKind. Pushed onto askedTopics via applyAiMove's F7 ledger
    * so the planner can verify single-fire (in addition to the explicit
@@ -358,6 +366,8 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   "close-confirmation", "close-recap-formal", "candidate-trial-close",
   "comparative-anchoring", "internal-equity-defense", "band-anchor-with-rationale",
   "panel-approval-stall", "polite-walkaway", "anchor-defense-hike-strong",
+  /* PDF#42 BUG-A (2026-05-21). */
+  "competitor-match",
   "anchor-with-offer", "post-acceptance-document-request",
   "lever-grade-upgrade", "lever-retention-bonus", "lever-rsu-refresh",
   "lever-relocation", "lever-perf-bonus-cadence", "lever-joining-bonus-explained",
@@ -892,6 +902,11 @@ export interface NegotiationState {
    * the turn the lever fires. Defensive single-fire layered on top of
    * the proofRequestedAtTurn gate on competingOfferDetail. */
   fakeLeverageChallengeFiredAtTurn?: number | null;
+  /* PDF#42 BUG-A (2026-05-21) — competitor-match single-fire marker.
+   * Null on init; stamped by applyAiMove when actionKind ===
+   * "competitor-match". Planner reads it as the single-fire gate so
+   * the panel-match commitment doesn't ship repeatedly. */
+  competitorMatchFiredAtTurn?: number | null;
   /* Symmetric ledger entry for stalemate. Stamped once when derivePhase
    * first returns "stalemate"; cleared symmetrically with the others
    * when a walk-away-return reopens the session. Lets downstream
@@ -2114,6 +2129,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     politeWalkawayFiredAtTurn: null,
     hikeStrongDefenseFiredAtTurn: null,
     fakeLeverageChallengeFiredAtTurn: null,
+    competitorMatchFiredAtTurn: null,
     hikePercent: null,
     rationale: null,
     noticeJoining: {
@@ -3142,8 +3158,15 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
   /* PDF#27 Fix 5 (2026-05-17) — offer-ask detection. Candidate asks
    * what the company is offering; the band-disclosure lever reads this
    * to fire on the very next planner call. */
+  /* PDF#42 BUG-D (2026-05-21) — widen to include "final offer", "last
+   * offer", "best (and) final". Candidate's "what is your final offer?"
+   * after multiple deflections must route to a closing-push restate,
+   * NOT fall through the question-intent classifier into a generic
+   * budget-deflection (which masked the ask and trickled into an
+   * abrupt-termination chain). The kernel stamp `offerAskedAtTurn`
+   * lets the planner pick the closing-push lever on the very next call. */
   const OFFER_ASK_RE =
-    /\b(?:what'?s\s+(?:the\s+)?offer|share\s+(?:the\s+)?offer|initial\s+offer|what\s+are\s+you\s+offering|what'?s\s+on\s+offer)\b/i;
+    /\b(?:what'?s\s+(?:the\s+)?offer|share\s+(?:the\s+)?offer|initial\s+offer|what\s+are\s+you\s+offering|what'?s\s+on\s+offer|(?:what(?:'?s|\s+is)\s+your\s+)?(?:final|last|best(?:\s+and\s+final)?)\s+(?:offer|number|fitment)|best\s+and\s+final)\b/i;
   const offerAskedAtTurn = OFFER_ASK_RE.test(answer)
     ? state.turnIndex
     : (state.offerAskedAtTurn ?? null);
@@ -4589,6 +4612,13 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
       };
     }
   }
+  /* PDF#42 BUG-A (2026-05-21) — competitor-match single-fire stamp. */
+  if (
+    move.actionKind === "competitor-match" &&
+    state.competitorMatchFiredAtTurn == null
+  ) {
+    next.competitorMatchFiredAtTurn = state.turnIndex;
+  }
   /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
    * ledger so planNextAction can skip same-topic probes within 3 turns.
    * Use move.askedTopic if set (reactive-followups), otherwise fall back
@@ -5042,6 +5072,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
   ) {
     throw new Error("state.fakeLeverageChallengeFiredAtTurn");
   }
+  if (
+    s.competitorMatchFiredAtTurn !== undefined &&
+    s.competitorMatchFiredAtTurn !== null &&
+    !isFiniteNonNegInt(s.competitorMatchFiredAtTurn)
+  ) {
+    throw new Error("state.competitorMatchFiredAtTurn");
+  }
   /* Backward-compatible optional fields: tolerate absence (older
      in-flight sessions) but reject malformed values. deserializeState
      backfills defaults so the rest of the kernel sees a fully-shaped
@@ -5386,6 +5423,8 @@ export function deserializeState(json: string): NegotiationState {
       (s.hikeStrongDefenseFiredAtTurn as number | null | undefined) ?? null,
     fakeLeverageChallengeFiredAtTurn:
       (s.fakeLeverageChallengeFiredAtTurn as number | null | undefined) ?? null,
+    competitorMatchFiredAtTurn:
+      (s.competitorMatchFiredAtTurn as number | null | undefined) ?? null,
     firstAnchoredTarget:
       typeof s.firstAnchoredTarget === "number"
         ? s.firstAnchoredTarget

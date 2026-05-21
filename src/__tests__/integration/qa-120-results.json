@@ -351,8 +351,8 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/5 keywords present; prose missing: identifies, variable, fixed, bonus, lever",
-      "prose": "On the budget — I can't share the full internal band, but the fitment sits in a defined corridor for this grade. If you can share even a rough target, I'll tell you straight away whether we're broadly aligned.",
-      "actionKind": "reactive-followup",
+      "prose": "I'll need to take that back to the hiring panel — as per our band, the grade fitment is what I have on the table. Happy to escalate your expectation internally. If you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+      "actionKind": "band-disclosure-deflect",
       "keywords": [
         "identifies",
         "variable",
