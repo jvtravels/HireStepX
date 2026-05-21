@@ -1,3 +1,5 @@
+import { registerWaveFlag } from "./_candidate-profile-registry";
+
 /* Candidate-profile parser — Phase 17B (2026-05-13).
  *
  * The 19-scenario audit surfaced three adjacent candidate-background
@@ -2107,6 +2109,37 @@ const RTO_PUSHBACK_PATTERNS: RegExp[] = [
 function detectRtoPushback(t: string): boolean {
   return RTO_PUSHBACK_PATTERNS.some((p) => p.test(t));
 }
+
+/* Audit follow-up (2026-05-21) — wave-flag registry SHADOW registration.
+ * Three Wave-2A detectors register themselves with the composition seam
+ * (`_candidate-profile-registry.ts`). The legacy direct-call path in
+ * extractCandidateProfile remains canonical; the registry runs in
+ * shadow and a contract test asserts byte-identical parity. When the
+ * wave is fully cut over the registration becomes PRIMARY and the
+ * legacy lines below in extract/merge/EMPTY can be deleted without
+ * behaviour change. This is the proof-of-pattern; six more waves to
+ * migrate after this. */
+registerWaveFlag({
+  name: "parentInsuranceAsked",
+  waveId: "wave-2A",
+  detect: detectParentInsuranceAsked,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "inHandTakehomeFocus",
+  waveId: "wave-2A",
+  detect: detectInHandTakehomeFocus,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "rtoPushback",
+  waveId: "wave-2A",
+  detect: detectRtoPushback,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
 
 /* Wave-2A — returnship from maternity. */
 const RETURNSHIP_MATERNITY_PATTERNS: RegExp[] = [
