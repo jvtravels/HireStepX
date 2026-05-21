@@ -1005,6 +1005,24 @@ export interface NegotiationState {
    * LLM knows not to restate them verbatim. */
   recruiterFactsAlreadySaid: string[];
 
+  /* Audit follow-up (2026-05-21) — cross-turn answer coherence ledger.
+   *
+   * The off-script answer-from-factPack path (response-pipeline.ts
+   * generateAnswerToCandidate) rebuilds the factPack fresh per turn.
+   * Without a memory of what the bot has already answered for a given
+   * intent, the LLM could land on inconsistent factual answers across
+   * turns ("vesting is 25/25/25/25" turn 4, "vesting is 1-year cliff
+   * then quarterly" turn 9). The ledger records the *intent* (coarse
+   * bucket from detectCandidateAskedQuestion) → the canonical answer
+   * the bot shipped + the turn it was shipped on. On a repeat ask of
+   * the same intent, the pipeline short-circuits the LLM and ships a
+   * deterministic "Just to reconfirm — <prior answer>" so the factual
+   * thread stays coherent.
+   *
+   * Optional for back-compat with in-flight sessions serialized before
+   * this field shipped; deserializeState backfills to {}. */
+  answeredQuestionLedger?: Record<string, { answerText: string; turn: number }>;
+
   /* Fix 3 (2026-05-15) — Promise-keeping enforcement. Open promises the
    * bot has made but not yet delivered ("we can discuss X", "let me share
    * Y"). Subjects are short normalised strings; promises that get
@@ -2230,6 +2248,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     candidatePrimaryDomain: input.candidatePrimaryDomain ?? null,
     freshGradDisclosed: false,
     recruiterFactsAlreadySaid: [],
+    answeredQuestionLedger: {},
     pendingPromises: [],
     lastBotReply: null,
     anchorLocked: false,
@@ -4541,6 +4560,34 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   if (state.discoveryStage === "probe-mismatch") {
     next.discoveryStage = "discovery";
   }
+  /* Audit follow-up (2026-05-21) — answeredQuestionLedger write.
+   *
+   * If the candidate's most recent turn carried a structured
+   * `candidateAskedQuestion.intent`, the AI text we just shipped is
+   * THE canonical answer to that intent for this session. Record it
+   * so a future repeat of the same intent can short-circuit straight
+   * to the prior answer (cross-turn factual coherence).
+   *
+   * Two reasons for keying on intent (not raw question text):
+   *   1. Same fact, different phrasings ("when do RSUs vest?" vs
+   *      "what's the equity schedule?") share an intent ("equity") so
+   *      both get the consistent answer.
+   *   2. The ledger size stays bounded by the intent enum cardinality
+   *      (~15 buckets) instead of growing per-utterance.
+   *
+   * The write happens UNCONDITIONALLY on every AI turn that follows a
+   * question-bearing user turn — re-asks of the same intent overwrite
+   * the prior entry with the latest answer text and turn marker, so a
+   * follow-up clarification on the same topic supersedes the older
+   * answer rather than freezing on a stale one. */
+  const askedIntent = state.lastTurnDelta?.candidateAskedQuestion?.intent;
+  if (typeof askedIntent === "string" && askedIntent.length > 0 && aiText && aiText.trim().length > 0) {
+    const priorLedger = state.answeredQuestionLedger ?? {};
+    next.answeredQuestionLedger = {
+      ...priorLedger,
+      [askedIntent]: { answerText: aiText, turn: state.turnIndex },
+    };
+  }
   /* Negotiation-flow redesign commit 4 (2026-05-15) — record the
    * reactive-followup topic the planner emitted this turn. Sticky:
    * future planNextAction calls consult this ledger before re-emitting
@@ -5180,6 +5227,27 @@ export function validateState(state: unknown): asserts state is NegotiationState
       throw new Error("state.leversFired");
     }
   }
+  /* Audit follow-up (2026-05-21) — answeredQuestionLedger validator.
+   * Optional for back-compat. When present, every value must be
+   * { answerText: string, turn: finite non-neg int }. */
+  if (s.answeredQuestionLedger !== undefined) {
+    if (
+      s.answeredQuestionLedger === null ||
+      typeof s.answeredQuestionLedger !== "object" ||
+      Array.isArray(s.answeredQuestionLedger)
+    ) {
+      throw new Error("state.answeredQuestionLedger");
+    }
+    for (const [k, v] of Object.entries(s.answeredQuestionLedger)) {
+      if (typeof k !== "string" || k.length === 0) {
+        throw new Error("state.answeredQuestionLedger.key");
+      }
+      if (!v || typeof v !== "object") throw new Error("state.answeredQuestionLedger.value");
+      const entry = v as { answerText?: unknown; turn?: unknown };
+      if (typeof entry.answerText !== "string") throw new Error("state.answeredQuestionLedger.answerText");
+      if (!isFiniteNonNegInt(entry.turn)) throw new Error("state.answeredQuestionLedger.turn");
+    }
+  }
   if (s.hardBandCap !== undefined && typeof s.hardBandCap !== "boolean") throw new Error("state.hardBandCap");
   if (s.marketMode !== undefined && s.marketMode !== "soft" && s.marketMode !== "neutral" && s.marketMode !== "hot") throw new Error("state.marketMode");
   if (
@@ -5551,6 +5619,13 @@ export function deserializeState(json: string): NegotiationState {
     candidatePrimaryDomain: (s.candidatePrimaryDomain as string | null | undefined) ?? null,
     freshGradDisclosed: (s.freshGradDisclosed as boolean | undefined) ?? false,
     recruiterFactsAlreadySaid: (s.recruiterFactsAlreadySaid as string[] | undefined) ?? [],
+    /* Audit follow-up (2026-05-21) — answeredQuestionLedger back-compat
+     * default. In-flight sessions serialized before this field shipped
+     * deserialise with an empty ledger; the cross-turn coherence
+     * short-circuit becomes inert until the next answered question
+     * populates it. */
+    answeredQuestionLedger:
+      (s.answeredQuestionLedger as NegotiationState["answeredQuestionLedger"]) ?? {},
     pendingPromises: (s.pendingPromises as string[] | undefined) ?? [],
     lastBotReply: (s.lastBotReply as string | null | undefined) ?? null,
     anchorLocked: (s.anchorLocked as boolean | undefined) ?? false,

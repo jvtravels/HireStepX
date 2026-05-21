@@ -133,7 +133,43 @@ export async function generateBotReply(
   let result: PipelineResult;
   if ((askedFromDelta && askedFromDelta.raw) || askedFromAnswer.asked) {
     const rawQ = askedFromDelta?.raw ?? askedFromAnswer.raw ?? candidateAnswer ?? "";
-    result = await generateAnswerToCandidate(state, action, move, rawQ, generateAiText);
+    /* Audit follow-up (2026-05-21) — cross-turn answer coherence
+     * short-circuit. If the candidate is asking about an intent the
+     * bot has ALREADY answered earlier in this session, skip the LLM
+     * and ship a deterministic reconfirmation of the prior answer.
+     * Two reasons this lives upstream of generateAnswerToCandidate:
+     *   1. The LLM, on a fresh factPack, can drift to an
+     *      inconsistent factual answer (different vesting math, a
+     *      different team-size guess) — risk #4 from the 2026-05-21
+     *      audit.
+     *   2. Returning the prior canonical answer is strictly cheaper
+     *      (no LLM call) and strictly safer (the answer was already
+     *      validated when it shipped originally).
+     * Skip on the same-turn-as-prior-answer case: if the intent was
+     * answered THIS turn we're still inside the same exchange and
+     * should let the planner's prose run normally. */
+    const askedIntent = askedFromDelta?.intent ?? askedFromAnswer.intent;
+    const ledger = state.answeredQuestionLedger;
+    const priorAnswer =
+      typeof askedIntent === "string" && askedIntent.length > 0 && ledger
+        ? ledger[askedIntent]
+        : undefined;
+    if (
+      priorAnswer &&
+      typeof priorAnswer.answerText === "string" &&
+      priorAnswer.answerText.length > 0 &&
+      priorAnswer.turn < state.turnIndex
+    ) {
+      result = {
+        text: `Just to reconfirm — ${priorAnswer.answerText}`,
+        source: "answer-canonical",
+        action,
+        move,
+        rejectReason: `repeat-intent:${askedIntent}`,
+      };
+    } else {
+      result = await generateAnswerToCandidate(state, action, move, rawQ, generateAiText);
+    }
   } else {
     result = await generateRestyledCanonical(state, action, move, generateAiText);
   }
