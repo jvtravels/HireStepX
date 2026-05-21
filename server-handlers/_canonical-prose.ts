@@ -1580,6 +1580,17 @@ export function buildRestylePrompt(
   return { system, user };
 }
 
+/** Audit follow-up (2026-05-21) — canonical hedge fired when the LLM
+ *  answer-path fails `validateAnswerGrounding`. The grounding validator
+ *  catches LLM-fabricated proper-nouns (manager names, office addresses,
+ *  insurance carriers, team-lead names) that `validateAnswer` cannot —
+ *  it's salary-number focused. When grounding fails, ship this stall
+ *  move instead of letting the LLM-confabulated facts reach the
+ *  candidate. Conservative, recruiter-idiomatic, defers ownership to
+ *  the hiring manager which is the real-world resolution path. */
+export const FACT_GROUNDING_HEDGE =
+  "That specific one I'd want to confirm with the hiring manager before committing — let me revert once I have it from them.";
+
 /** Restyle-prompt builder for off-script candidate questions. The LLM
  *  may answer ONLY from the supplied factPack; if a fact is missing,
  *  it must defer and pivot to the canonical follow-up line. */

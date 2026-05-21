@@ -35,6 +35,7 @@ import {
   countPreferredIdioms,
   ACK_TEMPLATES,
   META_DIRECTIVE_TOKENS_RE,
+  FACT_GROUNDING_HEDGE,
 } from "./_canonical-prose";
 import { extractSalaryScalars } from "./_fact-parser";
 import {
@@ -473,6 +474,21 @@ async function generateAnswerToCandidate(
   if (!validation.valid) {
     const defer = buildDeferText("validation", [], canonicalFollowup);
     return shipDefer(defer, validation.reason ?? "validation-failed");
+  }
+  /* Audit follow-up (2026-05-21) — fact-grounding validator. Catches
+   * non-numeric LLM hallucinations (manager names, office addresses,
+   * insurance carriers) that `validateAnswer` is blind to. On failure
+   * we ship the canonical hedge `FACT_GROUNDING_HEDGE` rather than the
+   * planner's canonicalFollowup — the hedge is a topic-neutral stall
+   * move (defer to hiring manager) which is the safe real-world
+   * resolution. Defense-in-depth: this runs in addition to
+   * `validateAnswer`, not instead of it. */
+  const grounding = validateAnswerGrounding(answer, factPack);
+  if (!grounding.ok) {
+    return shipDefer(
+      FACT_GROUNDING_HEDGE,
+      grounding.reason ?? "fact-grounding-failed",
+    );
   }
   /* PDF#36 Fix A4 (2026-05-19) — META directive leak on the answer
    * path. The boundary META check in generateBotReply runs AFTER this
@@ -1545,6 +1561,124 @@ export function validateAnswer(
     return { valid: false, reason: "defensive-loop-leaked" };
   }
   return { valid: true };
+}
+
+/* Audit follow-up (2026-05-21) — fact-grounding validator.
+ *
+ * `validateAnswer` above is salary-number focused — it catches LPA
+ * hallucinations and band-leaks but lets the LLM fabricate NON-NUMERIC
+ * facts: manager names ("Priya Sharma"), office addresses ("12th floor,
+ * Prestige Tower"), insurance carriers ("ICICI Lombard"), team-lead
+ * names, vesting schedules, etc. Those are the audit harm.
+ *
+ * This validator extracts the proper-noun shaped tokens from the LLM
+ * output (capitalized multi-token phrases that aren't at the start of a
+ * sentence, plus standalone Title-Case bigrams) and rejects the answer
+ * if any of those tokens are NOT present in the JSON-serialized factPack
+ * or the small allowlist of generic recruiter vocabulary.
+ *
+ * It is HEURISTIC. False positives → safe hedge (no harm). False
+ * negatives are the harm we're preventing; tune conservatively. The
+ * tradeoff favours rejecting borderline LLM prose since the fallback
+ * (canonical hedge) is itself a valid recruiter move. */
+
+/* Allowlist: generic recruiter / business / Indian-context tokens that
+ * are safe even when not literally in the factPack. Lowercase. Keep
+ * tight — anything load-bearing as a fact (carrier names, vendor names,
+ * specific city/office strings) MUST come from the pack. */
+const GROUNDING_GENERIC_ALLOWLIST = new Set<string>([
+  // Days / months / time
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+  "january", "february", "march", "april", "may", "june", "july",
+  "august", "september", "october", "november", "december",
+  "q1", "q2", "q3", "q4",
+  // Generic recruiter / role / process vocabulary
+  "ctc", "lpa", "hr", "hm", "em", "vp", "ceo", "cto", "cfo", "coo", "pm", "pmo",
+  "rsu", "esop", "pf", "epf", "epfo", "uan", "bgv", "esic", "fbp",
+  "fixed", "variable", "base", "bonus", "joining", "retention",
+  "wfh", "hybrid", "remote", "office", "onsite",
+  "india", "indian", "bengaluru", "bangalore", "mumbai", "delhi", "hyderabad",
+  "pune", "chennai", "gurgaon", "noida", "kolkata",
+  "firstadvantage", "authbridge",
+  // Statutory acts / regulators referenced in INDIAN_MARKET_FACTS
+  "epf", "esic", "sec", "section",
+  // Common BFSI / IT-services / product-cos shorthand
+  "bfsi", "it-services", "it",
+]);
+
+/* Proper-noun-like phrase detector. Matches:
+ *   - Capitalized word followed by 1-3 more capitalized words (e.g.
+ *     "Priya Sharma", "ICICI Lombard", "Prestige Tech Park").
+ *   - Standalone Capitalized words that aren't the very first word of
+ *     a sentence (the lead-word check is applied by scanning per-
+ *     sentence and skipping the first whitespace-delimited token).
+ * We deliberately do NOT match all-caps acronyms like "RSU" / "BGV"
+ * since those are domain vocabulary, not fabricated specifics. */
+const PROPER_NOUN_RE = /\b[A-Z][a-z]{1,}(?:\s+[A-Z][a-z]+){0,3}\b/g;
+
+/** Extract proper-noun-shaped tokens from `text`, excluding sentence-
+ *  initial leads (which are just normal capitalization). Returns
+ *  lowercase tokens for case-insensitive comparison. */
+function extractGroundingTokens(text: string): string[] {
+  if (!text) return [];
+  const out: string[] = [];
+  /* Split into sentences on . ! ? while preserving content. */
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  for (const s of sentences) {
+    const trimmed = s.trim();
+    if (!trimmed) continue;
+    /* Drop sentence-initial capitalized lead — that's syntactic, not a
+     * proper noun. Find first whitespace-delimited token and skip it
+     * when scanning. */
+    const firstSpace = trimmed.indexOf(" ");
+    const afterLead = firstSpace > 0 ? trimmed.slice(firstSpace) : "";
+    const matches = afterLead.match(PROPER_NOUN_RE) || [];
+    for (const m of matches) out.push(m.toLowerCase());
+  }
+  return out;
+}
+
+/** Audit follow-up (2026-05-21) — grounding validator.
+ *
+ *  Verifies every proper-noun-shaped token in the LLM output appears
+ *  either in the JSON-serialized factPack or in the generic allowlist.
+ *  Returns { ok: false, reason } when an unrecognised proper noun is
+ *  found — the pipeline then substitutes `FACT_GROUNDING_HEDGE`.
+ *
+ *  Pure. Heuristic. False-positives are safe (hedge fallback); the
+ *  tuning bias is low false-negative. */
+export function validateAnswerGrounding(
+  text: string,
+  factPack: unknown,
+): { ok: boolean; reason?: string } {
+  if (!text || !text.trim()) return { ok: true };
+  const tokens = extractGroundingTokens(text);
+  if (tokens.length === 0) return { ok: true };
+  let packStr: string;
+  try {
+    packStr = JSON.stringify(factPack ?? {});
+  } catch {
+    packStr = "";
+  }
+  const packLower = packStr.toLowerCase();
+  for (const tok of tokens) {
+    if (GROUNDING_GENERIC_ALLOWLIST.has(tok)) continue;
+    /* Multi-word phrase: accept if the FULL phrase appears in pack, or
+     * if each component word (>=4 chars) appears in pack. The component
+     * check guards against the LLM splicing a real first-name with a
+     * fabricated last-name ("Priya Random"). */
+    if (packLower.includes(tok)) continue;
+    const parts = tok.split(/\s+/);
+    const allPartsKnown = parts.every(
+      (p) =>
+        GROUNDING_GENERIC_ALLOWLIST.has(p) ||
+        (p.length >= 4 && packLower.includes(p)) ||
+        p.length < 4 /* short tokens too noisy to flag */,
+    );
+    if (allPartsKnown) continue;
+    return { ok: false, reason: `unfounded-proper-noun:${tok}` };
+  }
+  return { ok: true };
 }
 
 /* PDF#30 R3 (2026-05-18) — bot self-defense phrasings that indicate
