@@ -24,6 +24,8 @@ import {
   canDiscloseSpecificNumber,
   isTerminalPhase,
 } from "./_negotiation-kernel";
+import { resolveVestingSchedule } from "../data/company-vesting-overlay";
+import { clawbackForCompany } from "./_joining-bonus-clawback";
 import { summarizeTranscriptIfLong, type TranscriptTurn } from "./_transcript-summarizer";
 import { detectResumeRoleMismatch, shouldEnterProbeMismatch } from "./_resume-role-match";
 import { classifyRoleFamily } from "./_company-band-tiers";
@@ -192,6 +194,8 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. If the prior turn did not yet collect onboarding documents (Aadhaar / PAN / recent payslips), gently re-prompt for them. One or two short sentences only.",
   "acknowledge-and-recover":
     "The candidate has signalled they're repeating themselves ('I already told you', 'we covered this', 'you keep asking'). Acknowledge the loop in ONE short clause ('you're right, my apologies — let me not loop on that') and then advance to the next non-redundant topic. Do NOT re-ask anything the candidate has already answered. Do NOT introduce a new number. The recover line is a meta-turn — it exists to reset rapport, not to negotiate.",
+  "ctc-inflation-anchor":
+    "The candidate has anchored well above the initial offer. Match the headline number on TOTAL PACKAGE by stacking fixed + variable + ESOP paper-value + joining bonus + benefits — quote each component with the rupee figure from the action payload. The numbers are accurate; the framing weaponises CTC-vs-in-hand confusion to teach the candidate to ask for the guaranteed in-hand breakdown. Do NOT volunteer the in-hand split; if the candidate asks, the next turn ships the truthful breakdown.",
 };
 
 export interface BuildPromptInput {
@@ -1434,9 +1438,16 @@ export function buildAiPrompt(input: BuildPromptInput): { system: string; user: 
    `wantsCompStructure` for the routing pattern).
    ───────────────────────────────────────────────────────────────── */
 const INFO_ANSWERS: Record<string, string> = {
-  "clawback-period": "Address clawback: 2-year clawback, pro-rated by months served, gross amount on exit.",
+  /* Audit 2026-05-21: shadowed by the company+amount-aware overlay
+   * injected below ("CLAWBACK DISCLOSURE"). Static text kept as a safe
+   * fallback for sessions with no company or no JB on the table. */
+  "clawback-period": "Address clawback: window scales with bonus amount and company tier; resolve via overlay before quoting a specific window.",
   "variable-history": "Address variable history: typical payout 80-100% in last 3 years, no zero years.",
-  "vest-schedule": "Address vest: 4-year vest, 1-year cliff (25%), monthly thereafter.",
+  /* Audit 2026-05-21: this static entry is shadowed at runtime by the
+   * company-aware overlay hint injected in `buildResponseHints` below
+   * (see "VEST SCHEDULE DISCLOSURE"). Kept as a safe fallback for the
+   * (very rare) case where state.company is empty. */
+  "vest-schedule": "Address vest: schedule varies by company — confirm the specific company plan; do NOT default to US 4yr/1yr cliff without checking the overlay.",
   "strike-price": "Address strike: set at last 409A / fair market value, refreshed annually.",
   "in-hand-monthly": "Address in-hand: ~70-75% of fixed CTC monthly after tax + statutory deductions.",
   "exercise-window": "Address exercise window: 90 days post-termination standard; can negotiate up to 12 months for IC tracks.",
@@ -1492,6 +1503,32 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
   for (const intent of state.infoAsked) {
     const a = INFO_ANSWERS[intent];
     if (a) hints.push(a);
+  }
+  /* Audit fix 2026-05-21: vest-schedule disclosure is overlay-aware.
+   * The static one-liner above is the legacy default; when the kernel
+   * has a company name we resolve the actual schedule via
+   * `resolveVestingSchedule()` so the recruiter never lies that
+   * Flipkart vests like a US startup or that TCS hands out RSUs. */
+  /* Audit fix 2026-05-21: clawback disclosure is amount+tier-aware.
+   * If a JB is currently on the table (state.lastJoiningBonusOffered),
+   * use that amount; otherwise resolve at 0 which lands on the small-
+   * bonus ladder. */
+  if (state.infoAsked.includes("clawback-period") && state.company) {
+    const cb = clawbackForCompany(state.lastJoiningBonusOffered ?? 0, state.company);
+    hints.push(
+      `CLAWBACK DISCLOSURE — the candidate asked about the joining-bonus clawback. ` +
+      `Describe ${state.company}'s clawback as: ${cb.description} ` +
+      `This is an INFO disclosure; do NOT propose a new number.`,
+    );
+  }
+  if (state.infoAsked.includes("vest-schedule") && state.company) {
+    const sched = resolveVestingSchedule(state.company);
+    const liq = sched.liquidityNote ? ` Liquidity caveat: ${sched.liquidityNote}` : "";
+    hints.push(
+      `VEST SCHEDULE DISCLOSURE — the candidate asked about the vesting schedule. ` +
+      `Describe ${state.company}'s schedule as: ${sched.description}.${liq} ` +
+      `This is an INFO disclosure; do NOT propose a new number or push for acceptance.`,
+    );
   }
   /* Bug report 11 follow-up E (2026-05-14) — benefits-overview is
    * state-derived (depends on company), so it's hinted here rather than

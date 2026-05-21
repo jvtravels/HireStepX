@@ -32,6 +32,7 @@ import type { NextAction } from "./_next-action-planner";
 import type { RecruiterSectorPersona } from "./_indian-recruiter-personas";
 import type { NegotiationRoundPersona } from "./_negotiation-rounds";
 import { getNegotiationRoundPersona } from "./_negotiation-rounds";
+import { clawbackForCompany } from "./_joining-bonus-clawback";
 import {
   classifyCandidateQuestion,
   renderCandidateQuestionResponse,
@@ -1209,10 +1210,45 @@ function renderCanonicalProseBody(
        * substantive payout shape directly. */
       return "Looking at the structure — perf bonus is anchored to the March appraisal cycle with a mid-year correction window for top performers. Target payout sits at 100% for on-track ratings, scaling to 150% at the top band and 0% below threshold.";
 
+    case "ctc-inflation-anchor": {
+      /* Audit fix 2026-05-21 — recruiter weaponises CTC-vs-in-hand
+       * confusion. Numbers are accurate; the framing is the lie.
+       * The simulator allows this once per session so the candidate
+       * learns to ALWAYS ask "what's the guaranteed in-hand?". The
+       * truth-on-followup is handled by the `ctc-inflation-truth`
+       * arm below — same underlying numbers, honest framing. */
+      return (
+        `We can do ₹${action.ctcLpa}L total package — that's ₹${action.fixedLpa}L fixed, ` +
+        `₹${action.variableLpa}L variable on annual rating, ESOPs worth ₹${action.esopPaperLpa}L ` +
+        `at last fair-market-value, ₹${action.joiningBonusLpa}L joining bonus, and our standard ` +
+        `benefits package (gratuity, PF employer, NPS, insurance) worth around ₹${action.benefitsLpa}L. ` +
+        `So overall ₹${action.ctcLpa}L on the table.`
+      );
+    }
+    case "ctc-inflation-truth": {
+      /* Audit fix 2026-05-21 — candidate asked for the in-hand
+       * breakdown after the inflated anchor. Truthful framing of the
+       * same numbers. Teaches defense, not deception-as-skill. */
+      return (
+        `Fair question — let me break it down honestly. The guaranteed cash is the ₹${action.fixedLpa}L fixed; ` +
+        `that's what hits your account month after month. The ₹${action.variableLpa}L variable is at-risk on the annual rating cycle — ` +
+        `most years it pays out 80-100%, but it's not contractual. The ₹${action.esopPaperLpa}L ESOPs are paper value at last FMV — ` +
+        `actual realisable value depends on buyback windows and vesting completion. The ₹${action.joiningBonusLpa}L joining bonus is ` +
+        `one-time, amortised over year one, and carries a clawback if you leave early. Benefits ₹${action.benefitsLpa}L is gratuity / ` +
+        `PF / NPS / insurance — real value, but non-cash. So the headline ₹${action.ctcLpa}L is the full envelope; ` +
+        `the guaranteed annual cash is ₹${action.fixedLpa}L fixed.`
+      );
+    }
+
     case "lever-joining-bonus-explained": {
       const jb = state.lastJoiningBonusOffered;
       const jbPart = jb != null && jb > 0 ? `₹${jb}L ` : "";
-      return `On the joining bonus — the ${jbPart}is one-time, paid with the first month's payroll, and carries the standard 12-month clawback (prorated thereafter). Let me know if you want the exact wording before I revert internally.`;
+      /* Audit fix 2026-05-21: clawback window scales with amount and
+       * tier — not a flat 12mo. Resolver consults the JB amount + the
+       * company tier (IT-services → service bond; MNC India → 24mo;
+       * else ladder by amount). */
+      const clawback = clawbackForCompany(jb ?? 0, state.company);
+      return `On the joining bonus — the ${jbPart}is one-time, paid with the first month's payroll, and carries a ${clawback.description} Let me know if you want the exact wording before I revert internally.`;
     }
 
     case "internal-equity-defense": {
@@ -1461,7 +1497,9 @@ function renderCanonicalProseBody(
       parts.push(`Fixed ₹${action.fixedLpa}L`);
       parts.push(`variable target ₹${action.variableLpa}L`);
       if (action.joiningBonusLpa != null && action.joiningBonusLpa > 0) {
-        parts.push(`joining bonus ₹${action.joiningBonusLpa}L with the standard 12-month clawback`);
+        /* Audit fix 2026-05-21: tier+amount-aware clawback. */
+        const cb = clawbackForCompany(action.joiningBonusLpa, state.company);
+        parts.push(`joining bonus ₹${action.joiningBonusLpa}L with a ${cb.months}-month ${cb.structure === "it-services-service-bond" ? "service bond" : "clawback"}`);
       }
       if (action.retentionBonusLpa != null && action.retentionBonusLpa > 0) {
         parts.push(`retention bonus ₹${action.retentionBonusLpa}L split across the retention window`);

@@ -325,6 +325,7 @@ export type DiscoveryTopic =
   | "close-walkaway"
   | "close-stalemate"
   | "terminal-restate"
+  | "ctc-inflation-anchor"
   /* PDF#29 Bug 7 (2026-05-18) — frustration-recovery actionKind. Pushed
    * onto state.askedTopics by applyAiMove so the F7 ledger records the
    * single-fire emission alongside the lastUserFrustrated clear. */
@@ -518,7 +519,15 @@ export type NegotiationLever =
    * answered and breaks out of the loop. Not a comp lever; no
    * newTotalLpa is emitted. Single-fire is enforced by the planner
    * via state.lastUserFrustrated being one-shot. */
-  | "acknowledge-and-recover";
+  | "acknowledge-and-recover"
+  /* Audit fix 2026-05-21 — CTC-inflation anchor. Recruiter anchors high
+   * on the TOTAL PACKAGE while breaking it into fixed/variable/ESOP-
+   * paper/JB/benefits, weaponising the CTC-vs-in-hand confusion that
+   * Indian candidates routinely hit. The framing is the lie; the
+   * numbers are accurate. When the candidate later asks for the
+   * in-hand breakdown, a separate truthful render is shipped (see
+   * `_ctc-inflation.ts`). Single-fire per session via the planner. */
+  | "ctc-inflation-anchor";
 
 /* ─── Band — server-derived once at session start ────────────────── */
 
@@ -5109,6 +5118,7 @@ const VALID_LEVERS: ReadonlySet<NegotiationLever> = new Set<NegotiationLever>([
   "close-walkaway",
   "close-stalemate",
   "terminal-restate",
+  "ctc-inflation-anchor",
 ]);
 
 function isFiniteNonNegInt(n: unknown): n is number {

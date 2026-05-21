@@ -334,6 +334,33 @@ export type NextAction =
    * to `anchor-with-offer`; `lo`/`hi` dropped in favour of a single
    * `initialOffer` point (band floor, classic Indian HR lowball). */
   | { kind: "anchor-with-offer"; initialOffer: number; bandIncomplete: boolean; satisfiesTopic: SatisfiesTopic }
+  /* Audit fix 2026-05-21 — CTC-inflation anchor. Recruiter quotes a
+   * headline total package and breaks it into fixed/variable/ESOP-
+   * paper/JB/benefits, teaching the candidate to always ask for the
+   * in-hand breakdown. The numbers reflect a real Indian-market mix
+   * (60/18/12/5/5 approx) computed by `buildCtcInflationBreakdown`. */
+  | {
+      kind: "ctc-inflation-anchor";
+      ctcLpa: number;
+      fixedLpa: number;
+      variableLpa: number;
+      esopPaperLpa: number;
+      joiningBonusLpa: number;
+      benefitsLpa: number;
+    }
+  /* Audit fix 2026-05-21 — truthful breakdown follow-up. Fires when the
+   * candidate asks for the in-hand breakdown AFTER a ctc-inflation-
+   * anchor has been used. Uses the SAME underlying numbers — the lie
+   * was the framing, not the values. */
+  | {
+      kind: "ctc-inflation-truth";
+      ctcLpa: number;
+      fixedLpa: number;
+      variableLpa: number;
+      esopPaperLpa: number;
+      joiningBonusLpa: number;
+      benefitsLpa: number;
+    }
   /* Post-acceptance documentation request. Fires immediately after
    * `verbalAcceptanceTurn` is stamped (close-recap acceptance). Single-fire
    * via state.postAcceptanceDocsRequestedAtTurn; transitions to terminal. */
@@ -3527,3 +3554,114 @@ registerNextActionPlanner(
   (s) => planNextAction(s as NegotiationState),
   (a, s) => actionToLever(a as NextAction, s as NegotiationState),
 );
+
+/* ───────────────────────────────────────────────────────────────────
+ * Audit fix 2026-05-21 — CTC-inflation anchor planner helpers.
+ *
+ * Pure helpers that the cascade integration site (TBD) calls to (a)
+ * decide whether to weaponise CTC-vs-in-hand confusion and (b) build
+ * the inflated anchor action. Kept as separate exports so the lever +
+ * prose surface ships cleanly today; full cascade integration is a
+ * follow-up commit. See `_ctc-inflation.ts` for the breakdown math
+ * and prose renderers.
+ *
+ * Detection contract (intentionally tight to avoid noise):
+ *   1. The candidate has anchored a target (state.candidateTarget != null).
+ *   2. The target is materially above the recruiter's initial offer
+ *      (>= 1.3x), i.e. an "over-anchor".
+ *   3. The candidate has not previously asked about the in-hand
+ *      breakdown (in-hand-monthly / fixed-vs-variable infoAsked items).
+ *   4. The recruiter has not already used this lever this session.
+ * ─────────────────────────────────────────────────────────────────── */
+
+import { buildCtcInflationBreakdown } from "./_ctc-inflation";
+
+/** Pure: should the recruiter weaponise CTC-vs-in-hand confusion on the
+ *  next turn? See the contract above. */
+export function shouldFireCtcInflationAnchor(state: NegotiationState): boolean {
+  if (state.candidateTarget == null) return false;
+  if (state.band == null) return false;
+  if (!Number.isFinite(state.band.initialOffer) || state.band.initialOffer <= 0) return false;
+  const overAnchor = state.candidateTarget >= state.band.initialOffer * 1.3;
+  if (!overAnchor) return false;
+  /* Has the candidate already asked about the in-hand breakdown? If so,
+   * the inflation lever is moot — the candidate has already exercised
+   * the defence we're trying to teach. */
+  const askedInHand =
+    state.infoAsked?.includes("in-hand-monthly") ||
+    state.infoAsked?.includes("fixed-vs-variable") ||
+    state.infoAsked?.includes("compensation-breakdown");
+  if (askedInHand) return false;
+  /* Single-fire per session — `leversUsed` mirrors lever history. */
+  if (state.leversUsed?.includes("ctc-inflation-anchor")) return false;
+  return true;
+}
+
+/** Pure: build the CTC-inflation NextAction at the current anchor level.
+ *  Uses `state.candidateTarget` as the headline (since the recruiter is
+ *  matching the over-anchor on TOTAL package while the actual guaranteed
+ *  cash is much lower). Returns null when no target is set. */
+export function planCtcInflationAnchor(state: NegotiationState): PlannedAction | null {
+  const ctc = state.candidateTarget;
+  if (ctc == null || !Number.isFinite(ctc) || ctc <= 0) return null;
+  const br = buildCtcInflationBreakdown(ctc);
+  return {
+    kind: "ctc-inflation-anchor",
+    ctcLpa: br.ctcLpa,
+    fixedLpa: br.fixedLpa,
+    variableLpa: br.variableLpa,
+    esopPaperLpa: br.esopPaperLpa,
+    joiningBonusLpa: br.joiningBonusLpa,
+    benefitsLpa: br.benefitsLpa,
+    _move: {
+      lever: "ctc-inflation-anchor",
+      newTotalLpa: br.ctcLpa,
+      rationale:
+        `CTC-inflation anchor at turn ${state.turnIndex}: candidate over-anchored ` +
+        `(target ₹${ctc}L vs initial ₹${state.band?.initialOffer}L). Recruiter quotes ` +
+        `total package broken into fixed/variable/ESOP-paper/JB/benefits to weaponise ` +
+        `CTC-vs-in-hand confusion. Single-fire per session.`,
+      actionKind: "ctc-inflation-anchor",
+    },
+  };
+}
+
+/** Pure: detect whether the candidate's last utterance is asking for the
+ *  in-hand / breakdown information AFTER a ctc-inflation-anchor has been
+ *  used. Caller passes the latest candidate utterance text. */
+export function detectInHandFollowupAfterInflation(
+  state: NegotiationState,
+  candidateUtterance: string,
+): boolean {
+  if (!state.leversUsed?.includes("ctc-inflation-anchor")) return false;
+  if (!candidateUtterance || typeof candidateUtterance !== "string") return false;
+  return /\b(?:in[\s-]?hand|take[\s-]?home|breakdown|guaranteed\s+cash|what.?s\s+(?:guaranteed|fixed)|monthly\s+take[\s-]?home|after\s+tax)\b/i
+    .test(candidateUtterance);
+}
+
+/** Pure: build the truthful follow-up action using the same numbers as
+ *  the original inflation quote. The caller must pass the original
+ *  headline CTC (typically state.candidateTarget at the time the
+ *  inflation lever fired) so the numbers match byte-for-byte. */
+export function planCtcInflationTruth(headlineCtcLpa: number): PlannedAction | null {
+  if (!Number.isFinite(headlineCtcLpa) || headlineCtcLpa <= 0) return null;
+  const br = buildCtcInflationBreakdown(headlineCtcLpa);
+  return {
+    kind: "ctc-inflation-truth",
+    ctcLpa: br.ctcLpa,
+    fixedLpa: br.fixedLpa,
+    variableLpa: br.variableLpa,
+    esopPaperLpa: br.esopPaperLpa,
+    joiningBonusLpa: br.joiningBonusLpa,
+    benefitsLpa: br.benefitsLpa,
+    _move: {
+      lever: "benefits-summary", // a truthful info turn, not a fresh anchor
+      newTotalLpa: null,
+      rationale:
+        "CTC-inflation truth follow-up: candidate asked for the in-hand " +
+        "breakdown after the inflated anchor. Recruiter answers truthfully " +
+        "with the same underlying numbers; the lie was the framing.",
+      actionKind: "ctc-inflation-truth",
+    },
+  };
+}

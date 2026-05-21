@@ -448,6 +448,22 @@ export function deriveMoveTag(action: NextAction, _state: NegotiationState): Mov
         family: "meta",
         hint: "Multi-round persona switch",
       };
+    /* Audit fix 2026-05-21 — CTC-inflation anchor + truth follow-up. */
+    case "ctc-inflation-anchor":
+      return {
+        label: "CTC-inflation anchor",
+        family: "anchor",
+        hint:
+          "The recruiter is quoting a headline TOTAL PACKAGE that bundles fixed, variable, ESOP paper-value, joining bonus, and benefits. " +
+          "Only the fixed component is guaranteed cash. Always ask for the in-hand breakdown before reacting to the headline number.",
+      };
+    case "ctc-inflation-truth":
+      return {
+        label: "Honest in-hand breakdown",
+        family: "meta",
+        hint:
+          "The recruiter answered honestly after you asked for the breakdown. Same numbers, different framing — this is what you should always anchor on.",
+      };
   }
   /* Exhaustiveness fallback — TS's stricter Vercel build flags this
    * function as "lacks ending return" without an explicit out-of-switch

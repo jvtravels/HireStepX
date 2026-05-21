@@ -8,6 +8,7 @@
 
 import { SALARY_DATA, ROLE_ALIASES, matchRoleKey, type RoleKey, type ExperienceLevel, type SalaryEntry } from "./salaries";
 import { getCompanyBandOverride, COMPANY_SALARY_OVERRIDES, COMPANY_META } from "./company-salary-overrides";
+import { resolveVestingSchedule } from "./company-vesting-overlay";
 
 /** Pre-computed set of canonical override keys, used to distinguish
  * "true company override" from "sector fallback" in the bandSource
@@ -975,7 +976,24 @@ export function generateNegotiationBand(params: SalaryLookupParams): Negotiation
 - Walk-away ceiling: ${fmtLPA(recruiterCeiling)}
 - Walk-away floor (below which this offer is sub-market): ${fmtLPA(walkAway)}
 - Joining bonus authority: ${fmtRange(joiningBonusRange[0], joiningBonusRange[1])}
-${hasEquity ? `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${override.equityVesting ?? "4yr / 1yr cliff"})` : `- No equity at this level (${noBonusTiers.has(companyTier) ? "typical for this tier" : "company-specific"})`}
+${(() => {
+  /* Audit fix 2026-05-21: vesting overlay supersedes the per-row
+   * `equityVesting` string. The legacy string was uniformly hard-
+   * coded "4yr / 1yr cliff" across 1,776 entries — wrong for
+   * Walmart-owned Flipkart, listed cos (Swiggy/Zomato/Paytm),
+   * buyback-dependent unicorns (Razorpay/CRED), and IT-services
+   * (TCS/Infosys, no equity at IC). The overlay maps by company
+   * name + tier classifier to the correct canonical schedule. */
+  const sched = resolveVestingSchedule(params.company);
+  if (sched.scheduleId === "it-services-none") {
+    return `- No equity at this level (${sched.description})`;
+  }
+  if (!hasEquity) {
+    return `- No equity at this level (${noBonusTiers.has(companyTier) ? "typical for this tier" : "company-specific"})`;
+  }
+  const liq = sched.liquidityNote ? ` ${sched.liquidityNote}` : "";
+  return `- Equity: ${fmtRange(equityRange[0], equityRange[1])}/yr (${sched.description}).${liq}`;
+})()}
 ${override.notes ? `- Note: ${override.notes}` : ""}
 SOURCE: ${override.source}.${calibrationNote}
 
