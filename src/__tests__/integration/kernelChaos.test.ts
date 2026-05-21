@@ -89,7 +89,7 @@ const CANDIDATE_INPUTS: string[] = [
  * already cover. */
 const MOVES: AiMove[] = [
   { lever: "probe", newTotalLpa: null, rationale: "discovery probe", actionKind: "round-transition" },
-  { lever: "anchor", newTotalLpa: 20, rationale: "initial anchor", actionKind: "round-transition" },
+  { lever: "open-with-offer", newTotalLpa: 20, rationale: "initial anchor", actionKind: "round-transition" },
   { lever: "counter-base", newTotalLpa: 24, rationale: "counter-base hike", actionKind: "round-transition" },
   { lever: "joining-bonus", newTotalLpa: 24, rationale: "JB stack", actionKind: "round-transition" },
   { lever: "hold-firm", newTotalLpa: 26, rationale: "hold here", actionKind: "round-transition" },
