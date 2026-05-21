@@ -626,19 +626,25 @@ describe("pickAiMove", () => {
        splitSchedule decay. Note: init() builds fresh state with
        counterRound=0 regardless of leversUsed content, so all t-values
        use the round-0 spiralMultiplier (0.60). */
+    /* Audit 2026-05-21 — the CTC-inflation cascade lever would otherwise
+     * intercept t2/t3/tLate (candidateTarget=40 vs initialOffer=20 = 2x
+     * over-anchor, phase=counter-offer, counter-base already shipped).
+     * The lever is single-fire per session — mark it already-used so the
+     * test stays focused on the split-schedule decay it was written to
+     * validate, not the cascade interception. */
     const base = { phase: "counter-offer" as const, highestOfferMade: 20, candidateTarget: 40 };
 
     const t1 = pickAiMove(init({ ...base, leversUsed: ["probe-justification"] }));
     expect(t1.newTotalLpa).toBe(22.4); // 20 + 8 * 0.5 * 0.60
 
-    const t2 = pickAiMove(init({ ...base, leversUsed: ["counter-base"] }));
+    const t2 = pickAiMove(init({ ...base, leversUsed: ["counter-base", "ctc-inflation-anchor"] }));
     expect(t2.newTotalLpa).toBe(21.7); // 20 + 8 * 0.35 * 0.60 = 21.68 → 21.7
 
-    const t3 = pickAiMove(init({ ...base, leversUsed: ["counter-base", "counter-base"] }));
+    const t3 = pickAiMove(init({ ...base, leversUsed: ["counter-base", "counter-base", "ctc-inflation-anchor"] }));
     expect(t3.newTotalLpa).toBe(21.1); // 20 + 8 * 0.22 * 0.60 = 21.056 → 21.1
 
     /* Past schedule: floors at 0.05 split. */
-    const tLate = pickAiMove(init({ ...base, leversUsed: Array(10).fill("counter-base") }));
+    const tLate = pickAiMove(init({ ...base, leversUsed: [...Array(10).fill("counter-base"), "ctc-inflation-anchor"] }));
     expect(tLate.newTotalLpa).toBe(20.2); // 20 + 8 * 0.05 * 0.60 = 20.24 → 20.2
   });
 

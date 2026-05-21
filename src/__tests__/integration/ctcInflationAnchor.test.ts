@@ -101,14 +101,17 @@ describe("CTC-inflation anchor (audit fix #3)", () => {
         role: "se",
         company: "Razorpay",
         band: { initialOffer: 20, maxStretch: 30, walkAway: 15, hasEquity: true },
-        phase: "offer-presented",
+        /* Audit revision 2026-05-21 — lever is now a SUBSEQUENT-counter
+         * wrap (not pre-empting the first counter). Base state reflects
+         * a session that has already shipped one counter-base. */
+        phase: "counter-offer",
         turnIndex: 4,
         maxTurns: 20,
         candidateTarget: 40,
         candidateCurrentCtc: 18,
         competingOffer: null,
-        highestOfferMade: 20,
-        leversUsed: [],
+        highestOfferMade: 22,
+        leversUsed: ["counter-base"] as NegotiationLever[],
         lastAiText: "",
         lastJoiningBonusOffered: null,
         acceptedAtTurn: null,
@@ -135,8 +138,25 @@ describe("CTC-inflation anchor (audit fix #3)", () => {
     });
 
     it("does NOT fire twice in the same session (single-fire)", () => {
-      const s = baseState({ leversUsed: ["ctc-inflation-anchor"] as NegotiationLever[] });
+      const s = baseState({
+        leversUsed: ["counter-base", "ctc-inflation-anchor"] as NegotiationLever[],
+      });
       expect(shouldFireCtcInflationAnchor(s)).toBe(false);
+    });
+
+    it("does NOT fire pre-emptively on the FIRST counter (no counter-base yet)", () => {
+      const s = baseState({ leversUsed: [] as NegotiationLever[] });
+      expect(shouldFireCtcInflationAnchor(s)).toBe(false);
+    });
+
+    it("does NOT fire outside counter-offer / closing-push phases", () => {
+      const s = baseState({ phase: "offer-presented" } as Partial<NegotiationState>);
+      expect(shouldFireCtcInflationAnchor(s)).toBe(false);
+    });
+
+    it("also fires in closing-push phase after a counter-base", () => {
+      const s = baseState({ phase: "closing-push" } as Partial<NegotiationState>);
+      expect(shouldFireCtcInflationAnchor(s)).toBe(true);
     });
 
     it("planCtcInflationAnchor produces a fully-typed action with all five components", () => {

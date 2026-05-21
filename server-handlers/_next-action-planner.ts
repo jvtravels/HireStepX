@@ -984,6 +984,34 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     };
   }
 
+  /* Audit fix 2026-05-21 — CTC-inflation truth follow-up. Priority-
+   * positioned RIGHT AFTER the clarification-request branch (and BEFORE
+   * stalled-discovery / discovery cascades) so that a candidate's
+   * "what's the in-hand?" lands the truthful breakdown instead of
+   * routing through the regular probe cascade. Reads the candidate's
+   * most recent utterance from conversationLog (the kernel appends a
+   * "candidate" entry before planNextAction runs) and gates on the
+   * single-fire stamp `ctcInflationAnchorCtcLpa` from the kernel. The
+   * truth helper reuses the EXACT headline CTC from the original
+   * inflation quote — same numbers, honest framing. */
+  if (state.ctcInflationAnchorCtcLpa != null) {
+    const log = state.conversationLog ?? [];
+    let lastCandidate = "";
+    for (let i = log.length - 1; i >= 0; i--) {
+      if (log[i].speaker === "candidate") {
+        lastCandidate = log[i].text ?? "";
+        break;
+      }
+    }
+    if (
+      lastCandidate &&
+      detectInHandFollowupAfterInflation(state, lastCandidate)
+    ) {
+      const action = planCtcInflationTruth(state.ctcInflationAnchorCtcLpa);
+      if (action != null) return action;
+    }
+  }
+
   /* PDF#30 architectural pass (2026-05-18) — stalled-discovery cap.
    * Sibling to the explicit-frustration branch below: even when the
    * candidate hasn't VOICED frustration, if the bot has emitted a
@@ -2342,6 +2370,20 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       };
     }
 
+    /* 1d. ctc-inflation-anchor (audit fix 2026-05-21) — fires when the
+     * candidate over-anchors (>= 1.3x initial offer) AFTER at least one
+     * counter-base has already shipped. The lever weaponises CTC-vs-in-
+     * hand confusion by quoting a headline total package broken into
+     * fixed / variable / ESOP-paper / JB / benefits (60/18/12/5/5 mix).
+     * Single-fire per session via `leversUsed`. Sits between competitor-
+     * match (proven leverage path) and anchor-defense-hike-strong
+     * (small-hike complaint path) so neither legitimate branch is
+     * displaced. See shouldFireCtcInflationAnchor for the full gate. */
+    if (shouldFireCtcInflationAnchor(state)) {
+      const action = planCtcInflationAnchor(state);
+      if (action != null) return action;
+    }
+
     /* 2. anchor-defense-hike-strong — fires when candidate complains
      * the offer represents only a small % hike on their current CTC.
      * Compute hikePct from max(highestOfferMade, band.initialOffer) and
@@ -3577,8 +3619,20 @@ registerNextActionPlanner(
 import { buildCtcInflationBreakdown } from "./_ctc-inflation";
 
 /** Pure: should the recruiter weaponise CTC-vs-in-hand confusion on the
- *  next turn? See the contract above. */
+ *  next turn? See the contract above.
+ *
+ *  Audit revision 2026-05-21 — tightened gate:
+ *    - Phase MUST be counter-offer or closing-push (not pre-empting the
+ *      first counter; the lever is a number-ship wrap on a SUBSEQUENT
+ *      counter).
+ *    - At least one `counter-base` lever must already have shipped.
+ *
+ *  Together these prevent the lever from intercepting the FIRST counter-
+ *  offer (which previously displaced legitimate counter-base shipping in
+ *  20+ existing tests). */
 export function shouldFireCtcInflationAnchor(state: NegotiationState): boolean {
+  if (state.phase !== "counter-offer" && state.phase !== "closing-push") return false;
+  if (!state.leversUsed?.includes("counter-base")) return false;
   if (state.candidateTarget == null) return false;
   if (state.band == null) return false;
   if (!Number.isFinite(state.band.initialOffer) || state.band.initialOffer <= 0) return false;

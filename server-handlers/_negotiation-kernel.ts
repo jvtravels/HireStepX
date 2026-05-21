@@ -919,6 +919,13 @@ export interface NegotiationState {
    * "competitor-match". Planner reads it as the single-fire gate so
    * the panel-match commitment doesn't ship repeatedly. */
   competitorMatchFiredAtTurn?: number | null;
+  /* Audit fix 2026-05-21 — CTC-inflation cascade. Stamped by applyAiMove
+   * when actionKind === "ctc-inflation-anchor" with the headline CTC at
+   * fire time (typically state.candidateTarget). The truth follow-up
+   * reads this back so the breakdown reuses the EXACT same numbers as
+   * the inflated quote — the lie was the framing, not the values. Null
+   * on init; null after a walk-away-return reset. */
+  ctcInflationAnchorCtcLpa?: number | null;
   /* Symmetric ledger entry for stalemate. Stamped once when derivePhase
    * first returns "stalemate"; cleared symmetrically with the others
    * when a walk-away-return reopens the session. Lets downstream
@@ -2150,6 +2157,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     hikeStrongDefenseFiredAtTurn: null,
     fakeLeverageChallengeFiredAtTurn: null,
     competitorMatchFiredAtTurn: null,
+    ctcInflationAnchorCtcLpa: null,
     /* Audit follow-up (2026-05-21) — kernel chaos test caught schema
      * drift on 10 optional fields: applyCandidateAnswer produced these
      * keys, but initState never seeded them. Consumers checking the
@@ -4731,6 +4739,19 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
   ) {
     next.competitorMatchFiredAtTurn = state.turnIndex;
   }
+  /* Audit fix 2026-05-21 — CTC-inflation anchor stamps the headline CTC
+   * at fire time so the truth follow-up reuses the EXACT same numbers
+   * (the lie was the framing, not the values). Pulled off the action
+   * payload — `_move.newTotalLpa` carries `br.ctcLpa` for this lever. */
+  if (
+    move.actionKind === "ctc-inflation-anchor" &&
+    state.ctcInflationAnchorCtcLpa == null &&
+    move.newTotalLpa != null &&
+    Number.isFinite(move.newTotalLpa) &&
+    move.newTotalLpa > 0
+  ) {
+    next.ctcInflationAnchorCtcLpa = move.newTotalLpa;
+  }
   /* F7 (PDF#20 2026-05-15) — push the asked topic onto the askedTopics
    * ledger so planNextAction can skip same-topic probes within 3 turns.
    * Use move.askedTopic if set (reactive-followups), otherwise fall back
@@ -4752,6 +4773,12 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     const NON_PROBE_ACTION_KINDS: ReadonlySet<string> = new Set([
       "round-transition",
       "reactive-followup" /* generic reactive carrier — askedTopic supplied when probe-shaped */,
+      /* Audit fix 2026-05-21 — CTC-inflation cascade. The anchor is a
+       * number-ship (not a probe); the truth follow-up is an info-
+       * disclosure carrying no askedTopic. Both legitimately bypass the
+       * askedTopics ledger. */
+      "ctc-inflation-anchor",
+      "ctc-inflation-truth",
     ]);
     const fallbackRaw =
       (move.actionKind && move.actionKind !== "reactive-followup" ? move.actionKind : null) ??
@@ -5206,6 +5233,13 @@ export function validateState(state: unknown): asserts state is NegotiationState
   ) {
     throw new Error("state.competitorMatchFiredAtTurn");
   }
+  if (
+    s.ctcInflationAnchorCtcLpa !== undefined &&
+    s.ctcInflationAnchorCtcLpa !== null &&
+    !(typeof s.ctcInflationAnchorCtcLpa === "number" && Number.isFinite(s.ctcInflationAnchorCtcLpa) && s.ctcInflationAnchorCtcLpa > 0)
+  ) {
+    throw new Error("state.ctcInflationAnchorCtcLpa");
+  }
   /* Backward-compatible optional fields: tolerate absence (older
      in-flight sessions) but reject malformed values. deserializeState
      backfills defaults so the rest of the kernel sees a fully-shaped
@@ -5621,6 +5655,8 @@ export function deserializeState(json: string): NegotiationState {
       (s.fakeLeverageChallengeFiredAtTurn as number | null | undefined) ?? null,
     competitorMatchFiredAtTurn:
       (s.competitorMatchFiredAtTurn as number | null | undefined) ?? null,
+    ctcInflationAnchorCtcLpa:
+      (s.ctcInflationAnchorCtcLpa as number | null | undefined) ?? null,
     firstAnchoredTarget:
       typeof s.firstAnchoredTarget === "number"
         ? s.firstAnchoredTarget
