@@ -1291,6 +1291,28 @@ export function validateRestyle(
       }
     }
   }
+  /* PDF #45 second-pass audit (2026-05-22) — COMPOUND-PROBE GUARD.
+   *
+   * T5 of the Flipkart Sr PD transcript shipped "Are there any ESOPs
+   * or RSUs in your current package, AND what's the vesting schedule
+   * like?" — two distinct fact-probes (equity presence, vesting
+   * structure) crammed into one turn. The candidate dropped one half
+   * and the kernel had no way to retry the dropped fact cleanly.
+   *
+   * Real recruiters ask one fact per probe turn. The kernel canonical
+   * for the equity case has been split (line 1127), so this validator
+   * catches the LLM RE-INTRODUCING a compound shape: more `?` in the
+   * restyle than the canonical is a hard reject for probe-kind
+   * actions. Non-probe actions (anchor, recap, terminal) often
+   * legitimately have multiple question marks (rhetorical anchors) so
+   * the gate is scoped. */
+  if (action != null && PROBE_KINDS_NEEDING_BRIDGE_SET.has(action.kind)) {
+    const canonicalQs = (canonical.match(/\?/g) ?? []).length;
+    const restyleQs = (restyled.match(/\?/g) ?? []).length;
+    if (restyleQs > Math.max(canonicalQs, 1)) {
+      return { valid: false, reason: "compound-probe-introduced" };
+    }
+  }
   /* Numbers in restyle must be a subset of numbers in canonical. */
   const canonicalNums = new Set(extractNumbers(canonical));
   const restyleNums = extractNumbers(restyled);
