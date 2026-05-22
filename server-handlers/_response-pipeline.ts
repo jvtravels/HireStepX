@@ -580,6 +580,12 @@ function normalizeForLoopCompare(s: string): string {
     .trim()
     .toLowerCase()
     .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
+    /* Audit fix (2026-05-22) — collapse internal punctuation so prose
+     * that differs only by `—` vs `,` vs `;` vs `:` vs ` - ` collapses
+     * to the same key. Without this the T17/T19 dedup misses the same
+     * sentence punctuated differently by a restyling LLM. */
+    .replace(/[\u2014\u2013,;:]+/g, " ")
+    .replace(/\s+-\s+/g, " ")
     .replace(LEADING_ACK_RE_PIPELINE, "")
     .replace(/\s+/g, " ")
     .replace(/[.!?]+$/, "");

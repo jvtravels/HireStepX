@@ -114,6 +114,80 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
     });
   });
 
+  describe("audit-followup guards (2026-05-22 second pass)", () => {
+    function postAnchorState() {
+      const s = initState({
+        sessionId: "flipkart-audit-2026-05-22",
+        company: "Flipkart",
+        role: "Senior Product Designer",
+        band: { initialOffer: 41, maxStretch: 50, walkAway: 35, hasEquity: true },
+        recruiterPersona: "consultative",
+        marketMode: "neutral",
+      });
+      s.highestOfferMade = 41;
+      s.phase = "counter-offer";
+      s.turnIndex = 5;
+      return s;
+    }
+
+    it("does NOT fire breakdown when candidate counters with BARE number ('I had 38 in mind')", () => {
+      const s = postAnchorState();
+      s.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹41 LPA." },
+        { speaker: "candidate", text: "I had 38 in mind, what's your 41 made of" },
+      ];
+      const action = planNextAction(s);
+      expect(action.kind).not.toBe("ctc-inflation-truth");
+    });
+
+    it("does NOT fire breakdown for counter-phrase 'looking for 45'", () => {
+      const s = postAnchorState();
+      s.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹41 LPA." },
+        { speaker: "candidate", text: "I'm looking for 45, can you share the breakdown" },
+      ];
+      const action = planNextAction(s);
+      expect(action.kind).not.toBe("ctc-inflation-truth");
+    });
+
+    it("does NOT fire CASH breakdown when candidate asks for EQUITY breakdown", () => {
+      const s = postAnchorState();
+      s.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹41 LPA." },
+        { speaker: "candidate", text: "Can you share the structure of the equity / RSU vesting?" },
+      ];
+      const action = planNextAction(s);
+      expect(action.kind).not.toBe("ctc-inflation-truth");
+    });
+
+    it("STILL fires breakdown for cash-keyword utterance ('what is base, variable, bonus')", () => {
+      const s = postAnchorState();
+      s.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹41 LPA." },
+        { speaker: "candidate", text: "what is base, variable, bonus" },
+      ];
+      const action = planNextAction(s);
+      expect(action.kind).toBe("ctc-inflation-truth");
+    });
+  });
+
+  describe("normalized-recent-prose dedup handles punctuation variance", () => {
+    /* The dedup compares last-3-AI-turns after normalization. Variants
+     * differing ONLY by em-dash/comma/colon swap must collapse. We
+     * exercise the helper indirectly by importing the response-pipeline
+     * and verifying the rotation-repeat detector treats them as same. */
+    it("collapses '—' vs ',' vs ':' variants to the same key", async () => {
+      const { isLeadingAckRotationRepeat } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const a = "Coming back to the structure — okay. Happy to address that — let me come back.";
+      const b = "Coming back to the structure, okay. Happy to address that, let me come back.";
+      const c = "Coming back to the structure: okay. Happy to address that: let me come back.";
+      expect(isLeadingAckRotationRepeat(a, b)).toBe(true);
+      expect(isLeadingAckRotationRepeat(a, c)).toBe(true);
+    });
+  });
+
   describe("inflation-truth gate still ONLY fires when inflation-anchor lever has been used", () => {
     it("returns false without the lever even if utterance matches", () => {
       const state = initState({

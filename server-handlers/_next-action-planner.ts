@@ -1220,11 +1220,31 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const candidateHasNewNumber = numberMatches.some(
       (n) => Number.isFinite(n) && Math.abs(n - offerLpa) > 0.5,
     );
+    /* Audit fix (2026-05-22) — phrase-level counter cue. Candidates
+     * often counter with a BARE number ("I had 38 in mind", "I was
+     * thinking 40", "looking for 42", "expecting 45") with no LPA/L
+     * suffix. The unit-anchored regex above misses those. Detect the
+     * intent-carrying phrase instead. */
+    const COUNTER_PHRASE_RE =
+      /\b(?:i\s+(?:had|was)\b.*?(?:in\s+mind|thinking|expecting|hoping)|i'?m\s+(?:thinking|expecting|hoping|looking\s+for)|looking\s+for\s+\d|expecting\s+\d|hoping\s+for\s+\d|targeting\s+\d|aiming\s+(?:at|for)\s+\d|considering\s+\d|need(?:ed|ing)?\s+(?:at\s+least\s+|around\s+|closer\s+to\s+)\d|can\s+you\s+(?:do|match|stretch\s+(?:to|up)|go\s+up\s+to)\s+\d)/i;
+    const candidateHasCounterPhrase = COUNTER_PHRASE_RE.test(lastCandidate);
+    /* Audit fix (2026-05-22) — equity-context guard. If the candidate
+     * is asking for a breakdown of EQUITY/ESOP/RSU/vesting (not the
+     * cash CTC), the 60/18/12/5/5 cash-mix is the wrong response. Let
+     * the dedicated esop-structure / vesting prose paths handle it. */
+    const EQUITY_CONTEXT_RE = /\b(?:equity|esop|rsu|vesting|stock|options?)\b/i;
+    const CASH_BREAKDOWN_CONTEXT_RE =
+      /\b(?:base|variable|bonus|ctc|fixed|in[\s-]?hand|take[\s-]?home|offer|package|fitment|comp(?:ensation)?)\b/i;
+    const looksLikeEquityBreakdown =
+      EQUITY_CONTEXT_RE.test(lastCandidate) &&
+      !CASH_BREAKDOWN_CONTEXT_RE.test(lastCandidate);
     if (
       offerLpa > 0 &&
       isPostAnchorPhase &&
       !alreadyDisclosed &&
       !candidateHasNewNumber &&
+      !candidateHasCounterPhrase &&
+      !looksLikeEquityBreakdown &&
       lastCandidate &&
       detectOfferBreakdownRequest(lastCandidate)
     ) {
