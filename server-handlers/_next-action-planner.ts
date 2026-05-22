@@ -1166,6 +1166,73 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     }
   }
 
+  /* Audit fix (2026-05-22, user-reported Flipkart transcript) — widened
+   * offer-breakdown disclosure. The truth-followup above is GATED on
+   * `ctcInflationAnchorCtcLpa != null`, which only stamps after the
+   * single-fire inflation-anchor lever has been used. In the wild the
+   * candidate can ask for an offer breakdown ("Can you share the
+   * breakdown of 41 LPA offer", "what is base, variable, bonus",
+   * "summarize the offer again") after a PLAIN anchor-with-offer turn
+   * where the inflation lever never fired. Previously the planner had
+   * no breakdown-disclosure branch for that case and routed through the
+   * generic answer-direct path which classified to null and shipped the
+   * generic "Happy to address that — let me come back to where we were."
+   * fallback three turns in a row. Fire whenever (a) the candidate
+   * asked for a breakdown, (b) at least one offer has been quoted
+   * (`highestOfferMade > 0`), and (c) we haven't shipped the inflation-
+   * truth above. Reuses the same buildCtcInflationBreakdown helper so
+   * the disclosed numbers match the inflation-anchor mix. */
+  {
+    const log = state.conversationLog ?? [];
+    let lastCandidate = "";
+    for (let i = log.length - 1; i >= 0; i--) {
+      if (log[i].speaker === "candidate") {
+        lastCandidate = log[i].text ?? "";
+        break;
+      }
+    }
+    const offerLpa =
+      state.highestOfferMade > 0
+        ? state.highestOfferMade
+        : state.band?.initialOffer ?? 0;
+    /* Defense: only fire when (a) the offer is genuinely on the table
+     * (post-anchor phase), (b) the candidate's last AI turn wasn't
+     * already this same disclosure (we don't want to ship two recaps
+     * in a row to the same "yes do it" follow-up), and (c) the
+     * candidate isn't simultaneously countering — countering carries
+     * a NEW target number which the counter-base planner branch
+     * handles. */
+    const lastAiText = (state.lastAiText ?? "").toLowerCase();
+    const alreadyDisclosed =
+      lastAiText.includes("guaranteed cash is") ||
+      lastAiText.includes("let me break it down honestly");
+    const isPostAnchorPhase =
+      state.phase === "counter-offer" ||
+      state.phase === "closing-push" ||
+      state.phase === "accepted";
+    /* Counter-detection: candidate carries a salary number that is
+     * NOT the recruiter's current offer — that's a counter, not a
+     * breakdown ask. Restating the offer's own number (e.g. "share the
+     * breakdown of 41 LPA offer") is fine. */
+    const numberMatches = Array.from(
+      lastCandidate.matchAll(/\b(\d+(?:\.\d+)?)\s*(?:l|lpa|lakh|lacs?|cr)\b/gi),
+    ).map((m) => Number(m[1]));
+    const candidateHasNewNumber = numberMatches.some(
+      (n) => Number.isFinite(n) && Math.abs(n - offerLpa) > 0.5,
+    );
+    if (
+      offerLpa > 0 &&
+      isPostAnchorPhase &&
+      !alreadyDisclosed &&
+      !candidateHasNewNumber &&
+      lastCandidate &&
+      detectOfferBreakdownRequest(lastCandidate)
+    ) {
+      const action = planCtcInflationTruth(offerLpa);
+      if (action != null) return action;
+    }
+  }
+
   /* PDF#30 architectural pass (2026-05-18) — stalled-discovery cap.
    * Sibling to the explicit-frustration branch below: even when the
    * candidate hasn't VOICED frustration, if the bot has emitted a
@@ -3843,8 +3910,37 @@ export function detectInHandFollowupAfterInflation(
 ): boolean {
   if (!state.leversUsed?.includes("ctc-inflation-anchor")) return false;
   if (!candidateUtterance || typeof candidateUtterance !== "string") return false;
-  return /\b(?:in[\s-]?hand|take[\s-]?home|breakdown|guaranteed\s+cash|what.?s\s+(?:guaranteed|fixed)|monthly\s+take[\s-]?home|after\s+tax)\b/i
-    .test(candidateUtterance);
+  return BREAKDOWN_REQUEST_RE.test(candidateUtterance);
+}
+
+/** Audit fix (2026-05-22) — breakdown/recap request regex, shared by the
+ *  inflation-truth branch AND the new wider offer-breakdown disclosure
+ *  branch. Matches all real-world phrasings: "in-hand", "breakdown",
+ *  "what is base, variable, bonus", "summarize the offer", "split",
+ *  "components", "structure of the offer", "recap".
+ *
+ *  Deliberately omits bare `\bbreakup\b` — "I've reviewed the breakup"
+ *  is a past-tense observation, not an information request, and was
+ *  false-firing on the happy-path E2E T5 (candidate counters on fixed,
+ *  the planner read it as "ship a breakdown" and routed to inflation-
+ *  truth with numbers below the band floor). The deeper anchor here:
+ *  bare nouns are ambient, request VERBS (share, give, can you,
+ *  what's, summarize) are what mark intent. */
+export const BREAKDOWN_REQUEST_RE =
+  /\b(?:in[\s-]?hand|take[\s-]?home|guaranteed\s+cash|what.?s\s+(?:guaranteed|fixed)|monthly\s+take[\s-]?home|after\s+tax|summari[sz]e|recap)\b|(?:share|give|provide|walk\s+me\s+through|explain|tell\s+me|can\s+you|could\s+you|what(?:'?s| is)|need|want)\s+(?:me\s+|us\s+)?(?:the\s+|a\s+|an\s+)?(?:break(?:down|up)|split|structure|components?)\b|(?:break(?:down|up)|split|structure|components?)\s+of\s+(?:the\s+|this\s+|that\s+|\d)|what\s+is\s+(?:the\s+)?base\b|base\s*,?\s*variable\s*,?\s*bonus/i;
+
+/** Audit fix (2026-05-22) — detect ANY candidate breakdown / recap
+ *  request. Used by the planner's offer-breakdown branch to ship a
+ *  structured component breakdown EVEN when the prior offer wasn't a
+ *  ctc-inflation-anchor. The user-reported transcript (Flipkart, T10/
+ *  T12/T16, 2026-05-22) shows three consecutive breakdown requests
+ *  going unanswered because the only breakdown path was gated on a
+ *  prior inflation-anchor. */
+export function detectOfferBreakdownRequest(
+  candidateUtterance: string,
+): boolean {
+  if (!candidateUtterance || typeof candidateUtterance !== "string") return false;
+  return BREAKDOWN_REQUEST_RE.test(candidateUtterance);
 }
 
 /** Pure: build the truthful follow-up action using the same numbers as

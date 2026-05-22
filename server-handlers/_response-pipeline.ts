@@ -225,6 +225,43 @@ export async function generateBotReply(
       rejectReason: "empty-text",
     };
   }
+  /* User-reported bug (2026-05-22, Flipkart transcript T17/T19) —
+   * recent-bot-prose de-dup. The byte-identical "Coming back to the
+   * structure — okay. Happy to address that — let me come back to
+   * where we were." shipped twice in a row because the META boundary
+   * fallback and the answer-path defer both bypass `isVerbatimRepeat`
+   * for one path or another. Defense-in-depth: at the final pipeline
+   * boundary, normalize the proposed text and compare against the last
+   * N AI turns from conversationLog. On match, ship LOOP_BREAKER_STUB
+   * once so the candidate at least sees something different. The
+   * ROOT-cause planner fix (offer-breakdown disclosure branch) prevents
+   * the repeat from being generated in the first place; this is a
+   * defense-in-depth guard for any future class of repeat. */
+  {
+    const proposed = normalizeForLoopCompare(result.text);
+    if (proposed.length > 0) {
+      const log = state.conversationLog ?? [];
+      let dup = false;
+      for (let i = log.length - 1, seen = 0; i >= 0 && seen < 3; i--) {
+        const e = log[i];
+        if (!e || e.speaker !== "ai" || !e.text) continue;
+        seen++;
+        if (normalizeForLoopCompare(e.text) === proposed) {
+          dup = true;
+          break;
+        }
+      }
+      if (dup) {
+        return {
+          text: LOOP_BREAKER_STUB,
+          source: "canonical-fallback",
+          action,
+          move,
+          rejectReason: `recent-prose-dedup:${result.rejectReason ?? result.source}`,
+        };
+      }
+    }
+  }
   return result;
 }
 
