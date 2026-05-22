@@ -103,6 +103,33 @@ export async function generateBotReply(
   generateAiText: GenerateAiTextFn,
   candidateAnswer?: string,
 ): Promise<PipelineResult> {
+  /* PDF #45 fix (2026-05-22) — outermost safety net. User-reported
+   * Flipkart Sr PD session DIED on T17 after a frustration-recovery
+   * turn; the planner verified-never-returns-null, the LLM call has
+   * its own catch, but ANY OTHER thrown error in the pipeline (e.g.
+   * a validator panic, a fact-pack assembly throw, a prose helper
+   * missing arm) would bubble up to negotiate-turn.ts's 500 handler
+   * and end the session. Wrap the whole pipeline so the worst case
+   * is a benign continuation prompt, never a session-killer. */
+  try {
+    return await generateBotReplyInner(state, generateAiText, candidateAnswer);
+  } catch (err) {
+    void err;
+    return {
+      text: "Let me come back to that — what would be most useful to cover next from your side?",
+      source: "canonical-fallback",
+      action: { kind: "terminal-restate" } as NextAction,
+      move: actionToLever({ kind: "terminal-restate" } as NextAction, state),
+      rejectReason: "pipeline-outer-throw",
+    };
+  }
+}
+
+async function generateBotReplyInner(
+  state: NegotiationState,
+  generateAiText: GenerateAiTextFn,
+  candidateAnswer?: string,
+): Promise<PipelineResult> {
   const rawAction = planNextAction(state);
   /* Audit follow-up (2026-05-21) — planner → pipeline shape guard.
    * planNextAction is the kernel's authoritative decision; downstream

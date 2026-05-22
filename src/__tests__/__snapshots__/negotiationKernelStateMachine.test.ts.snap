@@ -88,6 +88,7 @@ exports[`Phase 4.2 — negotiation-kernel canonical paths > happy-close: opening
 {
   "finalShape": {
     "acceptedAtTurnSet": true,
+    "candidateTarget": 26,
     "leversUsed": [
       "close-acceptance",
       "counter-base",
@@ -100,8 +101,8 @@ exports[`Phase 4.2 — negotiation-kernel canonical paths > happy-close: opening
   "phaseTrajectory": [
     "opening",
     "offer-presented",
-    "probe-expectations",
-    "probe-expectations",
+    "counter-offer",
+    "counter-offer",
     "accepted",
     "accepted",
   ],

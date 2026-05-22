@@ -150,7 +150,15 @@ const CURRENT_CUES: CueTable = {
 
 const TARGET_CUES: CueTable = {
   left: [
-    /\bexpect(?:ing|ed)?\b/i,
+    /* PDF #45 fix (2026-05-22) — the prior `expect(?:ing|ed)?` form
+     * required a word boundary right after `expect`, which the noun
+     * forms "expectation" / "expectations" fail (the `a` after `expect`
+     * is a word char). User-reported Flipkart transcript: candidate
+     * said "my expectation is 46 LPA CTC" → target field stayed null
+     * → discoveryChecklist.targetAnswered stayed false → planner
+     * probed target twice more after disclosure → loop, then session
+     * died. */
+    /\bexpect(?:ing|ed|ation|ations|s)?\b/i,
     /\bwant(?:ing)?\b/i,
     /\blooking\s+for\b/i,
     /\btarget\b/i,

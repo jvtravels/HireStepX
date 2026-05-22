@@ -3007,6 +3007,23 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
  *  candidate counter. */
 const MIN_HIKE_PCT_FOR_ANCHOR = 0.15;
 
+/** PDF #45 fix (2026-05-22) — tier-aware hike floor. The flat 15% floor
+ *  is junior-grade and reads as a lowball for senior switches. Real
+ *  Indian-market norms for a Senior / Lead / Principal / Staff role
+ *  with ≥4 YoE applicable are 25–35% on switch. User-reported
+ *  Flipkart Sr PD transcript anchored at ₹37 LPA on a candidate with
+ *  current CTC ₹32–36 LPA (15% floor = 36.8, rounded to 37) — a
+ *  ₹1 LPA hike on switch. Real Sr PD floor is ₹40 LPA (25% floor) or
+ *  higher. Returns the role-aware percentage. */
+function minHikePctForRole(state: NegotiationState): number {
+  const role = (state.role || "").toLowerCase();
+  const seniorRoleRe = /\b(?:senior|lead|principal|staff|sr\.?|director|head)\b/i;
+  const isSeniorRole = seniorRoleRe.test(role);
+  const applicableYoe = state.candidateApplicableYoe ?? 0;
+  if (isSeniorRole || applicableYoe >= 4) return 0.25;
+  return MIN_HIKE_PCT_FOR_ANCHOR;
+}
+
 /** PDF#31 BUG D fix (2026-05-18, Meesho/Prita T18) — minimum number of
  *  counter-base rounds that must have happened before a hold-firm action
  *  can fire from a non-acceptance, non-rescission emission site. Real
@@ -3026,8 +3043,11 @@ function clampAnchorAboveDisclosed(
   const disclosed = state.candidateCurrentCtc;
   if (typeof disclosed !== "number" || disclosed <= 0) return lo;
   /* Floor = disclosed * (1 + hike) — anchor must beat current CTC by a
-   * real margin, not merely match it. */
-  const hikeFloor = disclosed * (1 + MIN_HIKE_PCT_FOR_ANCHOR);
+   * real margin, not merely match it. PDF #45 (2026-05-22): tier-aware
+   * hike — senior roles / ≥4 YoE candidates get a 25% floor instead of
+   * 15% to match real Indian-market norms. */
+  const hikePct = minHikePctForRole(state);
+  const hikeFloor = disclosed * (1 + hikePct);
   /* PDF#39 BUG-D (2026-05-20) — round to INTEGER, not 1 decimal. The
    * previous policy ("messy fractions") still emitted ₹30.4 LPA-style
    * numbers, which (i) read awkwardly in recruiter prose and (ii) caused
