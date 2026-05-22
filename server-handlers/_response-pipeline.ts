@@ -1308,6 +1308,41 @@ export function validateRestyle(
       return { valid: false, reason: "ack-without-disclosure" };
     }
   }
+  /* PDF #45 fix (2026-05-22) — FALSE-ATTRIBUTION CLARIFICATION.
+   *
+   * User-reported Flipkart Sr PD transcript: bot asked "what's your
+   * current CTC — total annual?" on T1, candidate gave their total
+   * CTC on T2, bot shipped on T3:
+   *   "Thanks for that clarification on the base split — how does it
+   *    look?"
+   * The candidate hadn't "clarified" anything — they gave a substantive
+   * first-disclosure of total CTC. The LLM imposed "clarification"
+   * framing because the restyle prompt explicitly permits "Thanks for
+   * that —" openers (canonical-prose.ts:1181 system instruction).
+   *
+   * Reject the restyle when it asserts the candidate's prior turn was
+   * a clarification UNLESS the prior candidate turn actually contained
+   * a clarification-seeking signal ("what do you mean", "can you
+   * explain", "I'm confused", "could you clarify"). Candidates rarely
+   * clarify; they disclose, anchor, push back, accept, walk. False
+   * "thanks for clarifying" framing reads as patronising. */
+  const CLARIFICATION_ATTRIBUTION_RE =
+    /\b(?:thanks?\s+(?:you\s+)?for\s+(?:that\s+)?(?:clarification|clarifying|explaining)|appreciate\s+(?:that\s+)?(?:clarification|clarifying|the\s+explanation)|thank\s+you\s+for\s+(?:that\s+)?(?:clarification|clarifying|explaining))\b/i;
+  if (CLARIFICATION_ATTRIBUTION_RE.test(restyled)) {
+    const log = state.conversationLog ?? [];
+    let lastCandidate = "";
+    for (let i = log.length - 1; i >= 0; i--) {
+      if (log[i].speaker === "candidate") {
+        lastCandidate = (log[i].text ?? "").toLowerCase();
+        break;
+      }
+    }
+    const CLARIFY_REQUEST_RE =
+      /\b(?:what\s+do\s+you\s+mean|can\s+you\s+(?:explain|clarify|elaborate)|could\s+you\s+(?:explain|clarify|elaborate)|i'?m\s+confused|not\s+sure\s+(?:what|i\s+follow)|come\s+again|sorry,?\s+(?:what|can\s+you)|didn'?t\s+(?:catch|get)\s+that|repeat\s+that)\b/i;
+    if (!CLARIFY_REQUEST_RE.test(lastCandidate)) {
+      return { valid: false, reason: "false-attribution-clarification" };
+    }
+  }
   /* Bug 1 fix (PDF#25, 2026-05-16) — IDIOM STACKING.
    *
    * Session #25 (Senior Product Designer @ Flipkart) produced restyles

@@ -93,6 +93,88 @@ describe("PDF #45 — Flipkart Sr PD audit fixes", () => {
     });
   });
 
+  describe("BUG 4 — false-attribution 'thanks for that clarification' validator", () => {
+    function seedState(lastCandidateText: string): NegotiationState {
+      const s = initState({
+        sessionId: "pdf45-clarify",
+        role: "Senior Product Designer",
+        company: "Flipkart",
+        band: { initialOffer: 35, maxStretch: 50, walkAway: 30, hasEquity: true },
+      });
+      s.conversationLog = [
+        { speaker: "ai", text: "What's your current CTC — total annual?" },
+        { speaker: "candidate", text: lastCandidateText },
+      ];
+      return s;
+    }
+
+    it("REJECTS 'Thanks for that clarification on the base split' when candidate gave a substantive answer", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedState("My current CTC is 32 LPA");
+      const result = validateRestyle(
+        "Got it on the total — what's the base split?",
+        "Thanks for that clarification on the base split — how does it look?",
+        s,
+      );
+      expect(result.valid).toBe(false);
+      expect(result.reason).toBe("false-attribution-clarification");
+    });
+
+    it("REJECTS 'Thanks for clarifying' / 'thank you for that explanation' (synonyms)", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedState("My current CTC is 32 LPA");
+      const r1 = validateRestyle(
+        "Got it — what's next?",
+        "Thanks for clarifying that — what's the base split?",
+        s,
+      );
+      expect(r1.valid).toBe(false);
+      const r2 = validateRestyle(
+        "Got it — what's next?",
+        "Thank you for that explanation — moving on.",
+        s,
+      );
+      expect(r2.valid).toBe(false);
+    });
+
+    it("ALLOWS 'Thanks for that clarification' when candidate actually asked for clarification", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedState("Sorry, what do you mean by total CTC?");
+      const result = validateRestyle(
+        "Got it on the total — what's the base split?",
+        "Thanks for that clarification — by total CTC I mean fixed + variable. What's the base split?",
+        s,
+      );
+      /* This should pass the clarification check; may fail other gates
+       * for unrelated reasons (canonical-verbatim, etc.), but the
+       * clarification reason should NOT be the failure mode. */
+      if (!result.valid) {
+        expect(result.reason).not.toBe("false-attribution-clarification");
+      }
+    });
+
+    it("ALLOWS plain 'Thanks for that —' opener (no clarification claim)", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedState("My current CTC is 32 LPA");
+      const result = validateRestyle(
+        "Got it on the total — what's the base split?",
+        "Thanks for that — what's the base split?",
+        s,
+      );
+      if (!result.valid) {
+        expect(result.reason).not.toBe("false-attribution-clarification");
+      }
+    });
+  });
+
   describe("BUG 3 — generateBotReply outermost safety net", () => {
     it("returns a benign continuation when an unexpected throw happens inside the pipeline", async () => {
       const s = initState({
