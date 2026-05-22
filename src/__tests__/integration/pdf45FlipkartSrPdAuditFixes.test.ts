@@ -203,4 +203,120 @@ describe("PDF #45 — Flipkart Sr PD audit fixes", () => {
       expect(typeof mod.generateBotReply).toBe("function");
     });
   });
+
+  describe("BUG 5 (PDF #45 second-pass) — same-opener-thrice guard", () => {
+    function seedStateWithRecentOpeners(
+      ai1: string,
+      ai2: string,
+    ): NegotiationState {
+      const s = initState({
+        sessionId: "pdf45-opener",
+        role: "Senior Product Designer",
+        company: "Flipkart",
+        band: { initialOffer: 35, maxStretch: 50, walkAway: 30, hasEquity: true },
+      });
+      s.conversationLog = [
+        { speaker: "ai", text: ai1 },
+        { speaker: "candidate", text: "32 LPA." },
+        { speaker: "ai", text: ai2 },
+        { speaker: "candidate", text: "46 LPA." },
+      ];
+      return s;
+    }
+
+    it("REJECTS 'Thanks for that —' when last 2 AI turns also opened with 'Thanks for that'", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedStateWithRecentOpeners(
+        "Thanks for that — what's your current CTC?",
+        "Thanks for that — what's your target?",
+      );
+      const result = validateRestyle(
+        "Got it — what's your notice period?",
+        "Thanks for that — what's your notice period?",
+        s,
+      );
+      expect(result.valid).toBe(false);
+      expect(result.reason).toBe("same-opener-thrice");
+    });
+
+    it("REJECTS 'Appreciate the colour —' when last 2 turns opened with 'Thanks for that' (same bucket)", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedStateWithRecentOpeners(
+        "Thanks for that — current CTC?",
+        "Thanks for that — your target?",
+      );
+      const result = validateRestyle(
+        "Got it — notice period?",
+        "Appreciate the colour — what's your notice period?",
+        s,
+      );
+      expect(result.valid).toBe(false);
+      expect(result.reason).toBe("same-opener-thrice");
+    });
+
+    it("ALLOWS 'Fair enough —' (different bucket) after two 'Thanks for that' openers", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedStateWithRecentOpeners(
+        "Thanks for that — current CTC?",
+        "Thanks for that — your target?",
+      );
+      const result = validateRestyle(
+        "Got it — notice period?",
+        "Fair enough — what's your notice period?",
+        s,
+      );
+      if (!result.valid) {
+        expect(result.reason).not.toBe("same-opener-thrice");
+      }
+    });
+
+    it("ALLOWS one repeat — second consecutive 'Thanks for that' is fine", async () => {
+      const { validateRestyle } = await import(
+        "../../../server-handlers/_response-pipeline"
+      );
+      const s = seedStateWithRecentOpeners(
+        "Got it — current CTC?",
+        "Thanks for that — your target?",
+      );
+      const result = validateRestyle(
+        "Noted — notice period?",
+        "Thanks for that — what's your notice period?",
+        s,
+      );
+      if (!result.valid) {
+        expect(result.reason).not.toBe("same-opener-thrice");
+      }
+    });
+  });
+
+  describe("BUG 6 (PDF #45 second-pass) — post-frustration force-advance", () => {
+    it("after acknowledge-and-recover, planner skips the last-asked topic", () => {
+      const s = initState({
+        sessionId: "pdf45-postrec",
+        role: "Senior Product Designer",
+        company: "Flipkart",
+        band: { initialOffer: 35, maxStretch: 50, walkAway: 30, hasEquity: true },
+      });
+      s.phase = "opening";
+      s.candidateCurrentCtc = 32;
+      s.candidateTarget = 46;
+      s.leversUsed = ["acknowledge-and-recover"];
+      s.askedTopics = [
+        { topic: "noticePeriodAsked", atTurn: s.turnIndex - 1 },
+      ];
+      const action = planNextAction(s);
+      /* Whatever the planner returns, the askedTopic should NOT be
+       * noticePeriod (the recently-frustrated topic). */
+      const move = (action as { _move?: { askedTopic?: string } })._move;
+      if (move?.askedTopic) {
+        expect(move.askedTopic).not.toBe("noticePeriodAsked");
+      }
+    });
+  });
 });

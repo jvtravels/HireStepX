@@ -1237,6 +1237,60 @@ export function validateRestyle(
   if (restyled.length > canonical.length * 2 && restyled.length > 280) {
     return { valid: false, reason: "restyle-too-long" };
   }
+  /* PDF #45 second-pass audit (2026-05-22) — SAME-OPENER-THRICE GUARD.
+   *
+   * Flipkart Sr PD transcript T3/T5/T7/T9/T11/T13 all opened with
+   * "Thanks for that —" or "Fair enough —". The restyle prompt
+   * permits these openers but the 0.4-temperature model lands on the
+   * same family turn after turn. The opener carries <10% of the prose
+   * information but is the loudest cadence signal — a candidate
+   * hearing the same opener five turns running reads it as parrot.
+   *
+   * Sits BEFORE content-specific gates (ack-prefix, ack-without-
+   * disclosure, idiom cap) because opener repetition is a cadence
+   * concern independent of content. One repeat is allowed (natural);
+   * three in a row is the regression we reject.
+   *
+   * Buckets are coarse — "thanks/appreciate", "fair/understood",
+   * "got it/noted", "okay/alright/right", "sure/of course" — so
+   * synonymous restylings within a bucket still trip the gate. */
+  const OPENER_BUCKET_RE: Array<{ key: string; re: RegExp }> = [
+    { key: "thanks", re: /^\s*(?:thanks?(?:\s+(?:you|so much))?\s+(?:for|on)|appreciate(?:\s+(?:that|the|you))?)\b/i },
+    { key: "fair", re: /^\s*(?:fair\s+enough|understood|that[\s']?s\s+fair|makes\s+sense)\b/i },
+    { key: "gotit", re: /^\s*(?:got\s+it|noted)\b/i },
+    { key: "okay", re: /^\s*(?:okay|ok|alright|right)[\s,.\-—:;]/i },
+    { key: "sure", re: /^\s*(?:sure|of\s+course|absolutely)\b/i },
+  ];
+  function classifyOpenerBucket(s: string): string | null {
+    const t = (s || "").trim();
+    for (const b of OPENER_BUCKET_RE) {
+      if (b.re.test(t)) return b.key;
+    }
+    return null;
+  }
+  /* Skip when validating canonical-against-itself (lint mode). The
+   * canonical layer has its own rotation (pickNeutralBridgeAck);
+   * rejecting here would have no remedy — fallback IS the canonical.
+   * Same-opener-thrice is a check on the LLM restyle layer only. */
+  if (restyled.trim() !== canonical.trim()) {
+    const restyleBucket = classifyOpenerBucket(restyled);
+    if (restyleBucket != null) {
+      const log = state.conversationLog ?? [];
+      const recentAi: string[] = [];
+      for (let i = log.length - 1; i >= 0 && recentAi.length < 2; i--) {
+        const e = log[i];
+        if (!e || e.speaker !== "ai" || !e.text) continue;
+        recentAi.push(e.text);
+      }
+      if (
+        recentAi.length === 2 &&
+        classifyOpenerBucket(recentAi[0]) === restyleBucket &&
+        classifyOpenerBucket(recentAi[1]) === restyleBucket
+      ) {
+        return { valid: false, reason: "same-opener-thrice" };
+      }
+    }
+  }
   /* Numbers in restyle must be a subset of numbers in canonical. */
   const canonicalNums = new Set(extractNumbers(canonical));
   const restyleNums = extractNumbers(restyled);

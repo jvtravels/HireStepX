@@ -688,6 +688,26 @@ function buildSkipRecord(
       );
     }
   }
+  /* PDF #45 second-pass audit (2026-05-22) — POST-FRUSTRATION-RECOVERY
+   * force-advance. After `acknowledge-and-recover` fires, the next
+   * planner call re-enters the ordered discovery cascade. If the same
+   * topic that triggered the frustration is still un-answered, the
+   * cascade re-asks it — which is exactly the loop the recovery was
+   * meant to break. Sentinel: if the LAST entry in leversUsed is
+   * `acknowledge-and-recover`, mark the most-recently-asked topic as
+   * skipped for this turn so the cascade advances to the NEXT item
+   * (or exits discovery if everything else is satisfied). */
+  const lastLever = state.leversUsed[state.leversUsed.length - 1];
+  if (lastLever === "acknowledge-and-recover" && topics.length > 0) {
+    const lastAsked = topics[topics.length - 1].topic;
+    recentlyAsked[lastAsked] = true;
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[planner] post-recovery force-advance: skipping last-asked topic "${lastAsked}" on turn ${state.turnIndex}.`,
+      );
+    }
+  }
   if (refused == null && Object.keys(recentlyAsked).length === 0) return null;
   return { ...(refused ?? {}), ...recentlyAsked };
 }
@@ -3570,7 +3590,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     ) {
       return {
         kind: "reactive-followup",
-        ask: "It sounds like the role's growth trajectory matters as much as the number — what would make the opportunity feel genuinely worth the move for you?",
+        ask: "It sounds like trajectory matters as much as the number — concretely, which of these would move the needle most: scope of the role, the manager/team you'd report into, equity / long-term upside, or a clearer path to a lead position?",
         trigger: "directional-expectation",
         topic: "value-proof",
         satisfiesTopic: "value-proof",
@@ -3637,7 +3657,7 @@ function planArchetypeReactive(
   if (archetype === "P09_NON_CASH_FOCUS" && !hasFired("value-proof")) {
     return {
       kind: "reactive-followup",
-      ask: "Got it — learning and exposure are weighing heavier than the number here. Just so I frame the offer right, what would make this role feel like the right next step beyond comp?",
+      ask: "Got it — learning and exposure are weighing heavier than comp here. Concretely, what would make the next 12–18 months a clear step up: bigger scope of ownership, a stronger manager / team, equity upside, or a defined path to a lead / principal role?",
       trigger: "archetype:P09",
       topic: "value-proof",
       satisfiesTopic: "value-proof",
