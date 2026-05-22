@@ -79,7 +79,9 @@ const ALLOWLIST: ReadonlyMap<string, string> = new Map([
   ["getConcessionMultiplier", "DEFERRED — paired with inferMarketMode; consumed once auto-inference ships"],
   ["analyzeEquityClarity", "DEFERRED — trial-close detector authored but not threaded into the brief layer yet (see DEFERRED.md)"],
   ["detectTrialCloseAsked", "DEFERRED — trial-close detector authored but not threaded into the brief layer yet (see DEFERRED.md)"],
-  ["detectTrialCloseResponse", "DEFERRED — trial-close detector authored but not threaded into the brief layer yet (see DEFERRED.md)"],
+  /* detectTrialCloseResponse — WIRED 2026-05-22 via applyCandidateAnswer
+   * in _negotiation-kernel.ts (gates candidateSignaledClose stamping
+   * on explicit accept; records hedge/decline markers separately). */
   ["detectVariableComfortAsked", "DEFERRED — trial-close detector authored but not threaded into the brief layer yet (see DEFERRED.md)"],
   ["shouldDiscloseRange", "DEFERRED — range-disclosure helper kept for the planned phase-rule consolidator"],
   ["critiqueRecruiterWithQuotes", "DEFERRED — verbose critique mode used only by the post-session coach surface (not the live engine)"],

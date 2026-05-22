@@ -1228,15 +1228,23 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
     const COUNTER_PHRASE_RE =
       /\b(?:i\s+(?:had|was)\b.*?(?:in\s+mind|thinking|expecting|hoping)|i'?m\s+(?:thinking|expecting|hoping|looking\s+for)|looking\s+for\s+\d|expecting\s+\d|hoping\s+for\s+\d|targeting\s+\d|aiming\s+(?:at|for)\s+\d|considering\s+\d|need(?:ed|ing)?\s+(?:at\s+least\s+|around\s+|closer\s+to\s+)\d|can\s+you\s+(?:do|match|stretch\s+(?:to|up)|go\s+up\s+to)\s+\d)/i;
     const candidateHasCounterPhrase = COUNTER_PHRASE_RE.test(lastCandidate);
-    /* Audit fix (2026-05-22) — equity-context guard. If the candidate
-     * is asking for a breakdown of EQUITY/ESOP/RSU/vesting (not the
-     * cash CTC), the 60/18/12/5/5 cash-mix is the wrong response. Let
-     * the dedicated esop-structure / vesting prose paths handle it. */
-    const EQUITY_CONTEXT_RE = /\b(?:equity|esop|rsu|vesting|stock|options?)\b/i;
+    /* Audit fix (2026-05-22) — non-cash-context guard. If the candidate
+     * is asking for a breakdown of EQUITY/ESOP/RSU/vesting OR any other
+     * non-cash structure (team, role, location, WFH days, process,
+     * timeline, benefits, interview, notice period), the 60/18/12/5/5
+     * cash-mix is the wrong response. Let dedicated prose paths handle
+     * those. We require the utterance to either:
+     *   (a) carry an explicit cash keyword (base/variable/bonus/CTC/etc.),
+     *       OR
+     *   (b) be cash-neutral (no non-cash context keyword present).
+     * If a non-cash context keyword is present AND no cash keyword is
+     * present, skip the cash-breakdown branch entirely. */
+    const NON_CASH_CONTEXT_RE =
+      /\b(?:equity|esop|rsu|vesting|stock|options?|team|reporting|manager|location|office|wfh|work[\s-]?from[\s-]?home|hybrid|remote|onsite|relocation|notice[\s-]?period|joining[\s-]?date|interview|process|timeline|role|responsibilities|leave|insurance|benefits|perks|hours|schedule|shift)\b/i;
     const CASH_BREAKDOWN_CONTEXT_RE =
-      /\b(?:base|variable|bonus|ctc|fixed|in[\s-]?hand|take[\s-]?home|offer|package|fitment|comp(?:ensation)?)\b/i;
-    const looksLikeEquityBreakdown =
-      EQUITY_CONTEXT_RE.test(lastCandidate) &&
+      /\b(?:base|variable|bonus|ctc|fixed|in[\s-]?hand|take[\s-]?home|offer|package|fitment|comp(?:ensation)?|salary|fixed\s+pay)\b/i;
+    const looksLikeNonCashBreakdown =
+      NON_CASH_CONTEXT_RE.test(lastCandidate) &&
       !CASH_BREAKDOWN_CONTEXT_RE.test(lastCandidate);
     if (
       offerLpa > 0 &&
@@ -1244,7 +1252,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
       !alreadyDisclosed &&
       !candidateHasNewNumber &&
       !candidateHasCounterPhrase &&
-      !looksLikeEquityBreakdown &&
+      !looksLikeNonCashBreakdown &&
       lastCandidate &&
       detectOfferBreakdownRequest(lastCandidate)
     ) {

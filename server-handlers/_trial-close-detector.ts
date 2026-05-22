@@ -46,6 +46,17 @@ const ACCEPT_PATTERNS: RegExp[] = [
   /\b(?:i'?m|i\s+am)\s+(?:in|on\s+board|good\s+with\s+(?:this|that))\b/i,
   /\bdone\s+deal\b/i,
   /\bsounds\s+good[,.]?\s+(?:let'?s\s+)?(?:proceed|close|move\s+forward)\b/i,
+  /* Audit fix (2026-05-22) — common positive-response phrasings the
+   * patterns above missed: "yes, that works (for me)", "works for
+   * me", "that works", "happy with that", "fine with that", "i'll
+   * take it", "i'm fine/good/happy with this/that". */
+  /\b(?:yes,?\s+)?that\s+works(?:\s+for\s+me)?\b/i,
+  /\bworks\s+for\s+me\b/i,
+  /\b(?:i'?m|i\s+am)\s+(?:happy|fine|good|ok(?:ay)?)\s+with\s+(?:this|that|it)\b/i,
+  /\bhappy\s+with\s+(?:this|that|the\s+offer)\b/i,
+  /\bi'?ll\s+take\s+(?:it|the\s+offer)\b/i,
+  /\b(?:i\s+)?accept\s+(?:the\s+)?offer\b/i,
+  /\bgreat,?\s+(?:let'?s\s+)?(?:proceed|move\s+forward|close|do\s+it)\b/i,
   /* STT fragility audit (2026-05-22) — bare affirmative tokens. The
    * trial-close response is a yes/no question; STT routinely ships
    * "yeah" / "yep" / "ya" / "haan" / "ji" / "ji haan" / "absolutely"

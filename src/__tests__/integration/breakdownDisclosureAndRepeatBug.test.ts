@@ -169,6 +169,95 @@ describe("Flipkart 2026-05-22 — breakdown disclosure + repeat de-dup", () => {
       const action = planNextAction(s);
       expect(action.kind).toBe("ctc-inflation-truth");
     });
+
+    it("does NOT fire CASH breakdown when candidate asks about WFH days structure", () => {
+      const s = postAnchorState();
+      s.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹41 LPA." },
+        { speaker: "candidate", text: "what's the structure of the WFH days?" },
+      ];
+      const action = planNextAction(s);
+      expect(action.kind).not.toBe("ctc-inflation-truth");
+    });
+
+    it("does NOT fire CASH breakdown when candidate asks about team / reporting structure", () => {
+      const s = postAnchorState();
+      s.conversationLog = [
+        { speaker: "ai", text: "Fitment is ₹41 LPA." },
+        { speaker: "candidate", text: "can you share the structure of the team and reporting manager?" },
+      ];
+      const action = planNextAction(s);
+      expect(action.kind).not.toBe("ctc-inflation-truth");
+    });
+  });
+
+  describe("trial-close response classification gates candidateSignaledClose (audit fix 2026-05-22)", () => {
+    function trialCloseState() {
+      const s = initState({
+        sessionId: "trial-close-audit",
+        company: "Flipkart",
+        role: "SWE",
+        band: { initialOffer: 22, maxStretch: 28, walkAway: 18, hasEquity: false },
+      });
+      s.phase = "counter-offer";
+      s.highestOfferMade = 22;
+      s.lastAiText = "If we land at ₹22 LPA, would you accept this offer today?";
+      return s;
+    }
+
+    it("STAMPS candidateSignaledClose on explicit accept", async () => {
+      const { applyCandidateAnswer } = await import(
+        "../../../server-handlers/_negotiation-kernel"
+      );
+      const s = trialCloseState();
+      const next = applyCandidateAnswer(s, "Yes, I accept the offer.");
+      expect(
+        (next as typeof next & { candidateSignaledClose?: boolean })
+          .candidateSignaledClose,
+      ).toBe(true);
+    });
+
+    it("does NOT stamp candidateSignaledClose on hedge ('I'd be comfortable if you can do 24')", async () => {
+      const { applyCandidateAnswer } = await import(
+        "../../../server-handlers/_negotiation-kernel"
+      );
+      const s = trialCloseState();
+      const next = applyCandidateAnswer(s, "I'd be comfortable if you can do 24 LPA");
+      expect(
+        (next as typeof next & { candidateSignaledClose?: boolean })
+          .candidateSignaledClose,
+      ).toBeFalsy();
+      expect(next.reactiveFollowupsFired ?? []).toContain(
+        "candidate-trial-close-hedge",
+      );
+    });
+
+    it("does NOT stamp candidateSignaledClose on decline ('I'll pass')", async () => {
+      const { applyCandidateAnswer } = await import(
+        "../../../server-handlers/_negotiation-kernel"
+      );
+      const s = trialCloseState();
+      const next = applyCandidateAnswer(s, "I'll pass on this one.");
+      expect(
+        (next as typeof next & { candidateSignaledClose?: boolean })
+          .candidateSignaledClose,
+      ).toBeFalsy();
+      expect(next.reactiveFollowupsFired ?? []).toContain(
+        "candidate-trial-close-decline",
+      );
+    });
+
+    it("does NOT stamp candidateSignaledClose on ambiguous response ('let me think')", async () => {
+      const { applyCandidateAnswer } = await import(
+        "../../../server-handlers/_negotiation-kernel"
+      );
+      const s = trialCloseState();
+      const next = applyCandidateAnswer(s, "let me think about it");
+      expect(
+        (next as typeof next & { candidateSignaledClose?: boolean })
+          .candidateSignaledClose,
+      ).toBeFalsy();
+    });
   });
 
   describe("normalized-recent-prose dedup handles punctuation variance", () => {

@@ -59,7 +59,7 @@ import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfill
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
 import { buildPostAcceptanceMessage } from "./_post-acceptance";
 import { detectInHandFraming, backComputeCtcFromInHand } from "./_in-hand-vs-ctc";
-import { detectRangeDisclosure, detectTrialCloseAsked } from "./_trial-close-detector";
+import { detectRangeDisclosure, detectTrialCloseAsked, detectTrialCloseResponse } from "./_trial-close-detector";
 import {
   extractComponentBreakdown,
   mergeBreakdown,
@@ -3984,12 +3984,37 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
    * replying now, set candidateSignaledClose sticky-true and push
    * "candidate-trial-close" onto reactiveFollowupsFired so the planner
    * can emit a close-confirmation move. Monotone-up: once signaled,
-   * stays signaled for the rest of the session. */
+   * stays signaled for the rest of the session.
+   *
+   * Audit fix (2026-05-22) — the prior gate stamped `candidateSignaledClose`
+   * whenever the bot's PRIOR turn was a trial close, regardless of how
+   * the candidate actually responded. A hedge ("I'd be comfortable IF
+   * X happens", "let me think", "depends") or decline ("not interested",
+   * "I'll pass") would still flip the flag → planner shipped a close-
+   * confirmation move → bot prematurely treated the candidate as
+   * accepting. Now we classify the candidate response and stamp ONLY on
+   * explicit accept. Hedge/decline/null → stay in counter-offer. */
   if (!next.candidateSignaledClose && detectTrialCloseAsked(state.lastAiText ?? null)) {
-    next.candidateSignaledClose = true;
-    const priorFired = next.reactiveFollowupsFired ?? [];
-    if (!priorFired.includes("candidate-trial-close")) {
-      next.reactiveFollowupsFired = [...priorFired, "candidate-trial-close"];
+    const response = detectTrialCloseResponse(answer);
+    if (response === "accept") {
+      next.candidateSignaledClose = true;
+      const priorFired = next.reactiveFollowupsFired ?? [];
+      if (!priorFired.includes("candidate-trial-close")) {
+        next.reactiveFollowupsFired = [...priorFired, "candidate-trial-close"];
+      }
+    }
+    /* Hedge / decline / null — record on reactiveFollowupsFired so the
+     * planner can avoid re-asking the same trial-close immediately, but
+     * do NOT stamp candidateSignaledClose. */
+    if (response === "hedge" || response === "decline") {
+      const priorFired = next.reactiveFollowupsFired ?? [];
+      const marker =
+        response === "hedge"
+          ? "candidate-trial-close-hedge"
+          : "candidate-trial-close-decline";
+      if (!priorFired.includes(marker)) {
+        next.reactiveFollowupsFired = [...priorFired, marker];
+      }
     }
   }
 
