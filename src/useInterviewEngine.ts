@@ -125,6 +125,15 @@ export function useInterviewEngine() {
      server on each turn. Null until the kernel path initialises it
      on first follow-up. */
   const negotiationKernelStateRef = useRef<string | null>(null);
+  /* PDF#43 fix (2026-05-22) — has the kernel ever signaled a terminal
+   * phase (accepted / walked-away / stalemate) on this session? Used to
+   * gate auto-end of the static closing slot in the 3-step salary-neg
+   * script. Until terminal is reached, the closing step's waitForUser
+   * is forced to TRUE so the engine pauses for the candidate instead
+   * of ending the interview after one back-and-forth (the symptom in
+   * PDF#43: T1 kernel CTC probe → T2 candidate discloses CTC → T3
+   * static "Thanks for the conversation today" + phase=done). */
+  const kernelTerminalReachedRef = useRef<boolean>(false);
   /* Move history accumulator — one entry per AI turn the kernel returns.
      Consumed at session end to compute kernel-aware metrics (anchor
      turn, lever diversity, band traversal, LPA per turn). Kept as a
@@ -1136,6 +1145,31 @@ export function useInterviewEngine() {
        template that doesn't commit to a specific number and instead
        defers to HR. The actual final number is communicated in the
        written offer, not the live closing line. */
+    /* PDF#43 fix (2026-05-22) — the 3-step salary-neg script
+     * [intro, question, closing] has waitForUser:false on the closing
+     * slot. Without this guard, the engine ends the interview after a
+     * single negotiation back-and-forth in two failure modes:
+     *   (a) kernel turn times out / returns null → fallback speaks the
+     *       static closing text → onSpeechEnd reads waitForUser:false →
+     *       phase=done.
+     *   (b) kernel returns a non-terminal follow-up → the race-fix at
+     *       line 1771+ mutates step.aiText to the kernel response, but
+     *       NOT step.waitForUser → bot speaks the kernel response, then
+     *       phase=done.
+     * Until the kernel has actually emitted a terminal phase, force
+     * waitForUser=true on the closing slot. The serverSaysDone branch
+     * still explicitly sets waitForUser:false (line 1607-1613) when
+     * the kernel terminates, so the legitimate auto-end path is
+     * unaffected. */
+    if (
+      interviewType === "salary-negotiation"
+      && step.type === "closing"
+      && step.waitForUser === false
+      && !kernelTerminalReachedRef.current
+    ) {
+      step.waitForUser = true;
+    }
+
     if (
       interviewType === "salary-negotiation"
       && step.type === "closing"
@@ -1554,6 +1588,13 @@ export function useInterviewEngine() {
                confirmation, then the closing wrap-up, instead of
                being dragged through 4 more anchor phases. */
             const serverSaysDone = isSalaryNegConversation && (result as { conversationDone?: boolean })?.conversationDone === true;
+            /* PDF#43 fix (2026-05-22) — latch the kernel-terminal flag the
+             * moment the server emits it. Read by the closing-step
+             * waitForUser guard at the top of this effect so subsequent
+             * renders correctly route through the auto-end path. */
+            if (serverSaysDone) {
+              kernelTerminalReachedRef.current = true;
+            }
             setInterviewScript(prev => {
               const nextQuestionIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "question");
               /* Sticky terminal-phase safety net (session 13 bug,
@@ -1787,6 +1828,21 @@ export function useInterviewEngine() {
               if (followUpStep.scoreNote) step.scoreNote = followUpStep.scoreNote;
               const fuAccent = (followUpStep as { accentSplit?: { before: string; accent: string; after: string } }).accentSplit;
               if (fuAccent) (step as { accentSplit?: typeof fuAccent }).accentSplit = fuAccent;
+              /* PDF#43 fix (2026-05-22) — when injecting a NON-TERMINAL
+               * kernel response into the closing slot (race-fix path), the
+               * closure's step is the original closing object with
+               * waitForUser:false. Mutating aiText alone caused the bot to
+               * speak the kernel's follow-up question and then immediately
+               * auto-end the interview (onSpeechEnd → waitForUser:false →
+               * phase=done). Re-shape the closure step so the engine pauses
+               * for the candidate's reply, matching what the kernel
+               * intended. The serverSaysDone branch above explicitly
+               * handles the terminal case with its own waitForUser:false
+               * wrap step, so this only fires for legitimate follow-ups. */
+              if (isSalaryNegConversation && !serverSaysDone && step.type === "closing") {
+                step.waitForUser = true;
+                step.type = "follow-up";
+              }
             }
             // Thinking phrase already spoken — go directly to main response
             // Brief pause for natural transition from thinking phrase to main speech
