@@ -271,6 +271,13 @@ export type DiscoveryTopic =
   | "close-confirmation"
   | "close-recap-formal"
   | "candidate-trial-close"
+  /* Audit fix (2026-05-22) — trial-close response classification.
+   * Stamped by applyCandidateAnswer when the candidate replies to a
+   * trial-close with a hedge or decline (not an accept). The planner
+   * uses these to avoid re-asking the same trial close on the next
+   * turn. */
+  | "candidate-trial-close-hedge"
+  | "candidate-trial-close-decline"
   | "comparative-anchoring"
   | "internal-equity-defense"
   /* Phase 3 missing-lever set (2026-05-17) — three additional Indian-HR
@@ -369,6 +376,7 @@ const KNOWN_TOPICS: ReadonlySet<string> = new Set<DiscoveryTopic>([
   /* PDF#37 (2026-05-20). */
   "anchor-clarify",
   "close-confirmation", "close-recap-formal", "candidate-trial-close",
+  "candidate-trial-close-hedge", "candidate-trial-close-decline",
   "comparative-anchoring", "internal-equity-defense", "band-anchor-with-rationale",
   "panel-approval-stall", "polite-walkaway", "anchor-defense-hike-strong",
   /* PDF#42 BUG-A (2026-05-21). */
