@@ -60,6 +60,12 @@ const CORPUS: string[] = [
   "What's your gender pay parity report? Curious about women in engineering leadership.",
   "My current employer already gave me a counter-offer and a promotion to retain me.",
   "Can I have a couple of weeks to decide? Need some time to think before I commit.",
+  /* Wave-2D signals — newly shadow-registered (2026-05-22). */
+  "Part of the comp is paid in crypto tokens — is the token allocation vested?",
+  "This is a GCC, the parent company is in the US — what about salary parity with HQ?",
+  "I've been on the bench for 3 months between projects, just waiting for an allocation.",
+  "I was a co-founder, my startup didn't work out, looking at a second innings in FTE roles.",
+  "Am I too senior for this team? Worried about culture fit with a younger team and age bias.",
 ];
 
 /* Flags registered in the wave-flag registry. Wave-2A is PRIMARY (the
@@ -85,6 +91,12 @@ const EXPECTED_SHADOW_FLAGS = [
   "payParityAsked",
   "preemptiveCounterReceived",
   "acceptanceTimeRequest",
+  /* Wave-2D (SHADOW since 2026-05-22). */
+  "cryptoTokenComp",
+  "gccArbitrageAnchor",
+  "benchTimeDisclosed",
+  "founderSecondInnings",
+  "latecareerAgeBias",
 ] as const;
 
 describe("candidate-profile registry — contract", () => {

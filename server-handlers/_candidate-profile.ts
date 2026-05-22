@@ -2231,6 +2231,50 @@ registerWaveFlag({
   mergeStrategy: "or",
 });
 
+/* Audit follow-up (2026-05-22) — wave-flag registry Wave-2D SHADOW mode.
+ * Five Wave-2D detectors register themselves below alongside the legacy
+ * direct-call path that still lives in extractCandidateProfile. Same
+ * pattern as Wave-2B/2C: registry runs in parallel, parity contract test
+ * (candidateProfileRegistry.test.ts) asserts byte-for-byte equivalence,
+ * and a NODE_ENV !== "production" runtime parity-assert in the call-site
+ * surfaces drift fast in dev/CI. Cutover to PRIMARY is a separate commit
+ * after the soak window. */
+registerWaveFlag({
+  name: "cryptoTokenComp",
+  waveId: "wave-2D",
+  detect: detectCryptoTokenComp,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "gccArbitrageAnchor",
+  waveId: "wave-2D",
+  detect: detectGccArbitrageAnchor,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "benchTimeDisclosed",
+  waveId: "wave-2D",
+  detect: detectBenchTimeDisclosed,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "founderSecondInnings",
+  waveId: "wave-2D",
+  detect: detectFounderSecondInnings,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+registerWaveFlag({
+  name: "latecareerAgeBias",
+  waveId: "wave-2D",
+  detect: detectLatecareerAgeBias,
+  defaultValue: false,
+  mergeStrategy: "or",
+});
+
 /* Wave-2A — returnship from maternity. */
 const RETURNSHIP_MATERNITY_PATTERNS: RegExp[] = [
   /\b(?:returning|coming\s+back|getting\s+back)\s+(?:to\s+work\s+)?(?:after|from|post)\s+(?:my\s+)?(?:maternity|parental|child\s+care|baby)\b/i,
@@ -3584,6 +3628,35 @@ export function extractCandidateProfile(text: string): CandidateProfileResult {
   const benchTimeDisclosed = detectBenchTimeDisclosed(text);
   const founderSecondInnings = detectFounderSecondInnings(text);
   const latecareerAgeBias = detectLatecareerAgeBias(text);
+  /* Wave-2D SHADOW parity-assert (2026-05-22). Legacy direct-call values
+   * above remain canonical; the registry is registered in parallel and
+   * checked here. The contract test enforces byte-for-byte parity across
+   * the adversarial corpus; this dev-only assert surfaces drift fast if
+   * either path is later modified. Cutover to PRIMARY happens in a
+   * separate commit after the soak window. */
+  if (process.env.NODE_ENV !== "production") {
+    const __wave2dRegistry = runRegistry(text);
+    console.assert(
+      cryptoTokenComp === Boolean(__wave2dRegistry.cryptoTokenComp),
+      "wave-2d drift: cryptoTokenComp",
+    );
+    console.assert(
+      gccArbitrageAnchor === Boolean(__wave2dRegistry.gccArbitrageAnchor),
+      "wave-2d drift: gccArbitrageAnchor",
+    );
+    console.assert(
+      benchTimeDisclosed === Boolean(__wave2dRegistry.benchTimeDisclosed),
+      "wave-2d drift: benchTimeDisclosed",
+    );
+    console.assert(
+      founderSecondInnings === Boolean(__wave2dRegistry.founderSecondInnings),
+      "wave-2d drift: founderSecondInnings",
+    );
+    console.assert(
+      latecareerAgeBias === Boolean(__wave2dRegistry.latecareerAgeBias),
+      "wave-2d drift: latecareerAgeBias",
+    );
+  }
   /* Wave-3 (2026-05-14j) — 25 new signals. */
   const titlePrecisionAsk = detectTitlePrecisionAsk(text);
   const currentCtcRefusal = detectCurrentCtcRefusal(text);
