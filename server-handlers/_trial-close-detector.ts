@@ -46,7 +46,15 @@ const ACCEPT_PATTERNS: RegExp[] = [
   /\b(?:i'?m|i\s+am)\s+(?:in|on\s+board|good\s+with\s+(?:this|that))\b/i,
   /\bdone\s+deal\b/i,
   /\bsounds\s+good[,.]?\s+(?:let'?s\s+)?(?:proceed|close|move\s+forward)\b/i,
-  /^\s*yes\s*[.!]?\s*$/i,
+  /* STT fragility audit (2026-05-22) — bare affirmative tokens. The
+   * trial-close response is a yes/no question; STT routinely ships
+   * "yeah" / "yep" / "ya" / "haan" / "ji" / "ji haan" / "absolutely"
+   * as the candidate's whole reply. Previously only bare "yes" matched
+   * — every other affirmative fell through to null, the move-picker
+   * never transitioned, and the recruiter re-asked the same trial
+   * close next turn. All English + Hindi affirmatives that are
+   * idiomatically equivalent to "yes" anchor here. */
+  /^\s*(?:yes|yeah|yep|yup|ya|yah|yes\s+please|sure|absolutely|definitely|certainly|of\s+course|for\s+sure|haan|hanji|ji|ji\s+haan|ha\s+ji|han\s+ji|theek\s+hai|thik\s+hai|bilkul|haan\s+ji)\s*[.!]?\s*$/i,
 ];
 
 const DECLINE_PATTERNS: RegExp[] = [
@@ -55,6 +63,9 @@ const DECLINE_PATTERNS: RegExp[] = [
   /\b(?:i'?ll|i\s+will)\s+(?:pass|decline)\b/i,
   /\bnot\s+interested\b/i,
   /\bi'?m\s+passing\b/i,
+  /* STT fragility audit (2026-05-22) — bare negative tokens. Same
+   * shape as ACCEPT_PATTERNS bare-affirmatives. */
+  /^\s*(?:no|nope|nah|naah|no\s+thanks|no\s+thank\s+you|nahi|nahin|nahi\s+chahiye|bilkul\s+nahi)\s*[.!]?\s*$/i,
 ];
 
 export function detectTrialCloseResponse(

@@ -52,6 +52,8 @@
  * Pure. No clock, no IO.
  */
 
+import { substituteEnglishNumbers } from "./_fact-parser";
+
 /* ─── Type surface ─────────────────────────────────────────────────── */
 
 export type NumberRole = "current" | "target" | "competing";
@@ -229,7 +231,7 @@ interface SalarySpan {
  *  ("LPS", "LPP"). The unit shape `[Dd]igits + LP[A-Z]` is unambiguous
  *  in the Indian-HR register; accept the whole family as LPA so the
  *  role-classifier mirrors the fact-parser. */
-const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|l|cr|crore)";
+const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l|cr|crore)";
 
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
@@ -448,12 +450,18 @@ function pickRole(
  *    5. `targetAsRange` is true when ANY salary span is a range upper
  *       AND a target was bound. */
 export function classifyNumberRoles(
-  text: string,
+  textIn: string,
   ctx: NumberRoleContext = {},
 ): NumberRoleResult {
-  if (!text || !text.trim()) {
+  if (!textIn || !textIn.trim()) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
   }
+  /* STT fragility (2026-05-22): mirror `parseSalaryFacts` and normalize
+   * English number-words to digits BEFORE span discovery / cue scoring.
+   * Without this, "my current CTC is thirty six LPA" silently returns
+   * { currentCtc: null }, the kernel sees no disclosure, and the engine
+   * falls through — exact same shape as the LPE bug f5289f3 fixed. */
+  const text = substituteEnglishNumbers(textIn);
   const spans = findSalarySpans(text);
   if (spans.length === 0) {
     return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };

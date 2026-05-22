@@ -60,7 +60,77 @@ export interface SalaryFact {
  * unambiguous (digits + space + "LP" + one letter), so accept any
  * `LP[A-Z]` token as LPA — there is no real word in the Indian-HR
  * register that this collides with. */
-const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|crores?|cr|lacs?|L";
+const UNIT_TOKEN = "LPA|LP[A-Z]|lakhs?|crores?|cr|lacs?|lacks|lax|L";
+
+/* STT fragility audit (2026-05-22) — follow-up to LPE fix.
+ *
+ * English number-word substitution. STT layers (Sarvam / Whisper /
+ * Azure) sometimes ship spelled-out numerals instead of digits for
+ * slowly / carefully pronounced numbers ("thirty six LPA", not "36
+ * LPA"). Every downstream salary parser keys on digit strings, so a
+ * spelled-out disclosure was silently dropped — exact same shape as
+ * the LPE bug.
+ *
+ * Strategy: pre-normalize spelled-out English numbers in the salary
+ * range [1, 100] LPA — that's the realistic Indian-HR window. We
+ * substitute the spelled form (with optional hyphen) for its digit
+ * equivalent so the downstream regex bank sees "36 LPA" regardless of
+ * whether STT shipped "36", "thirty six", or "thirty-six".
+ *
+ * Word boundaries: the substitution is whole-word with `\b`, so
+ * "thirtysix" (word-boundary STT mishap) is handled by also accepting
+ * the run-together form for tens+ones combinations.
+ *
+ * Range cap of 100 is conservative — Indian salary disclosures in
+ * the spelled-out window almost never exceed two digits, and the
+ * collision risk grows above 100 ("hundred and fifty" might be a
+ * page count, etc.). Above 100 candidates use digits anyway. */
+const ENGLISH_NUMBER_WORDS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15,
+  sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50,
+  sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+const TENS_WORDS = ["twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+const ONES_WORDS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+
+/* Build a single regex that matches either:
+ *   - tens + (hyphen|space|none) + ones    → "thirty-six" / "thirty six" / "thirtysix"
+ *   - tens alone                           → "thirty"
+ *   - teens (eleven..nineteen)             → "fifteen"
+ *   - ones (one..nine)                     → "six"
+ * Whole-word anchored to avoid colliding with substrings ("forty" inside
+ * "forty-five-year-old"). Case-insensitive. */
+const _tensAlt = TENS_WORDS.join("|");
+const _onesAlt = ONES_WORDS.join("|");
+const _teensAlt = "eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen";
+const ENGLISH_NUM_RE = new RegExp(
+  `\\b((?:${_tensAlt})(?:[-\\s]?(?:${_onesAlt}))?|${_teensAlt}|${_onesAlt}|ten)\\b`,
+  "gi",
+);
+
+/** Substitute spelled-out English number-words in the salary range
+ *  [1, 99] with their digit equivalent. Exposed so other parsers
+ *  (`_number-role-classifier`) can apply the same normalization at
+ *  their input boundary. Pure. */
+export function substituteEnglishNumbers(s: string): string {
+  if (!s) return s;
+  return s.replace(ENGLISH_NUM_RE, (whole) => {
+    const norm = whole.toLowerCase().replace(/\s+/g, "-");
+    /* Compound "thirty-six" / "thirtysix" / "thirty six" → 36. */
+    const compound = norm.match(/^(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)-?(one|two|three|four|five|six|seven|eight|nine)$/);
+    if (compound) {
+      const tens = ENGLISH_NUMBER_WORDS[compound[1]];
+      const ones = ENGLISH_NUMBER_WORDS[compound[2]];
+      if (tens != null && ones != null) return String(tens + ones);
+    }
+    const direct = ENGLISH_NUMBER_WORDS[norm.replace(/-/g, "")] ?? ENGLISH_NUMBER_WORDS[norm];
+    if (direct != null) return String(direct);
+    return whole;
+  });
+}
 
 /* Standalone salary-bearing tokens: 22 LPA / 22.5 lakhs / 1.2 crore / 22L.
  * Capture groups:
@@ -85,7 +155,7 @@ function normaliseUnit(raw: string | undefined): SalaryUnit {
   const u = raw.toLowerCase();
   if (u === "lpa") return "LPA";
   if (u.startsWith("crore") || u === "cr") return "crore";
-  if (u.startsWith("lakh") || u.startsWith("lac") || u === "l") return "lakh";
+  if (u.startsWith("lakh") || u.startsWith("lac") || u === "lacks" || u === "lax" || u === "l") return "lakh";
   /* STT typo tolerance — any 3-char `lp?` shape (lpe / lps / lpp / lpi /
    * lpo / lpu / lpm …) is treated as LPA. Constrained by the regex above
    * to `LP[A-Z]`, so this branch only ever sees the near-miss family. */
@@ -110,8 +180,14 @@ function digitsToNumber(raw: string): number {
  *  matches like "22-24 LPA" produce two SalaryFacts with
  *  `isRangeLower=true` / `isRangeUpper=true` and `rangePeer` set so
  *  the consumer can detect the pairing. */
-export function parseSalaryFacts(text: string): SalaryFact[] {
-  if (!text) return [];
+export function parseSalaryFacts(textIn: string): SalaryFact[] {
+  if (!textIn) return [];
+  /* STT fragility (2026-05-22): normalize English number-words to digits
+   * BEFORE running the regex bank. "thirty six LPA" → "36 LPA" → matches.
+   * Without this pre-pass, the entire downstream pipeline (kernel fact
+   * binding, salary clamping, hike math, telemetry) silently drops
+   * spelled-out salary disclosures. */
+  const text = substituteEnglishNumbers(textIn);
   const facts: SalaryFact[] = [];
   /* Tracks spans we've already produced a fact for, so a range match
    * doesn't double-count with the per-number unit/rupee passes. */

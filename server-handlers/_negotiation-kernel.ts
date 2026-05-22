@@ -52,6 +52,7 @@ import { clampBandToTierP50 } from "./_band-sanity";
 import { getCompanyTier } from "../data/company-tiers";
 import { classifyQuestionIntent, type QuestionIntent } from "./_question-intent";
 import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-classifier";
+import { normalizeForParsing } from "./_speech-normalize";
 import { classifyCandidateArchetype } from "./_candidate-archetype";
 import { classifyNumberRoles } from "./_number-role-classifier";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
@@ -2722,27 +2723,12 @@ export interface ParsedAnswer {
    number that wasn't already bound elsewhere. This is what the legacy
    extractor did across the whole transcript every render; here we run
    it once per candidate turn against the single fresh answer. */
-/* Hinglish word-numbers commonly heard in spoken negotiation calls
-   (and frequently mis-transcribed by STT into the wrong digit). We
-   pre-substitute the spelled form into a digit so the rest of the
-   parser sees a normal "30 LPA". Only the salary-relevant range
-   (10–100 lakhs) is mapped — outside that, candidates use English
-   digits anyway. Common surface forms: "tees LPA" (30), "paintees
-   LPA" (35), "chalis lakh chahiye" (40), "pachas LPA" (50). */
-const HINGLISH_NUMBERS: Record<string, string> = {
-  das: "10", gyarah: "11", barah: "12", terah: "13", chaudah: "14",
-  pandrah: "15", solah: "16", satrah: "17", atharah: "18", unnees: "19",
-  bees: "20", ikees: "21", baees: "22", tees: "30", paintees: "35",
-  chalees: "40", chalis: "40", paintaalis: "45", pachas: "50",
-  pachaas: "50", pachpan: "55", saath: "60", pasath: "65", sattar: "70",
-  pichattar: "75", assi: "80", pacchasi: "85", nabbe: "90", pachanve: "95",
-  sau: "100",
-};
-
-function substituteHinglishNumbers(s: string): string {
-  return s.replace(/\b(das|gyarah|barah|terah|chaudah|pandrah|solah|satrah|atharah|unnees|bees|ikees|baees|tees|paintees|chalees|chalis|paintaalis|pachas|pachaas|pachpan|saath|pasath|sattar|pichattar|assi|pacchasi|nabbe|pachanve|sau)\b/gi,
-    (m) => HINGLISH_NUMBERS[m.toLowerCase()] ?? m);
-}
+/* Hinglish word-number substitution (`tees` → 30, `pachas` → 50, etc.)
+ * was relocated to `_speech-normalize.ts` as part of the STT-fragility
+ * audit (2026-05-22). The kernel-boundary `normalizeForParsing` call in
+ * `parseCandidateAnswer` below runs it together with English
+ * number-words, unit-typo fixups, and decimal-point folding — single
+ * source of truth for STT normalization. */
 
 /* Voss-tactic detection. These patterns are conservative — only
    reasonably unambiguous formulations are recognized. False positives
@@ -3009,7 +2995,23 @@ export function parseCandidateAnswer(
    *  back-compat for callers that don't have state context. */
   priorTotalCtc: number | null = null,
 ): ParsedAnswer {
-  const a = substituteHinglishNumbers((answer || "").trim());
+  /* STT fragility audit (2026-05-22) — kernel-boundary normalization.
+   *
+   * Follow-up to f5289f3 (LPA→LPE STT mishear fix). That commit landed
+   * inline fixes in two parsers; this routes ALL downstream parsers
+   * through a single normalizer at the candidate-turn entry boundary.
+   * `normalizeForParsing` is a superset of the legacy
+   * `substituteHinglishNumbers` (which it absorbs) plus English
+   * number-words, unit-typo fixups (LPE/lacks/krore/rupies), letter-
+   * spelled "L P A", and decimal-point folding. Every extractor below
+   * (`extractComponentBreakdown`, `extractHikeRationale`,
+   * `extractNoticeJoining`, `extractEquityVesting`,
+   * `extractLocationMode`, `extractCompetingOfferDetail`,
+   * `extractDecisionDeadline`, `extractCandidateProfile`,
+   * `extractMiscSignals`, `extractCandidateStance`,
+   * `extractRetentionCounter`, `classifyAcceptance`,
+   * `classifyNumberRoles`) sees the normalized string. */
+  const a = normalizeForParsing((answer || "").trim());
   if (!a) {
     return {
       target: null, currentCtc: null, competing: null,

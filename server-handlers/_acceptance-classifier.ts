@@ -156,13 +156,23 @@ const HINDI_MIX_PATTERNS: RegExp[] = [
   /\bkar\s+(?:di(?:ya|jiye)|do|dijiye)\b/i,
   /\bmanzoor(?:\s+hai)?\b/i,
   /\bhaan\s+(?:thik|theek|ok|okay|done)\b/i,
+  /* STT fragility audit (2026-05-22) — bare Hindi affirmatives.
+   * Indian candidates routinely answer "are you good with this offer?"
+   * with bare "haan" / "ji" / "ji haan" / "ha ji" / "hanji" / "bilkul".
+   * Previously HINDI_MIX_PATTERNS required "haan + thik/ok/done"; bare
+   * Hindi yes fell through to no-match and the candidate's acceptance
+   * was lost. The structural phase gate at step 5 still vetoes these
+   * when no offer is on the table (you can't accept what hasn't been
+   * offered) — so this is safe to fire as a commitment idiom. */
+  /^\s*(?:haan|hanji|han\s*ji|ha\s*ji|ji\s+haan|ji|bilkul)\s*[,.!]?\s*$/i,
+  /^\s*(?:haan|hanji|han\s*ji|ha\s*ji|ji\s+haan|ji|bilkul)[,\s]+/i,
 ];
 
 /** Offer reference — the candidate's text mentions the offer object
  *  or a specific number. Required to upgrade a commitment idiom
  *  from "ambiguous filler" to "acceptance". */
 const OFFER_REFERENCE_PATTERN =
-  /\b(?:offer|deal|salary|ctc|package|lpa|lakhs?|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lakhs?|l\b|cr|crore|k\b))\b/i;
+  /\b(?:offer|deal|salary|ctc|package|lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l\b|cr|crore|k\b))\b/i;
 
 /** Veto: walk-away or rejection. */
 const WALK_AWAY_PATTERN =
