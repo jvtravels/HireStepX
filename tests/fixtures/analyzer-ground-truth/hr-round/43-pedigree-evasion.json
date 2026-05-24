@@ -1,0 +1,24 @@
+{
+  "name": "Sub-5yoe candidate deflects on CGPA / college probe",
+  "notes": "v5.2 realism: pedigree_evasion — Indian HR routinely probes academics under 5 YOE; 'don't remember exactly' reads as hiding a weak GPA.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 3 years at a Bangalore product company on the payments team.", "time": "" },
+      { "speaker": "ai", "text": "Which college did you graduate from, and what was your CGPA?", "time": "" },
+      { "speaker": "user", "text": "It was a long time ago, I don't remember the exact CGPA. Why does it matter at this point?", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Redesigned the refund pipeline to handle async webhooks at 2M events/day; cut p99 from 1.2s to 200ms over four months.", "time": "" },
+      { "speaker": "ai", "text": "Why our company?", "time": "" },
+      { "speaker": "user", "text": "Your engineering blog on idempotency keys and the scale of catalog you're at line up with what I want to work on next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["pedigree_evasion"],
+    "must_not_include": ["empty_transcript", "vague_notice_period"]
+  }
+}
