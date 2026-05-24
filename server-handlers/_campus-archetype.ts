@@ -30,6 +30,7 @@ export type CampusArchetype =
   | "tcs-ninja"
   | "tcs-digital"
   | "wipro-nlth"
+  | "cognizant-genc"
   | "top-tier-campus"
   | "unknown";
 
@@ -38,7 +39,8 @@ export type CampusArchetype =
  * variant of the parent company applies. */
 const HINT_TCS_DIGITAL = /\b(?:tcs\s+digital|digital\s+track|power\s+programmer|infy(?:tq)?\s+(?:power\s+programmer|specialist)|infosys\s+(?:specialist|power\s+programmer)|wipro\s+elite|elite\s+track)\b/i;
 const HINT_TCS_NINJA = /\b(?:tcs\s+(?:ninja|nqt|national\s+qualifier)|nqt\s+(?:ninja|base|track)|ninja\s+track|infosys\s+systems?\s+engineer|infy\s+systems?\s+engineer|se\s+track\s+at\s+infosys)\b/i;
-const HINT_WIPRO_NLTH = /\b(?:wipro\s+nlth|wipro\s+turbo|nlth\s+track|cognizant\s+genc(?:\s+next)?|genc\s+next|capgemini\s+exceller|exceller\s+track|hcl\s+techbee)\b/i;
+const HINT_WIPRO_NLTH = /\b(?:wipro\s+nlth|wipro\s+turbo|nlth\s+track|hcl\s+techbee)\b/i;
+const HINT_COGNIZANT_GENC = /\b(?:cognizant\s+genc(?:\s+next)?|genc\s+next|genc\s+pro|capgemini\s+exceller|exceller\s+track)\b/i;
 const HINT_TOP_TIER = /\b(?:google\s+step|amazon\s+future\s+engineer|microsoft\s+engage|microsoft\s+aspire|adobe\s+women[- ]?in[- ]?tech|flipkart\s+gold|razorpay\s+road|day[- ]?1\s+slot|day\s+one\s+(?:slot|company))\b/i;
 
 /* Pure company-string buckets (no transcript context). Conservative —
@@ -51,7 +53,8 @@ const COMPANY_TOP_TIER = [
   "myntra", "paytm", "freshworks", "browserstack", "postman",
 ];
 const COMPANY_TCS = ["tcs", "tata consultancy"];
-const COMPANY_WIPRO_NLTH = ["wipro", "cognizant", "capgemini", "hcl", "tech mahindra"];
+const COMPANY_COGNIZANT = ["cognizant", "capgemini"];
+const COMPANY_WIPRO_NLTH = ["wipro", "hcl", "tech mahindra"];
 const COMPANY_INFOSYS = ["infosys", "infy"];
 
 function normalize(s: string): string {
@@ -69,6 +72,7 @@ export function classifyCampusArchetype(
   /* 1. Transcript hints override company-name buckets. */
   if (HINT_TCS_DIGITAL.test(transcriptText)) return "tcs-digital";
   if (HINT_TOP_TIER.test(transcriptText)) return "top-tier-campus";
+  if (HINT_COGNIZANT_GENC.test(transcriptText)) return "cognizant-genc";
   if (HINT_WIPRO_NLTH.test(transcriptText)) return "wipro-nlth";
   if (HINT_TCS_NINJA.test(transcriptText)) return "tcs-ninja";
 
@@ -83,6 +87,7 @@ export function classifyCampusArchetype(
   // exception, not the rule, by candidate volume.
   for (const term of COMPANY_TCS) if (wordMatch(n, term)) return "tcs-ninja";
   for (const term of COMPANY_INFOSYS) if (wordMatch(n, term)) return "tcs-ninja";
+  for (const term of COMPANY_COGNIZANT) if (wordMatch(n, term)) return "cognizant-genc";
   for (const term of COMPANY_WIPRO_NLTH) if (wordMatch(n, term)) return "wipro-nlth";
 
   return "unknown";
@@ -98,6 +103,7 @@ export function archetypeCgpaCutoff(arch: CampusArchetype): number | null {
     case "tcs-ninja":      return 6.0;
     case "tcs-digital":    return 7.5;
     case "wipro-nlth":     return 6.0;
+    case "cognizant-genc": return 6.0;
     case "top-tier-campus": return 7.5;
     case "unknown":        return null;
   }
@@ -111,7 +117,8 @@ export function archetypeLabel(arch: CampusArchetype): string {
   switch (arch) {
     case "tcs-ninja":       return "TCS NQT (Ninja) / Infosys SE";
     case "tcs-digital":     return "TCS Digital / Infosys Power Programmer";
-    case "wipro-nlth":      return "Wipro NLTH / Cognizant GenC";
+    case "wipro-nlth":      return "Wipro NLTH / HCL TechBee";
+    case "cognizant-genc":  return "Cognizant GenC / Capgemini Exceller";
     case "top-tier-campus": return "Top-tier campus (product)";
     case "unknown":         return "Generic campus";
   }

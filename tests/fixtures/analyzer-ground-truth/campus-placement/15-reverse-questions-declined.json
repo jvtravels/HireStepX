@@ -8,6 +8,10 @@
       { "speaker": "user", "text": "I built a college bus-tracking app using Python and Flask deployed on AWS. CGPA is 8.0. I was the backend developer in a team of four — I owned the API and the Postgres schema. The app is used by 300 students daily.", "time": "" },
       { "speaker": "ai", "text": "What's been your favorite course so far?", "time": "" },
       { "speaker": "user", "text": "Database systems — it shaped how I designed the bus-app schema. We covered normalization, indexing, query plans. I built side projects with Postgres to keep practicing.", "time": "" },
+      { "speaker": "ai", "text": "How would you handle a tight project deadline?", "time": "" },
+      { "speaker": "user", "text": "Split the scope into a must-have core and a nice-to-have layer, communicate the trade-off early, and ship the core on time.", "time": "" },
+      { "speaker": "ai", "text": "Are you open to relocation?", "time": "" },
+      { "speaker": "user", "text": "Yes, pan-India is fine. I'd prefer Bangalore but I'm flexible.", "time": "" },
       { "speaker": "ai", "text": "Great. We're wrapping up — do you have any questions for us?", "time": "" },
       { "speaker": "user", "text": "No, I'm good. I think you've covered everything I wanted to know.", "time": "" }
     ]

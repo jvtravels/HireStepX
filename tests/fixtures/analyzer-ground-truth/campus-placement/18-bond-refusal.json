@@ -8,6 +8,10 @@
       { "speaker": "user", "text": "I built a college bus-tracking app in Python and Flask. CGPA 8.0. Team of 4, I owned the backend.", "time": "" },
       { "speaker": "ai", "text": "TCS has a 2-year service agreement. Are you comfortable signing the bond?", "time": "" },
       { "speaker": "user", "text": "Honestly, no. I won't sign any bond. That feels restrictive to me.", "time": "" },
+      { "speaker": "ai", "text": "What database did you use for the bus-tracking app?", "time": "" },
+      { "speaker": "user", "text": "Postgres with three tables — users, buses, and trip-events. I added an index on bus_id + timestamp for the lookup queries.", "time": "" },
+      { "speaker": "ai", "text": "Are you open to relocation across India?", "time": "" },
+      { "speaker": "user", "text": "Yes, I'm fine relocating anywhere TCS allocates me.", "time": "" },
       { "speaker": "ai", "text": "Understood. Any questions for us?", "time": "" },
       { "speaker": "user", "text": "No, I think I'm clear.", "time": "" }
     ]

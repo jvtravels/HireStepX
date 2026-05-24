@@ -67,6 +67,30 @@
  *        verify. Low severity, informational.
  *        (f) MTI "graduated in 2024" was already a no-op (no pattern
  *        in v6.5 list matches it); documented in the realism note.
+ *   v6.7 Post-v6.6 realism audit — six gaps closed:
+ *        (a) `cognizant-genc` archetype split out from `wipro-nlth`
+ *        (Cognizant + Capgemini Exceller). Cognizant's "client rotation
+ *        / domain breadth" narrative now gets credit on the why-company
+ *        probe via the new `COGNIZANT_CLIENT_ROTATION_NARRATIVE` regex,
+ *        which feeds the existing `service_tier_why_company_acceptable`
+ *        positive flag. (b) Short-screening gate — when
+ *        `transcript.length < 10`, suppress `bond_unprepared` and
+ *        `reverse_questions_declined`; an HR-screening call doesn't
+ *        always hit the closing slot or probe bond twice. Emits the
+ *        positive flag `short_screening_session_acknowledged`.
+ *        (c) `shipped_to_prod_context` positive flag — when a candidate
+ *        narrates a project with concrete shipped-to-prod evidence
+ *        (active users / production deploy / merged PR / shipped feature),
+ *        emit the positive flag and suppress `portfolio_absent_for_claim`
+ *        at product-grade archetypes (top-tier-campus / tcs-digital).
+ *        (d) `location_agnostic_signal` — at tcs-digital, a candidate
+ *        who explicitly states they're open to any location / pan-India
+ *        gets credit instead of being silently dinged for not probing
+ *        relocation. (e) `aptitude_puzzle_refusal` severity downgraded
+ *        to "low" for tcs-digital — that loop is offline-coding-format,
+ *        not live-puzzle. (f) `weak_reverse_questions` at unknown
+ *        archetype now adopts service-tier leniency (generic reverse
+ *        questions are acceptable when we can't pin down archetype).
  * ──────────────────────────────────────────────────────────────────
  */
 
@@ -153,6 +177,32 @@ const COMPANY_SPECIFIC_SIGNAL = /\b(trailhead|nqt|infytq|techbee|genc|engage|ste
  * (Google / Flipkart / Razorpay) still demand specific signal — the
  * archetype gate handles that asymmetry below. */
 const COMPANY_SERVICE_TIER_NARRATIVE = /\b(?:structured\s+training|training\s+program|stable\s+(?:career|growth|environment|long[- ]term)|long[- ]term\s+(?:career|growth|stability)|proven\s+(?:client|track\s+record|delivery)|client\s+(?:base|portfolio|delivery)|service[- ]led|services?\s+(?:model|business|firm)|global\s+(?:delivery|footprint|presence)|scale\s+of\s+(?:operations?|delivery)|established\s+(?:firm|company|leader|player)|brand\s+maturity|industry\s+leader|fortune\s+\d+|domain\s+exposure|industry\s+exposure|breadth\s+of\s+(?:projects?|domains?)|onboarding\s+(?:program|process|cohort)|fresher\s+(?:training|cohort|program)|ilp\b|initial\s+learning\s+program)\b/i;
+
+/* v6.7 — Cognizant GenC / Capgemini Exceller specifically reward a
+ * "client rotation / domain breadth" narrative. Candidates who say
+ * "exposure to multiple client domains / horizontal mobility / cross-
+ * industry rotation / GenC Pro track" are giving the rubric-matched
+ * answer for that archetype. Feeds the existing
+ * `service_tier_why_company_acceptable` positive flag when archetype
+ * resolves to `cognizant-genc`. */
+const COGNIZANT_CLIENT_ROTATION_NARRATIVE = /\b(?:client\s+rotation|cross[- ]?(?:industry|domain|client)\s+(?:rotation|exposure|mobility|projects?)|multiple\s+(?:client|domain)\s+(?:exposure|projects?)|domain\s+breadth|breadth\s+(?:of\s+)?(?:industries?|domains?|clients?)|genc\s+(?:pro|next)|exceller\s+track|horizontal\s+mobility|rotational\s+(?:program|projects?))\b/i;
+
+/* v6.7 — Location-agnostic signal for tcs-digital. The Digital track
+ * loop does NOT probe relocation explicitly (unlike Ninja); a candidate
+ * who proactively states pan-India / any-location openness deserves
+ * credit, not silence. Used to suppress `weak_reverse_questions` at
+ * tcs-digital when present + emit `location_agnostic_signal`. */
+const LOCATION_AGNOSTIC_SIGNAL = /\b(?:open\s+to\s+(?:any\s+location|relocat|pan[- ]?india|all\s+locations?)|location[- ]?agnostic|happy\s+to\s+(?:move|relocate)\s+(?:anywhere|to\s+any)|willing\s+to\s+relocate\s+(?:to\s+)?(?:anywhere|any\s+location|any\s+city|pan[- ]?india)|no\s+location\s+(?:preference|constraint)|flexible\s+(?:on|with|about)\s+location|comfortable\s+(?:with\s+)?(?:any\s+location|pan[- ]?india|relocat))\b/i;
+
+/* v6.7 — Shipped-to-prod evidence. Distinct from the generic
+ * PORTFOLIO_LINK / TECH_APPLIED — this specifically captures the
+ * "we shipped it and users used it" signal: production deploys,
+ * active users, merged PRs to a real codebase, features in
+ * customer-facing release notes. At product-grade archetypes
+ * (top-tier-campus / tcs-digital) this is a higher-credibility
+ * substitute for a GitHub link and suppresses
+ * `portfolio_absent_for_claim`. */
+const SHIPPED_TO_PROD_CONTEXT = /\b(?:(?:shipped|deployed|launched|released)\s+(?:to\s+)?(?:prod(?:uction)?|customers?|users?|live|the\s+app|the\s+platform)|(?:in|to)\s+production|live\s+(?:in\s+production|with\s+(?:real\s+)?users?|on\s+the\s+app)|active\s+users?|monthly\s+active|daily\s+active|dau|mau|merged\s+(?:my\s+|the\s+)?pr\s+(?:to|into)|pr\s+(?:got\s+)?merged|customer[- ]?facing|user[- ]?facing\s+feature|first\s+\d+\s+(?:users|customers)|onboarded\s+\d+|served\s+\d+\s+(?:users|requests|customers))\b/i;
 
 /* Volunteered backlogs / KTs / low CGPA unprompted is a framing error.
  * DEFICIT_PROBE intentionally excludes /fail/ — behavioral failure
@@ -444,7 +494,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.6",
+  version: "campus-placement-v6.7",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -594,8 +644,15 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     const aiAskedWhyCompany = transcript.some((t) => isAi(t) && WHY_COMPANY_PROBE.test(t.text || ""));
     if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText)) {
       const whyArchetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
-      const serviceTier = whyArchetype === "tcs-ninja" || whyArchetype === "wipro-nlth";
-      const serviceTierNarrativePresent = serviceTier && COMPANY_SERVICE_TIER_NARRATIVE.test(userText);
+      const serviceTier = whyArchetype === "tcs-ninja" || whyArchetype === "wipro-nlth" || whyArchetype === "cognizant-genc";
+      // v6.7 — Cognizant GenC / Capgemini Exceller specifically reward
+      // a client-rotation / domain-breadth narrative. Either the
+      // generic service-tier narrative OR the Cognizant-specific one
+      // counts as a context-appropriate answer for that archetype.
+      const serviceTierNarrativePresent = serviceTier && (
+        COMPANY_SERVICE_TIER_NARRATIVE.test(userText) ||
+        (whyArchetype === "cognizant-genc" && COGNIZANT_CLIENT_ROTATION_NARRATIVE.test(userText))
+      );
 
       if (serviceTierNarrativePresent) {
         // Positive signal — candidate gave a context-appropriate
@@ -779,17 +836,35 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (midSessionSpecificAsked) {
       flags.add("mid_session_questions_present");
     }
+    // v6.7 — Short-screening session gate. Sub-10-turn transcripts are
+    // typically HR screening / first-round skim, not full panels. Don't
+    // ding the candidate for a missing closing slot or a single bond
+    // probe in that format. Emit a positive informational flag so the
+    // report can render the calibration explicitly.
+    const isShortScreeningSession = transcript.length < 10;
+    if (isShortScreeningSession) {
+      flags.add("short_screening_session_acknowledged");
+    }
+    // v6.7 — Location-agnostic signal at tcs-digital. The Digital track
+    // doesn't probe relocation explicitly; candidates who proactively
+    // state any-location openness deserve credit.
+    const locationAgnosticPresent = LOCATION_AGNOSTIC_SIGNAL.test(userText);
+    if (locationAgnosticPresent) {
+      flags.add("location_agnostic_signal");
+    }
     if (reverseProbeIdx >= 0) {
       const afterProbe = transcript.slice(reverseProbeIdx + 1).filter(isUser).map((t) => t.text || "").join(" ");
       if (afterProbe) {
         if (REVERSE_QUESTION_DECLINED.test(afterProbe)) {
-          flags.add("reverse_questions_declined");
-          gaps.push({
-            dimension: "preparation",
-            expected: "Always have 2-3 prepared reverse-questions — about training program, tech stack, mentor structure, growth track, or something from the PPT",
-            observed: "User declined the reverse-question slot ('No, I'm good') — reads as unprepared / disinterested",
-            severity: "medium",
-          });
+          if (!isShortScreeningSession) {
+            flags.add("reverse_questions_declined");
+            gaps.push({
+              dimension: "preparation",
+              expected: "Always have 2-3 prepared reverse-questions — about training program, tech stack, mentor structure, growth track, or something from the PPT",
+              observed: "User declined the reverse-question slot ('No, I'm good') — reads as unprepared / disinterested",
+              severity: "medium",
+            });
+          }
         } else if (REVERSE_QUESTION_GENERIC.test(afterProbe) && !REVERSE_QUESTION_SPECIFIC.test(afterProbe)) {
           // Phase-6 realism calibration: at TCS NQT / Wipro NLTH /
           // Cognizant loops, "what's the work culture?" is a perfectly
@@ -801,8 +876,16 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           // closing-slot weak flag (across archetypes). Smart candidates
           // ask substantive questions mid-interview and then close with
           // "all clear" — that pattern should not be docked.
-          const reverseService = archetype === "tcs-ninja" || archetype === "wipro-nlth";
-          if (!reverseService && !midSessionSpecificAsked) {
+          // v6.7 — Service-tier leniency extended to `cognizant-genc`
+          // and `unknown` archetypes (we can't pin archetype; default
+          // to leniency rather than docking a generic reverse question).
+          // tcs-digital: location-agnostic statement is also a positive
+          // signal that suppresses the closing-slot weak flag (the
+          // candidate volunteered relocation context the Digital loop
+          // would normally probe for).
+          const reverseService = archetype === "tcs-ninja" || archetype === "wipro-nlth" || archetype === "cognizant-genc" || archetype === "unknown";
+          const tcsDigitalLocationCovered = archetype === "tcs-digital" && locationAgnosticPresent;
+          if (!reverseService && !midSessionSpecificAsked && !tcsDigitalLocationCovered) {
             flags.add("weak_reverse_questions");
             gaps.push({
               dimension: "preparation",
@@ -813,13 +896,15 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           }
         }
       } else {
-        flags.add("reverse_questions_declined");
-        gaps.push({
-          dimension: "preparation",
-          expected: "Always have 2-3 prepared reverse-questions — silence on the closer is a credibility hit",
-          observed: "AI asked 'any questions for us?' — user gave no response",
-          severity: "medium",
-        });
+        if (!isShortScreeningSession) {
+          flags.add("reverse_questions_declined");
+          gaps.push({
+            dimension: "preparation",
+            expected: "Always have 2-3 prepared reverse-questions — silence on the closer is a credibility hit",
+            observed: "AI asked 'any questions for us?' — user gave no response",
+            severity: "medium",
+          });
+        }
       }
     }
 
@@ -842,7 +927,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           observed: "User refused the service agreement outright — at service-tier firms this ends the interview",
           severity: "high",
         });
-      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText)) {
+      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText) && !isShortScreeningSession) {
+        // v6.7 — Short-screening sessions are excluded; a sub-10-turn
+        // HR skim doesn't always reach a second bond probe meaningfully.
         flags.add("bond_unprepared");
         gaps.push({
           dimension: "preparation",
@@ -1063,8 +1150,29 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
+    // v6.7 — Shipped-to-prod context as a positive signal. Distinct from
+    // PORTFOLIO_LINK (which is a URL): this captures "we shipped it and
+    // users used it" — production deploys, active users, merged PRs.
+    // At product-grade archetypes (top-tier-campus / tcs-digital) this
+    // is a higher-credibility substitute for a GitHub link.
+    const shippedToProdPresent = SHIPPED_TO_PROD_CONTEXT.test(userText) && (PROJECT_NARRATION.test(userText) || INTERNSHIP_CLAIM.test(userText));
+    if (shippedToProdPresent) {
+      flags.add("shipped_to_prod_context");
+    }
+
     // Portfolio absence — claimed to build something but no public artifact link.
-    if (CLAIMED_BUILT.test(userText) && !PORTFOLIO_LINK.test(userText) && userTurnCount >= 3 && (PROJECT_NARRATION.test(userText) || INTERNSHIP_CLAIM.test(userText))) {
+    // v6.7 — At product-grade archetypes (top-tier-campus / tcs-digital),
+    // a `shipped_to_prod_context` signal counts as credibility substitute
+    // for the missing portfolio link (the candidate's evidence is "real
+    // users ship", not "here's a repo URL").
+    const productGradeArchetype = archetype === "top-tier-campus" || archetype === "tcs-digital";
+    if (
+      CLAIMED_BUILT.test(userText) &&
+      !PORTFOLIO_LINK.test(userText) &&
+      userTurnCount >= 3 &&
+      (PROJECT_NARRATION.test(userText) || INTERNSHIP_CLAIM.test(userText)) &&
+      !(productGradeArchetype && shippedToProdPresent)
+    ) {
       flags.add("portfolio_absent_for_claim");
       gaps.push({
         dimension: "credibility",
@@ -1235,11 +1343,16 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         if (reply && reply.text && APTITUDE_REFUSAL.test(reply.text)) {
           aptitudeRefusedAt = i;
           flags.add("aptitude_puzzle_refusal");
+          // v6.7 — tcs-digital is offline-coding-format (the live loop
+          // doesn't dwell on classical puzzles); downgrade severity so
+          // the report reflects the rubric the Digital track actually
+          // grades against. Other archetypes keep the "high" severity.
+          const aptitudeSeverity: "low" | "medium" | "high" = archetype === "tcs-digital" ? "low" : "high";
           gaps.push({
             dimension: "preparation",
             expected: "Even if stuck, narrate your thinking aloud — 'Let me think out loud: 8 balls, two weighings, so each weighing has to split into 3 buckets...' Interviewers grade approach, not perfection. Flat refusal loses 100% of marks.",
             observed: "Candidate refused or stalled on a live puzzle / DSA / estimation question — reads as inflexible or unprepared.",
-            severity: "high",
+            severity: aptitudeSeverity,
           });
           break;
         }
@@ -1691,6 +1804,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("internship_duration_mismatch_with_resume")) tips.push("Your resume's internship dates (and the matching offer / relieving letter) are what BGV pulls — never round 3 months up to 'six months' to sound stronger. If you genuinely extended an internship, state it cleanly: 'Initial 3-month internship, extended by another 3 months — both reflected on the relieving letter.' Specific timelines beat inflated round numbers.");
     if (flags.has("college_cgpa_policy_acknowledged")) tips.push("Good — you anchored your CGPA against the college / TPO internal cutoff. Indian recruiters respect this framing because internal college gatekeeping is real (tier-2/3 colleges enforce 6.5–7.0 bars even when firm cutoffs are 6.0). Keep using it when relevant: 'My college's TPO cutoff is 7.0; my CGPA is 7.2' lands much better than a bare 7.2.");
     if (flags.has("mid_session_questions_present")) tips.push("Good — you asked substantive questions mid-interview (tech stack / mentor / growth track), not just at the closing 'any questions?' slot. Indian campus recruiters weight curiosity across the whole conversation; an empty closer after smart mid-session asks reads as 'thoroughly satisfied', not 'unprepared'.");
+    if (flags.has("shipped_to_prod_context")) tips.push("Strong — anchoring a project in production / active-users / merged-PRs evidence beats a bare 'I built X' every time. At product-grade panels (Google / Razorpay / TCS Digital), 'shipped to prod, 200 DAU' is recognised as higher credibility than a GitHub URL alone. Keep this phrasing — it's the rubric-matched answer.");
+    if (flags.has("location_agnostic_signal")) tips.push("Good — proactively stating you're open to any location / pan-India removes a friction point the panel would otherwise probe. At service-tier (TCS / Infosys / Wipro / Cognizant) this is table-stakes; at Digital tracks it's a positive differentiator. Keep volunteering it.");
+    if (flags.has("short_screening_session_acknowledged")) tips.push("This was a short screening-format conversation, not a full panel. The rubric was relaxed accordingly — no penalty for a missing closing 'any questions for us?' slot or a single bond mention. Treat the next round as the deeper rubric.");
     if (flags.has("internship_company_unrecognized")) tips.push("When naming an internship company, use the full, recognised legal name (e.g. 'Razorpay Software Pvt Ltd' / 'Infosys BPM'). If the firm is small or local, briefly anchor it: 'a 12-person fintech startup in Bangalore that powers UPI for X bank.' Vague unrecognised names invite a verification drill that's hard to defend.");
     if (flags.has("cgpa_mismatch_with_resume")) tips.push("Your CGPA on the resume is the BGV-checked number — recruiters cross-reference it against your transcript. Stating a different CGPA verbally (even rounded up by 1 point) reads as fabrication. If your latest semester moved the average, say so explicitly: 'My resume shows 7.2 from last semester; current cumulative is 7.4 after this semester's results.' Specificity beats inflation.");
 

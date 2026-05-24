@@ -123,11 +123,19 @@ describe("campus-placement v6.6 (7.2) — bond multi-probe gate", () => {
     const result = await campusPlacement.analyze({
       session: session({
         targetCompany: "TCS",
+        // v6.7 — full-panel format (≥10 turns) so the short-screening
+        // gate doesn't suppress bond_unprepared.
         transcript: [
-          { speaker: "ai", text: "Are you aware of the service bond?", time: "00:00" },
-          { speaker: "user", text: "What's a bond? I don't really know.", time: "00:05" },
-          { speaker: "ai", text: "The two-year bond — sign the bond at joining. Familiar?", time: "01:00" },
-          { speaker: "user", text: "I've never heard of it honestly.", time: "01:15" },
+          { speaker: "ai", text: "Tell me about yourself.", time: "00:00" },
+          { speaker: "user", text: "I'm Anjali, CSE final year, CGPA 8.4.", time: "00:05" },
+          { speaker: "ai", text: "Walk me through a project.", time: "01:00" },
+          { speaker: "user", text: "Built a small REST service in Flask with Postgres.", time: "01:15" },
+          { speaker: "ai", text: "Are you aware of the service bond?", time: "02:00" },
+          { speaker: "user", text: "What's a bond? I don't really know.", time: "02:05" },
+          { speaker: "ai", text: "The two-year bond — sign the bond at joining. Familiar?", time: "03:00" },
+          { speaker: "user", text: "I've never heard of it honestly.", time: "03:15" },
+          { speaker: "ai", text: "Any questions for us?", time: "04:00" },
+          { speaker: "user", text: "What's the training program structure?", time: "04:15" },
         ],
       }),
       resume: null,
