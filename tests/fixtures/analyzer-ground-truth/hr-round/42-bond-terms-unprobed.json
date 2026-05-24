@@ -1,0 +1,26 @@
+{
+  "name": "HR raises 2-year training bond; candidate never probes terms",
+  "notes": "v5.2 realism: bond_terms_unprobed — services-track training bond raised, candidate accepts without asking duration/breakage/pro-rate.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "entry",
+    "transcript": [
+      { "speaker": "ai", "text": "Walk me through your background.", "time": "" },
+      { "speaker": "user", "text": "Computer Science graduate from VIT, 2024 batch. Six months of internship at a Bangalore startup on the backend team.", "time": "" },
+      { "speaker": "ai", "text": "We have a standard 2-year service bond for fresh hires from the training program. Are you comfortable with that?", "time": "" },
+      { "speaker": "user", "text": "Yeah, that's fine. I'm committed to the role.", "time": "" },
+      { "speaker": "ai", "text": "What's your current notice or availability?", "time": "" },
+      { "speaker": "user", "text": "I'm on a 30-day notice at the startup; I can wrap up cleanly.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about an internship project.", "time": "" },
+      { "speaker": "user", "text": "Built a webhook retry queue using Redis; reduced delivery failures from 4% to 0.2% over a 3-month run.", "time": "" },
+      { "speaker": "ai", "text": "Why our company?", "time": "" },
+      { "speaker": "user", "text": "Your scale of backend infrastructure and the on-the-job mentorship in the training program are exactly what I want next.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for me?", "time": "" },
+      { "speaker": "user", "text": "What does the rotation across teams look like in year one?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["bond_terms_unprobed"],
+    "must_not_include": ["empty_transcript", "bgv_literacy_low"]
+  }
+}

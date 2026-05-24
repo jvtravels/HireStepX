@@ -41,7 +41,11 @@ const GAP_PROMPT = /\b(gap|career break|sabbatical|why (?:were you|are you|was t
 const NOTICE_PERIOD = /\b(notice period|when can you (?:start|join)|availability|join (?:by|on|in)|relocat|location preference|lwd|last working day|buyout|earliest (?:join|start)|kab join|join kab|notice kitna)\b/i;
 const NOTICE_ASKED = /\b(notice period|when can you (?:start|join)|earliest (?:join|start)|lwd|last working day|kab join kar|notice kitna)\b/i;
 const NOTICE_VAGUE = /\b(?:not sure|don'?t know|haven'?t checked|will check|depends on|maybe|few months|some time|not decided|need to (?:check|find out|confirm)|pata nahi|dekh ke bataunga|check karke|abhi confirm nahi|thoda time)\b/i;
-const NOTICE_CONCRETE = /\b(?:30|45|60|90|three months?|two months?|one month|sixty|ninety|thirty|teen mahine|do mahine|ek mahina)\b/i;
+/* Notice-period concrete answers include the full Indian range.
+   180 / 6 months is standard at LTI Mindtree, Cognizant, Persistent,
+   most of BFSI; flagging a candidate who says "180 days, no buyout"
+   as vague would be a false positive. */
+const NOTICE_CONCRETE = /\b(?:30|45|60|90|120|180|three months?|two months?|one month|six months?|four months?|sixty|ninety|thirty|teen mahine|do mahine|ek mahina|chhe mahine|chai mahine)\b/i;
 const BGV_PROMPT = /\b(bgv|background verification|background check|payslip|form\s*16|relieving letter|experience letter|uan|pan card|aadhaar|aadhar|marksheet|reference check|first advantage|authbridge|ongrid)\b/i;
 const BGV_EVASIVE = /\b(?:not comfortable|prefer not|can'?t share|cannot share|don'?t share|won'?t share|not willing|not (?:able|ready) to share|don'?t have|lost|misplaced|nahi hai|kho gaya|share nahi)\b/i;
 const COUNTER_OFFER_PROMPT = /\b(counter[- ]offer|counter offer|if (?:your )?current (?:company|employer) (?:offers|matches|counters)|other offers|interviewing elsewhere|if we (?:make|extend) (?:you )?an offer|commitment within|kahin aur interview|aur offer)\b/i;
@@ -50,7 +54,7 @@ const COUNTER_OFFER_DODGE = /\b(?:i'?ll see|it depends|maybe|not sure|can'?t say
    counter-offer probe gracefully with a firm "no counter" commitment.
    When this fires we suppress counter_offer_dodge AND record a
    positive signal so the report credits the candidate. */
-const OFFER_ACCEPTED_GRACEFUL = /\b(?:if i (?:accept|take) (?:yours|your offer)[\s,]+i (?:won'?t|will not|don'?t plan to) (?:take|consider|entertain) (?:a |any )?counter|no counter[- ]?offer (?:consideration|for me|here|please)|(?:i'?ve|i have) (?:already )?decided[\s,]+no counter|once i sign[\s,]+i'?m (?:in|committed|done)|i (?:won'?t|will not) entertain (?:a |any )?counter[- ]?offer|counter[- ]?offer (?:not in (?:the )?picture|out of (?:the )?picture|isn'?t happening)|haan main commit (?:karta|kar) (?:hu|raha))\b/i;
+const OFFER_ACCEPTED_GRACEFUL = /\b(?:if i (?:accept|take) (?:yours|your offer)[\s,]+i (?:won'?t|will not|don'?t plan to) (?:take|consider|entertain) (?:a |any )?counter|no counter[- ]?offer (?:consideration|for me|here|please)|(?:i'?ve|i have) (?:already )?(?:mentally )?decided[\s,]*(?:no counter|on this move|to (?:leave|move))|once i sign[\s,]+i'?m (?:in|committed|done)|i (?:won'?t|will not) entertain (?:a |any )?counter[- ]?offer|counter[- ]?offer (?:not in (?:the )?picture|out of (?:the )?picture|isn'?t happening)|haan main commit (?:karta|kar) (?:hu|raha)|i'?m done with them|no second thoughts (?:on (?:this|the) move)?|(?:yeah |yes )?i'?m clear on (?:this|the) move|i'?ve made up my mind|made up my mind (?:already|on (?:this|the) move))\b/i;
 const WHY_COMPANY_PROMPT = /\b(why (?:our|this) company|why us|why are you interested in (?:us|our|this company)|what do you know about (?:us|our company)|why (?:do )?you want to (?:join|work (?:at|with|here))|humari company kyu|yahan kyu)\b/i;
 const GENERIC_WHY = /\b(great culture|great brand|good company|reputed|reputation|big name|industry leader|top company|growth opportunit|good work[- ]?life|good place|nice place|love the company|achi company|badi company|brand achi)\b/i;
 const SPECIFIC_WHY = /\b(launched|launch|product|feature|leader|founder|ceo|cto|paper|blog|talk|conference|series [a-d]|ipo|acquired|acquisition|mission|domain|space|sector|stack|engineering blog|open source|case study|customer|use case)\b/i;
@@ -58,38 +62,52 @@ const SELF_INTRO_PROMPT = /\b(tell me about yourself|walk me through|introduce y
 const SPECIFICS = /\b\d+\s*(?:years?|months?|saal|mahine)\b|\b(?:built|led|shipped|launched|migrated|deployed|scaled|owned|drove|delivered|banaya|kiya tha|lead kiya)\b/i;
 const BENEFITS_PROMPT = /\b(joining bonus|signing bonus|clawback|probation|bond|service agreement|esop|rsu|vesting|cliff|insurance|epf|provident fund|gratuity|nps|variable pay)\b/i;
 
-/* v4.6 depth validators ───────────────────────────────────────────
-   2.1  NOTICE_DEPTH — extras that distinguish a shallow "60 days"
-        from a real notice-period plan (buyout, handover, LWD, early
-        release, garden leave).
-   2.2  BGV_DOC_NAMED — candidate-side BGV literacy: did they ever
-        name a specific document (Form 16 / UAN / payslip / relieving
-        letter / Aadhaar / PAN / EPFO)?
-   2.3  COMP_PROBE_RE — did the candidate ASK about ESOP cliff /
-        variable payout / clawback / vesting terms? HR offers benefits;
-        a candidate who never probes the terms accepts blind. */
+/* Depth validators — distinguish shallow signals from real engagement.
+   NOTICE_DEPTH:    real notice-period plan (buyout, handover, LWD,
+                    early release, garden leave) beyond just raw days.
+   BGV_DOC_NAMED:   candidate-side BGV literacy — did they name a
+                    specific document (Form 16 / UAN / payslip /
+                    relieving letter / Aadhaar / PAN / EPFO)?
+   COMP_PROBE_RE:   did the candidate ASK about ESOP cliff / variable
+                    payout / clawback / vesting terms? HR offers
+                    benefits; a candidate who never probes accepts blind. */
 const NOTICE_DEPTH = /\b(?:buy[- ]?out|hand[- ]?over|knowledge transfer|kt plan|early release|negotiate (?:my )?notice|reduce (?:my )?notice|serve (?:full|partial|out)|garden(?:ing)? leave|lwd (?:of|is|on|will be)|last working day (?:of|on|is|will be)|relieving (?:date|letter on|on)|formal resignation|notice buyout|notice negotiate)\b/i;
 const BGV_DOC_NAMED = /\b(?:form\s*16|uan|pay\s*slips?|relieving letter|experience letter|pan(?:\s*card)?|aadha+r|epfo|epf statement|salary slip|appointment letter)\b/i;
 const COMP_PROBE_RE = /\b(?:what(?:'?s| is) the (?:cliff|vesting|variable|clawback|payout|breakup)|cliff (?:period|duration|of)|vesting (?:schedule|period|cliff|over)|variable (?:payout|percentage|%|pay out)|clawback (?:terms|duration|period|amount)|how (?:much|long) is the (?:cliff|vesting|clawback|variable)|joining bonus clawback|esop (?:vest|cliff|schedule|grant)|when does the (?:variable|bonus|esop) (?:pay|vest|kick)|kya cliff hai|cliff kitna|variable kitna)\b/i;
 
-/* v5.1 / Phase 5 stretch ─────────────────────────────────────────
-   5.1  Counter-offer simulation guard. Candidate volunteers that
-        their current employer IS likely to / already has counter-
-        offered. Indian-market reality: counter-offers from current
-        employer arrive in ~40% of senior switches; HR's #1 fear is
-        the post-counter retraction. If the candidate raises it but
-        never firmly declines, the round reads as "flight risk
-        confirmed by their own admission".
-   5.2  Probationary period probe. Indian probation is 3-6 months
-        (services-track), 6 months at most product orgs. Candidate
-        who never probes duration / confirmation criteria / pay
-        during probation accepts blind — the classic "I joined and
-        got let go in month 4 with no warning" pattern. */
-const COUNTER_OFFER_VOLUNTEERED = /\b(?:my (?:current )?(?:employer|company|manager|boss) (?:is likely to|might|will|may) (?:counter|match|come back)|current (?:employer|company) (?:gave|offered|made) (?:me )?(?:a )?counter|already (?:got|received|have) (?:a )?counter[- ]?offer|they'?re (?:trying to|going to) match|trying to retain me|retention (?:offer|bonus) on the table)\b/i;
+/* Counter-offer + probation guards.
+   COUNTER_OFFER_VOLUNTEERED / DECLINE: candidate self-discloses an
+     active retention attempt. Indian-market reality — counter-offers
+     arrive in ~40% of senior switches; HR's #1 fear is the post-counter
+     retraction. Raising one without firmly declining reads as flight
+     risk confirmed.
+   PROBATION_PROMPT / PROBE: services-track probation is 3-6 months
+     with termination-without-cause clauses. Candidate who never probes
+     duration / confirmation criteria / pay-during-probation accepts
+     blind — the classic month-4 termination shock pattern. */
+const COUNTER_OFFER_VOLUNTEERED = /\b(?:my (?:current )?(?:employer|company|manager|boss) (?:is likely to|might|will|may) (?:counter|match|come back)|current (?:employer|company) (?:gave|offered|made) (?:me )?(?:a )?counter|already (?:got|received|have) (?:a )?counter[- ]?offer|they'?re (?:trying to|going to) match|trying to retain me|retention (?:offer|bonus) on the table|they want me to stay|they'?re working on (?:a |my )?revised (?:offer|package)|(?:my )?manager has spoken to (?:leadership|hr|skip)|hr called me (?:yesterday|today|last week) (?:about|on)|asked me to (?:think|reconsider) before resigning|asked me to (?:wait|hold) before resigning|they'?re putting together (?:a |an )?(?:counter|revised|new offer))\b/i;
 const COUNTER_OFFER_DECLINE = /\b(?:i (?:declined|refused|turned (?:it )?down|rejected) (?:it|the counter|their offer)|told them no|not (?:taking|considering|accepting) (?:the |their |any )?counter|will not entertain|won'?t entertain|already (?:said|told them) no|no chance i (?:take|accept))\b/i;
 const PROBATION_PROMPT = /\b(probation(?:ary)?(?:\s+period)?|probationary|confirmation(?:\s+period)?|under probation|during probation)\b/i;
 const PROBATION_PROBE = /\b(?:how long is the probation|probation (?:period|duration|length) (?:is|of)|(?:what'?s|what is) the (?:probation|confirmation) (?:period|criteria|process)|confirmation (?:criteria|review|process)|probation pay|salary during probation|notice (?:during|in) probation|probation kitni|probation kab tak|kya criteria hai)\b/i;
 const HIKE_RATIONALE = /\b(market|benchmark|levels|glassdoor|range|peers?|competing|other offer|levels\.fyi|because i|since i'?ve|scope|impact|delivered|saved|drove|market rate|market mein)\b/i;
+
+/* Service bond literacy — TCS / Infosys / Wipro / Accenture training
+   bonds are 1-2 years with breakage penalties (₹50k-2L). Indian HR
+   raises "bond" or "service agreement" and candidate should probe
+   duration / breakage / pro-rate. Distinct from clawback (which
+   covers joining-bonus repayment); bond covers service-period
+   commitment. */
+const BOND_PROMPT = /\b(?:service\s+bond|training\s+bond|(?:two|one|1|2)[\s-]year\s+bond|service\s+agreement|bond\s+(?:period|amount|duration|penalty)|surety|notarized\s+bond)\b/i;
+const BOND_PROBE_RE = /\b(?:bond (?:period|duration|amount|breakage|penalty|pro[- ]?rate)|how (?:much|long) is the bond|what(?:'?s| is) the bond (?:period|amount|penalty)|breakage (?:fee|amount|penalty)|early exit (?:penalty|cost)|bond kitne (?:saal|years)|bond ki (?:duration|amount))\b/i;
+
+/* Pedigree / CGPA probe — Indian HR routinely probes college tier
+   + graduation CGPA in the first 90 seconds for <5yoe candidates.
+   Practice equals reality even if it's questionable. Candidate
+   who deflects ("I don't remember exactly") under 5 YOE reads as
+   hiding a sub-7 CGPA — a real screen-out signal at IT services
+   and consulting hires. */
+const PEDIGREE_PROMPT = /\b(?:cgpa|gpa|graduation marks|college tier|which (?:college|university|institute)|tenth (?:percentage|marks)|twelfth (?:percentage|marks)|(?:10th|12th|hsc|ssc) (?:percentage|marks|score)|graduation (?:from|in|year))\b/i;
+const PEDIGREE_EVASION = /\b(?:don'?t remember (?:exactly|the (?:exact )?(?:number|cgpa|percentage))|long time ago|doesn'?t matter (?:now|anymore)|why does (?:that|it) matter|pata nahi exact|yaad nahi)\b/i;
 
 /* Salary breakup vagueness — when HR asks for the fixed/variable/bonus
    split and the candidate only gives a single CTC number with no
@@ -103,6 +121,11 @@ const BREAKUP_DETAIL = /\b(?:fixed|base)\b[\s\S]{0,30}\b(?:variable|bonus|rsu|es
    leaving" is fine; "I'd rather not share any references" is a hard stop. */
 const REFERENCE_PROMPT = /\b(reference(?:s)?|ex[- ]?manager|previous manager|former manager|reference check)\b/i;
 const REFERENCE_REFUSAL = /\b(?:no references|don'?t want to share (?:any )?references?|rather not (?:give|share|provide) (?:any )?references?|no one to (?:give|share)|references nahi|reference nahi de sakta)\b/i;
+/* Legitimate Indian carve-out: candidate offers ex-employer references
+   but withholds CURRENT-employer reference until offer letter is in
+   hand. Sharing your current manager before resignation gets you fired —
+   this isn't evasion, it's universal Indian practice. */
+const REFERENCE_CURRENT_DEFERRED = /\b(?:current (?:manager|employer|boss|company)[^.]{0,80}(?:after (?:the )?offer|once (?:i|the offer) (?:have|is) (?:the )?offer|post offer letter|after offer letter)|happy to share (?:ex|previous|former|past) (?:managers|employers)|can share (?:references )?from (?:ex|previous|former) (?:employers|managers|companies))\b/i;
 
 /* Offer-letter-delay anxiety — candidate volunteers worry about
    verbal-offer-to-written-offer gap, exploding offers, or other
@@ -225,7 +248,7 @@ const CERT_VAGUE = /\b(?:long (?:back|time ago)|few years (?:back|ago)|don'?t re
    transactional / unprofessional. */
 const CTC_FIRST_USER = /\b(?:what(?:'s| is) the (?:ctc|package|salary|pay)|how much (?:does|will) (?:this|the role) pay|salary range|ctc range|package (?:offered|kya hai)|what are you offering)\b/i;
 
-/* ── v4.2 resume cross-checks ────────────────────────────────────────
+/* ── Resume cross-checks ─────────────────────────────────────────────
  * When the cron loads the user's resume by resume_version_id, three
  * extra checks fire:
  *   - resume_transcript_mismatch — employers named verbally that don't
@@ -319,9 +342,81 @@ const DIMENSION_PATTERNS: Record<Dimension, RegExp> = {
   motivation: WHY_COMPANY_PROMPT,
 };
 
+/* LLM rescore rubrics for weak-regex flags. Static — moved to module
+   scope so it's not rebuilt per analyze() call. */
+const RESCORE_RUBRICS: Record<string, string> = {
+  generic_why_company: "Did the candidate name a verifiable specific (launch name, leader name, blog title, recent move, product, domain)? If yes, the flag is FALSE.",
+  counter_offer_dodge: "Did the candidate commit OR did they only defer? If they deferred WITH a stated decision criterion (e.g. 'I'll commit once the role scope is locked'), the flag is FALSE. Pure 'I'll see' / 'we'll see' / 'dekhta hu' is TRUE.",
+  generic_self_intro: "Does the intro have a narrative arc (years of experience + role + an outcome / project)? If yes, the flag is FALSE. Purely token-listing (skills, tech stack) with no story is TRUE.",
+};
+
+/* Coaching clusters — group flags by theme so the report leads with
+   "pattern" framing when ≥2 flags in a cluster fire. Indian HR scores
+   compliance and commitment as patterns, not isolated mistakes —
+   telling the candidate "3 evasive signals across compliance" lands
+   harder than 3 separate one-liners. Per-flag tips still follow so
+   the candidate sees the per-issue specifics. */
+const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyArray<string> }> = [
+  {
+    label: "compliance",
+    theme: "BGV / documentation",
+    members: [
+      "bgv_document_evasion",
+      "bgv_document_evasion_sustained",
+      "bgv_document_initial_hedge",
+      "payslip_refusal",
+      "payslip_refusal_sustained",
+      "reference_refusal",
+      "reference_refusal_sustained",
+      "reference_initial_hedge",
+      "prior_bgv_fail_uncontextualised",
+      "certification_gap_evasion",
+      "pf_uan_evasive",
+      "bgv_literacy_low",
+    ],
+  },
+  {
+    label: "commitment",
+    theme: "pre-joining commitment",
+    members: [
+      "counter_offer_dodge",
+      "offer_letter_delay_anxiety",
+      "joining_date_overpromise",
+      "aspiration_walkback",
+      "loyalty_overcommit",
+      "notice_period_shallow",
+      "comp_breakup_probe_missing",
+      "current_employer_counter_unresolved",
+      "probation_terms_unprobed",
+      "bond_terms_unprobed",
+    ],
+  },
+  {
+    label: "stability",
+    theme: "switch rationale / tenure",
+    members: [
+      "gap_unexplained",
+      "resume_gap_unaddressed",
+      "job_hopping_pattern",
+      "user_badmouthing_employer",
+    ],
+  },
+  {
+    label: "credibility",
+    theme: "resume cross-checks",
+    members: [
+      "resume_transcript_mismatch",
+      "inflated_seniority_claim",
+      "moonlighting_flat_denial",
+      "genai_flat_denial",
+      "pedigree_evasion",
+    ],
+  },
+];
+
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v5.1.0",
+  version: "hr-round-v5.2.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -374,7 +469,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* v4.6 / 2.1 — notice_period_shallow. Concrete notice answer
+    /* notice_period_shallow. Concrete notice answer
        ("60 days") but no buyout / handover / LWD / early-release
        discussion across the whole session. Mid-senior HR rounds expect
        depth here; the shallow answer leaves comp-of-buyout and handover
@@ -561,7 +656,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* v5.1 / Phase 5.1 — current_employer_counter_unresolved.
+    /* current_employer_counter_unresolved.
        Candidate volunteers that their current employer is likely to /
        did counter-offer them, but never gives a firm decline ("I told
        them no" / "won't entertain"). Distinct from counter_offer_dodge
@@ -584,7 +679,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* v5.1 / Phase 5.2 — probation_terms_unprobed.
+    /* probation_terms_unprobed.
        Probation came up (HR side OR candidate side) but the candidate
        never asked duration / confirmation criteria / pay-during-
        probation. Services-track probation is 3-6 months with
@@ -605,18 +700,25 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* v4.6 / 2.2 — bgv_literacy_low. HR raised BGV / documents but the
+    /* bgv_literacy_low. HR raised BGV / documents but the
        candidate never named a single doc back (Form 16 / UAN /
        payslip / relieving letter / Aadhaar / PAN / EPFO). Even when
        not actively evading, this reads as unprepared and slows
        onboarding. Distinct from bgv_document_evasion which requires
-       active refusal language. */
+       active refusal language.
+
+       Suppressed for freshers / entry-level — a fresh graduate has
+       never filed taxes (no Form 16), often has no activated UAN, and
+       hasn't seen a relieving letter. Penalising them here is unfair. */
     {
+      const level = (session.difficulty || "").toLowerCase();
+      const isFresher = level === "fresher" || level === "entry";
       const hrAskedBgv = transcript.some((t) => isAi(t) && BGV_PROMPT.test(t.text || ""));
       const userNamedDoc = transcript.some((t) => isUser(t) && BGV_DOC_NAMED.test(t.text || ""));
       if (
         hrAskedBgv &&
         !userNamedDoc &&
+        !isFresher &&
         !flags.has("bgv_document_evasion") &&
         !flags.has("bgv_document_evasion_sustained")
       ) {
@@ -631,7 +733,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* v4.6 / 2.3 — comp_breakup_probe_missing. HR mentioned benefits /
+    /* comp_breakup_probe_missing. HR mentioned benefits /
        ESOP / clawback / joining bonus but the candidate never PROBED
        the terms back (cliff, vesting schedule, variable payout %,
        clawback duration). Accepting benefits blind is the classic
@@ -652,6 +754,53 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
+    /* bond_terms_unprobed. HR raised service bond / training bond
+       but candidate never asked duration / breakage / pro-rate. Indian-
+       specific — TCS, Infosys, Wipro, Accenture training bonds are 1-2
+       years with ₹50k-2L breakage. Blind acceptance is the #1 services-
+       track post-joining shock. */
+    {
+      const hrMentionedBond = transcript.some((t) => isAi(t) && BOND_PROMPT.test(t.text || ""));
+      const userProbedBond = transcript.some((t) => isUser(t) && BOND_PROBE_RE.test(t.text || ""));
+      if (hrMentionedBond && !userProbedBond) {
+        flags.add("bond_terms_unprobed");
+        gaps.push({
+          dimension: "negotiation_protection",
+          expected: "When bond / service agreement comes up, probe duration, breakage penalty, pro-rate clause, and notarisation requirement",
+          observed: "Service bond was raised but candidate never asked duration / breakage / pro-rate — accepting blind locks in 1-2 years with five- to six-figure exit penalty",
+          severity: "high",
+          flag: "bond_terms_unprobed",
+        });
+      }
+    }
+
+    /* pedigree_evasion. HR probed college / CGPA / 10th-12th marks
+       (illegal-ish but universal in Indian HR) and candidate deflected
+       under 5 YOE. Real HR reads "don't remember exactly" as hiding a
+       sub-7 CGPA — a screen-out at IT services / consulting hires. */
+    {
+      const yoe = (session.difficulty || "").toLowerCase();
+      const lowYoe = yoe === "fresher" || yoe === "entry" || yoe === "mid";
+      if (lowYoe) {
+        for (let i = 0; i < transcript.length; i++) {
+          const t = transcript[i];
+          if (!(isAi(t) && PEDIGREE_PROMPT.test(t.text || ""))) continue;
+          const r = replyTo(transcript, i);
+          if (r && r.text && PEDIGREE_EVASION.test(r.text)) {
+            flags.add("pedigree_evasion");
+            gaps.push({
+              dimension: "credibility",
+              expected: "Under 5 YOE, know your CGPA / 10th / 12th / college cold — Indian HR anchors early-career screening on academics",
+              observed: "Candidate deflected on academic credentials — HR reads this as hiding a weak GPA, often a screen-out signal at IT services and consulting",
+              severity: "medium",
+              flag: "pedigree_evasion",
+            });
+            break;
+          }
+        }
+      }
+    }
+
     /* Reference-refusal tracker — same cumulative pattern. Recovery
        on a follow-up probe ("oh I do have a couple of references
        actually") downgrades the flag; sustained refusal across ≥2
@@ -666,6 +815,12 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         probes += 1;
         const r = replyTo(transcript, i);
         if (!r || !r.text) continue;
+        /* Current-employer deferral is universal Indian practice, not
+           refusal. Treat as resolved so the flag doesn't fire. */
+        if (REFERENCE_CURRENT_DEFERRED.test(r.text)) {
+          resolved = true;
+          continue;
+        }
         if (REFERENCE_REFUSAL.test(r.text)) refusals += 1;
         if (REFERENCE_RESOLVED.test(r.text)) resolved = true;
       }
@@ -917,7 +1072,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* ── v4.2 resume cross-checks (silent no-op when resume null) ─── */
+    /* ── Resume cross-checks (silent no-op when resume null) ─── */
     if (resume) {
       const resumeAgg = summarizeResume(resume);
 
@@ -1052,14 +1207,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
        flag if the LLM judges it a false positive.
 
        Gated by LLM_RESCORE_ENABLED. When off, rescoreFlags returns null and
-       every flag is kept as-is (fail-open). When the call fails, same. So the
-       worst case is "back to v4.3.2 behavior," never a regression. */
+       every flag is kept as-is (fail-open). When the call fails, same — so the
+       worst case is identical to the pure-regex pass, never a regression. */
     const rescoreCandidates: FlagRescoreCandidate[] = [];
-    const RESCORE_RUBRICS: Record<string, string> = {
-      generic_why_company: "Did the candidate name a verifiable specific (launch name, leader name, blog title, recent move, product, domain)? If yes, the flag is FALSE.",
-      counter_offer_dodge: "Did the candidate commit OR did they only defer? If they deferred WITH a stated decision criterion (e.g. 'I'll commit once the role scope is locked'), the flag is FALSE. Pure 'I'll see' / 'we'll see' / 'dekhta hu' is TRUE.",
-      generic_self_intro: "Does the intro have a narrative arc (years of experience + role + an outcome / project)? If yes, the flag is FALSE. Purely token-listing (skills, tech stack) with no story is TRUE.",
-    };
     for (const flag of Object.keys(RESCORE_RUBRICS)) {
       const ev = rescoreEvidence.get(flag);
       if (ev && flags.has(flag)) {
@@ -1079,68 +1229,6 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
 
     const tips: string[] = [];
 
-    /* ── Coaching clusters (v4.5) ──
-       Group flags by theme so the report leads with "pattern" framing
-       when ≥2 flags in a cluster fire. Indian HR scores compliance and
-       commitment as patterns, not isolated mistakes — telling the
-       candidate "3 evasive signals across compliance" lands harder
-       than 3 separate one-liners further down. Linear per-flag tips
-       still follow so the candidate sees the per-issue specifics. */
-    const CLUSTERS: Array<{ label: string; theme: string; members: string[] }> = [
-      {
-        label: "compliance",
-        theme: "BGV / documentation",
-        members: [
-          "bgv_document_evasion",
-          "bgv_document_evasion_sustained",
-          "bgv_document_initial_hedge",
-          "payslip_refusal",
-          "payslip_refusal_sustained",
-          "reference_refusal",
-          "reference_refusal_sustained",
-          "reference_initial_hedge",
-          "prior_bgv_fail_uncontextualised",
-          "certification_gap_evasion",
-          "pf_uan_evasive",
-          "bgv_literacy_low",
-        ],
-      },
-      {
-        label: "commitment",
-        theme: "pre-joining commitment",
-        members: [
-          "counter_offer_dodge",
-          "offer_letter_delay_anxiety",
-          "joining_date_overpromise",
-          "aspiration_walkback",
-          "loyalty_overcommit",
-          "notice_period_shallow",
-          "comp_breakup_probe_missing",
-          "current_employer_counter_unresolved",
-          "probation_terms_unprobed",
-        ],
-      },
-      {
-        label: "stability",
-        theme: "switch rationale / tenure",
-        members: [
-          "gap_unexplained",
-          "resume_gap_unaddressed",
-          "job_hopping_pattern",
-          "user_badmouthing_employer",
-        ],
-      },
-      {
-        label: "credibility",
-        theme: "resume cross-checks",
-        members: [
-          "resume_transcript_mismatch",
-          "inflated_seniority_claim",
-          "moonlighting_flat_denial",
-          "genai_flat_denial",
-        ],
-      },
-    ];
     for (const cluster of CLUSTERS) {
       const hits = cluster.members.filter((m) => flags.has(m));
       if (hits.length >= 2) {
@@ -1150,10 +1238,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    /* Phase 1.3 — positive-signal counterpart to counter_offer_dodge.
-       Surfaced before the negative tips so the candidate sees credit
-       first. We don't add it to the rubric-gap list (not a gap) but
-       we DO push it into coachingNotes for visibility. */
+    /* Positive-signal counterpart to counter_offer_dodge — surfaced
+       before negative tips so the candidate sees credit first. Not a
+       rubric gap; pushed into coachingNotes for visibility only. */
     if (flags.has("offer_accepted_graceful")) {
       tips.push("Strong commitment signal: you closed the counter-offer probe cleanly ('won't entertain a counter / once I sign I'm in'). HR's #1 fear is pre-joining drop-out — that line de-risks you. Keep using it.");
     }
@@ -1165,6 +1252,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("notice_period_shallow")) tips.push("Concrete days alone aren't enough at mid-senior. Layer on: buyout cost (typically 1 month gross), handover / KT plan, earliest LWD with manager sign-off, and whether early release is precedented. That's what HR scores.");
     if (flags.has("bgv_literacy_low")) tips.push("Name the docs by name when BGV comes up: 'Form 16 for last 2 years, UAN active, last 3 payslips, relieving letter from each employer.' Fluency signals you've onboarded before — opaque hand-waving slows down BGV intake.");
     if (flags.has("comp_breakup_probe_missing")) tips.push("Always probe ESOP / variable / clawback terms before you sign: cliff (typically 1yr), vesting (4yr standard), variable payout history (% paid out last 2 cycles), joining-bonus clawback duration. Accepting blind is the #1 post-joining regret pattern.");
+    if (flags.has("bond_terms_unprobed")) tips.push("When service bond comes up, probe before agreeing: 'What's the bond duration — 1 or 2 years? What's the breakage penalty? Is it pro-rated by months served? Is it notarised?' Services-track training bonds (TCS, Infosys, Wipro, Accenture) lock you in 12-24 months with ₹50k–2L breakage. Knowing the terms is the difference between an informed choice and a five-figure exit shock.");
+    if (flags.has("pedigree_evasion")) tips.push("Under 5 years experience, Indian HR will anchor on academics — know your CGPA, 10th %, 12th %, college name cold. 'Don't remember exactly' reads as hiding a sub-7 CGPA. Even if you're not proud of the number, own it: 'Graduated with X.Y CGPA from <college> — academics weren't my strongest, but here's what I did with my time after.'");
     if (flags.has("current_employer_counter_unresolved")) tips.push("If you mention your current employer is counter-offering, ALWAYS close it in the same breath: 'they're trying to match — I've already told them no.' Mentioning a counter without declining reads as you keeping the option open. India-market reality: ~40% of senior offers face a counter; HR rounds reward candidates who pre-empt the script.");
     if (flags.has("probation_terms_unprobed")) tips.push("When probation comes up, probe terms cold: 'What's the duration — 3 or 6 months? What are the confirmation criteria? Is the notice period during probation different? Is pay full or pro-rated?' Services-track probation has termination-without-cause clauses; blind acceptance leaves you exposed to a month-3 surprise.");
     if (flags.has("bgv_document_evasion")) tips.push("Keep payslips (last 3), Form 16, relieving letters, PAN/Aadhaar/UAN ready. Hesitation here blocks onboarding via BGV.");
@@ -1183,18 +1272,18 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("offer_letter_delay_anxiety")) tips.push("Hold offer-letter timing questions for the close — asking mid-interview reads as anxious. Phrase it cleanly: 'What's your typical timeline from verbal to written offer?'");
     if (flags.has("prior_bgv_fail_uncontextualised")) tips.push("Prior BGV failure? Own it with date + reason + resolution in one breath: 'flagged in 2022 for date overlap with my notice, cleared in 30 days.' Recruiters trust honest specifics.");
     if (flags.has("non_compete_unquantified")) tips.push("Non-compete? State scope crisply: duration + geography + industry coverage. 'Vague non-compete' = recruiter timebomb.");
-    if (flags.has("genai_flat_denial")) tips.push("2026 HR assumes everyone uses AI. Flat denial reads as dishonest. Answer the HOW: 'Used Copilot for boilerplate; wrote tests by hand; verified security-sensitive bits.'");
+    if (flags.has("genai_flat_denial")) tips.push("Modern HR assumes everyone uses AI. Flat denial reads as dishonest. Answer the HOW: 'Used Copilot for boilerplate; wrote tests by hand; verified security-sensitive bits.'");
     if (flags.has("loyalty_overcommit")) tips.push("Don't promise N years flat. Real answer: 'I plan for 3+ years; I can't promise but I'd communicate early if anything changed.' HR respects calibration.");
     if (flags.has("aspiration_walkback")) tips.push("Don't walk back stated ambitions when probed. Tie them to the role: 'Founder ambition in 3+ yrs — this role gives me the X experience I need first.'");
     if (flags.has("floor_collapse")) tips.push("Never collapse to 'whatever you can offer' on band mismatch. Hold a floor with rationale: 'My floor is X — anchored on competing offer / current + reasonable hike.'");
     if (flags.has("reverse_interview_low_quality")) tips.push("Close with 2-3 substantive questions: team structure, what success looks like in 90 days, manager style. No questions = low engagement signal.");
     if (flags.has("job_hopping_pattern")) tips.push("Short stints? Pre-empt the probe. One line per move: 'left X after 10 months — founder pivoted away from my domain; left Y after a year — bond completed.' Specifics defuse the instability read.");
-    if (flags.has("moonlighting_flat_denial")) tips.push("Don't flat-deny moonlighting. 2026 HR expects scoped honesty: 'I contribute to open-source on weekends, no client conflict, disclosed in writing.' That answer scores; 'no, never' reads as evasive.");
+    if (flags.has("moonlighting_flat_denial")) tips.push("Don't flat-deny moonlighting. Post-2022 HR (Wipro fired 300 for it) expects scoped honesty: 'I contribute to open-source on weekends, no client conflict, disclosed in writing.' That answer scores; 'no, never' reads as evasive.");
     if (flags.has("pf_uan_evasive")) tips.push("Know your UAN cold + confirm no overlapping PF contributions. BGV pulls EPFO; surprises here block onboarding.");
     if (flags.has("family_constraint_freeze")) tips.push("Family / relocation probes deserve a calm one-liner: 'Open to relocation' or 'I have a hometown preference, happy to discuss.' Freezing reads as a hidden constraint.");
     if (flags.has("joining_date_overpromise")) tips.push("Don't promise '15-day join' on a 60-day notice. Be honest: 'My notice is 60 days; I can attempt a buyout if there's flexibility — what's typical here?'");
     if (flags.has("clawback_blind_accept")) tips.push("Never blind-accept a clawback. Ask: 'What's the duration, amount, and pro-rate structure?' Acceptance without terms invites post-joining shock.");
-    if (flags.has("rto_flat_refusal")) tips.push("Flat WFH-only is a 2026 dealbreaker at most Indian firms. Negotiate: 'I can do 3 in-office days; what's the hybrid structure?'");
+    if (flags.has("rto_flat_refusal")) tips.push("Flat WFH-only is a post-RTO dealbreaker at most Indian firms (TCS, Infosys, Wipro, Flipkart, Swiggy all returned to office in 2023-2024). Negotiate: 'I can do 3 in-office days; what's the hybrid structure?'");
     if (flags.has("designation_downgrade_defensive")) tips.push("Don't dismiss the title question. Frame it: 'Titles map to your leveling; I care about the scope and the problem space — happy to align on what your X-level looks like.'");
     if (flags.has("certification_gap_evasion")) tips.push("Know your cert dates and IDs cold. HR verifies via Credly/AWS directly — vague answers + a discrepancy read as resume inflation.");
     if (flags.has("ctc_first_question_user")) tips.push("Don't open with salary. Establish role / team / scope first; surface comp once HR signals discovery is wrapping. Asking comp upfront reads as transactional.");
@@ -1204,7 +1293,11 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("under_titled_candidate")) tips.push("Your resume has 5+ years of experience but every title reads as plain IC (Software Engineer / Developer). Indian HR anchors comp on title, not scope — retitle to match what you actually own (Senior / Lead) or be ready to walk through scope that exceeds the level on paper. Under-titling costs lakhs at offer time.");
     if (flags.has("inflated_seniority_claim")) tips.push("Your resume reads Senior/Lead/Staff/Principal but your years don't support it yet. Either retitle to match the level you can defend (with scope + ownership stories) or be ready to justify the leap: 'titled Senior because I lead the X module end-to-end since month N — I know that's quick.'");
 
-    const ILLEGAL_PROMPT_RE = /\b(?:caste|religion|mother tongue|marital|married|family.*(?:plan|soon)|are you (?:from|originally)|community)\b/i;
+    /* Indian HR illegally but routinely probes these — especially for
+       women candidates (maternity intent, spouse-job, relocation-if-
+       husband-transfers). The drill must cover them so candidates can
+       practise deflection, not so the analyzer endorses the prompts. */
+    const ILLEGAL_PROMPT_RE = /\b(?:caste|religion|mother tongue|marital|married|family.*(?:plan|soon)|are you (?:from|originally)|community|maternity (?:plan|leave|intent)|pregnan|baby plan|when (?:are|do) you plan(?:ning)? (?:to have|on having) (?:a |any )?(?:baby|child|kids)|(?:husband|wife|spouse)(?:'?s)? (?:job|work|company|transfer|location)|relocat.*(?:if|when) (?:husband|wife|spouse))\b/i;
     const touchedIllegal = transcript.some((t) => isAi(t) && ILLEGAL_PROMPT_RE.test(t.text || ""));
     if (touchedIllegal) {
       flags.add("illegal_prompt_used_for_practice");
