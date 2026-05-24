@@ -1,0 +1,26 @@
+{
+  "name": "Mid candidate pre-apologises for non-tier-1 college without HR raising it",
+  "notes": "v5.5.0 realism: tier1_college_default_assumption — internalised bias signal.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I know my college isn't IIT — I'm from a tier-3 college in Pune — but I've been a backend engineer for 5 years at a Bangalore product company on the payments team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-payments — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Built the UPI mandate engine — cut auto-debit failure rate from 6% to 1.5% over a five-month rollout.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at one month gross with manager sign-off.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹28 LPA fixed, ₹4 LPA variable paid out at 80% historically, ₹2 LPA joining bonus.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's UPI roadmap and the catalog scale you're at line up with where I want to take my skills next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["tier1_college_default_assumption"],
+    "must_not_include": ["empty_transcript", "pedigree_evasion"]
+  }
+}

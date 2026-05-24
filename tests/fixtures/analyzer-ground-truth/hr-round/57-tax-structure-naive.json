@@ -1,0 +1,32 @@
+{
+  "name": "Senior candidate negotiates only on gross, never engages tax-optimised structure",
+  "notes": "v5.5.0 realism: tax_structure_naive — leaves 1-2 LPA on the table at ₹40L+ band.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior platform engineer, 10 years across Walmart Labs and Target India, on the supply-chain platform.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-supply-chain — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the inventory-allocation engine to cut SLA breaches from 12% to 3%; owned spec to launch over seven months across 14 warehouses.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a hard cross-functional disagreement.", "time": "" },
+      { "speaker": "user", "text": "Ops wanted same-day promise extended; engineering capacity wouldn't hold. Ran a six-week shadow rollout, brought data, aligned in three weeks.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹58 LPA fixed, ₹10 LPA variable paid out at 85% historically, ₹5 LPA joining bonus, RSU vest of ₹40 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "What's your expected number?", "time": "" },
+      { "speaker": "user", "text": "Looking at a 28% jump on fixed. So roughly ₹74 LPA fixed plus the variable and joining bonus.", "time": "" },
+      { "speaker": "ai", "text": "BGV — payslips, Form 16, UAN, relieving letters — all in order?", "time": "" },
+      { "speaker": "user", "text": "Yes. Form 16 for last three years, UAN active, last 6 payslips, relieving letter from Walmart Labs ready to share.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's last-mile optimisation work and the scale of the SCOT org are the exact problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["tax_structure_naive"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague"]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Candidate volunteers 'fully remote, never come to office' with no hybrid softener",
+  "notes": "v5.5.0 realism: hybrid_expectation_mismatch — absolutist remote demand at GCC / unicorn band.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior backend engineer, 8 years across Razorpay and Cred, currently on the ledger team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "I'm looking for fully remote only — I won't come to the office. That's a hard requirement for me at this stage.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the double-entry ledger to cut reconciliation lag from 24h to 90s — owned spec to launch over six months.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹48 LPA fixed, ₹6 LPA variable paid out at 85% historically, ₹3 LPA joining bonus, RSU vest of ₹20 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's ledger-consensus roadmap and the catalog scale are exactly the problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["hybrid_expectation_mismatch"],
+    "must_not_include": ["empty_transcript", "rto_flat_refusal"]
+  }
+}

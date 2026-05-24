@@ -1,0 +1,30 @@
+{
+  "name": "Senior candidate negotiates comp without asking about review cycle / promo cadence",
+  "notes": "v5.5.0 realism: salary_review_cycle_unprobed — accepts comp as point not curve.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior backend engineer, 9 years across Swiggy and Zomato, on the discovery team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-search — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the discovery ranking pipeline to cut p95 from 800ms to 220ms; owned spec to launch over four months.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a hard cross-functional disagreement and how you resolved it.", "time": "" },
+      { "speaker": "user", "text": "Ops wanted same-day promise extended; engineering capacity wouldn't hold. Ran a six-week shadow rollout, brought CFO-grade data, aligned in three weeks.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC structure.", "time": "" },
+      { "speaker": "user", "text": "₹52 LPA fixed, ₹8 LPA variable paid out at 85% historically, ₹4 LPA joining bonus already vested, RSU vest of ₹25 LPA over 4 years with a 1-year cliff completed.", "time": "" },
+      { "speaker": "ai", "text": "What's your expected hike?", "time": "" },
+      { "speaker": "user", "text": "Looking at a 30% jump over current — anchored on competing offer at Razorpay and market benchmark for senior backend.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's agentic-discovery roadmap and the catalog scale are the exact problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["salary_review_cycle_unprobed"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague"]
+  }
+}

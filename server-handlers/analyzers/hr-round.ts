@@ -285,13 +285,25 @@ const CTC_FIRST_USER = COMP_RAISED_BY_USER;
    Friday") are the strong signal. */
 const OTHER_OFFERS_PROMPT = /\b(?:other (?:offers?|processes?|interviews?)|interviewing elsewhere|active (?:offers?|processes?|conversations?)|in (?:the )?market with|elsewhere in (?:the )?market|kahin aur (?:interview|offer|process))\b/i;
 const OTHER_OFFERS_VAGUE = /\b(?:yeah|yes|a few|couple of|some|two[- ]three|a couple)\b[^.]{0,60}\b(?:places?|companies|processes?|offers?|interviews?)\b/i;
-const OTHER_OFFERS_SPECIFIC = /\b(?:round\s*[1-9]|final round|hr round|onsite|offer (?:in hand|by|expected|on)|by (?:friday|monday|tuesday|wednesday|thursday|next week|end of (?:week|month))|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|(?:at |with )[A-Z][\w]+(?:[\s.][A-Z][\w]+){0,2})/;
+/* v5.5.0: tightened. The previous version's `final round` / `round N`
+   arms false-positived on candidates referring back to CURRENT
+   conversation ("preparing for the final round here") and the proper-
+   noun arm missed lowercase STT output ("at razorpay"). New version
+   requires EITHER (a) a brand-name token paired with a stage, OR
+   (b) a date/timeline anchor. Either signal alone is sufficient — both
+   beats vague "a few places." */
+const OTHER_OFFERS_SPECIFIC = /\b(?:(?:at|with)\s+(?:razorpay|swiggy|zomato|flipkart|amazon|google|microsoft|meta|stripe|paypal|phonepe|cred|zerodha|udaan|meesho|ola|uber|netflix|adobe|oracle|salesforce|sap|atlassian|linkedin|airbnb|booking|expedia|walmart|target|lowes|nvidia|intel|amd|qualcomm|cisco|ibm|deloitte|accenture|tcs|infosys|wipro|cognizant|capgemini|hcl|tech mahindra|mindtree)|offer (?:in hand|by|expected|on)|expecting (?:an? )?offer|by (?:friday|monday|tuesday|wednesday|thursday|next week|end of (?:week|month))|\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|(?:final|hr|onsite)\s+(?:round|interview)\s+(?:at|with|next)|round\s*\d\s+(?:at|with))/i;
 
 /* location_flex_unprobed — FAANG India / GCC critical. Base-location
    (Hyd / Blr / Pune / Gurgaon) is non-negotiable but candidate never
    probes (a) base city, (b) relocation assistance, (c) temporary WFH
    for relo window. */
-const HR_NAMED_CITY = /\b(?:hyderabad|hyd|bangalore|bengaluru|blr|bangaluru|chennai|pune|gurgaon|gurugram|noida|delhi ncr|mumbai|bombay|kolkata|ahmedabad|kochi|trivandrum|chandigarh|base (?:location|city)|primary location|reporting location)\b/i;
+/* v5.5.0: split into TWO arms so incidental city mentions in HR's
+   intro ("our Hyderabad team built X") don't false-fire. Either an
+   explicit base-location keyword OR a city paired with role-location
+   language. */
+const HR_BASE_KEYWORD = /\b(?:base (?:location|city|out of)|primary (?:location|city|reporting)|reporting (?:location|to (?:our )?(?:office|campus)))\b/i;
+const HR_CITY_WITH_ROLE = /\b(?:(?:role|position|job|seat|opening) (?:is )?(?:based )?(?:in|out of|at)|(?:located|based) (?:in|out of|at)|relocate to|move to)\s+(?:hyderabad|hyd|bangalore|bengaluru|blr|chennai|pune|gurgaon|gurugram|noida|delhi(?:\s+ncr)?|mumbai|bombay|kolkata|ahmedabad|kochi|trivandrum|chandigarh)\b/i;
 const RELO_PROBED = /\b(?:relocat|relo|joining bonus for relo|(?:temporary|temp) (?:wfh|remote)|when do i need to be in|moving (?:cost|allowance)|relocation (?:assistance|allowance|package)|housing (?:allowance|support))\b/i;
 
 /* reason_for_leaving_blame_framing — softer than BADMOUTHING. Catches
@@ -305,8 +317,11 @@ const FORWARD_FRAME = /\b(?:next (?:challenge|step|chapter)|want to (?:build|lea
    offers references but doesn't NAME them ("yeah I have references",
    "couple of ex-managers" with no proper noun). Real HR scores
    named > vague. */
-const REFERENCE_AFFIRMED_VAGUE = /\b(?:yeah|yes|sure|definitely)[^.]{0,40}\b(?:references?|ex[- ]?managers?|previous managers?|former managers?)\b/i;
-const REFERENCE_NAMED = /\b(?:from |at |my (?:manager|lead|director|VP|head) (?:at|from)|who was my)\s+[A-Z][\w]+|\b(?:Mr\.?|Ms\.?|Mrs\.?|Dr\.?)\s+[A-Z][\w]+|\b[A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+from|\s+at|\s+\()/;
+const REFERENCE_AFFIRMED_VAGUE = /\b(?:yeah|yes|sure|definitely|haan)[^.]{0,40}\b(?:references?|ex[- ]?managers?|previous managers?|former managers?|references? hai)\b/i;
+/* v5.5.0: case-insensitive + accepts lowercase STT proper nouns
+   ("anand from swiggy"). Triggered by an explicit relational
+   construction (was my / my manager at / from / Mr/Ms prefix). */
+const REFERENCE_NAMED = /\b(?:from|at|with)\s+[a-z][\w&.-]{2,}|\bmy\s+(?:manager|lead|director|vp|head|reporting)\s+(?:at|from|was)\s+[\w&.-]{2,}|\bwho\s+was\s+my\s+(?:manager|lead|director|vp|head)|\b(?:mr|ms|mrs|dr)\.?\s+[a-z][\w]+/i;
 
 /* esop_literacy_low — product-unicorn / startup HR offers ESOP/RSU
    and candidate doesn't show literacy on the standard four terms:
@@ -328,6 +343,36 @@ const BELL_CURVE_PROBED = /\b(?:bell curve|stack rank|forced rank|performance ca
    table. */
 const BUYOUT_MENTIONED = /\bbuy[- ]?out\b/i;
 const BUYOUT_SPLIT_PROBED = /\b(?:reimburs|new (?:company|employer) (?:pay|cover|fund|reimburs)|split (?:the )?buyout|joining bonus (?:offset|cover|adjust)|who (?:pays|covers|funds) the buyout|covered by|offset (?:against|by) (?:joining|signing))\b/i;
+
+/* ── v5.5.0 realism additions ──────────────────────────────────────
+ * Five HIGH/MEDIUM Indian-HR gaps surfaced in the post-v5.4.0 audit. */
+
+/* hybrid_expectation_mismatch — candidate states fully-remote / never-
+   in-office posture when HR has framed RTO/hybrid as default. Distinct
+   from rto_flat_refusal which requires HR to ask "how many days?"
+   first; this fires when the candidate VOLUNTEERS an absolutist remote
+   demand. Common at GCC / unicorn rounds where 3-day hybrid is policy. */
+const FULLY_REMOTE_DEMAND = /\b(?:(?:i'?m |i am |i'?d )?(?:looking for|need|want|require) (?:fully |100\s*%? |permanent(?:ly)? )?remote|never (?:come|coming) (?:to|into) (?:the )?office|fully remote only|100\s*%? remote (?:only|preferred|required)|wfh permanent|can'?t (?:do|come to) office|no office days)\b/i;
+const HYBRID_NEGOTIATION = /\b(?:can do|happy to|fine with|will do)\s*(?:\d+\s*days?|hybrid|some office|few days)|ramp[- ]?up (?:in[- ]?office|period)|first (?:30|60|90)\s*days?\s+in/i;
+
+/* visa_sponsorship_demand_unprompted — candidate raises H1B / blue
+   card / onsite sponsorship for what's framed as an India-IC role.
+   GCC and unicorns treat this as misalignment. */
+const VISA_DEMAND = /\b(?:h[\s-]?1\s?b|h1b|green\s*card|blue\s*card|sponsor (?:my )?(?:visa|relocation)|visa sponsorship|onsite (?:opportunity|within|in)\s*\d+\s*(?:months?|years?)|us (?:onsite|deputation)|uk (?:onsite|deputation)|sg (?:onsite|deputation))\b/i;
+
+/* salary_review_cycle_unprobed — mid+ candidate accepts comp without
+   asking review/appraisal cycle. Indian HR expects this question. */
+const REVIEW_CYCLE_PROBE = /\b(?:review cycle|appraisal cycle|increment cycle|hike cycle|off[- ]?cycle|next (?:hike|review|appraisal)|promo cycle|promotion cycle|when (?:is|are) the (?:next )?(?:review|appraisal|hike|increment)|how (?:often|frequent) (?:are the )?(?:reviews|appraisals|hikes))\b/i;
+
+/* tax_structure_naive — mid+ candidate at ₹25L+ talks only about
+   gross/fixed without engaging Section 80C, NPS, LTA, meal cards,
+   flexi-basket, take-home. Indian HR expects this fluency at senior. */
+const TAX_STRUCTURE_PROBE = /\b(?:80\s*c|nps(?:\s+(?:employer|contribution))?|flexi (?:basket|component|pay)|meal (?:card|voucher|coupon)|sodexo|lta|leave travel|take[- ]?home|in[- ]?hand|tax (?:optim|saving|efficient)|gratuity calcul|section\s+80)\b/i;
+
+/* tier1_college_default_assumption — candidate from non-tier-1 over-
+   apologises pre-emptively when HR never raised pedigree. Internalised
+   bias signal; low confidence read. */
+const PEDIGREE_PRE_APOLOGY = /\b(?:i know my college isn'?t|despite (?:my )?(?:college|tier|background)|not from (?:iit|nit|iiit|bits|iim)|tier[- ]?[23](?:\s+college)?|though i'?m not from|even though my college|coming from a tier[- ]?[23])\b/i;
 
 /* ── Resume cross-checks ─────────────────────────────────────────────
  * When the cron loads the user's resume by resume_version_id, three
@@ -429,6 +474,9 @@ const RESCORE_RUBRICS: Record<string, string> = {
   generic_why_company: "Did the candidate name a verifiable specific (launch name, leader name, blog title, recent move, product, domain)? If yes, the flag is FALSE.",
   counter_offer_dodge: "Did the candidate commit OR did they only defer? If they deferred WITH a stated decision criterion (e.g. 'I'll commit once the role scope is locked'), the flag is FALSE. Pure 'I'll see' / 'we'll see' / 'dekhta hu' is TRUE.",
   generic_self_intro: "Does the intro have a narrative arc (years of experience + role + an outcome / project)? If yes, the flag is FALSE. Purely token-listing (skills, tech stack) with no story is TRUE.",
+  reason_for_leaving_blame_framing: "Did the candidate frame the reason for leaving primarily through a FORWARD pull (next challenge, new domain, scope expansion) even if some backward facts (politics, no growth) are mentioned? If a forward frame is present alongside, the flag is FALSE. Pure backward blame with no forward pull is TRUE.",
+  multi_offer_undisclosed: "Did the candidate name a specific company OR a specific timeline OR a specific stage for any other offer? Even one specific anchor (company name, expected-by date, round-stage) means the flag is FALSE. Pure 'a few places' / 'some companies' / 'yeah I'm interviewing' with zero specifics is TRUE.",
+  reference_list_vague: "Did the candidate name a referee (first name, role, or company), OR specifically defer ('current manager doesn't know yet, will share post-offer')? Either case the flag is FALSE. Pure 'yeah I have references' / 'a couple of ex-managers' with no proper noun and no deferral context is TRUE.",
 };
 
 /* Coaching clusters — group flags by theme so the report leads with
@@ -511,13 +559,43 @@ const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyA
       "rto_flat_refusal",
       "family_constraint_freeze",
       "location_flex_unprobed",
+      "hybrid_expectation_mismatch",
+    ],
+  },
+  /* v5.5.0 new cluster — comp maturity. Surfaces "you negotiated like
+     a fresher" pattern: comp number alone, no review cadence, no tax
+     fluency, no equity literacy. Indian HR weights this cluster hard
+     at mid-senior — anchors comp band on perceived sophistication. */
+  {
+    label: "comp_maturity",
+    theme: "compensation sophistication",
+    members: [
+      "salary_review_cycle_unprobed",
+      "tax_structure_naive",
+      "esop_literacy_low",
+      "comp_breakup_probe_missing",
+      "buyout_split_unaddressed",
+      "floor_collapse",
+    ],
+  },
+  /* v5.5.0 new cluster — register / fit signals. Surfaces "low
+     confidence" pattern: pre-apology for pedigree, deferential opener,
+     pre-emptive visa demand misaligning with seat. */
+  {
+    label: "register_fit",
+    theme: "register + role-seat fit",
+    members: [
+      "over_deferential_opener",
+      "tier1_college_default_assumption",
+      "visa_sponsorship_demand_unprompted",
+      "designation_downgrade_defensive",
     ],
   },
 ];
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v5.4.0",
+  version: "hr-round-v5.5.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -1247,6 +1325,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           severity: "high",
           flag: "multi_offer_undisclosed",
         });
+        rescoreEvidence.set("multi_offer_undisclosed", { aiPrompt: t.text || "", userReply: r.text || "" });
         break;
       }
     }
@@ -1254,7 +1333,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     // location_flex_unprobed — HR named a base city; candidate never
     // probed relocation / temp WFH / housing. FAANG India / GCC critical.
     {
-      const hrNamedCity = transcript.some((t) => isAi(t) && HR_NAMED_CITY.test(t.text || ""));
+      const hrNamedCity = transcript.some(
+        (t) => isAi(t) && (HR_BASE_KEYWORD.test(t.text || "") || HR_CITY_WITH_ROLE.test(t.text || "")),
+      );
       const userProbedRelo = transcript.some((t) => isUser(t) && RELO_PROBED.test(t.text || ""));
       if (hrNamedCity && !userProbedRelo && transcript.length > 8) {
         flags.add("location_flex_unprobed");
@@ -1284,6 +1365,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           severity: "high",
           flag: "reason_for_leaving_blame_framing",
         });
+        rescoreEvidence.set("reason_for_leaving_blame_framing", { aiPrompt: t.text || "", userReply: r.text || "" });
         break;
       }
     }
@@ -1310,6 +1392,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           severity: "medium",
           flag: "reference_list_vague",
         });
+        rescoreEvidence.set("reference_list_vague", { aiPrompt: t.text || "", userReply: r.text || "" });
         break;
       }
     }
@@ -1349,12 +1432,16 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       }
     }
 
-    // buyout_split_unaddressed — buyout discussed, candidate didn't
+    // buyout_split_unaddressed — buyout raised by HR, candidate didn't
     // probe who pays (new employer reimburses vs candidate self-funds).
+    // v5.5.0: HR-gated. Candidate-only buyout mentions (very common —
+    // candidate volunteers "60 days notice, buyout possible") should
+    // NOT fire this flag; the candidate already owns the topic and HR
+    // never opened the funding question to begin with.
     {
-      const buyoutMentioned = BUYOUT_MENTIONED.test(allText);
-      const splitProbed = transcript.some((t) => BUYOUT_SPLIT_PROBED.test(t.text || ""));
-      if (buyoutMentioned && !splitProbed && transcript.length > 8) {
+      const hrRaisedBuyout = transcript.some((t) => isAi(t) && BUYOUT_MENTIONED.test(t.text || ""));
+      const splitProbed = transcript.some((t) => isUser(t) && BUYOUT_SPLIT_PROBED.test(t.text || ""));
+      if (hrRaisedBuyout && !splitProbed && transcript.length > 8) {
         flags.add("buyout_split_unaddressed");
         gaps.push({
           dimension: "negotiation_protection",
@@ -1364,6 +1451,103 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
           flag: "buyout_split_unaddressed",
         });
       }
+    }
+
+    /* ── v5.5.0 realism additions ────────────────────────────────── */
+
+    // hybrid_expectation_mismatch — candidate volunteers an absolutist
+    // fully-remote demand with no hybrid-negotiation softener.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!(isUser(t) && FULLY_REMOTE_DEMAND.test(t.text || ""))) continue;
+      if (HYBRID_NEGOTIATION.test(t.text || "")) continue;
+      // Don't double-fire with rto_flat_refusal (which requires HR
+      // to have asked first); this one catches the candidate-volunteered
+      // version that rto_flat_refusal misses.
+      if (flags.has("rto_flat_refusal")) break;
+      flags.add("hybrid_expectation_mismatch");
+      gaps.push({
+        dimension: "logistics_clarity",
+        expected: "Most Indian GCCs / unicorns mandate 3+ day hybrid. Don't volunteer 'fully remote, never come to office' — frame as 'open to hybrid, can do N in-office days; what's the policy?' Absolutist remote demands are an instant misalignment signal in 2025-26",
+        observed: "Candidate volunteered a fully-remote / never-in-office posture with no hybrid-negotiation softener — reads as misaligned with India RTO/hybrid reality",
+        severity: "high",
+        flag: "hybrid_expectation_mismatch",
+      });
+      break;
+    }
+
+    // visa_sponsorship_demand_unprompted — candidate raises H1B /
+    // onsite sponsorship for an India-IC role.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!(isUser(t) && VISA_DEMAND.test(t.text || ""))) continue;
+      flags.add("visa_sponsorship_demand_unprompted");
+      gaps.push({
+        dimension: "motivation_specificity",
+        expected: "For an India-based IC role, don't raise H1B / blue-card / onsite sponsorship in the HR round — it signals the India seat is a stepping stone, not the destination. If onsite matters, ask about company-wide mobility programs ('does the team have onsite rotations?') instead of demanding sponsorship",
+        observed: "Candidate raised visa sponsorship / onsite-deputation expectation in the HR round — for India-IC roles this reads as misalignment with the seat",
+        severity: "high",
+        flag: "visa_sponsorship_demand_unprompted",
+      });
+      break;
+    }
+
+    // salary_review_cycle_unprobed — mid+ long-form, comp discussed,
+    // no candidate-side question about review/appraisal cadence.
+    {
+      const level = (session.difficulty || "").toLowerCase();
+      const isMidPlus = level === "mid" || level === "senior" || level === "lead" || level === "executive";
+      const compDiscussed = ASKED_ABOUT_SALARY.test(aiText) || transcript.some((t) => isUser(t) && SALARY_NUMBER.test(t.text || ""));
+      const reviewProbed = transcript.some((t) => isUser(t) && REVIEW_CYCLE_PROBE.test(t.text || ""));
+      if (isMidPlus && compDiscussed && !reviewProbed && transcript.length > 10) {
+        flags.add("salary_review_cycle_unprobed");
+        gaps.push({
+          dimension: "comp_transparency",
+          expected: "At mid-senior, ask about the review cycle (annual / half-yearly), off-cycle correction policy, and promo cadence. Comp is a trajectory not a number — Indian HR expects this question from candidates who've negotiated before",
+          observed: "Comp was discussed but candidate never asked about review cycle / off-cycle / promo cadence — accepts the comp number as static instead of as a starting point",
+          severity: "medium",
+          flag: "salary_review_cycle_unprobed",
+        });
+      }
+    }
+
+    // tax_structure_naive — mid+ candidate negotiates only on
+    // gross/fixed without engaging tax-optimised structure.
+    {
+      const level = (session.difficulty || "").toLowerCase();
+      const isMidPlus = level === "mid" || level === "senior" || level === "lead" || level === "executive";
+      const compDiscussed = ASKED_ABOUT_SALARY.test(aiText) || transcript.some((t) => isUser(t) && SALARY_NUMBER.test(t.text || ""));
+      const taxAware = transcript.some((t) => isUser(t) && TAX_STRUCTURE_PROBE.test(t.text || ""));
+      if (isMidPlus && compDiscussed && !taxAware && transcript.length > 10) {
+        flags.add("tax_structure_naive");
+        gaps.push({
+          dimension: "comp_transparency",
+          expected: "At mid-senior (₹25L+) the take-home delta between a naive structure and a tax-optimised one is 1-2 LPA. Ask about flexi-basket components: 80C max-out, NPS employer contribution (10% extra deduction), LTA, meal cards, gratuity calc. Indian HR expects this fluency",
+          observed: "Comp was discussed but candidate never engaged 80C / NPS / flexi / LTA / take-home — gross-only negotiation leaves 1-2 LPA on the table at this band",
+          severity: "medium",
+          flag: "tax_structure_naive",
+        });
+      }
+    }
+
+    // tier1_college_default_assumption — candidate pre-apologises for
+    // non-tier-1 pedigree when HR never raised it. Internalised bias.
+    for (let i = 0; i < transcript.length; i++) {
+      const t = transcript[i];
+      if (!(isUser(t) && PEDIGREE_PRE_APOLOGY.test(t.text || ""))) continue;
+      // Only fire if HR never opened the pedigree topic — otherwise
+      // it's a defensive response, not unsolicited.
+      const hrAskedPedigree = transcript.slice(0, i).some((x) => isAi(x) && PEDIGREE_PROMPT.test(x.text || ""));
+      if (hrAskedPedigree) continue;
+      flags.add("tier1_college_default_assumption");
+      gaps.push({
+        dimension: "register_confidence",
+        expected: "Don't pre-apologise for your college unless HR raises it. 'I know my college isn't IIT' / 'despite my tier-3 background' signals internalised bias and low confidence — the interviewer wasn't going there. Lead with what you've shipped; pedigree comes up only if asked",
+        observed: "Candidate pre-apologised for non-tier-1 / non-IIT pedigree without HR raising the topic — reads as low confidence and surfaces a screen you'd otherwise have avoided",
+        severity: "medium",
+        flag: "tier1_college_default_assumption",
+      });
+      break;
     }
 
     /* ── Resume cross-checks (silent no-op when resume null) ─── */
@@ -1593,6 +1777,11 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("esop_literacy_low")) tips.push("Equity was on the table and you didn't surface the four standard probes: strike price, cliff (typically 1 yr), vest schedule (4 yr standard), double-trigger (at unicorns) / FMV / 409A (at private cos). At pre-IPO / unicorn comp this is six- to seven-figure exposure — accepting blind is the classic post-joining regret.");
     if (flags.has("bell_curve_pip_unprobed")) tips.push("At mid-senior at Amazon / Microsoft / TCS / Wipro / Infosys, ask about performance calibration cycle, bell-curve / stack-rank policy, PIP history, and regretted-attrition rate. These are the structural factors that decide whether you'll succeed 6-12 months in — and the answer telegraphs a LOT about the team culture.");
     if (flags.has("buyout_split_unaddressed")) tips.push("Buyout came up but you didn't ask WHO pays. The default is candidate self-funds — but new employer reimbursement is standard at FAANG / GCC and negotiable at most product cos. Ask: 'Is buyout reimbursed, or offset against joining bonus, or candidate-funded?' One question = potentially 1-3 months of gross salary back in your pocket.");
+    if (flags.has("hybrid_expectation_mismatch")) tips.push("'Fully remote, never come to office' is a 2025-26 instant misalignment at most Indian GCCs / unicorns — 3-day hybrid is policy at Microsoft India, Walmart Global Tech, Target India, Razorpay, Flipkart, Swiggy. Reframe: 'Open to hybrid — can do 3 in-office days; what's the team's policy?' Even if your floor is 1 in-office day, ask before declaring.");
+    if (flags.has("visa_sponsorship_demand_unprompted")) tips.push("Raising H1B / blue-card / onsite sponsorship in an India HR round signals the India seat is a stepping stone. If onsite matters, ask softly about company-wide mobility ('does the team have onsite rotations?' or 'what's the typical path to a US deputation?') — never demand sponsorship in round one. Misalignment with the seat is a screen-out signal.");
+    if (flags.has("salary_review_cycle_unprobed")) tips.push("At mid-senior, never accept a comp number without asking about the trajectory. The three questions: 'What's the review cycle — annual or half-yearly? Are off-cycle corrections common? What's the typical promo timeline at this band?' Comp is a curve, not a point — HR scores candidates who treat it that way.");
+    if (flags.has("tax_structure_naive")) tips.push("At ₹25L+ in India, the take-home delta between a naive structure and a tax-optimised one is 1-2 LPA. Ask: 'Is there a flexi-basket with 80C max-out, NPS employer contribution (10% extra deduction beyond 1.5L), LTA, meal cards? What's the take-home post all deductions?' This question alone often unlocks structure changes the recruiter wouldn't volunteer.");
+    if (flags.has("tier1_college_default_assumption")) tips.push("Don't pre-apologise for your college. 'I know my college isn't IIT' / 'despite my tier-3 background' surfaces a screen the interviewer wasn't going to bring up — and signals internalised bias. Lead with what you've shipped. Pedigree comes up only if asked; if it does, own it with one calm line and pivot back to scope.");
     if (flags.has("dimensions_thin_coverage")) tips.push("Real Indian HR covers 7 dimensions. Re-run with notice/BGV/counter-offer/benefits prompts.");
     if (flags.has("resume_transcript_mismatch")) tips.push("Every employer you say out loud should already be on your resume. BGV pulls the resume as source-of-truth — verbal employers that aren't listed read as fabrication.");
     if (flags.has("resume_gap_unaddressed")) tips.push("Your resume shows a ≥3-month employment gap. Don't wait for the real interviewer to corner you — pre-prep a one-liner: 'between Mar 2022 and Jan 2023 I [studied / cared for family / took a sabbatical to ship X]; here's what I did with the time.'");
