@@ -9,6 +9,8 @@
  * which causes catastrophic prompt-level misbehaviour.
  */
 
+import { isWalkAway } from "./_walkaway-detection";
+
 export interface CandidateIntent {
   accepted: boolean;
   /** Accepted with a condition/question attached ("I accept but what about equity?") */
@@ -218,8 +220,7 @@ export function detectSalaryPhase(input: DetectSalaryPhaseInput): SalaryPhase {
   if (facts?.acceptedImmediately) return "closing";
 
   // 2. Walk-away language — switch to closing-pressure (retention).
-  const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass)\b/i;
-  if (answer && walkAwayPat.test(answer)) return "closing-pressure";
+  if (isWalkAway(answer)) return "closing-pressure";
 
   // 3. A number is on the table — counter-offer regardless of turn.
   //    Previously gated on idx>=2, which marched-through-probe even

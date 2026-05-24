@@ -5,6 +5,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, sanitizeForLLM, validateContentType } from "./_shared";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter, pickNextMove } from "./_follow-up-helpers";
+import { isWalkAway } from "./_walkaway-detection";
 import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
 import { callLLM, extractJSON } from "./_llm";
@@ -2705,9 +2706,8 @@ Repeat-text in followUpText is FORBIDDEN.`;
        away. Rejection alone does NOT end the conversation — the AI
        continues countering. The client uses this to jump straight to
        the closing step instead of marching through the 5-anchor arc. */
-    const walkAwayPatFinal = /\b(walk away|walking away|i.?m out|not interested|decline|pull out|no deal|have to pass|withdraw)\b/i;
     const isCandidateAcceptance = type === "salary-negotiation" && !!negotiationFacts?.acceptedImmediately;
-    const isCandidateWalking = type === "salary-negotiation" && typeof answer === "string" && walkAwayPatFinal.test(answer);
+    const isCandidateWalking = type === "salary-negotiation" && isWalkAway(answer);
     const conversationDone = isCandidateAcceptance || isCandidateWalking;
 
     return new Response(JSON.stringify({

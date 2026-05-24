@@ -55,6 +55,7 @@ import { classifyAcceptance, detectExplicitAcceptance } from "./_acceptance-clas
 import { normalizeForParsing } from "./_speech-normalize";
 import { classifyCandidateArchetype } from "./_candidate-archetype";
 import { classifyNumberRoles } from "./_number-role-classifier";
+import { isWalkAway } from "./_walkaway-detection";
 import { extractRecruiterFacts, extractRecruiterPromises, extractPromisesFulfilled } from "./_recruiter-facts";
 import { extractNonSalaryConstraints, mergeNonSalaryConstraints } from "./_non-salary-constraints";
 import { buildPostAcceptanceMessage } from "./_post-acceptance";
@@ -3053,8 +3054,7 @@ export function parseCandidateAnswer(
    * extractor needs a paired walk-away check on the same axis. */
   const acceptanceResult = classifyAcceptance(a, { phase, offerOnTable });
   const signalsAcceptance = acceptanceResult.accepted;
-  const walkAwayPat = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline|won.?t work|isn.?t going to work|have to pass|that won.?t work|move on|nahi\s+(?:chahiye|karna|banega|hoga|kar\s+sakta)|nahin\s+(?:chahiye|karna)|mujhe\s+nahi(?:n)?\s+chahiye)\b/i;
-  const signalsWalkAway = walkAwayPat.test(a);
+  const signalsWalkAway = isWalkAway(a);
 
   /* Architectural refactor (PDF#30, 2026-05-18) — number-role classification.
    *
@@ -3209,7 +3209,7 @@ export function applyCandidateAnswer(state: NegotiationState, rawAnswerInput: st
      with a penalty flag. This is the only path out of a terminal phase
      and it's a one-way trapdoor (the flag is sticky). */
   if (state.phase === "walked-away" && (answer || "").trim().length > 0 &&
-      !/\b(walk away|walking away|not interested|withdraw|decline|won.?t work|isn.?t going to work|move on|nahi\s+(?:chahiye|karna|banega))\b/i.test(answer)) {
+      !isWalkAway(answer)) {
     const reopened: NegotiationState = {
       ...state,
       leversUsed: [...state.leversUsed],
