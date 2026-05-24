@@ -199,6 +199,7 @@ After this session's work, this dimension is unusually strong for an early-stage
 - **EMAIL_VERIFICATION_SECRET** is fail-closed in production
 - **ESLint** at 114 warnings (down from 156); 0 errors
 - **Coverage gate** ratchets monotonically per-folder
+- **Voice-stack observability** (shipped 2026-05-25): Cartesia REST 15s timeout closes the "hung blob() = silent stall" hole; `tts_provider_used` PostHog event per utterance reveals the full Sarvam→Cartesia→Azure→Browser fallback chain (winner, hops, latency, textLength) so silent escalation to expensive providers is no longer invisible; `stt_provider_used` + `stt_setup_failed` events mirror the same on Deepgram→Sarvam→WebSpeech with a user-facing toast on Sarvam silent-fail. Helper extracted to `src/_tts-telemetry.ts` (9 unit tests).
 
 **What's still weak:**
 
