@@ -1241,6 +1241,16 @@ export interface NegotiationState {
    * for state types); consumers cast to NextAction. */
   plannedNextAction?: unknown | null;
 
+  /* AR2 telemetry wire-in (2026-05-25) — the action that was SHIPPED on
+   * the previous AI turn (i.e. state.plannedNextAction at the moment
+   * applyAiMove ran). Used by the response-pipeline's
+   * validateTurnCoherence call to compare prevAi vs nextAi without the
+   * kernel having to reverse-import _next-action-planner. Stored as
+   * `unknown` for the same back-compat / no-cycle reasons as
+   * plannedNextAction. Cleared explicitly only by initState; consumers
+   * cast to NextAction. */
+  lastShippedAction?: unknown | null;
+
   /* Negotiation-flow redesign commit 4 (2026-05-15) — reactive-followup
    * de-dupe ledger. Each reactive trigger (variable-comfort,
    * competing-credibility, notice-buyout, hike-justification,
@@ -2219,6 +2229,7 @@ export function initState(input: InitStateInput & InitStateExtras): NegotiationS
     pendingCandidateAcks: [],
     phaseEnteredAtTurn: null,
     plannedNextAction: null,
+    lastShippedAction: null,
     hikePercent: null,
     rationale: null,
     noticeJoining: {
@@ -4621,7 +4632,11 @@ export function applyAiMove(state: NegotiationState, move: AiMove, aiText: strin
     /* Negotiation-flow redesign commit 3 (2026-05-15) — plannedNextAction
      * is a per-candidate-turn signal too. Clear after the AI consumes it;
      * the next applyCandidateAnswer call repopulates from the post-derive
-     * state. */
+     * state. AR2 telemetry wire-in (2026-05-25) — before clearing, copy
+     * to lastShippedAction so the next turn's pipeline can compare
+     * prevAi (the action we just consumed) vs nextAi (the one
+     * applyCandidateAnswer will stamp). */
+    lastShippedAction: state.plannedNextAction ?? null,
     plannedNextAction: null,
     /* PDF#29 Bug 7 (2026-05-18) — frustration signal is one-shot. Clear
      * after the AI turn fires so a single complaint doesn't re-trigger

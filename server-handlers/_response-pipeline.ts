@@ -44,6 +44,7 @@ import {
   detectCandidateAskedQuestion,
 } from "./_fact-pack";
 import type { QuestionIntent } from "./_question-intent";
+import { captureServerEvent } from "./_posthog";
 
 /* PDF#42 BUG-B (2026-05-21) — set of reactive-followup topics whose
  * canonical prose is authored in planWiredProfileFollowup (planner)
@@ -145,6 +146,25 @@ async function generateBotReplyInner(
       ? rawAction
       : ({ kind: "terminal-restate" } as NextAction);
   const move = actionToLever(action, state);
+
+  /* AR2 telemetry wire-in (2026-05-25) — surface turn-coherence warnings
+   * to PostHog so live regressions get caught the way the regression
+   * harness catches them in tests. The validator is dev-gated internally
+   * (NODE_ENV !== "production"), so this call returns [] in prod by
+   * design — production flips the flag at deploy-time via env override
+   * when ops wants to sample. The fire-and-forget posthog emit cannot
+   * throw (telemetry contract), so we don't await or wrap. */
+  try {
+    const prevAi = state.lastShippedAction
+      ? (state.lastShippedAction as NextAction)
+      : null;
+    const warnings = validateTurnCoherence(prevAi, candidateAnswer ?? null, action, state);
+    if (warnings.length > 0) {
+      void emitCoherenceWarnings(state, warnings);
+    }
+  } catch {
+    /* never break the pipeline on a telemetry path */
+  }
 
   /* Off-script candidate-question routing. Two signals — preferred is
    * the structured candidateAskedQuestion field carried on TurnDelta;
@@ -2133,4 +2153,31 @@ export function validateTurnCoherence(
   }
 
   return surfaced;
+}
+
+/** AR2 telemetry emit (2026-05-25) — surface coherence warnings to
+ *  PostHog so live regressions get logged the way the regression harness
+ *  catches them in tests. Fire-and-forget, never throws (telemetry must
+ *  never break a request). One event per warning so the PostHog filter
+ *  surface can pivot by `kind` / `topic`. */
+async function emitCoherenceWarnings(
+  state: NegotiationState,
+  warnings: readonly CoherenceWarning[],
+): Promise<void> {
+  /* In production, validateTurnCoherence short-circuits to [] (dev-only
+   * gate). If a future config flips that gate on, this emit path is
+   * already wired — no further changes needed. */
+  if (warnings.length === 0) return;
+  const sessionId = (state as { sessionId?: string }).sessionId ?? "anonymous";
+  for (const w of warnings) {
+    void captureServerEvent("negotiation_coherence_warning", sessionId, {
+      kind: w.kind,
+      topic: w.topic,
+      prev_action_kind: w.prevKind,
+      next_action_kind: w.nextKind,
+      turn_index: (state as { turnIndex?: number }).turnIndex ?? null,
+      phase: (state as { phase?: string }).phase ?? null,
+      message: w.message,
+    });
+  }
 }
