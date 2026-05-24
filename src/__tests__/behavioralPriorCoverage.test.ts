@@ -52,6 +52,11 @@ describe("Phase-6.1 — behavioural prebias plumbing", () => {
       "no_learning_reflection",
       "unquantified_answers",
       "answer_off_topic",
+      "rambling_answers",
+      "rehearsed_answers",
+      "low_conviction_delivery",
+      "one_sided_conflict_narrative",
+      "weak_specificity_in_failure_story",
     ];
     for (const f of canonicalBehavioralFlags) {
       // Match `f:` (object key) — must be present as a property name

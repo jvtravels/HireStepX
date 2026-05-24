@@ -33,8 +33,13 @@ import {
 import {
   classifyAiProbe,
   classifyFailureResponse,
+  detectRehearsedOpener,
+  hasConcreteFailureMiss,
+  hasCounterpartyPov,
   hasLearningReflection,
+  isConflictQuestion,
   isFailureQuestion,
+  isLowConvictionDelivery,
   isVagueAnswer,
 } from "./_behavioral-probing";
 import { findUsismDrift, type UsismHit } from "./_usism-patterns";
@@ -151,6 +156,33 @@ export const BEHAVIORAL_THRESHOLDS = {
    * trip the session-level flag. */
   WE_ATTRIBUTION_RATE: 0.5,
   WE_ATTRIBUTION_MIN_HITS: 3,
+  /* `rambling_answers` — answer over this many chars (~350 words at
+   * an average 5 chars/word) that ALSO misses Result AND quantification
+   * counts as a rambling hit. Long isn't a problem on its own; long
+   * WITHOUT structure + evidence is — that's the candidate filling
+   * silence rather than delivering substance. Two such hits across the
+   * session is a pattern, not a one-off. */
+  RAMBLING_MIN_CHARS: 1800,
+  RAMBLING_MIN_HITS: 2,
+  /* `rehearsed_answers` — count of substantive answers that open with a
+   * memorised stock phrase ("let me tell you about a time…", "to answer
+   * your question…"). Two such openers across the session = a habit,
+   * not a one-off. Feeds the next-session prebias to push for cold-
+   * start stems that resist canned templates. */
+  REHEARSED_MIN_HITS: 2,
+  /* `low_conviction_delivery` — count of substantive answers with hedge
+   * density ≥3 (um / like / maybe / I think / kind of). Two such
+   * answers across the session reads as a confidence pattern worth
+   * coaching. */
+  LOW_CONVICTION_MIN_HITS: 2,
+  /* `one_sided_conflict_narrative` — count of conflict/disagreement
+   * answers where the candidate never mentioned what the OTHER side
+   * wanted. Two such answers across the session means the candidate
+   * narrates conflicts as monologues — a real Bar-Raiser-style probe
+   * would dig exactly there ("what did *they* want?"). Gated on at
+   * least one conflict question being asked at all so a behavioral
+   * session that never touched conflict doesn't accidentally trip. */
+  ONE_SIDED_CONFLICT_MIN_HITS: 2,
 } as const;
 
 function classifyStar(text: string): Set<StarPart> {
@@ -205,6 +237,11 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     let learningReflections = 0;
     let failureQuestionAsked = false;
     let failureResponse: "owns" | "deflects" | "neutral" | null = null;
+    /* Concrete-miss capture on the SAME failure response we classify
+     * for owns/deflects. Senior interviewers expect "I underestimated
+     * the rollback path" not "I made a mistake". `null` until we've
+     * scored the response; true/false once captured. */
+    let failureResponseHadConcreteMiss: boolean | null = null;
 
     /* Phase-6.3 evidence-quality counters. An answer with a metric but
      * no baseline / method / sample is a soft fail at senior level —
@@ -230,6 +267,28 @@ export const behavioralAnalyzer: FocusAnalyzer = {
      * we want. */
     let weAttributionHits = 0;
 
+    /* Long-but-empty answer counter. Increments when a user answer
+     * exceeds RAMBLING_MIN_CHARS AND misses Result AND lacks impact
+     * quantification. The session-level `rambling_answers` flag fires
+     * at RAMBLING_MIN_HITS — same "≥2 across the session is a pattern"
+     * cadence as the other pattern-class flags. */
+    let ramblingHits = 0;
+
+    /* Rehearsed-opener + low-conviction counters. Both run on every
+     * substantive user answer in the single STAR loop pass; session-
+     * level flags fire at REHEARSED_MIN_HITS / LOW_CONVICTION_MIN_HITS. */
+    let rehearsedOpenerHits = 0;
+    let lowConvictionHits = 0;
+
+    /* One-sided-conflict-narrative counter. Increments when the
+     * candidate's answer to a conflict-shaped AI prompt does NOT carry
+     * any counterparty-POV framing. Pair-aware: we look back at the
+     * most recent AI turn before this user reply (already computed
+     * below for the off-topic pass) and only score the answer when
+     * that AI turn was conflict-shaped. */
+    let oneSidedConflictHits = 0;
+    let conflictQuestionsAsked = 0;
+
     const seenQuestions: { idx: number; norm: string }[] = [];
     const starBreakdown: NonNullable<NonNullable<AnalyzerResult["meta"]>["behavioral"]>["starBreakdown"] = [];
 
@@ -249,7 +308,9 @@ export const behavioralAnalyzer: FocusAnalyzer = {
             .slice(i + 1, i + 6)
             .find((t) => isUserTurn(t) && (t.text || "").trim().length >= 60);
           if (nextUser) {
-            failureResponse = classifyFailureResponse(nextUser.text || "");
+            const nextText = nextUser.text || "";
+            failureResponse = classifyFailureResponse(nextText);
+            failureResponseHadConcreteMiss = hasConcreteFailureMiss(nextText);
           }
         }
         const norm = normalizeQuestion(text);
@@ -300,6 +361,19 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       const quantified = hasImpactQuantified(text);
       if (parts.has("A") && !quantified) {
         unquantifiedCount += 1;
+      }
+
+      /* Rambling detector. Long answer + no Result + no quantification =
+       * candidate filling space without delivering structure or evidence.
+       * Three conditions because any single one of them is forgivable on
+       * its own: long answers can be great, no-R can be a setup turn,
+       * unquantified can be qualitative. The intersection isn't. */
+      if (
+        text.length >= BEHAVIORAL_THRESHOLDS.RAMBLING_MIN_CHARS &&
+        !parts.has("R") &&
+        !quantified
+      ) {
+        ramblingHits += 1;
       }
 
       /* Phase-6.3 evidence-quality scan. Independent of the
@@ -356,6 +430,15 @@ export const behavioralAnalyzer: FocusAnalyzer = {
             preview: text.slice(0, 160),
           });
         }
+        /* One-sided conflict narrative: did the AI just ask a
+         * conflict / disagreement / pushback shaped question? If yes
+         * AND the candidate's answer carries zero counterparty-POV
+         * framing, this turn is a hit. Pattern fires at ≥2 across the
+         * session, gated on at least 2 conflict questions asked. */
+        if (isConflictQuestion(precedingAi.text || "")) {
+          conflictQuestionsAsked += 1;
+          if (!hasCounterpartyPov(text)) oneSidedConflictHits += 1;
+        }
       }
 
       /* Phase 2: per-answer competency detection. Storing the keys
@@ -379,6 +462,11 @@ export const behavioralAnalyzer: FocusAnalyzer = {
        * AI follow-up exists). The session-level `we_attribution_heavy`
        * flag fires off this counter. */
       if (isVagueAnswer(text)) weAttributionHits += 1;
+
+      /* Rehearsed-opener + low-conviction per-turn detection. Inline
+       * with the STAR loop so we stay single-pass. */
+      if (detectRehearsedOpener(text)) rehearsedOpenerHits += 1;
+      if (isLowConvictionDelivery(text)) lowConvictionHits += 1;
 
       /* Phase-3 probing pass: classify the AI turn that follows this
        * user answer. We look at the next 2 AI turns (some sessions
@@ -427,6 +515,40 @@ export const behavioralAnalyzer: FocusAnalyzer = {
         weAttributionHits / userAnswerCount >= BEHAVIORAL_THRESHOLDS.WE_ATTRIBUTION_RATE
       ) {
         flags.add("we_attribution_heavy");
+      }
+
+      /* `rambling_answers` — fires when ≥2 substantive answers were both
+       * long AND missing R + quantification. Surfacing this lets the
+       * report coach "less narration, more outcome" and lets the prebias
+       * loop steer future stems toward tight result-first prompts. */
+      if (ramblingHits >= BEHAVIORAL_THRESHOLDS.RAMBLING_MIN_HITS) {
+        flags.add("rambling_answers");
+      }
+
+      /* `rehearsed_answers` — ≥2 stock-opener answers across the
+       * session. Surfaces to the user (coach toward situational opens)
+       * AND to the next-session prebias loop (push for cold-start stems
+       * that resist canned templates). */
+      if (rehearsedOpenerHits >= BEHAVIORAL_THRESHOLDS.REHEARSED_MIN_HITS) {
+        flags.add("rehearsed_answers");
+      }
+
+      /* `low_conviction_delivery` — ≥2 hedge-heavy answers across the
+       * session. Prebias loop steers toward stems demanding a decisive
+       * opening line ("in one sentence, the call you made was…"). */
+      if (lowConvictionHits >= BEHAVIORAL_THRESHOLDS.LOW_CONVICTION_MIN_HITS) {
+        flags.add("low_conviction_delivery");
+      }
+
+      /* `one_sided_conflict_narrative` — ≥2 conflict-shaped answers
+       * where the candidate never named what the other side wanted.
+       * Gated on ≥2 conflict questions asked at all so a session that
+       * never touched conflict doesn't trip. */
+      if (
+        conflictQuestionsAsked >= BEHAVIORAL_THRESHOLDS.PATTERN_MIN_COUNT &&
+        oneSidedConflictHits >= BEHAVIORAL_THRESHOLDS.ONE_SIDED_CONFLICT_MIN_HITS
+      ) {
+        flags.add("one_sided_conflict_narrative");
       }
     } else {
       /* All-AI transcript or every user reply was a micro-utterance
@@ -553,17 +675,73 @@ export const behavioralAnalyzer: FocusAnalyzer = {
       /* Positive signal — kept in flags so the report can render it
        * as a strength badge alongside negative flags. */
       flags.add("owns_failure");
+      /* Specificity gate. Owning the failure is good; owning without
+       * naming WHAT specifically you missed is hindsight theatre.
+       * Bar-Raiser interviewers push exactly there. We only fire this
+       * when the candidate owned the failure (no point flagging
+       * specificity-on-deflection — that's a different problem). */
+      if (failureResponseHadConcreteMiss === false) {
+        flags.add("weak_specificity_in_failure_story");
+      }
     }
+
+    /* Turn-specific coaching support. Generic "practice STAR" advice
+     * is forgettable — naming the exact turns that missed a part lets
+     * the candidate re-listen and re-rehearse. We pre-compute lists of
+     * 1-based turn positions (counting only substantive user answers,
+     * not raw transcript indices — that's how candidates think) keyed
+     * by what they missed. */
+    const userTurnPositions: number[] = []; // 1-based per substantive answer
+    const missingByPart: Record<StarPart, number[]> = { S: [], T: [], A: [], R: [] };
+    const unquantifiedTurns: number[] = [];
+    starBreakdown.forEach((sb, idx) => {
+      const pos = idx + 1;
+      userTurnPositions.push(pos);
+      for (const p of sb.missing) missingByPart[p as StarPart].push(pos);
+      if (sb.present.includes("A") && !sb.quantified) unquantifiedTurns.push(pos);
+    });
+    const fmtTurns = (ts: number[]): string => {
+      if (ts.length === 0) return "";
+      if (ts.length === 1) return `turn ${ts[0]}`;
+      if (ts.length === 2) return `turns ${ts[0]} and ${ts[1]}`;
+      return `turns ${ts.slice(0, -1).join(", ")}, and ${ts[ts.length - 1]}`;
+    };
 
     const coachingBits: string[] = [];
     if (flags.has("weak_star_structure")) {
-      coachingBits.push("Practice answering with all four STAR parts — many answers skipped Situation or Task framing.");
+      /* Name the most-skipped part + the specific turns. Falls back to
+       * the generic line only when starBreakdown is empty (defensive). */
+      const counts = (["S", "T", "A", "R"] as StarPart[])
+        .map((p) => ({ p, n: missingByPart[p].length }))
+        .filter((x) => x.n > 0)
+        .sort((a, b) => b.n - a.n);
+      if (counts.length > 0 && userTurnPositions.length > 0) {
+        const top = counts[0];
+        const partLabel = { S: "Situation", T: "Task", A: "Action", R: "Result" }[top.p];
+        coachingBits.push(
+          `STAR structure slipped most on ${partLabel} — missing in ${fmtTurns(missingByPart[top.p].slice(0, 4))}. Open those answers by naming the ${partLabel.toLowerCase()} in one sentence before you walk into the rest.`,
+        );
+      } else {
+        coachingBits.push("Practice answering with all four STAR parts — many answers skipped Situation or Task framing.");
+      }
     }
     if (flags.has("frequent_missing_result")) {
-      coachingBits.push("Most answers stopped before the Result. Always close with the measurable outcome.");
+      if (missingByPart.R.length > 0) {
+        coachingBits.push(
+          `${missingByPart.R.length} of ${userTurnPositions.length} answers stopped before the Result (${fmtTurns(missingByPart.R.slice(0, 4))}). Close every story with the measurable outcome — even 'we cut p99 from 800ms to 240ms' beats trailing off after the action.`,
+        );
+      } else {
+        coachingBits.push("Most answers stopped before the Result. Always close with the measurable outcome.");
+      }
     }
     if (flags.has("unquantified_answers")) {
-      coachingBits.push("Add concrete numbers (%, hours saved, users impacted) to make impact credible.");
+      if (unquantifiedTurns.length > 0) {
+        coachingBits.push(
+          `Concrete numbers were missing from ${fmtTurns(unquantifiedTurns.slice(0, 4))}. Anchor impact with %, hours saved, or users affected — qualitative claims invite the next probe.`,
+        );
+      } else {
+        coachingBits.push("Add concrete numbers (%, hours saved, users impacted) to make impact credible.");
+      }
     }
     /* Phase-3 coaching. Aim per the plan: tell the candidate not just
      * that the AI rolled past a vague answer, but what to do about it
@@ -576,6 +754,9 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("deflects_failure")) {
       coachingBits.push("The failure question landed on blame routing — own the miss explicitly before naming external factors.");
+    }
+    if (flags.has("weak_specificity_in_failure_story")) {
+      coachingBits.push("Owning the failure is good — but you didn't name WHAT specifically you missed (a system, an assumption, a stakeholder, a risk). 'I underestimated the rollback path' lands; 'I made a mistake' is hindsight theatre. Senior interviewers expect the concrete miss-token in the same sentence as the ownership.");
     }
     if (flags.has("register_drift_to_us")) {
       coachingBits.push("The mock drifted into US framing (USD figures / PTO / 401k) — for Indian-market rounds, keep numbers in ₹ / LPA and leave / PL/CL terminology.");
@@ -591,6 +772,18 @@ export const behavioralAnalyzer: FocusAnalyzer = {
     }
     if (flags.has("answer_off_topic")) {
       coachingBits.push("A few answers drifted from the question's intent — start every response by mirroring the prompt ('You asked about a conflict — let me take one from my last role…') so the interviewer hears you've heard them.");
+    }
+    if (flags.has("rambling_answers")) {
+      coachingBits.push("Long answers that didn't land an outcome — open with the result in one sentence, then walk back to how you got there. Senior interviewers reward compression.");
+    }
+    if (flags.has("rehearsed_answers")) {
+      coachingBits.push("Several answers opened with stock phrases ('let me tell you about a time…', 'to answer your question…') — that pattern reads as memorised. Skip the preamble and start inside the situation: 'It was three weeks before launch and…'.");
+    }
+    if (flags.has("low_conviction_delivery")) {
+      coachingBits.push("Hedging stacked up across multiple answers ('um, like, I think, sort of') — say the call you made first in one decisive line, then justify it. Interviewers read hedge density as uncertainty about the substance.");
+    }
+    if (flags.has("one_sided_conflict_narrative")) {
+      coachingBits.push("Conflict answers ran one-sided — you walked through what *you* did without ever naming what *they* wanted. Open every disagreement story with the counterparty's position in one sentence ('the PM wanted to ship in two weeks; I thought we needed four') so the interviewer sees you understood the other side before pushing back.");
     }
 
     /* Phase 2: aggregate competency counts across the session and
@@ -637,11 +830,21 @@ export const behavioralAnalyzer: FocusAnalyzer = {
             learningReflections,
             failureQuestionAsked,
             failureResponse,
+            failureResponseHadConcreteMiss,
           },
           evidence: {
             metricAnswersCount,
             metricAnswersUnevidenced,
             aiAcceptedUnevidencedMetric,
+          },
+          delivery: {
+            rehearsedOpenerHits,
+            lowConvictionHits,
+            ramblingHits,
+          },
+          conflict: {
+            conflictQuestionsAsked,
+            oneSidedConflictHits,
           },
         },
       };

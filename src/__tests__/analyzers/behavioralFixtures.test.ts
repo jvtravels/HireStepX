@@ -203,6 +203,38 @@ describe("behavioral fixtures — probing depth (Phase 3)", () => {
     expect(out.meta?.behavioral?.probing?.failureResponse).toBe("owns");
   });
 
+  it("FIXTURE: owns failure WITHOUT naming concrete miss → weak_specificity_in_failure_story", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about your biggest failure."),
+          user(
+            "Honestly, I made a mistake on that one. I underestimated it and I should have done better. My bad — I owned the miss in the retro and committed to doing better next time. I learned a lot from it and moved on.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("owns_failure");
+    expect(out.flags).toContain("weak_specificity_in_failure_story");
+    expect(out.meta?.behavioral?.probing?.failureResponseHadConcreteMiss).toBe(false);
+  });
+
+  it("FIXTURE: owns failure WITH concrete miss → no weak_specificity_in_failure_story", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about your biggest failure."),
+          user(
+            "I underestimated the rollback path on the checkout migration — I shipped without a tested revert sequence and we ate two hours of downtime during the next sale event. My mistake. In hindsight I should have spec'd the rollback before the rollout, and that's the rule on my team now.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("owns_failure");
+    expect(out.flags).not.toContain("weak_specificity_in_failure_story");
+    expect(out.meta?.behavioral?.probing?.failureResponseHadConcreteMiss).toBe(true);
+  });
+
   it("FIXTURE: failure question → deflects_failure when candidate routes blame", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({
@@ -408,6 +440,48 @@ describe("behavioral fixtures — we_attribution_heavy (Phase-6 hygiene)", () =>
     expect(out.flags).toContain("we_attribution_heavy");
   });
 
+  it("FIXTURE: ≥2 long answers without R or quantification → rambling_answers", async () => {
+    /* Each user answer below is intentionally >1800 chars, missing R,
+     * and not impact-quantified. The flag should fire on the session
+     * pattern, not on any single long answer. */
+    const longNoR = (theme: string): string => {
+      const filler = " The team kept iterating across reviews, alignment meetings, and design crits — and honestly there was a lot of back-and-forth between us, the PM, and the design lead about what good would look like in this space, which made the whole stretch feel longer than it needed to be.";
+      const seed = `So the situation with ${theme} was layered — there were stakeholders pulling in different directions and I was trying to find a path that respected the technical realities while still moving us forward on the original commitment we had made earlier in the quarter to the leadership review.`;
+      return (seed + filler.repeat(6)).slice(0, 2400);
+    };
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Walk me through a major delivery."),
+          user(longNoR("the migration")),
+          ai("Tell me about a difficult call."),
+          user(longNoR("the rearchitecture")),
+          ai("And a time you led through ambiguity?"),
+          user(longNoR("the cross-org rollout")),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("rambling_answers");
+  });
+
+  it("FIXTURE: long answer WITH R + quantification → no rambling_answers", async () => {
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Walk me through a major delivery."),
+          user(
+            "The situation was that our checkout p99 latency was at 1.2s during sale events, and conversion was dropping eight percent on flash sales — we were leaving real money on the table every weekend. My task was to bring p99 under 500ms within six weeks while keeping the existing payment integrations stable. I led the migration to a sharded queue, rewrote the settlement worker, and personally owned the cutover sequencing across our three regional clusters. As a result, p99 dropped to 380ms and we recovered six percent of conversion within the first sale window after rollout — measured against the prior month's baseline."
+          ),
+          ai("Tell me about a difficult call."),
+          user(
+            "The situation was a planned feature freeze before the audit window. My task was to land a security fix without breaking the freeze policy. I escalated to the head of engineering, walked through the risk math, and proposed a tightly-scoped one-week exception. As a result, we shipped the fix, the audit passed cleanly, and the team avoided the much larger cost of slipping the audit by a quarter — which we measured at roughly thirty engineering-weeks of follow-on work."
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("rambling_answers");
+  });
+
   it("FIXTURE: every answer carries first-person action → no we_attribution_heavy", async () => {
     const out = await behavioralAnalyzer.analyze({
       session: session({
@@ -422,5 +496,157 @@ describe("behavioral fixtures — we_attribution_heavy (Phase-6 hygiene)", () =>
       }),
     });
     expect(out.flags).not.toContain("we_attribution_heavy");
+  });
+
+  it("FIXTURE: ≥2 stock-opener answers → rehearsed_answers", async () => {
+    /* Two of the three substantive answers open with a memorised stock
+     * phrase. Should fire at REHEARSED_MIN_HITS = 2. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you led through a tough delivery."),
+          user(
+            "Let me tell you about a time when our checkout p99 was at 1.2 seconds during sale events. My task was to bring it under 500ms in six weeks. I led the migration to a sharded queue and rewrote the settlement worker. As a result, p99 dropped to 380ms.",
+          ),
+          ai("Tell me about a difficult conversation."),
+          user(
+            "To answer your question, I had a disagreement with my product manager about scope. My task was to align the team without slipping the launch date. I escalated to the head of engineering, walked through the risk math, and we shipped on time.",
+          ),
+          ai("Tell me about a failure."),
+          user(
+            "I once underestimated the migration complexity and we slipped by two weeks. I owned the miss in the retro, wrote up the lessons, and we rebuilt the estimation process so future migrations had buffer.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("rehearsed_answers");
+    expect(out.meta?.behavioral?.delivery?.rehearsedOpenerHits).toBeGreaterThanOrEqual(2);
+  });
+
+  it("FIXTURE: spontaneous openings → no rehearsed_answers", async () => {
+    /* Same answer shapes as above but each one opens inside the
+     * situation rather than with a template phrase. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you led through a tough delivery."),
+          user(
+            "It was three weeks before launch and our checkout p99 was sitting at 1.2 seconds during sale events. My task was to bring it under 500ms in six weeks. I led the migration to a sharded queue and rewrote the settlement worker. As a result, p99 dropped to 380ms.",
+          ),
+          ai("Tell me about a difficult conversation."),
+          user(
+            "My PM wanted to push checkout-revamp into the same sprint as the audit fix — that's where we disagreed. I walked through the risk math with the head of engineering and proposed a tightly scoped exception. We shipped both on time.",
+          ),
+          ai("Tell me about a failure."),
+          user(
+            "I underestimated the migration complexity and we slipped by two weeks. I owned the miss in the retro and we rebuilt the estimation process so future migrations had buffer.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("rehearsed_answers");
+  });
+
+  it("FIXTURE: ≥2 hedge-dense answers → low_conviction_delivery", async () => {
+    /* Each substantive answer carries ≥3 hedge tokens (um / like /
+     * maybe / I think / kind of). Should fire at LOW_CONVICTION_MIN_HITS = 2. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you led through a tough delivery."),
+          user(
+            "So um, I think it was, like, the checkout migration where, you know, I was kind of leading the work. Basically my task was to, like, get latency down and I think we maybe shipped it in six weeks or so. I led the migration to a sharded queue and rewrote the settlement worker. As a result, latency dropped.",
+          ),
+          ai("Tell me about a difficult conversation."),
+          user(
+            "Honestly, I would say it was, like, a disagreement with my PM. I mean, I think it was about scope, basically, and I'm not sure exactly how it started but, you know, we kind of worked through it. I escalated to the head of engineering and we shipped on time.",
+          ),
+          ai("Tell me about a failure."),
+          user(
+            "I underestimated the migration and we slipped by two weeks. I owned the miss in the retro and we rebuilt the estimation process so future migrations had buffer.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("low_conviction_delivery");
+    expect(out.meta?.behavioral?.delivery?.lowConvictionHits).toBeGreaterThanOrEqual(2);
+  });
+
+  it("FIXTURE: ≥2 conflict answers without counterparty POV → one_sided_conflict_narrative", async () => {
+    /* Both conflict-shaped AI prompts get answered with pure first-
+     * person narration ("I did X, I escalated, I shipped") — the
+     * candidate never mentions what the OTHER side wanted, believed,
+     * or feared. Should fire at ONE_SIDED_CONFLICT_MIN_HITS = 2. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a disagreement with a stakeholder."),
+          user(
+            "I disagreed with the scope on the audit-fix sprint. I walked through the risk math, escalated to the head of engineering, and proposed a one-week exception. I shipped the fix on time and the audit passed.",
+          ),
+          ai("Tell me about a time you had to push back on cross-functional alignment."),
+          user(
+            "I pushed back on the launch plan because I thought it was unsafe. I wrote up my analysis, presented it in the next leadership review, and got the rollout window extended. I shipped the migration two sprints later.",
+          ),
+          ai("Tell me about a project."),
+          user(
+            "I led the checkout rewrite end-to-end. I owned the architecture call, designed the cutover sequence, and shipped p99 down to 380ms.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).toContain("one_sided_conflict_narrative");
+    expect(out.meta?.behavioral?.conflict?.oneSidedConflictHits).toBeGreaterThanOrEqual(2);
+    expect(out.meta?.behavioral?.conflict?.conflictQuestionsAsked).toBeGreaterThanOrEqual(2);
+  });
+
+  it("FIXTURE: conflict answers that name the other side's position → no one_sided_conflict_narrative", async () => {
+    /* Same conflict prompts but each answer opens with what the
+     * counterparty wanted / believed / argued. Protects against false
+     * positives on well-narrated disagreements. */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a disagreement with a stakeholder."),
+          user(
+            "The PM wanted to ship checkout-revamp in the same sprint as the audit fix — their position was that the audit would slip the launch and lose the quarter. I walked through the risk math with the head of engineering and proposed a one-week exception. We shipped both on time.",
+          ),
+          ai("Tell me about a time you had to push back on cross-functional alignment."),
+          user(
+            "The design lead believed the new flow would lose mobile users; their concern was around tap-target density on low-end Androids. I ran a usability test on a 2GB device, brought the data back, and we landed on a compromise layout. The mobile conversion held.",
+          ),
+          ai("Tell me about a project."),
+          user(
+            "I led the checkout rewrite end-to-end. I owned the architecture call and shipped p99 down to 380ms.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("one_sided_conflict_narrative");
+  });
+
+  it("FIXTURE: decisive answers → no low_conviction_delivery", async () => {
+    /* Same content density but no hedge stacks. Should NOT trip the
+     * flag — protects against false positives on confident speech that
+     * happens to contain a single "I think" or "like". */
+    const out = await behavioralAnalyzer.analyze({
+      session: session({
+        transcript: [
+          ai("Tell me about a time you led through a tough delivery."),
+          user(
+            "The checkout migration. My task was to bring p99 under 500ms in six weeks. I led the migration to a sharded queue and rewrote the settlement worker. As a result, p99 dropped to 380ms within the first sale window.",
+          ),
+          ai("Tell me about a difficult conversation."),
+          user(
+            "My PM and I disagreed on scope for the audit fix. I walked through the risk math with the head of engineering and proposed a tightly scoped one-week exception. We shipped both on time.",
+          ),
+          ai("Tell me about a failure."),
+          user(
+            "I underestimated the migration complexity and we slipped by two weeks. I owned the miss in the retro and we rebuilt the estimation process so future migrations had buffer.",
+          ),
+        ],
+      }),
+    });
+    expect(out.flags).not.toContain("low_conviction_delivery");
   });
 });

@@ -120,6 +120,12 @@ export interface AnalyzerMeta {
        *  to a failure-style AI question. `null` when no failure
        *  question was asked, or no substantive user response. */
       failureResponse: "owns" | "deflects" | "neutral" | null;
+      /** Did the captured failure response name a concrete thing the
+       *  candidate missed (a system / assumption / stakeholder), or
+       *  just generic "I made a mistake" ownership? `null` when no
+       *  failure response was captured. Drives the
+       *  `weak_specificity_in_failure_story` flag. */
+      failureResponseHadConcreteMiss?: boolean | null;
     };
     /** Phase-6.3: evidence-quality counters. Tracks how many user
      *  answers quoted a metric, how many of those metrics floated
@@ -131,6 +137,26 @@ export interface AnalyzerMeta {
       metricAnswersCount: number;
       metricAnswersUnevidenced: number;
       aiAcceptedUnevidencedMetric: number;
+    };
+    /** Delivery-pattern counters: rehearsed-opener hits, hedge-density
+     *  hits, and rambling-answer hits. Each aggregates to a session-
+     *  level pattern flag at threshold (see BEHAVIORAL_THRESHOLDS).
+     *  Surfaced in the report so the candidate sees the absolute count,
+     *  not just the flag presence. */
+    delivery?: {
+      rehearsedOpenerHits: number;
+      lowConvictionHits: number;
+      ramblingHits: number;
+    };
+    /** Conflict-narrative counters: how many conflict / disagreement-
+     *  shaped questions the AI asked, and how many of the candidate's
+     *  responses ran one-sided (no counterparty-POV framing). Fires the
+     *  `one_sided_conflict_narrative` flag at threshold so the next
+     *  session's prebias steers toward stems that demand the other
+     *  side's position up front. */
+    conflict?: {
+      conflictQuestionsAsked: number;
+      oneSidedConflictHits: number;
     };
   };
   /** Campus-placement: tier-aware CGPA calibration the analyzer used.

@@ -2590,7 +2590,7 @@ export function useInterviewEngine() {
           answerText || "",
         ].filter(Boolean);
         if (shouldUseEmpatheticClosing(recentUserTurns, answerQualityRef.current.slice(-3))) {
-          const empatheticClosing = "Thanks for sticking with it — these conversations aren't easy. Generating your detailed report now. Stay on this screen for a moment.";
+          const empatheticClosing = "Thanks for sticking with it — these conversations aren't easy. Generating your detailed report now.";
           if (empatheticClosing !== nextStep.aiText) {
             setInterviewScript(prev => {
               const updated = [...prev];

@@ -137,3 +137,103 @@ export function isFailureQuestion(text: string): boolean {
   if (!text) return false;
   return FAILURE_QUESTION_RE.test(text);
 }
+
+/* Rehearsed-opener detector. Candidates who memorise STAR templates open
+ * with stiff stock phrases that don't sound like spontaneous speech. We
+ * fire only when the phrase is the FIRST non-trivial chunk of the answer
+ * (anchored ^) — a mid-answer "let me tell you" inside otherwise
+ * spontaneous prose doesn't count. Light filler tokens (so / well /
+ * okay) are allowed before the stock phrase since natural speech often
+ * starts with them. */
+export const REHEARSED_OPENER_RE =
+  /^(?:\s*(?:so|well|okay|alright|sure)\s*[,.\-]?\s*){0,2}(?:let\s+me\s+(?:tell|share|walk)\s+you\s+(?:about|through)\s+(?:a\s+(?:time|story|situation|scenario)|the\s+time)|i\s+would\s+like\s+to\s+(?:share|tell|narrate)|i\s+(?:will|would)\s+(?:like\s+to\s+)?(?:begin|start)\s+(?:by|with)|allow\s+me\s+to\s+(?:share|narrate|elaborate)|to\s+answer\s+(?:this|your)\s+question(?:\s+[,.\-]?\s*i)?|in\s+response\s+to\s+(?:this|your)\s+question|as\s+per\s+(?:my|the)\s+(?:experience|understanding)|i\s+have\s+a\s+(?:very\s+)?(?:good|relevant|perfect)\s+example|there\s+was\s+(?:one|a)\s+(?:instance|time|situation)\s+(?:in|when|where)\s+my)/i;
+
+/* Hedge-token regex for the low-conviction-delivery signal. Captures
+ * filler markers ("um", "uh"), epistemic hedges ("I think", "maybe",
+ * "kind of"), and verbal-tic discourse markers ("you know", "basically",
+ * "literally", "honestly"). Single occurrences are normal speech;
+ * density is the signal — caller gates on ≥3 hits + answer length ≥120. */
+export const HEDGE_TOKEN_RE =
+  /\b(?:um+|uh+|er+|hmm+|like|maybe|kind\s+of|sort\s+of|i\s+(?:think|guess|believe|feel\s+like|suppose)|i'?m\s+not\s+(?:sure|certain)|probably|possibly|somewhat|i\s+would\s+say|you\s+know|basically|literally|honestly|to\s+be\s+honest|i\s+mean)\b/gi;
+
+/** Detect a rehearsed stock-opener at the head of the answer. Returns
+ *  false on micro-replies (length < 40) — those don't carry the
+ *  rehearsed-vs-spontaneous signal either way. */
+export function detectRehearsedOpener(text: string): boolean {
+  if (!text || text.length < 40) return false;
+  return REHEARSED_OPENER_RE.test(text);
+}
+
+/** Count hedge-token hits in `text`. Used by `isLowConvictionDelivery`
+ *  and exported so the report can show the absolute density. */
+export function countHedgeTokens(text: string): number {
+  if (!text) return 0;
+  const matches = text.match(HEDGE_TOKEN_RE);
+  return matches ? matches.length : 0;
+}
+
+/** Low-conviction delivery: substantive answer (≥120 chars) with hedge
+ *  density ≥3. Pure check — caller still gates on per-session min-hits
+ *  for the pattern-class flag. */
+export function isLowConvictionDelivery(text: string): boolean {
+  if (!text || text.length < 120) return false;
+  return countHedgeTokens(text) >= 3;
+}
+
+/* Conflict-question detector. Fires on AI prompts that ask about
+ * disagreements, pushback, alignment battles, or saying-no. Triggers
+ * the one-sided-narrative classification on the immediately-following
+ * user answer. Distinct from FAILURE_QUESTION_RE — failure is about
+ * the candidate's own mistake; conflict is about an interpersonal
+ * disagreement that requires two POVs to narrate well. */
+export const CONFLICT_QUESTION_RE =
+  /\b(?:disagree(?:d|ment)?|conflict|pushed?\s+back|push[\s-]?back|argument|aligned?\s+(?:on|with)|alignment|stakeholder|cross[\s-]?functional|tough\s+conversation|difficult\s+(?:conversation|stakeholder|peer)|said\s+no|saying\s+no|stand\s+(?:your|my)\s+ground|escalat(?:ed?|ion)|got\s+(?:them|him|her)\s+to|won\s+(?:them|him|her)\s+over|change\s+(?:their|someone'?s)\s+mind|convince(?:d)?)\b/i;
+
+/* Counterparty-POV markers. A well-narrated conflict answer mentions
+ * what the OTHER side wanted, believed, or feared — not just what the
+ * candidate did. We look for explicit second-party framing:
+ *   - "they wanted / believed / argued / pushed for / preferred"
+ *   - "their concern / position / argument / view was"
+ *   - "from their perspective / their side"
+ *   - named role + want-verb ("the PM wanted", "engineering pushed for")
+ * Conservative — requires a verb form (not just any pronoun mention)
+ * so a passing "they were there" doesn't satisfy the check. */
+export const COUNTERPARTY_POV_RE =
+  /\b(?:they\s+(?:wanted|believed|argued|preferred|insisted|felt|thought|worried|feared|pushed\s+(?:for|back)|were\s+(?:concerned|worried|afraid))|(?:their|his|her)\s+(?:concern|position|argument|view|side|perspective|reasoning|fear|worry|priority|priorities|case)\s+(?:was|were)|from\s+(?:their|his|her)\s+(?:perspective|side|point\s+of\s+view|standpoint)|(?:the\s+)?(?:pm|product|engineering|design|qa|tech\s+lead|tl|manager|director|client|customer|user|stakeholder|leadership|legal|finance|security|sales|marketing|founders?|ceo|cto|cfo|hr|recruiter|team)\s+(?:wanted|believed|argued|insisted|felt|preferred|pushed\s+(?:for|back)|disagreed|objected|was\s+(?:concerned|worried)|thought))\b/i;
+
+/** Detect the AI turn as a conflict-style question. */
+export function isConflictQuestion(text: string): boolean {
+  if (!text) return false;
+  return CONFLICT_QUESTION_RE.test(text);
+}
+
+/** Does the user answer include any counterparty-POV framing? A
+ *  conflict answer that lacks this reads as one-sided narration — the
+ *  candidate steamrolled rather than collaborated. */
+export function hasCounterpartyPov(text: string): boolean {
+  if (!text || text.length < 60) return false;
+  return COUNTERPARTY_POV_RE.test(text);
+}
+
+/* Concrete-miss marker for failure stories. Owning a failure isn't
+ * enough at senior level — the interviewer wants to hear WHAT
+ * specifically the candidate missed: a system, a process, an
+ * assumption, a stakeholder, a risk, a tradeoff. Vague ownership
+ * ("I underestimated it / I messed up / my mistake") with no named
+ * miss-token is hindsight theatre — the candidate sounds accountable
+ * without revealing whether they actually understood the failure mode.
+ * We require BOTH a miss-verb AND an explicit object (the noun that
+ * was missed) within the same clause. "I underestimated the
+ * complexity" passes; "I underestimated it" doesn't. */
+export const CONCRETE_FAILURE_MISS_RE =
+  /\b(?:underestimated|over[\s-]?estimated|didn'?t\s+(?:account\s+for|consider|catch|anticipate|realise|realize|see)|failed\s+to\s+(?:account\s+for|consider|catch|anticipate|spot|notice)|missed|overlooked|skipped|ignored|under[\s-]?invested\s+in|wasn'?t\s+aware\s+of|hadn'?t\s+thought\s+about|lost\s+sight\s+of)\s+(?:the|a|an|my|our|their|how|that|whether|when|why)\s+\w+/i;
+
+/** Did the failure-story answer name a CONCRETE thing the candidate
+ *  missed? Returns false for "I made a mistake" / "I owned it" /
+ *  "my bad" — these are accountability without specificity. Returns
+ *  true for "I underestimated the migration risk" / "I didn't account
+ *  for the rollback path" / "I overlooked the monitoring gap". */
+export function hasConcreteFailureMiss(text: string): boolean {
+  if (!text || text.length < 60) return false;
+  return CONCRETE_FAILURE_MISS_RE.test(text);
+}

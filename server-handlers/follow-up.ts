@@ -18,6 +18,8 @@ import { summarizeReverseInterview } from "../src/_reverse-interview";
 import { detectRegionFromCity, hasRegionalSignal } from "../src/_regional-register";
 import { getPanelPersona, panelPersonaPromptFragment } from "../src/_indian-panel-personas";
 import { cueFromEngineHints, pickBehavioralProbe, probePromptFragment, shouldSuppressCue } from "./_behavioral-followup-bank";
+import { detectEvidenceQuality } from "./_evidence-signals";
+import { detectRehearsedOpener, hasCounterpartyPov, isConflictQuestion, isLowConvictionDelivery } from "./analyzers/_behavioral-probing";
 
 declare const process: { env: Record<string, string | undefined> };
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
@@ -1245,6 +1247,55 @@ ${safeStarGap === "action"
     // the directive is empty (we still want the detection telemetry).
     void regional.region;
 
+    /* Gap-classified answer-shape directive. The engine already passes
+     * starGap / weHeavy / crispness; this block layers a finer probe
+     * shape based on local detection of the two highest-signal answer
+     * shape failures the existing engine signals don't cover:
+     *   - METRIC_NAKED   → numbers without baseline / method
+     *   - RAMBLING_EMPTY → long answer, no result, no number
+     * The classifier is precedence-ordered: a single answer can match
+     * both, but we emit ONE directive (most-actionable wins) so the LLM
+     * doesn't get conflicting probes. */
+    /* Precedence: metric_naked → rehearsed → low_conviction → rambling.
+     * METRIC_NAKED is the highest-leverage probe (Bar-Raiser default).
+     * REHEARSED beats LOW_CONVICTION because a stock opener IS the
+     * confidence-mask candidates use to hide hedging. RAMBLING is
+     * lowest priority — when nothing sharper fires, compress. */
+    let answerShape: "metric_naked" | "rehearsed" | "low_conviction" | "rambling_empty" | null = null;
+    if (type === "behavioral" && answer && answer.length >= 60) {
+      const ev = detectEvidenceQuality(answer);
+      const hasResultVerb = /\b(reduced|increased|saved|shipped|launched|grew|cut|improved|dropped|raised|lowered|boosted|accelerated|deprecated|migrated|delivered|onboarded|converted|retained|scaled)\b/i.test(answer);
+      const hasNumber = /\b\d+(?:[.,]\d+)?\s*(?:%|percent|x|k|m|b|crores?|lakhs?|million|billion|hours?|days?|weeks?|months?|users?|customers?|requests?|qps|ms)?\b/i.test(answer);
+      if (ev.hasMetric && !ev.evidenced) answerShape = "metric_naked";
+      else if (detectRehearsedOpener(answer)) answerShape = "rehearsed";
+      else if (isLowConvictionDelivery(answer)) answerShape = "low_conviction";
+      else if (answer.length >= 1200 && !hasResultVerb && !hasNumber) answerShape = "rambling_empty";
+    }
+    const answerShapeDirective = answerShape
+      ? answerShape === "metric_naked"
+        ? `\nANSWER-SHAPE PROBE — METRIC_NAKED. The candidate quoted a number without anchoring it (no baseline, no measurement method, no sample). Your follow-up MUST press exactly there in ONE sentence: "What was the baseline before that?" / "How did you measure it — A/B, analytics, customer survey?" / "Over what sample / time window?" Do NOT pile on; one anchor probe.`
+        : answerShape === "rehearsed"
+        ? `\nANSWER-SHAPE PROBE — REHEARSED. The candidate opened with a stock template phrase. Bypass the canned shape: ask for a SPECIFIC detail that a memorised answer wouldn't have prepared — a name, a number, a Tuesday-afternoon moment. Examples: "Skip the setup — what was the first decision you made on that?" / "What was the room like when you made that call?" / "Who pushed back, and what did they say?" ONE probe, no preamble.`
+        : answerShape === "low_conviction"
+        ? `\nANSWER-SHAPE PROBE — LOW_CONVICTION. The candidate's answer stacked hedges (um, like, I think, maybe). Pull them off the fence in ONE sentence: "In one line, what was the call you actually made?" / "Were you sure at the time, or hedging?" / "If you had to defend that decision now in one sentence, what would you say?" Do NOT mock the hedging; just demand a decisive line.`
+        : `\nANSWER-SHAPE PROBE — RAMBLING_EMPTY. The candidate spoke at length without landing a Result or any numbers. Your follow-up MUST compress: "In one sentence — what changed because of what you did?" / "Skip the journey, just the outcome — what was the number at the end?" ONE compression probe; do not also ask for more context.`
+      : "";
+
+    /* Counterparty-POV probe. Independent of answerShape because it
+     * gates on the QUESTION being conflict-shaped, not on the answer's
+     * stylistic shape — a conflict answer can be metric-naked AND
+     * one-sided, and we still want to push for the other side's POV
+     * because that's the Bar-Raiser-style miss the candidate didn't
+     * recover from. Cheap regex, no LLM. */
+    const conflictGapDirective =
+      type === "behavioral" &&
+      answer &&
+      answer.length >= 60 &&
+      isConflictQuestion(question || "") &&
+      !hasCounterpartyPov(answer)
+        ? `\nCOUNTERPARTY-POV PROBE. The question was conflict / disagreement-shaped and the candidate's answer walked through what THEY did without naming what the OTHER side wanted, believed, or feared. Your follow-up MUST press exactly there in ONE sentence: "What did *they* want, in their own words?" / "What was the other side's actual position — not your read of it, their case?" / "If I asked the PM / design lead / manager to tell me the same story, what would they say their concern was?" Do NOT pile on; one counterparty-POV probe.`
+        : "";
+
     const tenureProbe = (type === "behavioral" && TENURE_SHORT_RE.test(answer))
       ? `\nTENURE-DEFENCE PROBE — the candidate mentioned a short tenure (<24 months) followed by a departure. Indian interviewers aggressively probe these. If a follow-up is warranted, your ONE follow-up MAY re-ask the "why did you leave" angle from a DIFFERENT cut than the original question already covered: the manager-fit angle ("how was the working relationship with your manager?"), the growth angle ("what was missing for you to stay another year?"), or the timing angle ("was there a specific incident, or was it building up?"). Do NOT escalate or shame. Do NOT call the tenure "short" or "concerning" — neutral curiosity only. Treat instability framing as a non-penalty narrative-coherence check, not a red flag.`
       : "";
@@ -1298,7 +1349,7 @@ If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question
 
 ${tierPromptSuffix(classifyCompanyTier(company))}
 
-${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
+${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
 
 Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}

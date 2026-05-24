@@ -44,33 +44,33 @@ export interface InterviewStep {
 
 export const scriptsByType: Record<string, InterviewStep[]> = {
   behavioral: [
-    { type: "intro", aiText: "Hi! Welcome to your behavioral mock interview. I'm your AI interviewer today. We'll focus on leadership, decision-making, and conflict resolution. This will take about 15 minutes. Feel free to take your time. Ready?", thinkingDuration: 500, speakingDuration: 6000, waitForUser: true },
+    { type: "intro", aiText: "Hi, welcome. We've got about 15 minutes — I'll ask 4–5 behavioural questions covering leadership, decisions, and how you handle disagreement. Take your time on each one, and we'll leave a few minutes at the end for any questions you have for me. Sound good?", thinkingDuration: 500, speakingDuration: 6000, waitForUser: true },
     { type: "question", aiText: "Great. Tell me about a time you had to make a difficult technical decision that significantly impacted your team's roadmap. What was the situation, and how did you approach it?", thinkingDuration: 600, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: STAR structure, strategic framing, business impact" },
     { type: "question", aiText: "Now, let's talk about scaling. Describe a situation where you had to scale your engineering organization. What challenges did you face, and how did you maintain engineering velocity during that growth?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: scaling strategy, people management, metrics" },
     { type: "question", aiText: "Let's shift to stakeholder management. Tell me about a time when you had to push back on a request from a senior executive. How did you handle it, and what was the outcome?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: stakeholder alignment, communication, courage" },
     { type: "question", aiText: "Before we wrap up — do you have any questions for me? About the role, the team, how decisions get made, anything you'd like to understand better.", thinkingDuration: 600, speakingDuration: 4500, waitForUser: true, scoreNote: "Focus on: substantive role / team / decision-making questions (green); avoid salary-in-round-1, leave-policy, WFH-aggressive, promotion-timeline (red)." },
-    { type: "closing", aiText: "That wraps it up. Thanks for the conversation — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "That wraps it up — thanks for the conversation. All the best for what's next.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   strategic: [
     { type: "intro", aiText: "Welcome to your strategic interview session. Today we'll explore your vision-setting ability, roadmap thinking, and business alignment. Let's dive in — are you ready?", thinkingDuration: 500, speakingDuration: 5000, waitForUser: true },
     { type: "question", aiText: "Imagine you've just joined a company as VP of Engineering. The product has strong market fit but the tech stack is aging. How would you approach building a 3-year technical strategy?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Focus on: strategic vision, prioritization, stakeholder buy-in" },
     { type: "question", aiText: "Tell me about a time you had to pivot a major initiative based on changing business conditions. How did you recognize the need and communicate the change?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: adaptability, communication, decisiveness" },
     { type: "question", aiText: "How do you ensure engineering strategy stays aligned with business goals? Walk me through your approach to cross-functional planning.", thinkingDuration: 700, speakingDuration: 4500, waitForUser: true, scoreNote: "Focus on: cross-functional alignment, planning rigor" },
-    { type: "closing", aiText: "Alright, that's everything I needed. Thanks for the discussion — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "Alright, that's everything I needed. Thanks for the discussion — all the best.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   technical: [
     { type: "intro", aiText: "Welcome to your technical leadership interview. We'll focus on architecture decisions, system design at scale, and tech strategy. Ready to begin?", thinkingDuration: 500, speakingDuration: 4500, waitForUser: true },
     { type: "question", aiText: "Describe a system you designed that had to handle 10x growth in traffic. What were the key architectural decisions and trade-offs?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: scalability thinking, trade-off analysis" },
     { type: "question", aiText: "Tell me about a major production incident you led the response for. How did you structure the incident response, and what systemic changes did you make afterward?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Focus on: incident management, blameless culture, systemic thinking" },
     { type: "question", aiText: "How do you evaluate and introduce new technologies into your stack? Walk me through a recent technology decision you drove.", thinkingDuration: 700, speakingDuration: 4500, waitForUser: true, scoreNote: "Focus on: tech evaluation rigor, risk management" },
-    { type: "closing", aiText: "Good. That covers what I wanted to discuss. Generating your detailed report now — stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "Good — that covers what I wanted to discuss. Thanks for walking me through it. All the best.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   "case-study": [
     { type: "intro", aiText: "Welcome to your case study interview. I'll present you with business scenarios that test your analytical thinking and problem-solving frameworks. Let's start.", thinkingDuration: 500, speakingDuration: 5000, waitForUser: true },
     { type: "question", aiText: "Your company's core API has 99.95% uptime but customers are churning citing 'reliability issues.' Latency p99 is 2 seconds. How would you investigate and address this?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Focus on: problem decomposition, data-driven approach" },
     { type: "question", aiText: "A competitor just launched a feature that took them 2 months. Your team estimates it would take 6 months due to tech debt. The CEO wants it in 3. How do you handle this?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: negotiation, creative solutions, scope management" },
     { type: "question", aiText: "Your engineering team of 40 has low morale. Attrition is at 25%. Exit interviews cite 'lack of growth' and 'unclear direction.' You have 90 days to turn it around. What do you do?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Focus on: people leadership, organizational design, quick wins" },
-    { type: "closing", aiText: "That wraps up the case discussion. Thanks for working through these — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "That wraps up the case discussion. Thanks for working through these — all the best for what's next.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   "campus-placement": [
     { type: "intro", aiText: "Hi! Welcome to your campus placement mock interview. I'll be your interviewer today. We'll cover a mix of HR questions, problem-solving, and questions about your academic projects. This is designed to feel like a real on-campus interview. Ready to begin?", thinkingDuration: 500, speakingDuration: 6000, waitForUser: true },
@@ -78,7 +78,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "Walk me through a project you're most proud of from college. What was your specific contribution, and what did you learn from the challenges you faced?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: technical depth, ownership, learning mindset" },
     { type: "question", aiText: "Where do you see yourself in 5 years? How does this role fit into your long-term career goals?", thinkingDuration: 600, speakingDuration: 3500, waitForUser: true, scoreNote: "Focus on: ambition, alignment with role, realistic goals" },
     { type: "question", aiText: "Tell me about a time you worked in a team on a tight deadline — perhaps for a college project, hackathon, or internship. How did you handle disagreements or pressure?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: teamwork, conflict resolution, deadline management" },
-    { type: "closing", aiText: "Great. That's all I had for you today. Thanks for chatting — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "Great. That's all I had for you today. Thanks for chatting — all the best for placements.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   "hr-round": [
     { type: "intro", aiText: "Welcome to your HR round practice session. This round focuses on your personality, cultural fit, and soft skills. I'll ask questions that real HR managers ask. Let's get started — are you ready?", thinkingDuration: 500, speakingDuration: 5000, waitForUser: true },
@@ -86,7 +86,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "What are your greatest strengths and weaknesses? Give me a specific example of how a strength helped you deliver results, and how you're working on a weakness.", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: self-awareness, honesty, growth mindset" },
     { type: "question", aiText: "Describe a conflict you had with a colleague or team member. How did you resolve it, and what did you learn?", thinkingDuration: 700, speakingDuration: 4500, waitForUser: true, scoreNote: "Focus on: emotional intelligence, resolution approach, maturity" },
     { type: "question", aiText: "Why should we hire you over other candidates? What unique value do you bring to this team?", thinkingDuration: 600, speakingDuration: 4000, waitForUser: true, scoreNote: "Focus on: confidence without arrogance, unique value proposition" },
-    { type: "closing", aiText: "Alright, that's all from my side. Thanks for the conversation — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "Alright, that's all from my side. Thanks for the conversation — we'll be in touch about next steps.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   management: [
     { type: "intro", aiText: "Welcome to your management interview session. We'll explore your leadership style, team management approach, and how you drive results through others. This covers questions typical for operations, project management, and general management roles. Ready?", thinkingDuration: 500, speakingDuration: 6000, waitForUser: true },
@@ -94,7 +94,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "Describe a situation where you had to manage a team through a significant change or reorganization. What was your approach and what challenges did you face?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: change management, communication, empathy" },
     { type: "question", aiText: "How do you handle underperformance on your team? Walk me through a specific example where you had to address a team member who wasn't meeting expectations.", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: difficult conversations, fairness, development orientation" },
     { type: "question", aiText: "Tell me about a cross-functional initiative you led. How did you align different departments with competing priorities toward a shared goal?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: influence without authority, stakeholder management, strategic thinking" },
-    { type: "closing", aiText: "Good. That covers everything I wanted to ask. Thanks for the discussion — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "Good. That covers everything I wanted to ask. Thanks for the discussion — all the best for what's next.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   "government-psu": [
     { type: "intro", aiText: "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin — are you ready?", thinkingDuration: 500, speakingDuration: 5500, waitForUser: true },
@@ -102,7 +102,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "Suppose you're posted in a rural district and discover that a government scheme is not reaching its intended beneficiaries due to local corruption. What steps would you take?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Focus on: ethical reasoning, practical approach, knowledge of governance systems" },
     { type: "question", aiText: "India faces challenges in balancing economic growth with environmental sustainability. How would you approach this trade-off in a policy role?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: balanced perspective, policy awareness, analytical thinking" },
     { type: "question", aiText: "Tell me about a current national issue you feel strongly about. What is the government's current approach, and what would you do differently?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Focus on: current affairs knowledge, critical thinking, constructive suggestions" },
-    { type: "closing", aiText: "That wraps up our discussion. Thank you for your responses — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
+    { type: "closing", aiText: "That wraps up our discussion. Thank you for your responses — all the best.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false },
   ],
   "panel": [
     { type: "intro", aiText: "Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. We'll each ask you questions from our perspective. Let's begin — tell us briefly about yourself.", thinkingDuration: 500, speakingDuration: 6000, waitForUser: true, persona: "Hiring Manager" },
@@ -110,7 +110,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "I'd like to understand your leadership style. Can you describe a time you had to rally a team through a difficult period? What was your approach?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Hiring Manager evaluating: leadership, team management", persona: "Hiring Manager" },
     { type: "question", aiText: "Let's talk about culture and collaboration. How do you handle disagreements with peers, especially when you strongly believe your approach is right?", thinkingDuration: 700, speakingDuration: 4500, waitForUser: true, scoreNote: "HR Partner evaluating: emotional intelligence, conflict resolution, cultural fit", persona: "HR Partner" },
     { type: "question", aiText: "Back to the technical side — if I gave you a system currently handling 1000 requests per second and told you it needs to handle 100x that in 6 months, how would you approach it?", thinkingDuration: 800, speakingDuration: 5500, waitForUser: true, scoreNote: "Technical Lead evaluating: scalability thinking, planning", persona: "Technical Lead" },
-    { type: "closing", aiText: "Thank you for speaking with all of us today. That's everything we had — generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false, persona: "Hiring Manager" },
+    { type: "closing", aiText: "Thank you for speaking with all of us today. That's everything we had — we'll be in touch about next steps.", thinkingDuration: 800, speakingDuration: 4500, waitForUser: false, persona: "Hiring Manager" },
   ],
   "salary-negotiation": [
     { type: "intro", aiText: "Good to see you again. We've completed all the interview rounds, and the team was really impressed with your profile. I'm here to discuss the offer details and see if we can make this work. Let me walk you through what we've put together.", thinkingDuration: 500, speakingDuration: 5500, waitForUser: true },
@@ -119,7 +119,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
     { type: "question", aiText: "I hear you. That's a bit above our initial band for this level. Let me see what I can do — there's some flexibility on the base, and I could also look at a joining bonus or ESOPs to bridge the gap. What matters more to you — a higher fixed component or equity upside?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Phase: counter-offer. Evaluate: Did they negotiate beyond just base? Did they explore multiple levers? Did they maintain leverage without being adversarial?" },
     { type: "question", aiText: "Let me lay out the full picture then. Beyond the base and variable, there's a learning budget, flexible work options, and comprehensive benefits. I think the total package is quite competitive when you factor everything in. What would make this a clear yes for you?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Phase: benefits-discussion. Evaluate: Did they think about total compensation? Did they prioritize clearly? Did they explore non-salary items?" },
     { type: "question", aiText: "I appreciate the thorough discussion. I should mention — this is genuinely at the top of our approved band for this level. I've got one other strong candidate at final stage. I'd love to close this today. What's your notice period, and when could you realistically join us?", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Phase: closing-pressure. Evaluate: Did they handle pressure well? Did they negotiate pressure tactics? Did they set a clear timeline without caving?" },
-    { type: "closing", aiText: "Alright, I think we've reached a good place. I'll have HR send you the formal offer letter — take a day or two to review. Generating your detailed report now. Stay on this screen for a moment.", thinkingDuration: 800, speakingDuration: 5000, waitForUser: false },
+    { type: "closing", aiText: "Alright, I think we've reached a good place. I'll have HR send you the formal offer letter — take a day or two to review, and reach out if anything's unclear.", thinkingDuration: 800, speakingDuration: 5000, waitForUser: false },
   ],
 };
 
@@ -165,6 +165,15 @@ const miniQuestionsByType: Record<string, QuestionBank[]> = {
        during transition. Avoids the "are you willing to relocate"
        compliance frame. */
     { q: "Tell me about a time you made a major work-related relocation or shift change — moving cities for a role, or switching to a US/UK shift. Walk me through how you decided, how you set it up with family, and how the first 60 days went.", qResume: "As {title}, walk me through a major relocation or shift change you made — how you decided, set it up at home, and what the first 60 days looked like.", scoreNote: "Decision-making under personal-cost trade-off, family/stakeholder coordination, transition execution, honest reflection on what worked and what didn't" },
+    /* B9-B11 — sharper India-rooted result-first stems. Each demands a
+       measurable outcome in the prompt itself, not as a follow-up. The
+       behavioural prebias system steers toward these when the prior
+       session emitted `rambling_answers`, `unquantified_answers`, or
+       `frequent_missing_result` — they bake the result ask into the
+       first beat so the candidate can't drift. */
+    { q: "Give me one number that you moved in the last twelve months that you're genuinely proud of — and then walk me back to what you actually did to move it. Skip the team narration; I want your specific actions.", qResume: "From your time as {title}, give me one number you personally moved in the last twelve months — then walk me back through your specific actions.", scoreNote: "Outcome-first delivery, first-person ownership, action specificity over team narration" },
+    { q: "Tell me about a deadline that was genuinely at risk — a release date, an audit window, a client demo. What was your call between scope, quality, and timeline, and what was the result the day after?", qResume: "As {title}, walk me through a genuinely at-risk deadline. What did you trade off — scope, quality, or timeline — and what was the result the day after?", scoreNote: "Trade-off framing under pressure, decisiveness, measurable post-decision outcome" },
+    { q: "Walk me through a time you said no to a senior leader — VP, founder, client executive — and made it stick. What did you give up to hold that line, and what happened in the next quarter?", qResume: "In your role as {title}, tell me about saying no to a senior leader and making it stick. What did you give up, and what happened in the next quarter?", scoreNote: "Conviction at hierarchy gap, cost-of-no awareness, multi-quarter outcome thinking" },
   ],
   "hr-round": [
     { q: "Tell me about yourself — your background, what drives you, and why you're interested in this role.", qResume: "Walk me through your journey from {title} to where you are now. What motivates you, and why are you looking at this role?", scoreNote: "Concise narrative, motivation, role alignment" },
@@ -309,10 +318,10 @@ export function getMiniScript(user: User | null, company?: string, interviewType
       thinkingDuration: 800, speakingDuration: 5000, waitForUser: true, ...(isPanel ? { persona: panelPersonas[0] } : {}) },
     ...questionSteps,
     { type: "closing" as const, aiText: isSalaryNeg
-      ? `Achha, I think we've covered the main points${name ? `, ${name}` : ""}. I'll have HR send the formal offer letter. All the best — generating your detailed report now. Stay on this screen for a moment.`
+      ? `Achha, I think we've covered the main points${name ? `, ${name}` : ""}. I'll have HR send the formal offer letter. All the best — generating your detailed report now.`
       : isPanel
-      ? "Thank you for speaking with all of us today. All the best — generating your detailed report now. Stay on this screen for a moment."
-      : "Achha, that's all from my side. All the best — generating your detailed report now. Stay on this screen for a moment.",
+      ? "Thank you for speaking with all of us today. All the best — generating your detailed report now."
+      : "Achha, that's all from my side. All the best — generating your detailed report now.",
       thinkingDuration: 800, speakingDuration: 4000, waitForUser: false, ...(isPanel ? { persona: panelPersonas[4] } : {}) },
   ];
 }
@@ -363,8 +372,8 @@ export function getScript(type: string | null, difficulty: string | null, user: 
   const personalizedClosing: InterviewStep = {
     type: "closing",
     aiText: isPanel
-      ? `Thank you for speaking with all of us today${name ? `, ${name}` : ""}. That's everything we had for you. All the best — generating your detailed report now. Stay on this screen for a moment.`
-      : `Achha${name ? `, ${name}` : ""}, that's everything from my side. All the best — generating your detailed report now. Stay on this screen for a moment.`,
+      ? `Thank you for speaking with all of us today${name ? `, ${name}` : ""}. That's everything we had for you. All the best — generating your detailed report now.`
+      : `Achha${name ? `, ${name}` : ""}, that's everything from my side. All the best — generating your detailed report now.`,
     thinkingDuration: 800,
     speakingDuration: 4500,
     waitForUser: false,

@@ -379,6 +379,16 @@ export default async function handler(req: Request): Promise<Response> {
         "Quantification (the candidate consistently answers without numbers — at least 2 questions should bake quantification into the prompt, e.g. 'walk me through the numbers')",
       answer_off_topic:
         "Prompt anchoring (last session showed repeated drift from the question's intent — open at least 2 stems with a single sharp clause that the candidate can't sidestep, e.g. 'specifically about a CONFLICT — not a tough decision — tell me about…')",
+      rambling_answers:
+        "Outcome-first compression (last session had long answers that arrived nowhere — open at least 2 stems demanding the result up-front, e.g. 'in one sentence, what was the measurable outcome — then walk me back to how you got there')",
+      rehearsed_answers:
+        "Cold-start framing (last session showed memorised stock openings — design at least 2 stems that bypass canned templates, e.g. 'don't set the scene — start with the moment the decision had to be made' or 'skip the background, what was the call you made')",
+      low_conviction_delivery:
+        "Decisive-opening prompts (last session had hedge-heavy answers — open at least 2 stems demanding a one-sentence stance before the story, e.g. 'in one line: what was the call you made — then justify it')",
+      one_sided_conflict_narrative:
+        "Counterparty-POV framing on conflict stems (last session narrated disagreements as monologues — at least 2 stems must explicitly demand the OTHER side's position first, e.g. 'tell me about a disagreement — start with what THEY wanted before you tell me your side' or 'walk me through a conflict, but the first sentence has to be the counterparty's position in their words')",
+      weak_specificity_in_failure_story:
+        "Specific-miss framing on failure stems (last session owned the failure but never named WHAT was missed — at least 1 stem must force a concrete miss-token, e.g. 'tell me about a failure — and the first sentence has to name the specific thing you missed: a system, an assumption, a stakeholder, a risk' or 'walk me through a miss — not just that you owned it, but what specifically you didn't account for')",
     };
     const isBehavioral = interviewType === "behavioral";
     const behavioralPriorFlagList = (isBehavioral && Array.isArray(priorFlags))
