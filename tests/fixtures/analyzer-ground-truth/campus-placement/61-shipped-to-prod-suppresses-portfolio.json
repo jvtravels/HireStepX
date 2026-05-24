@@ -1,0 +1,25 @@
+{
+  "name": "Candidate narrates shipped-to-prod evidence — portfolio_absent_for_claim suppressed at product-grade archetype",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "Razorpay",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "I'm Aarav, final-year CSE at IIT Bombay, CGPA 8.6, zero backlogs.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your strongest project.", "time": "" },
+      { "speaker": "user", "text": "I built a campus payments reconciliation tool — FastAPI backend, Postgres, Redis for the idempotency cache. We deployed it to production last semester and it's been live for 4 months now serving roughly 1,200 weekly active students across the hostel mess and cafeteria. The repo is internal to the institute so I can't share it publicly, but the deployment is real and the merged PRs went through code review by the institute IT team.", "time": "" },
+      { "speaker": "ai", "text": "What was the hardest design call you made on that project?", "time": "" },
+      { "speaker": "user", "text": "Choosing the idempotency window. We had to make sure a retry from the mobile app wouldn't double-charge a student if the network flaked mid-confirm. I went with a 24-hour Redis key on the request hash plus a unique constraint on the orders table — defence in depth so a Redis miss still wouldn't double-write.", "time": "" },
+      { "speaker": "ai", "text": "How would you approach finding the longest substring without repeating characters?", "time": "" },
+      { "speaker": "user", "text": "Sliding window — left and right pointer, a hashmap of char to last-seen index. When you see a repeat, advance left to one past the last seen index of the repeating char. Track max length as you go. O(n) time, O(min(n, alphabet)) space.", "time": "" },
+      { "speaker": "ai", "text": "What's your CGPA and any backlogs?", "time": "" },
+      { "speaker": "user", "text": "8.6, no active or history of backlogs.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "Two — what's the typical first-year scope for a backend fresher on the payments-core team, and how does on-call rotation work for freshers in the first 6 months?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["shipped_to_prod_context"],
+    "must_not_include": ["empty_transcript", "portfolio_absent_for_claim", "weak_reverse_questions"]
+  }
+}

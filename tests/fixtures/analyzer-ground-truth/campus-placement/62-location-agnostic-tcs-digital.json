@@ -1,0 +1,25 @@
+{
+  "name": "TCS Digital candidate volunteers pan-India relocation — location_agnostic_signal fires, weak_reverse_questions suppressed",
+  "session": {
+    "type": "campus-placement",
+    "target_company": "TCS Digital",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your final-year project.", "time": "" },
+      { "speaker": "user", "text": "I built a fraud-detection pipeline for campus UPI transactions — XGBoost on a class-imbalanced dataset, SMOTE plus focal loss. Got recall to 0.84 at precision 0.71. Python, FastAPI, Postgres. Repo on github.com/aarav/fraud-detect. CGPA 8.2, no backlogs.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through the trade-off you made on the imbalance handling.", "time": "" },
+      { "speaker": "user", "text": "SMOTE alone over-fit to synthetic minority — F1 looked great on train, dropped on holdout. Switched to focal loss with gamma 2.0 and a 3x undersampling on the majority, which made the recall improvement actually generalize. I logged the precision-recall curve per fold so the calibration was defensible to the team.", "time": "" },
+      { "speaker": "ai", "text": "How would you approach a SQL query to find the second-highest salary in an Employee table?", "time": "" },
+      { "speaker": "user", "text": "Window function — DENSE_RANK() OVER (ORDER BY salary DESC) in a CTE, then WHERE rnk = 2. Handles ties cleanly. If no window functions available, SELECT MAX(salary) FROM Employee WHERE salary < (SELECT MAX(salary) FROM Employee) — but I'd flag the NULL case when there's only one distinct salary.", "time": "" },
+      { "speaker": "ai", "text": "What's your CGPA and any backlogs to disclose?", "time": "" },
+      { "speaker": "user", "text": "8.2, no active or history of backlogs.", "time": "" },
+      { "speaker": "ai", "text": "Anything you want us to know about your preferences going in?", "time": "" },
+      { "speaker": "user", "text": "I'm open to any location — pan-India is fine, I'm comfortable relocating wherever TCS Digital places me. No constraints from my side.", "time": "" },
+      { "speaker": "ai", "text": "Any questions for us?", "time": "" },
+      { "speaker": "user", "text": "What's the typical tech stack and team size for a Digital fresher on the BFSI track in the first 6 months?", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["location_agnostic_signal"],
+    "must_not_include": ["empty_transcript", "weak_reverse_questions", "reverse_questions_declined"]
+  }
+}

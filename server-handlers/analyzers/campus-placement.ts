@@ -91,6 +91,19 @@
  *        not live-puzzle. (f) `weak_reverse_questions` at unknown
  *        archetype now adopts service-tier leniency (generic reverse
  *        questions are acceptable when we can't pin down archetype).
+ *   v6.8 Post-v6.7 audit — severity coherence pass:
+ *        (a) `aptitude_puzzle_refusal` severity calibrated by archetype
+ *        loop format: tcs-digital "low" (offline-coding format),
+ *        tcs-ninja / unknown "medium" (NQT live round doesn't dwell on
+ *        puzzles; unknown can't be pinned to either side), wipro-nlth /
+ *        cognizant-genc / top-tier-campus stay "high" where classical
+ *        puzzles and DSA-on-the-spot ARE the loop. Removes the
+ *        unknown-archetype incoherence where v6.7 granted service-tier
+ *        leniency on reverse questions but still slammed "high" on
+ *        aptitude refusal. (b) Two new ground-truth fixtures exercise
+ *        the v6.7 positive flags `shipped_to_prod_context` +
+ *        `location_agnostic_signal` end-to-end so the regression net
+ *        catches future drift on the suppression chains they feed.
  * ──────────────────────────────────────────────────────────────────
  */
 
@@ -494,7 +507,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.7",
+  version: "campus-placement-v6.8",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -1347,7 +1360,20 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           // doesn't dwell on classical puzzles); downgrade severity so
           // the report reflects the rubric the Digital track actually
           // grades against. Other archetypes keep the "high" severity.
-          const aptitudeSeverity: "low" | "medium" | "high" = archetype === "tcs-digital" ? "low" : "high";
+          // v6.8 — extend the offline-coding-format leniency: tcs-ninja
+          // (NQT) is also an online-aptitude-then-live-coding loop where
+          // the LIVE round rarely dwells on classical puzzles, so a
+          // puzzle refusal in the mock there reads "medium" rather than
+          // "high". `unknown` picks up the same medium severity — when
+          // we can't pin the archetype we shouldn't slam a fresher at
+          // full "high" for refusing a probe whose format we can't
+          // verify against the actual loop. `wipro-nlth` and
+          // `cognizant-genc` keep "high" — their live loops genuinely
+          // do test classical puzzles.
+          const aptitudeSeverity: "low" | "medium" | "high" =
+            archetype === "tcs-digital" ? "low"
+            : archetype === "tcs-ninja" || archetype === "unknown" ? "medium"
+            : "high";
           gaps.push({
             dimension: "preparation",
             expected: "Even if stuck, narrate your thinking aloud — 'Let me think out loud: 8 balls, two weighings, so each weighing has to split into 3 buckets...' Interviewers grade approach, not perfection. Flat refusal loses 100% of marks.",
