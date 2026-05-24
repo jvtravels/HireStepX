@@ -1,0 +1,26 @@
+{
+  "name": "Mid-senior candidate opens with respected ma'am / it's an honour framing",
+  "notes": "v5.3 realism: over_deferential_opener — services-coded register depresses comp anchor at MNC / FAANG / GCC HR rounds.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Respected ma'am, first of all, thank you so much for this opportunity — it's an honour to be considered for this role. I am a senior backend engineer with 9 years of experience across Flipkart and Razorpay, currently leading the payouts squad.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Looking for a fresh problem space — payouts has plateaued for me.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Designed and shipped the new instant payouts pipeline handling 5M transactions a day. Owned spec to launch over five months.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹48 LPA fixed, ₹6 LPA variable (paid out at ~85% historically), ₹4 LPA joining bonus, RSU vest of ₹25 LPA over 4 years with a 1-year cliff.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your founder's blog on ledger consensus lines up with my interests, and the engineering scale you're at is the next jump from where I am.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["over_deferential_opener"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague"]
+  }
+}

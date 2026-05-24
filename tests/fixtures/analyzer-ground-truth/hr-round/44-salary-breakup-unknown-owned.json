@@ -1,0 +1,24 @@
+{
+  "name": "Candidate honestly flags they don't know variable payout history",
+  "notes": "v5.3 realism: salary_breakup_unknown_owned — honest unknown is better than guessing; carve-out suppresses salary_breakup_vague false positive.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about your current background.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer at a Bangalore product company for 4 years on the search team.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your current CTC — fixed, variable, joining bonus, RSU split.", "time": "" },
+      { "speaker": "user", "text": "My CTC is ₹32 LPA. Honestly, I don't know the exact variable payout history — my company doesn't share it transparently. Fixed component is the bulk.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Built the query-rewriting layer for our search stack — cut zero-result queries by 38% over a 4-month rollout.", "time": "" },
+      { "speaker": "ai", "text": "Why our company?", "time": "" },
+      { "speaker": "user", "text": "Your engineering blog on vector search and the catalog scale you're at line up with where I want to take my skills next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["salary_breakup_unknown_owned"],
+    "must_not_include": ["salary_breakup_vague", "empty_transcript"]
+  }
+}
