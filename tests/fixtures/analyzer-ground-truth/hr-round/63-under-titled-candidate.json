@@ -1,0 +1,35 @@
+{
+  "name": "Resume shows 6 years YoE but every title is plain IC — under-titled, costs lakhs at offer time",
+  "notes": "v5.6.0 fixture backfill: under_titled_candidate — resume cross-check. Requires resume YoE ≥ 60 months + all titles plain IC.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 6 years across Infosys and Cognizant on the BFSI payments rails — currently leading a 4-person pod on a tier-1 bank account.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into product engineering — services scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Built the payments reconciliation pipeline for a top-3 private bank — owned spec to launch over seven months, handling 3M daily transactions.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "90 days notice, buyout possible at one month gross with manager sign-off and handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹18 LPA fixed, ₹2 LPA variable paid out at 80% historically, ₹1 LPA joining bonus.", "time": "" },
+      { "speaker": "ai", "text": "BGV — payslips, Form 16, UAN, relieving letters — all in order?", "time": "" },
+      { "speaker": "user", "text": "Yes. Form 16 for last 3 years, UAN active, last 6 payslips, relieving letters from both companies ready.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's UPI rails and agentic-payments roadmap line up with where I want to take my skills next.", "time": "" }
+    ]
+  },
+  "resume": {
+    "experiences": [
+      { "title": "Software Engineer", "company": "Cognizant", "period": "March 2022 - present" },
+      { "title": "Software Engineer", "company": "Infosys", "period": "July 2018 - February 2022" }
+    ],
+    "topSkills": ["Java", "Spring Boot", "Kafka", "Oracle"]
+  },
+  "expected": {
+    "must_include": ["under_titled_candidate"],
+    "must_not_include": ["empty_transcript", "inflated_seniority_claim", "resume_transcript_mismatch"]
+  }
+}

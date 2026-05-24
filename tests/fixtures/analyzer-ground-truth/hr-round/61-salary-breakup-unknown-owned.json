@@ -1,0 +1,28 @@
+{
+  "name": "Candidate honestly flags they don't know variable payout history — owned, not vague",
+  "notes": "v5.6.0 fixture backfill: salary_breakup_unknown_owned — positive-honesty path distinct from salary_breakup_vague.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 6 years at a services-track firm on the BFSI integration team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into product engineering — current scope is mature for me on services.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Built the core payments-reconciliation pipeline for a top-3 private bank — handled 2.4M daily transactions, cut reconciliation lag from 8h to 22 min over a six-month rollout.", "time": "" },
+      { "speaker": "ai", "text": "What's the breakup of your CTC — fixed, variable, joining bonus, RSU?", "time": "" },
+      { "speaker": "user", "text": "₹22 LPA total — but I don't know the exact variable payout history. Will pull payslips before the next round.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "90 days notice, buyout possible at one month gross with manager sign-off.", "time": "" },
+      { "speaker": "ai", "text": "BGV — payslips, Form 16, UAN, relieving letter — all in order?", "time": "" },
+      { "speaker": "user", "text": "Yes. Form 16 for last 3 years, UAN active, last 6 payslips ready to share.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's UPI rails work and the move into agentic-payments line up with where I want to take my skills next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["salary_breakup_unknown_owned"],
+    "must_not_include": ["empty_transcript", "salary_breakup_vague", "comp_breakup_probe_missing"]
+  }
+}

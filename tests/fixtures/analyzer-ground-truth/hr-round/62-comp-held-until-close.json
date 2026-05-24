@@ -1,0 +1,32 @@
+{
+  "name": "Candidate holds salary off the table until HR opens it — positive role-first signal",
+  "notes": "v5.6.0 fixture backfill: comp_held_until_close — positive-signal flag. First 3 user turns don't raise comp; HR raises CTC mid-session.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior backend engineer, 8 years across Razorpay and Cred, currently on the ledger team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-payments — current scope is mature for me on the double-entry ledger.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the double-entry ledger to cut reconciliation lag from 24h to 90s — owned spec to launch over six months.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through a hard cross-functional disagreement.", "time": "" },
+      { "speaker": "user", "text": "Ops wanted same-day settlement extended; engineering capacity wouldn't hold. Ran a six-week shadow rollout, brought data, aligned in three weeks.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your current CTC and expected ctc.", "time": "" },
+      { "speaker": "user", "text": "₹48 LPA fixed, ₹6 LPA variable paid out at 85% historically, ₹3 LPA joining bonus, RSU vest of ₹20 LPA over 4 years.", "time": "" },
+      { "speaker": "ai", "text": "What's your expected hike?", "time": "" },
+      { "speaker": "user", "text": "Looking at a 30% jump on fixed — anchored on market benchmark for senior backend at unicorns and the scope expansion in this role.", "time": "" },
+      { "speaker": "ai", "text": "Review cycle and increment cadence — any questions?", "time": "" },
+      { "speaker": "user", "text": "Yes — annual or half-yearly? Off-cycle corrections common? Typical promo timeline at this band?", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's ledger-consensus roadmap and the catalog scale are exactly the problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["comp_held_until_close"],
+    "must_not_include": ["empty_transcript", "ctc_first_question_user", "user_anchor_leaked_salary"]
+  }
+}
