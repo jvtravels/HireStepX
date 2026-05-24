@@ -810,11 +810,11 @@ function renderCanonicalProseBody(
        * idiom. Surfaces the resume↔stated-affiliation gap without
        * accusation. Tokens "resume" + both company names are required
        * by the NextActionContract restyle gate. */
-      return `Just to align — your resume reads ${action.resumeCompany}; you're currently at ${action.statedCompany}?`;
+      return `Quick check — your resume mentions ${action.resumeCompany}; you're currently with ${action.statedCompany}?`;
 
     case "live-walk-away":
       if (action.mode === "walk") {
-        return "Looks like this may not be the right fit at this point — appreciate the conversation.";
+        return "Looks like this may not be the right fit at this stage — thanks for taking the time to speak with us.";
       }
       if (action.mode === "hold-firm") {
         return state.highestOfferMade > 0
@@ -865,7 +865,7 @@ function renderCanonicalProseBody(
 
     case "lever-retention-bonus": {
       const anchor = selectEscalationAnchor(action, state);
-      return `Looking at the structure — we can layer a retention bonus split across the first 12-18 months over and above the fitment. Let me run the exact split past ${anchor} and revert.`;
+      return `On the structure — we can add a retention bonus paid out across the first 12-18 months, over and above the fitment. Let me run the exact split past ${anchor} and revert.`;
     }
 
     case "lever-rsu-refresh":
@@ -928,7 +928,7 @@ function renderCanonicalProseBody(
     case "internal-equity-defense": {
       const median = action.peerBandMedianLpa;
       const top = action.peerBandTopLpa;
-      return `Here's something I have to be upfront about — your peers at ${gradeLabel(state)} in our team are sitting between ₹${median} and ₹${top} LPA fixed. Moving you above that creates an internal-equity issue I'd have to get signed off by Comp, and frankly the bar for that is a documented critical-skill premium. The band we're discussing is already at the upper end of where I can land you without that escalation.`;
+      return `Let me be upfront with you — your peers at ${gradeLabel(state)} in our team are between ₹${median} and ₹${top} LPA fixed. Going above that creates a parity issue inside the team, which I'd need to get cleared with the Comp team — and that approval only comes through for a clear niche-skill case. The number we're discussing is already at the top end of what I can close without that exception.`;
     }
 
     case "comparative-anchoring": {
@@ -1132,7 +1132,7 @@ function renderCanonicalProseBody(
 
     case "band-anchor-with-rationale": {
       const lo = state.band.initialOffer;
-      return `As per the band for this grade, fitment lands at ₹${lo} LPA. That's anchored against role scope and internal parity, not a single benchmark.`;
+      return `As per the band for this grade, the fitment comes to ₹${lo} LPA. That's based on the role scope and internal parity within the team, not a single market benchmark.`;
     }
 
     case "close-recap-formal":
