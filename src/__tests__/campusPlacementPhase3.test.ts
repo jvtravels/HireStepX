@@ -7,7 +7,8 @@
  *   - `tcs-digital`      — TCS Digital / Infosys Power Programmer /
  *                          Wipro Elite. CGPA bar 7.5, deep DSA expected.
  *   - `wipro-nlth`       — Wipro NLTH / Cognizant GenC / Capgemini
- *                          Exceller / HCL TechBee. CGPA bar 6.5.
+ *                          Exceller / HCL TechBee. CGPA bar 6.0
+ *                          (moved 6.5 → 6.0 firm-wide in 2025).
  *   - `top-tier-campus`  — Google / Amazon / Microsoft / Flipkart /
  *                          Razorpay etc. on-campus. CGPA bar 7.5.
  *
@@ -73,13 +74,13 @@ describe("campus-placement archetype resolution (Phase 3)", () => {
     expect(result.flags).toContain("campus_archetype_tcs_digital");
   });
 
-  it("resolves Wipro to the NLTH track with a 6.5 cutoff", async () => {
+  it("resolves Wipro to the NLTH track with a 6.0 cutoff (firm-wide floor moved 6.5 → 6.0 in 2025)", async () => {
     const result = await campusPlacement.analyze({
       session: session({ userText: "My CGPA is 7.0.", targetCompany: "Wipro" }),
       resume: null,
     });
     expect(result.meta?.campusPlacement?.archetype).toBe("wipro-nlth");
-    expect(result.meta?.campusPlacement?.baseCgpaCutoff).toBe(6.5);
+    expect(result.meta?.campusPlacement?.baseCgpaCutoff).toBe(6.0);
   });
 
   it("resolves Google to the top-tier-campus archetype with a 7.5 cutoff", async () => {

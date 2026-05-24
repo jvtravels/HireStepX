@@ -31,6 +31,20 @@
  *   v6.4 Phase 5 stretch — `backlog_honest_disclosure` (positive pair to
  *        `active_backlog_evasion`) + `aptitude_project_inconsistency`
  *        cross-signal. Bond awareness covered by Wave-3 patterns.
+ *   v6.5 Phase 6 realism calibration — (a) MTI whitelist now allows
+ *        "passed out 2024" (standard Indian English; recruiters don't
+ *        deduct); (b) new `COMPANY_SERVICE_TIER_NARRATIVE` regex +
+ *        `service_tier_why_company_acceptable` positive flag — TCS NQT /
+ *        Wipro NLTH candidates saying "structured training / proven
+ *        client base / long-term stability" no longer fire
+ *        `no_company_specific_research` (they were product-co graded
+ *        wrongly); (c) `weak_reverse_questions` suppressed for
+ *        tcs-ninja / wipro-nlth archetypes (acceptable filler at
+ *        service-tier); (d) `archetypeCgpaCutoff("wipro-nlth")` moved
+ *        6.5 → 6.0 to match the 2025 firm-wide floor; (e) the
+ *        aptitude-probe prompt in generate-questions now routes
+ *        cognitive-coding (SQL / strings) to TCS / Infosys and
+ *        classical puzzles to Wipro / Cognizant.
  * ──────────────────────────────────────────────────────────────────
  */
 
@@ -106,6 +120,17 @@ const WHY_COMPANY_PROBE = /\b(?:why\b[^?.!]{0,80}?\b(?:join us|work (?:here|with
  * unrelated answers. */
 const COMPANY_GENERIC_FILLER = /\b(great culture|good culture|brand value|brand name|great brand|big company|good company|great company|reputation|growth opportunit|learning opportunit|big mnc)\b/i;
 const COMPANY_SPECIFIC_SIGNAL = /\b(trailhead|nqt|infytq|techbee|genc|engage|step program|leadership principles?|customer obsession|day\s*1|crucible|future leaders|gennxt|peak|spirit of wipro|infosys lex|tata code of conduct|your (?:founder|ceo|cofounder|recent|latest|q[1-4]|fy\d|launch|ipo|acquisition|investment|hiring plan|product line|ai strategy|tech stack)|i (?:read|saw|noticed|came across|listened to))\b/i;
+/* Service-tier acceptable narrative — TCS / Infosys / Wipro / Cognizant
+ * recruiters EXPECT freshers to anchor on stability, structured training,
+ * proven scale, long-term growth. Saying "great training program +
+ * proven client base + long-term career" at a TCS NQT loop is NOT
+ * generic — it's exactly the answer the panelist is grading for.
+ * This regex captures that narrative so we don't fire
+ * `no_company_specific_research` against service-tier archetypes when
+ * the candidate gave a context-appropriate answer. Product-co loops
+ * (Google / Flipkart / Razorpay) still demand specific signal — the
+ * archetype gate handles that asymmetry below. */
+const COMPANY_SERVICE_TIER_NARRATIVE = /\b(?:structured\s+training|training\s+program|stable\s+(?:career|growth|environment|long[- ]term)|long[- ]term\s+(?:career|growth|stability)|proven\s+(?:client|track\s+record|delivery)|client\s+(?:base|portfolio|delivery)|service[- ]led|services?\s+(?:model|business|firm)|global\s+(?:delivery|footprint|presence)|scale\s+of\s+(?:operations?|delivery)|established\s+(?:firm|company|leader|player)|brand\s+maturity|industry\s+leader|fortune\s+\d+|domain\s+exposure|industry\s+exposure|breadth\s+of\s+(?:projects?|domains?)|onboarding\s+(?:program|process|cohort)|fresher\s+(?:training|cohort|program)|ilp\b|initial\s+learning\s+program)\b/i;
 
 /* Volunteered backlogs / KTs / low CGPA unprompted is a framing error.
  * DEFICIT_PROBE intentionally excludes /fail/ — behavioral failure
@@ -122,14 +147,28 @@ const FILLER_PER_100_WORDS_THRESHOLD = 4;
 const INTERNSHIP_CLAIM = /\b(internship|interned|intern at|summer intern|summer training|industrial training|6[- ]month\s+intern)\b/i;
 const INTERNSHIP_DETAIL = /\b(intern(ship)?\s+at\s+\w|stipend|deliverable|reported to|mentor|onboarded|shipped|merged|in production)\b/i;
 
-/* Mother-Tongue-Influence (MTI) — top high-frequency Indian-English deviations
- * that recruiters flag in tier-2/3 freshers. Each entry is a distinct phrase
- * shape; we count distinct hits across all patterns and trigger at ≥1. */
+/* Mother-Tongue-Influence (MTI) — high-frequency Indian-English deviations
+ * that recruiters at TIER-1 firms (Google / MS / Goldman / McKinsey India)
+ * actively flag. Each entry is a distinct phrase shape; we count distinct
+ * hits across all patterns and trigger at ≥1.
+ *
+ * REALISM CALIBRATION NOTE — items deliberately NOT in this list because
+ * Indian recruiters across TCS / Infosys / Wipro / product-cos all accept
+ * them as standard Indian English in 2025-26:
+ *   - "passed out 2024"  — universal Indian usage for "graduated 2024".
+ *     TCS / Infosys / Wipro hear it every screen; product cos don't dock
+ *     for it either. Penalizing it is accent-policing, not actual rubric.
+ *   - "give an exam"     — standard for "take an exam".
+ *   - "do the needful"   — borderline; kept (only in formal email context
+ *     is it grating); see `do_the_needful` entry below.
+ *
+ * Items that DO stay flagged because they consistently land as a deduction
+ * in recruiter feedback forms: bare "myself X" intro, "revert back",
+ * "kindly", "doubt" (for question), "prepone", "cope up with".
+ */
 const MTI_PATTERNS: RegExp[] = [
   /\bdo(?:ing)?\s+the\s+needful\b/i,
   /\brevert\s+back\b/i,                     // "revert" already means reply
-  /\bpass(?:ed|ing|\s+)?out\s+(?:of|from|in)\s+(?:20|19)\d{2}\b/i,
-  /\bpass(?:ed|ing)?\s+out\s+from\s+\w+/i,  // "passed out from XYZ college"
   /\bmyself\s+[A-Z][a-z]+\b/,               // "Myself Rahul"
   /\bgood\s+name\b/i,                       // "May I know your good name?"
   /\bkindly\s+(?:do|find|note|revert|provide|share)\b/i,
@@ -367,7 +406,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.4.1",
+  version: "campus-placement-v6.5",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -505,16 +544,37 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       });
     }
 
-    // "Why this company" probed but only generic filler in response
+    // "Why this company" probed but only generic filler in response.
+    // Phase-6 realism calibration: service-tier (TCS NQT / Wipro NLTH /
+    // Cognizant GenC) recruiters EXPECT stability/training/scale
+    // narrative — flagging it as generic was a product-co rubric leak.
+    // We compute archetype inline here (cheap, pure) and apply an
+    // archetype-aware gate: service-tier candidates get credit for
+    // either SPECIFIC_SIGNAL (program names) OR SERVICE_TIER_NARRATIVE
+    // (stability/training/scale); product-tier candidates still need
+    // SPECIFIC_SIGNAL.
     const aiAskedWhyCompany = transcript.some((t) => isAi(t) && WHY_COMPANY_PROBE.test(t.text || ""));
     if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText)) {
-      flags.add("no_company_specific_research");
-      gaps.push({
-        dimension: "preparation",
-        expected: "Reference a specific program (TCS NQT, Infosys InfyTQ, Amazon LP), recent launch, or values from the careers page",
-        observed: "AI probed 'why this company' — user replied with generic 'great culture / brand' filler",
-        severity: "high",
-      });
+      const whyArchetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
+      const serviceTier = whyArchetype === "tcs-ninja" || whyArchetype === "wipro-nlth";
+      const serviceTierNarrativePresent = serviceTier && COMPANY_SERVICE_TIER_NARRATIVE.test(userText);
+
+      if (serviceTierNarrativePresent) {
+        // Positive signal — candidate gave a context-appropriate
+        // service-tier answer (training program / stability / scale).
+        // No `no_company_specific_research` flag for this archetype.
+        flags.add("service_tier_why_company_acceptable");
+      } else {
+        flags.add("no_company_specific_research");
+        gaps.push({
+          dimension: "preparation",
+          expected: serviceTier
+            ? "For service-tier (TCS / Infosys / Wipro), anchor on what they actually reward — structured training program, proven client base, long-term stable growth, breadth of domain exposure. 'Great culture / great brand' alone is too thin."
+            : "Reference a specific program (TCS NQT, Infosys InfyTQ, Amazon LP), recent launch, or values from the careers page",
+          observed: "AI probed 'why this company' — user replied with generic 'great culture / brand' filler",
+          severity: "high",
+        });
+      }
     }
 
     // Volunteered backlogs / low CGPA without being asked
@@ -551,7 +611,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       flags.add("mti_pattern_detected");
       gaps.push({
         dimension: "communication clarity",
-        expected: "Swap MTI phrases for standard professional phrasing — 'please do this' instead of 'kindly do the needful', 'I graduated in 2024' instead of 'I passed out in 2024'",
+        expected: "Swap MTI phrases for standard professional phrasing — 'please do this' instead of 'kindly do the needful', 'I'm Rahul' instead of 'myself Rahul', 'I have a question' instead of 'I have a doubt'. ('Passed out' is fine — Indian recruiters accept it.)",
         observed: `User used ${mtiHits} Mother-Tongue-Influence phrase${mtiHits === 1 ? "" : "s"} — recruiters in tier-1 firms grade against these`,
         severity: mtiHits >= 3 ? "medium" : "low",
       });
@@ -649,13 +709,22 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             severity: "medium",
           });
         } else if (REVERSE_QUESTION_GENERIC.test(afterProbe) && !REVERSE_QUESTION_SPECIFIC.test(afterProbe)) {
-          flags.add("weak_reverse_questions");
-          gaps.push({
-            dimension: "preparation",
-            expected: "Specific reverse-questions score: 'What's the typical TCS-Ignite cohort exit destination after the 2-year bond?' beats 'How is the work culture?'",
-            observed: "User's reverse-questions were generic ('work culture' / 'growth opportunities') — weak tie-breaker signal",
-            severity: "low",
-          });
+          // Phase-6 realism calibration: at TCS NQT / Wipro NLTH /
+          // Cognizant loops, "what's the work culture?" is a perfectly
+          // acceptable filler question — recruiters there expect safe,
+          // table-stakes questions from freshers, not Razorpay-grade
+          // product probes. We only fire `weak_reverse_questions` for
+          // tcs-digital and top-tier-campus where the bar IS specific.
+          const reverseService = archetype === "tcs-ninja" || archetype === "wipro-nlth";
+          if (!reverseService) {
+            flags.add("weak_reverse_questions");
+            gaps.push({
+              dimension: "preparation",
+              expected: "Specific reverse-questions score: 'What's the typical TCS-Ignite cohort exit destination after the 2-year bond?' beats 'How is the work culture?'",
+              observed: "User's reverse-questions were generic ('work culture' / 'growth opportunities') — weak tie-breaker signal",
+              severity: "low",
+            });
+          }
         }
       } else {
         flags.add("reverse_questions_declined");
@@ -1463,7 +1532,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("volunteered_academic_deficit")) tips.push("Don't volunteer backlogs or low CGPA. If asked directly, say what happened in one sentence and pivot to what you did about it.");
     if (flags.has("excessive_filler_words")) tips.push("Replace fillers with a half-second pause. Recording one mock and counting your 'basically's is the fastest fix.");
     if (flags.has("internship_unsubstantiated")) tips.push("If you list an internship, be ready with: company, duration, mentor, what shipped, and a measurable outcome.");
-    if (flags.has("mti_pattern_detected")) tips.push("Watch for Mother-Tongue-Influence phrasing: 'I graduated in 2024' (not 'passed out'), 'please reply' (not 'kindly revert back'), 'I have a question' (not 'doubt'), 'I'm Rahul' (not 'Myself Rahul').");
+    if (flags.has("mti_pattern_detected")) tips.push("Watch for Mother-Tongue-Influence phrasing that tier-1 recruiters flag: 'please reply' (not 'kindly revert back'), 'I have a question' (not 'doubt'), 'I'm Rahul' (not 'Myself Rahul'), 'discuss this' (not 'discuss about this'). Note: 'passed out 2024' is standard Indian English — no need to swap.");
     if (flags.has("cgpa_low_no_framing")) tips.push("If your CGPA is under 7, never state it bare. Use the 3-part frame: one-sentence honest reason → one piece of recent evidence (project / internship / hackathon) → forward-looking intent. Bare numbers below 7 stick in the interviewer's memory.");
     if (flags.has("reverse_questions_declined")) tips.push("Always have 2-3 reverse-questions ready: training program details, mentor structure, what the first 6 months look like, a specific point from the PPT. Saying 'no' to 'any questions for us?' tells the interviewer you didn't prepare.");
     if (flags.has("weak_reverse_questions")) tips.push("'What's the work culture?' isn't a real question — every interviewer hears it 20 times a day. Ask specific: 'What does a typical week look like for an SDE on your Trailhead team?' or 'You mentioned the new ABDM project in the PPT — would freshers rotate through it?'");
