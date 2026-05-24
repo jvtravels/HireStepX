@@ -62,14 +62,14 @@ export function buildPostAcceptanceMessage(
   /* 3. BGV alignment. */
   if (includeBgv) {
     sections.push(
-      "BGV: our partner will reach out within 48 hours. Please respond promptly — gaps in the relieving-letter chain are the #1 onboarding blocker, so flag any issue today rather than at week 4.",
+      "BGV: our partner will revert within 48 hours. Please respond promptly — gaps in the relieving-letter chain are the #1 onboarding blocker, so flag any issue today rather than at week 4.",
     );
   }
 
   /* 4. Counter-offer heads-up. */
   if (includeCounterOffer) {
     sections.push(
-      "Heads-up: it's common for your current employer to deploy a retention counter within 2-3 weeks of resignation. We'd rather you decide today than chase a counter; if one lands, please loop us in before responding.",
+      "One thing to keep in mind: it's common for your current employer to come back with a retention counter within 2-3 weeks of resignation. We'd rather you decide today than chase a counter; if one comes up, please inform us before responding.",
     );
   }
 
