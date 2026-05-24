@@ -650,12 +650,22 @@ async function speakWithProxy(
       const { authHeaders } = await import("./supabase");
       const headers = await authHeaders();
 
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ text, voiceId, language: loadTTSSettings().language, ...(gender ? { gender } : {}) }),
-        signal: controller.signal,
-      });
+      // Matches Sarvam (line ~766) and Azure (line ~879) timeout. Without
+      // this, a hung Cartesia REST call could stall the interview forever
+      // — the orchestrator's onError fallback to Azure never fires because
+      // the await on res.blob() never settles.
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+      let res: Response;
+      try {
+        res = await fetch("/api/tts", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ text, voiceId, language: loadTTSSettings().language, ...(gender ? { gender } : {}) }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if (!res.ok) {
         settle(onError);
@@ -1087,6 +1097,14 @@ export function hardMuteTTS() {
 }
 
 /* ─── Speak with a specific voice (for panel interviews) ─── */
+import {
+  startTtsAttempt,
+  recordTtsAttempt,
+  recordTtsAudioStarted,
+  finalizeTtsAttempt,
+  type TtsTier,
+} from "./_tts-telemetry";
+
 export async function speakAs(
   text: string,
   voiceId: string,
@@ -1118,51 +1136,67 @@ export async function speakAs(
     return speak(text, onEnd, onError, undefined, undefined, onAudioStarted);
   }
 
+  // Per-call telemetry attempt — emits one `tts_provider_used` event with
+  // the full fallback chain so we can see Sarvam→Cartesia→Azure escalation
+  // in PostHog. See _tts-telemetry.ts.
+  const attempt = startTtsAttempt({ text, voiceId, gender });
+  const wrapStart = (tier: TtsTier) => () => {
+    recordTtsAudioStarted(attempt, tier);
+    try { onAudioStarted?.(); } catch { /* consumer error must not break TTS */ }
+  };
+  const wrapEnd = () => { finalizeTtsAttempt(attempt, "ok"); try { onEnd(); } catch { /* consumer */ } };
+  const wrapError = () => { finalizeTtsAttempt(attempt, "error"); try { onError(); } catch { /* consumer */ } };
+
   // Versioned cancel: each new speakAs/speak call gets a generation ID.
   // Stale fallback chains won't overwrite the current cancel handle.
   const gen = ++_ttsGeneration;
-  const setCancel = (fn: () => void) => { if (gen === _ttsGeneration) _activeCancel = fn; };
+  const setCancel = (fn: () => void) => {
+    if (gen === _ttsGeneration) _activeCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); fn(); };
+  };
 
   let handle: { cancel: () => void };
 
-  // Last-leg fallback: Azure → Browser. Returned as a thunk so it can be
-  // wired in after Cartesia fails.
+  // Last-leg fallback: Azure → Browser.
   const azureFallback = async () => {
     console.warn("Trying Azure TTS fallback (speakAs)");
-    handle = await speakWithAzure(text, onEnd, () => {
+    recordTtsAttempt(attempt, "azure");
+    handle = await speakWithAzure(text, wrapEnd, () => {
       console.warn("Azure TTS also failed (speakAs), falling back to browser TTS");
-      const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
+      recordTtsAttempt(attempt, "browser");
+      const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
       handle = browserHandle;
       setCancel(browserHandle.cancel);
-    }, gender, voiceId, onDurationKnown, onAudioStarted);
+    }, gender, voiceId, onDurationKnown, wrapStart("azure"));
     setCancel(handle.cancel);
   };
 
-  // Cartesia (2nd) → Azure → Browser. Cartesia is now the secondary path
-  // — the WS-stream + REST fallback both live here.
+  // Cartesia (2nd) → Azure → Browser.
   const cartesiaFallback = async () => {
     console.warn("Trying Cartesia TTS fallback (speakAs)");
-    handle = await speakWithWebSocket(text, voiceId, onEnd, async () => {
+    recordTtsAttempt(attempt, "cartesia-ws");
+    handle = await speakWithWebSocket(text, voiceId, wrapEnd, async () => {
       console.warn("Cartesia WS failed (speakAs), trying REST");
-      handle = await speakWithProxy(text, voiceId, onEnd, async () => {
+      recordTtsAttempt(attempt, "cartesia-rest");
+      handle = await speakWithProxy(text, voiceId, wrapEnd, async () => {
         console.warn("Cartesia REST also failed (speakAs), trying Azure");
         await azureFallback();
-      }, gender, onDurationKnown, onAudioStarted);
+      }, gender, onDurationKnown, wrapStart("cartesia-rest"));
       setCancel(handle.cancel);
-    }, gender, onDurationKnown, onAudioStarted);
+    }, gender, onDurationKnown, wrapStart("cartesia-ws"));
     setCancel(handle.cancel);
   };
 
-  // Sarvam primary → Cartesia fallback → Azure fallback → Browser fallback.
-  // Sarvam's Bulbul Indian-English voices were promoted to primary because
-  // they're the most authentic en-IN accent in our roster.
-  handle = await speakWithSarvam(text, onEnd, async () => {
+  // Sarvam primary → Cartesia → Azure → Browser.
+  recordTtsAttempt(attempt, "sarvam");
+  handle = await speakWithSarvam(text, wrapEnd, async () => {
     console.warn("Sarvam TTS failed (speakAs), trying Cartesia");
     await cartesiaFallback();
-  }, gender, voiceId, onDurationKnown, onAudioStarted);
+  }, gender, voiceId, onDurationKnown, wrapStart("sarvam"));
 
   setCancel(handle.cancel);
-  return handle;
+  // Wrap returned cancel so external callers also finalize as "cancelled".
+  const outerCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); handle.cancel(); };
+  return { cancel: outerCancel };
 }
 
 /* ─── Unified speak function ─── */
@@ -1429,19 +1463,34 @@ export async function speak(
   const settings = loadTTSSettings();
   let handle: { cancel: () => void };
 
+  // Per-call telemetry — see _tts-telemetry.ts. One `tts_provider_used`
+  // PostHog event per spoken utterance captures the full fallback chain
+  // so we can see Sarvam→Cartesia→Azure escalation cost in production.
+  const attempt = startTtsAttempt({ text, gender });
+  const wrapStart = (tier: TtsTier) => () => {
+    recordTtsAudioStarted(attempt, tier);
+    try { onAudioStarted?.(); } catch { /* consumer error must not break TTS */ }
+  };
+  const wrapEnd = () => { finalizeTtsAttempt(attempt, "ok"); try { onEnd(); } catch { /* consumer */ } };
+  const wrapError = () => { finalizeTtsAttempt(attempt, "error"); try { onError(); } catch { /* consumer */ } };
+
   // Versioned cancel to prevent stale fallback chains from overwriting current handle
   const gen = ++_ttsGeneration;
-  const setCancel = (fn: () => void) => { if (gen === _ttsGeneration) _activeCancel = fn; };
+  const setCancel = (fn: () => void) => {
+    if (gen === _ttsGeneration) _activeCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); fn(); };
+  };
 
   // Azure (3rd-tier) → Browser final fallback.
   const azureFallback = async () => {
     console.warn("Trying Azure TTS fallback");
-    handle = await speakWithAzure(text, onEnd, () => {
+    recordTtsAttempt(attempt, "azure");
+    handle = await speakWithAzure(text, wrapEnd, () => {
       console.warn("Azure TTS also failed, falling back to browser TTS");
-      const browserHandle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
+      recordTtsAttempt(attempt, "browser");
+      const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
       handle = browserHandle;
       setCancel(browserHandle.cancel);
-    }, gender, undefined, onDurationKnown, onAudioStarted);
+    }, gender, undefined, onDurationKnown, wrapStart("azure"));
     setCancel(handle.cancel);
   };
 
@@ -1460,35 +1509,42 @@ export async function speak(
     const prefetchEntry = _prefetchCache.get(text);
     const hasPrefetch = !!prefetchEntry && Date.now() - prefetchEntry.createdAt < PREFETCH_TTL;
     if (hasPrefetch) {
-      handle = await speakWithProxy(text, cartesiaVoice, onEnd, async () => {
+      recordTtsAttempt(attempt, "cartesia-rest");
+      handle = await speakWithProxy(text, cartesiaVoice, wrapEnd, async () => {
         console.warn("Cartesia REST also failed, trying Azure");
         await azureFallback();
-      }, undefined, onDurationKnown, onAudioStarted);
+      }, undefined, onDurationKnown, wrapStart("cartesia-rest"));
     } else {
-      handle = await speakWithWebSocket(text, cartesiaVoice, onEnd, async () => {
+      recordTtsAttempt(attempt, "cartesia-ws");
+      handle = await speakWithWebSocket(text, cartesiaVoice, wrapEnd, async () => {
         console.warn("Cartesia WS failed, trying REST");
-        handle = await speakWithProxy(text, cartesiaVoice, onEnd, async () => {
+        recordTtsAttempt(attempt, "cartesia-rest");
+        handle = await speakWithProxy(text, cartesiaVoice, wrapEnd, async () => {
           console.warn("Cartesia REST also failed, trying Azure");
           await azureFallback();
-        }, undefined, onDurationKnown, onAudioStarted);
+        }, undefined, onDurationKnown, wrapStart("cartesia-rest"));
         setCancel(handle.cancel);
-      }, undefined, onDurationKnown, onAudioStarted);
+      }, undefined, onDurationKnown, wrapStart("cartesia-ws"));
     }
     setCancel(handle.cancel);
   };
 
   if (settings.provider === "browser") {
-    handle = speakWithBrowser(text, onEnd, onError, onAudioStarted);
+    recordTtsAttempt(attempt, "browser");
+    handle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
   } else {
     // Sarvam primary → Cartesia → Azure → Browser. Each layer escalates
     // on `onError`; `onEnd` short-circuits the chain on success or on
     // autoplay-block (treated as silent success).
-    handle = await speakWithSarvam(text, onEnd, async () => {
+    recordTtsAttempt(attempt, "sarvam");
+    handle = await speakWithSarvam(text, wrapEnd, async () => {
       console.warn("Sarvam TTS failed, trying Cartesia fallback");
       await cartesiaFallback();
-    }, gender, undefined, onDurationKnown, onAudioStarted);
+    }, gender, undefined, onDurationKnown, wrapStart("sarvam"));
   }
 
   setCancel(handle.cancel);
-  return handle;
+  // Wrap returned cancel so external callers also finalize as "cancelled".
+  const outerCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); handle.cancel(); };
+  return { cancel: outerCancel };
 }

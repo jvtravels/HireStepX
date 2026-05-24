@@ -15,6 +15,7 @@ import {
   resetSttConfidence,
   snapshotSttConfidence,
 } from "./_stt-confidence";
+import { captureClientEvent } from "./posthogClient";
 
 export interface STTCallbacks {
   setCurrentTranscript: (text: string) => void;
@@ -134,8 +135,14 @@ export function useInterviewSTT(
         if (handle) {
           refs.sarvamRef.current = handle;
           sarvamCleanup = () => { handle.stop(); refs.sarvamRef.current = null; };
+          captureClientEvent("stt_provider_used", { provider: "sarvam", fellThroughFrom: "deepgram" });
         } else {
+          // Previously this branch only logged to console — users hit Web
+          // Speech with no signal in PostHog and no toast, masking a real
+          // failure pattern (e.g. Sarvam token endpoint regressions).
           console.warn("[Sarvam] setup failed, falling back to Web Speech API");
+          callbacks.toast("Speech recognition switched to browser fallback.", "info");
+          captureClientEvent("stt_setup_failed", { provider: "sarvam", fellThroughTo: "webspeech" });
           startWebSpeechAPI();
         }
       };
@@ -221,7 +228,10 @@ export function useInterviewSTT(
         if (handle) {
           refs.deepgramRef.current = handle;
           deepgramCleanup = () => { handle.stop(); refs.deepgramRef.current = null; };
+          captureClientEvent("stt_provider_used", { provider: "deepgram" });
         } else {
+          console.warn("[Deepgram] setup failed, falling back to Sarvam AI");
+          captureClientEvent("stt_setup_failed", { provider: "deepgram", fellThroughTo: "sarvam" });
           trySarvam();
         }
       };
@@ -287,9 +297,13 @@ export function useInterviewSTT(
             }
           }
         };
-        try { recognition.start(); } catch (e) {
+        try {
+          recognition.start();
+          captureClientEvent("stt_provider_used", { provider: "webspeech", fellThroughFrom: "sarvam" });
+        } catch (e) {
           console.warn("Speech recognition failed to start:", e);
           callbacks.setMicError("Could not start speech recognition. Try refreshing.");
+          captureClientEvent("stt_setup_failed", { provider: "webspeech" });
         }
         refs.recognitionRef.current = recognition;
       }
