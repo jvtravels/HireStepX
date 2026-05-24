@@ -787,7 +787,7 @@ function renderCanonicalProseBody(
     case "close":
       if (action.mode === "accept") {
         const anchor = selectEscalationAnchor(action, state);
-        return `Broadly aligned, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+        return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
       }
       if (action.mode === "walkaway") {
         return "Looking at where your expectations sit versus our band for this grade, I don't think we'll be able to bridge the gap on this one. Appreciate your time.";
@@ -796,14 +796,14 @@ function renderCanonicalProseBody(
 
     case "auto-accept": {
       const anchor = selectEscalationAnchor(action, state);
-      return `Broadly aligned, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
+      return `We're in the same range, then. Let me run this fitment past ${anchor} once and revert with the formal offer letter.`;
     }
 
     case "reactive-followup":
       return proseReactiveFollowup(action, state, helpers);
 
     case "probe-mismatch":
-      return "Before we get into the fitment side, can you walk me through how your current work maps to this role?";
+      return "Before we get to the fitment, can you walk me through how your current work maps to this role?";
 
     case "credibility-probe":
       /* ResumeFactPack track Step 4 (2026-05-16) — Indian-recruiter
@@ -839,16 +839,16 @@ function renderCanonicalProseBody(
       return proseInfoDisclosure(action, state, helpers);
 
     case "probe-expectations":
-      return "What fitment were you anchoring on for this role?";
+      return "What fitment were you expecting for this role?";
 
     case "probe-justification":
-      return "Help me understand what's anchoring that number — where is the expectation coming from?";
+      return "Help me understand the basis for that number — where is the expectation coming from?";
 
     case "counter-offer":
       return proseCounterOffer(action, state, helpers);
 
     case "lever-explore":
-      return "Let me see what else we can structure on the fitment side.";
+      return "Let me see what else we can structure on the fitment.";
 
     case "hold-firm":
       return state.highestOfferMade > 0
@@ -860,7 +860,7 @@ function renderCanonicalProseBody(
 
     case "lever-grade-upgrade": {
       const anchor = selectEscalationAnchor(action, state);
-      return `On the structure side — let me check with ${anchor} if there's scope to position you a grade higher. That moves the band and the fitment in one shot.`;
+      return `On the structure side — let me check with ${anchor} if there's scope to position you a grade higher. That changes both the grade and the fitment together.`;
     }
 
     case "lever-retention-bonus": {
@@ -872,7 +872,7 @@ function renderCanonicalProseBody(
       /* PDF#33 Move A (2026-05-18) — replaced teaser "Let me walk you
        * through how the refresh cadence works for this grade" with
        * the substantive content directly: cadence + sizing band. */
-      return "On the RSU side — there's an annual refresh at the appraisal cycle on top of the initial vest. Refresh sizing typically lands at 30–40% of the initial grant for on-track performance, with stretch above that for top quartile.";
+      return "On the RSU side — there's an annual refresh at the appraisal cycle on top of the initial vest. The refresh is typically 30 to 40% of the initial grant for on-track performance, and higher for top performers.";
 
     case "lever-relocation": {
       const anchor = selectEscalationAnchor(action, state);
@@ -882,7 +882,7 @@ function renderCanonicalProseBody(
     case "lever-perf-bonus-cadence":
       /* PDF#33 Move A (2026-05-18) — replaced teaser tail with the
        * substantive payout shape directly. */
-      return "Looking at the structure — perf bonus is anchored to the March appraisal cycle with a mid-year correction window for top performers. Target payout sits at 100% for on-track ratings, scaling to 150% at the top band and 0% below threshold.";
+      return "Looking at the structure — performance bonus is tied to the March appraisal cycle, with a mid-year correction window for top performers. Target payout is 100% for on-track ratings, going up to 150% for top performers and 0% if the rating is below the threshold.";
 
     case "ctc-inflation-anchor": {
       /* Audit fix 2026-05-21 — recruiter weaponises CTC-vs-in-hand

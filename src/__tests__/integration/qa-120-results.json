@@ -1418,7 +1418,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: coaching, session, after",
-      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "coaching",
@@ -1434,7 +1434,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/3 keywords present; prose missing: evaluation, rubric, maps",
-      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "evaluation",
@@ -1450,7 +1450,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: recognizes, awareness, variable, fixed",
-      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "recognizes",
@@ -1467,7 +1467,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/2 keywords present; prose missing: coaching, useful",
-      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "coaching",
@@ -1787,7 +1787,7 @@
       "severity": "Medium",
       "verdict": "FAIL",
       "reason": "0/4 keywords present; prose missing: practice, coaches, only, mode",
-      "prose": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "prose": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "keywords": [
         "practice",

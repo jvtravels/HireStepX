@@ -409,9 +409,9 @@ function buildDeferLead(reason: "fact-gap" | "llm-throw" | "empty-llm" | "valida
      * without committing to "circle back" / "get back to you". */
     if (topic === "workMode")     return "On the work mode, I'll keep that one open for now —";
     if (topic === "joiningWindow") return "On the joining side, that's something we firm up post-offer —";
-    if (topic === "teamSize")     return "Team size is something the HM walks through in the next round —";
-    if (topic === "reportingTo")  return "Reporting line gets confirmed once the band is locked —";
-    return "That detail is one I'd rather not commit to off the cuff —";
+    if (topic === "teamSize")     return "Team size is something the hiring manager will walk you through in the next round —";
+    if (topic === "reportingTo")  return "Reporting line gets confirmed once your grade is finalised —";
+    return "Let me check on that and come back to you —";
   }
   /* llm-throw / empty-llm / validation — quietly fall through to the
    * planned next move; no fake-callback theatre. */

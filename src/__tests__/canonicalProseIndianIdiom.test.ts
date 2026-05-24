@@ -89,10 +89,14 @@ describe("canonical prose — Indian idiom rewrite (Fix 2)", () => {
     }
   });
 
-  it("close-accept uses 'broadly aligned' + 'revert with the formal offer letter'", () => {
+  it("close-accept signals same-range agreement + 'revert with the formal offer letter'", () => {
     const s = baseState({ highestOfferMade: 22 });
     const prose = renderCanonicalProse({ kind: "close", mode: "accept" } as NextAction, s);
-    expect(prose).toMatch(/broadly aligned/i);
+    /* Plain Indian-English alignment signal — was "broadly aligned"
+     * (MBA-jargon), now "in the same range" / "same page" / similar
+     * everyday phrasing. The semantic contract is "the recruiter signals
+     * acceptance-level agreement" — the literal phrase can evolve. */
+    expect(prose).toMatch(/same range|same page|aligned|works for us|on board/i);
     expect(prose).toMatch(/revert/i);
   });
 

@@ -107,7 +107,7 @@
       "candidate": "Confirmed — I accept the offer. Please send the letter across; I'll align with my current employer on the LWD.",
       "phaseBefore": "range-disclosure",
       "phaseAfter": "accepted",
-      "recruiterProse": "Broadly aligned, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
+      "recruiterProse": "We're in the same range, then. Let me run this fitment past finance for fitment approval once and revert with the formal offer letter.",
       "actionKind": "close",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 0
