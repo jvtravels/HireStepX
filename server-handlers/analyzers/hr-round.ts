@@ -115,6 +115,28 @@ const PEDIGREE_EVASION = /\b(?:don'?t remember (?:exactly|the (?:exact )?(?:numb
    red flag (variable rarely paid out is the classic inflation). */
 const BREAKUP_ASKED = /\b(?:fixed|variable|joining\s+bonus|retention\s+bonus|rsu|esop|breakup|break[- ]?up|split|component|structure)\b[\s\S]{0,40}\b(?:ctc|comp|package|salary)\b|\bctc[\s\S]{0,40}\b(?:fixed|variable|breakup|break[- ]?up|split|component|structure)\b/i;
 const BREAKUP_DETAIL = /\b(?:fixed|base)\b[\s\S]{0,30}\b(?:variable|bonus|rsu|esop)\b|\b\d{1,3}(?:[.,]\d{1,2})?\s*(?:lpa|lakhs?|lakh|l\b)\s*(?:fixed|base|variable|bonus|rsu)\b|\bvariable\s+is\s+\d|\bjoining\s+bonus\s+(?:of\s+)?\d/i;
+/* Honest-unknown carve-out for salary_breakup_vague. ~80% of mid-level
+   Indian candidates don't actually know their variable payout %
+   history — their employer doesn't share it. Flagging an honest "I
+   don't know the exact variable split" as vague is a false positive.
+   We still want a follow-up flag (`salary_breakup_unknown_owned`) so
+   the report can coach "go find out before the next round" — but it's
+   low severity, not a credibility hit. */
+const BREAKUP_GENUINELY_UNKNOWN = /\b(?:i (?:don'?t|do not) (?:actually )?know (?:the )?(?:exact )?(?:variable|payout|breakup|split)|(?:my )?company (?:doesn'?t|does not) share (?:the )?(?:variable|payout)|never (?:got|seen) (?:the )?(?:exact )?breakup|payout (?:history|details) (?:isn'?t|aren'?t|not) shared|not transparent (?:on|about) variable|variable (?:payout )?isn'?t (?:disclosed|shared|transparent))\b/i;
+
+/* Over-deferential opener — "thank you so much sir/ma'am, it's an
+   honour" / "respected ma'am". Sounds polite but reads as juniorish /
+   services-coded at FAANG / GCC / consulting / BFSI-global HR rounds.
+   Persona-conditional intent: this is bad under hr-bp-firm at top-tier
+   companies; tolerated at services/early-career. We can't access the
+   persona inside the analyzer cleanly yet, so we gate on tier proxy via
+   the difficulty + transcript length (mid+ with long-form session). */
+const DEFERENTIAL_OPENER = /\b(?:respected (?:sir|ma'?am|madam)|honou?rable (?:sir|ma'?am)|it'?s (?:an |such )?(?:honou?r|privilege|great honou?r) (?:to be|to have|to be (?:considered|here))|thank you so much (?:for|sir|ma'?am)[^.]{0,40}opportunity|thanks (?:a lot |so much )?(?:for|sir|ma'?am)[^.]{0,40}opportunity|(?:first of all|firstly)[\s,]+thank you[^.]{0,40}(?:sir|ma'?am|opportunity)|i'?m (?:very |so |really )?(?:grateful|thankful|honou?red) (?:to|for|that)[^.]{0,40}(?:opportunity|considered|shortlist))\b/i;
+
+/* Comp held until close — positive signal. Candidate does NOT raise
+   salary / CTC in their first 3 user turns. Indian HR rewards this
+   pattern: it reads as candidate prioritising role-fit over money. */
+const COMP_RAISED_BY_USER = /\b(?:what(?:'?s| is) the (?:ctc|package|salary|pay|comp)|how much (?:does|will) (?:this|the role) pay|salary range|ctc range|package (?:offered|kya hai)|what are you offering|expected (?:ctc|package))\b/i;
 
 /* Reference-check stalling — HR asks for ex-manager references and the
    candidate stalls/refuses. In India, "current manager doesn't know I'm
@@ -416,7 +438,7 @@ const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyA
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v5.2.0",
+  version: "hr-round-v5.3.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -648,10 +670,65 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       const t = transcript[i];
       if (isAi(t) && BREAKUP_ASKED.test(t.text || "")) {
         const r = replyTo(transcript, i);
-        if (r && r.text && r.text.length < 220 && SALARY_NUMBER.test(r.text) && !BREAKUP_DETAIL.test(r.text)) {
+        if (!(r && r.text && r.text.length < 220 && SALARY_NUMBER.test(r.text) && !BREAKUP_DETAIL.test(r.text))) continue;
+        if (BREAKUP_GENUINELY_UNKNOWN.test(r.text)) {
+          /* Honest unknown — coach to go find out, but don't penalise
+             credibility. */
+          flags.add("salary_breakup_unknown_owned");
+          gaps.push({
+            dimension: "comp_transparency",
+            expected: "Know your CTC breakup cold before the next round — fixed / variable / payout-history / joining bonus / RSU vest",
+            observed: "Candidate honestly flagged they don't know the variable payout history — better than guessing, but go pull payslips / talk to manager before the next interview",
+            severity: "low",
+            flag: "salary_breakup_unknown_owned",
+          });
+        } else {
           flags.add("salary_breakup_vague");
           gaps.push({ dimension: "comp_transparency", expected: "When asked for the CTC structure, state fixed / variable / joining bonus / RSU split explicitly", observed: "Candidate gave a single CTC number with no component breakup — Indian HR reads this as inflated variable", severity: "medium" });
-          break;
+        }
+        break;
+      }
+    }
+
+    /* over_deferential_opener. Indian candidates from services /
+       Tier-2 college backgrounds often open with "respected
+       sir/ma'am, it's an honour" — sounds polite but reads as
+       juniorish at MNC / FAANG / GCC / BFSI-global. Coaching anchor:
+       confident-equal register opens, not deferential.
+
+       Only fires for mid+ (where the register matters) on long-form
+       sessions (a brisk 4-turn TA screen with a polite opener is
+       fine). Won't penalise fresher / entry-level deferential openers. */
+    {
+      const level = (session.difficulty || "").toLowerCase();
+      const isMidPlus = level === "mid" || level === "senior" || level === "lead" || level === "executive";
+      if (isMidPlus && transcript.length > 8) {
+        const firstUserTurns = transcript.filter(isUser).slice(0, 2);
+        const opener = firstUserTurns.map((t) => t.text || "").join(" ");
+        if (DEFERENTIAL_OPENER.test(opener)) {
+          flags.add("over_deferential_opener");
+          gaps.push({
+            dimension: "register_confidence",
+            expected: "Confident-equal register from the first turn — 'thanks for the time, let me walk you through my background' lands better than 'respected ma'am, it's an honour'",
+            observed: "Candidate opened with deferential / over-grateful framing — at mid-senior MNC / FAANG / GCC rounds this reads as juniorish or services-coded and depresses comp anchor",
+            severity: "low",
+            flag: "over_deferential_opener",
+          });
+        }
+      }
+    }
+
+    /* comp_held_until_close — positive signal. Candidate does NOT
+       raise salary / CTC in their first 3 user turns. Indian HR
+       rewards this pattern as prioritising role-fit over money.
+       Only credit-worthy on long-form sessions where there was time
+       for the candidate to surface comp early but they didn't. */
+    {
+      if (transcript.length > 8) {
+        const firstUserTurns = transcript.filter(isUser).slice(0, 3);
+        const raisedCompEarly = firstUserTurns.some((t) => COMP_RAISED_BY_USER.test(t.text || ""));
+        if (!raisedCompEarly && !flags.has("ctc_first_question_user")) {
+          flags.add("comp_held_until_close");
         }
       }
     }
@@ -1244,6 +1321,9 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("offer_accepted_graceful")) {
       tips.push("Strong commitment signal: you closed the counter-offer probe cleanly ('won't entertain a counter / once I sign I'm in'). HR's #1 fear is pre-joining drop-out — that line de-risks you. Keep using it.");
     }
+    if (flags.has("comp_held_until_close")) {
+      tips.push("Positive signal: you held salary off the table until HR opened it — that reads as role-first, not money-first. Indian HR scores this as the right register; keep that discipline.");
+    }
 
     if (flags.has("user_anchor_leaked_salary")) tips.push("Never name a salary first — deflect with 'I'd want to understand the role + level before discussing comp.'");
     if (flags.has("user_badmouthing_employer")) tips.push("Reframe past frustrations as growth opportunities. HR scores professionalism heavily.");
@@ -1265,6 +1345,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
     if (flags.has("gap_unexplained")) tips.push("Own gaps with one crisp sentence: dates + reason + what you did with the time. Indian HR will probe — be ready.");
     if (flags.has("hike_rationale_thin")) tips.push("Anchor hike % on market data or scope, not a desired round number.");
     if (flags.has("salary_breakup_vague")) tips.push("When HR asks structure, break the CTC down: 'Fixed X, variable Y (paid out Z%), joining bonus A, RSU vest B over 4 years.' Single-number CTC reads as inflated variable.");
+    if (flags.has("salary_breakup_unknown_owned")) tips.push("You owned the unknown well ('I don't know the exact variable payout history') — that's better than guessing. Action item before the next round: pull last 2 years of payslips, talk to your manager about variable %, and learn the RSU vest schedule. Knowing the breakup is non-negotiable at offer time.");
+    if (flags.has("over_deferential_opener")) tips.push("Drop the 'respected ma'am / it's an honour' framing — at MNC / FAANG / GCC / BFSI-global HR rounds it reads as juniorish and depresses your comp anchor. Try: 'Thanks for the time — quick background then I'll let you drive.' Confident-equal register, not deferential.");
     if (flags.has("reference_refusal")) tips.push("Have 2 references ready (ex-managers preferred). Saying 'no references' is a hard BGV blocker — even one current peer + one ex-manager is fine.");
     if (flags.has("reference_refusal_sustained")) tips.push("Refusing references across multiple HR probes is a hard pre-offer stop. Line up at least one ex-manager + one peer before the next round.");
     if (flags.has("reference_initial_hedge")) tips.push("You recovered on the second reference probe, but the initial hedge still scored. Have a name + role ready before HR asks twice.");

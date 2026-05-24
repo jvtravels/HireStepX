@@ -1,0 +1,26 @@
+{
+  "name": "Candidate prioritises role-fit, holds salary off the table until HR opens it",
+  "notes": "v5.3 realism: comp_held_until_close — positive signal credited when candidate doesn't raise CTC in first 3 turns.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "senior",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Senior backend engineer, 8 years across Swiggy and Zomato, currently on the discovery team owning the ranking pipeline.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Fresh problem space — discovery is mature for me; I want to move into the agentic-search problem area.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the search-ranking pipeline to cut p95 from 800ms to 220ms; owned spec to launch over four months.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days notice, buyout possible at one month gross with manager sign-off and a handover plan.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your current CTC structure.", "time": "" },
+      { "speaker": "user", "text": "₹42 LPA fixed, ₹8 LPA variable paid out at ~80% historically, joining bonus already vested, RSU vest of ₹20 LPA over 4 years with a 1-year cliff completed.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's recsys roadmap and the catalog scale are exactly the problems I want to be solving next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["comp_held_until_close"],
+    "must_not_include": ["ctc_first_question_user", "empty_transcript"]
+  }
+}

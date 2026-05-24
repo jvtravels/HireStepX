@@ -42,7 +42,7 @@ interface Threshold {
 // Per-focus precision/recall + fixture-count gates. minFixtures rises
 // with the calibration set; precision/recall thresholds rise once the
 // focus has shipped a real fixture set AND a recent green run.
-// hr-round and campus-placement now have 45 / 61 fixtures and have
+// hr-round and campus-placement now have 46 / 61 fixtures and have
 // passed at recall=1.0 for several waves — promoting them to 0.85
 // locks in the precision improvements from the v4.3 cross-checks and
 // catches any future regression with one missed flag.
