@@ -2,14 +2,14 @@
   "name": "User gives only generic reverse-questions (culture/growth)",
   "session": {
     "type": "campus-placement",
-    "target_company": "TCS",
+    "target_company": "Razorpay",
     "transcript": [
       { "speaker": "ai", "text": "Tell me about your final-year project.", "time": "" },
       { "speaker": "user", "text": "I built a sentiment analysis tool using Python, scikit-learn, and Flask. CGPA is 7.8. Deployed on Render with 200 weekly active users. I was the sole developer.", "time": "" },
       { "speaker": "ai", "text": "What was the trickiest part?", "time": "" },
       { "speaker": "user", "text": "Handling sarcastic reviews — the logistic regression baseline flagged them wrong. I added a fine-tuning loop where users can correct misclassifications and the model retrains weekly. That bumped accuracy from 78% to 89%.", "time": "" },
       { "speaker": "ai", "text": "Wrapping up — do you have any questions for us?", "time": "" },
-      { "speaker": "user", "text": "Yes, two things — how is the work culture at TCS, and what are the growth opportunities for freshers?", "time": "" }
+      { "speaker": "user", "text": "Yes, two things — how is the work culture here, and what are the growth opportunities for freshers?", "time": "" }
     ]
   },
   "expected": {

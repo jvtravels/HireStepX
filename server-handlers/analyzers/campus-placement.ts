@@ -45,6 +45,28 @@
  *        aptitude-probe prompt in generate-questions now routes
  *        cognitive-coding (SQL / strings) to TCS / Infosys and
  *        classical puzzles to Wipro / Cognizant.
+ *   v6.6 Post-v6.5 realism audit — six gaps closed:
+ *        (a) `college_cgpa_policy_acknowledged` positive flag — when a
+ *        candidate cites the TPO / college internal CGPA cutoff
+ *        alongside a stated CGPA, the bare number isn't framing-naked.
+ *        Suppresses `cgpa_low_no_framing` (treated as framing context).
+ *        (b) Bond multi-probe gate — `bond_unprepared` now requires the
+ *        AI to have probed bond ≥2 times before firing. Eliminates the
+ *        false-positive on freshers who simply weren't asked twice.
+ *        `bondProbeCount` surfaced on meta. (c) Reverse-question
+ *        mid-session tracking — if the candidate asked ≥1 SPECIFIC
+ *        question BEFORE the closing slot, suppress `weak_reverse_questions`
+ *        even at tcs-digital / top-tier-campus (and emit
+ *        `mid_session_questions_present` as a positive signal).
+ *        (d) Aptitude probe expected-type surfaced on meta
+ *        (`aptitudeProbeExpectedType`) so the LLM evaluator can grade
+ *        whether the generated probe matched the archetype.
+ *        (e) `internship_company_unrecognized` — transcript-only signal
+ *        when claimed-internship company doesn't match any of the
+ *        top ~70 Indian tech employers AND no resume is loaded to
+ *        verify. Low severity, informational.
+ *        (f) MTI "graduated in 2024" was already a no-op (no pattern
+ *        in v6.5 list matches it); documented in the realism note.
  * ──────────────────────────────────────────────────────────────────
  */
 
@@ -181,6 +203,15 @@ const MTI_PATTERNS: RegExp[] = [
 
 /* Stated CGPA values — captures the numeric value so we can grade framing. */
 const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)/i;
+/* College / TPO internal CGPA gatekeeping. Many tier-2/3 colleges enforce
+ * 6.5–7.0 internal bars even though TCS firm cutoff is 6.0. A candidate
+ * stating their CGPA alongside "my college won't send me below 6.5" or
+ * "TPO cutoff is 7.0" is providing valid context, NOT being evasive —
+ * it surfaces a real structural constraint the recruiter respects.
+ * v6.6 — treats this as framing for `cgpa_low_no_framing` AND emits the
+ * positive flag `college_cgpa_policy_acknowledged`. */
+const COLLEGE_CGPA_POLICY = /\b(?:my\s+college|the\s+college|college'?s?|tpo|placement\s+cell|t\.?p\.?o\.?)\s+(?:(?:internal\s+)?(?:cutoff|policy|bar|requirement|gatekeep(?:ing)?|threshold|minimum)|won'?t\s+(?:send|allow|forward|shortlist)|requires?|enforces?|mandate[sd]?|insists?)\b[^.?!]{0,60}?\b\d(?:\.\d{1,2})?\b/i;
+
 /* Framing context that excuses a low CGPA — must appear in the same user
  * span as the number for the candidate to get credit. */
 const CGPA_FRAMING_CONTEXT = /\b(?:family|health|hospital|surgery|loss|covid|caregiv|financial|part[- ]?time job|supported|recovered|bounced back|after that|since then|the next sem|improved|trended? up|consistent improvement|i (?:worked on|focused on|built|shipped|interned|won|cleared|topped)|(?:9|8|10)\.\d+\s+in\s+(?:my\s+)?(?:last|recent|final)\s+(?:few\s+)?semesters?|last\s+(?:three|four|two|few|3|4|5)\s+semesters?\s+(?:i|i'?ve)|cleared\s+(?:the\s+)?(?:case|coding|final|aptitude)\s+round|placed\s+(?:in|at|with)|offered?\s+by|got\s+(?:an\s+)?offer\s+from|trend(?:ing|ed)?\s+(?:upward|up)|sgpa\s+(?:has\s+)?(?:improved|gone\s+up)|hackathon|kaggle|leetcode|codeforces|open[- ]?source\s+contribut|published)\b/i;
@@ -390,6 +421,13 @@ function normalizeCompanyName(raw: string | undefined): string {
     .trim();
 }
 
+/** Curated list of well-known Indian + global tech employers (~70).
+ *  Used by `internship_company_unrecognized` to decide whether a
+ *  claimed-internship company is plausible without resume cross-check.
+ *  Conservative — only the most-recognised names; small legitimate
+ *  startups will fall through and not be flagged at high severity. */
+const KNOWN_TECH_EMPLOYER = /\b(?:tcs|tata\s+consultancy|infosys|wipro|cognizant|hcl|tech\s+mahindra|capgemini|accenture|deloitte|pwc|ey|kpmg|ibm|oracle|sap|google|microsoft|amazon|apple|meta|facebook|adobe|linkedin|salesforce|nvidia|intel|qualcomm|atlassian|stripe|netflix|uber|doordash|databricks|snowflake|mongodb|flipkart|razorpay|phonepe|paytm|swiggy|zomato|cred|zerodha|myntra|freshworks|browserstack|postman|nykaa|meesho|ola|byju'?s|unacademy|jio|airtel|ltimindtree|persistent|mindtree|hexaware|coforge|mphasis|amdocs|globallogic|virtusa|samsung|sony|cisco|dell|hp(?:\s+inc)?|lenovo|qualcomm|broadcom|amd|paypal|netapp|servicenow|workday|vmware|cloudera|hortonworks|nutanix|palo\s+alto|fortinet|crowdstrike|okta|twilio|zoom|slack|github|gitlab|atlassian|reliance|isro|drdo|barc|nse|bse|crisil|nielsen|gartner|mckinsey|bcg|bain|fractal|tredence|mu\s*sigma|brillio|happiest\s+minds|persistent\s+systems|zoho|kpit|cyient|sonata|niit|hcl\s+technologies|infosys\s+bpm|wipro\s+digital|tcs\s+ignite)\b/i;
+
 /** Extract candidate company names from transcript text — looks for
  *  "interned at X" / "internship at X" / "at X as <role>". Conservative
  *  — only returns short proper-noun-looking strings. */
@@ -406,7 +444,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.5",
+  version: "campus-placement-v6.6",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -646,6 +684,23 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
      * the otherwise-invisible tier-adjustment math (TCS NQT base 6.0 →
      * tier-2 adjusted 5.5, etc.) instead of leaving them to guess. */
     const statedCgpaForMeta = cgpaMatch ? Number(cgpaMatch[1]) : NaN;
+    // v6.6 — hoist bond probe count so it can be surfaced on meta
+    // alongside archetype + cgpa info. The downstream bond block
+    // (line ~770) re-uses the same value for its multi-probe gate.
+    const bondProbeCount = transcript.filter((t) => isAi(t) && BOND_PROBE.test(t.text || "")).length;
+    // v6.6 — aptitude probe expected type, derived from archetype, so
+    // the LLM evaluator (and any downstream prompt-quality check) can
+    // grade whether the generated probe actually matched what the
+    // recruiter at this archetype would have asked. tcs-ninja /
+    // tcs-digital expect cognitive-coding (SQL / strings / hashmap);
+    // wipro-nlth expects classical puzzles (8 balls, 3 switches);
+    // top-tier-campus skips the aptitude probe entirely. Anything
+    // else: "either" (signal absent).
+    const aptitudeProbeExpectedType: "cognitive-coding" | "classical-puzzle" | "none" | "either" =
+      archetype === "tcs-ninja" || archetype === "tcs-digital" ? "cognitive-coding"
+      : archetype === "wipro-nlth" ? "classical-puzzle"
+      : archetype === "top-tier-campus" ? "none"
+      : "either";
     result.meta = {
       ...(result.meta || {}),
       campusPlacement: {
@@ -657,11 +712,22 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         targetCompany: session.target_company || null,
         archetype,
         archetypeLabel: archetypeLabel(archetype),
+        bondProbeCount,
+        aptitudeProbeExpectedType,
       },
     };
+    // v6.6 — college/TPO internal CGPA cutoff disclosure is valid
+    // framing: it surfaces a structural constraint (e.g. "my college
+    // won't send below 6.5" / "TPO cutoff is 7.0") that the recruiter
+    // respects rather than penalises. Emit positive flag and treat
+    // as framing context for `cgpa_low_no_framing` below.
+    const collegeCgpaPolicyCited = COLLEGE_CGPA_POLICY.test(userText);
+    if (collegeCgpaPolicyCited) {
+      flags.add("college_cgpa_policy_acknowledged");
+    }
     if (cgpaMatch) {
       const cgpa = Number(cgpaMatch[1]);
-      if (cgpa > 0 && cgpa < cgpaCutoff && !CGPA_FRAMING_CONTEXT.test(userText)) {
+      if (cgpa > 0 && cgpa < cgpaCutoff && !CGPA_FRAMING_CONTEXT.test(userText) && !collegeCgpaPolicyCited) {
         flags.add("cgpa_low_no_framing");
         const tierNote = collegeTier === "tier-1"
           ? ` (already adjusted for ${collegeTier} grading curve)`
@@ -697,6 +763,22 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // We inspect the LAST user turn AFTER the latest reverse-question probe by the AI.
     let reverseProbeIdx = -1;
     transcript.forEach((t, idx) => { if (isAi(t) && REVERSE_QUESTION_PROBE.test(t.text || "")) reverseProbeIdx = idx; });
+    // v6.6 — scan ALL user turns BEFORE the closing reverse-question slot
+    // for any SPECIFIC question (tech stack, mentor, growth track, etc.).
+    // Smart candidates often ask substantive questions mid-interview and
+    // then say "no" / "all clear" at the formal closing — that's not
+    // weak preparation, it's exhausted curiosity. Emit positive flag and
+    // suppress `weak_reverse_questions` at any archetype when present.
+    const beforeProbeUserText = reverseProbeIdx >= 0
+      ? transcript.slice(0, reverseProbeIdx).filter(isUser).map((t) => t.text || "").join(" ")
+      : "";
+    const midSessionSpecificAsked =
+      beforeProbeUserText.length > 0 &&
+      REVERSE_QUESTION_SPECIFIC.test(beforeProbeUserText) &&
+      /\?/.test(beforeProbeUserText);
+    if (midSessionSpecificAsked) {
+      flags.add("mid_session_questions_present");
+    }
     if (reverseProbeIdx >= 0) {
       const afterProbe = transcript.slice(reverseProbeIdx + 1).filter(isUser).map((t) => t.text || "").join(" ");
       if (afterProbe) {
@@ -715,8 +797,12 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           // table-stakes questions from freshers, not Razorpay-grade
           // product probes. We only fire `weak_reverse_questions` for
           // tcs-digital and top-tier-campus where the bar IS specific.
+          // v6.6 — mid-session specific questions also suppress the
+          // closing-slot weak flag (across archetypes). Smart candidates
+          // ask substantive questions mid-interview and then close with
+          // "all clear" — that pattern should not be docked.
           const reverseService = archetype === "tcs-ninja" || archetype === "wipro-nlth";
-          if (!reverseService) {
+          if (!reverseService && !midSessionSpecificAsked) {
             flags.add("weak_reverse_questions");
             gaps.push({
               dimension: "preparation",
@@ -738,7 +824,14 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // Bond / service-agreement probing — service-tier only.
-    const aiBondProbed = transcript.some((t) => isAi(t) && BOND_PROBE.test(t.text || ""));
+    // v6.6 — `bond_unprepared` now requires ≥2 AI probes. Real loops
+    // probe bond twice (once early as a screening, once again at
+    // closure); a single probe with an "I don't know" reply is often
+    // just the candidate caught off-guard, not unresearched. Refusal
+    // remains a single-strike DQ — refusing outright doesn't get more
+    // benign with more probes. `bondProbeCount` was hoisted earlier so
+    // it could land on meta alongside archetype info.
+    const aiBondProbed = bondProbeCount > 0;
     if (aiBondProbed) {
       const userBondText = transcript.filter(isUser).map((t) => t.text || "").join(" ");
       if (BOND_REFUSAL.test(userBondText)) {
@@ -749,7 +842,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           observed: "User refused the service agreement outright — at service-tier firms this ends the interview",
           severity: "high",
         });
-      } else if (BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText)) {
+      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText)) {
         flags.add("bond_unprepared");
         gaps.push({
           dimension: "preparation",
@@ -769,6 +862,30 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         observed: "User mentioned an internship but never named the company, deliverable, or impact",
         severity: "medium",
       });
+    }
+
+    // v6.6 — internship company plausibility (transcript-only). Fires
+    // only when no resume is loaded (resume-aware path uses the stricter
+    // `claimed_internship_not_in_resume` instead) AND the candidate
+    // named ≥1 internship company AND none of the named companies match
+    // any of the ~70 well-known Indian/global tech employers in the
+    // `KNOWN_TECH_EMPLOYER` whitelist. Conservative — small legitimate
+    // startups will fall through; we treat this as informational, not
+    // disqualifying, until resume-cross-check can verify.
+    if (!resume && INTERNSHIP_CLAIM.test(userText)) {
+      const claimed = extractClaimedCompanies(userText);
+      if (claimed.length > 0) {
+        const anyKnown = claimed.some((c) => KNOWN_TECH_EMPLOYER.test(c));
+        if (!anyKnown) {
+          flags.add("internship_company_unrecognized");
+          gaps.push({
+            dimension: "credibility",
+            expected: "When naming an internship company, prefer the full, recognised brand (e.g. 'Razorpay Software Pvt Ltd' / 'Infosys BPM'). Recruiters cross-check against BGV — unrecognised names invite a verification drill the candidate may not be able to defend.",
+            observed: `Candidate named internship company/companies (${claimed.slice(0, 3).join(", ")}) that don't match any of the well-known Indian / global tech employers — informational, not yet verified against resume.`,
+            severity: "low",
+          });
+        }
+      }
     }
 
     /* ── Wave 3 detection: real-life campus edge cases ─────────────── */
@@ -1572,6 +1689,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (flags.has("grad_year_mismatch_with_resume")) tips.push("Your stated graduation year and the year on your resume must match within a year — BGV pulls the year off your provisional degree / transcript. If you're an extended-semester passout, state it once and stick to it: 'I graduated in 2024 — completed after one supplementary in extended semester.' Drifting between two years in the same interview reads as fabrication.");
     if (flags.has("college_mismatch_with_resume")) tips.push("Name the exact college on your resume — Indian campus BGV cross-checks the degree certificate, and Tier-1-sounding swaps (e.g. saying 'IIT' when the resume lists 'NIT') are an instant disqualifier. If you transferred, say it once: 'Started at NIT Surat, transferred to NIT Trichy in 2nd year, both reflected on the resume.'");
     if (flags.has("internship_duration_mismatch_with_resume")) tips.push("Your resume's internship dates (and the matching offer / relieving letter) are what BGV pulls — never round 3 months up to 'six months' to sound stronger. If you genuinely extended an internship, state it cleanly: 'Initial 3-month internship, extended by another 3 months — both reflected on the relieving letter.' Specific timelines beat inflated round numbers.");
+    if (flags.has("college_cgpa_policy_acknowledged")) tips.push("Good — you anchored your CGPA against the college / TPO internal cutoff. Indian recruiters respect this framing because internal college gatekeeping is real (tier-2/3 colleges enforce 6.5–7.0 bars even when firm cutoffs are 6.0). Keep using it when relevant: 'My college's TPO cutoff is 7.0; my CGPA is 7.2' lands much better than a bare 7.2.");
+    if (flags.has("mid_session_questions_present")) tips.push("Good — you asked substantive questions mid-interview (tech stack / mentor / growth track), not just at the closing 'any questions?' slot. Indian campus recruiters weight curiosity across the whole conversation; an empty closer after smart mid-session asks reads as 'thoroughly satisfied', not 'unprepared'.");
+    if (flags.has("internship_company_unrecognized")) tips.push("When naming an internship company, use the full, recognised legal name (e.g. 'Razorpay Software Pvt Ltd' / 'Infosys BPM'). If the firm is small or local, briefly anchor it: 'a 12-person fintech startup in Bangalore that powers UPI for X bank.' Vague unrecognised names invite a verification drill that's hard to defend.");
     if (flags.has("cgpa_mismatch_with_resume")) tips.push("Your CGPA on the resume is the BGV-checked number — recruiters cross-reference it against your transcript. Stating a different CGPA verbally (even rounded up by 1 point) reads as fabrication. If your latest semester moved the average, say so explicitly: 'My resume shows 7.2 from last semester; current cumulative is 7.4 after this semester's results.' Specificity beats inflation.");
 
     result.rubricGaps = gaps;

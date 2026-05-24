@@ -8,7 +8,9 @@
       { "speaker": "user", "text": "I built a sentiment analysis tool in Python and Flask deployed on Render. CGPA 7.5. Sole developer, 200 weekly active users from my college.", "time": "" },
       { "speaker": "ai", "text": "Wipro has a 15-month training bond with a ₹2 lakh buyout. Are you comfortable signing the service agreement?", "time": "" },
       { "speaker": "user", "text": "Honestly, what's a bond? I haven't heard of this. Is that normal for companies?", "time": "" },
-      { "speaker": "ai", "text": "It's standard for service-tier campus offers. Any questions for us?", "time": "" },
+      { "speaker": "ai", "text": "It's standard. Let me ask again — knowing the bond is 15 months with a ₹2 lakh buyout, are you okay with the service agreement?", "time": "" },
+      { "speaker": "user", "text": "I really don't know much about service agreements. I'd need to read up on what that means.", "time": "" },
+      { "speaker": "ai", "text": "Understood. Any questions for us?", "time": "" },
       { "speaker": "user", "text": "Could you walk me through the WILP rotation program and which client engagements freshers typically land on?", "time": "" }
     ]
   },

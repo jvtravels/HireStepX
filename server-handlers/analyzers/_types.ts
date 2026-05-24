@@ -149,6 +149,18 @@ export interface AnalyzerMeta {
      *  and the report chip label. */
     archetype?: string;
     archetypeLabel?: string;
+    /** v6.6 — how many times the AI probed bond / service-agreement.
+     *  The `bond_unprepared` flag now gates on ≥2 probes (a single
+     *  probe + "I don't know" is often just surprise, not unresearch). */
+    bondProbeCount?: number;
+    /** v6.6 — what kind of aptitude probe the recruiter at this
+     *  archetype would have asked. Lets the LLM evaluator grade whether
+     *  the generated probe matched the rubric.
+     *    "cognitive-coding" — TCS / Infosys (SQL, strings, hashmap)
+     *    "classical-puzzle" — Wipro NLTH / Cognizant (8 balls, switches)
+     *    "none"             — top-tier-campus skips aptitude
+     *    "either"           — archetype unknown */
+    aptitudeProbeExpectedType?: "cognitive-coding" | "classical-puzzle" | "none" | "either";
   };
   /** Salary-negotiation: tier-aware scoring band + CTC take-home
    *  breakdown the analyzer used. Surfaced in the report header so the
