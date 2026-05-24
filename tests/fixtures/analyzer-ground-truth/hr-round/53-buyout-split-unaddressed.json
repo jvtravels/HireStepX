@@ -9,7 +9,7 @@
       { "speaker": "user", "text": "Backend engineer, 5 years at a Bangalore product company on the payments team.", "time": "" },
       { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
       { "speaker": "user", "text": "Want to move into agentic-payments — current scope is mature for me.", "time": "" },
-      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period? Any buyout possible?", "time": "" },
       { "speaker": "user", "text": "90 days notice, buyout possible at two months gross with manager sign-off and handover plan.", "time": "" },
       { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
       { "speaker": "user", "text": "Built the UPI mandate engine — cut auto-debit failure rate from 6% to 1.5% over a five-month rollout.", "time": "" },

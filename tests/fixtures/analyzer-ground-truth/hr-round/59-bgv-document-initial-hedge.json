@@ -1,0 +1,30 @@
+{
+  "name": "Candidate hedges on first BGV probe but recovers on second — initial_hedge, not sustained",
+  "notes": "v5.6.0 fixture backfill: bgv_document_initial_hedge — exercises the cumulative-tracker recovery downgrade path.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 5 years across Razorpay and Cred on the payments rails team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-payments — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the UPI mandate engine — cut auto-debit failure from 6% to 1.5% over a five-month rollout.", "time": "" },
+      { "speaker": "ai", "text": "For BGV, will you be able to share payslips, Form 16, UAN and relieving letters?", "time": "" },
+      { "speaker": "user", "text": "I don't have them ready right now — let me dig out the old documents.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at one month gross with manager sign-off.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹32 LPA fixed, ₹5 LPA variable paid out at 85% historically, ₹3 LPA joining bonus.", "time": "" },
+      { "speaker": "ai", "text": "Coming back to BGV — when can you share the document set?", "time": "" },
+      { "speaker": "user", "text": "Yes, I can share. Form 16 for last 3 years, last 6 payslips, UAN active, relieving letters from both companies ready.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's UPI roadmap and the catalog scale you're at line up with where I want to take my skills next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["bgv_document_initial_hedge"],
+    "must_not_include": ["empty_transcript", "bgv_document_evasion", "bgv_document_evasion_sustained"]
+  }
+}

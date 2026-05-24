@@ -1,0 +1,30 @@
+{
+  "name": "Candidate refuses references on first probe but recovers on second — initial_hedge, not refusal",
+  "notes": "v5.6.0 fixture backfill: reference_initial_hedge — exercises the cumulative-tracker recovery downgrade path.",
+  "session": {
+    "type": "hr-round",
+    "difficulty": "mid",
+    "transcript": [
+      { "speaker": "ai", "text": "Tell me about yourself.", "time": "" },
+      { "speaker": "user", "text": "Backend engineer, 6 years across Swiggy and Zomato on the discovery team.", "time": "" },
+      { "speaker": "ai", "text": "Why are you considering a switch?", "time": "" },
+      { "speaker": "user", "text": "Want to move into agentic-search — current scope is mature for me.", "time": "" },
+      { "speaker": "ai", "text": "Tell me about a project you owned end to end.", "time": "" },
+      { "speaker": "user", "text": "Rebuilt the discovery ranking pipeline — cut p95 from 800ms to 220ms over a four-month rollout.", "time": "" },
+      { "speaker": "ai", "text": "Can you share two professional references — ex-managers preferred?", "time": "" },
+      { "speaker": "user", "text": "Rather not share any references right now — let me think about it.", "time": "" },
+      { "speaker": "ai", "text": "What's your notice period?", "time": "" },
+      { "speaker": "user", "text": "60 days, buyout possible at one month gross with manager sign-off.", "time": "" },
+      { "speaker": "ai", "text": "Walk me through your CTC.", "time": "" },
+      { "speaker": "user", "text": "₹35 LPA fixed, ₹6 LPA variable paid out at 85% historically, ₹3 LPA joining bonus.", "time": "" },
+      { "speaker": "ai", "text": "Coming back to references — we'll need at least two before the offer.", "time": "" },
+      { "speaker": "user", "text": "I have two references ready — my ex-manager from Swiggy and a peer lead from Zomato. Will share their contacts.", "time": "" },
+      { "speaker": "ai", "text": "Why this company?", "time": "" },
+      { "speaker": "user", "text": "Your team's agentic-discovery roadmap and the catalog scale are the exact problems I want to solve next.", "time": "" }
+    ]
+  },
+  "expected": {
+    "must_include": ["reference_initial_hedge"],
+    "must_not_include": ["empty_transcript", "reference_refusal", "reference_refusal_sustained"]
+  }
+}

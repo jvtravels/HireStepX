@@ -176,14 +176,21 @@ const NONCOMPETE_QUANTIFIED = /\b(?:\d+\s*(?:months?|years?|days?)|expires? (?:o
    denies flatly, that's the red flag. Honest "yes, for X, verified by Y"
    is the strong signal. */
 const GENAI_PROMPT = /\b(?:chat\s*gpt|copilot|cursor|claude|gemini|gen\s*ai|ai\s+(?:tool|assist)|llm)\b[\s\S]{0,40}\b(?:use|using|used|help|during)\b|\b(?:use|using|used)\b[\s\S]{0,30}\b(?:chat\s*gpt|copilot|cursor|claude|gemini|gen\s*ai|llm)\b/i;
-const GENAI_DENIAL = /\b(?:no,?\s*(?:i|never|not at all)|i didn'?t use|never used|absolutely not|of course not)\b/i;
+/* v5.6.0: Hinglish forms ("nahi kiya", "kabhi nahi"). */
+const GENAI_DENIAL = /\b(?:no,?\s*(?:i|never|not at all)|i didn'?t use|never used|absolutely not|of course not|nahi(?:n)? (?:kiya|use kiya|liya)|kabhi nahi(?:n)?|bilkul nahi(?:n)?)\b/i;
 const GENAI_HONEST = /\b(?:yes,?\s*(?:i|for|i used)|i used (?:it|chat|copilot|cursor|claude)|i did use|for (?:boilerplate|syntax|drafts|brainstorm|debugging)|verified (?:by|with)|then i (?:reviewed|verified|tested))\b/i;
 
 /* Loyalty extraction — "promise me you won't leave in 2 years" ritual,
    especially at services firms. The right answer is calibrated honesty
    ("I plan for 3+ years but can't promise"), not a flat yes/no. */
 const LOYALTY_PROMPT = /\b(?:promise (?:me )?you (?:won'?t|will not) leave|commit to (?:at least )?\d+ years|stay (?:for|at least) \d+ years|not (?:leaving|switching) (?:for|in) \d+ years)\b/i;
-const LOYALTY_FLAT_YES = /\b(?:yes,?\s*(?:i (?:promise|commit|will|won'?t))|absolutely,?\s*i (?:promise|commit|won'?t)|sure,?\s*i (?:promise|commit|won'?t))\b/i;
+/* v5.6.0: tightened. The previous version fired on calibrated answers
+   that opened with "Yes, I commit … but I'll communicate early if X."
+   New version requires absence of any calibration token ("but", "if",
+   "unless", "communicate", "early", "can't promise") within the same
+   turn. Also adds Hinglish forms ("haan promise", "pakka commit"). */
+const LOYALTY_FLAT_YES = /\b(?:yes,?\s*(?:i (?:promise|commit|will|won'?t))|absolutely,?\s*i (?:promise|commit|won'?t)|sure,?\s*i (?:promise|commit|won'?t)|haan,?\s*(?:i )?(?:promise|commit|pakka)|pakka\s+(?:commit|promise|stay)|guarantee\s+(?:i|that i)\s+(?:will|won'?t))\b/i;
+const LOYALTY_CALIBRATED = /\b(?:but\s+(?:i|if)|unless|i can'?t (?:promise|guarantee)|communicate early|let you know|plan for|aim for|hope to|3\+\s*years?|five\s+plus|conditional|if (?:things|the role|nothing))\b/i;
 
 /* Aspiration conflict — when candidate mentioned founder/MBA/own-company
    ambitions earlier and HR probes "why join us then". A dodge or a
@@ -195,14 +202,16 @@ const ASPIRATION_WALKBACK = /\b(?:no,?\s*i (?:was|wasn'?t)|actually|i didn'?t me
    your floor?" The candidate should hold a floor with rationale, not
    collapse to "whatever you can offer". */
 const BAND_MISMATCH_PROMPT = /\b(?:(?:above|outside|over) (?:our|the) band|(?:we can'?t|cannot) (?:match|offer) (?:that|your number)|your (?:number|ask) is (?:high|outside)|what(?:'s| is) your (?:real )?floor|tighten (?:your )?ask)\b/i;
-const FLOOR_COLLAPSE = /\b(?:whatever (?:you|the company) (?:can|offer)|i'?m (?:flexible|open to anything)|happy with (?:whatever|anything)|no specific (?:floor|number)|you decide)\b/i;
+/* v5.6.0: Hinglish forms ("jo aap dein", "aap decide karo"). */
+const FLOOR_COLLAPSE = /\b(?:whatever (?:you|the company) (?:can|offer)|i'?m (?:flexible|open to anything)|happy with (?:whatever|anything)|no specific (?:floor|number)|you decide|jo (?:aap|tum) (?:dein|do|de|offer)|aap (?:decide|tay) karo|jitna (?:dein|de)|koi (?:bhi )?number|no preference|as per (?:company|your) (?:policy|standard))\b/i;
 
 /* Reverse-interview quality — at close, HR invites questions. The
    candidate who asks zero or fluff ("what time do I start?") signals
    low engagement; substantive questions (team structure, success
    metric, manager style) signal strong fit. */
 const REVERSE_INVITED = /\b(?:do you have (?:any )?questions for me|any questions (?:from your|for) (?:side|me)|anything you'?d like to ask)\b/i;
-const REVERSE_FLUFF = /\b(?:no(?:t really)?,?\s*(?:nothing|no questions|all good|i'?m good)|just (?:wanted to know|curious about) (?:the )?(?:start date|joining date|location|timing))\b/i;
+/* v5.6.0: Hinglish forms ("nahi koi sawal", "kuch nahi"). */
+const REVERSE_FLUFF = /\b(?:no(?:t really)?,?\s*(?:nothing|no questions|all good|i'?m good)|just (?:wanted to know|curious about) (?:the )?(?:start date|joining date|location|timing)|nahi(?:n)?,?\s*(?:koi (?:sawal|question)|kuch nahi|sab clear)|sab (?:clear|theek) hai|covered (?:everything|sab kuch))\b/i;
 const REVERSE_SUBSTANTIVE = /\b(?:team structure|reporting (?:line|to)|success (?:metric|criteria|look like)|first (?:30|60|90) days|manager(?:'s)? style|growth path|attrition|tech stack|on[- ]?call|roadmap|investment in|how is success measured)\b/i;
 
 /* Multi-probe RESOLUTION patterns — when a candidate initially hedges
@@ -254,7 +263,8 @@ const CLAWBACK_INFORMED = /\b(?:what (?:are|is) the (?:terms|duration|amount)|ho
 /* RTO / 5-day office flat refusal — service-tier and most product-cos in
    2026 require WFO. Flat "I prefer WFH" with no negotiation is a dealbreaker. */
 const RTO_PROMPT = /\b(?:5[- ]?day(?:s)? (?:in office|wfo|from office)|return to office|work from office|wfo policy|hybrid policy|in[- ]?office (?:days|policy)|how many days (?:in|from) office)\b/i;
-const RTO_FLAT_REFUSAL = /\b(?:only (?:wfh|remote)|wfh only|cannot (?:come to office|do wfo|do 5 days)|i don'?t do (?:wfo|office)|prefer (?:fully |only )?remote|no office)\b/i;
+/* v5.6.0: Hinglish forms ("office nahi aaunga", "ghar se kaam"). */
+const RTO_FLAT_REFUSAL = /\b(?:only (?:wfh|remote)|wfh only|cannot (?:come to office|do wfo|do 5 days)|i don'?t do (?:wfo|office)|prefer (?:fully |only )?remote|no office|office nahi (?:aaunga|aaungi|aaunge|aa sakta)|ghar se (?:hi )?kaam|remote (?:hi )?chahiye|wfo (?:nahi|nahin) (?:chahiye|karna))\b/i;
 const RTO_NEGOTIATED = /\b(?:can do|i can come|fine with|3 days|4 days|hybrid (?:works|is fine)|negotiable|happy to|will adjust|can arrange)\b/i;
 
 /* Designation downgrade — candidate is Senior X applying for X. HR probes;
@@ -310,7 +320,8 @@ const RELO_PROBED = /\b(?:relocat|relo|joining bonus for relo|(?:temporary|temp)
    subtler blame: "no growth", "wasn't valued", "politics". Universal
    Indian-HR screen — softer than "toxic" but equally disqualifying. */
 const REASON_LEAVING_PROMPT = /\b(?:reason for (?:leaving|change|switch)|why (?:are you )?leaving|why (?:do you want to|are you looking to) (?:leave|move|switch))\b/i;
-const BLAME_FRAMING = /\b(?:no growth|wasn'?t (?:supported|valued|heard|recognized|respected)|politics|favoritism|biased|manager (?:didn'?t|wasn'?t|isn'?t)|hr (?:didn'?t|wasn'?t)|toxic culture|no learning|stuck (?:there|in)|nothing to learn|micromanag|not (?:appreciated|valued))\b/i;
+/* v5.6.0: Hinglish forms ("growth nahi thi", "manager theek nahi"). */
+const BLAME_FRAMING = /\b(?:no growth|wasn'?t (?:supported|valued|heard|recognized|respected)|politics|favoritism|biased|manager (?:didn'?t|wasn'?t|isn'?t)|hr (?:didn'?t|wasn'?t)|toxic culture|no learning|stuck (?:there|in)|nothing to learn|micromanag|not (?:appreciated|valued)|growth nahi(?:n)? (?:thi|tha|hai)|manager (?:theek|sahi|achha) nahi|culture (?:kharab|bad|toxic)|seekhne ko kuch nahi|kuch (?:bhi )?(?:nahi|naya))\b/i;
 const FORWARD_FRAME = /\b(?:next (?:challenge|step|chapter)|want to (?:build|learn|own|drive|move into|grow into)|(?:looking|ready) for (?:a |the )?(?:next|new|bigger)|fresh (?:problem|domain|space)|domain (?:change|shift)|move into|expand my)\b/i;
 
 /* reference_list_vague — distinct from REFERENCE_REFUSAL. Candidate
@@ -387,7 +398,9 @@ const PEDIGREE_PRE_APOLOGY = /\b(?:i know my college isn'?t|despite (?:my )?(?:c
  *     checks the level against years; mismatch reads as inflation.
  *
  * All three are silent no-ops when `resume` is null / empty. */
-const TRANSCRIPT_EMPLOYER_RE = /\b(?:worked\s+at|was\s+at|joined|employed\s+at|currently\s+(?:at|with)|previously\s+at|my\s+(?:current|previous|last|ex)\s+(?:company|employer)\s+(?:is|was)|company\s+called)\s+([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*){0,3})/g;
+/* v5.6.0: case-insensitive + accepts lowercase STT proper nouns
+   ("worked at razorpay"). Same fix shipped at L321 for REFERENCE_NAMED. */
+const TRANSCRIPT_EMPLOYER_RE = /\b(?:worked\s+at|was\s+at|joined|employed\s+at|currently\s+(?:at|with)|previously\s+at|my\s+(?:current|previous|last|ex)\s+(?:company|employer)\s+(?:is|was)|company\s+called)\s+([a-z][\w&.-]*(?:\s+[a-z][\w&.-]*){0,3})/gi;
 const SENIOR_TITLE_RE = /\b(?:senior|sr\.?|lead|staff|principal|architect|head\s+of|director|vp|vice\s+president)\b/i;
 const CAREER_BREAK_PROMPT = /\b(career\s+break|sabbatical|time\s+off|not\s+working|between\s+(?:jobs|roles)|year\s+off)\b/i;
 
@@ -477,6 +490,11 @@ const RESCORE_RUBRICS: Record<string, string> = {
   reason_for_leaving_blame_framing: "Did the candidate frame the reason for leaving primarily through a FORWARD pull (next challenge, new domain, scope expansion) even if some backward facts (politics, no growth) are mentioned? If a forward frame is present alongside, the flag is FALSE. Pure backward blame with no forward pull is TRUE.",
   multi_offer_undisclosed: "Did the candidate name a specific company OR a specific timeline OR a specific stage for any other offer? Even one specific anchor (company name, expected-by date, round-stage) means the flag is FALSE. Pure 'a few places' / 'some companies' / 'yeah I'm interviewing' with zero specifics is TRUE.",
   reference_list_vague: "Did the candidate name a referee (first name, role, or company), OR specifically defer ('current manager doesn't know yet, will share post-offer')? Either case the flag is FALSE. Pure 'yeah I have references' / 'a couple of ex-managers' with no proper noun and no deferral context is TRUE.",
+  floor_collapse: "Did the candidate hold ANY floor with rationale (a number, a 'no less than X', anchored on current/competing/market)? If a floor is stated — even tentatively — the flag is FALSE. Pure 'whatever you can offer' / 'I'm flexible' / 'aap decide karo' with zero floor and zero rationale is TRUE.",
+  clawback_blind_accept: "Did the candidate ask ANY clarifying question about the clawback (duration, amount, pro-rate, what triggers it, refund schedule), even after an initial 'yes that's fine'? If a clarifier was asked in the same turn or the next, the flag is FALSE. Pure unconditional yes with no follow-up question is TRUE.",
+  moonlighting_flat_denial: "Did the candidate disclose ANY scoped outside activity (open-source, blog, teaching, GitHub, consulting on weekends with permission) OR specifically caveat the denial ('nothing that creates a client conflict')? Either case the flag is FALSE. Pure 'no, never, of course not' with no scope is TRUE.",
+  hybrid_expectation_mismatch: "Did the candidate frame remote as a preference with negotiation room ('I'd prefer remote but can do N days hybrid', 'open to hybrid if the team is mostly remote') vs an absolutist demand ('fully remote only, never in office')? Preference-with-room is FALSE. Absolutist no-office stance is TRUE.",
+  tax_structure_naive: "Did the candidate engage ANY tax-structure component (80C, NPS, LTA, flexi-basket, meal cards, take-home, gratuity), even briefly? Any engagement = FALSE. Comp negotiation that stayed strictly on gross/fixed/variable with zero tax-structure mention at ₹25L+ is TRUE.",
 };
 
 /* Coaching clusters — group flags by theme so the report leads with
@@ -595,7 +613,7 @@ const CLUSTERS: ReadonlyArray<{ label: string; theme: string; members: ReadonlyA
 
 export const hrRoundAnalyzer: FocusAnalyzer = {
   focus: "hr-round",
-  version: "hr-round-v5.5.0",
+  version: "hr-round-v5.6.0",
 
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
@@ -1112,7 +1130,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       const t = transcript[i];
       if (isAi(t) && LOYALTY_PROMPT.test(t.text || "")) {
         const r = replyTo(transcript, i);
-        if (r && r.text && r.text.length < 220 && LOYALTY_FLAT_YES.test(r.text)) {
+        if (r && r.text && r.text.length < 220 && LOYALTY_FLAT_YES.test(r.text) && !LOYALTY_CALIBRATED.test(r.text)) {
           flags.add("loyalty_overcommit");
           gaps.push({ dimension: "commitment_signal", expected: "Calibrated honesty ('I plan for 3+ years, can't promise — but I'd communicate early if anything changed')", observed: "Flat promise reads as performative — HR knows you can't actually commit to N years", severity: "low" });
           break;
@@ -1138,7 +1156,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         const r = replyTo(transcript, i);
         if (r && r.text && FLOOR_COLLAPSE.test(r.text)) {
           flags.add("floor_collapse");
-          gaps.push({ dimension: "comp_transparency", expected: "Hold a floor with rationale ('my floor is X — anchored on competing offer / current + reasonable hike')", observed: "Collapsed to 'whatever you can offer' — HR will now anchor at the bottom of their band", severity: "high" });
+          gaps.push({ dimension: "comp_transparency", expected: "Hold a floor with rationale ('my floor is X — anchored on competing offer / current + reasonable hike')", observed: "Collapsed to 'whatever you can offer' — HR will now anchor at the bottom of their band", severity: "high", flag: "floor_collapse" });
+          rescoreEvidence.set("floor_collapse", { aiPrompt: t.text || "", userReply: r.text || "" });
           break;
         }
       }
@@ -1185,7 +1204,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         const r = replyTo(transcript, i);
         if (r && r.text && MOONLIGHT_FLAT_DENIAL.test(r.text) && !MOONLIGHT_HONEST.test(r.text)) {
           flags.add("moonlighting_flat_denial");
-          gaps.push({ dimension: "switch_rationale_honesty", expected: "Honest disclosure with boundaries ('I contribute to open-source on weekends, no client conflict')", observed: "Flat denial of any side activity reads as evasive — 2026 HR expects disclosure with scope", severity: "medium" });
+          gaps.push({ dimension: "switch_rationale_honesty", expected: "Honest disclosure with boundaries ('I contribute to open-source on weekends, no client conflict')", observed: "Flat denial of any side activity reads as evasive — 2026 HR expects disclosure with scope", severity: "medium", flag: "moonlighting_flat_denial" });
+          rescoreEvidence.set("moonlighting_flat_denial", { aiPrompt: t.text || "", userReply: r.text || "" });
           break;
         }
       }
@@ -1234,7 +1254,8 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         const r = replyTo(transcript, i);
         if (r && r.text && CLAWBACK_BLIND_YES.test(r.text.trim()) && !CLAWBACK_INFORMED.test(r.text)) {
           flags.add("clawback_blind_accept");
-          gaps.push({ dimension: "comp_transparency", expected: "Acknowledge + ask terms: 'I'm fine in principle — could you share the duration, amount, and pro-rate structure?'", observed: "Blind-accepted a clawback/bond without asking duration or amount — sets up a post-joining surprise", severity: "medium" });
+          gaps.push({ dimension: "comp_transparency", expected: "Acknowledge + ask terms: 'I'm fine in principle — could you share the duration, amount, and pro-rate structure?'", observed: "Blind-accepted a clawback/bond without asking duration or amount — sets up a post-joining surprise", severity: "medium", flag: "clawback_blind_accept" });
+          rescoreEvidence.set("clawback_blind_accept", { aiPrompt: t.text || "", userReply: r.text || "" });
           break;
         }
       }
@@ -1466,6 +1487,7 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       // version that rto_flat_refusal misses.
       if (flags.has("rto_flat_refusal")) break;
       flags.add("hybrid_expectation_mismatch");
+      rescoreEvidence.set("hybrid_expectation_mismatch", { aiPrompt: "", userReply: t.text || "" });
       gaps.push({
         dimension: "logistics_clarity",
         expected: "Most Indian GCCs / unicorns mandate 3+ day hybrid. Don't volunteer 'fully remote, never come to office' — frame as 'open to hybrid, can do N in-office days; what's the policy?' Absolutist remote demands are an instant misalignment signal in 2025-26",
@@ -1520,6 +1542,10 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
       const taxAware = transcript.some((t) => isUser(t) && TAX_STRUCTURE_PROBE.test(t.text || ""));
       if (isMidPlus && compDiscussed && !taxAware && transcript.length > 10) {
         flags.add("tax_structure_naive");
+        // session-level signal — no single AI prompt anchors it; pass
+        // the user's comp-discussion snippet to the rescorer for context.
+        const compTurn = transcript.find((t) => isUser(t) && SALARY_NUMBER.test(t.text || ""));
+        rescoreEvidence.set("tax_structure_naive", { aiPrompt: "", userReply: compTurn?.text || userText.slice(0, 400) });
         gaps.push({
           dimension: "comp_transparency",
           expected: "At mid-senior (₹25L+) the take-home delta between a naive structure and a tax-optimised one is 1-2 LPA. Ask about flexi-basket components: 80C max-out, NPS employer contribution (10% extra deduction), LTA, meal cards, gratuity calc. Indian HR expects this fluency",
@@ -1562,11 +1588,36 @@ export const hrRoundAnalyzer: FocusAnalyzer = {
         const claimed: string[] = [];
         for (const t of transcript) {
           if (!isUser(t) || !t.text) continue;
-          const re = new RegExp(TRANSCRIPT_EMPLOYER_RE.source, "g");
+          const re = new RegExp(TRANSCRIPT_EMPLOYER_RE.source, "gi");
           let m: RegExpExecArray | null;
           while ((m = re.exec(t.text)) !== null) {
             const name = m[1].trim().replace(/[.,;:!?]+$/, "");
-            if (name.length >= 2 && name.length <= 60) claimed.push(name);
+            if (name.length < 2 || name.length > 60) continue;
+            // v5.6.0: lowercase regex captures common-noun phrases
+            // ("a fintech", "an early-stage saas"). Drop captures whose
+            // first token is an article / generic descriptor, and drop
+            // captures that are entirely generic-noun / stop tokens —
+            // real employer mentions either start with a proper noun
+            // or include a brand-shaped token.
+            const tokens = name.toLowerCase().split(/\s+/);
+            const first = tokens[0] || "";
+            const STOP = new Set([
+              "a", "an", "the", "my", "our", "their", "his", "her",
+              "this", "that", "some", "another", "one", "two", "three",
+            ]);
+            if (STOP.has(first)) continue;
+            const GENERIC = new Set([
+              "fintech", "saas", "startup", "company", "firm", "mnc", "gcc",
+              "unicorn", "product", "services", "agency", "consultancy",
+              "bank", "client", "vendor", "team", "org", "shop", "place",
+              "early", "stage", "small", "mid", "large", "global", "fintech.",
+            ]);
+            if (tokens.every((tk) => GENERIC.has(tk) || STOP.has(tk) || tk.length < 4)) continue;
+            // Drop single-token captures that look like English verbs
+            // (the regex's "my current company is X" arm catches phrases
+            // like "is taking", "is doing", "is building").
+            if (tokens.length === 1 && /(?:ing|ed)$/.test(tokens[0])) continue;
+            claimed.push(name);
           }
         }
         const orphans = claimed.filter(
