@@ -1553,7 +1553,7 @@ function planNextActionInternal(state: NegotiationState): PlannedAction {
              * promised content the kernel never delivered. Now asks the
              * candidate to disclose schedule + cliff, which is the
              * actual signal the equity-clarity probe needs. */
-            ask: "On the equity piece — what's the vesting schedule and cliff on your current grant?",
+            ask: "On the equity part — what's the vesting schedule and cliff on your current grant?",
             trigger: "equityUnclear",
             topic: "equity-clarity",
             satisfiesTopic: "equity-clarity",
@@ -3363,7 +3363,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
   ) {
     return {
       kind: "reactive-followup",
-      ask: "That's useful context — is the competing offer at a similar stage, or further along?",
+      ask: "That's helpful — is the competing offer at a similar interview stage, or further along?",
       trigger: "invokedCompetingOffer",
       topic: "competing-leverage-ack",
       satisfiesTopic: "competing-leverage-ack",
@@ -3547,7 +3547,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
   ) {
     return {
       kind: "reactive-followup",
-      ask: "I want to make sure I can go to bat for you internally — having a sense of your current package really helps. Are you comfortable sharing?",
+      ask: "I want to make a strong case for you internally — knowing your current package really helps. Are you comfortable sharing?",
       trigger: "evasiveOnCurrentCtc",
       topic: "ctc-gentle-push",
       satisfiesTopic: "ctc-gentle-push",
@@ -3590,7 +3590,7 @@ function planReactiveFollowup(state: NegotiationState): PlannedAction | null {
     ) {
       return {
         kind: "reactive-followup",
-        ask: "It sounds like trajectory matters as much as the number — concretely, which of these would move the needle most: scope of the role, the manager/team you'd report into, equity / long-term upside, or a clearer path to a lead position?",
+        ask: "It sounds like growth matters as much as the number — which of these would matter most to you: the scope of the role, the manager and team, equity and long-term upside, or a clearer path to a lead position?",
         trigger: "directional-expectation",
         topic: "value-proof",
         satisfiesTopic: "value-proof",
@@ -3657,7 +3657,7 @@ function planArchetypeReactive(
   if (archetype === "P09_NON_CASH_FOCUS" && !hasFired("value-proof")) {
     return {
       kind: "reactive-followup",
-      ask: "Got it — learning and exposure are weighing heavier than comp here. Concretely, what would make the next 12–18 months a clear step up: bigger scope of ownership, a stronger manager / team, equity upside, or a defined path to a lead / principal role?",
+      ask: "Got it — learning and exposure matter more than the package here. What would make the next 12 to 18 months a real step forward for you: bigger ownership, a stronger manager and team, equity upside, or a clearer path to a lead role?",
       trigger: "archetype:P09",
       topic: "value-proof",
       satisfiesTopic: "value-proof",
@@ -3673,7 +3673,7 @@ function planArchetypeReactive(
   if (archetype === "P11_FREELANCER" && !hasFired("anchor-clarify")) {
     return {
       kind: "reactive-followup",
-      ask: "Got it — freelance billing isn't a clean CTC equivalent. What's your typical monthly run-rate over the last 6–12 months, and how loaded is it (one big retainer vs. multiple gigs)?",
+      ask: "Got it — freelance billing doesn't map cleanly to a CTC. What's your average monthly billing over the last 6 to 12 months, and is it mostly one big retainer or spread across several clients?",
       trigger: "archetype:P11",
       topic: "anchor-clarify",
       satisfiesTopic: "anchor-clarify",
@@ -3689,7 +3689,7 @@ function planArchetypeReactive(
   if (archetype === "P14_HIGH_EARNER" && !hasFired("value-proof")) {
     return {
       kind: "reactive-followup",
-      ask: "Noted — at your current level, money alone isn't going to be the lever. What's pulling you toward this role specifically?",
+      ask: "Noted — at your level, money alone isn't going to be the deciding factor. What's drawing you to this role specifically?",
       trigger: "archetype:P14",
       topic: "value-proof",
       satisfiesTopic: "value-proof",
@@ -3729,49 +3729,49 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.wantsHigherBase,
         topic: "wants-higher-base",
-        ask: "Understood that fixed weight matters to you — is that to bank against EMIs or to anchor the next appraisal cycle? Helps me frame the fitment correctly.",
+        ask: "Understood that a higher fixed matters to you — is that to cover EMIs, or to set a stronger base for your next appraisal? Helps me structure the fitment correctly.",
         rationale: "Candidate signalled preference for higher base — probe motivation (cashflow vs anchor) to size the fixed:variable split.",
       },
       {
         flag: profile.wantsJoiningBonus,
         topic: "wants-joining-bonus",
-        ask: "On the joining bonus — are you looking to cover a notice buyout or a variable shortfall at your current place? The clawback is typically 12 months pro-rata.",
+        ask: "On the joining bonus — is it to cover a notice-period buyout, or to make up for a pending variable payout at your current place? The clawback is typically 12 months pro-rata.",
         rationale: "Candidate asked for JB — probe whether it's notice buyout vs variable bridge to size correctly and surface clawback context.",
       },
       {
         flag: profile.wantsRelocationAllowance,
         topic: "wants-relocation-allowance",
-        ask: "Relocation is on our standard menu — one-time shift assistance plus a settling-in component. Are we talking intra-city or a base-city change?",
+        ask: "Relocation is part of our standard package — one-time shifting assistance plus a settling-in allowance. Is this a move within the same city, or to a different city?",
         rationale: "Candidate mentioned relocation — confirm intra-city vs inter-city to pick the right reimbursement bucket.",
       },
       {
         flag: profile.mentionedSpouseFamily,
         topic: "spouse-family-context",
-        ask: "Got it — and on the family side, is your spouse also in a similar role search, or is location flex something we should plan around?",
+        ask: "Got it — and on the family side, is your spouse also looking for a role in the same city, or is location flexibility something we should plan for?",
         rationale: "Candidate referenced spouse/family — surface dual-career and location constraints early so they don't ambush the close.",
       },
       {
         flag: profile.askedAboutReporting,
         topic: "reporting-structure",
-        ask: "Reporting on this role is into the EM/Director on the platform side; skip-level is the VP. Want me to set up a quick chat with the hiring manager?",
+        ask: "For this role, you'd report to the EM or Director on the platform side, and their manager is the VP. Would you like me to set up a short chat with the hiring manager?",
         rationale: "Candidate asked about reporting — answer with reporting line and offer manager intro to de-risk the close.",
       },
       {
         flag: profile.askedAboutGrowthPath,
         topic: "growth-path",
-        ask: "On the growth path — standard arc here is two appraisal cycles to the next grade, faster if you land a high-impact charter. We'll align that in the first 30 days.",
+        ask: "On the growth path — the standard journey here is two appraisal cycles to the next grade, faster if you take on a high-impact project. We'll discuss that in your first 30 days.",
         rationale: "Candidate asked about growth path — give the appraisal-cycle anchor (Indian context: April/March cycle, two cycles to next grade).",
       },
       {
         flag: profile.askedAboutTeamSize,
         topic: "team-size",
-        ask: "The pod you'd join is about 8 engineers today, splitting into two squads next quarter — so genuine ownership without being lost in headcount.",
+        ask: "The team you'd join is around 8 engineers today, splitting into two smaller teams next quarter — so you'll have real ownership without getting lost in the crowd.",
         rationale: "Candidate asked about team size — answer with concrete headcount and trajectory so they can map ownership scope.",
       },
       {
         flag: profile.mentionedTaxImplication,
         topic: "tax-implication",
-        ask: "On tax — under the new regime, the optimisation point sits around ₹15L; above that the marginal rate is 30% plus surcharge. Want me to share the structured breakup so you can see take-home?",
+        ask: "On tax — under the new regime, the take-home is most efficient up to around ₹15L; above that the marginal rate is 30% plus surcharge. Would you like me to share the salary breakup so you can see the take-home?",
         rationale: "Candidate raised tax — offer the structured breakup with new-regime breakpoints (Indian context: ₹7L/₹15L/₹25L slabs).",
       },
       {
@@ -3783,19 +3783,19 @@ function planWiredProfileFollowup(state: NegotiationState): PlannedAction | null
       {
         flag: profile.mentionedMoonlighting,
         topic: "moonlighting-policy",
-        ask: "On the moonlighting question — our policy is the standard one: prior written disclosure for any external paid engagement, no compete-overlap. Was there a specific arrangement you wanted to flag?",
+        ask: "On the moonlighting question — our policy is the standard one: prior written disclosure for any external paid work, and no overlap with competing companies. Was there a specific arrangement you wanted to flag?",
         rationale: "Candidate mentioned moonlighting — surface policy proactively (Indian context: post-2022 IT-services crackdown made this load-bearing).",
       },
       {
         flag: profile.gaveRangeNotPoint,
         topic: "range-to-point",
-        ask: "You shared a range — to frame the fitment cleanly, where in that range do you actually see yourself landing? Helps me run a sharper number past leadership.",
+        ask: "You shared a range — to plan the fitment cleanly, where in that range do you actually see yourself landing? Helps me take a more specific number to leadership.",
         rationale: "Candidate gave a range instead of a target — pin down the actual point before the lever rotation locks in.",
       },
       {
         flag: profile.deflectedOnRange,
         topic: "range-deflection",
-        ask: "I understand wanting to hear our number first — fair. As per our band for this grade, the fitment sits in a defined corridor; if you can share even a rough target, I can tell you straight away whether we're broadly aligned.",
+        ask: "I understand wanting to hear our number first — fair. Our band for this grade has a defined range; if you can share even a rough target, I can tell you straight away whether we're in the same ballpark.",
         rationale: "Candidate is deflecting on number disclosure — re-anchor with band-grade language and invite mutual disclosure.",
       },
       {
