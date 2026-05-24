@@ -458,7 +458,7 @@ export function renderSentimentPrefix(
     case "frustrated":
       return "I hear you — and I want to be straight with you here.";
     case "excited":
-      return "Glad we're broadly aligned —";
+      return "Glad we're in the same range —";
     case "hesitant":
       return "Take your time on this —";
     case "decisive":
@@ -935,7 +935,7 @@ function renderCanonicalProseBody(
       const target = state.candidateTarget;
       const targetStr = target != null && target > 0 ? `₹${target} LPA` : "where you're anchoring";
       if (action.quartile === "top") {
-        return `Just to frame this — at ${targetStr}, you'd be sitting at the top quartile of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
+        return `Just to frame this — at ${targetStr}, you'd be at the top end of the ${gradeLabel(state)} band. That's not unreasonable for the profile, but it does set the bar for performance in the first review.`;
       }
       return `At ${targetStr}, you'd be landing at the median of the ${gradeLabel(state)} band — comfortable spot, headroom for the appraisal cycle.`;
     }
@@ -1073,9 +1073,9 @@ function renderCanonicalProseBody(
       const co = action.competingCompany;
       const competingOffer = action.competingOffer;
       if (co) {
-        return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we broadly aligned?`;
+        return `Got it — that's a real number from ${co}. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we in the same range?`;
       }
-      return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we broadly aligned?`;
+      return `Got it — that's a real number. Let me take ₹${competingOffer} LPA back to the panel for a re-look and revert by EOD. If we're able to land within striking distance of that, are we in the same range?`;
     }
 
     case "anchor-defense-hike-strong": {
