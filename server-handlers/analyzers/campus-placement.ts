@@ -104,6 +104,14 @@
  *        the v6.7 positive flags `shipped_to_prod_context` +
  *        `location_agnostic_signal` end-to-end so the regression net
  *        catches future drift on the suppression chains they feed.
+ *   v6.9 Maintainability pass — zero-behavior-change refactor: the
+ *        57-entry flag → coaching-tip if-chain at the bottom of the
+ *        analyzer extracted to `_campus-tips.ts` as a single
+ *        `CAMPUS_FLAG_TIPS: Record<string, string>` dictionary. The
+ *        analyzer's final step iterates the live flag set and joins
+ *        matching tips. Drops ~55 lines from this file (now under the
+ *        1500-LOC ESLint warn line) and makes a missing tip for a
+ *        newly-added flag trivially discoverable in one place.
  * ──────────────────────────────────────────────────────────────────
  */
 
@@ -112,6 +120,7 @@ import { classifyCompanyTier } from "../_company-tier";
 import { classifyCollegeTier, cgpaCutoffAdjustment } from "../_college-tier";
 import { classifyCampusArchetype, archetypeCgpaCutoff, archetypeLabel } from "../_campus-archetype";
 import { parsePeriodMonths, NUM_WORDS, SPOKEN_DURATION_REGEX } from "../_resume-period";
+import { CAMPUS_FLAG_TIPS } from "./_campus-tips";
 
 const isAi = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("a");
 const isUser = (t: TranscriptTurn) => t.speaker.toLowerCase().startsWith("u");
@@ -507,7 +516,7 @@ function extractClaimedCompanies(userText: string): string[] {
 
 export const campusPlacementAnalyzer: FocusAnalyzer = {
   focus: "campus-placement",
-  version: "campus-placement-v6.8",
+  version: "campus-placement-v6.9",
   async analyze({ session, resume }: AnalyzerInput): Promise<AnalyzerResult> {
     const result = emptyResult();
     const transcript = Array.isArray(session.transcript) ? session.transcript : [];
@@ -1779,62 +1788,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     const tips: string[] = [];
-    if (flags.has("no_academic_project_discussed")) tips.push("As a fresher, lead with your capstone or final-year project — it's your strongest evidence.");
-    if (flags.has("generic_passion_no_substance")) tips.push("Replace 'I'm passionate about tech' with 'I built X using Y, here's what I learned.'");
-    if (flags.has("user_badmouthing_college")) tips.push("Even if coursework was weak, frame it as 'I supplemented with self-study and projects' — never criticize professors.");
-    if (flags.has("project_no_tech_stack")) tips.push("Always name the stack: language + framework + DB + deployment. 'I built it in Python, FastAPI, Postgres, deployed on Render' beats 'I built a web app.'");
-    if (flags.has("implausible_team_size")) tips.push("College projects are typically 3-6 people. If you led 20, it was likely a college fest — frame the leadership separately from technical projects.");
-    if (flags.has("no_company_specific_research")) tips.push("Spend 20 minutes on the careers page before each interview. Name a program, a value, or a recent launch — never just 'great culture'.");
-    if (flags.has("volunteered_academic_deficit")) tips.push("Don't volunteer backlogs or low CGPA. If asked directly, say what happened in one sentence and pivot to what you did about it.");
-    if (flags.has("excessive_filler_words")) tips.push("Replace fillers with a half-second pause. Recording one mock and counting your 'basically's is the fastest fix.");
-    if (flags.has("internship_unsubstantiated")) tips.push("If you list an internship, be ready with: company, duration, mentor, what shipped, and a measurable outcome.");
-    if (flags.has("mti_pattern_detected")) tips.push("Watch for Mother-Tongue-Influence phrasing that tier-1 recruiters flag: 'please reply' (not 'kindly revert back'), 'I have a question' (not 'doubt'), 'I'm Rahul' (not 'Myself Rahul'), 'discuss this' (not 'discuss about this'). Note: 'passed out 2024' is standard Indian English — no need to swap.");
-    if (flags.has("cgpa_low_no_framing")) tips.push("If your CGPA is under 7, never state it bare. Use the 3-part frame: one-sentence honest reason → one piece of recent evidence (project / internship / hackathon) → forward-looking intent. Bare numbers below 7 stick in the interviewer's memory.");
-    if (flags.has("reverse_questions_declined")) tips.push("Always have 2-3 reverse-questions ready: training program details, mentor structure, what the first 6 months look like, a specific point from the PPT. Saying 'no' to 'any questions for us?' tells the interviewer you didn't prepare.");
-    if (flags.has("weak_reverse_questions")) tips.push("'What's the work culture?' isn't a real question — every interviewer hears it 20 times a day. Ask specific: 'What does a typical week look like for an SDE on your Trailhead team?' or 'You mentioned the new ABDM project in the PPT — would freshers rotate through it?'");
-    if (flags.has("bond_refusal")) tips.push("Never refuse the bond outright in an on-campus TCS/Infosys/Wipro interview — it's an instant disqualifier. If concerned, ask: 'Could you walk me through the buyout terms and the typical reasons people exercise them?' Sounds informed, not resistant.");
-    if (flags.has("bond_unprepared")) tips.push("Know the bond duration for your target company before the interview. Quick reference: TCS 2 years, Infosys 1 year, Wipro 15 months + ₹2L bond, Cognizant 1 year, HCL 1.5 years, Tech Mahindra / Capgemini / Accenture 1 year. Service-tier firms WILL ask.");
-    if (flags.has("attrition_risk_higher_studies")) tips.push("If MBA / MS is a real 2-year plan, don't volunteer it in a service-tier campus interview — bonds recover training cost over 2 years and recruiters discount you immediately. If asked directly, frame as 'I'd like to first build a strong foundation here — higher studies is a future consideration, not a fixed timeline.'");
-    if (flags.has("relocation_refusal")) tips.push("Pan-India service firms allocate across Mysore / Hyderabad / Chennai / Bhubaneswar / Coimbatore — flat refusal of relocation ends the conversation. If you have a genuine constraint, soften: 'I have a preference for Southern locations due to family — could you walk me through how allocation works?' Curiosity, not refusal.");
-    if (flags.has("shift_oncall_refusal")) tips.push("Most service-tier and global-product India roles include rotational / US-shift coverage. Saying 'I can't do night shift' before understanding the cadence (every 8 weeks? Once a quarter? Only during incidents?) reads as inflexible. Ask first, decide later.");
-    if (flags.has("cliche_strength_weakness")) tips.push("Drop 'perfectionist' and 'I work too hard' — every interviewer hears these 5x a day. Real weaknesses: 'I over-engineer when I should ship and iterate. I've started timeboxing my POCs to 2 days.' Specific, calibrated, with a real fix in progress.");
-    if (flags.has("tmay_resume_recital")) tips.push("'Tell me about yourself' is NOT a resume read. Use the 60-second frame: one sentence on who you are → one strong project with a measurable outcome → one sentence on why this role. Skip 'as per my resume' — they already read it.");
-    if (flags.has("career_goal_vague")) tips.push("'I see myself in a senior position' is the laziest possible answer to the 5-year question. Pick a specific role: 'SDE-2 with ownership of a backend service' / 'tech lead on a payments squad' / 'product specialist in fintech infra'. Specific = thoughtful; vague = unprepared.");
-    if (flags.has("hackathon_unsubstantiated")) tips.push("If you mention a hackathon, lead with: theme + team size + duration + what you built + the rank/outcome. 'Smart India Hackathon 2023, 4-person team, built an OCR pipeline for railway tickets, finalist (top 5 of 80)' beats 'I did SIH.'");
-    if (flags.has("buzzword_soup")) tips.push("Listing AI + ML + blockchain + IoT + web3 as interests without a single project reads as resume padding. Pick ONE — say 'I went deep on ML over my final year and built a 3-stage churn-prediction pipeline with XGBoost' — depth beats breadth in fresher interviews.");
-    if (flags.has("family_pressure_framing")) tips.push("Never frame your career as parent-driven ('my parents wanted me to do engineering / join TCS'). Own the choice even if the original push came from family: 'I picked CS because the problem-solving clicked for me in 12th — I've been building projects since.' Recruiters select for ownership.");
-    if (flags.has("negative_company_compare")) tips.push("Never trash another company — even a competitor, even one that rejected you. The interviewer notes 'will say negative things about us in 2 years.' If asked 'why us over X', name what excites you about THIS company, not what's wrong with X.");
-    if (flags.has("salary_expectation_inflated")) tips.push("Campus fresher offers are typically non-negotiable and capped by tier (TCS/Infosys ≈ ₹3.5-4.5L, Indian product ≈ ₹6-15L, global product India ≈ ₹15-30L for fresher SDE). Quoting a number 2-3x above band tells recruiters you didn't do research. Either anchor to levels.fyi data or defer: 'I trust the standard fresher band — I'd like to learn more about the role first.'");
-    if (flags.has("salary_raised_too_early")) tips.push("Don't bring up salary in the technical / first round. Wrong round = wrong priorities signal. Wait for HR / final round, or for the interviewer to raise it. If you genuinely don't know the band, ask after the technical conversation has finished: 'I'd love to understand the comp structure — when's the right time to discuss?'");
-    if (flags.has("portfolio_absent_for_claim")) tips.push("Drop a GitHub link / live demo URL whenever you narrate a project. 'Source is on my GitHub at github.com/username/repo' or 'live demo at xyz.vercel.app' adds 10x credibility versus a verbal claim — recruiters can check it in 30 seconds.");
-    if (flags.has("active_backlog_evasion")) tips.push("Service-tier firms (TCS/Infosys/Wipro/Cognizant) auto-reject anyone with active backlogs — and hedging reads the same as having one. State your exact standing: 'Zero active backlogs; one supplementary cleared in 2nd year.' Crisp facts beat dodging.");
-    if (flags.has("branch_jump_thin_narrative")) tips.push("Non-CS branch into SDE? Build the bridge upfront: a named course (CS50 / Striver / NPTEL), 3-4 self-built projects, and one sentence on what clicked. 'I'm Mech, did CS50 + Striver SDE Sheet, built 4 projects, applied because systems thinking translates.' Owns the switch instead of hiding it.");
-    if (flags.has("ppt_recall_absent")) tips.push("Always reference the pre-placement talk: a speaker name, a recent launch, a program ('Infosys Springboard', 'Wipro Turbo', 'TCS Digital'). Even one mention proves you listened — interviewers heavily weight this on campus.");
-    if (flags.has("coding_round_score_undefended")) tips.push("Defend a low coding score with one honest + one recent-evidence sentence: 'Time pressure on the last problem; since then I've solved 200+ on Leetcode, currently Knight rated.' Owning the gap with proof beats excusing it.");
-    if (flags.has("parallel_exam_prep_disclosed")) tips.push("Don't volunteer GATE / CAT / UPSC parallel prep in service-tier interviews — recruiters discount you as 1-2 year attrition risk. If asked directly, frame as: 'I'd like to first build a strong foundation here; longer-term plans are flexible and not in a fixed window.'");
-    if (flags.has("tier_3_overcompensation")) tips.push("Calibrate achievement claims to verifiable detail. 'Top 5 in my college hackathon (40 teams, 36 hours, built X)' lands; 'national hackathon winner' invites a one-question verification drill you can't pass. Specificity beats grandiosity.");
-    if (flags.has("fyp_solo_claim_vs_team")) tips.push("Be precise on individual contribution in team projects. 'In our 4-person FYP, I owned the backend (FastAPI + Postgres); teammates handled the React frontend and the ML model.' Mixing 'I built' with 'we presented' invites a 'who did what' drill.");
-    if (flags.has("stipend_dodge")) tips.push("Stipend is a routine probe — state numbers cleanly even if small. '₹25K/month at the startup; unpaid academic internship at the lab under Prof. X.' Hedging reads as fabrication, even when the internship was real.");
-    if (flags.has("memorized_self_intro")) tips.push("'Good morning sir, first of all thank you for this wonderful opportunity, coming to my introduction' is the YouTube template every panel has heard 500 times. Open with one sentence on who you are + one strong project line + why this role. Verbatim templates flag as no-thought.");
-    if (flags.has("aptitude_puzzle_refusal")) tips.push("Never refuse a live puzzle / DSA / estimation flat. Narrate: 'Let me think out loud — I'll start with the brute force, then optimize.' Interviewers grade approach more than the final answer; saying 'I can't think under pressure' kills the rest of the round.");
-    if (flags.has("onsite_opportunity_premature")) tips.push("Don't bring up onsite / US deputation in the first 2-3 turns — service-tier recruiters read it as offer-shopping. Save it for HR / post-offer. If genuinely curious, phrase as 'I'd love to understand how growth and global rotation work over the first 2-3 years.'");
-    if (flags.has("nepotism_reference")) tips.push("Never volunteer that a relative / family-friend works at the company — even as small-talk. It activates explicit anti-nepotism filters at Indian firms and is forbidden at PSU / consulting / Big-4. If BGV surfaces it later, that's fine; mentioning it unsolicited isn't.");
-    if (flags.has("inhand_vs_ctc_confusion")) tips.push("Learn the CTC ladder before the interview: CTC = fixed + variable + joining bonus + RSU + benefits. In-hand ≈ 70-78% of fixed after tax + EPF + professional tax. Asking 'isn't CTC the in-hand' tells recruiters you didn't prepare for the offer conversation.");
-    if (flags.has("code_on_paper_freeze")) tips.push("Practice writing 15-20 line solutions on paper / chat / a doc during prep — at least 10 problems before any campus drive. 'I can only code in an IDE' tells the interviewer you've memorized templates, not internalized logic. Even rough pseudocode beats refusal.");
-    if (flags.has("resume_date_inconsistency")) tips.push("Internship / project windows must not overlap unless explicitly part-time and disclosed. Two full-time ranges that overlap trip BGV instantly and read as fabrication. Pull the resume, fix the months, and rehearse the corrected timeline in one breath.");
-    if (flags.has("degree_branch_inconsistency")) tips.push("Pick the exact branch name on your transcript and stick with it across the whole conversation. If you have a minor / dual-degree, say so once: 'CSE major with an AIML minor.' Drifting between 'I'm in CSE' and 'I'm in AIML' reads as confusion or fabrication.");
-    if (flags.has("claimed_internship_not_in_resume")) tips.push("Every company you mention in the interview must already appear on your uploaded resume. BGV uses the resume as ground truth — narrating a role that isn't listed reads as fabrication and is the #1 instant-disqualifier in Indian campus rounds. Update the resume before the next session, or only narrate companies you've already listed.");
-    if (flags.has("branch_mismatch_with_resume")) tips.push("Your resume's degree field is the BGV-checked source of truth. If you spoke about a different branch than what's on your resume, frame it explicitly: 'My resume lists Mechanical — I've been doing CS50, Striver SDE Sheet, and projects on the side, which is why I'm targeting SDE roles.' Owning the bridge beats a silent verbal swap.");
-    if (flags.has("grad_year_mismatch_with_resume")) tips.push("Your stated graduation year and the year on your resume must match within a year — BGV pulls the year off your provisional degree / transcript. If you're an extended-semester passout, state it once and stick to it: 'I graduated in 2024 — completed after one supplementary in extended semester.' Drifting between two years in the same interview reads as fabrication.");
-    if (flags.has("college_mismatch_with_resume")) tips.push("Name the exact college on your resume — Indian campus BGV cross-checks the degree certificate, and Tier-1-sounding swaps (e.g. saying 'IIT' when the resume lists 'NIT') are an instant disqualifier. If you transferred, say it once: 'Started at NIT Surat, transferred to NIT Trichy in 2nd year, both reflected on the resume.'");
-    if (flags.has("internship_duration_mismatch_with_resume")) tips.push("Your resume's internship dates (and the matching offer / relieving letter) are what BGV pulls — never round 3 months up to 'six months' to sound stronger. If you genuinely extended an internship, state it cleanly: 'Initial 3-month internship, extended by another 3 months — both reflected on the relieving letter.' Specific timelines beat inflated round numbers.");
-    if (flags.has("college_cgpa_policy_acknowledged")) tips.push("Good — you anchored your CGPA against the college / TPO internal cutoff. Indian recruiters respect this framing because internal college gatekeeping is real (tier-2/3 colleges enforce 6.5–7.0 bars even when firm cutoffs are 6.0). Keep using it when relevant: 'My college's TPO cutoff is 7.0; my CGPA is 7.2' lands much better than a bare 7.2.");
-    if (flags.has("mid_session_questions_present")) tips.push("Good — you asked substantive questions mid-interview (tech stack / mentor / growth track), not just at the closing 'any questions?' slot. Indian campus recruiters weight curiosity across the whole conversation; an empty closer after smart mid-session asks reads as 'thoroughly satisfied', not 'unprepared'.");
-    if (flags.has("shipped_to_prod_context")) tips.push("Strong — anchoring a project in production / active-users / merged-PRs evidence beats a bare 'I built X' every time. At product-grade panels (Google / Razorpay / TCS Digital), 'shipped to prod, 200 DAU' is recognised as higher credibility than a GitHub URL alone. Keep this phrasing — it's the rubric-matched answer.");
-    if (flags.has("location_agnostic_signal")) tips.push("Good — proactively stating you're open to any location / pan-India removes a friction point the panel would otherwise probe. At service-tier (TCS / Infosys / Wipro / Cognizant) this is table-stakes; at Digital tracks it's a positive differentiator. Keep volunteering it.");
-    if (flags.has("short_screening_session_acknowledged")) tips.push("This was a short screening-format conversation, not a full panel. The rubric was relaxed accordingly — no penalty for a missing closing 'any questions for us?' slot or a single bond mention. Treat the next round as the deeper rubric.");
-    if (flags.has("internship_company_unrecognized")) tips.push("When naming an internship company, use the full, recognised legal name (e.g. 'Razorpay Software Pvt Ltd' / 'Infosys BPM'). If the firm is small or local, briefly anchor it: 'a 12-person fintech startup in Bangalore that powers UPI for X bank.' Vague unrecognised names invite a verification drill that's hard to defend.");
-    if (flags.has("cgpa_mismatch_with_resume")) tips.push("Your CGPA on the resume is the BGV-checked number — recruiters cross-reference it against your transcript. Stating a different CGPA verbally (even rounded up by 1 point) reads as fabrication. If your latest semester moved the average, say so explicitly: 'My resume shows 7.2 from last semester; current cumulative is 7.4 after this semester's results.' Specificity beats inflation.");
+    flags.forEach((flag) => {
+      const tip = CAMPUS_FLAG_TIPS[flag];
+      if (tip) tips.push(tip);
+    });
 
     result.rubricGaps = gaps;
     result.flags = Array.from(flags);
