@@ -235,7 +235,7 @@ Also under 6.3: broadened `SITUATION_RE` in `src/_star-detection.ts` and `STAR_C
 
 **File**: `server-handlers/analyzers/campus-placement.ts`**Target market**: TCS NQT, Infosys NQT, Wipro NLTH — 100k+ Indian hires/yr.
 
-**Status**: ✅ Phases 1–5 shipped. Analyzer at `campus-placement-v6.4`. Target reached.
+**Status**: ✅ Phases 1–6 shipped. Analyzer at `campus-placement-v6.5`. Target reached + realism-calibrated.
 
 **Top weaknesses**:
 
@@ -279,6 +279,17 @@ Four archetypes resolved in new helper `server-handlers/_campus-archetype.ts`. A
 - ✅ "Any backlogs?" honest-handling detector — new positive flag `backlog_honest_disclosure` (paired with existing `active_backlog_evasion`); fires when AI probes backlogs and candidate gives a clean, unhedged disclosure ("zero backlogs", "cleared first attempt").
 - ✅ Aptitude-to-project consistency — new flag `aptitude_project_inconsistency` fires when candidate refuses an aptitude / puzzle probe AND elsewhere claimed applied-tech depth (`TECH_APPLIED`) or a portfolio link (`PORTFOLIO_LINK`).
 - **Tests**: `src/__tests__/campusPlacementPhase5.test.ts` (5 tests). Analyzer bumped to `campus-placement-v6.4`.
+
+### Phase 6 — Realism calibration (post-audit, May 2026) ✅ DONE
+
+Triggered by an independent realism audit comparing the analyzer's rubric to actual recruiter behaviour at TCS NQT / Wipro NLTH / Cognizant GenC loops in 2025-26. Five corrections shipped together as `campus-placement-v6.5`:
+
+- **6.1** ✅ MTI whitelist for standard Indian English — "passed out 2024" / "passing out 2025" no longer fire `mti_pattern_detected`. Real recruiters across services-tier loops hear this every screen and don't dock. Items that still fire (`myself Rahul`, `kindly revert`, `having a doubt`) are kept with an inline calibration comment explaining the rationale for future agents.
+- **6.2** ✅ Service-tier "why this company" acceptable narrative — TCS NQT / Wipro NLTH candidates citing structured training / proven client base / long-term growth / ILP / two-year-bond acceptance no longer fire `no_company_specific_research`. They fire the new positive flag `service_tier_why_company_acceptable` instead. Product-tier (Google / top-tier-campus) still requires specific signal. Gated by inline archetype resolution at the flag site (so the `whyArchetype` and `serviceTier` locals stay scoped).
+- **6.3** ✅ Reverse-question realism for service-tier — "what's the work culture?" is acceptable filler at TCS NQT / Wipro NLTH loops; `weak_reverse_questions` is suppressed for those archetypes. Still fires at `tcs-digital` / `top-tier-campus` where the bar is specific (process, scale, team structure).
+- **6.4** ✅ Wipro NLTH CGPA cutoff 6.5 → 6.0 — `archetypeCgpaCutoff("wipro-nlth")` now returns 6.0 to match the 2025 firm-wide floor. Updated docstring on `_campus-archetype.ts` notes that internal college gatekeeping often enforces 7.0+ regardless of the firm-level cutoff.
+- **6.5** ✅ Aptitude probe routed by archetype in `generate-questions.ts` — TCS / Infosys / Accenture / HCL / LTIMindtree get cognitive-coding (SQL 2nd-highest, reverse-a-string, HashMap-vs-TreeMap, first-non-repeating-char). Wipro NLTH / Cognizant GenC / Capgemini / Tech Mahindra get classical puzzles (8 balls, 3 switches, 100 pirates). Product cos skip the aptitude probe entirely.
+- **Tests**: `src/__tests__/campusPlacementPhase6.test.ts` (9 tests across 4 describe blocks). Phase 3 test updated for the new Wipro cutoff. All 54/54 campus tests pass; `tsc --noEmit` clean.
 
 ---
 

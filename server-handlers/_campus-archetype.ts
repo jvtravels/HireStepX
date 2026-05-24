@@ -13,6 +13,9 @@
  *                          Specialist + Wipro Elite. CGPA 7.5+, DSA depth.
  *   - `wipro-nlth`       — Wipro NLTH base + Cognizant GenC + Capgemini
  *                          Exceller. Bond + location-flex critical.
+ *                          CGPA floor moved to 6.0 in 2025 (was 6.5);
+ *                          internal college gatekeeping often enforces
+ *                          7.0+ regardless of firm cutoff.
  *   - `top-tier-campus`  — Google/Amazon/Microsoft/Adobe/Flipkart/Razorpay
  *                          on-campus. Project depth + system-design lite.
  *   - `unknown`          — no specialized track detected; fall back to
@@ -94,7 +97,7 @@ export function archetypeCgpaCutoff(arch: CampusArchetype): number | null {
   switch (arch) {
     case "tcs-ninja":      return 6.0;
     case "tcs-digital":    return 7.5;
-    case "wipro-nlth":     return 6.5;
+    case "wipro-nlth":     return 6.0;
     case "top-tier-campus": return 7.5;
     case "unknown":        return null;
   }
