@@ -1155,11 +1155,20 @@ export function useInterviewEngine() {
      * the kernel is still mid-negotiation (skip, hangup, etc bypassing
      * handleNextQuestion's placeholder pre-insertion). Force waitForUser
      * so the engine pauses instead of silently auto-ending. Derived from
-     * kernel state — no shadow boolean to keep in sync. */
+     * kernel state — no shadow boolean to keep in sync.
+     *
+     * Skip the backstop when the closing slot was explicitly authored
+     * by the kernel-terminal rewrite path (line ~1605). That path sets
+     * waitForUser:false intentionally because the kernel text IS the
+     * wrap-up, and the server may have signaled conversationDone via a
+     * regex pattern the kernel doesn't share (e.g. "pull out", "have to
+     * pass") — in which case phase wouldn't be terminal here. The
+     * scoreNote sentinel is the contract between the two code paths. */
     if (
       interviewType === "salary-negotiation"
       && step.type === "closing"
       && step.waitForUser === false
+      && !step.scoreNote?.startsWith("Negotiation kernel terminal")
       && !isNegotiationKernelTerminal()
     ) {
       step.waitForUser = true;
