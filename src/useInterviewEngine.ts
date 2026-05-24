@@ -1145,22 +1145,16 @@ export function useInterviewEngine() {
        template that doesn't commit to a specific number and instead
        defers to HR. The actual final number is communicated in the
        written offer, not the live closing line. */
-    /* PDF#43 fix (2026-05-22) — the 3-step salary-neg script
-     * [intro, question, closing] has waitForUser:false on the closing
-     * slot. Without this guard, the engine ends the interview after a
-     * single negotiation back-and-forth in two failure modes:
-     *   (a) kernel turn times out / returns null → fallback speaks the
-     *       static closing text → onSpeechEnd reads waitForUser:false →
-     *       phase=done.
-     *   (b) kernel returns a non-terminal follow-up → the race-fix at
-     *       line 1771+ mutates step.aiText to the kernel response, but
-     *       NOT step.waitForUser → bot speaks the kernel response, then
-     *       phase=done.
-     * Until the kernel has actually emitted a terminal phase, force
-     * waitForUser=true on the closing slot. The serverSaysDone branch
-     * still explicitly sets waitForUser:false (line 1607-1613) when
-     * the kernel terminates, so the legitimate auto-end path is
-     * unaffected. */
+    /* PDF#43 defense-in-depth (2026-05-22) — kernel-driven slot
+     * pre-insertion in handleNextQuestion now guarantees currentStep
+     * never lands on the static closing while the kernel is non-
+     * terminal. This guard is a backstop: if any future code path
+     * advances onto the closing without going through handleNextQuestion
+     * (e.g. handleSkipQuestion), waitForUser is force-flipped so the
+     * engine doesn't silently auto-end an in-progress negotiation.
+     * kernelTerminalReachedRef is latched only when the server emits
+     * conversationDone=true, so legitimate terminal closings retain
+     * waitForUser:false and route through phase="done". */
     if (
       interviewType === "salary-negotiation"
       && step.type === "closing"
@@ -1828,21 +1822,6 @@ export function useInterviewEngine() {
               if (followUpStep.scoreNote) step.scoreNote = followUpStep.scoreNote;
               const fuAccent = (followUpStep as { accentSplit?: { before: string; accent: string; after: string } }).accentSplit;
               if (fuAccent) (step as { accentSplit?: typeof fuAccent }).accentSplit = fuAccent;
-              /* PDF#43 fix (2026-05-22) — when injecting a NON-TERMINAL
-               * kernel response into the closing slot (race-fix path), the
-               * closure's step is the original closing object with
-               * waitForUser:false. Mutating aiText alone caused the bot to
-               * speak the kernel's follow-up question and then immediately
-               * auto-end the interview (onSpeechEnd → waitForUser:false →
-               * phase=done). Re-shape the closure step so the engine pauses
-               * for the candidate's reply, matching what the kernel
-               * intended. The serverSaysDone branch above explicitly
-               * handles the terminal case with its own waitForUser:false
-               * wrap step, so this only fires for legitimate follow-ups. */
-              if (isSalaryNegConversation && !serverSaysDone && step.type === "closing") {
-                step.waitForUser = true;
-                step.type = "follow-up";
-              }
             }
             // Thinking phrase already spoken — go directly to main response
             // Brief pause for natural transition from thinking phrase to main speech
@@ -2617,6 +2596,62 @@ export function useInterviewEngine() {
             });
           }
         }
+      }
+      /* PDF#43 architectural fix (2026-05-22) — kernel-driven slot
+       * pre-insertion for salary-negotiation.
+       *
+       * THE STRUCTURAL PROBLEM: the 3-step salary-neg script
+       * [intro, question, closing] has exactly one "question" slot. The
+       * NegotiationKernel needs N turns (discovery → counter → close).
+       * After the candidate's first negotiation answer, currentStep
+       * advances to the static closing slot (waitForUser:false) — and
+       * every kernel response after that has to be retrofitted into a
+       * slot that doesn't structurally exist. The historical fix was a
+       * race-fix that inserted before the closing AND mutated the
+       * closure-captured `step` object (waitForUser/aiText/type) so the
+       * engine wouldn't auto-end. That's three layers of patchwork
+       * fighting the data model.
+       *
+       * THE ARCHITECTURAL FIX: before currentStep advances onto the
+       * static closing slot during an active (non-terminal) negotiation,
+       * INSERT a fresh "question" slot at currentStep+1. The engine
+       * lands in a slot that is structurally correct (waitForUser:true,
+       * type:"question") — the existing follow-up resolution path
+       * (line 1581 branch) replaces its aiText with the kernel response
+       * via the normal nextQuestionIdx === currentStep flow. No closure
+       * mutations needed, no race-fix-against-closing needed.
+       *
+       * The placeholder's aiText is a safe generic probe so that on the
+       * rare path where the kernel turn returns null (network drop,
+       * 5xx, parse failure) the bot says something coherent instead of
+       * the placeholder string leaking through.
+       *
+       * When the kernel later signals serverSaysDone, the existing path
+       * at line ~1607 rewrites the current slot into a closing
+       * (waitForUser:false) AND truncates everything after — so the
+       * inserted placeholders don't cause the interview to run forever.
+       *
+       * Pre-insertion is gated on kernelTerminalReachedRef so that AFTER
+       * a terminal turn (where the closing has been rewritten) we
+       * advance normally. */
+      if (
+        isSalaryNegType &&
+        !kernelTerminalReachedRef.current &&
+        nextStep?.type === "closing"
+      ) {
+        const placeholderText = "Could you say more about what's most important to you in the package — base, joining bonus, equity, or somewhere else?";
+        setInterviewScript(prev => {
+          const placeholder: InterviewStep = {
+            type: "question",
+            aiText: placeholderText,
+            aiTextDisplay: placeholderText,
+            thinkingDuration: 300,
+            speakingDuration: 4500,
+            waitForUser: true,
+            scoreNote: "Negotiation kernel placeholder — replaced by live kernel response on resolve",
+          };
+          return [...prev.slice(0, nextIdx), placeholder, ...prev.slice(nextIdx)];
+        });
       }
       setPhase("thinking");
       setCurrentStep(currentStep + 1);
