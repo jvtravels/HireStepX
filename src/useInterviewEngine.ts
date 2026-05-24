@@ -125,15 +125,21 @@ export function useInterviewEngine() {
      server on each turn. Null until the kernel path initialises it
      on first follow-up. */
   const negotiationKernelStateRef = useRef<string | null>(null);
-  /* PDF#43 fix (2026-05-22) — has the kernel ever signaled a terminal
-   * phase (accepted / walked-away / stalemate) on this session? Used to
-   * gate auto-end of the static closing slot in the 3-step salary-neg
-   * script. Until terminal is reached, the closing step's waitForUser
-   * is forced to TRUE so the engine pauses for the candidate instead
-   * of ending the interview after one back-and-forth (the symptom in
-   * PDF#43: T1 kernel CTC probe → T2 candidate discloses CTC → T3
-   * static "Thanks for the conversation today" + phase=done). */
-  const kernelTerminalReachedRef = useRef<boolean>(false);
+  /* Single source of truth for "is the negotiation done?": derive from
+   * the kernel state's phase. Eliminates the prior pattern of latching
+   * a separate boolean ref on serverSaysDone, which could drift out of
+   * sync with the kernel and re-introduce the PDF#43 symptom (static
+   * closing leaks through while kernel is still mid-negotiation). */
+  const isNegotiationKernelTerminal = useCallback((): boolean => {
+    const raw = negotiationKernelStateRef.current;
+    if (!raw) return false;
+    try {
+      const phase = (JSON.parse(raw) as { phase?: string })?.phase;
+      return phase === "accepted" || phase === "walked-away" || phase === "stalemate";
+    } catch {
+      return false;
+    }
+  }, []);
   /* Move history accumulator — one entry per AI turn the kernel returns.
      Consumed at session end to compute kernel-aware metrics (anchor
      turn, lever diversity, band traversal, LPA per turn). Kept as a
@@ -1145,21 +1151,16 @@ export function useInterviewEngine() {
        template that doesn't commit to a specific number and instead
        defers to HR. The actual final number is communicated in the
        written offer, not the live closing line. */
-    /* PDF#43 defense-in-depth (2026-05-22) — kernel-driven slot
-     * pre-insertion in handleNextQuestion now guarantees currentStep
-     * never lands on the static closing while the kernel is non-
-     * terminal. This guard is a backstop: if any future code path
-     * advances onto the closing without going through handleNextQuestion
-     * (e.g. handleSkipQuestion), waitForUser is force-flipped so the
-     * engine doesn't silently auto-end an in-progress negotiation.
-     * kernelTerminalReachedRef is latched only when the server emits
-     * conversationDone=true, so legitimate terminal closings retain
-     * waitForUser:false and route through phase="done". */
+    /* Backstop for any code path that lands on the static closing while
+     * the kernel is still mid-negotiation (skip, hangup, etc bypassing
+     * handleNextQuestion's placeholder pre-insertion). Force waitForUser
+     * so the engine pauses instead of silently auto-ending. Derived from
+     * kernel state — no shadow boolean to keep in sync. */
     if (
       interviewType === "salary-negotiation"
       && step.type === "closing"
       && step.waitForUser === false
-      && !kernelTerminalReachedRef.current
+      && !isNegotiationKernelTerminal()
     ) {
       step.waitForUser = true;
     }
@@ -1582,13 +1583,6 @@ export function useInterviewEngine() {
                confirmation, then the closing wrap-up, instead of
                being dragged through 4 more anchor phases. */
             const serverSaysDone = isSalaryNegConversation && (result as { conversationDone?: boolean })?.conversationDone === true;
-            /* PDF#43 fix (2026-05-22) — latch the kernel-terminal flag the
-             * moment the server emits it. Read by the closing-step
-             * waitForUser guard at the top of this effect so subsequent
-             * renders correctly route through the auto-end path. */
-            if (serverSaysDone) {
-              kernelTerminalReachedRef.current = true;
-            }
             setInterviewScript(prev => {
               const nextQuestionIdx = prev.findIndex((s, i) => i >= currentStep && s.type === "question");
               /* Sticky terminal-phase safety net (session 13 bug,
@@ -2631,12 +2625,12 @@ export function useInterviewEngine() {
        * (waitForUser:false) AND truncates everything after — so the
        * inserted placeholders don't cause the interview to run forever.
        *
-       * Pre-insertion is gated on kernelTerminalReachedRef so that AFTER
-       * a terminal turn (where the closing has been rewritten) we
-       * advance normally. */
+       * Pre-insertion is gated on the kernel's own terminal phase so
+       * that AFTER a terminal turn (where the closing has been
+       * rewritten) we advance normally. */
       if (
         isSalaryNegType &&
-        !kernelTerminalReachedRef.current &&
+        !isNegotiationKernelTerminal() &&
         nextStep?.type === "closing"
       ) {
         const placeholderText = "Could you say more about what's most important to you in the package — base, joining bonus, equity, or somewhere else?";
